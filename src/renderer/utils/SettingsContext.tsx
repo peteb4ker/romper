@@ -1,0 +1,114 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+interface SettingsContextProps {
+    sdCardPath: string | null;
+    setSdCardPath: (path: string) => void;
+    initializeSettings: () => Promise<void>;
+    darkMode: boolean;
+    setDarkMode: (enabled: boolean) => void;
+    settingsInitialized: boolean;
+}
+
+const SettingsContext = createContext<SettingsContextProps | undefined>(undefined);
+
+export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [sdCardPath, setSdCardPathState] = useState<string | null>(null);
+    const [darkMode, setDarkModeState] = useState<boolean>(false);
+    const [settingsInitialized, setSettingsInitialized] = useState(false);
+    const [settings, setSettings] = useState<Record<string, any>>({});
+
+    const setSdCardPath = (path: string) => {
+        const updatedSettings = { ...settings, sdCardPath: path };
+        setSettings(updatedSettings);
+        setSdCardPathState(path);
+        window.electronAPI.setSetting('sdCardPath', path);
+    };
+
+    const setDarkMode = (enabled: boolean) => {
+        const updatedSettings = { ...settings, darkMode: enabled };
+        setSettings(updatedSettings);
+        setDarkModeState(enabled);
+        window.electronAPI.setSetting('darkMode', enabled);
+
+        // Apply or remove the 'dark' class on the document element
+        if (enabled) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    };
+
+    const initializeSettings = async () => {
+        try {
+            console.log('Initializing settings...');
+            const loadedSettings = await window.electronAPI.readSettings();
+            console.log('Loaded settings:', loadedSettings);
+
+            if (loadedSettings.sdCardPath) {
+                console.log('Setting sdCardPath state:', loadedSettings.sdCardPath);
+                setSdCardPathState(loadedSettings.sdCardPath);
+            }
+
+            if (typeof loadedSettings.darkMode === 'boolean') {
+                console.log('Setting darkMode state:', loadedSettings.darkMode);
+                setDarkModeState(loadedSettings.darkMode);
+            }
+        } catch (error) {
+            console.error('Failed to initialize settings:', error);
+        } finally {
+            setSettingsInitialized(true);
+        }
+    };
+
+    useEffect(() => {
+        initializeSettings();
+    }, []);
+
+    return (
+        <SettingsContext.Provider value={{ sdCardPath, setSdCardPath, darkMode, setDarkMode, initializeSettings, settingsInitialized }}>
+            {settingsInitialized ? children : null}
+        </SettingsContext.Provider>
+    );
+};
+
+export const useSettings = (): SettingsContextProps => {
+    const context = useContext(SettingsContext);
+    if (!context) {
+        throw new Error('useSettings must be used within a SettingsProvider');
+    }
+    return context;
+};
+
+export { SettingsContext };
+
+// Tests
+import { render, waitFor } from '@testing-library/react';
+
+describe('SettingsContext', () => {
+    it('should initialize settings successfully', async () => {
+        (window.electronAPI.readSettings as jest.Mock).mockResolvedValue({
+            sdCardPath: '/mock/path',
+            darkMode: true,
+        });
+
+        const { getByText } = render(
+            <SettingsProvider>
+                <div>Settings Loaded</div>
+            </SettingsProvider>
+        );
+
+        await waitFor(() => expect(getByText('Settings Loaded')).toBeInTheDocument());
+    });
+
+    it('should handle errors during settings initialization', async () => {
+        (window.electronAPI.readSettings as jest.Mock).mockRejectedValue(new Error('Failed to load settings'));
+
+        const { getByText } = render(
+            <SettingsProvider>
+                <div>Settings Loaded</div>
+            </SettingsProvider>
+        );
+
+        await waitFor(() => expect(getByText('Settings Loaded')).toBeInTheDocument());
+    });
+});

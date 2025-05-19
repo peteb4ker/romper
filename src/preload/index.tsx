@@ -1,56 +1,56 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const fs = require('fs');
-const path = require('path');
-const { app } = require('electron').remote || require('@electron/remote');
 
-// Ensure the userData directory is resolved correctly
-const userDataPath = app ? app.getPath('userData') : process.env.APPDATA || process.env.HOME;
-const settingsPath = path.join(userDataPath, 'settings.json');
+// Ensure the userData directory and settings path are resolved via IPC
+const getUserDataPath = async (): Promise<string> => {
+    return await ipcRenderer.invoke('get-user-data-path');
+};
 
-function readSettings() {
+async function readSettings(): Promise<{ sdCardPath?: string; darkMode?: boolean; theme?: string }> {
     try {
-        if (fs.existsSync(settingsPath)) {
-            return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-        }
+        const settings = await ipcRenderer.invoke('read-settings');
+        return typeof settings === 'string' ? JSON.parse(settings) : settings || {};
     } catch (e) {
         console.error('Failed to read settings:', e);
+        return {}; // Return an empty object if settings cannot be read
     }
-    return {}; // Return an empty object if settings cannot be read
 }
 
-function writeSettings(settings: any) {
+async function writeSettings(key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string }, value: any): Promise<void> {
     try {
-        // Ensure the directory exists before writing
-        const dir = path.dirname(settingsPath);
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+        await ipcRenderer.invoke('write-settings', key, value);
     } catch (e) {
         console.error('Failed to write settings:', e);
     }
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
-    scanSdCard: (sdCardPath: string) => ipcRenderer.invoke('scan-sd-card', sdCardPath),
-    selectSdCard: () => ipcRenderer.invoke('select-sd-card'),
-    watchSdCard: (sdCardPath: string, callback: () => void) => {
-        ipcRenderer.on('sd-card-changed', (_: unknown, _data: unknown) => callback());
+    scanSdCard: (sdCardPath: string): Promise<string[]> => ipcRenderer.invoke('scan-sd-card', sdCardPath),
+    selectSdCard: (): Promise<string | null> => ipcRenderer.invoke('select-sd-card'),
+    watchSdCard: (sdCardPath: string, callback: () => void): { close: () => Promise<void> } => {
+        console.log('watchSdCard invoked with path:', sdCardPath);
+        ipcRenderer.on('sd-card-changed', (_event: unknown, _data: unknown) => callback());
 
-        return ipcRenderer.invoke('watch-sd-card', sdCardPath).then((watcherId: any) => ({
-            close: () => ipcRenderer.invoke('unwatch-sd-card', watcherId),
-        }));
+        return ipcRenderer.invoke('watch-sd-card', sdCardPath).then((watcherId: string) => {
+            console.log('watcherId received:', watcherId);
+            return {
+                close: () => {
+                    console.log('Closing watcher with ID:', watcherId);
+                    return ipcRenderer.invoke('unwatch-sd-card', watcherId);
+                },
+            };
+        });
     },
-    // Settings API
-    getSetting: (key: string) => {
-        const settings = readSettings();
+    getSetting: async (key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string }): Promise<any> => {
+        const settings = await readSettings();
         return settings[key];
     },
-    setSetting: (key: string, value: any) => {
-        const settings = readSettings();
-        settings[key] = value;
-        writeSettings(settings);
+    setSetting: async (key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string }, value: any): Promise<void> => {
+        console.log(`setSetting called with key: ${key}, value:`, value);
+        await writeSettings(key, value);
+    },
+    readSettings: async (): Promise<{ sdCardPath?: string; darkMode?: boolean; theme?: string }> => {
+        return readSettings();
     },
 });
 
-console.log('Preload script loaded');
+console.log('Preload script updated and loaded');

@@ -1,32 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useSettings } from '../utils/SettingsContext';
 
-const ThemeToggle = () => {
-    const [isDarkMode, setIsDarkMode] = useState(() => {
-        // Check localStorage for the user's theme preference
-        return localStorage.getItem('theme') === 'dark';
-    });
+const ThemeToggle: React.FC = () => {
+    const { darkMode, setDarkMode } = useSettings();
 
-    useEffect(() => {
-        // Apply the theme to the <html> element
-        if (isDarkMode) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
-        }
-    }, [isDarkMode]);
-
-    const toggleTheme = () => {
-        setIsDarkMode(!isDarkMode);
+    const toggleDarkMode = () => {
+        setDarkMode(!darkMode);
     };
 
     return (
         <button
-            onClick={toggleTheme}
-            className="px-4 py-2 bg-gray-700 text-gray-100 rounded-lg hover:bg-gray-600 transition"
+            onClick={toggleDarkMode}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-md shadow hover:bg-gray-300 dark:hover:bg-gray-700 transition"
         >
-            {isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            {darkMode ? 'Disable Dark Mode' : 'Enable Dark Mode'}
         </button>
     );
 };

@@ -28,7 +28,7 @@ jobs:
         run: npm run make
 
       - name: Upload release assets
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.3
         with:
           name: release-artifacts
           path: out/

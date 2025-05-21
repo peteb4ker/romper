@@ -12,6 +12,7 @@ logs/
 # Build output
 dist/
 build/
+out/
 
 # Dependency directories
 .DS_Store

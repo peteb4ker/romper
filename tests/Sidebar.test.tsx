@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import Sidebar from '../src/renderer/components/Sidebar';
 
 describe('Sidebar', () => {
     it('should render without crashing', () => {

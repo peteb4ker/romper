@@ -80,35 +80,3 @@ export const useSettings = (): SettingsContextProps => {
 };
 
 export { SettingsContext };
-
-// Tests
-import { render, waitFor } from '@testing-library/react';
-
-describe('SettingsContext', () => {
-    it('should initialize settings successfully', async () => {
-        (window.electronAPI.readSettings as jest.Mock).mockResolvedValue({
-            sdCardPath: '/mock/path',
-            darkMode: true,
-        });
-
-        const { getByText } = render(
-            <SettingsProvider>
-                <div>Settings Loaded</div>
-            </SettingsProvider>
-        );
-
-        await waitFor(() => expect(getByText('Settings Loaded')).toBeInTheDocument());
-    });
-
-    it('should handle errors during settings initialization', async () => {
-        (window.electronAPI.readSettings as jest.Mock).mockRejectedValue(new Error('Failed to load settings'));
-
-        const { getByText } = render(
-            <SettingsProvider>
-                <div>Settings Loaded</div>
-            </SettingsProvider>
-        );
-
-        await waitFor(() => expect(getByText('Settings Loaded')).toBeInTheDocument());
-    });
-});

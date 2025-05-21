@@ -1,4 +1,4 @@
-import { getSetting, setSetting, applyTheme, toggleTheme } from './settingsManager';
+import { getSetting, setSetting, applyTheme, toggleTheme } from '../src/renderer/utils/settingsManager';
 
 describe('settingsManager', () => {
     beforeEach(() => {

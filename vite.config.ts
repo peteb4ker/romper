@@ -5,6 +5,7 @@ import tailwindcss from 'tailwindcss';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
+    base: './', // Ensures assets are resolved correctly with file:// protocol
     plugins: [
         react(),
         viteStaticCopy({

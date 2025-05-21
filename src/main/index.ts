@@ -12,22 +12,32 @@ const watchers: { [key: string]: fs.FSWatcher } = {};
 let inMemorySettings: Record<string, any> = {}; // Store settings in memory
 
 function createWindow() {
+    const isDev = process.env.NODE_ENV === 'development';
+
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
         icon: path.resolve(__dirname, '../resources/app-icon.png'),
         webPreferences: {
-            preload: path.resolve(__dirname, '../preload/index.js'),
+            preload: path.resolve(__dirname, '../../dist/preload/index.js'), // Always read from dist folder
             contextIsolation: true,
             nodeIntegration: false,
         }
     });
-    win.loadURL('http://localhost:5173').catch((err) => {
-        console.error('Failed to load URL:', err);
-    });
+
+    if (process.env.NODE_ENV === 'development') {
+        win.loadURL('http://localhost:5173').catch((err) => {
+            console.error('Failed to load URL:', err);
+        });
+    } else {
+        const indexPath = path.resolve(__dirname, '../../dist/renderer/index.html');
+        win.loadFile(indexPath).catch((err) => {
+            console.error('Failed to load index.html:', err);
+        });
+    }
 
     win.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-        console.error('Failed to load preload script:', errorDescription);
+        console.error('Failed to load content:', errorDescription);
     });
 }
 

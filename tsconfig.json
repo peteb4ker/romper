@@ -18,6 +18,7 @@
         "tests/SamplesView.test.tsx",
         "tests/settingsManager.test.ts",
         "tests/SettingsContext.test.tsx",
-        "tests/Sidebar.test.tsx"
+        "tests/Sidebar.test.tsx",
+        "vite.config.ts"
     ]
 }

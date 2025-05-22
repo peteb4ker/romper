@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
-        "outDir": "dist",
+        "outDir": "dist/main",
+        "rootDir": "src/main",
         "target": "ES2020",
         "module": "ESNext",
         "lib": [
@@ -14,11 +15,12 @@
         "skipLibCheck": true
     },
     "include": [
-        "src",
-        "tests/SamplesView.test.tsx",
-        "tests/settingsManager.test.ts",
-        "tests/SettingsContext.test.tsx",
-        "tests/Sidebar.test.tsx",
-        "vite.config.ts"
+        "src/main/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "out",
+        "src/renderer"
     ]
 }

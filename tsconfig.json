@@ -17,6 +17,8 @@
     "include": [
         "src/main/**/*",
         "src/preload/**/*",
+        "src/renderer/electron.d.ts",
+
     ],
     "exclude": [
         "node_modules",

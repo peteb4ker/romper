@@ -44,4 +44,4 @@ jobs:
           body: |
             This release includes the following changes:
             - Add your release notes here.
-          artifacts: out/
+          assets: out/**

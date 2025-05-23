@@ -12,7 +12,8 @@
         "package": "electron-builder",
         "test": "jest --coverage",
         "make": "electron-forge make",
-        "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+        "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+        "clean": "rm -fr dist && rm -fr out"
     },
     "dependencies": {
         "history": "^5.3.0",

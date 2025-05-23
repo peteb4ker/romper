@@ -31,9 +31,6 @@ export default defineConfig([
         files: ['**/*.ts', '**/*.tsx'],
         languageOptions: {
             parser: tseslint.parser,
-            parserOptions: {
-                project: './tsconfig.json',
-            },
             globals: globals.browser,
         },
         plugins: {
@@ -51,6 +48,7 @@ export default defineConfig([
             globals: {
                 ...globals.browser,
                 ...globals.jest, // or ...globals.vitest if using Vitest
+                jest: true,
             },
         },
     },

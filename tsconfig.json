@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
-        "outDir": "dist/main",
-        "rootDir": "src/main",
+        "outDir": "dist", // Output directory for the main process
+        "rootDir": "src", // Restrict build to the main entry point
         "target": "ES2020",
         "module": "ESNext",
         "lib": [
@@ -15,12 +15,12 @@
         "skipLibCheck": true
     },
     "include": [
-        "src/main/**/*"
+        "src/main/**/*",
+        "src/preload/**/*",
     ],
     "exclude": [
         "node_modules",
         "dist",
-        "out",
-        "src/renderer"
+        "out"
     ]
 }

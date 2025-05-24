@@ -9,7 +9,7 @@
         "build": "vite build",
         "build:main": "tsc",
         "start": "npm run build:main && electron .",
-        "electron:dev": "electron --inspect=5858 .",
+        "electron:dev": "NODE_ENV=development electron --inspect=5858 .",
         "package": "electron-builder",
         "test": "jest --coverage",
         "make": "electron-forge make -- --arch=universal",

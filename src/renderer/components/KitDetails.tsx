@@ -11,18 +11,18 @@ const KitDetails: React.FC<KitDetailsProps> = ({ kitName, sdCardPath, onBack }) 
 
     return (
         <div>
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Kit: {kitName}</h2>
+            <h2 className="text-base font-bold text-gray-800 mb-2">Kit: {kitName}</h2>
             <button
                 onClick={onBack}
-                className="mb-6 px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg shadow hover:bg-gray-400 transition"
+                className="mb-3 px-3 py-1 bg-gray-300 text-gray-800 font-semibold rounded shadow hover:bg-gray-400 transition text-xs"
             >
                 Back to Kit Browser
             </button>
-            <ul className="space-y-4">
+            <ul className="space-y-2">
                 {voiceSlots.map((slot) => (
                     <li
                         key={slot}
-                        className="p-4 bg-gray-100 rounded-lg shadow flex justify-between items-center"
+                        className="p-2 bg-gray-100 rounded shadow flex justify-between items-center text-sm"
                     >
                         <span className="font-semibold">Voice {slot}:</span>
                         <span className="text-gray-500">No sample assigned</span>

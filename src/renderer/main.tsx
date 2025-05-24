@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar';
 import KitsView from './views/KitsView';
 import SamplesView from './views/SamplesView';
 import SettingsView from './views/SettingsView';
+import AboutView from './views/AboutView';
 import './styles/index.css';
 
 const App = () => {
@@ -25,6 +26,7 @@ const App = () => {
                             <Route path="/kits" element={<KitsView />} />
                             <Route path="/samples" element={<SamplesView />} />
                             <Route path="/settings" element={<SettingsView />} />
+                            <Route path="/about" element={<AboutView />} />
                         </Routes>
                     </main>
                 </div>

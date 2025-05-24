@@ -5,9 +5,9 @@ const SamplesView = () => {
     const sampleSlots = [1, 2, 3, 4]; // Placeholder for 4 voice slots
 
     return (
-        <div className="p-6 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 min-h-screen">
-            <h2 className="text-2xl font-bold mb-6">Samples</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-3 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 min-h-screen">
+            <h2 className="text-lg font-bold mb-3">Samples</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {sampleSlots.map((slot) => (
                     <SampleSlot
                         key={slot}

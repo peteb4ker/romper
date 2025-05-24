@@ -51,6 +51,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     readSettings: async (): Promise<{ sdCardPath?: string; darkMode?: boolean; theme?: string }> => {
         return readSettings();
     },
+    createKit: (sdCardPath: string, kitSlot: string): Promise<void> => ipcRenderer.invoke('create-kit', sdCardPath, kitSlot),
 });
 
 console.log('Preload script updated and loaded');

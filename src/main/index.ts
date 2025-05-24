@@ -12,17 +12,6 @@ let inMemorySettings: Record<string, any> = {}; // Store settings in memory
 
 const isDev = process.env.NODE_ENV === 'development';
 
-// Refactor all instances of 'process.env.NODE_ENV === 'development' to use 'isDev'
-if (isDev) {
-    import('electron-devtools-installer')
-        .then((installer) => {
-            installer.default(installer.REACT_DEVELOPER_TOOLS)
-                .then((name) => console.log(`Added Extension: ${name}`))
-                .catch((err) => console.log('An error occurred: ', err));
-        })
-        .catch((err) => console.log('Failed to load electron-devtools-installer: ', err));
-}
-
 function createWindow() {
     const win = new BrowserWindow({
         width: 1200,
@@ -60,11 +49,6 @@ app.whenReady().then(async () => {
         console.log('App is ready. Configuring...');
 
         createWindow();
-
-        if (isDev) {
-            const name = await import('electron-devtools-installer').then((installer) => installer.default(installer.REACT_DEVELOPER_TOOLS));
-            console.log(`React DevTools installed: ${name}`);
-        }
 
         // Load settings into memory
         const userDataPath = app.getPath('userData');
@@ -160,4 +144,21 @@ ipcMain.handle('get-user-data-path', () => {
 });
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Promise Rejection:', reason);
+});
+
+ipcMain.handle('create-kit', async (_event, sdCardPath: string, kitSlot: string) => {
+    // Validate kitSlot
+    if (!/^[A-Z][0-9]{1,2}$/.test(kitSlot)) {
+        throw new Error('Invalid kit slot. Use format A0-Z99.');
+    }
+    const kitPath = path.join(sdCardPath, kitSlot);
+    if (fs.existsSync(kitPath)) {
+        throw new Error('Kit already exists.');
+    }
+    try {
+        fs.mkdirSync(kitPath);
+        // Optionally, create a default .KIT file or metadata here
+    } catch (err) {
+        throw new Error('Failed to create kit folder: ' + err);
+    }
 });

@@ -1,11 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FiFolder, FiMusic, FiSettings, FiHardDrive, FiInfo } from 'react-icons/fi';
+import { FiFolder, FiMusic, FiSettings, FiInfo } from 'react-icons/fi';
+import { MdSdCard } from 'react-icons/md';
 
-declare global {
-    interface Window {
-        electronAPI: any;
-    }
-}
 
 const Sidebar = () => {
     const navigate = useNavigate();
@@ -33,7 +29,7 @@ const Sidebar = () => {
                 onClick={handleSelectSdCard}
                 className="mx-3 my-2 px-2 py-1 flex items-center space-x-1 text-sm bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition"
             >
-                <FiHardDrive size={16} />
+                <MdSdCard size={16} />
                 <span>Select SD Card</span>
             </button>
             <nav className="flex-1 px-2 py-2 space-y-1">

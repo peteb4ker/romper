@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { getNextKitSlot } from '../src/renderer/components/KitBrowser';
+import { getNextKitSlot } from '../src/renderer/components/kitUtils';
 
 describe('getNextKitSlot', () => {
     it('returns A0 if no kits exist', () => {

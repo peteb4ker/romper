@@ -1,6 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-// Import the function from the KitBrowser file
-import { compareKitSlots } from '../src/renderer/components/KitBrowser';
+import { compareKitSlots } from '../src/renderer/components/kitUtils';
 
 describe('compareKitSlots', () => {
     it('sorts by bank first', () => {

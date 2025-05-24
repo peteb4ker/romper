@@ -162,3 +162,36 @@ ipcMain.handle('create-kit', async (_event, sdCardPath: string, kitSlot: string)
         throw new Error('Failed to create kit folder: ' + err);
     }
 });
+
+ipcMain.handle('copy-kit', async (_event, sdCardPath: string, sourceKit: string, destKit: string) => {
+    // Validate kit names
+    if (!/^[A-Z][0-9]{1,2}$/.test(sourceKit) || !/^[A-Z][0-9]{1,2}$/.test(destKit)) {
+        throw new Error('Invalid kit slot. Use format A0-Z99.');
+    }
+    const srcPath = path.join(sdCardPath, sourceKit);
+    const destPath = path.join(sdCardPath, destKit);
+    if (!fs.existsSync(srcPath)) {
+        throw new Error('Source kit does not exist.');
+    }
+    if (fs.existsSync(destPath)) {
+        throw new Error('Destination kit already exists.');
+    }
+    // Recursively copy folder
+    const copyRecursiveSync = (src: string, dest: string) => {
+        fs.mkdirSync(dest);
+        for (const item of fs.readdirSync(src)) {
+            const srcItem = path.join(src, item);
+            const destItem = path.join(dest, item);
+            if (fs.lstatSync(srcItem).isDirectory()) {
+                copyRecursiveSync(srcItem, destItem);
+            } else {
+                fs.copyFileSync(srcItem, destItem);
+            }
+        }
+    };
+    try {
+        copyRecursiveSync(srcPath, destPath);
+    } catch (err) {
+        throw new Error('Failed to copy kit: ' + err);
+    }
+});

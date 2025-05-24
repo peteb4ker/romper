@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiFolder } from 'react-icons/fi';
+import { FiFolder, FiCopy } from 'react-icons/fi';
 
 interface KitBrowserProps {
     onSelectKit: (kitName: string) => void;
@@ -51,6 +51,29 @@ export function getNextKitSlot(existingKits: string[]): string | null {
     return String.fromCharCode(bank) + num.toString();
 }
 
+// Modern, visually distinct color palette for kit banks (A-Z),
+// with both light and dark mode and accessible contrast.
+const KIT_BANK_COLORS = [
+    'text-cyan-700 dark:text-cyan-300',      // 0: A
+    'text-pink-700 dark:text-pink-300',      // 1: B
+    'text-amber-700 dark:text-amber-300',    // 2: C
+    'text-green-700 dark:text-green-300',    // 3: D
+    'text-blue-700 dark:text-blue-300',      // 4: E
+    'text-purple-700 dark:text-purple-300',  // 5: F
+    'text-orange-700 dark:text-orange-300',  // 6: G
+    'text-lime-700 dark:text-lime-300',      // 7: H
+    'text-fuchsia-700 dark:text-fuchsia-300',// 8: I
+    'text-teal-700 dark:text-teal-300',      // 9: J
+    'text-rose-700 dark:text-rose-300',      // 10: K
+    'text-violet-700 dark:text-violet-300',  // 11: L
+];
+
+function getKitColorClass(kit: string): string {
+    if (!/^[A-Z]/.test(kit)) return 'text-gray-400 dark:text-gray-500';
+    const idx = (kit.charCodeAt(0) - 65) % KIT_BANK_COLORS.length;
+    return KIT_BANK_COLORS[idx];
+}
+
 const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: externalKits }) => {
     const [kits, setKits] = useState<string[]>(externalKits || []);
     const [error, setError] = useState<string | null>(null);
@@ -60,13 +83,16 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
     const [newKitError, setNewKitError] = useState<string | null>(null);
     const [showNextKit, setShowNextKit] = useState(false);
     const [nextKitSlot, setNextKitSlot] = useState<string | null>(null);
+    const [duplicateKitSource, setDuplicateKitSource] = useState<string | null>(null);
+    const [duplicateKitDest, setDuplicateKitDest] = useState('');
+    const [duplicateKitError, setDuplicateKitError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!externalKits && sdCardPath) {
             const fetchKits = async (path: string) => {
                 try {
-                    const result = await window.electronAPI.scanSdCard(path);
-                    setKits(result);
+                    const result = await window.electronAPI?.scanSdCard?.(path);
+                    setKits(result ?? []);
                 } catch (err) {
                     setError('Failed to load kits. Please check the SD card path.');
                 }
@@ -74,7 +100,7 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
 
             fetchKits(sdCardPath);
 
-            const watcher = window.electronAPI.watchSdCard(sdCardPath, () => {
+            const watcher = window.electronAPI?.watchSdCard?.(sdCardPath, () => {
                 fetchKits(sdCardPath);
             });
 
@@ -119,6 +145,26 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
             setKits(await window.electronAPI?.scanSdCard?.(sdCardPath) ?? []);
         } catch (err: any) {
             setNewKitError('Failed to create kit: ' + (err?.message || err));
+        }
+    };
+
+    const handleDuplicateKit = async () => {
+        setDuplicateKitError(null);
+        if (!duplicateKitSource || !/^[A-Z][0-9]{1,2}$/.test(duplicateKitDest)) {
+            setDuplicateKitError('Invalid destination slot. Use format A0-Z99.');
+            return;
+        }
+        if (!sdCardPath) return;
+        try {
+            await window.electronAPI?.copyKit?.(sdCardPath, duplicateKitSource, duplicateKitDest);
+            setDuplicateKitSource(null);
+            setDuplicateKitDest('');
+            setKits(await window.electronAPI?.scanSdCard?.(sdCardPath) ?? []);
+        } catch (err: any) {
+            let msg = String(err?.message || err);
+            // Remove verbose Electron IPC error prefix if present
+            msg = msg.replace(/^Error invoking remote method 'copy-kit':\s*/, '').replace(/^Error:\s*/, '');
+            setDuplicateKitError(msg);
         }
     };
 
@@ -176,11 +222,40 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
                     </div>
                 </div>
             )}
+            {duplicateKitSource && (
+                <div className="mb-2 flex flex-col gap-2 bg-slate-200 dark:bg-slate-800 p-2 rounded">
+                    <label className="text-xs font-semibold">Duplicate {duplicateKitSource} to:
+                        <input
+                            className="ml-2 px-2 py-1 rounded border border-gray-300 dark:border-slate-700 text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100"
+                            value={duplicateKitDest}
+                            onChange={e => setDuplicateKitDest(e.target.value.toUpperCase())}
+                            maxLength={3}
+                            autoFocus
+                        />
+                    </label>
+                    {duplicateKitError && <div className="text-xs text-red-500">{duplicateKitError}</div>}
+                    <div className="flex gap-2">
+                        <button
+                            className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 font-semibold"
+                            onClick={handleDuplicateKit}
+                        >
+                            Duplicate
+                        </button>
+                        <button
+                            className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500 font-semibold"
+                            onClick={() => { setDuplicateKitSource(null); setDuplicateKitDest(''); setDuplicateKitError(null); }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
             {sdCardWarning && <p className="text-yellow-500 mb-2 text-xs">{sdCardWarning}</p>}
             {error && <p className="text-red-500 mb-2 text-xs">{error}</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {kitsToDisplay.map((kit) => {
                     const isValid = /^[A-Z][0-9]{1,2}$/.test(kit);
+                    const colorClass = isValid ? getKitColorClass(kit) : 'text-red-500';
                     return (
                         <div
                             key={kit}
@@ -191,7 +266,9 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
                             onClick={() => isValid && onSelectKit(kit)}
                         >
                             <FiFolder
-                                className={`text-lg ${isValid ? 'text-cyan-500' : 'text-red-500'}`}
+                                className={`text-lg ${colorClass}`}
+                                aria-label={`Kit bank ${kit[0]}`}
+                                role="img"
                             />
                             <span
                                 className={`font-mono truncate ${isValid
@@ -201,6 +278,15 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
                             >
                                 {kit}
                             </span>
+                            {isValid && (
+                                <button
+                                    className="ml-auto p-1 text-xs text-gray-500 hover:text-green-600"
+                                    title="Duplicate kit"
+                                    onClick={e => { e.stopPropagation(); setDuplicateKitSource(kit); setDuplicateKitDest(''); setDuplicateKitError(null); }}
+                                >
+                                    <FiCopy />
+                                </button>
+                            )}
                         </div>
                     );
                 })}
@@ -208,5 +294,17 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
         </div>
     );
 };
+
+declare global {
+    interface Window {
+        electronAPI?: {
+            scanSdCard?: (sdCardPath: string) => Promise<string[]>;
+            selectSdCard?: () => Promise<string | null>;
+            watchSdCard?: (sdCardPath: string, callback: () => void) => { close: () => void };
+            createKit?: (sdCardPath: string, kitSlot: string) => Promise<void>;
+            copyKit?: (sdCardPath: string, sourceKit: string, destKit: string) => Promise<void>;
+        };
+    }
+}
 
 export default KitBrowser;

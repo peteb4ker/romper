@@ -52,6 +52,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return readSettings();
     },
     createKit: (sdCardPath: string, kitSlot: string): Promise<void> => ipcRenderer.invoke('create-kit', sdCardPath, kitSlot),
+    copyKit: (sdCardPath: string, sourceKit: string, destKit: string): Promise<void> => ipcRenderer.invoke('copy-kit', sdCardPath, sourceKit, destKit),
 });
 
 console.log('Preload script updated and loaded');

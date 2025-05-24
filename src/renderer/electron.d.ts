@@ -12,6 +12,7 @@ interface ElectronAPI {
     getSetting: (key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string }) => Promise<any>;
     createKit?: (sdCardPath: string, kitSlot: string) => Promise<void>;
     copyKit?: (sdCardPath: string, sourceKit: string, destKit: string) => Promise<void>;
+    listFilesInRoot?: (sdCardPath: string) => Promise<string[]>;
 }
 
 declare global {

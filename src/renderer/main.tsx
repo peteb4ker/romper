@@ -44,9 +44,9 @@ const App = () => {
     return (
         <Router>
             <div className="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
-                <div className="flex flex-1">
+                <div className="flex flex-1 min-h-0">
                     <Sidebar />
-                    <main className="flex-1 p-6 pb-12"> {/* Add bottom padding for status bar */}
+                    <main className="flex-1 min-h-0 flex flex-col h-full p-6 pb-12"> {/* Add bottom padding for status bar */}
                         <Routes>
                             <Route path="/" element={<Navigate to="/kits" replace />} /> {/* Redirect root to /kits */}
                             <Route path="/kits" element={<KitsView />} />

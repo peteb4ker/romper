@@ -195,3 +195,12 @@ ipcMain.handle('copy-kit', async (_event, sdCardPath: string, sourceKit: string,
         throw new Error('Failed to copy kit: ' + err);
     }
 });
+
+ipcMain.handle('list-files-in-root', async (_event, sdCardPath: string) => {
+    try {
+        return fs.readdirSync(sdCardPath);
+    } catch (error) {
+        console.error('Error listing files in SD card root:', error);
+        return [];
+    }
+});

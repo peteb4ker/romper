@@ -1,5 +1,6 @@
 {
-    "name": "rample-sample-manager",
+    "name": "romper",
+    "productName": "Romper",
     "version": "0.1.0",
     "main": "dist/main/index.js",
     "type": "module",
@@ -11,7 +12,7 @@
         "electron:dev": "electron --inspect=5858 .",
         "package": "electron-builder",
         "test": "jest --coverage",
-        "make": "electron-forge make",
+        "make": "electron-forge make -- --arch=universal",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
         "clean": "rm -fr dist && rm -fr out"
     },
@@ -60,11 +61,18 @@
     },
     "config": {
         "forge": {
+            "packagerConfig": {
+                "icon": "dist/resources/app-icon",
+                "extraResource": [
+                    "dist/resources/app-icon.icns"
+                ]
+            },
             "makers": [
                 {
                     "name": "@electron-forge/maker-dmg",
                     "config": {
-                        "format": "ULFO"
+                        "format": "ULFO",
+                        "icon": "dist/resources/app-icon.icns"
                     }
                 },
                 {

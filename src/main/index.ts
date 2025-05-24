@@ -27,7 +27,7 @@ function createWindow() {
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
-        icon: path.resolve(__dirname, '../resources/app-icon.png'),
+        icon: path.resolve(__dirname, '../../dist/resources/app-icon.icns'), // Set app icon for built app
         webPreferences: {
             preload: path.resolve(__dirname, '../../dist/preload/index.js'), // Always read from dist folder
             contextIsolation: true,
@@ -58,11 +58,6 @@ app.whenReady().then(async () => {
 
     try {
         console.log('App is ready. Configuring...');
-
-        // Set the dock icon for macOS
-        if (process.platform === 'darwin' && app.dock) {
-            app.dock.setIcon(path.resolve(__dirname, '../../dist/resources/app-icon.png'));
-        }
 
         createWindow();
 

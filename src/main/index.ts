@@ -2,7 +2,6 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import path from 'path';
-import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -11,9 +10,20 @@ const __dirname = path.dirname(__filename);
 const watchers: { [key: string]: fs.FSWatcher } = {};
 let inMemorySettings: Record<string, any> = {}; // Store settings in memory
 
-function createWindow() {
-    const isDev = process.env.NODE_ENV === 'development';
+const isDev = process.env.NODE_ENV === 'development';
 
+// Refactor all instances of 'process.env.NODE_ENV === 'development' to use 'isDev'
+if (isDev) {
+    import('electron-devtools-installer')
+        .then((installer) => {
+            installer.default(installer.REACT_DEVELOPER_TOOLS)
+                .then((name) => console.log(`Added Extension: ${name}`))
+                .catch((err) => console.log('An error occurred: ', err));
+        })
+        .catch((err) => console.log('Failed to load electron-devtools-installer: ', err));
+}
+
+function createWindow() {
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -25,7 +35,7 @@ function createWindow() {
         }
     });
 
-    if (process.env.NODE_ENV === 'development') {
+    if (isDev) {
         win.loadURL('http://localhost:5173').catch((err) => {
             console.error('Failed to load URL:', err);
         });
@@ -56,8 +66,8 @@ app.whenReady().then(async () => {
 
         createWindow();
 
-        if (process.env.NODE_ENV === 'development') {
-            const name = await installExtension(REACT_DEVELOPER_TOOLS);
+        if (isDev) {
+            const name = await import('electron-devtools-installer').then((installer) => installer.default(installer.REACT_DEVELOPER_TOOLS));
             console.log(`React DevTools installed: ${name}`);
         }
 

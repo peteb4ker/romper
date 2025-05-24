@@ -149,8 +149,7 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full p-2 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded shadow">
-            <div className="flex items-center justify-between mb-2">
-                <h3 className="text-base font-semibold">Kits</h3>
+            <div className="flex items-center justify-end mb-2">
                 <div className="flex gap-2">
                     <button
                         className="px-2 py-1 text-xs bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition font-semibold"
@@ -192,6 +191,7 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
                     onSelectKit={onSelectKit}
                     bankNames={bankNames}
                     onDuplicate={kit => { setDuplicateKitSource(kit); setDuplicateKitDest(''); setDuplicateKitError(null); }}
+                    sdCardPath={sdCardPath || ''}
                 />
             </div>
         </div>

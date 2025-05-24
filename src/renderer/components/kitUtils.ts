@@ -68,3 +68,22 @@ export function toCapitalCase(str: string): string {
         .replace(/_/g, ' ')
         .replace(/\b\w/g, c => c.toUpperCase());
 }
+
+/**
+ * Group .wav sample filenames by voice number (1-4).
+ * @param files List of filenames (strings)
+ * @returns Object mapping voice number to array of sample filenames
+ */
+export function groupSamplesByVoice(files: string[]): { [voice: number]: string[] } {
+    const voices: { [voice: number]: string[] } = { 1: [], 2: [], 3: [], 4: [] };
+    files.forEach(f => {
+        const match = /^([1-4])\s/.exec(f);
+        if (match) {
+            const voice = parseInt(match[1], 10);
+            if (voices[voice]) voices[voice].push(f);
+        }
+    });
+    // Sort samples for each voice
+    Object.keys(voices).forEach(v => voices[+v].sort());
+    return voices;
+}

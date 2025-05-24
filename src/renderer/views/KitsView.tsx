@@ -16,7 +16,6 @@ const KitsView = () => {
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
-            <h2 className="text-lg font-bold mb-3">Kits</h2>
             {sdCardPath ? (
                 kits === null ? (
                     <p className="text-gray-600 dark:text-gray-400 text-center text-sm">Loading kits...</p>

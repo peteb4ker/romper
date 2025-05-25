@@ -54,6 +54,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createKit: (sdCardPath: string, kitSlot: string): Promise<void> => ipcRenderer.invoke('create-kit', sdCardPath, kitSlot),
     copyKit: (sdCardPath: string, sourceKit: string, destKit: string): Promise<void> => ipcRenderer.invoke('copy-kit', sdCardPath, sourceKit, destKit),
     listFilesInRoot: (sdCardPath: string): Promise<string[]> => ipcRenderer.invoke('list-files-in-root', sdCardPath),
+    playSample: (filePath: string) => ipcRenderer.invoke('play-sample', filePath),
+    stopSample: () => ipcRenderer.invoke('stop-sample'),
+    onSamplePlaybackEnded: (cb: () => void) => {
+        ipcRenderer.removeAllListeners('sample-playback-ended');
+        ipcRenderer.on('sample-playback-ended', cb);
+    },
+    onSamplePlaybackError: (cb: (errMsg: string) => void) => {
+        ipcRenderer.removeAllListeners('sample-playback-error');
+        ipcRenderer.on('sample-playback-error', (_event: any, errMsg: string) => cb(errMsg));
+    },
+    readRampleBinAll: (filePath: string) => ipcRenderer.invoke('read-rample-bin-all', filePath),
+    getAudioBuffer: (filePath: string) => ipcRenderer.invoke('get-audio-buffer', filePath),
+    readRampleLabels: (sdCardPath: string) => ipcRenderer.invoke('read-rample-labels', sdCardPath),
+    writeRampleLabels: (sdCardPath: string, labels: any) => ipcRenderer.invoke('write-rample-labels', sdCardPath, labels),
 });
 
 console.log('Preload script updated and loaded');

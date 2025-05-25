@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import KitItem from './KitItem';
 import { compareKitSlots, getKitColorClass, groupSamplesByVoice } from './kitUtils';
+import type { RampleLabels, RampleKitLabel } from './KitDetails';
 
 interface KitListProps {
     kits: string[];
@@ -15,6 +16,7 @@ type KitSampleCounts = Record<string, [number, number, number, number]>;
 const KitList: React.FC<KitListProps> = ({ kits, onSelectKit, bankNames, onDuplicate, sdCardPath }) => {
     const kitsToDisplay = kits.length > 0 ? kits.slice().sort(compareKitSlots) : [];
     const [sampleCounts, setSampleCounts] = useState<KitSampleCounts>({});
+    const [kitLabels, setKitLabels] = useState<Record<string, RampleKitLabel>>({});
 
     useEffect(() => {
         let cancelled = false;
@@ -38,6 +40,23 @@ const KitList: React.FC<KitListProps> = ({ kits, onSelectKit, bankNames, onDupli
         fetchCounts();
         return () => { cancelled = true; };
     }, [kitsToDisplay, sdCardPath]);
+
+    // Fetch kit labels/tags for all kits
+    useEffect(() => {
+        let cancelled = false;
+        async function fetchLabels() {
+            if (!sdCardPath) return;
+            // @ts-ignore
+            const labels: RampleLabels | null = await window.electronAPI.readRampleLabels(sdCardPath);
+            if (!cancelled && labels && labels.kits) {
+                setKitLabels(labels.kits);
+            } else if (!cancelled) {
+                setKitLabels({});
+            }
+        }
+        fetchLabels();
+        return () => { cancelled = true; };
+    }, [sdCardPath]);
 
     return (
         <div className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded p-2">
@@ -63,6 +82,8 @@ const KitList: React.FC<KitListProps> = ({ kits, onSelectKit, bankNames, onDupli
                                 onSelect={() => isValid && onSelectKit(kit)}
                                 onDuplicate={() => isValid && onDuplicate(kit)}
                                 sampleCounts={sampleCounts[kit]}
+                                kitLabel={kitLabels[kit]}
+                                data-kit={kit} // <-- add this prop
                             />
                         </React.Fragment>
                     );

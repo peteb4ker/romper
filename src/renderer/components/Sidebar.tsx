@@ -69,6 +69,15 @@ const Sidebar = () => {
                     <FiInfo className="text-gray-500 dark:text-gray-300" size={16} />
                     <span>About</span>
                 </NavLink>
+                <NavLink
+                    to="/rample-bin"
+                    className={({ isActive }) =>
+                        `flex items-center space-x-2 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-slate-800 text-sm ${isActive ? 'bg-gray-200 dark:bg-slate-800 font-semibold' : ''}`
+                    }
+                >
+                    <MdSdCard className="text-blue-600 dark:text-blue-400" size={16} />
+                    <span>RampleBin</span>
+                </NavLink>
             </nav>
         </div>
     );

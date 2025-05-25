@@ -2,6 +2,9 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import path from 'path';
+import { ChildProcess } from 'child_process';
+import { readRampleBinAll, parseRampleBin } from './rampleBin.js';
+import { readRampleLabels, writeRampleLabels } from './rampleLabels.js';
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -9,6 +12,8 @@ const __dirname = path.dirname(__filename);
 
 const watchers: { [key: string]: fs.FSWatcher } = {};
 let inMemorySettings: Record<string, any> = {}; // Store settings in memory
+let currentSamplePlayer: any = null;
+let currentSampleWebContents: Electron.WebContents | null = null;
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -203,4 +208,30 @@ ipcMain.handle('list-files-in-root', async (_event, sdCardPath: string) => {
         console.error('Error listing files in SD card root:', error);
         return [];
     }
+});
+
+// Add IPC handler to read a sample file as ArrayBuffer
+ipcMain.handle('get-audio-buffer', async (_event, filePath: string) => {
+    try {
+        const data = fs.readFileSync(filePath);
+        // Return as a Buffer (will be transferred as ArrayBuffer)
+        return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+    } catch (err) {
+        throw new Error('Failed to read audio file: ' + err);
+    }
+});
+
+ipcMain.handle('read-rample-bin-all', async (_event, filePath: string) => {
+    const parsed = parseRampleBin(filePath);
+    return parsed;
+});
+
+ipcMain.handle('read-rample-labels', async (_event, sdCardPath: string) => {
+    const labels = readRampleLabels(sdCardPath);
+    return labels;
+});
+
+ipcMain.handle('write-rample-labels', async (_event, sdCardPath: string, labels) => {
+    writeRampleLabels(sdCardPath, labels);
+    return true;
 });

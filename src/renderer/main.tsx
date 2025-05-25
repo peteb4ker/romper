@@ -5,9 +5,9 @@ import { applyTheme } from './utils/settingsManager';
 import { SettingsProvider, useSettings } from './utils/SettingsContext';
 import Sidebar from './components/Sidebar';
 import KitsView from './views/KitsView';
-import SamplesView from './views/SamplesView';
 import SettingsView from './views/SettingsView';
 import AboutView from './views/AboutView';
+import RampleBinView from './views/RampleBinView';
 import { FiSun, FiMoon } from 'react-icons/fi';
 import { MdSdCard } from 'react-icons/md';
 import './styles/index.css';
@@ -41,6 +41,8 @@ const App = () => {
         applyTheme(); // Apply the saved theme on app load
     }, []);
 
+    const { sdCardPath } = useSettings();
+
     return (
         <Router>
             <div className="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
@@ -48,9 +50,9 @@ const App = () => {
                     <Sidebar />
                     <main className="flex-1 min-h-0 flex flex-col h-full p-6 pb-12"> {/* Add bottom padding for status bar */}
                         <Routes>
-                            <Route path="/" element={<Navigate to="/kits" replace />} /> {/* Redirect root to /kits */}
+                            <Route path="/" element={<Navigate to="/kits" replace />} />
                             <Route path="/kits" element={<KitsView />} />
-                            <Route path="/samples" element={<SamplesView />} />
+                            <Route path="/rample-bin" element={<RampleBinView sdCardPath={sdCardPath} />} />
                             <Route path="/settings" element={<SettingsView />} />
                             <Route path="/about" element={<AboutView />} />
                         </Routes>

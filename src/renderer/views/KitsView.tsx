@@ -25,7 +25,15 @@ const KitsView = () => {
                     <KitDetails
                         kitName={selectedKit}
                         sdCardPath={sdCardPath}
-                        onBack={() => setSelectedKit(null)}
+                        onBack={(scrollToKit) => {
+                            setSelectedKit(null);
+                            if (scrollToKit) {
+                                setTimeout(() => {
+                                    const el = document.querySelector(`[data-kit='${scrollToKit}']`);
+                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }, 100);
+                            }
+                        }}
                     />
                 ) : (
                     <KitBrowser

@@ -88,49 +88,63 @@ export function groupSamplesByVoice(files: string[]): { [voice: number]: string[
     return voices;
 }
 
-// Voice type inference mapping and function
+// Streamlined and permissive voice type keywords
 const VOICE_TYPE_KEYWORDS: { [voice: string]: string[] } = {
-  kick: ["kick", "bd", "kck", "kicklow", "kick_low", "kick low"],
-  snare: ["snare", "sd", "sn", "snarelow", "snare_low", "snare low"],
-  clap: ["clap", "clp"],
-  hh_closed: ["ch", "chh", "closedhat", "closed_hh", "closed", "hh closed", "hh close"],
-  hh_open: ["ohh", "openhat", "open_hh", "open", "hh open"],
-  hh: ["hh", "hat", "hihat"],
-  perc: ["perc", "percussion"],
-  tom: [
-    "tom", "lowtom", "hightom", "midtoms", "floor tom", "floortom", "floor_tom", "hi tom", "hitom", "hi_tom", "mid tom", "midtom", "mid_tom"
-  ],
-  rim: ["rim", "rimshot"],
-  ride: [
-    "ride", "ride cymbal", "ridecymbal", "ride_cymbal", "ride hi", "ridehi", "ride_hi"
-  ],
+  kick: ["kick", "kk"],
+  snare: ["snare", "sn", "sd"],
+  clap: ["clap"],
+  hh_closed: ["hh closed", "hh close", "close", "ch", "chh", "closed"],
+  hh_open: ["hh open", "oh", "open"],
+  hh: ["hihat", "hat", "hh"],
+  perc: ["perc", "glass", "clave"],
+  tom: ["tom", "floor tom"],
+  rim: ["rim"],
+  ride: ["ride"],
   crash: ["crash"],
-  fx: ["fx", "effect", "sfx", "laser"],
+  fx: ["fx", "effect", "laser"],
   bass: ["bass", "808", "sub"],
   vox: ["vox", "vocal", "voice"],
-  synth: ["pad", "stab", "bell"]
+  synth: ["pad", "stab", "bell", "chord", "lead", "saw", "JP8"],
+  loop: ["loop"],
+  conga: ["conga"]
 };
+
 const VOICE_TYPE_PRECEDENCE = [
-  "kick", "snare", "clap", "hh_closed", "hh_open", "hh", "perc", "tom", "rim", "ride", "crash", "fx", "bass", "vox", "synth"
+  "fx",
+  "kick", "snare", "rim", "clap", "synth", "hh_closed", "hh_open", "hh", "perc", "tom", "ride", "crash", "bass", "vox", "loop", "conga"
 ];
 
 export function inferVoiceTypeFromFilename(filename: string): string | null {
   const name = filename.replace(/\.[^.]+$/, '').toLowerCase();
-  // Try to match multi-word phrases first (e.g., 'snare low')
+  // 1. Try to match multi-word phrases first (e.g., 'hh closed', 'floor tom', 'snare low')
   for (const type of VOICE_TYPE_PRECEDENCE) {
     for (const keyword of VOICE_TYPE_KEYWORDS[type]) {
       if (keyword.includes(' ')) {
-        if (name.includes(keyword)) {
+        // All words in the keyword must be present in the name (order-insensitive)
+        const words = keyword.split(/\s+/);
+        if (words.every(w => name.includes(w))) {
           return toCapitalCase(type);
         }
       }
     }
   }
-  // Fallback to original regex for single-word/abbreviations
+  // 2. Try to match exact whole words for single-word keywords
   for (const type of VOICE_TYPE_PRECEDENCE) {
     for (const keyword of VOICE_TYPE_KEYWORDS[type]) {
       if (!keyword.includes(' ')) {
-        if (new RegExp(`(^|[_.\-\s])${keyword}([_.\-\s0-9]|$)`).test(name)) {
+        // Match if keyword is a whole word (surrounded by non-word chars or string boundaries)
+        if (new RegExp(`(^|\\W)${keyword}(?=\\W|$)`, 'i').test(name)) {
+          return toCapitalCase(type);
+        }
+      }
+    }
+  }
+  // 3. Fallback to word boundary/substring match for single-word keywords (legacy, permissive)
+  for (const type of VOICE_TYPE_PRECEDENCE) {
+    for (const keyword of VOICE_TYPE_KEYWORDS[type]) {
+      if (!keyword.includes(' ')) {
+        // Match if keyword is at the start of a word (word boundary) or after a digit
+        if (new RegExp(`(?:\\b|(?<=\\d))${keyword}`, 'i').test(name)) {
           return toCapitalCase(type);
         }
       }

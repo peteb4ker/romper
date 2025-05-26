@@ -181,4 +181,7 @@ export interface RampleLabels {
   kits: Record<string, RampleKitLabel>;
 }
 
-export default RampleBinView;
+// This view is obsolete and should be removed as per new UI requirements.
+export default function RampleBinView() {
+  return null;
+}

@@ -4,14 +4,24 @@ if (typeof TextEncoder === 'undefined') {
     global.TextEncoder = require('util').TextEncoder;
 }
 
-window.electronAPI = {
-    ...window.electronAPI,
-    readSettings: jest.fn().mockResolvedValue({ sdCardPath: '/mock/path', darkMode: false, theme: 'light' }),
-    watchSdCard: jest.fn().mockImplementation((sdCardPath, callback) => {
-        console.log(`Mock watchSdCard called with path: ${sdCardPath}`);
-        return { close: jest.fn() };
-    }),
-    getSetting: jest.fn(),
-    setSetting: jest.fn(),
-    scanSdCard: jest.fn().mockResolvedValue([]), // Added mock for scanSdCard
-};
+// Mock ElectronAPI and AudioContext for all tests
+beforeAll(() => {
+  global.window = global.window || {};
+  window.electronAPI = {
+    listFilesInRoot: async () => ['1sample.wav'],
+    readRampleLabels: async () => ({ kits: { TestKit: { label: 'TestKit', voiceNames: {} } } }),
+    writeRampleLabels: async () => {},
+    getAudioBuffer: async () => new ArrayBuffer(8),
+    setSetting: jest.fn(async () => {}),
+    getSetting: jest.fn(async () => undefined),
+    // Add other methods as needed
+  };
+  // Mock AudioContext for SampleWaveform
+  window.AudioContext = function () {
+    return {
+      decodeAudioData: (arrayBuffer, cb) => cb({}),
+      close: () => {},
+      state: 'running',
+    };
+  };
+});

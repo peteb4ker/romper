@@ -55,24 +55,12 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
     const [bankNames, setBankNames] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (!externalKits && sdCardPath) {
-            const fetchKits = async (path: string) => {
-                // @ts-ignore
-                const result = await window.electronAPI?.scanSdCard?.(path);
-                setKits(result ?? []);
-            };
-            fetchKits(sdCardPath);
-            // @ts-ignore
-            const watcher = window.electronAPI?.watchSdCard?.(sdCardPath, () => {
-                fetchKits(sdCardPath);
-            });
-            return () => {
-                if (watcher && typeof watcher.close === 'function') {
-                    watcher.close();
-                }
-            };
+        if (externalKits) {
+            setKits(externalKits);
+        } else if (sdCardPath) {
+            window.electronAPI.scanSdCard(sdCardPath).then(setKits).catch(() => setKits([]));
         }
-    }, [sdCardPath, externalKits]);
+    }, [externalKits, sdCardPath]);
 
     useEffect(() => {
         setNextKitSlot(getNextKitSlot(kits));
@@ -147,9 +135,23 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
+    // Move Select SD Card button to the top
+    const handleSelectSdCard = async () => {
+        const selected = await window.electronAPI.selectSdCard();
+        if (selected) {
+            window.electronAPI.setSetting('sdCardPath', selected);
+        }
+    };
+
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full p-2 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded shadow">
-            <div className="flex items-center justify-end mb-2">
+            <div className="flex items-center justify-between mb-4">
+                <button
+                    className="px-3 py-1 bg-blue-600 text-white rounded shadow hover:bg-blue-700 font-semibold text-xs"
+                    onClick={handleSelectSdCard}
+                >
+                    Select SD Card
+                </button>
                 <div className="flex gap-2">
                     <button
                         className="px-2 py-1 text-xs bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition font-semibold"

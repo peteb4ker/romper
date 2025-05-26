@@ -13,6 +13,9 @@ interface ElectronAPI {
     createKit?: (sdCardPath: string, kitSlot: string) => Promise<void>;
     copyKit?: (sdCardPath: string, sourceKit: string, destKit: string) => Promise<void>;
     listFilesInRoot?: (sdCardPath: string) => Promise<string[]>;
+    readRampleLabels?: (sdCardPath: string) => Promise<any>;
+    writeRampleLabels?: (sdCardPath: string, labels: any) => Promise<void>;
+    getAudioBuffer?: (filePath: string) => Promise<ArrayBuffer>;
 }
 
 declare global {

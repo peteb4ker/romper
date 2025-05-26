@@ -22,6 +22,10 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
     // @ts-ignore
     window.electronAPI.getAudioBuffer(filePath).then((arrayBuffer: ArrayBuffer) => {
       if (cancelled) return;
+      // Always close previous context before creating a new one
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+        try { audioCtxRef.current.close(); } catch (e) {}
+      }
       const ctx = new window.AudioContext();
       audioCtxRef.current = ctx;
       ctx.decodeAudioData(arrayBuffer.slice(0), (buf) => {

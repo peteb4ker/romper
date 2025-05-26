@@ -13,9 +13,18 @@ const AboutView: React.FC = () => {
     // @ts-ignore
     const version = (import.meta.env ? import.meta.env.VITE_APP_VERSION : undefined) || 'dev';
     const currentYear = new Date().getFullYear();
+    const navigateBack = () => {
+        window.history.length > 1 ? window.history.back() : window.location.assign('/kits');
+    };
     return (
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-cyan-900 via-slate-900 to-gray-900 text-gray-100 px-4 py-8 overflow-hidden">
             <div className="relative z-10 w-full max-w-xl bg-white/10 dark:bg-slate-900/80 rounded-2xl shadow-2xl border border-cyan-800/30 backdrop-blur-md p-8 flex flex-col items-center">
+                <button
+                    onClick={navigateBack}
+                    className="absolute left-4 top-4 px-3 py-1 bg-cyan-700/80 text-white rounded-full text-xs font-semibold shadow hover:bg-cyan-600/90 transition z-20"
+                >
+                    ← Back
+                </button>
                 <h2 className="text-4xl font-extrabold mb-2 tracking-tight bg-gradient-to-r from-cyan-400 to-amber-300 bg-clip-text text-transparent drop-shadow-lg">Romper</h2>
                 <p className="text-lg font-semibold mb-6 text-cyan-200 tracking-wide">Rample SD Card Manager</p>
                 <div className="text-base leading-relaxed space-y-3 mb-6 text-center">

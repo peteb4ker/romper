@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { groupSamplesByVoice, inferVoiceTypeFromFilename, toCapitalCase } from './kitUtils';
+import React, { useEffect, useState, useRef } from 'react';
+import { groupSamplesByVoice, inferVoiceTypeFromFilename } from './kitUtils';
 import VoiceSamplesList from './VoiceSamplesList';
 import SampleWaveform from './SampleWaveform';
-import { FiPlay, FiSquare } from 'react-icons/fi';
+import { FiPlay, FiSquare, FiEdit2, FiCheck, FiX, FiTrash2, FiRefreshCw, FiArrowLeft, FiChevronLeft, FiChevronRight, FiFolder } from 'react-icons/fi';
+import KitVoicePanel from './KitVoicePanel';
+import KitMetadataForm from './KitMetadataForm';
 
 // TypeScript interfaces for kit metadata (duplicated from backend for type safety)
 export interface RampleKitLabel {
@@ -20,17 +22,22 @@ interface KitDetailsProps {
     kitName: string;
     sdCardPath: string;
     onBack: (scrollToKit?: string) => void;
+    kits?: string[];
+    kitIndex?: number;
+    onNextKit?: () => void;
+    onPrevKit?: () => void;
+    samples?: VoiceSamples | null;
+    onRequestSamplesReload?: () => void;
 }
 
 interface VoiceSamples {
     [voice: number]: string[];
 }
 
-const KitDetails: React.FC<KitDetailsProps> = ({ kitName, sdCardPath, onBack }) => {
-    const [samples, setSamples] = useState<VoiceSamples>({});
+const KitDetails: React.FC<KitDetailsProps> = ({ kitName, sdCardPath, onBack, kits, kitIndex, onNextKit, onPrevKit, samples: propSamples, onRequestSamplesReload }) => {
+    const [samples, setSamples] = useState<VoiceSamples>(propSamples || {});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [playing, setPlaying] = useState<{ voice: number; sample: string } | null>(null);
     const [playbackError, setPlaybackError] = useState<string | null>(null);
     const [playTriggers, setPlayTriggers] = useState<{ [key: string]: number }>({});
     const [stopTriggers, setStopTriggers] = useState<{ [key: string]: number }>({});
@@ -38,14 +45,25 @@ const KitDetails: React.FC<KitDetailsProps> = ({ kitName, sdCardPath, onBack }) 
     const [kitLabel, setKitLabel] = useState<RampleKitLabel | null>(null);
     const [labelsLoading, setLabelsLoading] = useState(false);
     const [labelsError, setLabelsError] = useState<string | null>(null);
-    const [editingLabel, setEditingLabel] = useState(false);
-    const [editLabel, setEditLabel] = useState('');
-    const [editDescription, setEditDescription] = useState('');
-    const [editTags, setEditTags] = useState<string[]>([]);
-    const [tagInput, setTagInput] = useState('');
     const [voiceNames, setVoiceNames] = useState<{ [voice: number]: string | null }>({});
+    const [editingKitMetadata, setEditingKitMetadata] = useState(false);
+    const [editingKitLabel, setEditingKitLabel] = useState(false);
+    const [kitLabelInput, setKitLabelInput] = useState(kitLabel?.label || '');
+    const kitLabelInputRef = useRef<HTMLInputElement>(null);
+    const [metadataChanged, setMetadataChanged] = useState(false);
 
+    // --- PATCH: Always use propSamples if provided, and update local state when it changes ---
     useEffect(() => {
+        if (propSamples) {
+            setSamples(propSamples);
+            setLoading(false);
+            setError(null);
+        }
+    }, [propSamples]);
+
+    // Only load from disk if propSamples is null/undefined
+    useEffect(() => {
+        if (propSamples) return; // Don't load from disk if samples are provided
         const loadSamples = async () => {
             setLoading(true);
             setError(null);
@@ -78,16 +96,12 @@ const KitDetails: React.FC<KitDetailsProps> = ({ kitName, sdCardPath, onBack }) 
             }
         };
         loadSamples();
-        return () => {
-            setPlaying(null);
-        };
-    }, [kitName, sdCardPath]);
+    }, [kitName, sdCardPath, propSamples]);
 
     // Play a sample (no pause)
     const handlePlay = (voice: number, sample: string) => {
         // Bump playTrigger for this sample to trigger waveform play
         setPlayTriggers(triggers => ({ ...triggers, [voice + ':' + sample]: (triggers[voice + ':' + sample] || 0) + 1 }));
-        setPlaying({ voice, sample });
         setPlaybackError(null); // Clear previous error
     };
 
@@ -99,10 +113,10 @@ const KitDetails: React.FC<KitDetailsProps> = ({ kitName, sdCardPath, onBack }) 
     // Listen for playback end and error from backend ONCE on mount
     useEffect(() => {
         // @ts-ignore
-        const handleEnded = () => setPlaying(null);
+        const handleEnded = () => setLoading(false);
         // @ts-ignore
         const handleError = (errMsg: string) => {
-            setPlaying(null);
+            setLoading(false);
             setPlaybackError(errMsg || 'Playback failed');
         };
         // @ts-ignore
@@ -110,7 +124,6 @@ const KitDetails: React.FC<KitDetailsProps> = ({ kitName, sdCardPath, onBack }) 
         // @ts-ignore
         window.electronAPI.onSamplePlaybackError?.(handleError);
         return () => {
-            setPlaying(null);
             // Remove the event listeners to avoid leaks
             // @ts-ignore
             window.electronAPI.onSamplePlaybackEnded?.(() => {});
@@ -131,256 +144,228 @@ const KitDetails: React.FC<KitDetailsProps> = ({ kitName, sdCardPath, onBack }) 
         // @ts-ignore
         window.electronAPI.readRampleLabels(sdCardPath)
             .then(async (labels: RampleLabels | null) => {
-                let needsUpdate = false;
-                let updatedVoiceNames: { [voice: number]: string | null } = {};
                 if (labels && labels.kits && labels.kits[kitName]) {
                     const kit = labels.kits[kitName];
-                    // If voiceNames missing or any are empty/null, infer and update
-                    for (let v = 1; v <= 4; v++) {
-                        const current = kit.voiceNames?.[v];
-                        if (!current) {
-                            updatedVoiceNames[v] = voiceNames[v] || null;
-                            needsUpdate = true;
-                        } else {
-                            updatedVoiceNames[v] = current;
-                        }
-                    }
-                    if (needsUpdate) {
-                        // Write back updated voiceNames
-                        // @ts-ignore
-                        const allLabels: RampleLabels = await window.electronAPI.readRampleLabels(sdCardPath) || { kits: {} };
-                        allLabels.kits[kitName] = {
-                            ...allLabels.kits[kitName],
-                            voiceNames: updatedVoiceNames
-                        };
-                        // @ts-ignore
-                        await window.electronAPI.writeRampleLabels(sdCardPath, allLabels);
-                        setKitLabel({ ...kit, voiceNames: updatedVoiceNames });
-                    } else {
-                        setKitLabel(kit);
-                    }
-                    // Always update edit fields to match saved data when not editing
-                    if (!editingLabel) {
-                        setEditLabel(kit.label || '');
-                        setEditDescription(kit.description || '');
-                        setEditTags(kit.tags || []);
-                        setTagInput('');
-                    }
+                    setKitLabel(kit);
                 } else {
                     setKitLabel(null);
-                    if (!editingLabel) {
-                        setEditLabel('');
-                        setEditDescription('');
-                        setEditTags([]);
-                        setTagInput('');
-                    }
                 }
             })
             .catch(e => setLabelsError('Failed to load kit metadata.'))
             .finally(() => setLabelsLoading(false));
-    }, [sdCardPath, kitName, editingLabel, voiceNames]);
+    }, [sdCardPath, kitName]);
 
-    const handleEditKitLabel = () => {
-        setEditLabel(kitLabel?.label || '');
-        setEditDescription(kitLabel?.description || '');
-        setEditTags(kitLabel?.tags || []);
-        setTagInput('');
-        setEditingLabel(true);
-    };
-    const handleSaveKitLabel = async () => {
+    // Save kit metadata handler for KitMetadataForm
+    const handleSaveKitMetadata = async (label: string, description: string, tags: string[]) => {
         // @ts-ignore
         const labels: RampleLabels = await window.electronAPI.readRampleLabels(sdCardPath) || { kits: {} };
-        const newKitLabel: RampleKitLabel = { label: editLabel };
-        if (editDescription.trim() !== '') newKitLabel.description = editDescription.trim();
-        if (editTags.length > 0) newKitLabel.tags = editTags;
+        const newKitLabel: RampleKitLabel = { label };
+        if (description.trim() !== '') newKitLabel.description = description.trim();
+        if (tags.length > 0) newKitLabel.tags = tags;
         labels.kits[kitName] = newKitLabel;
         // @ts-ignore
         await window.electronAPI.writeRampleLabels(sdCardPath, labels);
-        setKitLabel(newKitLabel); // Update local state immediately
-        setEditingLabel(false);
-    };
-    const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if ((e.key === 'Tab' || e.key === 'Enter') && tagInput.trim()) {
-            e.preventDefault();
-            if (!editTags.includes(tagInput.trim())) {
-                setEditTags([...editTags, tagInput.trim()]);
-            }
-            setTagInput('');
-        } else if (e.key === 'Backspace' && !tagInput && editTags.length > 0) {
-            setEditTags(editTags.slice(0, -1));
-        }
-    };
-    const handleRemoveTag = (tag: string) => {
-        setEditTags(editTags.filter(t => t !== tag));
+        setKitLabel(newKitLabel);
     };
 
-    // Write kit metadata to disk on every change while editing
+    // Save voice name handler for KitVoicePanel
+    const handleSaveVoiceName = async (voice: number, newName: string) => {
+        if (!sdCardPath || !kitName) return;
+        // @ts-ignore
+        const labels: RampleLabels = await window.electronAPI.readRampleLabels(sdCardPath) || { kits: {} };
+        const kit = labels.kits[kitName] || { label: kitName };
+        const updatedVoiceNames = { ...(kit.voiceNames || {}), [voice]: newName };
+        kit.voiceNames = updatedVoiceNames;
+        labels.kits[kitName] = kit;
+        // @ts-ignore
+        await window.electronAPI.writeRampleLabels(sdCardPath, labels);
+        setKitLabel({ ...kit, voiceNames: updatedVoiceNames });
+    };
+
+    // Handler to rescan (re-infer) a voice name, always overwriting
+    const handleRescanVoiceName = async (voice: number) => {
+        if (!sdCardPath || !kitName) return;
+        // Reload sample list for this kit
+        // @ts-ignore
+        const kitPath = `${sdCardPath}/${kitName}`;
+        // @ts-ignore
+        const files: string[] = await window.electronAPI?.listFilesInRoot?.(kitPath);
+        const wavFiles = files.filter(f => /\.wav$/i.test(f));
+        const voices = groupSamplesByVoice(wavFiles);
+        const samplesForVoice = voices[voice] || [];
+        // @ts-ignore
+        const labels: RampleLabels = await window.electronAPI.readRampleLabels(sdCardPath) || { kits: {} };
+        const kit = labels.kits[kitName] || { label: kitName };
+        let inferredName: string | null = null;
+        for (const sample of samplesForVoice) {
+            const type = inferVoiceTypeFromFilename(sample);
+            if (type) { inferredName = type; break; }
+        }
+        if (!kit.voiceNames) kit.voiceNames = {};
+        kit.voiceNames[voice] = inferredName;
+        labels.kits[kitName] = kit;
+        // @ts-ignore
+        await window.electronAPI.writeRampleLabels(sdCardPath, labels);
+        // Reload from disk to ensure UI is in sync
+        // @ts-ignore
+        const updatedLabels: RampleLabels = await window.electronAPI.readRampleLabels(sdCardPath) || { kits: {} };
+        const updatedKit = updatedLabels.kits[kitName] || { label: kitName };
+        setKitLabel(updatedKit);
+        setVoiceNames(updatedKit.voiceNames || {});
+    };
+
     useEffect(() => {
-        if (!editingLabel) return;
-        const write = async () => {
-            // @ts-ignore
-            const labels: RampleLabels = await window.electronAPI.readRampleLabels(sdCardPath) || { kits: {} };
-            const newKitLabel: RampleKitLabel = { label: editLabel };
-            if (editDescription.trim() !== '') newKitLabel.description = editDescription.trim();
-            if (editTags.length > 0) newKitLabel.tags = editTags;
-            labels.kits[kitName] = newKitLabel;
-            // @ts-ignore
-            await window.electronAPI.writeRampleLabels(sdCardPath, labels);
-        };
-        write();
-    }, [editLabel, editDescription, editTags, editingLabel, kitName, sdCardPath]);
+        setKitLabelInput(kitLabel?.label || '');
+    }, [kitLabel?.label]);
+
+    // Save kit label (name) handler
+    const handleSaveKitLabel = async (newLabel: string) => {
+        if (!sdCardPath || !kitName) return;
+        // @ts-ignore
+        const labels: RampleLabels = await window.electronAPI.readRampleLabels(sdCardPath) || { kits: {} };
+        const kit = labels.kits[kitName] || { label: kitName };
+        kit.label = newLabel;
+        labels.kits[kitName] = kit;
+        // @ts-ignore
+        await window.electronAPI.writeRampleLabels(sdCardPath, labels);
+        setKitLabel({ ...kit });
+        setMetadataChanged(true);
+    };
+
+    // Save kit tags handler
+    const handleSaveKitTags = async (tags: string[]) => {
+        if (!sdCardPath || !kitName) return;
+        // @ts-ignore
+        const labels: RampleLabels = await window.electronAPI.readRampleLabels(sdCardPath) || { kits: {} };
+        const kit = labels.kits[kitName] || { label: kitName };
+        kit.tags = tags;
+        labels.kits[kitName] = kit;
+        // @ts-ignore
+        await window.electronAPI.writeRampleLabels(sdCardPath, labels);
+        setKitLabel({ ...kit });
+        setMetadataChanged(true);
+    };
 
     return (
-        <div>
-            <h2 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-2">Kit: {kitName}</h2>
-            {/* Header buttons: Back and Add/Edit Metadata side by side */}
-            <div className="flex gap-2 mb-3">
+        <div className="flex flex-col flex-1 min-h-0 h-full p-2 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded shadow">
+            {/* Static header and metadata section */}
+            <div className="flex items-center mb-2">
+                <FiFolder className="inline-block mr-2 align-text-bottom text-gray-500 dark:text-gray-400" aria-label="Kit folder" />
+                <span className="font-mono text-base font-bold text-gray-800 dark:text-gray-100 mr-1">{kitName}</span>
+                <span className="text-base font-bold text-gray-800 dark:text-gray-100 mr-1">:</span>
+                {editingKitLabel ? (
+                    <input
+                        ref={kitLabelInputRef}
+                        className="border-b border-blue-500 bg-transparent text-base font-bold text-gray-800 dark:text-gray-100 focus:outline-none px-1 w-48"
+                        value={kitLabelInput}
+                        onChange={e => setKitLabelInput(e.target.value)}
+                        onBlur={() => {
+                            setEditingKitLabel(false);
+                            handleSaveKitLabel(kitLabelInput.trim());
+                        }}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                                setEditingKitLabel(false);
+                                handleSaveKitLabel(kitLabelInput.trim());
+                            } else if (e.key === 'Escape') {
+                                setEditingKitLabel(false);
+                                setKitLabelInput(kitLabel?.label || '');
+                            }
+                        }}
+                        autoFocus
+                    />
+                ) : (
+                    <span
+                        className="font-bold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline min-w-[2rem]"
+                        onClick={() => setEditingKitLabel(true)}
+                        title="Edit kit name"
+                    >
+                        {kitLabel?.label || <span className="italic text-gray-400">(no name)</span>}
+                    </span>
+                )}
+            </div>
+            <div className="flex gap-2 mb-3 items-center">
                 <button
                     onClick={() => onBack(kitName)}
-                    className="px-3 py-1 bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 font-semibold rounded shadow hover:bg-gray-400 dark:hover:bg-slate-600 transition text-xs"
+                    className="px-3 py-1 bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 font-semibold rounded shadow hover:bg-gray-400 dark:hover:bg-slate-600 transition text-xs flex items-center gap-1"
                 >
-                    Back to Kit Browser
+                    <FiArrowLeft />
+                    Back
                 </button>
+                {typeof kitIndex === 'number' && kits && (
+                    <>
+                        <button
+                            className="px-2 py-1 bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded text-xs font-semibold disabled:opacity-50 flex items-center gap-1"
+                            onClick={onPrevKit}
+                            disabled={kitIndex <= 0}
+                            title="Previous Kit"
+                        >
+                            <FiChevronLeft />
+                            Previous
+                        </button>
+                        <button
+                            className="px-2 py-1 bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded text-xs font-semibold disabled:opacity-50 flex items-center gap-1"
+                            onClick={onNextKit}
+                            disabled={kitIndex >= kits.length - 1}
+                            title="Next Kit"
+                        >
+                            Next
+                            <FiChevronRight />
+                        </button>
+                    </>
+                )}
                 {labelsLoading ? (
                     <span className="text-xs text-gray-400 self-center">Loading kit metadata...</span>
                 ) : labelsError ? (
                     <span className="text-xs text-red-500 self-center">{labelsError}</span>
-                ) : kitLabel && !editingLabel ? (
-                    <button className="px-2 py-1 bg-blue-600 text-white rounded text-xs w-fit" onClick={handleEditKitLabel}>Edit Metadata</button>
-                ) : !editingLabel ? (
-                    <button className="px-2 py-1 bg-blue-600 text-white rounded text-xs w-fit" onClick={handleEditKitLabel}>Add Metadata</button>
                 ) : null}
             </div>
-            {/* Kit metadata UI */}
-            <div className="mb-4">
-                <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-4 flex flex-col gap-3 max-w-xl border border-gray-200 dark:border-slate-700">
-                    {editingLabel ? (
-                        <form className="flex flex-col gap-3" onSubmit={e => { e.preventDefault(); handleSaveKitLabel(); }}>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-xs font-semibold mb-0.5" htmlFor="kit-label">Label</label>
-                                <input id="kit-label" className="border rounded px-2 py-1 w-full text-sm" value={editLabel} onChange={e => setEditLabel(e.target.value)} autoFocus />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-xs font-semibold mb-0.5" htmlFor="kit-desc">Description</label>
-                                <input id="kit-desc" className="border rounded px-2 py-1 w-full text-sm" value={editDescription} onChange={e => setEditDescription(e.target.value)} />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-xs font-semibold mb-0.5" htmlFor="kit-tags">Tags</label>
-                                <div className="flex flex-wrap items-center gap-1 border rounded px-2 py-1 min-h-[38px] bg-white dark:bg-slate-800 focus-within:ring-2 ring-blue-400">
-                                    {editTags.map(tag => (
-                                        <span key={tag} className="bg-blue-200 dark:bg-blue-700 text-blue-900 dark:text-blue-100 px-2 py-0.5 rounded-full text-xs flex items-center gap-1 mr-1 mb-1">
-                                            {tag}
-                                            <button type="button" className="ml-1 text-xs text-blue-700 dark:text-blue-200 hover:text-red-500" onClick={() => handleRemoveTag(tag)} aria-label={`Remove tag ${tag}`}>×</button>
-                                        </span>
-                                    ))}
-                                    <input
-                                        className="flex-1 min-w-[60px] border-none outline-none bg-transparent text-xs py-0.5"
-                                        value={tagInput}
-                                        onChange={e => setTagInput(e.target.value)}
-                                        onKeyDown={handleTagInputKeyDown}
-                                        placeholder={editTags.length === 0 ? "Add tag..." : ""}
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex gap-2 mt-1">
-                                <button type="submit" className="px-3 py-1 bg-green-600 text-white rounded text-xs">Save</button>
-                                <button type="button" className="px-3 py-1 bg-gray-400 text-white rounded text-xs" onClick={() => setEditingLabel(false)}>Cancel</button>
-                            </div>
-                        </form>
-                    ) : kitLabel ? (
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold">Label:</span>
-                                <span className="font-normal text-xs text-gray-800 dark:text-gray-100">{kitLabel.label}</span>
-                            </div>
-                            {kitLabel.description && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs font-semibold">Description:</span>
-                                    <span className="font-normal text-xs text-gray-800 dark:text-gray-100">{kitLabel.description}</span>
-                                </div>
-                            )}
-                            {kitLabel.tags && kitLabel.tags.length > 0 && (
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-xs font-semibold">Tags:</span>
-                                    {kitLabel.tags.map(tag => (
-                                        <span key={tag} className="bg-blue-200 dark:bg-blue-700 text-blue-900 dark:text-blue-100 px-2 py-0.5 rounded-full text-xs mr-1 mb-1">{tag}</span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="text-xs text-gray-500 italic">No metadata for this kit.</div>
-                    )}
-                </div>
-            </div>
-            {loading ? (
-                <div className="text-sm text-gray-500 dark:text-gray-300">Loading samples...</div>
-            ) : error ? (
-                <div className="text-sm text-red-500">{error}</div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[1, 2, 3, 4].map((voice) => (
-                        <div key={voice} className="flex flex-col">
-                            <div className="font-semibold mb-1 text-gray-800 dark:text-gray-100 pl-1 flex items-center gap-2">
-                                <span>Voice {voice}:</span>
-                                { (kitLabel?.voiceNames?.[voice] || voiceNames[voice]) && (
-                                    <span className="ml-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 text-sm font-semibold tracking-wide">
-                                        {toCapitalCase(kitLabel?.voiceNames?.[voice] || voiceNames[voice] || '')}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
-                                {samples[voice] && samples[voice].length > 0 ? (
-                                    <ul className="list-none ml-0 text-sm">
-                                        {samples[voice].slice(0, 12).map(sample => {
-                                            const sampleKey = voice + ':' + sample;
-                                            const isPlaying = samplePlaying[sampleKey];
-                                            return (
-                                                <li key={sample} className="truncate flex items-center gap-2 mb-1">
-                                                    {isPlaying ? (
-                                                        <button
-                                                            className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs text-red-600 dark:text-red-400`}
-                                                            onClick={() => handleStop(voice, sample)}
-                                                            aria-label="Stop"
-                                                            style={{ minWidth: 24, minHeight: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                        >
-                                                            <FiSquare />
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs ${isPlaying ? 'text-green-600 dark:text-green-400' : ''}`}
-                                                            onClick={() => handlePlay(voice, sample)}
-                                                            aria-label="Play"
-                                                            style={{ minWidth: 24, minHeight: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                        >
-                                                            <FiPlay />
-                                                        </button>
-                                                    )}
-                                                    <span className="truncate text-xs font-mono text-gray-800 dark:text-gray-100" title={sample}>{sample}</span>
-                                                    <SampleWaveform
-                                                        filePath={`${sdCardPath}/${kitName}/${sample}`}
-                                                        playTrigger={playTriggers[sampleKey] || 0}
-                                                        stopTrigger={stopTriggers[sampleKey] || 0}
-                                                        onPlayingChange={playing => handleWaveformPlayingChange(voice, sample, playing)}
-                                                    />
-                                                </li>
-                                            );
-                                        })}
-                                        {samples[voice].length > 12 && (
-                                            <li className="italic text-xs text-gray-500 dark:text-gray-400">...and more</li>
-                                        )}
-                                    </ul>
-                                ) : (
-                                    <div className="text-gray-400 italic text-sm ml-1">No samples assigned</div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+            <KitMetadataForm
+                kitLabel={kitLabel}
+                loading={labelsLoading}
+                error={labelsError}
+                editing={false}
+                onEdit={() => {}}
+                onCancel={() => {}}
+                onSave={(label, _description, tags) => {
+                  handleSaveKitLabel(label);
+                  handleSaveKitTags(tags);
+                }}
+                hideDescription={true}
+                tagsEditable={true}
+            />
             {playbackError && (
                 <div className="text-xs text-red-500 mb-2">{playbackError}</div>
             )}
+            {/* Scrollable voices section */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+                {loading ? (
+                    <div className="text-sm text-gray-500 dark:text-gray-300">Loading samples...</div>
+                ) : error ? (
+                    <div className="text-sm text-red-500">{error}</div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[1, 2, 3, 4].map((voice) => (
+                            <KitVoicePanel
+                                key={`${kitName}-${voice}`}
+                                voice={voice}
+                                samples={samples[voice] || []}
+                                voiceName={kitLabel?.voiceNames?.[voice] || voiceNames[voice] || null}
+                                onSaveVoiceName={handleSaveVoiceName}
+                                onRescanVoiceName={handleRescanVoiceName}
+                                samplePlaying={samplePlaying}
+                                playTriggers={playTriggers}
+                                stopTriggers={stopTriggers}
+                                onPlay={handlePlay}
+                                onStop={handleStop}
+                                onWaveformPlayingChange={handleWaveformPlayingChange}
+                                sdCardPath={sdCardPath}
+                                kitName={kitName}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

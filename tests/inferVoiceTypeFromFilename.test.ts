@@ -66,4 +66,8 @@ describe('inferVoiceTypeFromFilename', () => {
   it('should infer synth from "1 Lead 1.wav"', () => {
     expect(inferVoiceTypeFromFilename('1 Lead 1.wav')).toBe('Synth');
   });
+
+  it('should infer fx from "3laser05.wav"', () => {
+    expect(inferVoiceTypeFromFilename('3laser05.wav')).toBe('Fx');
+  });
 });

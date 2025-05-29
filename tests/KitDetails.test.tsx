@@ -18,4 +18,35 @@ describe('KitDetails voice name controls', () => {
     expect(screen.getAllByTitle('Edit voice name').length).toBeGreaterThan(0);
     expect(screen.getAllByTitle('Rescan voice name').length).toBeGreaterThan(0);
   });
+  it('auto-scans all voice names if none are set', async () => {
+    // Mock electronAPI for this test
+    (window as any).electronAPI = {
+      readRampleLabels: async () => ({
+        kits: {
+          TestKit: { label: 'TestKit', voiceNames: {} }
+        }
+      }),
+      writeRampleLabels: async () => {},
+      listFilesInRoot: async () => [
+        '1 Kick.wav', '2 Snare.wav', '3 Hat.wav', '4 Tom.wav'
+      ]
+    };
+    render(
+      <KitDetails
+        kitName="TestKit"
+        sdCardPath="/sd"
+        onBack={() => {}}
+      />
+    );
+    // Wait for async effects and auto-scan
+    expect(await screen.findByText('Kick')).toBeInTheDocument();
+    expect(await screen.findByText('Snare')).toBeInTheDocument();
+    expect(await screen.findByText('Hat')).toBeInTheDocument();
+    expect(await screen.findByText('Tom')).toBeInTheDocument();
+  });
+});
+
+// Mock canvas getContext for jsdom
+beforeAll(() => {
+  HTMLCanvasElement.prototype.getContext = function () { return null; } as any;
 });

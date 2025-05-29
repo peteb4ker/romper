@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 // Ensure the userData directory and settings path are resolved via IPC
 const getUserDataPath = async (): Promise<string> => {
@@ -68,6 +68,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAudioBuffer: (filePath: string) => ipcRenderer.invoke('get-audio-buffer', filePath),
     readRampleLabels: (sdCardPath: string) => ipcRenderer.invoke('read-rample-labels', sdCardPath),
     writeRampleLabels: (sdCardPath: string, labels: any) => ipcRenderer.invoke('write-rample-labels', sdCardPath, labels),
+    commitKitPlan: (sdCardPath: string, kitName: string) => ipcRenderer.invoke('commit-kit-plan', sdCardPath, kitName),
+    discardKitPlan: (sdCardPath: string, kitName: string) => ipcRenderer.invoke('discard-kit-plan', sdCardPath, kitName),
+    rescanAllVoiceNames: (sdCardPath: string, kitNames: string[]) => ipcRenderer.invoke('rescan-all-voice-names', sdCardPath, kitNames),
+});
+
+// Expose a function to get the file path from a dropped File object (Electron only)
+contextBridge.exposeInMainWorld('electronFileAPI', {
+    getDroppedFilePath: async (file: File) => {
+        if (webUtils && webUtils.getPathForFile) {
+            try {
+                return await webUtils.getPathForFile(file);
+            } catch (e) {
+                console.error('webUtils.getPathForFile failed:', e);
+                throw e;
+            }
+        }
+        throw new Error('webUtils.getPathForFile is not available.');
+    }
 });
 
 console.log('Preload script updated and loaded');

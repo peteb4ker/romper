@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import KitItem from './KitItem';
-import { compareKitSlots, getKitColorClass, groupSamplesByVoice } from './kitUtils';
+import { compareKitSlots, getKitColorClass } from './kitUtils';
 import type { RampleLabels, RampleKitLabel } from './KitDetails';
 
 interface KitListProps {
@@ -9,57 +9,15 @@ interface KitListProps {
     bankNames: Record<string, string>;
     onDuplicate: (kit: string) => void;
     sdCardPath: string;
+    kitLabels: { [kit: string]: RampleKitLabel };
+    sampleCounts?: Record<string, [number, number, number, number]>;
 }
 
-type KitSampleCounts = Record<string, [number, number, number, number]>;
-
-const KitList: React.FC<KitListProps> = ({ kits, onSelectKit, bankNames, onDuplicate, sdCardPath }) => {
+const KitList: React.FC<KitListProps> = ({ kits, onSelectKit, bankNames, onDuplicate, sdCardPath, kitLabels, sampleCounts }) => {
     const kitsToDisplay = kits.length > 0 ? kits.slice().sort(compareKitSlots) : [];
-    const [sampleCounts, setSampleCounts] = useState<KitSampleCounts>({});
-    const [kitLabels, setKitLabels] = useState<Record<string, RampleKitLabel>>({});
-
-    useEffect(() => {
-        let cancelled = false;
-        const fetchCounts = async () => {
-            const counts: KitSampleCounts = {};
-            for (const kit of kitsToDisplay) {
-                const kitPath = sdCardPath ? `${sdCardPath}/${kit}` : undefined;
-                if (!kitPath) continue;
-                try {
-                    // @ts-ignore
-                    const files: string[] = await window.electronAPI?.listFilesInRoot?.(kitPath);
-                    const wavs = files.filter(f => /\.wav$/i.test(f));
-                    const grouped = groupSamplesByVoice(wavs);
-                    counts[kit] = [1,2,3,4].map(v => grouped[v]?.length || 0) as [number, number, number, number];
-                } catch {
-                    counts[kit] = [0,0,0,0];
-                }
-            }
-            if (!cancelled) setSampleCounts(counts);
-        };
-        fetchCounts();
-        return () => { cancelled = true; };
-    }, [kitsToDisplay, sdCardPath]);
-
-    // Fetch kit labels/tags for all kits
-    useEffect(() => {
-        let cancelled = false;
-        async function fetchLabels() {
-            if (!sdCardPath) return;
-            // @ts-ignore
-            const labels: RampleLabels | null = await window.electronAPI.readRampleLabels(sdCardPath);
-            if (!cancelled && labels && labels.kits) {
-                setKitLabels(labels.kits);
-            } else if (!cancelled) {
-                setKitLabels({});
-            }
-        }
-        fetchLabels();
-        return () => { cancelled = true; };
-    }, [sdCardPath]);
 
     return (
-        <div className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded p-2">
+        <div className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded pt-0 pb-2 pl-2 pr-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {kitsToDisplay.map((kit, idx, arr) => {
                     const isValid = /^[A-Z][0-9]{1,2}$/.test(kit);
@@ -81,9 +39,9 @@ const KitList: React.FC<KitListProps> = ({ kits, onSelectKit, bankNames, onDupli
                                 isValid={isValid}
                                 onSelect={() => isValid && onSelectKit(kit)}
                                 onDuplicate={() => isValid && onDuplicate(kit)}
-                                sampleCounts={sampleCounts[kit]}
+                                sampleCounts={sampleCounts ? sampleCounts[kit] : undefined}
                                 kitLabel={kitLabels[kit]}
-                                data-kit={kit} // <-- add this prop
+                                data-kit={kit}
                             />
                         </React.Fragment>
                     );

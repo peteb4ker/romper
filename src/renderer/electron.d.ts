@@ -16,6 +16,8 @@ interface ElectronAPI {
     readRampleLabels?: (sdCardPath: string) => Promise<any>;
     writeRampleLabels?: (sdCardPath: string, labels: any) => Promise<void>;
     getAudioBuffer?: (filePath: string) => Promise<ArrayBuffer>;
+    getDroppedFilePath?: (file: File) => Promise<string>;
+    rescanAllVoiceNames: (sdCardPath: string, kitNames: string[]) => Promise<void>;
 }
 
 declare global {

@@ -1,31 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import KitBankNav from './KitBankNav';
+import KitBrowserHeader from './KitBrowserHeader';
 import KitList from './KitList';
 import KitDialogs from './KitDialogs';
+import KitBankNav from './KitBankNav';
 import { compareKitSlots, getNextKitSlot, toCapitalCase } from './kitUtils';
 
 interface KitBrowserProps {
     onSelectKit: (kitName: string) => void;
     sdCardPath: string | null;
     kits?: string[];
-}
-
-// --- PATCH: Add preload API for listing files in SD card root ---
-async function listFilesInRoot(sdCardPath: string): Promise<string[]> {
-    // Try to use a custom preload API if available
-    // @ts-ignore
-    if (window.electronAPI && typeof window.electronAPI.listFilesInRoot === 'function') {
-        // @ts-ignore
-        return await window.electronAPI.listFilesInRoot(sdCardPath);
-    }
-    return [];
+    kitLabels: { [kit: string]: RampleKitLabel };
+    onRescanAllVoiceNames: () => void;
+    sampleCounts?: Record<string, [number, number, number, number]>;
+    // New: callback to refresh kits after create/duplicate
+    onRefreshKits?: () => void;
 }
 
 async function getBankNames(sdCardPath: string | null): Promise<Record<string, string>> {
     if (!sdCardPath) return {};
     try {
-        // @ts-ignore
-        const files: string[] = await window.electronAPI?.listFilesInRoot?.(sdCardPath);
         const rtfFiles = files.filter(f => /^[A-Z] - .+\.rtf$/i.test(f));
         const bankNames: Record<string, string> = {};
         for (const file of rtfFiles) {
@@ -41,8 +34,17 @@ async function getBankNames(sdCardPath: string | null): Promise<Record<string, s
     return {};
 }
 
-const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: externalKits }) => {
-    const [kits, setKits] = useState<string[]>(externalKits || []);
+const KitBrowser: React.FC<KitBrowserProps> = ({
+    onSelectKit,
+    sdCardPath,
+    kits: externalKits,
+    kitLabels,
+    onRescanAllVoiceNames,
+    sampleCounts,
+    onRefreshKits,
+}) => {
+    // Kits are now always provided by props (from KitsView)
+    const kits = externalKits || [];
     const [error, setError] = useState<string | null>(null);
     const [sdCardWarning, setSdCardWarning] = useState<string | null>(null);
     const [showNewKit, setShowNewKit] = useState(false);
@@ -54,14 +56,9 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
     const [duplicateKitError, setDuplicateKitError] = useState<string | null>(null);
     const [bankNames, setBankNames] = useState<Record<string, string>>({});
 
-    useEffect(() => {
-        if (externalKits) {
-            setKits(externalKits);
-        } else if (sdCardPath) {
-            window.electronAPI.scanSdCard(sdCardPath).then(setKits).catch(() => setKits([]));
-        }
-    }, [externalKits, sdCardPath]);
+    const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
+    // Only update nextKitSlot when kits prop changes
     useEffect(() => {
         setNextKitSlot(getNextKitSlot(kits));
     }, [kits]);
@@ -86,8 +83,7 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
             await window.electronAPI?.createKit?.(sdCardPath, newKitSlot);
             setShowNewKit(false);
             setNewKitSlot('');
-            // @ts-ignore
-            setKits(await window.electronAPI?.scanSdCard?.(sdCardPath) ?? []);
+            if (onRefreshKits) onRefreshKits(); // Ask KitsView to refresh
         } catch (err: any) {
             setNewKitError('Failed to create kit: ' + (err?.message || err));
         }
@@ -102,8 +98,7 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
         try {
             // @ts-ignore
             await window.electronAPI?.createKit?.(sdCardPath, nextKitSlot);
-            // @ts-ignore
-            setKits(await window.electronAPI?.scanSdCard?.(sdCardPath) ?? []);
+            if (onRefreshKits) onRefreshKits(); // Ask KitsView to refresh
         } catch (err: any) {
             setNewKitError('Failed to create kit: ' + (err?.message || err));
         }
@@ -120,8 +115,7 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
             await window.electronAPI?.copyKit?.(sdCardPath, duplicateKitSource, duplicateKitDest);
             setDuplicateKitSource(null);
             setDuplicateKitDest('');
-            // @ts-ignore
-            setKits(await window.electronAPI?.scanSdCard?.(sdCardPath) ?? []);
+            if (onRefreshKits) onRefreshKits(); // Ask KitsView to refresh
         } catch (err: any) {
             let msg = String(err?.message || err);
             msg = msg.replace(/^Error invoking remote method 'copy-kit':\s*/, '').replace(/^Error:\s*/, '');
@@ -132,7 +126,19 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
     // Navigation handler for banks
     const handleBankClick = (bank: string) => {
         const el = document.getElementById(`bank-${bank}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        console.log('handleBankClick', { bank, el });
+        if (el && scrollContainerRef.current) {
+            const header = document.querySelector('.sticky.top-0');
+            const headerHeight = header instanceof HTMLElement ? header.offsetHeight : 0;
+            const containerRect = scrollContainerRef.current.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+            // Add 8px offset to match m-2 (Tailwind m-2 = 0.5rem = 8px)
+            const offset = elRect.top - containerRect.top - headerHeight - 8;
+            console.log('scrolling to', { offset, headerHeight, elRect, containerRect });
+            scrollContainerRef.current.scrollTo({ top: scrollContainerRef.current.scrollTop + offset, behavior: 'smooth' });
+        } else {
+            console.warn('Bank element not found for', bank);
+        }
     };
 
     // Move Select SD Card button to the top
@@ -144,32 +150,20 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
     };
 
     return (
-        <div className="flex flex-col flex-1 min-h-0 h-full p-2 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded shadow">
-            <div className="flex items-center justify-between mb-4">
-                <button
-                    className="px-3 py-1 bg-blue-600 text-white rounded shadow hover:bg-blue-700 font-semibold text-xs"
-                    onClick={handleSelectSdCard}
-                >
-                    Select SD Card
-                </button>
-                <div className="flex gap-2">
-                    <button
-                        className="px-2 py-1 text-xs bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition font-semibold"
-                        onClick={() => setShowNewKit(true)}
-                    >
-                        + New Kit
-                    </button>
-                    <button
-                        className="px-2 py-1 text-xs bg-green-600 text-white rounded shadow hover:bg-green-700 transition font-semibold"
-                        onClick={handleCreateNextKit}
-                        disabled={!nextKitSlot}
-                        title={nextKitSlot ? `Next: ${nextKitSlot}` : 'No slots available'}
-                    >
-                        + Next Kit
-                    </button>
-                </div>
-            </div>
-            <KitBankNav kits={kits} onBankClick={handleBankClick} bankNames={bankNames} />
+        <div
+            ref={scrollContainerRef}
+            className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded m-2"
+        >
+            <KitBrowserHeader
+                onSelectSdCard={handleSelectSdCard}
+                onRescanAllVoiceNames={onRescanAllVoiceNames}
+                onShowNewKit={() => setShowNewKit(true)}
+                onCreateNextKit={handleCreateNextKit}
+                nextKitSlot={nextKitSlot}
+                bankNav={
+                    <KitBankNav kits={kits} onBankClick={handleBankClick} bankNames={bankNames} />
+                }
+            />
             <KitDialogs
                 showNewKit={showNewKit}
                 newKitSlot={newKitSlot}
@@ -194,6 +188,8 @@ const KitBrowser: React.FC<KitBrowserProps> = ({ onSelectKit, sdCardPath, kits: 
                     bankNames={bankNames}
                     onDuplicate={kit => { setDuplicateKitSource(kit); setDuplicateKitDest(''); setDuplicateKitError(null); }}
                     sdCardPath={sdCardPath || ''}
+                    kitLabels={kitLabels}
+                    sampleCounts={sampleCounts}
                 />
             </div>
         </div>

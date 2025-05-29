@@ -3,6 +3,13 @@ import { FiEdit2, FiCheck, FiX, FiRefreshCw, FiPlay, FiSquare } from 'react-icon
 import SampleWaveform from './SampleWaveform';
 import { toCapitalCase } from './kitUtils';
 
+interface KitSamplePlanSlot {
+  source: string;
+  target: string;
+  voiceType?: string;
+  meta?: Record<string, any>;
+}
+
 interface KitVoicePanelProps {
   voice: number;
   samples: string[];
@@ -17,6 +24,8 @@ interface KitVoicePanelProps {
   onWaveformPlayingChange: (voice: number, sample: string, playing: boolean) => void;
   sdCardPath: string;
   kitName: string;
+  planSlots?: KitSamplePlanSlot[];
+  usePlanSource?: boolean;
 }
 
 const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
@@ -33,6 +42,8 @@ const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
   onWaveformPlayingChange,
   sdCardPath,
   kitName,
+  planSlots,
+  usePlanSource,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(voiceName || '');
@@ -85,11 +96,17 @@ const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
       <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
         {samples && samples.length > 0 ? (
           <ul className="list-none ml-0 text-sm">
-            {samples.slice(0, 12).map(sample => {
+            {samples.slice(0, 12).map((sample, i) => {
               const sampleKey = voice + ':' + sample;
               const isPlaying = samplePlaying[sampleKey];
+              // If using plan, get source path from planSlots
+              let filePath = `${sdCardPath}/${kitName}/${sample}`;
+              if (usePlanSource && planSlots && planSlots[i]) {
+                filePath = planSlots[i].source;
+              }
               return (
-                <li key={sample} className="truncate flex items-center gap-2 mb-1">
+                <li key={`${voice}-${i}-${sample}`}
+                  className="truncate flex items-center gap-2 mb-1">
                   {isPlaying ? (
                     <button
                       className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs text-red-600 dark:text-red-400`}
@@ -111,8 +128,8 @@ const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
                   )}
                   <span className="truncate text-xs font-mono text-gray-800 dark:text-gray-100" title={sample}>{sample}</span>
                   <SampleWaveform
-                    key={`${kitName}-${voice}-${sample}`}
-                    filePath={`${sdCardPath}/${kitName}/${sample}`}
+                    key={`${kitName}-${voice}-${i}-${sample}`}
+                    filePath={filePath}
                     playTrigger={playTriggers[sampleKey] || 0}
                     stopTrigger={stopTriggers[sampleKey] || 0}
                     onPlayingChange={playing => onWaveformPlayingChange(voice, sample, playing)}

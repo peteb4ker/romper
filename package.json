@@ -5,10 +5,9 @@
     "main": "dist/main/index.js",
     "type": "module",
     "scripts": {
-        "dev": "vite dev",
+        "dev": "vite build && tsc && vite dev",
         "build": "vite build",
         "build:main": "tsc",
-        "start": "npm run build:main && electron .",
         "electron:dev": "NODE_ENV=development electron --inspect=5858 .",
         "package": "electron-builder",
         "test": "jest --coverage",

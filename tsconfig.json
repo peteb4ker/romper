@@ -18,7 +18,7 @@
         "src/main/**/*",
         "src/preload/**/*",
         "src/renderer/electron.d.ts",
-
+        "src/shared/**/*"
     ],
     "exclude": [
         "node_modules",

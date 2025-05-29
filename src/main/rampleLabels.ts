@@ -1,10 +1,30 @@
 import fs from 'fs';
 import path from 'path';
 
+export interface KitSamplePlanSlot {
+  /** Absolute or relative path to the source file (before commit) */
+  source: string;
+  /** Intended filename in the kit (e.g. '1 Kick.wav') */
+  target: string;
+  /** Inferred or user-assigned voice type (e.g. 'Kick', 'Snare', etc.) */
+  voiceType?: string;
+  /** Optional extra metadata (length, format, etc.) */
+  meta?: Record<string, any>;
+}
+
 export interface RampleKitLabel {
   label: string;
   description?: string;
   tags?: string[];
+  /**
+   * Optional working plan for sample assignments (up to 12 slots, sequential, no gaps).
+   * If present, this is the working copy for the kit's sample assignments.
+   */
+  plan?: KitSamplePlanSlot[];
+  /**
+   * Optional mapping of voice number to inferred or user-assigned name (e.g. {1: 'Kick', 2: 'Snare'})
+   */
+  voiceNames?: Record<number, string>;
 }
 
 export interface RampleLabels {

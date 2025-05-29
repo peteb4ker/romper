@@ -1,10 +1,8 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import path from 'path';
-import { ChildProcess } from 'child_process';
-import { readRampleBinAll, parseRampleBin } from './rampleBin.js';
-import { readRampleLabels, writeRampleLabels } from './rampleLabels.js';
+import { registerIpcHandlers } from './ipcHandlers.js';
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -70,168 +68,14 @@ app.whenReady().then(async () => {
         } else {
             console.warn('Settings file not found. Starting with empty settings.');
         }
+
+        // Register all IPC handlers
+        registerIpcHandlers(watchers, inMemorySettings);
     } catch (error) {
         console.error('Error during app initialization:', error);
     }
 });
 
-// Read settings from memory
-ipcMain.handle('read-settings', (_event) => {
-    return inMemorySettings;
-});
-
-// Write settings to memory and persist to file
-ipcMain.handle('write-settings', (_event, key: string, value: any) => {
-    const userDataPath = app.getPath('userData');
-    const settingsPath = path.join(userDataPath, 'settings.json');
-
-    inMemorySettings[key] = value; // Update in-memory settings
-    console.log(`Writing setting: ${key} =`, value);
-
-    try {
-        fs.writeFileSync(settingsPath, JSON.stringify(inMemorySettings, null, 2), 'utf-8');
-    } catch (error) {
-        console.error('Failed to write settings to file:', error);
-        throw error;
-    }
-});
-
-ipcMain.handle('scan-sd-card', async (event, sdCardPath) => {
-    try {
-        const folders = fs.readdirSync(sdCardPath).filter((folder) => {
-            return /^[A-Z][0-9]{1,2}$/.test(folder); // Match A0 to Z99
-        });
-        return folders;
-    } catch (error) {
-        console.error('Error scanning SD card:', error);
-        throw error;
-    }
-});
-
-ipcMain.handle('select-sd-card', async () => {
-    const result = await dialog.showOpenDialog({
-        properties: ['openDirectory'], // Allow selecting directories only
-        title: 'Select SD Card Path',
-    });
-
-    if (result.canceled) {
-        return null; // User canceled the dialog
-    }
-
-    return result.filePaths[0]; // Return the selected folder path
-});
-
-ipcMain.handle('watch-sd-card', (event, sdCardPath: string) => {
-    const watcherId = `${sdCardPath}-${Date.now()}`;
-
-    const watcher = fs.watch(sdCardPath, { persistent: true }, (eventType, filename) => {
-        if (filename) {
-            event.sender.send('sd-card-changed', { eventType, filename });
-        }
-    });
-
-    watchers[watcherId] = watcher;
-
-    return watcherId; // Return the watcher ID to the renderer process
-});
-
-ipcMain.handle('unwatch-sd-card', (event, watcherId: string) => {
-    if (watchers[watcherId]) {
-        watchers[watcherId].close();
-        delete watchers[watcherId];
-        console.log(`Stopped watching: ${watcherId}`);
-    }
-});
-
-// Get the user data path
-ipcMain.handle('get-user-data-path', () => {
-    return app.getPath('userData');
-});
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Promise Rejection:', reason);
-});
-
-ipcMain.handle('create-kit', async (_event, sdCardPath: string, kitSlot: string) => {
-    // Validate kitSlot
-    if (!/^[A-Z][0-9]{1,2}$/.test(kitSlot)) {
-        throw new Error('Invalid kit slot. Use format A0-Z99.');
-    }
-    const kitPath = path.join(sdCardPath, kitSlot);
-    if (fs.existsSync(kitPath)) {
-        throw new Error('Kit already exists.');
-    }
-    try {
-        fs.mkdirSync(kitPath);
-        // Optionally, create a default .KIT file or metadata here
-    } catch (err) {
-        throw new Error('Failed to create kit folder: ' + err);
-    }
-});
-
-ipcMain.handle('copy-kit', async (_event, sdCardPath: string, sourceKit: string, destKit: string) => {
-    // Validate kit names
-    if (!/^[A-Z][0-9]{1,2}$/.test(sourceKit) || !/^[A-Z][0-9]{1,2}$/.test(destKit)) {
-        throw new Error('Invalid kit slot. Use format A0-Z99.');
-    }
-    const srcPath = path.join(sdCardPath, sourceKit);
-    const destPath = path.join(sdCardPath, destKit);
-    if (!fs.existsSync(srcPath)) {
-        throw new Error('Source kit does not exist.');
-    }
-    if (fs.existsSync(destPath)) {
-        throw new Error('Destination kit already exists.');
-    }
-    // Recursively copy folder
-    const copyRecursiveSync = (src: string, dest: string) => {
-        fs.mkdirSync(dest);
-        for (const item of fs.readdirSync(src)) {
-            const srcItem = path.join(src, item);
-            const destItem = path.join(dest, item);
-            if (fs.lstatSync(srcItem).isDirectory()) {
-                copyRecursiveSync(srcItem, destItem);
-            } else {
-                fs.copyFileSync(srcItem, destItem);
-            }
-        }
-    };
-    try {
-        copyRecursiveSync(srcPath, destPath);
-    } catch (err) {
-        throw new Error('Failed to copy kit: ' + err);
-    }
-});
-
-ipcMain.handle('list-files-in-root', async (_event, sdCardPath: string) => {
-    try {
-        return fs.readdirSync(sdCardPath);
-    } catch (error) {
-        console.error('Error listing files in SD card root:', error);
-        return [];
-    }
-});
-
-// Add IPC handler to read a sample file as ArrayBuffer
-ipcMain.handle('get-audio-buffer', async (_event, filePath: string) => {
-    try {
-        const data = fs.readFileSync(filePath);
-        // Return as a Buffer (will be transferred as ArrayBuffer)
-        return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-    } catch (err) {
-        throw new Error('Failed to read audio file: ' + err);
-    }
-});
-
-ipcMain.handle('read-rample-bin-all', async (_event, filePath: string) => {
-    const parsed = parseRampleBin(filePath);
-    return parsed;
-});
-
-ipcMain.handle('read-rample-labels', async (_event, sdCardPath: string) => {
-    const labels = readRampleLabels(sdCardPath);
-    return labels;
-});
-
-ipcMain.handle('write-rample-labels', async (_event, sdCardPath: string, labels) => {
-    writeRampleLabels(sdCardPath, labels);
-    return true;
 });

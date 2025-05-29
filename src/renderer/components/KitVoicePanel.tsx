@@ -3,13 +3,6 @@ import { FiEdit2, FiCheck, FiX, FiRefreshCw, FiPlay, FiSquare } from 'react-icon
 import SampleWaveform from './SampleWaveform';
 import { toCapitalCase } from './kitUtils';
 
-interface KitSamplePlanSlot {
-  source: string;
-  target: string;
-  voiceType?: string;
-  meta?: Record<string, any>;
-}
-
 interface KitVoicePanelProps {
   voice: number;
   samples: string[];
@@ -24,8 +17,6 @@ interface KitVoicePanelProps {
   onWaveformPlayingChange: (voice: number, sample: string, playing: boolean) => void;
   sdCardPath: string;
   kitName: string;
-  planSlots?: KitSamplePlanSlot[];
-  usePlanSource?: boolean;
 }
 
 const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
@@ -42,8 +33,6 @@ const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
   onWaveformPlayingChange,
   sdCardPath,
   kitName,
-  planSlots,
-  usePlanSource,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(voiceName || '');
@@ -99,11 +88,7 @@ const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
             {samples.slice(0, 12).map((sample, i) => {
               const sampleKey = voice + ':' + sample;
               const isPlaying = samplePlaying[sampleKey];
-              // If using plan, get source path from planSlots
               let filePath = `${sdCardPath}/${kitName}/${sample}`;
-              if (usePlanSource && planSlots && planSlots[i]) {
-                filePath = planSlots[i].source;
-              }
               return (
                 <li key={`${voice}-${i}-${sample}`}
                   className="truncate flex items-center gap-2 mb-1">

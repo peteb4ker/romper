@@ -24,8 +24,11 @@ jobs:
       - name: Install dependencies
         run: npm install --arch=universal
 
-      - name: Build application
+      - name: Build frontend
         run: npm run build
+
+      - name: Build preload
+        run: npm run build:preload
 
       - name: Build main
         run: npm run build:main

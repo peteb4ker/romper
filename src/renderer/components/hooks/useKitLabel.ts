@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { RampleKitLabel, RampleLabels, KitSamplePlanSlot, KitDetailsProps } from '../kitTypes';
+import { RampleKitLabel, RampleLabels, KitDetailsProps } from '../kitTypes';
 import { groupSamplesByVoice, inferVoiceTypeFromFilename } from '../kitUtils';
 
 export function useKitLabel(props: KitDetailsProps) {
@@ -10,7 +10,6 @@ export function useKitLabel(props: KitDetailsProps) {
     const [editingKitLabel, setEditingKitLabel] = useState(false);
     const [kitLabelInput, setKitLabelInput] = useState('');
     const [metadataChanged, setMetadataChanged] = useState(false);
-    const [plan, setPlan] = useState<KitSamplePlanSlot[] | null>(null);
 
     useEffect(() => {
         if (!sdCardPath || !kitName) return;
@@ -38,14 +37,6 @@ export function useKitLabel(props: KitDetailsProps) {
     useEffect(() => {
         setKitLabelInput(kitLabel?.label || '');
     }, [kitLabel?.label]);
-
-    useEffect(() => {
-        if (kitLabel && kitLabel.plan) {
-            setPlan([...kitLabel.plan]);
-        } else {
-            setPlan(null);
-        }
-    }, [kitLabel]);
 
     // --- Utility: updateKitLabel ---
     async function updateKitLabel(update: (kit: RampleKitLabel) => void) {
@@ -132,14 +123,6 @@ export function useKitLabel(props: KitDetailsProps) {
         });
         setKitLabel(kit);
     };
-    const handleSaveKitPlan = async (newPlan: KitSamplePlanSlot[]) => {
-        if (!sdCardPath || !kitName) return;
-        const kit = await updateKitLabel((kit) => {
-            kit.plan = newPlan;
-        });
-        setKitLabel({ ...kit });
-        setPlan([...newPlan]);
-    };
 
     return {
         kitLabel,
@@ -156,10 +139,7 @@ export function useKitLabel(props: KitDetailsProps) {
         handleSaveVoiceName,
         handleRescanVoiceName,
         handleRescanAllVoiceNames,
-        handleSaveKitPlan,
         metadataChanged,
         setMetadataChanged,
-        plan,
-        setPlan
     };
 }

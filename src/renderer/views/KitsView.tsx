@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import KitBrowser from '../components/KitBrowser';
 import KitDetails from '../components/KitDetails';
 import { useSettings } from '../utils/SettingsContext';
-import { compareKitSlots, groupSamplesByVoice, inferVoiceTypeFromFilename } from '../components/kitUtils';
+import { compareKitSlots, groupSamplesByVoice } from '../components/kitUtils';
+import { useKitLabel } from '../components/hooks/useKitLabel';
 import type { VoiceSamples, RampleLabels, RampleKitLabel } from '../components/kitTypes';
 
 const KitsView = () => {
@@ -44,30 +45,8 @@ const KitsView = () => {
         setSelectedKitSamples(allKitSamples[selectedKit] || { 1: [], 2: [], 3: [], 4: [] });
     }, [selectedKit, allKitSamples]);
 
-    // Handler: Rescan all kit voice names using in-memory sample lists
-    const handleRescanAllVoiceNames = useCallback(async () => {
-        if (!sdCardPath) return;
-        // Use in-memory allKitSamples
-        const newLabels: { [kit: string]: RampleKitLabel } = { ...kitLabels };
-        for (const kit of kits) {
-            const voices = allKitSamples[kit] || { 1: [], 2: [], 3: [], 4: [] };
-            const voiceNames: { [voice: number]: string } = {};
-            for (let v = 1; v <= 4; v++) {
-                const samples = voices[v] || [];
-                let inferred: string | null = null;
-                for (const sample of samples) {
-                    const type = inferVoiceTypeFromFilename(sample);
-                    if (type) { inferred = type; break; }
-                }
-                voiceNames[v] = inferred || '';
-            }
-            if (!newLabels[kit]) newLabels[kit] = { label: kit };
-            newLabels[kit].voiceNames = voiceNames;
-        }
-        setKitLabels(newLabels);
-        // Write updated labels file
-        await window.electronAPI.writeRampleLabels(sdCardPath, { kits: newLabels });
-    }, [sdCardPath, kits, allKitSamples, kitLabels]);
+    // Use the centralized hook instead
+    const { handleRescanAllVoiceNames } = useKitLabel({ kitName: selectedKit || '', sdCardPath: sdCardPath || '' });
 
     // Compute sample counts for each kit
     const sampleCounts: Record<string, [number, number, number, number]> = {};
@@ -137,8 +116,20 @@ const KitsView = () => {
                         setSelectedKitSamples(null);
                         if (scrollToKit) {
                             setTimeout(() => {
-                                const el = document.querySelector(`[data-kit='${scrollToKit}']`);
-                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                // Prefer scrolling the KitBrowser's scroll container, not the window
+                                const kitEl = document.querySelector(`[data-kit='${scrollToKit}']`);
+                                // Find the KitBrowser scroll container by class or ref
+                                const container = kitEl && kitEl.closest('.overflow-y-auto');
+                                if (kitEl && container) {
+                                    // Scroll the container so the kit is centered
+                                    const containerRect = container.getBoundingClientRect();
+                                    const kitRect = kitEl.getBoundingClientRect();
+                                    const offset = kitRect.top - containerRect.top + container.scrollTop - containerRect.height / 2 + kitRect.height / 2;
+                                    container.scrollTo({ top: offset, behavior: 'smooth' });
+                                } else if (kitEl) {
+                                    // Fallback: scroll the kit element into view
+                                    kitEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
                             }, 100);
                         }
                     }}

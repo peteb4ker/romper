@@ -37,13 +37,7 @@ function createWindow() {
             console.error('Failed to load index.html:', err);
         });
     }
-
-    win.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-        console.error('Failed to load content:', errorDescription);
-    });
 }
-
-
 
 app.whenReady().then(async () => {
     console.log('App is starting...'); // Early log to confirm execution

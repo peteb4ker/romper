@@ -1,6 +1,6 @@
 import React from 'react';
 import KitItem from './KitItem';
-import { compareKitSlots, getKitColorClass } from './kitUtils';
+import { useKitListLogic } from './hooks/useKitListLogic';
 import type { RampleLabels, RampleKitLabel } from './KitDetails';
 
 interface KitListProps {
@@ -14,18 +14,18 @@ interface KitListProps {
 }
 
 const KitList: React.FC<KitListProps> = ({ kits, onSelectKit, bankNames, onDuplicate, sdCardPath, kitLabels, sampleCounts }) => {
-    const kitsToDisplay = kits.length > 0 ? kits.slice().sort(compareKitSlots) : [];
+    const { kitsToDisplay, isValidKit, getColorClass, showBankAnchor } = useKitListLogic(kits);
 
     return (
         <div className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded pt-0 pb-2 pl-2 pr-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {kitsToDisplay.map((kit, idx, arr) => {
-                    const isValid = /^[A-Z][0-9]{1,2}$/.test(kit);
-                    const colorClass = isValid ? getKitColorClass(kit) : 'text-red-500';
-                    const showBankAnchor = isValid && (idx === 0 || arr[idx - 1][0] !== kit[0]);
+                    const isValid = isValidKit(kit);
+                    const colorClass = getColorClass(kit);
+                    const showAnchor = showBankAnchor(kit, idx, arr);
                     return (
                         <React.Fragment key={kit}>
-                            {showBankAnchor && (
+                            {showAnchor && (
                                 <div id={`bank-${kit[0]}`} className="col-span-full mt-2 mb-1 flex items-center gap-2">
                                     <span className="font-bold text-xs tracking-widest text-blue-700 dark:text-blue-300">Bank {kit[0]}</span>
                                     {bankNames[kit[0]] && (

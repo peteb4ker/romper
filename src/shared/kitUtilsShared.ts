@@ -25,7 +25,7 @@ export function groupSamplesByVoice(files: string[]): { [voice: number]: string[
 }
 
 const VOICE_TYPE_KEYWORDS: { [voice: string]: string[] } = {
-  kick: ["kick", "kk"],
+  kick: ["kick", "kk", "bd"],
   snare: ["snare", "sn", "sd"],
   clap: ["clap"],
   closed_hh: ["hh closed", "hh close", "close", "ch", "chh", "closed", "cldHat"],
@@ -91,4 +91,26 @@ export function inferVoiceTypeFromFilename(filename: string): string | null {
     }
   }
   return null;
+}
+
+// Compare kit slots by bank and number (e.g. 'A0', 'B10')
+export function compareKitSlots(a: string, b: string): number {
+    const bankA = a.charCodeAt(0);
+    const bankB = b.charCodeAt(0);
+    if (bankA !== bankB) return bankA - bankB;
+    const numA = parseInt(a.slice(1), 10);
+    const numB = parseInt(b.slice(1), 10);
+    return numA - numB;
+}
+
+// Get the next available kit slot (e.g. 'A0', 'A1', ..., 'B0', ...)
+export function getNextKitSlot(existing: string[]): string | null {
+    const banks = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)); // 'A' to 'Z'
+    for (const bank of banks) {
+        for (let num = 0; num <= 99; num++) {
+            const slot = `${bank}${num}`;
+            if (!existing.includes(slot)) return slot;
+        }
+    }
+    return null;
 }

@@ -1,6 +1,5 @@
 // Utility functions for kit management and display
 
-// All logic now lives in src/shared/kitUtilsShared.ts
 export * from '../../shared/kitUtilsShared';
 
 export function compareKitSlots(a: string, b: string): number {

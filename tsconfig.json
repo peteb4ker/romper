@@ -16,7 +16,6 @@
     },
     "include": [
         "src/main/**/*",
-        "src/preload/**/*",
         "src/renderer/electron.d.ts",
         "src/shared/**/*"
     ],

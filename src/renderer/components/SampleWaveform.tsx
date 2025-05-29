@@ -39,7 +39,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
         try { audioCtxRef.current.close(); } catch (e) {}
       }
     };
-    // eslint-disable-next-line
   }, [filePath]);
 
   // Draw waveform
@@ -113,7 +112,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
       setPlayhead(0);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-    // eslint-disable-next-line
   }, [playTrigger]);
 
   // Stop playback when stopTrigger changes
@@ -126,13 +124,11 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
     }
     setIsPlaying(false);
     setPlayhead(0);
-    // eslint-disable-next-line
   }, [stopTrigger]);
 
   // Notify parent about playing state changes
   useEffect(() => {
     if (onPlayingChange) onPlayingChange(isPlaying);
-    // eslint-disable-next-line
   }, [isPlaying]);
 
   // Draw playhead
@@ -152,7 +148,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
       ctx.lineTo(x, canvas.height);
       ctx.stroke();
     }
-    // eslint-disable-next-line
   }, [playhead, isPlaying, audioBuffer]);
 
   // Clean up on unmount
@@ -163,7 +158,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
         try { audioCtxRef.current.close(); } catch (e) {}
       }
     };
-    // eslint-disable-next-line
   }, []);
 
   // Button click handler

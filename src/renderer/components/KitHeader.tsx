@@ -15,7 +15,6 @@ interface KitHeaderProps {
     onNextKit?: () => void;
     onPrevKit?: () => void;
     onCreateKit?: () => void;
-    onAddPlan?: () => void;
     onRescanAllVoiceNames?: () => void;
     kits?: string[];
     kitIndex?: number;
@@ -34,7 +33,6 @@ const KitHeader: React.FC<KitHeaderProps> = ({
     onNextKit,
     onPrevKit,
     onCreateKit,
-    onAddPlan,
     onRescanAllVoiceNames,
     kits,
     kitIndex
@@ -108,15 +106,6 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         >
             Rescan Kit Voice Names
         </button>
-        {kitLabel && !kitLabel.plan && (
-            <button
-                className="ml-2 px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 font-semibold"
-                onClick={() => onAddPlan && onAddPlan()}
-                title="Add empty plan to kit"
-            >
-                + Add Plan
-            </button>
-        )}
     </div>
 );
 

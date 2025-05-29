@@ -14,7 +14,6 @@ export interface RampleKitLabel {
   description?: string;
   tags?: string[];
   voiceNames?: { [voice: number]: string | null };
-  plan?: KitSamplePlanSlot[];
 }
 
 export interface RampleLabels {

@@ -5,21 +5,22 @@ import tailwindcss from 'tailwindcss';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
-    base: './', // Ensures assets are resolved correctly with file:// protocol
+    base: './',
     plugins: [
         react(),
         viteStaticCopy({
             targets: [
                 {
-                    src: '../resources/*', // Adjusted path relative to 'src/renderer'
-                    dest: '../resources'  // Place resources in dist/resources
+                    src: 'resources/*',
+                    dest: 'resources'
                 }
             ]
         })
     ],
-    root: 'src/renderer',
+    root: '.',
     build: {
-        outDir: '../../dist/renderer',
+        // Only build the renderer (frontend) and shared code
+        outDir: 'dist/renderer',
         emptyOutDir: true,
     },
     css: {
@@ -28,6 +29,21 @@ export default defineConfig({
                 tailwindcss(),
                 autoprefixer(),
             ],
+        },
+    },
+    test: {
+        include: ['src/**/__tests__/*.{test,spec}.{js,ts,jsx,tsx}'],
+        exclude: ['node_modules', 'dist', 'out'],
+        environment: 'jsdom',
+        setupFiles: ['./vitest.setup.ts'],
+        setupFilesAfterEnv: ['./jest-dom.setup.ts'],
+        coverage: {
+            enabled: true,
+            reporter: ['json', 'text', 'html'],
+            reportsDirectory: './coverage',
+            include: ['src/**/*.ts', 'src/**/*.tsx', 'shared/**/*.ts'],
+            exclude: ['src/**/*.d.ts', 'src/renderer/styles/**'],
+            reportOnFailure: true
         },
     },
 });

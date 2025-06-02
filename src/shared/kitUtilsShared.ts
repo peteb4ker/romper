@@ -45,8 +45,7 @@ const VOICE_TYPE_KEYWORDS: { [voice: string]: string[] } = {
 };
 
 const VOICE_TYPE_PRECEDENCE = [
-  "fx",
-  "kick", "snare", "rim", "clap", "synth", "closed_hh", "open_hh", "hh", "perc", "tom", "ride", "crash", "bass", "vox", "loop", "conga"
+  "fx", "kick", "snare", "rim", "clap", "synth", "closed_hh", "open_hh", "hh", "perc", "tom", "ride", "crash", "bass", "vox", "loop", "conga"
 ];
 
 export function inferVoiceTypeFromFilename(filename: string): string | null {

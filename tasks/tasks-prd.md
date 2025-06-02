@@ -1,0 +1,244 @@
+## Relevant Files
+
+- `src/renderer/components/KitBrowser.tsx` - Main kit browser UI, kit navigation, and kit list rendering.
+- `src/renderer/components/KitDetails.tsx` - Kit detail page, voice/slot management, and sample assignment.
+- `src/renderer/components/KitVoicePanel.tsx` - UI for managing voices and sample slots within a kit.
+- `src/renderer/components/SampleList.tsx` - Displays and manages samples for a voice.
+- `src/renderer/components/SampleWaveform.tsx` - Displays waveform previews for samples.
+- `src/renderer/components/StatusBar.tsx` - Status bar for progress indicators and messages.
+- `src/renderer/components/KitDialogs.tsx` - Dialogs for warnings, errors, confirmations, and factory restore.
+- `src/renderer/components/KitBankNav.tsx` - A-Z bank navigation UI and hotkey handling.
+- `src/renderer/components/hooks/useKitDetails.ts` - Business logic for kit details and sample management.
+- `src/renderer/components/hooks/useKitItem.ts` - Business logic for kit type inference and metadata display.
+- `src/renderer/components/hooks/useKitPlan.ts` - Business logic for kit plan creation, duplication, and editing.
+- `src/renderer/components/hooks/useSamplePreview.ts` - Business logic for sample and kit previewing.
+- `src/renderer/components/utils/settingsManager.ts` - Manages app settings (e.g., stereo/mono toggle, theme persistence).
+- `src/renderer/components/utils/kitUtils.ts` - Utility functions for kit/voice/sample validation and SD card structure.
+- `src/renderer/components/__tests__/KitBrowser.test.tsx` - Unit tests for kit browser UI and navigation.
+- `src/renderer/components/__tests__/KitDetails.test.tsx` - Unit tests for kit detail page and sample assignment.
+- `src/renderer/components/__tests__/KitVoicePanel.test.tsx` - Unit tests for voice/slot management.
+- `src/renderer/components/__tests__/SampleList.test.tsx` - Unit tests for sample list and validation.
+- `src/renderer/components/__tests__/SampleWaveform.test.tsx` - Unit tests for waveform preview.
+- `src/renderer/components/__tests__/StatusBar.test.tsx` - Unit tests for status bar and progress indicators.
+- `src/renderer/components/__tests__/KitDialogs.test.tsx` - Unit tests for dialogs and error handling.
+- `src/renderer/components/__tests__/KitBankNav.test.tsx` - Unit tests for A-Z navigation and hotkeys.
+- `src/renderer/components/hooks/__tests__/useKitDetails.test.ts` - Unit tests for kit details logic.
+- `src/renderer/components/hooks/__tests__/useKitItem.test.ts` - Unit tests for kit type inference logic.
+- `src/renderer/components/hooks/__tests__/useKitPlan.test.ts` - Unit tests for kit plan logic.
+- `src/renderer/components/hooks/__tests__/useSamplePreview.test.ts` - Unit tests for preview logic.
+- `src/renderer/components/utils/__tests__/settingsManager.test.ts` - Unit tests for settings management.
+- `src/renderer/components/utils/__tests__/kitUtils.test.ts` - Unit tests for kit/voice/sample utilities.
+
+### Notes
+
+- Unit tests should be placed alongside the code files they are testing (e.g., `MyComponent.tsx` and `MyComponent.test.tsx` in the same directory).
+- Use `npx vitest` to run tests. Running without a path executes all tests found by the Vitest configuration.
+
+## Tasks
+
+- [ ] 1.0 Implement Sample Management Features
+  - [ ] 1.1 Implement drag-and-drop sample assignment to kit voices/slots in the UI
+    - [ ] 1.1.1 Add drag-and-drop handlers to kit voice/slot UI components
+    - [ ] 1.1.2 Provide visual feedback (highlight/placeholder) during drag-over
+    - [ ] 1.1.3 Support multi-file drop, enforcing slot limits and warnings
+    - [ ] 1.1.4 Write unit tests for drag-and-drop assignment and feedback
+  - [ ] 1.2 Enforce 4 voices per kit and up to 12 slots per voice in the UI
+    - [ ] 1.2.1 Render exactly 4 voices per kit in the UI
+    - [ ] 1.2.2 Limit each voice to 12 sample slots
+    - [ ] 1.2.3 Display warnings if slot/voice limits are exceeded
+    - [ ] 1.2.4 Write unit tests for slot/voice enforcement and warnings
+  - [ ] 1.3 Validate dropped files as `.wav` and display warnings for invalid files
+    - [ ] 1.3.1 Check file extensions on drop
+    - [ ] 1.3.2 Ignore invalid files and show warning message
+    - [ ] 1.3.3 Write unit tests for file validation and warning display
+  - [ ] 1.4 Prevent duplicate samples in a voice and warn for duplicates across voices
+    - [ ] 1.4.1 Check for duplicate samples within a voice and prevent assignment
+    - [ ] 1.4.2 Allow but warn for duplicates across voices in a kit
+    - [ ] 1.4.3 Write unit tests for duplicate detection and warnings
+  - [ ] 1.5 Implement stereo/mono handling and global/per-sample toggles
+    - [ ] 1.5.1 Add global stereo/mono toggle in app settings
+    - [ ] 1.5.2 Allow per-sample stereo/mono override in sample list
+    - [ ] 1.5.3 Implement logic for stereo sample slot assignment (fills two slots/voices)
+    - [ ] 1.5.4 Convert stereo samples to mono on SD sync if needed
+    - [ ] 1.5.5 Write unit tests for stereo/mono toggles and assignment logic
+  - [ ] 1.6 Store kit plan/sample assignment metadata in SQLite and persist changes immediately
+    - [ ] 1.6.1 Integrate `better-sqlite3` for local metadata storage
+    - [ ] 1.6.2 Persist all kit/sample assignment changes immediately
+    - [ ] 1.6.3 Write unit tests for persistence and data integrity
+  - [ ] 1.7 Display warnings/errors for slot/voice limit violations and duplicate samples
+    - [ ] 1.7.1 Centralize warning/error display at top of app
+    - [ ] 1.7.2 Ensure all relevant warnings/errors are triggered by UI actions
+    - [ ] 1.7.3 Write unit tests for warning/error display
+
+- [ ] 2.0 Implement Kit Planning and Metadata Management
+  - [ ] 2.1 Allow creation, duplication, and editing of kit plans without SD card present
+    - [ ] 2.1.1 Implement UI for creating new kit plans
+    - [ ] 2.1.2 Implement duplication and editing of existing kit plans
+    - [ ] 2.1.3 Persist kit plans in SQLite
+    - [ ] 2.1.4 Write unit tests for kit plan creation, duplication, and editing
+  - [ ] 2.2 Allow assignment of samples to specific bank/kit folders in the UI
+    - [ ] 2.2.1 Implement UI for selecting bank/kit folder for each kit
+    - [ ] 2.2.2 Validate and enforce Rample folder naming conventions
+    - [ ] 2.2.3 Write unit tests for bank/kit assignment and validation
+  - [ ] 2.3 Detect and warn about missing samples in a kit plan
+    - [ ] 2.3.1 Implement logic to detect missing sample files
+    - [ ] 2.3.2 Display warning in kit details and prevent sync if missing
+    - [ ] 2.3.3 Write unit tests for missing sample detection and warning
+  - [ ] 2.4 Allow locking individual kits to prevent accidental overwriting
+    - [ ] 2.4.1 Add lock/unlock UI and state for kits
+    - [ ] 2.4.2 Prevent editing/syncing of locked kits
+    - [ ] 2.4.3 Write unit tests for kit locking and prevention logic
+  - [ ] 2.5 Implement tagging and favoriting for kits and samples
+    - [ ] 2.5.1 Add UI for tagging/favoriting kits and samples
+    - [ ] 2.5.2 Persist tags/favorites in SQLite
+    - [ ] 2.5.3 Write unit tests for tagging/favoriting logic
+  - [ ] 2.6 Implement voice name inference and kit type inference logic
+    - [ ] 2.6.1 Implement extensible voice name scanning function
+    - [ ] 2.6.2 Implement kit type inference based on voice names
+    - [ ] 2.6.3 Write unit tests for inference logic
+  - [ ] 2.7 Display kit metadata (ID, name, icon, sample counts, deduped voice names) in kit browser
+    - [ ] 2.7.1 Render kit metadata in kit browser UI
+    - [ ] 2.7.2 Add color coding for sample counts (red, light green, bold green)
+    - [ ] 2.7.3 Write unit tests for metadata display and color logic
+
+- [ ] 3.0 Implement Previewing and Audio Features
+  - [ ] 3.1 Implement preview for individual `.wav` samples (UI and audio engine)
+    - [ ] 3.1.1 Add play/stop controls for samples in UI
+    - [ ] 3.1.2 Integrate audio playback engine for `.wav` files
+    - [ ] 3.1.3 Write unit tests for sample preview logic
+  - [ ] 3.2 Implement preview for full kits using built-in MIDI test patterns
+    - [ ] 3.2.1 Add play/stop controls for full kit preview
+    - [ ] 3.2.2 Integrate MIDI test pattern playback
+    - [ ] 3.2.3 Write unit tests for kit preview logic
+  - [ ] 3.3 Display waveform view for each sample in the UI
+    - [ ] 3.3.1 Render waveform for each sample slot
+    - [ ] 3.3.2 Write unit tests for waveform rendering
+  - [ ] 3.4 Implement keyboard navigation for previewing (spacebar to preview sample)
+    - [ ] 3.4.1 Add keyboard event handlers for sample preview
+    - [ ] 3.4.2 Write unit tests for keyboard preview navigation
+
+- [ ] 4.0 Implement SD Card Sync and File Operations
+  - [ ] 4.1 Implement option to initialize app state from SD card
+    - [ ] 4.1.1 Scan SD card for existing kits and samples
+    - [ ] 4.1.2 Initialize local metadata from SD card contents
+    - [ ] 4.1.3 Write unit tests for SD card initialization
+  - [ ] 4.2 Only allow sync when SD card is mounted
+    - [ ] 4.2.1 Detect SD card mount/unmount events
+    - [ ] 4.2.2 Enable/disable sync actions based on SD card state
+    - [ ] 4.2.3 Write unit tests for SD card detection logic
+  - [ ] 4.3 Prevent sync if any samples in the plan are missing from disk
+    - [ ] 4.3.1 Check for missing samples before sync
+    - [ ] 4.3.2 Block sync and display warning if missing
+    - [ ] 4.3.3 Write unit tests for sync prevention logic
+  - [ ] 4.4 Copy samples destructively to SD card (after user confirmation)
+    - [ ] 4.4.1 Prompt user for confirmation before destructive sync
+    - [ ] 4.4.2 Copy samples and metadata to SD card, deleting old data as needed
+    - [ ] 4.4.3 Write unit tests for destructive sync workflow
+  - [ ] 4.5 Sync both metadata and sample files to SD card
+    - [ ] 4.5.1 Ensure both sample files and metadata are copied
+    - [ ] 4.5.2 Write unit tests for sync completeness
+  - [ ] 4.6 Implement SD card folder structure and kit validation logic
+    - [ ] 4.6.1 Enforce Rample SD card folder structure (banks, kits, voices)
+    - [ ] 4.6.2 Validate kit folders and sample files before sync
+    - [ ] 4.6.3 Write unit tests for folder structure and validation
+  - [ ] 4.7 Implement factory sample restore workflow with warning, progress, and error handling
+    - [ ] 4.7.1 Add UI for factory restore with warning dialog
+    - [ ] 4.7.2 Download and unzip factory sample pack
+    - [ ] 4.7.3 Replace user folders with factory samples, rescan metadata
+    - [ ] 4.7.4 Show progress indicator and handle errors gracefully
+    - [ ] 4.7.5 Write unit tests for factory restore workflow
+
+- [ ] 5.0 Implement UI/UX Structure and Navigation
+  - [ ] 5.1 Implement main kit browser and kit detail page
+    - [ ] 5.1.1 Build kit browser UI with kit list and navigation
+    - [ ] 5.1.2 Build kit detail page for voice/slot/sample management
+    - [ ] 5.1.3 Write unit tests for browser and detail page navigation
+  - [ ] 5.2 Place action buttons at the top of the page
+    - [ ] 5.2.1 Add action buttons (create, duplicate, sync, etc.) to top bar
+    - [ ] 5.2.2 Write unit tests for action button functionality
+  - [ ] 5.3 Implement status bar at the bottom with pertinent information (including progress indicators)
+    - [ ] 5.3.1 Build status bar UI and integrate progress indicators
+    - [ ] 5.3.2 Write unit tests for status bar and progress
+  - [ ] 5.4 Display information, error, and warning messages in a central location at the top of the screen
+    - [ ] 5.4.1 Centralize message display logic
+    - [ ] 5.4.2 Style messages according to type (info, warning, error)
+    - [ ] 5.4.3 Write unit tests for message display
+  - [ ] 5.5 Implement A-Z hotkeys and UI for bank navigation
+    - [ ] 5.5.1 Add hotkey handlers for A-Z navigation
+    - [ ] 5.5.2 Highlight selected bank in UI
+    - [ ] 5.5.3 Write unit tests for hotkey navigation
+  - [ ] 5.6 Implement keyboard navigation for kits, voices, and sample slots (arrow keys, enter, space)
+    - [ ] 5.6.1 Add keyboard event handlers for navigation
+    - [ ] 5.6.2 Disable navigation at first/last kit as appropriate
+    - [ ] 5.6.3 Write unit tests for keyboard navigation
+  - [ ] 5.7 Implement persistent light/dark mode toggle
+    - [ ] 5.7.1 Add toggle UI and persist theme setting
+    - [ ] 5.7.2 Write unit tests for theme toggle and persistence
+  - [ ] 5.8 Add link to Squarp Rample manual (opens in system browser)
+    - [ ] 5.8.1 Add external link to manual in UI
+    - [ ] 5.8.2 Write unit tests for manual link
+
+- [ ] 6.0 Implement Error Handling, Edge Cases, and Non-Functional Requirements
+  - [ ] 6.1 Handle invalid/corrupt `.wav` files gracefully
+    - [ ] 6.1.1 Detect and warn about invalid/corrupt files
+    - [ ] 6.1.2 Prevent assignment/sync of invalid files
+    - [ ] 6.1.3 Write unit tests for invalid file handling
+  - [ ] 6.2 Handle SD card removal during sync or file operations
+    - [ ] 6.2.1 Detect SD card removal events
+    - [ ] 6.2.2 Pause/cancel file operations and warn user
+    - [ ] 6.2.3 Write unit tests for SD card removal handling
+  - [ ] 6.3 Handle duplicate sample names or hash collisions
+    - [ ] 6.3.1 Detect duplicate names/hashes and warn user
+    - [ ] 6.3.2 Write unit tests for duplicate name/hash handling
+  - [ ] 6.4 Handle slot/voice limit violations with user feedback
+    - [ ] 6.4.1 Detect and warn about slot/voice limit violations
+    - [ ] 6.4.2 Write unit tests for limit violation handling
+  - [ ] 6.5 Handle missing samples when opening or syncing a kit plan
+    - [ ] 6.5.1 Detect missing samples on kit open/sync
+    - [ ] 6.5.2 Block actions and display warning if missing
+    - [ ] 6.5.3 Write unit tests for missing sample handling
+  - [ ] 6.6 Ensure sub-50ms UI interaction delay
+    - [ ] 6.6.1 Profile and optimize UI for responsiveness
+    - [ ] 6.6.2 Write performance tests for UI delay
+  - [ ] 6.7 Ensure no user data is collected or sent externally
+    - [ ] 6.7.1 Audit code for data collection
+    - [ ] 6.7.2 Write unit tests to verify no external data is sent
+  - [ ] 6.8 Ensure no cloud sync or external network access
+    - [ ] 6.8.1 Audit code for network access
+    - [ ] 6.8.2 Write unit tests to verify no network access
+  - [ ] 6.9 Ensure the app is standalone and only interacts with the SD card
+    - [ ] 6.9.1 Audit code for external dependencies
+    - [ ] 6.9.2 Write unit tests for SD card-only interaction
+  - [ ] 6.10 Ensure destructive sync is only allowed after confirmation and local backup
+    - [ ] 6.10.1 Require user confirmation and backup before destructive sync
+    - [ ] 6.10.2 Write unit tests for destructive sync confirmation
+  - [ ] 6.11 Ensure no multi-user or multi-computer sync is required
+    - [ ] 6.11.1 Audit code for multi-user/multi-computer logic
+    - [ ] 6.11.2 Write unit tests to verify single-user operation
+
+- [ ] 7.0 Implement Testing, Quality Assurance, and Release Workflow
+  - [ ] 7.1 Implement unit tests for all business logic (using vitest)
+    - [ ] 7.1.1 Write unit tests for all hooks, utils, and UI logic
+    - [ ] 7.1.2 Ensure all test files are isolated and DRY
+  - [ ] 7.2 Achieve at least 80% code coverage
+    - [ ] 7.2.1 Add/expand tests to reach 80% coverage
+    - [ ] 7.2.2 Use coverage reports to identify gaps
+  - [ ] 7.3 Implement at least one integration test to verify the application loads successfully
+    - [ ] 7.3.1 Write integration test for app load
+  - [ ] 7.4 Add tests for A-Z hotkey navigation
+    - [ ] 7.4.1 Write tests for A-Z hotkey navigation in kit browser
+  - [ ] 7.5 Add tests for info/error/warning message display
+    - [ ] 7.5.1 Write tests for message display logic
+  - [ ] 7.6 Add tests for kit locking/prevent overwrite
+    - [ ] 7.6.1 Write tests for kit locking and prevention
+  - [ ] 7.7 Add tests for tagging/favoriting
+    - [ ] 7.7.1 Write tests for tagging/favoriting logic
+  - [ ] 7.8 Add tests for missing sample detection/warning
+    - [ ] 7.8.1 Write tests for missing sample detection and warning
+  - [ ] 7.9 Implement GitHub release workflow for app distribution
+    - [ ] 7.9.1 Set up GitHub Actions for build and release
+    - [ ] 7.9.2 Write documentation for release workflow
+  - [ ] 7.10 Ensure macOS distribution is working
+    - [ ] 7.10.1 Test and verify macOS build/distribution
+  - [ ] 7.11 Implement Windows distribution
+    - [ ] 7.11.1 Test and verify Windows build/distribution

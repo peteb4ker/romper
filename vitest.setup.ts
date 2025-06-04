@@ -21,24 +21,24 @@ beforeAll(() => {
     }
   };
   window.electronAPI = {
-    scanSdCard: async (sdCardPath) => ['KitA', 'KitB', 'KitC'],
-    selectSdCard: async () => '/sd',
-    watchSdCard: () => ({ close: () => {} }),
-    readSettings: async () => ({ sdCardPath: '/sd' }),
-    setSetting: async () => {},
-    getSetting: async () => '/sd',
-    createKit: async () => {},
-    copyKit: async () => {},
-    listFilesInRoot: async (kitPath) => ['1 kick.wav', '2 snare.wav', '3 hat.wav', '4 tom.wav'],
-    readRampleLabels: async (sdCardPath) => ({
+    scanSdCard: vi.fn(async (sdCardPath) => ['KitA', 'KitB', 'KitC']),
+    selectSdCard: vi.fn(async () => '/sd'),
+    watchSdCard: vi.fn(() => ({ close: () => {} })),
+    readSettings: vi.fn(async () => ({ sdCardPath: '/sd' })),
+    setSetting: vi.fn(async () => {}),
+    getSetting: vi.fn(async () => '/sd'),
+    createKit: vi.fn(async () => {}),
+    copyKit: vi.fn(async () => {}),
+    listFilesInRoot: vi.fn(async (kitPath) => ['1 kick.wav', '2 snare.wav', '3 hat.wav', '4 tom.wav']),
+    readRampleLabels: vi.fn(async (sdCardPath) => ({
       kits: {
         KitA: { label: 'KitA', voiceNames: { 1: 'kick', 2: 'snare', 3: 'hat', 4: 'tom' } },
         KitB: { label: 'KitB', voiceNames: { 1: 'kick', 2: 'snare', 3: 'hat', 4: 'tom' } },
         KitC: { label: 'KitC', voiceNames: { 1: 'kick', 2: 'snare', 3: 'hat', 4: 'tom' } },
       }
-    }),
-    writeRampleLabels: async (sdCardPath, labels) => {},
-    getAudioBuffer: async () => new ArrayBuffer(8),
+    })),
+    writeRampleLabels: vi.fn(async (sdCardPath, labels) => {}),
+    getAudioBuffer: vi.fn(async () => new ArrayBuffer(8)),
   };
 
   // Mock scrollIntoView for all elements

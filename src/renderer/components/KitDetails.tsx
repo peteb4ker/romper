@@ -12,7 +12,7 @@ import type { RampleKitLabel, RampleLabels, KitDetailsProps, VoiceSamples } from
 import KitHeader from './KitHeader';
 
 const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onRescanAllVoiceNames?: () => void; onCreateKit?: () => void }> = (props) => {
-    const { samples, kitLabel } = props;
+    const { samples = {}, kitLabel } = props;
 
     // Playback logic
     const {

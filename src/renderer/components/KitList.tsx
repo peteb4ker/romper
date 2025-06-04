@@ -1,6 +1,7 @@
 import React from 'react';
 import KitItem from './KitItem';
 import { useKitListLogic } from './hooks/useKitListLogic';
+import { useKitListNavigation } from './hooks/useKitListNavigation';
 import type { RampleLabels, RampleKitLabel } from './KitDetails';
 
 interface KitListProps {
@@ -15,9 +16,27 @@ interface KitListProps {
 
 const KitList: React.FC<KitListProps> = ({ kits, onSelectKit, bankNames, onDuplicate, sdCardPath, kitLabels, sampleCounts }) => {
     const { kitsToDisplay, isValidKit, getColorClass, showBankAnchor } = useKitListLogic(kits);
+    const { focusedIdx, setFocus, moveFocus } = useKitListNavigation(kitsToDisplay);
+
+    const gridCols = 1;
+    // Keyboard navigation handler
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            if (kitsToDisplay[focusedIdx]) {
+                onSelectKit(kitsToDisplay[focusedIdx]);
+                e.preventDefault();
+            }
+        }
+    };
 
     return (
-        <div className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded pt-0 pb-2 pl-2 pr-2">
+        <div className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded pt-0 pb-2 pl-2 pr-2"
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
+            aria-label="Kit list"
+            data-testid="kit-list"
+        >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {kitsToDisplay.map((kit, idx, arr) => {
                     const isValid = isValidKit(kit);
@@ -42,6 +61,10 @@ const KitList: React.FC<KitListProps> = ({ kits, onSelectKit, bankNames, onDupli
                                 sampleCounts={sampleCounts ? sampleCounts[kit] : undefined}
                                 kitLabel={kitLabels[kit]}
                                 data-kit={kit}
+                                tabIndex={focusedIdx === idx ? 0 : -1}
+                                aria-selected={focusedIdx === idx}
+                                onFocus={() => setFocus(idx)}
+                                data-testid={`kit-item-${kit}`}
                             />
                         </React.Fragment>
                     );

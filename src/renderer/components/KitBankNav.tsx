@@ -4,28 +4,32 @@ interface KitBankNavProps {
     kits: string[];
     onBankClick: (bank: string) => void;
     bankNames?: Record<string, string>;
+    selectedBank?: string;
 }
 
-const KitBankNav: React.FC<KitBankNavProps> = ({ kits, onBankClick, bankNames = {} }) => (
-    <div className="overflow-x-auto mb-2">
-        <div className="flex gap-1 whitespace-nowrap">
-            {Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).map(bank => (
-                <button
-                    key={bank}
-                    className={`px-2 py-1 text-xs rounded font-mono font-semibold transition border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-400
-                        ${kits.some(k => k.startsWith(bank))
-                            ? 'bg-gray-200 dark:bg-slate-700 text-gray-900 dark:text-gray-100 hover:bg-blue-200 dark:hover:bg-blue-800'
+const banks = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
+
+const KitBankNav: React.FC<KitBankNavProps> = ({ kits, onBankClick, bankNames = {}, selectedBank }) => (
+    <div className="flex flex-row flex-wrap gap-1 justify-center">
+        {banks.map(bank => (
+            <button
+                key={bank}
+                className={`px-2 py-1 rounded text-xs font-mono font-bold transition
+                    ${selectedBank === bank
+                        ? 'bg-blue-800 text-white shadow border border-blue-900'
+                        : kits.some(k => k.startsWith(bank))
+                            ? 'bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-slate-600'
                             : 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'}
-                    `}
-                    disabled={!kits.some(k => k.startsWith(bank))}
-                    onClick={() => onBankClick(bank)}
-                    aria-label={`Jump to bank ${bank}`}
-                    title={bankNames[bank] ? bankNames[bank] : undefined}
-                >
-                    {bank}
-                </button>
-            ))}
-        </div>
+                `}
+                disabled={!kits.some(k => k.startsWith(bank))}
+                onClick={() => onBankClick(bank)}
+                aria-label={`Jump to bank ${bank}`}
+                title={bankNames[bank] ? bankNames[bank] : undefined}
+                aria-current={selectedBank === bank ? 'true' : undefined}
+            >
+                {bank}
+            </button>
+        ))}
     </div>
 );
 

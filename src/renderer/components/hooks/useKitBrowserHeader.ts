@@ -13,7 +13,6 @@ export function useKitBrowserHeader({
   onCreateNextKit: () => void;
   nextKitSlot: string | null;
 }) {
-  // Memoize handlers for performance and testability
   const handleSelectSdCard = useCallback(() => onSelectSdCard(), [onSelectSdCard]);
   const handleRescanAllVoiceNames = useCallback(() => onRescanAllVoiceNames(), [onRescanAllVoiceNames]);
   const handleShowNewKit = useCallback(() => onShowNewKit(), [onShowNewKit]);

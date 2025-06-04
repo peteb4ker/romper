@@ -31,3 +31,21 @@ When working with task lists, the AI must:
 4. Keep “Relevant Files” accurate and up to date.
 5. Before starting work, check which sub‑task is next.
 6. After implementing a sub‑task, update the file and then pause for user approval.
+7. Before starting on a task, check whether it has already been implemented.
+
+## Accessibility
+
+- All UI elements must be accessible in both light and dark modes, including keyboard navigation, visible focus indicators, and sufficient color contrast.
+- Accessibility must be considered and tested for every UI-related task.
+
+## Accessibility Note
+
+- All UI elements must be accessible in both light and dark mode, with sufficient color contrast and keyboard navigation support. Accessibility must be verified for every new or updated UI feature.
+
+## Checks
+
+- A task or sub-task may only be marked as complete ([x]) after the corresponding code has been implemented or changed in the codebase.
+
+- Do not mark a task as complete based on planning or intent alone.
+- Each completion must be accompanied by a code change (or verification that the code already exists and meets requirements).
+- If a task is marked complete in error, revert it to incomplete ([ ]) until the code is present.

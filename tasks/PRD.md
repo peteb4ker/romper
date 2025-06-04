@@ -91,6 +91,15 @@ Romper is a cross-platform desktop application for organizing, previewing, and s
 40. When restoring factory samples, the app should prompt the user with a clear warning message before proceeding. A progress indicator is shown during the operation, and errors are handled gracefully. The process downloads the factory pack, unzips it, enumerates the folders in the factory zip, deletes those folders from the user space, and moves the new folders in place. Metadata is rescanned for these samples.
 41. In the kit browser, the user can navigate kits with the arrow keys and hit enter to view the kit. Within a kit, the user can navigate sample slots with up/down arrows and voices with left/right arrows. Hitting space on a sample will preview it.
 
+## Centralized Message Display (Info, Warning, Error)
+
+- The application must display all information, warning, and error messages in a central location at the top of the screen.
+- The message display system must support multiple simultaneous messages, displaying them in a stack or queue (not just the latest message).
+- Each message must be styled according to its type (info, warning, error).
+- Messages should be individually dismissible by the user, and info/warning messages should auto-dismiss after a timeout.
+- The system must ensure that no messages are lost if multiple are triggered in quick succession; all should be visible until dismissed or expired.
+- The message display logic and UI must be fully unit tested, including scenarios with multiple messages.
+
 ## 5. Non-Goals (Out of Scope)
 - No browsing external sample folders (only drag-and-drop)
 - No `.KIT` binary file editing
@@ -106,7 +115,11 @@ Romper is a cross-platform desktop application for organizing, previewing, and s
 - A status bar at the bottom displays pertinent information.
 - Information, errors, and warning messages are displayed in a central location at the top of the screen and are styled appropriately.
 - Edge cases (invalid/corrupt files, SD removal, duplication, slot/voice limits, missing samples, etc.) are handled and more will be added as needed.
-- A-Z hotkeys will scroll to the corresponding bank.
+- A-Z hotkeys will scroll to the corresponding bank and move keyboard focus to the first kit in that bank.
+- Arrow keys (Up/Down/Left/Right) move focus between kits in the kit browser grid, wrapping between columns as appropriate.
+- Enter/Space selects the focused kit.
+- Focus indicators must be visible and accessible.
+- Navigation is disabled at the first/last kit as appropriate.
 - UI is built with React and styled with Tailwind CSS.
 - There is light and dark mode support.
 - The UI must be highly responsive (sub-50ms interaction delay).
@@ -143,6 +156,14 @@ Romper is a cross-platform desktop application for organizing, previewing, and s
 
 ## 9. Open Questions
 - None at this time.
+
+## Accessibility Requirements
+
+- All UI elements must be accessible to users with disabilities, following WCAG 2.1 AA guidelines where possible.
+- All interactive elements must be keyboard-navigable and have visible focus indicators.
+- All UI elements must have sufficient color contrast in both light and dark mode.
+- All icons and images must have appropriate alt text or aria-labels.
+- The application must be fully usable in both light and dark mode, with accessibility maintained in both themes.
 
 
 

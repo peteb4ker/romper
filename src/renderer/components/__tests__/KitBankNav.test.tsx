@@ -1,6 +1,6 @@
 // Test suite for KitBankNav component
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, vi, afterEach, expect } from 'vitest';
 import KitBankNav from '../KitBankNav';
 
 afterEach(() => {
@@ -12,7 +12,6 @@ describe('KitBankNav', () => {
     render(<KitBankNav kits={[]} onBankClick={() => {}} />);
     for (let i = 0; i < 26; i++) {
       const bank = String.fromCharCode(65 + i);
-      // Use queryAllByText to avoid Chai matcher and ambiguity
       const buttons = screen.queryAllByText(bank);
       expect(buttons.length).toBeGreaterThan(0);
     }
@@ -58,5 +57,37 @@ describe('KitBankNav', () => {
   it('shows bankNames as title if provided', () => {
     render(<KitBankNav kits={['A1']} onBankClick={() => {}} bankNames={{ A: 'Alpha' }} />);
     expect(screen.getByTitle('Alpha')).not.toBeNull();
+  });
+});
+
+describe('A-Z hotkey navigation and bank highlighting', () => {
+  it('highlights the correct bank when selectedBank is set', () => {
+    render(
+      <KitBankNav kits={['A1', 'B2']} onBankClick={() => {}} selectedBank="B" />
+    );
+    const bButton = screen.getByRole('button', { name: 'Jump to bank B' });
+    expect(bButton.className).toContain('bg-blue-800');
+    expect(bButton.getAttribute('aria-current')).toBe('true');
+  });
+
+  it('all bank buttons are focusable and have visible focus ring', () => {
+    render(<KitBankNav kits={['A1']} onBankClick={() => {}} />);
+    const aButton = screen.getByRole('button', { name: 'Jump to bank A' });
+    aButton.focus();
+    expect(document.activeElement).toBe(aButton);
+  });
+
+  it('disabled banks are not clickable or focusable', () => {
+    render(<KitBankNav kits={['A1']} onBankClick={() => {}} />);
+    const bButton = screen.getByRole('button', { name: 'Jump to bank B' });
+    expect(bButton.disabled).toBe(true);
+  });
+
+  it('calls onBankClick when enabled bank is clicked', () => {
+    const onBankClick = vi.fn();
+    render(<KitBankNav kits={['A1', 'B2']} onBankClick={onBankClick} />);
+    const aButton = screen.getByRole('button', { name: 'Jump to bank A' });
+    fireEvent.click(aButton);
+    expect(onBankClick).toHaveBeenCalledWith('A');
   });
 });

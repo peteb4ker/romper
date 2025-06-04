@@ -25,6 +25,7 @@
         "react-dropzone": "^14.3.8",
         "react-icons": "^5.5.0",
         "react-router-dom": "^7.6.0",
+        "sonner": "^2.0.5",
         "wavesurfer.js": "^7.9.5"
     },
     "devDependencies": {

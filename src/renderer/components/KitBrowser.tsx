@@ -4,6 +4,7 @@ import KitList from './KitList';
 import KitDialogs from './KitDialogs';
 import KitBankNav from './KitBankNav';
 import { useKitBrowser } from './hooks/useKitBrowser';
+import { useMessageApi } from './hooks/useMessageApi';
 
 interface KitBrowserProps {
     onSelectKit: (kitName: string) => void;
@@ -39,7 +40,28 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         handleDuplicateKit,
         handleBankClick,
         handleSelectSdCard,
+        handleBankClickWithScroll,
+        selectedBank,
+        globalBankHotkeyHandler,
     } = logic;
+    const messageApi = useMessageApi();
+
+    React.useEffect(() => {
+        if (sdCardWarning) {
+            messageApi.showMessage(sdCardWarning, 'warning', 5000);
+        }
+    }, [sdCardWarning]);
+    React.useEffect(() => {
+        if (error) {
+            messageApi.showMessage(error, 'error', 7000);
+        }
+    }, [error]);
+
+    // Enable global A-Z navigation for bank selection
+    React.useEffect(() => {
+        window.addEventListener('keydown', globalBankHotkeyHandler);
+        return () => window.removeEventListener('keydown', globalBankHotkeyHandler);
+    }, [globalBankHotkeyHandler]);
 
     return (
         <div
@@ -53,7 +75,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
                 onCreateNextKit={handleCreateNextKit}
                 nextKitSlot={nextKitSlot}
                 bankNav={
-                    <KitBankNav kits={kits} onBankClick={handleBankClick} bankNames={bankNames} />
+                    <KitBankNav kits={kits} onBankClick={handleBankClickWithScroll} bankNames={bankNames} selectedBank={selectedBank} />
                 }
             />
             <KitDialogs
@@ -71,8 +93,6 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
                 onDuplicateKit={handleDuplicateKit}
                 onCancelDuplicateKit={() => { setDuplicateKitSource(null); setDuplicateKitDest(''); setDuplicateKitError(null); }}
             />
-            {sdCardWarning && <p className="text-yellow-500 mb-2 text-xs">{sdCardWarning}</p>}
-            {error && <p className="text-red-500 mb-2 text-xs">{error}</p>}
             <div className="flex-1 min-h-0">
                 <KitList
                     kits={kits}

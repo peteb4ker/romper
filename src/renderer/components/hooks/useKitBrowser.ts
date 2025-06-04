@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getNextKitSlot, toCapitalCase } from '../kitUtils';
+import { useMessageApi } from './useMessageApi';
 
 export function useKitBrowser({
   kits: externalKits,
@@ -18,6 +19,7 @@ export function useKitBrowser({
   const [duplicateKitError, setDuplicateKitError] = useState(null);
   const [bankNames, setBankNames] = useState({});
   const scrollContainerRef = useRef(null);
+  const messageApi = useMessageApi();
 
   useEffect(() => {
     setNextKitSlot(getNextKitSlot(kits));
@@ -62,6 +64,7 @@ export function useKitBrowser({
       setShowNewKit(false);
       setNewKitSlot('');
       if (onRefreshKits) onRefreshKits();
+      messageApi.showMessage(`Kit ${newKitSlot} created successfully!`, 'info', 4000);
     } catch (err) {
       setNewKitError('Failed to create kit: ' + (err?.message || err));
     }
@@ -103,6 +106,8 @@ export function useKitBrowser({
     }
   };
 
+  // --- Bank selection state and logic (moved from KitBrowser) ---
+  const [selectedBank, setSelectedBank] = useState<string>('A');
   const handleBankClick = (bank) => {
     const el = document.getElementById(`bank-${bank}`);
     if (el && scrollContainerRef.current) {
@@ -111,9 +116,22 @@ export function useKitBrowser({
       const containerRect = scrollContainerRef.current.getBoundingClientRect();
       const elRect = el.getBoundingClientRect();
       const offset = elRect.top - containerRect.top - headerHeight - 8;
-      scrollContainerRef.current.scrollTo({ top: scrollContainerRef.current.scrollTop + offset, behavior: 'smooth' });
+      scrollContainerRef.current.scrollTo({ top: scrollContainerRef.current.scrollTop + offset, behavior: 'auto' });
     }
   };
+  const handleBankClickWithScroll = useCallback((bank: string) => {
+    setSelectedBank(bank);
+    handleBankClick(bank);
+  }, [handleBankClick]);
+
+  // Provide a stable global A-Z hotkey handler for KitBrowser
+  const globalBankHotkeyHandler = useCallback((e: KeyboardEvent) => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
+      handleBankClickWithScroll(e.key.toUpperCase());
+      e.preventDefault();
+    }
+  }, [handleBankClickWithScroll]);
 
   const handleSelectSdCard = async () => {
     const selected = await window.electronAPI.selectSdCard();
@@ -149,6 +167,10 @@ export function useKitBrowser({
     handleCreateNextKit,
     handleDuplicateKit,
     handleBankClick,
+    handleBankClickWithScroll, // expose for UI
+    selectedBank,
+    setSelectedBank,
+    globalBankHotkeyHandler,
     handleSelectSdCard,
   };
 }

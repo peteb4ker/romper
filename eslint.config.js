@@ -41,14 +41,13 @@ export default defineConfig([
         },
     },
 
-    // Test files (Jest or Vitest)
     {
         files: ['**/*.test.js', '**/*.test.ts', '**/*.test.tsx'],
         languageOptions: {
             globals: {
                 ...globals.browser,
-                ...globals.jest, // or ...globals.vitest if using Vitest
-                jest: true,
+                ...globals.vitest, // or ...globals.vitest if using Vitest
+                vitest: true,
             },
         },
     },

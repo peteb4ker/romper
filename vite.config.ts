@@ -39,7 +39,7 @@ export default defineConfig({
         setupFilesAfterEnv: ['./jest-dom.setup.ts'],
         coverage: {
             enabled: true,
-            reporter: ['json', 'text', 'html'],
+            reporter: ['json', 'html'],
             reportsDirectory: './coverage',
             include: ['src/**/*.ts', 'src/**/*.tsx', 'shared/**/*.ts'],
             exclude: ['src/**/*.d.ts', 'src/renderer/styles/**'],

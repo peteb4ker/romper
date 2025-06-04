@@ -39,6 +39,7 @@ const KitItem: React.FC<KitItemProps & { 'data-kit'?: string }> = ({ kit, colorC
         default:
             icon = <FiFolder className="text-3xl" />;
     }
+    // Add data-testid to root element for unambiguous test selection
     return (
         <div
             className={`flex flex-col p-2 rounded border text-sm ${isValid
@@ -46,6 +47,11 @@ const KitItem: React.FC<KitItemProps & { 'data-kit'?: string }> = ({ kit, colorC
                 : 'border-red-500 bg-red-100 dark:bg-red-900'
                 } cursor-pointer transition`}
             onClick={onSelect}
+            data-kit={kit}
+            data-testid={`kit-item-${kit}`}
+            tabIndex={rest.tabIndex}
+            aria-selected={rest['aria-selected']}
+            onFocus={rest.onFocus}
             style={{ margin: 0 }}
             {...rest}
         >

@@ -69,6 +69,7 @@
     - [ ] 1.7.1 Centralize warning/error display at top of app
     - [ ] 1.7.2 Ensure all relevant warnings/errors are triggered by UI actions
     - [ ] 1.7.3 Write unit tests for warning/error display
+  - [ ] 1.8 Display notification when a new kit is created
 
 - [ ] 2.0 Implement Kit Planning and Metadata Management
   - [ ] 2.1 Allow creation, duplication, and editing of kit plans without SD card present
@@ -150,32 +151,35 @@
 
 - [ ] 5.0 Implement UI/UX Structure and Navigation
   - [ ] 5.1 Implement main kit browser and kit detail page
-    - [ ] 5.1.1 Build kit browser UI with kit list and navigation
-    - [ ] 5.1.2 Build kit detail page for voice/slot/sample management
-    - [ ] 5.1.3 Write unit tests for browser and detail page navigation
+    - [x] 5.1.1 Build kit browser UI with kit list and navigation
+    - [x] 5.1.2 Build kit detail page for voice/slot/sample management
+    - [x] 5.1.3 Write unit tests for browser and detail page navigation
   - [ ] 5.2 Place action buttons at the top of the page
-    - [ ] 5.2.1 Add action buttons (create, duplicate, sync, etc.) to top bar
-    - [ ] 5.2.2 Write unit tests for action button functionality
+    - [x] 5.2.1 Add action buttons (create kit, read SD card, write SD card, etc.) to top bar
+    - [x] 5.2.2 Write unit tests for action button functionality
   - [ ] 5.3 Implement status bar at the bottom with pertinent information (including progress indicators)
-    - [ ] 5.3.1 Build status bar UI and integrate progress indicators
-    - [ ] 5.3.2 Write unit tests for status bar and progress
-  - [ ] 5.4 Display information, error, and warning messages in a central location at the top of the screen
-    - [ ] 5.4.1 Centralize message display logic
-    - [ ] 5.4.2 Style messages according to type (info, warning, error)
-    - [ ] 5.4.3 Write unit tests for message display
+    - [x] 5.3.1 Build status bar UI and integrate progress indicators (visual progress bar now implemented)
+    - [x] 5.3.2 Write unit tests for status bar and progress
+  - [x] 5.4 Display information, error, and warning messages in a central location at the top of the screen
+    - [x] 5.4.1 Centralize message display logic
+    - [x] 5.4.1a Support multiple simultaneous messages (queue/stack)
+    - [x] 5.4.2 Style messages according to type (info, warning, error)
+    - [x] 5.4.3 Write unit tests for message display (including multiple messages)
   - [ ] 5.5 Implement A-Z hotkeys and UI for bank navigation
-    - [ ] 5.5.1 Add hotkey handlers for A-Z navigation
-    - [ ] 5.5.2 Highlight selected bank in UI
-    - [ ] 5.5.3 Write unit tests for hotkey navigation
+    - [x] 5.5.1 Add hotkey handlers for A-Z navigation
+    - [x] 5.5.2 Highlight selected bank in UI
+    - [x] 5.5.3 Write unit tests for hotkey navigation
+    - [ ] 5.5.4 Fix: A-Z hotkeys must move keyboard focus to the first kit in the selected bank
   - [ ] 5.6 Implement keyboard navigation for kits, voices, and sample slots (arrow keys, enter, space)
     - [ ] 5.6.1 Add keyboard event handlers for navigation
     - [ ] 5.6.2 Disable navigation at first/last kit as appropriate
     - [ ] 5.6.3 Write unit tests for keyboard navigation
+    - [ ] 5.6.4 Fix: Arrow key navigation must work in the kit browser grid and wrap between columns
   - [ ] 5.7 Implement persistent light/dark mode toggle
-    - [ ] 5.7.1 Add toggle UI and persist theme setting
+    - [x] 5.7.1 Add toggle UI and persist theme setting
     - [ ] 5.7.2 Write unit tests for theme toggle and persistence
-  - [ ] 5.8 Add link to Squarp Rample manual (opens in system browser)
-    - [ ] 5.8.1 Add external link to manual in UI
+  - [x] 5.8 Add link to Squarp Rample manual (opens in app browser)
+    - [x] 5.8.1 Add external link to manual in UI
     - [ ] 5.8.2 Write unit tests for manual link
 
 - [ ] 6.0 Implement Error Handling, Edge Cases, and Non-Functional Requirements

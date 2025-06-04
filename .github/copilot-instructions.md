@@ -8,6 +8,8 @@
 - When requirements are not being met, first try to isolate why by adding or updating tests.
 ## Testing
 - `vitest` is used for testing. Not `jest`.
+- `jest-dom` is globally available to tests through `jest-dom.setup.ts`.
+- `chai` should not be used.
 - Each code file has exactly 1 corresponding unit test file in a relative `__tests__` subdirectory.  If there are multiple test files for a code file, merge the tests and delete the erroneous empty test file(s).
 - Require that all test files are isolated and do not leak state between tests.
 - All new and existing code should be unit tested according to the coverage include/exclude patterns in `vite.config.ts`.

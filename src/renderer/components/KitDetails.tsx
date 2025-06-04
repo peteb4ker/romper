@@ -10,9 +10,11 @@ import { useKitLabel } from './hooks/useKitLabel';
 import { useKitDetails } from './hooks/useKitDetails';
 import type { RampleKitLabel, RampleLabels, KitDetailsProps, VoiceSamples } from './kitTypes';
 import KitHeader from './KitHeader';
+import { useMessageApi } from './hooks/useMessageApi';
 
 const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onRescanAllVoiceNames?: () => void; onCreateKit?: () => void }> = (props) => {
     const { samples, kitLabel } = props;
+    const messageApi = useMessageApi();
 
     // Playback logic
     const {
@@ -43,6 +45,20 @@ const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onResc
         handleSaveKitMetadata,
     } = useKitLabel(props);
 
+    // Show playback errors via centralized message display
+    React.useEffect(() => {
+        if (playbackError) {
+            messageApi.showMessage({ type: 'error', text: playbackError });
+        }
+    }, [playbackError]);
+
+    // Show label errors via centralized message display
+    React.useEffect(() => {
+        if (labelsError) {
+            messageApi.showMessage({ type: 'error', text: labelsError });
+        }
+    }, [labelsError]);
+
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full p-2 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-sm shadow">
             <KitHeader
@@ -61,7 +77,7 @@ const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onResc
             <KitMetadataForm
                 kitLabel={managedKitLabel}
                 loading={labelsLoading}
-                error={labelsError}
+                error={null} // error now handled by centralized message display
                 editing={editingKitLabel}
                 onEdit={() => setEditingKitLabel(true)}
                 onCancel={() => setEditingKitLabel(false)}
@@ -69,9 +85,7 @@ const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onResc
                 hideDescription={true}
                 tagsEditable={false} // Remove tag editing
             />
-            {playbackError && (
-                <div className="text-xs text-red-500 mb-2">{playbackError}</div>
-            )}
+            {/* playbackError and labelsError are now handled by centralized message display */}
             <div className="flex-1 min-h-0 overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[1, 2, 3, 4].map((voice) => (

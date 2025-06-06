@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import KitBrowser from '../components/KitBrowser';
 import KitDetails from '../components/KitDetails';
 import { useSettings } from '../utils/SettingsContext';
@@ -48,12 +48,33 @@ const KitsView = () => {
     // Use the centralized hook instead
     const { handleRescanAllVoiceNames } = useKitLabel({ kitName: selectedKit || '', sdCardPath: sdCardPath || '' });
 
-    // Compute sample counts for each kit
-    const sampleCounts: Record<string, [number, number, number, number]> = {};
-    for (const kit of kits) {
-        const voices = allKitSamples[kit] || { 1: [], 2: [], 3: [], 4: [] };
-        sampleCounts[kit] = [1, 2, 3, 4].map(v => voices[v]?.length || 0) as [number, number, number, number];
-    }
+    // Memoize sample counts for all kits
+    const sampleCounts = useMemo(() => {
+        const counts: Record<string, [number, number, number, number]> = {};
+        for (const kit of kits) {
+            const voices = allKitSamples[kit] || { 1: [], 2: [], 3: [], 4: [] };
+            counts[kit] = [1, 2, 3, 4].map(v => voices[v]?.length || 0) as [number, number, number, number];
+        }
+        return counts;
+    }, [kits, allKitSamples]);
+
+    // Memoize deduped voice label sets for all kits
+    const voiceLabelSets = useMemo(() => {
+        const sets: Record<string, string[]> = {};
+        for (const kit of kits) {
+            const labelObj = kitLabels[kit];
+            if (labelObj && labelObj.voiceNames) {
+                // Accept both array and object forms
+                const values = Array.isArray(labelObj.voiceNames)
+                    ? labelObj.voiceNames
+                    : Object.values(labelObj.voiceNames);
+                sets[kit] = Array.from(new Set(values.filter(Boolean).map(v => typeof v === 'string' ? v : '')));
+            } else {
+                sets[kit] = [];
+            }
+        }
+        return sets;
+    }, [kits, kitLabels]);
 
     const sortedKits = kits ? kits.slice().sort(compareKitSlots) : [];
     const currentKitIndex = sortedKits.findIndex(k => k === selectedKit);
@@ -148,6 +169,7 @@ const KitsView = () => {
                     kitLabels={kitLabels}
                     onRescanAllVoiceNames={handleRescanAllVoiceNames}
                     sampleCounts={sampleCounts}
+                    voiceLabelSets={voiceLabelSets}
                 />
             )}
         </div>

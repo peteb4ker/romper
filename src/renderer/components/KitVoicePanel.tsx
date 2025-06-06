@@ -19,7 +19,7 @@ interface KitVoicePanelProps {
   kitName: string;
 }
 
-const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
+const KitVoicePanel: React.FC<KitVoicePanelProps & { dataTestIdVoiceName?: string }> = ({
   voice,
   samples,
   voiceName,
@@ -33,6 +33,7 @@ const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
   onWaveformPlayingChange,
   sdCardPath,
   kitName,
+  dataTestIdVoiceName
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(voiceName || '');
@@ -51,7 +52,10 @@ const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
   };
 
   return (
-    <div className="flex flex-col">
+    <div
+      className="flex flex-col"
+      role="region"
+    >
       <div className="font-semibold mb-1 text-gray-800 dark:text-gray-100 pl-1 flex items-center gap-2">
         <span>{voice}:</span>
         {editing ? (
@@ -68,15 +72,15 @@ const KitVoicePanel: React.FC<KitVoicePanelProps> = ({
           </>
         ) : (
           <>
-            {voiceName ? (
-              <span className="ml-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 text-sm font-semibold tracking-wide">
-                {toCapitalCase(voiceName)}
-              </span>
-            ) : (
-              <span className="ml-1 px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-semibold tracking-wide italic">
-                No voice name set
-              </span>
-            )}
+            <span
+              className={voiceName
+                ? "ml-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 text-sm font-semibold tracking-wide"
+                : "ml-1 px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-semibold tracking-wide italic"
+              }
+              data-testid={dataTestIdVoiceName || `voice-name-${voice}`}
+            >
+              {voiceName ? toCapitalCase(voiceName) : "No voice name set"}
+            </span>
             <button className="ml-1 text-blue-600 dark:text-blue-300" onClick={() => setEditing(true)} title="Edit voice name"><FiEdit2 /></button>
             <button className="ml-1 text-gray-600 dark:text-gray-300" onClick={() => onRescanVoiceName(voice)} title="Rescan voice name"><FiRefreshCw /></button>
           </>

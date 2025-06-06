@@ -3,14 +3,13 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { applyTheme } from './utils/settingsManager';
 import { SettingsProvider } from './utils/SettingsContext';
+import { MessageDisplayContext } from './components/MessageDisplayContext';
 import KitsView from './views/KitsView';
 import AboutView from './views/AboutView';
 import StatusBar from './components/StatusBar';
 import MessageDisplay from './components/MessageDisplay';
 import { useMessageDisplay } from './components/hooks/useMessageDisplay';
 import './styles/index.css';
-
-export const MessageDisplayContext = React.createContext<ReturnType<typeof useMessageDisplay> | null>(null);
 
 const App = () => {
     useEffect(() => {
@@ -25,7 +24,7 @@ const App = () => {
                 <div className="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
                     <MessageDisplay />
                     <div className="flex flex-1 min-h-0">
-                        <main className="flex-1 min-h-0 flex flex-col h-full pb-12">
+                        <main className="flex-1 min-h-0 flex flex-col h-full pb-10">
                             <Routes>
                                 <Route path="/" element={<Navigate to="/kits" replace />} />
                                 <Route path="/kits" element={<KitsView />} />

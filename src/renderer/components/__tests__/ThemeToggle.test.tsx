@@ -4,6 +4,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import ThemeToggle from '../ThemeToggle';
 
+import { afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+
+afterEach(() => {
+  cleanup();
+});
+
 describe('ThemeToggle', () => {
   it('renders the toggle button', () => {
     render(<ThemeToggle darkMode={false} onToggle={vi.fn()} />);

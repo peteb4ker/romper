@@ -14,6 +14,7 @@ export interface RampleKitLabel {
   description?: string;
   tags?: string[];
   voiceNames?: { [voice: number]: string | null };
+  stepPattern?: boolean[][]; // [voice][step] 4x16 boolean array
 }
 
 export interface RampleLabels {

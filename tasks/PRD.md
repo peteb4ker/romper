@@ -90,6 +90,8 @@ Romper is a cross-platform desktop application for organizing, previewing, and s
 39. There is a link to the Squarp Rample manual: https://squarp.net/rample/manual/ (opens in the system browser).
 40. When restoring factory samples, the app should prompt the user with a clear warning message before proceeding. A progress indicator is shown during the operation, and errors are handled gracefully. The process downloads the factory pack, unzips it, enumerates the folders in the factory zip, deletes those folders from the user space, and moves the new folders in place. Metadata is rescanned for these samples.
 41. In the kit browser, the user can navigate kits with the arrow keys and hit enter to view the kit. Within a kit, the user can navigate sample slots with up/down arrows and voices with left/right arrows. Hitting space on a sample will preview it.
+42. There is a global volume control to adjust the application audio volume.
+43. Later: copy and paste sequences between kits
 
 ## Centralized Message Display (Info, Warning, Error)
 
@@ -99,6 +101,63 @@ Romper is a cross-platform desktop application for organizing, previewing, and s
 - Messages should be individually dismissible by the user, and info/warning messages should auto-dismiss after a timeout.
 - The system must ensure that no messages are lost if multiple are triggered in quick succession; all should be visible until dismissed or expired.
 - The message display logic and UI must be fully unit tested, including scenarios with multiple messages.
+
+## 4-Channel, 16-Step XOX-Style Step Sequencer for Kit Preview
+
+### Introduction/Overview
+Add a programmable 4-channel, 16-step XOX-style step sequencer to the kit preview feature. This allows users to quickly program and audition rhythmic patterns using the first sample in each kit voice, making kit previewing more interactive and realistic.
+
+### Goals
+- Allow users to program a 4x16 step pattern for each kit.
+- Enable playback of the programmed pattern using the first sample in each voice.
+- Provide a visually clear, interactive, and keyboard-navigable step grid.
+- Persist the test pattern per kit in the labels JSON file.
+
+### User Stories
+- As a musician, I want to program a step sequence for a kit so I can preview how the kit sounds in a musical context.
+- As a musician, I want to use both mouse and keyboard to toggle steps and navigate the grid for fast editing.
+- As a musician, I want my test pattern to be saved with the kit so I can return to it later.
+
+### Functional Requirements
+1. The system must display a 4x16 step grid (4 voices, 16 steps per voice) at the bottom of the KitDetails view.
+2. Each row (voice) in the grid must be color-coded and match the corresponding color used as a highlight / indicator in the voice panel.
+3. Each step must be clickable to toggle on/off, with clear visual feedback (e.g., backlit button style).
+4. The grid must support keyboard navigation (arrow keys to move, spacebar to toggle).
+5. The user must be able to start and stop playback of the pattern; playback loops continuously at 120 BPM.
+6. During playback, the system must play the first sample in each voice for each active step.
+7. If a voice has no sample assigned, it is muted for that row.
+8. The test pattern must be saved per kit in the labels JSON file and loaded automatically.
+9. Only one pattern per kit is supported.
+10. No accent/velocity per step; steps are on/off only.
+11. Exporting patterns and advanced sequencing features (e.g., swing, step probability) are out of scope.
+12. For each of the 16 steps, 0 to 4 samples can be played concurrently.
+13. For each voice, if a sample is playing when the next step triggers, that next step chokes the first and starts the second.  Samples are only choked if there is an active step that restarts the voice.  Otherwise, samples pley until they end.
+
+### Non-Goals (Out of Scope)
+- Exporting patterns to external formats.
+- Multiple patterns per kit.
+- Accent/velocity per step.
+- Advanced sequencing features (swing, probability, etc.).
+- Adjustable tempo (for now; may be added later).
+- Choke groups
+
+### Design Considerations
+- The sequencer appears at the bottom of the KitDetails view, sliding up from the status bar area.
+- Each row uses a distinct color, matching the voice panel for visual consistency.
+- Step buttons use a modern, backlit look for clear state indication.
+- Keyboard navigation is custom (not browser focus-based).
+- The UI is accessible via keyboard but does not require screen reader support.
+
+### Technical Considerations
+- Pattern data is stored in the labels JSON file per kit.
+- Playback uses the first sample in each voice.
+- Future enhancements may include adjustable tempo, per-step sample selection, and SQLite persistence.
+
+### Success Metrics
+- Users can program and play a 4x16 pattern for any kit, using both mouse and keyboard, and the pattern is saved and loaded per kit.
+
+### Open Questions
+- None at this time.
 
 ## 5. Non-Goals (Out of Scope)
 - No browsing external sample folders (only drag-and-drop)
@@ -150,6 +209,7 @@ Romper is a cross-platform desktop application for organizing, previewing, and s
 - Tests for kit locking/prevent overwrite.
 - Tests for tagging/favoriting.
 - Tests for missing sample detection/warning.
+- Precompute and memoize kit sample counts and voice label sets in the kit browser. These values should be calculated only once per kit list load/change, not on every render, to maximize performance and minimize UI update latency.
 
 ## 8. Success Metrics
 - Success is measured by the number of kits that are created in the app.

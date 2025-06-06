@@ -2,7 +2,7 @@
     "compilerOptions": {
         "outDir": "dist", // Output directory for the main process
         "rootDir": "src", // Restrict build to the main entry point
-        "target": "ES2020",
+        "target": "ESNext",
         "module": "ESNext",
         "lib": [
             "DOM",

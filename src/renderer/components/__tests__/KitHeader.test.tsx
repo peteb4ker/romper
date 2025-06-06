@@ -5,6 +5,13 @@ import { describe, it, expect, vi } from 'vitest';
 import KitHeader from '../KitHeader';
 import type { RampleKitLabel } from '../kitTypes';
 
+import { afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+
+afterEach(() => {
+  cleanup();
+});
+
 describe('KitHeader', () => {
   const baseProps = {
     kitName: 'A1',

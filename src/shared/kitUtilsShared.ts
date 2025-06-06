@@ -113,3 +113,26 @@ export function getNextKitSlot(existing: string[]): string | null {
     }
     return null;
 }
+
+export function uniqueVoiceLabels(voiceNames: Record<number, string>): string[] {
+  const seen = new Set<string>();
+  return Object.values(voiceNames)
+    .filter(label => label && label.trim() !== '')
+    .filter(label => {
+      if (seen.has(label)) return false;
+      seen.add(label);
+      return true;
+    });
+}
+
+export function isValidKit(kit: string): boolean {
+  // Valid kit: 1 uppercase letter A-Z, followed by 1-2 digits 0-99
+  return /^[A-Z][0-9]{1,2}$/.test(kit) && parseInt(kit.slice(1), 10) <= 99;
+}
+
+export function showBankAnchor(kit: string, idx: number, kits: string[]): boolean {
+  // Show anchor if this is the first kit in a bank or the first kit overall
+  if (idx === 0) return true;
+  const prevKit = kits[idx - 1];
+  return kit[0] !== prevKit[0];
+}

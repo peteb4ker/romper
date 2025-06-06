@@ -12,6 +12,7 @@
 - `src/renderer/components/hooks/useKitItem.ts` - Business logic for kit type inference and metadata display.
 - `src/renderer/components/hooks/useKitPlan.ts` - Business logic for kit plan creation, duplication, and editing.
 - `src/renderer/components/hooks/useSamplePreview.ts` - Business logic for sample and kit previewing.
+- `src/renderer/components/hooks/useKitPreview.ts` - Business logic for full kit preview playback (MIDI test pattern), play/stop state, and error handling.
 - `src/renderer/components/utils/settingsManager.ts` - Manages app settings (e.g., stereo/mono toggle, theme persistence).
 - `src/renderer/components/utils/kitUtils.ts` - Utility functions for kit/voice/sample validation and SD card structure.
 - `src/renderer/components/__tests__/KitBrowser.test.tsx` - Unit tests for kit browser UI and navigation.
@@ -36,40 +37,56 @@
 
 ## Tasks
 
-- [ ] 1.0 Implement Sample Management Features
-  - [ ] 1.1 Implement drag-and-drop sample assignment to kit voices/slots in the UI
-    - [ ] 1.1.1 Add drag-and-drop handlers to kit voice/slot UI components
-    - [ ] 1.1.2 Provide visual feedback (highlight/placeholder) during drag-over
-    - [ ] 1.1.3 Support multi-file drop, enforcing slot limits and warnings
-    - [ ] 1.1.4 Write unit tests for drag-and-drop assignment and feedback
-  - [ ] 1.2 Enforce 4 voices per kit and up to 12 slots per voice in the UI
-    - [ ] 1.2.1 Render exactly 4 voices per kit in the UI
-    - [ ] 1.2.2 Limit each voice to 12 sample slots
-    - [ ] 1.2.3 Display warnings if slot/voice limits are exceeded
-    - [ ] 1.2.4 Write unit tests for slot/voice enforcement and warnings
-  - [ ] 1.3 Validate dropped files as `.wav` and display warnings for invalid files
-    - [ ] 1.3.1 Check file extensions on drop
-    - [ ] 1.3.2 Ignore invalid files and show warning message
-    - [ ] 1.3.3 Write unit tests for file validation and warning display
-  - [ ] 1.4 Prevent duplicate samples in a voice and warn for duplicates across voices
-    - [ ] 1.4.1 Check for duplicate samples within a voice and prevent assignment
-    - [ ] 1.4.2 Allow but warn for duplicates across voices in a kit
-    - [ ] 1.4.3 Write unit tests for duplicate detection and warnings
-  - [ ] 1.5 Implement stereo/mono handling and global/per-sample toggles
-    - [ ] 1.5.1 Add global stereo/mono toggle in app settings
-    - [ ] 1.5.2 Allow per-sample stereo/mono override in sample list
-    - [ ] 1.5.3 Implement logic for stereo sample slot assignment (fills two slots/voices)
-    - [ ] 1.5.4 Convert stereo samples to mono on SD sync if needed
-    - [ ] 1.5.5 Write unit tests for stereo/mono toggles and assignment logic
-  - [ ] 1.6 Store kit plan/sample assignment metadata in SQLite and persist changes immediately
-    - [ ] 1.6.1 Integrate `better-sqlite3` for local metadata storage
-    - [ ] 1.6.2 Persist all kit/sample assignment changes immediately
-    - [ ] 1.6.3 Write unit tests for persistence and data integrity
-  - [ ] 1.7 Display warnings/errors for slot/voice limit violations and duplicate samples
-    - [ ] 1.7.1 Centralize warning/error display at top of app
-    - [ ] 1.7.2 Ensure all relevant warnings/errors are triggered by UI actions
-    - [ ] 1.7.3 Write unit tests for warning/error display
-  - [ ] 1.8 Display notification when a new kit is created
+- [x] 1.0 Implement UI/UX Structure and Navigation
+  - [x] 1.1 Implement main kit browser and kit detail page
+    - [x] 1.1.1 Build kit browser UI with kit list and navigation
+    - [x] 1.1.2 Build kit detail page for voice/slot/sample management
+    - [x] 1.1.3 Write unit tests for browser and detail page navigation
+  - [x] 1.2 Place action buttons at the top of the page
+    - [x] 1.2.1 Add action buttons (create, duplicate, sync, etc.) to top bar
+    - [x] 1.2.2 Write unit tests for action button functionality
+  - [x] 1.3 Implement status bar at the bottom with pertinent information (including progress indicators)
+    - [x] 1.3.1 Build status bar UI and integrate progress indicators
+    - [x] 1.3.2 Write unit tests for status bar and progress
+  - [x] 1.4 Display information, error, and warning messages in a central location at the top of the screen
+    - [x] 1.4.1 Centralize message display logic
+    - [x] 1.4.2 Style messages according to type (info, warning, error)
+    - [x] 1.4.3 Write unit tests for message display
+  - [x] 1.5 Implement A-Z hotkeys and UI for bank navigation
+    - [x] 1.5.1 Add hotkey handlers for A-Z navigation
+    - [x] 1.5.2 Highlight selected bank in UI
+    - [x] 1.5.3 Write unit tests for hotkey navigation
+    - [x] 1.5.4 Fix: A-Z hotkeys must move keyboard focus to the first kit in the selected bank
+      - [x] 1.5.4.1 Kits must be keyboard focusable and have a visible focus indicator
+      - [x] 1.5.4.2 On app load, the first kit should be focused and visibly focused
+    - [x] 1.5.5 Selection highlight in KitList must be persistent and independent of DOM focus
+      - [x] 1.5.5.1 The selected kit must always have a visible highlight (e.g., border or background), even if focus is elsewhere
+      - [x] 1.5.5.2 Keyboard navigation (A-Z, arrows) should update both selection and focus, but selection highlight remains if focus moves away
+      - [x] 1.5.5.3 Write unit tests to verify persistent selection highlight and correct keyboard/focus behavior
+  - [x] 1.6 Implement keyboard navigation for kits, voices, and sample slots
+    - [x] 1.6.1 Implement keyboard navigation for kits (arrow keys, enter)
+      - [x] 1.6.1.1 Add keyboard event handlers for kit navigation (up/down/left/right, enter)
+      - [x] 1.6.1.2 Disable navigation at first/last kit as appropriate (cannot move before first or after last kit)
+      - [x] 1.6.1.3 Ensure selection highlight and focus update correctly on navigation
+      - [x] 1.6.1.4 Write unit tests for kit keyboard navigation (including edge cases)
+    - [x] 1.6.2 Remove voice keyboard navigation (left/right arrows, enter) and related tasks
+      - [x] 1.6.2.1 Voice selection is always mouse-only, no keyboard navigation or highlight
+      - [x] 1.6.2.2 Remove any code, hooks, or tests for voice keyboard navigation
+    - [x] 1.6.3 Implement keyboard navigation for sample slots (up/down arrows, space)
+      - [x] 1.6.3.1 Add keyboard event handlers for sample slot navigation (up/down, space)
+      - [x] 1.6.3.2 Disable navigation at first/last slot as appropriate
+      - [x] 1.6.3.3 Ensure selection highlight and focus update correctly on navigation
+      - [x] 1.6.3.4 Write unit tests for sample slot keyboard navigation (including edge cases)
+  - [x] 1.7 Implement persistent light/dark mode toggle
+    - [x] 1.7.1 Add toggle UI and persist theme setting
+    - [x] 1.7.2 Write unit tests for theme toggle and persistence
+  - [x] 1.8 Add link to Squarp Rample manual (opens in system browser)
+    - [x] 1.8.1 Add external link to manual in UI
+    - [x] 1.8.2 Write unit tests for manual link
+  - [x] 1.12 Precompute and memoize kit sample counts and voice label sets in kit browser for performance
+    - [x] 1.12.1 Compute these values once per kit list load/change, not on every render
+    - [x] 1.12.2 Pass precomputed values as props to KitList/KitItem
+    - [x] 1.12.3 Write unit tests to verify memoization and correct display
 
 - [ ] 2.0 Implement Kit Planning and Metadata Management
   - [ ] 2.1 Allow creation, duplication, and editing of kit plans without SD card present
@@ -103,14 +120,26 @@
     - [ ] 2.7.3 Write unit tests for metadata display and color logic
 
 - [ ] 3.0 Implement Previewing and Audio Features
-  - [ ] 3.1 Implement preview for individual `.wav` samples (UI and audio engine)
-    - [ ] 3.1.1 Add play/stop controls for samples in UI
-    - [ ] 3.1.2 Integrate audio playback engine for `.wav` files
-    - [ ] 3.1.3 Write unit tests for sample preview logic
-  - [ ] 3.2 Implement preview for full kits using built-in MIDI test patterns
-    - [ ] 3.2.1 Add play/stop controls for full kit preview
-    - [ ] 3.2.2 Integrate MIDI test pattern playback
-    - [ ] 3.2.3 Write unit tests for kit preview logic
+  - [x] 3.1 Implement preview for individual `.wav` samples (UI and audio engine)
+    - [x] 3.1.1 Add play/stop controls for samples in UI
+    - [x] 3.1.2 Integrate audio playback engine for `.wav` files
+    - [x] 3.1.3 Write unit tests for sample preview logic
+  - [x] 3.2 Implement preview for full kits using built-in MIDI test patterns
+    - [x] 3.2.1 Add play/stop controls for full kit preview
+    - [x] 3.2.2 Implement 4-channel, 16-step XOX-style step sequencer for kit preview
+      - [x] 3.2.2.1 Render a 4x16 step grid at the bottom of KitDetails, color-coded by voice.
+         - [x] 3.2.2.1.1 The step buttons are square
+         - [x] 3.2.2.1.2 The step buttons should ideally look like backlit LED buttons when lit.
+         - [x] 3.2.2.1.3 The grid is fixed and is not responsive to UI resizing
+         - [x] 3.2.2.1.4 The step sequencer should be visually different to the rest of the application, appearing as if its coming out of a drawer at the bottom of the app.  clicking on the edge of the control should show and hide it via animation.
+         - [x] 3.2.2.1.5 The step sequencer should be centered in the middle of its parent control
+         - [x] 3.2.2.1.6 There should be a visual separation between each 4 of the 16 steps to indicate that its a beat in the bar
+         - [x] 3.2.2.1.7 Its possible to show and hide the step sequencer.
+      - [x] 3.2.2.2 Allow mouse and keyboard navigation/toggling of steps (arrow keys, spacebar)
+      - [x] 3.2.2.3 Implement play/stop controls for sequencer playback (looping at 120 BPM)
+      - [x] 3.2.2.4 Play first sample in each voice for each active step; mute if no sample
+      - [x] 3.2.2.5 Persist pattern per kit in labels JSON file
+      - [x] 3.2.2.6 Unit tests for sequencer UI, playback, persistence, and navigation
   - [ ] 3.3 Display waveform view for each sample in the UI
     - [ ] 3.3.1 Render waveform for each sample slot
     - [ ] 3.3.2 Write unit tests for waveform rendering
@@ -149,38 +178,39 @@
     - [ ] 4.7.4 Show progress indicator and handle errors gracefully
     - [ ] 4.7.5 Write unit tests for factory restore workflow
 
-- [ ] 5.0 Implement UI/UX Structure and Navigation
-  - [ ] 5.1 Implement main kit browser and kit detail page
-    - [x] 5.1.1 Build kit browser UI with kit list and navigation
-    - [x] 5.1.2 Build kit detail page for voice/slot/sample management
-    - [x] 5.1.3 Write unit tests for browser and detail page navigation
-  - [ ] 5.2 Place action buttons at the top of the page
-    - [x] 5.2.1 Add action buttons (create kit, read SD card, write SD card, etc.) to top bar
-    - [x] 5.2.2 Write unit tests for action button functionality
-  - [ ] 5.3 Implement status bar at the bottom with pertinent information (including progress indicators)
-    - [x] 5.3.1 Build status bar UI and integrate progress indicators (visual progress bar now implemented)
-    - [x] 5.3.2 Write unit tests for status bar and progress
-  - [x] 5.4 Display information, error, and warning messages in a central location at the top of the screen
-    - [x] 5.4.1 Centralize message display logic
-    - [x] 5.4.1a Support multiple simultaneous messages (queue/stack)
-    - [x] 5.4.2 Style messages according to type (info, warning, error)
-    - [x] 5.4.3 Write unit tests for message display (including multiple messages)
-  - [ ] 5.5 Implement A-Z hotkeys and UI for bank navigation
-    - [x] 5.5.1 Add hotkey handlers for A-Z navigation
-    - [x] 5.5.2 Highlight selected bank in UI
-    - [x] 5.5.3 Write unit tests for hotkey navigation
-    - [ ] 5.5.4 Fix: A-Z hotkeys must move keyboard focus to the first kit in the selected bank
-  - [ ] 5.6 Implement keyboard navigation for kits, voices, and sample slots (arrow keys, enter, space)
-    - [ ] 5.6.1 Add keyboard event handlers for navigation
-    - [ ] 5.6.2 Disable navigation at first/last kit as appropriate
-    - [ ] 5.6.3 Write unit tests for keyboard navigation
-    - [ ] 5.6.4 Fix: Arrow key navigation must work in the kit browser grid and wrap between columns
-  - [ ] 5.7 Implement persistent light/dark mode toggle
-    - [x] 5.7.1 Add toggle UI and persist theme setting
-    - [ ] 5.7.2 Write unit tests for theme toggle and persistence
-  - [x] 5.8 Add link to Squarp Rample manual (opens in app browser)
-    - [x] 5.8.1 Add external link to manual in UI
-    - [ ] 5.8.2 Write unit tests for manual link
+- [ ] 5.0 Implement Sample Management Features
+  - [ ] 5.1 Implement drag-and-drop sample assignment to kit voices/slots in the UI
+    - [ ] 5.1.1 Add drag-and-drop handlers to kit voice/slot UI components
+    - [ ] 5.1.2 Provide visual feedback (highlight/placeholder) during drag-over
+    - [ ] 5.1.3 Support multi-file drop, enforcing slot limits and warnings
+    - [ ] 5.1.4 Write unit tests for drag-and-drop assignment and feedback
+  - [ ] 5.2 Enforce 4 voices per kit and up to 12 slots per voice in the UI
+    - [ ] 5.2.1 Render exactly 4 voices per kit in the UI
+    - [ ] 5.2.2 Limit each voice to 12 sample slots
+    - [ ] 5.2.3 Display warnings if slot/voice limits are exceeded
+    - [ ] 5.2.4 Write unit tests for slot/voice enforcement and warnings
+  - [ ] 5.3 Validate dropped files as `.wav` and display warnings for invalid files
+    - [ ] 5.3.1 Check file extensions on drop
+    - [ ] 5.3.2 Ignore invalid files and show warning message
+    - [ ] 5.3.3 Write unit tests for file validation and warning display
+  - [ ] 5.4 Prevent duplicate samples in a voice and warn for duplicates across voices
+    - [ ] 5.4.1 Check for duplicate samples within a voice and prevent assignment
+    - [ ] 5.4.2 Allow but warn for duplicates across voices in a kit
+    - [ ] 5.4.3 Write unit tests for duplicate detection and warnings
+  - [ ] 5.5 Implement stereo/mono handling and global/per-sample toggles
+    - [ ] 5.5.1 Add global stereo/mono toggle in app settings
+    - [ ] 5.5.2 Allow per-sample stereo/mono override in sample list
+    - [ ] 5.5.3 Implement logic for stereo sample slot assignment (fills two slots/voices)
+    - [ ] 5.5.4 Convert stereo samples to mono on SD sync if needed
+    - [ ] 5.5.5 Write unit tests for stereo/mono toggles and assignment logic
+  - [ ] 5.6 Store kit plan/sample assignment metadata in SQLite and persist changes immediately
+    - [ ] 5.6.1 Integrate `better-sqlite3` for local metadata storage
+    - [ ] 5.6.2 Persist all kit/sample assignment changes immediately
+    - [ ] 5.6.3 Write unit tests for persistence and data integrity
+  - [ ] 5.7 Display warnings/errors for slot/voice limit violations and duplicate samples
+    - [ ] 5.7.1 Centralize warning/error display at top of app
+    - [ ] 5.7.2 Ensure all relevant warnings/errors are triggered by UI actions
+    - [ ] 5.7.3 Write unit tests for warning/error display
 
 - [ ] 6.0 Implement Error Handling, Edge Cases, and Non-Functional Requirements
   - [ ] 6.1 Handle invalid/corrupt `.wav` files gracefully

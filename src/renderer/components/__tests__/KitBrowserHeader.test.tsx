@@ -4,6 +4,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import KitBrowserHeader from '../KitBrowserHeader';
 
+import { afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+
+afterEach(() => {
+  cleanup();
+});
+
 describe('KitBrowserHeader', () => {
   it('calls onSelectSdCard when Select SD Card button is clicked', () => {
     const onSelectSdCard = vi.fn();

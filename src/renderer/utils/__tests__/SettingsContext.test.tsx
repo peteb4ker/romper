@@ -1,6 +1,10 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, cleanup } from '@testing-library/react';
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { SettingsContext } from '../SettingsContext';
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('SettingsContext', () => {
     const mockSettingsContextValue = {

@@ -6,6 +6,7 @@ export function useKitBrowser({
   kits: externalKits,
   sdCardPath,
   onRefreshKits,
+  kitListRef, // NEW: ref to KitList
 }) {
   const kits = externalKits || [];
   const [error, setError] = useState(null);
@@ -109,6 +110,8 @@ export function useKitBrowser({
   // --- Bank selection state and logic (moved from KitBrowser) ---
   const [selectedBank, setSelectedBank] = useState<string>('A');
   const handleBankClick = (bank) => {
+    // Only scroll if the bank has kits
+    if (!kits.some(k => k[0] === bank)) return;
     const el = document.getElementById(`bank-${bank}`);
     if (el && scrollContainerRef.current) {
       const header = document.querySelector('.sticky.top-0');
@@ -120,18 +123,11 @@ export function useKitBrowser({
     }
   };
   const handleBankClickWithScroll = useCallback((bank: string) => {
+    // Only update selectedBank if the bank has kits
+    if (!kits.some(k => k[0] === bank)) return;
     setSelectedBank(bank);
     handleBankClick(bank);
-  }, [handleBankClick]);
-
-  // Provide a stable global A-Z hotkey handler for KitBrowser
-  const globalBankHotkeyHandler = useCallback((e: KeyboardEvent) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-    if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
-      handleBankClickWithScroll(e.key.toUpperCase());
-      e.preventDefault();
-    }
-  }, [handleBankClickWithScroll]);
+  }, [kits, handleBankClick]);
 
   const handleSelectSdCard = async () => {
     const selected = await window.electronAPI.selectSdCard();
@@ -139,6 +135,50 @@ export function useKitBrowser({
       window.electronAPI.setSetting('sdCardPath', selected);
     }
   };
+
+  // --- Kit focus state and A-Z navigation logic ---
+  const [focusedKit, setFocusedKit] = useState<string | null>(null);
+
+  // On kits change, focus the first kit
+  useEffect(() => {
+    if (kits && kits.length > 0) {
+      setFocusedKit(kits[0]);
+    }
+  }, [kits]);
+
+  // Global A-Z hotkey handler: select bank and focus first kit in that bank
+  const globalBankHotkeyHandler = useCallback((e: KeyboardEvent) => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
+      const bank = e.key.toUpperCase();
+      if (!kits.some(k => k[0] === bank)) return; // Only if bank has kits
+      setSelectedBank(bank);
+      handleBankClick(bank);
+      // Focus first kit in that bank
+      const firstKit = kits.find(k => k.startsWith(bank));
+      if (firstKit) setFocusedKit(firstKit);
+      e.preventDefault();
+    }
+  }, [kits, setSelectedBank, handleBankClick]);
+
+  // When selectedBank changes (e.g. via UI), focus first kit in that bank
+  useEffect(() => {
+    if (!kits.some(k => k[0] === selectedBank)) return;
+    const firstKit = kits.find(k => k.startsWith(selectedBank));
+    if (firstKit) setFocusedKit(firstKit);
+  }, [selectedBank, kits]);
+
+  // --- Shared virtualization-based bank focus/scroll logic ---
+  const focusBankInKitList = useCallback((bank: string) => {
+    const idx = kits.findIndex(k => k && typeof k === 'string' && k[0] && k[0].toUpperCase() === bank);
+    if (idx !== -1 && kitListRef && kitListRef.current && typeof kitListRef.current.scrollAndFocusKitByIndex === 'function') {
+      setSelectedBank(bank);
+      kitListRef.current.scrollAndFocusKitByIndex(idx);
+      setFocusedKit(kits[idx]);
+    } else {
+      // If no kit in that bank, do not update selectedBank or focusedKit
+    }
+  }, [kits, kitListRef]);
 
   return {
     kits,
@@ -170,7 +210,10 @@ export function useKitBrowser({
     handleBankClickWithScroll, // expose for UI
     selectedBank,
     setSelectedBank,
-    globalBankHotkeyHandler,
     handleSelectSdCard,
+    focusedKit,
+    setFocusedKit,
+    globalBankHotkeyHandler,
+    focusBankInKitList, // expose for UI
   };
 }

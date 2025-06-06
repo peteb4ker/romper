@@ -1,6 +1,9 @@
-import { vi, beforeAll } from 'vitest';
+import { vi, beforeAll, expect } from 'vitest';
 
 import { TextEncoder } from 'util';
+
+import * as matchers from '@testing-library/jest-dom/matchers';
+expect.extend(matchers);
 
 if (typeof globalThis.TextEncoder === 'undefined') {
   globalThis.TextEncoder = TextEncoder;
@@ -57,4 +60,25 @@ beforeAll(() => {
       state: 'running',
     };
   };
+
+  // Mock Worker for tests (step sequencer, etc.)
+  if (typeof globalThis.Worker === 'undefined') {
+    class MockWorker {
+      onmessage = null;
+      constructor() {}
+      postMessage(msg) {
+        // Simulate immediate step event for sequencer tests
+        if (msg.type === 'START' && this.onmessage) {
+          // Simulate a STEP event
+          setTimeout(() => {
+            this.onmessage({ data: { type: 'STEP', payload: { currentStep: 0 } } });
+          }, 1);
+        }
+      }
+      terminate() {}
+    }
+    globalThis.Worker = MockWorker;
+  }
 });
+
+// Removed electron vi.mock and getElectronMocks from global setup

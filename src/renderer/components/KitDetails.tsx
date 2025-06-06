@@ -8,12 +8,14 @@ import KitMetadataForm from './KitMetadataForm';
 import { useKitPlayback } from './hooks/useKitPlayback';
 import { useKitLabel } from './hooks/useKitLabel';
 import { useKitDetails } from './hooks/useKitDetails';
+import { useKitVoicePanel } from './hooks/useKitVoicePanel';
+import { useKitPreview } from './hooks/useKitPreview';
+import KitStepSequencer from './KitStepSequencer';
 import type { RampleKitLabel, RampleLabels, KitDetailsProps, VoiceSamples } from './kitTypes';
 import KitHeader from './KitHeader';
 import { useMessageApi } from './hooks/useMessageApi';
 
 const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onRescanAllVoiceNames?: () => void; onCreateKit?: () => void }> = (props) => {
-    const { samples, kitLabel } = props;
     const messageApi = useMessageApi();
 
     // Playback logic
@@ -25,7 +27,7 @@ const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onResc
         handlePlay,
         handleStop,
         handleWaveformPlayingChange
-    } = useKitPlayback(samples);
+    } = useKitPlayback(props.samples);
 
     // Use the shared useKitLabel hook for all label/voice rescanning logic
     const {
@@ -43,7 +45,34 @@ const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onResc
         handleSaveKitLabel,
         handleSaveKitTags,
         handleSaveKitMetadata,
+        reloadCounter, // <-- add this
+        reloadKitLabel, // <-- add this
+        stepPattern,
+        setStepPattern,
     } = useKitLabel(props);
+
+    // Full kit preview logic
+    const {
+        isPlaying: kitPreviewPlaying,
+        error: kitPreviewError,
+        handlePlayKit,
+        handleStopKit,
+        setError: setKitPreviewError
+    } = useKitPreview(props.kitName, props.samples);
+
+    // Default samples to avoid undefined errors
+    const samples = props.samples || { 1: [], 2: [], 3: [], 4: [] };
+
+    // Auto-scan logic: triggers auto-rescan if all voice names are missing and samples are loaded
+    useKitDetails({
+        kitLabel: managedKitLabel,
+        samples,
+        sdCardPath: props.sdCardPath,
+        kitName: props.kitName,
+        onRescanAllVoiceNames: () => handleRescanAllVoiceNames(samples)
+    });
+
+    // Remove reloadCounter effect: no need to force reload, hook handles it
 
     // Show playback errors via centralized message display
     React.useEffect(() => {
@@ -59,8 +88,15 @@ const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onResc
         }
     }, [labelsError]);
 
+    // Show kit preview errors via centralized message display
+    React.useEffect(() => {
+        if (kitPreviewError) {
+            messageApi.showMessage({ type: 'error', text: kitPreviewError });
+        }
+    }, [kitPreviewError]);
+
     return (
-        <div className="flex flex-col flex-1 min-h-0 h-full p-2 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-sm shadow">
+        <div className="flex flex-col flex-1 min-h-0 h-full p-2 pb-0 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-sm shadow">
             <KitHeader
                 kitName={props.kitName}
                 kitLabel={managedKitLabel}
@@ -73,6 +109,7 @@ const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onResc
                 // Always show navigation buttons, but disable as needed
                 disablePrev={props.kitIndex === 0}
                 disableNext={props.kits && props.kitIndex === (props.kits.length - 1)}
+                onRescanAllVoiceNames={() => handleRescanAllVoiceNames(samples)}
             />
             <KitMetadataForm
                 kitLabel={managedKitLabel}
@@ -89,25 +126,39 @@ const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onResc
             <div className="flex-1 min-h-0 overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[1, 2, 3, 4].map((voice) => (
-                        <KitVoicePanel
-                            key={`${props.kitName}-${voice}`}
-                            voice={voice}
-                            samples={samples[voice] || []}
-                            voiceName={managedKitLabel?.voiceNames?.[voice] || null}
-                            onSaveVoiceName={handleSaveVoiceName}
-                            onRescanVoiceName={() => handleRescanVoiceName(voice, samples)}
-                            samplePlaying={samplePlaying}
-                            playTriggers={playTriggers}
-                            stopTriggers={stopTriggers}
-                            onPlay={handlePlay}
-                            onStop={handleStop}
-                            onWaveformPlayingChange={handleWaveformPlayingChange}
-                            sdCardPath={props.sdCardPath}
-                            kitName={props.kitName}
-                        />
+                        <div
+                            key={`${props.kitName}-voicepanel-${voice}`}
+                            onClick={() => {/* no-op or optional: could call a callback if needed */}}
+                            data-testid={`voice-panel-${voice}`}
+                        >
+                            <KitVoicePanel
+                                voice={voice}
+                                samples={samples[voice] || []}
+                                voiceName={managedKitLabel?.voiceNames?.[voice] || null}
+                                onSaveVoiceName={handleSaveVoiceName}
+                                onRescanVoiceName={() => handleRescanVoiceName(voice, samples)}
+                                samplePlaying={samplePlaying}
+                                playTriggers={playTriggers}
+                                stopTriggers={stopTriggers}
+                                onPlay={handlePlay}
+                                onStop={handleStop}
+                                onWaveformPlayingChange={handleWaveformPlayingChange}
+                                sdCardPath={props.sdCardPath}
+                                kitName={props.kitName}
+                                // Add data-testid for voice name span for robust test selection
+                                dataTestIdVoiceName={`voice-name-${voice}`}
+                            />
+                        </div>
                     ))}
                 </div>
             </div>
+            {/* Step Sequencer Drawer */}
+            <KitStepSequencer
+                samples={samples}
+                onPlaySample={handlePlay}
+                stepPattern={stepPattern}
+                setStepPattern={setStepPattern}
+            />
         </div>
     );
 };

@@ -3,6 +3,13 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import SampleWaveform from '../SampleWaveform';
+import { afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+
+afterEach(() => {
+  cleanup();
+});
+
 
 describe('SampleWaveform', () => {
   it('renders the waveform canvas and filename', () => {

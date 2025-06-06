@@ -1,19 +1,28 @@
+vi.mock('electron', () => {
+  const mockContextBridge = { exposeInMainWorld: vi.fn() };
+  const mockIpcRenderer = {
+    invoke: vi.fn(),
+    on: vi.fn(),
+    removeAllListeners: vi.fn(),
+  };
+  const mockWebUtils = { getPathForFile: vi.fn() };
+  return {
+    contextBridge: mockContextBridge,
+    ipcRenderer: mockIpcRenderer,
+    webUtils: mockWebUtils,
+  };
+});
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as electron from 'electron';
 
-// Use manual mocks for Electron APIs
-const mockContextBridge = { exposeInMainWorld: vi.fn() };
-const mockIpcRenderer = {
-  invoke: vi.fn(),
-  on: vi.fn(),
-  removeAllListeners: vi.fn(),
-};
-const mockWebUtils = { getPathForFile: vi.fn() };
-
-vi.mock('electron', () => ({
-  contextBridge: mockContextBridge,
-  ipcRenderer: mockIpcRenderer,
-  webUtils: mockWebUtils,
-}));
+function getElectronMocks() {
+  return {
+    mockContextBridge: electron.contextBridge,
+    mockIpcRenderer: electron.ipcRenderer,
+    mockWebUtils: electron.webUtils,
+  };
+}
 
 describe('preload/index.tsx', () => {
   beforeEach(() => {
@@ -22,9 +31,8 @@ describe('preload/index.tsx', () => {
   });
 
   it('exposes electronAPI in main world', async () => {
-    // Only import the logic you want to test, not the full preload script
-    // await import('../index'); // REMOVE THIS LINE
-    // Instead, directly test the mockContextBridge
+    await import('../index');
+    const { mockContextBridge } = getElectronMocks();
     expect(mockContextBridge.exposeInMainWorld).toHaveBeenCalledWith(
       'electronAPI',
       expect.objectContaining({
@@ -51,7 +59,8 @@ describe('preload/index.tsx', () => {
   });
 
   it('exposes electronFileAPI in main world', async () => {
-    // await import('../index'); // REMOVE THIS LINE
+    await import('../index');
+    const { mockContextBridge } = getElectronMocks();
     expect(mockContextBridge.exposeInMainWorld).toHaveBeenCalledWith(
       'electronFileAPI',
       expect.objectContaining({
@@ -61,7 +70,8 @@ describe('preload/index.tsx', () => {
   });
 
   it('calls ipcRenderer.invoke for scanSdCard', async () => {
-    // await import('../index'); // REMOVE THIS LINE
+    await import('../index');
+    const { mockContextBridge, mockIpcRenderer } = getElectronMocks();
     const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
     mockIpcRenderer.invoke.mockResolvedValue(['file1', 'file2']);
     const result = await api.scanSdCard('/mock/sd');
@@ -70,7 +80,8 @@ describe('preload/index.tsx', () => {
   });
 
   it('calls webUtils.getPathForFile for getDroppedFilePath', async () => {
-    // await import('../index'); // REMOVE THIS LINE
+    await import('../index');
+    const { mockContextBridge, mockWebUtils } = getElectronMocks();
     const fileApi = mockContextBridge.exposeInMainWorld.mock?.calls.find(c => c[0] === 'electronFileAPI')?.[1];
     const file = {};
     mockWebUtils.getPathForFile.mockResolvedValue('/mock/path');

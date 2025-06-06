@@ -116,16 +116,23 @@ describe('KitList', () => {
       });
     });
   });
-});
 
-describe('KitList keyboard navigation', () => {
-  // Use unique kit names to avoid testID collisions with previous tests
-  const kits = ['C1', 'C2', 'D1', 'D2'];
-  const kitLabels = { C1: { label: 'Kick' }, C2: { label: 'Snare' }, D1: { label: 'Hat' }, D2: { label: 'Tom' } };
-  const bankNames = { C: 'Drums', D: 'Perc' };
-  const sampleCounts = { C1: [1, 2, 3, 4], C2: [2, 2, 2, 2], D1: [0, 1, 0, 1], D2: [1, 1, 1, 1] };
+  it('focuses only the first kit on load', () => {
+    render(
+      <KitList
+        kits={kits}
+        onSelectKit={vi.fn()}
+        bankNames={bankNames}
+        onDuplicate={vi.fn()}
+        sdCardPath="/sd"
+        kitLabels={kitLabels}
+        sampleCounts={sampleCounts}
+      />
+    );
+    expectOnlySelected(kits, 'A1');
+  });
 
-  it('ArrowDown moves focus to next kit', () => {
+  it('A-Z hotkey focuses only the first kit in the selected bank', () => {
     render(
       <KitList
         kits={kits}
@@ -139,13 +146,13 @@ describe('KitList keyboard navigation', () => {
     );
     const list = screen.getByLabelText('Kit list');
     list.focus();
-    fireEvent.keyDown(list, { key: 'ArrowDown' });
-    expectOnlySelected(kits, 'C2');
-    fireEvent.keyDown(list, { key: 'ArrowDown' });
-    expectOnlySelected(kits, 'D1');
+    fireEvent.keyDown(list, { key: 'B' });
+    expectOnlySelected(kits, 'B1');
+    fireEvent.keyDown(list, { key: 'A' });
+    expectOnlySelected(kits, 'A1');
   });
 
-  it('ArrowUp moves focus to previous kit', () => {
+  it('selected kit has persistent highlight even if focus moves away', () => {
     render(
       <KitList
         kits={kits}
@@ -159,13 +166,18 @@ describe('KitList keyboard navigation', () => {
     );
     const list = screen.getByLabelText('Kit list');
     list.focus();
-    fireEvent.keyDown(list, { key: 'ArrowDown' });
-    fireEvent.keyDown(list, { key: 'ArrowDown' });
-    fireEvent.keyDown(list, { key: 'ArrowUp' });
-    expectOnlySelected(kits, 'C2');
+    fireEvent.keyDown(list, { key: 'B' });
+    const selected = getKitItem('B1');
+    // Move focus away: focus the duplicate button
+    const duplicateBtn = within(selected).getByTitle('Duplicate kit');
+    duplicateBtn.focus();
+    // The selected kit should still have the highlight class
+    expect(selected.className).toMatch(/ring-2.*ring-blue-400/);
+    // And aria-selected should still be true
+    expect(selected.getAttribute('aria-selected')).toBe('true');
   });
 
-  it('A-Z hotkey moves focus to first kit in that bank', () => {
+  it('left and right arrow keys do not change selection (no-op for single column)', () => {
     render(
       <KitList
         kits={kits}
@@ -179,16 +191,35 @@ describe('KitList keyboard navigation', () => {
     );
     const list = screen.getByLabelText('Kit list');
     list.focus();
-    fireEvent.keyDown(list, { key: 'D' });
-    expectOnlySelected(kits, 'D1');
+    // Initial focus is on A1
+    expectOnlySelected(kits, 'A1');
+    fireEvent.keyDown(list, { key: 'ArrowRight' });
+    expectOnlySelected(kits, 'A1');
+    fireEvent.keyDown(list, { key: 'ArrowLeft' });
+    expectOnlySelected(kits, 'A1');
+    // Move to B1
+    fireEvent.keyDown(list, { key: 'B' });
+    expectOnlySelected(kits, 'B1');
+    // ArrowRight/ArrowLeft still do nothing
+    fireEvent.keyDown(list, { key: 'ArrowRight' });
+    expectOnlySelected(kits, 'B1');
+    fireEvent.keyDown(list, { key: 'ArrowLeft' });
+    expectOnlySelected(kits, 'B1');
   });
 
-  it('Enter selects the focused kit', () => {
-    const onSelectKit = vi.fn();
+  it('renders deduped voice label sets for each kit', () => {
+    const kits = ['A1', 'A2', 'B1'];
+    const kitLabels = {
+      A1: { label: 'Kick', voiceNames: { 1: 'kick', 2: 'snare', 3: 'kick', 4: '' } },
+      A2: { label: 'Snare', voiceNames: { 1: 'snare', 2: 'snare', 3: '', 4: 'hat' } },
+      B1: { label: 'Hat', voiceNames: { 1: '', 2: '', 3: '', 4: '' } },
+    };
+    const bankNames = { A: 'Drums', B: 'Perc' };
+    const sampleCounts = { A1: [1, 2, 3, 4], A2: [2, 2, 2, 2], B1: [0, 1, 0, 1] };
     render(
       <KitList
         kits={kits}
-        onSelectKit={onSelectKit}
+        onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
         sdCardPath="/sd"
@@ -196,11 +227,19 @@ describe('KitList keyboard navigation', () => {
         sampleCounts={sampleCounts}
       />
     );
-    const list = screen.getByLabelText('Kit list');
-    list.focus();
-    fireEvent.keyDown(list, { key: 'ArrowDown' });
-    fireEvent.keyDown(list, { key: 'Enter' });
-    expect(onSelectKit).toHaveBeenCalledWith('C2');
+    // A1 should show 'Kick' and 'Snare' (deduped, capitalized)
+    const kitA1 = getKitItem('A1');
+    expect(within(kitA1).getByText('Kick')).toBeDefined();
+    expect(within(kitA1).getByText('Snare')).toBeDefined();
+    // A2 should show 'Snare' and 'Hat' (deduped, capitalized)
+    const kitA2 = getKitItem('A2');
+    expect(within(kitA2).getByText('Snare')).toBeDefined();
+    expect(within(kitA2).getByText('Hat')).toBeDefined();
+    // B1 should not show any voice tags
+    const kitB1 = getKitItem('B1');
+    expect(within(kitB1).queryByText('Kick')).toBeNull();
+    expect(within(kitB1).queryByText('Snare')).toBeNull();
+    expect(within(kitB1).queryByText('Hat')).toBeNull();
   });
 });
 

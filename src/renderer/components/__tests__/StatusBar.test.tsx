@@ -3,6 +3,12 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import StatusBar from '../StatusBar';
+import { afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+
+afterEach(() => {
+  cleanup();
+});
 
 // Mock useSettings to provide stable test values
 vi.mock('../../utils/SettingsContext', () => ({
@@ -38,5 +44,14 @@ describe('StatusBar', () => {
     const innerDiv = progressBar.querySelector('div');
     expect(innerDiv).not.toBeNull();
     expect(innerDiv?.style.width).toBe('42%');
+  });
+
+  it('renders a manual link to the Squarp Rample manual', () => {
+    render(<StatusBar />);
+    const manualLink = screen.getByRole('link', { name: /rample manual/i });
+    expect(manualLink).toBeInTheDocument();
+    expect(manualLink).toHaveAttribute('href', 'https://squarp.net/rample/manual/');
+    expect(manualLink).toHaveAttribute('target', '_blank');
+    expect(manualLink).toHaveAttribute('rel', expect.stringContaining('noopener'));
   });
 });

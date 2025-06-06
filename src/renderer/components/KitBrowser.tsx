@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import KitBrowserHeader from './KitBrowserHeader';
-import KitList from './KitList';
+import KitList, { KitListHandle } from './KitList';
 import KitDialogs from './KitDialogs';
 import KitBankNav from './KitBankNav';
 import { useKitBrowser } from './hooks/useKitBrowser';
@@ -13,11 +13,13 @@ interface KitBrowserProps {
     kitLabels: { [kit: string]: RampleKitLabel };
     onRescanAllVoiceNames: () => void;
     sampleCounts?: Record<string, [number, number, number, number]>;
+    voiceLabelSets?: Record<string, string[]>;
     onRefreshKits?: () => void;
 }
 
 const KitBrowser: React.FC<KitBrowserProps> = (props) => {
-    const logic = useKitBrowser(props);
+    const kitListRef = useRef<KitListHandle>(null);
+    const logic = useKitBrowser({ ...props, kitListRef });
     const {
         kits,
         error,
@@ -40,8 +42,9 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         handleDuplicateKit,
         handleBankClick,
         handleSelectSdCard,
-        handleBankClickWithScroll,
         selectedBank,
+        focusedKit,
+        setFocusedKit,
         globalBankHotkeyHandler,
     } = logic;
     const messageApi = useMessageApi();
@@ -57,11 +60,35 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         }
     }, [error]);
 
-    // Enable global A-Z navigation for bank selection
+    // Register global A-Z navigation for bank selection and kit focus
     React.useEffect(() => {
         window.addEventListener('keydown', globalBankHotkeyHandler);
         return () => window.removeEventListener('keydown', globalBankHotkeyHandler);
     }, [globalBankHotkeyHandler]);
+
+    // Find the first kit index for a given bank letter
+    const scrollToBank = (bank: string) => {
+        const kitsArr = kits || [];
+        const idx = kitsArr.findIndex(k => k && typeof k === 'string' && k[0] && k[0].toUpperCase() === bank);
+        if (idx !== -1 && kitListRef.current) {
+            kitListRef.current.scrollAndFocusKitByIndex(idx);
+        }
+    };
+
+    // Handler for KitBankNav and KitList keyboard navigation
+    const focusBankInKitList = (bank: string) => {
+        if (logic.focusBankInKitList) logic.focusBankInKitList(bank);
+    };
+
+    // Handler for KitBankNav (renamed to avoid conflict)
+    const onBankClickWithScroll = (bank: string) => {
+        focusBankInKitList(bank);
+    };
+
+    // Handler for KitList keyboard navigation to update selectedBank
+    const handleBankFocus = (bank: string) => {
+        focusBankInKitList(bank);
+    };
 
     return (
         <div
@@ -75,7 +102,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
                 onCreateNextKit={handleCreateNextKit}
                 nextKitSlot={nextKitSlot}
                 bankNav={
-                    <KitBankNav kits={kits} onBankClick={handleBankClickWithScroll} bankNames={bankNames} selectedBank={selectedBank} />
+                    <KitBankNav kits={kits} onBankClick={onBankClickWithScroll} bankNames={bankNames} selectedBank={selectedBank} />
                 }
             />
             <KitDialogs
@@ -95,6 +122,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
             />
             <div className="flex-1 min-h-0">
                 <KitList
+                    ref={kitListRef}
                     kits={kits}
                     onSelectKit={props.onSelectKit}
                     bankNames={bankNames}
@@ -102,10 +130,13 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
                     sdCardPath={props.sdCardPath || ''}
                     kitLabels={props.kitLabels}
                     sampleCounts={props.sampleCounts}
+                    voiceLabelSets={props.voiceLabelSets}
+                    focusedKit={focusedKit}
+                    onBankFocus={handleBankFocus}
                 />
             </div>
         </div>
     );
 };
 
-export default KitBrowser;
+export default React.memo(KitBrowser);

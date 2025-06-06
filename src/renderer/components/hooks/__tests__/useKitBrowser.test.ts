@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useKitBrowserLogic } from '../useKitBrowserLogic';
+import { useKitBrowser } from '../useKitBrowser';
 import { getNextKitSlot } from '../../kitUtils';
 
 // Mock kitUtils
@@ -37,9 +37,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('useKitBrowserLogic', () => {
+describe('useKitBrowser', () => {
   it('initializes with default state', () => {
-    const { result } = renderHook(() => useKitBrowserLogic({ kits: ['A1'], sdCardPath: '/sd', onRefreshKits: undefined }));
+    const { result } = renderHook(() => useKitBrowser({ kits: ['A1'], sdCardPath: '/sd', onRefreshKits: undefined }));
     expect(result.current.kits).toEqual(['A1']);
     expect(result.current.showNewKit).toBe(false);
     expect(result.current.newKitSlot).toBe('');
@@ -49,7 +49,7 @@ describe('useKitBrowserLogic', () => {
   it('sets nextKitSlot when kits change', () => {
     // Ensure getNextKitSlot mock returns 'A1' for this test
     getNextKitSlot.mockReturnValue('A1');
-    const { result, rerender } = renderHook(({ kits }) => useKitBrowserLogic({ kits, sdCardPath: '/sd' }), { initialProps: { kits: ['A1'] } });
+    const { result, rerender } = renderHook(({ kits }) => useKitBrowser({ kits, sdCardPath: '/sd' }), { initialProps: { kits: ['A1'] } });
     expect(result.current.nextKitSlot).toBe('A1');
     rerender({ kits: ['A1', 'B2'] });
     expect(result.current.nextKitSlot).toBe('A1'); // Because of the mock
@@ -57,7 +57,7 @@ describe('useKitBrowserLogic', () => {
 
   it('loads bankNames from rtf files', async () => {
     mockListFilesInRoot.mockResolvedValue(['A - alpha.rtf', 'B - beta.rtf', 'foo.txt']);
-    const { result } = renderHook(() => useKitBrowserLogic({ kits: ['A1'], sdCardPath: '/sd' }));
+    const { result } = renderHook(() => useKitBrowser({ kits: ['A1'], sdCardPath: '/sd' }));
     // Wait for useEffect
     await act(async () => {
       await Promise.resolve();
@@ -68,7 +68,7 @@ describe('useKitBrowserLogic', () => {
   it('handleCreateKit validates and calls electronAPI', async () => {
     mockCreateKit.mockResolvedValue(undefined);
     const onRefreshKits = vi.fn();
-    const { result } = renderHook(() => useKitBrowserLogic({ kits: ['A1'], sdCardPath: '/sd', onRefreshKits }));
+    const { result } = renderHook(() => useKitBrowser({ kits: ['A1'], sdCardPath: '/sd', onRefreshKits }));
     act(() => { result.current.setNewKitSlot('A2'); });
     await act(async () => {
       await result.current.handleCreateKit();
@@ -78,7 +78,7 @@ describe('useKitBrowserLogic', () => {
   });
 
   it('handleCreateKit sets error for invalid slot', async () => {
-    const { result } = renderHook(() => useKitBrowserLogic({ kits: ['A1'], sdCardPath: '/sd' }));
+    const { result } = renderHook(() => useKitBrowser({ kits: ['A1'], sdCardPath: '/sd' }));
     act(() => { result.current.setNewKitSlot('bad'); });
     await act(async () => {
       await result.current.handleCreateKit();
@@ -89,7 +89,7 @@ describe('useKitBrowserLogic', () => {
   it('handleDuplicateKit validates and calls electronAPI', async () => {
     mockCopyKit.mockResolvedValue(undefined);
     const onRefreshKits = vi.fn();
-    const { result } = renderHook(() => useKitBrowserLogic({ kits: ['A1'], sdCardPath: '/sd', onRefreshKits }));
+    const { result } = renderHook(() => useKitBrowser({ kits: ['A1'], sdCardPath: '/sd', onRefreshKits }));
     await act(async () => {
       result.current.setDuplicateKitSource('A1');
       result.current.setDuplicateKitDest('B2');
@@ -108,7 +108,7 @@ describe('useKitBrowserLogic', () => {
     const container = { getBoundingClientRect, scrollTop: 0, scrollTo };
     vi.spyOn(document, 'getElementById').mockReturnValue(el as any);
     vi.spyOn(document, 'querySelector').mockReturnValue({ offsetHeight: 0 } as any);
-    const { result } = renderHook(() => useKitBrowserLogic({ kits: ['A1'], sdCardPath: '/sd' }));
+    const { result } = renderHook(() => useKitBrowser({ kits: ['A1'], sdCardPath: '/sd' }));
     result.current.scrollContainerRef.current = container as any;
     act(() => {
       result.current.handleBankClick('A');

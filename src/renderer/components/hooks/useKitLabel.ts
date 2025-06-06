@@ -10,6 +10,8 @@ export function useKitLabel(props: KitDetailsProps) {
     const [editingKitLabel, setEditingKitLabel] = useState(false);
     const [kitLabelInput, setKitLabelInput] = useState('');
     const [metadataChanged, setMetadataChanged] = useState(false);
+    const [reloadCounter, setReloadCounter] = useState(0);
+    const [stepPattern, setStepPatternState] = useState<boolean[][] | null>(null);
 
     useEffect(() => {
         if (!sdCardPath || !kitName) return;
@@ -37,6 +39,16 @@ export function useKitLabel(props: KitDetailsProps) {
     useEffect(() => {
         setKitLabelInput(kitLabel?.label || '');
     }, [kitLabel?.label]);
+
+    // Load stepPattern from kitLabel when it changes
+    useEffect(() => {
+        if (kitLabel && kitLabel.stepPattern) {
+            setStepPatternState(kitLabel.stepPattern);
+        } else {
+            // Default: 4x16 false
+            setStepPatternState(Array.from({ length: 4 }, () => Array(16).fill(false)));
+        }
+    }, [kitLabel]);
 
     // --- Utility: updateKitLabel ---
     async function updateKitLabel(update: (kit: RampleKitLabel) => void) {
@@ -88,18 +100,14 @@ export function useKitLabel(props: KitDetailsProps) {
         let inferredName: string | null = null;
         for (const sample of samples) {
             const type = inferVoiceTypeFromFilename(sample);
-            // Debug logging
-            console.log(`[RescanVoiceName] Voice ${voice}, Sample: ${sample}, Inferred: ${type}`);
             if (type) { inferredName = type; break; }
         }
         const newVoiceNames: { [key: number]: string } = { 1: '', 2: '', 3: '', 4: '', ...(kitLabel?.voiceNames || {}) };
         newVoiceNames[voice] = inferredName || '';
-        // Debug logging
-        console.log(`[RescanVoiceName] Final inferred name for voice ${voice}:`, newVoiceNames[voice]);
         const kit = await updateKitLabel((kit) => {
             kit.voiceNames = newVoiceNames;
         });
-        setKitLabel(kit);
+        await reloadKitLabel();
     };
     const handleRescanAllVoiceNames = async (voices: { [key: number]: string[] } | undefined) => {
         if (!sdCardPath || !kitName) return;
@@ -110,18 +118,41 @@ export function useKitLabel(props: KitDetailsProps) {
             let inferredName: string | null = null;
             for (const sample of samplesForVoice) {
                 const type = inferVoiceTypeFromFilename(sample);
-                // Debug logging
-                console.log(`[RescanAllVoiceNames] Voice ${voice}, Sample: ${sample}, Inferred: ${type}`);
                 if (type) { inferredName = type; break; }
             }
             newVoiceNames[voice] = inferredName || '';
-            // Debug logging
-            console.log(`[RescanAllVoiceNames] Final inferred name for voice ${voice}:`, newVoiceNames[voice]);
         }
         const kit = await updateKitLabel((kit) => {
             kit.voiceNames = newVoiceNames;
         });
+        await reloadKitLabel();
+    };
+
+    const reloadKitLabel = async () => {
+        if (!sdCardPath || !kitName) return;
+        // @ts-ignore
+        const labels: RampleLabels = await window.electronAPI.readRampleLabels(sdCardPath) || { kits: {} };
+        let kit: RampleKitLabel | null = null;
+        if (labels && labels.kits && labels.kits[kitName]) {
+            kit = labels.kits[kitName];
+        } else if (kitName) {
+            kit = { label: kitName };
+        }
+        if (kit) {
+            if (!kit.voiceNames) kit.voiceNames = { 1: '', 2: '', 3: '', 4: '' };
+        }
         setKitLabel(kit);
+        setReloadCounter(c => c + 1);
+    };
+
+    // Save stepPattern to disk and update kitLabel
+    const setStepPattern = async (pattern: boolean[][]) => {
+        setStepPatternState(pattern);
+        if (!sdCardPath || !kitName) return;
+        const kit = await updateKitLabel((kit) => {
+            kit.stepPattern = pattern;
+        });
+        setKitLabel({ ...kit });
     };
 
     return {
@@ -141,5 +172,9 @@ export function useKitLabel(props: KitDetailsProps) {
         handleRescanAllVoiceNames,
         metadataChanged,
         setMetadataChanged,
+        reloadCounter,
+        reloadKitLabel, // <-- expose reloadKitLabel
+        stepPattern,
+        setStepPattern,
     };
 }

@@ -1,6 +1,7 @@
 // Test suite for useKitSamples hook
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useKitSamples } from '../useKitSamples';
 
 describe('useKitSamples', () => {
@@ -28,10 +29,9 @@ describe('useKitSamples', () => {
 
   it('loads samples from electronAPI and infers voiceNames', async () => {
     listFilesInRoot.mockResolvedValue(['1 Kick.wav', '2 Snare.wav', '3 Hat.wav', '4 Tom.wav']);
-    const { result, waitForNextUpdate } = renderHook(() => useKitSamples({ kitName, sdCardPath }, setKitLabel));
-    // Wait for async effect
+    const { result } = renderHook(() => useKitSamples({ kitName, sdCardPath }, setKitLabel));
     await act(async () => {
-      await waitForNextUpdate();
+      await waitFor(() => result.current.loading === false);
     });
     expect(listFilesInRoot).toHaveBeenCalledWith(kitPath);
     expect(result.current.samples[1]).toContain('1 Kick.wav');
@@ -43,9 +43,9 @@ describe('useKitSamples', () => {
 
   it('sets error if electronAPI fails', async () => {
     listFilesInRoot.mockRejectedValue(new Error('fail!'));
-    const { result, waitForNextUpdate } = renderHook(() => useKitSamples({ kitName, sdCardPath }, setKitLabel));
+    const { result } = renderHook(() => useKitSamples({ kitName, sdCardPath }, setKitLabel));
     await act(async () => {
-      await waitForNextUpdate();
+      await waitFor(() => result.current.loading === false);
     });
     expect(result.current.error).toBe('Failed to load kit samples.');
     expect(result.current.loading).toBe(false);

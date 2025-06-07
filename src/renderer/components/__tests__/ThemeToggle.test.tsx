@@ -1,11 +1,12 @@
 // Test suite for ThemeToggle component
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import ThemeToggle from '../ThemeToggle';
-
-import { afterEach } from 'vitest';
+import { fireEvent,render, screen } from '@testing-library/react';
 import { cleanup } from '@testing-library/react';
+import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { afterEach } from 'vitest';
+
+import { TestSettingsProvider } from '../../views/__tests__/TestSettingsProvider';
+import ThemeToggle from '../ThemeToggle';
 
 afterEach(() => {
   cleanup();
@@ -13,21 +14,24 @@ afterEach(() => {
 
 describe('ThemeToggle', () => {
   it('renders the toggle button', () => {
-    render(<ThemeToggle darkMode={false} onToggle={vi.fn()} />);
+    render(
+      <TestSettingsProvider>
+        <ThemeToggle />
+      </TestSettingsProvider>
+    );
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
-  it('calls onToggle when clicked', () => {
-    const onToggle = vi.fn();
-    render(<ThemeToggle darkMode={false} onToggle={onToggle} />);
-    fireEvent.click(screen.getByRole('button'));
-    expect(onToggle).toHaveBeenCalled();
-  });
-
-  it('shows correct icon for dark and light mode', () => {
-    const { rerender } = render(<ThemeToggle darkMode={false} onToggle={vi.fn()} />);
-    expect(screen.getByTitle(/light|sun|day/i)).toBeInTheDocument();
-    rerender(<ThemeToggle darkMode={true} onToggle={vi.fn()} />);
-    expect(screen.getByTitle(/dark|moon|night/i)).toBeInTheDocument();
+  it('toggles dark mode when clicked', () => {
+    render(
+      <TestSettingsProvider>
+        <ThemeToggle />
+      </TestSettingsProvider>
+    );
+    const button = screen.getByRole('button');
+    expect(button).toHaveTextContent('Enable Dark Mode');
+    fireEvent.click(button);
+    // After click, should show 'Disable Dark Mode'
+    expect(button).toHaveTextContent('Disable Dark Mode');
   });
 });

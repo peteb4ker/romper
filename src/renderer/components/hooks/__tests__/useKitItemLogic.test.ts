@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { useKitItem } from '../useKitItem';
 import { renderHook } from '@testing-library/react';
+import { describe, expect,it } from 'vitest';
+
+import { useKitItem } from '../useKitItem';
 
 describe('useKitItem', () => {
   it('returns folder iconType and label if no voiceNames', () => {

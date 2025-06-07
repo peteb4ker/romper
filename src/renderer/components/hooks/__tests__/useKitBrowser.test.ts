@@ -1,7 +1,8 @@
-import { renderHook, act } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useKitBrowser } from '../useKitBrowser';
+import { act,renderHook } from '@testing-library/react';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { getNextKitSlot } from '../../kitUtils';
+import { useKitBrowser } from '../useKitBrowser';
 
 // Mock kitUtils
 vi.mock('../../kitUtils', () => ({

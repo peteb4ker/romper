@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { groupSamplesByVoice, inferVoiceTypeFromFilename } from '../kitUtils';
+import { useEffect,useState } from 'react';
+
 import { KitDetailsProps } from '../kitTypes';
+import { groupSamplesByVoice, inferVoiceTypeFromFilename } from '../kitUtils';
 
 export function useKitSamples(props: KitDetailsProps, setKitLabel: (label: any) => void) {
     const { kitName, sdCardPath, samples: propSamples } = props;

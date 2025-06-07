@@ -1,8 +1,9 @@
 // Test suite for KitsView component
-import { describe, it, beforeEach, afterEach, vi, expect } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
-import { TestSettingsProvider } from './TestSettingsProvider';
+import { cleanup,fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect,it, vi } from 'vitest';
+
 import KitsView from '../KitsView';
+import { TestSettingsProvider } from './TestSettingsProvider';
 
 describe('KitsView', () => {
   beforeEach(() => {
@@ -30,7 +31,11 @@ describe('KitsView', () => {
     cleanup();
   });
   it('renders KitBrowser with kits', async () => {
-    render(<TestSettingsProvider><KitsView /></TestSettingsProvider>);
+    render(
+      <TestSettingsProvider>
+        <KitsView />
+      </TestSettingsProvider>
+    );
     // There may be multiple elements with the same kit label, so use findAllByText
     const kitA0s = await screen.findAllByText('A0');
     const kitA1s = await screen.findAllByText('A1');

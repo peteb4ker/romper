@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { RampleKitLabel, RampleLabels, KitDetailsProps } from '../kitTypes';
+import { useEffect, useRef,useState } from 'react';
+
+import { KitDetailsProps,RampleKitLabel, RampleLabels } from '../kitTypes';
 import { groupSamplesByVoice, inferVoiceTypeFromFilename } from '../kitUtils';
 
 export function useKitLabel(props: KitDetailsProps) {
@@ -10,7 +11,6 @@ export function useKitLabel(props: KitDetailsProps) {
     const [editingKitLabel, setEditingKitLabel] = useState(false);
     const [kitLabelInput, setKitLabelInput] = useState('');
     const [metadataChanged, setMetadataChanged] = useState(false);
-    const [reloadCounter, setReloadCounter] = useState(0);
     const [stepPattern, setStepPatternState] = useState<boolean[][] | null>(null);
 
     useEffect(() => {
@@ -142,7 +142,6 @@ export function useKitLabel(props: KitDetailsProps) {
             if (!kit.voiceNames) kit.voiceNames = { 1: '', 2: '', 3: '', 4: '' };
         }
         setKitLabel(kit);
-        setReloadCounter(c => c + 1);
     };
 
     // Save stepPattern to disk and update kitLabel
@@ -172,8 +171,7 @@ export function useKitLabel(props: KitDetailsProps) {
         handleRescanAllVoiceNames,
         metadataChanged,
         setMetadataChanged,
-        reloadCounter,
-        reloadKitLabel, // <-- expose reloadKitLabel
+        reloadKitLabel,
         stepPattern,
         setStepPattern,
     };

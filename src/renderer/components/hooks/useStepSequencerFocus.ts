@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback,useState } from 'react';
 
 export function useStepSequencerFocus(numVoices: number, numSteps: number) {
   const [focusedStep, setFocusedStep] = useState<{ voice: number; step: number }>({ voice: 0, step: 0 });

@@ -1,10 +1,10 @@
 import React, { useRef } from 'react';
-import KitBrowserHeader from './KitBrowserHeader';
-import KitList, { KitListHandle } from './KitList';
-import KitDialogs from './KitDialogs';
-import KitBankNav from './KitBankNav';
+
 import { useKitBrowser } from './hooks/useKitBrowser';
-import { useMessageApi } from './hooks/useMessageApi';
+import KitBankNav from './KitBankNav';
+import KitBrowserHeader from './KitBrowserHeader';
+import KitDialogs from './KitDialogs';
+import KitList, { KitListHandle } from './KitList';
 
 interface KitBrowserProps {
     onSelectKit: (kitName: string) => void;
@@ -15,11 +15,12 @@ interface KitBrowserProps {
     sampleCounts?: Record<string, [number, number, number, number]>;
     voiceLabelSets?: Record<string, string[]>;
     onRefreshKits?: () => void;
+    onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
 }
 
 const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     const kitListRef = useRef<KitListHandle>(null);
-    const logic = useKitBrowser({ ...props, kitListRef });
+    const logic = useKitBrowser({ ...props, kitListRef, onMessage: props.onMessage });
     const {
         kits,
         error,
@@ -47,18 +48,17 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         setFocusedKit,
         globalBankHotkeyHandler,
     } = logic;
-    const messageApi = useMessageApi();
 
     React.useEffect(() => {
-        if (sdCardWarning) {
-            messageApi.showMessage(sdCardWarning, 'warning', 5000);
+        if (logic.sdCardWarning && props.onMessage) {
+            props.onMessage({ text: logic.sdCardWarning, type: 'warning', duration: 5000 });
         }
-    }, [sdCardWarning]);
+    }, [logic.sdCardWarning, props.onMessage]);
     React.useEffect(() => {
-        if (error) {
-            messageApi.showMessage(error, 'error', 7000);
+        if (logic.error && props.onMessage) {
+            props.onMessage({ text: logic.error, type: 'error', duration: 7000 });
         }
-    }, [error]);
+    }, [logic.error, props.onMessage]);
 
     // Register global A-Z navigation for bank selection and kit focus
     React.useEffect(() => {
@@ -133,6 +133,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
                     voiceLabelSets={props.voiceLabelSets}
                     focusedKit={focusedKit}
                     onBankFocus={handleBankFocus}
+                    onFocusKit={setFocusedKit} // NEW: keep parent in sync
                 />
             </div>
         </div>

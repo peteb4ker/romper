@@ -1,12 +1,12 @@
 // Test suite for KitHeader component
+import { fireEvent,render, screen } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { afterEach } from 'vitest';
+
 import KitHeader from '../KitHeader';
 import type { RampleKitLabel } from '../kitTypes';
-
-import { afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
 
 afterEach(() => {
   cleanup();

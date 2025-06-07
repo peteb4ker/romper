@@ -9,12 +9,20 @@ const openExternal = (url: string) => {
     }
 };
 
-const AboutView: React.FC = () => {
+interface AboutViewProps {
+    navigate?: (to: string) => void;
+}
+
+const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
     // @ts-ignore
     const version = (import.meta.env ? import.meta.env.VITE_APP_VERSION : undefined) || 'dev';
     const currentYear = new Date().getFullYear();
     const navigateBack = () => {
-        window.history.length > 1 ? window.history.back() : window.location.assign('/kits');
+        if (navigate) {
+            navigate('/kits');
+        } else {
+            window.history.length > 1 ? window.history.back() : window.location.assign('/kits');
+        }
     };
     return (
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-cyan-900 via-slate-900 to-gray-900 text-gray-100 px-4 py-8 overflow-hidden">

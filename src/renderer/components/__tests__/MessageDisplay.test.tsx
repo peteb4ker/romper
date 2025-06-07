@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import MessageDisplay from '../MessageDisplay';
-import { toast } from 'sonner';
-import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import { toast } from 'sonner';
+import { describe, expect,it } from 'vitest';
+import { afterEach } from 'vitest';
+
+import MessageDisplay from '../MessageDisplay';
 
 afterEach(() => {
   cleanup();

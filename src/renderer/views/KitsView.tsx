@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo,useState } from 'react';
+
+import { useKitLabel } from '../components/hooks/useKitLabel';
 import KitBrowser from '../components/KitBrowser';
 import KitDetails from '../components/KitDetails';
-import { useSettings } from '../utils/SettingsContext';
+import type { RampleKitLabel,RampleLabels, VoiceSamples } from '../components/kitTypes';
 import { compareKitSlots, groupSamplesByVoice } from '../components/kitUtils';
-import { useKitLabel } from '../components/hooks/useKitLabel';
-import type { VoiceSamples, RampleLabels, RampleKitLabel } from '../components/kitTypes';
+import { useSettings } from '../utils/SettingsContext';
 
 const KitsView = () => {
     const { sdCardPath } = useSettings();
@@ -160,6 +161,10 @@ const KitsView = () => {
                     kitIndex={currentKitIndex}
                     kitLabels={kitLabels}
                     onRescanAllVoiceNames={handleRescanAllVoiceNames}
+                    onMessage={msg => {
+                        // Optionally handle messages here, e.g. show a toast or log
+                        // For now, do nothing (parent can decide to handle or ignore)
+                    }}
                 />
             ) : (
                 <KitBrowser
@@ -170,6 +175,10 @@ const KitsView = () => {
                     onRescanAllVoiceNames={handleRescanAllVoiceNames}
                     sampleCounts={sampleCounts}
                     voiceLabelSets={voiceLabelSets}
+                    onMessage={msg => {
+                        // Optionally handle messages here, e.g. show a toast or log
+                        // For now, do nothing (parent can decide to handle or ignore)
+                    }}
                 />
             )}
         </div>

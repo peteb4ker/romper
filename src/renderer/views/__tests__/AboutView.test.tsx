@@ -1,7 +1,12 @@
 // Test suite for AboutView component
-import { describe } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { cleanup,fireEvent, render, screen } from '@testing-library/react';
+import { afterEach,beforeEach, describe, expect, it, vi} from 'vitest';
+
 import AboutView from '../AboutView';
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('AboutView', () => {
   beforeEach(() => {
@@ -20,12 +25,9 @@ describe('AboutView', () => {
     expect(window.electronAPI.openExternal).toHaveBeenCalledWith('https://github.com/peteb4ker/romper/');
   });
   it('navigates back when Back button is clicked', () => {
-    const assign = vi.fn();
-    const back = vi.fn();
-    Object.defineProperty(window, 'history', { value: { length: 0, back }, configurable: true });
-    Object.defineProperty(window.location, 'assign', { value: assign, configurable: true });
-    render(<AboutView />);
+    const navigate = vi.fn();
+    render(<AboutView navigate={navigate} />);
     fireEvent.click(screen.getByText('← Back'));
-    expect(assign).toHaveBeenCalledWith('/kits');
+    expect(navigate).toHaveBeenCalledWith('/kits');
   });
 });

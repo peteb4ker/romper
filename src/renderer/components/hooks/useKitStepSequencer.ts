@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback,useState } from 'react';
 
 // 4 voices, 16 steps per voice
 export const NUM_VOICES = 4;

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import SampleList from './SampleList';
 
 interface VoiceSamplesListProps {

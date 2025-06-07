@@ -1,7 +1,8 @@
 import { app, BrowserWindow } from 'electron';
-import { fileURLToPath } from 'url';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
 import { registerIpcHandlers } from './ipcHandlers.js';
 
 // Define __dirname for ES modules

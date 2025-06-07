@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { useKitListLogic } from '../useKitListLogic';
 import { renderHook } from '@testing-library/react';
+import { describe, expect,it } from 'vitest';
+
+import { useKitListLogic } from '../useKitListLogic';
 
 describe('useKitListLogic', () => {
   it('sorts kits and provides helpers', () => {

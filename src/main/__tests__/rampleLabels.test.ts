@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { readRampleLabels, writeRampleLabels, RampleLabels } from '../rampleLabels';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { RampleLabels,readRampleLabels, writeRampleLabels } from '../rampleLabels';
 
 const tmpDir = path.join(__dirname, 'tmp_labels_test');
 const labelsPath = path.join(tmpDir, '.rample_labels.json');

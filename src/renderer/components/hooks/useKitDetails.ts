@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { inferVoiceTypeFromFilename } from '../kitUtils';
+
 import type { RampleKitLabel, VoiceSamples } from '../kitTypes';
+import { inferVoiceTypeFromFilename } from '../kitUtils';
 
 export function useKitDetails({ kitLabel, samples, sdCardPath, kitName, onRescanAllVoiceNames }: {
   kitLabel?: RampleKitLabel;

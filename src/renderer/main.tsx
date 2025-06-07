@@ -1,15 +1,17 @@
+import './styles/index.css';
+
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { applyTheme } from './utils/settingsManager';
-import { SettingsProvider } from './utils/SettingsContext';
-import { MessageDisplayContext } from './components/MessageDisplayContext';
-import KitsView from './views/KitsView';
-import AboutView from './views/AboutView';
-import StatusBar from './components/StatusBar';
-import MessageDisplay from './components/MessageDisplay';
+import { BrowserRouter as Router, Navigate,Route, Routes } from 'react-router-dom';
+
 import { useMessageDisplay } from './components/hooks/useMessageDisplay';
-import './styles/index.css';
+import MessageDisplay from './components/MessageDisplay';
+import { MessageDisplayContext } from './components/MessageDisplayContext';
+import StatusBar from './components/StatusBar';
+import { SettingsProvider } from './utils/SettingsContext';
+import { applyTheme } from './utils/settingsManager';
+import AboutView from './views/AboutView';
+import KitsView from './views/KitsView';
 
 const App = () => {
     useEffect(() => {

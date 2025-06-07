@@ -57,21 +57,8 @@
     - [x] 1.5.2 Highlight selected bank in UI
     - [x] 1.5.3 Write unit tests for hotkey navigation
     - [x] 1.5.4 Fix: A-Z hotkeys must move keyboard focus to the first kit in the selected bank
-      - [x] 1.5.4.1 Kits must be keyboard focusable and have a visible focus indicator
-      - [x] 1.5.4.2 On app load, the first kit should be focused and visibly focused
-    - [x] 1.5.5 Selection highlight in KitList must be persistent and independent of DOM focus
-      - [x] 1.5.5.1 The selected kit must always have a visible highlight (e.g., border or background), even if focus is elsewhere
-      - [x] 1.5.5.2 Keyboard navigation (A-Z, arrows) should update both selection and focus, but selection highlight remains if focus moves away
-      - [x] 1.5.5.3 Write unit tests to verify persistent selection highlight and correct keyboard/focus behavior
-  - [x] 1.6 Implement keyboard navigation for kits, voices, and sample slots
-    - [x] 1.6.1 Implement keyboard navigation for kits (arrow keys, enter)
-      - [x] 1.6.1.1 Add keyboard event handlers for kit navigation (up/down/left/right, enter)
-      - [x] 1.6.1.2 Disable navigation at first/last kit as appropriate (cannot move before first or after last kit)
-      - [x] 1.6.1.3 Ensure selection highlight and focus update correctly on navigation
-      - [x] 1.6.1.4 Write unit tests for kit keyboard navigation (including edge cases)
-    - [x] 1.6.2 Remove voice keyboard navigation (left/right arrows, enter) and related tasks
-      - [x] 1.6.2.1 Voice selection is always mouse-only, no keyboard navigation or highlight
-      - [x] 1.6.2.2 Remove any code, hooks, or tests for voice keyboard navigation
+  - [x] 1.6 Implement keyboard navigation for sample slots
+      [x] 1.6.1 Remove all kit and voice keyboard navigation from the app. A-Z bank navigation should remain.
     - [x] 1.6.3 Implement keyboard navigation for sample slots (up/down arrows, space)
       - [x] 1.6.3.1 Add keyboard event handlers for sample slot navigation (up/down, space)
       - [x] 1.6.3.2 Disable navigation at first/last slot as appropriate
@@ -124,8 +111,7 @@
     - [x] 3.1.1 Add play/stop controls for samples in UI
     - [x] 3.1.2 Integrate audio playback engine for `.wav` files
     - [x] 3.1.3 Write unit tests for sample preview logic
-  - [x] 3.2 Implement preview for full kits using built-in MIDI test patterns
-    - [x] 3.2.1 Add play/stop controls for full kit preview
+  - [x] 3.2 Implement preview for full kits
     - [x] 3.2.2 Implement 4-channel, 16-step XOX-style step sequencer for kit preview
       - [x] 3.2.2.1 Render a 4x16 step grid at the bottom of KitDetails, color-coded by voice.
          - [x] 3.2.2.1.1 The step buttons are square

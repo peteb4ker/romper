@@ -1,13 +1,14 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
-import { getSetting, setSetting, applyTheme, toggleTheme } from '../settingsManager';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { applyTheme, getSetting, setSetting, toggleTheme } from '../settingsManager';
 
 describe('settingsManager', () => {
     beforeEach(() => {
         const mockClassList = {
             add: vi.fn(),
             remove: vi.fn(),
-            toggle: vi.fn(), // Explicitly mock toggle as a Jest mock function
-            contains: vi.fn(), // Explicitly mock contains as a Jest mock function
+            toggle: vi.fn(),
+            contains: vi.fn(),
         };
 
         Object.defineProperty(document, 'documentElement', {
@@ -16,6 +17,12 @@ describe('settingsManager', () => {
             },
             configurable: true,
         });
+
+        // Properly mock electronAPI methods as spies
+        window.electronAPI = {
+            getSetting: vi.fn(),
+            setSetting: vi.fn(),
+        };
     });
 
     afterEach(() => {
@@ -38,7 +45,7 @@ describe('settingsManager', () => {
 
     describe('applyTheme', () => {
         it('should apply dark mode if darkMode is true', async () => {
-            (window.electronAPI.getSetting as unknown as vi.Mock).mockResolvedValue(true);
+            (window.electronAPI.getSetting as any).mockResolvedValue(true);
 
             await applyTheme();
 
@@ -46,7 +53,7 @@ describe('settingsManager', () => {
         });
 
         it('should not apply dark mode if darkMode is false', async () => {
-            (window.electronAPI.getSetting as unknown as vi.Mock).mockResolvedValue(false);
+            (window.electronAPI.getSetting as any).mockResolvedValue(false);
 
             await applyTheme();
 

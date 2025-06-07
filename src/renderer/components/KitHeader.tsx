@@ -1,5 +1,6 @@
 import React from 'react';
-import { FiFolder, FiArrowLeft, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiArrowLeft, FiChevronLeft, FiChevronRight,FiFolder } from 'react-icons/fi';
+
 import type { RampleKitLabel } from './kitTypes';
 
 interface KitHeaderProps {

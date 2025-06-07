@@ -1,7 +1,8 @@
-import { defineConfig } from 'eslint/config'
 import js from '@eslint/js'
-import tseslint from 'typescript-eslint'
+import { defineConfig } from 'eslint/config'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
 import globals from 'globals'
+import tseslint from 'typescript-eslint'
 
 export default defineConfig([
     {
@@ -18,11 +19,14 @@ export default defineConfig([
         },
         plugins: {
             js,
+            'simple-import-sort': simpleImportSort
         },
         rules: {
             ...js.configs.recommended.rules,
             'no-unused-vars': 'warn',
             'no-undef': 'warn',
+            'simple-import-sort/imports': 'error',
+            'simple-import-sort/exports': 'error',
         },
     },
 
@@ -35,9 +39,12 @@ export default defineConfig([
         },
         plugins: {
             '@typescript-eslint': tseslint.plugin,
+            'simple-import-sort': simpleImportSort
         },
         rules: {
             ...tseslint.configs.recommendedTypeChecked.rules,
+            'simple-import-sort/imports': 'error',
+            'simple-import-sort/exports': 'error',
         },
     },
 

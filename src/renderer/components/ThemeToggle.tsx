@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { useSettings } from '../utils/SettingsContext';
 
 const ThemeToggle: React.FC = () => {

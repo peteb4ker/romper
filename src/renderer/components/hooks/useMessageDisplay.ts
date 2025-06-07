@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+
 import { MessageType } from '../MessageDisplay';
 
 export function useMessageDisplay() {

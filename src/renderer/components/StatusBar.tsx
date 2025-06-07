@@ -1,7 +1,8 @@
 import React from 'react';
-import { useSettings } from '../utils/SettingsContext';
-import { FiSun, FiMoon } from 'react-icons/fi';
+import { FiMoon,FiSun } from 'react-icons/fi';
 import { MdSdCard } from 'react-icons/md';
+
+import { useSettings } from '../utils/SettingsContext';
 
 interface StatusBarProps {
     status?: string;

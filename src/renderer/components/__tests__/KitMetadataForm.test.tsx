@@ -1,73 +1,60 @@
 // Test suite for KitMetadataForm component
+import { cleanup,fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach,describe, expect, it, vi } from 'vitest';
+
 import KitMetadataForm from '../KitMetadataForm';
-import { afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
 
 afterEach(() => {
   cleanup();
 });
 
 describe('KitMetadataForm', () => {
-  const baseProps = {
+  const baseKitLabel = {
     label: 'My Kit',
     description: 'A description',
     tags: ['drum', 'snare'],
-    onLabelChange: vi.fn(),
-    onDescriptionChange: vi.fn(),
-    onTagsChange: vi.fn(),
-    onSave: vi.fn(),
-    onCancel: vi.fn(),
-    error: null,
   };
 
-  it('renders label, description, and tags', () => {
-    render(<KitMetadataForm {...baseProps} />);
-    expect(screen.getByDisplayValue('My Kit')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('A description')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('drum, snare')).toBeInTheDocument();
-  });
-
-  it('calls onLabelChange, onDescriptionChange, and onTagsChange', () => {
-    const onLabelChange = vi.fn();
-    const onDescriptionChange = vi.fn();
-    const onTagsChange = vi.fn();
+  it('renders tags and Edit Tags button when tagsEditable', () => {
     render(
-      <KitMetadataForm
-        {...baseProps}
-        onLabelChange={onLabelChange}
-        onDescriptionChange={onDescriptionChange}
-        onTagsChange={onTagsChange}
-      />
+      <KitMetadataForm kitLabel={baseKitLabel} tagsEditable={true} onSave={vi.fn()} />
     );
-    fireEvent.change(screen.getByLabelText(/label/i), { target: { value: 'New Label' } });
-    expect(onLabelChange).toHaveBeenCalledWith('New Label');
-    fireEvent.change(screen.getByLabelText(/description/i), { target: { value: 'New Desc' } });
-    expect(onDescriptionChange).toHaveBeenCalledWith('New Desc');
-    fireEvent.change(screen.getByLabelText(/tags/i), { target: { value: 'kick, hat' } });
-    expect(onTagsChange).toHaveBeenCalledWith(['kick', 'hat']);
+    expect(screen.getByText('drum')).toBeInTheDocument();
+    expect(screen.getByText('snare')).toBeInTheDocument();
+    expect(screen.getByText('Edit Tags')).toBeInTheDocument();
   });
 
-  it('calls onSave and onCancel', () => {
+  it('shows tag editing UI and allows adding/removing tags', () => {
     const onSave = vi.fn();
-    const onCancel = vi.fn();
     render(
-      <KitMetadataForm
-        {...baseProps}
-        onSave={onSave}
-        onCancel={onCancel}
-      />
+      <KitMetadataForm kitLabel={baseKitLabel} tagsEditable={true} onSave={onSave} />
     );
+    fireEvent.click(screen.getByText('Edit Tags'));
+    // Remove a tag
+    fireEvent.click(screen.getAllByTitle('Remove tag')[0]);
+    // Add a tag
+    const input = screen.getByPlaceholderText('Add tag');
+    fireEvent.change(input, { target: { value: 'kick' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    // Save
     fireEvent.click(screen.getByText('Save'));
-    expect(onSave).toHaveBeenCalled();
-    fireEvent.click(screen.getByText('Cancel'));
-    expect(onCancel).toHaveBeenCalled();
+    expect(onSave).toHaveBeenCalledWith('My Kit', '', ['snare', 'kick']);
   });
 
-  it('shows error if provided', () => {
-    render(<KitMetadataForm {...baseProps} error="Something went wrong" />);
+  it('shows loading and error states', () => {
+    const { rerender } = render(
+      <KitMetadataForm kitLabel={baseKitLabel} loading={true} onSave={vi.fn()} />
+    );
+    expect(screen.getByText('Loading kit metadata...')).toBeInTheDocument();
+    rerender(<KitMetadataForm kitLabel={baseKitLabel} error="Something went wrong" onSave={vi.fn()} />);
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+  });
+
+  it('shows "No tags" if no tags present', () => {
+    render(
+      <KitMetadataForm kitLabel={{ label: 'Empty', tags: [] }} tagsEditable={true} onSave={vi.fn()} />
+    );
+    expect(screen.getByText('No tags')).toBeInTheDocument();
   });
 });

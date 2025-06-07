@@ -1,8 +1,6 @@
-import { vi, beforeAll, expect } from 'vitest';
-
-import { TextEncoder } from 'util';
-
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { TextEncoder } from 'util';
+import { beforeAll, expect,vi } from 'vitest';
 expect.extend(matchers);
 
 if (typeof globalThis.TextEncoder === 'undefined') {

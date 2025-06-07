@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useCallback,useEffect, useRef, useState } from 'react';
+
 import { getNextKitSlot, toCapitalCase } from '../kitUtils';
-import { useMessageApi } from './useMessageApi';
 
 export function useKitBrowser({
   kits: externalKits,
   sdCardPath,
   onRefreshKits,
   kitListRef, // NEW: ref to KitList
+  onMessage, // NEW: callback for user-facing messages
 }) {
   const kits = externalKits || [];
   const [error, setError] = useState(null);
@@ -20,7 +21,6 @@ export function useKitBrowser({
   const [duplicateKitError, setDuplicateKitError] = useState(null);
   const [bankNames, setBankNames] = useState({});
   const scrollContainerRef = useRef(null);
-  const messageApi = useMessageApi();
 
   useEffect(() => {
     setNextKitSlot(getNextKitSlot(kits));
@@ -65,7 +65,7 @@ export function useKitBrowser({
       setShowNewKit(false);
       setNewKitSlot('');
       if (onRefreshKits) onRefreshKits();
-      messageApi.showMessage(`Kit ${newKitSlot} created successfully!`, 'info', 4000);
+      if (onMessage) onMessage({ text: `Kit ${newKitSlot} created successfully!`, type: 'info', duration: 4000 });
     } catch (err) {
       setNewKitError('Failed to create kit: ' + (err?.message || err));
     }

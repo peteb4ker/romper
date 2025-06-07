@@ -1,8 +1,9 @@
 // Test suite for useKitLabel hook
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useKitLabel } from '../useKitLabel';
+import { act,renderHook } from '@testing-library/react';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+
 import * as kitUtils from '../../kitUtils';
+import { useKitLabel } from '../useKitLabel';
 
 const defaultKitName = 'TestKit';
 const defaultSdCardPath = '/sd';

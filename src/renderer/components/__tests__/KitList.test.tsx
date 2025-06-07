@@ -1,9 +1,11 @@
 // Test suite for KitList component
-import React from 'react';
-import { render, screen, fireEvent, within, cleanup } from '@testing-library/react';
-import { describe, it, vi, expect } from 'vitest';
-import KitList from '../KitList';
 import './setupTestUtils';
+
+import { cleanup,fireEvent, render, screen, within } from '@testing-library/react';
+import React from 'react';
+import { describe, expect,it, vi } from 'vitest';
+
+import KitList from '../KitList';
 
 // Helper: get kit item by data-kit attribute
 function getKitItem(kit) {
@@ -152,36 +154,13 @@ describe('KitList', () => {
     expectOnlySelected(kits, 'A1');
   });
 
-  it('selected kit has persistent highlight even if focus moves away', () => {
+  it('arrow keys and Enter/Space do not change selection', () => {
+    // This test ensures that only A-Z hotkey navigation is active and all other keyboard navigation is disabled.
+    const onSelectKit = vi.fn();
     render(
       <KitList
         kits={kits}
-        onSelectKit={vi.fn()}
-        bankNames={bankNames}
-        onDuplicate={vi.fn()}
-        sdCardPath="/sd"
-        kitLabels={kitLabels}
-        sampleCounts={sampleCounts}
-      />
-    );
-    const list = screen.getByLabelText('Kit list');
-    list.focus();
-    fireEvent.keyDown(list, { key: 'B' });
-    const selected = getKitItem('B1');
-    // Move focus away: focus the duplicate button
-    const duplicateBtn = within(selected).getByTitle('Duplicate kit');
-    duplicateBtn.focus();
-    // The selected kit should still have the highlight class
-    expect(selected.className).toMatch(/ring-2.*ring-blue-400/);
-    // And aria-selected should still be true
-    expect(selected.getAttribute('aria-selected')).toBe('true');
-  });
-
-  it('left and right arrow keys do not change selection (no-op for single column)', () => {
-    render(
-      <KitList
-        kits={kits}
-        onSelectKit={vi.fn()}
+        onSelectKit={onSelectKit}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
         sdCardPath="/sd"
@@ -193,18 +172,17 @@ describe('KitList', () => {
     list.focus();
     // Initial focus is on A1
     expectOnlySelected(kits, 'A1');
+    // Try all non-A-Z navigation keys
     fireEvent.keyDown(list, { key: 'ArrowRight' });
-    expectOnlySelected(kits, 'A1');
     fireEvent.keyDown(list, { key: 'ArrowLeft' });
+    fireEvent.keyDown(list, { key: 'ArrowDown' });
+    fireEvent.keyDown(list, { key: 'ArrowUp' });
+    fireEvent.keyDown(list, { key: ' ' });
+    fireEvent.keyDown(list, { key: 'Enter' });
+    // Selection should not change
     expectOnlySelected(kits, 'A1');
-    // Move to B1
-    fireEvent.keyDown(list, { key: 'B' });
-    expectOnlySelected(kits, 'B1');
-    // ArrowRight/ArrowLeft still do nothing
-    fireEvent.keyDown(list, { key: 'ArrowRight' });
-    expectOnlySelected(kits, 'B1');
-    fireEvent.keyDown(list, { key: 'ArrowLeft' });
-    expectOnlySelected(kits, 'B1');
+    // onSelectKit should never be called for these keys
+    expect(onSelectKit).not.toHaveBeenCalled();
   });
 
   it('renders deduped voice label sets for each kit', () => {
@@ -243,8 +221,8 @@ describe('KitList', () => {
   });
 });
 
-import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import { afterEach } from 'vitest';
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();

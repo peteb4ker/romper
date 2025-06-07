@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
 import { render } from '@testing-library/react';
+import React from 'react';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
 
 vi.mock('../utils/settingsManager', () => ({
   applyTheme: vi.fn(),

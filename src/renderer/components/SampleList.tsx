@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
+import React, { KeyboardEvent,useEffect, useRef, useState } from 'react';
 import { FiPlay } from 'react-icons/fi';
 
 interface SampleListProps {

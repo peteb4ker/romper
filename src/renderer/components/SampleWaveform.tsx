@@ -5,13 +5,15 @@ interface SampleWaveformProps {
   playTrigger: number; // increment to trigger play externally
   stopTrigger?: number; // increment to trigger stop externally
   onPlayingChange?: (playing: boolean) => void;
+  onError?: (error: string) => void;
 }
 
-const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, stopTrigger, onPlayingChange }) => {
+const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, stopTrigger, onPlayingChange, onError }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const animationRef = useRef<number | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -19,20 +21,29 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
   // Load audio file and decode
   useEffect(() => {
     let cancelled = false;
+    setError(null);
     // @ts-ignore
-    window.electronAPI.getAudioBuffer(filePath).then((arrayBuffer: ArrayBuffer) => {
-      if (cancelled) return;
-      // Always close previous context before creating a new one
-      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        try { audioCtxRef.current.close(); } catch (e) {}
-      }
-      const ctx = new window.AudioContext();
-      audioCtxRef.current = ctx;
-      ctx.decodeAudioData(arrayBuffer.slice(0), (buf) => {
-        setAudioBuffer(buf);
-        drawWaveform(buf);
+    window.electronAPI.getAudioBuffer(filePath)
+      .then((arrayBuffer: ArrayBuffer) => {
+        if (cancelled) return;
+        // Always close previous context before creating a new one
+        if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+          try { audioCtxRef.current.close(); } catch (e) {}
+        }
+        const ctx = new window.AudioContext();
+        audioCtxRef.current = ctx;
+        ctx.decodeAudioData(arrayBuffer.slice(0), (buf) => {
+          setAudioBuffer(buf);
+          drawWaveform(buf);
+        });
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError('Failed to load audio.');
+          if (onError) onError('Failed to load audio.');
+        }
+        setAudioBuffer(null);
       });
-    });
     return () => {
       cancelled = true;
       if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
@@ -178,6 +189,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
   return (
     <div style={{ display: 'flex', alignItems: 'center' }}>
       <canvas ref={canvasRef} width={80} height={18} className="rounded bg-slate-100 dark:bg-slate-800 shadow align-middle" style={{ display: 'inline-block', verticalAlign: 'middle' }} />
+      {/* Remove inline error message, error is now shown via MessageDisplay */}
     </div>
   );
 };

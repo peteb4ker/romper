@@ -1,10 +1,11 @@
 import { app, dialog, ipcMain } from 'electron';
 import fs from 'fs';
 import path from 'path';
-import { readRampleLabels, writeRampleLabels } from './rampleLabels.js';
-import { parseRampleBin } from './rampleBin.js';
-import { validateKitPlan, writeKitSamples, rescanVoiceNames, commitKitPlanHandler } from './kitPlanOps.js';
+
 import { groupSamplesByVoice, inferVoiceTypeFromFilename } from '../shared/kitUtilsShared.js';
+import { commitKitPlanHandler,rescanVoiceNames, validateKitPlan, writeKitSamples } from './kitPlanOps.js';
+import { parseRampleBin } from './rampleBin.js';
+import { readRampleLabels, writeRampleLabels } from './rampleLabels.js';
 
 // Utility: recursively copy a directory
 function copyRecursiveSync(src: string, dest: string) {

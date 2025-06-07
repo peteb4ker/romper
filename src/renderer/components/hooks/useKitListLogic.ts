@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { compareKitSlots, getKitColorClass } from '../kitUtils';
+
 import type { RampleKitLabel } from '../KitDetails';
+import { compareKitSlots } from '../kitUtils';
 
 export function useKitListLogic(kits: string[]) {
   // Sorted and filtered kits for display
@@ -13,7 +14,7 @@ export function useKitListLogic(kits: string[]) {
   const isValidKit = (kit: string) => /^[A-Z][0-9]{1,2}$/.test(kit);
 
   // Helper to get color class
-  const getColorClass = (kit: string) => isValidKit(kit) ? getKitColorClass(kit) : 'text-red-500';
+  const getColorClass = (kit: string) => isValidKit(kit) ? 'text-gray-600 dark:text-gray-300' : 'text-red-500';
 
   // Helper to determine if a bank anchor should be shown
   const showBankAnchor = (kit: string, idx: number, arr: string[]) =>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { FiEdit2, FiCheck, FiX, FiRefreshCw, FiPlay, FiSquare } from 'react-icons/fi';
-import SampleWaveform from './SampleWaveform';
+import { FiCheck, FiEdit2, FiPlay, FiRefreshCw, FiSquare,FiX } from 'react-icons/fi';
+
 import { toCapitalCase } from './kitUtils';
+import SampleWaveform from './SampleWaveform';
 
 interface KitVoicePanelProps {
   voice: number;
@@ -122,6 +123,12 @@ const KitVoicePanel: React.FC<KitVoicePanelProps & { dataTestIdVoiceName?: strin
                     playTrigger={playTriggers[sampleKey] || 0}
                     stopTrigger={stopTriggers[sampleKey] || 0}
                     onPlayingChange={playing => onWaveformPlayingChange(voice, sample, playing)}
+                    onError={err => {
+                      // Bubble up error to parent if needed (to be handled in KitDetails)
+                      if (typeof window !== 'undefined' && window.dispatchEvent) {
+                        window.dispatchEvent(new CustomEvent('SampleWaveformError', { detail: err }));
+                      }
+                    }}
                   />
                 </li>
               );

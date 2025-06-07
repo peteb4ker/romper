@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { SettingsProvider, SettingsContext } from '../../utils/SettingsContext';
+
+import { SettingsContext,SettingsProvider } from '../../utils/SettingsContext';
 
 // Test wrapper that always provides initialized settings
 export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

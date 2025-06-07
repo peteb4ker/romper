@@ -1,23 +1,27 @@
 import React from 'react';
-import { inferVoiceTypeFromFilename } from './kitUtils';
-import VoiceSamplesList from './VoiceSamplesList';
-import SampleWaveform from './SampleWaveform';
-import { FiPlay, FiSquare, FiEdit2, FiCheck, FiX, FiTrash2, FiRefreshCw, FiArrowLeft, FiChevronLeft, FiChevronRight, FiFolder } from 'react-icons/fi';
-import KitVoicePanel from './KitVoicePanel';
-import KitMetadataForm from './KitMetadataForm';
-import { useKitPlayback } from './hooks/useKitPlayback';
-import { useKitLabel } from './hooks/useKitLabel';
+import { FiArrowLeft, FiCheck, FiChevronLeft, FiChevronRight, FiEdit2, FiFolder,FiPlay, FiRefreshCw, FiSquare, FiTrash2, FiX } from 'react-icons/fi';
+
 import { useKitDetails } from './hooks/useKitDetails';
+import { useKitLabel } from './hooks/useKitLabel';
+import { useKitPlayback } from './hooks/useKitPlayback';
 import { useKitVoicePanel } from './hooks/useKitVoicePanel';
-import { useKitPreview } from './hooks/useKitPreview';
-import KitStepSequencer from './KitStepSequencer';
-import type { RampleKitLabel, RampleLabels, KitDetailsProps, VoiceSamples } from './kitTypes';
 import KitHeader from './KitHeader';
-import { useMessageApi } from './hooks/useMessageApi';
+import KitMetadataForm from './KitMetadataForm';
+import KitStepSequencer from './KitStepSequencer';
+import type { KitDetailsProps, RampleKitLabel, RampleLabels, VoiceSamples } from './kitTypes';
+import { inferVoiceTypeFromFilename } from './kitUtils';
+import KitVoicePanel from './KitVoicePanel';
+import SampleWaveform from './SampleWaveform';
+import VoiceSamplesList from './VoiceSamplesList';
 
-const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onRescanAllVoiceNames?: () => void; onCreateKit?: () => void }> = (props) => {
-    const messageApi = useMessageApi();
+interface KitDetailsAllProps extends KitDetailsProps {
+  kitLabel?: RampleKitLabel;
+  onRescanAllVoiceNames?: () => void;
+  onCreateKit?: () => void;
+  onMessage?: (msg: { type: string; text: string }) => void;
+}
 
+const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
     // Playback logic
     const {
         playbackError,
@@ -45,20 +49,10 @@ const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onResc
         handleSaveKitLabel,
         handleSaveKitTags,
         handleSaveKitMetadata,
-        reloadCounter, // <-- add this
-        reloadKitLabel, // <-- add this
+        reloadKitLabel,
         stepPattern,
         setStepPattern,
     } = useKitLabel(props);
-
-    // Full kit preview logic
-    const {
-        isPlaying: kitPreviewPlaying,
-        error: kitPreviewError,
-        handlePlayKit,
-        handleStopKit,
-        setError: setKitPreviewError
-    } = useKitPreview(props.kitName, props.samples);
 
     // Default samples to avoid undefined errors
     const samples = props.samples || { 1: [], 2: [], 3: [], 4: [] };
@@ -72,28 +66,31 @@ const KitDetails: React.FC<KitDetailsProps & { kitLabel?: RampleKitLabel; onResc
         onRescanAllVoiceNames: () => handleRescanAllVoiceNames(samples)
     });
 
-    // Remove reloadCounter effect: no need to force reload, hook handles it
-
-    // Show playback errors via centralized message display
+    // Show playback errors via onMessage callback
     React.useEffect(() => {
-        if (playbackError) {
-            messageApi.showMessage({ type: 'error', text: playbackError });
+        if (playbackError && props.onMessage) {
+            props.onMessage({ type: 'error', text: playbackError });
         }
-    }, [playbackError]);
+    }, [playbackError, props.onMessage]);
 
-    // Show label errors via centralized message display
+    // Show label errors via onMessage callback
     React.useEffect(() => {
-        if (labelsError) {
-            messageApi.showMessage({ type: 'error', text: labelsError });
+        if (labelsError && props.onMessage) {
+            props.onMessage({ type: 'error', text: labelsError });
         }
-    }, [labelsError]);
+    }, [labelsError, props.onMessage]);
 
-    // Show kit preview errors via centralized message display
+    // Listen for SampleWaveform errors bubbled up from children
     React.useEffect(() => {
-        if (kitPreviewError) {
-            messageApi.showMessage({ type: 'error', text: kitPreviewError });
-        }
-    }, [kitPreviewError]);
+        if (!props.onMessage) return;
+        const handler = (e: CustomEvent) => {
+            props.onMessage({ type: 'error', text: e.detail });
+        };
+        window.addEventListener('SampleWaveformError', handler as EventListener);
+        return () => {
+            window.removeEventListener('SampleWaveformError', handler as EventListener);
+        };
+    }, [props.onMessage]);
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full p-2 pb-0 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-sm shadow">

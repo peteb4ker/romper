@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { readRampleBin, writeRampleBin } from '../rampleBin';
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 
 describe('rampleBin', () => {
     const testFile = path.join(__dirname, '../../../tests/fixtures', 'rample.bin');

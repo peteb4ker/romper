@@ -1,5 +1,6 @@
-import { render, waitFor, cleanup } from '@testing-library/react';
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import { cleanup,render, waitFor } from '@testing-library/react';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { SettingsContext } from '../SettingsContext';
 
 afterEach(() => {

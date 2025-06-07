@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import { VariableSizeList, ListChildComponentProps } from 'react-window';
-import KitItem from './KitItem';
+import React, { forwardRef,useEffect, useImperativeHandle, useRef } from 'react';
+import { ListChildComponentProps,VariableSizeList } from 'react-window';
+
 import { useKitListLogic } from './hooks/useKitListLogic';
 import { useKitListNavigation } from './hooks/useKitListNavigation';
-import type { RampleLabels, RampleKitLabel } from './KitDetails';
+import type { RampleKitLabel,RampleLabels } from './KitDetails';
+import KitItem from './KitItem';
 
 interface KitListProps {
     kits: string[];
@@ -14,8 +15,9 @@ interface KitListProps {
     kitLabels: { [kit: string]: RampleKitLabel };
     sampleCounts?: Record<string, [number, number, number, number]>;
     voiceLabelSets?: Record<string, string[]>;
-    focusedKit?: string | null; // NEW: externally controlled focus
-    onBankFocus?: (bank: string) => void; // NEW: notify parent when bank focus changes
+    focusedKit?: string | null; // externally controlled focus
+    onBankFocus?: (bank: string) => void;
+    onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
 }
 
 // Expose imperative scroll/focus API for parent components
@@ -27,9 +29,7 @@ const KIT_ROW_HEIGHT = 72; // px
 const BANK_ROW_HEIGHT = 100; // px, adjust as needed for anchor+kit
 const HEADER_HEIGHT = 5; // px, set to your fixed header height
 
-const KitList = forwardRef<KitListHandle, KitListProps>(({
-    kits, onSelectKit, bankNames, onDuplicate, sdCardPath, kitLabels, sampleCounts, voiceLabelSets, focusedKit, onBankFocus
-}, ref) => {
+const KitList = forwardRef<KitListHandle, KitListProps>(({ kits, onSelectKit, bankNames, onDuplicate, sdCardPath, kitLabels, sampleCounts, voiceLabelSets, focusedKit, onBankFocus, onFocusKit }, ref) => {
     const { kitsToDisplay, isValidKit, getColorClass, showBankAnchor } = useKitListLogic(kits);
     // Only use focusedKit if defined, otherwise undefined
     const navFocusedKit = typeof focusedKit === 'string' ? focusedKit : undefined;
@@ -49,6 +49,56 @@ const KitList = forwardRef<KitListHandle, KitListProps>(({
         }
     }, [navFocusedKit, kitsToDisplay, setFocus]);
 
+    // selectedIdx is always derived from focusedIdx (not just focusedKit)
+    const selectedIdx = focusedIdx;
+
+    // Shared scroll and focus logic
+    const scrollAndFocusKitByIndex = (idx: number) => {
+        if (idx < 0 || idx >= kitsToDisplay.length) return;
+        if (listRef.current) {
+            const offset = getOffsetForIndex(idx) - HEADER_HEIGHT;
+            listRef.current.scrollTo(Math.max(0, offset));
+            console.log('[KitList] scrollAndFocusKitByIndex', idx, 'offset', offset);
+        } else {
+            console.warn('[KitList] listRef.current is null');
+        }
+        setFocus(idx);
+        if (onFocusKit) onFocusKit(kitsToDisplay[idx]);
+    };
+
+    useImperativeHandle(ref, () => ({
+        scrollAndFocusKitByIndex
+    }), [kitsToDisplay, setFocus, onFocusKit]);
+
+    // Keyboard navigation handler: Support A-Z hotkeys only (remove up/down/left/right/Enter/Space)
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+        // A-Z hotkey: select first kit in bank
+        if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
+            const bank = e.key.toUpperCase();
+            const idx = kitsToDisplay.findIndex(k => k && typeof k === 'string' && k[0] && k[0].toUpperCase() === bank);
+            if (idx !== -1) {
+                if (typeof onBankFocus === 'function') onBankFocus(bank);
+                if (onFocusKit) onFocusKit(kitsToDisplay[idx]);
+                setFocus(idx);
+                e.preventDefault();
+            } else {
+                e.preventDefault();
+            }
+            return;
+        }
+        // All other keys: do nothing
+    };
+
+    // Click handler: always notify parent
+    const handleSelectKit = (kit: string, idx: number) => {
+        if (isValidKit(kit)) {
+            onSelectKit(kit);
+            if (onFocusKit) onFocusKit(kit);
+            setFocus(idx);
+        }
+    };
+
     // Precompute which rows have anchors for height calculation
     const rowHasAnchor = kitsToDisplay.map((kit, idx, arr) => showBankAnchor(kit, idx, arr));
 
@@ -62,73 +112,6 @@ const KitList = forwardRef<KitListHandle, KitListProps>(({
             offset += getItemSize(i);
         }
         return offset;
-    };
-
-    // Shared scroll and focus logic
-    const scrollAndFocusKitByIndex = (idx: number) => {
-        if (idx < 0 || idx >= kitsToDisplay.length) return;
-        if (listRef.current) {
-            const offset = getOffsetForIndex(idx) - HEADER_HEIGHT;
-            listRef.current.scrollTo(Math.max(0, offset));
-            console.log('[KitList] scrollAndFocusKitByIndex', idx, 'offset', offset);
-        } else {
-            console.warn('[KitList] listRef.current is null');
-        }
-        setFocus(idx);
-    };
-
-    useImperativeHandle(ref, () => ({
-        scrollAndFocusKitByIndex
-    }), [kitsToDisplay, setFocus]);
-
-    // Track selected kit index for persistent highlight (independent of focus)
-    const [selectedIdx, setSelectedIdx] = React.useState<number>(0);
-
-    // Keyboard navigation handler: Support A-Z hotkeys, arrow keys, and Enter
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-        // A-Z hotkey: select first kit in bank
-        if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
-            const bank = e.key.toUpperCase();
-            const idx = kitsToDisplay.findIndex(k => k && typeof k === 'string' && k[0] && k[0].toUpperCase() === bank);
-            if (idx !== -1) {
-                if (typeof onBankFocus === 'function') onBankFocus(bank);
-                setSelectedIdx(idx);
-                e.preventDefault();
-            } else {
-                e.preventDefault();
-            }
-            return;
-        }
-        // Arrow navigation (up/down/left/right)
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            if (selectedIdx < kitsToDisplay.length - 1) {
-                setSelectedIdx(selectedIdx + 1);
-            }
-            return;
-        }
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (selectedIdx > 0) {
-                setSelectedIdx(selectedIdx - 1);
-            }
-            return;
-        }
-        // Left/Right: no-op for single column, but included for future grid support
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-            e.preventDefault();
-            return;
-        }
-        // Enter/Space: select current kit
-        if (e.key === 'Enter' || e.key === ' ') {
-            const kit = kitsToDisplay[selectedIdx];
-            if (isValidKit(kit)) {
-                onSelectKit(kit);
-                e.preventDefault();
-            }
-            return;
-        }
     };
 
     // Virtualized row renderer
@@ -154,7 +137,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(({
                     kit={kit}
                     colorClass={colorClass}
                     isValid={isValid}
-                    onSelect={() => { isValid && onSelectKit(kit); setSelectedIdx(index); }}
+                    onSelect={() => handleSelectKit(kit, index)}
                     onDuplicate={() => isValid && onDuplicate(kit)}
                     sampleCounts={sampleCounts ? sampleCounts[kit] : undefined}
                     kitLabel={dedupedVoiceNames}

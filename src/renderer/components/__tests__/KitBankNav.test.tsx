@@ -1,6 +1,7 @@
 // Test suite for KitBankNav component
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { describe, it, vi, afterEach, expect } from 'vitest';
+import { cleanup,fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect,it, vi } from 'vitest';
+
 import KitBankNav from '../KitBankNav';
 
 afterEach(() => {

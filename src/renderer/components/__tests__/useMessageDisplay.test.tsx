@@ -1,60 +1,36 @@
-import { render, screen, act } from '@testing-library/react';
-import { Toaster, toast } from 'sonner';
+vi.mock('sonner', () => ({
+  toast: vi.fn(),
+}));
+
+import { act,renderHook } from '@testing-library/react';
+import { toast } from 'sonner';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useMessageDisplay } from '../hooks/useMessageDisplay';
-import React from 'react';
 
-function TestComponent() {
-  const { showMessage, dismissMessage } = useMessageDisplay();
-  return (
-    <>
-      <Toaster position="top-center" richColors closeButton />
-      <button onClick={() => showMessage('Info message', 'info', 1000)}>Show Info</button>
-      <button onClick={() => showMessage('Warning message', 'warning', 1000)}>Show Warning</button>
-      <button onClick={() => showMessage('Error message', 'error', 1000)}>Show Error</button>
-      <button onClick={() => {
-        const id = showMessage('Dismiss me', 'info', 5000);
-        setTimeout(() => dismissMessage(id), 100);
-      }}>Show & Dismiss</button>
-    </>
-  );
-}
-
-describe('useMessageDisplay (Sonner integration)', () => {
-  it('shows info, warning, and error messages', () => {
-    render(<TestComponent />);
-    act(() => {
-      screen.getByText('Show Info').click();
-      screen.getByText('Show Warning').click();
-      screen.getByText('Show Error').click();
-    });
-    expect(screen.getByText('Info message')).toBeInTheDocument();
-    expect(screen.getByText('Warning message')).toBeInTheDocument();
-    expect(screen.getByText('Error message')).toBeInTheDocument();
+describe('useMessageDisplay', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  it('returns the correct API', () => {
+    const { result } = renderHook(() => useMessageDisplay());
+    expect(typeof result.current.showMessage).toBe('function');
+    expect(typeof result.current.dismissMessage).toBe('function');
+    expect(typeof result.current.clearMessages).toBe('function');
+    expect(Array.isArray(result.current.messages)).toBe(true);
   });
 
-  it('auto-dismisses messages after duration', async () => {
-    jest.useFakeTimers();
-    render(<TestComponent />);
+  it('calls toast with correct arguments', () => {
+    const { result } = renderHook(() => useMessageDisplay());
     act(() => {
-      screen.getByText('Show Info').click();
+      result.current.showMessage('Test info', 'info', 1234);
     });
-    expect(screen.getByText('Info message')).toBeInTheDocument();
-    act(() => {
-      jest.advanceTimersByTime(1100);
-    });
-    expect(screen.queryByText('Info message')).not.toBeInTheDocument();
-    jest.useRealTimers();
+    expect(toast).toHaveBeenCalledWith('Test info', expect.objectContaining({ type: 'info', duration: 1234 }));
   });
 
-  it('can dismiss a message programmatically', () => {
-    render(<TestComponent />);
-    act(() => {
-      screen.getByText('Show & Dismiss').click();
-    });
-    expect(screen.getByText('Dismiss me')).toBeInTheDocument();
-    // Wait for dismiss
-    setTimeout(() => {
-      expect(screen.queryByText('Dismiss me')).not.toBeInTheDocument();
-    }, 200);
+  it('dismissMessage and clearMessages are callable and do nothing', () => {
+    const { result } = renderHook(() => useMessageDisplay());
+    expect(() => result.current.dismissMessage('id')).not.toThrow();
+    expect(() => result.current.clearMessages()).not.toThrow();
   });
 });

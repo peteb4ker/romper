@@ -1,6 +1,7 @@
 import React from 'react';
 import { FiPlay, FiSquare } from 'react-icons/fi';
-import { NUM_VOICES, NUM_STEPS } from './hooks/useKitStepSequencer';
+
+import { NUM_STEPS,NUM_VOICES } from './hooks/useKitStepSequencer';
 import { useStepSequencerFocus } from './hooks/useStepSequencerFocus';
 
 // @ts-ignore

@@ -175,8 +175,6 @@ Add a programmable 4-channel, 16-step XOX-style step sequencer to the kit previe
 - Information, errors, and warning messages are displayed in a central location at the top of the screen and are styled appropriately.
 - Edge cases (invalid/corrupt files, SD removal, duplication, slot/voice limits, missing samples, etc.) are handled and more will be added as needed.
 - A-Z hotkeys will scroll to the corresponding bank and move keyboard focus to the first kit in that bank.
-- Arrow keys (Up/Down/Left/Right) move focus between kits in the kit browser grid, wrapping between columns as appropriate.
-- Enter/Space selects the focused kit.
 - Focus indicators must be visible and accessible.
 - Navigation is disabled at the first/last kit as appropriate.
 - UI is built with React and styled with Tailwind CSS.

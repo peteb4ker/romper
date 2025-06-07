@@ -14,7 +14,7 @@
         "test": "vitest --coverage",
         "test:ui": "vitest --ui --coverage",
         "make": "electron-forge make -- --arch=universal",
-        "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+        "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
         "clean": "rm -fr dist && rm -fr out",
         "dev:all": "npm run build && npm run build:preload && npm run build:main && concurrently \"vite dev\" \"sleep 3 && npm run electron:dev\""
     },
@@ -57,6 +57,7 @@
         "eslint-plugin-prettier": "^5.4.1",
         "eslint-plugin-react": "^7.37.5",
         "eslint-plugin-react-hooks": "^5.2.0",
+        "eslint-plugin-simple-import-sort": "^12.1.1",
         "globals": "^16.2.0",
         "jsdom": "^26.1.0",
         "postcss": "^8.5.4",

@@ -1,9 +1,10 @@
 import React from 'react';
-import { FiFolder, FiCopy } from 'react-icons/fi';
-import { MdMic, MdAutoAwesome } from 'react-icons/md';
 import { BiSolidPiano } from 'react-icons/bi';
-import { TiArrowLoop } from 'react-icons/ti';
+import { FiCopy,FiFolder } from 'react-icons/fi';
 import { GiDrumKit } from 'react-icons/gi';
+import { MdAutoAwesome,MdMic } from 'react-icons/md';
+import { TiArrowLoop } from 'react-icons/ti';
+
 import { useKitItem } from './hooks/useKitItem';
 import { toCapitalCase } from './kitUtils';
 
@@ -52,7 +53,7 @@ const KitItem = React.memo(React.forwardRef<HTMLDivElement, KitItemProps & { 'da
                 className={`flex flex-col p-2 rounded border text-sm ${isValid
                     ? 'border-gray-300 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-800'
                     : 'border-red-500 bg-red-100 dark:bg-red-900'
-                    } cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-300 ${isSelected ? 'ring-2 ring-blue-400 dark:ring-blue-300 border-blue-400 dark:border-blue-300 bg-blue-50 dark:bg-blue-900' : ''}`}
+                    } cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-300 ${selectedHighlight}`}
                 onClick={onSelect}
                 data-kit={kit}
                 data-testid={`kit-item-${kit}`}

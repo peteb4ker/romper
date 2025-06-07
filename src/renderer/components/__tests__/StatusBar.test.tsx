@@ -1,10 +1,11 @@
 // Test suite for StatusBar component
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import StatusBar from '../StatusBar';
-import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import React from 'react';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { afterEach } from 'vitest';
+
+import StatusBar from '../StatusBar';
 
 afterEach(() => {
   cleanup();

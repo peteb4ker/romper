@@ -1,11 +1,30 @@
-import { cleanup,fireEvent, render, screen, waitFor } from '@testing-library/react';
-import React from 'react';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import React from "react";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
-import KitDetails from '../KitDetails';
+import KitDetails from "../KitDetails";
 
 // Helper to mock electronAPI with dynamic state
-function mockElectronAPI({ files = [], voiceNames = {}, updateVoiceNames }: {
+function mockElectronAPI({
+  files = [],
+  voiceNames = {},
+  updateVoiceNames,
+}: {
   files?: string[];
   voiceNames?: any;
   updateVoiceNames?: () => any;
@@ -19,8 +38,8 @@ function mockElectronAPI({ files = [], voiceNames = {}, updateVoiceNames }: {
       }
       return {
         kits: {
-          TestKit: { label: 'TestKit', voiceNames: { ...currentVoiceNames } }
-        }
+          TestKit: { label: "TestKit", voiceNames: { ...currentVoiceNames } },
+        },
       };
     },
     writeRampleLabels: async () => {},
@@ -30,14 +49,16 @@ function mockElectronAPI({ files = [], voiceNames = {}, updateVoiceNames }: {
   };
 }
 
-describe('KitDetails', () => {
+describe("KitDetails", () => {
   beforeAll(() => {
-    HTMLCanvasElement.prototype.getContext = function () { return null; } as any;
+    HTMLCanvasElement.prototype.getContext = function () {
+      return null;
+    } as any;
   });
 
   beforeEach(() => {
     mockElectronAPI({
-      voiceNames: { 1: '', 2: '', 3: '', 4: '' }
+      voiceNames: { 1: "", 2: "", 3: "", 4: "" },
     });
   });
 
@@ -45,26 +66,28 @@ describe('KitDetails', () => {
     cleanup();
   });
 
-  describe('voice name controls', () => {
-    it('shows edit/rescan controls and a no-name indicator if no voice name is set', async () => {
-      mockElectronAPI({ voiceNames: { 1: '', 2: '', 3: '', 4: '' } });
+  describe("voice name controls", () => {
+    it("shows edit/rescan controls and a no-name indicator if no voice name is set", async () => {
+      mockElectronAPI({ voiceNames: { 1: "", 2: "", 3: "", 4: "" } });
       render(
         <KitDetails
           kitName="TestKit"
           sdCardPath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />
+        />,
       );
-      const noNameIndicators = await screen.findAllByText('No voice name set');
+      const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThan(0);
-      expect(screen.getAllByTitle('Edit voice name').length).toBeGreaterThan(0);
-      expect(screen.getAllByTitle('Rescan voice name').length).toBeGreaterThan(0);
+      expect(screen.getAllByTitle("Edit voice name").length).toBeGreaterThan(0);
+      expect(screen.getAllByTitle("Rescan voice name").length).toBeGreaterThan(
+        0,
+      );
     });
-    it('auto-scans all voice names if none are set', async () => {
+    it("auto-scans all voice names if none are set", async () => {
       mockElectronAPI({
-        files: ['1 Kick.wav', '2 Snare.wav', '3 Hat.wav', '4 Tom.wav'],
-        voiceNames: { 1: 'Kick', 2: 'Snare', 3: 'Hat', 4: 'Tom' }
+        files: ["1 Kick.wav", "2 Snare.wav", "3 Hat.wav", "4 Tom.wav"],
+        voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" },
       });
       render(
         <KitDetails
@@ -72,73 +95,98 @@ describe('KitDetails', () => {
           sdCardPath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />
+        />,
       );
-      await waitFor(() => expect(screen.getByTestId('voice-name-1')).toHaveTextContent('Kick'));
-      expect(screen.getByTestId('voice-name-1')).toHaveTextContent('Kick');
-      expect(screen.getByTestId('voice-name-2')).toHaveTextContent('Snare');
-      expect(screen.getByTestId('voice-name-3')).toHaveTextContent('Hat');
-      expect(screen.getByTestId('voice-name-4')).toHaveTextContent('Tom');
+      await waitFor(() =>
+        expect(screen.getByTestId("voice-name-1")).toHaveTextContent("Kick"),
+      );
+      expect(screen.getByTestId("voice-name-1")).toHaveTextContent("Kick");
+      expect(screen.getByTestId("voice-name-2")).toHaveTextContent("Snare");
+      expect(screen.getByTestId("voice-name-3")).toHaveTextContent("Hat");
+      expect(screen.getByTestId("voice-name-4")).toHaveTextContent("Tom");
     });
   });
 
-  describe('voice rescanning', () => {
-    it('rescans a single voice and updates only that voice', async () => {
+  describe("voice rescanning", () => {
+    it("rescans a single voice and updates only that voice", async () => {
       let updated = false;
       mockElectronAPI({
-        files: ['1 Kick.wav', '2 Snare.wav', '3 Hat.wav', '4 Tom.wav'],
-        voiceNames: { 1: '', 2: '', 3: '', 4: '' },
-        updateVoiceNames: () => updated ? { 1: 'Kick', 2: 'Snare', 3: 'Hat', 4: 'Tom' } : undefined
+        files: ["1 Kick.wav", "2 Snare.wav", "3 Hat.wav", "4 Tom.wav"],
+        voiceNames: { 1: "", 2: "", 3: "", 4: "" },
+        updateVoiceNames: () =>
+          updated ? { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" } : undefined,
       });
       render(
-        <KitDetails kitName="TestKit" sdCardPath="/sd" onBack={() => {}} onMessage={vi.fn()} />
+        <KitDetails
+          kitName="TestKit"
+          sdCardPath="/sd"
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
       );
-      const noNameIndicators = await screen.findAllByText('No voice name set');
+      const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThanOrEqual(4);
-      const rescanButtons = screen.getAllByTitle('Rescan voice name');
+      const rescanButtons = screen.getAllByTitle("Rescan voice name");
       updated = true;
       fireEvent.click(rescanButtons[1]);
-      await waitFor(() => expect(screen.getByTestId('voice-name-1')).toHaveTextContent('Kick'));
-      expect(screen.getByTestId('voice-name-1')).toHaveTextContent('Kick');
-      expect(screen.getByTestId('voice-name-2')).toHaveTextContent('Snare');
-      expect(screen.getByTestId('voice-name-3')).toHaveTextContent('Hat');
-      expect(screen.getByTestId('voice-name-4')).toHaveTextContent('Tom');
-      expect(screen.queryByText('No voice name set')).toBeNull();
+      await waitFor(() =>
+        expect(screen.getByTestId("voice-name-1")).toHaveTextContent("Kick"),
+      );
+      expect(screen.getByTestId("voice-name-1")).toHaveTextContent("Kick");
+      expect(screen.getByTestId("voice-name-2")).toHaveTextContent("Snare");
+      expect(screen.getByTestId("voice-name-3")).toHaveTextContent("Hat");
+      expect(screen.getByTestId("voice-name-4")).toHaveTextContent("Tom");
+      expect(screen.queryByText("No voice name set")).toBeNull();
     });
-    it('rescans all voices and updates all names', async () => {
+    it("rescans all voices and updates all names", async () => {
       let updated = false;
       mockElectronAPI({
-        files: ['1 Kick.wav', '2 Snare.wav', '3 Hat.wav', '4 Tom.wav'],
-        voiceNames: { 1: '', 2: '', 3: '', 4: '' },
-        updateVoiceNames: () => updated ? { 1: 'Kick', 2: 'Snare', 3: 'Hat', 4: 'Tom' } : undefined
+        files: ["1 Kick.wav", "2 Snare.wav", "3 Hat.wav", "4 Tom.wav"],
+        voiceNames: { 1: "", 2: "", 3: "", 4: "" },
+        updateVoiceNames: () =>
+          updated ? { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" } : undefined,
       });
       render(
-        <KitDetails kitName="TestKit" sdCardPath="/sd" onBack={() => {}} onMessage={vi.fn()} />
+        <KitDetails
+          kitName="TestKit"
+          sdCardPath="/sd"
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
       );
-      const noNameIndicators = await screen.findAllByText('No voice name set');
+      const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThanOrEqual(4);
-      const rescanAll = screen.getByRole('button', { name: /rescan kit voice names/i });
+      const rescanAll = screen.getByRole("button", {
+        name: /rescan kit voice names/i,
+      });
       updated = true;
       fireEvent.click(rescanAll);
-      await waitFor(() => expect(screen.getByTestId('voice-name-1')).toHaveTextContent('Kick'));
-      expect(screen.getByTestId('voice-name-1')).toHaveTextContent('Kick');
-      expect(screen.getByTestId('voice-name-2')).toHaveTextContent('Snare');
-      expect(screen.getByTestId('voice-name-3')).toHaveTextContent('Hat');
-      expect(screen.getByTestId('voice-name-4')).toHaveTextContent('Tom');
-      expect(screen.queryByText('No voice name set')).toBeNull();
+      await waitFor(() =>
+        expect(screen.getByTestId("voice-name-1")).toHaveTextContent("Kick"),
+      );
+      expect(screen.getByTestId("voice-name-1")).toHaveTextContent("Kick");
+      expect(screen.getByTestId("voice-name-2")).toHaveTextContent("Snare");
+      expect(screen.getByTestId("voice-name-3")).toHaveTextContent("Hat");
+      expect(screen.getByTestId("voice-name-4")).toHaveTextContent("Tom");
+      expect(screen.queryByText("No voice name set")).toBeNull();
     });
-    it('always shows all four voices, even if no match', async () => {
+    it("always shows all four voices, even if no match", async () => {
       mockElectronAPI({
-        files: ['1 Kick.wav', '2 Snare.wav'],
-        voiceNames: { 1: '', 2: '', 3: '', 4: '' }
+        files: ["1 Kick.wav", "2 Snare.wav"],
+        voiceNames: { 1: "", 2: "", 3: "", 4: "" },
       });
       render(
-        <KitDetails kitName="TestKit" sdCardPath="/sd" onBack={() => {}} onMessage={vi.fn()} />
+        <KitDetails
+          kitName="TestKit"
+          sdCardPath="/sd"
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
       );
-      expect(await screen.findByTestId('voice-name-1')).toBeInTheDocument();
-      expect(screen.getByTestId('voice-name-2')).toBeInTheDocument();
-      expect(screen.getByTestId('voice-name-3')).toBeInTheDocument();
-      expect(screen.getByTestId('voice-name-4')).toBeInTheDocument();
+      expect(await screen.findByTestId("voice-name-1")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-name-2")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-name-3")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-name-4")).toBeInTheDocument();
     });
   });
 });

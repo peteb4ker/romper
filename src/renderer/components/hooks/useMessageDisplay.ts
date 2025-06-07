@@ -1,10 +1,14 @@
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
-import { MessageType } from '../MessageDisplay';
+import { MessageType } from "../MessageDisplay";
 
 export function useMessageDisplay() {
   // Sonner handles all state internally; just expose a compatible API
-  const showMessage = (text: string, type: MessageType = 'info', duration?: number) => {
+  const showMessage = (
+    text: string,
+    type: MessageType = "info",
+    duration?: number,
+  ) => {
     // Sonner supports types: 'info', 'success', 'warning', 'error', 'loading'
     // We'll map our types directly
     return toast(text, {

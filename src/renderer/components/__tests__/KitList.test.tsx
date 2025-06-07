@@ -1,11 +1,17 @@
 // Test suite for KitList component
-import './setupTestUtils';
+import "./setupTestUtils";
 
-import { cleanup,fireEvent, render, screen, within } from '@testing-library/react';
-import React from 'react';
-import { describe, expect,it, vi } from 'vitest';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
+import React from "react";
+import { describe, expect, it, vi } from "vitest";
 
-import KitList from '../KitList';
+import KitList from "../KitList";
 
 // Helper: get kit item by data-kit attribute
 function getKitItem(kit) {
@@ -14,29 +20,29 @@ function getKitItem(kit) {
 
 // Helper: expect only one kit to be selected/focused
 function expectOnlySelected(kits, selectedKit) {
-  kits.forEach(k => {
+  kits.forEach((k) => {
     const el = getKitItem(k);
     if (k === selectedKit) {
-      expect(el.getAttribute('aria-selected')).toBe('true');
-      expect(el.getAttribute('tabindex')).toBe('0');
+      expect(el.getAttribute("aria-selected")).toBe("true");
+      expect(el.getAttribute("tabindex")).toBe("0");
     } else {
-      expect(el.getAttribute('aria-selected')).toBe('false');
-      expect(el.getAttribute('tabindex')).toBe('-1');
+      expect(el.getAttribute("aria-selected")).toBe("false");
+      expect(el.getAttribute("tabindex")).toBe("-1");
     }
   });
 }
 
-describe('KitList', () => {
-  const kits = ['A1', 'A2', 'B1'];
+describe("KitList", () => {
+  const kits = ["A1", "A2", "B1"];
   const kitLabels = {
-    A1: { label: 'Kick' },
-    A2: { label: 'Snare' },
-    B1: { label: 'Hat' },
+    A1: { label: "Kick" },
+    A2: { label: "Snare" },
+    B1: { label: "Hat" },
   };
-  const bankNames = { A: 'Drums', B: 'Perc' };
+  const bankNames = { A: "Drums", B: "Perc" };
   const sampleCounts = { A1: [1, 2, 3, 4], A2: [2, 2, 2, 2], B1: [0, 1, 0, 1] };
 
-  it('renders all kits and bank anchors', () => {
+  it("renders all kits and bank anchors", () => {
     render(
       <KitList
         kits={kits}
@@ -46,18 +52,18 @@ describe('KitList', () => {
         sdCardPath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
-    kits.forEach(kit => {
+    kits.forEach((kit) => {
       expect(getKitItem(kit)).toBeDefined();
     });
-    expect(screen.getByText('Bank A')).toBeDefined();
-    expect(screen.getByText('Bank B')).toBeDefined();
-    expect(screen.getByText('Drums')).toBeDefined();
-    expect(screen.getByText('Perc')).toBeDefined();
+    expect(screen.getByText("Bank A")).toBeDefined();
+    expect(screen.getByText("Bank B")).toBeDefined();
+    expect(screen.getByText("Drums")).toBeDefined();
+    expect(screen.getByText("Perc")).toBeDefined();
   });
 
-  it('calls onSelectKit when a valid kit is clicked', () => {
+  it("calls onSelectKit when a valid kit is clicked", () => {
     const onSelectKit = vi.fn();
     render(
       <KitList
@@ -68,13 +74,13 @@ describe('KitList', () => {
         sdCardPath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
-    fireEvent.click(getKitItem('A1'));
-    expect(onSelectKit).toHaveBeenCalledWith('A1');
+    fireEvent.click(getKitItem("A1"));
+    expect(onSelectKit).toHaveBeenCalledWith("A1");
   });
 
-  it('calls onDuplicate when duplicate button is clicked', () => {
+  it("calls onDuplicate when duplicate button is clicked", () => {
     const onDuplicate = vi.fn();
     render(
       <KitList
@@ -85,16 +91,16 @@ describe('KitList', () => {
         sdCardPath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
     // Find the duplicate button inside the kit item
-    const kitItem = getKitItem('A1');
-    const duplicateBtn = within(kitItem).getByTitle('Duplicate kit');
+    const kitItem = getKitItem("A1");
+    const duplicateBtn = within(kitItem).getByTitle("Duplicate kit");
     fireEvent.click(duplicateBtn);
     expect(onDuplicate).toHaveBeenCalled();
   });
 
-  it('renders sample counts for each kit', () => {
+  it("renders sample counts for each kit", () => {
     render(
       <KitList
         kits={kits}
@@ -104,9 +110,9 @@ describe('KitList', () => {
         sdCardPath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
-    kits.forEach(kit => {
+    kits.forEach((kit) => {
       const kitItem = getKitItem(kit);
       // For each count, check that the correct number of sample count elements are rendered
       sampleCounts[kit].forEach((count, idx) => {
@@ -119,7 +125,7 @@ describe('KitList', () => {
     });
   });
 
-  it('focuses only the first kit on load', () => {
+  it("focuses only the first kit on load", () => {
     render(
       <KitList
         kits={kits}
@@ -129,12 +135,12 @@ describe('KitList', () => {
         sdCardPath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
-    expectOnlySelected(kits, 'A1');
+    expectOnlySelected(kits, "A1");
   });
 
-  it('A-Z hotkey focuses only the first kit in the selected bank', () => {
+  it("A-Z hotkey focuses only the first kit in the selected bank", () => {
     render(
       <KitList
         kits={kits}
@@ -144,17 +150,17 @@ describe('KitList', () => {
         sdCardPath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
-    const list = screen.getByLabelText('Kit list');
+    const list = screen.getByLabelText("Kit list");
     list.focus();
-    fireEvent.keyDown(list, { key: 'B' });
-    expectOnlySelected(kits, 'B1');
-    fireEvent.keyDown(list, { key: 'A' });
-    expectOnlySelected(kits, 'A1');
+    fireEvent.keyDown(list, { key: "B" });
+    expectOnlySelected(kits, "B1");
+    fireEvent.keyDown(list, { key: "A" });
+    expectOnlySelected(kits, "A1");
   });
 
-  it('arrow keys and Enter/Space do not change selection', () => {
+  it("arrow keys and Enter/Space do not change selection", () => {
     // This test ensures that only A-Z hotkey navigation is active and all other keyboard navigation is disabled.
     const onSelectKit = vi.fn();
     render(
@@ -166,34 +172,44 @@ describe('KitList', () => {
         sdCardPath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
-    const list = screen.getByLabelText('Kit list');
+    const list = screen.getByLabelText("Kit list");
     list.focus();
     // Initial focus is on A1
-    expectOnlySelected(kits, 'A1');
+    expectOnlySelected(kits, "A1");
     // Try all non-A-Z navigation keys
-    fireEvent.keyDown(list, { key: 'ArrowRight' });
-    fireEvent.keyDown(list, { key: 'ArrowLeft' });
-    fireEvent.keyDown(list, { key: 'ArrowDown' });
-    fireEvent.keyDown(list, { key: 'ArrowUp' });
-    fireEvent.keyDown(list, { key: ' ' });
-    fireEvent.keyDown(list, { key: 'Enter' });
+    fireEvent.keyDown(list, { key: "ArrowRight" });
+    fireEvent.keyDown(list, { key: "ArrowLeft" });
+    fireEvent.keyDown(list, { key: "ArrowDown" });
+    fireEvent.keyDown(list, { key: "ArrowUp" });
+    fireEvent.keyDown(list, { key: " " });
+    fireEvent.keyDown(list, { key: "Enter" });
     // Selection should not change
-    expectOnlySelected(kits, 'A1');
+    expectOnlySelected(kits, "A1");
     // onSelectKit should never be called for these keys
     expect(onSelectKit).not.toHaveBeenCalled();
   });
 
-  it('renders deduped voice label sets for each kit', () => {
-    const kits = ['A1', 'A2', 'B1'];
+  it("renders deduped voice label sets for each kit", () => {
+    const kits = ["A1", "A2", "B1"];
     const kitLabels = {
-      A1: { label: 'Kick', voiceNames: { 1: 'kick', 2: 'snare', 3: 'kick', 4: '' } },
-      A2: { label: 'Snare', voiceNames: { 1: 'snare', 2: 'snare', 3: '', 4: 'hat' } },
-      B1: { label: 'Hat', voiceNames: { 1: '', 2: '', 3: '', 4: '' } },
+      A1: {
+        label: "Kick",
+        voiceNames: { 1: "kick", 2: "snare", 3: "kick", 4: "" },
+      },
+      A2: {
+        label: "Snare",
+        voiceNames: { 1: "snare", 2: "snare", 3: "", 4: "hat" },
+      },
+      B1: { label: "Hat", voiceNames: { 1: "", 2: "", 3: "", 4: "" } },
     };
-    const bankNames = { A: 'Drums', B: 'Perc' };
-    const sampleCounts = { A1: [1, 2, 3, 4], A2: [2, 2, 2, 2], B1: [0, 1, 0, 1] };
+    const bankNames = { A: "Drums", B: "Perc" };
+    const sampleCounts = {
+      A1: [1, 2, 3, 4],
+      A2: [2, 2, 2, 2],
+      B1: [0, 1, 0, 1],
+    };
     render(
       <KitList
         kits={kits}
@@ -203,26 +219,26 @@ describe('KitList', () => {
         sdCardPath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
     // A1 should show 'Kick' and 'Snare' (deduped, capitalized)
-    const kitA1 = getKitItem('A1');
-    expect(within(kitA1).getByText('Kick')).toBeDefined();
-    expect(within(kitA1).getByText('Snare')).toBeDefined();
+    const kitA1 = getKitItem("A1");
+    expect(within(kitA1).getByText("Kick")).toBeDefined();
+    expect(within(kitA1).getByText("Snare")).toBeDefined();
     // A2 should show 'Snare' and 'Hat' (deduped, capitalized)
-    const kitA2 = getKitItem('A2');
-    expect(within(kitA2).getByText('Snare')).toBeDefined();
-    expect(within(kitA2).getByText('Hat')).toBeDefined();
+    const kitA2 = getKitItem("A2");
+    expect(within(kitA2).getByText("Snare")).toBeDefined();
+    expect(within(kitA2).getByText("Hat")).toBeDefined();
     // B1 should not show any voice tags
-    const kitB1 = getKitItem('B1');
-    expect(within(kitB1).queryByText('Kick')).toBeNull();
-    expect(within(kitB1).queryByText('Snare')).toBeNull();
-    expect(within(kitB1).queryByText('Hat')).toBeNull();
+    const kitB1 = getKitItem("B1");
+    expect(within(kitB1).queryByText("Kick")).toBeNull();
+    expect(within(kitB1).queryByText("Snare")).toBeNull();
+    expect(within(kitB1).queryByText("Hat")).toBeNull();
   });
 });
 
-import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { cleanup } from "@testing-library/react";
+import { afterEach } from "vitest";
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();

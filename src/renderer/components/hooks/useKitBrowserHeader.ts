@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback } from "react";
 
 export function useKitBrowserHeader({
   onSelectSdCard,
@@ -13,10 +13,19 @@ export function useKitBrowserHeader({
   onCreateNextKit: () => void;
   nextKitSlot: string | null;
 }) {
-  const handleSelectSdCard = useCallback(() => onSelectSdCard(), [onSelectSdCard]);
-  const handleRescanAllVoiceNames = useCallback(() => onRescanAllVoiceNames(), [onRescanAllVoiceNames]);
+  const handleSelectSdCard = useCallback(
+    () => onSelectSdCard(),
+    [onSelectSdCard],
+  );
+  const handleRescanAllVoiceNames = useCallback(
+    () => onRescanAllVoiceNames(),
+    [onRescanAllVoiceNames],
+  );
   const handleShowNewKit = useCallback(() => onShowNewKit(), [onShowNewKit]);
-  const handleCreateNextKit = useCallback(() => onCreateNextKit(), [onCreateNextKit]);
+  const handleCreateNextKit = useCallback(
+    () => onCreateNextKit(),
+    [onCreateNextKit],
+  );
 
   return {
     handleSelectSdCard,

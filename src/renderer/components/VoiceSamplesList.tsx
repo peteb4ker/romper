@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-import SampleList from './SampleList';
+import SampleList from "./SampleList";
 
 interface VoiceSamplesListProps {
   samples: { [voice: number]: string[] };
@@ -8,11 +8,17 @@ interface VoiceSamplesListProps {
   onPlay: (voice: number, sample: string) => void;
 }
 
-const VoiceSamplesList: React.FC<VoiceSamplesListProps> = ({ samples, playing, onPlay }) => (
+const VoiceSamplesList: React.FC<VoiceSamplesListProps> = ({
+  samples,
+  playing,
+  onPlay,
+}) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    {[1, 2, 3, 4].map(voice => (
+    {[1, 2, 3, 4].map((voice) => (
       <div key={voice} className="flex flex-col">
-        <div className="font-semibold mb-1 text-gray-800 dark:text-gray-100 pl-1">Voice {voice}:</div>
+        <div className="font-semibold mb-1 text-gray-800 dark:text-gray-100 pl-1">
+          Voice {voice}:
+        </div>
         <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
           <SampleList
             voice={voice}

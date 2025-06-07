@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 export interface KitSamplePlanSlot {
   /** Absolute or relative path to the source file (before commit) */
@@ -37,14 +37,18 @@ export interface RampleLabels {
  * @returns Parsed RampleLabels object, or null if not found/invalid
  */
 export function readRampleLabels(sdCardPath: string): RampleLabels | null {
-  const filePath = path.join(sdCardPath, '.rample_labels.json');
+  const filePath = path.join(sdCardPath, ".rample_labels.json");
   if (!fs.existsSync(filePath)) return null;
   try {
-    const raw = fs.readFileSync(filePath, 'utf-8');
+    const raw = fs.readFileSync(filePath, "utf-8");
     const parsed = JSON.parse(raw);
-    if (!parsed.kits || typeof parsed.kits !== 'object') return null;
+    if (!parsed.kits || typeof parsed.kits !== "object") return null;
     for (const kitName in parsed.kits) {
-      if (typeof parsed.kits[kitName] !== 'object' || parsed.kits[kitName] === null) return null;
+      if (
+        typeof parsed.kits[kitName] !== "object" ||
+        parsed.kits[kitName] === null
+      )
+        return null;
     }
     return parsed as RampleLabels;
   } catch (e) {
@@ -57,8 +61,11 @@ export function readRampleLabels(sdCardPath: string): RampleLabels | null {
  * @param sdCardPath Path to the SD card root
  * @param labels RampleLabels object to write
  */
-export function writeRampleLabels(sdCardPath: string, labels: RampleLabels): void {
-  const filePath = path.join(sdCardPath, '.rample_labels.json');
+export function writeRampleLabels(
+  sdCardPath: string,
+  labels: RampleLabels,
+): void {
+  const filePath = path.join(sdCardPath, ".rample_labels.json");
   console.log(`[rampleLabels] Writing labels to: ${filePath}`);
-  fs.writeFileSync(filePath, JSON.stringify(labels, null, 2), 'utf-8');
+  fs.writeFileSync(filePath, JSON.stringify(labels, null, 2), "utf-8");
 }

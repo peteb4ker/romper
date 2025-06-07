@@ -1,9 +1,15 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
-import type { RampleKitLabel, VoiceSamples } from '../kitTypes';
-import { inferVoiceTypeFromFilename } from '../kitUtils';
+import type { RampleKitLabel, VoiceSamples } from "../kitTypes";
+import { inferVoiceTypeFromFilename } from "../kitUtils";
 
-export function useKitDetails({ kitLabel, samples, sdCardPath, kitName, onRescanAllVoiceNames }: {
+export function useKitDetails({
+  kitLabel,
+  samples,
+  sdCardPath,
+  kitName,
+  onRescanAllVoiceNames,
+}: {
   kitLabel?: RampleKitLabel;
   samples: VoiceSamples;
   sdCardPath: string;
@@ -14,12 +20,19 @@ export function useKitDetails({ kitLabel, samples, sdCardPath, kitName, onRescan
   const scannedRef = useRef(false);
   useEffect(() => {
     if (!kitLabel || !samples) return;
-    const allMissing = [1,2,3,4].every(v => {
+    const allMissing = [1, 2, 3, 4].every((v) => {
       const name = kitLabel.voiceNames?.[v];
-      return name === undefined || name === null || name === '';
+      return name === undefined || name === null || name === "";
     });
-    const samplesLoaded = [1,2,3,4].some(v => (samples[v] && samples[v].length > 0));
-    if (allMissing && samplesLoaded && !scannedRef.current && onRescanAllVoiceNames) {
+    const samplesLoaded = [1, 2, 3, 4].some(
+      (v) => samples[v] && samples[v].length > 0,
+    );
+    if (
+      allMissing &&
+      samplesLoaded &&
+      !scannedRef.current &&
+      onRescanAllVoiceNames
+    ) {
       onRescanAllVoiceNames();
       scannedRef.current = true;
     }

@@ -1,10 +1,11 @@
 // This hook provides access to the Sonner-based message API via context.
-import { useContext } from 'react';
+import { useContext } from "react";
 
-import { MessageDisplayContext } from '../MessageDisplayContext';
+import { MessageDisplayContext } from "../MessageDisplayContext";
 
 export function useMessageApi() {
   const ctx = useContext(MessageDisplayContext);
-  if (!ctx) throw new Error('useMessageApi must be used within MessageDisplayContext');
+  if (!ctx)
+    throw new Error("useMessageApi must be used within MessageDisplayContext");
   return ctx;
 }

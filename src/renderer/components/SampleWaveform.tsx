@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 
 interface SampleWaveformProps {
   filePath: string;
@@ -8,7 +8,13 @@ interface SampleWaveformProps {
   onError?: (error: string) => void;
 }
 
-const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, stopTrigger, onPlayingChange, onError }) => {
+const SampleWaveform: React.FC<SampleWaveformProps> = ({
+  filePath,
+  playTrigger,
+  stopTrigger,
+  onPlayingChange,
+  onError,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -23,12 +29,15 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
     let cancelled = false;
     setError(null);
     // @ts-ignore
-    window.electronAPI.getAudioBuffer(filePath)
+    window.electronAPI
+      .getAudioBuffer(filePath)
       .then((arrayBuffer: ArrayBuffer) => {
         if (cancelled) return;
         // Always close previous context before creating a new one
-        if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-          try { audioCtxRef.current.close(); } catch (e) {}
+        if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
+          try {
+            audioCtxRef.current.close();
+          } catch (e) {}
         }
         const ctx = new window.AudioContext();
         audioCtxRef.current = ctx;
@@ -39,15 +48,17 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
       })
       .catch((err) => {
         if (!cancelled) {
-          setError('Failed to load audio.');
-          if (onError) onError('Failed to load audio.');
+          setError("Failed to load audio.");
+          if (onError) onError("Failed to load audio.");
         }
         setAudioBuffer(null);
       });
     return () => {
       cancelled = true;
-      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        try { audioCtxRef.current.close(); } catch (e) {}
+      if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
+        try {
+          audioCtxRef.current.close();
+        } catch (e) {}
       }
     };
   }, [filePath]);
@@ -56,19 +67,20 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
   function drawWaveform(buffer: AudioBuffer) {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#0ea5e9'; // teal-500
+    ctx.strokeStyle = "#0ea5e9"; // teal-500
     ctx.lineWidth = 1;
     const data = buffer.getChannelData(0);
     const step = Math.ceil(data.length / canvas.width);
     const amp = canvas.height / 2;
     ctx.beginPath();
     for (let i = 0; i < canvas.width; i++) {
-      let min = 1.0, max = -1.0;
+      let min = 1.0,
+        max = -1.0;
       for (let j = 0; j < step; j++) {
-        const datum = data[(i * step) + j] || 0;
+        const datum = data[i * step + j] || 0;
         if (datum < min) min = datum;
         if (datum > max) max = datum;
       }
@@ -81,7 +93,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
   // Stop playback logic
   const stopPlayback = () => {
     if (sourceRef.current) {
-      try { sourceRef.current.stop(); } catch (e) {}
+      try {
+        sourceRef.current.stop();
+      } catch (e) {}
       sourceRef.current.disconnect();
       sourceRef.current = null;
     }
@@ -146,13 +160,13 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !audioBuffer) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
     // Redraw waveform
     drawWaveform(audioBuffer);
     // Draw playhead
     if (isPlaying) {
-      ctx.strokeStyle = '#f59e42'; // orange-400
+      ctx.strokeStyle = "#f59e42"; // orange-400
       ctx.beginPath();
       const x = Math.floor(playhead * canvas.width);
       ctx.moveTo(x, 0);
@@ -165,8 +179,10 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
   useEffect(() => {
     return () => {
       stopPlayback();
-      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        try { audioCtxRef.current.close(); } catch (e) {}
+      if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
+        try {
+          audioCtxRef.current.close();
+        } catch (e) {}
       }
     };
   }, []);
@@ -187,8 +203,14 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({ filePath, playTrigger, 
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <canvas ref={canvasRef} width={80} height={18} className="rounded bg-slate-100 dark:bg-slate-800 shadow align-middle" style={{ display: 'inline-block', verticalAlign: 'middle' }} />
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <canvas
+        ref={canvasRef}
+        width={80}
+        height={18}
+        className="rounded bg-slate-100 dark:bg-slate-800 shadow align-middle"
+        style={{ display: "inline-block", verticalAlign: "middle" }}
+      />
       {/* Remove inline error message, error is now shown via MessageDisplay */}
     </div>
   );

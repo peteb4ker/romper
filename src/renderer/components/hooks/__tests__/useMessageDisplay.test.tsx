@@ -6,7 +6,7 @@ import { act, renderHook } from "@testing-library/react";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useMessageDisplay } from "../hooks/useMessageDisplay";
+import { useMessageDisplay } from "../useMessageDisplay";
 
 describe("useMessageDisplay", () => {
   beforeEach(() => {

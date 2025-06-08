@@ -3,7 +3,7 @@
 - `src/renderer/components/KitBrowser.tsx` - Main kit browser UI, kit navigation, and kit list rendering.
 - `src/renderer/components/KitDetails.tsx` - Kit detail page, voice/slot management, and sample assignment.
 - `src/renderer/components/KitVoicePanel.tsx` - UI for managing voices and sample slots within a kit.
-- `src/renderer/components/SampleList.tsx` - Displays and manages samples for a voice.
+- `src/renderer/components/KitVoicePanels.tsx` - Renders all 4 KitVoicePanel components and centralizes cross-voice navigation logic.
 - `src/renderer/components/SampleWaveform.tsx` - Displays waveform previews for samples.
 - `src/renderer/components/StatusBar.tsx` - Status bar for progress indicators and messages.
 - `src/renderer/components/KitDialogs.tsx` - Dialogs for warnings, errors, confirmations, and factory restore.
@@ -17,8 +17,8 @@
 - `src/renderer/components/utils/kitUtils.ts` - Utility functions for kit/voice/sample validation and SD card structure.
 - `src/renderer/components/__tests__/KitBrowser.test.tsx` - Unit tests for kit browser UI and navigation.
 - `src/renderer/components/__tests__/KitDetails.test.tsx` - Unit tests for kit detail page and sample assignment.
-- `src/renderer/components/__tests__/KitVoicePanel.test.tsx` - Unit tests for voice/slot management.
-- `src/renderer/components/__tests__/SampleList.test.tsx` - Unit tests for sample list and validation.
+- `src/renderer/components/__tests__/KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel sample slot selection and keyboard navigation. Now focused only on single-voice panel logic; multi-voice/cross-panel tests have been moved to KitVoicePanels.test.tsx for clarity and separation of concerns.
+- `src/renderer/components/__tests__/KitVoicePanels.test.tsx` - Unit tests for KitVoicePanels, covering multi-voice/cross-panel navigation and integration scenarios (newly created as part of this refactor).
 - `src/renderer/components/__tests__/SampleWaveform.test.tsx` - Unit tests for waveform preview.
 - `src/renderer/components/__tests__/StatusBar.test.tsx` - Unit tests for status bar and progress indicators.
 - `src/renderer/components/__tests__/KitDialogs.test.tsx` - Unit tests for dialogs and error handling.
@@ -106,7 +106,7 @@
     - [ ] 2.7.2 Add color coding for sample counts (red, light green, bold green)
     - [ ] 2.7.3 Write unit tests for metadata display and color logic
 
-- [ ] 3.0 Implement Previewing and Audio Features
+- [x] 3.0 Implement Previewing and Audio Features
   - [x] 3.1 Implement preview for individual `.wav` samples (UI and audio engine)
     - [x] 3.1.1 Add play/stop controls for samples in UI
     - [x] 3.1.2 Integrate audio playback engine for `.wav` files
@@ -121,17 +121,29 @@
          - [x] 3.2.2.1.5 The step sequencer should be centered in the middle of its parent control
          - [x] 3.2.2.1.6 There should be a visual separation between each 4 of the 16 steps to indicate that its a beat in the bar
          - [x] 3.2.2.1.7 Its possible to show and hide the step sequencer.
-      - [x] 3.2.2.2 Allow mouse and keyboard navigation/toggling of steps (arrow keys, spacebar)
+       - [x] 3.2.2.2 Allow mouse and keyboard navigation/toggling of steps (arrow keys, spacebar)
       - [x] 3.2.2.3 Implement play/stop controls for sequencer playback (looping at 120 BPM)
+        - [] 3.2.2.3.1 Play control and BPM label should be to the left of the grid to optimize whitespace in the sequencer drawer
       - [x] 3.2.2.4 Play first sample in each voice for each active step; mute if no sample
       - [x] 3.2.2.5 Persist pattern per kit in labels JSON file
       - [x] 3.2.2.6 Unit tests for sequencer UI, playback, persistence, and navigation
-  - [ ] 3.3 Display waveform view for each sample in the UI
-    - [ ] 3.3.1 Render waveform for each sample slot
-    - [ ] 3.3.2 Write unit tests for waveform rendering
-  - [ ] 3.4 Implement keyboard navigation for previewing (spacebar to preview sample)
-    - [ ] 3.4.1 Add keyboard event handlers for sample preview
-    - [ ] 3.4.2 Write unit tests for keyboard preview navigation
+      - [x] 3.2.2.7 The sequencer is hidden by default.
+  - [x] 3.3 Display waveform view for each sample in the UI
+    - [x] 3.3.1 Render waveform for each sample slot
+    - [x] 3.3.2 Write unit tests for waveform rendering
+  - [x] 3.4 Implement keyboard navigation for previewing (spacebar to preview sample)
+    - [x] 3.4.1 Add keyboard event handlers for sample preview
+    - [x] 3.4.3 Browser focus / accessibility is not important for keyboard navigation. Custom selection is fine.
+    - [x] 3.4.4 One sample per kit should be selectable at any time.  Going down beyond the end of a voice should move selection to the top of the next voice
+    - [x] 3.4.5 Keyboard navigation should always take precedence over screen scrolling
+    - [x] 3.4.6 Keyboard navigation should work independently from sequencer navigation.  if the sequencer navigation is active, waveform navigation is ignored, if waveform navigation is active, sequencer navigation is ignored
+    - [x] 3.4.7 When selection moves to the first sample in a voice, subsequent up/down navigation should work as expected and not scroll the app
+  - [x] 3.5 Disable sequencer keyboard navigation when the sequencer is closed.
+  - [x] 3.6 Enable sample navigation when the sequencer is closed.
+  - [x] 3.7 Enable sequencer keyboard navigation when the sequencer is open.
+  - [x] 3.8 Disable sample navigation when the sequencer is open.
+  - [x] 3.9 When opening or closing the sequencer, the selection focus should always immediately switch so the user can start keyboard nabigation straight away, and not need to click on the sequencer to give it focus.
+  - [x] 3.10 Hitting the 'S' key opens and closes the sequencer.
 
 - [ ] 4.0 Implement SD Card Sync and File Operations
   - [ ] 4.1 Implement option to initialize app state from SD card

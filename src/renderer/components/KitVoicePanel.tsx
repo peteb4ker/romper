@@ -29,6 +29,12 @@ interface KitVoicePanelProps {
   ) => void;
   sdCardPath: string;
   kitName: string;
+
+  // New props for cross-voice navigation
+  selectedIdx?: number; // index of selected sample in this voice, or -1 if not active
+  onSampleKeyNav?: (direction: "up" | "down") => void;
+  onSampleSelect?: (voice: number, idx: number) => void;
+  isActive?: boolean;
 }
 
 const KitVoicePanel: React.FC<
@@ -48,6 +54,10 @@ const KitVoicePanel: React.FC<
   sdCardPath,
   kitName,
   dataTestIdVoiceName,
+  selectedIdx = -1,
+  onSampleKeyNav,
+  onSampleSelect,
+  isActive = false,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(voiceName || "");
@@ -63,6 +73,37 @@ const KitVoicePanel: React.FC<
   const handleCancel = () => {
     setEditValue(voiceName || "");
     setEditing(false);
+  };
+
+  // Keyboard navigation for sample slots
+  const listRef = React.useRef<HTMLUListElement>(null);
+
+  React.useEffect(() => {
+    setEditValue(voiceName || "");
+  }, [voiceName]);
+
+  React.useEffect(() => {
+    // Focus the selected item if list is focused and this panel is active
+    if (
+      isActive &&
+      listRef.current &&
+      listRef.current.contains(document.activeElement) &&
+      selectedIdx >= 0
+    ) {
+      const item = listRef.current.querySelectorAll("li")[selectedIdx];
+      if (item) (item as HTMLElement).focus();
+    }
+  }, [selectedIdx, isActive]);
+
+  // Only handle Enter/Space for play when focused, not up/down navigation
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLUListElement>) => {
+    if (!samples.length) return;
+    if (!isActive) return;
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      const sample = samples[selectedIdx];
+      onPlay(voice, sample);
+    }
   };
 
   return (
@@ -127,7 +168,15 @@ const KitVoicePanel: React.FC<
       </div>
       <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
         {samples && samples.length > 0 ? (
-          <ul className="list-none ml-0 text-sm">
+          <ul
+            className="list-none ml-0 text-sm"
+            ref={listRef}
+            aria-label="Sample slots"
+            data-testid={`sample-list-voice-${voice}`}
+            // Only tab-focusable if active
+            tabIndex={isActive ? 0 : -1}
+            onKeyDown={handleKeyDown}
+          >
             {samples.slice(0, 12).map((sample, i) => {
               const sampleKey = voice + ":" + sample;
               const isPlaying = samplePlaying[sampleKey];
@@ -135,7 +184,19 @@ const KitVoicePanel: React.FC<
               return (
                 <li
                   key={`${voice}-${i}-${sample}`}
-                  className="truncate flex items-center gap-2 mb-1"
+                  className={`truncate flex items-center gap-2 mb-1${
+                    selectedIdx === i && isActive
+                      ? " bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 font-bold ring-2 ring-blue-400 dark:ring-blue-300"
+                      : ""
+                  }`}
+                  tabIndex={-1}
+                  aria-selected={selectedIdx === i && isActive}
+                  data-testid={
+                    selectedIdx === i && isActive
+                      ? `sample-selected-voice-${voice}`
+                      : undefined
+                  }
+                  onClick={() => onSampleSelect && onSampleSelect(voice, i)}
                 >
                   {isPlaying ? (
                     <button
@@ -154,7 +215,9 @@ const KitVoicePanel: React.FC<
                     </button>
                   ) : (
                     <button
-                      className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs ${isPlaying ? "text-green-600 dark:text-green-400" : ""}`}
+                      className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs ${
+                        isPlaying ? "text-green-600 dark:text-green-400" : ""
+                      }`}
                       onClick={() => onPlay(voice, sample)}
                       aria-label="Play"
                       style={{

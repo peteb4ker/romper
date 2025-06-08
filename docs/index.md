@@ -12,7 +12,6 @@ For a technical overview see the [README](../README.md). This site focuses on ho
 - [Syncing Kits](./syncing.md)
 - [Settings](./settings.md)
 - [Keyboard Shortcuts](./keyboard-shortcuts.md)
-- [Troubleshooting](./troubleshooting.md)
 - [Developer Setup](./development.md)
 
 ## Features

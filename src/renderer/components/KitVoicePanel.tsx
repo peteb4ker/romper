@@ -169,7 +169,7 @@ const KitVoicePanel: React.FC<
       <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
         {samples && samples.length > 0 ? (
           <ul
-            className="list-none ml-0 text-sm"
+            className="list-none ml-0 text-sm flex flex-col"
             ref={listRef}
             aria-label="Sample slots"
             data-testid={`sample-list-voice-${voice}`}
@@ -198,6 +198,14 @@ const KitVoicePanel: React.FC<
                   }
                   onClick={() => onSampleSelect && onSampleSelect(voice, i)}
                 >
+                  <span
+                    className="text-xs font-mono text-gray-500 dark:text-gray-400 px-1 select-none inline-block align-right"
+                    style={{ minWidth: 32, textAlign: 'right', display: 'inline-block' }}
+                    data-testid={`slot-number-${voice}-${i}`}
+                  >
+                    {i + 1}.
+                  </span>
+                  {/* Slot number, always visible, not part of sample name */}
                   {isPlaying ? (
                     <button
                       className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs text-red-600 dark:text-red-400`}

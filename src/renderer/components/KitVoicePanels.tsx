@@ -34,7 +34,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     sequencerOpen: props.sequencerOpen,
   });
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div
+      className="grid grid-cols-4 gap-4 w-full"
+      data-testid="voice-panels-row"
+    >
       {[1, 2, 3, 4].map((voice) => (
         <div
           key={`${hookProps.kitName}-voicepanel-${voice}`}

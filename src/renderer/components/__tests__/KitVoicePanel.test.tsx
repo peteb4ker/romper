@@ -158,4 +158,62 @@ describe("KitVoicePanel", () => {
     });
     expect(onPlay).toHaveBeenCalledWith(1, "snare.wav");
   });
+
+  it("renders slot number indicator for each sample, visually distinct and not part of sample name", () => {
+    const samples = ["1kick.wav", "2snare.wav", "hat.wav"];
+    render(
+      <MockMessageDisplayProvider>
+        <KitVoicePanel {...controlledProps} samples={samples} />
+      </MockMessageDisplayProvider>,
+    );
+    samples.forEach((sample, i) => {
+      // Slot number indicator is always present, visually distinct, and not part of sample name
+      const slotNumber = screen.getAllByText(`${i + 1}.`)[0];
+      expect(slotNumber).toBeInTheDocument();
+      expect(slotNumber.className).toMatch(/text-xs/);
+      expect(slotNumber.className).toMatch(/font-mono/);
+      expect(slotNumber.className).toMatch(/text-gray-500/);
+      // The sample name is rendered separately
+      const sampleName = screen.getByText(sample);
+      expect(sampleName).toBeInTheDocument();
+      // Slot number and sample name are not concatenated
+      expect(sampleName.textContent).toBe(sample);
+    });
+  });
+
+  it("slot number indicator uses accessible color classes for light and dark mode", () => {
+    render(
+      <MockMessageDisplayProvider>
+        <KitVoicePanel {...controlledProps} />
+      </MockMessageDisplayProvider>,
+    );
+    // Check slot number indicator for first sample
+    const slotNumber = screen.getAllByText("1.")[0];
+    expect(slotNumber.className).toMatch(/text-gray-500/);
+    expect(slotNumber.className).toMatch(/dark:text-gray-400/);
+    // Should be visually distinct (font-mono, px-1, select-none)
+    expect(slotNumber.className).toMatch(/font-mono/);
+    expect(slotNumber.className).toMatch(/px-1/);
+    expect(slotNumber.className).toMatch(/select-none/);
+  });
+
+  it("slot number indicator takes up uniform space for alignment", () => {
+    const samples = ["1kick.wav", "2snare.wav", "hat.wav"];
+    render(
+      <MockMessageDisplayProvider>
+        <KitVoicePanel {...controlledProps} samples={samples} />
+      </MockMessageDisplayProvider>
+    );
+    // All slot number indicators should have the same computed width
+    const slotNumbers = samples.map((_, i) => screen.getByTestId(`slot-number-1-${i}`));
+    const widths = slotNumbers.map((el) => el.style.minWidth || el.getAttribute('style'));
+    // All should be set to 32px
+    widths.forEach((w) => {
+      expect(w).toMatch(/32px/);
+    });
+    // All should have display: inline-block
+    slotNumbers.forEach((el) => {
+      expect(el.className).toMatch(/inline-block/);
+    });
+  });
 });

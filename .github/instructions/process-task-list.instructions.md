@@ -1,5 +1,5 @@
 ---
-applyTo: 'tasks-prd.md'
+applyTo: '**/tasks-*.md'
 ---
 # Task List Management
 

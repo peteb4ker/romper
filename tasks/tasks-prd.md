@@ -74,6 +74,10 @@
     - [x] 1.12.1 Compute these values once per kit list load/change, not on every render
     - [x] 1.12.2 Pass precomputed values as props to KitList/KitItem
     - [x] 1.12.3 Write unit tests to verify memoization and correct display
+  - [x] 1.13 Voice panels clearly indicate the slot number, and there is no confusion between the slot number and the sample name, especially if the sample name starts with a number.
+    - [x] 1.13.1 Slot numbers take up a uniform amount of space so the play buttons, filenames and waveforms are all aligned.
+  - [x] 1.14 The 4 voice panels are laid out in a single row of 4 columns, left to right across the screen.
+  - [x] 1.15 Within the voice panel, the sample list is in a single column.
 
 - [ ] 2.0 Implement Kit Planning and Metadata Management
   - [ ] 2.1 Allow creation, duplication, and editing of kit plans without SD card present

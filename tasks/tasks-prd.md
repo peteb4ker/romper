@@ -82,35 +82,7 @@
     - [x] 1.16.1 An empty slot is the same height as a slot with an assigned sample
 
 - [ ] 2.0 Implement Kit Planning and Metadata Management
-  - [ ] 2.1 Allow creation, duplication, and editing of kit plans without SD card present
-    - [ ] 2.1.1 Implement UI for creating new kit plans
-    - [ ] 2.1.2 Implement duplication and editing of existing kit plans
-    - [ ] 2.1.3 Persist kit plans in SQLite
-    - [ ] 2.1.4 Write unit tests for kit plan creation, duplication, and editing
-  - [ ] 2.2 Allow assignment of samples to specific bank/kit folders in the UI
-    - [ ] 2.2.1 Implement UI for selecting bank/kit folder for each kit
-    - [ ] 2.2.2 Validate and enforce Rample folder naming conventions
-    - [ ] 2.2.3 Write unit tests for bank/kit assignment and validation
-  - [ ] 2.3 Detect and warn about missing samples in a kit plan
-    - [ ] 2.3.1 Implement logic to detect missing sample files
-    - [ ] 2.3.2 Display warning in kit details and prevent sync if missing
-    - [ ] 2.3.3 Write unit tests for missing sample detection and warning
-  - [ ] 2.4 Allow locking individual kits to prevent accidental overwriting
-    - [ ] 2.4.1 Add lock/unlock UI and state for kits
-    - [ ] 2.4.2 Prevent editing/syncing of locked kits
-    - [ ] 2.4.3 Write unit tests for kit locking and prevention logic
-  - [ ] 2.5 Implement tagging and favoriting for kits and samples
-    - [ ] 2.5.1 Add UI for tagging/favoriting kits and samples
-    - [ ] 2.5.2 Persist tags/favorites in SQLite
-    - [ ] 2.5.3 Write unit tests for tagging/favoriting logic
-  - [ ] 2.6 Implement voice name inference and kit type inference logic
-    - [ ] 2.6.1 Implement extensible voice name scanning function
-    - [ ] 2.6.2 Implement kit type inference based on voice names
-    - [ ] 2.6.3 Write unit tests for inference logic
-  - [ ] 2.7 Display kit metadata (ID, name, icon, sample counts, deduped voice names) in kit browser
-    - [ ] 2.7.1 Render kit metadata in kit browser UI
-    - [ ] 2.7.2 Add color coding for sample counts (red, light green, bold green)
-    - [ ] 2.7.3 Write unit tests for metadata display and color logic
+ - Defined in `tasks/task-plans-PRD.md`
 
 - [x] 3.0 Implement Previewing and Audio Features
   - [x] 3.1 Implement preview for individual `.wav` samples (UI and audio engine)

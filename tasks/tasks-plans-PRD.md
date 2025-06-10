@@ -1,11 +1,9 @@
 ## Relevant Files
 
-- `src/renderer/components/KitPlanManager.tsx` - Main UI for creating, editing, and managing kit plans.
-- `src/renderer/components/KitPlanManager.test.tsx` - Unit tests for KitPlanManager UI and logic.
+- `src/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI).
+- `src/renderer/components/KitDetails.test.tsx` - Unit tests for KitDetails, including plan mode and kit planning integration.
 - `src/renderer/components/hooks/useKitPlan.ts` - Hook for all business logic related to kit plans, including plan state, actions, and persistence.
 - `src/renderer/components/hooks/useKitPlan.test.ts` - Unit tests for useKitPlan hook.
-- `src/renderer/components/KitDetails.tsx` - Integrates plan mode and plan actions into the kit details view.
-- `src/renderer/components/KitDetails.test.tsx` - Unit tests for KitDetails plan integration.
 - `src/renderer/components/utils/planUtils.ts` - Utility functions for plan validation, sample assignment, and format checks.
 - `src/renderer/components/utils/planUtils.test.ts` - Unit tests for planUtils.
 - `src/renderer/components/utils/settingsManager.ts` - Manages global settings such as 'default to mono samples' and local store location.
@@ -32,18 +30,37 @@
 ## Tasks
 
 - [ ] 1.0 Plan Mode Core Functionality
-  - [ ] 1.1 Implement plan mode toggle (on/off) for each kit, defaulting to on for new kits and off for pre-existing kits.
+  - [ ] 1.1 Implement plan mode toggle (on/off) for each kit, defaulting to on for new and empty kits and off for pre-existing kits.
   - [ ] 1.2 Ensure each kit has exactly one plan, integral to the kit.
   - [ ] 1.3 Integrate plan mode status and controls into KitDetails UI.
   - [ ] 1.4 Persist plan mode state in Romper DB and settings.
   - [ ] 1.5 Unit tests for plan mode toggle, persistence, and UI feedback.
 
 - [ ] 2.0 Local Store and Romper DB Initialization
-  - [ ] 2.1 Implement local store setup wizard (SD card, Squarp.net archive, blank folder).
+  - [ ] 2.1 Implement local store setup wizard with the following flow:
+    - [ ] 2.1.1 User chooses the target of the local store:
+      - [ ] 2.1.1.1 Default is the OS-equivalent 'Documents' folder
+      - [ ] 2.1.1.2 User can choose a custom path
+      - [ ] 2.1.1.3 The `romper` directory will be created in this location
+    - [ ] 2.1.2 User chooses the source of the local store (three options):
+      - [ ] 2.1.2.1 From the Rample SD card
+        - [ ] 2.1.2.1.1 User must navigate to the mounted SD card. If not mounted, prompt user to mount it before proceeding.
+      - [ ] 2.1.2.2 From the Squarp.net archive (https://data.squarp.net/RampleSamplesV1-2.zip)
+      - [ ] 2.1.2.3 A blank folder
+    - [ ] 2.1.3 Local store is initialized from the source:
+      - [ ] 2.1.3.1 Kit folder initialization:
+        - [ ] 2.1.3.1.1 If SD card is the source, copy all files from SD card to local store
+        - [ ] 2.1.3.1.2 If Squarp.net archive is the source, download and extract archive to local store
+        - [ ] 2.1.3.1.3 If blank folder is chosen, no files are copied
   - [ ] 2.2 Create and initialize Romper DB in `.romperdb` folder within local store.
   - [ ] 2.3 Persist local store location in settings; allow changing location.
   - [ ] 2.4 Validate local store and DB sync; display errors if out of sync.
   - [ ] 2.5 Unit tests for initialization, validation, and error handling.
+  - [ ] 2.7 If the local store or Romper DB does not exist, automatically create them as needed.
+  - [ ] 2.8 Store exactly one local store path and associated Romper DB location in application settings; load them on startup if present.
+  - [ ] 2.9 Allow the user to create a new local store at a new location via a settings menu action, and change to that local store
+  - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
+  - [ ] 2.12 If the Romper DB metadata or plans are out of sync with the local store, present an error to the user and indicate that manual intervention may be required.
 
 - [ ] 3.0 Sample Assignment and Slot Management
   - [ ] 3.1 Implement drag-and-drop for adding samples to slots (single and multiple).
@@ -100,3 +117,6 @@
   - [ ] 10.1 Ensure all plan-related UI is accessible in light and dark modes.
   - [ ] 10.2 Provide visible focus indicators and keyboard navigation for all plan actions.
   - [ ] 10.3 Unit tests for accessibility and UI consistency.
+
+- `src/renderer/components/KitPlanManager.tsx` - (Deprecated: see KitDetails.tsx) [If still present, this file should be removed after migration.]
+- `src/renderer/components/KitPlanManager.test.tsx` - (Deprecated: see KitDetails.test.tsx) [If still present, this file should be removed after migration.]

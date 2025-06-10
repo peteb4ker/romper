@@ -167,24 +167,25 @@ const KitVoicePanel: React.FC<
         )}
       </div>
       <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
-        {samples && samples.length > 0 ? (
-          <ul
-            className="list-none ml-0 text-sm flex flex-col"
-            ref={listRef}
-            aria-label="Sample slots"
-            data-testid={`sample-list-voice-${voice}`}
-            // Only tab-focusable if active
-            tabIndex={isActive ? 0 : -1}
-            onKeyDown={handleKeyDown}
-          >
-            {samples.slice(0, 12).map((sample, i) => {
+        <ul
+          className="list-none ml-0 text-sm flex flex-col"
+          ref={listRef}
+          aria-label="Sample slots"
+          data-testid={`sample-list-voice-${voice}`}
+          tabIndex={isActive ? 0 : -1}
+          onKeyDown={handleKeyDown}
+        >
+          {[...Array(12)].map((_, i) => {
+            const sample = samples[i];
+            const slotBaseClass = "truncate flex items-center gap-2 mb-1 min-h-[28px]"; // uniform height for all slots
+            if (sample) {
               const sampleKey = voice + ":" + sample;
               const isPlaying = samplePlaying[sampleKey];
               let filePath = `${sdCardPath}/${kitName}/${sample}`;
               return (
                 <li
                   key={`${voice}-${i}-${sample}`}
-                  className={`truncate flex items-center gap-2 mb-1${
+                  className={`${slotBaseClass}${
                     selectedIdx === i && isActive
                       ? " bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 font-bold ring-2 ring-blue-400 dark:ring-blue-300"
                       : ""
@@ -269,18 +270,30 @@ const KitVoicePanel: React.FC<
                   />
                 </li>
               );
-            })}
-            {samples.length > 12 && (
-              <li className="italic text-xs text-gray-500 dark:text-gray-400">
-                ...and more
-              </li>
-            )}
-          </ul>
-        ) : (
-          <div className="text-gray-400 italic text-sm ml-1">
-            No samples assigned
-          </div>
-        )}
+            } else {
+              // Empty slot
+              return (
+                <li
+                  key={`${voice}-empty-${i}`}
+                  className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic`}
+                  tabIndex={-1}
+                  aria-selected={false}
+                  data-testid={`empty-slot-${voice}-${i}`}
+                  onClick={() => onSampleSelect && onSampleSelect(voice, i)}
+                >
+                  <span
+                    className="text-xs font-mono text-gray-500 dark:text-gray-400 px-1 select-none inline-block align-right"
+                    style={{ minWidth: 32, textAlign: 'right', display: 'inline-block' }}
+                    data-testid={`slot-number-${voice}-${i}`}
+                  >
+                    {i + 1}.
+                  </span>
+                  <span className="ml-2">(empty)</span>
+                </li>
+              );
+            }
+          })}
+        </ul>
       </div>
     </div>
   );

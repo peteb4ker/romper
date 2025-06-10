@@ -216,4 +216,36 @@ describe("KitVoicePanel", () => {
       expect(el.className).toMatch(/inline-block/);
     });
   });
+
+  it("renders exactly 12 slots, with empty slots for unassigned samples (1.16)", () => {
+    render(
+      <MockMessageDisplayProvider>
+        <KitVoicePanel {...controlledProps} samples={["kick.wav", "snare.wav"]} />
+      </MockMessageDisplayProvider>
+    );
+    // Should always render 12 list items
+    const slots = screen.getAllByRole("listitem");
+    expect(slots).toHaveLength(12);
+    // The first two are filled, the rest are empty
+    expect(screen.getByText("kick.wav")).toBeInTheDocument();
+    expect(screen.getByText("snare.wav")).toBeInTheDocument();
+    // Check for empty slot labels
+    for (let i = 2; i < 12; i++) {
+      expect(screen.getByTestId(`empty-slot-1-${i}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`slot-number-1-${i}`)).toHaveTextContent(`${i + 1}.`);
+    }
+  });
+
+  it("empty slots have the same min-height as filled slots (1.16.1)", () => {
+    render(
+      <MockMessageDisplayProvider>
+        <KitVoicePanel {...controlledProps} samples={["kick.wav"]} />
+      </MockMessageDisplayProvider>
+    );
+    const slots = screen.getAllByRole("listitem");
+    // All slots (filled and empty) should have the same min-h-[28px] class
+    slots.forEach((slot) => {
+      expect(slot.className).toMatch(/min-h-\[28px\]/);
+    });
+  });
 });

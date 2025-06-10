@@ -78,6 +78,8 @@
     - [x] 1.13.1 Slot numbers take up a uniform amount of space so the play buttons, filenames and waveforms are all aligned.
   - [x] 1.14 The 4 voice panels are laid out in a single row of 4 columns, left to right across the screen.
   - [x] 1.15 Within the voice panel, the sample list is in a single column.
+  - [x] 1.16 Each voice has exactly 12 slots.  If a sample is not assigned, an empty slot is shown.
+    - [x] 1.16.1 An empty slot is the same height as a slot with an assigned sample
 
 - [ ] 2.0 Implement Kit Planning and Metadata Management
   - [ ] 2.1 Allow creation, duplication, and editing of kit plans without SD card present
@@ -187,7 +189,6 @@
     - [ ] 5.1.3 Support multi-file drop, enforcing slot limits and warnings
     - [ ] 5.1.4 Write unit tests for drag-and-drop assignment and feedback
   - [ ] 5.2 Enforce 4 voices per kit and up to 12 slots per voice in the UI
-    - [ ] 5.2.1 Render exactly 4 voices per kit in the UI
     - [ ] 5.2.2 Limit each voice to 12 sample slots
     - [ ] 5.2.3 Display warnings if slot/voice limits are exceeded
     - [ ] 5.2.4 Write unit tests for slot/voice enforcement and warnings

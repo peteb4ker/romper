@@ -30,6 +30,7 @@
         "react-window": "^1.8.11",
         "sonner": "^2.0.5",
         "tailwindcss": "^4.1.8",
+        "unzipper": "^0.12.3",
         "wavesurfer.js": "^7.9.5"
     },
     "devDependencies": {

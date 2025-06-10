@@ -34,6 +34,10 @@ interface ElectronAPI {
     sdCardPath: string,
     kitNames: string[],
   ) => Promise<void>;
+  downloadAndExtractArchive?: (
+    url: string,
+    destDir: string,
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 declare global {

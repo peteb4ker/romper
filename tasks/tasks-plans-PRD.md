@@ -2,6 +2,8 @@
 
 - `src/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI).
 - `src/renderer/components/KitDetails.test.tsx` - Unit tests for KitDetails, including plan mode and kit planning integration.
+- `src/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic (now to be used at KitList level, not KitDetails).
+- `src/renderer/components/hooks/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook.
 - `src/renderer/components/hooks/useKitPlan.ts` - Hook for all business logic related to kit plans, including plan state, actions, and persistence.
 - `src/renderer/components/hooks/useKitPlan.test.ts` - Unit tests for useKitPlan hook.
 - `src/renderer/components/utils/planUtils.ts` - Utility functions for plan validation, sample assignment, and format checks.
@@ -37,20 +39,19 @@
   - [ ] 1.5 Unit tests for plan mode toggle, persistence, and UI feedback.
 
 - [ ] 2.0 Local Store and Romper DB Initialization
-  - [ ] 2.1 Implement local store setup wizard with the following flow:
+  - [x] 2.1 Implement local store setup wizard with the following flow:
     - [ ] 2.1.1 User chooses the target of the local store:
-      - [ ] 2.1.1.1 Default is the OS-equivalent 'Documents' folder
-      - [ ] 2.1.1.2 User can choose a custom path
+      - [x] 2.1.1.1 Default is the OS-equivalent 'Documents' folder
+      - [x] 2.1.1.2 User can choose a custom path (via folder picker dialog, always appending '/romper' if not present)
       - [ ] 2.1.1.3 The `romper` directory will be created in this location
-    - [ ] 2.1.2 User chooses the source of the local store (three options):
-      - [ ] 2.1.2.1 From the Rample SD card
-        - [ ] 2.1.2.1.1 User must navigate to the mounted SD card. If not mounted, prompt user to mount it before proceeding.
-      - [ ] 2.1.2.2 From the Squarp.net archive (https://data.squarp.net/RampleSamplesV1-2.zip)
-      - [ ] 2.1.2.3 A blank folder
-    - [ ] 2.1.3 Local store is initialized from the source:
+    - [x] 2.1.2 User chooses the source of the local store (three options):
+      - [x] 2.1.2.1 From the Rample SD card (card with SD icon)
+      - [x] 2.1.2.2 From the Squarp.net archive (card with archive icon)
+      - [x] 2.1.2.3 A blank folder (card with folder icon)
+    - [x] 2.1.3 Local store is initialized from the source:
       - [ ] 2.1.3.1 Kit folder initialization:
         - [ ] 2.1.3.1.1 If SD card is the source, copy all files from SD card to local store
-        - [ ] 2.1.3.1.2 If Squarp.net archive is the source, download and extract archive to local store
+        - [x] 2.1.3.1.2 If Squarp.net archive is the source, download and extract archive to local store
         - [ ] 2.1.3.1.3 If blank folder is chosen, no files are copied
   - [ ] 2.2 Create and initialize Romper DB in `.romperdb` folder within local store.
   - [ ] 2.3 Persist local store location in settings; allow changing location.

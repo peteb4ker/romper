@@ -1,6 +1,6 @@
 import { app, dialog, ipcMain } from "electron";
-import fs from "fs";
-import path from "path";
+import * as fs from "fs";
+import * as path from "path";
 
 import {
   groupSamplesByVoice,
@@ -202,4 +202,54 @@ export function registerIpcHandlers(
       return true;
     },
   );
+  ipcMain.handle("get-user-home-dir", async () => {
+    const os = await import("os");
+    return os.homedir();
+  });
+  ipcMain.handle("select-local-store-path", async () => {
+    const { dialog } = await import("electron");
+    const result = await dialog.showOpenDialog({
+      properties: ["openDirectory", "createDirectory"],
+      title: "Select Local Store Folder",
+      message: "Choose a folder for your Romper local store.",
+    });
+    if (result.canceled || !result.filePaths.length) return null;
+    return result.filePaths[0];
+  });
+  // --- Download and extract Squarp.net archive to local store ---
+  ipcMain.handle("download-and-extract-archive", async (_event, url: string, destDir: string) => {
+    const https = await import("https");
+    const { pipeline } = await import("stream/promises");
+    const os = await import("os");
+    const fsPromises = fs.promises;
+    const tmp = os.tmpdir();
+    const zipPath = path.join(tmp, `romper_squarp_archive_${Date.now()}.zip`);
+    try {
+      // Download the archive
+      await new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(zipPath);
+        https.get(url, (response) => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`Failed to download archive: ${response.statusCode}`));
+            return;
+          }
+          response.pipe(file);
+          file.on("finish", () => file.close(resolve));
+          file.on("error", reject);
+        }).on("error", reject);
+      });
+      // Extract the archive
+      const unzipper = await import("unzipper");
+      await fsPromises.mkdir(destDir, { recursive: true });
+      await pipeline(
+        fs.createReadStream(zipPath),
+        unzipper.Extract({ path: destDir })
+      );
+      await fsPromises.unlink(zipPath);
+      return { success: true };
+    } catch (e) {
+      try { await fsPromises.unlink(zipPath); } catch {}
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  });
 }

@@ -1,10 +1,12 @@
 import React, { useRef } from "react";
 
 import { useKitBrowser } from "./hooks/useKitBrowser";
+import { useLocalStoreWizard } from "./hooks/useLocalStoreWizard";
 import KitBankNav from "./KitBankNav";
 import KitBrowserHeader from "./KitBrowserHeader";
 import KitDialogs from "./KitDialogs";
 import KitList, { KitListHandle } from "./KitList";
+import LocalStoreWizardUI from "./LocalStoreWizardUI";
 
 interface KitBrowserProps {
   onSelectKit: (kitName: string) => void;
@@ -52,6 +54,8 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     setFocusedKit,
     globalBankHotkeyHandler,
   } = logic;
+
+  const [showLocalStoreWizard, setShowLocalStoreWizard] = React.useState(false);
 
   React.useEffect(() => {
     if (logic.sdCardWarning && props.onMessage) {
@@ -111,6 +115,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         onShowNewKit={() => setShowNewKit(true)}
         onCreateNextKit={handleCreateNextKit}
         nextKitSlot={nextKitSlot}
+        onShowLocalStoreWizard={() => setShowLocalStoreWizard(true)}
         bankNav={
           <KitBankNav
             kits={kits}
@@ -163,6 +168,15 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
           onFocusKit={setFocusedKit} // NEW: keep parent in sync
         />
       </div>
+      {/* Local Store Wizard Modal */}
+      {showLocalStoreWizard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white dark:bg-slate-900 rounded shadow-lg p-6 w-full max-w-lg">
+            <h2 className="text-xl font-bold mb-4">Romper Local Store Setup</h2>
+            <LocalStoreWizardUI onClose={() => setShowLocalStoreWizard(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

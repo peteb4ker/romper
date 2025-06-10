@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
-        "outDir": "dist", // Output directory for the main process
-        "rootDir": "src", // Restrict build to the main entry point
+        "outDir": "dist",
+        "rootDir": "src",
         "target": "ESNext",
         "module": "ESNext",
         "lib": [
@@ -12,7 +12,11 @@
         "strict": true,
         "jsx": "react-jsx",
         "esModuleInterop": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "typeRoots": [
+            "./src/types",
+            "./node_modules/@types"
+        ]
     },
     "include": [
         "src/main/**/*",

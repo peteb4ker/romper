@@ -9,6 +9,7 @@ interface KitBrowserHeaderProps {
   onCreateNextKit: () => void;
   nextKitSlot: string | null;
   bankNav?: React.ReactNode;
+  onShowLocalStoreWizard: () => void;
 }
 
 const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
@@ -50,6 +51,13 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
             disabled={!nextKitSlot}
           >
             + Next Kit
+          </button>
+          <button
+            className="px-2 py-1 text-xs bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition font-semibold"
+            onClick={props.onShowLocalStoreWizard}
+            aria-label="Local Store Setup"
+          >
+            Local Store Setup
           </button>
         </div>
       </div>

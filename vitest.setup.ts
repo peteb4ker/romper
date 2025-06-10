@@ -25,6 +25,7 @@ beforeAll(() => {
     scanSdCard: async (sdCardPath) => ["KitA", "KitB", "KitC"],
     selectSdCard: async () => "/sd",
     watchSdCard: () => ({ close: () => {} }),
+    getUserHomeDir: async () => "/mock/home", // Fix: make this async to match production API
     readSettings: async () => ({ sdCardPath: "/sd" }),
     setSetting: async () => {},
     getSetting: async () => "/sd",
@@ -54,6 +55,7 @@ beforeAll(() => {
     }),
     writeRampleLabels: async (sdCardPath, labels) => {},
     getAudioBuffer: async () => new ArrayBuffer(8),
+    selectLocalStorePath: async () => "/mock/custom/path", // mock for tests
   };
 
   // Mock scrollIntoView for all elements

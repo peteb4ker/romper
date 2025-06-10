@@ -115,6 +115,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("discard-kit-plan", sdCardPath, kitName),
   rescanAllVoiceNames: (sdCardPath: string, kitNames: string[]) =>
     ipcRenderer.invoke("rescan-all-voice-names", sdCardPath, kitNames),
+  getUserHomeDir: async () => {
+    return await ipcRenderer.invoke("get-user-home-dir");
+  },
+  selectLocalStorePath: async () => {
+    return await ipcRenderer.invoke("select-local-store-path");
+  },
+  downloadAndExtractArchive: async (url: string, destDir: string) => {
+    return await ipcRenderer.invoke("download-and-extract-archive", url, destDir);
+  },
 });
 
 // Expose a function to get the file path from a dropped File object (Electron only)

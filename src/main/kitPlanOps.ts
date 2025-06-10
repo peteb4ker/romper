@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import * as fs from "fs";
+import * as path from "path";
 
 import { readRampleLabels, writeRampleLabels } from "./rampleLabels.js";
 
@@ -30,7 +30,7 @@ export function validateKitPlan(plan: any[]): string[] {
   for (const [src, voices] of Object.entries(sourceToVoices)) {
     if (voices.size > 1) {
       errors.push(
-        `Sample '${src}' is assigned to multiple voices (${[...voices].join(", ")}). Each sample file can only be used in one voice slot.`,
+        `Sample '${src}' is assigned to multiple voices (${Array.from(voices).join(", ")}). Each sample file can only be used in one voice slot.`,
       );
     }
   }

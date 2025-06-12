@@ -121,8 +121,34 @@ contextBridge.exposeInMainWorld("electronAPI", {
   selectLocalStorePath: async () => {
     return await ipcRenderer.invoke("select-local-store-path");
   },
-  downloadAndExtractArchive: async (url: string, destDir: string) => {
-    return await ipcRenderer.invoke("download-and-extract-archive", url, destDir);
+  downloadAndExtractArchive: async (
+    url: string,
+    destDir: string,
+    onProgress?: (p: any) => void,
+    onError?: (e: any) => void,
+  ) => {
+    let progressListener: any, errorListener: any;
+    if (onProgress) {
+      progressListener = (_e: any, data: any) => onProgress(data);
+      ipcRenderer.on("archive-progress", progressListener);
+    }
+    if (onError) {
+      errorListener = (_e: any, err: any) => onError(err);
+      ipcRenderer.on("archive-error", errorListener);
+    }
+    try {
+      const result = await ipcRenderer.invoke(
+        "download-and-extract-archive",
+        url,
+        destDir,
+      );
+      return result;
+    } finally {
+      if (progressListener)
+        ipcRenderer.removeListener("archive-progress", progressListener);
+      if (errorListener)
+        ipcRenderer.removeListener("archive-error", errorListener);
+    }
   },
 });
 

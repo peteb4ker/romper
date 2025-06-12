@@ -1,5 +1,6 @@
-import { renderHook, act } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { act, renderHook } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+
 import { useLocalStoreWizard } from "../useLocalStoreWizard";
 
 // Replace all usage of waitFor with manual polling for async state
@@ -109,7 +110,10 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("handles download/extract error", async () => {
-    window.electronAPI.downloadAndExtractArchive = async () => ({ success: false, error: "fail" });
+    window.electronAPI.downloadAndExtractArchive = async () => ({
+      success: false,
+      error: "fail",
+    });
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -121,5 +125,56 @@ describe("useLocalStoreWizard", () => {
     });
     expect(result.current.state.error).toBe("fail");
     expect(result.current.state.isInitializing).toBe(false);
+  });
+
+  it("sets and clears progress during Squarp.net archive initialization", async () => {
+    let progressCb: any = null;
+    window.electronAPI.downloadAndExtractArchive = async (
+      url,
+      destDir,
+      onProgress,
+    ) => {
+      progressCb = onProgress;
+      // Simulate progress events
+      if (progressCb) progressCb({ phase: "Downloading", percent: 10 });
+      if (progressCb) progressCb({ phase: "Extracting", percent: 80 });
+      return { success: true };
+    };
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("squarp");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    // Progress should be cleared after completion
+    expect(result.current.progress).toBeNull();
+    expect(result.current.state.error).toBeNull();
+  });
+
+  it("handles premature close error with user-friendly message", async () => {
+    window.electronAPI.downloadAndExtractArchive = async (
+      url,
+      destDir,
+      onProgress,
+      onError,
+    ) => {
+      if (onError) onError({ message: "premature close" });
+      return { success: false, error: "premature close" };
+    };
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("squarp");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(result.current.state.error).toMatch(/connection was closed/i);
+    expect(result.current.state.isInitializing).toBe(false);
+    expect(result.current.progress).toBeNull();
   });
 });

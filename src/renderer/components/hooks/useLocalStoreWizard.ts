@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type LocalStoreSource = "sdcard" | "squarp" | "blank";
 
@@ -48,6 +48,11 @@ export function useLocalStoreWizard() {
     error: null,
   });
   const [defaultPath, setDefaultPath] = useState("");
+  const [progress, setProgress] = useState<{
+    phase: string;
+    percent?: number;
+    file?: string;
+  } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -81,33 +86,60 @@ export function useLocalStoreWizard() {
   const initialize = useCallback(async () => {
     setIsInitializing(true);
     setError(null);
+    setProgress(null);
     try {
       if (!state.targetPath) throw new Error("No target path specified");
       if (!state.source) throw new Error("No source selected");
-      // Always create the target directory
       if (
         typeof window !== "undefined" &&
         window.electronAPI &&
         typeof window.electronAPI.getUserHomeDir === "function"
       ) {
-        // Ensure directory exists (handled by main process for archive, but always call for blank)
         if (state.source === "blank") {
-          await window.electronAPI.downloadAndExtractArchive?.("about:blank", state.targetPath); // NOP, just mkdir
+          await window.electronAPI.downloadAndExtractArchive?.(
+            "about:blank",
+            state.targetPath,
+          );
         }
       }
       if (state.source === "squarp") {
-        // Download and extract Squarp.net archive
         const url = "https://data.squarp.net/RampleSamplesV1-2.zip";
-        const result = await window.electronAPI.downloadAndExtractArchive?.(url, state.targetPath);
-        if (!result?.success) throw new Error(result?.error || "Failed to extract archive");
+        const result = await window.electronAPI.downloadAndExtractArchive?.(
+          url,
+          state.targetPath,
+          (p: any) => setProgress(p),
+          (e: any) => {
+            // Robust error handling, including premature close
+            let msg = e?.message || String(e);
+            if (msg.includes("premature close")) {
+              msg =
+                "Download failed: The connection was closed before completion. Please check your internet connection and try again.";
+            }
+            setError(msg);
+          },
+        );
+        if (!result?.success)
+          throw new Error(result?.error || "Failed to extract archive");
       }
       // TODO: SD card copy logic (future)
     } catch (e: any) {
-      setError(e.message || "Unknown error");
+      let msg = e.message || "Unknown error";
+      if (msg.includes("premature close")) {
+        msg =
+          "Download failed: The connection was closed before completion. Please check your internet connection and try again.";
+      }
+      setError(msg);
     } finally {
       setIsInitializing(false);
+      setProgress(null);
     }
-  }, [setIsInitializing, setError, state.targetPath, state.source]);
+  }, [
+    setIsInitializing,
+    setError,
+    setProgress,
+    state.targetPath,
+    state.source,
+  ]);
 
   return {
     state,
@@ -118,5 +150,6 @@ export function useLocalStoreWizard() {
     setIsInitializing,
     initialize,
     defaultPath,
+    progress,
   };
 }

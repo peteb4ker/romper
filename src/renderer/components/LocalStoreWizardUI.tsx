@@ -1,6 +1,7 @@
 import React from "react";
+import { FaArchive, FaFolderOpen, FaSdCard } from "react-icons/fa";
+
 import { useLocalStoreWizard } from "./hooks/useLocalStoreWizard";
-import { FaSdCard, FaArchive, FaFolderOpen } from "react-icons/fa";
 
 interface LocalStoreWizardUIProps {
   onClose: () => void;
@@ -30,17 +31,53 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
   return (
     <div>
       {wizard.state.error && (
-        <div className="mb-2 text-red-600 dark:text-red-400">{wizard.state.error}</div>
+        <div
+          className="mb-2 text-red-600 dark:text-red-400"
+          data-testid="wizard-error"
+        >
+          {wizard.state.error}
+        </div>
       )}
+      {wizard.state.isInitializing &&
+        wizard.progress &&
+        wizard.progress.percent != null && (
+          <div className="mb-4">
+            <label className="block font-semibold mb-1">
+              {wizard.progress.phase || "Working..."}
+            </label>
+            <div className="w-full bg-gray-200 dark:bg-slate-700 rounded h-4 overflow-hidden">
+              <div
+                className="bg-blue-600 h-4 transition-all duration-200"
+                style={{
+                  width:
+                    wizard.progress.percent != null
+                      ? `${wizard.progress.percent}%`
+                      : "100%",
+                }}
+                data-testid="wizard-progress-bar"
+              />
+            </div>
+            {wizard.progress.file && (
+              <div
+                className="text-xs mt-1 text-gray-700 dark:text-gray-300 truncate"
+                data-testid="wizard-progress-file"
+              >
+                {wizard.progress.file}
+              </div>
+            )}
+          </div>
+        )}
       <div className="mb-4">
-        <label className="block font-semibold mb-1">Choose local store target location:</label>
+        <label className="block font-semibold mb-1">
+          Choose local store target location:
+        </label>
         <div className="flex gap-2 items-center">
           <input
             type="text"
             className="border rounded px-2 py-1 w-full mb-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
             value={wizard.state.targetPath}
             placeholder={wizard.defaultPath}
-            onChange={e => wizard.setTargetPath(e.target.value)}
+            onChange={(e) => wizard.setTargetPath(e.target.value)}
             aria-label="Local store path"
           />
           <button
@@ -70,9 +107,11 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
         </div>
       </div>
       <div className="mb-4">
-        <label className="block font-semibold mb-1">Choose source for initial kit data:</label>
+        <label className="block font-semibold mb-1">
+          Choose source for initial kit data:
+        </label>
         <div className="flex gap-4">
-          {sourceOptions.map(opt => (
+          {sourceOptions.map((opt) => (
             <button
               key={opt.value}
               type="button"
@@ -85,13 +124,17 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
               aria-pressed={wizard.state.source === opt.value}
             >
               {opt.icon}
-              <span className="mt-1 text-sm font-medium text-center">{opt.label}</span>
+              <span className="mt-1 text-sm font-medium text-center">
+                {opt.label}
+              </span>
             </button>
           ))}
         </div>
       </div>
       {wizard.state.source === "sdcard" && !wizard.state.sdCardMounted && (
-        <div className="mb-2 text-yellow-700 dark:text-yellow-300">Please mount your Rample SD card to continue.</div>
+        <div className="mb-2 text-yellow-700 dark:text-yellow-300">
+          Please mount your Rample SD card to continue.
+        </div>
       )}
       <div className="flex gap-2 mt-4">
         <button
@@ -104,7 +147,9 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
           }
           onClick={wizard.initialize}
         >
-          {wizard.state.isInitializing ? "Initializing..." : "Initialize Local Store"}
+          {wizard.state.isInitializing
+            ? "Initializing..."
+            : "Initialize Local Store"}
         </button>
         <button
           className="bg-gray-400 text-white px-4 py-2 rounded"

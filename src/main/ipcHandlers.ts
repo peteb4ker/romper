@@ -1,11 +1,17 @@
 import { app, dialog, ipcMain } from "electron";
 import * as fs from "fs";
 import * as path from "path";
+import * as unzipper from "unzipper";
 
 import {
   groupSamplesByVoice,
   inferVoiceTypeFromFilename,
 } from "../shared/kitUtilsShared.js";
+import {
+  countZipEntries,
+  downloadArchive,
+  extractZipEntries,
+} from "./archiveUtils.js";
 import {
   commitKitPlanHandler,
   rescanVoiceNames,
@@ -216,40 +222,55 @@ export function registerIpcHandlers(
     if (result.canceled || !result.filePaths.length) return null;
     return result.filePaths[0];
   });
-  // --- Download and extract Squarp.net archive to local store ---
-  ipcMain.handle("download-and-extract-archive", async (_event, url: string, destDir: string) => {
-    const https = await import("https");
-    const { pipeline } = await import("stream/promises");
-    const os = await import("os");
-    const fsPromises = fs.promises;
-    const tmp = os.tmpdir();
-    const zipPath = path.join(tmp, `romper_squarp_archive_${Date.now()}.zip`);
-    try {
-      // Download the archive
-      await new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(zipPath);
-        https.get(url, (response) => {
-          if (response.statusCode !== 200) {
-            reject(new Error(`Failed to download archive: ${response.statusCode}`));
-            return;
-          }
-          response.pipe(file);
-          file.on("finish", () => file.close(resolve));
-          file.on("error", reject);
-        }).on("error", reject);
-      });
-      // Extract the archive
-      const unzipper = await import("unzipper");
-      await fsPromises.mkdir(destDir, { recursive: true });
-      await pipeline(
-        fs.createReadStream(zipPath),
-        unzipper.Extract({ path: destDir })
-      );
-      await fsPromises.unlink(zipPath);
-      return { success: true };
-    } catch (e) {
-      try { await fsPromises.unlink(zipPath); } catch {}
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
-    }
-  });
+  ipcMain.handle(
+    "download-and-extract-archive",
+    async (event, url: string, destDir: string) => {
+      const os = await import("os");
+      const fsPromises = fs.promises;
+      const tmp = os.tmpdir();
+      const tmpZipPath = path.join(tmp, `romper_download_${Date.now()}.zip`);
+      try {
+        // Download
+        await downloadArchive(url, tmpZipPath, (percent: number | null) => {
+          event.sender.send("archive-progress", {
+            phase: "Downloading",
+            percent,
+          });
+        });
+        // Count entries
+        let entryCount = 0;
+        try {
+          entryCount = await countZipEntries(tmpZipPath);
+        } catch {
+          entryCount = 0;
+        }
+        // Extract
+        await extractZipEntries(
+          tmpZipPath,
+          destDir,
+          entryCount,
+          ({ percent, file }: { percent: number | null; file: string }) => {
+            event.sender.send("archive-progress", {
+              phase: "Extracting",
+              percent,
+              file,
+            });
+          },
+        );
+        event.sender.send("archive-progress", { phase: "Done", percent: 100 });
+        return { success: true };
+      } catch (e) {
+        try {
+          await fsPromises.unlink(tmpZipPath);
+        } catch {}
+        let message = e instanceof Error ? e.message : String(e);
+        if (message && message.includes("premature close")) {
+          message =
+            "Extraction failed: Archive closed unexpectedly. Please try again.";
+        }
+        event.sender.send("archive-error", { message });
+        return { success: false, error: message };
+      }
+    },
+  );
 }

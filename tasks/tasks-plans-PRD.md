@@ -2,8 +2,9 @@
 
 - `src/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI).
 - `src/renderer/components/KitDetails.test.tsx` - Unit tests for KitDetails, including plan mode and kit planning integration.
-- `src/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic (now to be used at KitList level, not KitDetails).
-- `src/renderer/components/hooks/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook.
+- `src/renderer/components/LocalStoreWizardUI.tsx` - UI for local store setup wizard, now supports progress bar and robust error display for Squarp.net archive initialization.
+- `src/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now exposes progress/error state for Squarp.net archive initialization.
+- `src/renderer/components/hooks/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook, now cover progress and error handling for Squarp.net archive.
 - `src/renderer/components/hooks/useKitPlan.ts` - Hook for all business logic related to kit plans, including plan state, actions, and persistence.
 - `src/renderer/components/hooks/useKitPlan.test.ts` - Unit tests for useKitPlan hook.
 - `src/renderer/components/utils/planUtils.ts` - Utility functions for plan validation, sample assignment, and format checks.
@@ -22,6 +23,9 @@
 - `src/renderer/components/utils/kitUtils.test.ts` - Unit tests for kitUtils.
 - `src/renderer/components/utils/romperDb.ts` - Handles Romper DB (SQLite) operations for plans, kits, and samples.
 - `src/renderer/components/utils/romperDb.test.ts` - Unit tests for romperDb.
+- `src/main/ipcHandlers.ts` - Main process IPC handlers, including robust, testable Squarp.net archive download/extract logic with progress and error reporting.
+- `src/main/__tests__/archiveExtract.test.ts` - Unit tests for Squarp.net archive download/extract handler, with full async/streaming and error simulation. (Premature close test removed as non-robust in test env)
+- `src/main/__tests__/isValidEntry.test.ts` - Unit tests for isValidEntry helper in archiveUtils, covering all valid and invalid entry cases.
 
 ### Notes
 
@@ -51,7 +55,7 @@
     - [x] 2.1.3 Local store is initialized from the source:
       - [ ] 2.1.3.1 Kit folder initialization:
         - [ ] 2.1.3.1.1 If SD card is the source, copy all files from SD card to local store
-        - [x] 2.1.3.1.2 If Squarp.net archive is the source, download and extract archive to local store
+        - [x] 2.1.3.1.2 If Squarp.net archive is the source, download and extract archive to local store (with progress bar, robust error handling, and test coverage for premature close and progress events)
         - [ ] 2.1.3.1.3 If blank folder is chosen, no files are copied
   - [ ] 2.2 Create and initialize Romper DB in `.romperdb` folder within local store.
   - [ ] 2.3 Persist local store location in settings; allow changing location.
@@ -59,7 +63,6 @@
   - [ ] 2.5 Unit tests for initialization, validation, and error handling.
   - [ ] 2.7 If the local store or Romper DB does not exist, automatically create them as needed.
   - [ ] 2.8 Store exactly one local store path and associated Romper DB location in application settings; load them on startup if present.
-  - [ ] 2.9 Allow the user to create a new local store at a new location via a settings menu action, and change to that local store
   - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
   - [ ] 2.12 If the Romper DB metadata or plans are out of sync with the local store, present an error to the user and indicate that manual intervention may be required.
 

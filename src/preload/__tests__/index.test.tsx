@@ -108,7 +108,11 @@ describe("preload/index.tsx", () => {
     expect(homeDirPromise).toBeInstanceOf(Promise);
     const homeDir = await homeDirPromise;
     // Debug log
-    console.log("DEBUG getUserHomeDir resolved value:", homeDir, typeof homeDir);
+    console.log(
+      "DEBUG getUserHomeDir resolved value:",
+      homeDir,
+      typeof homeDir,
+    );
     expect(typeof homeDir).toBe("string");
     expect(homeDir.length).toBeGreaterThan(0);
   });
@@ -132,14 +136,18 @@ describe("preload/index.tsx", () => {
     expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("read-settings");
     expect(value).toBe("bar");
     await api.setSetting("foo", "baz");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("write-settings", "foo", "baz");
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
+      "write-settings",
+      "foo",
+      "baz",
+    );
   });
 
   it("calls ipcRenderer.invoke for readSettings and handles error", async () => {
     await import("../index");
     const { mockContextBridge, mockIpcRenderer } = getElectronMocks();
     const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
-    mockIpcRenderer.invoke.mockResolvedValue("{\"foo\":\"bar\"}");
+    mockIpcRenderer.invoke.mockResolvedValue('{"foo":"bar"}');
     const settings = await api.readSettings();
     expect(settings).toEqual({ foo: "bar" });
     mockIpcRenderer.invoke.mockRejectedValue(new Error("fail"));
@@ -158,6 +166,9 @@ describe("preload/index.tsx", () => {
     // Wait for watcherId to be set
     await new Promise((r) => setTimeout(r, 60));
     await watcher.close();
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("unwatch-sd-card", "watcher-id");
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
+      "unwatch-sd-card",
+      "watcher-id",
+    );
   });
 });

@@ -173,7 +173,9 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white dark:bg-slate-900 rounded shadow-lg p-6 w-full max-w-lg">
             <h2 className="text-xl font-bold mb-4">Romper Local Store Setup</h2>
-            <LocalStoreWizardUI onClose={() => setShowLocalStoreWizard(false)} />
+            <LocalStoreWizardUI
+              onClose={() => setShowLocalStoreWizard(false)}
+            />
           </div>
         </div>
       )}

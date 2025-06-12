@@ -177,7 +177,8 @@ const KitVoicePanel: React.FC<
         >
           {[...Array(12)].map((_, i) => {
             const sample = samples[i];
-            const slotBaseClass = "truncate flex items-center gap-2 mb-1 min-h-[28px]"; // uniform height for all slots
+            const slotBaseClass =
+              "truncate flex items-center gap-2 mb-1 min-h-[28px]"; // uniform height for all slots
             if (sample) {
               const sampleKey = voice + ":" + sample;
               const isPlaying = samplePlaying[sampleKey];
@@ -201,7 +202,11 @@ const KitVoicePanel: React.FC<
                 >
                   <span
                     className="text-xs font-mono text-gray-500 dark:text-gray-400 px-1 select-none inline-block align-right"
-                    style={{ minWidth: 32, textAlign: 'right', display: 'inline-block' }}
+                    style={{
+                      minWidth: 32,
+                      textAlign: "right",
+                      display: "inline-block",
+                    }}
                     data-testid={`slot-number-${voice}-${i}`}
                   >
                     {i + 1}.
@@ -283,7 +288,11 @@ const KitVoicePanel: React.FC<
                 >
                   <span
                     className="text-xs font-mono text-gray-500 dark:text-gray-400 px-1 select-none inline-block align-right"
-                    style={{ minWidth: 32, textAlign: 'right', display: 'inline-block' }}
+                    style={{
+                      minWidth: 32,
+                      textAlign: "right",
+                      display: "inline-block",
+                    }}
                     data-testid={`slot-number-${voice}-${i}`}
                   >
                     {i + 1}.

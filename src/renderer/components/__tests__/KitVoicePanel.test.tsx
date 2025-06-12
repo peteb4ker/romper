@@ -202,11 +202,15 @@ describe("KitVoicePanel", () => {
     render(
       <MockMessageDisplayProvider>
         <KitVoicePanel {...controlledProps} samples={samples} />
-      </MockMessageDisplayProvider>
+      </MockMessageDisplayProvider>,
     );
     // All slot number indicators should have the same computed width
-    const slotNumbers = samples.map((_, i) => screen.getByTestId(`slot-number-1-${i}`));
-    const widths = slotNumbers.map((el) => el.style.minWidth || el.getAttribute('style'));
+    const slotNumbers = samples.map((_, i) =>
+      screen.getByTestId(`slot-number-1-${i}`),
+    );
+    const widths = slotNumbers.map(
+      (el) => el.style.minWidth || el.getAttribute("style"),
+    );
     // All should be set to 32px
     widths.forEach((w) => {
       expect(w).toMatch(/32px/);
@@ -220,8 +224,11 @@ describe("KitVoicePanel", () => {
   it("renders exactly 12 slots, with empty slots for unassigned samples (1.16)", () => {
     render(
       <MockMessageDisplayProvider>
-        <KitVoicePanel {...controlledProps} samples={["kick.wav", "snare.wav"]} />
-      </MockMessageDisplayProvider>
+        <KitVoicePanel
+          {...controlledProps}
+          samples={["kick.wav", "snare.wav"]}
+        />
+      </MockMessageDisplayProvider>,
     );
     // Should always render 12 list items
     const slots = screen.getAllByRole("listitem");
@@ -232,7 +239,9 @@ describe("KitVoicePanel", () => {
     // Check for empty slot labels
     for (let i = 2; i < 12; i++) {
       expect(screen.getByTestId(`empty-slot-1-${i}`)).toBeInTheDocument();
-      expect(screen.getByTestId(`slot-number-1-${i}`)).toHaveTextContent(`${i + 1}.`);
+      expect(screen.getByTestId(`slot-number-1-${i}`)).toHaveTextContent(
+        `${i + 1}.`,
+      );
     }
   });
 
@@ -240,7 +249,7 @@ describe("KitVoicePanel", () => {
     render(
       <MockMessageDisplayProvider>
         <KitVoicePanel {...controlledProps} samples={["kick.wav"]} />
-      </MockMessageDisplayProvider>
+      </MockMessageDisplayProvider>,
     );
     const slots = screen.getAllByRole("listitem");
     // All slots (filled and empty) should have the same min-h-[28px] class

@@ -10,6 +10,7 @@ This document describes the schema for the Romper local SQLite database, which i
 
 <div class="mermaid">
 %%{init: {"class": {"direction": "LR"}, "theme": "default", "themeVariables": {"fontSize": "14px"}}}%%
+
 classDiagram
 
 direction LR

@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 # Kit Browser
 
 The Kit Browser is the main landing view. Kits are organized by bank (A–Z) and slot (00–99).

@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 # Syncing Kits to SD Card
 
 Romper copies your kit plans and samples to the mounted SD card. Syncing is only available when the card is present.

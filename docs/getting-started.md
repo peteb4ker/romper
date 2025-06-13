@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 # Getting Started
 
 This page walks you through installing Romper, connecting your SD card, and creating your first kit plan.

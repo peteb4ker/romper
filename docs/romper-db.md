@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 # Romper Database Schema
 
 This document describes the schema for the Romper local SQLite database, which is created in the `.romperdb` folder inside the local store.

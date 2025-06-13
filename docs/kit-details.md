@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 # Kit Details
 
 Each kit contains four voices, and each voice can hold up to 12 sample slots. This page describes assigning samples, previewing them, and using the built‑in step sequencer.

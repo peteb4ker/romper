@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 # Settings
 
 Romper includes several global preferences that persist between launches.

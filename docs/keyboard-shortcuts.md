@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 # Keyboard Shortcuts
 
 Romper is fully navigable with the keyboard. The most common shortcuts are listed below.

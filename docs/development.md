@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 # Developer Setup
 
 These instructions are for developers who want to work on Romper itself.

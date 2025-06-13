@@ -1,3 +1,8 @@
+---
+layout: default
+title: Romper Sample Manager
+---
+
 # Romper Sample Manager
 
 Welcome to the Romper documentation site. Romper is a cross‑platform desktop app for organizing, previewing, and syncing sample kits for the Squarp Rample.

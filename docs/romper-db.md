@@ -9,20 +9,20 @@ erDiagram
     plans ||--o{ kits : contains
     kits ||--o{ samples : contains
     plans {
-      int id PK
-      string name
-      datetime created_at
+        int id PK
+        string name
+        datetime created_at
     }
     kits {
-      int id PK
-      int plan_id FK
-      string name
+        int id PK
+        int plan_id FK
+        string name
     }
     samples {
-      int id PK
-      int kit_id FK
-      string filename
-      string metadata
+        int id PK
+        int kit_id FK
+        string filename
+        string metadata
     }
 ```
 

@@ -8,7 +8,7 @@ This document describes the schema for the Romper local SQLite database, which i
 
 ## Entity-Relationship Diagram (ERD)
 
-```mermaid
+<div class="mermaid">
 classDiagram
     direction LR
 
@@ -33,6 +33,7 @@ classDiagram
 
     Plan "1" --> "0..*" Kit : contains
     Kit "1" --> "0..*" Sample : contains
+</div>
 
 - **plans**: Top-level plan objects.
 - **kits**: Each kit belongs to a plan.

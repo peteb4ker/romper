@@ -20,17 +20,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" crossorigin="anonymous"></script>
     <script>anchors.add();</script>
     <script>
-        mermaid.initialize({
-            startOnLoad: true,
-            theme: 'default',
-            themeVariables: {
-            primaryColor: '#213448',
-            edgeLabelBackground: '#f4f4f4',
-            classText: '#213448',
-            classBorder: '#547792',
-            background: '#ECEFCA'
-            }
-        });
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: 'default', // 'forest' is very large and high-contrast; 'default' is more balanced
+        fontSize: 18, // reasonable default for docs
+        flowchart: {
+          useMaxWidth: true,
+          htmlLabels: true
+        },
+        class: {
+          useMaxWidth: true,
+        }
+      });
     </script>
   </body>
 </html>

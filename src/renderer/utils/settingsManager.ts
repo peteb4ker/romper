@@ -1,11 +1,11 @@
 export const getSetting = async (
-  key: "sdCardPath" | "darkMode",
+  key: "sdCardPath" | "darkMode" | "localStorePath",
 ): Promise<any> => {
   return window.electronAPI.getSetting(key);
 };
 
 export const setSetting = async (
-  key: "sdCardPath" | "darkMode",
+  key: "sdCardPath" | "darkMode" | "localStorePath",
   value: any,
 ): Promise<void> => {
   window.electronAPI.setSetting(key, value);

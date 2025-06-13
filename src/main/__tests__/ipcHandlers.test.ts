@@ -41,9 +41,6 @@ vi.mock("../rampleLabels", () => ({
   readRampleLabels: vi.fn(() => ({ kits: {} })),
   writeRampleLabels: vi.fn(),
 }));
-vi.mock("../rampleBin", () => ({
-  parseRampleBin: vi.fn(() => ({ foo: "bar" })),
-}));
 vi.mock("../kitPlanOps", () => ({
   validateKitPlan: vi.fn(() => []),
   writeKitSamples: vi.fn(),

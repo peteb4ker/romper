@@ -48,7 +48,6 @@ describe("preload/index.tsx", () => {
         stopSample: expect.any(Function),
         onSamplePlaybackEnded: expect.any(Function),
         onSamplePlaybackError: expect.any(Function),
-        readRampleBinAll: expect.any(Function),
         getAudioBuffer: expect.any(Function),
         readRampleLabels: expect.any(Function),
         writeRampleLabels: expect.any(Function),

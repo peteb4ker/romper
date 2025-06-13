@@ -9,6 +9,7 @@ async function readSettings(): Promise<{
   sdCardPath?: string;
   darkMode?: boolean;
   theme?: string;
+  localStorePath?: string;
 }> {
   try {
     const settings = await ipcRenderer.invoke("read-settings");
@@ -20,7 +21,7 @@ async function readSettings(): Promise<{
 }
 
 async function writeSettings(
-  key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string },
+  key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string; localStorePath?: string },
   value: any,
 ): Promise<void> {
   try {
@@ -62,13 +63,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     };
   },
   getSetting: async (
-    key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string },
+    key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string; localStorePath?: string },
   ): Promise<any> => {
     const settings = await readSettings();
     return settings[key];
   },
   setSetting: async (
-    key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string },
+    key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string; localStorePath?: string },
     value: any,
   ): Promise<void> => {
     console.log(`setSetting called with key: ${key}, value:`, value);
@@ -78,6 +79,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     sdCardPath?: string;
     darkMode?: boolean;
     theme?: string;
+    localStorePath?: string;
   }> => {
     return readSettings();
   },
@@ -103,8 +105,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
       cb(errMsg),
     );
   },
-  readRampleBinAll: (filePath: string) =>
-    ipcRenderer.invoke("read-rample-bin-all", filePath),
   getAudioBuffer: (filePath: string) =>
     ipcRenderer.invoke("get-audio-buffer", filePath),
   readRampleLabels: (sdCardPath: string) =>

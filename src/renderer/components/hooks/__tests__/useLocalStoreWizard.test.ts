@@ -24,6 +24,11 @@ describe("useLocalStoreWizard", () => {
       ...window.electronAPI,
       createRomperDb: vi.fn(async (dbDir: string) => ({ success: true, dbPath: dbDir + "/romper.sqlite" })),
       ensureDir: vi.fn(async () => true),
+      getSetting: vi.fn(async (key) => {
+        if (key === "localStorePath") return "/mock/saved/path/romper";
+        return undefined;
+      }),
+      setSetting: vi.fn(async () => {}),
     };
   });
 
@@ -302,5 +307,29 @@ describe("useLocalStoreWizard", () => {
       "/mock/sd/B12",
       "/mock/home/Documents/romper/B12",
     );
+  });
+
+  it("loads localStorePath from settings if present", async () => {
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    expect(result.current.defaultPath).toBe("/mock/saved/path/romper");
+    expect(result.current.state.targetPath).toBe("/mock/saved/path/romper");
+  });
+
+  it("persists localStorePath after successful initialization", async () => {
+    let setSettingCalled = false;
+    window.electronAPI.setSetting = vi.fn(async (key, value) => {
+      if (key === "localStorePath") setSettingCalled = value;
+    });
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("blank");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(setSettingCalled).toBe("/mock/home/Documents/romper");
   });
 });

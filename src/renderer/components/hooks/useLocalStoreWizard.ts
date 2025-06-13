@@ -74,7 +74,16 @@ export function useLocalStoreWizard() {
 
   useEffect(() => {
     (async () => {
-      const path = await getDefaultRomperPathAsync();
+      let path = "";
+      if (window.electronAPI?.getSetting) {
+        const saved = await window.electronAPI.getSetting("localStorePath");
+        if (typeof saved === "string" && saved.length > 0) {
+          path = saved;
+        }
+      }
+      if (!path) {
+        path = await getDefaultRomperPathAsync();
+      }
       setDefaultPath(path);
       setState((s) => ({ ...s, targetPath: path }));
     })();
@@ -187,6 +196,10 @@ export function useLocalStoreWizard() {
           // Done: no files copied
           setIsInitializing(false);
           setProgress(null);
+          // Persist localStorePath in settings
+          if (window.electronAPI?.setSetting) {
+            await window.electronAPI.setSetting("localStorePath", state.targetPath);
+          }
           return;
         }
       }
@@ -209,9 +222,12 @@ export function useLocalStoreWizard() {
         if (!result?.success)
           throw new Error(result?.error || "Failed to extract archive");
       }
-      // TODO: SD card copy logic (future)
       // After local store is created, create .romperdb folder
       await createRomperDbHelper(state.targetPath);
+      // Persist localStorePath in settings
+      if (window.electronAPI?.setSetting) {
+        await window.electronAPI.setSetting("localStorePath", state.targetPath);
+      }
     } catch (e: any) {
       let msg = e.message || "Unknown error";
       if (msg.includes("premature close")) {

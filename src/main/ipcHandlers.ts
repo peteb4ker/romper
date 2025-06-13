@@ -18,7 +18,6 @@ import {
   validateKitPlan,
   writeKitSamples,
 } from "./kitPlanOps.js";
-import { parseRampleBin } from "./rampleBin.js";
 import { readRampleLabels, writeRampleLabels } from "./rampleLabels.js";
 
 // Utility: recursively copy a directory
@@ -125,9 +124,6 @@ export function registerIpcHandlers(
       data.byteOffset + data.byteLength,
     );
   });
-  ipcMain.handle("read-rample-bin-all", async (_event, filePath: string) =>
-    parseRampleBin(filePath),
-  );
   ipcMain.handle("read-rample-labels", async (_event, sdCardPath: string) =>
     readRampleLabels(sdCardPath),
   );

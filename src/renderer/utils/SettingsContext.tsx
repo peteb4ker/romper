@@ -3,6 +3,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 interface SettingsContextProps {
   sdCardPath: string | null;
   setSdCardPath: (path: string) => void;
+  localStorePath: string | null;
+  setLocalStorePath: (path: string) => void;
   initializeSettings: () => Promise<void>;
   darkMode: boolean;
   setDarkMode: (enabled: boolean) => void;
@@ -17,6 +19,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [sdCardPath, setSdCardPathState] = useState<string | null>(null);
+  const [localStorePath, setLocalStorePathState] = useState<string | null>(null);
   const [darkMode, setDarkModeState] = useState<boolean>(false);
   const [settingsInitialized, setSettingsInitialized] = useState(false);
   const [settings, setSettings] = useState<Record<string, any>>({});
@@ -26,6 +29,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     setSettings(updatedSettings);
     setSdCardPathState(path);
     window.electronAPI.setSetting("sdCardPath", path);
+  };
+
+  const setLocalStorePath = (path: string) => {
+    const updatedSettings = { ...settings, localStorePath: path };
+    setSettings(updatedSettings);
+    setLocalStorePathState(path);
+    window.electronAPI.setSetting("localStorePath", path);
   };
 
   const setDarkMode = (enabled: boolean) => {
@@ -52,7 +62,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log("Setting sdCardPath state:", loadedSettings.sdCardPath);
         setSdCardPathState(loadedSettings.sdCardPath);
       }
-
+      if (loadedSettings.localStorePath) {
+        setLocalStorePathState(loadedSettings.localStorePath);
+      }
       if (typeof loadedSettings.darkMode === "boolean") {
         console.log("Setting darkMode state:", loadedSettings.darkMode);
         setDarkModeState(loadedSettings.darkMode);
@@ -73,6 +85,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         sdCardPath,
         setSdCardPath,
+        localStorePath,
+        setLocalStorePath,
         darkMode,
         setDarkMode,
         initializeSettings,

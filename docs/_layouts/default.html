@@ -20,16 +20,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" crossorigin="anonymous"></script>
     <script>anchors.add();</script>
     <script>
-      var config = {
-        startOnLoad:true,
-        theme: 'forest',
-        flowchart:{
-          useMaxWidth:false,
-          htmlLabels:true
-        }
-      };
-      mermaid.initialize(config);
-      window.mermaid.init(undefined, document.querySelectorAll('.language-mermaid'));
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+            primaryColor: '#213448',
+            edgeLabelBackground: '#f4f4f4',
+            classText: '#213448',
+            classBorder: '#547792',
+            background: '#ECEFCA'
+            }
+        });
     </script>
   </body>
 </html>

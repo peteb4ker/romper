@@ -1,9 +1,4 @@
-title: Romper
-description: Romper Sample Manager
-baseurl: "" # Adjust if needed
-url: "https://peteb4ker.github.io"
-
+title: Mermaid Site
 markdown: kramdown
-
 plugins:
   - jekyll-mermaid

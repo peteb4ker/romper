@@ -4,9 +4,8 @@ This document describes the schema for the Romper local SQLite database, which i
 
 ## Entity-Relationship Diagram (ERD)
 
-```mermaid
+<div class="mermaid">
 erDiagram
-
     plans ||--o{ kits : contains
     kits ||--o{ samples : contains
     plans {
@@ -25,7 +24,7 @@ erDiagram
         string filename
         string metadata
     }
-```
+</div>
 
 - **plans**: Top-level plan objects.
 - **kits**: Each kit belongs to a plan.

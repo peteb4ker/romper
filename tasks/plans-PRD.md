@@ -72,6 +72,7 @@ The Kit Plans feature enables users to create new kits or modify existing kits b
 - The Romper DB is a SQLite database stored in the `.romperdb` folder within the local store.
 - Only one local store and associated DB are active at a time, as set in application settings.
 - The local store can be initialized from SD card, Squarp.net archive (https://data.squarp.net/RampleSamplesV1-2.zip), or a blank folder.
+  - For SD card source, any folder can be chosen. It is valid if it contains at least one subfolder matching ^[A-Z].*?(?:[1-9]?\d)$; otherwise, a warning is shown and the user must choose another folder.
 - All plan changes are persisted immediately to the DB for reliability.
 - Sample format conversion (to 16 bit 44100 Hz, mono/stereo as needed) is handled on commit.
 - Stereo sample assignment logic must handle edge cases (e.g., last voice, conflicting slots).

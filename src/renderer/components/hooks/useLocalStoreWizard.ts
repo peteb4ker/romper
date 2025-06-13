@@ -8,6 +8,8 @@ export interface LocalStoreWizardState {
   sdCardMounted: boolean;
   isInitializing: boolean;
   error: string | null;
+  sdCardPath?: string;
+  kitFolderValidationError?: string | null;
 }
 
 export function getDefaultRomperPath(): string {
@@ -82,6 +84,24 @@ export function useLocalStoreWizard() {
     setState((s) => ({ ...s, isInitializing }));
   }, []);
 
+  const setSdCardPath = useCallback((sdCardPath: string) => {
+    setState((s) => ({ ...s, sdCardPath }));
+  }, []);
+
+  // Validate SD card folder for kit subfolders
+  const validateSdCardFolder = useCallback(async (sdCardPath: string) => {
+    if (!sdCardPath) return null; // Don't show error if nothing picked, UI should handle this
+    if (!window.electronAPI?.listFilesInRoot)
+      return "Cannot access filesystem.";
+    const files = await window.electronAPI.listFilesInRoot(sdCardPath);
+    const kitRegex = /^[A-Z].*?(?:[1-9]?\d)$/;
+    const kitFolders = files.filter((f: string) => kitRegex.test(f));
+    if (kitFolders.length === 0) {
+      return "No valid kit folders found. Please choose a folder with kit subfolders (e.g. A0, B12, etc).";
+    }
+    return null;
+  }, []);
+
   // Placeholder for actual initialization logic
   const initialize = useCallback(async () => {
     setIsInitializing(true);
@@ -93,13 +113,57 @@ export function useLocalStoreWizard() {
       if (
         typeof window !== "undefined" &&
         window.electronAPI &&
+        typeof window.electronAPI.ensureDir === "function"
+      ) {
+        await window.electronAPI.ensureDir(state.targetPath);
+      }
+      if (state.source === "sdcard") {
+        if (!state.sdCardPath) throw new Error(); // Don't show error, UI should handle this
+        const validationError = await validateSdCardFolder(state.sdCardPath);
+        if (validationError) {
+          setState((s) => ({
+            ...s,
+            kitFolderValidationError: validationError,
+            source: null,
+          }));
+          throw new Error(validationError);
+        } else {
+          setState((s) => ({ ...s, kitFolderValidationError: undefined }));
+        }
+        // Copy all valid kit folders to local store with progress
+        const files = await window.electronAPI.listFilesInRoot(
+          state.sdCardPath,
+        );
+        const kitRegex = /^[A-Z].*?(?:[1-9]?\d)$/;
+        const kitFolders = files.filter((f: string) => kitRegex.test(f));
+        let copied = 0;
+        for (const folder of kitFolders) {
+          setProgress({
+            phase: `Copying kits...`,
+            percent: Math.round((copied / kitFolders.length) * 100),
+            file: folder,
+          });
+          await window.electronAPI.copyDir(
+            `${state.sdCardPath}/${folder}`,
+            `${state.targetPath}/${folder}`,
+          );
+          copied++;
+        }
+        setProgress({
+          phase: `Copying kits...`,
+          percent: 100,
+        });
+      }
+      if (
+        typeof window !== "undefined" &&
+        window.electronAPI &&
         typeof window.electronAPI.getUserHomeDir === "function"
       ) {
         if (state.source === "blank") {
-          await window.electronAPI.downloadAndExtractArchive?.(
-            "about:blank",
-            state.targetPath,
-          );
+          // Done: no files copied
+          setIsInitializing(false);
+          setProgress(null);
+          return;
         }
       }
       if (state.source === "squarp") {
@@ -129,6 +193,10 @@ export function useLocalStoreWizard() {
           "Download failed: The connection was closed before completion. Please check your internet connection and try again.";
       }
       setError(msg);
+      // If SD card error, allow reselect by clearing source
+      if (state.source === "sdcard") {
+        setState((s) => ({ ...s, source: null }));
+      }
     } finally {
       setIsInitializing(false);
       setProgress(null);
@@ -139,6 +207,8 @@ export function useLocalStoreWizard() {
     setProgress,
     state.targetPath,
     state.source,
+    state.sdCardPath,
+    validateSdCardFolder,
   ]);
 
   return {
@@ -148,6 +218,8 @@ export function useLocalStoreWizard() {
     setSdCardMounted,
     setError,
     setIsInitializing,
+    setSdCardPath,
+    validateSdCardFolder,
     initialize,
     defaultPath,
     progress,

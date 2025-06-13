@@ -150,6 +150,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
         ipcRenderer.removeListener("archive-error", errorListener);
     }
   },
+  ensureDir: async (dir: string) => {
+    return await ipcRenderer.invoke("ensure-dir", dir);
+  },
+  copyDir: async (src: string, dest: string) => {
+    return await ipcRenderer.invoke("copy-dir", src, dest);
+  },
 });
 
 // Expose a function to get the file path from a dropped File object (Electron only)

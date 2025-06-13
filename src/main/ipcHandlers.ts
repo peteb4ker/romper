@@ -273,4 +273,26 @@ export function registerIpcHandlers(
       }
     },
   );
+  ipcMain.handle("ensure-dir", async (_event, dir: string) => {
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      return { success: true };
+    } catch (e) {
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : String(e),
+      };
+    }
+  });
+  ipcMain.handle("copy-dir", async (_event, src: string, dest: string) => {
+    try {
+      copyRecursiveSync(src, dest);
+      return { success: true };
+    } catch (e) {
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : String(e),
+      };
+    }
+  });
 }

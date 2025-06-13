@@ -3,8 +3,8 @@
 - `src/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI).
 - `src/renderer/components/KitDetails.test.tsx` - Unit tests for KitDetails, including plan mode and kit planning integration.
 - `src/renderer/components/LocalStoreWizardUI.tsx` - UI for local store setup wizard, now supports progress bar and robust error display for Squarp.net archive initialization.
-- `src/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now exposes progress/error state for Squarp.net archive initialization.
-- `src/renderer/components/hooks/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook, now cover progress and error handling for Squarp.net archive.
+- `src/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now exposes progress/error state for Squarp.net archive initialization, handles blank folder (no files copied, only folder created), and SD card folder validation/copy logic.
+- `src/renderer/components/hooks/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook, now cover progress, error handling, blank folder initialization, and SD card folder validation/copy.
 - `src/renderer/components/hooks/useKitPlan.ts` - Hook for all business logic related to kit plans, including plan state, actions, and persistence.
 - `src/renderer/components/hooks/useKitPlan.test.ts` - Unit tests for useKitPlan hook.
 - `src/renderer/components/utils/planUtils.ts` - Utility functions for plan validation, sample assignment, and format checks.
@@ -29,6 +29,7 @@
 
 ### Notes
 
+- SD card source can be any folder. It is valid if it contains at least one subfolder matching ^[A-Z].*?(?:[1-9]?\d)$; otherwise, a warning is shown and the user must choose another folder.
 - Unit tests must be placed alongside the code files they are testing.
 - All plan actions and state changes must be covered by unit tests.
 - Use `npx vitest` to run all tests.
@@ -47,16 +48,16 @@
     - [ ] 2.1.1 User chooses the target of the local store:
       - [x] 2.1.1.1 Default is the OS-equivalent 'Documents' folder
       - [x] 2.1.1.2 User can choose a custom path (via folder picker dialog, always appending '/romper' if not present)
-      - [ ] 2.1.1.3 The `romper` directory will be created in this location
+      - [x] 2.1.1.3 The `romper` directory will be created in this location
     - [x] 2.1.2 User chooses the source of the local store (three options):
       - [x] 2.1.2.1 From the Rample SD card (card with SD icon)
       - [x] 2.1.2.2 From the Squarp.net archive (card with archive icon)
       - [x] 2.1.2.3 A blank folder (card with folder icon)
     - [x] 2.1.3 Local store is initialized from the source:
-      - [ ] 2.1.3.1 Kit folder initialization:
-        - [ ] 2.1.3.1.1 If SD card is the source, copy all files from SD card to local store
+      - [x] 2.1.3.1 Kit folder initialization:
+        - [x] 2.1.3.1.1 If SD card is the source, copy all files from SD card to local store
         - [x] 2.1.3.1.2 If Squarp.net archive is the source, download and extract archive to local store (with progress bar, robust error handling, and test coverage for premature close and progress events)
-        - [ ] 2.1.3.1.3 If blank folder is chosen, no files are copied
+        - [x] 2.1.3.1.3 If blank folder is chosen, no files are copied
   - [ ] 2.2 Create and initialize Romper DB in `.romperdb` folder within local store.
   - [ ] 2.3 Persist local store location in settings; allow changing location.
   - [ ] 2.4 Validate local store and DB sync; display errors if out of sync.

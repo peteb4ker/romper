@@ -171,4 +171,17 @@ describe("preload/index.tsx", () => {
       "watcher-id",
     );
   });
+
+  it("calls ipcRenderer.invoke for ensureDir", async () => {
+    await import("../index");
+    const { mockContextBridge, mockIpcRenderer } = getElectronMocks();
+    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    mockIpcRenderer.invoke.mockResolvedValue({ success: true });
+    const result = await api.ensureDir("/mock/dir/romper");
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
+      "ensure-dir",
+      "/mock/dir/romper",
+    );
+    expect(result).toEqual({ success: true });
+  });
 });

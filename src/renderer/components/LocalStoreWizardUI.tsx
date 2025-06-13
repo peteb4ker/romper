@@ -10,6 +10,33 @@ interface LocalStoreWizardUIProps {
 const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
   const wizard = useLocalStoreWizard();
 
+  // New: UI for SD card folder selection and validation
+  const handleSdCardFolderPick = async () => {
+    if (window.electronAPI?.selectLocalStorePath) {
+      const folder = await window.electronAPI.selectLocalStorePath();
+      if (folder) wizard.setSdCardPath(folder);
+    }
+  };
+
+  // When SD card source is selected, immediately show folder picker
+  React.useEffect(() => {
+    if (wizard.state.source === "sdcard" && !wizard.state.sdCardPath) {
+      (async () => {
+        if (window.electronAPI?.selectLocalStorePath) {
+          const folder = await window.electronAPI.selectLocalStorePath();
+          if (folder) wizard.setSdCardPath(folder);
+        }
+      })();
+    }
+  }, [wizard.state.source]);
+
+  const isSdCardSource = wizard.state.source === "sdcard";
+  const canInitialize =
+    !!wizard.state.targetPath &&
+    !!wizard.state.source &&
+    (!isSdCardSource ||
+      (!!wizard.state.sdCardPath && !wizard.state.kitFolderValidationError));
+
   const sourceOptions = [
     {
       value: "sdcard",
@@ -30,12 +57,13 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
 
   return (
     <div>
-      {wizard.state.error && (
+      {/* Show all errors and warnings in one place */}
+      {(wizard.state.error || wizard.state.kitFolderValidationError) && (
         <div
           className="mb-2 text-red-600 dark:text-red-400"
           data-testid="wizard-error"
         >
-          {wizard.state.error}
+          {wizard.state.error || wizard.state.kitFolderValidationError}
         </div>
       )}
       {wizard.state.isInitializing &&
@@ -120,7 +148,14 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
                   ? "border-blue-600 bg-blue-50 dark:bg-blue-900"
                   : "border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800"
               }`}
-              onClick={() => wizard.setSource(opt.value as any)}
+              onClick={() => {
+                if (opt.value === "sdcard") {
+                  wizard.setSource("sdcard");
+                  wizard.setSdCardPath(""); // Clear previous path to force folder picker
+                } else {
+                  wizard.setSource(opt.value as any);
+                }
+              }}
               aria-pressed={wizard.state.source === opt.value}
             >
               {opt.icon}
@@ -131,20 +166,18 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
           ))}
         </div>
       </div>
-      {wizard.state.source === "sdcard" && !wizard.state.sdCardMounted && (
-        <div className="mb-2 text-yellow-700 dark:text-yellow-300">
-          Please mount your Rample SD card to continue.
+      {isSdCardSource && wizard.state.sdCardPath && (
+        <div className="mb-2">
+          {/* Only show the selected folder, never 'No SD card selected' */}
+          <span className="ml-2 text-xs text-gray-700 dark:text-gray-300">
+            {wizard.state.sdCardPath}
+          </span>
         </div>
       )}
       <div className="flex gap-2 mt-4">
         <button
           className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-          disabled={
-            !wizard.state.targetPath ||
-            !wizard.state.source ||
-            (wizard.state.source === "sdcard" && !wizard.state.sdCardMounted) ||
-            wizard.state.isInitializing
-          }
+          disabled={!canInitialize || wizard.state.isInitializing}
           onClick={wizard.initialize}
         >
           {wizard.state.isInitializing

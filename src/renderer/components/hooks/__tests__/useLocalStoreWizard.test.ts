@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { useLocalStoreWizard } from "../useLocalStoreWizard";
 
@@ -176,5 +176,121 @@ describe("useLocalStoreWizard", () => {
     expect(result.current.state.error).toMatch(/connection was closed/i);
     expect(result.current.state.isInitializing).toBe(false);
     expect(result.current.progress).toBeNull();
+  });
+
+  it("initializes blank folder (no files copied, only folder created)", async () => {
+    let ensureDirCalled = false;
+    window.electronAPI.ensureDir = async (dir) => {
+      ensureDirCalled = true;
+      if (!dir.includes("romper")) throw new Error("Invalid dir");
+      return true;
+    };
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("blank");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(ensureDirCalled).toBe(true);
+    expect(result.current.state.error).toBeNull();
+    expect(result.current.state.isInitializing).toBe(false);
+  });
+
+  it("initializes squarp source and ensures directory is created", async () => {
+    let ensureDirCalled = false;
+    window.electronAPI.ensureDir = async (dir) => {
+      ensureDirCalled = true;
+      if (!dir.includes("romper")) throw new Error("Invalid dir");
+      return true;
+    };
+    window.electronAPI.downloadAndExtractArchive = async (url, destDir) => {
+      return { success: true };
+    };
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("squarp");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(ensureDirCalled).toBe(true);
+    expect(result.current.state.error).toBeNull();
+    expect(result.current.state.isInitializing).toBe(false);
+  });
+
+  it("initializes sdcard source and ensures directory is created (copy logic not yet implemented)", async () => {
+    let ensureDirCalled = false;
+    window.electronAPI.ensureDir = async (dir) => {
+      ensureDirCalled = true;
+      if (!dir.includes("romper")) throw new Error("Invalid dir");
+      return true;
+    };
+    window.electronAPI.listFilesInRoot = async () => ["A0"];
+    window.electronAPI.copyDir = vi.fn();
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("sdcard");
+      result.current.setSdCardPath("/mock/sd");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(ensureDirCalled).toBe(true);
+    expect(result.current.state.error).toBeNull();
+    expect(result.current.state.isInitializing).toBe(false);
+  });
+
+  it("blocks initialization and sets error if SD card folder is invalid (no kit folders)", async () => {
+    window.electronAPI.listFilesInRoot = async () => ["notakit", "foo"];
+    window.electronAPI.copyDir = vi.fn();
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("sdcard");
+      result.current.setSdCardPath("/mock/sd");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(result.current.state.kitFolderValidationError).toMatch(
+      /no valid kit folders/i,
+    );
+    expect(result.current.state.error).toMatch(/no valid kit folders/i);
+    expect(window.electronAPI.copyDir).not.toHaveBeenCalled();
+  });
+
+  it("copies all valid kit folders from SD card to local store", async () => {
+    window.electronAPI.listFilesInRoot = async () => ["A0", "B12", "notakit"];
+    const copyDir = vi.fn();
+    window.electronAPI.copyDir = copyDir;
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("sdcard");
+      result.current.setSdCardPath("/mock/sd");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(result.current.state.kitFolderValidationError).toBeUndefined();
+    expect(result.current.state.error).toBeNull();
+    expect(copyDir).toHaveBeenCalledTimes(2);
+    expect(copyDir).toHaveBeenCalledWith(
+      "/mock/sd/A0",
+      "/mock/home/Documents/romper/A0",
+    );
+    expect(copyDir).toHaveBeenCalledWith(
+      "/mock/sd/B12",
+      "/mock/home/Documents/romper/B12",
+    );
   });
 });

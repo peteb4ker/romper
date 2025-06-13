@@ -1,6 +1,14 @@
 import fs from "fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// Mock better-sqlite3 to avoid native module errors
+vi.mock("better-sqlite3", () => ({
+  default: vi.fn(() => ({
+    exec: vi.fn(),
+    close: vi.fn(),
+  })),
+}));
+
 // Mocks for Electron and Node APIs
 vi.mock("electron", () => {
   const app = {

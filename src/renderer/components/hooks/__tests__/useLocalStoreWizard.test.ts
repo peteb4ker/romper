@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { useLocalStoreWizard } from "../useLocalStoreWizard";
 
@@ -17,6 +17,16 @@ function waitForAsync(fn: () => boolean, timeout = 1000) {
 }
 
 describe("useLocalStoreWizard", () => {
+  beforeEach(() => {
+    // DRY: Always mock createRomperDb and ensureDir for all tests
+    // @ts-ignore
+    window.electronAPI = {
+      ...window.electronAPI,
+      createRomperDb: vi.fn(async (dbDir: string) => ({ success: true, dbPath: dbDir + "/romper.sqlite" })),
+      ensureDir: vi.fn(async () => true),
+    };
+  });
+
   it("initializes with default state and loads defaultPath async", async () => {
     const { result } = renderHook(() => useLocalStoreWizard());
     expect(result.current.state).toMatchObject({

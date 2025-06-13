@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { registerIpcHandlers } from "./ipcHandlers.js";
+import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -68,6 +69,7 @@ app.whenReady().then(async () => {
 
     // Register all IPC handlers
     registerIpcHandlers(watchers, inMemorySettings);
+    registerDbIpcHandlers();
   } catch (error) {
     console.error("Error during app initialization:", error);
   }

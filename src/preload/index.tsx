@@ -156,6 +156,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   copyDir: async (src: string, dest: string) => {
     return await ipcRenderer.invoke("copy-dir", src, dest);
   },
+  createRomperDb: async (dbDir: string) => {
+    return await ipcRenderer.invoke("create-romper-db", dbDir);
+  },
 });
 
 // Expose a function to get the file path from a dropped File object (Electron only)

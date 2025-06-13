@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createRomperDb } from "../utils/romperDb";
 
 export type LocalStoreSource = "sdcard" | "squarp" | "blank";
 
@@ -45,6 +46,15 @@ export async function getDefaultRomperPathAsync(): Promise<string> {
 function getKitFolders(files: string[]): string[] {
   const kitRegex = /^[A-Z].*?(?:[1-9]?\d)$/;
   return files.filter((f) => kitRegex.test(f));
+}
+
+// Helper: create Romper DB in .romperdb folder
+async function createRomperDbHelper(targetPath: string) {
+  if (!window.electronAPI?.ensureDir) throw new Error("Cannot access filesystem");
+  const dbDir = `${targetPath}/.romperdb`;
+  await window.electronAPI.ensureDir(dbDir);
+  await createRomperDb(dbDir);
+  return dbDir;
 }
 
 export function useLocalStoreWizard() {
@@ -200,6 +210,8 @@ export function useLocalStoreWizard() {
           throw new Error(result?.error || "Failed to extract archive");
       }
       // TODO: SD card copy logic (future)
+      // After local store is created, create .romperdb folder
+      await createRomperDbHelper(state.targetPath);
     } catch (e: any) {
       let msg = e.message || "Unknown error";
       if (msg.includes("premature close")) {

@@ -9,30 +9,32 @@ This document describes the schema for the Romper local SQLite database, which i
 ## Entity-Relationship Diagram (ERD)
 
 <div class="mermaid">
+%%{init: {"class": {"direction": "LR"}, "theme": "default", "themeVariables": {"fontSize": "14px"}}}%%
 classDiagram
-    direction LR
 
-    class Plan {
-        +int id
-        +string name
-        +datetime created_at
-    }
+direction LR
 
-    class Kit {
-        +int id
-        +int plan_id
-        +string name
-    }
+class Plan {
+  +int id
+  +string name
+  +datetime created_at
+}
 
-    class Sample {
-        +int id
-        +int kit_id
-        +string filename
-        +string metadata
-    }
+class Kit {
+  +int id
+  +int plan_id
+  +string name
+}
 
-    Plan "1" --> "0..*" Kit : contains
-    Kit "1" --> "0..*" Sample : contains
+class Sample {
+  +int id
+  +int kit_id
+  +string filename
+  +string metadata
+}
+
+Plan "1" --> "0..*" Kit : contains
+Kit "1" --> "0..*" Sample : contains
 </div>
 
 - **plans**: Top-level plan objects.

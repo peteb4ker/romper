@@ -57,3 +57,7 @@ When working with task lists, the AI must:
 - Do not mark a task as complete based on planning or intent alone.
 - Each completion must be accompanied by a code change (or verification that the code already exists and meets requirements).
 - If a task is marked complete in error, revert it to incomplete ([ ]) until the code is present.
+
+## Romper DB Schema Documentation
+- Any change to the Romper DB schema (including migrations, new tables, or column changes) **must** be reflected in `/docs/romper-db.md`.
+- The ERD in that file must always match the current schema in `/src/main/dbIpcHandlers.ts` and related DB code.

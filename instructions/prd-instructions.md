@@ -42,6 +42,10 @@ The generated PRD should include the following sections:
 8.  **Success Metrics:** How will the success of this feature be measured? (e.g., "Increase user engagement by 10%", "Reduce support tickets related to X").
 9.  **Open Questions:** List any remaining questions or areas needing further clarification.
 
+## Romper DB Schema Documentation
+- Any change to the Romper DB schema (including migrations, new tables, or column changes) **must** be reflected in `/docs/romper-db.md`.
+- The ERD in that file must always match the current schema in `/src/main/dbIpcHandlers.ts` and related DB code.
+
 ## Target Audience
 
 Assume the primary reader of the PRD is a **junior developer**. Therefore, requirements should be explicit, unambiguous, and avoid jargon where possible. Provide enough detail for them to understand the feature's purpose and core logic.

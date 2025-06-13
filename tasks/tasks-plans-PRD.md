@@ -59,7 +59,7 @@
         - [x] 2.1.3.1.2 If Squarp.net archive is the source, download and extract archive to local store (with progress bar, robust error handling, and test coverage for premature close and progress events)
         - [x] 2.1.3.1.3 If blank folder is chosen, no files are copied
   - [x] 2.2 Create and initialize Romper DB in `.romperdb` folder within local store.
-  - [ ] 2.3 Persist local store location in settings; allow changing location.
+  - [x] 2.3 Persist local store location in settings; allow changing location
   - [ ] 2.4 Validate local store and DB sync; display errors if out of sync.
   - [ ] 2.5 Unit tests for initialization, validation, and error handling.
   - [ ] 2.7 If the local store or Romper DB does not exist, automatically create them as needed.

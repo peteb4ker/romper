@@ -10,6 +10,7 @@ This document describes the schema for the Romper local SQLite database, which i
 
 <div class="mermaid">
 erDiagram
+
     plans ||--o{ kits : contains
     kits ||--o{ samples : contains
     plans {

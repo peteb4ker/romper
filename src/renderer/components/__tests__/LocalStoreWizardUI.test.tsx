@@ -37,6 +37,10 @@ describe("LocalStoreWizardUI", () => {
         initialize: vi.fn(),
         defaultPath: "/mock/path/romper",
         progress: null,
+        handleSourceSelect: vi.fn(),
+        errorMessage: "fail",
+        canInitialize: true,
+        isSdCardSource: false,
       }),
     }));
     const { default: LocalStoreWizardUI } = await import(

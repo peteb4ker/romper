@@ -41,6 +41,12 @@ export async function getDefaultRomperPathAsync(): Promise<string> {
   return "";
 }
 
+// Helper: get kit folders from a list of filenames
+function getKitFolders(files: string[]): string[] {
+  const kitRegex = /^[A-Z].*?(?:[1-9]?\d)$/;
+  return files.filter((f) => kitRegex.test(f));
+}
+
 export function useLocalStoreWizard() {
   const [state, setState] = useState<LocalStoreWizardState>({
     targetPath: "",
@@ -91,16 +97,33 @@ export function useLocalStoreWizard() {
   // Validate SD card folder for kit subfolders
   const validateSdCardFolder = useCallback(async (sdCardPath: string) => {
     if (!sdCardPath) return null; // Don't show error if nothing picked, UI should handle this
-    if (!window.electronAPI?.listFilesInRoot)
-      return "Cannot access filesystem.";
+    if (!window.electronAPI?.listFilesInRoot) return "Cannot access filesystem.";
     const files = await window.electronAPI.listFilesInRoot(sdCardPath);
-    const kitRegex = /^[A-Z].*?(?:[1-9]?\d)$/;
-    const kitFolders = files.filter((f: string) => kitRegex.test(f));
+    const kitFolders = getKitFolders(files);
     if (kitFolders.length === 0) {
       return "No valid kit folders found. Please choose a folder with kit subfolders (e.g. A0, B12, etc).";
     }
     return null;
   }, []);
+
+  // DRY: Single handler for source selection, including SD card logic
+  const handleSourceSelect = useCallback((value: string) => {
+    if (value === "sdcard") {
+      setSource("sdcard");
+      setSdCardPath(""); // Always clear to force folder picker
+    } else {
+      setSource(value as any);
+    }
+  }, [setSource, setSdCardPath]);
+
+  // DRY: Single error/warning display
+  const errorMessage = state.error || state.kitFolderValidationError;
+
+  const isSdCardSource = state.source === "sdcard";
+  const canInitialize =
+    !!state.targetPath &&
+    !!state.source &&
+    (!isSdCardSource || (!!state.sdCardPath && !state.kitFolderValidationError));
 
   // Placeholder for actual initialization logic
   const initialize = useCallback(async () => {
@@ -121,33 +144,24 @@ export function useLocalStoreWizard() {
         if (!state.sdCardPath) throw new Error(); // Don't show error, UI should handle this
         const validationError = await validateSdCardFolder(state.sdCardPath);
         if (validationError) {
-          setState((s) => ({
-            ...s,
-            kitFolderValidationError: validationError,
-            source: null,
-          }));
+          setState((s) => ({ ...s, kitFolderValidationError: validationError, source: null }));
           throw new Error(validationError);
         } else {
           setState((s) => ({ ...s, kitFolderValidationError: undefined }));
         }
         // Copy all valid kit folders to local store with progress
-        const files = await window.electronAPI.listFilesInRoot(
-          state.sdCardPath,
-        );
-        const kitRegex = /^[A-Z].*?(?:[1-9]?\d)$/;
-        const kitFolders = files.filter((f: string) => kitRegex.test(f));
-        let copied = 0;
-        for (const folder of kitFolders) {
+        const files = await window.electronAPI.listFilesInRoot(state.sdCardPath);
+        const kitFolders = getKitFolders(files);
+        for (let i = 0; i < kitFolders.length; i++) {
           setProgress({
             phase: `Copying kits...`,
-            percent: Math.round((copied / kitFolders.length) * 100),
-            file: folder,
+            percent: Math.round((i / kitFolders.length) * 100),
+            file: kitFolders[i],
           });
           await window.electronAPI.copyDir(
-            `${state.sdCardPath}/${folder}`,
-            `${state.targetPath}/${folder}`,
+            `${state.sdCardPath}/${kitFolders[i]}`,
+            `${state.targetPath}/${kitFolders[i]}`,
           );
-          copied++;
         }
         setProgress({
           phase: `Copying kits...`,
@@ -223,5 +237,9 @@ export function useLocalStoreWizard() {
     initialize,
     defaultPath,
     progress,
+    handleSourceSelect,
+    errorMessage,
+    canInitialize,
+    isSdCardSource,
   };
 }

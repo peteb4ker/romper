@@ -1,8 +1,10 @@
-name: Deploy Jekyll Site with Mermaid Support
+# This workflow uses GitHub's built-in Pages workflow for Jekyll
+# See: https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll
+name: GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -10,40 +12,23 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
         with:
-          ruby-version: '3.2'
-          bundler-cache: true
-
-      - name: Install dependencies
-        run: bundle install
-        working-directory: .
-
-      - name: Build site
-        run: bundle exec jekyll build --source ./docs --destination ./_site
-
+          source: ./docs
+          destination: ./_site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
+        with:
+          path: ./_site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

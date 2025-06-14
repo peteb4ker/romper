@@ -1,0 +1,38 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "primaryColor": "#f6f8fa",
+    "primaryTextColor": "#1f2328",
+    "primaryBorderColor": "#d0d7de",
+    "lineColor": "#57606a",
+    "fontSize": "14px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+    "edgeLabelBackground": "#ffffff"
+  }
+}}%%
+
+
+classDiagram
+    direction LR
+
+    class Plan {
+        +int id
+        +string name
+        +datetime created_at
+    }
+
+    class Kit {
+        +int id
+        +int plan_id
+        +string name
+    }
+
+    class Sample {
+        +int id
+        +int kit_id
+        +string filename
+        +string metadata
+    }
+
+    Plan "1" --> "0..*" Kit : contains
+    Kit "1" --> "0..*" Sample : contains

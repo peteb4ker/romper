@@ -1,6 +1,0 @@
-title: Mermaid Site
-markdown: kramdown
-plugins:
-  - jekyll-feed
-  - jekyll-seo-tag
-  - jekyll-mermaid

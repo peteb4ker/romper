@@ -8,7 +8,7 @@ This document describes the schema for the Romper local SQLite database, which i
 
 ## Entity-Relationship Diagram (ERD)
 
-
+![Romper DB ERD](./romper-db-erd.png)
 
 - **plans**: Top-level plan objects.
 - **kits**: Each kit belongs to a plan.

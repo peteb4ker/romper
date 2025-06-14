@@ -18,6 +18,7 @@ For a technical overview see the [README](../README.md). This site focuses on ho
 - [Settings](./settings.md)
 - [Keyboard Shortcuts](./keyboard-shortcuts.md)
 - [Developer Setup](./development.md)
+- [Romper Database Schema](./romper-db.md)
 
 ## Features
 

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import { getNextKitSlot, toCapitalCase } from "@romper/shared/kitUtilsShared";
+import { getNextKitSlot, toCapitalCase } from "@romper/shared";
 
 export function useKitBrowser({
   kits: externalKits,

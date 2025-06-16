@@ -47,7 +47,7 @@ vi.mock("../kitPlanOps", () => ({
   rescanVoiceNames: vi.fn(() => ({ 1: "Kick", 2: "Snare" })),
   commitKitPlanHandler: vi.fn(() => ({ success: true })),
 }));
-vi.mock("@romper/shared/kitUtilsShared", () => ({
+vi.mock("../../../shared/dist/kitUtilsShared.js", () => ({
   groupSamplesByVoice: vi.fn(() => ({ 1: ["kick.wav"], 2: ["snare.wav"] })),
   inferVoiceTypeFromFilename: vi.fn(() => "Kick"),
 }));

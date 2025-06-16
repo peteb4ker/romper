@@ -1,7 +1,20 @@
 {
   "name": "@romper/shared",
   "version": "0.1.0",
-  "main": "dist/kitUtilsShared.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./kitUtilsShared": {
+      "import": "./dist/kitUtilsShared.js",
+      "require": "./dist/kitUtilsShared.js",
+      "types": "./dist/kitUtilsShared.d.ts"
+    }
+  },
   "type": "module",
   "scripts": {
     "build": "tsc --project tsconfig.build.json",

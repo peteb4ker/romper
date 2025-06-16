@@ -6,6 +6,7 @@
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "@romper/shared": "*",
     "better-sqlite3": "^11.10.0",
     "electron": "^36.4.0",
     "play-sound": "^1.1.6",
@@ -23,14 +24,15 @@
   },
   "scripts": {
     "start": "electron .",
-    "build": "tsc && tsc -p preload/tsconfig.preload.json",
-    "test": "vitest",
     "build:preload": "tsc -p preload/tsconfig.preload.json",
-    "build:main": "tsc",
+    "build:main": "tsc -p tsconfig.json",
+    "build": "npm run build:main && npm run build:preload",
+    "electron:dev": "NODE_ENV=development electron --inspect=5858 .",
     "rebuild:electron": "npx electron-rebuild -f -w better-sqlite3",
-    "make": "NODE_PATH=./electron_node_modules/node_modules electron-forge make -- --arch=universal",
-    "install:electron": "cd electron_node_modules && npm install",
-    "lint": "eslint . --fix"
+    "make": "electron-forge make -- --arch=universal",
+    "lint": "eslint . --fix",
+    "test": "vitest --coverage",
+    "clean": "rm -fr dist && rm -fr out"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.1",

@@ -3,16 +3,16 @@
     "private": true,
     "version": "0.1.0",
     "workspaces": [
+        "shared",
         "app",
-        "electron",
-        "shared"
+        "electron"
     ],
     "scripts": {
         "bootstrap": "npm install --workspaces --legacy-peer-deps",
         "build": "npm run build --workspaces",
         "test": "npm run test --workspaces",
         "lint": "npm run lint --workspaces",
-        "dev": "concurrently \"npm run build:main --workspace=electron && npm run build:preload --workspace=electron && npm run build --workspace=app\" \"npm run start --workspace=electron\""
+        "dev": "npm run build && concurrently \"npm run dev --workspace=app\" \"sleep 3 && npm run electron:dev --workspace=electron\""
     },
     "devDependencies": {
         "autoprefixer": "^10.4.21",
@@ -23,5 +23,8 @@
     },
     "overrides": {
         "eslint": "^9.0.0"
+    },
+    "dependencies": {
+        "workspaces": "^0.1.0"
     }
 }

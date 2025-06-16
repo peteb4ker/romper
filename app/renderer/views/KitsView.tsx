@@ -8,7 +8,7 @@ import type {
   RampleLabels,
   VoiceSamples,
 } from "../components/kitTypes";
-import { compareKitSlots, groupSamplesByVoice } from "@romper/shared/kitUtilsShared";
+import { compareKitSlots, groupSamplesByVoice } from "@romper/shared";
 import { useSettings } from "../utils/SettingsContext";
 
 const KitsView = () => {

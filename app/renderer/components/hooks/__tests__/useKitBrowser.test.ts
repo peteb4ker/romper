@@ -1,14 +1,11 @@
-import { act, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { getNextKitSlot } from "@romper/shared/kitUtilsShared";
-import { useKitBrowser } from "../useKitBrowser";
-
-// Mock kitUtils
-vi.mock("@romper/shared/kitUtilsShared", () => ({
-  getNextKitSlot: vi.fn(() => "A1"),
+// @vitest-environment jsdom
+vi.mock("@romper/shared", () => ({
+  getNextKitSlot: () => "A1",
   toCapitalCase: (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
 }));
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useKitBrowser } from "../useKitBrowser";
 
 // Mock electronAPI
 let mockListFilesInRoot: any;
@@ -54,15 +51,13 @@ describe("useKitBrowser", () => {
   });
 
   it("sets nextKitSlot when kits change", () => {
-    // Ensure getNextKitSlot mock returns 'A1' for this test
-    getNextKitSlot.mockReturnValue("A1");
     const { result, rerender } = renderHook(
       ({ kits }) => useKitBrowser({ kits, sdCardPath: "/sd" }),
       { initialProps: { kits: ["A1"] } },
     );
     expect(result.current.nextKitSlot).toBe("A1");
     rerender({ kits: ["A1", "B2"] });
-    expect(result.current.nextKitSlot).toBe("A1"); // Because of the mock
+    expect(result.current.nextKitSlot).toBe("A1");
   });
 
   it("loads bankNames from rtf files", async () => {

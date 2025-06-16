@@ -3,10 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as unzipper from "unzipper";
 
-import {
-  groupSamplesByVoice,
-  inferVoiceTypeFromFilename,
-} from "@romper/shared/kitUtilsShared";
+import { groupSamplesByVoice, inferVoiceTypeFromFilename } from '@romper/shared/kitUtilsShared.js';
 import {
   countZipEntries,
   downloadArchive,

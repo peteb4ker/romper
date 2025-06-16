@@ -14,7 +14,7 @@ export default defineConfig({
       },
       {
         find: "@romper/shared/kitUtilsShared",
-        replacement: path.resolve(__dirname, "../shared/kitUtilsShared.ts"),
+        replacement: path.resolve(__dirname, "../shared/dist/kitUtilsShared.js"),
       },
     ],
   },

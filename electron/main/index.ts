@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 // Import IPC handlers
 import { registerIpcHandlers } from "./ipcHandlers.js";
 import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
+import { groupSamplesByVoice, inferVoiceTypeFromFilename } from '@romper/shared';
 
 type Settings = {
   sdCardPath?: string;

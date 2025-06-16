@@ -6,7 +6,7 @@ import { MdAutoAwesome, MdMic } from "react-icons/md";
 import { TiArrowLoop } from "react-icons/ti";
 
 import { useKitItem } from "./hooks/useKitItem";
-import { toCapitalCase } from "./kitUtils";
+import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 
 interface KitItemProps {
   kit: string;

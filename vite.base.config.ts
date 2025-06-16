@@ -28,6 +28,7 @@ export default defineConfig({
       include: ["src/**/*.ts", "src/**/*.tsx", "shared/**/*.ts"],
       exclude: ["src/**/*.d.ts", "src/renderer/styles/**"],
       reportOnFailure: true,
+      provider: "v8",
     },
   },
 });

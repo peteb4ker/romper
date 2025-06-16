@@ -1,9 +1,10 @@
 {
   "name": "@romper/shared",
   "version": "0.1.0",
-  "main": "kitUtilsShared.js",
+  "main": "dist/kitUtilsShared.js",
   "type": "module",
   "scripts": {
+    "build": "tsc --project tsconfig.build.json",
     "test": "vitest run",
     "lint": "eslint . --fix"
   },

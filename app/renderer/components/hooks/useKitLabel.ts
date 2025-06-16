@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { KitDetailsProps, RampleKitLabel, RampleLabels } from "../kitTypes";
-import { groupSamplesByVoice, inferVoiceTypeFromFilename } from "../kitUtils";
+import { groupSamplesByVoice, inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared";
 
 export function useKitLabel(props: KitDetailsProps) {
   const { kitName, sdCardPath } = props;

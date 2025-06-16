@@ -7,7 +7,6 @@ export default defineConfig({
     setupFiles: ['../vitest.setup.ts'],
     include: ['__tests__/**/*.test.ts'],
     watch: false,
-    run: true,
     coverage: {
       enabled: true,
       reporter: ['json', 'html'],
@@ -15,6 +14,7 @@ export default defineConfig({
       include: ['**/*.ts'],
       exclude: ['**/*.d.ts'],
       reportOnFailure: true,
+      provider: 'v8',
     },
   },
 });

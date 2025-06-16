@@ -11,10 +11,15 @@
         "bootstrap": "npm install --workspaces --legacy-peer-deps",
         "build": "npm run build --workspaces",
         "test": "npm run test --workspaces",
-        "lint": "npm run lint --workspaces"
+        "lint": "npm run lint --workspaces",
+        "dev": "concurrently \"npm run build:main --workspace=electron && npm run build:preload --workspace=electron && npm run build --workspace=app\" \"npm run start --workspace=electron\""
     },
     "devDependencies": {
-        "eslint": "^9.0.0"
+        "autoprefixer": "^10.4.21",
+        "concurrently": "^9.1.2",
+        "eslint": "^9.0.0",
+        "vite": "^6.3.5",
+        "vitest": "^3.2.3"
     },
     "overrides": {
         "eslint": "^9.0.0"

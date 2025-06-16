@@ -11,8 +11,12 @@
     "build:docs": "mmdc -i ../docs/romper-db.mmd -o ../docs/romper-db-erd.png"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.10",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0"
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitejs/plugin-react": "^4.5.2"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0"
+  }
 }

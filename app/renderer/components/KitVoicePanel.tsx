@@ -8,7 +8,7 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { toCapitalCase } from "./kitUtils";
+import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import SampleWaveform from "./SampleWaveform";
 
 interface KitVoicePanelProps {

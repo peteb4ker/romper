@@ -1,11 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getNextKitSlot } from "../../kitUtils";
+import { getNextKitSlot } from "@romper/shared/kitUtilsShared";
 import { useKitBrowser } from "../useKitBrowser";
 
 // Mock kitUtils
-vi.mock("../../kitUtils", () => ({
+vi.mock("@romper/shared/kitUtilsShared", () => ({
   getNextKitSlot: vi.fn(() => "A1"),
   toCapitalCase: (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
 }));

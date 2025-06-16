@@ -2,6 +2,7 @@
   "name": "romper-electron-runtime",
   "private": true,
   "main": "dist/main/index.js",
+  "type": "module",
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
@@ -22,13 +23,20 @@
   },
   "scripts": {
     "start": "electron .",
-    "build": "tsc && tsc -p tsconfig.preload.json",
+    "build": "tsc && tsc -p preload/tsconfig.preload.json",
     "test": "vitest",
-    "build:preload": "tsc -p tsconfig.preload.json",
+    "build:preload": "tsc -p preload/tsconfig.preload.json",
     "build:main": "tsc",
     "rebuild:electron": "npx electron-rebuild -f -w better-sqlite3",
     "make": "NODE_PATH=./electron_node_modules/node_modules electron-forge make -- --arch=universal",
     "install:electron": "cd electron_node_modules && npm install",
     "lint": "eslint . --fix"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@vitest/coverage-v8": "^3.2.3",
+    "jsdom": "^26.1.0",
+    "vite-plugin-static-copy": "^3.0.2"
   }
 }

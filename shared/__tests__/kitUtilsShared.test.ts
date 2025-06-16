@@ -4,6 +4,9 @@ import {
   compareKitSlots,
   getNextKitSlot,
   inferVoiceTypeFromFilename,
+  uniqueVoiceLabels,
+  isValidKit,
+  showBankAnchor,
 } from "../kitUtilsShared";
 
 // inferVoiceTypeFromFilename tests
@@ -109,5 +112,39 @@ describe("getNextKitSlot", () => {
   });
   it("handles non-sequential kits", () => {
     expect(getNextKitSlot(["A0", "A2", "A3"])).toBe("A1"); // implementation returns 'A1', not 'A4'
+  });
+});
+
+// uniqueVoiceLabels tests
+
+describe("uniqueVoiceLabels", () => {
+  it("returns unique, non-empty labels", () => {
+    const voiceNames = { 1: "Kick", 2: "Kick", 3: "Snare", 4: "" };
+    expect(uniqueVoiceLabels(voiceNames)).toEqual(["Kick", "Snare"]);
+  });
+});
+
+// isValidKit tests
+
+describe("isValidKit", () => {
+  it("returns true for valid kit names", () => {
+    expect(isValidKit("A1")).toBe(true);
+    expect(isValidKit("B99")).toBe(true);
+    expect(isValidKit("Z0")).toBe(true);
+  });
+  it("returns false for invalid kit names", () => {
+    expect(isValidKit("foo")).toBe(false);
+    expect(isValidKit("A100")).toBe(false);
+    expect(isValidKit("")).toBe(false);
+  });
+});
+
+// showBankAnchor tests
+
+describe("showBankAnchor", () => {
+  it("returns true for first kit in a bank", () => {
+    expect(showBankAnchor("A1", 0, ["A1", "A2", "B1"])).toBe(true);
+    expect(showBankAnchor("B1", 2, ["A1", "A2", "B1"])).toBe(true);
+    expect(showBankAnchor("A2", 1, ["A1", "A2", "B1"])).toBe(false);
   });
 });

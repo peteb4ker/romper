@@ -7,8 +7,8 @@ export default defineConfig({
     ...baseConfig.test,
     include: ['__tests__/**/*.test.ts'],
     coverage: {
-      ...baseConfig.test.coverage,
-      include: ['**/*.ts'],
+      ...(baseConfig.test?.coverage ?? {}),
+      ...(baseConfig.test?.coverage?.provider !== 'custom' ? { include: ['**/*.ts'], provider: 'v8' } : {}),
     },
   },
 });

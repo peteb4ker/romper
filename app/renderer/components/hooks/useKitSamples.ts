@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { KitDetailsProps } from "../kitTypes";
-import { groupSamplesByVoice, inferVoiceTypeFromFilename } from "../kitUtils";
+import { groupSamplesByVoice, inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared";
 
 export function useKitSamples(
   props: KitDetailsProps,

@@ -26,7 +26,6 @@ export default defineConfig({
       "../shared/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}",
     ],
     watch: false,
-    run: true,
     coverage: {
       enabled: true,
       reporter: ["json", "html"],

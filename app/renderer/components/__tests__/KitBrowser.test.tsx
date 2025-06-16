@@ -158,7 +158,7 @@ describe("KitBrowser", () => {
           name: "Jump to bank B",
         });
         const bButton = bButtons.find((btn) => !btn.disabled);
-        fireEvent.click(bButton!);
+        fireEvent.click(bButton);
         // The first kit in bank B should be focused/highlighted
         await waitFor(
           () => {

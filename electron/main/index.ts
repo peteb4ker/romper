@@ -7,15 +7,22 @@ import { fileURLToPath } from "url";
 import { registerIpcHandlers } from "./ipcHandlers.js";
 import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
 
+type Settings = {
+  sdCardPath?: string;
+  darkMode?: boolean;
+  theme?: string;
+  localStorePath?: string;
+  [key: string]: unknown;
+};
+
 const watchers: { [key: string]: fs.FSWatcher } = {};
-let inMemorySettings: Record<string, any> = {}; // Store settings in memory
-let currentSamplePlayer: any = null;
-let currentSampleWebContents: Electron.WebContents | null = null;
+let inMemorySettings: Settings = {}; // Store settings in memory
+let currentSamplePlayer: unknown = null; // TODO: Refine type if possible
 
 const isDev = process.env.NODE_ENV === "development";
 
 function createWindow() {
-  const win = new BrowserWindow({
+  const win: BrowserWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     icon: path.resolve(__dirname, "../../dist/resources/app-icon.icns"), // Set app icon for built app
@@ -27,13 +34,20 @@ function createWindow() {
   });
 
   if (isDev) {
-    win.loadURL("http://localhost:5173").catch((err) => {
-      console.error("Failed to load URL:", err);
+    // Type-safe error handling for loadURL
+    win.loadURL("http://localhost:5173").catch((err: unknown) => {
+      console.error(
+        "Failed to load URL:",
+        err instanceof Error ? err.message : String(err)
+      );
     });
   } else {
     const indexPath = path.resolve(__dirname, "../../dist/renderer/index.html");
-    win.loadFile(indexPath).catch((err) => {
-      console.error("Failed to load index.html:", err);
+    win.loadFile(indexPath).catch((err: unknown) => {
+      console.error(
+        "Failed to load index.html:",
+        err instanceof Error ? err.message : String(err)
+      );
     });
   }
 }
@@ -52,15 +66,24 @@ app.whenReady().then(async () => {
 
     if (fs.existsSync(settingsPath)) {
       try {
-        inMemorySettings = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
+        const fileContent = fs.readFileSync(settingsPath, "utf-8");
+        const parsed = JSON.parse(fileContent);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          inMemorySettings = parsed as Settings;
+        } else {
+          inMemorySettings = {};
+          console.warn("Settings file did not contain an object. Using empty settings.");
+        }
         console.info("Settings loaded from file:", inMemorySettings);
       } catch (error) {
+        inMemorySettings = {};
         console.error(
           "Failed to parse settings file. Using empty settings:",
           error,
         );
       }
     } else {
+      inMemorySettings = {};
       console.warn("Settings file not found. Starting with empty settings.");
     }
 
@@ -73,11 +96,17 @@ app.whenReady().then(async () => {
     registerIpcHandlers(watchers, inMemorySettings);
     registerDbIpcHandlers();
     console.log("[Romper Electron] IPC handlers registered");
-  } catch (error) {
-    console.error("Error during app initialization:", error);
+  } catch (error: unknown) {
+    console.error(
+      "Error during app initialization:",
+      error instanceof Error ? error.message : String(error)
+    );
   }
 });
 
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Promise Rejection:", reason);
+process.on("unhandledRejection", (reason: unknown) => {
+  console.error(
+    "Unhandled Promise Rejection:",
+    reason instanceof Error ? reason.message : String(reason)
+  );
 });

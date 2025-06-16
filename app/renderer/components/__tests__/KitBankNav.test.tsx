@@ -40,7 +40,7 @@ describe("KitBankNav", () => {
 
     expect(enabledA).toBeDefined();
     expect(enabledA?.disabled).toBe(false); // Debug: ensure it's enabled
-    fireEvent.click(enabledA!);
+    fireEvent.click(enabledA);
     expect(onBankClick).toHaveBeenCalledWith("A");
   });
 
@@ -51,7 +51,7 @@ describe("KitBankNav", () => {
     const bButtons = screen.getAllByRole("button", { name: "Jump to bank B" });
     const disabledB = bButtons.find((btn) => btn.disabled);
     expect(disabledB).toBeDefined();
-    fireEvent.click(disabledB!);
+    fireEvent.click(disabledB);
     expect(onBankClick).not.toHaveBeenCalled();
   });
 

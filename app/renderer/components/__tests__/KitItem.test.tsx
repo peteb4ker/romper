@@ -51,7 +51,7 @@ describe("KitItem", () => {
     // Click the first duplicate button
     const kitRoot = screen.getByTestId("kit-item-A1");
     const dupBtn = kitRoot.querySelector('button[title="Duplicate kit"]');
-    fireEvent.click(dupBtn!);
+    fireEvent.click(dupBtn);
     expect(onDuplicate).toHaveBeenCalled();
   });
 

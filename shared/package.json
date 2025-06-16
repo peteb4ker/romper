@@ -4,6 +4,12 @@
   "main": "kitUtilsShared.js",
   "type": "module",
   "scripts": {
-    "test": "vitest run"
-  }
+    "test": "vitest run",
+    "lint": "eslint . --fix"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0"
+  },
+  "devDependencies": {}
 }

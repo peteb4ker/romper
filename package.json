@@ -10,6 +10,13 @@
     "scripts": {
         "bootstrap": "npm install --workspaces --legacy-peer-deps",
         "build": "npm run build --workspaces",
-        "test": "npm run test --workspaces"
+        "test": "npm run test --workspaces",
+        "lint": "npm run lint --workspaces"
+    },
+    "devDependencies": {
+        "eslint": "^9.0.0"
+    },
+    "overrides": {
+        "eslint": "^9.0.0"
     }
 }

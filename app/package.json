@@ -6,12 +6,13 @@
     "dev": "vite dev",
     "build": "vite build",
     "test": "vitest",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "lint": "eslint . --fix",
     "clean": "rm -fr dist && rm -fr out",
     "build:docs": "mmdc -i ../docs/romper-db.mmd -o ../docs/romper-db-erd.png"
   },
   "dependencies": {
-    "@romper/shared": "workspace:*"
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0"
   },
   "devDependencies": {}
 }

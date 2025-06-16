@@ -29,6 +29,7 @@
 - `src/renderer/components/hooks/__tests__/useSamplePreview.test.ts` - Unit tests for preview logic.
 - `src/renderer/components/utils/__tests__/settingsManager.test.ts` - Unit tests for settings management.
 - `src/renderer/components/utils/__tests__/kitUtils.test.ts` - Unit tests for kit/voice/sample utilities.
+- `electron/main/index.ts` - Type safety improvements for inMemorySettings and currentSamplePlayer.
 
 ### Notes
 
@@ -53,7 +54,6 @@
     - [x] 1.4.2 Style messages according to type (info, warning, error)
     - [x] 1.4.3 Write unit tests for message display
   - [x] 1.5 Implement A-Z hotkeys and UI for bank navigation
-    - [x] 1.5.1 Add hotkey handlers for A-Z navigation
     - [x] 1.5.2 Highlight selected bank in UI
     - [x] 1.5.3 Write unit tests for hotkey navigation
     - [x] 1.5.4 Fix: A-Z hotkeys must move keyboard focus to the first kit in the selected bank

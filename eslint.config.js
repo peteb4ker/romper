@@ -77,4 +77,4 @@ export default defineConfig([
   },
 ]);
 
-// Remove obsolete eslint.config.js from root, copy to app/ if needed
+// Remove this file. ESLint flat config should only use per-package eslint.config.mjs files, not a root config.

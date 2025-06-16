@@ -21,11 +21,23 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
+      - name: Install dependencies (monorepo root)
         run: npm install
 
-      - name: Run linting
-        run: npm run lint
+      - name: Lint shared
+        run: npm run lint --workspace=shared
 
-      - name: Run tests
-        run: npm test
+      - name: Lint app
+        run: npm run lint --workspace=app
+
+      - name: Lint electron
+        run: npm run lint --workspace=electron
+
+      - name: Test shared
+        run: npm run test --workspace=shared
+
+      - name: Test app
+        run: npm run test --workspace=app
+
+      - name: Test electron
+        run: npm run test --workspace=electron

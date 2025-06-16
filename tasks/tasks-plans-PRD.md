@@ -1,31 +1,37 @@
+<!-- filepath: /Users/pete/workspace/romper/tasks/tasks-plans-PRD.md -->
 ## Relevant Files
 
-- `src/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI).
-- `src/renderer/components/KitDetails.test.tsx` - Unit tests for KitDetails, including plan mode and kit planning integration.
-- `src/renderer/components/LocalStoreWizardUI.tsx` - UI for local store setup wizard, now supports progress bar and robust error display for Squarp.net archive initialization.
-- `src/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now exposes progress/error state for Squarp.net archive initialization, handles blank folder (no files copied, only folder created), and SD card folder validation/copy logic.
-- `src/renderer/components/hooks/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook, now cover progress, error handling, blank folder initialization, and SD card folder validation/copy.
-- `src/renderer/components/hooks/useKitPlan.ts` - Hook for all business logic related to kit plans, including plan state, actions, and persistence.
-- `src/renderer/components/hooks/useKitPlan.test.ts` - Unit tests for useKitPlan hook.
-- `src/renderer/components/utils/planUtils.ts` - Utility functions for plan validation, sample assignment, and format checks.
-- `src/renderer/components/utils/planUtils.test.ts` - Unit tests for planUtils.
-- `src/renderer/components/utils/settingsManager.ts` - Manages global settings such as 'default to mono samples' and local store location.
-- `src/renderer/components/utils/settingsManager.test.ts` - Unit tests for settingsManager.
-- `src/renderer/components/KitVoicePanel.tsx` - UI for voice slot drag-and-drop, add/replace/delete actions, and plan mode feedback.
-- `src/renderer/components/KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel plan mode and slot actions.
-- `src/renderer/components/KitVoicePanels.tsx` - Renders all voice panels and coordinates plan mode state.
-- `src/renderer/components/KitVoicePanels.test.tsx` - Unit tests for KitVoicePanels plan mode integration.
-- `src/renderer/components/StatusBar.tsx` - Displays progress and notifications for plan actions.
-- `src/renderer/components/StatusBar.test.tsx` - Unit tests for StatusBar notifications.
-- `src/renderer/components/MessageDisplay.tsx` - Notification system for info, warning, error, and progress messages.
-- `src/renderer/components/MessageDisplay.test.tsx` - Unit tests for MessageDisplay.
-- `src/renderer/components/utils/kitUtils.ts` - Kit and sample validation helpers.
-- `src/renderer/components/utils/kitUtils.test.ts` - Unit tests for kitUtils.
-- `src/renderer/components/utils/romperDb.ts` - Handles Romper DB (SQLite) operations for plans, kits, and samples.
-- `src/renderer/components/utils/romperDb.test.ts` - Unit tests for romperDb.
-- `src/main/ipcHandlers.ts` - Main process IPC handlers, including robust, testable Squarp.net archive download/extract logic with progress and error reporting.
-- `src/main/__tests__/archiveExtract.test.ts` - Unit tests for Squarp.net archive download/extract handler, with full async/streaming and error simulation. (Premature close test removed as non-robust in test env)
-- `src/main/__tests__/isValidEntry.test.ts` - Unit tests for isValidEntry helper in archiveUtils, covering all valid and invalid entry cases.
+- `app/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI).
+- `app/renderer/components/KitDetails.test.tsx` - Unit tests for KitDetails, including plan mode and kit planning integration.
+- `app/renderer/components/LocalStoreWizardUI.tsx` - UI for local store setup wizard, now supports progress bar, robust error display, and a flipped flow (choose source > choose target > import). UI and accessibility improvements.
+- `app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx` - Unit tests for LocalStoreWizardUI, now fully decoupled from IPC/Electron, only test UI logic and user interaction.
+- `app/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now exposes progress/error state for Squarp.net archive initialization, handles blank folder (no files copied, only folder created), and SD card folder validation/copy logic.
+- `app/renderer/components/hooks/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook, now cover progress, error handling, blank folder initialization, and SD card folder validation/copy.
+- `app/renderer/components/hooks/useKitPlan.ts` - Hook for all business logic related to kit plans, including plan state, actions, and persistence.
+- `app/renderer/components/hooks/useKitPlan.test.ts` - Unit tests for useKitPlan hook.
+- `app/renderer/components/utils/planUtils.ts` - Utility functions for plan validation, sample assignment, and format checks.
+- `app/renderer/components/utils/planUtils.test.ts` - Unit tests for planUtils.
+- `app/renderer/components/utils/settingsManager.ts` - Manages global settings such as 'default to mono samples' and local store location.
+- `app/renderer/components/utils/settingsManager.test.ts` - Unit tests for settingsManager.
+- `app/renderer/components/KitVoicePanel.tsx` - UI for voice slot drag-and-drop, add/replace/delete actions, and plan mode feedback.
+- `app/renderer/components/KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel plan mode and slot actions.
+- `app/renderer/components/KitVoicePanels.tsx` - Renders all voice panels and coordinates plan mode state.
+- `app/renderer/components/KitVoicePanels.test.tsx` - Unit tests for KitVoicePanels plan mode integration.
+- `app/renderer/components/StatusBar.tsx` - Displays progress and notifications for plan actions.
+- `app/renderer/components/StatusBar.test.tsx` - Unit tests for StatusBar notifications.
+- `app/renderer/components/MessageDisplay.tsx` - Notification system for info, warning, error, and progress messages.
+- `app/renderer/components/MessageDisplay.test.tsx` - Unit tests for MessageDisplay.
+- `app/renderer/components/utils/kitUtils.ts` - Kit and sample validation helpers.
+- `app/renderer/components/utils/kitUtils.test.ts` - Unit tests for kitUtils.
+- `app/renderer/components/utils/romperDb.ts` - Handles Romper DB (SQLite) operations for plans, kits, and samples.
+- `app/renderer/components/utils/romperDb.test.ts` - Unit tests for romperDb.
+- `electron/main/ipcHandlers.ts` - Main process IPC handlers, including robust, testable Squarp.net archive download/extract logic with progress and error reporting.
+- `electron/main/__tests__/archiveExtract.test.ts` - Unit tests for Squarp.net archive download/extract handler, with full async/streaming and error simulation. (Premature close test removed as non-robust in test env)
+- `electron/main/__tests__/isValidEntry.test.ts` - Unit tests for isValidEntry helper in archiveUtils, covering all valid and invalid entry cases.
+- `electron/main/db/romperDbCore.ts` - Core logic for Romper DB creation, record insertion, and error handling (including corrupt/overwrite cases).
+- `electron/main/db/__tests__/romperDbCore.test.ts` - Integration and edge-case tests for DB creation, overwrite, validation, and error handling.
+- `shared/kitUtilsShared.ts` - Shared kit utility logic for both app and electron workspaces.
+- `shared/__tests__/kitUtilsShared.test.ts` - Unit tests for shared kit utility logic.
 
 ### Notes
 
@@ -60,19 +66,20 @@
         - [x] 2.1.3.1.3 If blank folder is chosen, no files are copied
   - [x] 2.2 Create and initialize Romper DB in `.romperdb` folder within local store.
   - [x] 2.3 Persist local store location in settings; allow changing location
-  - [ ] 2.4 Validate local store and DB sync; display errors if out of sync.
-  - [ ] 2.5 Unit tests for initialization, validation, and error handling.
+  - [x] 2.4 Upon selection and instantiation of local store files, insert new records into the Romper DB.
+    - [x] 2.13 Update Romper DB schema to remove plan table, add new kit and sample fields, and update docs/ERD
+    - [x] 2.14 Implement initial import to create kit and sample records (no plan table), with new fields
+    - [x] 2.15 Update documentation and ERD to match new schema (docs/romper-db.md, docs/romper-db.mmd)
+  - [x] 2.5 Unit tests for initialization, validation, and error handling.
   - [ ] 2.7 If the local store or Romper DB does not exist, automatically create them as needed.
   - [ ] 2.8 Store exactly one local store path and associated Romper DB location in application settings; load them on startup if present.
   - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
   - [ ] 2.12 If the Romper DB metadata or plans are out of sync with the local store, present an error to the user and indicate that manual intervention may be required.
+  - [x] 2.16 Flip local store setup flow: user chooses source first, then target, then import. Update UI, logic, and tests. Decouple UI tests from IPC/Electron.
 
 - [ ] 3.0 Sample Assignment and Slot Management
   - [ ] 3.1 Implement drag-and-drop for adding samples to slots (single and multiple).
   - [ ] 3.2 Enforce 12-slot limit per voice and 4 voices per kit.
-  - [ ] 3.3 Display 'Add sample' or 'Replace sample' UI feedback for slots.
-  - [ ] 3.4 Support deleting and undoing deletion of samples in slots.
-  - [ ] 3.5 Persist all plan actions (add, replace, delete) immediately to Romper DB.
   - [ ] 3.6 Unit tests for all slot actions, drag-and-drop, and undo/redo.
 
 - [ ] 4.0 WAV Format Validation and Conversion

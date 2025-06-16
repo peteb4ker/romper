@@ -1,0 +1,32 @@
+{
+  "name": "romper-electron-runtime",
+  "private": true,
+  "main": "dist/main/index.js",
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "electron": "^36.4.0",
+    "play-sound": "^1.1.6",
+    "prebuildify": "^6.0.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-dropzone": "^14.3.8",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.6.2",
+    "react-window": "^1.8.11",
+    "sonner": "^2.0.5",
+    "tailwindcss": "^4.1.8",
+    "unzipper": "^0.12.3",
+    "wavesurfer.js": "^7.9.5",
+    "@romper/shared": "workspace:*"
+  },
+  "scripts": {
+    "start": "electron .",
+    "build": "tsc && tsc -p tsconfig.preload.json",
+    "test": "vitest",
+    "build:preload": "tsc -p tsconfig.preload.json",
+    "build:main": "tsc",
+    "rebuild:electron": "npx electron-rebuild -f -w better-sqlite3",
+    "make": "NODE_PATH=./electron_node_modules/node_modules electron-forge make -- --arch=universal",
+    "install:electron": "cd electron_node_modules && npm install"
+  }
+}

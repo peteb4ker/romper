@@ -11,28 +11,23 @@
   }
 }}%%
 
-
 classDiagram
     direction LR
 
-    class Plan {
-        +int id
-        +string name
-        +datetime created_at
-    }
-
     class Kit {
         +int id
-        +int plan_id
         +string name
+        +string alias
+        +string artist
+        +bool plan_enabled
     }
 
     class Sample {
         +int id
         +int kit_id
         +string filename
-        +string metadata
+        +int slot_number
+        +bool is_stereo
     }
 
-    Plan "1" --> "0..*" Kit : contains
     Kit "1" --> "0..*" Sample : contains

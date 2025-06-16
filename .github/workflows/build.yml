@@ -21,14 +21,17 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
+      - name: Install dependencies (monorepo root)
         run: npm install
 
-      - name: Build frontend
-        run: npm run build
+      - name: Rebuild Electron native modules
+        run: npm run rebuild:electron --workspace=electron
 
-      - name: Build preload
-        run: npm run build:preload
+      - name: Build shared package
+        run: npm run build --workspace=shared
 
-      - name: Build main
-        run: npm run build:main
+      - name: Build app package
+        run: npm run build --workspace=app
+
+      - name: Build electron package
+        run: npm run build --workspace=electron

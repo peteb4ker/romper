@@ -4,6 +4,55 @@ A cross-platform desktop app to manage sample kits for the **Squarp Rample** —
 
 ---
 
+# Monorepo Structure
+
+This repository is organized as a monorepo with two main packages:
+
+- `app/` – The React/Vite renderer and shared logic
+- `electron/` – The Electron main process, preload scripts, and native modules
+
+```
+romper/
+  app/         # React renderer, shared code, tests, and app-specific configs
+  electron/    # Electron main process, preload, resources, and electron-specific configs
+  docs/        # Documentation
+  tasks/       # Project management and PRD
+  ...          # Shared configs (eslint, tailwind, vite, tsconfig, etc.)
+```
+
+## Getting Started
+
+### Install dependencies (from repo root)
+
+```sh
+npm install
+```
+
+### App (Renderer)
+
+```sh
+cd app
+npm run dev      # Start Vite dev server
+npm run build    # Build for production
+npm run test     # Run Vitest unit tests
+```
+
+### Electron (Main/Preload)
+
+```sh
+cd electron
+npm run start    # Start Electron in development mode
+npm run build    # Build Electron main/preload
+npm test         # (if tests are present)
+```
+
+## Notes
+- Each package manages its own dependencies and build/test scripts.
+- Shared configuration is in the repo root and referenced by both packages.
+- See each package's README or package.json for more details.
+
+---
+
 ## 🚀 Features
 
 - 🎚️ **Drag-and-drop sample assignment** to Rample kit voices (1–4)

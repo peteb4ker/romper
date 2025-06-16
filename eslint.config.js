@@ -76,3 +76,5 @@ export default defineConfig([
     },
   },
 ]);
+
+// Remove obsolete eslint.config.js from root, copy to app/ if needed

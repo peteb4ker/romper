@@ -1,0 +1,9 @@
+{
+  "name": "@romper/shared",
+  "version": "0.1.0",
+  "main": "kitUtilsShared.js",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  }
+}

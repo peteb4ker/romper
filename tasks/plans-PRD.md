@@ -98,5 +98,38 @@ The Kit Plans feature enables users to create new kits or modify existing kits b
 - Should the plan commit process be cancellable or undoable after starting?
  - No
 
+## 10. Romper DB Schema
+
+The Romper DB is a SQLite database with the following schema (no separate plan table):
+
+### kits
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `name` TEXT NOT NULL (e.g. A0, B2, Z99)
+- `alias` TEXT (optional, human-readable name)
+- `artist` TEXT (optional, artist name)
+- `plan_enabled` BOOLEAN NOT NULL DEFAULT 0 (true for user kits, false for imported/factory kits)
+
+### samples
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `kit_id` INTEGER (FK to kits.id)
+- `filename` TEXT NOT NULL
+- `slot_number` INTEGER NOT NULL CHECK(slot_number BETWEEN 1 AND 12)
+- `is_stereo` BOOLEAN NOT NULL DEFAULT 0
+
+- There is no plan table. Each kit may have plan_enabled true/false.
+- There is always 0..1 plan per kit, tracked by the plan_enabled flag.
+- All imported/factory kits have plan_enabled = false.
+- All new/user kits have plan_enabled = true by default.
+
+### Local Store Setup Flow Update (2025-06-14)
+
+- The local store setup wizard flow is now:
+  1. User chooses the **source** (SD card, Squarp.net archive, or blank folder)
+  2. User chooses the **target** location for the local store
+  3. User confirms and imports
+- This replaces the previous flow (target first, then source).
+- All UI, logic, and documentation must reflect this new order for clarity and user experience.
+
 ---
+_Last updated: 2025-06-14_
 

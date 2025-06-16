@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@romper/shared/*": ["../shared/*"]
+    }
+  },
+  "include": ["main/**/*", "preload/**/*", "types/**/*", "../shared/**/*"],
+  "exclude": ["node_modules", "dist", "../app/shared/__tests__"]
+}

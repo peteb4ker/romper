@@ -1,0 +1,17 @@
+{
+  "name": "romper-app",
+  "main": "renderer/main.tsx",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "test": "vitest",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "clean": "rm -fr dist && rm -fr out",
+    "build:docs": "mmdc -i ../docs/romper-db.mmd -o ../docs/romper-db-erd.png"
+  },
+  "dependencies": {
+    "@romper/shared": "workspace:*"
+  },
+  "devDependencies": {}
+}

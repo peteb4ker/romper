@@ -21,26 +21,29 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
+      - name: Install dependencies (monorepo root)
         run: npm install --arch=universal
 
-      - name: Build frontend
-        run: npm run build
+      - name: Rebuild Electron native modules
+        run: npm run rebuild:electron --workspace=electron
 
-      - name: Build preload
-        run: npm run build:preload
+      - name: Build shared package
+        run: npm run build --workspace=shared
 
-      - name: Build main
-        run: npm run build:main
+      - name: Build app package
+        run: npm run build --workspace=app
 
-      - name: Package application
-        run: npm run make
+      - name: Build electron package
+        run: npm run build --workspace=electron
+
+      - name: Package application (Electron)
+        run: npm run make --workspace=electron
 
       - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
           name: release-artifacts
-          path: out/
+          path: electron/out/
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
@@ -51,5 +54,5 @@ jobs:
             This release includes the following changes:
             - Add your release notes here.
           artifacts: |
-            out/make/*.zip
-            out/make/*.dmg
+            electron/out/make/*.zip
+            electron/out/make/*.dmg

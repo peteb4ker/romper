@@ -5,14 +5,19 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./kitUtilsShared": {
+      "types": "./dist/kitUtilsShared.d.ts",
       "import": "./dist/kitUtilsShared.js",
-      "require": "./dist/kitUtilsShared.js",
-      "types": "./dist/kitUtilsShared.d.ts"
+      "require": "./dist/kitUtilsShared.js"
+    },
+    "./kitUtilsShared.js": {
+      "types": "./dist/kitUtilsShared.d.ts",
+      "import": "./dist/kitUtilsShared.js",
+      "require": "./dist/kitUtilsShared.js"
     }
   },
   "type": "module",

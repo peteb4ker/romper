@@ -8,5 +8,13 @@
     }
   },
   "include": ["main/**/*", "preload/**/*", "types/**/*", "../shared/**/*"],
-  "exclude": ["node_modules", "dist", "../app/shared/__tests__"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "../app/shared/__tests__",
+    "../shared/vitest.config.ts",
+    "../shared/vite.config.ts",
+    "../shared/__tests__",
+    "../shared/coverage"
+  ]
 }

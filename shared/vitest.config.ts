@@ -1,14 +1,20 @@
-import baseConfig from '../vite.base.config';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  ...baseConfig,
   test: {
-    ...baseConfig.test,
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['../vitest.setup.ts'],
     include: ['__tests__/**/*.test.ts'],
+    watch: false,
     coverage: {
-      ...(baseConfig.test?.coverage ?? {}),
-      ...(baseConfig.test?.coverage?.provider !== 'custom' ? { include: ['**/*.ts'], provider: 'v8' } : {}),
+      enabled: true,
+      reporter: ['json', 'html'],
+      reportsDirectory: './coverage',
+      include: ['**/*.ts'],
+      exclude: ['**/*.d.ts'],
+      reportOnFailure: true,
+      provider: 'v8',
     },
   },
 });

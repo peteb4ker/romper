@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import { getNextKitSlot, toCapitalCase } from "../../../../shared/kitUtilsShared";
+import {
+  getNextKitSlot,
+  toCapitalCase,
+} from "../../../../shared/kitUtilsShared";
 
 export function useKitBrowser({
   kits: externalKits,

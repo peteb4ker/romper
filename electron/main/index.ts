@@ -3,10 +3,13 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import {
+  groupSamplesByVoice,
+  inferVoiceTypeFromFilename,
+} from "../../shared/kitUtilsShared";
+import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
 // Import IPC handlers
 import { registerIpcHandlers } from "./ipcHandlers.js";
-import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
-import { groupSamplesByVoice, inferVoiceTypeFromFilename } from '../../shared/kitUtilsShared';
 
 type Settings = {
   sdCardPath?: string;
@@ -39,7 +42,7 @@ function createWindow() {
     win.loadURL("http://localhost:5173").catch((err: unknown) => {
       console.error(
         "Failed to load URL:",
-        err instanceof Error ? err.message : String(err)
+        err instanceof Error ? err.message : String(err),
       );
     });
   } else {
@@ -47,7 +50,7 @@ function createWindow() {
     win.loadFile(indexPath).catch((err: unknown) => {
       console.error(
         "Failed to load index.html:",
-        err instanceof Error ? err.message : String(err)
+        err instanceof Error ? err.message : String(err),
       );
     });
   }
@@ -73,7 +76,9 @@ app.whenReady().then(async () => {
           inMemorySettings = parsed as Settings;
         } else {
           inMemorySettings = {};
-          console.warn("Settings file did not contain an object. Using empty settings.");
+          console.warn(
+            "Settings file did not contain an object. Using empty settings.",
+          );
         }
         console.info("Settings loaded from file:", inMemorySettings);
       } catch (error) {
@@ -100,7 +105,7 @@ app.whenReady().then(async () => {
   } catch (error: unknown) {
     console.error(
       "Error during app initialization:",
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
   }
 });
@@ -108,6 +113,6 @@ app.whenReady().then(async () => {
 process.on("unhandledRejection", (reason: unknown) => {
   console.error(
     "Unhandled Promise Rejection:",
-    reason instanceof Error ? reason.message : String(reason)
+    reason instanceof Error ? reason.message : String(reason),
   );
 });

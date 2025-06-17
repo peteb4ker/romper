@@ -13,6 +13,7 @@ import {
   FiX,
 } from "react-icons/fi";
 
+import { inferVoiceTypeFromFilename } from "../../../shared/kitUtilsShared";
 import { useKitDetails } from "./hooks/useKitDetails";
 import { useKitLabel } from "./hooks/useKitLabel";
 import { useKitPlayback } from "./hooks/useKitPlayback";
@@ -27,7 +28,6 @@ import type {
   RampleLabels,
   VoiceSamples,
 } from "./kitTypes";
-import { inferVoiceTypeFromFilename } from '../../../shared/kitUtilsShared';
 import KitVoicePanel from "./KitVoicePanel";
 import KitVoicePanels from "./KitVoicePanels";
 import SampleWaveform from "./SampleWaveform";

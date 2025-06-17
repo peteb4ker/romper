@@ -4,6 +4,10 @@ import prettierConfig from "eslint-config-prettier";
 import prettier from "eslint-plugin-prettier";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import globals from "globals";
+// Patch: trim whitespace from all global keys
+function trimGlobals(obj) {
+  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k.trim(), v]));
+}
 import tseslint from "typescript-eslint";
 
 export default defineConfig([
@@ -17,7 +21,7 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
-      globals: globals.browser,
+      globals: trimGlobals(globals.browser),
     },
     plugins: {
       js,
@@ -40,7 +44,7 @@ export default defineConfig([
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       parser: tseslint.parser,
-      globals: globals.browser,
+      globals: trimGlobals(globals.browser),
     },
     plugins: {
       "@typescript-eslint": tseslint.plugin,
@@ -60,11 +64,11 @@ export default defineConfig([
   {
     files: ["**/*.test.js", "**/*.test.ts", "**/*.test.tsx"],
     languageOptions: {
-      globals: {
+      globals: trimGlobals({
         ...globals.browser,
         ...globals.vitest,
         vitest: true,
-      },
+      }),
     },
   },
 
@@ -72,7 +76,7 @@ export default defineConfig([
   {
     files: ["*.config.js", "*.config.ts"],
     languageOptions: {
-      globals: globals.node,
+      globals: trimGlobals(globals.node),
     },
   },
 ]);

@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 
+import {
+  groupSamplesByVoice,
+  inferVoiceTypeFromFilename,
+} from "../../../../shared/kitUtilsShared";
 import { KitDetailsProps } from "../kitTypes";
-import { groupSamplesByVoice, inferVoiceTypeFromFilename } from '../../../../shared/kitUtilsShared';
 
 export function useKitSamples(
   props: KitDetailsProps,

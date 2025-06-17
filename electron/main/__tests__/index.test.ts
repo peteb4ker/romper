@@ -2,7 +2,7 @@ import fs from "fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock better-sqlite3 to avoid native module errors
-vi.mock('better-sqlite3', () => ({
+vi.mock("better-sqlite3", () => ({
   default: vi.fn(() => ({
     exec: vi.fn(),
   })),

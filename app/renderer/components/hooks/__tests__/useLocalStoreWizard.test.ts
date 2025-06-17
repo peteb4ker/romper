@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useLocalStoreWizard } from "../useLocalStoreWizard";
 
@@ -22,14 +22,19 @@ describe("useLocalStoreWizard", () => {
     // @ts-ignore
     window.electronAPI = {
       ...window.electronAPI,
-      createRomperDb: vi.fn(async (dbDir: string) => ({ success: true, dbPath: dbDir + "/romper.sqlite" })),
+      createRomperDb: vi.fn(async (dbDir: string) => ({
+        success: true,
+        dbPath: dbDir + "/romper.sqlite",
+      })),
       ensureDir: vi.fn(async () => true),
       getSetting: vi.fn(async (key) => {
         if (key === "localStorePath") return "/mock/saved/path/romper";
         return undefined;
       }),
       setSetting: vi.fn(async () => {}),
-      downloadAndExtractArchive: vi.fn(async (url, destDir, onProgress, onError) => ({ success: true })),
+      downloadAndExtractArchive: vi.fn(
+        async (url, destDir, onProgress, onError) => ({ success: true }),
+      ),
       listFilesInRoot: vi.fn(async (path) => []),
       copyDir: vi.fn(async (src, dest) => {}),
       insertKit: vi.fn(async (_dbDir, _kit) => 1),
@@ -251,7 +256,8 @@ describe("useLocalStoreWizard", () => {
       return true;
     };
     // SD card returns one kit folder, local store returns same kit folder
-    window.electronAPI.listFilesInRoot = vi.fn()
+    window.electronAPI.listFilesInRoot = vi
+      .fn()
       .mockImplementationOnce(async () => ["A0"]) // SD card
       .mockImplementationOnce(async () => ["A0"]) // local store
       .mockImplementation(async () => []); // kit folder contents
@@ -275,7 +281,8 @@ describe("useLocalStoreWizard", () => {
 
   it("copies all valid kit folders from SD card to local store", async () => {
     // SD card returns two kit folders, local store returns same kit folders
-    window.electronAPI.listFilesInRoot = vi.fn()
+    window.electronAPI.listFilesInRoot = vi
+      .fn()
       .mockImplementationOnce(async () => ["A0", "B12", "notakit"]) // SD card
       .mockImplementationOnce(async () => ["A0", "B12"]) // local store
       .mockImplementation(async () => []); // kit folder contents

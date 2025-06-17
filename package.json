@@ -1,12 +1,13 @@
 {
-    "name": "romper-monorepo",
+    "name": "romper",
     "private": true,
     "version": "0.1.0",
+    "type": "module",
     "scripts": {
         "build": "tsc --project tsconfig.json",
         "test": "npm run test:unit && npm run test:integration",
         "test:unit": "vitest --config vite.config.ts --run",
-        "test:integration": "node electron/run-vitest-in-electron.cjs electron/main/db/__tests__/integration/*.test.ts",
+        "test:integration": "node electron/run-vitest-in-electron.cjs",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
         "dev": "npm run build && concurrently \"vite dev --config vite.config.ts\" \"sleep 3 && npm run electron:dev\"",
         "postinstall": "npx electron-rebuild -f -w better-sqlite3"
@@ -20,8 +21,12 @@
         "concurrently": "^9.1.2",
         "cross-env": "^7.0.3",
         "eslint": "^9.0.0",
+        "eslint-config-prettier": "^10.1.5",
+        "eslint-plugin-prettier": "^5.4.1",
+        "eslint-plugin-simple-import-sort": "^12.1.1",
         "tailwindcss": "^4.1.8",
         "typescript": "^5.8.3",
+        "typescript-eslint": "^8.34.1",
         "vite": "^6.3.5",
         "vitest": "^3.2.3"
     },

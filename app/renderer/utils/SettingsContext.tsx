@@ -19,7 +19,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [sdCardPath, setSdCardPathState] = useState<string | null>(null);
-  const [localStorePath, setLocalStorePathState] = useState<string | null>(null);
+  const [localStorePath, setLocalStorePathState] = useState<string | null>(
+    null,
+  );
   const [darkMode, setDarkModeState] = useState<boolean>(false);
   const [settingsInitialized, setSettingsInitialized] = useState(false);
   const [settings, setSettings] = useState<Record<string, any>>({});

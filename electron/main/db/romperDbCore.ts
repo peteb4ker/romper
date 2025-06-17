@@ -1,11 +1,20 @@
 // Core Romper DB logic for creation and record insertion (no Electron dependencies)
-import * as path from "path";
+import BetterSqlite3 from "better-sqlite3";
 import * as fs from "fs";
-import BetterSqlite3 from 'better-sqlite3';
+import * as path from "path";
 
-export function createRomperDbFile(dbDir: string): { success: boolean; dbPath?: string; error?: string } {
+export function createRomperDbFile(dbDir: string): {
+  success: boolean;
+  dbPath?: string;
+  error?: string;
+} {
   const dbPath = path.join(dbDir, "romper.sqlite");
-  console.log("[Romper Electron] createRomperDbFile called with dbDir:", dbDir, "dbPath:", dbPath);
+  console.log(
+    "[Romper Electron] createRomperDbFile called with dbDir:",
+    dbDir,
+    "dbPath:",
+    dbPath,
+  );
   let triedRecreate = false;
   for (;;) {
     try {
@@ -35,9 +44,14 @@ export function createRomperDbFile(dbDir: string): { success: boolean; dbPath?: 
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[Romper Electron] Error in createRomperDbFile:", msg);
-      if (!triedRecreate && /file is not a database|file is encrypted|malformed/i.test(msg)) {
+      if (
+        !triedRecreate &&
+        /file is not a database|file is encrypted|malformed/i.test(msg)
+      ) {
         triedRecreate = true;
-        try { fs.unlinkSync(dbPath); } catch {}
+        try {
+          fs.unlinkSync(dbPath);
+        } catch {}
         continue;
       }
       return { success: false, error: msg };
@@ -45,31 +59,72 @@ export function createRomperDbFile(dbDir: string): { success: boolean; dbPath?: 
   }
 }
 
-export function insertKitRecord(dbDir: string, kit: { name: string; alias?: string; artist?: string; plan_enabled: boolean }): { success: boolean; kitId?: number; error?: string } {
+export function insertKitRecord(
+  dbDir: string,
+  kit: { name: string; alias?: string; artist?: string; plan_enabled: boolean },
+): { success: boolean; kitId?: number; error?: string } {
   try {
     const dbPath = path.join(dbDir, "romper.sqlite");
-    console.log("[Romper Electron] insertKitRecord called with dbDir:", dbDir, "dbPath:", dbPath, "kit:", kit);
+    console.log(
+      "[Romper Electron] insertKitRecord called with dbDir:",
+      dbDir,
+      "dbPath:",
+      dbPath,
+      "kit:",
+      kit,
+    );
     let db = new BetterSqlite3(dbPath);
-    const stmt = db.prepare("INSERT INTO kits (name, alias, artist, plan_enabled) VALUES (?, ?, ?, ?)");
-    const result = stmt.run(kit.name, kit.alias || null, kit.artist || null, kit.plan_enabled ? 1 : 0);
+    const stmt = db.prepare(
+      "INSERT INTO kits (name, alias, artist, plan_enabled) VALUES (?, ?, ?, ?)",
+    );
+    const result = stmt.run(
+      kit.name,
+      kit.alias || null,
+      kit.artist || null,
+      kit.plan_enabled ? 1 : 0,
+    );
     db.close();
     console.log("[Romper Electron] Kit inserted, id:", result.lastInsertRowid);
     return { success: true, kitId: Number(result.lastInsertRowid) };
   } catch (e) {
-    console.error("[Romper Electron] Error in insertKitRecord:", e instanceof Error ? e.message : String(e));
-    return { success: false, error: e instanceof Error ? e.message : String(e) };
+    console.error(
+      "[Romper Electron] Error in insertKitRecord:",
+      e instanceof Error ? e.message : String(e),
+    );
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
-export function insertSampleRecord(dbDir: string, sample: { kit_id: number; filename: string; slot_number: number; is_stereo: boolean }): { success: boolean; sampleId?: number; error?: string } {
+export function insertSampleRecord(
+  dbDir: string,
+  sample: {
+    kit_id: number;
+    filename: string;
+    slot_number: number;
+    is_stereo: boolean;
+  },
+): { success: boolean; sampleId?: number; error?: string } {
   try {
     const dbPath = path.join(dbDir, "romper.sqlite");
     let db = new BetterSqlite3(dbPath);
-    const stmt = db.prepare("INSERT INTO samples (kit_id, filename, slot_number, is_stereo) VALUES (?, ?, ?, ?)");
-    const result = stmt.run(sample.kit_id, sample.filename, sample.slot_number, sample.is_stereo ? 1 : 0);
+    const stmt = db.prepare(
+      "INSERT INTO samples (kit_id, filename, slot_number, is_stereo) VALUES (?, ?, ?, ?)",
+    );
+    const result = stmt.run(
+      sample.kit_id,
+      sample.filename,
+      sample.slot_number,
+      sample.is_stereo ? 1 : 0,
+    );
     db.close();
     return { success: true, sampleId: Number(result.lastInsertRowid) };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : String(e) };
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }

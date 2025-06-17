@@ -101,10 +101,12 @@ beforeAll(() => {
   }
 
   // Suppress HTMLCanvasElement.getContext not implemented warning in tests
-  Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
-    value: vi.fn(() => ({})),
-    writable: true,
-  });
+  if (typeof HTMLCanvasElement !== "undefined") {
+    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+      value: vi.fn(() => ({})),
+      writable: true,
+    });
+  }
 });
 
 // Removed electron vi.mock and getElectronMocks from global setup

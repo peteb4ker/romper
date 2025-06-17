@@ -4,9 +4,9 @@ import {
   compareKitSlots,
   getNextKitSlot,
   inferVoiceTypeFromFilename,
-  uniqueVoiceLabels,
   isValidKit,
   showBankAnchor,
+  uniqueVoiceLabels,
 } from "../kitUtilsShared";
 
 // inferVoiceTypeFromFilename tests

@@ -1,7 +1,7 @@
-import { describe, it, beforeEach, vi, expect } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Use hoisted vi.mock for electron and romperDbCore
-vi.mock('electron', () => {
+vi.mock("electron", () => {
   // Define handleMock at the top level of the factory
   const handleMock = vi.fn();
   return {
@@ -11,7 +11,7 @@ vi.mock('electron', () => {
   };
 });
 
-vi.mock('../db/romperDbCore', () => {
+vi.mock("../db/romperDbCore", () => {
   return {
     createRomperDbFile: vi.fn(),
     insertKitRecord: vi.fn(),
@@ -20,13 +20,15 @@ vi.mock('../db/romperDbCore', () => {
   };
 });
 
-import { registerDbIpcHandlers } from '../dbIpcHandlers';
-import * as romperDbCore from '../db/romperDbCore';
-import * as electron from 'electron';
+import * as electron from "electron";
 
-const getHandleMock = () => (electron as any).handleMock || electron.ipcMain.handle;
+import * as romperDbCore from "../db/romperDbCore";
+import { registerDbIpcHandlers } from "../dbIpcHandlers";
 
-describe('dbIpcHandlers', () => {
+const getHandleMock = () =>
+  (electron as any).handleMock || electron.ipcMain.handle;
+
+describe("dbIpcHandlers", () => {
   beforeEach(() => {
     getHandleMock().mockClear();
     (romperDbCore.createRomperDbFile as any).mockClear();
@@ -34,52 +36,63 @@ describe('dbIpcHandlers', () => {
     (romperDbCore.insertSampleRecord as any).mockClear();
   });
 
-  it('registers all expected handlers', () => {
+  it("registers all expected handlers", () => {
     registerDbIpcHandlers();
     const handleMock = getHandleMock();
     expect(handleMock).toHaveBeenCalledWith(
-      'create-romper-db',
-      expect.any(Function)
+      "create-romper-db",
+      expect.any(Function),
     );
+    expect(handleMock).toHaveBeenCalledWith("insert-kit", expect.any(Function));
     expect(handleMock).toHaveBeenCalledWith(
-      'insert-kit',
-      expect.any(Function)
-    );
-    expect(handleMock).toHaveBeenCalledWith(
-      'insert-sample',
-      expect.any(Function)
+      "insert-sample",
+      expect.any(Function),
     );
   });
 
-  it('handler for create-romper-db calls createRomperDbFile with correct args', async () => {
+  it("handler for create-romper-db calls createRomperDbFile with correct args", async () => {
     registerDbIpcHandlers();
     const handleMock = getHandleMock();
-    const handler = handleMock.mock.calls.find(([ch]: any[]) => ch === 'create-romper-db')[1];
-    (romperDbCore.createRomperDbFile as any).mockResolvedValue('ok');
-    const result = await handler({}, 'dbDir');
-    expect(romperDbCore.createRomperDbFile).toHaveBeenCalledWith('dbDir');
-    expect(result).toBe('ok');
+    const handler = handleMock.mock.calls.find(
+      ([ch]: any[]) => ch === "create-romper-db",
+    )[1];
+    (romperDbCore.createRomperDbFile as any).mockResolvedValue("ok");
+    const result = await handler({}, "dbDir");
+    expect(romperDbCore.createRomperDbFile).toHaveBeenCalledWith("dbDir");
+    expect(result).toBe("ok");
   });
 
-  it('handler for insert-kit calls insertKitRecord with correct args', async () => {
+  it("handler for insert-kit calls insertKitRecord with correct args", async () => {
     registerDbIpcHandlers();
     const handleMock = getHandleMock();
-    const handler = handleMock.mock.calls.find(([ch]: any[]) => ch === 'insert-kit')[1];
-    (romperDbCore.insertKitRecord as any).mockResolvedValue('kitResult');
-    const kit = { name: 'foo', plan_enabled: true };
-    const result = await handler({}, 'dbDir', kit);
-    expect(romperDbCore.insertKitRecord).toHaveBeenCalledWith('dbDir', kit);
-    expect(result).toBe('kitResult');
+    const handler = handleMock.mock.calls.find(
+      ([ch]: any[]) => ch === "insert-kit",
+    )[1];
+    (romperDbCore.insertKitRecord as any).mockResolvedValue("kitResult");
+    const kit = { name: "foo", plan_enabled: true };
+    const result = await handler({}, "dbDir", kit);
+    expect(romperDbCore.insertKitRecord).toHaveBeenCalledWith("dbDir", kit);
+    expect(result).toBe("kitResult");
   });
 
-  it('handler for insert-sample calls insertSampleRecord with correct args', async () => {
+  it("handler for insert-sample calls insertSampleRecord with correct args", async () => {
     registerDbIpcHandlers();
     const handleMock = getHandleMock();
-    const handler = handleMock.mock.calls.find(([ch]: any[]) => ch === 'insert-sample')[1];
-    (romperDbCore.insertSampleRecord as any).mockResolvedValue('sampleResult');
-    const sample = { kit_id: 1, filename: 'a.wav', slot_number: 2, is_stereo: false };
-    const result = await handler({}, 'dbDir', sample);
-    expect(romperDbCore.insertSampleRecord).toHaveBeenCalledWith('dbDir', sample);
-    expect(result).toBe('sampleResult');
+    const handler = handleMock.mock.calls.find(
+      ([ch]: any[]) => ch === "insert-sample",
+    )[1];
+    (romperDbCore.insertSampleRecord as any).mockResolvedValue("sampleResult");
+    const sample = {
+      kit_id: 1,
+      filename: "a.wav",
+      slot_number: 2,
+      is_stereo: false,
+    };
+    const result = await handler({}, "dbDir", sample);
+    expect(romperDbCore.insertSampleRecord).toHaveBeenCalledWith(
+      "dbDir",
+      sample,
+    );
+    expect(result).toBe("sampleResult");
   });
 });

@@ -89,7 +89,7 @@ vi.mock("electron", () => ({
 }));
 
 beforeEach(async () => {
-  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation(() => {});
   Object.keys(ipcMainHandlers).forEach((k) => delete ipcMainHandlers[k]);
   vi.clearAllMocks();
   unzipperStreams.length = 0;

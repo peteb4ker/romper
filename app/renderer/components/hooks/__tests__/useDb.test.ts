@@ -1,12 +1,16 @@
-import { renderHook, act } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { useDb } from "../useDb";
 
 describe("useDb", () => {
   beforeEach(() => {
     // @ts-ignore
     window.electronAPI = {
-      createRomperDb: vi.fn(async (dbDir: string) => ({ success: true, dbPath: dbDir + "/romper.sqlite" }))
+      createRomperDb: vi.fn(async (dbDir: string) => ({
+        success: true,
+        dbPath: dbDir + "/romper.sqlite",
+      })),
     };
   });
 
@@ -20,8 +24,13 @@ describe("useDb", () => {
 
   it("should throw if electronAPI.createRomperDb fails", async () => {
     // @ts-ignore
-    window.electronAPI.createRomperDb = vi.fn(async () => ({ success: false, error: "fail" }));
+    window.electronAPI.createRomperDb = vi.fn(async () => ({
+      success: false,
+      error: "fail",
+    }));
     const { result } = renderHook(() => useDb());
-    await expect(result.current.createRomperDb("/fail/path")).rejects.toThrow("fail");
+    await expect(result.current.createRomperDb("/fail/path")).rejects.toThrow(
+      "fail",
+    );
   });
 });

@@ -1,11 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { createRomperDb } from "../useDb";
 
 describe("createRomperDb util", () => {
   beforeEach(() => {
     // @ts-ignore
     window.electronAPI = {
-      createRomperDb: vi.fn(async (dbDir: string) => ({ success: true, dbPath: dbDir + "/romper.sqlite" }))
+      createRomperDb: vi.fn(async (dbDir: string) => ({
+        success: true,
+        dbPath: dbDir + "/romper.sqlite",
+      })),
     };
   });
 
@@ -18,7 +22,10 @@ describe("createRomperDb util", () => {
 
   it("should throw if electronAPI.createRomperDb fails", async () => {
     // @ts-ignore
-    window.electronAPI.createRomperDb = vi.fn(async () => ({ success: false, error: "fail" }));
+    window.electronAPI.createRomperDb = vi.fn(async () => ({
+      success: false,
+      error: "fail",
+    }));
     await expect(createRomperDb("/fail/path")).rejects.toThrow("fail");
   });
 });

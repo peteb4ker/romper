@@ -80,7 +80,13 @@ describe("LocalStoreWizardUI", () => {
     vi.resetModules();
     vi.doMock("../hooks/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () => ({
-        state: { error: null, isInitializing: false, source: null, targetPath: "", sdCardMounted: false },
+        state: {
+          error: null,
+          isInitializing: false,
+          source: null,
+          targetPath: "",
+          sdCardMounted: false,
+        },
         setTargetPath: vi.fn(),
         setSource: vi.fn(),
         setSdCardMounted: vi.fn(),

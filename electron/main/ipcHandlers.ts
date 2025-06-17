@@ -3,7 +3,10 @@ import * as fs from "fs";
 import * as path from "path";
 import * as unzipper from "unzipper";
 
-import { groupSamplesByVoice, inferVoiceTypeFromFilename } from '../../shared/kitUtilsShared';
+import {
+  groupSamplesByVoice,
+  inferVoiceTypeFromFilename,
+} from "../../shared/kitUtilsShared";
 import {
   countZipEntries,
   downloadArchive,

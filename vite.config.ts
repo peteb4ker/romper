@@ -20,36 +20,34 @@ export default defineConfig({
       plugins: [autoprefixer()],
     },
   },
-  test: {
-    include: [
-      "app/renderer/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}",
-      "shared/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}",
-      "electron/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}"
-    ],
-    exclude: [
-      "node_modules",
-      "dist",
-      "out",
-      "electron/main/db/__tests__/integration/**"
-    ],
-    environment: "jsdom",
-    setupFiles: ["./vitest.setup.ts"],
-    coverage: {
-      enabled: true,
-      reporter: ["json", "html"],
-      reportsDirectory: "./coverage",
-      include: [
-        "app/renderer/**/*.ts",
-        "app/renderer/**/*.tsx",
-        "shared/**/*.ts",
-        "electron/**/*.ts"
-      ],
+  test: (() => {
+    const isIntegration = process.env.VITEST_MODE === "integration";
+    return {
+      include: isIntegration
+        ? ["**/*.integration.test.{js,ts,jsx,tsx}"]
+        : ["**/*.test.{js,ts,jsx,tsx}"],
       exclude: [
-        "**/*.d.ts",
-        "app/renderer/styles/**"
+        "node_modules",
+        "dist",
+        "out",
+        ...(isIntegration ? [] : ["**/*.integration.test.{js,ts,jsx,tsx}"]),
       ],
-      reportOnFailure: true,
-      provider: "v8",
-    },
-  },
+      environment: isIntegration ? "node" : "jsdom",
+      setupFiles: ["./vitest.setup.ts"],
+      coverage: {
+        enabled: true,
+        reporter: ["json", "html"],
+        reportsDirectory: "./coverage",
+        include: [
+          "app/renderer/**/*.ts",
+          "app/renderer/**/*.tsx",
+          "shared/**/*.ts",
+          "electron/**/*.ts",
+        ],
+        exclude: ["**/*.d.ts", "app/renderer/styles/**"],
+        reportOnFailure: true,
+        provider: "v8",
+      },
+    };
+  })(),
 });

@@ -13,6 +13,7 @@ const subprocess = spawn(electron, [
   env: {
     ...process.env,
     ELECTRON_RUN_AS_NODE: '1', // Important: run without Electron GUI
+    VITEST_MODE: 'integration', // Set integration mode for dynamic config
   },
 });
 

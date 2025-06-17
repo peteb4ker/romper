@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 
+import {
+  compareKitSlots,
+  groupSamplesByVoice,
+} from "../../../shared/kitUtilsShared";
 import { useKitLabel } from "../components/hooks/useKitLabel";
 import KitBrowser from "../components/KitBrowser";
 import KitDetails from "../components/KitDetails";
@@ -8,7 +12,6 @@ import type {
   RampleLabels,
   VoiceSamples,
 } from "../components/kitTypes";
-import { compareKitSlots, groupSamplesByVoice } from "../../../shared/kitUtilsShared";
 import { useSettings } from "../utils/SettingsContext";
 
 const KitsView = () => {

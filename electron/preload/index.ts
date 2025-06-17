@@ -21,7 +21,12 @@ async function readSettings(): Promise<{
 }
 
 async function writeSettings(
-  key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string; localStorePath?: string },
+  key: keyof {
+    sdCardPath?: string;
+    darkMode?: boolean;
+    theme?: string;
+    localStorePath?: string;
+  },
   value: any,
 ): Promise<void> {
   try {
@@ -68,14 +73,24 @@ contextBridge.exposeInMainWorld("electronAPI", {
     };
   },
   getSetting: async (
-    key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string; localStorePath?: string },
+    key: keyof {
+      sdCardPath?: string;
+      darkMode?: boolean;
+      theme?: string;
+      localStorePath?: string;
+    },
   ): Promise<any> => {
     console.log("[Preload] getSetting invoked", key);
     const settings = await readSettings();
     return settings[key];
   },
   setSetting: async (
-    key: keyof { sdCardPath?: string; darkMode?: boolean; theme?: string; localStorePath?: string },
+    key: keyof {
+      sdCardPath?: string;
+      darkMode?: boolean;
+      theme?: string;
+      localStorePath?: string;
+    },
     value: any,
   ): Promise<void> => {
     console.log(`[Preload] setSetting called with key: ${key}, value:`, value);
@@ -196,13 +211,26 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[Preload] createRomperDb invoked", dbDir);
     return await ipcRenderer.invoke("create-romper-db", dbDir);
   },
-  insertKit: async (dbDir: string, kit: { name: string; alias?: string; artist?: string; plan_enabled: boolean }) => {
+  insertKit: async (
+    dbDir: string,
+    kit: {
+      name: string;
+      alias?: string;
+      artist?: string;
+      plan_enabled: boolean;
+    },
+  ) => {
     console.log("[Preload] insertKit invoked", dbDir, kit);
     return await ipcRenderer.invoke("insert-kit", dbDir, kit);
   },
   insertSample: async (
     dbDir: string,
-    sample: { kit_id: number; filename: string; slot_number: number; is_stereo: boolean }
+    sample: {
+      kit_id: number;
+      filename: string;
+      slot_number: number;
+      is_stereo: boolean;
+    },
   ) => {
     console.log("[Preload] insertSample invoked", dbDir, sample);
     return await ipcRenderer.invoke("insert-sample", dbDir, sample);

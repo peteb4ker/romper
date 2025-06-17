@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+
+import { groupSamplesByVoice } from "../../../../shared/kitUtilsShared";
 import { createRomperDb, insertKit, insertSample } from "../utils/romperDb";
-import { groupSamplesByVoice } from '../../../../shared/kitUtilsShared';
 
 export type LocalStoreSource = "sdcard" | "squarp" | "blank";
 
@@ -51,7 +52,8 @@ function getKitFolders(files: string[]): string[] {
 
 // Helper: create Romper DB in .romperdb folder
 async function createRomperDbHelper(targetPath: string) {
-  if (!window.electronAPI?.ensureDir) throw new Error("Cannot access filesystem");
+  if (!window.electronAPI?.ensureDir)
+    throw new Error("Cannot access filesystem");
   const dbDir = `${targetPath}/.romperdb`;
   await window.electronAPI.ensureDir(dbDir);
   await createRomperDb(dbDir);
@@ -117,7 +119,8 @@ export function useLocalStoreWizard() {
   // Validate SD card folder for kit subfolders
   const validateSdCardFolder = useCallback(async (sdCardPath: string) => {
     if (!sdCardPath) return null; // Don't show error if nothing picked, UI should handle this
-    if (!window.electronAPI?.listFilesInRoot) return "Cannot access filesystem.";
+    if (!window.electronAPI?.listFilesInRoot)
+      return "Cannot access filesystem.";
     const files = await window.electronAPI.listFilesInRoot(sdCardPath);
     const kitFolders = getKitFolders(files);
     if (kitFolders.length === 0) {
@@ -127,19 +130,26 @@ export function useLocalStoreWizard() {
   }, []);
 
   // DRY: Single handler for source selection, including SD card logic
-  const handleSourceSelect = useCallback((value: string) => {
-    setState((s) => ({ ...s, kitFolderValidationError: undefined })); // Clear error on new source
-    if (value === "sdcard") {
-      setSource("sdcard");
-      setSdCardPath(""); // Always clear to force folder picker
-    } else {
-      setSource(value as any);
-    }
-  }, [setSource, setSdCardPath]);
+  const handleSourceSelect = useCallback(
+    (value: string) => {
+      setState((s) => ({ ...s, kitFolderValidationError: undefined })); // Clear error on new source
+      if (value === "sdcard") {
+        setSource("sdcard");
+        setSdCardPath(""); // Always clear to force folder picker
+      } else {
+        setSource(value as any);
+      }
+    },
+    [setSource, setSdCardPath],
+  );
 
   // Also clear kitFolderValidationError when sdCardPath changes
   const setSdCardPathPatched = useCallback((sdCardPath: string) => {
-    setState((s) => ({ ...s, sdCardPath, kitFolderValidationError: undefined }));
+    setState((s) => ({
+      ...s,
+      sdCardPath,
+      kitFolderValidationError: undefined,
+    }));
   }, []);
 
   // DRY: Single error/warning display
@@ -149,7 +159,8 @@ export function useLocalStoreWizard() {
   const canInitialize =
     !!state.targetPath &&
     !!state.source &&
-    (!isSdCardSource || (!!state.sdCardPath && !state.kitFolderValidationError));
+    (!isSdCardSource ||
+      (!!state.sdCardPath && !state.kitFolderValidationError));
 
   // Placeholder for actual initialization logic
   const initialize = useCallback(async () => {
@@ -170,13 +181,19 @@ export function useLocalStoreWizard() {
         if (!state.sdCardPath) throw new Error(); // Don't show error, UI should handle this
         const validationError = await validateSdCardFolder(state.sdCardPath);
         if (validationError) {
-          setState((s) => ({ ...s, kitFolderValidationError: validationError, source: null }));
+          setState((s) => ({
+            ...s,
+            kitFolderValidationError: validationError,
+            source: null,
+          }));
           throw new Error(validationError);
         } else {
           setState((s) => ({ ...s, kitFolderValidationError: undefined }));
         }
         // Copy all valid kit folders to local store with progress
-        const files = await window.electronAPI.listFilesInRoot(state.sdCardPath);
+        const files = await window.electronAPI.listFilesInRoot(
+          state.sdCardPath,
+        );
         const kitFolders = getKitFolders(files);
         for (let i = 0; i < kitFolders.length; i++) {
           setProgress({
@@ -205,7 +222,10 @@ export function useLocalStoreWizard() {
           setProgress(null);
           // Persist localStorePath in settings
           if (window.electronAPI?.setSetting) {
-            await window.electronAPI.setSetting("localStorePath", state.targetPath);
+            await window.electronAPI.setSetting(
+              "localStorePath",
+              state.targetPath,
+            );
           }
           // Continue to DB population
         }
@@ -233,14 +253,19 @@ export function useLocalStoreWizard() {
       const dbDir = await createRomperDbHelper(state.targetPath);
       // --- NEW: Scan kits and insert into DB ---
       // 1. List kit folders in local store
-      const kitFolders = await window.electronAPI.listFilesInRoot(state.targetPath);
+      const kitFolders = await window.electronAPI.listFilesInRoot(
+        state.targetPath,
+      );
       const validKits = getKitFolders(kitFolders);
       for (const kitName of validKits) {
         const kitPath = `${state.targetPath}/${kitName}`;
         const files = await window.electronAPI.listFilesInRoot(kitPath);
         const wavFiles = files.filter((f: string) => /\.wav$/i.test(f));
         // Insert kit: imported/factory kits have plan_enabled = false
-        const kitId = await insertKit(dbDir, { name: kitName, plan_enabled: false });
+        const kitId = await insertKit(dbDir, {
+          name: kitName,
+          plan_enabled: false,
+        });
         // Group by voice and slot, insert each sample
         const voices = groupSamplesByVoice(wavFiles); // { 1: [..], 2: [..], ... }
         for (const voiceNum of Object.keys(voices)) {

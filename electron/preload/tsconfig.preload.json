@@ -1,4 +1,10 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["index.ts"]
+  "include": ["index.ts"],
+  "exclude": ["../../node_modules", "../../dist", "../../coverage", "../../**/__tests__/**", "../../electron/main/db/__tests__/integration/**"],
+  "compilerOptions": {
+    "module": "CommonJS",
+    "outDir": "../../dist/",
+    "target": "ES2020"
+  }
 }

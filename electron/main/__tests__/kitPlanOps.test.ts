@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import {
   afterAll,
   afterEach,
@@ -16,6 +17,8 @@ import {
   rescanVoiceNames,
   validateKitPlan,
 } from "../kitPlanOps";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe("commitKitPlanHandler", () => {
   const tmpDir = path.join(__dirname, "tmp_kit_test");

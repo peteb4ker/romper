@@ -3,14 +3,17 @@
     "private": true,
     "version": "0.1.0",
     "type": "module",
+    "main": "dist/electron/main/index.js",
     "scripts": {
-        "build": "tsc --project tsconfig.json && vite build --config vite.config.ts",
+        "build": "tsc --project tsconfig.json && npm run build:preload && vite build --config vite.config.ts",
         "test": "npm run test:unit && npm run test:integration",
         "test:unit": "vitest --config vite.config.ts --run",
         "test:integration": "node electron/run-vitest-in-electron.cjs",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-        "dev": "npm run build && concurrently \"vite dev --config vite.config.ts\" \"sleep 3 && npm run electron:dev\"",
-        "postinstall": "npx electron-rebuild -f -w better-sqlite3"
+        "dev": "npm run build && concurrently \"vite dev --config vite.config.ts\" \"sleep 2 && npm run electron:dev\"",
+        "electron:dev": "NODE_ENV=development electron --inspect=5858 .",
+        "postinstall": "npx electron-rebuild -f -w better-sqlite3",
+        "build:preload": "tsc --project electron/preload/tsconfig.preload.json"
     },
     "devDependencies": {
         "@electron/rebuild": "^4.0.1",

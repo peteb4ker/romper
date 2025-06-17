@@ -36,6 +36,7 @@
         "dist",
         "coverage",
         "**/__tests__/**",
-        "electron/main/db/__tests__/integration/**"
+        "electron/main/db/__tests__/integration/**",
+        "electron/preload"
     ]
 }

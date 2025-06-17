@@ -1,15 +1,12 @@
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
 import { defineConfig } from "vite";
-import { viteStaticCopy } from "vite-plugin-static-copy";
 
 // Centralized Vite config for all packages (renderer, shared, etc)
 export default defineConfig({
   base: "./",
-  plugins: [
-    react(),
-    // Add more plugins here as needed
-  ],
+  plugins: [react(), tailwindcss()],
   root: ".",
   build: {
     outDir: "dist/renderer",

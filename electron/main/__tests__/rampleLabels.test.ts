@@ -1,5 +1,6 @@
 import fs from "fs";
-import path from "path";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -7,6 +8,9 @@ import {
   readRampleLabels,
   writeRampleLabels,
 } from "../rampleLabels";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const tmpDir = path.join(__dirname, "tmp_labels_test");
 const labelsPath = path.join(tmpDir, ".rample_labels.json");

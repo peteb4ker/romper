@@ -2,6 +2,8 @@ import { app, BrowserWindow } from "electron";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import {
   groupSamplesByVoice,
@@ -29,9 +31,9 @@ function createWindow() {
   const win: BrowserWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    icon: path.resolve(__dirname, "../../dist/resources/app-icon.icns"), // Set app icon for built app
+    icon: path.resolve(__dirname, "../resources/app-icon.icns"), // Set app icon for built app
     webPreferences: {
-      preload: path.resolve(__dirname, "../../dist/preload/index.js"), // Always read from dist folder
+      preload: path.resolve(__dirname, "../preload/index.js"), // Always read from dist folder
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -46,7 +48,7 @@ function createWindow() {
       );
     });
   } else {
-    const indexPath = path.resolve(__dirname, "../../dist/renderer/index.html");
+    const indexPath = path.resolve(__dirname, "../renderer/index.html");
     win.loadFile(indexPath).catch((err: unknown) => {
       console.error(
         "Failed to load index.html:",

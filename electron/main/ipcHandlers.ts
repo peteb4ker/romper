@@ -6,7 +6,7 @@ import * as unzipper from "unzipper";
 import {
   groupSamplesByVoice,
   inferVoiceTypeFromFilename,
-} from "../../shared/kitUtilsShared";
+} from "../../shared/kitUtilsShared.js";
 import {
   countZipEntries,
   downloadArchive,

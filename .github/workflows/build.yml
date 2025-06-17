@@ -24,14 +24,5 @@ jobs:
       - name: Install dependencies (monorepo root)
         run: npm install
 
-      - name: Rebuild Electron native modules
-        run: npm run rebuild:electron --workspace=electron
-
       - name: Build shared package
-        run: npm run build --workspace=shared
-
-      - name: Build app package
-        run: npm run build --workspace=app
-
-      - name: Build electron package
-        run: npm run build --workspace=electron
+        run: npm run build

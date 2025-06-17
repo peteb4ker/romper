@@ -24,20 +24,11 @@ jobs:
       - name: Install dependencies (monorepo root)
         run: npm install --arch=universal
 
-      - name: Rebuild Electron native modules
-        run: npm run rebuild:electron --workspace=electron
-
-      - name: Build shared package
-        run: npm run build --workspace=shared
-
-      - name: Build app package
-        run: npm run build --workspace=app
-
-      - name: Build electron package
-        run: npm run build --workspace=electron
+      - name: Build app
+        run: npm run build
 
       - name: Package application (Electron)
-        run: npm run make --workspace=electron
+        run: npm run make
 
       - name: Upload release assets
         uses: actions/upload-artifact@v4

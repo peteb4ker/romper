@@ -27,7 +27,7 @@ import type {
   RampleLabels,
   VoiceSamples,
 } from "./kitTypes";
-import { inferVoiceTypeFromFilename } from "@romper/shared";
+import { inferVoiceTypeFromFilename } from '../../../shared/kitUtilsShared';
 import KitVoicePanel from "./KitVoicePanel";
 import KitVoicePanels from "./KitVoicePanels";
 import SampleWaveform from "./SampleWaveform";

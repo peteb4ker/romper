@@ -25,19 +25,8 @@ jobs:
         run: npm install
 
       - name: Lint shared
-        run: npm run lint --workspace=shared
-
-      - name: Lint app
-        run: npm run lint --workspace=app
-
-      - name: Lint electron
-        run: npm run lint --workspace=electron
+        run: npm run lint
 
       - name: Test shared
-        run: npm run test --workspace=shared
+        run: npm run test
 
-      - name: Test app
-        run: npm run test --workspace=app
-
-      - name: Test electron
-        run: npm run test --workspace=electron

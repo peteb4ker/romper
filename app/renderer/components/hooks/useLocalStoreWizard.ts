@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createRomperDb, insertKit, insertSample } from "../utils/romperDb";
-import { groupSamplesByVoice } from "@romper/shared";
+import { groupSamplesByVoice } from '../../../../shared/kitUtilsShared';
 
 export type LocalStoreSource = "sdcard" | "squarp" | "blank";
 

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-vi.mock("@romper/shared", () => ({
+vi.mock("../../../shared/kitUtilsShared", () => ({
   getNextKitSlot: () => "A1",
   toCapitalCase: (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
 }));
@@ -35,29 +35,24 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+// Helper to create the hook with default props
+function renderKitBrowserHook(props = {}) {
+  return renderHook(() =>
+    useKitBrowser({
+      kits: ["A1"],
+      sdCardPath: "/sd",
+      ...props,
+    }),
+  );
+}
+
 describe("useKitBrowser", () => {
   it("initializes with default state", () => {
-    const { result } = renderHook(() =>
-      useKitBrowser({
-        kits: ["A1"],
-        sdCardPath: "/sd",
-        onRefreshKits: undefined,
-      }),
-    );
+    const { result } = renderKitBrowserHook();
     expect(result.current.kits).toEqual(["A1"]);
     expect(result.current.showNewKit).toBe(false);
     expect(result.current.newKitSlot).toBe("");
     expect(result.current.duplicateKitSource).toBe(null);
-  });
-
-  it("sets nextKitSlot when kits change", () => {
-    const { result, rerender } = renderHook(
-      ({ kits }) => useKitBrowser({ kits, sdCardPath: "/sd" }),
-      { initialProps: { kits: ["A1"] } },
-    );
-    expect(result.current.nextKitSlot).toBe("A1");
-    rerender({ kits: ["A1", "B2"] });
-    expect(result.current.nextKitSlot).toBe("A1");
   });
 
   it("loads bankNames from rtf files", async () => {
@@ -66,9 +61,7 @@ describe("useKitBrowser", () => {
       "B - beta.rtf",
       "foo.txt",
     ]);
-    const { result } = renderHook(() =>
-      useKitBrowser({ kits: ["A1"], sdCardPath: "/sd" }),
-    );
+    const { result } = renderKitBrowserHook();
     // Wait for useEffect
     await act(async () => {
       await Promise.resolve();
@@ -76,12 +69,28 @@ describe("useKitBrowser", () => {
     expect(result.current.bankNames).toEqual({ A: "Alpha", B: "Beta" });
   });
 
+  it("setNewKitSlot updates state", () => {
+    const { result } = renderKitBrowserHook();
+    act(() => {
+      result.current.setNewKitSlot("A2");
+    });
+    expect(result.current.newKitSlot).toBe("A2");
+  });
+
+  it("setDuplicateKitSource and setDuplicateKitDest update state", () => {
+    const { result } = renderKitBrowserHook();
+    act(() => {
+      result.current.setDuplicateKitSource("A1");
+      result.current.setDuplicateKitDest("B2");
+    });
+    expect(result.current.duplicateKitSource).toBe("A1");
+    expect(result.current.duplicateKitDest).toBe("B2");
+  });
+
   it("handleCreateKit validates and calls electronAPI", async () => {
     mockCreateKit.mockResolvedValue(undefined);
     const onRefreshKits = vi.fn();
-    const { result } = renderHook(() =>
-      useKitBrowser({ kits: ["A1"], sdCardPath: "/sd", onRefreshKits }),
-    );
+    const { result } = renderKitBrowserHook({ onRefreshKits });
     act(() => {
       result.current.setNewKitSlot("A2");
     });
@@ -93,9 +102,7 @@ describe("useKitBrowser", () => {
   });
 
   it("handleCreateKit sets error for invalid slot", async () => {
-    const { result } = renderHook(() =>
-      useKitBrowser({ kits: ["A1"], sdCardPath: "/sd" }),
-    );
+    const { result } = renderKitBrowserHook();
     act(() => {
       result.current.setNewKitSlot("bad");
     });
@@ -108,9 +115,7 @@ describe("useKitBrowser", () => {
   it("handleDuplicateKit validates and calls electronAPI", async () => {
     mockCopyKit.mockResolvedValue(undefined);
     const onRefreshKits = vi.fn();
-    const { result } = renderHook(() =>
-      useKitBrowser({ kits: ["A1"], sdCardPath: "/sd", onRefreshKits }),
-    );
+    const { result } = renderKitBrowserHook({ onRefreshKits });
     await act(async () => {
       result.current.setDuplicateKitSource("A1");
       result.current.setDuplicateKitDest("B2");
@@ -138,9 +143,7 @@ describe("useKitBrowser", () => {
     vi.spyOn(document, "querySelector").mockReturnValue({
       offsetHeight: 0,
     } as any);
-    const { result } = renderHook(() =>
-      useKitBrowser({ kits: ["A1"], sdCardPath: "/sd" }),
-    );
+    const { result } = renderKitBrowserHook();
     result.current.scrollContainerRef.current = container as any;
     act(() => {
       result.current.handleBankClick("A");

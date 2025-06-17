@@ -2,7 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import * as kitUtils from "@romper/shared";
+import * as kitUtils from "../../../../../shared/kitUtilsShared";
 import { useKitLabel } from "../useKitLabel";
 
 const defaultKitName = "TestKit";

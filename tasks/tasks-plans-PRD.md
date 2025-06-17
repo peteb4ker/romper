@@ -21,8 +21,6 @@
 - `app/renderer/components/StatusBar.test.tsx` - Unit tests for StatusBar notifications.
 - `app/renderer/components/MessageDisplay.tsx` - Notification system for info, warning, error, and progress messages.
 - `app/renderer/components/MessageDisplay.test.tsx` - Unit tests for MessageDisplay.
-- `app/renderer/components/utils/kitUtils.ts` - Kit and sample validation helpers.
-- `app/renderer/components/utils/kitUtils.test.ts` - Unit tests for kitUtils.
 - `app/renderer/components/utils/romperDb.ts` - Handles Romper DB (SQLite) operations for plans, kits, and samples.
 - `app/renderer/components/utils/romperDb.test.ts` - Unit tests for romperDb.
 - `electron/main/ipcHandlers.ts` - Main process IPC handlers, including robust, testable Squarp.net archive download/extract logic with progress and error reporting.

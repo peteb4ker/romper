@@ -14,7 +14,6 @@
 - `src/renderer/components/hooks/useSamplePreview.ts` - Business logic for sample and kit previewing.
 - `src/renderer/components/hooks/useKitPreview.ts` - Business logic for full kit preview playback (MIDI test pattern), play/stop state, and error handling.
 - `src/renderer/components/utils/settingsManager.ts` - Manages app settings (e.g., stereo/mono toggle, theme persistence).
-- `src/renderer/components/utils/kitUtils.ts` - Utility functions for kit/voice/sample validation and SD card structure.
 - `src/renderer/components/__tests__/KitBrowser.test.tsx` - Unit tests for kit browser UI and navigation.
 - `src/renderer/components/__tests__/KitDetails.test.tsx` - Unit tests for kit detail page and sample assignment.
 - `src/renderer/components/__tests__/KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel sample slot selection and keyboard navigation. Now focused only on single-voice panel logic; multi-voice/cross-panel tests have been moved to KitVoicePanels.test.tsx for clarity and separation of concerns.
@@ -28,7 +27,6 @@
 - `src/renderer/components/hooks/__tests__/useKitPlan.test.ts` - Unit tests for kit plan logic.
 - `src/renderer/components/hooks/__tests__/useSamplePreview.test.ts` - Unit tests for preview logic.
 - `src/renderer/components/utils/__tests__/settingsManager.test.ts` - Unit tests for settings management.
-- `src/renderer/components/utils/__tests__/kitUtils.test.ts` - Unit tests for kit/voice/sample utilities.
 - `electron/main/index.ts` - Type safety improvements for inMemorySettings and currentSamplePlayer.
 
 ### Notes

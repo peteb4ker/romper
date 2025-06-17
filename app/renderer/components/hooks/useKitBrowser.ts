@@ -1,53 +1,80 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import {
   getNextKitSlot,
   toCapitalCase,
 } from "../../../../shared/kitUtilsShared";
 
+interface UseKitBrowserProps {
+  kits: string[];
+  sdCardPath: string;
+  onRefreshKits?: () => void;
+  kitListRef: RefObject<any>;
+  onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
+}
+
+interface BankNames {
+  [bank: string]: string;
+}
+
 export function useKitBrowser({
-  kits: externalKits,
+  kits: externalKits = [],
   sdCardPath,
   onRefreshKits,
-  kitListRef, // NEW: ref to KitList
-  onMessage, // NEW: callback for user-facing messages
-}) {
-  const kits = externalKits || [];
-  const [error, setError] = useState(null);
-  const [sdCardWarning, setSdCardWarning] = useState(null);
+  kitListRef,
+  onMessage,
+}: UseKitBrowserProps) {
+  const kits: string[] = externalKits;
+  const [error, setError] = useState<string | null>(null);
+  const [sdCardWarning, setSdCardWarning] = useState<string | null>(null);
   const [showNewKit, setShowNewKit] = useState(false);
   const [newKitSlot, setNewKitSlot] = useState("");
-  const [newKitError, setNewKitError] = useState(null);
-  const [nextKitSlot, setNextKitSlot] = useState(null);
-  const [duplicateKitSource, setDuplicateKitSource] = useState(null);
+  const [newKitError, setNewKitError] = useState<string | null>(null);
+  const [nextKitSlot, setNextKitSlot] = useState<string | null>(null);
+  const [duplicateKitSource, setDuplicateKitSource] = useState<string | null>(
+    null,
+  );
   const [duplicateKitDest, setDuplicateKitDest] = useState("");
-  const [duplicateKitError, setDuplicateKitError] = useState(null);
-  const [bankNames, setBankNames] = useState({});
-  const scrollContainerRef = useRef(null);
+  const [duplicateKitError, setDuplicateKitError] = useState<string | null>(
+    null,
+  );
+  const [bankNames, setBankNames] = useState<BankNames>({});
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setNextKitSlot(getNextKitSlot(kits));
   }, [kits]);
 
-  const getBankNames = useCallback(async (sdCardPath) => {
-    if (!sdCardPath) return {};
-    try {
-      // @ts-ignore
-      const files = await window.electronAPI?.listFilesInRoot?.(sdCardPath);
-      const rtfFiles = files.filter((f) => /^[A-Z] - .+\.rtf$/i.test(f));
-      const bankNames = {};
-      for (const file of rtfFiles) {
-        const match = /^([A-Z]) - (.+)\.rtf$/i.exec(file);
-        if (match) {
-          const bank = match[1].toUpperCase();
-          const name = toCapitalCase(match[2]);
-          bankNames[bank] = name;
+  const getBankNames = useCallback(
+    async (sdCardPath: string): Promise<BankNames> => {
+      if (!sdCardPath) return {};
+      try {
+        const files = await window.electronAPI?.listFilesInRoot?.(sdCardPath);
+        if (!files) return {};
+        const rtfFiles = files.filter((f: string) =>
+          /^[A-Z] - .+\.rtf$/i.test(f),
+        );
+        const bankNames: BankNames = {};
+        for (const file of rtfFiles) {
+          const match = /^([A-Z]) - (.+)\.rtf$/i.exec(file);
+          if (match) {
+            const bank = match[1].toUpperCase();
+            const name = toCapitalCase(match[2]);
+            bankNames[bank] = name;
+          }
         }
-      }
-      return bankNames;
-    } catch (e) {}
-    return {};
-  }, []);
+        return bankNames;
+      } catch (e) {}
+      return {};
+    },
+    [],
+  );
 
   useEffect(() => {
     (async () => {
@@ -63,7 +90,6 @@ export function useKitBrowser({
     }
     if (!sdCardPath) return;
     try {
-      // @ts-ignore
       await window.electronAPI?.createKit?.(sdCardPath, newKitSlot);
       setShowNewKit(false);
       setNewKitSlot("");
@@ -75,7 +101,10 @@ export function useKitBrowser({
           duration: 4000,
         });
     } catch (err) {
-      setNewKitError("Failed to create kit: " + (err?.message || err));
+      setNewKitError(
+        "Failed to create kit: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
     }
   };
 
@@ -87,11 +116,13 @@ export function useKitBrowser({
     }
     if (!sdCardPath) return;
     try {
-      // @ts-ignore
       await window.electronAPI?.createKit?.(sdCardPath, nextKitSlot);
       if (onRefreshKits) onRefreshKits();
     } catch (err) {
-      setNewKitError("Failed to create kit: " + (err?.message || err));
+      setNewKitError(
+        "Failed to create kit: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
     }
   };
 
@@ -103,7 +134,6 @@ export function useKitBrowser({
     }
     if (!sdCardPath) return;
     try {
-      // @ts-ignore
       await window.electronAPI?.copyKit?.(
         sdCardPath,
         duplicateKitSource,
@@ -113,7 +143,7 @@ export function useKitBrowser({
       setDuplicateKitDest("");
       if (onRefreshKits) onRefreshKits();
     } catch (err) {
-      let msg = String(err?.message || err);
+      let msg = String(err instanceof Error ? err.message : err);
       msg = msg
         .replace(/^Error invoking remote method 'copy-kit':\s*/, "")
         .replace(/^Error:\s*/, "");
@@ -123,7 +153,7 @@ export function useKitBrowser({
 
   // --- Bank selection state and logic (moved from KitBrowser) ---
   const [selectedBank, setSelectedBank] = useState<string>("A");
-  const handleBankClick = (bank) => {
+  const handleBankClick = (bank: string) => {
     // Only scroll if the bank has kits
     if (!kits.some((k) => k[0] === bank)) return;
     const el = document.getElementById(`bank-${bank}`);

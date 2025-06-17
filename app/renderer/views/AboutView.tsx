@@ -1,8 +1,7 @@
 import React from "react";
 
 const openExternal = (url: string) => {
-  // Use Electron shell if available, otherwise fallback to window.open
-  if (window.electronAPI && window.electronAPI.openExternal) {
+  if (window.electronAPI?.openExternal) {
     window.electronAPI.openExternal(url);
   } else {
     window.open(url, "_blank", "noopener,noreferrer");
@@ -11,6 +10,15 @@ const openExternal = (url: string) => {
 
 interface AboutViewProps {
   navigate?: (to: string) => void;
+}
+
+// Add type declaration for import.meta.env
+declare global {
+  interface ImportMeta {
+    env: {
+      VITE_APP_VERSION?: string;
+    };
+  }
 }
 
 const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {

@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useKitListNavigation(kits, focusedKit) {
+export function useKitListNavigation(
+  kits: string[],
+  focusedKit: string | null,
+) {
   const [focusedIdx, setFocusedIdx] = useState(0);
   const lastExternalIdx = useRef<number | null>(null);
 
   // Move focus by delta (row/col navigation)
   const moveFocus = useCallback(
-    (delta) => {
+    (delta: number) => {
       setFocusedIdx((idx) => {
         let next = idx + delta;
         if (next < 0) next = 0;
@@ -20,7 +23,7 @@ export function useKitListNavigation(kits, focusedKit) {
 
   // Set focus to a specific index
   const setFocus = useCallback(
-    (idx) => {
+    (idx: number) => {
       if (idx < 0 || idx >= kits.length) return;
       setFocusedIdx(idx);
       lastExternalIdx.current = null; // user navigation
@@ -37,7 +40,7 @@ export function useKitListNavigation(kits, focusedKit) {
   // Externally controlled focus: only update if changed
   useEffect(() => {
     if (focusedKit) {
-      const idx = kits.findIndex((k) => k === focusedKit);
+      const idx = kits.findIndex((k: string) => k === focusedKit);
       if (idx !== -1 && lastExternalIdx.current !== idx) {
         setFocusedIdx(idx);
         lastExternalIdx.current = idx;

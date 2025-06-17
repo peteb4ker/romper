@@ -4,7 +4,7 @@
 let isPlaying = false;
 let currentStep = 0;
 let numSteps = 16;
-let interval: number | null = null;
+let interval: ReturnType<typeof setInterval> | null = null; // Fix setInterval type assignment
 let stepDuration = 125; // ms
 
 self.onmessage = function (e) {

@@ -1,6 +1,6 @@
 import React from "react";
 
-import { useKitVoicePanels } from "./hooks/useKitVoicePanels.ts";
+import { useKitVoicePanels } from "./hooks/useKitVoicePanels";
 import type { RampleKitLabel, VoiceSamples } from "./kitTypes";
 import KitVoicePanel from "./KitVoicePanel";
 
@@ -26,11 +26,15 @@ interface KitVoicePanelsProps {
   onSampleKeyNav: (direction: "up" | "down") => void;
   onSampleSelect: (voice: number, idx: number) => void;
   sequencerOpen: boolean;
+  setSelectedVoice: (v: number) => void;
+  setSelectedSampleIdx: (i: number) => void;
 }
 
 const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const hookProps = useKitVoicePanels({
     ...props,
+    setSelectedVoice: props.setSelectedVoice,
+    setSelectedSampleIdx: props.setSelectedSampleIdx,
     sequencerOpen: props.sequencerOpen,
   });
   return (

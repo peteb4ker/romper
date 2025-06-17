@@ -26,10 +26,14 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
     isSdCardSource, // from hook
   } = useLocalStoreWizard();
 
+  // Safe wrapper for selectLocalStorePath
+  const safeSelectLocalStorePath =
+    window.electronAPI?.selectLocalStorePath?.bind(window.electronAPI);
+
   // New: UI for SD card folder selection and validation
   const handleSdCardFolderPick = async () => {
-    if (window.electronAPI?.selectLocalStorePath) {
-      const folder = await window.electronAPI.selectLocalStorePath();
+    if (safeSelectLocalStorePath) {
+      const folder = await safeSelectLocalStorePath();
       if (folder) setSdCardPath(folder);
     }
   };
@@ -38,8 +42,8 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
   React.useEffect(() => {
     if (state.source === "sdcard" && !state.sdCardPath) {
       (async () => {
-        if (window.electronAPI?.selectLocalStorePath) {
-          const folder = await window.electronAPI.selectLocalStorePath();
+        if (safeSelectLocalStorePath) {
+          const folder = await safeSelectLocalStorePath();
           if (folder) setSdCardPath(folder);
         }
       })();
@@ -144,7 +148,9 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({ onClose }) => {
               type="button"
               className="bg-gray-200 dark:bg-slate-700 text-gray-900 dark:text-gray-100 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               onClick={async () => {
-                let path = await window.electronAPI.selectLocalStorePath();
+                if (!safeSelectLocalStorePath)
+                  throw new Error("selectLocalStorePath is not available");
+                let path = await safeSelectLocalStorePath();
                 if (path) {
                   if (!/romper\/?$/.test(path)) {
                     path = path.replace(/\/+$/, "") + "/romper";

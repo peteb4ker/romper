@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import type { RampleKitLabel, VoiceSamples } from "./kitTypes";
+import type { RampleKitLabel, VoiceSamples } from "../kitTypes";
 
 export function useKitVoicePanels({
   samples,

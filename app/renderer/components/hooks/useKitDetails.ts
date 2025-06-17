@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { inferVoiceTypeFromFilename } from "../../../shared/kitUtilsShared";
+import { inferVoiceTypeFromFilename } from "../../../../shared/kitUtilsShared";
 import type { RampleKitLabel, VoiceSamples } from "../kitTypes";
 
 export function useKitDetails({

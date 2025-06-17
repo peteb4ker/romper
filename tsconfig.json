@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "target": "ES2020",
-        "module": "CommonJS",
+        "module": "ESNext",
         "moduleResolution": "node",
         "outDir": "dist",
         "rootDir": ".",
@@ -18,7 +18,13 @@
             "@romper/electron/*": [
                 "electron/*"
             ]
-        }
+        },
+        "jsx": "react-jsx",
+        "types": [
+            "node",
+            "react",
+            "react-dom"
+        ]
     },
     "include": [
         "app/**/*",

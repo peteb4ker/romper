@@ -61,6 +61,12 @@ async function createRomperDbHelper(targetPath: string) {
 }
 
 export function useLocalStoreWizard() {
+  // Safe wrappers for Electron APIs (move to top)
+  const safeListFilesInRoot = window.electronAPI?.listFilesInRoot?.bind(
+    window.electronAPI,
+  );
+  const safeCopyDir = window.electronAPI?.copyDir?.bind(window.electronAPI);
+
   const [state, setState] = useState<LocalStoreWizardState>({
     targetPath: "",
     source: null,
@@ -117,17 +123,19 @@ export function useLocalStoreWizard() {
   }, []);
 
   // Validate SD card folder for kit subfolders
-  const validateSdCardFolder = useCallback(async (sdCardPath: string) => {
-    if (!sdCardPath) return null; // Don't show error if nothing picked, UI should handle this
-    if (!window.electronAPI?.listFilesInRoot)
-      return "Cannot access filesystem.";
-    const files = await window.electronAPI.listFilesInRoot(sdCardPath);
-    const kitFolders = getKitFolders(files);
-    if (kitFolders.length === 0) {
-      return "No valid kit folders found. Please choose a folder with kit subfolders (e.g. A0, B12, etc).";
-    }
-    return null;
-  }, []);
+  const validateSdCardFolder = useCallback(
+    async (sdCardPath: string) => {
+      if (!sdCardPath) return null; // Don't show error if nothing picked, UI should handle this
+      if (!safeListFilesInRoot) return "Cannot access filesystem.";
+      const files = await safeListFilesInRoot(sdCardPath);
+      const kitFolders = getKitFolders(files);
+      if (kitFolders.length === 0) {
+        return "No valid kit folders found. Please choose a folder with kit subfolders (e.g. A0, B12, etc).";
+      }
+      return null;
+    },
+    [safeListFilesInRoot],
+  );
 
   // DRY: Single handler for source selection, including SD card logic
   const handleSourceSelect = useCallback(
@@ -191,9 +199,9 @@ export function useLocalStoreWizard() {
           setState((s) => ({ ...s, kitFolderValidationError: undefined }));
         }
         // Copy all valid kit folders to local store with progress
-        const files = await window.electronAPI.listFilesInRoot(
-          state.sdCardPath,
-        );
+        if (!safeListFilesInRoot)
+          throw new Error("listFilesInRoot is not available");
+        const files = await safeListFilesInRoot(state.sdCardPath);
         const kitFolders = getKitFolders(files);
         for (let i = 0; i < kitFolders.length; i++) {
           setProgress({
@@ -201,7 +209,8 @@ export function useLocalStoreWizard() {
             percent: Math.round((i / kitFolders.length) * 100),
             file: kitFolders[i],
           });
-          await window.electronAPI.copyDir(
+          if (!safeCopyDir) throw new Error("copyDir is not available");
+          await safeCopyDir(
             `${state.sdCardPath}/${kitFolders[i]}`,
             `${state.targetPath}/${kitFolders[i]}`,
           );
@@ -253,13 +262,15 @@ export function useLocalStoreWizard() {
       const dbDir = await createRomperDbHelper(state.targetPath);
       // --- NEW: Scan kits and insert into DB ---
       // 1. List kit folders in local store
-      const kitFolders = await window.electronAPI.listFilesInRoot(
-        state.targetPath,
-      );
+      if (!safeListFilesInRoot)
+        throw new Error("listFilesInRoot is not available");
+      const kitFolders = await safeListFilesInRoot(state.targetPath);
       const validKits = getKitFolders(kitFolders);
       for (const kitName of validKits) {
         const kitPath = `${state.targetPath}/${kitName}`;
-        const files = await window.electronAPI.listFilesInRoot(kitPath);
+        if (!safeListFilesInRoot)
+          throw new Error("listFilesInRoot is not available");
+        const files = await safeListFilesInRoot(kitPath);
         const wavFiles = files.filter((f: string) => /\.wav$/i.test(f));
         // Insert kit: imported/factory kits have plan_enabled = false
         const kitId = await insertKit(dbDir, {
@@ -269,16 +280,18 @@ export function useLocalStoreWizard() {
         // Group by voice and slot, insert each sample
         const voices = groupSamplesByVoice(wavFiles); // { 1: [..], 2: [..], ... }
         for (const voiceNum of Object.keys(voices)) {
-          voices[voiceNum].forEach((filename, idx) => {
-            // slot_number is 1-based index in the voice array
-            // is_stereo: TODO - determine from file metadata if needed, here set false as placeholder
-            insertSample(dbDir, {
-              kit_id: kitId,
-              filename,
-              slot_number: idx + 1,
-              is_stereo: false,
-            });
-          });
+          voices[Number(voiceNum)]?.forEach?.(
+            (filename: string, idx: number) => {
+              // slot_number is 1-based index in the voice array
+              // is_stereo: TODO - determine from file metadata if needed, here set false as placeholder
+              insertSample(dbDir, {
+                kit_id: kitId,
+                filename,
+                slot_number: idx + 1,
+                is_stereo: false,
+              });
+            },
+          );
         }
       }
       // Persist localStorePath in settings

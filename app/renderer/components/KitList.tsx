@@ -8,8 +8,8 @@ import { ListChildComponentProps, VariableSizeList } from "react-window";
 
 import { useKitListLogic } from "./hooks/useKitListLogic";
 import { useKitListNavigation } from "./hooks/useKitListNavigation";
-import type { RampleKitLabel, RampleLabels } from "./KitDetails";
 import KitItem from "./KitItem";
+import type { RampleKitLabel, RampleLabels } from "./kitTypes";
 
 interface KitListProps {
   kits: string[];
@@ -54,8 +54,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
     const { kitsToDisplay, isValidKit, getColorClass, showBankAnchor } =
       useKitListLogic(kits);
     // Only use focusedKit if defined, otherwise undefined
-    const navFocusedKit =
-      typeof focusedKit === "string" ? focusedKit : undefined;
+    const navFocusedKit = typeof focusedKit === "string" ? focusedKit : null;
     const { focusedIdx, setFocus, moveFocus } = useKitListNavigation(
       kitsToDisplay,
       navFocusedKit,

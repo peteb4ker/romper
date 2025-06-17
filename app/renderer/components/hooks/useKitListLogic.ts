@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 
 import { compareKitSlots } from "../../../../shared/kitUtilsShared";
-import type { RampleKitLabel } from "../KitDetails";
+import type { RampleKitLabel } from "../kitTypes";
 
 export function useKitListLogic(kits: string[]) {
   // Sorted and filtered kits for display

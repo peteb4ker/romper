@@ -6,6 +6,7 @@ import KitBankNav from "./KitBankNav";
 import KitBrowserHeader from "./KitBrowserHeader";
 import KitDialogs from "./KitDialogs";
 import KitList, { KitListHandle } from "./KitList";
+import type { RampleKitLabel } from "./kitTypes";
 import LocalStoreWizardUI from "./LocalStoreWizardUI";
 
 interface KitBrowserProps {
@@ -22,9 +23,12 @@ interface KitBrowserProps {
 
 const KitBrowser: React.FC<KitBrowserProps> = (props) => {
   const kitListRef = useRef<KitListHandle>(null);
+  // Ensure sdCardPath is always a string (never null)
   const logic = useKitBrowser({
     ...props,
-    kitListRef,
+    kits: props.kits ?? [],
+    kitListRef: kitListRef,
+    sdCardPath: props.sdCardPath ?? "",
     onMessage: props.onMessage,
   });
   const {
@@ -134,7 +138,8 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         onCancelNewKit={() => {
           setShowNewKit(false);
           setNewKitSlot("");
-          setNewKitError(null);
+          // Fix: setNewKitError and setDuplicateKitError should be called from logic, not as standalone names
+          logic.setNewKitError(null);
         }}
         showDuplicateKit={!!duplicateKitSource}
         duplicateKitSource={duplicateKitSource}
@@ -145,7 +150,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         onCancelDuplicateKit={() => {
           setDuplicateKitSource(null);
           setDuplicateKitDest("");
-          setDuplicateKitError(null);
+          logic.setDuplicateKitError(null);
         }}
       />
       <div className="flex-1 min-h-0">
@@ -157,7 +162,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
           onDuplicate={(kit) => {
             setDuplicateKitSource(kit);
             setDuplicateKitDest("");
-            setDuplicateKitError(null);
+            logic.setDuplicateKitError(null);
           }}
           sdCardPath={props.sdCardPath || ""}
           kitLabels={props.kitLabels}

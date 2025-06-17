@@ -77,7 +77,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
 
   // Auto-scan logic: triggers auto-rescan if all voice names are missing and samples are loaded
   useKitDetails({
-    kitLabel: managedKitLabel,
+    kitLabel: managedKitLabel || undefined,
     samples,
     sdCardPath: props.sdCardPath,
     kitName: props.kitName,
@@ -87,14 +87,14 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   // Show playback errors via onMessage callback
   React.useEffect(() => {
     if (playbackError && props.onMessage) {
-      props.onMessage({ type: "error", text: playbackError });
+      props.onMessage?.({ type: "error", text: playbackError });
     }
   }, [playbackError, props.onMessage]);
 
   // Show label errors via onMessage callback
   React.useEffect(() => {
     if (labelsError && props.onMessage) {
-      props.onMessage({ type: "error", text: labelsError });
+      props.onMessage?.({ type: "error", text: labelsError });
     }
   }, [labelsError, props.onMessage]);
 
@@ -102,7 +102,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   React.useEffect(() => {
     if (!props.onMessage) return;
     const handler = (e: CustomEvent) => {
-      props.onMessage({ type: "error", text: e.detail });
+      props.onMessage?.({ type: "error", text: e.detail });
     };
     window.addEventListener("SampleWaveformError", handler as EventListener);
     return () => {
@@ -119,7 +119,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   const [sequencerOpen, setSequencerOpen] = React.useState(false);
 
   // Ref for sequencer grid
-  const sequencerGridRef = React.useRef<HTMLDivElement>(null);
+  const sequencerGridRef = React.useRef<HTMLDivElement | null>(null);
 
   // Focus sequencer grid when opening, focus sample when closing
   React.useEffect(() => {
@@ -211,16 +211,19 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
     <div className="flex flex-col flex-1 min-h-0 h-full p-2 pb-0 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-sm shadow">
       <KitHeader
         kitName={props.kitName}
-        kitLabel={managedKitLabel}
+        kitLabel={managedKitLabel || null}
+        editingKitLabel={editingKitLabel}
+        setEditingKitLabel={setEditingKitLabel}
+        kitLabelInput={kitLabelInput}
+        setKitLabelInput={setKitLabelInput}
+        handleSaveKitLabel={handleSaveKitLabel}
+        kitLabelInputRef={undefined as any} // TODO: wire up ref if needed
         onBack={props.onBack}
         onNextKit={props.onNextKit}
         onPrevKit={props.onPrevKit}
         onCreateKit={props.onCreateKit}
         kits={props.kits}
         kitIndex={props.kitIndex}
-        // Always show navigation buttons, but disable as needed
-        disablePrev={props.kitIndex === 0}
-        disableNext={props.kits && props.kitIndex === props.kits.length - 1}
         onRescanAllVoiceNames={() => handleRescanAllVoiceNames(samples)}
       />
       <KitMetadataForm
@@ -237,11 +240,18 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
       <div className="flex-1 min-h-0 overflow-y-auto">
         <KitVoicePanels
           samples={samples}
-          kitLabel={managedKitLabel}
+          kitLabel={managedKitLabel || null}
           selectedVoice={selectedVoice}
           selectedSampleIdx={selectedSampleIdx}
+          setSelectedVoice={setSelectedVoice}
+          setSelectedSampleIdx={setSelectedSampleIdx}
           onSaveVoiceName={handleSaveVoiceName}
+          onSampleSelect={(voice, idx) => {
+            setSelectedVoice(voice);
+            setSelectedSampleIdx(idx);
+          }}
           onRescanVoiceName={handleRescanVoiceName}
+          sequencerOpen={sequencerOpen}
           samplePlaying={samplePlaying}
           playTriggers={playTriggers}
           stopTriggers={stopTriggers}
@@ -251,11 +261,6 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
           sdCardPath={props.sdCardPath}
           kitName={props.kitName}
           onSampleKeyNav={kitVoicePanels.onSampleKeyNav}
-          onSampleSelect={(voice, idx) => {
-            setSelectedVoice(voice);
-            setSelectedSampleIdx(idx);
-          }}
-          sequencerOpen={sequencerOpen}
         />
       </div>
       <KitStepSequencer
@@ -265,7 +270,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         setStepPattern={setStepPattern}
         sequencerOpen={sequencerOpen}
         setSequencerOpen={setSequencerOpen}
-        gridRef={sequencerGridRef}
+        gridRef={sequencerGridRef as React.RefObject<HTMLDivElement>}
       />
     </div>
   );

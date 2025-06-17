@@ -1,4 +1,4 @@
-import React from "react";
+import React, { JSX } from "react";
 import { BiSolidPiano } from "react-icons/bi";
 import { FiCopy, FiFolder } from "react-icons/fi";
 import { GiDrumKit } from "react-icons/gi";
@@ -15,7 +15,7 @@ interface KitItemProps {
   onSelect: () => void;
   onDuplicate: () => void;
   sampleCounts?: [number, number, number, number]; // New prop
-  kitLabel?: { voiceNames?: string[] };
+  kitLabel?: { voiceNames?: { [voice: number]: string | null } };
 }
 
 // Add ref forwarding to support programmatic focus from KitList
@@ -38,7 +38,15 @@ const KitItem = React.memo(
       },
       ref,
     ) => {
-      const { iconType, iconLabel } = useKitItem(kitLabel?.voiceNames);
+      // Filter out nulls from voiceNames before passing to useKitItem
+      const filteredVoiceNames = kitLabel?.voiceNames
+        ? Object.fromEntries(
+            Object.entries(kitLabel.voiceNames).filter(([_, v]) => v != null),
+          )
+        : undefined;
+      const { iconType, iconLabel } = useKitItem(
+        filteredVoiceNames as Record<string | number, string> | undefined,
+      );
       let icon: JSX.Element;
       switch (iconType) {
         case "mic":

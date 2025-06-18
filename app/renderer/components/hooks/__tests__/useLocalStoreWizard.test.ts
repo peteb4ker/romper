@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
+import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useLocalStoreWizard } from "../useLocalStoreWizard";
@@ -53,7 +54,8 @@ describe("useLocalStoreWizard", () => {
     });
     await waitForAsync(() => result.current.defaultPath !== "");
     expect(result.current.defaultPath).toContain("romper");
-    expect(result.current.state.targetPath).toBe(result.current.defaultPath);
+    // targetPath is not set on mount anymore
+    expect(result.current.state.targetPath).toBe("");
   });
 
   it("sets target path", () => {
@@ -316,8 +318,10 @@ describe("useLocalStoreWizard", () => {
   it("loads localStorePath from settings if present", async () => {
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
-    expect(result.current.defaultPath).toBe("/mock/saved/path/romper");
-    expect(result.current.state.targetPath).toBe("/mock/saved/path/romper");
+    // Now defaultPath is always getDefaultRomperPathAsync, not from settings
+    expect(result.current.defaultPath).toBe("/mock/home/Documents/romper");
+    // targetPath is not set on mount anymore
+    expect(result.current.state.targetPath).toBe("");
   });
 
   it("persists localStorePath after successful initialization", async () => {
@@ -335,5 +339,36 @@ describe("useLocalStoreWizard", () => {
       await result.current.initialize();
     });
     expect(setSettingCalled).toBe("/mock/home/Documents/romper");
+  });
+
+  it("shows progress for writing to database during DB import", async () => {
+    const progressEvents: any[] = [];
+    window.electronAPI.listFilesInRoot = vi.fn(async (path) => {
+      if (path === "/mock/sd") return ["A0", "B12"];
+      if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
+      if (path === "/mock/home/Documents/romper/A0")
+        return ["kick.wav", "snare.wav"];
+      if (path === "/mock/home/Documents/romper/B12") return ["hat.wav"];
+      return [];
+    });
+    window.electronAPI.copyDir = vi.fn(async () => {});
+    window.electronAPI.insertKit = vi.fn(async () => 1);
+    window.electronAPI.insertSample = vi.fn(async () => 1);
+    // Use the new progress callback for testability
+    const { result } = renderHook(() =>
+      useLocalStoreWizard((p) => progressEvents.push(p)),
+    );
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("sdcard");
+      result.current.setSdCardPath("/mock/sd");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(progressEvents.some((e) => e.phase === "Writing to database")).toBe(
+      true,
+    );
   });
 });

@@ -119,7 +119,7 @@ describe("LocalStoreWizardUI", () => {
           error: null,
           isInitializing: false,
           source: "squarp",
-          targetPath: "/mock/path/romper",
+          targetPath: "",
           sdCardMounted: false,
         },
         setTargetPath: vi.fn(),
@@ -142,6 +142,7 @@ describe("LocalStoreWizardUI", () => {
       "../LocalStoreWizardUI"
     );
     render(<LocalStoreWizardUI onClose={() => {}} />);
+    // The input should be present in step 2 (target selection)
     expect(screen.getByLabelText(/local store path/i)).toBeInTheDocument();
   });
   // All tests below only verify UI rendering and user interaction, not IPC or Electron API

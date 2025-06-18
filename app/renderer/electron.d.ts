@@ -1,6 +1,4 @@
-export {};
-
-interface ElectronAPI {
+export interface ElectronAPI {
   scanSdCard: (sdCardPath: string) => Promise<string[]>;
   selectSdCard: () => Promise<string | null>;
   watchSdCard: (

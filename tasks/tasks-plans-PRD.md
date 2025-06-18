@@ -4,9 +4,9 @@
 - `app/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI).
 - `app/renderer/components/KitDetails.test.tsx` - Unit tests for KitDetails, including plan mode and kit planning integration.
 - `app/renderer/components/LocalStoreWizardUI.tsx` - UI for local store setup wizard, now supports progress bar, robust error display, and a flipped flow (choose source > choose target > import). UI and accessibility improvements.
-- `app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx` - Unit tests for LocalStoreWizardUI, now fully decoupled from IPC/Electron, only test UI logic and user interaction.
-- `app/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now exposes progress/error state for Squarp.net archive initialization, handles blank folder (no files copied, only folder created), and SD card folder validation/copy logic.
-- `app/renderer/components/hooks/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook, now cover progress, error handling, blank folder initialization, and SD card folder validation/copy.
+- `app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx` - Unit tests for LocalStoreWizardUI, now fully decoupled from IPC/Electron, only test UI logic and user interaction. Updated to match new step logic and label expectations.
+- `app/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now exposes progress/error state for Squarp.net archive initialization, handles blank folder (no files copied, only folder created), and SD card folder validation/copy logic. Updated to only set targetPath after source selection.
+- `app/renderer/components/hooks/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook, now cover progress, error handling, blank folder initialization, and SD card folder validation/copy. Updated to expect targetPath to be empty on mount.
 - `app/renderer/components/hooks/useKitPlan.ts` - Hook for all business logic related to kit plans, including plan state, actions, and persistence.
 - `app/renderer/components/hooks/useKitPlan.test.ts` - Unit tests for useKitPlan hook.
 - `app/renderer/components/utils/planUtils.ts` - Utility functions for plan validation, sample assignment, and format checks.
@@ -62,6 +62,9 @@
         - [x] 2.1.3.1.1 If SD card is the source, copy all files from SD card to local store
         - [x] 2.1.3.1.2 If Squarp.net archive is the source, download and extract archive to local store (with progress bar, robust error handling, and test coverage for premature close and progress events)
         - [x] 2.1.3.1.3 If blank folder is chosen, no files are copied
+    - [x] 2.1.4 Progress bar is used for: downloading zip, unzipping/moving files, writing to DB
+    - [x] 2.1.5 Enforce step order: cannot proceed to next step until current is valid; allow going back to previous steps. The steps are a) choose source b) choose target c) initialize
+    - [ ] 2.1.7 Cancel action is always available and stops any in-progress operation
   - [x] 2.2 Create and initialize Romper DB in `.romperdb` folder within local store.
   - [x] 2.3 Persist local store location in settings; allow changing location
   - [x] 2.4 Upon selection and instantiation of local store files, insert new records into the Romper DB.
@@ -69,7 +72,6 @@
     - [x] 2.14 Implement initial import to create kit and sample records (no plan table), with new fields
     - [x] 2.15 Update documentation and ERD to match new schema (docs/romper-db.md, docs/romper-db.mmd)
   - [x] 2.5 Unit tests for initialization, validation, and error handling.
-  - [ ] 2.7 If the local store or Romper DB does not exist, automatically create them as needed.
   - [ ] 2.8 Store exactly one local store path and associated Romper DB location in application settings; load them on startup if present.
   - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
   - [ ] 2.12 If the Romper DB metadata or plans are out of sync with the local store, present an error to the user and indicate that manual intervention may be required.

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import type { ElectronAPI } from "../../electron.d";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { groupSamplesByVoice } from "../../../../shared/kitUtilsShared";
 import { createRomperDb, insertKit, insertSample } from "../utils/romperDb";
@@ -15,28 +16,42 @@ export interface LocalStoreWizardState {
   kitFolderValidationError?: string | null;
 }
 
-export function getDefaultRomperPath(): string {
-  // Use Electron preload bridge to get homedir from main process
-  if (
-    typeof window !== "undefined" &&
-    window.electronAPI &&
-    typeof window.electronAPI.getUserHomeDir === "function"
-  ) {
-    // NOTE: getUserHomeDir is now async, so this function must be async too
-    // For backward compatibility, return empty string and require async usage
-    return "";
-  }
-  // Fallback for browser: empty string
-  return "";
+export interface ProgressEvent {
+  phase: string;
+  percent?: number;
+  file?: string;
 }
 
-export async function getDefaultRomperPathAsync(): Promise<string> {
-  if (
-    typeof window !== "undefined" &&
-    window.electronAPI &&
-    typeof window.electronAPI.getUserHomeDir === "function"
-  ) {
-    const homeDir = await window.electronAPI.getUserHomeDir();
+// --- Electron API wrappers ---
+// Use the global ElectronAPI type from electron.d.ts for DRYness
+// (no local interface needed)
+
+declare global {
+  interface Window {
+    electronAPI: ElectronAPI;
+  }
+}
+
+function getElectronAPI(): ElectronAPI {
+  // Use type assertion to avoid type conflict with window.electronAPI
+  return typeof window !== "undefined" && window.electronAPI
+    ? window.electronAPI
+    : ({} as ElectronAPI);
+}
+
+function useElectronAPI(): ElectronAPI {
+  return getElectronAPI();
+}
+
+// --- Helpers ---
+function getKitFolders(files: string[]): string[] {
+  const kitRegex = /^[A-Z].*?(?:[1-9]?\d)$/;
+  return files.filter((f) => kitRegex.test(f));
+}
+
+async function getDefaultRomperPathAsync(api: any): Promise<string> {
+  if (api.getUserHomeDir) {
+    const homeDir = await api.getUserHomeDir();
     if (typeof homeDir === "string" && homeDir.length > 0) {
       return homeDir + "/Documents/romper";
     }
@@ -44,29 +59,9 @@ export async function getDefaultRomperPathAsync(): Promise<string> {
   return "";
 }
 
-// Helper: get kit folders from a list of filenames
-function getKitFolders(files: string[]): string[] {
-  const kitRegex = /^[A-Z].*?(?:[1-9]?\d)$/;
-  return files.filter((f) => kitRegex.test(f));
-}
-
-// Helper: create Romper DB in .romperdb folder
-async function createRomperDbHelper(targetPath: string) {
-  if (!window.electronAPI?.ensureDir)
-    throw new Error("Cannot access filesystem");
-  const dbDir = `${targetPath}/.romperdb`;
-  await window.electronAPI.ensureDir(dbDir);
-  await createRomperDb(dbDir);
-  return dbDir;
-}
-
-export function useLocalStoreWizard() {
-  // Safe wrappers for Electron APIs (move to top)
-  const safeListFilesInRoot = window.electronAPI?.listFilesInRoot?.bind(
-    window.electronAPI,
-  );
-  const safeCopyDir = window.electronAPI?.copyDir?.bind(window.electronAPI);
-
+// --- Main Hook ---
+export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
+  const api = useElectronAPI();
   const [state, setState] = useState<LocalStoreWizardState>({
     targetPath: "",
     source: null,
@@ -75,102 +70,211 @@ export function useLocalStoreWizard() {
     error: null,
   });
   const [defaultPath, setDefaultPath] = useState("");
-  const [progress, setProgress] = useState<{
-    phase: string;
-    percent?: number;
-    file?: string;
-  } | null>(null);
+  const [progress, setProgress] = useState<ProgressEvent | null>(null);
+  const progressCb = useRef(onProgress);
+  progressCb.current = onProgress;
 
+  // --- Progress reporting ---
+  const reportProgress = useCallback((p: ProgressEvent) => {
+    setProgress(p);
+    if (progressCb.current) progressCb.current(p);
+  }, []);
+
+  // --- State setters ---
+  const setTargetPath = useCallback(
+    (targetPath: string) => setState((s) => ({ ...s, targetPath })),
+    [],
+  );
+  const setSource = useCallback(
+    (source: LocalStoreSource) => setState((s) => ({ ...s, source })),
+    [],
+  );
+  const setSdCardMounted = useCallback(
+    (mounted: boolean) => setState((s) => ({ ...s, sdCardMounted: mounted })),
+    [],
+  );
+  const setError = useCallback(
+    (error: string | null) => setState((s) => ({ ...s, error })),
+    [],
+  );
+  const setIsInitializing = useCallback(
+    (isInitializing: boolean) => setState((s) => ({ ...s, isInitializing })),
+    [],
+  );
+  const setSdCardPath = useCallback(
+    (sdCardPath: string) =>
+      setState((s) => ({
+        ...s,
+        sdCardPath,
+        kitFolderValidationError: undefined,
+      })),
+    [],
+  );
+
+  // --- State update helper ---
+  const setWizardState = useCallback(
+    (patch: Partial<LocalStoreWizardState>) => {
+      setState((s) => ({ ...s, ...patch }));
+    },
+    [],
+  );
+
+  // --- Error message normalization ---
+  function normalizeErrorMessage(msg: string) {
+    if (msg.includes("premature close")) {
+      return "Download failed: The connection was closed before completion. Please check your internet connection and try again.";
+    }
+    return msg;
+  }
+
+  // --- Progress reporting helper ---
+  function reportStepProgress({
+    items,
+    phase,
+    onStep,
+  }: {
+    items: string[];
+    phase: string;
+    onStep: (item: string, idx: number) => Promise<void>;
+  }) {
+    // Sequentially process items for correct progress updates
+    return (async () => {
+      for (let idx = 0; idx < items.length; idx++) {
+        const item = items[idx];
+        reportProgress({
+          phase,
+          percent: Math.round(((idx + 1) / items.length) * 100),
+          file: item,
+        });
+        await onStep(item, idx);
+      }
+      if (items.length > 0) reportProgress({ phase, percent: 100 });
+    })();
+  }
+
+  // --- Load default path on mount ---
   useEffect(() => {
     (async () => {
-      let path = "";
-      if (window.electronAPI?.getSetting) {
-        const saved = await window.electronAPI.getSetting("localStorePath");
-        if (typeof saved === "string" && saved.length > 0) {
-          path = saved;
-        }
-      }
-      if (!path) {
-        path = await getDefaultRomperPathAsync();
-      }
+      let path = await getDefaultRomperPathAsync(api);
       setDefaultPath(path);
-      setState((s) => ({ ...s, targetPath: path }));
+      // Do NOT set targetPath here; only set defaultPath
+      // Do NOT read from system settings
     })();
+    // Clear targetPath and source on wizard mount (start)
+    setState((s) => ({
+      ...s,
+      targetPath: "",
+      source: null,
+      sdCardPath: undefined,
+      kitFolderValidationError: undefined,
+      error: null,
+      isInitializing: false,
+      sdCardMounted: false,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setTargetPath = useCallback((targetPath: string) => {
-    setState((s) => ({ ...s, targetPath }));
-  }, []);
-
-  const setSource = useCallback((source: LocalStoreSource) => {
-    setState((s) => ({ ...s, source }));
-  }, []);
-
-  const setSdCardMounted = useCallback((mounted: boolean) => {
-    setState((s) => ({ ...s, sdCardMounted: mounted }));
-  }, []);
-
-  const setError = useCallback((error: string | null) => {
-    setState((s) => ({ ...s, error }));
-  }, []);
-
-  const setIsInitializing = useCallback((isInitializing: boolean) => {
-    setState((s) => ({ ...s, isInitializing }));
-  }, []);
-
-  const setSdCardPath = useCallback((sdCardPath: string) => {
-    setState((s) => ({ ...s, sdCardPath }));
-  }, []);
-
-  // Validate SD card folder for kit subfolders
+  // --- Kit folder validation ---
   const validateSdCardFolder = useCallback(
     async (sdCardPath: string) => {
-      if (!sdCardPath) return null; // Don't show error if nothing picked, UI should handle this
-      if (!safeListFilesInRoot) return "Cannot access filesystem.";
-      const files = await safeListFilesInRoot(sdCardPath);
+      if (!sdCardPath) return null;
+      if (!api.listFilesInRoot) return "Cannot access filesystem.";
+      const files = await api.listFilesInRoot(sdCardPath);
       const kitFolders = getKitFolders(files);
       if (kitFolders.length === 0) {
         return "No valid kit folders found. Please choose a folder with kit subfolders (e.g. A0, B12, etc).";
       }
       return null;
     },
-    [safeListFilesInRoot],
+    [api],
   );
 
-  // DRY: Single handler for source selection, including SD card logic
-  const handleSourceSelect = useCallback(
-    (value: string) => {
-      setState((s) => ({ ...s, kitFolderValidationError: undefined })); // Clear error on new source
-      if (value === "sdcard") {
-        setSource("sdcard");
-        setSdCardPath(""); // Always clear to force folder picker
+  // --- SD Card validation and copy combined ---
+  const validateAndCopySdCardKits = useCallback(
+    async (sdCardPath: string, targetPath: string) => {
+      if (!sdCardPath) throw new Error();
+      const validationError = await validateSdCardFolder(sdCardPath);
+      if (validationError) {
+        setWizardState({
+          kitFolderValidationError: validationError,
+          source: null,
+        });
+        throw new Error(validationError);
       } else {
-        setSource(value as any);
+        setWizardState({ kitFolderValidationError: undefined });
       }
+      if (!api.listFilesInRoot || !api.copyDir)
+        throw new Error("Missing Electron API");
+      const files = await api.listFilesInRoot(sdCardPath);
+      const kitFolders = getKitFolders(files);
+      await reportStepProgress({
+        items: kitFolders,
+        phase: "Copying kits...",
+        onStep: async (kit) => {
+          if (!api.copyDir) throw new Error("Missing Electron API");
+          await api.copyDir(`${sdCardPath}/${kit}`, `${targetPath}/${kit}`);
+        },
+      });
     },
-    [setSource, setSdCardPath],
+    [api, validateSdCardFolder],
   );
 
-  // Also clear kitFolderValidationError when sdCardPath changes
-  const setSdCardPathPatched = useCallback((sdCardPath: string) => {
-    setState((s) => ({
-      ...s,
-      sdCardPath,
-      kitFolderValidationError: undefined,
-    }));
-  }, []);
+  const extractSquarpArchive = useCallback(
+    async (targetPath: string) => {
+      const url = "https://data.squarp.net/RampleSamplesV1-2.zip";
+      const result = await api.downloadAndExtractArchive?.(
+        url,
+        targetPath,
+        (p: any) => reportProgress(p),
+        (e: any) => setError(e?.message || String(e)),
+      );
+      if (!result?.success)
+        throw new Error(result?.error || "Failed to extract archive");
+    },
+    [api, reportProgress, setError],
+  );
 
-  // DRY: Single error/warning display
-  const errorMessage = state.error || state.kitFolderValidationError;
+  const createAndPopulateDb = useCallback(
+    async (targetPath: string) => {
+      const dbDir = `${targetPath}/.romperdb`;
+      if (api.ensureDir) await api.ensureDir(dbDir);
+      await createRomperDb(dbDir);
+      if (!api.listFilesInRoot)
+        throw new Error("listFilesInRoot is not available");
+      const kitFolders = await api.listFilesInRoot(targetPath);
+      const validKits = getKitFolders(kitFolders);
+      await reportStepProgress({
+        items: validKits,
+        phase: "Writing to database",
+        onStep: async (kitName) => {
+          const kitPath = `${targetPath}/${kitName}`;
+          if (!api.listFilesInRoot)
+            throw new Error("listFilesInRoot is not available");
+          const files = await api.listFilesInRoot(kitPath);
+          const wavFiles = files.filter((f: string) => /\.wav$/i.test(f));
+          const kitId = await insertKit(dbDir, {
+            name: kitName,
+            plan_enabled: false,
+          });
+          const voices = groupSamplesByVoice(wavFiles);
+          for (const voiceNum of Object.keys(voices)) {
+            voices[Number(voiceNum)]?.forEach?.(
+              (filename: string, idx: number) => {
+                insertSample(dbDir, {
+                  kit_id: kitId,
+                  filename,
+                  slot_number: idx + 1,
+                  is_stereo: false,
+                });
+              },
+            );
+          }
+        },
+      });
+    },
+    [api, reportProgress],
+  );
 
-  const isSdCardSource = state.source === "sdcard";
-  const canInitialize =
-    !!state.targetPath &&
-    !!state.source &&
-    (!isSdCardSource ||
-      (!!state.sdCardPath && !state.kitFolderValidationError));
-
-  // Placeholder for actual initialization logic
   const initialize = useCallback(async () => {
     setIsInitializing(true);
     setError(null);
@@ -178,163 +282,89 @@ export function useLocalStoreWizard() {
     try {
       if (!state.targetPath) throw new Error("No target path specified");
       if (!state.source) throw new Error("No source selected");
-      if (
-        typeof window !== "undefined" &&
-        window.electronAPI &&
-        typeof window.electronAPI.ensureDir === "function"
-      ) {
-        await window.electronAPI.ensureDir(state.targetPath);
-      }
+      if (api.ensureDir) await api.ensureDir(state.targetPath);
       if (state.source === "sdcard") {
-        if (!state.sdCardPath) throw new Error(); // Don't show error, UI should handle this
-        const validationError = await validateSdCardFolder(state.sdCardPath);
-        if (validationError) {
-          setState((s) => ({
-            ...s,
-            kitFolderValidationError: validationError,
-            source: null,
-          }));
-          throw new Error(validationError);
-        } else {
-          setState((s) => ({ ...s, kitFolderValidationError: undefined }));
-        }
-        // Copy all valid kit folders to local store with progress
-        if (!safeListFilesInRoot)
-          throw new Error("listFilesInRoot is not available");
-        const files = await safeListFilesInRoot(state.sdCardPath);
-        const kitFolders = getKitFolders(files);
-        for (let i = 0; i < kitFolders.length; i++) {
-          setProgress({
-            phase: `Copying kits...`,
-            percent: Math.round((i / kitFolders.length) * 100),
-            file: kitFolders[i],
-          });
-          if (!safeCopyDir) throw new Error("copyDir is not available");
-          await safeCopyDir(
-            `${state.sdCardPath}/${kitFolders[i]}`,
-            `${state.targetPath}/${kitFolders[i]}`,
-          );
-        }
-        setProgress({
-          phase: `Copying kits...`,
-          percent: 100,
-        });
-      }
-      if (
-        typeof window !== "undefined" &&
-        window.electronAPI &&
-        typeof window.electronAPI.getUserHomeDir === "function"
-      ) {
-        if (state.source === "blank") {
-          // Done: no files copied
-          setIsInitializing(false);
-          setProgress(null);
-          // Persist localStorePath in settings
-          if (window.electronAPI?.setSetting) {
-            await window.electronAPI.setSetting(
-              "localStorePath",
-              state.targetPath,
-            );
-          }
-          // Continue to DB population
-        }
+        if (!state.sdCardPath) throw new Error("No SD card path selected");
+        await validateAndCopySdCardKits(state.sdCardPath, state.targetPath);
       }
       if (state.source === "squarp") {
-        const url = "https://data.squarp.net/RampleSamplesV1-2.zip";
-        const result = await window.electronAPI.downloadAndExtractArchive?.(
-          url,
-          state.targetPath,
-          (p: any) => setProgress(p),
-          (e: any) => {
-            // Robust error handling, including premature close
-            let msg = e?.message || String(e);
-            if (msg.includes("premature close")) {
-              msg =
-                "Download failed: The connection was closed before completion. Please check your internet connection and try again.";
-            }
-            setError(msg);
-          },
-        );
-        if (!result?.success)
-          throw new Error(result?.error || "Failed to extract archive");
+        await extractSquarpArchive(state.targetPath);
       }
-      // After local store is created, create .romperdb folder
-      const dbDir = await createRomperDbHelper(state.targetPath);
-      // --- NEW: Scan kits and insert into DB ---
-      // 1. List kit folders in local store
-      if (!safeListFilesInRoot)
-        throw new Error("listFilesInRoot is not available");
-      const kitFolders = await safeListFilesInRoot(state.targetPath);
-      const validKits = getKitFolders(kitFolders);
-      for (const kitName of validKits) {
-        const kitPath = `${state.targetPath}/${kitName}`;
-        if (!safeListFilesInRoot)
-          throw new Error("listFilesInRoot is not available");
-        const files = await safeListFilesInRoot(kitPath);
-        const wavFiles = files.filter((f: string) => /\.wav$/i.test(f));
-        // Insert kit: imported/factory kits have plan_enabled = false
-        const kitId = await insertKit(dbDir, {
-          name: kitName,
-          plan_enabled: false,
-        });
-        // Group by voice and slot, insert each sample
-        const voices = groupSamplesByVoice(wavFiles); // { 1: [..], 2: [..], ... }
-        for (const voiceNum of Object.keys(voices)) {
-          voices[Number(voiceNum)]?.forEach?.(
-            (filename: string, idx: number) => {
-              // slot_number is 1-based index in the voice array
-              // is_stereo: TODO - determine from file metadata if needed, here set false as placeholder
-              insertSample(dbDir, {
-                kit_id: kitId,
-                filename,
-                slot_number: idx + 1,
-                is_stereo: false,
-              });
-            },
-          );
-        }
-      }
-      // Persist localStorePath in settings
-      if (window.electronAPI?.setSetting) {
-        await window.electronAPI.setSetting("localStorePath", state.targetPath);
-      }
+      await createAndPopulateDb(state.targetPath);
+      if (api.setSetting)
+        await api.setSetting("localStorePath", state.targetPath);
     } catch (e: any) {
-      let msg = e.message || "Unknown error";
-      if (msg.includes("premature close")) {
-        msg =
-          "Download failed: The connection was closed before completion. Please check your internet connection and try again.";
-      }
-      setError(msg);
-      // If SD card error, allow reselect by clearing source
+      setError(normalizeErrorMessage(e.message || "Unknown error"));
       if (state.source === "sdcard") {
-        setState((s) => ({ ...s, source: null }));
+        setWizardState({ source: null });
       }
     } finally {
       setIsInitializing(false);
       setProgress(null);
     }
   }, [
+    state,
+    api,
+    validateAndCopySdCardKits,
+    extractSquarpArchive,
+    createAndPopulateDb,
     setIsInitializing,
     setError,
-    setProgress,
-    state.targetPath,
-    state.source,
-    state.sdCardPath,
-    validateSdCardFolder,
   ]);
+
+  // --- Source selection handler ---
+  const handleSourceSelect = useCallback(
+    async (value: string) => {
+      // For SD card, prompt for folder and only set source/step if folder is picked
+      if (value === "sdcard" && api.selectLocalStorePath) {
+        const folder = await api.selectLocalStorePath();
+        if (folder) {
+          setState((s) => ({
+            ...s,
+            source: "sdcard",
+            sdCardPath: folder,
+            kitFolderValidationError: undefined,
+            targetPath: "",
+          }));
+        }
+        // If no folder picked, do not advance
+        return;
+      }
+      // For squarp/blank, set source and clear targetPath, but do not advance to step 2 until user picks target
+      setState((s) => ({
+        ...s,
+        source: value as LocalStoreSource,
+        kitFolderValidationError: undefined,
+        targetPath: "",
+        sdCardPath: undefined,
+      }));
+    },
+    [api],
+  );
+
+  // --- Derived UI helpers ---
+  const isSdCardSource = state.source === "sdcard";
+  const errorMessage = state.error || state.kitFolderValidationError || null;
+  const canInitialize = Boolean(
+    state.targetPath &&
+      state.source &&
+      (!isSdCardSource ||
+        (state.sdCardPath && !state.kitFolderValidationError)) &&
+      !state.isInitializing,
+  );
 
   return {
     state,
+    defaultPath,
+    progress,
     setTargetPath,
     setSource,
     setSdCardMounted,
     setError,
     setIsInitializing,
-    setSdCardPath: setSdCardPathPatched,
-    validateSdCardFolder,
+    setSdCardPath,
     initialize,
-    defaultPath,
-    progress,
+    validateSdCardFolder,
     handleSourceSelect,
     errorMessage,
     canInitialize,

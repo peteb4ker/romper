@@ -31,4 +31,6 @@ This document describes the schema for the Romper local SQLite database, which i
 
 ---
 
-_Last updated: 2025-06-12_
+_Last updated: 2025-06-17_
+
+<!-- Schema and diagrams confirmed up to date with electron/main/db/romperDbCore.ts as of 2025-06-17 -->

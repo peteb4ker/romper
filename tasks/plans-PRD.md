@@ -130,6 +130,35 @@ The Romper DB is a SQLite database with the following schema (no separate plan t
 - This replaces the previous flow (target first, then source).
 - All UI, logic, and documentation must reflect this new order for clarity and user experience.
 
+## Local Store Setup Wizard Flow (Updated 2025-06-17)
+
+The local store setup wizard consists of four discrete actions, which must be performed in order:
+
+1. **Choose the source** (SD card, Squarp.net archive, or blank folder)
+2. **Choose the target** location for the local store
+3. **Initialize the local store** (copy/download/unzip files, create folders, and initialize the Romper DB)
+4. **Cancel** (can be done at any time)
+
+- Step 2 cannot be performed before step 1 is complete and valid.
+- Step 3 cannot be performed before step 2 is complete and valid.
+- Step 4 (cancel) can be performed at any time.
+- The user can only progress from 1 → 2 → 3 if each choice is valid.
+- The user can go back from 3 → 2 → 1 to redo their choice at any time before initialization.
+
+### Progress Bar Usage
+
+The progress bar in the wizard is used for:
+- Downloading the Squarp.net archive zip (if selected as source)
+- Unzipping or moving files into place
+- Writing to the database (Romper DB initialization and record insertion)
+
+### UI/UX Requirements
+- The wizard must enforce the step order and only enable the next step when the current step is valid.
+- The user must be able to go back to previous steps to change their choices before initialization.
+- The cancel action must be available at all times and immediately stop any in-progress operation.
+- Progress and error states must be clearly displayed during long-running actions (download, unzip, DB write).
+- All UI must be accessible in both light and dark modes, with keyboard navigation and visible focus indicators.
+
 ---
-_Last updated: 2025-06-14_
+_Last updated: 2025-06-17_
 

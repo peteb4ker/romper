@@ -50,8 +50,26 @@ export function createRomperDbFile(dbDir: string): {
       ) {
         triedRecreate = true;
         try {
+          // Close any existing database connections first
+          try {
+            // Attempt to force close by creating a new connection and immediately closing it
+            const tempDb = new BetterSqlite3(dbPath);
+            tempDb.close();
+          } catch {
+            // Ignore errors from temp connection
+          }
+          
           fs.unlinkSync(dbPath);
-        } catch {}
+        } catch (unlinkError) {
+          // If we can't delete the file, try moving it instead (common on Windows)
+          try {
+            const backupPath = `${dbPath}.backup.${Date.now()}`;
+            fs.renameSync(dbPath, backupPath);
+          } catch {
+            // If both delete and rename fail, return the original error
+            return { success: false, error: msg };
+          }
+        }
         continue;
       }
       return { success: false, error: msg };

@@ -14,7 +14,7 @@ if (!dbPath) {
 
 const verifierScript = `
 import { verifyDatabase } from './dist/electron/dbVerifier.js';
-const dbPath = '${dbPath.replace(/'/g, "\\'")}'; // Escape single quotes
+const dbPath = ${JSON.stringify(dbPath)}; // Properly escape the path
 const result = verifyDatabase(dbPath);
 console.log(JSON.stringify(result));
 `;

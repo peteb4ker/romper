@@ -153,7 +153,7 @@ export function useKitBrowser({
 
   // --- Bank selection state and logic (moved from KitBrowser) ---
   const [selectedBank, setSelectedBank] = useState<string>("A");
-  const handleBankClick = (bank: string) => {
+  const handleBankClick = useCallback((bank: string) => {
     // Only scroll if the bank has kits
     if (!kits.some((k) => k[0] === bank)) return;
     const el = document.getElementById(`bank-${bank}`);
@@ -169,7 +169,7 @@ export function useKitBrowser({
         behavior: "auto",
       });
     }
-  };
+  }, [kits, scrollContainerRef]);
   const handleBankClickWithScroll = useCallback(
     (bank: string) => {
       // Only update selectedBank if the bank has kits

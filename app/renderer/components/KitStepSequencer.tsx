@@ -88,6 +88,18 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = ({
     }
   }, [isSeqPlaying, currentSeqStep, stepPattern, samples, onPlaySample]);
 
+  // Toggle step helper
+  const toggleStep = React.useCallback(
+    (voiceIdx: number, stepIdx: number) => {
+      if (!stepPattern) return;
+      const newPattern = stepPattern.map((row, v) =>
+        v === voiceIdx ? row.map((on, s) => (s === stepIdx ? !on : on)) : row,
+      );
+      setStepPattern(newPattern);
+    },
+    [stepPattern, setStepPattern],
+  );
+
   // Step sequencer keyboard navigation handler
   const handleStepGridKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -114,18 +126,6 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = ({
       stepPattern,
       toggleStep,
     ],
-  );
-
-  // Toggle step helper
-  const toggleStep = React.useCallback(
-    (voiceIdx: number, stepIdx: number) => {
-      if (!stepPattern) return;
-      const newPattern = stepPattern.map((row, v) =>
-        v === voiceIdx ? row.map((on, s) => (s === stepIdx ? !on : on)) : row,
-      );
-      setStepPattern(newPattern);
-    },
-    [stepPattern, setStepPattern],
   );
 
   const [localStepPattern, setLocalStepPattern] = React.useState<

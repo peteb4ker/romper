@@ -1,0 +1,130 @@
+name: End-to-End Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Show system info (debugging)
+        run: |
+          echo "OS: ${{ matrix.os }}"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Current directory: $(pwd)"
+        shell: bash
+
+      - name: Install system dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2
+
+      - name: Setup test environment
+        run: |
+          mkdir -p /tmp/e2e-sdcard
+          mkdir -p /tmp/e2e-test-data
+          # Copy test fixtures if they exist
+          if [ -d "tests/fixtures" ]; then
+            cp -r tests/fixtures/* /tmp/e2e-test-data/
+          fi
+        shell: bash
+
+      - name: Setup test environment (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir C:\temp\e2e-sdcard
+          mkdir C:\temp\e2e-test-data
+          if exist tests\fixtures xcopy tests\fixtures C:\temp\e2e-test-data\ /E /I /Q
+        shell: cmd
+
+      - name: Build application
+        run: npm run build
+
+      - name: Setup virtual display (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get install -y xvfb
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          sleep 3
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run end-to-end tests (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: npm run test:e2e
+        env:
+          ROMPER_E2E_SDCARD_PATH: /tmp/e2e-sdcard
+          CI: true
+          DISPLAY: ':99'
+
+      - name: Run end-to-end tests (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm run test:e2e
+        env:
+          ROMPER_E2E_SDCARD_PATH: C:\temp\e2e-sdcard
+          CI: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-test-results-${{ matrix.os }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-screenshots-${{ matrix.os }}
+          path: test-results/**/*.png
+          retention-days: 7
+
+  # Job to check if all e2e tests passed
+  e2e-tests-check:
+    runs-on: ubuntu-latest
+    needs: e2e-tests
+    if: always()
+    steps:
+      - name: Check e2e test results
+        run: |
+          if [[ "${{ needs.e2e-tests.result }}" == "success" ]]; then
+            echo "All e2e tests passed!"
+            exit 0
+          else
+            echo "Some e2e tests failed!"
+            exit 1
+          fi

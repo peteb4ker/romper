@@ -83,7 +83,8 @@ jobs:
       - name: Build application
         run: npm run build
 
-      - name: Verify build output
+      - name: Verify build output (Linux/macOS)
+        if: matrix.os != 'windows-latest'
         run: |
           echo "Checking build output..."
           ls -la dist/
@@ -94,6 +95,21 @@ jobs:
             exit 1
           fi
           echo "Build verification successful"
+        shell: bash
+
+      - name: Verify build output (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          echo "Checking build output..."
+          dir dist\
+          dir dist\electron\
+          dir dist\electron\main\
+          if (!(Test-Path "dist\electron\main\index.js")) {
+            Write-Error "ERROR: Main Electron file not found!"
+            exit 1
+          }
+          echo "Build verification successful"
+        shell: pwsh
 
       - name: Setup virtual display (Linux)
         if: matrix.os == 'ubuntu-latest'

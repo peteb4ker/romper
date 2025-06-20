@@ -120,9 +120,6 @@ jobs:
           echo "Checking if display :99 is available..."
           DISPLAY=:99 xdpyinfo || echo "Display check failed, but continuing..."
 
-      - name: Install Playwright (Electron support only)
-        run: npx playwright install electron
-
       - name: Run end-to-end tests (Linux/macOS)
         if: matrix.os != 'windows-latest'
         run: npm run test:e2e

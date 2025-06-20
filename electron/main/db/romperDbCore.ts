@@ -58,7 +58,7 @@ export function createRomperDbFile(dbDir: string): {
           } catch {
             // Ignore errors from temp connection
           }
-          
+
           fs.unlinkSync(dbPath);
         } catch (unlinkError) {
           // If we can't delete the file, try moving it instead (common on Windows)

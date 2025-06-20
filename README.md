@@ -1,57 +1,71 @@
 # 🎛️ Rample Sample Manager
 
+[![Tests](https://github.com/peteb4ker/romper/actions/workflows/test.yml/badge.svg)](https://github.com/peteb4ker/romper/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/peteb4ker/romper/branch/main/graph/badge.svg)](https://codecov.io/gh/peteb4ker/romper)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/release/peteb4ker/romper.svg)](https://github.com/peteb4ker/romper/releases/latest)
 
 A cross-platform desktop app to manage sample kits for the **Squarp Rample** — a 4-voice Eurorack sampler. Built with **Electron**, **React**, and **Vite**, this app makes it easy to organize, preview, and protect your SD card kits.
 
----
+## ✨ Features
 
-# Monorepo Structure
+- 🎵 **Kit Browser** - Browse and organize your Rample sample kits
+- 🔊 **Sample Preview** - Listen to samples with built-in audio playback, including 4-channel xox sampler.
+- 📁 **SD Card Management** - Direct integration with Rample SD card structure
+- 💾 **Safe Operations** - Protect your samples with validation and backups
+- 🌙 **Dark/Light Theme** - Modern UI that adapts to your preference
 
-This repository is organized as a monorepo with two main packages:
-
-- `app/` – The React/Vite renderer and shared logic
-- `electron/` – The Electron main process, preload scripts, and native modules
+## 🏗️ Project Structure
 
 ```
 romper/
-  app/         # React renderer, shared code, tests, and app-specific configs
-  electron/    # Electron main process, preload, resources, and electron-specific configs
-  docs/        # Documentation
-  tasks/       # Project management and PRD
-  ...          # Shared configs (eslint, tailwind, vite, tsconfig, etc.)
+  app/renderer/    # React UI components and renderer logic
+  electron/        # Electron main process and native integrations
+  shared/          # Shared utilities between renderer and main
+  docs/            # Documentation
+  tests/           # End-to-end tests
 ```
 
-## Getting Started
+## 🚀 Getting Started
 
-### Install dependencies (from repo root)
+### Install dependencies
 
 ```sh
 npm install
 ```
 
-### App (Renderer)
+### Development
 
 ```sh
-cd app
-npm run dev      # Start Vite dev server
+npm run dev      # Start development with hot reload
+```
+
+### Building
+
+```sh
 npm run build    # Build for production
-npm run test     # Run Vitest unit tests
 ```
 
-### Electron (Main/Preload)
+### Testing
 
 ```sh
-cd electron
-npm run start    # Start Electron in development mode
-npm run build    # Build Electron main/preload
-npm test         # (if tests are present)
+npm run lint     # Run ESLint
+npm test         # Run unit and integration tests
+npm run test:e2e # Run end-to-end tests
 ```
 
-## Notes
-- Each package manages its own dependencies and build/test scripts.
-- Shared configuration is in the repo root and referenced by both packages.
-- See each package's README or package.json for more details.
+## 🎯 Getting Started with Romper
+
+Romper can work with your SD card in several ways:
+
+### 📱 **From your existing Rample SD card**
+If you already have a Rample with sample kits, just point Romper to your SD card directory and start managing your existing kits.
+
+### 🏭 **From Squarp factory samples**
+Automatically download the official factory sample packs from [squarp.net](https://squarp.net) and use Romper to organize them into your preferred kit structure.
+
+### 📁 **From an empty folder**
+Start fresh! Create a new folder and let Romper help you build your sample library from scratch. Perfect for organizing your own samples into Rample-compatible kits.
 
 ---
 

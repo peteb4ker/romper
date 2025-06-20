@@ -59,7 +59,8 @@ jobs:
             libasound2-dev \
             libatspi2.0-0 \
             libgtk-3-0 \
-            libgdk-pixbuf2.0-0
+            libgdk-pixbuf2.0-0 \
+            x11-utils
 
       - name: Setup test environment
         run: |
@@ -82,13 +83,29 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Verify build output
+        run: |
+          echo "Checking build output..."
+          ls -la dist/
+          ls -la dist/electron/
+          ls -la dist/electron/main/
+          if [ ! -f "dist/electron/main/index.js" ]; then
+            echo "ERROR: Main Electron file not found!"
+            exit 1
+          fi
+          echo "Build verification successful"
+
       - name: Setup virtual display (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get install -y xvfb
+          # Start Xvfb and wait for it to be ready
           export DISPLAY=:99
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          sleep 3
+          sleep 5
+          # Verify display is working
+          echo "Checking if display :99 is available..."
+          DISPLAY=:99 xdpyinfo || echo "Display check failed, but continuing..."
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps

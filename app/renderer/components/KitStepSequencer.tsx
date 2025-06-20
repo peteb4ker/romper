@@ -106,7 +106,14 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = ({
       }
       e.preventDefault();
     },
-    [sequencerOpen, focusedStep, moveFocus, setStepPattern, stepPattern],
+    [
+      sequencerOpen,
+      focusedStep,
+      moveFocus,
+      setStepPattern,
+      stepPattern,
+      toggleStep,
+    ],
   );
 
   // Toggle step helper

@@ -101,7 +101,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       () => ({
         scrollAndFocusKitByIndex,
       }),
-      [kitsToDisplay, setFocus, onFocusKit],
+      [kitsToDisplay, setFocus, onFocusKit, scrollAndFocusKitByIndex],
     );
 
     // Keyboard navigation handler: Support A-Z hotkeys only (remove up/down/left/right/Enter/Space)

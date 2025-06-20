@@ -23,6 +23,7 @@ interface KitBrowserProps {
 }
 
 const KitBrowser: React.FC<KitBrowserProps> = (props) => {
+  const { onMessage } = props;
   const kitListRef = useRef<KitListHandle>(null);
   // Ensure sdCardPath is always a string (never null)
   const logic = useKitBrowser({
@@ -63,19 +64,19 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
   const [showLocalStoreWizard, setShowLocalStoreWizard] = React.useState(false);
 
   React.useEffect(() => {
-    if (logic.sdCardWarning && props.onMessage) {
-      props.onMessage({
+    if (logic.sdCardWarning && onMessage) {
+      onMessage({
         text: logic.sdCardWarning,
         type: "warning",
         duration: 5000,
       });
     }
-  }, [logic.sdCardWarning, props.onMessage]);
+  }, [logic.sdCardWarning, onMessage]);
   React.useEffect(() => {
-    if (logic.error && props.onMessage) {
-      props.onMessage({ text: logic.error, type: "error", duration: 7000 });
+    if (logic.error && onMessage) {
+      onMessage({ text: logic.error, type: "error", duration: 7000 });
     }
-  }, [logic.error, props.onMessage]);
+  }, [logic.error, onMessage]);
 
   // Register global A-Z navigation for bank selection and kit focus
   React.useEffect(() => {

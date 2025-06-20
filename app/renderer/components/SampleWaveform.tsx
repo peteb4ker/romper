@@ -61,7 +61,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         } catch (e) {}
       }
     };
-  }, [filePath]);
+  }, [filePath, onError]);
 
   // Draw waveform
   function drawWaveform(buffer: AudioBuffer) {
@@ -149,12 +149,12 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     }
     setIsPlaying(false);
     setPlayhead(0);
-  }, [stopTrigger]);
+  }, [stopTrigger, isPlaying]);
 
   // Notify parent about playing state changes
   useEffect(() => {
     if (onPlayingChange) onPlayingChange(isPlaying);
-  }, [isPlaying]);
+  }, [isPlaying, onPlayingChange]);
 
   // Draw playhead
   useEffect(() => {

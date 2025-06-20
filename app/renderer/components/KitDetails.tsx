@@ -40,6 +40,8 @@ interface KitDetailsAllProps extends KitDetailsProps {
 }
 
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
+  const { onMessage } = props;
+
   // Playback logic
   const {
     playbackError,
@@ -73,7 +75,10 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   } = useKitLabel(props);
 
   // Default samples to avoid undefined errors
-  const samples = props.samples || { 1: [], 2: [], 3: [], 4: [] };
+  const samples = React.useMemo(
+    () => props.samples || { 1: [], 2: [], 3: [], 4: [] },
+    [props.samples],
+  );
 
   // Auto-scan logic: triggers auto-rescan if all voice names are missing and samples are loaded
   useKitDetails({
@@ -86,23 +91,23 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
 
   // Show playback errors via onMessage callback
   React.useEffect(() => {
-    if (playbackError && props.onMessage) {
-      props.onMessage?.({ type: "error", text: playbackError });
+    if (playbackError && onMessage) {
+      onMessage?.({ type: "error", text: playbackError });
     }
-  }, [playbackError, props.onMessage]);
+  }, [playbackError, onMessage]);
 
   // Show label errors via onMessage callback
   React.useEffect(() => {
-    if (labelsError && props.onMessage) {
-      props.onMessage?.({ type: "error", text: labelsError });
+    if (labelsError && onMessage) {
+      onMessage?.({ type: "error", text: labelsError });
     }
-  }, [labelsError, props.onMessage]);
+  }, [labelsError, onMessage]);
 
   // Listen for SampleWaveform errors bubbled up from children
   React.useEffect(() => {
-    if (!props.onMessage) return;
+    if (!onMessage) return;
     const handler = (e: CustomEvent) => {
-      props.onMessage?.({ type: "error", text: e.detail });
+      onMessage?.({ type: "error", text: e.detail });
     };
     window.addEventListener("SampleWaveformError", handler as EventListener);
     return () => {
@@ -111,7 +116,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         handler as EventListener,
       );
     };
-  }, [props.onMessage]);
+  }, [onMessage]);
 
   const [selectedVoice, setSelectedVoice] = React.useState(1);
   const [selectedSampleIdx, setSelectedSampleIdx] = React.useState(0);

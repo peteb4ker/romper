@@ -1,7 +1,8 @@
-import type { ElectronAPI } from "../../electron.d";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { groupSamplesByVoice } from "../../../../shared/kitUtilsShared";
+import { config } from "../../config";
+import type { ElectronAPI } from "../../electron.d";
 import { createRomperDb, insertKit, insertSample } from "../utils/romperDb";
 
 export type LocalStoreSource = "sdcard" | "squarp" | "blank";
@@ -14,6 +15,7 @@ export interface LocalStoreWizardState {
   error: string | null;
   sdCardPath?: string;
   kitFolderValidationError?: string | null;
+  sourceConfirmed?: boolean;
 }
 
 export interface ProgressEvent {
@@ -68,6 +70,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
     sdCardMounted: false,
     isInitializing: false,
     error: null,
+    sourceConfirmed: false,
   });
   const [defaultPath, setDefaultPath] = useState("");
   const [progress, setProgress] = useState<ProgressEvent | null>(null);
@@ -108,6 +111,11 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
         sdCardPath,
         kitFolderValidationError: undefined,
       })),
+    [],
+  );
+  const setSourceConfirmed = useCallback(
+    (confirmed: boolean) =>
+      setState((s) => ({ ...s, sourceConfirmed: confirmed })),
     [],
   );
 
@@ -221,7 +229,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
 
   const extractSquarpArchive = useCallback(
     async (targetPath: string) => {
-      const url = "https://data.squarp.net/RampleSamplesV1-2.zip";
+      const url = config.squarpArchiveUrl;
       const result = await api.downloadAndExtractArchive?.(
         url,
         targetPath,
@@ -243,39 +251,44 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
         throw new Error("listFilesInRoot is not available");
       const kitFolders = await api.listFilesInRoot(targetPath);
       const validKits = getKitFolders(kitFolders);
-      await reportStepProgress({
-        items: validKits,
-        phase: "Writing to database",
-        onStep: async (kitName) => {
-          const kitPath = `${targetPath}/${kitName}`;
-          if (!api.listFilesInRoot)
-            throw new Error("listFilesInRoot is not available");
-          const files = await api.listFilesInRoot(kitPath);
-          const wavFiles = files.filter((f: string) => /\.wav$/i.test(f));
-          const kitId = await insertKit(dbDir, {
-            name: kitName,
-            plan_enabled: false,
-          });
-          const voices = groupSamplesByVoice(wavFiles);
-          for (const voiceNum of Object.keys(voices)) {
-            voices[Number(voiceNum)]?.forEach?.(
-              (filename: string, idx: number) => {
-                insertSample(dbDir, {
-                  kit_id: kitId,
-                  filename,
-                  slot_number: idx + 1,
-                  is_stereo: false,
-                });
-              },
-            );
-          }
-        },
-      });
+      if (validKits.length > 0) {
+        await reportStepProgress({
+          items: validKits,
+          phase: "Writing to database",
+          onStep: async (kitName) => {
+            const kitPath = `${targetPath}/${kitName}`;
+            if (!api.listFilesInRoot)
+              throw new Error("listFilesInRoot is not available");
+            const files = await api.listFilesInRoot(kitPath);
+            const wavFiles = files.filter((f: string) => /\.wav$/i.test(f));
+            const kitId = await insertKit(dbDir, {
+              name: kitName,
+              plan_enabled: false,
+            });
+            const voices = groupSamplesByVoice(wavFiles);
+            for (const voiceNum of Object.keys(voices)) {
+              const voiceSamples = voices[Number(voiceNum)];
+              if (voiceSamples) {
+                for (let idx = 0; idx < voiceSamples.length; idx++) {
+                  const filename = voiceSamples[idx];
+                  await insertSample(dbDir, {
+                    kit_id: kitId,
+                    filename,
+                    slot_number: idx + 1,
+                    is_stereo: false,
+                  });
+                }
+              }
+            }
+          },
+        });
+      }
     },
     [api, reportProgress],
   );
 
   const initialize = useCallback(async () => {
+    console.log("[Hook] initialize starting with state:", state);
     setIsInitializing(true);
     setError(null);
     setProgress(null);
@@ -285,15 +298,22 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
       if (api.ensureDir) await api.ensureDir(state.targetPath);
       if (state.source === "sdcard") {
         if (!state.sdCardPath) throw new Error("No SD card path selected");
+        console.log("[Hook] initialize - copying SD card kits");
         await validateAndCopySdCardKits(state.sdCardPath, state.targetPath);
       }
       if (state.source === "squarp") {
+        console.log("[Hook] initialize - extracting Squarp archive");
         await extractSquarpArchive(state.targetPath);
+        console.log("[Hook] initialize - Squarp archive extraction completed");
       }
+      console.log("[Hook] initialize - creating and populating database");
       await createAndPopulateDb(state.targetPath);
+      console.log("[Hook] initialize - database creation completed");
       if (api.setSetting)
         await api.setSetting("localStorePath", state.targetPath);
+      console.log("[Hook] initialize completed successfully");
     } catch (e: any) {
+      console.error("[Hook] initialize error:", e);
       setError(normalizeErrorMessage(e.message || "Unknown error"));
       if (state.source === "sdcard") {
         setWizardState({ source: null });
@@ -315,9 +335,15 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
   // --- Source selection handler ---
   const handleSourceSelect = useCallback(
     async (value: string) => {
-      // For SD card, prompt for folder and only set source/step if folder is picked
-      if (value === "sdcard" && api.selectLocalStorePath) {
-        const folder = await api.selectLocalStorePath();
+      // For SD card, use config value if available, otherwise prompt for folder
+      if (value === "sdcard") {
+        let folder = config.sdCardPath; // Check config first (used in E2E tests)
+
+        if (!folder && api.selectLocalStorePath) {
+          // Fall back to native picker if no config value
+          folder = await api.selectLocalStorePath();
+        }
+
         if (folder) {
           setState((s) => ({
             ...s,
@@ -327,7 +353,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
             targetPath: "",
           }));
         }
-        // If no folder picked, do not advance
+        // If no folder available (neither config nor picked), do not advance
         return;
       }
       // For squarp/blank, set source and clear targetPath, but do not advance to step 2 until user picks target
@@ -363,6 +389,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
     setError,
     setIsInitializing,
     setSdCardPath,
+    setSourceConfirmed,
     initialize,
     validateSdCardFolder,
     handleSourceSelect,

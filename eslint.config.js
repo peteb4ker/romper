@@ -2,6 +2,7 @@ import js from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import prettierConfig from "eslint-config-prettier";
 import prettier from "eslint-plugin-prettier";
+import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import globals from "globals";
 // Patch: trim whitespace from all global keys
@@ -48,12 +49,14 @@ export default defineConfig([
     },
     plugins: {
       "@typescript-eslint": tseslint.plugin,
+      "react-hooks": reactHooks,
       "simple-import-sort": simpleImportSort,
       prettier,
     },
     rules: {
       ...tseslint.configs.recommendedTypeChecked.rules,
       ...prettierConfig.rules,
+      ...reactHooks.configs.recommended.rules,
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
       "prettier/prettier": "error",

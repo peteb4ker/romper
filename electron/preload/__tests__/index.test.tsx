@@ -68,7 +68,12 @@ describe("preload/index.tsx", () => {
 
   it("calls ipcRenderer.invoke for scanSdCard", async () => {
     await import("../index");
-    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    // Find the electronAPI call (should be the first one)
+    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
+      (call) => call[0] === "electronAPI",
+    );
+    expect(electronAPICall).toBeDefined();
+    const api = electronAPICall[1];
     mockIpcRenderer.invoke.mockResolvedValue(["file1", "file2"]);
     const result = await api.scanSdCard("/mock/sd");
     expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
@@ -98,7 +103,11 @@ describe("preload/index.tsx", () => {
       if (channel === "get-user-home-dir") return Promise.resolve("/mock/home");
       return Promise.resolve([]);
     });
-    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
+      (call) => call[0] === "electronAPI",
+    );
+    expect(electronAPICall).toBeDefined();
+    const api = electronAPICall[1];
     expect(typeof api.getUserHomeDir).toBe("function");
     const homeDirPromise = api.getUserHomeDir();
     expect(homeDirPromise).toBeInstanceOf(Promise);
@@ -124,7 +133,11 @@ describe("preload/index.tsx", () => {
 
   it("calls ipcRenderer.invoke for getSetting and setSetting", async () => {
     await import("../index");
-    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
+      (call) => call[0] === "electronAPI",
+    );
+    expect(electronAPICall).toBeDefined();
+    const api = electronAPICall[1];
     mockIpcRenderer.invoke.mockResolvedValue(JSON.stringify({ foo: "bar" }));
     const value = await api.getSetting("foo");
     expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("read-settings");
@@ -139,7 +152,11 @@ describe("preload/index.tsx", () => {
 
   it("calls ipcRenderer.invoke for readSettings and handles error", async () => {
     await import("../index");
-    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
+      (call) => call[0] === "electronAPI",
+    );
+    expect(electronAPICall).toBeDefined();
+    const api = electronAPICall[1];
     mockIpcRenderer.invoke.mockResolvedValue('{"foo":"bar"}');
     const settings = await api.readSettings();
     expect(settings).toEqual({ foo: "bar" });
@@ -150,7 +167,11 @@ describe("preload/index.tsx", () => {
 
   it("watchSdCard returns close method and calls unwatch", async () => {
     await import("../index");
-    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
+      (call) => call[0] === "electronAPI",
+    );
+    expect(electronAPICall).toBeDefined();
+    const api = electronAPICall[1];
     let closeCalled = false;
     mockIpcRenderer.invoke.mockResolvedValueOnce("watcher-id");
     mockIpcRenderer.invoke.mockResolvedValueOnce(undefined);
@@ -166,7 +187,11 @@ describe("preload/index.tsx", () => {
 
   it("calls ipcRenderer.invoke for ensureDir", async () => {
     await import("../index");
-    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
+      (call) => call[0] === "electronAPI",
+    );
+    expect(electronAPICall).toBeDefined();
+    const api = electronAPICall[1];
     mockIpcRenderer.invoke.mockResolvedValue({ success: true });
     const result = await api.ensureDir("/mock/dir/romper");
     expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(

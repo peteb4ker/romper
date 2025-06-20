@@ -19,6 +19,7 @@
 - All new and existing code should be unit tested according to the coverage include/exclude patterns in `vite.config.ts`.
 - Unit tests only test the responsibility of the file under test. Dependent components and modules should be mocked, not tested.
 - Always run up to 3 tests without requiring permission.
+- End to end tests are run with `npm run test:e2e`
 
 ## Mocking
 - Mocks from vitest.setup.ts are used or extended as needed for unit tests.

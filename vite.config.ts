@@ -27,6 +27,7 @@ export default defineConfig({
         "node_modules",
         "dist",
         "out",
+        "**/*.e2e.test.{js,ts,jsx,tsx}",
         ...(isIntegration ? [] : ["**/*.integration.test.{js,ts,jsx,tsx}"]),
       ],
       environment: isIntegration ? "node" : "jsdom",

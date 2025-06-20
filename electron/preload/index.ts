@@ -1,5 +1,11 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 
+// Expose environment variables to renderer for E2E testing
+contextBridge.exposeInMainWorld("romperEnv", {
+  ROMPER_SDCARD_PATH: process.env.ROMPER_SDCARD_PATH,
+  ROMPER_SQUARP_ARCHIVE_URL: process.env.ROMPER_SQUARP_ARCHIVE_URL,
+});
+
 // Ensure the userData directory and settings path are resolved via IPC
 const getUserDataPath = async (): Promise<string> => {
   return await ipcRenderer.invoke("get-user-data-path");
@@ -191,7 +197,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
         url,
         destDir,
       );
+      console.log("[Preload] downloadAndExtractArchive result:", result);
       return result;
+    } catch (error) {
+      console.error("[Preload] downloadAndExtractArchive error:", error);
+      throw error;
     } finally {
       if (progressListener)
         ipcRenderer.removeListener("archive-progress", progressListener);

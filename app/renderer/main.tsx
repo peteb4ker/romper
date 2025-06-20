@@ -3,11 +3,12 @@ import "./styles/index.css";
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import {
-  BrowserRouter as Router,
+  HashRouter as Router,
   Navigate,
   Route,
   Routes,
 } from "react-router-dom";
+import { toast } from "sonner";
 
 import { useMessageDisplay } from "./components/hooks/useMessageDisplay";
 import MessageDisplay from "./components/MessageDisplay";
@@ -17,6 +18,12 @@ import { SettingsProvider } from "./utils/SettingsContext";
 import { applyTheme } from "./utils/settingsManager";
 import AboutView from "./views/AboutView";
 import KitsView from "./views/KitsView";
+
+declare global {
+  interface Window {
+    toast: typeof toast;
+  }
+}
 
 const App = () => {
   useEffect(() => {
@@ -52,5 +59,7 @@ root.render(
     <App />
   </SettingsProvider>,
 );
+
+window.toast = toast;
 
 export { App };

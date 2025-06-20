@@ -224,15 +224,31 @@ export function registerIpcHandlers(
       const os = await import("os");
       const fsPromises = fs.promises;
       const tmp = os.tmpdir();
-      const tmpZipPath = path.join(tmp, `romper_download_${Date.now()}.zip`);
+      let tmpZipPath: string | undefined;
+
       try {
-        // Download
-        await downloadArchive(url, tmpZipPath, (percent: number | null) => {
-          event.sender.send("archive-progress", {
-            phase: "Downloading",
-            percent,
+        // Handle file:// URLs for testing
+        if (url.startsWith("file://")) {
+          // Extract the local file path from the file:// URL
+          tmpZipPath = url.replace("file://", "");
+          console.log("[Main] Using local file for extraction:", tmpZipPath);
+
+          // Check if the file exists
+          if (!fs.existsSync(tmpZipPath)) {
+            throw new Error(`Local file does not exist: ${tmpZipPath}`);
+          }
+        } else {
+          // Download from HTTPS URL
+          tmpZipPath = path.join(tmp, `romper_download_${Date.now()}.zip`);
+          // Download
+          await downloadArchive(url, tmpZipPath, (percent: number | null) => {
+            event.sender.send("archive-progress", {
+              phase: "Downloading",
+              percent,
+            });
           });
-        });
+        }
+
         // Count entries
         let entryCount = 0;
         try {
@@ -256,9 +272,12 @@ export function registerIpcHandlers(
         event.sender.send("archive-progress", { phase: "Done", percent: 100 });
         return { success: true };
       } catch (e) {
-        try {
-          await fsPromises.unlink(tmpZipPath);
-        } catch {}
+        // Only clean up the temp file if we downloaded it (not for file:// URLs)
+        if (!url.startsWith("file://") && tmpZipPath) {
+          try {
+            await fsPromises.unlink(tmpZipPath);
+          } catch {}
+        }
         let message = e instanceof Error ? e.message : String(e);
         if (message && message.includes("premature close")) {
           message =

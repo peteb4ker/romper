@@ -1,3 +1,5 @@
+console.log("[Romper Electron] Main process entrypoint loaded");
+
 import { app, BrowserWindow } from "electron";
 import fs from "fs";
 import path from "path";
@@ -28,6 +30,13 @@ let currentSamplePlayer: unknown = null; // TODO: Refine type if possible
 const isDev = process.env.NODE_ENV === "development";
 
 function createWindow() {
+  console.log("[Electron Main] Environment variables:");
+  console.log("  ROMPER_SDCARD_PATH:", process.env.ROMPER_SDCARD_PATH);
+  console.log(
+    "  ROMPER_SQUARP_ARCHIVE_URL:",
+    process.env.ROMPER_SQUARP_ARCHIVE_URL,
+  );
+
   const win: BrowserWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -48,7 +57,11 @@ function createWindow() {
       );
     });
   } else {
-    const indexPath = path.resolve(__dirname, "../renderer/index.html");
+    const indexPath = path.resolve(__dirname, "../../renderer/index.html");
+    console.log("[Romper Electron] Attempting to load:", indexPath);
+    if (!fs.existsSync(indexPath)) {
+      console.error("[Romper Electron] index.html not found at:", indexPath);
+    }
     win.loadFile(indexPath).catch((err: unknown) => {
       console.error(
         "Failed to load index.html:",

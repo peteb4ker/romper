@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { toast } from "sonner";
 
 import { useKitBrowser } from "./hooks/useKitBrowser";
 import { useLocalStoreWizard } from "./hooks/useLocalStoreWizard";
@@ -180,6 +181,15 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
             <h2 className="text-xl font-bold mb-4">Romper Local Store Setup</h2>
             <LocalStoreWizardUI
               onClose={() => setShowLocalStoreWizard(false)}
+              onSuccess={() => {
+                setShowLocalStoreWizard(false);
+                {
+                  /* TODO replace with proper message handling */
+                }
+                toast.success("Local store initialized successfully!", {
+                  duration: 5000,
+                });
+              }}
             />
           </div>
         </div>

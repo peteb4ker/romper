@@ -137,7 +137,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       setPlayhead(0);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [playTrigger]);
+  }, [playTrigger, audioBuffer]);
 
   // Stop playback when stopTrigger changes
   useEffect(() => {

@@ -13,6 +13,11 @@ import { TestSettingsProvider } from "./TestSettingsProvider";
 
 describe("KitsView", () => {
   beforeEach(() => {
+    // Ensure we have a proper window object
+    if (typeof window === "undefined") {
+      global.window = {} as any;
+    }
+
     // Mock all electronAPI methods outside of the test body for isolation
     window.electronAPI = {
       scanSdCard: vi.fn().mockResolvedValue(["A0", "A1"]),
@@ -38,6 +43,16 @@ describe("KitsView", () => {
         .fn()
         .mockResolvedValue({ slice: () => new ArrayBuffer(8) }),
       writeRampleLabels: vi.fn().mockResolvedValue(undefined),
+      // Add other required methods that might be missing
+      selectSdCard: vi.fn().mockResolvedValue("/sd"),
+      watchSdCard: vi.fn().mockReturnValue({ close: vi.fn() }),
+      getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),
+      readSettings: vi.fn().mockResolvedValue({ sdCardPath: "/sd" }),
+      setSetting: vi.fn().mockResolvedValue(undefined),
+      getSetting: vi.fn().mockResolvedValue("/sd"),
+      createKit: vi.fn().mockResolvedValue(undefined),
+      copyKit: vi.fn().mockResolvedValue(undefined),
+      selectLocalStorePath: vi.fn().mockResolvedValue("/mock/custom/path"),
     };
   });
   afterEach(() => {

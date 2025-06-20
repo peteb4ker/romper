@@ -1,5 +1,6 @@
 import React, {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -77,31 +78,58 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
     // selectedIdx is always derived from focusedIdx (not just focusedKit)
     const selectedIdx = focusedIdx;
 
+    // Precompute which rows have anchors for height calculation
+    const rowHasAnchor = kitsToDisplay.map((kit, idx, arr) =>
+      showBankAnchor(kit, idx, arr),
+    );
+
+    // Height function for VariableSizeList
+    const getItemSize = useCallback(
+      (index: number) =>
+        rowHasAnchor[index] ? BANK_ROW_HEIGHT : KIT_ROW_HEIGHT,
+      [rowHasAnchor],
+    );
+
+    // Helper to sum row heights up to a given index
+    const getOffsetForIndex = useCallback(
+      (index: number) => {
+        let offset = 0;
+        for (let i = 0; i < index; i++) {
+          offset += getItemSize(i);
+        }
+        return offset;
+      },
+      [getItemSize],
+    );
+
     // Shared scroll and focus logic
-    const scrollAndFocusKitByIndex = (idx: number) => {
-      if (idx < 0 || idx >= kitsToDisplay.length) return;
-      if (listRef.current) {
-        const offset = getOffsetForIndex(idx) - HEADER_HEIGHT;
-        listRef.current.scrollTo(Math.max(0, offset));
-        console.log(
-          "[KitList] scrollAndFocusKitByIndex",
-          idx,
-          "offset",
-          offset,
-        );
-      } else {
-        console.warn("[KitList] listRef.current is null");
-      }
-      setFocus(idx);
-      if (onFocusKit) onFocusKit(kitsToDisplay[idx]);
-    };
+    const scrollAndFocusKitByIndex = useCallback(
+      (idx: number) => {
+        if (idx < 0 || idx >= kitsToDisplay.length) return;
+        if (listRef.current) {
+          const offset = getOffsetForIndex(idx) - HEADER_HEIGHT;
+          listRef.current.scrollTo(Math.max(0, offset));
+          console.log(
+            "[KitList] scrollAndFocusKitByIndex",
+            idx,
+            "offset",
+            offset,
+          );
+        } else {
+          console.warn("[KitList] listRef.current is null");
+        }
+        setFocus(idx);
+        if (onFocusKit) onFocusKit(kitsToDisplay[idx]);
+      },
+      [kitsToDisplay, setFocus, onFocusKit, getOffsetForIndex],
+    );
 
     useImperativeHandle(
       ref,
       () => ({
         scrollAndFocusKitByIndex,
       }),
-      [kitsToDisplay, setFocus, onFocusKit, scrollAndFocusKitByIndex],
+      [scrollAndFocusKitByIndex],
     );
 
     // Keyboard navigation handler: Support A-Z hotkeys only (remove up/down/left/right/Enter/Space)
@@ -138,24 +166,6 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
         if (onFocusKit) onFocusKit(kit);
         setFocus(idx);
       }
-    };
-
-    // Precompute which rows have anchors for height calculation
-    const rowHasAnchor = kitsToDisplay.map((kit, idx, arr) =>
-      showBankAnchor(kit, idx, arr),
-    );
-
-    // Height function for VariableSizeList
-    const getItemSize = (index: number) =>
-      rowHasAnchor[index] ? BANK_ROW_HEIGHT : KIT_ROW_HEIGHT;
-
-    // Helper to sum row heights up to a given index
-    const getOffsetForIndex = (index: number) => {
-      let offset = 0;
-      for (let i = 0; i < index; i++) {
-        offset += getItemSize(i);
-      }
-      return offset;
     };
 
     // Virtualized row renderer

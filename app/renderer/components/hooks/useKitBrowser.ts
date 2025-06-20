@@ -153,23 +153,27 @@ export function useKitBrowser({
 
   // --- Bank selection state and logic (moved from KitBrowser) ---
   const [selectedBank, setSelectedBank] = useState<string>("A");
-  const handleBankClick = useCallback((bank: string) => {
-    // Only scroll if the bank has kits
-    if (!kits.some((k) => k[0] === bank)) return;
-    const el = document.getElementById(`bank-${bank}`);
-    if (el && scrollContainerRef.current) {
-      const header = document.querySelector(".sticky.top-0");
-      const headerHeight =
-        header instanceof HTMLElement ? header.offsetHeight : 0;
-      const containerRect = scrollContainerRef.current.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
-      const offset = elRect.top - containerRect.top - headerHeight - 8;
-      scrollContainerRef.current.scrollTo({
-        top: scrollContainerRef.current.scrollTop + offset,
-        behavior: "auto",
-      });
-    }
-  }, [kits, scrollContainerRef]);
+  const handleBankClick = useCallback(
+    (bank: string) => {
+      // Only scroll if the bank has kits
+      if (!kits.some((k) => k[0] === bank)) return;
+      const el = document.getElementById(`bank-${bank}`);
+      if (el && scrollContainerRef.current) {
+        const header = document.querySelector(".sticky.top-0");
+        const headerHeight =
+          header instanceof HTMLElement ? header.offsetHeight : 0;
+        const containerRect =
+          scrollContainerRef.current.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const offset = elRect.top - containerRect.top - headerHeight - 8;
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollTop + offset,
+          behavior: "auto",
+        });
+      }
+    },
+    [kits, scrollContainerRef],
+  );
   const handleBankClickWithScroll = useCallback(
     (bank: string) => {
       // Only update selectedBank if the bank has kits

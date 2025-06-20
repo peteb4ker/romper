@@ -136,29 +136,32 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
   }
 
   // --- Progress reporting helper ---
-  function reportStepProgress({
-    items,
-    phase,
-    onStep,
-  }: {
-    items: string[];
-    phase: string;
-    onStep: (item: string, idx: number) => Promise<void>;
-  }) {
-    // Sequentially process items for correct progress updates
-    return (async () => {
-      for (let idx = 0; idx < items.length; idx++) {
-        const item = items[idx];
-        reportProgress({
-          phase,
-          percent: Math.round(((idx + 1) / items.length) * 100),
-          file: item,
-        });
-        await onStep(item, idx);
-      }
-      if (items.length > 0) reportProgress({ phase, percent: 100 });
-    })();
-  }
+  const reportStepProgress = useCallback(
+    ({
+      items,
+      phase,
+      onStep,
+    }: {
+      items: string[];
+      phase: string;
+      onStep: (item: string, idx: number) => Promise<void>;
+    }) => {
+      // Sequentially process items for correct progress updates
+      return (async () => {
+        for (let idx = 0; idx < items.length; idx++) {
+          const item = items[idx];
+          reportProgress({
+            phase,
+            percent: Math.round(((idx + 1) / items.length) * 100),
+            file: item,
+          });
+          await onStep(item, idx);
+        }
+        if (items.length > 0) reportProgress({ phase, percent: 100 });
+      })();
+    },
+    [reportProgress],
+  );
 
   // --- Load default path on mount ---
   useEffect(() => {
@@ -224,7 +227,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
         },
       });
     },
-    [api, validateSdCardFolder],
+    [api, validateSdCardFolder, reportStepProgress, setWizardState],
   );
 
   const extractSquarpArchive = useCallback(
@@ -284,7 +287,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
         });
       }
     },
-    [api, reportProgress],
+    [api, reportStepProgress],
   );
 
   const initialize = useCallback(async () => {
@@ -330,6 +333,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
     createAndPopulateDb,
     setIsInitializing,
     setError,
+    setWizardState,
   ]);
 
   // --- Source selection handler ---

@@ -63,7 +63,7 @@ const KitsView = () => {
       ).catch(() => null);
       setKitLabels(loadedLabels && loadedLabels.kits ? loadedLabels.kits : {});
     })();
-  }, [sdCardPath]);
+  }, [sdCardPath, safeListFilesInRoot, safeReadRampleLabels]);
 
   // When a kit is selected, set its samples
   useEffect(() => {

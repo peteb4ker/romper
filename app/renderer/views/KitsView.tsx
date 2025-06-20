@@ -34,15 +34,21 @@ const KitsView = () => {
   const safeReadRampleLabels = window.electronAPI?.readRampleLabels?.bind(
     window.electronAPI,
   );
+  const safeScanSdCard = window.electronAPI?.scanSdCard?.bind(
+    window.electronAPI,
+  );
 
   // Load all kits, samples, and labels on SD card change
   useEffect(() => {
     if (!sdCardPath) return;
     (async () => {
       // 1. Scan all kits
-      const kitNames = await window.electronAPI
-        .scanSdCard(sdCardPath)
-        .catch(() => []);
+      if (!safeScanSdCard) {
+        console.warn("scanSdCard is not available");
+        setKits([]);
+        return;
+      }
+      const kitNames = await safeScanSdCard(sdCardPath).catch(() => []);
       setKits(kitNames);
       // 2. Scan all samples for each kit
       const samples: { [kit: string]: VoiceSamples } = {};
@@ -63,7 +69,7 @@ const KitsView = () => {
       ).catch(() => null);
       setKitLabels(loadedLabels && loadedLabels.kits ? loadedLabels.kits : {});
     })();
-  }, [sdCardPath, safeListFilesInRoot, safeReadRampleLabels]);
+  }, [sdCardPath, safeScanSdCard, safeListFilesInRoot, safeReadRampleLabels]);
 
   // When a kit is selected, set its samples
   useEffect(() => {

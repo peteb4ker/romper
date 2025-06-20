@@ -75,29 +75,34 @@ async function runWizardTest(
       ),
     }).filter(([_, v]) => typeof v === "string"),
   ) as { [key: string]: string };
-  
+
   // Enhanced logging for debugging
-  console.log(`[${testName || "E2E"}] Launching Electron with env:`, Object.keys(env));
+  console.log(
+    `[${testName || "E2E"}] Launching Electron with env:`,
+    Object.keys(env),
+  );
   console.log(`[${testName || "E2E"}] Working directory:`, process.cwd());
   console.log(`[${testName || "E2E"}] Checking if main file exists...`);
-  
+
   const mainFile = path.resolve("dist/electron/main/index.js");
   if (!fs.existsSync(mainFile)) {
     throw new Error(`Main file does not exist: ${mainFile}`);
   }
   console.log(`[${testName || "E2E"}] Main file exists: ${mainFile}`);
-  
-  const electronApp = await electron.launch({
-    args: [
-      "dist/electron/main/index.js",
-      ...(process.env.CI ? ["--no-sandbox", "--disable-setuid-sandbox"] : []),
-    ],
-    env,
-    timeout: 30000, // 30 second timeout
-  }).catch(error => {
-    console.error(`[${testName || "E2E"}] Failed to launch Electron:`, error);
-    throw error;
-  });
+
+  const electronApp = await electron
+    .launch({
+      args: [
+        "dist/electron/main/index.js",
+        ...(process.env.CI ? ["--no-sandbox", "--disable-setuid-sandbox"] : []),
+      ],
+      env,
+      timeout: 30000, // 30 second timeout
+    })
+    .catch((error) => {
+      console.error(`[${testName || "E2E"}] Failed to launch Electron:`, error);
+      throw error;
+    });
 
   const window = await electronApp.firstWindow();
 

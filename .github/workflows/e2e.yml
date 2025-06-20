@@ -49,7 +49,6 @@ jobs:
           sudo apt-get install -y \
             libnss3-dev \
             libatk-bridge2.0-dev \
-            libdrm2 \
             libxkbcommon0 \
             libxcomposite1 \
             libxdamage1 \
@@ -57,9 +56,7 @@ jobs:
             libgbm1 \
             libxss1 \
             libasound2-dev \
-            libatspi2.0-0 \
             libgtk-3-0 \
-            libgdk-pixbuf2.0-0 \
             x11-utils
 
       - name: Setup test environment
@@ -123,8 +120,8 @@ jobs:
           echo "Checking if display :99 is available..."
           DISPLAY=:99 xdpyinfo || echo "Display check failed, but continuing..."
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+      - name: Install Playwright (Electron support only)
+        run: npx playwright install electron
 
       - name: Run end-to-end tests (Linux/macOS)
         if: matrix.os != 'windows-latest'

@@ -1,5 +1,7 @@
 # 🎛️ Rample Sample Manager
 
+[![codecov](https://codecov.io/gh/peteb4ker/romper/branch/main/graph/badge.svg)](https://codecov.io/gh/peteb4ker/romper)
+
 A cross-platform desktop app to manage sample kits for the **Squarp Rample** — a 4-voice Eurorack sampler. Built with **Electron**, **React**, and **Vite**, this app makes it easy to organize, preview, and protect your SD card kits.
 
 ---

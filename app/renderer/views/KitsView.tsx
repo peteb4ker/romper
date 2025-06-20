@@ -48,26 +48,50 @@ const KitsView = () => {
         setKits([]);
         return;
       }
-      const kitNames = await safeScanSdCard(sdCardPath).catch(() => []);
-      setKits(kitNames);
+      let kitNames: string[] = [];
+      try {
+        const scanResult = safeScanSdCard(sdCardPath);
+        kitNames = await (scanResult || Promise.resolve([]));
+        setKits(kitNames);
+      } catch (error) {
+        console.warn("Error scanning SD card:", error);
+        setKits([]);
+      }
       // 2. Scan all samples for each kit
       const samples: { [kit: string]: VoiceSamples } = {};
       for (const kit of kitNames) {
         const kitPath = `${sdCardPath}/${kit}`;
-        if (!safeListFilesInRoot)
-          throw new Error("listFilesInRoot is not available");
-        const files = await safeListFilesInRoot(kitPath).catch(() => []);
-        const wavs = files.filter((f: string) => /\.wav$/i.test(f));
-        samples[kit] = groupSamplesByVoice(wavs);
+        if (!safeListFilesInRoot) {
+          console.warn("listFilesInRoot is not available");
+          samples[kit] = { 1: [], 2: [], 3: [], 4: [] };
+          continue;
+        }
+        try {
+          const files = await safeListFilesInRoot(kitPath);
+          const wavs = files.filter((f: string) => /\.wav$/i.test(f));
+          samples[kit] = groupSamplesByVoice(wavs);
+        } catch (error) {
+          console.warn(`Error listing files for kit ${kit}:`, error);
+          samples[kit] = { 1: [], 2: [], 3: [], 4: [] };
+        }
       }
       setAllKitSamples(samples);
       // 3. Load labels
-      if (!safeReadRampleLabels)
-        throw new Error("readRampleLabels is not available");
-      const loadedLabels: RampleLabels | null = await safeReadRampleLabels(
-        sdCardPath,
-      ).catch(() => null);
-      setKitLabels(loadedLabels && loadedLabels.kits ? loadedLabels.kits : {});
+      if (!safeReadRampleLabels) {
+        console.warn("readRampleLabels is not available");
+        setKitLabels({});
+        return;
+      }
+      try {
+        const loadedLabels: RampleLabels | null =
+          await safeReadRampleLabels(sdCardPath);
+        setKitLabels(
+          loadedLabels && loadedLabels.kits ? loadedLabels.kits : {},
+        );
+      } catch (error) {
+        console.warn("Error reading rample labels:", error);
+        setKitLabels({});
+      }
     })();
   }, [sdCardPath, safeScanSdCard, safeListFilesInRoot, safeReadRampleLabels]);
 

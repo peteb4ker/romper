@@ -209,10 +209,10 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = ({
           data-testid="kit-step-sequencer"
         >
           {/* Step sequencer controls and grid in a row */}
-          <div className="flex flex-row items-start justify-center gap-6">
+          <div className="flex flex-row items-start justify-center gap-4">
             {/* Play controls (left) */}
             <div
-              className="flex flex-col items-end justify-start pt-2"
+              className="flex flex-col items-center justify-start pt-2"
               data-testid="kit-step-sequencer-controls"
             >
               <button

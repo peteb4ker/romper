@@ -39,13 +39,16 @@ export function validateKitPlan(plan: any[]): string[] {
 
 export function writeKitSamples(plan: any[], kitPath: string) {
   if (fs.existsSync(kitPath)) {
-    const files = fs.readdirSync(kitPath);
-    for (const file of files) {
-      if (/\.wav$/i.test(file)) {
-        try {
-          fs.unlinkSync(path.join(kitPath, file));
-        } catch (e) {
-          /* ignore for test */
+    const stat = fs.statSync(kitPath);
+    if (stat.isDirectory()) {
+      const files = fs.readdirSync(kitPath);
+      for (const file of files) {
+        if (/\.wav$/i.test(file)) {
+          try {
+            fs.unlinkSync(path.join(kitPath, file));
+          } catch (e) {
+            /* ignore for test */
+          }
         }
       }
     }
@@ -77,9 +80,18 @@ export function writeKitSamples(plan: any[], kitPath: string) {
 }
 
 export function rescanVoiceNames(kitPath: string) {
-  const wavFiles = fs.existsSync(kitPath)
-    ? fs.readdirSync(kitPath).filter((f) => /\.wav$/i.test(f))
-    : [];
+  let wavFiles: string[] = [];
+  if (fs.existsSync(kitPath)) {
+    try {
+      const stat = fs.statSync(kitPath);
+      if (stat.isDirectory()) {
+        wavFiles = fs.readdirSync(kitPath).filter((f) => /\.wav$/i.test(f));
+      }
+    } catch (e) {
+      // If we can't read the directory, just return empty
+      wavFiles = [];
+    }
+  }
   const voiceNames: Record<number, string> = {};
   for (const file of wavFiles) {
     const match = /^([1-4])\s*([\w\- ]+)/.exec(file);
@@ -119,6 +131,21 @@ export async function commitKitPlanHandler(
       errors.push(
         `Failed to create kit folder: ${e instanceof Error ? e.message : String(e)}`,
       );
+      return { success: false, errors };
+    }
+  } else {
+    // Path exists, but check if it's actually a directory
+    try {
+      const stat = fs.statSync(kitPath);
+      if (!stat.isDirectory()) {
+        errors.push(`Kit path exists but is not a directory: ${kitPath}`);
+        return { success: false, errors };
+      }
+    } catch (e) {
+      errors.push(
+        `Failed to check kit folder: ${e instanceof Error ? e.message : String(e)}`,
+      );
+      return { success: false, errors };
     }
   }
   writeKitSamples(plan, kitPath);

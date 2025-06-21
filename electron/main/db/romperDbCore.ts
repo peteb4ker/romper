@@ -3,11 +3,11 @@ import BetterSqlite3 from "better-sqlite3";
 import * as fs from "fs";
 import * as path from "path";
 
-export function createRomperDbFile(dbDir: string): {
+export async function createRomperDbFile(dbDir: string): Promise<{
   success: boolean;
   dbPath?: string;
   error?: string;
-} {
+}> {
   const dbPath = path.join(dbDir, "romper.sqlite");
   console.log(
     "[Romper Electron] createRomperDbFile called with dbDir:",
@@ -59,21 +59,54 @@ export function createRomperDbFile(dbDir: string): {
             // Ignore errors from temp connection
           }
 
-          fs.unlinkSync(dbPath);
-        } catch (unlinkError) {
-          // If we can't delete the file, try moving it instead (common on Windows)
-          try {
-            const backupPath = `${dbPath}.backup.${Date.now()}`;
-            fs.renameSync(dbPath, backupPath);
-          } catch {
-            // If both delete and rename fail, return the original error
-            return { success: false, error: msg };
-          }
+          // Try multiple strategies for file removal on Windows
+          await deleteDbFileWithRetry(dbPath);
+        } catch (deleteError) {
+          return { success: false, error: msg };
         }
         continue;
       }
       return { success: false, error: msg };
     }
+  }
+}
+
+async function deleteDbFileWithRetry(
+  dbPath: string,
+  maxRetries = 5,
+): Promise<void> {
+  let lastError: Error | null = null;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      fs.unlinkSync(dbPath);
+      return;
+    } catch (error) {
+      lastError = error as Error;
+
+      // If deletion fails, try renaming first (common Windows issue)
+      if (process.platform === "win32" && i < maxRetries - 1) {
+        try {
+          const backupPath = `${dbPath}.backup.${Date.now()}.${i}`;
+          fs.renameSync(dbPath, backupPath);
+          return;
+        } catch (renameError) {
+          // Wait and retry
+          await new Promise((resolve) => setTimeout(resolve, 100 * (i + 1)));
+        }
+      } else if (i < maxRetries - 1) {
+        // Wait and retry on other platforms
+        await new Promise((resolve) => setTimeout(resolve, 50 * (i + 1)));
+      }
+    }
+  }
+
+  // Final attempt: try renaming instead of deleting
+  try {
+    const backupPath = `${dbPath}.backup.${Date.now()}`;
+    fs.renameSync(dbPath, backupPath);
+  } catch {
+    throw lastError || new Error("Could not delete or rename database file");
   }
 }
 

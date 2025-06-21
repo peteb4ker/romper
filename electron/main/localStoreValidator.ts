@@ -12,7 +12,9 @@ export interface LocalStoreValidationResult {
  * @param localStorePath - The path to the local store directory
  * @returns Validation result with isValid flag, optional error message, and derived DB path
  */
-export function validateLocalStoreAndDb(localStorePath: string): LocalStoreValidationResult {
+export function validateLocalStoreAndDb(
+  localStorePath: string,
+): LocalStoreValidationResult {
   try {
     // Check if local store directory exists
     if (!fs.existsSync(localStorePath)) {
@@ -40,7 +42,8 @@ export function validateLocalStoreAndDb(localStorePath: string): LocalStoreValid
   } catch (error) {
     return {
       isValid: false,
-      error: error instanceof Error ? error.message : "Unknown validation error",
+      error:
+        error instanceof Error ? error.message : "Unknown validation error",
     };
   }
 }

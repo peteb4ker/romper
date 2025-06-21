@@ -25,7 +25,7 @@ const baseProps = {
   onPlay: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  sdCardPath: "/fake/path",
+  localStorePath: "/fake/path",
   kitName: "Kit1",
 };
 
@@ -105,7 +105,7 @@ function MultiVoicePanelsTestWrapper({
         onPlay={onPlay}
         onStop={baseProps.onStop}
         onWaveformPlayingChange={baseProps.onWaveformPlayingChange}
-        sdCardPath={baseProps.sdCardPath}
+        localStorePath={baseProps.localStorePath}
         kitName={baseProps.kitName}
         onSampleKeyNav={() => {}}
         onSampleSelect={() => {}}

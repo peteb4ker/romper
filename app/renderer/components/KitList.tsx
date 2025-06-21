@@ -17,7 +17,7 @@ interface KitListProps {
   onSelectKit: (kit: string) => void;
   bankNames: Record<string, string>;
   onDuplicate: (kit: string) => void;
-  sdCardPath: string;
+  localStorePath: string;
   kitLabels: { [kit: string]: RampleKitLabel };
   sampleCounts?: Record<string, [number, number, number, number]>;
   voiceLabelSets?: Record<string, string[]>;
@@ -42,7 +42,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       onSelectKit,
       bankNames,
       onDuplicate,
-      sdCardPath,
+      localStorePath,
       kitLabels,
       sampleCounts,
       voiceLabelSets,

@@ -17,10 +17,9 @@ import { registerIpcHandlers } from "./ipcHandlers.js";
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
 
 type Settings = {
-  sdCardPath?: string;
+  localStorePath?: string;
   darkMode?: boolean;
   theme?: string;
-  localStorePath?: string;
   [key: string]: unknown;
 };
 
@@ -114,7 +113,10 @@ app.whenReady().then(async () => {
             });
           } else {
             // Clear invalid local store path
-            console.warn("Saved local store path is invalid:", validation.error);
+            console.warn(
+              "Saved local store path is invalid:",
+              validation.error,
+            );
             console.warn("Clearing invalid local store settings");
             delete inMemorySettings.localStorePath;
 

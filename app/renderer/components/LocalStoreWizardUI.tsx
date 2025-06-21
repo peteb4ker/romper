@@ -91,7 +91,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
           sourceOptions={sourceOptions}
           stateSource={state.source}
           handleSourceSelect={handleSourceSelect}
-          sdCardPath={state.sdCardPath}
+          localStorePath={state.localStorePath}
           setSdCardPath={setSdCardPath}
           sourceConfirmed={state.sourceConfirmed}
           setSourceConfirmed={setSourceConfirmed}
@@ -110,7 +110,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
           }
           sourceUrl={
             state.source === "sdcard"
-              ? state.sdCardPath || ""
+              ? state.localStorePath || ""
               : state.source === "squarp"
                 ? config.squarpArchiveUrl || ""
                 : ""

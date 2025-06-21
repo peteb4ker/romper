@@ -12,26 +12,10 @@ afterEach(() => {
 });
 
 describe("KitBrowserHeader", () => {
-  it("calls onSelectSdCard when Select SD Card button is clicked", () => {
-    const onSelectSdCard = vi.fn();
-    render(
-      <KitBrowserHeader
-        onSelectSdCard={onSelectSdCard}
-        onRescanAllVoiceNames={vi.fn()}
-        onShowNewKit={vi.fn()}
-        onCreateNextKit={vi.fn()}
-        nextKitSlot={null}
-      />,
-    );
-    fireEvent.click(screen.getByText("Select SD Card"));
-    expect(onSelectSdCard).toHaveBeenCalled();
-  });
-
   it("calls onRescanAllVoiceNames when Rescan All Kit Voice Names button is clicked", () => {
     const onRescanAllVoiceNames = vi.fn();
     render(
       <KitBrowserHeader
-        onSelectSdCard={vi.fn()}
         onRescanAllVoiceNames={onRescanAllVoiceNames}
         onShowNewKit={vi.fn()}
         onCreateNextKit={vi.fn()}
@@ -46,7 +30,6 @@ describe("KitBrowserHeader", () => {
     const onShowNewKit = vi.fn();
     render(
       <KitBrowserHeader
-        onSelectSdCard={vi.fn()}
         onRescanAllVoiceNames={vi.fn()}
         onShowNewKit={onShowNewKit}
         onCreateNextKit={vi.fn()}
@@ -61,7 +44,6 @@ describe("KitBrowserHeader", () => {
     const onCreateNextKit = vi.fn();
     render(
       <KitBrowserHeader
-        onSelectSdCard={vi.fn()}
         onRescanAllVoiceNames={vi.fn()}
         onShowNewKit={vi.fn()}
         onCreateNextKit={onCreateNextKit}
@@ -75,7 +57,6 @@ describe("KitBrowserHeader", () => {
   it("disables + Next Kit button when nextKitSlot is null", () => {
     render(
       <KitBrowserHeader
-        onSelectSdCard={vi.fn()}
         onRescanAllVoiceNames={vi.fn()}
         onShowNewKit={vi.fn()}
         onCreateNextKit={vi.fn()}
@@ -88,7 +69,6 @@ describe("KitBrowserHeader", () => {
   it("renders bankNav if provided", () => {
     render(
       <KitBrowserHeader
-        onSelectSdCard={vi.fn()}
         onRescanAllVoiceNames={vi.fn()}
         onShowNewKit={vi.fn()}
         onCreateNextKit={vi.fn()}

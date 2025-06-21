@@ -413,7 +413,7 @@ describe("rescanVoiceNames", () => {
 describe("commitKitPlanHandler", () => {
   const tmpDir = path.join(__dirname, "tmp_commit_test");
   const kitName = "TestKit";
-  const sdCardPath = tmpDir;
+  const localStorePath = tmpDir;
 
   beforeEach(() => {
     if (fs.existsSync(tmpDir)) {
@@ -463,12 +463,12 @@ describe("commitKitPlanHandler", () => {
       { source: path.join(sourceDir, "snare.wav"), target: "2 Snare.wav" },
     ];
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(true);
     expect(result.errors).toHaveLength(0);
     expect(writeRampleLabels).toHaveBeenCalledWith(
-      sdCardPath,
+      localStorePath,
       expect.objectContaining({
         kits: expect.objectContaining({
           [kitName]: expect.objectContaining({
@@ -485,7 +485,7 @@ describe("commitKitPlanHandler", () => {
   it("fails when no labels found", async () => {
     vi.mocked(readRampleLabels).mockReturnValue(null);
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(false);
     expect(result.errors).toContain("No plan found for kit.");
@@ -495,7 +495,7 @@ describe("commitKitPlanHandler", () => {
     const labels = { kits: {} };
     vi.mocked(readRampleLabels).mockReturnValue(labels);
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(false);
     expect(result.errors).toContain("No plan found for kit.");
@@ -512,7 +512,7 @@ describe("commitKitPlanHandler", () => {
     };
     vi.mocked(readRampleLabels).mockReturnValue(labels);
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(false);
     expect(result.errors).toContain("No plan found for kit.");
@@ -529,7 +529,7 @@ describe("commitKitPlanHandler", () => {
     };
     vi.mocked(readRampleLabels).mockReturnValue(labels);
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(false);
     expect(result.errors).toContain("Plan must have 1-12 samples.");
@@ -546,7 +546,7 @@ describe("commitKitPlanHandler", () => {
     };
     vi.mocked(readRampleLabels).mockReturnValue(labels);
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(false);
     expect(result.errors).toContain("Plan must have 1-12 samples.");
@@ -566,7 +566,7 @@ describe("commitKitPlanHandler", () => {
     };
     vi.mocked(readRampleLabels).mockReturnValue(labels);
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(false);
     expect(result.errors).toContain("Plan must have 1-12 samples.");
@@ -586,7 +586,7 @@ describe("commitKitPlanHandler", () => {
     };
     vi.mocked(readRampleLabels).mockReturnValue(labels);
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(false);
     expect(result.errors.length).toBeGreaterThan(0);
@@ -606,9 +606,9 @@ describe("commitKitPlanHandler", () => {
     vi.mocked(readRampleLabels).mockReturnValue(labels);
     vi.mocked(writeRampleLabels).mockImplementation(() => {});
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
-    const kitPath = path.join(sdCardPath, kitName);
+    const kitPath = path.join(localStorePath, kitName);
     expect(fs.existsSync(kitPath)).toBe(true);
   });
 
@@ -625,14 +625,14 @@ describe("commitKitPlanHandler", () => {
 
     // Create a file with the same name as the directory we want to create
     // This will cause the validation to fail since path exists but is not a directory
-    const problematicPath = path.join(sdCardPath, kitName);
+    const problematicPath = path.join(localStorePath, kitName);
     if (fs.existsSync(problematicPath)) {
       fs.rmSync(problematicPath, { recursive: true, force: true });
     }
 
     fs.writeFileSync(problematicPath, "blocking file");
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(false);
     expect(result.errors).toHaveLength(1);
@@ -667,11 +667,11 @@ describe("commitKitPlanHandler", () => {
     vi.mocked(readRampleLabels).mockReturnValue(labels);
     vi.mocked(writeRampleLabels).mockImplementation(() => {});
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(true);
     expect(writeRampleLabels).toHaveBeenCalledWith(
-      sdCardPath,
+      localStorePath,
       expect.objectContaining({
         kits: expect.objectContaining({
           [kitName]: expect.objectContaining({
@@ -704,11 +704,11 @@ describe("commitKitPlanHandler", () => {
     vi.mocked(readRampleLabels).mockReturnValue(labels);
     vi.mocked(writeRampleLabels).mockImplementation(() => {});
 
-    const result = await commitKitPlanHandler(sdCardPath, kitName);
+    const result = await commitKitPlanHandler(localStorePath, kitName);
 
     expect(result.success).toBe(true);
     expect(writeRampleLabels).toHaveBeenCalledWith(
-      sdCardPath,
+      localStorePath,
       expect.objectContaining({
         kits: expect.objectContaining({
           [kitName]: expect.objectContaining({

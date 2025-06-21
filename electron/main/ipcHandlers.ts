@@ -18,8 +18,8 @@ import {
   validateKitPlan,
   writeKitSamples,
 } from "./kitPlanOps.js";
-import { readRampleLabels, writeRampleLabels } from "./rampleLabels.js";
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
+import { readRampleLabels, writeRampleLabels } from "./rampleLabels.js";
 
 // Utility: recursively copy a directory
 function copyRecursiveSync(src: string, dest: string) {
@@ -39,11 +39,12 @@ export function registerIpcHandlers(
   watchers: { [key: string]: fs.FSWatcher },
   inMemorySettings: Record<string, any>,
 ) {
-  ipcMain.handle("read-settings", (_event) => inMemorySettings);  ipcMain.handle("write-settings", (_event, key: string, value: any) => {
+  ipcMain.handle("read-settings", (_event) => inMemorySettings);
+  ipcMain.handle("write-settings", (_event, key: string, value: any) => {
     const userDataPath = app.getPath("userData");
     const settingsPath = path.join(userDataPath, "settings.json");
     inMemorySettings[key] = value;
-    
+
     fs.writeFileSync(
       settingsPath,
       JSON.stringify(inMemorySettings, null, 2),
@@ -75,9 +76,14 @@ export function registerIpcHandlers(
     };
   });
 
-  ipcMain.handle("scan-sd-card", async (event, sdCardPath) => {
+  // Add close app handler
+  ipcMain.handle("close-app", () => {
+    app.quit();
+  });
+
+  ipcMain.handle("scan-sd-card", async (event, localStorePath) => {
     return fs
-      .readdirSync(sdCardPath)
+      .readdirSync(localStorePath)
       .filter((folder) => /^[A-Z][0-9]{1,2}$/.test(folder));
   });
   ipcMain.handle("select-sd-card", async () => {
@@ -87,10 +93,10 @@ export function registerIpcHandlers(
     });
     return result.canceled ? null : result.filePaths[0];
   });
-  ipcMain.handle("watch-sd-card", (event, sdCardPath: string) => {
-    const watcherId = `${sdCardPath}-${Date.now()}`;
+  ipcMain.handle("watch-sd-card", (event, localStorePath: string) => {
+    const watcherId = `${localStorePath}-${Date.now()}`;
     const watcher = fs.watch(
-      sdCardPath,
+      localStorePath,
       { persistent: true },
       (eventType, filename) => {
         if (filename)
@@ -109,30 +115,35 @@ export function registerIpcHandlers(
   ipcMain.handle("get-user-data-path", () => app.getPath("userData"));
   ipcMain.handle(
     "create-kit",
-    async (_event, sdCardPath: string, kitSlot: string) => {
+    async (_event, localStorePath: string, kitSlot: string) => {
       if (!/^[A-Z][0-9]{1,2}$/.test(kitSlot))
         throw new Error("Invalid kit slot. Use format A0-Z99.");
-      const kitPath = path.join(sdCardPath, kitSlot);
+      const kitPath = path.join(localStorePath, kitSlot);
       if (fs.existsSync(kitPath)) throw new Error("Kit already exists.");
       fs.mkdirSync(kitPath);
-      let labels = readRampleLabels(sdCardPath) || { kits: {} };
+      let labels = readRampleLabels(localStorePath) || { kits: {} };
       labels.kits[kitSlot] = labels.kits[kitSlot] || {
         label: kitSlot,
         plan: [],
       };
-      writeRampleLabels(sdCardPath, labels);
+      writeRampleLabels(localStorePath, labels);
     },
   );
   ipcMain.handle(
     "copy-kit",
-    async (_event, sdCardPath: string, sourceKit: string, destKit: string) => {
+    async (
+      _event,
+      localStorePath: string,
+      sourceKit: string,
+      destKit: string,
+    ) => {
       if (
         !/^[A-Z][0-9]{1,2}$/.test(sourceKit) ||
         !/^[A-Z][0-9]{1,2}$/.test(destKit)
       )
         throw new Error("Invalid kit slot. Use format A0-Z99.");
-      const srcPath = path.join(sdCardPath, sourceKit);
-      const destPath = path.join(sdCardPath, destKit);
+      const srcPath = path.join(localStorePath, sourceKit);
+      const destPath = path.join(localStorePath, destKit);
       if (!fs.existsSync(srcPath))
         throw new Error("Source kit does not exist.");
       if (fs.existsSync(destPath))
@@ -140,8 +151,8 @@ export function registerIpcHandlers(
       copyRecursiveSync(srcPath, destPath);
     },
   );
-  ipcMain.handle("list-files-in-root", async (_event, sdCardPath: string) =>
-    fs.readdirSync(sdCardPath),
+  ipcMain.handle("list-files-in-root", async (_event, localStorePath: string) =>
+    fs.readdirSync(localStorePath),
   );
   ipcMain.handle("get-audio-buffer", async (_event, filePath: string) => {
     const data = fs.readFileSync(filePath);
@@ -150,26 +161,26 @@ export function registerIpcHandlers(
       data.byteOffset + data.byteLength,
     );
   });
-  ipcMain.handle("read-rample-labels", async (_event, sdCardPath: string) =>
-    readRampleLabels(sdCardPath),
+  ipcMain.handle("read-rample-labels", async (_event, localStorePath: string) =>
+    readRampleLabels(localStorePath),
   );
   ipcMain.handle(
     "write-rample-labels",
-    async (_event, sdCardPath: string, labels) => {
-      writeRampleLabels(sdCardPath, labels);
+    async (_event, localStorePath: string, labels) => {
+      writeRampleLabels(localStorePath, labels);
       return true;
     },
   );
   // --- Register handler ---
-  ipcMain.handle("commit-kit-plan", async (_event, sdCardPath, kitName) => {
-    return commitKitPlanHandler(sdCardPath, kitName);
+  ipcMain.handle("commit-kit-plan", async (_event, localStorePath, kitName) => {
+    return commitKitPlanHandler(localStorePath, kitName);
   });
   ipcMain.handle(
     "discard-kit-plan",
-    async (_event, sdCardPath: string, kitName: string) => {
+    async (_event, localStorePath: string, kitName: string) => {
       const errors: string[] = [];
       try {
-        const labels = readRampleLabels(sdCardPath);
+        const labels = readRampleLabels(localStorePath);
         if (!labels || !labels.kits[kitName]) {
           errors.push("Kit not found in labels file.");
           return { success: false, errors };
@@ -180,7 +191,7 @@ export function registerIpcHandlers(
         }
         delete labels.kits[kitName].plan;
         try {
-          writeRampleLabels(sdCardPath, labels);
+          writeRampleLabels(localStorePath, labels);
         } catch (e) {
           errors.push(
             `Failed to update labels file: ${e instanceof Error ? e.message : String(e)}`,
@@ -197,10 +208,10 @@ export function registerIpcHandlers(
   // Use kebab-case for consistency with other handlers
   ipcMain.handle(
     "rescan-all-voice-names",
-    async (_event, sdCardPath: string, kitNames: string[]) => {
-      const labels = readRampleLabels(sdCardPath) || { kits: {} };
+    async (_event, localStorePath: string, kitNames: string[]) => {
+      const labels = readRampleLabels(localStorePath) || { kits: {} };
       for (const kitName of kitNames) {
-        const kitPath = path.join(sdCardPath, kitName);
+        const kitPath = path.join(localStorePath, kitName);
         const wavFiles = fs.existsSync(kitPath)
           ? fs.readdirSync(kitPath).filter((f) => /\.wav$/i.test(f))
           : [];
@@ -226,7 +237,7 @@ export function registerIpcHandlers(
         if (!labels.kits[kitName]) labels.kits[kitName] = { label: kitName };
         labels.kits[kitName].voiceNames = newVoiceNames;
       }
-      writeRampleLabels(sdCardPath, labels);
+      writeRampleLabels(localStorePath, labels);
       return true;
     },
   );

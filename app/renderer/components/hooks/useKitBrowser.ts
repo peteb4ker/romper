@@ -13,7 +13,7 @@ import {
 
 interface UseKitBrowserProps {
   kits: string[];
-  sdCardPath: string;
+  localStorePath: string;
   onRefreshKits?: () => void;
   kitListRef: RefObject<any>;
   onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
@@ -25,7 +25,7 @@ interface BankNames {
 
 export function useKitBrowser({
   kits: externalKits = [],
-  sdCardPath,
+  localStorePath,
   onRefreshKits,
   kitListRef,
   onMessage,
@@ -52,10 +52,11 @@ export function useKitBrowser({
   }, [kits]);
 
   const getBankNames = useCallback(
-    async (sdCardPath: string): Promise<BankNames> => {
-      if (!sdCardPath) return {};
+    async (localStorePath: string): Promise<BankNames> => {
+      if (!localStorePath) return {};
       try {
-        const files = await window.electronAPI?.listFilesInRoot?.(sdCardPath);
+        const files =
+          await window.electronAPI?.listFilesInRoot?.(localStorePath);
         if (!files) return {};
         const rtfFiles = files.filter((f: string) =>
           /^[A-Z] - .+\.rtf$/i.test(f),
@@ -78,9 +79,9 @@ export function useKitBrowser({
 
   useEffect(() => {
     (async () => {
-      setBankNames(await getBankNames(sdCardPath));
+      setBankNames(await getBankNames(localStorePath));
     })();
-  }, [sdCardPath, getBankNames]);
+  }, [localStorePath, getBankNames]);
 
   const handleCreateKit = async () => {
     setNewKitError(null);
@@ -88,9 +89,9 @@ export function useKitBrowser({
       setNewKitError("Invalid kit slot. Use format A0-Z99.");
       return;
     }
-    if (!sdCardPath) return;
+    if (!localStorePath) return;
     try {
-      await window.electronAPI?.createKit?.(sdCardPath, newKitSlot);
+      await window.electronAPI?.createKit?.(localStorePath, newKitSlot);
       setShowNewKit(false);
       setNewKitSlot("");
       if (onRefreshKits) onRefreshKits();
@@ -114,9 +115,9 @@ export function useKitBrowser({
       setNewKitError("No next kit slot available.");
       return;
     }
-    if (!sdCardPath) return;
+    if (!localStorePath) return;
     try {
-      await window.electronAPI?.createKit?.(sdCardPath, nextKitSlot);
+      await window.electronAPI?.createKit?.(localStorePath, nextKitSlot);
       if (onRefreshKits) onRefreshKits();
     } catch (err) {
       setNewKitError(
@@ -132,10 +133,10 @@ export function useKitBrowser({
       setDuplicateKitError("Invalid destination slot. Use format A0-Z99.");
       return;
     }
-    if (!sdCardPath) return;
+    if (!localStorePath) return;
     try {
       await window.electronAPI?.copyKit?.(
-        sdCardPath,
+        localStorePath,
         duplicateKitSource,
         duplicateKitDest,
       );
@@ -183,13 +184,6 @@ export function useKitBrowser({
     },
     [kits, handleBankClick],
   );
-
-  const handleSelectSdCard = async () => {
-    const selected = await window.electronAPI.selectSdCard();
-    if (selected) {
-      window.electronAPI.setSetting("sdCardPath", selected);
-    }
-  };
 
   // --- Kit focus state and A-Z navigation logic ---
   const [focusedKit, setFocusedKit] = useState<string | null>(null);
@@ -283,7 +277,6 @@ export function useKitBrowser({
     handleBankClickWithScroll, // expose for UI
     selectedBank,
     setSelectedBank,
-    handleSelectSdCard,
     focusedKit,
     setFocusedKit,
     globalBankHotkeyHandler,

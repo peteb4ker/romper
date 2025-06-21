@@ -13,7 +13,7 @@ export interface LocalStoreWizardState {
   sdCardMounted: boolean;
   isInitializing: boolean;
   error: string | null;
-  sdCardPath?: string;
+  localStorePath?: string;
   kitFolderValidationError?: string | null;
   sourceConfirmed?: boolean;
 }
@@ -105,10 +105,10 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
     [],
   );
   const setSdCardPath = useCallback(
-    (sdCardPath: string) =>
+    (localStorePath: string) =>
       setState((s) => ({
         ...s,
-        sdCardPath,
+        localStorePath,
         kitFolderValidationError: undefined,
       })),
     [],
@@ -176,7 +176,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
       ...s,
       targetPath: "",
       source: null,
-      sdCardPath: undefined,
+      localStorePath: undefined,
       kitFolderValidationError: undefined,
       error: null,
       isInitializing: false,
@@ -187,10 +187,10 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
 
   // --- Kit folder validation ---
   const validateSdCardFolder = useCallback(
-    async (sdCardPath: string) => {
-      if (!sdCardPath) return null;
+    async (localStorePath: string) => {
+      if (!localStorePath) return null;
       if (!api.listFilesInRoot) return "Cannot access filesystem.";
-      const files = await api.listFilesInRoot(sdCardPath);
+      const files = await api.listFilesInRoot(localStorePath);
       const kitFolders = getKitFolders(files);
       if (kitFolders.length === 0) {
         return "No valid kit folders found. Please choose a folder with kit subfolders (e.g. A0, B12, etc).";
@@ -202,9 +202,9 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
 
   // --- SD Card validation and copy combined ---
   const validateAndCopySdCardKits = useCallback(
-    async (sdCardPath: string, targetPath: string) => {
-      if (!sdCardPath) throw new Error();
-      const validationError = await validateSdCardFolder(sdCardPath);
+    async (localStorePath: string, targetPath: string) => {
+      if (!localStorePath) throw new Error();
+      const validationError = await validateSdCardFolder(localStorePath);
       if (validationError) {
         setWizardState({
           kitFolderValidationError: validationError,
@@ -216,14 +216,14 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
       }
       if (!api.listFilesInRoot || !api.copyDir)
         throw new Error("Missing Electron API");
-      const files = await api.listFilesInRoot(sdCardPath);
+      const files = await api.listFilesInRoot(localStorePath);
       const kitFolders = getKitFolders(files);
       await reportStepProgress({
         items: kitFolders,
         phase: "Copying kits...",
         onStep: async (kit) => {
           if (!api.copyDir) throw new Error("Missing Electron API");
-          await api.copyDir(`${sdCardPath}/${kit}`, `${targetPath}/${kit}`);
+          await api.copyDir(`${localStorePath}/${kit}`, `${targetPath}/${kit}`);
         },
       });
     },
@@ -300,9 +300,9 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
       if (!state.source) throw new Error("No source selected");
       if (api.ensureDir) await api.ensureDir(state.targetPath);
       if (state.source === "sdcard") {
-        if (!state.sdCardPath) throw new Error("No SD card path selected");
+        if (!state.localStorePath) throw new Error("No SD card path selected");
         console.log("[Hook] initialize - copying SD card kits");
-        await validateAndCopySdCardKits(state.sdCardPath, state.targetPath);
+        await validateAndCopySdCardKits(state.localStorePath, state.targetPath);
       }
       if (state.source === "squarp") {
         console.log("[Hook] initialize - extracting Squarp archive");
@@ -341,7 +341,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
     async (value: string) => {
       // For SD card, use config value if available, otherwise prompt for folder
       if (value === "sdcard") {
-        let folder = config.sdCardPath; // Check config first (used in E2E tests)
+        let folder = config.localStorePath; // Check config first (used in E2E tests)
 
         if (!folder && api.selectLocalStorePath) {
           // Fall back to native picker if no config value
@@ -352,7 +352,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
           setState((s) => ({
             ...s,
             source: "sdcard",
-            sdCardPath: folder,
+            localStorePath: folder,
             kitFolderValidationError: undefined,
             targetPath: "",
           }));
@@ -366,7 +366,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
         source: value as LocalStoreSource,
         kitFolderValidationError: undefined,
         targetPath: "",
-        sdCardPath: undefined,
+        localStorePath: undefined,
       }));
     },
     [api],
@@ -379,7 +379,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
     state.targetPath &&
       state.source &&
       (!isSdCardSource ||
-        (state.sdCardPath && !state.kitFolderValidationError)) &&
+        (state.localStorePath && !state.kitFolderValidationError)) &&
       !state.isInitializing,
   );
 

@@ -14,7 +14,7 @@ afterEach(() => {
 // Mock useSettings to provide stable test values
 vi.mock("../../utils/SettingsContext", () => ({
   useSettings: () => ({
-    sdCardPath: "/mock/sd",
+    localStorePath: "/mock/sd",
     darkMode: false,
     setDarkMode: vi.fn(),
   }),
@@ -62,5 +62,12 @@ describe("StatusBar", () => {
       "rel",
       expect.stringContaining("noopener"),
     );
+  });
+
+  it("renders local store path with database icon", () => {
+    render(<StatusBar />);
+    const localStoreText = screen.getByText(/Local Store:/);
+    expect(localStoreText).toBeInTheDocument();
+    expect(screen.getByText("/mock/sd")).toBeInTheDocument();
   });
 });

@@ -6,13 +6,13 @@ import type { RampleKitLabel, VoiceSamples } from "../kitTypes";
 export function useKitDetails({
   kitLabel,
   samples,
-  sdCardPath,
+  localStorePath,
   kitName,
   onRescanAllVoiceNames,
 }: {
   kitLabel?: RampleKitLabel;
   samples: VoiceSamples;
-  sdCardPath: string;
+  localStorePath: string;
   kitName: string;
   onRescanAllVoiceNames?: () => void;
 }) {

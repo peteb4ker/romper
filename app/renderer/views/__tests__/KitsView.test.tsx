@@ -47,12 +47,17 @@ describe("KitsView", () => {
       selectSdCard: vi.fn().mockResolvedValue("/sd"),
       watchSdCard: vi.fn().mockReturnValue({ close: vi.fn() }),
       getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),
-      readSettings: vi.fn().mockResolvedValue({ sdCardPath: "/sd" }),
+      readSettings: vi
+        .fn()
+        .mockResolvedValue({ localStorePath: "/mock/local/store" }),
       setSetting: vi.fn().mockResolvedValue(undefined),
-      getSetting: vi.fn().mockResolvedValue("/sd"),
+      getSetting: vi.fn().mockResolvedValue("/mock/local/store"),
       createKit: vi.fn().mockResolvedValue(undefined),
       copyKit: vi.fn().mockResolvedValue(undefined),
       selectLocalStorePath: vi.fn().mockResolvedValue("/mock/custom/path"),
+      getLocalStoreStatus: vi
+        .fn()
+        .mockResolvedValue({ isValid: true, hasLocalStore: true }),
     };
   });
   afterEach(() => {

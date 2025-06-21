@@ -1,11 +1,11 @@
 export const getSetting = async (
-  key: "sdCardPath" | "darkMode" | "localStorePath",
+  key: "localStorePath" | "darkMode" | "localStorePath",
 ): Promise<any> => {
   return window.electronAPI.getSetting(key);
 };
 
 export const setSetting = async (
-  key: "sdCardPath" | "darkMode" | "localStorePath",
+  key: "localStorePath" | "darkMode" | "localStorePath",
   value: any,
 ): Promise<void> => {
   window.electronAPI.setSetting(key, value);
@@ -57,7 +57,10 @@ export const getLocalStoreStatus = async (): Promise<{
     }
     return null;
   } catch (error) {
-    console.error("getLocalStoreStatus: Failed to get local store status:", error);
+    console.error(
+      "getLocalStoreStatus: Failed to get local store status:",
+      error,
+    );
     return null;
   }
 };

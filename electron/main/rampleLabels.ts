@@ -33,11 +33,11 @@ export interface RampleLabels {
 
 /**
  * Reads the .rample_labels.json file from the SD card root.
- * @param sdCardPath Path to the SD card root
+ * @param localStorePath Path to the SD card root
  * @returns Parsed RampleLabels object, or null if not found/invalid
  */
-export function readRampleLabels(sdCardPath: string): RampleLabels | null {
-  const filePath = path.join(sdCardPath, ".rample_labels.json");
+export function readRampleLabels(localStorePath: string): RampleLabels | null {
+  const filePath = path.join(localStorePath, ".rample_labels.json");
   if (!fs.existsSync(filePath)) return null;
   try {
     const raw = fs.readFileSync(filePath, "utf-8");
@@ -58,14 +58,14 @@ export function readRampleLabels(sdCardPath: string): RampleLabels | null {
 
 /**
  * Writes the .rample_labels.json file to the SD card root.
- * @param sdCardPath Path to the SD card root
+ * @param localStorePath Path to the SD card root
  * @param labels RampleLabels object to write
  */
 export function writeRampleLabels(
-  sdCardPath: string,
+  localStorePath: string,
   labels: RampleLabels,
 ): void {
-  const filePath = path.join(sdCardPath, ".rample_labels.json");
+  const filePath = path.join(localStorePath, ".rample_labels.json");
   console.log(`[rampleLabels] Writing labels to: ${filePath}`);
   fs.writeFileSync(filePath, JSON.stringify(labels, null, 2), "utf-8");
 }

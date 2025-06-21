@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 interface LocalStoreStatus {
   hasLocalStore: boolean;
@@ -8,8 +14,6 @@ interface LocalStoreStatus {
 }
 
 interface SettingsContextProps {
-  sdCardPath: string | null;
-  setSdCardPath: (path: string) => void;
   localStorePath: string | null;
   setLocalStorePath: (path: string) => void;
   localStoreStatus: LocalStoreStatus | null;
@@ -27,21 +31,14 @@ const SettingsContext = createContext<SettingsContextProps | undefined>(
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [sdCardPath, setSdCardPathState] = useState<string | null>(null);
   const [localStorePath, setLocalStorePathState] = useState<string | null>(
     null,
   );
-  const [localStoreStatus, setLocalStoreStatus] = useState<LocalStoreStatus | null>(null);
+  const [localStoreStatus, setLocalStoreStatus] =
+    useState<LocalStoreStatus | null>(null);
   const [darkMode, setDarkModeState] = useState<boolean>(false);
   const [settingsInitialized, setSettingsInitialized] = useState(false);
   const [settings, setSettings] = useState<Record<string, any>>({});
-
-  const setSdCardPath = (path: string) => {
-    const updatedSettings = { ...settings, sdCardPath: path };
-    setSettings(updatedSettings);
-    setSdCardPathState(path);
-    window.electronAPI.setSetting("sdCardPath", path);
-  };
 
   const setLocalStorePath = (path: string) => {
     const updatedSettings = { ...settings, localStorePath: path };
@@ -66,7 +63,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const refreshLocalStoreStatus = async () => {
+  const refreshLocalStoreStatus = useCallback(async () => {
     try {
       if (window.electronAPI?.getLocalStoreStatus) {
         const status = await window.electronAPI.getLocalStoreStatus();
@@ -76,19 +73,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Failed to refresh local store status:", error);
       setLocalStoreStatus(null);
     }
-  };
+  }, []);
 
-  const initializeSettings = async () => {
+  const initializeSettings = useCallback(async () => {
     try {
       console.log("Initializing settings...");
       const loadedSettings = await window.electronAPI.readSettings();
       console.log("Loaded settings:", loadedSettings);
 
-      if (loadedSettings.sdCardPath) {
-        console.log("Setting sdCardPath state:", loadedSettings.sdCardPath);
-        setSdCardPathState(loadedSettings.sdCardPath);
-      }
       if (loadedSettings.localStorePath) {
+        console.log(
+          "Setting localStorePath state:",
+          loadedSettings.localStorePath,
+        );
         setLocalStorePathState(loadedSettings.localStorePath);
       }
       if (typeof loadedSettings.darkMode === "boolean") {
@@ -103,17 +100,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setSettingsInitialized(true);
     }
-  };
+  }, [refreshLocalStoreStatus]);
 
   useEffect(() => {
     initializeSettings();
-  }, []);
+  }, [initializeSettings]);
 
   return (
     <SettingsContext.Provider
       value={{
-        sdCardPath,
-        setSdCardPath,
         localStorePath,
         setLocalStorePath,
         darkMode,

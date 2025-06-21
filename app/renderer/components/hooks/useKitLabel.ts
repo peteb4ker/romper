@@ -7,7 +7,7 @@ import {
 import { KitDetailsProps, RampleKitLabel, RampleLabels } from "../kitTypes";
 
 export function useKitLabel(props: KitDetailsProps) {
-  const { kitName, sdCardPath } = props;
+  const { kitName, localStorePath } = props;
   const [kitLabel, setKitLabel] = useState<RampleKitLabel | null>(null);
   const [labelsLoading, setLabelsLoading] = useState(false);
   const [labelsError, setLabelsError] = useState<string | null>(null);
@@ -17,12 +17,12 @@ export function useKitLabel(props: KitDetailsProps) {
   const [stepPattern, setStepPatternState] = useState<boolean[][] | null>(null);
 
   useEffect(() => {
-    if (!sdCardPath || !kitName) return;
+    if (!localStorePath || !kitName) return;
     setLabelsLoading(true);
     setLabelsError(null);
     // @ts-ignore
     window.electronAPI
-      .readRampleLabels(sdCardPath)
+      .readRampleLabels(localStorePath)
       .then(async (labels: RampleLabels | null) => {
         let kit: RampleKitLabel | null = null;
         if (labels && labels.kits && labels.kits[kitName]) {
@@ -38,7 +38,7 @@ export function useKitLabel(props: KitDetailsProps) {
       })
       .catch((e) => setLabelsError("Failed to load kit metadata."))
       .finally(() => setLabelsLoading(false));
-  }, [sdCardPath, kitName]);
+  }, [localStorePath, kitName]);
 
   useEffect(() => {
     setKitLabelInput(kitLabel?.label || "");
@@ -60,18 +60,18 @@ export function useKitLabel(props: KitDetailsProps) {
   async function updateKitLabel(update: (kit: RampleKitLabel) => void) {
     // @ts-ignore
     const labels: RampleLabels = (await window.electronAPI.readRampleLabels(
-      sdCardPath,
+      localStorePath,
     )) || { kits: {} };
     const kit = labels.kits[kitName] || { label: kitName };
     update(kit);
     labels.kits[kitName] = kit;
     // @ts-ignore
-    await window.electronAPI.writeRampleLabels(sdCardPath, labels);
+    await window.electronAPI.writeRampleLabels(localStorePath, labels);
     return kit;
   }
 
   const handleSaveKitLabel = async (newLabel: string) => {
-    if (!sdCardPath || !kitName) return;
+    if (!localStorePath || !kitName) return;
     const kit = await updateKitLabel((kit) => {
       kit.label = newLabel;
     });
@@ -79,7 +79,7 @@ export function useKitLabel(props: KitDetailsProps) {
     setMetadataChanged(true);
   };
   const handleSaveKitTags = async (tags: string[]) => {
-    if (!sdCardPath || !kitName) return;
+    if (!localStorePath || !kitName) return;
     const kit = await updateKitLabel((kit) => {
       kit.tags = tags;
     });
@@ -99,7 +99,7 @@ export function useKitLabel(props: KitDetailsProps) {
     setKitLabel(kit);
   };
   const handleSaveVoiceName = async (voice: number, newName: string) => {
-    if (!sdCardPath || !kitName) return;
+    if (!localStorePath || !kitName) return;
     const kit = await updateKitLabel((kit) => {
       kit.voiceNames = { ...(kit.voiceNames || {}), [voice]: newName };
     });
@@ -110,7 +110,7 @@ export function useKitLabel(props: KitDetailsProps) {
     voice: number,
     voices: { [key: number]: string[] },
   ) => {
-    if (!sdCardPath || !kitName) return;
+    if (!localStorePath || !kitName) return;
     const samples = voices[voice] || [];
     let inferredName: string | null = null;
     for (const sample of samples) {
@@ -136,7 +136,7 @@ export function useKitLabel(props: KitDetailsProps) {
   const handleRescanAllVoiceNames = async (
     voices: { [key: number]: string[] } | undefined,
   ) => {
-    if (!sdCardPath || !kitName) return;
+    if (!localStorePath || !kitName) return;
     const safeVoices = voices || { 1: [], 2: [], 3: [], 4: [] };
     const newVoiceNames: { [key: number]: string } = {
       1: "",
@@ -163,10 +163,10 @@ export function useKitLabel(props: KitDetailsProps) {
   };
 
   const reloadKitLabel = async () => {
-    if (!sdCardPath || !kitName) return;
+    if (!localStorePath || !kitName) return;
     // @ts-ignore
     const labels: RampleLabels = (await window.electronAPI.readRampleLabels(
-      sdCardPath,
+      localStorePath,
     )) || { kits: {} };
     let kit: RampleKitLabel | null = null;
     if (labels && labels.kits && labels.kits[kitName]) {
@@ -183,7 +183,7 @@ export function useKitLabel(props: KitDetailsProps) {
   // Save stepPattern to disk and update kitLabel
   const setStepPattern = async (pattern: boolean[][]) => {
     setStepPatternState(pattern);
-    if (!sdCardPath || !kitName) return;
+    if (!localStorePath || !kitName) return;
     const kit = await updateKitLabel((kit) => {
       kit.stepPattern = pattern;
     });

@@ -9,6 +9,12 @@
 - Do not assert that a piece of functionality is working at the end of your messages.
 - if a tsx file grows to more than 350 lines, it should be refactored into multiple logical components.
 
+## Build Validation
+- After making any code changes, always run `npx tsc --noEmit` to check for TypeScript compilation errors before marking a task complete.
+- Use `npx tsc --noEmit` rather than a full build as it's faster and sufficient for type checking.
+- Fix all TypeScript errors before proceeding to the next task.
+- Use the `get_errors` tool to check for errors in specific files during development.
+
 ## Testing
 - `vitest` is used for testing. Not `jest`.
 - centralized mocks, setup, teardown and dependencies in `vitest.setup.ts` should always be referenced when testing.

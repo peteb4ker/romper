@@ -41,7 +41,7 @@ function renderKitBrowserHook(props = {}) {
   return renderHook(() =>
     useKitBrowser({
       kits: ["A1"],
-      sdCardPath: "/sd",
+      localStorePath: "/sd",
       ...props,
     }),
   );

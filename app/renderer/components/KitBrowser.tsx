@@ -12,7 +12,7 @@ import LocalStoreWizardUI from "./LocalStoreWizardUI";
 
 interface KitBrowserProps {
   onSelectKit: (kitName: string) => void;
-  sdCardPath: string | null;
+  localStorePath: string | null;
   kits?: string[];
   kitLabels: { [kit: string]: RampleKitLabel };
   onRescanAllVoiceNames: () => void;
@@ -25,12 +25,12 @@ interface KitBrowserProps {
 const KitBrowser: React.FC<KitBrowserProps> = (props) => {
   const { onMessage } = props;
   const kitListRef = useRef<KitListHandle>(null);
-  // Ensure sdCardPath is always a string (never null)
+  // Ensure localStorePath is always a string (never null)
   const logic = useKitBrowser({
     ...props,
     kits: props.kits ?? [],
     kitListRef: kitListRef,
-    sdCardPath: props.sdCardPath ?? "",
+    localStorePath: props.localStorePath ?? "",
     onMessage: props.onMessage,
   });
   const {
@@ -54,7 +54,6 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     handleCreateNextKit,
     handleDuplicateKit,
     handleBankClick,
-    handleSelectSdCard,
     selectedBank,
     focusedKit,
     setFocusedKit,
@@ -116,7 +115,6 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
       className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded m-2"
     >
       <KitBrowserHeader
-        onSelectSdCard={handleSelectSdCard}
         onRescanAllVoiceNames={props.onRescanAllVoiceNames}
         onShowNewKit={() => setShowNewKit(true)}
         onCreateNextKit={handleCreateNextKit}
@@ -166,7 +164,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
             setDuplicateKitDest("");
             logic.setDuplicateKitError(null);
           }}
-          sdCardPath={props.sdCardPath || ""}
+          localStorePath={props.localStorePath || ""}
           kitLabels={props.kitLabels}
           sampleCounts={props.sampleCounts}
           voiceLabelSets={props.voiceLabelSets}

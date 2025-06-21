@@ -105,11 +105,11 @@ export function rescanVoiceNames(kitPath: string) {
 }
 
 export async function commitKitPlanHandler(
-  sdCardPath: string,
+  localStorePath: string,
   kitName: string,
 ) {
   const errors: string[] = [];
-  const labels = readRampleLabels(sdCardPath);
+  const labels = readRampleLabels(localStorePath);
   if (!labels || !labels.kits[kitName] || !labels.kits[kitName].plan) {
     errors.push("No plan found for kit.");
     return { success: false, errors };
@@ -123,7 +123,7 @@ export async function commitKitPlanHandler(
   if (validationErrors.length > 0) {
     return { success: false, errors: validationErrors };
   }
-  const kitPath = path.join(sdCardPath, kitName);
+  const kitPath = path.join(localStorePath, kitName);
   if (!fs.existsSync(kitPath)) {
     try {
       fs.mkdirSync(kitPath);
@@ -152,6 +152,6 @@ export async function commitKitPlanHandler(
   const voiceNames = rescanVoiceNames(kitPath);
   if (!labels.kits[kitName].voiceNames) labels.kits[kitName].voiceNames = {};
   Object.assign(labels.kits[kitName].voiceNames, voiceNames);
-  writeRampleLabels(sdCardPath, labels);
+  writeRampleLabels(localStorePath, labels);
   return { success: errors.length === 0, errors };
 }

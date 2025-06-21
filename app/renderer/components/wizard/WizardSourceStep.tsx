@@ -12,7 +12,7 @@ interface WizardSourceStepProps {
   sourceOptions: SourceOption[];
   stateSource: string | null;
   handleSourceSelect: (value: string) => void;
-  sdCardPath?: string;
+  localStorePath?: string;
   setSdCardPath?: (path: string) => void;
   sourceConfirmed?: boolean;
   setSourceConfirmed?: (confirmed: boolean) => void;
@@ -22,13 +22,13 @@ const WizardSourceStep: React.FC<WizardSourceStepProps> = ({
   sourceOptions,
   stateSource,
   handleSourceSelect,
-  sdCardPath,
+  localStorePath,
   setSdCardPath,
   sourceConfirmed,
   setSourceConfirmed,
 }) => {
   // Only show SD card path if source is sdcard
-  const isEnvSdCardPath = !!config.sdCardPath;
+  const isEnvSdCardPath = !!config.localStorePath;
 
   // Unified click handler for SD card button
   const handleSdCardClick = async () => {
@@ -37,7 +37,7 @@ const WizardSourceStep: React.FC<WizardSourceStepProps> = ({
     }
     if (isEnvSdCardPath) {
       setSourceConfirmed?.(true);
-      if (setSdCardPath) setSdCardPath(config.sdCardPath!);
+      if (setSdCardPath) setSdCardPath(config.localStorePath!);
       return;
     }
     if (window.electronAPI?.selectSdCard) {

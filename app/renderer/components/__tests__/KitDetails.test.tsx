@@ -72,7 +72,7 @@ describe("KitDetails", () => {
       render(
         <KitDetails
           kitName="TestKit"
-          sdCardPath="/sd"
+          localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
         />,
@@ -92,7 +92,7 @@ describe("KitDetails", () => {
       render(
         <KitDetails
           kitName="TestKit"
-          sdCardPath="/sd"
+          localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
         />,
@@ -119,7 +119,7 @@ describe("KitDetails", () => {
       render(
         <KitDetails
           kitName="TestKit"
-          sdCardPath="/sd"
+          localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
         />,
@@ -149,7 +149,7 @@ describe("KitDetails", () => {
       render(
         <KitDetails
           kitName="TestKit"
-          sdCardPath="/sd"
+          localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
         />,
@@ -178,7 +178,7 @@ describe("KitDetails", () => {
       render(
         <KitDetails
           kitName="TestKit"
-          sdCardPath="/sd"
+          localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
         />,

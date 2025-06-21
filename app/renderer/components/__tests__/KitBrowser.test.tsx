@@ -13,7 +13,7 @@ import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 
 const baseProps = {
   onSelectKit: vi.fn(),
-  sdCardPath: "/mock/sd",
+  localStorePath: "/mock/sd",
   kits: ["A0", "A1", "B0"],
   kitLabels: {
     A0: { voiceNames: ["Kick", "Snare", "Hat", "Tom"] },
@@ -53,7 +53,6 @@ describe("KitBrowser", () => {
           <KitBrowser {...baseProps} />
         </MockMessageDisplayProvider>,
       );
-      expect(screen.getByText("Select SD Card")).toBeTruthy();
       expect(screen.getByText("Rescan All Kit Voice Names")).toBeTruthy();
       expect(screen.getByText("+ New Kit")).toBeTruthy();
       expect(screen.getByTestId("kit-item-A0")).toBeTruthy();
@@ -91,15 +90,6 @@ describe("KitBrowser", () => {
       );
       fireEvent.click(screen.getByText("Rescan All Kit Voice Names"));
       expect(baseProps.onRescanAllVoiceNames).toHaveBeenCalled();
-    });
-    it("calls electronAPI.selectSdCard and setSetting when Select SD Card is clicked", async () => {
-      render(
-        <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>,
-      );
-      fireEvent.click(screen.getByText("Select SD Card"));
-      expect(window.electronAPI.selectSdCard).toHaveBeenCalled();
     });
   });
 

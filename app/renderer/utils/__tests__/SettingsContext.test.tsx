@@ -18,7 +18,7 @@ afterEach(() => {
 
 describe("SettingsContext", () => {
   const mockSettingsContextValue = {
-    sdCardPath: null,
+    localStorePath: null,
     setSdCardPath: vi.fn(),
     darkMode: false,
     setDarkMode: vi.fn(),

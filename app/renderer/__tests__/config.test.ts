@@ -17,12 +17,12 @@ describe("config", () => {
   it("should use ROMPER_SDCARD_PATH if set", async () => {
     vi.stubEnv("ROMPER_SDCARD_PATH", "/test/sdcard");
     const { config: freshConfig } = await import("../config");
-    expect(freshConfig.sdCardPath).toBe("/test/sdcard");
+    expect(freshConfig.localStorePath).toBe("/test/sdcard");
   });
 
   it("should be undefined if ROMPER_SDCARD_PATH is not set", async () => {
     vi.stubEnv("ROMPER_SDCARD_PATH", undefined);
     const { config: freshConfig } = await import("../config");
-    expect(freshConfig.sdCardPath).toBeUndefined();
+    expect(freshConfig.localStorePath).toBeUndefined();
   });
 });

@@ -6,20 +6,25 @@ import { SettingsContext, SettingsProvider } from "../../utils/SettingsContext";
 export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // Provide a default sdCardPath and settingsInitialized=true for tests
+  // Provide a default localStorePath and settingsInitialized=true for tests
   const [settingsInitialized] = useState(true);
-  const [sdCardPath, setSdCardPath] = useState("/test-sd");
+  const [localStorePath, setLocalStorePath] = useState("/mock/local/store");
   const [darkMode, setDarkMode] = useState(false);
   const initializeSettings = async () => {};
+  const localStoreStatus = { isValid: true, hasLocalStore: true };
+  const refreshLocalStoreStatus = async () => {};
+
   return (
     <SettingsContext.Provider
       value={{
-        sdCardPath,
-        setSdCardPath,
+        localStorePath,
+        setLocalStorePath,
         darkMode,
         setDarkMode,
         initializeSettings,
         settingsInitialized,
+        localStoreStatus,
+        refreshLocalStoreStatus,
       }}
     >
       {children}

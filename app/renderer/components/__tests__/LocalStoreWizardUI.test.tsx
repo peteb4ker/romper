@@ -27,7 +27,7 @@ const getMockUseLocalStoreWizard = (overrides = {}) => ({
   ...overrides,
 });
 
-let configMock = { sdCardPath: undefined };
+let configMock = { localStorePath: undefined };
 
 beforeEach(() => {
   vi.resetModules();
@@ -46,7 +46,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
-  configMock = { sdCardPath: undefined };
+  configMock = { localStorePath: undefined };
 });
 
 describe("LocalStoreWizardUI", () => {
@@ -144,15 +144,15 @@ describe("LocalStoreWizardUI", () => {
     expect(screen.getByLabelText(/local store path/i)).toBeInTheDocument();
   });
 
-  it("should auto-fill SD card path and not show picker when config.sdCardPath is set", async () => {
-    configMock.sdCardPath = "/mock/sdcard";
+  it("should auto-fill SD card path and not show picker when config.localStorePath is set", async () => {
+    configMock.localStorePath = "/mock/sdcard";
     vi.doMock("../hooks/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () =>
         getMockUseLocalStoreWizard({
           state: {
             source: "sdcard",
             sourceConfirmed: false, // must be false so Source step is rendered
-            sdCardPath: "/mock/sdcard",
+            localStorePath: "/mock/sdcard",
             targetPath: "",
             isInitializing: false,
             error: null,

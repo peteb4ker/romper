@@ -17,7 +17,7 @@ export function useKitVoicePanels({
   onPlay,
   onStop,
   onWaveformPlayingChange,
-  sdCardPath,
+  localStorePath,
   kitName,
   onSampleSelect,
   sequencerOpen = false,
@@ -40,7 +40,7 @@ export function useKitVoicePanels({
     sample: string,
     playing: boolean,
   ) => void;
-  sdCardPath: string;
+  localStorePath: string;
   kitName: string;
   onSampleSelect: (voice: number, idx: number) => void;
   sequencerOpen?: boolean;
@@ -105,7 +105,7 @@ export function useKitVoicePanels({
     onPlay,
     onStop,
     onWaveformPlayingChange,
-    sdCardPath,
+    localStorePath,
     kitName,
     onSampleKeyNav: handleSampleNavigation,
     onSampleSelect,

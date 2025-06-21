@@ -13,6 +13,12 @@
 - `app/renderer/components/utils/planUtils.test.ts` - Unit tests for planUtils.
 - `app/renderer/components/utils/settingsManager.ts` - Manages global settings such as 'default to mono samples' and local store location.
 - `app/renderer/components/utils/settingsManager.test.ts` - Unit tests for settingsManager.
+- `app/renderer/utils/SettingsContext.tsx` - React context for settings management, including local store status validation.
+- `electron/main/localStoreValidator.ts` - Shared validation logic for local store paths and Romper DB validation, used by both main process and IPC handlers.
+- `electron/main/__tests__/localStoreValidator.test.ts` - Unit tests for shared local store validation logic.
+- `electron/main/index.ts` - Main Electron process entry point, now validates local store on startup and removes invalid paths from settings.
+- `electron/main/ipcHandlers.ts` - Main process IPC handlers, now uses shared validation logic for local store status checks.
+- `app/renderer/electron.d.ts` - TypeScript definitions for Electron IPC, updated with local store status interface.
 - `app/renderer/components/KitVoicePanel.tsx` - UI for voice slot drag-and-drop, add/replace/delete actions, and plan mode feedback.
 - `app/renderer/components/KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel plan mode and slot actions.
 - `app/renderer/components/KitVoicePanels.tsx` - Renders all voice panels and coordinates plan mode state.
@@ -72,7 +78,15 @@
     - [x] 2.14 Implement initial import to create kit and sample records (no plan table), with new fields
     - [x] 2.15 Update documentation and ERD to match new schema (docs/romper-db.md, docs/romper-db.mmd)
   - [x] 2.5 Unit tests for initialization, validation, and error handling.
-  - [ ] 2.8 Store exactly one local store path and associated Romper DB location in application settings; load them on startup if present.
+  - [x] 2.8 Store exactly one local store path and associated Romper DB location in application settings; load them on startup if present.
+  - [ ] 2.9 Transition from SD card-based startup to local store-based startup
+    - [x] 2.9.1 Update app startup logic to use local store path instead of SD card path
+    - [x] 2.9.2 Show local store wizard immediately on startup if local store is not configured or invalid
+    - [x] 2.9.3 Display info message that local store must be set up before app can be used
+    - [x] 2.9.4 Close app if user cancels the auto-triggered wizard
+    - [x] 2.9.5 Remove "Select SD Card" button from KitBrowserHeader
+    - [x] 2.9.6 Update StatusBar to show local store path with database icon instead of SD card info
+    - [x] 2.9.7 Update all related unit tests for the SD card to local store transition
   - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
   - [ ] 2.12 If the Romper DB metadata or plans are out of sync with the local store, present an error to the user and indicate that manual intervention may be required.
   - [x] 2.16 Flip local store setup flow: user chooses source first, then target, then import. Update UI, logic, and tests. Decouple UI tests from IPC/Electron.

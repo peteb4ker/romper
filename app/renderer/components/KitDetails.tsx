@@ -84,7 +84,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   useKitDetails({
     kitLabel: managedKitLabel || undefined,
     samples,
-    sdCardPath: props.sdCardPath,
+    localStorePath: props.localStorePath,
     kitName: props.kitName,
     onRescanAllVoiceNames: () => handleRescanAllVoiceNames(samples),
   });
@@ -153,7 +153,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
     onPlay: handlePlay,
     onStop: handleStop,
     onWaveformPlayingChange: handleWaveformPlayingChange,
-    sdCardPath: props.sdCardPath,
+    localStorePath: props.localStorePath,
     kitName: props.kitName,
     onSampleSelect: (voice, idx) => {
       setSelectedVoice(voice);
@@ -263,7 +263,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
           onPlay={handlePlay}
           onStop={handleStop}
           onWaveformPlayingChange={handleWaveformPlayingChange}
-          sdCardPath={props.sdCardPath}
+          localStorePath={props.localStorePath}
           kitName={props.kitName}
           onSampleKeyNav={kitVoicePanels.onSampleKeyNav}
         />

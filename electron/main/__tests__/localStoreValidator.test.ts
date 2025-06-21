@@ -1,7 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
-import { validateLocalStoreAndDb, getRomperDbPath } from "../localStoreValidator";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import {
+  getRomperDbPath,
+  validateLocalStoreAndDb,
+} from "../localStoreValidator";
 
 describe("localStoreValidator", () => {
   const testDir = "/tmp/romper-test-validation";

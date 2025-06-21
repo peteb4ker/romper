@@ -1,6 +1,5 @@
 import React from "react";
-import { FiMoon, FiSun } from "react-icons/fi";
-import { MdSdCard } from "react-icons/md";
+import { FiDatabase, FiMoon, FiSun } from "react-icons/fi";
 
 import { useSettings } from "../utils/SettingsContext";
 
@@ -13,13 +12,15 @@ const StatusBar: React.FC<StatusBarProps> = ({
   status = "Ready",
   progress = null,
 }) => {
-  const { sdCardPath, darkMode, setDarkMode } = useSettings();
+  const { localStorePath, darkMode, setDarkMode } = useSettings();
   return (
     <div className="fixed bottom-0 left-0 w-full flex items-center justify-between px-4 py-2 bg-gray-200 dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 border-t border-gray-300 dark:border-slate-700 z-20">
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1">
-          <MdSdCard size={16} /> SD Card:{" "}
-          <span className="font-mono">{sdCardPath || "Not selected"}</span>
+          <FiDatabase size={16} /> Local Store:{" "}
+          <span className="font-mono">
+            {localStorePath || "Not configured"}
+          </span>
         </span>
         <span className="ml-4 font-semibold" data-testid="status-text">
           {status}

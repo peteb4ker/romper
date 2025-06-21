@@ -27,7 +27,7 @@ export interface VoiceSamples {
 
 export interface KitDetailsProps {
   kitName: string;
-  sdCardPath: string;
+  localStorePath: string;
   onBack: (scrollToKit?: string) => void;
   kits?: string[];
   kitIndex?: number;

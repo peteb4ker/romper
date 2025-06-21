@@ -64,13 +64,13 @@ describe("WizardSourceStep", () => {
     expect(setSdCardPath).toHaveBeenCalledWith("/mock/sdcard");
     expect(setSourceConfirmed).toHaveBeenCalledWith(true);
   });
-  it("shows SD card path display when sdCardPath is set and no env var", () => {
+  it("shows SD card path display when localStorePath is set and no env var", () => {
     render(
       <WizardSourceStep
         sourceOptions={sourceOptions}
         stateSource="sdcard"
         handleSourceSelect={() => {}}
-        sdCardPath="/mock/sdcard"
+        localStorePath="/mock/sdcard"
       />,
     );
     // Path should NOT be shown during source step

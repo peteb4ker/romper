@@ -6,8 +6,8 @@ import { useKitSamples } from "../useKitSamples";
 
 describe("useKitSamples", () => {
   const kitName = "TestKit";
-  const sdCardPath = "/sd";
-  const kitPath = `${sdCardPath}/${kitName}`;
+  const localStorePath = "/sd";
+  const kitPath = `${localStorePath}/${kitName}`;
   let listFilesInRoot: any;
   let setKitLabel: any;
   beforeEach(() => {
@@ -22,7 +22,10 @@ describe("useKitSamples", () => {
   it("uses propSamples if provided", () => {
     const propSamples = { 1: ["kick.wav"], 2: ["snare.wav"] };
     const { result } = renderHook(() =>
-      useKitSamples({ kitName, sdCardPath, samples: propSamples }, setKitLabel),
+      useKitSamples(
+        { kitName, localStorePath, samples: propSamples },
+        setKitLabel,
+      ),
     );
     expect(result.current.samples).toEqual(propSamples);
     expect(result.current.loading).toBe(false);
@@ -37,7 +40,7 @@ describe("useKitSamples", () => {
       "4 Tom.wav",
     ]);
     const { result } = renderHook(() =>
-      useKitSamples({ kitName, sdCardPath }, setKitLabel),
+      useKitSamples({ kitName, localStorePath }, setKitLabel),
     );
     await act(async () => {
       await waitFor(() => result.current.loading === false);
@@ -53,7 +56,7 @@ describe("useKitSamples", () => {
   it("sets error if electronAPI fails", async () => {
     listFilesInRoot.mockRejectedValue(new Error("fail!"));
     const { result } = renderHook(() =>
-      useKitSamples({ kitName, sdCardPath }, setKitLabel),
+      useKitSamples({ kitName, localStorePath }, setKitLabel),
     );
     await act(async () => {
       await waitFor(() => result.current.loading === false);

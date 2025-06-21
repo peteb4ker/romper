@@ -10,7 +10,7 @@ export function useKitSamples(
   props: KitDetailsProps,
   setKitLabel: (label: any) => void,
 ) {
-  const { kitName, sdCardPath, samples: propSamples } = props;
+  const { kitName, localStorePath, samples: propSamples } = props;
   const [samples, setSamples] = useState<any>(propSamples || {});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export function useKitSamples(
       setError(null);
       try {
         // @ts-ignore
-        const kitPath = `${sdCardPath}/${kitName}`;
+        const kitPath = `${localStorePath}/${kitName}`;
         // @ts-ignore
         const files: string[] =
           await window.electronAPI?.listFilesInRoot?.(kitPath);
@@ -61,7 +61,7 @@ export function useKitSamples(
       }
     };
     loadSamples();
-  }, [kitName, sdCardPath, propSamples]);
+  }, [kitName, localStorePath, propSamples]);
 
   return { samples, loading, error, voiceNames };
 }

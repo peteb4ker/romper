@@ -21,7 +21,7 @@ interface KitVoicePanelsProps {
     sample: string,
     playing: boolean,
   ) => void;
-  sdCardPath: string;
+  localStorePath: string;
   kitName: string;
   onSampleKeyNav: (direction: "up" | "down") => void;
   onSampleSelect: (voice: number, idx: number) => void;
@@ -61,7 +61,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
             onPlay={hookProps.onPlay}
             onStop={hookProps.onStop}
             onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
-            sdCardPath={hookProps.sdCardPath}
+            localStorePath={hookProps.localStorePath}
             kitName={hookProps.kitName}
             dataTestIdVoiceName={`voice-name-${voice}`}
             selectedIdx={

@@ -23,11 +23,11 @@ beforeAll(() => {
       },
     };
     window.electronAPI = {
-      scanSdCard: async (sdCardPath) => ["KitA", "KitB", "KitC"],
+      scanSdCard: async (localStorePath) => ["KitA", "KitB", "KitC"],
       selectSdCard: async () => "/sd",
       watchSdCard: () => ({ close: () => {} }),
       getUserHomeDir: async () => "/mock/home", // Fix: make this async to match production API
-      readSettings: async () => ({ sdCardPath: "/sd" }),
+      readSettings: async () => ({ localStorePath: "/sd" }),
       setSetting: async () => {},
       getSetting: async () => "/sd",
       createKit: async () => {},
@@ -38,7 +38,7 @@ beforeAll(() => {
         "3 hat.wav",
         "4 tom.wav",
       ],
-      readRampleLabels: async (sdCardPath) => ({
+      readRampleLabels: async (localStorePath) => ({
         kits: {
           KitA: {
             label: "KitA",
@@ -54,7 +54,7 @@ beforeAll(() => {
           },
         },
       }),
-      writeRampleLabels: async (sdCardPath, labels) => {},
+      writeRampleLabels: async (localStorePath, labels) => {},
       getAudioBuffer: async () => new ArrayBuffer(8),
       selectLocalStorePath: async () => "/mock/custom/path", // mock for tests
     };
@@ -93,7 +93,7 @@ beforeAll(() => {
 
   // Mock SettingsContext
   vi.mock("./utils/SettingsContext", () => ({
-    useSettings: () => ({ sdCardPath: "/sd" }),
+    useSettings: () => ({ localStorePath: "/sd" }),
   }));
 
   // Mock Worker for tests (step sequencer, etc.)

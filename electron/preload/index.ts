@@ -12,7 +12,7 @@ const getUserDataPath = async (): Promise<string> => {
 };
 
 async function readSettings(): Promise<{
-  sdCardPath?: string;
+  localStorePath?: string;
   darkMode?: boolean;
   theme?: string;
   localStorePath?: string;
@@ -28,7 +28,7 @@ async function readSettings(): Promise<{
 
 async function writeSettings(
   key: keyof {
-    sdCardPath?: string;
+    localStorePath?: string;
     darkMode?: boolean;
     theme?: string;
     localStorePath?: string;
@@ -43,23 +43,23 @@ async function writeSettings(
 }
 
 contextBridge.exposeInMainWorld("electronAPI", {
-  scanSdCard: (sdCardPath: string): Promise<string[]> => {
-    console.log("[Preload] scanSdCard invoked", sdCardPath);
-    return ipcRenderer.invoke("scan-sd-card", sdCardPath);
+  scanSdCard: (localStorePath: string): Promise<string[]> => {
+    console.log("[Preload] scanSdCard invoked", localStorePath);
+    return ipcRenderer.invoke("scan-sd-card", localStorePath);
   },
   selectSdCard: (): Promise<string | null> => {
     console.log("[Preload] selectSdCard invoked");
     return ipcRenderer.invoke("select-sd-card");
   },
   watchSdCard: (
-    sdCardPath: string,
+    localStorePath: string,
     callback: () => void,
   ): { close: () => Promise<void> } => {
-    console.log("[Preload] watchSdCard invoked", sdCardPath);
+    console.log("[Preload] watchSdCard invoked", localStorePath);
     let watcherId: string | undefined;
-    ipcRenderer.invoke("watch-sd-card", sdCardPath).then((id: string) => {
+    ipcRenderer.invoke("watch-sd-card", localStorePath).then((id: string) => {
       watcherId = id;
-      console.log("watchSdCard invoked with path:", sdCardPath);
+      console.log("watchSdCard invoked with path:", localStorePath);
       ipcRenderer.on("sd-card-changed", (_event: unknown, _data: unknown) =>
         callback(),
       );
@@ -80,7 +80,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   getSetting: async (
     key: keyof {
-      sdCardPath?: string;
+      localStorePath?: string;
       darkMode?: boolean;
       theme?: string;
       localStorePath?: string;
@@ -92,7 +92,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   setSetting: async (
     key: keyof {
-      sdCardPath?: string;
+      localStorePath?: string;
       darkMode?: boolean;
       theme?: string;
       localStorePath?: string;
@@ -103,7 +103,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     await writeSettings(key, value);
   },
   readSettings: async (): Promise<{
-    sdCardPath?: string;
+    localStorePath?: string;
     darkMode?: boolean;
     theme?: string;
     localStorePath?: string;
@@ -111,21 +111,30 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[Preload] readSettings invoked");
     return readSettings();
   },
-  createKit: (sdCardPath: string, kitSlot: string): Promise<void> => {
-    console.log("[Preload] createKit invoked", sdCardPath, kitSlot);
-    return ipcRenderer.invoke("create-kit", sdCardPath, kitSlot);
+  createKit: (localStorePath: string, kitSlot: string): Promise<void> => {
+    console.log("[Preload] createKit invoked", localStorePath, kitSlot);
+    return ipcRenderer.invoke("create-kit", localStorePath, kitSlot);
   },
   copyKit: (
-    sdCardPath: string,
+    localStorePath: string,
     sourceKit: string,
     destKit: string,
   ): Promise<void> => {
-    console.log("[Preload] copyKit invoked", sdCardPath, sourceKit, destKit);
-    return ipcRenderer.invoke("copy-kit", sdCardPath, sourceKit, destKit);
+    console.log(
+      "[Preload] copyKit invoked",
+      localStorePath,
+      sourceKit,
+      destKit,
+    );
+    return ipcRenderer.invoke("copy-kit", localStorePath, sourceKit, destKit);
   },
-  listFilesInRoot: (sdCardPath: string): Promise<string[]> => {
-    console.log("[Preload] listFilesInRoot invoked", sdCardPath);
-    return ipcRenderer.invoke("list-files-in-root", sdCardPath);
+  listFilesInRoot: (localStorePath: string): Promise<string[]> => {
+    console.log("[Preload] listFilesInRoot invoked", localStorePath);
+    return ipcRenderer.invoke("list-files-in-root", localStorePath);
+  },
+  closeApp: (): Promise<void> => {
+    console.log("[Preload] closeApp invoked");
+    return ipcRenderer.invoke("close-app");
   },
   playSample: (filePath: string) => {
     console.log("[Preload] playSample invoked", filePath);
@@ -151,21 +160,29 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[Preload] getAudioBuffer invoked", filePath);
     return ipcRenderer.invoke("get-audio-buffer", filePath);
   },
-  readRampleLabels: (sdCardPath: string) => {
-    console.log("[Preload] readRampleLabels invoked", sdCardPath);
-    return ipcRenderer.invoke("read-rample-labels", sdCardPath);
+  readRampleLabels: (localStorePath: string) => {
+    console.log("[Preload] readRampleLabels invoked", localStorePath);
+    return ipcRenderer.invoke("read-rample-labels", localStorePath);
   },
-  writeRampleLabels: (sdCardPath: string, labels: any) => {
-    console.log("[Preload] writeRampleLabels invoked", sdCardPath, labels);
-    return ipcRenderer.invoke("write-rample-labels", sdCardPath, labels);
+  writeRampleLabels: (localStorePath: string, labels: any) => {
+    console.log("[Preload] writeRampleLabels invoked", localStorePath, labels);
+    return ipcRenderer.invoke("write-rample-labels", localStorePath, labels);
   },
-  discardKitPlan: (sdCardPath: string, kitName: string) => {
-    console.log("[Preload] discardKitPlan invoked", sdCardPath, kitName);
-    return ipcRenderer.invoke("discard-kit-plan", sdCardPath, kitName);
+  discardKitPlan: (localStorePath: string, kitName: string) => {
+    console.log("[Preload] discardKitPlan invoked", localStorePath, kitName);
+    return ipcRenderer.invoke("discard-kit-plan", localStorePath, kitName);
   },
-  rescanAllVoiceNames: (sdCardPath: string, kitNames: string[]) => {
-    console.log("[Preload] rescanAllVoiceNames invoked", sdCardPath, kitNames);
-    return ipcRenderer.invoke("rescan-all-voice-names", sdCardPath, kitNames);
+  rescanAllVoiceNames: (localStorePath: string, kitNames: string[]) => {
+    console.log(
+      "[Preload] rescanAllVoiceNames invoked",
+      localStorePath,
+      kitNames,
+    );
+    return ipcRenderer.invoke(
+      "rescan-all-voice-names",
+      localStorePath,
+      kitNames,
+    );
   },
   getUserHomeDir: async () => {
     console.log("[Preload] getUserHomeDir invoked");

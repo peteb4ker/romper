@@ -53,7 +53,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        sdCardPath="/sd"
+        localStorePath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
       />,
@@ -75,7 +75,7 @@ describe("KitList", () => {
         onSelectKit={onSelectKit}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        sdCardPath="/sd"
+        localStorePath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
       />,
@@ -92,7 +92,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={onDuplicate}
-        sdCardPath="/sd"
+        localStorePath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
       />,
@@ -111,7 +111,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        sdCardPath="/sd"
+        localStorePath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
       />,
@@ -136,7 +136,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        sdCardPath="/sd"
+        localStorePath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
       />,
@@ -151,7 +151,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        sdCardPath="/sd"
+        localStorePath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
       />,
@@ -173,7 +173,7 @@ describe("KitList", () => {
         onSelectKit={onSelectKit}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        sdCardPath="/sd"
+        localStorePath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
       />,
@@ -220,7 +220,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        sdCardPath="/sd"
+        localStorePath="/sd"
         kitLabels={kitLabels}
         sampleCounts={sampleCounts}
       />,

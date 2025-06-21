@@ -1,7 +1,7 @@
 // Centralized Romper config for renderer and hooks
 export interface RomperConfig {
   squarpArchiveUrl: string;
-  sdCardPath?: string;
+  localStorePath?: string;
   // Add more config options here as needed
 }
 
@@ -35,7 +35,7 @@ function createConfig(): RomperConfig {
         "ROMPER_SQUARP_ARCHIVE_URL",
         "https://data.squarp.net/RampleSamplesV1-2.zip",
       ) || "https://data.squarp.net/RampleSamplesV1-2.zip",
-    sdCardPath: getConfigValue("ROMPER_SDCARD_PATH"),
+    localStorePath: getConfigValue("ROMPER_SDCARD_PATH"),
   };
 
   return config;

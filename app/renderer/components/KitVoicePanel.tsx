@@ -27,7 +27,7 @@ interface KitVoicePanelProps {
     sample: string,
     playing: boolean,
   ) => void;
-  sdCardPath: string;
+  localStorePath: string;
   kitName: string;
 
   // New props for cross-voice navigation
@@ -51,7 +51,7 @@ const KitVoicePanel: React.FC<
   onPlay,
   onStop,
   onWaveformPlayingChange,
-  sdCardPath,
+  localStorePath,
   kitName,
   dataTestIdVoiceName,
   selectedIdx = -1,
@@ -182,7 +182,7 @@ const KitVoicePanel: React.FC<
             if (sample) {
               const sampleKey = voice + ":" + sample;
               const isPlaying = samplePlaying[sampleKey];
-              let filePath = `${sdCardPath}/${kitName}/${sample}`;
+              let filePath = `${localStorePath}/${kitName}/${sample}`;
               return (
                 <li
                   key={`${voice}-${i}-${sample}`}

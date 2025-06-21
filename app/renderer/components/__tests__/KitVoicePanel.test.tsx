@@ -25,7 +25,7 @@ const baseProps = {
   onPlay: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  sdCardPath: "/fake/path",
+  localStorePath: "/fake/path",
   kitName: "Kit1",
 };
 

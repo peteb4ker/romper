@@ -1,19 +1,19 @@
 export interface ElectronAPI {
-  scanSdCard: (sdCardPath: string) => Promise<string[]>;
+  scanSdCard: (localStorePath: string) => Promise<string[]>;
   selectSdCard: () => Promise<string | null>;
   watchSdCard: (
-    sdCardPath: string,
+    localStorePath: string,
     callback: () => void,
   ) => { close: () => Promise<void> };
   readSettings: () => Promise<{
-    sdCardPath?: string;
+    localStorePath?: string;
     darkMode?: boolean;
     theme?: string;
     localStorePath?: string;
   }>;
   setSetting: (
     key: keyof {
-      sdCardPath?: string;
+      localStorePath?: string;
       darkMode?: boolean;
       theme?: string;
       localStorePath?: string;
@@ -22,29 +22,30 @@ export interface ElectronAPI {
   ) => Promise<void>;
   getSetting: (
     key: keyof {
-      sdCardPath?: string;
+      localStorePath?: string;
       darkMode?: boolean;
       theme?: string;
       localStorePath?: string;
     },
   ) => Promise<any>;
-  createKit?: (sdCardPath: string, kitSlot: string) => Promise<void>;
+  createKit?: (localStorePath: string, kitSlot: string) => Promise<void>;
   copyKit?: (
-    sdCardPath: string,
+    localStorePath: string,
     sourceKit: string,
     destKit: string,
   ) => Promise<void>;
-  listFilesInRoot?: (sdCardPath: string) => Promise<string[]>;
+  listFilesInRoot?: (localStorePath: string) => Promise<string[]>;
+  closeApp?: () => Promise<void>;
   playSample?: (filePath: string) => Promise<any>;
   stopSample?: () => Promise<any>;
   onSamplePlaybackEnded?: (cb: () => void) => void;
   onSamplePlaybackError?: (cb: (errMsg: string) => void) => void;
   getAudioBuffer?: (filePath: string) => Promise<ArrayBuffer>;
-  readRampleLabels?: (sdCardPath: string) => Promise<any>;
-  writeRampleLabels?: (sdCardPath: string, labels: any) => Promise<void>;
-  discardKitPlan?: (sdCardPath: string, kitName: string) => Promise<any>;
+  readRampleLabels?: (localStorePath: string) => Promise<any>;
+  writeRampleLabels?: (localStorePath: string, labels: any) => Promise<void>;
+  discardKitPlan?: (localStorePath: string, kitName: string) => Promise<any>;
   rescanAllVoiceNames: (
-    sdCardPath: string,
+    localStorePath: string,
     kitNames: string[],
   ) => Promise<void>;
   getUserHomeDir?: () => Promise<string>;

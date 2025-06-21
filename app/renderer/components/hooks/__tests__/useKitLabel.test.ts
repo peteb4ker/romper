@@ -6,7 +6,7 @@ import * as kitUtils from "../../../../../shared/kitUtilsShared";
 import { useKitLabel } from "../useKitLabel";
 
 const defaultKitName = "TestKit";
-const defaultSdCardPath = "/sd";
+const defaultLocalStorePath = "/local-store";
 const defaultKitLabel = {
   label: defaultKitName,
   description: "desc",
@@ -45,7 +45,10 @@ describe("useKitLabel", () => {
   it("loads kit label and normalizes voiceNames", async () => {
     setupMocks({ voiceNames: undefined });
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     // Wait for async effect
     await act(async () => {
@@ -63,7 +66,10 @@ describe("useKitLabel", () => {
       writeRampleLabels: vi.fn(),
     };
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -74,7 +80,10 @@ describe("useKitLabel", () => {
   it("saves kit label", async () => {
     const { writeRampleLabels } = setupMocks();
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -89,7 +98,10 @@ describe("useKitLabel", () => {
   it("saves kit tags", async () => {
     const { writeRampleLabels } = setupMocks();
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -104,7 +116,10 @@ describe("useKitLabel", () => {
   it("saves kit metadata", async () => {
     const { writeRampleLabels } = setupMocks();
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -121,7 +136,10 @@ describe("useKitLabel", () => {
   it("saves voice name", async () => {
     const { writeRampleLabels } = setupMocks();
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -138,7 +156,10 @@ describe("useKitLabel", () => {
       voiceNames: { 1: "", 2: "", 3: "", 4: "" },
     });
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -165,7 +186,10 @@ describe("useKitLabel", () => {
       voiceNames: { 1: "", 2: "", 3: "", 4: "" },
     });
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -201,7 +225,10 @@ describe("useKitLabel", () => {
       voiceNames: { 1: "", 2: "", 3: "", 4: "" },
     });
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -227,7 +254,10 @@ describe("useKitLabel", () => {
       voiceNames: { 1: "", 2: "", 3: "", 4: "" },
     });
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -248,7 +278,10 @@ describe("useKitLabel", () => {
       voiceNames: { 1: "", 2: "", 3: "", 4: "" },
     });
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -274,7 +307,10 @@ describe("useKitLabel", () => {
       voiceNames: { 1: "Kick", 2: "Snare", 3: "", 4: "" },
     });
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();
@@ -303,7 +339,10 @@ describe("useKitLabel", () => {
       voiceNames: { 1: "", 2: "", 3: "", 4: "" },
     });
     const { result } = renderHook(() =>
-      useKitLabel({ kitName: defaultKitName, sdCardPath: defaultSdCardPath }),
+      useKitLabel({
+        kitName: defaultKitName,
+        localStorePath: defaultLocalStorePath,
+      }),
     );
     await act(async () => {
       await Promise.resolve();

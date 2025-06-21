@@ -39,6 +39,8 @@ export function registerDbIpcHandlers() {
         voice_number: number;
         slot_number: number;
         is_stereo: boolean;
+        wav_bitrate?: number;
+        wav_sample_rate?: number;
       },
     ) => {
       return insertSampleRecord(dbDir, sample);

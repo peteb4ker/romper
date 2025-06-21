@@ -31,6 +31,8 @@ export interface SampleRecord {
   voice_number: number;
   slot_number: number;
   is_stereo: boolean;
+  wav_bitrate?: number;
+  wav_sample_rate?: number;
 }
 
 // Constants
@@ -123,6 +125,8 @@ export function getDbSchema(): string {
       voice_number INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4),
       slot_number INTEGER NOT NULL CHECK(slot_number BETWEEN ${MIN_SLOT_NUMBER} AND ${MAX_SLOT_NUMBER}),
       is_stereo BOOLEAN NOT NULL DEFAULT 0,
+      wav_bitrate INTEGER,
+      wav_sample_rate INTEGER,
       FOREIGN KEY(kit_id) REFERENCES kits(id)
     );
   `;
@@ -450,7 +454,7 @@ export function insertSampleRecord(
   try {
     db = createDbConnection(dbPath);
     const stmt = db.prepare(
-      "INSERT INTO samples (kit_id, filename, voice_number, slot_number, is_stereo) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO samples (kit_id, filename, voice_number, slot_number, is_stereo, wav_bitrate, wav_sample_rate) VALUES (?, ?, ?, ?, ?, ?, ?)",
     );
     const result = stmt.run(
       sample.kit_id,
@@ -458,6 +462,8 @@ export function insertSampleRecord(
       sample.voice_number,
       sample.slot_number,
       booleanToSqlite(sample.is_stereo),
+      sample.wav_bitrate || null,
+      sample.wav_sample_rate || null,
     );
 
     return { success: true, sampleId: Number(result.lastInsertRowid) };

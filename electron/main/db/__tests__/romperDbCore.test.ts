@@ -671,9 +671,9 @@ describe("romperDbCore", () => {
 
       expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        "INSERT INTO samples (kit_id, filename, voice_number, slot_number, is_stereo) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO samples (kit_id, filename, voice_number, slot_number, is_stereo, wav_bitrate, wav_sample_rate) VALUES (?, ?, ?, ?, ?, ?, ?)",
       );
-      expect(mockStmt.run).toHaveBeenCalledWith(123, "kick.wav", 1, 1, 1);
+      expect(mockStmt.run).toHaveBeenCalledWith(123, "kick.wav", 1, 1, 1, null, null);
       expect(mockDb.close).toHaveBeenCalled();
     });
 
@@ -689,7 +689,33 @@ describe("romperDbCore", () => {
 
       insertSampleRecord(dbDir, sample);
 
-      expect(mockStmt.run).toHaveBeenCalledWith(123, "mono.wav", 2, 2, 0);
+      expect(mockStmt.run).toHaveBeenCalledWith(123, "mono.wav", 2, 2, 0, null, null);
+    });
+
+    it("handles wav metadata fields", () => {
+      const dbDir = "/test/dir";
+      const sample: SampleRecord = {
+        kit_id: 456,
+        filename: "hd_sample.wav",
+        voice_number: 3,
+        slot_number: 5,
+        is_stereo: true,
+        wav_bitrate: 1411200, // 44.1kHz * 16-bit * 2 channels
+        wav_sample_rate: 44100,
+      };
+
+      const result = insertSampleRecord(dbDir, sample);
+
+      expect(result.success).toBe(true);
+      expect(mockStmt.run).toHaveBeenCalledWith(
+        456,
+        "hd_sample.wav",
+        3,
+        5,
+        1,
+        1411200,
+        44100,
+      );
     });
 
     it("handles database errors", () => {

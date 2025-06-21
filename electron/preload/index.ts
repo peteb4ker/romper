@@ -257,6 +257,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
       voice_number: number;
       slot_number: number;
       is_stereo: boolean;
+      wav_bitrate?: number;
+      wav_sample_rate?: number;
     },
   ) => {
     console.log("[Preload] insertSample invoked", dbDir, sample);

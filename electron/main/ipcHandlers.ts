@@ -19,6 +19,7 @@ import {
   writeKitSamples,
 } from "./kitPlanOps.js";
 import { readRampleLabels, writeRampleLabels } from "./rampleLabels.js";
+import { validateLocalStoreAndDb } from "./localStoreValidator.js";
 
 // Utility: recursively copy a directory
 function copyRecursiveSync(src: string, dest: string) {
@@ -38,17 +39,42 @@ export function registerIpcHandlers(
   watchers: { [key: string]: fs.FSWatcher },
   inMemorySettings: Record<string, any>,
 ) {
-  ipcMain.handle("read-settings", (_event) => inMemorySettings);
-  ipcMain.handle("write-settings", (_event, key: string, value: any) => {
+  ipcMain.handle("read-settings", (_event) => inMemorySettings);  ipcMain.handle("write-settings", (_event, key: string, value: any) => {
     const userDataPath = app.getPath("userData");
     const settingsPath = path.join(userDataPath, "settings.json");
     inMemorySettings[key] = value;
+    
     fs.writeFileSync(
       settingsPath,
       JSON.stringify(inMemorySettings, null, 2),
       "utf-8",
     );
   });
+
+  // Add local store status handler
+  ipcMain.handle("get-local-store-status", (_event) => {
+    const localStorePath = inMemorySettings.localStorePath;
+
+    if (!localStorePath) {
+      return {
+        hasLocalStore: false,
+        localStorePath: null,
+        isValid: false,
+        error: "No local store configured",
+      };
+    }
+
+    // Validate current paths using shared validation logic
+    const validationResult = validateLocalStoreAndDb(localStorePath);
+
+    return {
+      hasLocalStore: true,
+      localStorePath,
+      isValid: validationResult.isValid,
+      error: validationResult.error || null,
+    };
+  });
+
   ipcMain.handle("scan-sd-card", async (event, sdCardPath) => {
     return fs
       .readdirSync(sdCardPath)

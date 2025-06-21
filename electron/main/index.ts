@@ -14,6 +14,7 @@ import {
 import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
 // Import IPC handlers
 import { registerIpcHandlers } from "./ipcHandlers.js";
+import { validateLocalStoreAndDb } from "./localStoreValidator.js";
 
 type Settings = {
   sdCardPath?: string;
@@ -96,6 +97,39 @@ app.whenReady().then(async () => {
           );
         }
         console.info("Settings loaded from file:", inMemorySettings);
+
+        // Validate local store path on startup if present
+        if (inMemorySettings.localStorePath) {
+          console.log(
+            "Validating saved local store path:",
+            inMemorySettings.localStorePath,
+          );
+          const validation = validateLocalStoreAndDb(
+            inMemorySettings.localStorePath,
+          );
+
+          if (validation.isValid) {
+            console.info("Local store validated successfully:", {
+              localStorePath: inMemorySettings.localStorePath,
+            });
+          } else {
+            // Clear invalid local store path
+            console.warn("Saved local store path is invalid:", validation.error);
+            console.warn("Clearing invalid local store settings");
+            delete inMemorySettings.localStorePath;
+
+            // Update settings file to remove invalid paths
+            try {
+              fs.writeFileSync(
+                settingsPath,
+                JSON.stringify(inMemorySettings, null, 2),
+                "utf-8",
+              );
+            } catch (writeError) {
+              console.error("Failed to update settings file:", writeError);
+            }
+          }
+        }
       } catch (error) {
         inMemorySettings = {};
         console.error(
@@ -125,6 +159,7 @@ app.whenReady().then(async () => {
   }
 });
 
+// Add helper function to validate local store and DB
 process.on("unhandledRejection", (reason: unknown) => {
   console.error(
     "Unhandled Promise Rejection:",

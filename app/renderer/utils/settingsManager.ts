@@ -44,3 +44,20 @@ export const toggleTheme = (): void => {
 
   console.log("toggleTheme: Theme toggled to:", newDarkMode); // Log the toggled theme
 };
+
+export const getLocalStoreStatus = async (): Promise<{
+  hasLocalStore: boolean;
+  localStorePath: string | null;
+  isValid: boolean;
+  error?: string | null;
+} | null> => {
+  try {
+    if (window.electronAPI?.getLocalStoreStatus) {
+      return await window.electronAPI.getLocalStoreStatus();
+    }
+    return null;
+  } catch (error) {
+    console.error("getLocalStoreStatus: Failed to get local store status:", error);
+    return null;
+  }
+};

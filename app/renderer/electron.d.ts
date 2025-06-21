@@ -78,6 +78,12 @@ export interface ElectronAPI {
       is_stereo: boolean;
     },
   ) => Promise<any>;
+  getLocalStoreStatus?: () => Promise<{
+    hasLocalStore: boolean;
+    localStorePath: string | null;
+    isValid: boolean;
+    error?: string | null;
+  }>;
   openExternal?: (url: string) => void;
 }
 

@@ -206,20 +206,31 @@ describe("romperDbCore.ts integration", () => {
 
     // Give Windows extra time to release file locks
     if (process.platform === "win32") {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
-    // Write garbage to file
+    // Write garbage to file and verify it's corrupted
     fs.writeFileSync(dbPath, Buffer.from([1, 2, 3, 4, 5]));
+
+    // Verify the file exists and is corrupted
+    expect(fs.existsSync(dbPath)).toBe(true);
+    const corruptedSize = fs.statSync(dbPath).size;
+    expect(corruptedSize).toBe(5); // Should be 5 bytes of garbage
 
     // On Windows, wait a bit more after writing the corrupted file
     if (process.platform === "win32") {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 200));
     }
 
     // Should recreate DB
     const result = await createRomperDbFile(dbDir);
     expect(result.success).toBe(true);
+
+    // Verify the file was actually recreated and is now a valid SQLite DB
+    expect(fs.existsSync(dbPath)).toBe(true);
+    const newSize = fs.statSync(dbPath).size;
+    expect(newSize).toBeGreaterThan(5); // Should be much larger than the 5-byte garbage
+
     const db = createDb(dbPath);
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table'")

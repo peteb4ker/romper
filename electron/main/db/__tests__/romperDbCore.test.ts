@@ -1,24 +1,24 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import BetterSqlite3 from "better-sqlite3";
 import * as fs from "fs";
 import * as path from "path";
-import BetterSqlite3 from "better-sqlite3";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  getDbPath,
   booleanToSqlite,
-  isDbCorruptionError,
-  getDbSchema,
   createDbConnection,
-  setupDbSchema,
+  DB_FILENAME,
   ensureDbDirectory,
   forceCloseDbConnection,
+  getDbPath,
+  getDbSchema,
   insertKitRecord,
   insertSampleRecord,
-  DB_FILENAME,
+  isDbCorruptionError,
+  type KitRecord,
   MAX_SLOT_NUMBER,
   MIN_SLOT_NUMBER,
-  type KitRecord,
   type SampleRecord,
+  setupDbSchema,
 } from "../romperDbCore";
 
 // Mock modules
@@ -89,7 +89,9 @@ describe("romperDbCore", () => {
         const schema = getDbSchema();
         expect(schema).toContain("CREATE TABLE IF NOT EXISTS kits");
         expect(schema).toContain("CREATE TABLE IF NOT EXISTS samples");
-        expect(schema).toContain(`CHECK(slot_number BETWEEN ${MIN_SLOT_NUMBER} AND ${MAX_SLOT_NUMBER})`);
+        expect(schema).toContain(
+          `CHECK(slot_number BETWEEN ${MIN_SLOT_NUMBER} AND ${MAX_SLOT_NUMBER})`,
+        );
         expect(schema).toContain("FOREIGN KEY(kit_id) REFERENCES kits(id)");
       });
 
@@ -147,7 +149,9 @@ describe("romperDbCore", () => {
         const dbDir = "/test/dir";
         ensureDbDirectory(dbDir);
 
-        expect(mockFs.mkdirSync).toHaveBeenCalledWith(dbDir, { recursive: true });
+        expect(mockFs.mkdirSync).toHaveBeenCalledWith(dbDir, {
+          recursive: true,
+        });
       });
     });
 
@@ -180,8 +184,8 @@ describe("romperDbCore", () => {
 
       it("waits longer on Windows platform", async () => {
         const originalPlatform = process.platform;
-        Object.defineProperty(process, 'platform', {
-          value: 'win32'
+        Object.defineProperty(process, "platform", {
+          value: "win32",
         });
 
         const start = Date.now();
@@ -192,8 +196,8 @@ describe("romperDbCore", () => {
         expect(duration).toBeGreaterThanOrEqual(200);
 
         // Restore original platform
-        Object.defineProperty(process, 'platform', {
-          value: originalPlatform
+        Object.defineProperty(process, "platform", {
+          value: originalPlatform,
         });
       });
     });
@@ -241,7 +245,12 @@ describe("romperDbCore", () => {
       expect(mockDb.prepare).toHaveBeenCalledWith(
         "INSERT INTO kits (name, alias, artist, plan_enabled) VALUES (?, ?, ?, ?)",
       );
-      expect(mockStmt.run).toHaveBeenCalledWith("Test Kit", "TK", "Test Artist", 1);
+      expect(mockStmt.run).toHaveBeenCalledWith(
+        "Test Kit",
+        "TK",
+        "Test Artist",
+        1,
+      );
       expect(mockDb.close).toHaveBeenCalled();
     });
 

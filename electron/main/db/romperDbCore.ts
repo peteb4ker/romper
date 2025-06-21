@@ -121,13 +121,25 @@ export async function createRomperDbFile(dbDir: string): Promise<{
 
       if (!triedRecreate && isDbCorruptionError(msg)) {
         triedRecreate = true;
-        console.log("[Romper Electron] DB corruption detected, attempting to recreate...");
+        console.log(
+          "[Romper Electron] DB corruption detected, attempting to recreate...",
+        );
         try {
           await forceCloseDbConnection(dbPath);
           await deleteDbFileWithRetry(dbPath);
-          console.log("[Romper Electron] Successfully deleted corrupted DB file");
+          console.log(
+            "[Romper Electron] Successfully deleted corrupted DB file",
+          );
+
+          // Additional verification that file is gone
+          if (fs.existsSync(dbPath)) {
+            throw new Error("Corrupted DB file still exists after deletion");
+          }
         } catch (deleteError) {
-          console.error("[Romper Electron] Failed to delete corrupted DB file:", deleteError);
+          console.error(
+            "[Romper Electron] Failed to delete corrupted DB file:",
+            deleteError,
+          );
           return { success: false, error: msg };
         }
         continue;
@@ -146,21 +158,52 @@ async function deleteDbFileWithRetry(
   for (let i = 0; i < maxRetries; i++) {
     try {
       fs.unlinkSync(dbPath);
-      console.log(`[Romper Electron] Successfully deleted DB file on attempt ${i + 1}`);
-      return;
+      console.log(
+        `[Romper Electron] Successfully deleted DB file on attempt ${i + 1}`,
+      );
+
+      // Verify file is actually gone
+      if (!fs.existsSync(dbPath)) {
+        console.log(`[Romper Electron] Verified DB file is deleted`);
+        return;
+      } else {
+        console.log(
+          `[Romper Electron] File still exists after deletion, retrying...`,
+        );
+        throw new Error("File still exists after deletion");
+      }
     } catch (error) {
       lastError = error as Error;
-      console.log(`[Romper Electron] Delete attempt ${i + 1} failed:`, lastError.message);
+      console.log(
+        `[Romper Electron] Delete attempt ${i + 1} failed:`,
+        lastError.message,
+      );
 
       // If deletion fails, try renaming first (common Windows issue)
       if (process.platform === "win32" && i < maxRetries - 1) {
         try {
           const backupPath = `${dbPath}.backup.${Date.now()}.${i}`;
           fs.renameSync(dbPath, backupPath);
-          console.log(`[Romper Electron] Successfully renamed DB file to backup on attempt ${i + 1}`);
-          return;
+          console.log(
+            `[Romper Electron] Successfully renamed DB file to backup on attempt ${i + 1}`,
+          );
+
+          // Verify original file is gone
+          if (!fs.existsSync(dbPath)) {
+            console.log(
+              `[Romper Electron] Verified original DB file is gone after rename`,
+            );
+            return;
+          } else {
+            console.log(
+              `[Romper Electron] Original file still exists after rename, retrying...`,
+            );
+            throw new Error("Original file still exists after rename");
+          }
         } catch (renameError) {
-          console.log(`[Romper Electron] Rename attempt ${i + 1} failed, waiting...`);
+          console.log(
+            `[Romper Electron] Rename attempt ${i + 1} failed, waiting...`,
+          );
           // Wait longer on Windows and retry
           await new Promise((resolve) => setTimeout(resolve, 200 * (i + 1)));
         }
@@ -176,6 +219,16 @@ async function deleteDbFileWithRetry(
     const backupPath = `${dbPath}.backup.${Date.now()}`;
     fs.renameSync(dbPath, backupPath);
     console.log("[Romper Electron] Final rename attempt succeeded");
+
+    // Verify original file is gone
+    if (!fs.existsSync(dbPath)) {
+      console.log(
+        `[Romper Electron] Verified original DB file is gone after final rename`,
+      );
+      return;
+    } else {
+      throw new Error("Original file still exists after final rename");
+    }
   } catch {
     console.error("[Romper Electron] All deletion/rename attempts failed");
     throw lastError || new Error("Could not delete or rename database file");

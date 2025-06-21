@@ -151,6 +151,7 @@ describe("romperDbCore.ts integration", () => {
     const sampleRes = insertSampleRecord(dbDir, {
       kit_id: kitId,
       filename: "kick.wav",
+      voice_number: 1,
       slot_number: 1,
       is_stereo: true,
     });
@@ -161,6 +162,7 @@ describe("romperDbCore.ts integration", () => {
       .get(sampleRes.sampleId);
     expect(sample.kit_id).toBe(kitId);
     expect(sample.filename).toBe("kick.wav");
+    expect(sample.voice_number).toBe(1);
     expect(sample.slot_number).toBe(1);
     expect(sample.is_stereo).toBe(1);
     closeDb(db);
@@ -182,6 +184,7 @@ describe("romperDbCore.ts integration", () => {
     const res = insertSampleRecord(dbDir, {
       kit_id: kitId,
       filename: "snare.wav",
+      voice_number: 1,
       slot_number: 99,
       is_stereo: false,
     });
@@ -193,11 +196,24 @@ describe("romperDbCore.ts integration", () => {
     const res = insertSampleRecord(dbDir, {
       kit_id: 9999,
       filename: "ghost.wav",
+      voice_number: 1,
       slot_number: 2,
       is_stereo: false,
     });
     expect(res.success).toBe(false);
     expect(res.error).toMatch(/FOREIGN KEY constraint failed/i);
+  });
+
+  it("rejects invalid sample voice_number (out of range)", () => {
+    const res = insertSampleRecord(dbDir, {
+      kit_id: kitId,
+      filename: "hihat.wav",
+      voice_number: 99,
+      slot_number: 1,
+      is_stereo: false,
+    });
+    expect(res.success).toBe(false);
+    expect(res.error).toMatch(/CHECK constraint failed|constraint failed/i);
   });
 
   it("overwrites DB file if it already exists", async () => {

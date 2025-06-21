@@ -62,7 +62,7 @@ async function getDefaultRomperPathAsync(api: any): Promise<string> {
 }
 
 // --- Main Hook ---
-export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
+export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void, setLocalStorePath?: (path: string) => void) {
   const api = useElectronAPI();
   const [state, setState] = useState<LocalStoreWizardState>({
     targetPath: "",
@@ -272,14 +272,21 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
             for (const voiceNum of Object.keys(voices)) {
               const voiceSamples = voices[Number(voiceNum)];
               if (voiceSamples) {
-                for (let idx = 0; idx < voiceSamples.length; idx++) {
+                // Only process the first 12 samples per voice (slot limit)
+                const maxSamples = Math.min(voiceSamples.length, 12);
+                for (let idx = 0; idx < maxSamples; idx++) {
                   const filename = voiceSamples[idx];
                   await insertSample(dbDir, {
                     kit_id: kitId,
                     filename,
+                    voice_number: Number(voiceNum),
                     slot_number: idx + 1,
                     is_stereo: false,
                   });
+                }
+                // Log if samples were skipped
+                if (voiceSamples.length > 12) {
+                  console.log(`[Hook] Skipped ${voiceSamples.length - 12} samples in voice ${voiceNum} (exceeds 12 slot limit)`);
                 }
               }
             }
@@ -299,6 +306,22 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
       if (!state.targetPath) throw new Error("No target path specified");
       if (!state.source) throw new Error("No source selected");
       if (api.ensureDir) await api.ensureDir(state.targetPath);
+      
+      // Set the local store path early in the process, before potentially failing operations
+      console.log("[Hook] setLocalStorePath callback available:", !!setLocalStorePath);
+      console.log("[Hook] state.targetPath:", state.targetPath);
+      if (setLocalStorePath) {
+        console.log("[Hook] Calling setLocalStorePath with:", state.targetPath);
+        setLocalStorePath(state.targetPath);
+        console.log("[Hook] setLocalStorePath called successfully");
+      } else if (api.setSetting) {
+        console.log("[Hook] Falling back to api.setSetting");
+        await api.setSetting("localStorePath", state.targetPath);
+        console.log("[Hook] api.setSetting called successfully");
+      } else {
+        console.log("[Hook] No method available to set local store path!");
+      }
+      
       if (state.source === "sdcard") {
         if (!state.localStorePath) throw new Error("No SD card path selected");
         console.log("[Hook] initialize - copying SD card kits");
@@ -312,8 +335,6 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void) {
       console.log("[Hook] initialize - creating and populating database");
       await createAndPopulateDb(state.targetPath);
       console.log("[Hook] initialize - database creation completed");
-      if (api.setSetting)
-        await api.setSetting("localStorePath", state.targetPath);
       console.log("[Hook] initialize completed successfully");
     } catch (e: any) {
       console.error("[Hook] initialize error:", e);

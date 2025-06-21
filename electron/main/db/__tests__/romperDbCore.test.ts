@@ -323,6 +323,7 @@ describe("romperDbCore", () => {
       const sample: SampleRecord = {
         kit_id: 123,
         filename: "kick.wav",
+        voice_number: 1,
         slot_number: 1,
         is_stereo: true,
       };
@@ -335,9 +336,9 @@ describe("romperDbCore", () => {
 
       expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        "INSERT INTO samples (kit_id, filename, slot_number, is_stereo) VALUES (?, ?, ?, ?)",
+        "INSERT INTO samples (kit_id, filename, voice_number, slot_number, is_stereo) VALUES (?, ?, ?, ?, ?)",
       );
-      expect(mockStmt.run).toHaveBeenCalledWith(123, "kick.wav", 1, 1);
+      expect(mockStmt.run).toHaveBeenCalledWith(123, "kick.wav", 1, 1, 1);
       expect(mockDb.close).toHaveBeenCalled();
     });
 
@@ -346,13 +347,14 @@ describe("romperDbCore", () => {
       const sample: SampleRecord = {
         kit_id: 123,
         filename: "mono.wav",
+        voice_number: 2,
         slot_number: 2,
         is_stereo: false,
       };
 
       insertSampleRecord(dbDir, sample);
 
-      expect(mockStmt.run).toHaveBeenCalledWith(123, "mono.wav", 2, 0);
+      expect(mockStmt.run).toHaveBeenCalledWith(123, "mono.wav", 2, 2, 0);
     });
 
     it("handles database errors", () => {
@@ -360,6 +362,7 @@ describe("romperDbCore", () => {
       const sample: SampleRecord = {
         kit_id: 999,
         filename: "invalid.wav",
+        voice_number: 1,
         slot_number: 1,
         is_stereo: false,
       };
@@ -381,6 +384,7 @@ describe("romperDbCore", () => {
       const sample: SampleRecord = {
         kit_id: 123,
         filename: "test.wav",
+        voice_number: 3,
         slot_number: 1,
         is_stereo: false,
       };

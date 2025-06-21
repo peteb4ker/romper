@@ -11,7 +11,7 @@ This document describes the schema for the Romper local SQLite database, which i
 ![Romper DB ERD](./romper-db-erd.png)
 
 - **kits**: Each kit is a collection of samples and has metadata fields.
-- **samples**: Each sample belongs to a kit and has slot and stereo information.
+- **samples**: Each sample belongs to a kit and has voice, slot and stereo information.
 
 ## Table Definitions
 
@@ -26,7 +26,8 @@ This document describes the schema for the Romper local SQLite database, which i
 - `id` INTEGER PRIMARY KEY AUTOINCREMENT
 - `kit_id` INTEGER (FK to kits.id)
 - `filename` TEXT NOT NULL
-- `slot_number` INTEGER
+- `voice_number` INTEGER CHECK(voice_number BETWEEN 1 AND 4)
+- `slot_number` INTEGER CHECK(slot_number BETWEEN 1 AND 12)
 - `is_stereo` BOOLEAN DEFAULT 0
 
 ---

@@ -61,3 +61,4 @@ When working with task lists, the AI must:
 ## Romper DB Schema Documentation
 - Any change to the Romper DB schema (including migrations, new tables, or column changes) **must** be reflected in `/docs/romper-db.md`.
 - The ERD in that file must always match the current schema in `/src/main/dbIpcHandlers.ts` and related DB code.
+

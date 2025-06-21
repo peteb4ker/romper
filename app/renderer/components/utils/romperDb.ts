@@ -30,6 +30,7 @@ export async function insertSample(
   sample: {
     kit_id: number;
     filename: string;
+    voice_number: number;
     slot_number: number;
     is_stereo: boolean;
   },

@@ -50,4 +50,43 @@ To maintain responsive UX and good interaction latency:
 - When prompted, 'next task', always refer to tasks/tasks.prd-md for the next task.
 - Implement the next task using instructions/process-task-list.md.
 
+## Commit Message Format
+
+When asked to provide a summary of completed work, always format it as a conventional commit message:
+
+```
+<type>: <description>
+
+- Bullet point summary of key changes
+- Include specific technical details
+- Reference files modified
+- Note any breaking changes or important considerations
+- Include test status and counts
+
+Closes #<task-number> - <task-description>
+Tests: <passing>/<total> passing
+```
+
+**Guidelines:**
+- Use conventional commit types: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
+- Keep the first line under 50 characters when possible
+- Use bullet points for detailed changes
+- Always include test status
+- Reference completed task numbers
+- Mention any backward compatibility considerations
+
+**Example:**
+```
+feat: transition from SD card to local store as primary data source
+
+- Replace sdCardPath with localStorePath throughout main app logic
+- Remove Select SD Card button from KitBrowserHeader
+- Update StatusBar to show local store path with database icon
+- Refactor SettingsContext to use localStorePath consistently
+- Update all component props, types, and hooks to use localStorePath
+- Refactor 400+ unit tests to reflect local store usage
+
+Closes #2.9 - SD card to local store transition
+Tests: 400/400 passing
+```
 

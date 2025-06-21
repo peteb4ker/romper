@@ -20,6 +20,7 @@ export interface KitRecord {
 export interface SampleRecord {
   kit_id: number;
   filename: string;
+  voice_number: number;
   slot_number: number;
   is_stereo: boolean;
 }
@@ -55,6 +56,7 @@ export function getDbSchema(): string {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       kit_id INTEGER,
       filename TEXT NOT NULL,
+      voice_number INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4),
       slot_number INTEGER NOT NULL CHECK(slot_number BETWEEN ${MIN_SLOT_NUMBER} AND ${MAX_SLOT_NUMBER}),
       is_stereo BOOLEAN NOT NULL DEFAULT 0,
       FOREIGN KEY(kit_id) REFERENCES kits(id)
@@ -285,11 +287,12 @@ export function insertSampleRecord(
   try {
     db = createDbConnection(dbPath);
     const stmt = db.prepare(
-      "INSERT INTO samples (kit_id, filename, slot_number, is_stereo) VALUES (?, ?, ?, ?)",
+      "INSERT INTO samples (kit_id, filename, voice_number, slot_number, is_stereo) VALUES (?, ?, ?, ?, ?)",
     );
     const result = stmt.run(
       sample.kit_id,
       sample.filename,
+      sample.voice_number,
       sample.slot_number,
       booleanToSqlite(sample.is_stereo),
     );

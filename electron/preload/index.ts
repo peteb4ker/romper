@@ -15,7 +15,6 @@ async function readSettings(): Promise<{
   localStorePath?: string;
   darkMode?: boolean;
   theme?: string;
-  localStorePath?: string;
 }> {
   try {
     const settings = await ipcRenderer.invoke("read-settings");
@@ -31,7 +30,6 @@ async function writeSettings(
     localStorePath?: string;
     darkMode?: boolean;
     theme?: string;
-    localStorePath?: string;
   },
   value: any,
 ): Promise<void> {
@@ -83,7 +81,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
       localStorePath?: string;
       darkMode?: boolean;
       theme?: string;
-      localStorePath?: string;
     },
   ): Promise<any> => {
     console.log("[Preload] getSetting invoked", key);
@@ -95,7 +92,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
       localStorePath?: string;
       darkMode?: boolean;
       theme?: string;
-      localStorePath?: string;
     },
     value: any,
   ): Promise<void> => {
@@ -106,10 +102,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     localStorePath?: string;
     darkMode?: boolean;
     theme?: string;
-    localStorePath?: string;
   }> => {
     console.log("[Preload] readSettings invoked");
     return readSettings();
+  },
+  getLocalStoreStatus: async () => {
+    console.log("[Preload] getLocalStoreStatus invoked");
+    return await ipcRenderer.invoke("get-local-store-status");
   },
   createKit: (localStorePath: string, kitSlot: string): Promise<void> => {
     console.log("[Preload] createKit invoked", localStorePath, kitSlot);
@@ -255,6 +254,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     sample: {
       kit_id: number;
       filename: string;
+      voice_number: number;
       slot_number: number;
       is_stereo: boolean;
     },

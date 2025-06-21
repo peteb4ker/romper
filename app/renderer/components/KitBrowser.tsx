@@ -20,10 +20,11 @@ interface KitBrowserProps {
   voiceLabelSets?: Record<string, string[]>;
   onRefreshKits?: () => void;
   onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
+  setLocalStorePath?: (path: string) => void;
 }
 
 const KitBrowser: React.FC<KitBrowserProps> = (props) => {
-  const { onMessage } = props;
+  const { onMessage, setLocalStorePath } = props;
   const kitListRef = useRef<KitListHandle>(null);
   // Ensure localStorePath is always a string (never null)
   const logic = useKitBrowser({
@@ -189,6 +190,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
                   duration: 5000,
                 });
               }}
+              setLocalStorePath={setLocalStorePath || (() => {})}
             />
           </div>
         </div>

@@ -41,22 +41,29 @@ export function registerIpcHandlers(
 ) {
   ipcMain.handle("read-settings", (_event) => inMemorySettings);
   ipcMain.handle("write-settings", (_event, key: string, value: any) => {
+    console.log("[Main] write-settings called with key:", key, "value:", value);
     const userDataPath = app.getPath("userData");
     const settingsPath = path.join(userDataPath, "settings.json");
+    console.log("[Main] Settings path:", settingsPath);
     inMemorySettings[key] = value;
+    console.log("[Main] Updated inMemorySettings:", inMemorySettings);
 
     fs.writeFileSync(
       settingsPath,
       JSON.stringify(inMemorySettings, null, 2),
       "utf-8",
     );
+    console.log("[Main] Settings written to file");
   });
 
   // Add local store status handler
   ipcMain.handle("get-local-store-status", (_event) => {
+    console.log("[Main] get-local-store-status called");
     const localStorePath = inMemorySettings.localStorePath;
+    console.log("[Main] Current localStorePath in settings:", localStorePath);
 
     if (!localStorePath) {
+      console.log("[Main] No local store configured");
       return {
         hasLocalStore: false,
         localStorePath: null,
@@ -66,14 +73,18 @@ export function registerIpcHandlers(
     }
 
     // Validate current paths using shared validation logic
+    console.log("[Main] Validating local store path:", localStorePath);
     const validationResult = validateLocalStoreAndDb(localStorePath);
+    console.log("[Main] Validation result:", validationResult);
 
-    return {
+    const result = {
       hasLocalStore: true,
       localStorePath,
       isValid: validationResult.isValid,
       error: validationResult.error || null,
     };
+    console.log("[Main] Returning local store status:", result);
+    return result;
   });
 
   // Add close app handler

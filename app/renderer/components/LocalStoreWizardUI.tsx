@@ -14,6 +14,7 @@ import WizardTargetStep from "./wizard/WizardTargetStep";
 interface LocalStoreWizardUIProps {
   onClose: () => void;
   onSuccess?: () => void;
+  setLocalStorePath: (path: string) => void;
 }
 
 enum WizardStep {
@@ -25,7 +26,9 @@ enum WizardStep {
 const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
   onClose,
   onSuccess,
+  setLocalStorePath,
 }) => {
+  console.log("[LocalStoreWizardUI] Rendered with setLocalStorePath:", !!setLocalStorePath);
   const {
     state,
     setTargetPath,
@@ -43,7 +46,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
     canInitialize, // from hook
     isSdCardSource, // from hook
     setSourceConfirmed, // new setter from hook
-  } = useLocalStoreWizard();
+  } = useLocalStoreWizard(undefined, setLocalStorePath);
 
   const safeSelectLocalStorePath =
     window.electronAPI?.selectLocalStorePath?.bind(window.electronAPI);

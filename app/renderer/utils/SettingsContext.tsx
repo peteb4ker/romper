@@ -41,10 +41,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [settings, setSettings] = useState<Record<string, any>>({});
 
   const setLocalStorePath = (path: string) => {
+    console.log("[SettingsContext] setLocalStorePath called with:", path);
     const updatedSettings = { ...settings, localStorePath: path };
+    console.log("[SettingsContext] Updated settings object:", updatedSettings);
     setSettings(updatedSettings);
     setLocalStorePathState(path);
+    console.log("[SettingsContext] Set localStorePathState to:", path);
     window.electronAPI.setSetting("localStorePath", path);
+    console.log("[SettingsContext] Called electronAPI.setSetting with localStorePath:", path);
     // Refresh local store status after setting path
     refreshLocalStoreStatus();
   };
@@ -64,10 +68,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const refreshLocalStoreStatus = useCallback(async () => {
+    console.log("[SettingsContext] refreshLocalStoreStatus called");
     try {
       if (window.electronAPI?.getLocalStoreStatus) {
+        console.log("[SettingsContext] Calling electronAPI.getLocalStoreStatus");
         const status = await window.electronAPI.getLocalStoreStatus();
+        console.log("[SettingsContext] Received local store status:", status);
         setLocalStoreStatus(status);
+      } else {
+        console.log("[SettingsContext] getLocalStoreStatus not available");
       }
     } catch (error) {
       console.error("Failed to refresh local store status:", error);
@@ -80,6 +89,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("Initializing settings...");
       const loadedSettings = await window.electronAPI.readSettings();
       console.log("Loaded settings:", loadedSettings);
+
+      // Update the settings state object
+      setSettings(loadedSettings);
 
       if (loadedSettings.localStorePath) {
         console.log(

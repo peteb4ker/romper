@@ -79,7 +79,7 @@
     - [x] 2.15 Update documentation and ERD to match new schema (docs/romper-db.md, docs/romper-db.mmd)
   - [x] 2.5 Unit tests for initialization, validation, and error handling.
   - [x] 2.8 Store exactly one local store path and associated Romper DB location in application settings; load them on startup if present.
-  - [ ] 2.9 Transition from SD card-based startup to local store-based startup
+  - [x] 2.9 Transition from SD card-based startup to local store-based startup
     - [x] 2.9.1 Update app startup logic to use local store path instead of SD card path
     - [x] 2.9.2 Show local store wizard immediately on startup if local store is not configured or invalid
     - [x] 2.9.3 Display info message that local store must be set up before app can be used

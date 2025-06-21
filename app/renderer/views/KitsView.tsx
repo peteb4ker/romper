@@ -16,7 +16,7 @@ import LocalStoreWizardUI from "../components/LocalStoreWizardUI";
 import { useSettings } from "../utils/SettingsContext";
 
 const KitsView = () => {
-  const { localStorePath, localStoreStatus, refreshLocalStoreStatus } =
+  const { localStorePath, localStoreStatus, refreshLocalStoreStatus, setLocalStorePath } =
     useSettings();
   const [kits, setKits] = useState<string[]>([]);
   const [allKitSamples, setAllKitSamples] = useState<{
@@ -32,6 +32,10 @@ const KitsView = () => {
 
   // Check if local store needs to be set up
   const needsLocalStoreSetup = !localStoreStatus?.isValid || !localStorePath;
+  console.log("[KitsView] Local store status check:");
+  console.log("[KitsView] localStorePath:", localStorePath);
+  console.log("[KitsView] localStoreStatus:", localStoreStatus);
+  console.log("[KitsView] needsLocalStoreSetup:", needsLocalStoreSetup);
 
   // Auto-trigger wizard on startup if local store is not configured
   useEffect(() => {
@@ -295,6 +299,7 @@ const KitsView = () => {
             // Optionally handle messages here, e.g. show a toast or log
             // For now, do nothing (parent can decide to handle or ignore)
           }}
+          setLocalStorePath={setLocalStorePath}
         />
       )}
 
@@ -317,10 +322,14 @@ const KitsView = () => {
                 window.electronAPI?.closeApp?.();
               }}
               onSuccess={async () => {
+                console.log("[KitsView] Wizard success callback called");
                 setShowWizard(false);
+                console.log("[KitsView] Calling refreshLocalStoreStatus");
                 // Refresh local store status after successful setup
                 await refreshLocalStoreStatus();
+                console.log("[KitsView] refreshLocalStoreStatus completed");
               }}
+              setLocalStorePath={setLocalStorePath}
             />
           </div>
         </div>

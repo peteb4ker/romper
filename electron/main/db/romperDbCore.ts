@@ -15,6 +15,7 @@ export interface KitRecord {
   alias?: string;
   artist?: string;
   plan_enabled: boolean;
+  locked?: boolean;
 }
 
 export interface SampleRecord {
@@ -50,7 +51,8 @@ export function getDbSchema(): string {
       name TEXT NOT NULL,
       alias TEXT,
       artist TEXT,
-      plan_enabled BOOLEAN NOT NULL DEFAULT 0
+      plan_enabled BOOLEAN NOT NULL DEFAULT 0,
+      locked BOOLEAN NOT NULL DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS samples (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -255,13 +257,14 @@ export function insertKitRecord(
   try {
     db = createDbConnection(dbPath);
     const stmt = db.prepare(
-      "INSERT INTO kits (name, alias, artist, plan_enabled) VALUES (?, ?, ?, ?)",
+      "INSERT INTO kits (name, alias, artist, plan_enabled, locked) VALUES (?, ?, ?, ?, ?)",
     );
     const result = stmt.run(
       kit.name,
       kit.alias || null,
       kit.artist || null,
       booleanToSqlite(kit.plan_enabled),
+      booleanToSqlite(kit.locked || false),
     );
 
     console.log("[Romper Electron] Kit inserted, id:", result.lastInsertRowid);

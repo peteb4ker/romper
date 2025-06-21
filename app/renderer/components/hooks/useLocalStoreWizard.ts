@@ -306,7 +306,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void, set
       if (!state.targetPath) throw new Error("No target path specified");
       if (!state.source) throw new Error("No source selected");
       if (api.ensureDir) await api.ensureDir(state.targetPath);
-      
+
       // Set the local store path early in the process, before potentially failing operations
       console.log("[Hook] setLocalStorePath callback available:", !!setLocalStorePath);
       console.log("[Hook] state.targetPath:", state.targetPath);
@@ -321,7 +321,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void, set
       } else {
         console.log("[Hook] No method available to set local store path!");
       }
-      
+
       if (state.source === "sdcard") {
         if (!state.localStorePath) throw new Error("No SD card path selected");
         console.log("[Hook] initialize - copying SD card kits");

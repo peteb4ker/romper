@@ -243,13 +243,14 @@ describe("romperDbCore", () => {
 
       expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        "INSERT INTO kits (name, alias, artist, plan_enabled) VALUES (?, ?, ?, ?)",
+        "INSERT INTO kits (name, alias, artist, plan_enabled, locked) VALUES (?, ?, ?, ?, ?)",
       );
       expect(mockStmt.run).toHaveBeenCalledWith(
         "Test Kit",
         "TK",
         "Test Artist",
         1,
+        0,
       );
       expect(mockDb.close).toHaveBeenCalled();
     });
@@ -263,7 +264,20 @@ describe("romperDbCore", () => {
 
       insertKitRecord(dbDir, kit);
 
-      expect(mockStmt.run).toHaveBeenCalledWith("Minimal Kit", null, null, 0);
+      expect(mockStmt.run).toHaveBeenCalledWith("Minimal Kit", null, null, 0, 0);
+    });
+
+    it("handles locked field when provided", () => {
+      const dbDir = "/test/dir";
+      const kit: KitRecord = {
+        name: "Locked Kit",
+        plan_enabled: true,
+        locked: true,
+      };
+
+      insertKitRecord(dbDir, kit);
+
+      expect(mockStmt.run).toHaveBeenCalledWith("Locked Kit", null, null, 1, 1);
     });
 
     it("handles database errors", () => {

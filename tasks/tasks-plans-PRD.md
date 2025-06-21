@@ -29,6 +29,10 @@
 - `app/renderer/components/MessageDisplay.test.tsx` - Unit tests for MessageDisplay.
 - `app/renderer/components/utils/romperDb.ts` - Handles Romper DB (SQLite) operations for plans, kits, and samples.
 - `app/renderer/components/utils/romperDb.test.ts` - Unit tests for romperDb.
+- `app/renderer/components/utils/scanningOperations.ts` - Composable scanning operations for voice inference, WAV analysis, RTF parsing, and step patterns.
+- `app/renderer/components/utils/scanningOperations.test.ts` - Unit tests for scanning operations.
+- `app/renderer/components/utils/scannerOrchestrator.ts` - Orchestrates scanning operation chains with progress tracking and error handling.
+- `app/renderer/components/utils/scannerOrchestrator.test.ts` - Unit tests for scanner orchestration.
 - `electron/main/ipcHandlers.ts` - Main process IPC handlers, including robust, testable Squarp.net archive download/extract logic with progress and error reporting.
 - `electron/main/__tests__/archiveExtract.test.ts` - Unit tests for Squarp.net archive download/extract handler, with full async/streaming and error simulation. (Premature close test removed as non-robust in test env)
 - `electron/main/__tests__/isValidEntry.test.ts` - Unit tests for isValidEntry helper in archiveUtils, covering all valid and invalid entry cases.
@@ -88,6 +92,39 @@
     - [x] 2.9.6 Update StatusBar to show local store path with database icon instead of SD card info
     - [x] 2.9.7 Update all related unit tests for the SD card to local store transition
   - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
+  - [ ] 2.10 Implement composable scanning operations and database storage
+    - [ ] 2.10.1 Extend database schema for metadata storage
+      - [x] 2.10.1.1 Add kit_alias, kit_artist, locked fields to kits table
+      - [ ] 2.10.1.2 Add voice_alias field to existing voice-related structure
+      - [ ] 2.10.1.3 Add step_pattern field for step sequencer use
+      - [ ] 2.10.1.4 Add wav_bitrate, wav_sample_rate, is_stereo fields to samples table
+      - [ ] 2.10.1.5 Update database schema documentation in docs/romper-db.md
+    - [ ] 2.10.2 Implement core scanning operations as composable functions
+      - [ ] 2.10.2.1 Create voice name inference scanner (from existing function)
+      - [ ] 2.10.2.2 Create WAV file analysis scanner (bitrate, sample rate, stereo detection)
+      - [ ] 2.10.2.3 Create RTF artist metadata scanner (from existing function)
+      - [ ] 2.10.2.4 Create step pattern scanner for sequencer metadata
+      - [ ] 2.10.2.5 Design scanner orchestration system for composable operation chains
+    - [ ] 2.10.3 Remove JSON file dependency and migrate to database storage
+      - [ ] 2.10.3.1 Update scanning logic to store results in database instead of JSON
+      - [ ] 2.10.3.2 Remove JSON file reading/writing code
+      - [ ] 2.10.3.3 Update all components to read metadata from database
+    - [ ] 2.10.4 Unit tests for core scanning operations and database storage
+  - [ ] 2.17 Integrate scanning operations into wizard initialization
+    - [ ] 2.17.1 Add automatic scanning as final step in wizard initialization
+      - [ ] 2.17.1.1 After database records created, run scanning operation chain
+      - [ ] 2.17.1.2 Chain: voice inference → WAV analysis → RTF artist scan → step patterns
+      - [ ] 2.17.1.3 Show scanning progress on existing wizard progress bar
+      - [ ] 2.17.1.4 Handle partial failures gracefully (continue chain on errors)
+    - [ ] 2.17.2 Unit tests for wizard scanning integration
+  - [ ] 2.18 Update manual scanning functionality
+    - [ ] 2.18.1 Keep existing "Scan Kit" button in KitDetails page using new operations
+    - [ ] 2.18.2 Keep existing "Scan All Kits" option in KitBrowser using new operations
+    - [ ] 2.18.3 Use toast progress bar for manual scanning operations
+    - [ ] 2.18.4 Support full rescan and individual operation selection
+    - [ ] 2.18.5 Handle unscanned kits (prompt user, show appropriate UI state)
+    - [ ] 2.18.6 Unit tests for manual scanning UI and operations
+  - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
   - [ ] 2.12 If the Romper DB metadata or plans are out of sync with the local store, present an error to the user and indicate that manual intervention may be required.
   - [x] 2.16 Flip local store setup flow: user chooses source first, then target, then import. Update UI, logic, and tests. Decouple UI tests from IPC/Electron.
 
@@ -143,6 +180,11 @@
   - [ ] 10.1 Ensure all plan-related UI is accessible in light and dark modes.
   - [ ] 10.2 Provide visible focus indicators and keyboard navigation for all plan actions.
   - [ ] 10.3 Unit tests for accessibility and UI consistency.
+
+- [ ] 11.0 Menu System and Scanning Options
+  - [ ] 11.1 Move "Scan All Kits" option from KitBrowser to application menu
+  - [ ] 11.2 Implement application menu structure for scanning and maintenance operations
+  - [ ] 11.3 Unit tests for menu functionality and scanning operations
 
 - `src/renderer/components/KitPlanManager.tsx` - (Deprecated: see KitDetails.tsx) [If still present, this file should be removed after migration.]
 - `src/renderer/components/KitPlanManager.test.tsx` - (Deprecated: see KitDetails.test.tsx) [If still present, this file should be removed after migration.]

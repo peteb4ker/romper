@@ -204,13 +204,19 @@ describe("romperDbCore.ts integration", () => {
     // Close any existing connections before manipulating the file
     closeAllConnections();
 
-    // Give Windows time to release file locks
+    // Give Windows extra time to release file locks
     if (process.platform === "win32") {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
     // Write garbage to file
     fs.writeFileSync(dbPath, Buffer.from([1, 2, 3, 4, 5]));
+
+    // On Windows, wait a bit more after writing the corrupted file
+    if (process.platform === "win32") {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
     // Should recreate DB
     const result = await createRomperDbFile(dbDir);
     expect(result.success).toBe(true);

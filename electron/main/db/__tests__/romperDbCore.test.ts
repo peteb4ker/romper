@@ -128,7 +128,7 @@ describe("romperDbCore", () => {
       it("creates a new database connection", () => {
         const dbPath = "/test/path/db.sqlite";
         const result = createDbConnection(dbPath);
-        
+
         expect(mockBetterSqlite3).toHaveBeenCalledWith(dbPath);
         expect(result).toBe(mockDb);
       });
@@ -137,7 +137,7 @@ describe("romperDbCore", () => {
     describe("setupDbSchema", () => {
       it("executes the database schema", () => {
         setupDbSchema(mockDb);
-        
+
         expect(mockDb.exec).toHaveBeenCalledWith(getDbSchema());
       });
     });
@@ -146,7 +146,7 @@ describe("romperDbCore", () => {
       it("creates directory recursively", () => {
         const dbDir = "/test/dir";
         ensureDbDirectory(dbDir);
-        
+
         expect(mockFs.mkdirSync).toHaveBeenCalledWith(dbDir, { recursive: true });
       });
     });
@@ -155,7 +155,7 @@ describe("romperDbCore", () => {
       it("creates and immediately closes a connection", async () => {
         const dbPath = "/test/path/db.sqlite";
         await forceCloseDbConnection(dbPath);
-        
+
         expect(mockBetterSqlite3).toHaveBeenCalledWith(dbPath);
         expect(mockDb.close).toHaveBeenCalled();
       });
@@ -164,7 +164,7 @@ describe("romperDbCore", () => {
         mockDb.close.mockImplementation(() => {
           throw new Error("Connection already closed");
         });
-        
+
         const dbPath = "/test/path/db.sqlite";
         await expect(forceCloseDbConnection(dbPath)).resolves.not.toThrow();
       });
@@ -173,9 +173,28 @@ describe("romperDbCore", () => {
         mockBetterSqlite3.mockImplementation(() => {
           throw new Error("Cannot create connection");
         });
-        
+
         const dbPath = "/test/path/db.sqlite";
         await expect(forceCloseDbConnection(dbPath)).resolves.not.toThrow();
+      });
+
+      it("waits longer on Windows platform", async () => {
+        const originalPlatform = process.platform;
+        Object.defineProperty(process, 'platform', {
+          value: 'win32'
+        });
+
+        const start = Date.now();
+        await forceCloseDbConnection("/test/path/db.sqlite");
+        const duration = Date.now() - start;
+
+        // Should wait at least 200ms on Windows
+        expect(duration).toBeGreaterThanOrEqual(200);
+
+        // Restore original platform
+        Object.defineProperty(process, 'platform', {
+          value: originalPlatform
+        });
       });
     });
   });
@@ -193,7 +212,7 @@ describe("romperDbCore", () => {
         close: vi.fn(),
       };
       mockBetterSqlite3.mockReturnValue(mockDb);
-      
+
       // Mock console methods to avoid noise in tests
       vi.spyOn(console, "log").mockImplementation(() => {});
       vi.spyOn(console, "error").mockImplementation(() => {});

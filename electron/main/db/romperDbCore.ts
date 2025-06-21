@@ -82,6 +82,11 @@ export async function forceCloseDbConnection(dbPath: string): Promise<void> {
   } catch {
     // Ignore errors from temp connection
   }
+
+  // On Windows, give extra time for file handles to be released
+  if (process.platform === "win32") {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
 }
 
 export async function createRomperDbFile(dbDir: string): Promise<{
@@ -96,30 +101,33 @@ export async function createRomperDbFile(dbDir: string): Promise<{
     "dbPath:",
     dbPath,
   );
-  
+
   let triedRecreate = false;
-  
+
   for (;;) {
     try {
       ensureDbDirectory(dbDir);
       const db = createDbConnection(dbPath);
       console.log("[Romper Electron] Opened DB at", dbPath);
-      
+
       setupDbSchema(db);
       db.close();
-      
+
       console.log("[Romper Electron] DB created and closed at", dbPath);
       return { success: true, dbPath };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[Romper Electron] Error in createRomperDbFile:", msg);
-      
+
       if (!triedRecreate && isDbCorruptionError(msg)) {
         triedRecreate = true;
+        console.log("[Romper Electron] DB corruption detected, attempting to recreate...");
         try {
           await forceCloseDbConnection(dbPath);
           await deleteDbFileWithRetry(dbPath);
+          console.log("[Romper Electron] Successfully deleted corrupted DB file");
         } catch (deleteError) {
+          console.error("[Romper Electron] Failed to delete corrupted DB file:", deleteError);
           return { success: false, error: msg };
         }
         continue;
@@ -138,19 +146,23 @@ async function deleteDbFileWithRetry(
   for (let i = 0; i < maxRetries; i++) {
     try {
       fs.unlinkSync(dbPath);
+      console.log(`[Romper Electron] Successfully deleted DB file on attempt ${i + 1}`);
       return;
     } catch (error) {
       lastError = error as Error;
+      console.log(`[Romper Electron] Delete attempt ${i + 1} failed:`, lastError.message);
 
       // If deletion fails, try renaming first (common Windows issue)
       if (process.platform === "win32" && i < maxRetries - 1) {
         try {
           const backupPath = `${dbPath}.backup.${Date.now()}.${i}`;
           fs.renameSync(dbPath, backupPath);
+          console.log(`[Romper Electron] Successfully renamed DB file to backup on attempt ${i + 1}`);
           return;
         } catch (renameError) {
-          // Wait and retry
-          await new Promise((resolve) => setTimeout(resolve, 100 * (i + 1)));
+          console.log(`[Romper Electron] Rename attempt ${i + 1} failed, waiting...`);
+          // Wait longer on Windows and retry
+          await new Promise((resolve) => setTimeout(resolve, 200 * (i + 1)));
         }
       } else if (i < maxRetries - 1) {
         // Wait and retry on other platforms
@@ -163,7 +175,9 @@ async function deleteDbFileWithRetry(
   try {
     const backupPath = `${dbPath}.backup.${Date.now()}`;
     fs.renameSync(dbPath, backupPath);
+    console.log("[Romper Electron] Final rename attempt succeeded");
   } catch {
+    console.error("[Romper Electron] All deletion/rename attempts failed");
     throw lastError || new Error("Could not delete or rename database file");
   }
 }
@@ -181,7 +195,7 @@ export function insertKitRecord(
     "kit:",
     kit,
   );
-  
+
   let db: BetterSqlite3.Database | null = null;
   try {
     db = createDbConnection(dbPath);
@@ -194,7 +208,7 @@ export function insertKitRecord(
       kit.artist || null,
       booleanToSqlite(kit.plan_enabled),
     );
-    
+
     console.log("[Romper Electron] Kit inserted, id:", result.lastInsertRowid);
     return { success: true, kitId: Number(result.lastInsertRowid) };
   } catch (e) {
@@ -214,7 +228,7 @@ export function insertSampleRecord(
 ): { success: boolean; sampleId?: number; error?: string } {
   const dbPath = getDbPath(dbDir);
   let db: BetterSqlite3.Database | null = null;
-  
+
   try {
     db = createDbConnection(dbPath);
     const stmt = db.prepare(
@@ -226,7 +240,7 @@ export function insertSampleRecord(
       sample.slot_number,
       booleanToSqlite(sample.is_stereo),
     );
-    
+
     return { success: true, sampleId: Number(result.lastInsertRowid) };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);

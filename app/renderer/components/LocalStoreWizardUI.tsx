@@ -28,7 +28,10 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
   onSuccess,
   setLocalStorePath,
 }) => {
-  console.log("[LocalStoreWizardUI] Rendered with setLocalStorePath:", !!setLocalStorePath);
+  console.log(
+    "[LocalStoreWizardUI] Rendered with setLocalStorePath:",
+    !!setLocalStorePath,
+  );
   const {
     state,
     setTargetPath,

@@ -7,6 +7,8 @@ import {
   booleanToSqlite,
   createDbConnection,
   DB_FILENAME,
+  decodeStepPatternFromBlob,
+  encodeStepPatternToBlob,
   ensureDbDirectory,
   forceCloseDbConnection,
   getDbPath,
@@ -19,6 +21,9 @@ import {
   MIN_SLOT_NUMBER,
   type SampleRecord,
   setupDbSchema,
+  updateStepPattern,
+  updateVoiceAlias,
+  type VoiceRecord,
 } from "../romperDbCore";
 
 // Mock modules
@@ -110,6 +115,104 @@ describe("romperDbCore", () => {
         expect(schema).toContain("filename TEXT NOT NULL");
         expect(schema).toContain("slot_number INTEGER NOT NULL");
         expect(schema).toContain("is_stereo BOOLEAN NOT NULL DEFAULT 0");
+      });
+    });
+
+    describe("step pattern encoding/decoding", () => {
+      describe("encodeStepPatternToBlob", () => {
+        it("encodes a 4-voice x 16-step pattern to 64-byte BLOB", () => {
+          const stepPattern: number[][] = [
+            [127, 0, 64, 0, 96, 0, 80, 0, 127, 0, 64, 0, 96, 0, 80, 0], // Voice 1
+            [0, 127, 0, 96, 0, 80, 0, 64, 0, 127, 0, 96, 0, 80, 0, 64], // Voice 2
+            [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80], // Voice 3
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // Voice 4
+          ];
+
+          const blob = encodeStepPatternToBlob(stepPattern);
+
+          expect(blob).toBeInstanceOf(Uint8Array);
+          expect(blob?.length).toBe(64);
+
+          // Check a few specific positions (step 0 for each voice)
+          expect(blob?.[0]).toBe(127); // Step 0, Voice 0
+          expect(blob?.[1]).toBe(0); // Step 0, Voice 1
+          expect(blob?.[2]).toBe(80); // Step 0, Voice 2
+          expect(blob?.[3]).toBe(0); // Step 0, Voice 3
+        });
+
+        it("handles null/undefined input", () => {
+          expect(encodeStepPatternToBlob(null)).toBe(null);
+          expect(encodeStepPatternToBlob(undefined)).toBe(null);
+          expect(encodeStepPatternToBlob([])).toBe(null);
+        });
+
+        it("clamps velocity values to 0-127 range", () => {
+          const stepPattern: number[][] = [
+            [200, 0, 0, 0], // Voice 0: step 0 = 200 (will be clamped to 127)
+            [-10, 0, 0, 0], // Voice 1: step 0 = -10 (will be clamped to 0)
+            [64, 0, 0, 0], // Voice 2: step 0 = 64 (unchanged)
+            [128, 0, 0, 0], // Voice 3: step 0 = 128 (will be clamped to 127)
+          ];
+
+          const blob = encodeStepPatternToBlob(stepPattern);
+
+          expect(blob?.[0]).toBe(127); // 200 clamped to 127
+          expect(blob?.[1]).toBe(0); // -10 clamped to 0
+          expect(blob?.[2]).toBe(64); // 64 unchanged
+          expect(blob?.[3]).toBe(127); // 128 clamped to 127
+        });
+      });
+
+      describe("decodeStepPatternFromBlob", () => {
+        it("decodes a 64-byte BLOB to 4-voice x 16-step pattern", () => {
+          // Create a test BLOB with known values
+          const blob = new Uint8Array(64);
+          blob[0] = 127; // Step 0, Voice 0
+          blob[1] = 0; // Step 0, Voice 1
+          blob[2] = 80; // Step 0, Voice 2
+          blob[3] = 0; // Step 0, Voice 3
+          blob[4] = 0; // Step 1, Voice 0
+          blob[5] = 127; // Step 1, Voice 1
+
+          const stepPattern = decodeStepPatternFromBlob(blob);
+
+          expect(stepPattern).toHaveLength(4); // 4 voices
+          expect(stepPattern?.[0]).toHaveLength(16); // 16 steps
+          expect(stepPattern?.[0][0]).toBe(127); // Voice 0, Step 0
+          expect(stepPattern?.[1][0]).toBe(0); // Voice 1, Step 0
+          expect(stepPattern?.[2][0]).toBe(80); // Voice 2, Step 0
+          expect(stepPattern?.[3][0]).toBe(0); // Voice 3, Step 0
+          expect(stepPattern?.[0][1]).toBe(0); // Voice 0, Step 1
+          expect(stepPattern?.[1][1]).toBe(127); // Voice 1, Step 1
+        });
+
+        it("handles null input", () => {
+          expect(decodeStepPatternFromBlob(null)).toBe(null);
+        });
+
+        it("handles invalid BLOB size", () => {
+          const smallBlob = new Uint8Array(32); // Wrong size
+          expect(decodeStepPatternFromBlob(smallBlob)).toBe(null);
+
+          const largeBlob = new Uint8Array(128); // Wrong size
+          expect(decodeStepPatternFromBlob(largeBlob)).toBe(null);
+        });
+      });
+
+      describe("round-trip encoding/decoding", () => {
+        it("preserves data through encode/decode cycle", () => {
+          const originalPattern: number[][] = [
+            [127, 0, 64, 32, 96, 16, 80, 48, 127, 0, 64, 32, 96, 16, 80, 48],
+            [0, 127, 32, 96, 16, 80, 48, 64, 0, 127, 32, 96, 16, 80, 48, 64],
+            [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80],
+            [32, 16, 8, 4, 2, 1, 0, 127, 64, 32, 16, 8, 4, 2, 1, 0],
+          ];
+
+          const blob = encodeStepPatternToBlob(originalPattern);
+          const decodedPattern = decodeStepPatternFromBlob(blob!);
+
+          expect(decodedPattern).toEqual(originalPattern);
+        });
       });
     });
   });
@@ -205,14 +308,21 @@ describe("romperDbCore", () => {
 
   describe("insertKitRecord", () => {
     let mockDb: any;
-    let mockStmt: any;
+    let mockKitStmt: any;
+    let mockVoiceStmt: any;
 
     beforeEach(() => {
-      mockStmt = {
+      mockKitStmt = {
         run: vi.fn().mockReturnValue({ lastInsertRowid: 123 }),
       };
+      mockVoiceStmt = {
+        run: vi.fn(),
+      };
       mockDb = {
-        prepare: vi.fn().mockReturnValue(mockStmt),
+        prepare: vi
+          .fn()
+          .mockReturnValueOnce(mockKitStmt) // First call for kit INSERT
+          .mockReturnValueOnce(mockVoiceStmt), // Second call for voice INSERT
         close: vi.fn(),
       };
       mockBetterSqlite3.mockReturnValue(mockDb);
@@ -242,16 +352,32 @@ describe("romperDbCore", () => {
       expect(result.error).toBeUndefined();
 
       expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
-      expect(mockDb.prepare).toHaveBeenCalledWith(
-        "INSERT INTO kits (name, alias, artist, plan_enabled, locked) VALUES (?, ?, ?, ?, ?)",
+
+      // Check kit insertion
+      expect(mockDb.prepare).toHaveBeenNthCalledWith(
+        1,
+        "INSERT INTO kits (name, alias, artist, plan_enabled, locked, step_pattern) VALUES (?, ?, ?, ?, ?, ?)",
       );
-      expect(mockStmt.run).toHaveBeenCalledWith(
+      expect(mockKitStmt.run).toHaveBeenCalledWith(
         "Test Kit",
         "TK",
         "Test Artist",
         1,
         0,
+        null,
       );
+
+      // Check voice creation
+      expect(mockDb.prepare).toHaveBeenNthCalledWith(
+        2,
+        "INSERT INTO voices (kit_id, voice_number, voice_alias) VALUES (?, ?, ?)",
+      );
+      expect(mockVoiceStmt.run).toHaveBeenCalledTimes(4);
+      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(1, 123, 1, null);
+      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(2, 123, 2, null);
+      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(3, 123, 3, null);
+      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(4, 123, 4, null);
+
       expect(mockDb.close).toHaveBeenCalled();
     });
 
@@ -264,7 +390,15 @@ describe("romperDbCore", () => {
 
       insertKitRecord(dbDir, kit);
 
-      expect(mockStmt.run).toHaveBeenCalledWith("Minimal Kit", null, null, 0, 0);
+      expect(mockKitStmt.run).toHaveBeenCalledWith(
+        "Minimal Kit",
+        null,
+        null,
+        0,
+        0,
+        null,
+      );
+      expect(mockVoiceStmt.run).toHaveBeenCalledTimes(4); // Still creates 4 voices
     });
 
     it("handles locked field when provided", () => {
@@ -277,7 +411,44 @@ describe("romperDbCore", () => {
 
       insertKitRecord(dbDir, kit);
 
-      expect(mockStmt.run).toHaveBeenCalledWith("Locked Kit", null, null, 1, 1);
+      expect(mockKitStmt.run).toHaveBeenCalledWith(
+        "Locked Kit",
+        null,
+        null,
+        1,
+        1,
+        null,
+      );
+      expect(mockVoiceStmt.run).toHaveBeenCalledTimes(4); // Still creates 4 voices
+    });
+
+    it("handles step_pattern when provided", () => {
+      const dbDir = "/test/dir";
+      const stepPattern: number[][] = [
+        [127, 0, 64, 0], // Voice 1: step pattern with velocities
+        [0, 127, 0, 96], // Voice 2: different pattern
+        [80, 80, 80, 80], // Voice 3: consistent velocity
+        [0, 0, 0, 0], // Voice 4: all off
+      ];
+      const kit: KitRecord = {
+        name: "Pattern Kit",
+        plan_enabled: true,
+        step_pattern: stepPattern,
+      };
+
+      insertKitRecord(dbDir, kit);
+
+      // Expect the encoded BLOB instead of JSON
+      const expectedBlob = encodeStepPatternToBlob(stepPattern);
+      expect(mockKitStmt.run).toHaveBeenCalledWith(
+        "Pattern Kit",
+        null,
+        null,
+        1,
+        0,
+        expectedBlob,
+      );
+      expect(mockVoiceStmt.run).toHaveBeenCalledTimes(4); // Still creates 4 voices
     });
 
     it("handles database errors", () => {
@@ -287,7 +458,7 @@ describe("romperDbCore", () => {
         plan_enabled: true,
       };
 
-      mockStmt.run.mockImplementation(() => {
+      mockKitStmt.run.mockImplementation(() => {
         throw new Error("Database constraint violation");
       });
 
@@ -306,7 +477,7 @@ describe("romperDbCore", () => {
         plan_enabled: true,
       };
 
-      mockStmt.run.mockImplementation(() => {
+      mockKitStmt.run.mockImplementation(() => {
         throw "String error";
       });
 
@@ -314,6 +485,156 @@ describe("romperDbCore", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("String error");
+    });
+  });
+
+  describe("updateVoiceAlias", () => {
+    let mockDb: any;
+    let mockStmt: any;
+
+    beforeEach(() => {
+      mockStmt = {
+        run: vi.fn().mockReturnValue({ changes: 1 }),
+      };
+      mockDb = {
+        prepare: vi.fn().mockReturnValue(mockStmt),
+        close: vi.fn(),
+      };
+      mockBetterSqlite3.mockReturnValue(mockDb);
+
+      // Mock console methods to avoid noise in tests
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("updates voice alias successfully", () => {
+      const dbDir = "/test/dir";
+      const result = updateVoiceAlias(dbDir, 1, 2, "Kick");
+
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+
+      expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
+      expect(mockDb.prepare).toHaveBeenCalledWith(
+        "UPDATE voices SET voice_alias = ? WHERE kit_id = ? AND voice_number = ?",
+      );
+      expect(mockStmt.run).toHaveBeenCalledWith("Kick", 1, 2);
+      expect(mockDb.close).toHaveBeenCalled();
+    });
+
+    it("handles null voice alias", () => {
+      const dbDir = "/test/dir";
+      updateVoiceAlias(dbDir, 1, 3, null);
+
+      expect(mockStmt.run).toHaveBeenCalledWith(null, 1, 3);
+    });
+
+    it("handles voice not found", () => {
+      const dbDir = "/test/dir";
+      mockStmt.run.mockReturnValue({ changes: 0 });
+
+      const result = updateVoiceAlias(dbDir, 1, 1, "Snare");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Voice not found");
+      expect(mockDb.close).toHaveBeenCalled();
+    });
+
+    it("handles database errors", () => {
+      const dbDir = "/test/dir";
+      mockStmt.run.mockImplementation(() => {
+        throw new Error("Database error");
+      });
+
+      const result = updateVoiceAlias(dbDir, 1, 1, "Hat");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Database error");
+      expect(mockDb.close).toHaveBeenCalled();
+    });
+  });
+
+  describe("updateStepPattern", () => {
+    let mockDb: any;
+    let mockStmt: any;
+
+    beforeEach(() => {
+      mockStmt = {
+        run: vi.fn().mockReturnValue({ changes: 1 }),
+      };
+      mockDb = {
+        prepare: vi.fn().mockReturnValue(mockStmt),
+        close: vi.fn(),
+      };
+      mockBetterSqlite3.mockReturnValue(mockDb);
+
+      // Mock console methods to avoid noise in tests
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("updates step pattern successfully", () => {
+      const dbDir = "/test/dir";
+      const stepPattern: number[][] = [
+        [127, 0, 64, 0, 96, 0, 80, 0, 127, 0, 64, 0, 96, 0, 80, 0], // 16 steps
+        [0, 127, 0, 96, 0, 80, 0, 64, 0, 127, 0, 96, 0, 80, 0, 64],
+        [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      ];
+
+      const result = updateStepPattern(dbDir, 1, stepPattern);
+
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+
+      expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
+      expect(mockDb.prepare).toHaveBeenCalledWith(
+        "UPDATE kits SET step_pattern = ? WHERE id = ?",
+      );
+      // Expect the encoded BLOB instead of JSON
+      const expectedBlob = encodeStepPatternToBlob(stepPattern);
+      expect(mockStmt.run).toHaveBeenCalledWith(expectedBlob, 1);
+      expect(mockDb.close).toHaveBeenCalled();
+    });
+
+    it("handles null step pattern (clears pattern)", () => {
+      const dbDir = "/test/dir";
+      const result = updateStepPattern(dbDir, 1, null);
+
+      expect(result.success).toBe(true);
+      expect(mockStmt.run).toHaveBeenCalledWith(null, 1);
+    });
+
+    it("handles kit not found", () => {
+      const dbDir = "/test/dir";
+      mockStmt.run.mockReturnValue({ changes: 0 });
+
+      const result = updateStepPattern(dbDir, 999, [[127, 0, 64, 0]]);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Kit not found");
+      expect(mockDb.close).toHaveBeenCalled();
+    });
+
+    it("handles database errors", () => {
+      const dbDir = "/test/dir";
+      mockStmt.run.mockImplementation(() => {
+        throw new Error("Database error");
+      });
+
+      const result = updateStepPattern(dbDir, 1, [[127, 0]]);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Database error");
+      expect(mockDb.close).toHaveBeenCalled();
     });
   });
 

@@ -48,7 +48,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     setLocalStorePathState(path);
     console.log("[SettingsContext] Set localStorePathState to:", path);
     window.electronAPI.setSetting("localStorePath", path);
-    console.log("[SettingsContext] Called electronAPI.setSetting with localStorePath:", path);
+    console.log(
+      "[SettingsContext] Called electronAPI.setSetting with localStorePath:",
+      path,
+    );
     // Refresh local store status after setting path
     refreshLocalStoreStatus();
   };
@@ -71,7 +74,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log("[SettingsContext] refreshLocalStoreStatus called");
     try {
       if (window.electronAPI?.getLocalStoreStatus) {
-        console.log("[SettingsContext] Calling electronAPI.getLocalStoreStatus");
+        console.log(
+          "[SettingsContext] Calling electronAPI.getLocalStoreStatus",
+        );
         const status = await window.electronAPI.getLocalStoreStatus();
         console.log("[SettingsContext] Received local store status:", status);
         setLocalStoreStatus(status);

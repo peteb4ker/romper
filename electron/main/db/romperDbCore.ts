@@ -16,6 +16,13 @@ export interface KitRecord {
   artist?: string;
   plan_enabled: boolean;
   locked?: boolean;
+  step_pattern?: number[][];
+}
+
+export interface VoiceRecord {
+  kit_id: number;
+  voice_number: number;
+  voice_alias?: string;
 }
 
 export interface SampleRecord {
@@ -44,6 +51,52 @@ export function isDbCorruptionError(error: string): boolean {
   return /file is not a database|file is encrypted|malformed/i.test(error);
 }
 
+// Step pattern encoding/decoding utilities for BLOB storage
+// Each step pattern is stored as 64 bytes (16 steps x 4 voices)
+// Each byte represents velocity (0-127) for that step/voice combination
+// Layout: [step0_voice0, step0_voice1, step0_voice2, step0_voice3, step1_voice0, step1_voice1, ...]
+export function encodeStepPatternToBlob(
+  stepPattern: number[][] | null | undefined,
+): Uint8Array | null {
+  if (!stepPattern || stepPattern.length === 0) {
+    return null;
+  }
+
+  // Create a 64-byte array (16 steps x 4 voices)
+  const blob = new Uint8Array(64);
+
+  for (let step = 0; step < 16; step++) {
+    for (let voice = 0; voice < 4; voice++) {
+      const index = step * 4 + voice;
+      const velocity = stepPattern[voice]?.[step] || 0;
+      // Ensure velocity is within valid range (0-127)
+      blob[index] = Math.max(0, Math.min(127, velocity));
+    }
+  }
+
+  return blob;
+}
+
+export function decodeStepPatternFromBlob(
+  blob: Uint8Array | null,
+): number[][] | null {
+  if (!blob || blob.length !== 64) {
+    return null;
+  }
+
+  // Create 4 voices x 16 steps pattern
+  const stepPattern: number[][] = [[], [], [], []];
+
+  for (let step = 0; step < 16; step++) {
+    for (let voice = 0; voice < 4; voice++) {
+      const index = step * 4 + voice;
+      stepPattern[voice][step] = blob[index];
+    }
+  }
+
+  return stepPattern;
+}
+
 export function getDbSchema(): string {
   return `
     CREATE TABLE IF NOT EXISTS kits (
@@ -52,7 +105,16 @@ export function getDbSchema(): string {
       alias TEXT,
       artist TEXT,
       plan_enabled BOOLEAN NOT NULL DEFAULT 0,
-      locked BOOLEAN NOT NULL DEFAULT 0
+      locked BOOLEAN NOT NULL DEFAULT 0,
+      step_pattern BLOB
+    );
+    CREATE TABLE IF NOT EXISTS voices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kit_id INTEGER NOT NULL,
+      voice_number INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4),
+      voice_alias TEXT,
+      FOREIGN KEY(kit_id) REFERENCES kits(id),
+      UNIQUE(kit_id, voice_number)
     );
     CREATE TABLE IF NOT EXISTS samples (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -256,22 +318,120 @@ export function insertKitRecord(
   let db: BetterSqlite3.Database | null = null;
   try {
     db = createDbConnection(dbPath);
-    const stmt = db.prepare(
-      "INSERT INTO kits (name, alias, artist, plan_enabled, locked) VALUES (?, ?, ?, ?, ?)",
+
+    // Insert the kit
+    const kitStmt = db.prepare(
+      "INSERT INTO kits (name, alias, artist, plan_enabled, locked, step_pattern) VALUES (?, ?, ?, ?, ?, ?)",
     );
-    const result = stmt.run(
+    const stepPatternBlob = encodeStepPatternToBlob(kit.step_pattern);
+    const kitResult = kitStmt.run(
       kit.name,
       kit.alias || null,
       kit.artist || null,
       booleanToSqlite(kit.plan_enabled),
       booleanToSqlite(kit.locked || false),
+      stepPatternBlob,
     );
 
-    console.log("[Romper Electron] Kit inserted, id:", result.lastInsertRowid);
-    return { success: true, kitId: Number(result.lastInsertRowid) };
+    const kitId = Number(kitResult.lastInsertRowid);
+    console.log("[Romper Electron] Kit inserted, id:", kitId);
+
+    // Create exactly 4 voice records for this kit
+    const voiceStmt = db.prepare(
+      "INSERT INTO voices (kit_id, voice_number, voice_alias) VALUES (?, ?, ?)",
+    );
+
+    for (let voiceNumber = 1; voiceNumber <= 4; voiceNumber++) {
+      voiceStmt.run(kitId, voiceNumber, null);
+    }
+
+    console.log("[Romper Electron] Created 4 voice records for kit:", kitId);
+    return { success: true, kitId };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     console.error("[Romper Electron] Error in insertKitRecord:", error);
+    return { success: false, error };
+  } finally {
+    if (db) {
+      db.close();
+    }
+  }
+}
+
+export function updateVoiceAlias(
+  dbDir: string,
+  kitId: number,
+  voiceNumber: number,
+  voiceAlias: string | null,
+): { success: boolean; error?: string } {
+  const dbPath = getDbPath(dbDir);
+  console.log(
+    "[Romper Electron] updateVoiceAlias to:",
+    dbPath,
+    "kitId:",
+    kitId,
+    "voiceNumber:",
+    voiceNumber,
+    "alias:",
+    voiceAlias,
+  );
+
+  let db: BetterSqlite3.Database | null = null;
+  try {
+    db = createDbConnection(dbPath);
+    const stmt = db.prepare(
+      "UPDATE voices SET voice_alias = ? WHERE kit_id = ? AND voice_number = ?",
+    );
+    const result = stmt.run(voiceAlias, kitId, voiceNumber);
+
+    if (result.changes === 0) {
+      return { success: false, error: "Voice not found" };
+    }
+
+    console.log("[Romper Electron] Voice alias updated");
+    return { success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    console.error("[Romper Electron] Error in updateVoiceAlias:", error);
+    return { success: false, error };
+  } finally {
+    if (db) {
+      db.close();
+    }
+  }
+}
+
+export function updateStepPattern(
+  dbDir: string,
+  kitId: number,
+  stepPattern: number[][] | null,
+): { success: boolean; error?: string } {
+  const dbPath = getDbPath(dbDir);
+  console.log(
+    "[Romper Electron] updateStepPattern to:",
+    dbPath,
+    "kitId:",
+    kitId,
+    "pattern:",
+    stepPattern,
+  );
+
+  let db: BetterSqlite3.Database | null = null;
+  try {
+    db = createDbConnection(dbPath);
+    const stmt = db.prepare("UPDATE kits SET step_pattern = ? WHERE id = ?");
+    const stepPatternBlob = encodeStepPatternToBlob(stepPattern);
+    const result = stmt.run(stepPatternBlob, kitId);
+
+    if (result.changes === 0) {
+      return { success: false, error: "Kit not found" };
+    }
+
+    console.log("[Romper Electron] Step pattern updated");
+    return { success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    console.error("[Romper Electron] Error in updateStepPattern:", error);
     return { success: false, error };
   } finally {
     if (db) {

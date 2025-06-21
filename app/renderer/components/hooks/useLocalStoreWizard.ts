@@ -62,7 +62,10 @@ async function getDefaultRomperPathAsync(api: any): Promise<string> {
 }
 
 // --- Main Hook ---
-export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void, setLocalStorePath?: (path: string) => void) {
+export function useLocalStoreWizard(
+  onProgress?: (p: ProgressEvent) => void,
+  setLocalStorePath?: (path: string) => void,
+) {
   const api = useElectronAPI();
   const [state, setState] = useState<LocalStoreWizardState>({
     targetPath: "",
@@ -286,7 +289,9 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void, set
                 }
                 // Log if samples were skipped
                 if (voiceSamples.length > 12) {
-                  console.log(`[Hook] Skipped ${voiceSamples.length - 12} samples in voice ${voiceNum} (exceeds 12 slot limit)`);
+                  console.log(
+                    `[Hook] Skipped ${voiceSamples.length - 12} samples in voice ${voiceNum} (exceeds 12 slot limit)`,
+                  );
                 }
               }
             }
@@ -308,7 +313,10 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void, set
       if (api.ensureDir) await api.ensureDir(state.targetPath);
 
       // Set the local store path early in the process, before potentially failing operations
-      console.log("[Hook] setLocalStorePath callback available:", !!setLocalStorePath);
+      console.log(
+        "[Hook] setLocalStorePath callback available:",
+        !!setLocalStorePath,
+      );
       console.log("[Hook] state.targetPath:", state.targetPath);
       if (setLocalStorePath) {
         console.log("[Hook] Calling setLocalStorePath with:", state.targetPath);
@@ -355,6 +363,7 @@ export function useLocalStoreWizard(onProgress?: (p: ProgressEvent) => void, set
     setIsInitializing,
     setError,
     setWizardState,
+    setLocalStorePath,
   ]);
 
   // --- Source selection handler ---

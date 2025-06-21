@@ -36,8 +36,8 @@
 - `electron/main/ipcHandlers.ts` - Main process IPC handlers, including robust, testable Squarp.net archive download/extract logic with progress and error reporting.
 - `electron/main/__tests__/archiveExtract.test.ts` - Unit tests for Squarp.net archive download/extract handler, with full async/streaming and error simulation. (Premature close test removed as non-robust in test env)
 - `electron/main/__tests__/isValidEntry.test.ts` - Unit tests for isValidEntry helper in archiveUtils, covering all valid and invalid entry cases.
-- `electron/main/db/romperDbCore.ts` - Core logic for Romper DB creation, record insertion, and error handling (including corrupt/overwrite cases).
-- `electron/main/db/__tests__/romperDbCore.test.ts` - Integration and edge-case tests for DB creation, overwrite, validation, and error handling.
+- `electron/main/db/romperDbCore.ts` - Core logic for Romper DB creation, record insertion, and error handling (including corrupt/overwrite cases). Now includes step pattern encoding/decoding utilities for BLOB storage (Uint8Array, 64 bytes, 0-127 per step).
+- `electron/main/db/__tests__/romperDbCore.test.ts` - Integration and edge-case tests for DB creation, overwrite, validation, and error handling. Updated with comprehensive tests for step pattern BLOB encoding/decoding functions.
 - `shared/kitUtilsShared.ts` - Shared kit utility logic for both app and electron workspaces.
 - `shared/__tests__/kitUtilsShared.test.ts` - Unit tests for shared kit utility logic.
 
@@ -95,8 +95,8 @@
   - [ ] 2.10 Implement composable scanning operations and database storage
     - [ ] 2.10.1 Extend database schema for metadata storage
       - [x] 2.10.1.1 Add kit_alias, kit_artist, locked fields to kits table
-      - [ ] 2.10.1.2 Add voice_alias field to existing voice-related structure
-      - [ ] 2.10.1.3 Add step_pattern field for step sequencer use
+      - [x] 2.10.1.2 Add voice_alias field to existing voice-related structure
+      - [x] 2.10.1.3 Add step_pattern field for step sequencer use
       - [ ] 2.10.1.4 Add wav_bitrate, wav_sample_rate, is_stereo fields to samples table
       - [ ] 2.10.1.5 Update database schema documentation in docs/romper-db.md
     - [ ] 2.10.2 Implement core scanning operations as composable functions

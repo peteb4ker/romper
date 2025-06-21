@@ -16,8 +16,12 @@ import LocalStoreWizardUI from "../components/LocalStoreWizardUI";
 import { useSettings } from "../utils/SettingsContext";
 
 const KitsView = () => {
-  const { localStorePath, localStoreStatus, refreshLocalStoreStatus, setLocalStorePath } =
-    useSettings();
+  const {
+    localStorePath,
+    localStoreStatus,
+    refreshLocalStoreStatus,
+    setLocalStorePath,
+  } = useSettings();
   const [kits, setKits] = useState<string[]>([]);
   const [allKitSamples, setAllKitSamples] = useState<{
     [kit: string]: VoiceSamples;

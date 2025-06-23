@@ -99,12 +99,12 @@ describe("romperDbCore.ts integration", () => {
     dbPath = path.join(dbDir, "romper.sqlite");
     await createRomperDbFile(dbDir);
     const kitRes = insertKitRecord(dbDir, {
-      name: "808 Kit",
+      name: "A01",
       alias: "TR-808",
       artist: "Roland",
       plan_enabled: false,
     });
-    kitName = "808 Kit";
+    kitName = "A01";
   });
 
   afterEach(async () => {
@@ -123,13 +123,14 @@ describe("romperDbCore.ts integration", () => {
     const kitCols = db.prepare("PRAGMA table_info(kits)").all();
     const sampleCols = db.prepare("PRAGMA table_info(samples)").all();
     expect(kitCols.map((c: any) => c.name)).toEqual(
-      expect.arrayContaining(["id", "name", "alias", "artist", "plan_enabled"]),
+      expect.arrayContaining(["name", "alias", "artist", "plan_enabled", "locked", "step_pattern"]),
     );
     expect(sampleCols.map((c: any) => c.name)).toEqual(
       expect.arrayContaining([
         "id",
         "kit_name",
         "filename",
+        "voice_number",
         "slot_number",
         "is_stereo",
       ]),
@@ -140,7 +141,7 @@ describe("romperDbCore.ts integration", () => {
   it("inserts a kit record", () => {
     const db = createDb(dbPath);
     const kit = db.prepare("SELECT * FROM kits WHERE name = ?").get(kitName);
-    expect(kit.name).toBe("808 Kit");
+    expect(kit.name).toBe("A01");
     expect(kit.alias).toBe("TR-808");
     expect(kit.artist).toBe("Roland");
     expect(kit.plan_enabled).toBe(0);
@@ -168,16 +169,17 @@ describe("romperDbCore.ts integration", () => {
     closeDb(db);
   });
 
-  it("does not allow duplicate kit names (if unique constraint added)", () => {
-    // This test will pass if unique constraint is added in schema, otherwise will allow duplicates
+  it("does not allow duplicate kit names (PRIMARY KEY constraint)", () => {
+    // Try to insert a kit with the same name as one already inserted in beforeEach
     const res1 = insertKitRecord(dbDir, {
-      name: "808 Kit",
-      alias: "Copy",
+      name: "A01", // This name already exists from beforeEach
+      alias: "Duplicate Copy",
       artist: "Roland",
       plan_enabled: false,
     });
-    // Should succeed (no unique constraint in schema by default)
-    expect(res1.success).toBe(true);
+    // Should fail due to PRIMARY KEY constraint
+    expect(res1.success).toBe(false);
+    expect(res1.error).toMatch(/UNIQUE constraint failed|PRIMARY KEY/i);
   });
 
   it("rejects invalid sample slot_number (out of range)", () => {

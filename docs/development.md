@@ -110,3 +110,34 @@ Electron will launch and connect to the Vite dev server for hot reloading.
 - Integration tests live in `__tests__/integration/` subfolders.
 - This separation makes it easy to run fast, isolated unit tests or slower, more comprehensive integration tests as needed.
 
+## Architecture Overview
+
+### Database Schema
+Romper uses a simplified SQLite schema with kit names as primary keys instead of auto-generated IDs. This design choice improves maintainability and makes foreign key relationships more intuitive. See [Database Schema Documentation](./romper-db.md) for detailed schema information.
+
+### Scanning System
+The application features a unified scanning system built around composable operations:
+
+- **Scanner Functions**: Individual scanners for voice inference, WAV analysis, and RTF parsing
+- **Scanner Orchestrator**: Manages scanning chains with progress tracking and error handling  
+- **Database Integration**: Automatic storage of scanning results in the SQLite database
+
+Key files:
+- `app/renderer/components/utils/scannerOrchestrator.ts` - Main scanning orchestrator and individual scanner functions
+- `app/renderer/components/utils/databaseScanning.ts` - Database integration for scanning operations
+- `electron/main/db/romperDbCore.ts` - Core database operations including voice alias updates
+
+See [Scanning System Documentation](./scanning-system.md) for detailed information about scanning operations.
+
+### Code Organization
+- **Electron Main Process**: Database operations, file system access, IPC handlers
+- **Electron Renderer**: UI components, React hooks, utility functions
+- **Shared**: Common utilities used by both main and renderer processes
+- **Testing**: Comprehensive unit and integration tests with vitest
+
+### Development Principles
+- **DRY (Don't Repeat Yourself)**: Consolidated duplicate logic into unified systems
+- **Separation of Concerns**: UI logic in hooks, business logic in utilities
+- **Type Safety**: Full TypeScript coverage with strict compilation
+- **Testing**: Unit tests for all business logic, integration tests for system interactions
+

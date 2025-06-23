@@ -43,7 +43,7 @@ describe("romperDb", () => {
       "/mock/path",
       kit,
     );
-    expect(kitId).toBe(42);
+    expect(kitId).toBe("Test Kit");
   });
 
   it("should throw if insertKit fails", async () => {
@@ -59,7 +59,7 @@ describe("romperDb", () => {
 
   it("should call insertSample and return sampleId", async () => {
     const sample = {
-      kit_id: 1,
+      kit_name: "test_kit",
       filename: "kick.wav",
       slot_number: 1,
       is_stereo: false,
@@ -80,7 +80,7 @@ describe("romperDb", () => {
     }));
     await expect(
       insertSample("/fail/path", {
-        kit_id: 1,
+        kit_name: "test_kit",
         filename: "fail.wav",
         slot_number: 1,
         is_stereo: false,

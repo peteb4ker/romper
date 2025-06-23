@@ -27,14 +27,14 @@ This document describes the schema for the Romper local SQLite database, which i
 
 ### voices
 - `id` INTEGER PRIMARY KEY AUTOINCREMENT
-- `kit_id` INTEGER NOT NULL - Foreign key to kits.id
+- `kit_name` TEXT NOT NULL - Foreign key to kits.name
 - `voice_number` INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4) - Voice number (1-4)
 - `voice_alias` TEXT - Optional custom alias for this voice
-- UNIQUE(kit_id, voice_number) - Each kit has exactly one record per voice number
+- UNIQUE(kit_name, voice_number) - Each kit has exactly one record per voice number
 
 ### samples
 - `id` INTEGER PRIMARY KEY AUTOINCREMENT
-- `kit_id` INTEGER - Foreign key to kits.id
+- `kit_name` TEXT - Foreign key to kits.name
 - `filename` TEXT NOT NULL - Sample filename
 - `voice_number` INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4) - Voice this sample belongs to
 - `slot_number` INTEGER NOT NULL CHECK(slot_number BETWEEN 1 AND 12) - Slot position within the voice (1-12)
@@ -65,8 +65,32 @@ This document describes the schema for the Romper local SQLite database, which i
 - kits (1) → samples (many) - Each kit can have multiple samples
 - voices (1) → samples (many) - Each voice can have up to 12 samples (slots)
 
+## Scanning System Integration
+
+The Romper scanning system automatically populates and updates database records with analyzed metadata:
+
+### Voice Inference
+- The voice inference scanner analyzes sample filenames to determine voice types
+- Results are stored in the `voice_alias` field of the `voices` table
+- Voice aliases are automatically capitalized (e.g., "kick" → "Kick", "hihat" → "HH")
+- All 4 voice records are created for each kit, with unused voices having NULL aliases
+
+### WAV Analysis
+- WAV file analysis extracts technical audio properties during scanning
+- `wav_bitrate` and `wav_sample_rate` fields are populated automatically
+- `is_stereo` field is set based on channel analysis
+- Analysis results help ensure Rample compatibility
+
+### Database Operations
+- Scanning operations use kit names (`kit_name`) as foreign keys
+- Updates are performed using the `updateVoiceAlias()` function in romperDbCore
+- All scanning operations maintain referential integrity with the kit-voice-sample relationship
+- Batch operations ensure atomic updates across related records
+
+For detailed information about the scanning system, see [Scanning System Documentation](./scanning-system.md).
+
 ---
 
-_Last updated: 2025-01-27_
+_Last updated: 2025-06-23_
 
-<!-- Schema and diagrams confirmed up to date with electron/main/db/romperDbCore.ts as of 2025-01-27 -->
+<!-- Schema and diagrams confirmed up to date with electron/main/db/romperDbCore.ts as of 2025-06-23 -->

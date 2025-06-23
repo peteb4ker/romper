@@ -41,13 +41,56 @@ export interface ElectronAPI {
   onSamplePlaybackEnded?: (cb: () => void) => void;
   onSamplePlaybackError?: (cb: (errMsg: string) => void) => void;
   getAudioBuffer?: (filePath: string) => Promise<ArrayBuffer>;
-  readRampleLabels?: (localStorePath: string) => Promise<any>;
-  writeRampleLabels?: (localStorePath: string, labels: any) => Promise<void>;
-  discardKitPlan?: (localStorePath: string, kitName: string) => Promise<any>;
-  rescanAllVoiceNames: (
-    localStorePath: string,
-    kitNames: string[],
-  ) => Promise<void>;
+  // Database methods for kit metadata (replacing JSON file dependency)
+  getKitMetadata?: (dbDir: string, kitName: string) => Promise<{
+    success: boolean;
+    data?: {
+      id: number;
+      name: string;
+      alias?: string;
+      artist?: string;
+      plan_enabled: boolean;
+      locked: boolean;
+      step_pattern?: number[][];
+      voices: { [voiceNumber: number]: string };
+    };
+    error?: string;
+  }>;
+  updateKitMetadata?: (
+    dbDir: string,
+    kitName: string,
+    updates: {
+      alias?: string;
+      artist?: string;
+      tags?: string[];
+      description?: string;
+    },
+  ) => Promise<{ success: boolean; error?: string }>;
+  getAllKits?: (dbDir: string) => Promise<{
+    success: boolean;
+    data?: Array<{
+      id: number;
+      name: string;
+      alias?: string;
+      artist?: string;
+      plan_enabled: boolean;
+      locked: boolean;
+      step_pattern?: number[][];
+      voices: { [voiceNumber: number]: string };
+    }>;
+    error?: string;
+  }>;
+  updateVoiceAlias?: (
+    dbDir: string,
+    kitName: string,
+    voiceNumber: number,
+    voiceAlias: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  updateStepPattern?: (
+    dbDir: string,
+    kitName: string,
+    stepPattern: number[][],
+  ) => Promise<{ success: boolean; error?: string }>;
   getUserHomeDir?: () => Promise<string>;
   selectLocalStorePath?: () => Promise<string>;
   downloadAndExtractArchive?: (
@@ -73,7 +116,7 @@ export interface ElectronAPI {
   insertSample?: (
     dbDir: string,
     sample: {
-      kit_id: number;
+      kit_name: string;
       filename: string;
       voice_number: number;
       slot_number: number;

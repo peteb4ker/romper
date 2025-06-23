@@ -5,8 +5,8 @@ import { useSettings } from "../utils/SettingsContext";
 const ThemeToggle: React.FC = () => {
   const { darkMode, setDarkMode } = useSettings();
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
+  const toggleDarkMode = async () => {
+    await setDarkMode(!darkMode);
   };
 
   return (

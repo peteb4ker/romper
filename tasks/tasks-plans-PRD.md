@@ -29,8 +29,8 @@
 - `app/renderer/components/MessageDisplay.test.tsx` - Unit tests for MessageDisplay.
 - `app/renderer/components/utils/romperDb.ts` - Handles Romper DB (SQLite) operations for plans, kits, and samples.
 - `app/renderer/components/utils/romperDb.test.ts` - Unit tests for romperDb.
-- `app/renderer/components/utils/scanningOperations.ts` - Composable scanning operations for voice inference, WAV analysis, RTF parsing, and step patterns.
-- `app/renderer/components/utils/scanningOperations.test.ts` - Unit tests for scanning operations.
+- `app/renderer/components/utils/scannerOrchestrator.ts` - Unified scanning operations including voice inference, WAV analysis, and RTF parsing. Consolidates all scanning logic in one place for better maintainability.
+- `app/renderer/components/utils/__tests__/scannerOrchestrator.test.ts` - Integration tests for the unified scanning orchestrator. Tests the complete scanning pipeline including voice inference, WAV analysis, and RTF artist metadata extraction.
 - `app/renderer/components/utils/scannerOrchestrator.ts` - Orchestrates scanning operation chains with progress tracking and error handling.
 - `app/renderer/components/utils/scannerOrchestrator.test.ts` - Unit tests for scanner orchestration.
 - `electron/main/ipcHandlers.ts` - Main process IPC handlers, including robust, testable Squarp.net archive download/extract logic with progress and error reporting.
@@ -95,18 +95,18 @@
     - [x] 2.9.7 Update all related unit tests for the SD card to local store transition
   - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
   - [ ] 2.10 Implement composable scanning operations and database storage
-    - [ ] 2.10.1 Extend database schema for metadata storage
+    - [x] 2.10.1 Extend database schema for metadata storage
       - [x] 2.10.1.1 Add kit_alias, kit_artist, locked fields to kits table
       - [x] 2.10.1.2 Add voice_alias field to existing voice-related structure
       - [x] 2.10.1.3 Add step_pattern field for step sequencer use
       - [x] 2.10.1.4 Add wav_bitrate, wav_sample_rate, is_stereo fields to samples table
       - [x] 2.10.1.5 Update database schema documentation in docs/romper-db.md
     - [ ] 2.10.2 Implement core scanning operations as composable functions
-      - [ ] 2.10.2.1 Create voice name inference scanner (from existing function)
-      - [ ] 2.10.2.2 Create WAV file analysis scanner (bitrate, sample rate, stereo detection)
-      - [ ] 2.10.2.3 Create RTF artist metadata scanner (from existing function)
-      - [ ] 2.10.2.4 Create step pattern scanner for sequencer metadata
-      - [ ] 2.10.2.5 Design scanner orchestration system for composable operation chains
+      - [x] 2.10.2.1 Create voice name inference scanner (from existing function)
+      - [x] 2.10.2.2 Create WAV file analysis scanner (bitrate, sample rate, stereo detection)
+      - [x] 2.10.2.3 Create RTF artist metadata scanner (from existing function) - Extract artist names from RTF filenames (e.g., "A - Artist Name.rtf") and update the artist field on all kits in that bank
+      - [x] 2.10.2.4 Create step pattern scanner for sequencer metadata (SKIPPED - step patterns are internal to app/database)
+      - [x] 2.10.2.5 Design scanner orchestration system for composable operation chains
     - [ ] 2.10.3 Remove JSON file dependency and migrate to database storage
       - [ ] 2.10.3.1 Update scanning logic to store results in database instead of JSON
       - [ ] 2.10.3.2 Remove JSON file reading/writing code
@@ -115,7 +115,7 @@
   - [ ] 2.17 Integrate scanning operations into wizard initialization
     - [ ] 2.17.1 Add automatic scanning as final step in wizard initialization
       - [ ] 2.17.1.1 After database records created, run scanning operation chain
-      - [ ] 2.17.1.2 Chain: voice inference → WAV analysis → RTF artist scan → step patterns
+      - [ ] 2.17.1.2 Chain: voice inference → WAV analysis → RTF artist scan
       - [ ] 2.17.1.3 Show scanning progress on existing wizard progress bar
       - [ ] 2.17.1.4 Handle partial failures gracefully (continue chain on errors)
     - [ ] 2.17.2 Unit tests for wizard scanning integration

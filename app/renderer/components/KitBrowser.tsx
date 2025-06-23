@@ -14,7 +14,7 @@ interface KitBrowserProps {
   onSelectKit: (kitName: string) => void;
   localStorePath: string | null;
   kits?: string[];
-  kitLabels: { [kit: string]: RampleKitLabel };
+  kitLabels?: { [kit: string]: RampleKitLabel };
   onRescanAllVoiceNames: () => void;
   sampleCounts?: Record<string, [number, number, number, number]>;
   voiceLabelSets?: Record<string, string[]>;

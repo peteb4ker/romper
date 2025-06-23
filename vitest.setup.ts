@@ -38,25 +38,25 @@ beforeAll(() => {
         "3 hat.wav",
         "4 tom.wav",
       ],
-      readRampleLabels: async (localStorePath) => ({
-        kits: {
-          KitA: {
-            label: "KitA",
-            voiceNames: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
-          },
-          KitB: {
-            label: "KitB",
-            voiceNames: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
-          },
-          KitC: {
-            label: "KitC",
-            voiceNames: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
-          },
-        },
-      }),
-      writeRampleLabels: async (localStorePath, labels) => {},
       getAudioBuffer: async () => new ArrayBuffer(8),
       selectLocalStorePath: async () => "/mock/custom/path", // mock for tests
+      
+      // Database API methods for new metadata system
+      getKitMetadata: async (dbDir, kitName) => ({
+        success: true,
+        data: {
+          id: 1,
+          name: kitName,
+          alias: kitName,
+          plan_enabled: false,
+          locked: false,
+          voices: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
+          step_pattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
+        },
+      }),
+      updateKitMetadata: async (dbDir, kitName, updates) => ({ success: true }),
+      updateVoiceAlias: async (dbDir, kitName, voiceNumber, alias) => ({ success: true }),
+      updateStepPattern: async (dbDir, kitName, pattern) => ({ success: true }),
     };
 
     // Mock scrollIntoView for all elements
@@ -90,11 +90,6 @@ beforeAll(() => {
       };
     };
   }
-
-  // Mock SettingsContext
-  vi.mock("./utils/SettingsContext", () => ({
-    useSettings: () => ({ localStorePath: "/sd" }),
-  }));
 
   // Mock Worker for tests (step sequencer, etc.)
   if (typeof globalThis.Worker === "undefined") {

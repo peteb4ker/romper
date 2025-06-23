@@ -4,12 +4,10 @@ import {
   compareKitSlots,
   groupSamplesByVoice,
 } from "../../../shared/kitUtilsShared";
-import { useKitLabel } from "../components/hooks/useKitLabel";
+import { useKitMetadata } from "../components/hooks/useKitMetadata";
 import KitBrowser from "../components/KitBrowser";
 import KitDetails from "../components/KitDetails";
 import type {
-  RampleKitLabel,
-  RampleLabels,
   VoiceSamples,
 } from "../components/kitTypes";
 import LocalStoreWizardUI from "../components/LocalStoreWizardUI";
@@ -26,9 +24,6 @@ const KitsView = () => {
   const [allKitSamples, setAllKitSamples] = useState<{
     [kit: string]: VoiceSamples;
   }>({});
-  const [kitLabels, setKitLabels] = useState<{ [kit: string]: RampleKitLabel }>(
-    {},
-  );
   const [selectedKit, setSelectedKit] = useState<string | null>(null);
   const [selectedKitSamples, setSelectedKitSamples] =
     useState<VoiceSamples | null>(null);
@@ -50,9 +45,6 @@ const KitsView = () => {
 
   // Add type guards for possibly undefined Electron APIs
   const safeListFilesInRoot = window.electronAPI?.listFilesInRoot?.bind(
-    window.electronAPI,
-  );
-  const safeReadRampleLabels = window.electronAPI?.readRampleLabels?.bind(
     window.electronAPI,
   );
   const safeScanSdCard = window.electronAPI?.scanSdCard?.bind(
@@ -97,29 +89,12 @@ const KitsView = () => {
         }
       }
       setAllKitSamples(samples);
-      // 3. Load labels
-      if (!safeReadRampleLabels) {
-        console.warn("readRampleLabels is not available");
-        setKitLabels({});
-        return;
-      }
-      try {
-        const loadedLabels: RampleLabels | null =
-          await safeReadRampleLabels(localStorePath);
-        setKitLabels(
-          loadedLabels && loadedLabels.kits ? loadedLabels.kits : {},
-        );
-      } catch (error) {
-        console.warn("Error reading rample labels:", error);
-        setKitLabels({});
-      }
     })();
   }, [
     localStorePath,
     needsLocalStoreSetup,
     safeScanSdCard,
     safeListFilesInRoot,
-    safeReadRampleLabels,
   ]);
 
   // When a kit is selected, set its samples
@@ -134,10 +109,9 @@ const KitsView = () => {
   }, [selectedKit, allKitSamples]);
 
   // Use the centralized hook instead
-  const { handleRescanAllVoiceNames } = useKitLabel({
+  const { handleRescanAllVoiceNames } = useKitMetadata({
     kitName: selectedKit || "",
     localStorePath: localStorePath || "",
-    onBack: () => {}, // no-op to satisfy KitDetailsProps
   });
 
   // Memoize sample counts for all kits
@@ -154,28 +128,6 @@ const KitsView = () => {
     }
     return counts;
   }, [kits, allKitSamples]);
-
-  // Memoize deduped voice label sets for all kits
-  const voiceLabelSets = useMemo(() => {
-    const sets: Record<string, string[]> = {};
-    for (const kit of kits) {
-      const labelObj = kitLabels[kit];
-      if (labelObj && labelObj.voiceNames) {
-        // Accept both array and object forms
-        const values = Array.isArray(labelObj.voiceNames)
-          ? labelObj.voiceNames
-          : Object.values(labelObj.voiceNames);
-        sets[kit] = Array.from(
-          new Set(
-            values.filter(Boolean).map((v) => (typeof v === "string" ? v : "")),
-          ),
-        );
-      } else {
-        sets[kit] = [];
-      }
-    }
-    return sets;
-  }, [kits, kitLabels]);
 
   const sortedKits = kits ? kits.slice().sort(compareKitSlots) : [];
   const currentKitIndex = sortedKits.findIndex((k) => k === selectedKit);
@@ -267,7 +219,6 @@ const KitsView = () => {
             handleRescanAllVoiceNames(selectedKitSamples)
           }
           samples={selectedKitSamples}
-          kitLabel={kitLabels[selectedKit] || null}
           onRequestSamplesReload={async () => {
             // Re-scan samples for this kit only
             const kitPath = `${localStorePath}/${selectedKit}`;
@@ -295,10 +246,8 @@ const KitsView = () => {
           localStorePath={localStorePath}
           kits={sortedKits}
           onSelectKit={handleSelectKit}
-          kitLabels={kitLabels}
           onRescanAllVoiceNames={() => handleRescanAllVoiceNames(undefined)}
           sampleCounts={sampleCounts}
-          voiceLabelSets={voiceLabelSets}
           onMessage={(msg) => {
             // Optionally handle messages here, e.g. show a toast or log
             // For now, do nothing (parent can decide to handle or ignore)

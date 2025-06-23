@@ -5,6 +5,11 @@ import {
   createRomperDbFile,
   insertKitRecord,
   insertSampleRecord,
+  getKitByName,
+  updateKitMetadata,
+  getAllKits,
+  updateVoiceAlias,
+  updateStepPattern,
 } from "./db/romperDbCore.js";
 
 export function registerDbIpcHandlers() {
@@ -34,7 +39,7 @@ export function registerDbIpcHandlers() {
       _event,
       dbDir: string,
       sample: {
-        kit_id: number;
+        kit_name: string;
         filename: string;
         voice_number: number;
         slot_number: number;
@@ -44,6 +49,62 @@ export function registerDbIpcHandlers() {
       },
     ) => {
       return insertSampleRecord(dbDir, sample);
+    },
+  );
+
+  ipcMain.handle(
+    "get-kit-metadata",
+    async (_event, dbDir: string, kitName: string) => {
+      return getKitByName(dbDir, kitName);
+    },
+  );
+
+  ipcMain.handle(
+    "update-kit-metadata",
+    async (
+      _event,
+      dbDir: string,
+      kitName: string,
+      updates: {
+        alias?: string;
+        artist?: string;
+        tags?: string[];
+        description?: string;
+      },
+    ) => {
+      return updateKitMetadata(dbDir, kitName, updates);
+    },
+  );
+
+  ipcMain.handle(
+    "get-all-kits",
+    async (_event, dbDir: string) => {
+      return getAllKits(dbDir);
+    },
+  );
+
+  ipcMain.handle(
+    "update-voice-alias",
+    async (
+      _event,
+      dbDir: string,
+      kitName: string,
+      voiceNumber: number,
+      voiceAlias: string,
+    ) => {
+      return updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias);
+    },
+  );
+
+  ipcMain.handle(
+    "update-step-pattern",
+    async (
+      _event,
+      dbDir: string,
+      kitName: string,
+      stepPattern: number[][],
+    ) => {
+      return updateStepPattern(dbDir, kitName, stepPattern);
     },
   );
 }

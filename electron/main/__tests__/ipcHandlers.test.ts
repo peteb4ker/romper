@@ -83,20 +83,6 @@ describe("registerIpcHandlers", () => {
     expect(result).not.toContain("notakit");
   });
 
-  it("registers rescan-all-voice-names and updates labels", async () => {
-    const { registerIpcHandlers } = await import("../ipcHandlers");
-    const writeRampleLabels = (await import("../rampleLabels"))
-      .writeRampleLabels;
-    registerIpcHandlers({}, {});
-    const result = await ipcMainHandlers["rescan-all-voice-names"](
-      {},
-      "/mock/sd",
-      ["A1"],
-    );
-    expect(writeRampleLabels).toHaveBeenCalled();
-    expect(result).toBe(true);
-  });
-
   it("registers ensure-dir and creates directory", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     const fs = await import("fs");

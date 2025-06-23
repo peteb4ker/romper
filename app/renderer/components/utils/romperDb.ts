@@ -22,13 +22,13 @@ export async function insertKit(
   if (!window.electronAPI?.insertKit) throw new Error("IPC not available");
   const result = await window.electronAPI.insertKit(dbDir, kit);
   if (!result.success) throw new Error(result.error || "Failed to insert kit");
-  return result.kitId;
+  return kit.name; // Return the kit name instead of an ID
 }
 
 export async function insertSample(
   dbDir: string,
   sample: {
-    kit_id: number;
+    kit_name: string;
     filename: string;
     voice_number: number;
     slot_number: number;

@@ -4,10 +4,6 @@ import * as path from "path";
 import * as unzipper from "unzipper";
 
 import {
-  groupSamplesByVoice,
-  inferVoiceTypeFromFilename,
-} from "../../shared/kitUtilsShared.js";
-import {
   countZipEntries,
   downloadArchive,
   extractZipEntries,
@@ -19,7 +15,8 @@ import {
   writeKitSamples,
 } from "./kitPlanOps.js";
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
-import { readRampleLabels, writeRampleLabels } from "./rampleLabels.js";
+import { insertKitRecord } from "./db/romperDbCore.js";
+import { getKitByName } from "./db/romperDbCore.js";
 
 // Utility: recursively copy a directory
 function copyRecursiveSync(src: string, dest: string) {
@@ -132,12 +129,20 @@ export function registerIpcHandlers(
       const kitPath = path.join(localStorePath, kitSlot);
       if (fs.existsSync(kitPath)) throw new Error("Kit already exists.");
       fs.mkdirSync(kitPath);
-      let labels = readRampleLabels(localStorePath) || { kits: {} };
-      labels.kits[kitSlot] = labels.kits[kitSlot] || {
-        label: kitSlot,
-        plan: [],
-      };
-      writeRampleLabels(localStorePath, labels);
+      
+      // Create kit record in database instead of JSON
+      try {
+        const kitRecord = {
+          name: kitSlot,
+          plan_enabled: false,
+          locked: false,
+        };
+        await insertKitRecord(localStorePath, kitRecord);
+      } catch (error) {
+        // If database insertion fails, remove the created directory
+        fs.rmSync(kitPath, { recursive: true, force: true });
+        throw error;
+      }
     },
   );
   ipcMain.handle(
@@ -160,6 +165,32 @@ export function registerIpcHandlers(
       if (fs.existsSync(destPath))
         throw new Error("Destination kit already exists.");
       copyRecursiveSync(srcPath, destPath);
+      
+      // Copy kit metadata in database
+      try {
+        const sourceKitData = await getKitByName(localStorePath, sourceKit);
+        if (sourceKitData.success && sourceKitData.data) {
+          const destKitRecord = {
+            name: destKit,
+            alias: destKit,
+            plan_enabled: sourceKitData.data.plan_enabled,
+            locked: sourceKitData.data.locked,
+          };
+          await insertKitRecord(localStorePath, destKitRecord);
+        } else {
+          // If source kit doesn't exist in database, create default entry
+          const defaultKitRecord = {
+            name: destKit,
+            plan_enabled: false,
+            locked: false,
+          };
+          await insertKitRecord(localStorePath, defaultKitRecord);
+        }
+      } catch (error) {
+        // If database operation fails, remove the copied directory
+        fs.rmSync(destPath, { recursive: true, force: true });
+        throw error;
+      }
     },
   );
   ipcMain.handle("list-files-in-root", async (_event, localStorePath: string) =>
@@ -172,86 +203,10 @@ export function registerIpcHandlers(
       data.byteOffset + data.byteLength,
     );
   });
-  ipcMain.handle("read-rample-labels", async (_event, localStorePath: string) =>
-    readRampleLabels(localStorePath),
-  );
-  ipcMain.handle(
-    "write-rample-labels",
-    async (_event, localStorePath: string, labels) => {
-      writeRampleLabels(localStorePath, labels);
-      return true;
-    },
-  );
   // --- Register handler ---
   ipcMain.handle("commit-kit-plan", async (_event, localStorePath, kitName) => {
     return commitKitPlanHandler(localStorePath, kitName);
   });
-  ipcMain.handle(
-    "discard-kit-plan",
-    async (_event, localStorePath: string, kitName: string) => {
-      const errors: string[] = [];
-      try {
-        const labels = readRampleLabels(localStorePath);
-        if (!labels || !labels.kits[kitName]) {
-          errors.push("Kit not found in labels file.");
-          return { success: false, errors };
-        }
-        if (!("plan" in labels.kits[kitName])) {
-          errors.push("No plan to discard for this kit.");
-          return { success: false, errors };
-        }
-        delete labels.kits[kitName].plan;
-        try {
-          writeRampleLabels(localStorePath, labels);
-        } catch (e) {
-          errors.push(
-            `Failed to update labels file: ${e instanceof Error ? e.message : String(e)}`,
-          );
-          return { success: false, errors };
-        }
-        return { success: true };
-      } catch (e) {
-        errors.push(e instanceof Error && e.message ? e.message : String(e));
-        return { success: false, errors };
-      }
-    },
-  );
-  // Use kebab-case for consistency with other handlers
-  ipcMain.handle(
-    "rescan-all-voice-names",
-    async (_event, localStorePath: string, kitNames: string[]) => {
-      const labels = readRampleLabels(localStorePath) || { kits: {} };
-      for (const kitName of kitNames) {
-        const kitPath = path.join(localStorePath, kitName);
-        const wavFiles = fs.existsSync(kitPath)
-          ? fs.readdirSync(kitPath).filter((f) => /\.wav$/i.test(f))
-          : [];
-        const voices = groupSamplesByVoice(wavFiles);
-        const newVoiceNames: { [key: number]: string } = {
-          1: "",
-          2: "",
-          3: "",
-          4: "",
-        };
-        for (let voice = 1; voice <= 4; voice++) {
-          const samplesForVoice = voices[voice] || [];
-          let inferredName = "";
-          for (const sample of samplesForVoice) {
-            const type = inferVoiceTypeFromFilename(sample);
-            if (type) {
-              inferredName = type;
-              break;
-            }
-          }
-          newVoiceNames[voice] = inferredName;
-        }
-        if (!labels.kits[kitName]) labels.kits[kitName] = { label: kitName };
-        labels.kits[kitName].voiceNames = newVoiceNames;
-      }
-      writeRampleLabels(localStorePath, labels);
-      return true;
-    },
-  );
   ipcMain.handle("get-user-home-dir", async () => {
     const os = await import("os");
     return os.homedir();

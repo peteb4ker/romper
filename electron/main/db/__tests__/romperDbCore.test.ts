@@ -97,13 +97,12 @@ describe("romperDbCore", () => {
         expect(schema).toContain(
           `CHECK(slot_number BETWEEN ${MIN_SLOT_NUMBER} AND ${MAX_SLOT_NUMBER})`,
         );
-        expect(schema).toContain("FOREIGN KEY(kit_id) REFERENCES kits(id)");
+        expect(schema).toContain("FOREIGN KEY(kit_name) REFERENCES kits(name)");
       });
 
       it("includes all required kit columns", () => {
         const schema = getDbSchema();
-        expect(schema).toContain("id INTEGER PRIMARY KEY AUTOINCREMENT");
-        expect(schema).toContain("name TEXT NOT NULL");
+        expect(schema).toContain("name TEXT PRIMARY KEY");
         expect(schema).toContain("alias TEXT");
         expect(schema).toContain("artist TEXT");
         expect(schema).toContain("plan_enabled BOOLEAN NOT NULL DEFAULT 0");
@@ -111,7 +110,7 @@ describe("romperDbCore", () => {
 
       it("includes all required sample columns", () => {
         const schema = getDbSchema();
-        expect(schema).toContain("kit_id INTEGER");
+        expect(schema).toContain("kit_name TEXT");
         expect(schema).toContain("filename TEXT NOT NULL");
         expect(schema).toContain("slot_number INTEGER NOT NULL");
         expect(schema).toContain("is_stereo BOOLEAN NOT NULL DEFAULT 0");
@@ -348,7 +347,6 @@ describe("romperDbCore", () => {
       const result = insertKitRecord(dbDir, kit);
 
       expect(result.success).toBe(true);
-      expect(result.kitId).toBe(123);
       expect(result.error).toBeUndefined();
 
       expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
@@ -370,13 +368,13 @@ describe("romperDbCore", () => {
       // Check voice creation
       expect(mockDb.prepare).toHaveBeenNthCalledWith(
         2,
-        "INSERT INTO voices (kit_id, voice_number, voice_alias) VALUES (?, ?, ?)",
+        "INSERT INTO voices (kit_name, voice_number, voice_alias) VALUES (?, ?, ?)",
       );
       expect(mockVoiceStmt.run).toHaveBeenCalledTimes(4);
-      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(1, 123, 1, null);
-      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(2, 123, 2, null);
-      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(3, 123, 3, null);
-      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(4, 123, 4, null);
+      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(1, "Test Kit", 1, null);
+      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(2, "Test Kit", 2, null);
+      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(3, "Test Kit", 3, null);
+      expect(mockVoiceStmt.run).toHaveBeenNthCalledWith(4, "Test Kit", 4, null);
 
       expect(mockDb.close).toHaveBeenCalled();
     });
@@ -513,31 +511,31 @@ describe("romperDbCore", () => {
 
     it("updates voice alias successfully", () => {
       const dbDir = "/test/dir";
-      const result = updateVoiceAlias(dbDir, 1, 2, "Kick");
+      const result = updateVoiceAlias(dbDir, "TestKit", 2, "Kick");
 
       expect(result.success).toBe(true);
       expect(result.error).toBeUndefined();
 
       expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        "UPDATE voices SET voice_alias = ? WHERE kit_id = ? AND voice_number = ?",
+        "UPDATE voices SET voice_alias = ? WHERE kit_name = ? AND voice_number = ?",
       );
-      expect(mockStmt.run).toHaveBeenCalledWith("Kick", 1, 2);
+      expect(mockStmt.run).toHaveBeenCalledWith("Kick", "TestKit", 2);
       expect(mockDb.close).toHaveBeenCalled();
     });
 
     it("handles null voice alias", () => {
       const dbDir = "/test/dir";
-      updateVoiceAlias(dbDir, 1, 3, null);
+      updateVoiceAlias(dbDir, "TestKit", 3, null);
 
-      expect(mockStmt.run).toHaveBeenCalledWith(null, 1, 3);
+      expect(mockStmt.run).toHaveBeenCalledWith(null, "TestKit", 3);
     });
 
     it("handles voice not found", () => {
       const dbDir = "/test/dir";
       mockStmt.run.mockReturnValue({ changes: 0 });
 
-      const result = updateVoiceAlias(dbDir, 1, 1, "Snare");
+      const result = updateVoiceAlias(dbDir, "TestKit", 1, "Snare");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Voice not found");
@@ -550,7 +548,7 @@ describe("romperDbCore", () => {
         throw new Error("Database error");
       });
 
-      const result = updateVoiceAlias(dbDir, 1, 1, "Hat");
+      const result = updateVoiceAlias(dbDir, "TestKit", 1, "Hat");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Database error");
@@ -590,34 +588,34 @@ describe("romperDbCore", () => {
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       ];
 
-      const result = updateStepPattern(dbDir, 1, stepPattern);
+      const result = updateStepPattern(dbDir, "TestKit", stepPattern);
 
       expect(result.success).toBe(true);
       expect(result.error).toBeUndefined();
 
       expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        "UPDATE kits SET step_pattern = ? WHERE id = ?",
+        "UPDATE kits SET step_pattern = ? WHERE name = ?",
       );
       // Expect the encoded BLOB instead of JSON
       const expectedBlob = encodeStepPatternToBlob(stepPattern);
-      expect(mockStmt.run).toHaveBeenCalledWith(expectedBlob, 1);
+      expect(mockStmt.run).toHaveBeenCalledWith(expectedBlob, "TestKit");
       expect(mockDb.close).toHaveBeenCalled();
     });
 
     it("handles null step pattern (clears pattern)", () => {
       const dbDir = "/test/dir";
-      const result = updateStepPattern(dbDir, 1, null);
+      const result = updateStepPattern(dbDir, "TestKit", null);
 
       expect(result.success).toBe(true);
-      expect(mockStmt.run).toHaveBeenCalledWith(null, 1);
+      expect(mockStmt.run).toHaveBeenCalledWith(null, "TestKit");
     });
 
     it("handles kit not found", () => {
       const dbDir = "/test/dir";
       mockStmt.run.mockReturnValue({ changes: 0 });
 
-      const result = updateStepPattern(dbDir, 999, [[127, 0, 64, 0]]);
+      const result = updateStepPattern(dbDir, "NonexistentKit", [[127, 0, 64, 0]]);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Kit not found");
@@ -630,7 +628,7 @@ describe("romperDbCore", () => {
         throw new Error("Database error");
       });
 
-      const result = updateStepPattern(dbDir, 1, [[127, 0]]);
+      const result = updateStepPattern(dbDir, "TestKit", [[127, 0]]);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Database error");
@@ -656,7 +654,7 @@ describe("romperDbCore", () => {
     it("inserts a sample record successfully", () => {
       const dbDir = "/test/dir";
       const sample: SampleRecord = {
-        kit_id: 123,
+        kit_name: "TestKit",
         filename: "kick.wav",
         voice_number: 1,
         slot_number: 1,
@@ -671,16 +669,24 @@ describe("romperDbCore", () => {
 
       expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        "INSERT INTO samples (kit_id, filename, voice_number, slot_number, is_stereo, wav_bitrate, wav_sample_rate) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO samples (kit_name, filename, voice_number, slot_number, is_stereo, wav_bitrate, wav_sample_rate) VALUES (?, ?, ?, ?, ?, ?, ?)",
       );
-      expect(mockStmt.run).toHaveBeenCalledWith(123, "kick.wav", 1, 1, 1, null, null);
+      expect(mockStmt.run).toHaveBeenCalledWith(
+        "TestKit",
+        "kick.wav",
+        1,
+        1,
+        1,
+        null,
+        null,
+      );
       expect(mockDb.close).toHaveBeenCalled();
     });
 
     it("converts boolean to sqlite format", () => {
       const dbDir = "/test/dir";
       const sample: SampleRecord = {
-        kit_id: 123,
+        kit_name: "TestKit",
         filename: "mono.wav",
         voice_number: 2,
         slot_number: 2,
@@ -689,13 +695,21 @@ describe("romperDbCore", () => {
 
       insertSampleRecord(dbDir, sample);
 
-      expect(mockStmt.run).toHaveBeenCalledWith(123, "mono.wav", 2, 2, 0, null, null);
+      expect(mockStmt.run).toHaveBeenCalledWith(
+        "TestKit",
+        "mono.wav",
+        2,
+        2,
+        0,
+        null,
+        null,
+      );
     });
 
     it("handles wav metadata fields", () => {
       const dbDir = "/test/dir";
       const sample: SampleRecord = {
-        kit_id: 456,
+        kit_name: "TestKit",
         filename: "hd_sample.wav",
         voice_number: 3,
         slot_number: 5,
@@ -708,7 +722,7 @@ describe("romperDbCore", () => {
 
       expect(result.success).toBe(true);
       expect(mockStmt.run).toHaveBeenCalledWith(
-        456,
+        "TestKit",
         "hd_sample.wav",
         3,
         5,
@@ -721,7 +735,7 @@ describe("romperDbCore", () => {
     it("handles database errors", () => {
       const dbDir = "/test/dir";
       const sample: SampleRecord = {
-        kit_id: 999,
+        kit_name: "TestKit",
         filename: "invalid.wav",
         voice_number: 1,
         slot_number: 1,
@@ -743,7 +757,7 @@ describe("romperDbCore", () => {
     it("handles non-Error exceptions", () => {
       const dbDir = "/test/dir";
       const sample: SampleRecord = {
-        kit_id: 123,
+        kit_name: "test_kit",
         filename: "test.wav",
         voice_number: 3,
         slot_number: 1,

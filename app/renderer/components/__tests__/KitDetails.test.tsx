@@ -18,6 +18,7 @@ import {
 } from "vitest";
 
 import KitDetails from "../KitDetails";
+import { SettingsProvider } from "../../utils/SettingsContext";
 
 // Helper to mock electronAPI with dynamic state
 function mockElectronAPI({
@@ -31,22 +32,45 @@ function mockElectronAPI({
 } = {}) {
   let currentVoiceNames = { ...voiceNames };
   (window as any).electronAPI = {
-    readRampleLabels: async () => {
+    listFilesInRoot: async () => files,
+    onSamplePlaybackEnded: () => {},
+    onSamplePlaybackError: () => {},
+    
+    // New database methods
+    getKitMetadata: async (dbDir, kitName) => {
       if (updateVoiceNames) {
         const updated = updateVoiceNames();
         if (updated) currentVoiceNames = { ...updated };
       }
       return {
-        kits: {
-          TestKit: { label: "TestKit", voiceNames: { ...currentVoiceNames } },
+        success: true,
+        data: {
+          id: 1,
+          name: kitName,
+          alias: kitName,
+          plan_enabled: false,
+          locked: false,
+          voices: { ...currentVoiceNames },
+          step_pattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
         },
       };
     },
-    writeRampleLabels: async () => {},
-    listFilesInRoot: async () => files,
-    onSamplePlaybackEnded: () => {},
-    onSamplePlaybackError: () => {},
+    updateKitMetadata: async (dbDir, kitName, updates) => ({ success: true }),
+    updateVoiceAlias: async (dbDir, kitId, voiceNumber, alias) => {
+      currentVoiceNames[voiceNumber] = alias;
+      return { success: true };
+    },
+    updateStepPattern: async (dbDir, kitName, pattern) => ({ success: true }),
   };
+}
+
+// Helper to render components with SettingsProvider
+function renderWithSettings(component: React.ReactElement) {
+  return render(
+    <SettingsProvider>
+      {component}
+    </SettingsProvider>
+  );
 }
 
 describe("KitDetails", () => {
@@ -69,13 +93,13 @@ describe("KitDetails", () => {
   describe("voice name controls", () => {
     it("shows edit/rescan controls and a no-name indicator if no voice name is set", async () => {
       mockElectronAPI({ voiceNames: { 1: "", 2: "", 3: "", 4: "" } });
-      render(
+      renderWithSettings(
         <KitDetails
           kitName="TestKit"
           localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />,
+        />
       );
       const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThan(0);
@@ -89,13 +113,13 @@ describe("KitDetails", () => {
         files: ["1 Kick.wav", "2 Snare.wav", "3 Hat.wav", "4 Tom.wav"],
         voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" },
       });
-      render(
+      renderWithSettings(
         <KitDetails
           kitName="TestKit"
           localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />,
+        />
       );
       await waitFor(() =>
         expect(screen.getByTestId("voice-name-1")).toHaveTextContent("Kick"),
@@ -116,13 +140,13 @@ describe("KitDetails", () => {
         updateVoiceNames: () =>
           updated ? { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" } : undefined,
       });
-      render(
+      renderWithSettings(
         <KitDetails
           kitName="TestKit"
           localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />,
+        />
       );
       const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThanOrEqual(4);
@@ -146,13 +170,13 @@ describe("KitDetails", () => {
         updateVoiceNames: () =>
           updated ? { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" } : undefined,
       });
-      render(
+      renderWithSettings(
         <KitDetails
           kitName="TestKit"
           localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />,
+        />
       );
       const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThanOrEqual(4);
@@ -175,13 +199,13 @@ describe("KitDetails", () => {
         files: ["1 Kick.wav", "2 Snare.wav"],
         voiceNames: { 1: "", 2: "", 3: "", 4: "" },
       });
-      render(
+      renderWithSettings(
         <KitDetails
           kitName="TestKit"
           localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />,
+        />
       );
       expect(await screen.findByTestId("voice-name-1")).toBeInTheDocument();
       expect(screen.getByTestId("voice-name-2")).toBeInTheDocument();

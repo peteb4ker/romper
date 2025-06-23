@@ -6,10 +6,19 @@ import React, {
   useState,
 } from "react";
 
+import { getNextKitSlot } from "../../../../shared/kitUtilsShared";
 import {
-  getNextKitSlot,
-  toCapitalCase,
-} from "../../../../shared/kitUtilsShared";
+  bankHasKits,
+  type BankNames,
+  getBankNames,
+  getFirstKitInBank,
+} from "../utils/bankOperations";
+import {
+  createKit,
+  duplicateKit,
+  formatKitError,
+  validateKitSlot,
+} from "../utils/kitOperations";
 
 interface UseKitBrowserProps {
   kits: string[];
@@ -17,10 +26,6 @@ interface UseKitBrowserProps {
   onRefreshKits?: () => void;
   kitListRef: RefObject<any>;
   onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
-}
-
-interface BankNames {
-  [bank: string]: string;
 }
 
 export function useKitBrowser({
@@ -51,47 +56,22 @@ export function useKitBrowser({
     setNextKitSlot(getNextKitSlot(kits));
   }, [kits]);
 
-  const getBankNames = useCallback(
-    async (localStorePath: string): Promise<BankNames> => {
-      if (!localStorePath) return {};
-      try {
-        const files =
-          await window.electronAPI?.listFilesInRoot?.(localStorePath);
-        if (!files) return {};
-        const rtfFiles = files.filter((f: string) =>
-          /^[A-Z] - .+\.rtf$/i.test(f),
-        );
-        const bankNames: BankNames = {};
-        for (const file of rtfFiles) {
-          const match = /^([A-Z]) - (.+)\.rtf$/i.exec(file);
-          if (match) {
-            const bank = match[1].toUpperCase();
-            const name = toCapitalCase(match[2]);
-            bankNames[bank] = name;
-          }
-        }
-        return bankNames;
-      } catch (e) {}
-      return {};
-    },
-    [],
-  );
-
   useEffect(() => {
     (async () => {
       setBankNames(await getBankNames(localStorePath));
     })();
-  }, [localStorePath, getBankNames]);
+  }, [localStorePath]);
 
   const handleCreateKit = async () => {
     setNewKitError(null);
-    if (!/^[A-Z][0-9]{1,2}$/.test(newKitSlot)) {
+    if (!validateKitSlot(newKitSlot)) {
       setNewKitError("Invalid kit slot. Use format A0-Z99.");
       return;
     }
     if (!localStorePath) return;
+
     try {
-      await window.electronAPI?.createKit?.(localStorePath, newKitSlot);
+      await createKit(localStorePath, newKitSlot);
       setShowNewKit(false);
       setNewKitSlot("");
       if (onRefreshKits) onRefreshKits();
@@ -102,83 +82,82 @@ export function useKitBrowser({
           duration: 4000,
         });
     } catch (err) {
-      setNewKitError(
-        "Failed to create kit: " +
-          (err instanceof Error ? err.message : String(err)),
-      );
+      setNewKitError(formatKitError(err));
     }
   };
 
   const handleCreateNextKit = async () => {
     setNewKitError(null);
-    if (!nextKitSlot || !/^[A-Z][0-9]{1,2}$/.test(nextKitSlot)) {
+    if (!nextKitSlot || !validateKitSlot(nextKitSlot)) {
       setNewKitError("No next kit slot available.");
       return;
     }
     if (!localStorePath) return;
+
     try {
-      await window.electronAPI?.createKit?.(localStorePath, nextKitSlot);
+      await createKit(localStorePath, nextKitSlot);
       if (onRefreshKits) onRefreshKits();
     } catch (err) {
-      setNewKitError(
-        "Failed to create kit: " +
-          (err instanceof Error ? err.message : String(err)),
-      );
+      setNewKitError(formatKitError(err));
     }
   };
 
   const handleDuplicateKit = async () => {
     setDuplicateKitError(null);
-    if (!duplicateKitSource || !/^[A-Z][0-9]{1,2}$/.test(duplicateKitDest)) {
+    if (!duplicateKitSource || !validateKitSlot(duplicateKitDest)) {
       setDuplicateKitError("Invalid destination slot. Use format A0-Z99.");
       return;
     }
     if (!localStorePath) return;
+
     try {
-      await window.electronAPI?.copyKit?.(
-        localStorePath,
-        duplicateKitSource,
-        duplicateKitDest,
-      );
+      await duplicateKit(localStorePath, duplicateKitSource, duplicateKitDest);
       setDuplicateKitSource(null);
       setDuplicateKitDest("");
       if (onRefreshKits) onRefreshKits();
     } catch (err) {
-      let msg = String(err instanceof Error ? err.message : err);
-      msg = msg
-        .replace(/^Error invoking remote method 'copy-kit':\s*/, "")
-        .replace(/^Error:\s*/, "");
-      setDuplicateKitError(msg);
+      setDuplicateKitError(err instanceof Error ? err.message : String(err));
     }
   };
 
   // --- Bank selection state and logic (moved from KitBrowser) ---
   const [selectedBank, setSelectedBank] = useState<string>("A");
+
+  const scrollToBankInContainer = useCallback(
+    (bank: string) => {
+      if (!scrollContainerRef.current) return;
+
+      const el = document.getElementById(`bank-${bank}`);
+      if (!el) return;
+
+      const header = document.querySelector(".sticky.top-0");
+      const headerHeight =
+        header && "offsetHeight" in header ? (header as any).offsetHeight : 0;
+      const containerRect = scrollContainerRef.current.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const offset = elRect.top - containerRect.top - headerHeight - 8;
+
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollTop + offset,
+        behavior: "auto",
+      });
+    },
+    [scrollContainerRef],
+  );
+
   const handleBankClick = useCallback(
     (bank: string) => {
       // Only scroll if the bank has kits
-      if (!kits.some((k) => k[0] === bank)) return;
-      const el = document.getElementById(`bank-${bank}`);
-      if (el && scrollContainerRef.current) {
-        const header = document.querySelector(".sticky.top-0");
-        const headerHeight =
-          header instanceof HTMLElement ? header.offsetHeight : 0;
-        const containerRect =
-          scrollContainerRef.current.getBoundingClientRect();
-        const elRect = el.getBoundingClientRect();
-        const offset = elRect.top - containerRect.top - headerHeight - 8;
-        scrollContainerRef.current.scrollTo({
-          top: scrollContainerRef.current.scrollTop + offset,
-          behavior: "auto",
-        });
-      }
+      if (!bankHasKits(kits, bank)) return;
+      scrollToBankInContainer(bank);
     },
-    [kits, scrollContainerRef],
+    [kits, scrollToBankInContainer],
   );
+
   const handleBankClickWithScroll = useCallback(
     (bank: string) => {
       // Only update selectedBank if the bank has kits
-      if (!kits.some((k) => k[0] === bank)) return;
+      if (!bankHasKits(kits, bank)) return;
       setSelectedBank(bank);
       handleBankClick(bank);
     },
@@ -198,19 +177,27 @@ export function useKitBrowser({
   // Global A-Z hotkey handler: select bank and focus first kit in that bank
   const globalBankHotkeyHandler = useCallback(
     (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      )
+      // Don't handle hotkeys when typing in inputs
+      const target = e.target as Element;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") {
         return;
+      }
+
       if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
         const bank = e.key.toUpperCase();
-        if (!kits.some((k) => k[0] === bank)) return; // Only if bank has kits
+
+        // Only handle if bank has kits
+        if (!bankHasKits(kits, bank)) return;
+
         setSelectedBank(bank);
         handleBankClick(bank);
+
         // Focus first kit in that bank
-        const firstKit = kits.find((k) => k.startsWith(bank));
-        if (firstKit) setFocusedKit(firstKit);
+        const firstKit = getFirstKitInBank(kits, bank);
+        if (firstKit) {
+          setFocusedKit(firstKit);
+        }
+
         e.preventDefault();
       }
     },
@@ -219,8 +206,8 @@ export function useKitBrowser({
 
   // When selectedBank changes (e.g. via UI), focus first kit in that bank
   useEffect(() => {
-    if (!kits.some((k) => k[0] === selectedBank)) return;
-    const firstKit = kits.find((k) => k.startsWith(selectedBank));
+    if (!bankHasKits(kits, selectedBank)) return;
+    const firstKit = getFirstKitInBank(kits, selectedBank);
     if (firstKit) setFocusedKit(firstKit);
   }, [selectedBank, kits]);
 

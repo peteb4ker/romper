@@ -267,7 +267,7 @@ export function useLocalStoreWizard(
               throw new Error("listFilesInRoot is not available");
             const files = await api.listFilesInRoot(kitPath);
             const wavFiles = files.filter((f: string) => /\.wav$/i.test(f));
-            const kitId = await insertKit(dbDir, {
+            const insertedKitName = await insertKit(dbDir, {
               name: kitName,
               plan_enabled: false,
             });
@@ -280,7 +280,7 @@ export function useLocalStoreWizard(
                 for (let idx = 0; idx < maxSamples; idx++) {
                   const filename = voiceSamples[idx];
                   await insertSample(dbDir, {
-                    kit_id: kitId,
+                    kit_name: insertedKitName,
                     filename,
                     voice_number: Number(voiceNum),
                     slot_number: idx + 1,

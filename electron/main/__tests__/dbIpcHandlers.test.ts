@@ -83,7 +83,7 @@ describe("dbIpcHandlers", () => {
     )[1];
     (romperDbCore.insertSampleRecord as any).mockResolvedValue("sampleResult");
     const sample = {
-      kit_id: 1,
+      kit_name: "test_kit",
       filename: "a.wav",
       slot_number: 2,
       is_stereo: false,

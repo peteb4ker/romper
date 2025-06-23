@@ -15,7 +15,7 @@ import {
 
 import { inferVoiceTypeFromFilename } from "../../../shared/kitUtilsShared";
 import { useKitDetails } from "./hooks/useKitDetails";
-import { useKitLabel } from "./hooks/useKitLabel";
+import { useKitMetadata } from "./hooks/useKitMetadata";
 import { useKitPlayback } from "./hooks/useKitPlayback";
 import { useKitVoicePanel } from "./hooks/useKitVoicePanel";
 import { useKitVoicePanels } from "./hooks/useKitVoicePanels";
@@ -53,7 +53,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
     handleWaveformPlayingChange,
   } = useKitPlayback(props.samples);
 
-  // Use the shared useKitLabel hook for all label/voice rescanning logic
+  // Use the shared useKitMetadata hook for all label/voice rescanning logic
   const {
     handleSaveVoiceName,
     handleRescanVoiceName,
@@ -72,7 +72,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
     reloadKitLabel,
     stepPattern,
     setStepPattern,
-  } = useKitLabel(props);
+  } = useKitMetadata(props);
 
   // Default samples to avoid undefined errors
   const samples = React.useMemo(
@@ -236,8 +236,8 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         loading={labelsLoading}
         error={null} // error now handled by centralized message display
         editing={editingKitLabel}
-        onEdit={() => setEditingKitLabel(true)}
-        onCancel={() => setEditingKitLabel(false)}
+        onEdit={() => setEditingKitLabel()}
+        onCancel={() => setEditingKitLabel()}
         onSave={handleSaveKitLabel}
         hideDescription={true}
         tagsEditable={false} // Remove tag editing

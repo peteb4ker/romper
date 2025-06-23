@@ -159,85 +159,87 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[Preload] getAudioBuffer invoked", filePath);
     return ipcRenderer.invoke("get-audio-buffer", filePath);
   },
-  readRampleLabels: (localStorePath: string) => {
-    console.log("[Preload] readRampleLabels invoked", localStorePath);
-    return ipcRenderer.invoke("read-rample-labels", localStorePath);
+  // Database methods for kit metadata (replacing JSON file dependency)
+  getKitMetadata: (dbDir: string, kitName: string) => {
+    console.log("[Preload] getKitMetadata invoked", dbDir, kitName);
+    return ipcRenderer.invoke("get-kit-metadata", dbDir, kitName);
   },
-  writeRampleLabels: (localStorePath: string, labels: any) => {
-    console.log("[Preload] writeRampleLabels invoked", localStorePath, labels);
-    return ipcRenderer.invoke("write-rample-labels", localStorePath, labels);
+  updateKitMetadata: (
+    dbDir: string,
+    kitName: string,
+    updates: {
+      alias?: string;
+      artist?: string;
+      tags?: string[];
+      description?: string;
+    },
+  ) => {
+    console.log("[Preload] updateKitMetadata invoked", dbDir, kitName, updates);
+    return ipcRenderer.invoke("update-kit-metadata", dbDir, kitName, updates);
   },
-  discardKitPlan: (localStorePath: string, kitName: string) => {
-    console.log("[Preload] discardKitPlan invoked", localStorePath, kitName);
-    return ipcRenderer.invoke("discard-kit-plan", localStorePath, kitName);
+  getAllKits: (dbDir: string) => {
+    console.log("[Preload] getAllKits invoked", dbDir);
+    return ipcRenderer.invoke("get-all-kits", dbDir);
   },
-  rescanAllVoiceNames: (localStorePath: string, kitNames: string[]) => {
-    console.log(
-      "[Preload] rescanAllVoiceNames invoked",
-      localStorePath,
-      kitNames,
-    );
-    return ipcRenderer.invoke(
-      "rescan-all-voice-names",
-      localStorePath,
-      kitNames,
-    );
+  updateVoiceAlias: (
+    dbDir: string,
+    kitName: string,
+    voiceNumber: number,
+    voiceAlias: string,
+  ) => {
+    console.log("[Preload] updateVoiceAlias invoked", dbDir, kitName, voiceNumber, voiceAlias);
+    return ipcRenderer.invoke("update-voice-alias", dbDir, kitName, voiceNumber, voiceAlias);
   },
-  getUserHomeDir: async () => {
+  updateStepPattern: (
+    dbDir: string,
+    kitName: string,
+    stepPattern: number[][],
+  ) => {
+    console.log("[Preload] updateStepPattern invoked", dbDir, kitName, stepPattern);
+    return ipcRenderer.invoke("update-step-pattern", dbDir, kitName, stepPattern);
+  },
+  getUserHomeDir: () => {
     console.log("[Preload] getUserHomeDir invoked");
-    return await ipcRenderer.invoke("get-user-home-dir");
+    return ipcRenderer.invoke("get-user-home-dir");
   },
-  selectLocalStorePath: async () => {
+  selectLocalStorePath: () => {
     console.log("[Preload] selectLocalStorePath invoked");
-    return await ipcRenderer.invoke("select-local-store-path");
+    return ipcRenderer.invoke("select-local-store-path");
   },
-  downloadAndExtractArchive: async (
+  downloadAndExtractArchive: (
     url: string,
     destDir: string,
     onProgress?: (p: any) => void,
     onError?: (e: any) => void,
   ) => {
     console.log("[Preload] downloadAndExtractArchive invoked", url, destDir);
-    let progressListener: any, errorListener: any;
     if (onProgress) {
-      progressListener = (_e: any, data: any) => onProgress(data);
-      ipcRenderer.on("archive-progress", progressListener);
+      ipcRenderer.removeAllListeners("archive-progress");
+      ipcRenderer.on("archive-progress", (_event: any, progress: any) =>
+        onProgress(progress),
+      );
     }
     if (onError) {
-      errorListener = (_e: any, err: any) => onError(err);
-      ipcRenderer.on("archive-error", errorListener);
-    }
-    try {
-      const result = await ipcRenderer.invoke(
-        "download-and-extract-archive",
-        url,
-        destDir,
+      ipcRenderer.removeAllListeners("archive-error");
+      ipcRenderer.on("archive-error", (_event: any, error: any) =>
+        onError(error),
       );
-      console.log("[Preload] downloadAndExtractArchive result:", result);
-      return result;
-    } catch (error) {
-      console.error("[Preload] downloadAndExtractArchive error:", error);
-      throw error;
-    } finally {
-      if (progressListener)
-        ipcRenderer.removeListener("archive-progress", progressListener);
-      if (errorListener)
-        ipcRenderer.removeListener("archive-error", errorListener);
     }
+    return ipcRenderer.invoke("download-and-extract-archive", url, destDir);
   },
-  ensureDir: async (dir: string) => {
+  ensureDir: (dir: string) => {
     console.log("[Preload] ensureDir invoked", dir);
-    return await ipcRenderer.invoke("ensure-dir", dir);
+    return ipcRenderer.invoke("ensure-dir", dir);
   },
-  copyDir: async (src: string, dest: string) => {
+  copyDir: (src: string, dest: string) => {
     console.log("[Preload] copyDir invoked", src, dest);
-    return await ipcRenderer.invoke("copy-dir", src, dest);
+    return ipcRenderer.invoke("copy-dir", src, dest);
   },
-  createRomperDb: async (dbDir: string) => {
+  createRomperDb: (dbDir: string) => {
     console.log("[Preload] createRomperDb invoked", dbDir);
-    return await ipcRenderer.invoke("create-romper-db", dbDir);
+    return ipcRenderer.invoke("create-romper-db", dbDir);
   },
-  insertKit: async (
+  insertKit: (
     dbDir: string,
     kit: {
       name: string;
@@ -247,12 +249,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
   ) => {
     console.log("[Preload] insertKit invoked", dbDir, kit);
-    return await ipcRenderer.invoke("insert-kit", dbDir, kit);
+    return ipcRenderer.invoke("insert-kit", dbDir, kit);
   },
-  insertSample: async (
+  insertSample: (
     dbDir: string,
     sample: {
-      kit_id: number;
+      kit_name: string;
       filename: string;
       voice_number: number;
       slot_number: number;
@@ -262,7 +264,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
   ) => {
     console.log("[Preload] insertSample invoked", dbDir, sample);
-    return await ipcRenderer.invoke("insert-sample", dbDir, sample);
+    return ipcRenderer.invoke("insert-sample", dbDir, sample);
   },
 });
 

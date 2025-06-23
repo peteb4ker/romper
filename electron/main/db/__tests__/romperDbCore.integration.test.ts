@@ -90,7 +90,7 @@ describe("romperDbCore.ts integration", () => {
   let sandboxDir: string;
   let dbDir: string;
   let dbPath: string;
-  let kitId: number;
+  let kitName: string;
 
   beforeEach(async () => {
     sandboxDir = fs.mkdtempSync(path.join(os.tmpdir(), "romper-test-"));
@@ -104,7 +104,7 @@ describe("romperDbCore.ts integration", () => {
       artist: "Roland",
       plan_enabled: false,
     });
-    kitId = kitRes.kitId!;
+    kitName = "808 Kit";
   });
 
   afterEach(async () => {
@@ -128,7 +128,7 @@ describe("romperDbCore.ts integration", () => {
     expect(sampleCols.map((c: any) => c.name)).toEqual(
       expect.arrayContaining([
         "id",
-        "kit_id",
+        "kit_name",
         "filename",
         "slot_number",
         "is_stereo",
@@ -139,7 +139,7 @@ describe("romperDbCore.ts integration", () => {
 
   it("inserts a kit record", () => {
     const db = createDb(dbPath);
-    const kit = db.prepare("SELECT * FROM kits WHERE id = ?").get(kitId);
+    const kit = db.prepare("SELECT * FROM kits WHERE name = ?").get(kitName);
     expect(kit.name).toBe("808 Kit");
     expect(kit.alias).toBe("TR-808");
     expect(kit.artist).toBe("Roland");
@@ -149,7 +149,7 @@ describe("romperDbCore.ts integration", () => {
 
   it("inserts a sample record", () => {
     const sampleRes = insertSampleRecord(dbDir, {
-      kit_id: kitId,
+      kit_name: kitName,
       filename: "kick.wav",
       voice_number: 1,
       slot_number: 1,
@@ -160,7 +160,7 @@ describe("romperDbCore.ts integration", () => {
     const sample = db
       .prepare("SELECT * FROM samples WHERE id = ?")
       .get(sampleRes.sampleId);
-    expect(sample.kit_id).toBe(kitId);
+    expect(sample.kit_name).toBe(kitName);
     expect(sample.filename).toBe("kick.wav");
     expect(sample.voice_number).toBe(1);
     expect(sample.slot_number).toBe(1);
@@ -182,7 +182,7 @@ describe("romperDbCore.ts integration", () => {
 
   it("rejects invalid sample slot_number (out of range)", () => {
     const res = insertSampleRecord(dbDir, {
-      kit_id: kitId,
+      kit_name: kitName,
       filename: "snare.wav",
       voice_number: 1,
       slot_number: 99,
@@ -192,9 +192,9 @@ describe("romperDbCore.ts integration", () => {
     expect(res.error).toMatch(/CHECK constraint failed|constraint failed/i);
   });
 
-  it("rejects sample with invalid kit_id (foreign key)", () => {
+  it("rejects sample with invalid kit_name (foreign key)", () => {
     const res = insertSampleRecord(dbDir, {
-      kit_id: 9999,
+      kit_name: "nonexistent_kit",
       filename: "ghost.wav",
       voice_number: 1,
       slot_number: 2,
@@ -206,7 +206,7 @@ describe("romperDbCore.ts integration", () => {
 
   it("rejects invalid sample voice_number (out of range)", () => {
     const res = insertSampleRecord(dbDir, {
-      kit_id: kitId,
+      kit_name: kitName,
       filename: "hihat.wav",
       voice_number: 99,
       slot_number: 1,

@@ -18,7 +18,7 @@ interface KitListProps {
   bankNames: Record<string, string>;
   onDuplicate: (kit: string) => void;
   localStorePath: string;
-  kitLabels: { [kit: string]: RampleKitLabel };
+  kitLabels?: { [kit: string]: RampleKitLabel };
   sampleCounts?: Record<string, [number, number, number, number]>;
   voiceLabelSets?: Record<string, string[]>;
   focusedKit?: string | null; // externally controlled focus
@@ -175,7 +175,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       const colorClass = getColorClass(kit);
       const showAnchor = rowHasAnchor[index];
       const isSelected = selectedIdx === index;
-      const kitLabel = kitLabels[kit] || {};
+      const kitLabel = kitLabels?.[kit] || {};
       const dedupedVoiceNames =
         voiceLabelSets && voiceLabelSets[kit]
           ? { ...kitLabel, voiceNames: voiceLabelSets[kit] }

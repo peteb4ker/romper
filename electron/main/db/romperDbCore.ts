@@ -20,13 +20,13 @@ export interface KitRecord {
 }
 
 export interface VoiceRecord {
-  kit_id: number;
+  kit_name: string;
   voice_number: number;
   voice_alias?: string;
 }
 
 export interface SampleRecord {
-  kit_id: number;
+  kit_name: string;
   filename: string;
   voice_number: number;
   slot_number: number;
@@ -102,8 +102,7 @@ export function decodeStepPatternFromBlob(
 export function getDbSchema(): string {
   return `
     CREATE TABLE IF NOT EXISTS kits (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
+      name TEXT PRIMARY KEY,
       alias TEXT,
       artist TEXT,
       plan_enabled BOOLEAN NOT NULL DEFAULT 0,
@@ -112,22 +111,22 @@ export function getDbSchema(): string {
     );
     CREATE TABLE IF NOT EXISTS voices (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      kit_id INTEGER NOT NULL,
+      kit_name TEXT NOT NULL,
       voice_number INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4),
       voice_alias TEXT,
-      FOREIGN KEY(kit_id) REFERENCES kits(id),
-      UNIQUE(kit_id, voice_number)
+      FOREIGN KEY(kit_name) REFERENCES kits(name),
+      UNIQUE(kit_name, voice_number)
     );
     CREATE TABLE IF NOT EXISTS samples (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      kit_id INTEGER,
+      kit_name TEXT,
       filename TEXT NOT NULL,
       voice_number INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4),
       slot_number INTEGER NOT NULL CHECK(slot_number BETWEEN ${MIN_SLOT_NUMBER} AND ${MAX_SLOT_NUMBER}),
       is_stereo BOOLEAN NOT NULL DEFAULT 0,
       wav_bitrate INTEGER,
       wav_sample_rate INTEGER,
-      FOREIGN KEY(kit_id) REFERENCES kits(id)
+      FOREIGN KEY(kit_name) REFERENCES kits(name)
     );
   `;
 }
@@ -308,7 +307,7 @@ async function deleteDbFileWithRetry(
 export function insertKitRecord(
   dbDir: string,
   kit: KitRecord,
-): { success: boolean; kitId?: number; error?: string } {
+): { success: boolean; error?: string } {
   const dbPath = getDbPath(dbDir);
   console.log(
     "[Romper Electron] insertKitRecord called with dbDir:",
@@ -337,20 +336,19 @@ export function insertKitRecord(
       stepPatternBlob,
     );
 
-    const kitId = Number(kitResult.lastInsertRowid);
-    console.log("[Romper Electron] Kit inserted, id:", kitId);
+    console.log("[Romper Electron] Kit inserted:", kit.name);
 
     // Create exactly 4 voice records for this kit
     const voiceStmt = db.prepare(
-      "INSERT INTO voices (kit_id, voice_number, voice_alias) VALUES (?, ?, ?)",
+      "INSERT INTO voices (kit_name, voice_number, voice_alias) VALUES (?, ?, ?)",
     );
 
     for (let voiceNumber = 1; voiceNumber <= 4; voiceNumber++) {
-      voiceStmt.run(kitId, voiceNumber, null);
+      voiceStmt.run(kit.name, voiceNumber, null);
     }
 
-    console.log("[Romper Electron] Created 4 voice records for kit:", kitId);
-    return { success: true, kitId };
+    console.log("[Romper Electron] Created 4 voice records for kit:", kit.name);
+    return { success: true };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     console.error("[Romper Electron] Error in insertKitRecord:", error);
@@ -364,7 +362,7 @@ export function insertKitRecord(
 
 export function updateVoiceAlias(
   dbDir: string,
-  kitId: number,
+  kitName: string,
   voiceNumber: number,
   voiceAlias: string | null,
 ): { success: boolean; error?: string } {
@@ -372,8 +370,8 @@ export function updateVoiceAlias(
   console.log(
     "[Romper Electron] updateVoiceAlias to:",
     dbPath,
-    "kitId:",
-    kitId,
+    "kitName:",
+    kitName,
     "voiceNumber:",
     voiceNumber,
     "alias:",
@@ -384,9 +382,9 @@ export function updateVoiceAlias(
   try {
     db = createDbConnection(dbPath);
     const stmt = db.prepare(
-      "UPDATE voices SET voice_alias = ? WHERE kit_id = ? AND voice_number = ?",
+      "UPDATE voices SET voice_alias = ? WHERE kit_name = ? AND voice_number = ?",
     );
-    const result = stmt.run(voiceAlias, kitId, voiceNumber);
+    const result = stmt.run(voiceAlias, kitName, voiceNumber);
 
     if (result.changes === 0) {
       return { success: false, error: "Voice not found" };
@@ -407,15 +405,15 @@ export function updateVoiceAlias(
 
 export function updateStepPattern(
   dbDir: string,
-  kitId: number,
+  kitName: string,
   stepPattern: number[][] | null,
 ): { success: boolean; error?: string } {
   const dbPath = getDbPath(dbDir);
   console.log(
     "[Romper Electron] updateStepPattern to:",
     dbPath,
-    "kitId:",
-    kitId,
+    "kitName:",
+    kitName,
     "pattern:",
     stepPattern,
   );
@@ -423,9 +421,9 @@ export function updateStepPattern(
   let db: BetterSqlite3.Database | null = null;
   try {
     db = createDbConnection(dbPath);
-    const stmt = db.prepare("UPDATE kits SET step_pattern = ? WHERE id = ?");
+    const stmt = db.prepare("UPDATE kits SET step_pattern = ? WHERE name = ?");
     const stepPatternBlob = encodeStepPatternToBlob(stepPattern);
-    const result = stmt.run(stepPatternBlob, kitId);
+    const result = stmt.run(stepPatternBlob, kitName);
 
     if (result.changes === 0) {
       return { success: false, error: "Kit not found" };
@@ -454,10 +452,10 @@ export function insertSampleRecord(
   try {
     db = createDbConnection(dbPath);
     const stmt = db.prepare(
-      "INSERT INTO samples (kit_id, filename, voice_number, slot_number, is_stereo, wav_bitrate, wav_sample_rate) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO samples (kit_name, filename, voice_number, slot_number, is_stereo, wav_bitrate, wav_sample_rate) VALUES (?, ?, ?, ?, ?, ?, ?)",
     );
     const result = stmt.run(
-      sample.kit_id,
+      sample.kit_name,
       sample.filename,
       sample.voice_number,
       sample.slot_number,
@@ -467,6 +465,180 @@ export function insertSampleRecord(
     );
 
     return { success: true, sampleId: Number(result.lastInsertRowid) };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    return { success: false, error };
+  } finally {
+    if (db) {
+      db.close();
+    }
+  }
+}
+
+// Query functions
+export interface KitWithVoices {
+  name: string;
+  alias?: string;
+  artist?: string;
+  plan_enabled: boolean;
+  locked: boolean;
+  step_pattern?: number[][];
+  voices: { [voiceNumber: number]: string };
+}
+
+export function getKitByName(
+  dbDir: string,
+  kitName: string,
+): DbResult<KitWithVoices> {
+  const dbPath = getDbPath(dbDir);
+  let db: BetterSqlite3.Database | null = null;
+
+  try {
+    db = createDbConnection(dbPath);
+
+    // Get kit record
+    const kitStmt = db.prepare("SELECT * FROM kits WHERE name = ?");
+    const kitRow = kitStmt.get(kitName) as any;
+
+    if (!kitRow) {
+      return { success: false, error: "Kit not found" };
+    }
+
+    // Get voice aliases
+    const voiceStmt = db.prepare("SELECT voice_number, voice_alias FROM voices WHERE kit_name = ?");
+    const voiceRows = voiceStmt.all(kitName) as any[];
+
+    const voices: { [voiceNumber: number]: string } = {};
+    for (const voice of voiceRows) {
+      voices[voice.voice_number] = voice.voice_alias || "";
+    }
+
+    // Ensure all 4 voices exist
+    for (let i = 1; i <= 4; i++) {
+      if (!(i in voices)) {
+        voices[i] = "";
+      }
+    }
+
+    const kit: KitWithVoices = {
+      name: kitRow.name,
+      alias: kitRow.alias,
+      artist: kitRow.artist,
+      plan_enabled: Boolean(kitRow.plan_enabled),
+      locked: Boolean(kitRow.locked),
+      step_pattern: kitRow.step_pattern ? decodeStepPatternFromBlob(new Uint8Array(kitRow.step_pattern)) || undefined : undefined,
+      voices,
+    };
+
+    return { success: true, data: kit };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    return { success: false, error };
+  } finally {
+    if (db) {
+      db.close();
+    }
+  }
+}
+
+export function updateKitMetadata(
+  dbDir: string,
+  kitName: string,
+  updates: {
+    alias?: string;
+    artist?: string;
+    tags?: string[];
+    description?: string;
+  },
+): DbResult {
+  const dbPath = getDbPath(dbDir);
+  let db: BetterSqlite3.Database | null = null;
+
+  try {
+    db = createDbConnection(dbPath);
+
+    // Build dynamic update query
+    const setParts: string[] = [];
+    const values: any[] = [];
+
+    if (updates.alias !== undefined) {
+      setParts.push("alias = ?");
+      values.push(updates.alias);
+    }
+    if (updates.artist !== undefined) {
+      setParts.push("artist = ?");
+      values.push(updates.artist);
+    }
+
+    if (setParts.length === 0) {
+      return { success: true }; // No updates to make
+    }
+
+    values.push(kitName); // WHERE clause parameter
+
+    const sql = `UPDATE kits SET ${setParts.join(", ")} WHERE name = ?`;
+    const stmt = db.prepare(sql);
+    const result = stmt.run(...values);
+
+    if (result.changes === 0) {
+      return { success: false, error: "Kit not found" };
+    }
+
+    return { success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    return { success: false, error };
+  } finally {
+    if (db) {
+      db.close();
+    }
+  }
+}
+
+export function getAllKits(dbDir: string): DbResult<KitWithVoices[]> {
+  const dbPath = getDbPath(dbDir);
+  let db: BetterSqlite3.Database | null = null;
+
+  try {
+    db = createDbConnection(dbPath);
+
+    // Get all kits
+    const kitStmt = db.prepare("SELECT * FROM kits ORDER BY name");
+    const kitRows = kitStmt.all() as any[];
+
+    const kits: KitWithVoices[] = [];
+
+    for (const kitRow of kitRows) {
+      // Get voice aliases for this kit
+      const voiceStmt = db.prepare("SELECT voice_number, voice_alias FROM voices WHERE kit_name = ?");
+      const voiceRows = voiceStmt.all(kitRow.name) as any[];
+
+      const voices: { [voiceNumber: number]: string } = {};
+      for (const voice of voiceRows) {
+        voices[voice.voice_number] = voice.voice_alias || "";
+      }
+
+      // Ensure all 4 voices exist
+      for (let i = 1; i <= 4; i++) {
+        if (!(i in voices)) {
+          voices[i] = "";
+        }
+      }
+
+      const kit: KitWithVoices = {
+        name: kitRow.name,
+        alias: kitRow.alias,
+        artist: kitRow.artist,
+        plan_enabled: Boolean(kitRow.plan_enabled),
+        locked: Boolean(kitRow.locked),
+        step_pattern: kitRow.step_pattern ? decodeStepPatternFromBlob(new Uint8Array(kitRow.step_pattern)) || undefined : undefined,
+        voices,
+      };
+
+      kits.push(kit);
+    }
+
+    return { success: true, data: kits };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     return { success: false, error };

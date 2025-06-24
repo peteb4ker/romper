@@ -119,7 +119,7 @@ Romper uses a simplified SQLite schema with kit names as primary keys instead of
 The application features a unified scanning system built around composable operations:
 
 - **Scanner Functions**: Individual scanners for voice inference, WAV analysis, and RTF parsing
-- **Scanner Orchestrator**: Manages scanning chains with progress tracking and error handling  
+- **Scanner Orchestrator**: Manages scanning chains with progress tracking and error handling
 - **Database Integration**: Automatic storage of scanning results in the SQLite database
 
 Key files:

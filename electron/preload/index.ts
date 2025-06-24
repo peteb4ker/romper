@@ -187,16 +187,38 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     voiceAlias: string,
   ) => {
-    console.log("[Preload] updateVoiceAlias invoked", dbDir, kitName, voiceNumber, voiceAlias);
-    return ipcRenderer.invoke("update-voice-alias", dbDir, kitName, voiceNumber, voiceAlias);
+    console.log(
+      "[Preload] updateVoiceAlias invoked",
+      dbDir,
+      kitName,
+      voiceNumber,
+      voiceAlias,
+    );
+    return ipcRenderer.invoke(
+      "update-voice-alias",
+      dbDir,
+      kitName,
+      voiceNumber,
+      voiceAlias,
+    );
   },
   updateStepPattern: (
     dbDir: string,
     kitName: string,
     stepPattern: number[][],
   ) => {
-    console.log("[Preload] updateStepPattern invoked", dbDir, kitName, stepPattern);
-    return ipcRenderer.invoke("update-step-pattern", dbDir, kitName, stepPattern);
+    console.log(
+      "[Preload] updateStepPattern invoked",
+      dbDir,
+      kitName,
+      stepPattern,
+    );
+    return ipcRenderer.invoke(
+      "update-step-pattern",
+      dbDir,
+      kitName,
+      stepPattern,
+    );
   },
   getUserHomeDir: () => {
     console.log("[Preload] getUserHomeDir invoked");

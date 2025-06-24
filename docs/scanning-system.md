@@ -23,7 +23,7 @@ The scanning system is built around a composable architecture that allows differ
 Analyzes sample filenames to determine what type of drum voice they represent. The scanner uses intelligent keyword matching to identify:
 
 - **Kick drums**: kick, kk, bd
-- **Snares**: snare, sn, sd  
+- **Snares**: snare, sn, sd
 - **Hi-hats**: hihat, hat, hh, closed, open, ch, oh
 - **Percussion**: perc, glass, clave, tom, rim, ride, crash
 - **Effects**: fx, effect, laser
@@ -151,7 +151,7 @@ Parses RTF files to extract artist and metadata information.
 #### `scanVoiceInference(input: VoiceInferenceInput)`
 Core voice type inference logic using filename analysis.
 
-#### `scanWAVAnalysis(input: WAVAnalysisInput)`  
+#### `scanWAVAnalysis(input: WAVAnalysisInput)`
 Core WAV file analysis and property extraction.
 
 #### `scanRTFArtist(input: RTFArtistInput)`

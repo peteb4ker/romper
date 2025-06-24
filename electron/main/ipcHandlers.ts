@@ -8,6 +8,8 @@ import {
   downloadArchive,
   extractZipEntries,
 } from "./archiveUtils.js";
+import { insertKitRecord } from "./db/romperDbCore.js";
+import { getKitByName } from "./db/romperDbCore.js";
 import {
   commitKitPlanHandler,
   rescanVoiceNames,
@@ -15,8 +17,6 @@ import {
   writeKitSamples,
 } from "./kitPlanOps.js";
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
-import { insertKitRecord } from "./db/romperDbCore.js";
-import { getKitByName } from "./db/romperDbCore.js";
 
 // Utility: recursively copy a directory
 function copyRecursiveSync(src: string, dest: string) {
@@ -129,7 +129,7 @@ export function registerIpcHandlers(
       const kitPath = path.join(localStorePath, kitSlot);
       if (fs.existsSync(kitPath)) throw new Error("Kit already exists.");
       fs.mkdirSync(kitPath);
-      
+
       // Create kit record in database instead of JSON
       try {
         const kitRecord = {
@@ -165,7 +165,7 @@ export function registerIpcHandlers(
       if (fs.existsSync(destPath))
         throw new Error("Destination kit already exists.");
       copyRecursiveSync(srcPath, destPath);
-      
+
       // Copy kit metadata in database
       try {
         const sourceKitData = await getKitByName(localStorePath, sourceKit);

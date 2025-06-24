@@ -123,7 +123,14 @@ describe("romperDbCore.ts integration", () => {
     const kitCols = db.prepare("PRAGMA table_info(kits)").all();
     const sampleCols = db.prepare("PRAGMA table_info(samples)").all();
     expect(kitCols.map((c: any) => c.name)).toEqual(
-      expect.arrayContaining(["name", "alias", "artist", "plan_enabled", "locked", "step_pattern"]),
+      expect.arrayContaining([
+        "name",
+        "alias",
+        "artist",
+        "plan_enabled",
+        "locked",
+        "step_pattern",
+      ]),
     );
     expect(sampleCols.map((c: any) => c.name)).toEqual(
       expect.arrayContaining([

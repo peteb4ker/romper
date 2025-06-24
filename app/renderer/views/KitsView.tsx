@@ -7,9 +7,7 @@ import {
 import { useKitMetadata } from "../components/hooks/useKitMetadata";
 import KitBrowser from "../components/KitBrowser";
 import KitDetails from "../components/KitDetails";
-import type {
-  VoiceSamples,
-} from "../components/kitTypes";
+import type { VoiceSamples } from "../components/kitTypes";
 import LocalStoreWizardUI from "../components/LocalStoreWizardUI";
 import { useSettings } from "../utils/SettingsContext";
 

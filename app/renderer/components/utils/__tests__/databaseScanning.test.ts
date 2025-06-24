@@ -3,13 +3,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  type KitScanData,
   scanKitToDatabase,
   scanMultipleKitsToDatabase,
+  scanRtfFilesToDatabase,
   scanVoiceNamesToDatabase,
   scanWavFilesToDatabase,
-  scanRtfFilesToDatabase,
   setDatabaseOperations,
-  type KitScanData,
 } from "../databaseScanning";
 
 // Mock the scanner orchestrator
@@ -22,9 +22,9 @@ vi.mock("../scannerOrchestrator", () => ({
 
 import {
   executeFullKitScan,
+  executeRTFArtistScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
-  executeRTFArtistScan,
 } from "../scannerOrchestrator";
 
 describe("databaseScanning", () => {
@@ -97,8 +97,18 @@ describe("databaseScanning", () => {
       expect(result.errors).toEqual([]);
 
       // Check that voice aliases were updated
-      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith("/mock/db", "Test Kit", 1, "Kick");
-      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith("/mock/db", "Test Kit", 2, "Snare");
+      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
+        "/mock/db",
+        "Test Kit",
+        1,
+        "Kick",
+      );
+      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
+        "/mock/db",
+        "Test Kit",
+        2,
+        "Snare",
+      );
     });
 
     it("handles partial scanning failures gracefully", async () => {
@@ -125,7 +135,7 @@ describe("databaseScanning", () => {
       const result = await scanKitToDatabase("/mock/db", mockKitData);
 
       expect(result.success).toBe(false);
-      expect(result.scannedKits).toBe(0);  // No kits scanned successfully due to errors
+      expect(result.scannedKits).toBe(0); // No kits scanned successfully due to errors
       expect(result.scannedVoices).toBe(1);
       expect(result.scannedWavFiles).toBe(0);
       expect(result.scannedRtfFiles).toBe(1);
@@ -136,7 +146,12 @@ describe("databaseScanning", () => {
 
       // Only one voice should have been updated
       expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledTimes(1);
-      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith("/mock/db", "Test Kit", 1, "Kick");
+      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
+        "/mock/db",
+        "Test Kit",
+        1,
+        "Kick",
+      );
     });
 
     it("handles database update failures", async () => {
@@ -170,7 +185,9 @@ describe("databaseScanning", () => {
 
     it("handles unexpected exceptions", async () => {
       // Mock orchestration throwing an exception
-      vi.mocked(executeFullKitScan).mockRejectedValue(new Error("Unexpected error"));
+      vi.mocked(executeFullKitScan).mockRejectedValue(
+        new Error("Unexpected error"),
+      );
 
       const result = await scanKitToDatabase("/mock/db", mockKitData);
 
@@ -198,7 +215,7 @@ describe("databaseScanning", () => {
       expect(executeFullKitScan).toHaveBeenCalledWith(
         expect.any(Object),
         mockProgressCallback,
-        "continue"
+        "continue",
       );
     });
   });
@@ -240,7 +257,7 @@ describe("databaseScanning", () => {
       const result = await scanMultipleKitsToDatabase(
         "/mock/db",
         [mockKitData1, mockKitData2],
-        mockProgressCallback
+        mockProgressCallback,
       );
 
       expect(result.success).toBe(true);
@@ -249,9 +266,21 @@ describe("databaseScanning", () => {
       expect(result.errors).toEqual([]);
 
       // Check progress callbacks
-      expect(mockProgressCallback).toHaveBeenCalledWith(0, 2, "Scanning kit Kit 1");
-      expect(mockProgressCallback).toHaveBeenCalledWith(1, 2, "Scanning kit Kit 2");
-      expect(mockProgressCallback).toHaveBeenCalledWith(2, 2, "Scanning complete");
+      expect(mockProgressCallback).toHaveBeenCalledWith(
+        0,
+        2,
+        "Scanning kit Kit 1",
+      );
+      expect(mockProgressCallback).toHaveBeenCalledWith(
+        1,
+        2,
+        "Scanning kit Kit 2",
+      );
+      expect(mockProgressCallback).toHaveBeenCalledWith(
+        2,
+        2,
+        "Scanning complete",
+      );
     });
 
     it("handles partial failures across multiple kits", async () => {
@@ -267,14 +296,19 @@ describe("databaseScanning", () => {
         .mockResolvedValueOnce({
           success: false,
           results: {},
-          errors: [{ operation: "voiceInference", error: "Failed to infer voices" }],
+          errors: [
+            { operation: "voiceInference", error: "Failed to infer voices" },
+          ],
           completedOperations: 0,
           totalOperations: 1,
         });
 
       mockDbOps.updateVoiceAlias.mockResolvedValue({ success: true });
 
-      const result = await scanMultipleKitsToDatabase("/mock/db", [mockKitData1, mockKitData2]);
+      const result = await scanMultipleKitsToDatabase("/mock/db", [
+        mockKitData1,
+        mockKitData2,
+      ]);
 
       expect(result.success).toBe(false);
       expect(result.scannedKits).toBe(1); // Only first kit succeeded
@@ -301,22 +335,43 @@ describe("databaseScanning", () => {
       mockDbOps.updateVoiceAlias.mockResolvedValue({ success: true });
 
       const samples = { 1: ["kick.wav"], 2: ["snare.wav"], 3: ["hat.wav"] };
-      const result = await scanVoiceNamesToDatabase("/mock/db", "Test Kit", samples);
+      const result = await scanVoiceNamesToDatabase(
+        "/mock/db",
+        "Test Kit",
+        samples,
+      );
 
       expect(result.success).toBe(true);
       expect(result.scannedVoices).toBe(3);
       expect(result.errors).toEqual([]);
 
-      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith("/mock/db", "Test Kit", 1, "Kick");
-      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith("/mock/db", "Test Kit", 2, "Snare");
-      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith("/mock/db", "Test Kit", 3, "Hat");
+      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
+        "/mock/db",
+        "Test Kit",
+        1,
+        "Kick",
+      );
+      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
+        "/mock/db",
+        "Test Kit",
+        2,
+        "Snare",
+      );
+      expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
+        "/mock/db",
+        "Test Kit",
+        3,
+        "Hat",
+      );
     });
 
     it("handles voice inference failure", async () => {
       vi.mocked(executeVoiceInferenceScan).mockResolvedValue({
         success: false,
         results: {},
-        errors: [{ operation: "voiceInference", error: "No recognizable voices" }],
+        errors: [
+          { operation: "voiceInference", error: "No recognizable voices" },
+        ],
         completedOperations: 0,
         totalOperations: 1,
       });
@@ -338,8 +393,22 @@ describe("databaseScanning", () => {
         success: true,
         results: {
           wavAnalysis: [
-            { sampleRate: 44100, bitDepth: 16, channels: 2, bitrate: 1411200, isStereo: true, isValid: true },
-            { sampleRate: 48000, bitDepth: 24, channels: 1, bitrate: 1152000, isStereo: false, isValid: true },
+            {
+              sampleRate: 44100,
+              bitDepth: 16,
+              channels: 2,
+              bitrate: 1411200,
+              isStereo: true,
+              isValid: true,
+            },
+            {
+              sampleRate: 48000,
+              bitDepth: 24,
+              channels: 1,
+              bitrate: 1152000,
+              isStereo: false,
+              isValid: true,
+            },
           ],
         },
         errors: [],
@@ -394,7 +463,10 @@ describe("databaseScanning", () => {
 
       expect(result.success).toBe(true);
       expect(result.scannedRtfFiles).toBe(2);
-      expect(result.artistsByBank).toEqual({ A: "Artist One", B: "Artist Two" });
+      expect(result.artistsByBank).toEqual({
+        A: "Artist One",
+        B: "Artist Two",
+      });
       expect(result.errors).toEqual([]);
     });
 

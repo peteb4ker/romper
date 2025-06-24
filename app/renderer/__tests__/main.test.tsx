@@ -37,7 +37,7 @@ describe("renderer/main.tsx", () => {
   it("renders the app with SettingsProvider and main layout", async () => {
     const { App } = await import("../main");
     render(<App />);
-    
+
     // The app should render successfully (theme is now handled by SettingsProvider)
     expect(true).toBe(true); // Basic test to ensure no errors on render
   });

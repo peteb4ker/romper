@@ -2,9 +2,9 @@
 
 import {
   executeFullKitScan,
+  executeRTFArtistScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
-  executeRTFArtistScan,
   type ProgressCallback,
 } from "./scannerOrchestrator";
 
@@ -16,7 +16,12 @@ interface VoiceUpdateResult {
 
 // Database operations interface (to be implemented via IPC)
 interface DatabaseOperations {
-  updateVoiceAlias: (dbDir: string, kitName: string, voiceNumber: number, voiceAlias: string | null) => Promise<VoiceUpdateResult>;
+  updateVoiceAlias: (
+    dbDir: string,
+    kitName: string,
+    voiceNumber: number,
+    voiceAlias: string | null,
+  ) => Promise<VoiceUpdateResult>;
   // Add more database operations as needed
 }
 
@@ -51,7 +56,7 @@ export interface KitScanData {
 
 /**
  * Scan a single kit and store all results in the database
- * 
+ *
  * @param dbDir Path to the database directory
  * @param kitScanData Kit data to scan
  * @param progressCallback Optional progress tracking callback
@@ -80,17 +85,17 @@ export async function scanKitToDatabase(
         rtfFiles: kitScanData.rtfFiles,
       },
       progressCallback,
-      "continue" // Continue on errors to get partial results
+      "continue", // Continue on errors to get partial results
     );
 
     // Store voice inference results in database
     if (scanResult.results.voiceInference) {
       const voiceNames = scanResult.results.voiceInference.voiceNames;
-      
+
       for (const voiceNumStr in voiceNames) {
         const voiceNumber = parseInt(voiceNumStr, 10);
         const voiceAlias = voiceNames[voiceNumber];
-        
+
         if (voiceAlias) {
           if (!dbOps) {
             result.errors.push({
@@ -101,8 +106,13 @@ export async function scanKitToDatabase(
             continue;
           }
 
-          const updateResult = await dbOps.updateVoiceAlias(dbDir, kitScanData.kitName, voiceNumber, voiceAlias);
-          
+          const updateResult = await dbOps.updateVoiceAlias(
+            dbDir,
+            kitScanData.kitName,
+            voiceNumber,
+            voiceAlias,
+          );
+
           if (updateResult.success) {
             result.scannedVoices++;
           } else {
@@ -119,11 +129,11 @@ export async function scanKitToDatabase(
     // Store WAV analysis results in database
     if (scanResult.results.wavAnalysis) {
       const wavAnalyses = scanResult.results.wavAnalysis;
-      
+
       for (let i = 0; i < wavAnalyses.length; i++) {
         const analysis = wavAnalyses[i];
         const filePath = kitScanData.wavFiles[i];
-        
+
         if (analysis.isValid) {
           // WAV metadata is stored when samples are inserted
           // For now, we just count successful analyses
@@ -141,7 +151,7 @@ export async function scanKitToDatabase(
     if (scanResult.results.rtfArtist) {
       const bankArtists = scanResult.results.rtfArtist.bankArtists;
       result.scannedRtfFiles = Object.keys(bankArtists).length;
-      
+
       // Note: Artist information would need to be stored per kit
       // This would require updating the kit record with artist information
       // For now, we just count the RTF files processed
@@ -149,7 +159,7 @@ export async function scanKitToDatabase(
 
     // Include any orchestration errors
     result.errors.push(...scanResult.errors);
-    
+
     if (scanResult.errors.length > 0) {
       result.success = false;
     }
@@ -158,7 +168,6 @@ export async function scanKitToDatabase(
     if (scanResult.errors.length === 0) {
       result.scannedKits = 1;
     }
-
   } catch (error) {
     result.success = false;
     result.errors.push({
@@ -173,7 +182,7 @@ export async function scanKitToDatabase(
 
 /**
  * Scan multiple kits and store all results in the database
- * 
+ *
  * @param dbDir Path to the database directory
  * @param kitsToScan Array of kit data to scan
  * @param progressCallback Optional progress tracking callback
@@ -225,7 +234,7 @@ export async function scanMultipleKitsToDatabase(
 
 /**
  * Scan only voice names for a single kit and store in database
- * 
+ *
  * @param dbDir Path to the database directory
  * @param kitName Kit name in the database
  * @param samples Sample data organized by voice
@@ -265,7 +274,12 @@ export async function scanVoiceNamesToDatabase(
             continue;
           }
 
-          const updateResult = await dbOps.updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias);
+          const updateResult = await dbOps.updateVoiceAlias(
+            dbDir,
+            kitName,
+            voiceNumber,
+            voiceAlias,
+          );
 
           if (updateResult.success) {
             result.scannedVoices++;
@@ -278,7 +292,7 @@ export async function scanVoiceNamesToDatabase(
           }
         }
       }
-      
+
       // Count as scanned kit since we attempted voice scanning
       result.scannedKits = 1;
     } else {
@@ -301,7 +315,7 @@ export async function scanVoiceNamesToDatabase(
 
 /**
  * Scan WAV files and store metadata in database
- * 
+ *
  * @param dbDir Path to the database directory
  * @param wavFiles Array of WAV file paths to analyze
  * @param fileReader Optional file reader function for testing
@@ -326,7 +340,7 @@ export async function scanWavFilesToDatabase(
 
     if (scanResult.success && scanResult.results.wavAnalysis) {
       result.scannedWavFiles = scanResult.results.wavAnalysis.length;
-      
+
       // Note: The WAV metadata would be stored when updating sample records
       // This would require additional database operations to update existing samples
       // For now, we just track successful analyses
@@ -347,14 +361,18 @@ export async function scanWavFilesToDatabase(
 
 /**
  * Scan RTF files and extract artist information
- * 
+ *
  * @param rtfFiles Array of RTF filenames to analyze
  * @returns Database scan result with artist information
  */
 export async function scanRtfFilesToDatabase(
   rtfFiles: string[],
-): Promise<DatabaseScanResult & { artistsByBank?: { [bank: string]: string } }> {
-  const result: DatabaseScanResult & { artistsByBank?: { [bank: string]: string } } = {
+): Promise<
+  DatabaseScanResult & { artistsByBank?: { [bank: string]: string } }
+> {
+  const result: DatabaseScanResult & {
+    artistsByBank?: { [bank: string]: string };
+  } = {
     success: true,
     scannedKits: 0,
     scannedVoices: 0,

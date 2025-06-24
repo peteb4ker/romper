@@ -40,12 +40,12 @@ interface SettingsContextProps {
   localStorePath: string | null;
   darkMode: boolean;
   localStoreStatus: LocalStoreStatus | null;
-  
+
   // State
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
-  
+
   // Actions
   setLocalStorePath: (path: string) => Promise<void>;
   setDarkMode: (enabled: boolean) => Promise<void>;
@@ -64,11 +64,14 @@ const initialState: SettingsState = {
   error: null,
 };
 
-function settingsReducer(state: SettingsState, action: SettingsAction): SettingsState {
+function settingsReducer(
+  state: SettingsState,
+  action: SettingsAction,
+): SettingsState {
   switch (action.type) {
     case "INIT_START":
       return { ...state, isLoading: true, error: null };
-    
+
     case "INIT_SUCCESS":
       return {
         ...state,
@@ -77,7 +80,7 @@ function settingsReducer(state: SettingsState, action: SettingsAction): Settings
         isInitialized: true,
         error: null,
       };
-    
+
     case "INIT_ERROR":
       return {
         ...state,
@@ -85,25 +88,25 @@ function settingsReducer(state: SettingsState, action: SettingsAction): Settings
         isInitialized: true,
         error: action.payload,
       };
-    
+
     case "UPDATE_LOCAL_STORE_PATH":
       return {
         ...state,
         settings: { ...state.settings, localStorePath: action.payload },
       };
-    
+
     case "UPDATE_DARK_MODE":
       return {
         ...state,
         settings: { ...state.settings, darkMode: action.payload },
       };
-    
+
     case "UPDATE_LOCAL_STORE_STATUS":
       return { ...state, localStoreStatus: action.payload };
-    
+
     case "CLEAR_ERROR":
       return { ...state, error: null };
-    
+
     default:
       return state;
   }
@@ -126,46 +129,55 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Initialize settings on mount
   const initializeSettings = useCallback(async () => {
     dispatch({ type: "INIT_START" });
-    
+
     try {
       const loadedSettings = await window.electronAPI.readSettings();
       const settings: Settings = {
         localStorePath: loadedSettings.localStorePath || null,
         darkMode: loadedSettings.darkMode ?? false,
       };
-      
+
       dispatch({ type: "INIT_SUCCESS", payload: settings });
       applyTheme(settings.darkMode);
-      
+
       // Load local store status
       await refreshLocalStoreStatus();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to initialize settings";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to initialize settings";
       dispatch({ type: "INIT_ERROR", payload: errorMessage });
     }
-  }, [applyTheme]);
+  }, [applyTheme, refreshLocalStoreStatus]);
 
   // Update local store path
-  const setLocalStorePath = useCallback(async (path: string) => {
-    try {
-      await window.electronAPI.setSetting("localStorePath", path);
-      dispatch({ type: "UPDATE_LOCAL_STORE_PATH", payload: path });
-      await refreshLocalStoreStatus();
-    } catch (error) {
-      console.error("Failed to update local store path:", error);
-    }
-  }, []);
+  const setLocalStorePath = useCallback(
+    async (path: string) => {
+      try {
+        await window.electronAPI.setSetting("localStorePath", path);
+        dispatch({ type: "UPDATE_LOCAL_STORE_PATH", payload: path });
+        await refreshLocalStoreStatus();
+      } catch (error) {
+        console.error("Failed to update local store path:", error);
+      }
+    },
+    [refreshLocalStoreStatus],
+  );
 
   // Update dark mode setting
-  const setDarkMode = useCallback(async (enabled: boolean) => {
-    try {
-      await window.electronAPI.setSetting("darkMode", enabled);
-      dispatch({ type: "UPDATE_DARK_MODE", payload: enabled });
-      applyTheme(enabled);
-    } catch (error) {
-      console.error("Failed to update dark mode:", error);
-    }
-  }, [applyTheme]);
+  const setDarkMode = useCallback(
+    async (enabled: boolean) => {
+      try {
+        await window.electronAPI.setSetting("darkMode", enabled);
+        dispatch({ type: "UPDATE_DARK_MODE", payload: enabled });
+        applyTheme(enabled);
+      } catch (error) {
+        console.error("Failed to update dark mode:", error);
+      }
+    },
+    [applyTheme],
+  );
 
   // Refresh local store status
   const refreshLocalStoreStatus = useCallback(async () => {
@@ -195,12 +207,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorePath: state.settings.localStorePath,
     darkMode: state.settings.darkMode,
     localStoreStatus: state.localStoreStatus,
-    
+
     // State
     isLoading: state.isLoading,
     isInitialized: state.isInitialized,
     error: state.error,
-    
+
     // Actions
     setLocalStorePath,
     setDarkMode,

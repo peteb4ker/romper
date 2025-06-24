@@ -48,7 +48,11 @@ export type ScannerFunction<TInput, TOutput> = (
 ) => Promise<ScannerResult<TOutput>> | ScannerResult<TOutput>;
 
 // Progress callback for tracking orchestration progress
-export type ProgressCallback = (completed: number, total: number, operation: string) => void;
+export type ProgressCallback = (
+  completed: number,
+  total: number,
+  operation: string,
+) => void;
 
 // Error handling strategy for failed operations
 export type ErrorStrategy = "stop" | "continue";
@@ -67,14 +71,17 @@ export class ScannerOrchestrator {
   private progressCallback?: ProgressCallback;
   private errorStrategy: ErrorStrategy = "continue";
 
-  constructor(progressCallback?: ProgressCallback, errorStrategy: ErrorStrategy = "continue") {
+  constructor(
+    progressCallback?: ProgressCallback,
+    errorStrategy: ErrorStrategy = "continue",
+  ) {
     this.progressCallback = progressCallback;
     this.errorStrategy = errorStrategy;
   }
 
   /**
    * Execute a chain of scanner operations in sequence
-   * 
+   *
    * @param operations Array of operations to execute
    * @returns Orchestration result with all operation results
    */
@@ -83,7 +90,7 @@ export class ScannerOrchestrator {
       name: string;
       scanner: ScannerFunction<any, any>;
       input: any;
-    }>
+    }>,
   ): Promise<OrchestrationResult<T>> {
     const results = {} as T;
     const errors: Array<{ operation: string; error: string }> = [];
@@ -92,7 +99,11 @@ export class ScannerOrchestrator {
 
     for (const operation of operations) {
       try {
-        this.reportProgress(completedOperations, totalOperations, operation.name);
+        this.reportProgress(
+          completedOperations,
+          totalOperations,
+          operation.name,
+        );
 
         const result = await operation.scanner(operation.input);
 
@@ -111,7 +122,8 @@ export class ScannerOrchestrator {
         }
       } catch (error) {
         // Handle unexpected errors
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         errors.push({ operation: operation.name, error: errorMessage });
 
         if (this.errorStrategy === "stop") {
@@ -132,7 +144,11 @@ export class ScannerOrchestrator {
     };
   }
 
-  private reportProgress(completed: number, total: number, operation: string): void {
+  private reportProgress(
+    completed: number,
+    total: number,
+    operation: string,
+  ): void {
     if (this.progressCallback) {
       this.progressCallback(completed, total, operation);
     }
@@ -389,7 +405,7 @@ function capitalizeArtistName(name: string): string {
 
 /**
  * Execute full kit scanning chain: voice inference → WAV analysis → RTF artist scan
- * 
+ *
  * @param kitData Input data for all scanning operations
  * @param progressCallback Optional progress tracking callback
  * @param errorStrategy How to handle individual scanner failures
@@ -403,12 +419,14 @@ export async function executeFullKitScan(
     fileReader?: (filePath: string) => Promise<ArrayBuffer>;
   },
   progressCallback?: ProgressCallback,
-  errorStrategy: ErrorStrategy = "continue"
-): Promise<OrchestrationResult<{
-  voiceInference?: VoiceInferenceOutput;
-  wavAnalysis?: WAVAnalysisOutput[];
-  rtfArtist?: RTFArtistOutput;
-}>> {
+  errorStrategy: ErrorStrategy = "continue",
+): Promise<
+  OrchestrationResult<{
+    voiceInference?: VoiceInferenceOutput;
+    wavAnalysis?: WAVAnalysisOutput[];
+    rtfArtist?: RTFArtistOutput;
+  }>
+> {
   const orchestrator = new ScannerOrchestrator(progressCallback, errorStrategy);
 
   const operations = [
@@ -419,16 +437,19 @@ export async function executeFullKitScan(
     },
     {
       name: "wavAnalysis",
-      scanner: async (input: { files: string[]; fileReader?: (filePath: string) => Promise<ArrayBuffer> }) => {
+      scanner: async (input: {
+        files: string[];
+        fileReader?: (filePath: string) => Promise<ArrayBuffer>;
+      }) => {
         const results: WAVAnalysisOutput[] = [];
         const errors: string[] = [];
 
         for (const filePath of input.files) {
-          const result = await scanWAVAnalysis({ 
-            filePath, 
-            fileReader: input.fileReader 
+          const result = await scanWAVAnalysis({
+            filePath,
+            fileReader: input.fileReader,
           });
-          
+
           if (result.success && result.data) {
             results.push(result.data);
           } else {
@@ -448,9 +469,9 @@ export async function executeFullKitScan(
           data: results,
         };
       },
-      input: { 
-        files: kitData.wavFiles, 
-        fileReader: kitData.fileReader 
+      input: {
+        files: kitData.wavFiles,
+        fileReader: kitData.fileReader,
       },
     },
     {
@@ -465,14 +486,14 @@ export async function executeFullKitScan(
 
 /**
  * Execute voice inference only
- * 
+ *
  * @param samples Sample data organized by voice
  * @param progressCallback Optional progress tracking callback
  * @returns Voice inference results
  */
 export async function executeVoiceInferenceScan(
   samples: { [voice: number]: string[] },
-  progressCallback?: ProgressCallback
+  progressCallback?: ProgressCallback,
 ): Promise<OrchestrationResult<{ voiceInference?: VoiceInferenceOutput }>> {
   const orchestrator = new ScannerOrchestrator(progressCallback, "stop");
 
@@ -489,7 +510,7 @@ export async function executeVoiceInferenceScan(
 
 /**
  * Execute WAV analysis for multiple files
- * 
+ *
  * @param wavFiles Array of WAV file paths to analyze
  * @param fileReader Optional file reader function for testing
  * @param progressCallback Optional progress tracking callback
@@ -498,23 +519,26 @@ export async function executeVoiceInferenceScan(
 export async function executeWAVAnalysisScan(
   wavFiles: string[],
   fileReader?: (filePath: string) => Promise<ArrayBuffer>,
-  progressCallback?: ProgressCallback
+  progressCallback?: ProgressCallback,
 ): Promise<OrchestrationResult<{ wavAnalysis?: WAVAnalysisOutput[] }>> {
   const orchestrator = new ScannerOrchestrator(progressCallback, "continue");
 
   const operations = [
     {
       name: "wavAnalysis",
-      scanner: async (input: { files: string[]; fileReader?: (filePath: string) => Promise<ArrayBuffer> }) => {
+      scanner: async (input: {
+        files: string[];
+        fileReader?: (filePath: string) => Promise<ArrayBuffer>;
+      }) => {
         const results: WAVAnalysisOutput[] = [];
         const errors: string[] = [];
 
         for (const filePath of input.files) {
-          const result = await scanWAVAnalysis({ 
-            filePath, 
-            fileReader: input.fileReader 
+          const result = await scanWAVAnalysis({
+            filePath,
+            fileReader: input.fileReader,
           });
-          
+
           if (result.success && result.data) {
             results.push(result.data);
           } else {
@@ -543,14 +567,14 @@ export async function executeWAVAnalysisScan(
 
 /**
  * Execute RTF artist scanning only
- * 
+ *
  * @param rtfFiles Array of RTF filenames to analyze
  * @param progressCallback Optional progress tracking callback
  * @returns RTF artist scan results
  */
 export async function executeRTFArtistScan(
   rtfFiles: string[],
-  progressCallback?: ProgressCallback
+  progressCallback?: ProgressCallback,
 ): Promise<OrchestrationResult<{ rtfArtist?: RTFArtistOutput }>> {
   const orchestrator = new ScannerOrchestrator(progressCallback, "stop");
 

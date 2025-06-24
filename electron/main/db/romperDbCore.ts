@@ -505,7 +505,9 @@ export function getKitByName(
     }
 
     // Get voice aliases
-    const voiceStmt = db.prepare("SELECT voice_number, voice_alias FROM voices WHERE kit_name = ?");
+    const voiceStmt = db.prepare(
+      "SELECT voice_number, voice_alias FROM voices WHERE kit_name = ?",
+    );
     const voiceRows = voiceStmt.all(kitName) as any[];
 
     const voices: { [voiceNumber: number]: string } = {};
@@ -526,7 +528,10 @@ export function getKitByName(
       artist: kitRow.artist,
       plan_enabled: Boolean(kitRow.plan_enabled),
       locked: Boolean(kitRow.locked),
-      step_pattern: kitRow.step_pattern ? decodeStepPatternFromBlob(new Uint8Array(kitRow.step_pattern)) || undefined : undefined,
+      step_pattern: kitRow.step_pattern
+        ? decodeStepPatternFromBlob(new Uint8Array(kitRow.step_pattern)) ||
+          undefined
+        : undefined,
       voices,
     };
 
@@ -610,7 +615,9 @@ export function getAllKits(dbDir: string): DbResult<KitWithVoices[]> {
 
     for (const kitRow of kitRows) {
       // Get voice aliases for this kit
-      const voiceStmt = db.prepare("SELECT voice_number, voice_alias FROM voices WHERE kit_name = ?");
+      const voiceStmt = db.prepare(
+        "SELECT voice_number, voice_alias FROM voices WHERE kit_name = ?",
+      );
       const voiceRows = voiceStmt.all(kitRow.name) as any[];
 
       const voices: { [voiceNumber: number]: string } = {};
@@ -631,7 +638,10 @@ export function getAllKits(dbDir: string): DbResult<KitWithVoices[]> {
         artist: kitRow.artist,
         plan_enabled: Boolean(kitRow.plan_enabled),
         locked: Boolean(kitRow.locked),
-        step_pattern: kitRow.step_pattern ? decodeStepPatternFromBlob(new Uint8Array(kitRow.step_pattern)) || undefined : undefined,
+        step_pattern: kitRow.step_pattern
+          ? decodeStepPatternFromBlob(new Uint8Array(kitRow.step_pattern)) ||
+            undefined
+          : undefined,
         voices,
       };
 

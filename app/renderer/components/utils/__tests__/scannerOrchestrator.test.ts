@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  scanVoiceInference,
-  scanRTFArtist,
   ScannerOrchestrator,
+  scanRTFArtist,
+  scanVoiceInference,
 } from "../scannerOrchestrator";
 
 // Mock file system operations
@@ -20,9 +20,9 @@ describe("scannerOrchestrator", () => {
       const input = {
         samples: {
           1: ["/path/to/kick.wav"],
-          2: ["/path/to/snare.wav"], 
+          2: ["/path/to/snare.wav"],
           3: ["/path/to/hihat.wav"],
-        }
+        },
       };
 
       const result = scanVoiceInference(input);
@@ -30,9 +30,9 @@ describe("scannerOrchestrator", () => {
       expect(result.success).toBe(true);
       expect(result.data?.voiceNames).toEqual({
         1: "Kick",
-        2: "Snare", 
-        3: "HH",  // hihat gets converted to "HH"
-        4: null,  // voice 4 not provided
+        2: "Snare",
+        3: "HH", // hihat gets converted to "HH"
+        4: null, // voice 4 not provided
       });
     });
 

@@ -1,12 +1,5 @@
 import { cleanup, render, waitFor } from "@testing-library/react";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SettingsProvider, useSettings } from "../SettingsContext";
 
@@ -30,10 +23,12 @@ afterEach(() => {
 describe("SettingsContext", () => {
   const TestComponent = () => {
     const { isInitialized, localStorePath, darkMode, error } = useSettings();
-    
+
     return (
       <div>
-        <div data-testid="initialized">{isInitialized ? "initialized" : "loading"}</div>
+        <div data-testid="initialized">
+          {isInitialized ? "initialized" : "loading"}
+        </div>
         <div data-testid="localStorePath">{localStorePath || "null"}</div>
         <div data-testid="darkMode">{darkMode ? "dark" : "light"}</div>
         <div data-testid="error">{error || "no-error"}</div>
@@ -55,7 +50,7 @@ describe("SettingsContext", () => {
     const { getByTestId } = render(
       <SettingsProvider>
         <TestComponent />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => {
@@ -67,12 +62,14 @@ describe("SettingsContext", () => {
   });
 
   it("should handle initialization errors", async () => {
-    mockElectronAPI.readSettings.mockRejectedValue(new Error("Failed to load settings"));
+    mockElectronAPI.readSettings.mockRejectedValue(
+      new Error("Failed to load settings"),
+    );
 
     const { getByTestId } = render(
       <SettingsProvider>
         <TestComponent />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => {
@@ -89,13 +86,16 @@ describe("SettingsContext", () => {
     mockElectronAPI.setSetting.mockResolvedValue(undefined);
 
     const UpdateTestComponent = () => {
-      const { setLocalStorePath, setDarkMode, localStorePath, darkMode } = useSettings();
-      
+      const { setLocalStorePath, setDarkMode, localStorePath, darkMode } =
+        useSettings();
+
       return (
         <div>
           <div data-testid="localStorePath">{localStorePath || "null"}</div>
           <div data-testid="darkMode">{darkMode ? "dark" : "light"}</div>
-          <button onClick={() => setLocalStorePath("/new/path")}>Update Path</button>
+          <button onClick={() => setLocalStorePath("/new/path")}>
+            Update Path
+          </button>
           <button onClick={() => setDarkMode(true)}>Enable Dark Mode</button>
         </div>
       );
@@ -104,7 +104,7 @@ describe("SettingsContext", () => {
     const { getByTestId, getByText } = render(
       <SettingsProvider>
         <UpdateTestComponent />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => {
@@ -115,7 +115,10 @@ describe("SettingsContext", () => {
     // Test updating local store path
     getByText("Update Path").click();
     await waitFor(() => {
-      expect(mockElectronAPI.setSetting).toHaveBeenCalledWith("localStorePath", "/new/path");
+      expect(mockElectronAPI.setSetting).toHaveBeenCalledWith(
+        "localStorePath",
+        "/new/path",
+      );
     });
 
     // Test updating dark mode

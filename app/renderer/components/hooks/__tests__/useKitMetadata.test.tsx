@@ -1,9 +1,9 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useKitMetadata } from "../useKitMetadata";
 import { SettingsProvider } from "../../../utils/SettingsContext";
+import { useKitMetadata } from "../useKitMetadata";
 
 // Mock the SettingsContext
 vi.mock("../../../utils/SettingsContext", () => ({
@@ -53,7 +53,9 @@ describe("useKitMetadata", () => {
       data: mockMetadata,
     });
 
-    const { result } = renderHook(() => useKitMetadata(defaultProps), { wrapper });
+    const { result } = renderHook(() => useKitMetadata(defaultProps), {
+      wrapper,
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -61,7 +63,10 @@ describe("useKitMetadata", () => {
 
     expect(result.current.kitMetadata).toEqual(mockMetadata);
     expect(result.current.error).toBeNull();
-    expect(mockElectronAPI.getKitMetadata).toHaveBeenCalledWith("/test/path", "A1");
+    expect(mockElectronAPI.getKitMetadata).toHaveBeenCalledWith(
+      "/test/path",
+      "A1",
+    );
   });
 
   it("handles kit not found and creates default metadata", async () => {
@@ -70,7 +75,9 @@ describe("useKitMetadata", () => {
       error: "Kit not found",
     });
 
-    const { result } = renderHook(() => useKitMetadata(defaultProps), { wrapper });
+    const { result } = renderHook(() => useKitMetadata(defaultProps), {
+      wrapper,
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -86,9 +93,13 @@ describe("useKitMetadata", () => {
   });
 
   it("handles loading errors", async () => {
-    mockElectronAPI.getKitMetadata.mockRejectedValue(new Error("Database error"));
+    mockElectronAPI.getKitMetadata.mockRejectedValue(
+      new Error("Database error"),
+    );
 
-    const { result } = renderHook(() => useKitMetadata(defaultProps), { wrapper });
+    const { result } = renderHook(() => useKitMetadata(defaultProps), {
+      wrapper,
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -111,12 +122,14 @@ describe("useKitMetadata", () => {
       .mockResolvedValueOnce({ success: true, data: mockMetadata })
       .mockResolvedValueOnce({
         success: true,
-        data: { ...mockMetadata, alias: "Updated Kit" }
+        data: { ...mockMetadata, alias: "Updated Kit" },
       });
 
     mockElectronAPI.updateKitMetadata.mockResolvedValue({ success: true });
 
-    const { result } = renderHook(() => useKitMetadata(defaultProps), { wrapper });
+    const { result } = renderHook(() => useKitMetadata(defaultProps), {
+      wrapper,
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -127,7 +140,7 @@ describe("useKitMetadata", () => {
     expect(mockElectronAPI.updateKitMetadata).toHaveBeenCalledWith(
       "/test/path",
       "A1",
-      { alias: "Updated Kit" }
+      { alias: "Updated Kit" },
     );
   });
 
@@ -144,12 +157,14 @@ describe("useKitMetadata", () => {
       .mockResolvedValueOnce({ success: true, data: mockMetadata })
       .mockResolvedValueOnce({
         success: true,
-        data: { ...mockMetadata, voices: { 1: "Kick", 2: "", 3: "", 4: "" } }
+        data: { ...mockMetadata, voices: { 1: "Kick", 2: "", 3: "", 4: "" } },
       });
 
     mockElectronAPI.updateVoiceAlias.mockResolvedValue({ success: true });
 
-    const { result } = renderHook(() => useKitMetadata(defaultProps), { wrapper });
+    const { result } = renderHook(() => useKitMetadata(defaultProps), {
+      wrapper,
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -161,7 +176,7 @@ describe("useKitMetadata", () => {
       "/test/path",
       "A1",
       1,
-      "Kick"
+      "Kick",
     );
   });
 
@@ -181,27 +196,104 @@ describe("useKitMetadata", () => {
       [0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0],
     ];
 
+    const booleanStepPattern = [
+      [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+      ],
+      [
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+      ],
+      [
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        true,
+        false,
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+      ],
+    ];
+
     mockElectronAPI.getKitMetadata
       .mockResolvedValueOnce({ success: true, data: mockMetadata })
       .mockResolvedValueOnce({
         success: true,
-        data: { ...mockMetadata, step_pattern: stepPattern }
+        data: { ...mockMetadata, step_pattern: stepPattern },
       });
 
     mockElectronAPI.updateStepPattern.mockResolvedValue({ success: true });
 
-    const { result } = renderHook(() => useKitMetadata(defaultProps), { wrapper });
+    const { result } = renderHook(() => useKitMetadata(defaultProps), {
+      wrapper,
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
-    await result.current.setStepPattern(stepPattern);
+    await result.current.setStepPattern(booleanStepPattern);
 
     expect(mockElectronAPI.updateStepPattern).toHaveBeenCalledWith(
       "/test/path",
       "A1",
-      stepPattern
+      stepPattern,
     );
   });
 
@@ -219,7 +311,9 @@ describe("useKitMetadata", () => {
       data: mockMetadata,
     });
 
-    const { result } = renderHook(() => useKitMetadata(defaultProps), { wrapper });
+    const { result } = renderHook(() => useKitMetadata(defaultProps), {
+      wrapper,
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -254,7 +348,9 @@ describe("useKitMetadata", () => {
       data: mockMetadata,
     });
 
-    const { result } = renderHook(() => useKitMetadata(defaultProps), { wrapper });
+    const { result } = renderHook(() => useKitMetadata(defaultProps), {
+      wrapper,
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -267,10 +363,78 @@ describe("useKitMetadata", () => {
       tags: undefined,
       voiceNames: { 1: "Kick", 2: "Snare", 3: "HiHat", 4: "Cymbal" },
       stepPattern: [
-        [true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false],
-        [false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true],
-        [false, false, true, false, false, false, true, false, false, false, true, false, false, false, true, false],
-        [false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false],
+        [
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+        ],
+        [
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+        ],
+        [
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false,
+        ],
+        [
+          false,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+        ],
       ],
     });
 

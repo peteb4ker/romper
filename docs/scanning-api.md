@@ -181,7 +181,7 @@ Performs complete scanning of a kit including all scanner types.
 **Returns:**
 - Orchestration result with combined results from:
   - Voice inference scanning
-  - WAV analysis scanning  
+  - WAV analysis scanning
   - RTF artist scanning
 
 ## Database Integration

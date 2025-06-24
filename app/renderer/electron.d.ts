@@ -42,7 +42,10 @@ export interface ElectronAPI {
   onSamplePlaybackError?: (cb: (errMsg: string) => void) => void;
   getAudioBuffer?: (filePath: string) => Promise<ArrayBuffer>;
   // Database methods for kit metadata (replacing JSON file dependency)
-  getKitMetadata?: (dbDir: string, kitName: string) => Promise<{
+  getKitMetadata?: (
+    dbDir: string,
+    kitName: string,
+  ) => Promise<{
     success: boolean;
     data?: {
       id: number;

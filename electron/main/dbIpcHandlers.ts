@@ -3,13 +3,13 @@ import { ipcMain } from "electron";
 
 import {
   createRomperDbFile,
+  getAllKits,
+  getKitByName,
   insertKitRecord,
   insertSampleRecord,
-  getKitByName,
   updateKitMetadata,
-  getAllKits,
-  updateVoiceAlias,
   updateStepPattern,
+  updateVoiceAlias,
 } from "./db/romperDbCore.js";
 
 export function registerDbIpcHandlers() {
@@ -76,12 +76,9 @@ export function registerDbIpcHandlers() {
     },
   );
 
-  ipcMain.handle(
-    "get-all-kits",
-    async (_event, dbDir: string) => {
-      return getAllKits(dbDir);
-    },
-  );
+  ipcMain.handle("get-all-kits", async (_event, dbDir: string) => {
+    return getAllKits(dbDir);
+  });
 
   ipcMain.handle(
     "update-voice-alias",
@@ -98,12 +95,7 @@ export function registerDbIpcHandlers() {
 
   ipcMain.handle(
     "update-step-pattern",
-    async (
-      _event,
-      dbDir: string,
-      kitName: string,
-      stepPattern: number[][],
-    ) => {
+    async (_event, dbDir: string, kitName: string, stepPattern: number[][]) => {
       return updateStepPattern(dbDir, kitName, stepPattern);
     },
   );

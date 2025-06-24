@@ -615,7 +615,9 @@ describe("romperDbCore", () => {
       const dbDir = "/test/dir";
       mockStmt.run.mockReturnValue({ changes: 0 });
 
-      const result = updateStepPattern(dbDir, "NonexistentKit", [[127, 0, 64, 0]]);
+      const result = updateStepPattern(dbDir, "NonexistentKit", [
+        [127, 0, 64, 0],
+      ]);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Kit not found");

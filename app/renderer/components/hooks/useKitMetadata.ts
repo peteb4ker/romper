@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
 
@@ -34,7 +34,7 @@ export function useKitMetadata(props: KitDetailsProps) {
   useEffect(() => {
     if (!dbDir || !kitName) return;
     loadKitMetadata();
-  }, [dbDir, kitName]);
+  }, [dbDir, kitName, loadKitMetadata]);
 
   // Load stepPattern when kitMetadata changes
   useEffect(() => {
@@ -42,18 +42,16 @@ export function useKitMetadata(props: KitDetailsProps) {
       setStepPatternState(kitMetadata.step_pattern);
     } else {
       // Default: 4x16 with velocity 0 (off)
-      setStepPatternState(
-        Array.from({ length: 4 }, () => Array(16).fill(0)),
-      );
+      setStepPatternState(Array.from({ length: 4 }, () => Array(16).fill(0)));
     }
   }, [kitMetadata]);
 
-  const loadKitMetadata = async () => {
+  const loadKitMetadata = useCallback(async () => {
     if (!window.electronAPI?.getKitMetadata || !dbDir || !kitName) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const result = await window.electronAPI.getKitMetadata(dbDir, kitName);
       if (result.success && result.data) {
@@ -74,7 +72,7 @@ export function useKitMetadata(props: KitDetailsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dbDir, kitName]);
 
   const updateMetadata = async (updates: {
     alias?: string;
@@ -83,9 +81,13 @@ export function useKitMetadata(props: KitDetailsProps) {
     description?: string;
   }) => {
     if (!window.electronAPI?.updateKitMetadata || !dbDir || !kitName) return;
-    
+
     try {
-      const result = await window.electronAPI.updateKitMetadata(dbDir, kitName, updates);
+      const result = await window.electronAPI.updateKitMetadata(
+        dbDir,
+        kitName,
+        updates,
+      );
       if (result.success) {
         await loadKitMetadata(); // Reload to get updated data
         setMetadataChanged(true);
@@ -99,9 +101,14 @@ export function useKitMetadata(props: KitDetailsProps) {
 
   const updateVoiceAlias = async (voiceNumber: number, voiceAlias: string) => {
     if (!window.electronAPI?.updateVoiceAlias || !dbDir || !kitName) return;
-    
+
     try {
-      const result = await window.electronAPI.updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias);
+      const result = await window.electronAPI.updateVoiceAlias(
+        dbDir,
+        kitName,
+        voiceNumber,
+        voiceAlias,
+      );
       if (result.success) {
         await loadKitMetadata(); // Reload to get updated data
         setMetadataChanged(true);
@@ -115,18 +122,24 @@ export function useKitMetadata(props: KitDetailsProps) {
 
   const updateStepPattern = async (pattern: number[][]) => {
     if (!window.electronAPI?.updateStepPattern || !dbDir || !kitName) return;
-    
+
     setStepPatternState(pattern);
-    
+
     try {
-      const result = await window.electronAPI.updateStepPattern(dbDir, kitName, pattern);
+      const result = await window.electronAPI.updateStepPattern(
+        dbDir,
+        kitName,
+        pattern,
+      );
       if (result.success) {
         await loadKitMetadata(); // Reload to get updated data
       } else {
         setError(result.error || "Failed to update step pattern");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to update step pattern");
+      setError(
+        e instanceof Error ? e.message : "Failed to update step pattern",
+      );
     }
   };
 
@@ -156,8 +169,10 @@ export function useKitMetadata(props: KitDetailsProps) {
     voices: { [key: number]: string[] },
   ) => {
     // Import the scanning utility
-    const { inferVoiceTypeFromFilename } = await import("../../../../shared/kitUtilsShared");
-    
+    const { inferVoiceTypeFromFilename } = await import(
+      "../../../../shared/kitUtilsShared"
+    );
+
     const samples = voices[voice] || [];
     let inferredName: string | null = null;
     for (const sample of samples) {
@@ -167,7 +182,7 @@ export function useKitMetadata(props: KitDetailsProps) {
         break;
       }
     }
-    
+
     await updateVoiceAlias(voice, inferredName || "");
   };
 
@@ -175,10 +190,12 @@ export function useKitMetadata(props: KitDetailsProps) {
     voices: { [key: number]: string[] } | undefined,
   ) => {
     // Import the scanning utility
-    const { inferVoiceTypeFromFilename } = await import("../../../../shared/kitUtilsShared");
-    
+    const { inferVoiceTypeFromFilename } = await import(
+      "../../../../shared/kitUtilsShared"
+    );
+
     const safeVoices = voices || { 1: [], 2: [], 3: [], 4: [] };
-    
+
     for (let voice = 1; voice <= 4; voice++) {
       const samplesForVoice = safeVoices[voice] || [];
       let inferredName: string | null = null;
@@ -200,20 +217,28 @@ export function useKitMetadata(props: KitDetailsProps) {
     error,
     metadataChanged,
     setMetadataChanged,
-    stepPattern: stepPattern ? stepPattern.map(voice => voice.map(v => v > 0)) : null, // Convert velocity to boolean for UI
+    stepPattern: stepPattern
+      ? stepPattern.map((voice) => voice.map((v) => v > 0))
+      : null, // Convert velocity to boolean for UI
     setStepPattern: async (booleanPattern: boolean[][]) => {
       // Convert boolean pattern to velocity pattern (true -> 100, false -> 0)
-      const velocityPattern = booleanPattern.map(voice => voice.map(step => step ? 100 : 0));
+      const velocityPattern = booleanPattern.map((voice) =>
+        voice.map((step) => (step ? 100 : 0)),
+      );
       await updateStepPattern(velocityPattern);
     },
     // Compatibility methods for existing components
-    kitLabel: kitMetadata ? {
-      label: kitMetadata.alias || kitMetadata.name,
-      description: undefined, // Not stored in current schema
-      tags: undefined, // Not stored in current schema
-      voiceNames: kitMetadata.voices,
-      stepPattern: stepPattern ? stepPattern.map(voice => voice.map(v => v > 0)) : undefined, // Convert velocity to boolean
-    } : null,
+    kitLabel: kitMetadata
+      ? {
+          label: kitMetadata.alias || kitMetadata.name,
+          description: undefined, // Not stored in current schema
+          tags: undefined, // Not stored in current schema
+          voiceNames: kitMetadata.voices,
+          stepPattern: stepPattern
+            ? stepPattern.map((voice) => voice.map((v) => v > 0))
+            : undefined, // Convert velocity to boolean
+        }
+      : null,
     setKitLabel: setKitMetadata,
     labelsLoading: loading,
     labelsError: error,

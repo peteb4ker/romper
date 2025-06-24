@@ -40,7 +40,7 @@ beforeAll(() => {
       ],
       getAudioBuffer: async () => new ArrayBuffer(8),
       selectLocalStorePath: async () => "/mock/custom/path", // mock for tests
-      
+
       // Database API methods for new metadata system
       getKitMetadata: async (dbDir, kitName) => ({
         success: true,
@@ -55,7 +55,9 @@ beforeAll(() => {
         },
       }),
       updateKitMetadata: async (dbDir, kitName, updates) => ({ success: true }),
-      updateVoiceAlias: async (dbDir, kitName, voiceNumber, alias) => ({ success: true }),
+      updateVoiceAlias: async (dbDir, kitName, voiceNumber, alias) => ({
+        success: true,
+      }),
       updateStepPattern: async (dbDir, kitName, pattern) => ({ success: true }),
     };
 

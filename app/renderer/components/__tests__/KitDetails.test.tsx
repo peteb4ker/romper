@@ -17,8 +17,8 @@ import {
   vi,
 } from "vitest";
 
-import KitDetails from "../KitDetails";
 import { SettingsProvider } from "../../utils/SettingsContext";
+import KitDetails from "../KitDetails";
 
 // Helper to mock electronAPI with dynamic state
 function mockElectronAPI({
@@ -35,7 +35,7 @@ function mockElectronAPI({
     listFilesInRoot: async () => files,
     onSamplePlaybackEnded: () => {},
     onSamplePlaybackError: () => {},
-    
+
     // New database methods
     getKitMetadata: async (dbDir, kitName) => {
       if (updateVoiceNames) {
@@ -66,11 +66,7 @@ function mockElectronAPI({
 
 // Helper to render components with SettingsProvider
 function renderWithSettings(component: React.ReactElement) {
-  return render(
-    <SettingsProvider>
-      {component}
-    </SettingsProvider>
-  );
+  return render(<SettingsProvider>{component}</SettingsProvider>);
 }
 
 describe("KitDetails", () => {
@@ -99,7 +95,7 @@ describe("KitDetails", () => {
           localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />
+        />,
       );
       const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThan(0);
@@ -119,7 +115,7 @@ describe("KitDetails", () => {
           localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />
+        />,
       );
       await waitFor(() =>
         expect(screen.getByTestId("voice-name-1")).toHaveTextContent("Kick"),
@@ -146,7 +142,7 @@ describe("KitDetails", () => {
           localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />
+        />,
       );
       const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThanOrEqual(4);
@@ -176,7 +172,7 @@ describe("KitDetails", () => {
           localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />
+        />,
       );
       const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThanOrEqual(4);
@@ -205,7 +201,7 @@ describe("KitDetails", () => {
           localStorePath="/sd"
           onBack={() => {}}
           onMessage={vi.fn()}
-        />
+        />,
       );
       expect(await screen.findByTestId("voice-name-1")).toBeInTheDocument();
       expect(screen.getByTestId("voice-name-2")).toBeInTheDocument();

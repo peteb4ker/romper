@@ -107,10 +107,10 @@
       - [x] 2.10.2.3 Create RTF artist metadata scanner (from existing function) - Extract artist names from RTF filenames (e.g., "A - Artist Name.rtf") and update the artist field on all kits in that bank
       - [x] 2.10.2.4 Create step pattern scanner for sequencer metadata (SKIPPED - step patterns are internal to app/database)
       - [x] 2.10.2.5 Design scanner orchestration system for composable operation chains
-    - [ ] 2.10.3 Remove JSON file dependency and migrate to database storage
-      - [ ] 2.10.3.1 Update scanning logic to store results in database instead of JSON
-      - [ ] 2.10.3.2 Remove JSON file reading/writing code
-      - [ ] 2.10.3.3 Update all components to read metadata from database
+    - [x] 2.10.3 Remove JSON file dependency and migrate to database storage
+      - [x] 2.10.3.1 Update scanning logic to store results in database instead of JSON
+      - [x] 2.10.3.2 Remove JSON file reading/writing code
+      - [x] 2.10.3.3 Update all components to read metadata from database
     - [ ] 2.10.4 Unit tests for core scanning operations and database storage
   - [ ] 2.17 Integrate scanning operations into wizard initialization
     - [ ] 2.17.1 Add automatic scanning as final step in wizard initialization

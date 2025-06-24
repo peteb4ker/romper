@@ -31,21 +31,6 @@ export function useKitMetadata(props: KitDetailsProps) {
   // Get database directory from local store path
   const dbDir = localStorePath || contextLocalStorePath;
 
-  useEffect(() => {
-    if (!dbDir || !kitName) return;
-    loadKitMetadata();
-  }, [dbDir, kitName, loadKitMetadata]);
-
-  // Load stepPattern when kitMetadata changes
-  useEffect(() => {
-    if (kitMetadata && kitMetadata.step_pattern) {
-      setStepPatternState(kitMetadata.step_pattern);
-    } else {
-      // Default: 4x16 with velocity 0 (off)
-      setStepPatternState(Array.from({ length: 4 }, () => Array(16).fill(0)));
-    }
-  }, [kitMetadata]);
-
   const loadKitMetadata = useCallback(async () => {
     if (!window.electronAPI?.getKitMetadata || !dbDir || !kitName) return;
 
@@ -73,6 +58,21 @@ export function useKitMetadata(props: KitDetailsProps) {
       setLoading(false);
     }
   }, [dbDir, kitName]);
+
+  useEffect(() => {
+    if (!dbDir || !kitName) return;
+    loadKitMetadata();
+  }, [dbDir, kitName, loadKitMetadata]);
+
+  // Load stepPattern when kitMetadata changes
+  useEffect(() => {
+    if (kitMetadata && kitMetadata.step_pattern) {
+      setStepPatternState(kitMetadata.step_pattern);
+    } else {
+      // Default: 4x16 with velocity 0 (off)
+      setStepPatternState(Array.from({ length: 4 }, () => Array(16).fill(0)));
+    }
+  }, [kitMetadata]);
 
   const updateMetadata = async (updates: {
     alias?: string;

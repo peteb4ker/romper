@@ -126,6 +126,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     document.documentElement.classList.toggle("dark", isDark);
   }, []);
 
+  // Refresh local store status
+  const refreshLocalStoreStatus = useCallback(async () => {
+    try {
+      if (window.electronAPI?.getLocalStoreStatus) {
+        const status = await window.electronAPI.getLocalStoreStatus();
+        dispatch({ type: "UPDATE_LOCAL_STORE_STATUS", payload: status });
+      }
+    } catch (error) {
+      console.error("Failed to refresh local store status:", error);
+      dispatch({ type: "UPDATE_LOCAL_STORE_STATUS", payload: null });
+    }
+  }, []);
+
   // Initialize settings on mount
   const initializeSettings = useCallback(async () => {
     dispatch({ type: "INIT_START" });
@@ -178,19 +191,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     [applyTheme],
   );
-
-  // Refresh local store status
-  const refreshLocalStoreStatus = useCallback(async () => {
-    try {
-      if (window.electronAPI?.getLocalStoreStatus) {
-        const status = await window.electronAPI.getLocalStoreStatus();
-        dispatch({ type: "UPDATE_LOCAL_STORE_STATUS", payload: status });
-      }
-    } catch (error) {
-      console.error("Failed to refresh local store status:", error);
-      dispatch({ type: "UPDATE_LOCAL_STORE_STATUS", payload: null });
-    }
-  }, []);
 
   // Clear error state
   const clearError = useCallback(() => {

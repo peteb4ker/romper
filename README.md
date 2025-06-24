@@ -73,7 +73,7 @@ Start fresh! Create a new folder and let Romper help you build your sample libra
 
 - 🎚️ **Drag-and-drop sample assignment** to Rample kit voices (1–4)
 - 📂 **Browse and manage kits** directly on your Rample SD card
-- 🧠 **Kit metadata editing** via `.rample_labels.json` (friendly labels, locked status, role mapping)
+- 🧠 **Kit metadata editing** via database storage (friendly labels, locked status, role mapping)
 - 🎧 **Preview individual samples** using the Web Audio API
 - 🥁 **Kit rhythm previews** using built-in pattern templates (e.g., Boom Bap, Techno, Ambient)
 - 🛡️ **Protect factory kits** from accidental overwrite with locking
@@ -94,14 +94,14 @@ This desktop application is designed to manage sample kits on the SD card used b
 * **SD Card Access**
 
   * Detect and browse the contents of an inserted SD card.
-  * Recognize the standard Rample folder structure (`KITS`, `SAMPLES`, `.rample_labels.json`).
+  * Recognize the Rample kit folder structure (A01, A02, B01, etc.).
 
 * **Kit Management**
 
   * View a grid of kits labeled by bank and slot (e.g., `A0`, `B7`).
   * Select a kit and view its 4 voice assignments.
   * Assign or change samples for each voice.
-  * Rename kits and slots using a metadata file (`.rample_labels.json`).
+  * Rename kits and slots using the integrated database.
   * Kits automatically refreshed if updated on disk
 
 * **Sample Browser**
@@ -127,7 +127,7 @@ This desktop application is designed to manage sample kits on the SD card used b
 
 * **Kit Labeling**
 
-  * Support custom human-readable labels via `.rample_labels.json` sidecar file.
+  * Support custom human-readable labels via database storage.
 
 * **Conflict Detection**
 
@@ -215,13 +215,13 @@ Preview kit playback is driven by rhythm pattern templates like:
 }
 ```
 
-These are matched against voice roles (e.g., `kick`, `snare`, `hat`) inferred from filenames or defined in `.rample_labels.json`.
+These are matched against voice roles (e.g., `kick`, `snare`, `hat`) inferred from filenames or stored in the database.
 
 ---
 
 ## 📝 Kit Metadata Example
 
-Stored in `.rample_labels.json` at the root of the SD card:
+Stored in the local database (.romperdb/romper.sqlite):
 
 ```json
 {

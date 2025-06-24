@@ -10,12 +10,6 @@ import {
 } from "./archiveUtils.js";
 import { insertKitRecord } from "./db/romperDbCore.js";
 import { getKitByName } from "./db/romperDbCore.js";
-import {
-  commitKitPlanHandler,
-  rescanVoiceNames,
-  validateKitPlan,
-  writeKitSamples,
-} from "./kitPlanOps.js";
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
 
 // Utility: recursively copy a directory
@@ -202,10 +196,6 @@ export function registerIpcHandlers(
       data.byteOffset,
       data.byteOffset + data.byteLength,
     );
-  });
-  // --- Register handler ---
-  ipcMain.handle("commit-kit-plan", async (_event, localStorePath, kitName) => {
-    return commitKitPlanHandler(localStorePath, kitName);
   });
   ipcMain.handle("get-user-home-dir", async () => {
     const os = await import("os");

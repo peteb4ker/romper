@@ -16,7 +16,7 @@ The Kit Browser is the main landing view. Kits are organized by bank (A–Z) and
 Each kit card shows:
 
 - The **kit ID** (e.g., `A0`).
-- The kit **name** from `.rample_labels.json`.
+- The kit **name** from the database.
 - A kit type icon (Drum, Loop, Vocal, FX, or Synth).
 - Sample counts for each voice. Empty voices display in red, partially filled voices in light green, and full voices in bold green.
 - Labels of detected voice names.

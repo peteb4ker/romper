@@ -1,4 +1,4 @@
-// Tests for scanner orchestration system
+// Tests for orchestration functions
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -7,13 +7,11 @@ import {
   executeRTFArtistScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
-  type ProgressCallback,
-  type ScannerFunction,
-  ScannerOrchestrator,
-} from "../scanners";
+} from "../orchestrationFunctions";
+import type { ProgressCallback } from "../types";
 
 // Mock the individual scanner operations
-vi.mock("../scannerOperations", () => ({
+vi.mock("../../scannerOperations", () => ({
   scanVoiceInference: vi.fn(),
   scanWAVAnalysis: vi.fn(),
   scanRTFArtist: vi.fn(),
@@ -23,7 +21,7 @@ import {
   scanRTFArtist,
   scanVoiceInference,
   scanWAVAnalysis,
-} from "../scannerOperations";
+} from "../../scannerOperations";
 
 // Global mock progress callback for all tests
 let mockProgressCallback: ProgressCallback;
@@ -31,222 +29,6 @@ let mockProgressCallback: ProgressCallback;
 beforeEach(() => {
   vi.clearAllMocks();
   mockProgressCallback = vi.fn();
-});
-
-describe("ScannerOrchestrator", () => {
-  describe("executeChain", () => {
-    it("executes operations in sequence with progress tracking", async () => {
-      const orchestrator = new ScannerOrchestrator(
-        mockProgressCallback,
-        "continue",
-      );
-
-      const mockOperation1: ScannerFunction<any, any> = vi
-        .fn()
-        .mockResolvedValue({
-          success: true,
-          data: { result: "operation1" },
-        });
-
-      const mockOperation2: ScannerFunction<any, any> = vi
-        .fn()
-        .mockResolvedValue({
-          success: true,
-          data: { result: "operation2" },
-        });
-
-      const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
-      ];
-
-      const result = await orchestrator.executeChain(operations);
-
-      expect(result.success).toBe(true);
-      expect(result.results).toEqual({
-        op1: { result: "operation1" },
-        op2: { result: "operation2" },
-      });
-      expect(result.errors).toEqual([]);
-      expect(result.completedOperations).toBe(2);
-      expect(result.totalOperations).toBe(2);
-
-      // Check progress callbacks
-      expect(mockProgressCallback).toHaveBeenCalledWith(0, 2, "op1");
-      expect(mockProgressCallback).toHaveBeenCalledWith(1, 2, "op2");
-      expect(mockProgressCallback).toHaveBeenCalledWith(2, 2, "Complete");
-    });
-
-    it("handles scanner failure with continue strategy", async () => {
-      const orchestrator = new ScannerOrchestrator(
-        mockProgressCallback,
-        "continue",
-      );
-
-      const mockOperation1: ScannerFunction<any, any> = vi
-        .fn()
-        .mockResolvedValue({
-          success: false,
-          error: "Operation 1 failed",
-        });
-
-      const mockOperation2: ScannerFunction<any, any> = vi
-        .fn()
-        .mockResolvedValue({
-          success: true,
-          data: { result: "operation2" },
-        });
-
-      const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
-      ];
-
-      const result = await orchestrator.executeChain(operations);
-
-      expect(result.success).toBe(false);
-      expect(result.results).toEqual({
-        op2: { result: "operation2" },
-      });
-      expect(result.errors).toEqual([
-        { operation: "op1", error: "Operation 1 failed" },
-      ]);
-      expect(result.completedOperations).toBe(1);
-      expect(result.totalOperations).toBe(2);
-    });
-
-    it("handles scanner failure with stop strategy", async () => {
-      const orchestrator = new ScannerOrchestrator(
-        mockProgressCallback,
-        "stop",
-      );
-
-      const mockOperation1: ScannerFunction<any, any> = vi
-        .fn()
-        .mockResolvedValue({
-          success: false,
-          error: "Operation 1 failed",
-        });
-
-      const mockOperation2: ScannerFunction<any, any> = vi
-        .fn()
-        .mockResolvedValue({
-          success: true,
-          data: { result: "operation2" },
-        });
-
-      const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
-      ];
-
-      const result = await orchestrator.executeChain(operations);
-
-      expect(result.success).toBe(false);
-      expect(result.results).toEqual({});
-      expect(result.errors).toEqual([
-        { operation: "op1", error: "Operation 1 failed" },
-      ]);
-      expect(result.completedOperations).toBe(0);
-      expect(result.totalOperations).toBe(2);
-
-      // Operation 2 should not have been called
-      expect(mockOperation2).not.toHaveBeenCalled();
-    });
-
-    it("handles unexpected exceptions with continue strategy", async () => {
-      const orchestrator = new ScannerOrchestrator(
-        mockProgressCallback,
-        "continue",
-      );
-
-      const mockOperation1: ScannerFunction<any, any> = vi
-        .fn()
-        .mockRejectedValue(new Error("Unexpected error"));
-
-      const mockOperation2: ScannerFunction<any, any> = vi
-        .fn()
-        .mockResolvedValue({
-          success: true,
-          data: { result: "operation2" },
-        });
-
-      const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
-      ];
-
-      const result = await orchestrator.executeChain(operations);
-
-      expect(result.success).toBe(false);
-      expect(result.results).toEqual({
-        op2: { result: "operation2" },
-      });
-      expect(result.errors).toEqual([
-        { operation: "op1", error: "Unexpected error" },
-      ]);
-      expect(result.completedOperations).toBe(1);
-      expect(result.totalOperations).toBe(2);
-    });
-
-    it("handles unexpected exceptions with stop strategy", async () => {
-      const orchestrator = new ScannerOrchestrator(
-        mockProgressCallback,
-        "stop",
-      );
-
-      const mockOperation1: ScannerFunction<any, any> = vi
-        .fn()
-        .mockRejectedValue(new Error("Unexpected error"));
-
-      const mockOperation2: ScannerFunction<any, any> = vi
-        .fn()
-        .mockResolvedValue({
-          success: true,
-          data: { result: "operation2" },
-        });
-
-      const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
-      ];
-
-      const result = await orchestrator.executeChain(operations);
-
-      expect(result.success).toBe(false);
-      expect(result.results).toEqual({});
-      expect(result.errors).toEqual([
-        { operation: "op1", error: "Unexpected error" },
-      ]);
-      expect(result.completedOperations).toBe(0);
-      expect(result.totalOperations).toBe(2);
-
-      // Operation 2 should not have been called
-      expect(mockOperation2).not.toHaveBeenCalled();
-    });
-
-    it("works without progress callback", async () => {
-      const orchestrator = new ScannerOrchestrator();
-
-      const mockOperation: ScannerFunction<any, any> = vi
-        .fn()
-        .mockResolvedValue({
-          success: true,
-          data: { result: "operation" },
-        });
-
-      const operations = [
-        { name: "op", scanner: mockOperation, input: { test: "input" } },
-      ];
-
-      const result = await orchestrator.executeChain(operations);
-
-      expect(result.success).toBe(true);
-      expect(result.results).toEqual({
-        op: { result: "operation" },
-      });
-    });
-  });
 });
 
 describe("executeFullKitScan", () => {
@@ -427,6 +209,33 @@ describe("executeFullKitScan", () => {
       fileReader: customFileReader,
     });
   });
+
+  it("handles empty kit data", async () => {
+    vi.mocked(scanVoiceInference).mockReturnValue({
+      success: false,
+      error: "No voice types could be inferred from filenames",
+    });
+
+    vi.mocked(scanRTFArtist).mockReturnValue({
+      success: false,
+      error: "No valid RTF files found",
+    });
+
+    const kitData = {
+      samples: {},
+      wavFiles: [],
+      rtfFiles: [],
+    };
+
+    const result = await executeFullKitScan(
+      kitData,
+      mockProgressCallback,
+      "stop",
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.completedOperations).toBe(0); // Should stop at first failure
+  });
 });
 
 describe("executeVoiceInferenceScan", () => {
@@ -583,6 +392,20 @@ describe("executeWAVAnalysisScan", () => {
       fileReader: customFileReader,
     });
   });
+
+  it("handles empty WAV files array", async () => {
+    const result = await executeWAVAnalysisScan(
+      [],
+      undefined,
+      mockProgressCallback,
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.results.wavAnalysis).toBeUndefined();
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].operation).toBe("wavAnalysis");
+    expect(result.errors[0].error).toContain("failed for all files");
+  });
 });
 
 describe("executeRTFArtistScan", () => {
@@ -618,5 +441,18 @@ describe("executeRTFArtistScan", () => {
       { operation: "rtfArtist", error: "No valid RTF files found" },
     ]);
     expect(result.completedOperations).toBe(0);
+  });
+
+  it("handles empty RTF files array", async () => {
+    vi.mocked(scanRTFArtist).mockReturnValue({
+      success: false,
+      error: "No valid RTF files found",
+    });
+
+    const result = await executeRTFArtistScan([], mockProgressCallback);
+
+    expect(result.success).toBe(false);
+    expect(result.results.rtfArtist).toBeUndefined();
+    expect(result.errors).toHaveLength(1);
   });
 });

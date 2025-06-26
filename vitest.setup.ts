@@ -55,7 +55,7 @@ beforeAll(() => {
         },
       }),
       updateKitMetadata: async (dbDir, kitName, updates) => ({ success: true }),
-      updateVoiceAlias: async (dbDir, kitName, voiceNumber, alias) => ({
+      updateVoiceAlias: async (dbDir, kitId, voiceNumber, alias) => ({
         success: true,
       }),
       updateStepPattern: async (dbDir, kitName, pattern) => ({ success: true }),

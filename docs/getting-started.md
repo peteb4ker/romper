@@ -18,10 +18,11 @@ For contributors who want to work on the codebase, see
 ## Loading Your SD Card
 
 1. Insert the Rample SD card into your computer.
-2. When Romper starts, choose **Load from SD Card**. The app scans the Rample kit structure:
-   - Kit folders (A01, A02, B01, etc.)
-   - Sample files within each kit folder
-3. Existing kits and samples are imported into the local database and appear in the **Kit Browser**.
+2. When Romper starts, choose **Load from SD Card**. The app scans the standard Rample structure:
+   - `KITS/`
+   - `SAMPLES/`
+   - `.rample_labels.json`
+3. Existing kits, samples, and metadata appear in the **Kit Browser**.
 
 ## Creating a New Kit Plan
 

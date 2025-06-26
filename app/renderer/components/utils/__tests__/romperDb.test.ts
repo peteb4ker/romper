@@ -59,7 +59,7 @@ describe("romperDb", () => {
 
   it("should call insertSample and return sampleId", async () => {
     const sample = {
-      kit_name: "test_kit",
+      kit_id: 1,
       filename: "kick.wav",
       slot_number: 1,
       is_stereo: false,
@@ -80,7 +80,7 @@ describe("romperDb", () => {
     }));
     await expect(
       insertSample("/fail/path", {
-        kit_name: "test_kit",
+        kit_id: 1,
         filename: "fail.wav",
         slot_number: 1,
         is_stereo: false,

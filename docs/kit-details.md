@@ -37,7 +37,7 @@ A four‑row, 16‑step grid appears below the kit details:
 
 - Click steps or use the arrow keys and spacebar to toggle them.
 - The grid plays back at a fixed tempo when you press **Play**.
-- Patterns are saved to the database per kit.
+- Patterns are saved to `.rample_labels.json` per kit.
 
 ## Locking Kits
 

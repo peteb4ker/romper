@@ -37,6 +37,16 @@ vi.mock("path", () => {
   };
   return { ...mock, default: mock };
 });
+vi.mock("../rampleLabels", () => ({
+  readRampleLabels: vi.fn(() => ({ kits: {} })),
+  writeRampleLabels: vi.fn(),
+}));
+vi.mock("../kitPlanOps", () => ({
+  validateKitPlan: vi.fn(() => []),
+  writeKitSamples: vi.fn(),
+  rescanVoiceNames: vi.fn(() => ({ 1: "Kick", 2: "Snare" })),
+  commitKitPlanHandler: vi.fn(() => ({ success: true })),
+}));
 vi.mock("../../../shared/dist/kitUtilsShared.js", () => ({
   groupSamplesByVoice: vi.fn(() => ({ 1: ["kick.wav"], 2: ["snare.wav"] })),
   inferVoiceTypeFromFilename: vi.fn(() => "Kick"),
@@ -71,6 +81,20 @@ describe("registerIpcHandlers", () => {
     expect(result).toContain("A1");
     expect(result).toContain("B2");
     expect(result).not.toContain("notakit");
+  });
+
+  it("registers rescan-all-voice-names and updates labels", async () => {
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    const writeRampleLabels = (await import("../rampleLabels"))
+      .writeRampleLabels;
+    registerIpcHandlers({}, {});
+    const result = await ipcMainHandlers["rescan-all-voice-names"](
+      {},
+      "/mock/sd",
+      ["A1"],
+    );
+    expect(writeRampleLabels).toHaveBeenCalled();
+    expect(result).toBe(true);
   });
 
   it("registers ensure-dir and creates directory", async () => {

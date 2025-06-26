@@ -13,7 +13,7 @@ import {
 } from "../databaseScanning";
 
 // Mock the scanner orchestrator
-vi.mock("../scannerOrchestrator", () => ({
+vi.mock("../scanners", () => ({
   executeFullKitScan: vi.fn(),
   executeVoiceInferenceScan: vi.fn(),
   executeWAVAnalysisScan: vi.fn(),
@@ -25,7 +25,7 @@ import {
   executeRTFArtistScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
-} from "../scannerOrchestrator";
+} from "../scanners";
 
 describe("databaseScanning", () => {
   // Mock database operations
@@ -135,7 +135,7 @@ describe("databaseScanning", () => {
       const result = await scanKitToDatabase("/mock/db", mockKitData);
 
       expect(result.success).toBe(false);
-      expect(result.scannedKits).toBe(0); // No kits scanned successfully due to errors
+      expect(result.scannedKits).toBe(0); // Kit not fully scanned due to WAV analysis failure
       expect(result.scannedVoices).toBe(1);
       expect(result.scannedWavFiles).toBe(0);
       expect(result.scannedRtfFiles).toBe(1);
@@ -335,11 +335,7 @@ describe("databaseScanning", () => {
       mockDbOps.updateVoiceAlias.mockResolvedValue({ success: true });
 
       const samples = { 1: ["kick.wav"], 2: ["snare.wav"], 3: ["hat.wav"] };
-      const result = await scanVoiceNamesToDatabase(
-        "/mock/db",
-        "Test Kit",
-        samples,
-      );
+      const result = await scanVoiceNamesToDatabase("/mock/db", 1, samples);
 
       expect(result.success).toBe(true);
       expect(result.scannedVoices).toBe(3);
@@ -347,19 +343,19 @@ describe("databaseScanning", () => {
 
       expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
         "/mock/db",
-        "Test Kit",
+        1,
         1,
         "Kick",
       );
       expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
         "/mock/db",
-        "Test Kit",
+        1,
         2,
         "Snare",
       );
       expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
         "/mock/db",
-        "Test Kit",
+        1,
         3,
         "Hat",
       );
@@ -376,7 +372,7 @@ describe("databaseScanning", () => {
         totalOperations: 1,
       });
 
-      const result = await scanVoiceNamesToDatabase("/mock/db", "Test Kit", {});
+      const result = await scanVoiceNamesToDatabase("/mock/db", 1, {});
 
       expect(result.success).toBe(false);
       expect(result.scannedVoices).toBe(0);

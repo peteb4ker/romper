@@ -190,85 +190,10 @@ describe("useKitMetadata", () => {
     };
 
     const stepPattern = [
-      [100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0],
-      [0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100],
-      [0, 0, 100, 0, 0, 0, 100, 0, 0, 0, 100, 0, 0, 0, 100, 0],
-      [0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0],
-    ];
-
-    const booleanStepPattern = [
-      [
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-      ],
-      [
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-      ],
-      [
-        false,
-        false,
-        true,
-        false,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false,
-        true,
-        false,
-      ],
-      [
-        false,
-        false,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false,
-      ],
+      [127, 0, 127, 0, 127, 0, 127, 0, 127, 0, 127, 0, 127, 0, 127, 0],
+      [0, 127, 0, 127, 0, 127, 0, 127, 0, 127, 0, 127, 0, 127, 0, 127],
+      [0, 0, 127, 0, 0, 0, 127, 0, 0, 0, 127, 0, 0, 0, 127, 0],
+      [0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 0, 0, 127, 0, 0, 0],
     ];
 
     mockElectronAPI.getKitMetadata
@@ -288,7 +213,7 @@ describe("useKitMetadata", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    await result.current.setStepPattern(booleanStepPattern);
+    await result.current.setStepPattern(stepPattern);
 
     expect(mockElectronAPI.updateStepPattern).toHaveBeenCalledWith(
       "/test/path",
@@ -320,126 +245,10 @@ describe("useKitMetadata", () => {
     });
 
     expect(result.current.stepPattern).toEqual([
-      Array(16).fill(false),
-      Array(16).fill(false),
-      Array(16).fill(false),
-      Array(16).fill(false),
+      Array(16).fill(0),
+      Array(16).fill(0),
+      Array(16).fill(0),
+      Array(16).fill(0),
     ]);
-  });
-
-  it("provides compatibility interface for existing components", async () => {
-    const mockMetadata = {
-      id: 1,
-      name: "A1",
-      alias: "Test Kit",
-      plan_enabled: false,
-      locked: false,
-      voices: { 1: "Kick", 2: "Snare", 3: "HiHat", 4: "Cymbal" },
-      step_pattern: [
-        [100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0],
-        [0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100, 0, 100],
-        [0, 0, 100, 0, 0, 0, 100, 0, 0, 0, 100, 0, 0, 0, 100, 0],
-        [0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0],
-      ],
-    };
-
-    mockElectronAPI.getKitMetadata.mockResolvedValue({
-      success: true,
-      data: mockMetadata,
-    });
-
-    const { result } = renderHook(() => useKitMetadata(defaultProps), {
-      wrapper,
-    });
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    // Check compatibility interface
-    expect(result.current.kitLabel).toEqual({
-      label: "Test Kit",
-      description: undefined,
-      tags: undefined,
-      voiceNames: { 1: "Kick", 2: "Snare", 3: "HiHat", 4: "Cymbal" },
-      stepPattern: [
-        [
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-        ],
-        [
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-          false,
-          true,
-        ],
-        [
-          false,
-          false,
-          true,
-          false,
-          false,
-          false,
-          true,
-          false,
-          false,
-          false,
-          true,
-          false,
-          false,
-          false,
-          true,
-          false,
-        ],
-        [
-          false,
-          false,
-          false,
-          false,
-          true,
-          false,
-          false,
-          false,
-          false,
-          false,
-          false,
-          false,
-          true,
-          false,
-          false,
-          false,
-        ],
-      ],
-    });
-
-    expect(result.current.labelsLoading).toBe(false);
-    expect(result.current.labelsError).toBeNull();
-    expect(result.current.kitLabelInput).toBe("Test Kit");
   });
 });

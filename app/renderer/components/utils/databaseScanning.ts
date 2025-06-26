@@ -6,7 +6,7 @@ import {
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
   type ProgressCallback,
-} from "./scannerOrchestrator";
+} from "./scanners";
 
 // Types for database operations (will be implemented via IPC)
 interface VoiceUpdateResult {
@@ -157,7 +157,7 @@ export async function scanKitToDatabase(
       // For now, we just count the RTF files processed
     }
 
-    // Include any orchestration errors
+    // Include any orchestration errors with their original operation names
     result.errors.push(...scanResult.errors);
 
     if (scanResult.errors.length > 0) {

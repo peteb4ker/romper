@@ -111,7 +111,7 @@ The Romper DB is a SQLite database with the following schema (no separate plan t
 
 ### samples
 - `id` INTEGER PRIMARY KEY AUTOINCREMENT
-- `kit_name` TEXT (FK to kits.name)
+- `kit_id` INTEGER (FK to kits.id)
 - `filename` TEXT NOT NULL
 - `slot_number` INTEGER NOT NULL CHECK(slot_number BETWEEN 1 AND 12)
 - `is_stereo` BOOLEAN NOT NULL DEFAULT 0

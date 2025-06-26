@@ -43,9 +43,11 @@ describe("preload/index.tsx", () => {
         getSetting: expect.any(Function),
         setSetting: expect.any(Function),
         readSettings: expect.any(Function),
+        getLocalStoreStatus: expect.any(Function),
         createKit: expect.any(Function),
         copyKit: expect.any(Function),
         listFilesInRoot: expect.any(Function),
+        closeApp: expect.any(Function),
         playSample: expect.any(Function),
         stopSample: expect.any(Function),
         onSamplePlaybackEnded: expect.any(Function),
@@ -56,6 +58,14 @@ describe("preload/index.tsx", () => {
         getAllKits: expect.any(Function),
         updateVoiceAlias: expect.any(Function),
         updateStepPattern: expect.any(Function),
+        getUserHomeDir: expect.any(Function),
+        selectLocalStorePath: expect.any(Function),
+        downloadAndExtractArchive: expect.any(Function),
+        ensureDir: expect.any(Function),
+        copyDir: expect.any(Function),
+        createRomperDb: expect.any(Function),
+        insertKit: expect.any(Function),
+        insertSample: expect.any(Function),
       }),
     );
   });
@@ -452,8 +462,13 @@ describe("preload/index.tsx", () => {
       ),
     ).rejects.toThrow("Download failed");
 
-    // The current implementation doesn't clean up listeners on error
-    // This is a known limitation - listeners are only removed by removeAllListeners on setup
+    // Verify listeners were set up
+    expect(mockIpcRenderer.removeAllListeners).toHaveBeenCalledWith(
+      "archive-progress",
+    );
+    expect(mockIpcRenderer.removeAllListeners).toHaveBeenCalledWith(
+      "archive-error",
+    );
   });
 
   it("calls ipcRenderer.invoke for copyDir", async () => {
@@ -520,7 +535,7 @@ describe("preload/index.tsx", () => {
     expect(electronAPICall).toBeDefined();
     const api = electronAPICall[1];
     const sample = {
-      kit_name: "test_kit",
+      kit_id: 1,
       filename: "kick.wav",
       slot_number: 0,
       is_stereo: false,

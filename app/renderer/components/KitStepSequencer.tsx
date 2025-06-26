@@ -10,8 +10,8 @@ const workerUrl = new URL("./kitStepSequencerWorker.ts", import.meta.url);
 interface KitStepSequencerProps {
   samples: { [voice: number]: string[] };
   onPlaySample: (voice: number, sample: string) => void;
-  stepPattern: boolean[][] | null;
-  setStepPattern: (pattern: boolean[][]) => void;
+  stepPattern: number[][] | null;
+  setStepPattern: (pattern: number[][]) => void;
   sequencerOpen: boolean;
   setSequencerOpen: (open: boolean) => void;
   gridRef?: React.RefObject<HTMLDivElement>;
@@ -80,7 +80,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = ({
     if (lastStepRef.current === currentSeqStep) return; // Only trigger on step change
     lastStepRef.current = currentSeqStep;
     for (let voiceIdx = 0; voiceIdx < NUM_VOICES; voiceIdx++) {
-      const isStepActive = stepPattern[voiceIdx][currentSeqStep];
+      const isStepActive = stepPattern[voiceIdx][currentSeqStep] > 0; // Check if velocity > 0
       const sample = samples[voiceIdx + 1]?.[0];
       if (isStepActive && sample) {
         onPlaySample(voiceIdx + 1, sample);
@@ -93,7 +93,11 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = ({
     (voiceIdx: number, stepIdx: number) => {
       if (!stepPattern) return;
       const newPattern = stepPattern.map((row, v) =>
-        v === voiceIdx ? row.map((on, s) => (s === stepIdx ? !on : on)) : row,
+        v === voiceIdx
+          ? row.map((velocity, s) =>
+              s === stepIdx ? (velocity > 0 ? 0 : 127) : velocity,
+            )
+          : row,
       );
       setStepPattern(newPattern);
     },
@@ -122,10 +126,10 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = ({
   );
 
   const [localStepPattern, setLocalStepPattern] = React.useState<
-    boolean[][] | null
+    number[][] | null
   >(null);
 
-  // Defensive: ensure stepPattern is always a valid 4x16 boolean array
+  // Defensive: ensure stepPattern is always a valid 4x16 velocity array
   const safeStepPattern = React.useMemo(() => {
     if (
       !stepPattern ||
@@ -133,9 +137,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = ({
       stepPattern.length !== NUM_VOICES ||
       stepPattern.some((row) => !Array.isArray(row) || row.length !== NUM_STEPS)
     ) {
-      return Array.from({ length: NUM_VOICES }, () =>
-        Array(NUM_STEPS).fill(false),
-      );
+      return Array.from({ length: NUM_VOICES }, () => Array(NUM_STEPS).fill(0));
     }
     return stepPattern;
   }, [stepPattern]);
@@ -252,7 +254,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = ({
                     {voiceIdx + 1}
                   </span>
                   {Array.from({ length: NUM_STEPS }).map((_, stepIdx) => {
-                    const isOn = safeStepPattern[voiceIdx][stepIdx];
+                    const isOn = safeStepPattern[voiceIdx][stepIdx] > 0; // Check if velocity > 0
                     const isPlayhead =
                       isSeqPlaying && currentSeqStep === stepIdx;
                     const isFocused =

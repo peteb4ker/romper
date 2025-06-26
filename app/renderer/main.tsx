@@ -1,6 +1,6 @@
 import "./styles/index.css";
 
-import React from "react";
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import {
   HashRouter as Router,
@@ -15,6 +15,7 @@ import MessageDisplay from "./components/MessageDisplay";
 import { MessageDisplayContext } from "./components/MessageDisplayContext";
 import StatusBar from "./components/StatusBar";
 import { SettingsProvider } from "./utils/SettingsContext";
+import { applyTheme } from "./utils/settingsManager";
 import AboutView from "./views/AboutView";
 import KitsView from "./views/KitsView";
 
@@ -25,7 +26,10 @@ declare global {
 }
 
 const App = () => {
-  // Theme is now automatically applied by SettingsProvider
+  useEffect(() => {
+    applyTheme(); // Apply the saved theme on app load
+  }, []);
+
   const messageDisplay = useMessageDisplay();
 
   return (

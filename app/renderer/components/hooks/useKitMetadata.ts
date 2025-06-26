@@ -217,14 +217,9 @@ export function useKitMetadata(props: KitDetailsProps) {
     error,
     metadataChanged,
     setMetadataChanged,
-    stepPattern: stepPattern
-      ? stepPattern.map((voice) => voice.map((v) => v > 0))
-      : null, // Convert velocity to boolean for UI
-    setStepPattern: async (booleanPattern: boolean[][]) => {
-      // Convert boolean pattern to velocity pattern (true -> 100, false -> 0)
-      const velocityPattern = booleanPattern.map((voice) =>
-        voice.map((step) => (step ? 100 : 0)),
-      );
+    stepPattern, // Return raw velocity values for direct access
+    setStepPattern: async (velocityPattern: number[][]) => {
+      // Accept velocity pattern directly
       await updateStepPattern(velocityPattern);
     },
     // Compatibility methods for existing components
@@ -234,9 +229,7 @@ export function useKitMetadata(props: KitDetailsProps) {
           description: undefined, // Not stored in current schema
           tags: undefined, // Not stored in current schema
           voiceNames: kitMetadata.voices,
-          stepPattern: stepPattern
-            ? stepPattern.map((voice) => voice.map((v) => v > 0))
-            : undefined, // Convert velocity to boolean
+          stepPattern: stepPattern, // Use velocity values directly
         }
       : null,
     setKitLabel: setKitMetadata,

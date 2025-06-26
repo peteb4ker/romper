@@ -40,6 +40,11 @@
 - `electron/main/db/__tests__/romperDbCore.test.ts` - Integration and edge-case tests for DB creation, overwrite, validation, and error handling. Updated with comprehensive tests for step pattern BLOB encoding/decoding functions and new wav metadata fields in samples.
 - `electron/main/dbIpcHandlers.ts` - Main process IPC handlers for database operations, updated with new wav metadata fields for sample insertion.
 - `electron/preload/index.ts` - Electron preload script for secure IPC communication, updated insertSample interface to include wav_bitrate and wav_sample_rate fields.
+- `app/renderer/components/utils/scanners/__tests__/voiceInferenceScanner.test.ts` - Unit tests for voice name inference from sample filenames.
+- `app/renderer/components/utils/scanners/__tests__/wavAnalysisScanner.test.ts` - Unit tests for WAV file analysis including bitrate, sample rate, and stereo detection.
+- `app/renderer/components/utils/scanners/__tests__/rtfArtistScanner.test.ts` - Unit tests for RTF artist metadata extraction from filenames.
+- `app/renderer/components/utils/scanners/__tests__/orchestrator.test.ts` - Unit tests for scanner chain orchestration and error handling.
+- `app/renderer/components/utils/scanners/__tests__/orchestrationFunctions.test.ts` - Unit tests for high-level scanning orchestration functions.
 - `shared/kitUtilsShared.ts` - Shared kit utility logic for both app and electron workspaces.
 - `shared/__tests__/kitUtilsShared.test.ts` - Unit tests for shared kit utility logic.
 
@@ -101,7 +106,7 @@
       - [x] 2.10.1.3 Add step_pattern field for step sequencer use
       - [x] 2.10.1.4 Add wav_bitrate, wav_sample_rate, is_stereo fields to samples table
       - [x] 2.10.1.5 Update database schema documentation in docs/romper-db.md
-    - [ ] 2.10.2 Implement core scanning operations as composable functions
+    - [x] 2.10.2 Implement core scanning operations as composable functions
       - [x] 2.10.2.1 Create voice name inference scanner (from existing function)
       - [x] 2.10.2.2 Create WAV file analysis scanner (bitrate, sample rate, stereo detection)
       - [x] 2.10.2.3 Create RTF artist metadata scanner (from existing function) - Extract artist names from RTF filenames (e.g., "A - Artist Name.rtf") and update the artist field on all kits in that bank
@@ -111,7 +116,7 @@
       - [x] 2.10.3.1 Update scanning logic to store results in database instead of JSON
       - [x] 2.10.3.2 Remove JSON file reading/writing code
       - [x] 2.10.3.3 Update all components to read metadata from database
-    - [ ] 2.10.4 Unit tests for core scanning operations and database storage
+    - [x] 2.10.4 Unit tests for core scanning operations and database storage
   - [ ] 2.17 Integrate scanning operations into wizard initialization
     - [ ] 2.17.1 Add automatic scanning as final step in wizard initialization
       - [ ] 2.17.1.1 After database records created, run scanning operation chain

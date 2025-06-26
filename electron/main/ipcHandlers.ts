@@ -197,6 +197,24 @@ export function registerIpcHandlers(
       data.byteOffset + data.byteLength,
     );
   });
+  ipcMain.handle("read-file", async (_event, filePath: string) => {
+    try {
+      const data = fs.readFileSync(filePath);
+      return {
+        success: true,
+        data: data.buffer.slice(
+          data.byteOffset,
+          data.byteOffset + data.byteLength,
+        ),
+      };
+    } catch (error: any) {
+      console.error("[Main] Failed to read file:", filePath, error);
+      return {
+        success: false,
+        error: error.message || "Failed to read file",
+      };
+    }
+  });
   ipcMain.handle("get-user-home-dir", async () => {
     const os = await import("os");
     return os.homedir();

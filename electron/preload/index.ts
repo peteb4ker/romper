@@ -159,6 +159,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[Preload] getAudioBuffer invoked", filePath);
     return ipcRenderer.invoke("get-audio-buffer", filePath);
   },
+  readFile: (filePath: string) => {
+    console.log("[Preload] readFile invoked", filePath);
+    return ipcRenderer.invoke("read-file", filePath);
+  },
   // Database methods for kit metadata (replacing JSON file dependency)
   getKitMetadata: (dbDir: string, kitName: string) => {
     console.log("[Preload] getKitMetadata invoked", dbDir, kitName);

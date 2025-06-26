@@ -1,4 +1,9 @@
-<!-- filepath: /Users/pete/workspace/romper/tasks/tasks-plans-PRD.md -->
+<!-- fi- `app/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now supports progress/error state for Squarp.net archive initialization, handles blank folder (no files copied, only folder created), and SD card folder validation/copy logic. Updated to only set targetPath after source selection. **Extended with automatic scanning integration as final step in wizard initialization, including voice inference, WAV analysis, and RTF artist scanning with progress reporting and graceful error handling.**
+- `app/renderer/components/hooks/__tests__/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook, now cover progress, error handling, blank folder initialization, and SD card folder validation/copy. Updated to expect targetPath to be empty on mount. **Extended with comprehensive tests for scanning integration including successful scanning, error handling, and empty kit scenarios.**
+- `app/renderer/electron.d.ts` - TypeScript definitions for Electron IPC, updated with local store status interface. **Extended with readFile method for scanner file access during wizard initialization.**
+- `electron/main/ipcHandlers.ts` - Main process IPC handlers, now uses shared validation logic for local store status checks. **Extended with readFile handler for secure file access during scanning operations.**
+- `electron/preload/index.ts` - Electron preload script for secure IPC communication, updated insertSample interface to include wav_bitrate and wav_sample_rate fields. **Extended with readFile method exposure for scanner operations.**
+- `vitest.setup.ts` - Centralized test setup with mocks and utilities. **Extended with readFile mock for scanner testing.**path: /Users/pete/workspace/romper/tasks/tasks-plans-PRD.md -->
 ## Relevant Files
 
 - `app/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI).
@@ -117,13 +122,13 @@
       - [x] 2.10.3.2 Remove JSON file reading/writing code
       - [x] 2.10.3.3 Update all components to read metadata from database
     - [x] 2.10.4 Unit tests for core scanning operations and database storage
-  - [ ] 2.17 Integrate scanning operations into wizard initialization
-    - [ ] 2.17.1 Add automatic scanning as final step in wizard initialization
-      - [ ] 2.17.1.1 After database records created, run scanning operation chain
-      - [ ] 2.17.1.2 Chain: voice inference → WAV analysis → RTF artist scan
-      - [ ] 2.17.1.3 Show scanning progress on existing wizard progress bar
-      - [ ] 2.17.1.4 Handle partial failures gracefully (continue chain on errors)
-    - [ ] 2.17.2 Unit tests for wizard scanning integration
+  - [x] 2.17 Integrate scanning operations into wizard initialization
+    - [x] 2.17.1 Add automatic scanning as final step in wizard initialization
+      - [x] 2.17.1.1 After database records created, run scanning operation chain
+      - [x] 2.17.1.2 Chain: voice inference → WAV analysis → RTF artist scan
+      - [x] 2.17.1.3 Show scanning progress on existing wizard progress bar
+      - [x] 2.17.1.4 Handle partial failures gracefully (continue chain on errors)
+    - [x] 2.17.2 Unit tests for wizard scanning integration
   - [ ] 2.18 Update manual scanning functionality
     - [ ] 2.18.1 Keep existing "Scan Kit" button in KitDetails page using new operations
     - [ ] 2.18.2 Keep existing "Scan All Kits" option in KitBrowser using new operations

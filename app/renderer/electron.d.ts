@@ -132,6 +132,11 @@ export interface ElectronAPI {
     isValid: boolean;
     error?: string | null;
   }>;
+  readFile?: (filePath: string) => Promise<{
+    success: boolean;
+    data?: ArrayBuffer;
+    error?: string;
+  }>;
   openExternal?: (url: string) => void;
 }
 

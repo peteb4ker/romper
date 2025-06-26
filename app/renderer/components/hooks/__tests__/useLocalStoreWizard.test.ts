@@ -3,6 +3,14 @@ import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useLocalStoreWizard } from "../useLocalStoreWizard";
+import { executeFullKitScan } from "../../utils/scanners/orchestrationFunctions";
+
+// Mock the scanner orchestration functions
+vi.mock("../../utils/scanners/orchestrationFunctions", () => ({
+  executeFullKitScan: vi.fn(),
+}));
+
+const mockExecuteFullKitScan = vi.mocked(executeFullKitScan);
 
 // Replace all usage of waitFor with manual polling for async state
 function waitForAsync(fn: () => boolean, timeout = 1000) {
@@ -19,6 +27,25 @@ function waitForAsync(fn: () => boolean, timeout = 1000) {
 
 describe("useLocalStoreWizard", () => {
   beforeEach(() => {
+    // Clear all mocks
+    vi.clearAllMocks();
+
+    // Set up scanner mock with default successful response
+    mockExecuteFullKitScan.mockResolvedValue({
+      success: true,
+      results: {
+        voiceInference: {
+          voiceNames: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
+        },
+        rtfArtist: {
+          bankArtists: { "A0": "Test Artist", "B12": "Another Artist" },
+        },
+      },
+      errors: [],
+      completedOperations: 3,
+      totalOperations: 3,
+    });
+
     // DRY: Always mock all required electronAPI methods for all tests
     // @ts-ignore
     window.electronAPI = {
@@ -38,8 +65,15 @@ describe("useLocalStoreWizard", () => {
       ),
       listFilesInRoot: vi.fn(async (path) => []),
       copyDir: vi.fn(async (src, dest) => {}),
-      insertKit: vi.fn(async (_dbDir, _kit) => 1),
-      insertSample: vi.fn(async (_dbDir, _sample) => 1),
+      insertKit: vi.fn(async (_dbDir, _kit) => ({ success: true })),
+      insertSample: vi.fn(async (_dbDir, _sample) => ({ success: true })),
+      updateKitMetadata: vi.fn(async (_dbDir, _kitName, _updates) => ({
+        success: true,
+      })),
+      readFile: vi.fn(async (_filePath) => ({
+        success: true,
+        data: new ArrayBuffer(1024),
+      })),
     };
   });
 
@@ -264,8 +298,8 @@ describe("useLocalStoreWizard", () => {
       .mockImplementationOnce(async () => ["A0"]) // local store
       .mockImplementation(async () => []); // kit folder contents
     window.electronAPI.copyDir = vi.fn();
-    window.electronAPI.insertKit = vi.fn(async () => 1);
-    window.electronAPI.insertSample = vi.fn(async () => 1);
+    window.electronAPI.insertKit = vi.fn(async () => ({ success: true }));
+    window.electronAPI.insertSample = vi.fn(async () => ({ success: true }));
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -290,8 +324,8 @@ describe("useLocalStoreWizard", () => {
       .mockImplementation(async () => []); // kit folder contents
     const copyDir = vi.fn();
     window.electronAPI.copyDir = copyDir;
-    window.electronAPI.insertKit = vi.fn(async () => 1);
-    window.electronAPI.insertSample = vi.fn(async () => 1);
+    window.electronAPI.insertKit = vi.fn(async () => ({ success: true }));
+    window.electronAPI.insertSample = vi.fn(async () => ({ success: true }));
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -352,8 +386,8 @@ describe("useLocalStoreWizard", () => {
       return [];
     });
     window.electronAPI.copyDir = vi.fn(async () => {});
-    window.electronAPI.insertKit = vi.fn(async () => 1);
-    window.electronAPI.insertSample = vi.fn(async () => 1);
+    window.electronAPI.insertKit = vi.fn(async () => ({ success: true }));
+    window.electronAPI.insertSample = vi.fn(async () => ({ success: true }));
     // Use the new progress callback for testability
     const { result } = renderHook(() =>
       useLocalStoreWizard((p) => progressEvents.push(p)),
@@ -370,5 +404,151 @@ describe("useLocalStoreWizard", () => {
     expect(progressEvents.some((e) => e.phase === "Writing to database")).toBe(
       true,
     );
+  });
+
+  it("runs scanning operations after database creation", async () => {
+    const progressEvents: any[] = [];
+    window.electronAPI.listFilesInRoot = vi.fn(async (path) => {
+      if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
+      if (path === "/mock/home/Documents/romper/A0")
+        return ["1kick.wav", "2snare.wav", "artist.rtf"];
+      if (path === "/mock/home/Documents/romper/B12")
+        return ["1hat.wav", "3tom.wav"];
+      return [];
+    });
+
+    const { result } = renderHook(() =>
+      useLocalStoreWizard((p) => progressEvents.push(p)),
+    );
+
+    await waitForAsync(() => result.current.defaultPath !== "");
+
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("blank");
+    });
+
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    // Verify scanning was called for each kit
+    expect(mockExecuteFullKitScan).toHaveBeenCalledTimes(2);
+
+    // Verify the scanning input for the first kit (A0)
+    expect(mockExecuteFullKitScan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        samples: { 1: ["1kick.wav"], 2: ["2snare.wav"], 3: [], 4: [] },
+        wavFiles: [
+          "/mock/home/Documents/romper/A0/1kick.wav",
+          "/mock/home/Documents/romper/A0/2snare.wav",
+        ],
+        rtfFiles: ["/mock/home/Documents/romper/A0/artist.rtf"],
+        fileReader: expect.any(Function),
+      }),
+      undefined,
+      "continue",
+    );
+
+    // Verify kit metadata was updated
+    expect(window.electronAPI.updateKitMetadata).toHaveBeenCalledWith(
+      "/mock/home/Documents/romper/.romperdb",
+      "A0",
+      expect.objectContaining({
+        artist: "Test Artist",
+        tags: ["kick", "snare", "hat", "tom"],
+      }),
+    );
+
+    // Verify scanning progress was reported
+    expect(progressEvents.some((e) => e.phase === "Scanning kits for metadata...")).toBe(
+      true,
+    );
+  });
+
+  it("handles scanning errors gracefully and continues with other kits", async () => {
+    // Set up mock to fail for one kit but succeed for another
+    mockExecuteFullKitScan
+      .mockResolvedValueOnce({
+        success: false,
+        results: {},
+        errors: [{ operation: "voiceInference", error: "Mock error" }],
+        completedOperations: 0,
+        totalOperations: 3,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        results: {
+          rtfArtist: { bankArtists: { "B12": "Another Artist" } },
+        },
+        errors: [],
+        completedOperations: 3,
+        totalOperations: 3,
+      });
+
+    window.electronAPI.listFilesInRoot = vi.fn(async (path) => {
+      if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
+      if (path === "/mock/home/Documents/romper/A0") return ["1kick.wav"];
+      if (path === "/mock/home/Documents/romper/B12") return ["1hat.wav"];
+      return [];
+    });
+
+    const { result } = renderHook(() => useLocalStoreWizard());
+
+    await waitForAsync(() => result.current.defaultPath !== "");
+
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("blank");
+    });
+
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    // Should complete successfully even with scan failures
+    expect(result.current.state.isInitializing).toBe(false);
+    expect(result.current.state.error).toBe(null);
+
+    // Should have called scanning for both kits
+    expect(mockExecuteFullKitScan).toHaveBeenCalledTimes(2);
+
+    // Should only update metadata for the successful kit
+    expect(window.electronAPI.updateKitMetadata).toHaveBeenCalledTimes(1);
+    expect(window.electronAPI.updateKitMetadata).toHaveBeenCalledWith(
+      "/mock/home/Documents/romper/.romperdb",
+      "B12",
+      expect.objectContaining({
+        artist: "Another Artist",
+      }),
+    );
+  });
+
+  it("skips scanning when no kits are found", async () => {
+    window.electronAPI.listFilesInRoot = vi.fn(async (path) => {
+      if (path === "/mock/home/Documents/romper") return []; // No kit folders
+      return [];
+    });
+
+    const { result } = renderHook(() => useLocalStoreWizard());
+
+    await waitForAsync(() => result.current.defaultPath !== "");
+
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("blank");
+    });
+
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    // Should complete successfully
+    expect(result.current.state.isInitializing).toBe(false);
+    expect(result.current.state.error).toBe(null);
+
+    // Should not call scanning when no kits found
+    expect(mockExecuteFullKitScan).not.toHaveBeenCalled();
+    expect(window.electronAPI.updateKitMetadata).not.toHaveBeenCalled();
   });
 });

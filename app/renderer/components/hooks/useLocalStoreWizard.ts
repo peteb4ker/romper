@@ -4,6 +4,8 @@ import { groupSamplesByVoice } from "../../../../shared/kitUtilsShared";
 import { config } from "../../config";
 import type { ElectronAPI } from "../../electron.d";
 import { createRomperDb, insertKit, insertSample } from "../utils/romperDb";
+import { executeFullKitScan } from "../utils/scanners/orchestrationFunctions";
+import type { FullKitScanInput } from "../utils/scanners/types";
 
 export type LocalStoreSource = "sdcard" | "squarp" | "blank";
 
@@ -298,6 +300,118 @@ export function useLocalStoreWizard(
           },
         });
       }
+      return { dbDir, validKits };
+    },
+    [api, reportStepProgress],
+  );
+
+  const runScanning = useCallback(
+    async (targetPath: string, dbDir: string, kitNames: string[]) => {
+      if (kitNames.length === 0) {
+        console.log("[Hook] No kits to scan, skipping scanning phase");
+        return;
+      }
+
+      console.log("[Hook] Starting scanning operations for", kitNames.length, "kits");
+      
+      // Create a file reader that works with Electron APIs
+      const createFileReader = () => {
+        return async (filePath: string): Promise<ArrayBuffer> => {
+          if (!api.readFile) {
+            throw new Error("File reading not available");
+          }
+          const result = await api.readFile(filePath);
+          if (!result.success || !result.data) {
+            throw new Error(result.error || "Failed to read file");
+          }
+          return result.data;
+        };
+      };
+
+      await reportStepProgress({
+        items: kitNames,
+        phase: "Scanning kits for metadata...",
+        onStep: async (kitName) => {
+          try {
+            const kitPath = `${targetPath}/${kitName}`;
+            if (!api.listFilesInRoot) {
+              throw new Error("listFilesInRoot is not available");
+            }
+            
+            const files = await api.listFilesInRoot(kitPath);
+            const wavFiles = files
+              .filter((f: string) => /\.wav$/i.test(f))
+              .map((f: string) => `${kitPath}/${f}`);
+            const rtfFiles = files
+              .filter((f: string) => /\.rtf$/i.test(f))
+              .map((f: string) => `${kitPath}/${f}`);
+            
+            // Group samples by voice for voice inference
+            const wavFileNames = files.filter((f: string) => /\.wav$/i.test(f));
+            const samples = groupSamplesByVoice(wavFileNames);
+
+            // Prepare scan input
+            const scanInput: FullKitScanInput = {
+              samples,
+              wavFiles,
+              rtfFiles,
+              fileReader: createFileReader(),
+            };
+
+            // Execute the full scan chain with error handling
+            const scanResult = await executeFullKitScan(
+              scanInput,
+              undefined, // No detailed progress callback for now
+              "continue", // Continue on errors
+            );
+
+            // Update kit metadata based on scan results
+            const updates: {
+              alias?: string;
+              artist?: string;
+              tags?: string[];
+              description?: string;
+            } = {};
+
+            if (scanResult.success && scanResult.results.rtfArtist?.bankArtists) {
+              const bankArtists = scanResult.results.rtfArtist.bankArtists;
+              if (bankArtists[kitName]) {
+                updates.artist = bankArtists[kitName];
+              }
+            }
+
+            // Apply voice inference results as tags if available
+            if (scanResult.success && scanResult.results.voiceInference?.voiceNames) {
+              const voiceNames = scanResult.results.voiceInference.voiceNames;
+              const voiceTags = Object.values(voiceNames).filter((name): name is string => Boolean(name));
+              if (voiceTags.length > 0) {
+                updates.tags = voiceTags;
+              }
+            }
+
+            // Update kit metadata if we have any updates
+            if (Object.keys(updates).length > 0 && api.updateKitMetadata) {
+              const updateResult = await api.updateKitMetadata(dbDir, kitName, updates);
+              if (!updateResult.success) {
+                console.warn(`[Hook] Failed to update metadata for kit ${kitName}:`, updateResult.error);
+              } else {
+                console.log(`[Hook] Updated metadata for kit ${kitName}:`, updates);
+              }
+            }
+
+            // Log scan results for debugging
+            if (scanResult.errors.length > 0) {
+              console.warn(`[Hook] Scan warnings for kit ${kitName}:`, scanResult.errors);
+            }
+
+          } catch (error) {
+            console.error(`[Hook] Scanning failed for kit ${kitName}:`, error);
+            // Continue with other kits even if one fails
+          }
+        },
+      });
+
+      console.log("[Hook] Scanning operations completed");
     },
     [api, reportStepProgress],
   );
@@ -341,8 +455,14 @@ export function useLocalStoreWizard(
         console.log("[Hook] initialize - Squarp archive extraction completed");
       }
       console.log("[Hook] initialize - creating and populating database");
-      await createAndPopulateDb(state.targetPath);
+      const { dbDir, validKits } = await createAndPopulateDb(state.targetPath);
       console.log("[Hook] initialize - database creation completed");
+      
+      // Run scanning operations as the final step
+      console.log("[Hook] initialize - starting scanning operations");
+      await runScanning(state.targetPath, dbDir, validKits);
+      console.log("[Hook] initialize - scanning operations completed");
+      
       console.log("[Hook] initialize completed successfully");
     } catch (e: any) {
       console.error("[Hook] initialize error:", e);
@@ -360,6 +480,7 @@ export function useLocalStoreWizard(
     validateAndCopySdCardKits,
     extractSquarpArchive,
     createAndPopulateDb,
+    runScanning,
     setIsInitializing,
     setError,
     setWizardState,

@@ -39,6 +39,10 @@ beforeAll(() => {
         "4 tom.wav",
       ],
       getAudioBuffer: async () => new ArrayBuffer(8),
+      readFile: async (filePath) => ({
+        success: true,
+        data: new ArrayBuffer(1024), // Mock file data
+      }),
       selectLocalStorePath: async () => "/mock/custom/path", // mock for tests
 
       // Database API methods for new metadata system

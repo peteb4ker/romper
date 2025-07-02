@@ -1,5 +1,5 @@
 // Test suite for KitHeader component
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { cleanup } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -27,6 +27,7 @@ describe("KitHeader", () => {
     onPrevKit: vi.fn(),
     onCreateKit: vi.fn(),
     onRescanAllVoiceNames: vi.fn(),
+    onScanKit: vi.fn(),
     kits: ["A1", "A2", "A3"],
     kitIndex: 1,
   };
@@ -44,6 +45,14 @@ describe("KitHeader", () => {
     );
     fireEvent.click(screen.getByText("My Kit"));
     expect(setEditingKitLabel).toHaveBeenCalledWith(true);
+  });
+
+  it("calls onScanKit when Scan Kit button is clicked", () => {
+    const onScanKit = vi.fn();
+    render(<KitHeader {...baseProps} onScanKit={onScanKit} />);
+
+    fireEvent.click(screen.getByText("Scan Kit"));
+    expect(onScanKit).toHaveBeenCalled();
   });
 
   it("shows input when editingKitLabel is true and handles input events", () => {

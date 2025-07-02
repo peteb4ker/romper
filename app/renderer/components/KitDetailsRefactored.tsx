@@ -6,7 +6,6 @@ import KitMetadataForm from "./KitMetadataForm";
 import KitStepSequencer from "./KitStepSequencer";
 import type { KitDetailsProps, RampleKitLabel } from "./kitTypes";
 import KitVoicePanels from "./KitVoicePanels";
-import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitDetailsAllProps extends KitDetailsProps {
   kitLabel?: RampleKitLabel;
@@ -17,16 +16,6 @@ interface KitDetailsAllProps extends KitDetailsProps {
 
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   const logic = useKitDetailsLogic(props);
-  const [dismissedUnscannedPrompt, setDismissedUnscannedPrompt] =
-    React.useState(false);
-
-  // Check if kit needs scanning - this is just a simple heuristic for now
-  // A more robust implementation would check the database for scan status
-  const needsScanning =
-    logic.metadata.kitLabel &&
-    (!logic.metadata.kitLabel.voiceNames ||
-      Object.keys(logic.metadata.kitLabel.voiceNames).length === 0) &&
-    !dismissedUnscannedPrompt;
 
   return (
     <div className="flex flex-col flex-1 min-h-0 h-full p-2 pb-0 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-sm shadow">
@@ -50,15 +39,6 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         }
         onScanKit={logic.handleScanKit}
       />
-
-      {needsScanning && (
-        <UnscannedKitPrompt
-          kitName={props.kitName}
-          onScan={() => logic.handleScanKit()}
-          onDismiss={() => setDismissedUnscannedPrompt(true)}
-        />
-      )}
-
       <KitMetadataForm
         kitLabel={logic.metadata.kitLabel}
         loading={logic.metadata.labelsLoading}

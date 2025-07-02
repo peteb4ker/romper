@@ -4,6 +4,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiFolder,
+  FiRefreshCw,
 } from "react-icons/fi";
 
 import type { RampleKitLabel } from "./kitTypes";
@@ -22,6 +23,7 @@ interface KitHeaderProps {
   onPrevKit?: () => void;
   onCreateKit?: () => void;
   onRescanAllVoiceNames?: () => void;
+  onScanKit?: () => void;
   kits?: string[];
   kitIndex?: number;
 }
@@ -40,6 +42,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
   onPrevKit,
   onCreateKit,
   onRescanAllVoiceNames,
+  onScanKit,
   kits,
   kitIndex,
 }) => (
@@ -123,6 +126,16 @@ const KitHeader: React.FC<KitHeaderProps> = ({
       </button>
     )}
     <div className="flex-1" /> {/* Spacer */}
+    {onScanKit && (
+      <button
+        className="ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded shadow hover:bg-green-700 font-semibold flex items-center"
+        onClick={onScanKit}
+        title="Perform comprehensive kit scan (voice names, WAV analysis, artist metadata)"
+      >
+        <FiRefreshCw className="inline-block mr-1" />
+        Scan Kit
+      </button>
+    )}
     <button
       className="ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded shadow hover:bg-blue-700 font-semibold"
       onClick={onRescanAllVoiceNames}

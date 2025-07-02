@@ -45,6 +45,7 @@ export interface VoiceInferenceOutput {
 export interface WAVAnalysisInput {
   filePath: string;
   fileReader?: (filePath: string) => Promise<ArrayBuffer>;
+  wavData?: ArrayBuffer;
 }
 
 export interface WAVAnalysisOutput {

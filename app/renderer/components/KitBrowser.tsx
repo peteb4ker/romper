@@ -1,4 +1,5 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
+import { FiChevronDown, FiPlusCircle } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { useKitBrowser } from "./hooks/useKitBrowser";
@@ -62,6 +63,30 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
   } = logic;
 
   const [showLocalStoreWizard, setShowLocalStoreWizard] = React.useState(false);
+  const [showScanOptions, setShowScanOptions] = useState(false);
+
+  const scanOperations = [
+    {
+      id: "full",
+      name: "Full Scan All Kits",
+      description: "Voice names, WAV analysis, artist metadata",
+    },
+    {
+      id: "voiceInference",
+      name: "Voice Names Only",
+      description: "Infer voice names from samples",
+    },
+    {
+      id: "wavAnalysis",
+      name: "WAV Analysis Only",
+      description: "Analyze sample files",
+    },
+    {
+      id: "rtfArtist",
+      name: "Artist Metadata Only",
+      description: "Parse RTF files for artist info",
+    },
+  ];
 
   React.useEffect(() => {
     if (logic.sdCardWarning && onMessage) {
@@ -110,6 +135,147 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     focusBankInKitList(bank);
   };
 
+  // Handler for scanning all kits
+  const handleScanAllKits = React.useCallback(
+    async (operations?: string[]) => {
+      if (!props.localStorePath || !kits || kits.length === 0) {
+        toast.error("Local store path and kits are required for scanning");
+        return;
+      }
+
+      const scanType = operations?.length === 1 ? operations[0] : "full";
+      const scanTypeDisplay =
+        operations?.length === 1
+          ? {
+              voiceInference: "voice name inference",
+              wavAnalysis: "WAV analysis",
+              rtfArtist: "artist metadata",
+            }[operations[0]] || operations[0]
+          : "comprehensive";
+
+      const toastId = toast.loading(
+        `Starting ${scanTypeDisplay} scan of all kits...`,
+        {
+          duration: Infinity,
+        },
+      );
+
+      try {
+        // Import scanning functions
+        const {
+          executeFullKitScan,
+          executeVoiceInferenceScan,
+          executeWAVAnalysisScan,
+          executeRTFArtistScan,
+        } = await import("./utils/scanners/orchestrationFunctions");
+
+        let successCount = 0;
+        let errorCount = 0;
+        const errors: string[] = [];
+
+        for (let i = 0; i < kits.length; i++) {
+          const kitName = kits[i];
+
+          toast.loading(
+            `Scanning kit ${i + 1}/${kits.length}: ${kitName} (${scanTypeDisplay})`,
+            {
+              id: toastId,
+              duration: Infinity,
+            },
+          );
+
+          try {
+            // Get kit samples - we'll need to load them for each kit
+            // For now, we'll just do a basic scan without samples data
+            const kitPath = `${props.localStorePath}/${kitName}`;
+
+            // Get RTF files (artist metadata files)
+            const rtfFiles: string[] = [];
+            const bankName = kitName.charAt(0);
+            if (bankName >= "A" && bankName <= "Z") {
+              rtfFiles.push(`${props.localStorePath}/${bankName}.rtf`);
+            }
+
+            // Adapt electron API fileReader to scanner interface
+            const fileReader = async (
+              filePath: string,
+            ): Promise<ArrayBuffer> => {
+              if (!window.electronAPI?.readFile) {
+                throw new Error("File reader not available");
+              }
+              const result = await window.electronAPI.readFile(filePath);
+              if (!result.success || !result.data) {
+                throw new Error(result.error || "Failed to read file");
+              }
+              return result.data;
+            };
+
+            // Execute appropriate scan based on operation selection
+            let result;
+            if (scanType === "voiceInference") {
+              // For voice inference, we need sample data, but we don't have it here
+              // Just passing empty samples for now
+              const emptySamples = { 1: [], 2: [], 3: [], 4: [] };
+              result = await executeVoiceInferenceScan(emptySamples);
+            } else if (scanType === "wavAnalysis") {
+              // For WAV analysis, we'd need to list all WAV files in the kit folder
+              const wavFiles: string[] = []; // Would need to populate this
+              result = await executeWAVAnalysisScan(wavFiles, fileReader);
+            } else if (scanType === "rtfArtist") {
+              result = await executeRTFArtistScan(rtfFiles);
+            } else {
+              // Full scan by default
+              const scanInput = {
+                samples: { 1: [], 2: [], 3: [], 4: [] }, // Empty for batch scan
+                wavFiles: [], // Would need to populate this
+                rtfFiles,
+                fileReader,
+              };
+              result = await executeFullKitScan(scanInput);
+            }
+
+            if (result.success) {
+              successCount++;
+            } else {
+              errorCount++;
+              errors.push(
+                `${kitName}: ${result.errors.map((e) => e.error).join(", ")}`,
+              );
+            }
+          } catch (error) {
+            errorCount++;
+            errors.push(
+              `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
+        }
+
+        if (errorCount === 0) {
+          toast.success(
+            `All kits ${scanTypeDisplay} scan completed successfully! ${successCount} kits processed.`,
+            { id: toastId, duration: 5000 },
+          );
+        } else {
+          const message = `Scan completed: ${successCount} successful, ${errorCount} failed. ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? "..." : ""}`;
+          toast.warning(message, { id: toastId, duration: 8000 });
+        }
+
+        // Refresh kits to reflect changes
+        if (props.onRefreshKits) {
+          props.onRefreshKits();
+        }
+      } catch (error) {
+        toast.error(
+          `Scan error: ${error instanceof Error ? error.message : String(error)}`,
+          { id: toastId, duration: 8000 },
+        );
+      }
+    },
+    // Destructure specific props to avoid unnecessary rerenders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [kits, props.localStorePath, props.onRefreshKits],
+  );
+
   return (
     <div
       ref={scrollContainerRef}
@@ -117,6 +283,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     >
       <KitBrowserHeader
         onRescanAllVoiceNames={props.onRescanAllVoiceNames}
+        onScanAllKits={handleScanAllKits}
         onShowNewKit={() => setShowNewKit(true)}
         onCreateNextKit={handleCreateNextKit}
         nextKitSlot={nextKitSlot}

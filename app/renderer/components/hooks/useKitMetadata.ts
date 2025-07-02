@@ -168,45 +168,153 @@ export function useKitMetadata(props: KitDetailsProps) {
     voice: number,
     voices: { [key: number]: string[] },
   ) => {
-    // Import the scanning utility
-    const { inferVoiceTypeFromFilename } = await import(
-      "../../../../shared/kitUtilsShared"
+    // Use the new scanning operations for individual voice rescanning
+    const { executeVoiceInferenceScan } = await import(
+      "../utils/scanners/orchestrationFunctions"
     );
 
-    const samples = voices[voice] || [];
-    let inferredName: string | null = null;
-    for (const sample of samples) {
-      const type = inferVoiceTypeFromFilename(sample);
-      if (type) {
-        inferredName = type;
-        break;
-      }
-    }
+    // Create samples object with only the requested voice
+    const voiceSamples = { [voice]: voices[voice] || [] };
 
-    await updateVoiceAlias(voice, inferredName || "");
+    const result = await executeVoiceInferenceScan(voiceSamples);
+
+    if (result.success && result.results.voiceInference?.voiceNames) {
+      const voiceNames = result.results.voiceInference.voiceNames;
+      const inferredName = voiceNames[voice] || "";
+      await updateVoiceAlias(voice, inferredName);
+    }
   };
 
   const handleRescanAllVoiceNames = async (
     voices: { [key: number]: string[] } | undefined,
   ) => {
-    // Import the scanning utility
-    const { inferVoiceTypeFromFilename } = await import(
-      "../../../../shared/kitUtilsShared"
+    // Use the new scanning operations for comprehensive voice name scanning
+    const { executeVoiceInferenceScan } = await import(
+      "../utils/scanners/orchestrationFunctions"
     );
 
     const safeVoices = voices || { 1: [], 2: [], 3: [], 4: [] };
 
-    for (let voice = 1; voice <= 4; voice++) {
-      const samplesForVoice = safeVoices[voice] || [];
-      let inferredName: string | null = null;
-      for (const sample of samplesForVoice) {
-        const type = inferVoiceTypeFromFilename(sample);
-        if (type) {
-          inferredName = type;
-          break;
-        }
+    const result = await executeVoiceInferenceScan(safeVoices);
+
+    if (result.success && result.results.voiceInference?.voiceNames) {
+      const voiceNames = result.results.voiceInference.voiceNames;
+
+      // Update all voice aliases with inferred names
+      for (let voice = 1; voice <= 4; voice++) {
+        const inferredName = voiceNames[voice] || "";
+        await updateVoiceAlias(voice, inferredName);
       }
-      await updateVoiceAlias(voice, inferredName || "");
+    }
+  };
+
+  const handleFullKitScan = async (
+    voices: { [key: number]: string[] } | undefined,
+    progressCallback?: (phase: string, progress: number) => void,
+  ) => {
+    if (!dbDir || !kitName) {
+      return {
+        success: false,
+        errors: ["Database directory and kit name are required"],
+        results: {},
+      };
+    }
+
+    try {
+      // Import the comprehensive scanning operations
+      const { executeFullKitScan } = await import(
+        "../utils/scanners/orchestrationFunctions"
+      );
+
+      const safeVoices = voices || { 1: [], 2: [], 3: [], 4: [] };
+      const kitPath = `${dbDir}/${kitName}`;
+
+      // Get all WAV files from samples
+      const wavFiles: string[] = [];
+      Object.values(safeVoices).forEach((voiceSamples: string[]) => {
+        voiceSamples.forEach((sample: string) => {
+          if (sample.endsWith(".wav")) {
+            wavFiles.push(`${kitPath}/${sample}`);
+          }
+        });
+      });
+
+      // Get RTF files (artist metadata files)
+      const rtfFiles: string[] = [];
+      const bankName = kitName.charAt(0);
+      if (bankName >= "A" && bankName <= "Z") {
+        rtfFiles.push(`${dbDir}/${bankName}.rtf`);
+      }
+
+      // Adapt electron API fileReader to scanner interface
+      const fileReader = async (filePath: string): Promise<ArrayBuffer> => {
+        if (!window.electronAPI?.readFile) {
+          throw new Error("File reader not available");
+        }
+        const result = await window.electronAPI.readFile(filePath);
+        if (!result.success || !result.data) {
+          throw new Error(result.error || "Failed to read file");
+        }
+        return result.data;
+      };
+
+      const scanInput = {
+        samples: safeVoices,
+        wavFiles,
+        rtfFiles,
+        fileReader,
+      };
+
+      const orchestratorProgressCallback = (
+        current: number,
+        total: number,
+        operation: string,
+      ) => {
+        const progress = Math.round((current / total) * 100);
+        progressCallback?.(operation, progress);
+      };
+
+      const result = await executeFullKitScan(
+        scanInput,
+        orchestratorProgressCallback,
+      );
+
+      if (result.success) {
+        // Update metadata based on scan results
+        if (result.results.voiceInference?.voiceNames) {
+          const voiceNames = result.results.voiceInference.voiceNames;
+          for (let voice = 1; voice <= 4; voice++) {
+            const inferredName = voiceNames[voice] || "";
+            if (inferredName) {
+              await updateVoiceAlias(voice, inferredName);
+            }
+          }
+        }
+
+        // Update artist metadata if available
+        if (result.results.rtfArtist?.artists) {
+          const artists = result.results.rtfArtist.artists;
+          const bankName = kitName.charAt(0);
+          if (artists[bankName]) {
+            await updateMetadata({ artist: artists[bankName] });
+          }
+        }
+
+        // WAV analysis results are stored in the database automatically
+        // through the scanning operations
+      }
+
+      return {
+        success: result.success,
+        errors: result.errors.map((e) => e.error),
+        results: result.results,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [error instanceof Error ? error.message : String(error)],
+        results: {},
+      };
     }
   };
 
@@ -245,6 +353,7 @@ export function useKitMetadata(props: KitDetailsProps) {
     handleSaveVoiceName,
     handleRescanVoiceName,
     handleRescanAllVoiceNames,
+    handleFullKitScan,
     reloadKitLabel: loadKitMetadata,
   };
 }

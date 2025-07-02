@@ -48,19 +48,41 @@ export async function executeFullKitScan(
         const errors: string[] = [];
 
         for (const filePath of wavFiles) {
-          const result = await scanWAVAnalysis({ filePath, fileReader });
-          if (result.success && result.data) {
-            results.push(result.data);
-          } else {
-            errors.push(result.error || "Unknown error");
+          try {
+            if (!fileReader) {
+              throw new Error("No file reader provided");
+            }
+
+            const wavData = await fileReader(filePath);
+            const analysis = await scanWAVAnalysis({
+              wavData,
+              filePath,
+            });
+
+            if (analysis.success && analysis.data) {
+              results.push(analysis.data);
+            } else {
+              errors.push(
+                `Failed to analyze ${filePath}: ${
+                  analysis.error || "Unknown error"
+                }`,
+              );
+            }
+          } catch (error) {
+            errors.push(
+              `Error processing ${filePath}: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            );
           }
         }
 
-        // If any files failed, the entire operation fails
-        if (errors.length > 0) {
+        if (errors.length > 0 && errors.length === wavFiles.length) {
           return {
             success: false,
-            error: `WAV analysis failed for ${errors.length} file(s): ${errors.join(", ")}`,
+            error: `All WAV files failed analysis: ${errors.slice(0, 3).join("; ")}${
+              errors.length > 3 ? "..." : ""
+            }`,
           };
         }
 
@@ -74,7 +96,10 @@ export async function executeFullKitScan(
     {
       name: "rtfArtist",
       scanner: scanRTFArtist,
-      input: { rtfFiles: kitData.rtfFiles } as RTFArtistInput,
+      input: {
+        rtfFiles: kitData.rtfFiles,
+        fileReader: kitData.fileReader,
+      } as RTFArtistInput,
     },
   ];
 
@@ -83,7 +108,7 @@ export async function executeFullKitScan(
 
 /**
  * Executes voice inference scanning only
- * @param samples Sample files grouped by voice number
+ * @param samples Sample data by voice
  * @param progressCallback Optional progress callback
  * @param errorStrategy Error handling strategy (default: "continue")
  * @returns Voice inference results
@@ -109,7 +134,7 @@ export async function executeVoiceInferenceScan(
 /**
  * Executes WAV analysis scanning only
  * @param wavFiles Array of WAV file paths
- * @param fileReader Optional custom file reader
+ * @param fileReader File reader function
  * @param progressCallback Optional progress callback
  * @param errorStrategy Error handling strategy (default: "continue")
  * @returns WAV analysis results
@@ -134,18 +159,41 @@ export async function executeWAVAnalysisScan(
         const errors: string[] = [];
 
         for (const filePath of wavFiles) {
-          const result = await scanWAVAnalysis({ filePath, fileReader });
-          if (result.success && result.data) {
-            results.push(result.data);
-          } else {
-            errors.push(result.error || "Unknown error");
+          try {
+            if (!fileReader) {
+              throw new Error("No file reader provided");
+            }
+
+            const wavData = await fileReader(filePath);
+            const analysis = await scanWAVAnalysis({
+              wavData,
+              filePath,
+            });
+
+            if (analysis.success && analysis.data) {
+              results.push(analysis.data);
+            } else {
+              errors.push(
+                `Failed to analyze ${filePath}: ${
+                  analysis.error || "Unknown error"
+                }`,
+              );
+            }
+          } catch (error) {
+            errors.push(
+              `Error processing ${filePath}: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            );
           }
         }
 
-        if (results.length === 0) {
+        if (errors.length > 0 && errors.length === wavFiles.length) {
           return {
             success: false,
-            error: `WAV analysis failed for all files: ${errors.join(", ")}`,
+            error: `All WAV files failed analysis: ${errors.slice(0, 3).join("; ")}${
+              errors.length > 3 ? "..." : ""
+            }`,
           };
         }
 

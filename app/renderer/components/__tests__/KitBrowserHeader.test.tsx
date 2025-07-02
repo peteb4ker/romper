@@ -1,5 +1,5 @@
 // Test suite for KitBrowserHeader component
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { cleanup } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -12,14 +12,21 @@ afterEach(() => {
 });
 
 describe("KitBrowserHeader", () => {
+  const defaultProps = {
+    onRescanAllVoiceNames: vi.fn(),
+    onScanAllKits: vi.fn(),
+    onShowNewKit: vi.fn(),
+    onCreateNextKit: vi.fn(),
+    nextKitSlot: null,
+    onShowLocalStoreWizard: vi.fn(),
+  };
+
   it("calls onRescanAllVoiceNames when Rescan All Kit Voice Names button is clicked", () => {
     const onRescanAllVoiceNames = vi.fn();
     render(
       <KitBrowserHeader
+        {...defaultProps}
         onRescanAllVoiceNames={onRescanAllVoiceNames}
-        onShowNewKit={vi.fn()}
-        onCreateNextKit={vi.fn()}
-        nextKitSlot={null}
       />,
     );
     fireEvent.click(screen.getByText("Rescan All Kit Voice Names"));
@@ -28,24 +35,27 @@ describe("KitBrowserHeader", () => {
 
   it("calls onShowNewKit when + New Kit button is clicked", () => {
     const onShowNewKit = vi.fn();
-    render(
-      <KitBrowserHeader
-        onRescanAllVoiceNames={vi.fn()}
-        onShowNewKit={onShowNewKit}
-        onCreateNextKit={vi.fn()}
-        nextKitSlot={null}
-      />,
-    );
+    render(<KitBrowserHeader {...defaultProps} onShowNewKit={onShowNewKit} />);
     fireEvent.click(screen.getByText("+ New Kit"));
     expect(onShowNewKit).toHaveBeenCalled();
   });
+
+  it("calls onScanAllKits when Scan All Kits button is clicked", () => {
+    const onScanAllKits = vi.fn();
+    render(
+      <KitBrowserHeader {...defaultProps} onScanAllKits={onScanAllKits} />,
+    );
+    fireEvent.click(screen.getByText("Scan All Kits"));
+    expect(onScanAllKits).toHaveBeenCalled();
+  });
+
+  // No separate tests for scan options dropdown as it's been removed
 
   it("calls onCreateNextKit when + Next Kit button is clicked and nextKitSlot is set", () => {
     const onCreateNextKit = vi.fn();
     render(
       <KitBrowserHeader
-        onRescanAllVoiceNames={vi.fn()}
-        onShowNewKit={vi.fn()}
+        {...defaultProps}
         onCreateNextKit={onCreateNextKit}
         nextKitSlot={"A1"}
       />,
@@ -55,24 +65,14 @@ describe("KitBrowserHeader", () => {
   });
 
   it("disables + Next Kit button when nextKitSlot is null", () => {
-    render(
-      <KitBrowserHeader
-        onRescanAllVoiceNames={vi.fn()}
-        onShowNewKit={vi.fn()}
-        onCreateNextKit={vi.fn()}
-        nextKitSlot={null}
-      />,
-    );
+    render(<KitBrowserHeader {...defaultProps} nextKitSlot={null} />);
     expect(screen.getByText("+ Next Kit")).toBeDisabled();
   });
 
   it("renders bankNav if provided", () => {
     render(
       <KitBrowserHeader
-        onRescanAllVoiceNames={vi.fn()}
-        onShowNewKit={vi.fn()}
-        onCreateNextKit={vi.fn()}
-        nextKitSlot={null}
+        {...defaultProps}
         bankNav={<div data-testid="bank-nav">BANKS</div>}
       />,
     );

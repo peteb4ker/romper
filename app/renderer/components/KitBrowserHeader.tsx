@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
+import { FiRefreshCw } from "react-icons/fi";
 
 import { useKitBrowserHeader } from "./hooks/useKitBrowserHeader";
 
 interface KitBrowserHeaderProps {
   onRescanAllVoiceNames: () => void;
+  onScanAllKits?: () => void;
   onShowNewKit: () => void;
   onCreateNextKit: () => void;
   nextKitSlot: string | null;
@@ -29,6 +31,16 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           >
             Rescan All Kit Voice Names
           </button>
+          {props.onScanAllKits && (
+            <button
+              className="px-2 py-1 text-xs bg-green-500 text-white rounded shadow hover:bg-green-700 font-semibold flex items-center"
+              onClick={() => props.onScanAllKits && props.onScanAllKits()}
+              title="Perform comprehensive scan on all kits (voice names, WAV analysis, artist metadata)"
+            >
+              <FiRefreshCw className="inline-block mr-1" />
+              Scan All Kits
+            </button>
+          )}
         </div>
         <div className="flex gap-2">
           <button

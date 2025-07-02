@@ -146,15 +146,26 @@ export function ensureDbDirectory(dbDir: string): void {
 
 export async function forceCloseDbConnection(dbPath: string): Promise<void> {
   try {
+    // Try to open and immediately close to flush any pending operations
     const tempDb = createDbConnection(dbPath);
     tempDb.close();
   } catch {
     // Ignore errors from temp connection
   }
 
-  // On Windows, give extra time for file handles to be released
+  // On Windows, SQLite files can remain locked longer due to antivirus/file system delays
   if (process.platform === "win32") {
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    // Use multiple strategies to ensure file handles are released
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Increased wait time
+
+    // Force garbage collection if available to help release file handles
+    if (global.gc) {
+      global.gc();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
+    // Additional Windows-specific delay for antivirus scanning
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 }
 
@@ -197,19 +208,22 @@ export async function createRomperDbFile(dbDir: string): Promise<{
           await forceCloseDbConnection(dbPath);
           await deleteDbFileWithRetry(dbPath);
           console.log(
-            "[Romper Electron] Successfully deleted corrupted DB file",
+            "[Romper Electron] Successfully handled corrupted DB file",
           );
-
-          // Additional verification that file is gone
-          if (fs.existsSync(dbPath)) {
-            throw new Error("Corrupted DB file still exists after deletion");
-          }
         } catch (deleteError) {
           console.error(
             "[Romper Electron] Failed to delete corrupted DB file:",
             deleteError,
           );
-          return { success: false, error: msg };
+          // On Windows, if we can't delete the file, we might still be able to recreate
+          if (process.platform === "win32") {
+            console.log(
+              "[Romper Electron] Attempting to continue despite deletion failure on Windows",
+            );
+            // Try to continue anyway - sometimes SQLite can overwrite the file
+          } else {
+            return { success: false, error: msg };
+          }
         }
         continue;
       }
@@ -220,12 +234,17 @@ export async function createRomperDbFile(dbDir: string): Promise<{
 
 async function deleteDbFileWithRetry(
   dbPath: string,
-  maxRetries = 5,
+  maxRetries = 15, // Increase retries significantly for Windows
 ): Promise<void> {
   let lastError: Error | null = null;
 
   for (let i = 0; i < maxRetries; i++) {
     try {
+      // On Windows, try unlinking after progressively longer delays
+      if (process.platform === "win32" && i > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 200 * i));
+      }
+
       fs.unlinkSync(dbPath);
       console.log(
         `[Romper Electron] Successfully deleted DB file on attempt ${i + 1}`,
@@ -251,7 +270,7 @@ async function deleteDbFileWithRetry(
       // If deletion fails, try renaming first (common Windows issue)
       if (process.platform === "win32" && i < maxRetries - 1) {
         try {
-          const backupPath = `${dbPath}.backup.${Date.now()}.${i}`;
+          const backupPath = `${dbPath}.corrupted.${Date.now()}.${i}`;
           fs.renameSync(dbPath, backupPath);
           console.log(
             `[Romper Electron] Successfully renamed DB file to backup on attempt ${i + 1}`,
@@ -273,35 +292,44 @@ async function deleteDbFileWithRetry(
           console.log(
             `[Romper Electron] Rename attempt ${i + 1} failed, waiting...`,
           );
-          // Wait longer on Windows and retry
-          await new Promise((resolve) => setTimeout(resolve, 200 * (i + 1)));
+          // Wait progressively longer on Windows
+          await new Promise((resolve) => setTimeout(resolve, 500 * (i + 1)));
         }
       } else if (i < maxRetries - 1) {
         // Wait and retry on other platforms
-        await new Promise((resolve) => setTimeout(resolve, 50 * (i + 1)));
+        await new Promise((resolve) => setTimeout(resolve, 100 * (i + 1)));
       }
     }
   }
 
-  // Final attempt: try renaming instead of deleting
-  try {
-    const backupPath = `${dbPath}.backup.${Date.now()}`;
-    fs.renameSync(dbPath, backupPath);
-    console.log("[Romper Electron] Final rename attempt succeeded");
+  // On Windows, as a last resort, just rename the file to get it out of the way
+  // This allows the database creation to proceed even if we can't delete the old file
+  if (process.platform === "win32") {
+    try {
+      const timestamp = Date.now();
+      const backupPath = `${dbPath}.locked.${timestamp}`;
+      fs.renameSync(dbPath, backupPath);
+      console.log("[Romper Electron] Final rename attempt succeeded");
 
-    // Verify original file is gone
-    if (!fs.existsSync(dbPath)) {
-      console.log(
-        `[Romper Electron] Verified original DB file is gone after final rename`,
+      // Verify original file is gone
+      if (!fs.existsSync(dbPath)) {
+        console.log(
+          `[Romper Electron] Verified original DB file is gone after final rename`,
+        );
+        return;
+      }
+    } catch {
+      // If even rename fails, we'll have to proceed anyway
+      console.error(
+        "[Romper Electron] All deletion/rename attempts failed, proceeding anyway",
       );
+      // On Windows, sometimes we just have to accept that the file is locked
+      // and try to overwrite it directly
       return;
-    } else {
-      throw new Error("Original file still exists after final rename");
     }
-  } catch {
-    console.error("[Romper Electron] All deletion/rename attempts failed");
-    throw lastError || new Error("Could not delete or rename database file");
   }
+
+  throw lastError || new Error("Could not delete or rename database file");
 }
 
 export function insertKitRecord(

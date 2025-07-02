@@ -6,8 +6,22 @@
 - `vitest.setup.ts` - Centralized test setup with mocks and utilities. **Extended with readFile mock for scanner testing.**path: /Users/pete/workspace/romper/tasks/tasks-plans-PRD.md -->
 ## Relevant Files
 
-- `app/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI).
+- `app/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI). Updated for comprehensive scanning.
 - `app/renderer/components/KitDetails.test.tsx` - Unit tests for KitDetails, including plan mode and kit planning integration.
+- `app/renderer/components/KitHeader.tsx` - Updated to simplify scanning UI and logic, removing individual scan operation selection.
+- `app/renderer/components/KitBrowserHeader.tsx` - Updated to simplify scanning UI and logic, removing individual scan operation selection.
+- `app/renderer/components/hooks/useKitDetailsLogic.ts` - Updated scanning logic to always perform comprehensive scans.
+- `app/renderer/components/UnscannedKitPrompt.tsx` - Updated UI for unscanned kit prompts.
+- `app/renderer/components/utils/scanners/types.ts` - Updated types for simplified scanning operations.
+- `app/renderer/components/utils/scanners/orchestrationFunctions.ts` - Updated orchestration functions for simplified scanning flow.
+- `app/renderer/components/__tests__/KitHeader.test.tsx` - Updated tests for simplified scanning UI.
+- `app/renderer/components/__tests__/KitBrowserHeader.test.tsx` - Updated tests for simplified scanning UI.
+- `app/renderer/components/__tests__/KitDetails.test.tsx` - Updated tests for simplified scanning logic.
+- `app/renderer/components/__tests__/UnscannedKitPrompt.test.tsx` - Updated tests for unscanned kit prompts.
+- `app/renderer/components/utils/scanners/__tests__/orchestrationFunctions.test.ts` - Updated tests for scanning orchestration.
+- `app/renderer/components/utils/__tests__/scannerOrchestrator.test.ts` - Updated tests for scanner orchestrator.
+- `app/renderer/views/KitsView.tsx` - Fixed continuous invocation of listFilesInRoot on app load.
+- `app/renderer/views/__tests__/KitsView.test.tsx` - Added tests to validate fix for continuous listFilesInRoot invocation.
 - `app/renderer/components/LocalStoreWizardUI.tsx` - UI for local store setup wizard, now supports progress bar, robust error display, and a flipped flow (choose source > choose target > import). UI and accessibility improvements.
 - `app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx` - Unit tests for LocalStoreWizardUI, now fully decoupled from IPC/Electron, only test UI logic and user interaction. Updated to match new step logic and label expectations.
 - `app/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now exposes progress/error state for Squarp.net archive initialization, handles blank folder (no files copied, only folder created), and SD card folder validation/copy logic. Updated to only set targetPath after source selection.
@@ -129,13 +143,13 @@
       - [x] 2.17.1.3 Show scanning progress on existing wizard progress bar
       - [x] 2.17.1.4 Handle partial failures gracefully (continue chain on errors)
     - [x] 2.17.2 Unit tests for wizard scanning integration
-  - [ ] 2.18 Update manual scanning functionality
-    - [ ] 2.18.1 Keep existing "Scan Kit" button in KitDetails page using new operations
-    - [ ] 2.18.2 Keep existing "Scan All Kits" option in KitBrowser using new operations
-    - [ ] 2.18.3 Use toast progress bar for manual scanning operations
-    - [ ] 2.18.4 Support full rescan and individual operation selection
-    - [ ] 2.18.5 Handle unscanned kits (prompt user, show appropriate UI state)
-    - [ ] 2.18.6 Unit tests for manual scanning UI and operations
+  - [x] 2.18 Update manual scanning functionality
+    - [x] 2.18.1 Keep existing "Scan Kit" button in KitDetails page using new operations
+    - [x] 2.18.2 Keep existing "Scan All Kits" option in KitBrowser using new operations
+    - [x] 2.18.3 Use toast progress bar for manual scanning operations
+    - [x] 2.18.4 Simplified to always perform a comprehensive scan (removing individual operation selection)
+    - [x] 2.18.5 Handle unscanned kits (prompt user, show appropriate UI state)
+    - [x] 2.18.6 Unit tests for manual scanning UI and operations
   - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
   - [ ] 2.12 If the Romper DB metadata or plans are out of sync with the local store, present an error to the user and indicate that manual intervention may be required.
   - [x] 2.16 Flip local store setup flow: user chooses source first, then target, then import. Update UI, logic, and tests. Decouple UI tests from IPC/Electron.

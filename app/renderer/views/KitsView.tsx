@@ -41,14 +41,16 @@ const KitsView = () => {
     }
   }, [needsLocalStoreSetup]);
 
-  // Add type guards for possibly undefined Electron APIs
-  const safeListFilesInRoot = window.electronAPI?.listFilesInRoot?.bind(
-    window.electronAPI,
+  // Add type guards for possibly undefined Electron APIs - memoized to prevent infinite effect loops
+  const safeListFilesInRoot = React.useMemo(
+    () => window.electronAPI?.listFilesInRoot?.bind(window.electronAPI),
+    [] // Empty deps array ensures this function is created once
   );
 
   // Load all kits, samples, and labels on local store change
   useEffect(() => {
     if (!localStorePath || needsLocalStoreSetup) return;
+    console.log("[KitsView] Loading kits from", localStorePath); // Log when effect runs
     (async () => {
       // 1. Scan all kits using listFilesInRoot and filter for kit folder pattern
       if (!safeListFilesInRoot) {

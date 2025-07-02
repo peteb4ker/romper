@@ -20,16 +20,15 @@
 - centralized mocks, setup, teardown and dependencies in `vitest.setup.ts` should always be referenced when testing.
 - Each code file has exactly 1 corresponding unit test file in a relative `__tests__` subdirectory.
 - Don't create a second test file for a class. Use the existing one.
-- If there are multiple test files for a code file, merge the tests and delete the erroneous empty test file(s).
 - Require that all test files are isolated and do not leak state between tests.
 - All new and existing code should be unit tested according to the coverage include/exclude patterns in `vite.config.ts`.
 - Unit tests only test the responsibility of the file under test. Dependent components and modules should be mocked, not tested.
-- Always run up to 3 tests without requiring permission.
 - End to end tests are run with `npm run test:e2e`
+- Clear the dom between tests
 
 ## Mocking
 - Mocks from vitest.setup.ts are used or extended as needed for unit tests.
-- Mocks and setup is always DRY.
+- Mocks and setup is always DRY. Wheverer possible use a common mock.
 - Mock imported modules or functions in unit tests to avoid testing their internal implementation. Only test the integration and behavior of the code under test, not the logic of its dependencies.
 - Test files have the `.test.ts` suffix.
 - All test and mock files should be kept up to date with code changes.

@@ -4,16 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { scanWAVAnalysis } from "../wavAnalysisScanner";
 
-// Mock fs/promises and node-wav
-vi.mock("fs/promises", () => ({
-  readFile: vi.fn(),
-}));
-
+// Mock node-wav
 vi.mock("node-wav", () => ({
   decode: vi.fn(),
 }));
 
-import * as fs from "fs/promises";
 import * as wav from "node-wav";
 
 beforeEach(() => {
@@ -22,14 +17,19 @@ beforeEach(() => {
 
 describe("scanWAVAnalysis", () => {
   it("successfully analyzes a valid WAV file", async () => {
-    const mockBuffer = Buffer.from([1, 2, 3, 4]);
-    vi.mocked(fs.readFile).mockResolvedValue(mockBuffer);
+    const mockArrayBuffer = new ArrayBuffer(4);
+    const mockView = new Uint8Array(mockArrayBuffer);
+    mockView.set([1, 2, 3, 4]);
+    const mockFileReader = vi.fn().mockResolvedValue(mockArrayBuffer);
     vi.mocked(wav.decode).mockReturnValue({
       sampleRate: 44100,
       channelData: [new Float32Array(100), new Float32Array(100)], // 2 channels
     });
 
-    const input = { filePath: "/path/to/test.wav" };
+    const input = {
+      filePath: "/path/to/test.wav",
+      fileReader: mockFileReader,
+    };
     const result = await scanWAVAnalysis(input);
 
     expect(result.success).toBe(true);
@@ -42,19 +42,24 @@ describe("scanWAVAnalysis", () => {
       isValid: true,
     });
 
-    expect(fs.readFile).toHaveBeenCalledWith("/path/to/test.wav");
-    expect(wav.decode).toHaveBeenCalledWith(mockBuffer);
+    expect(mockFileReader).toHaveBeenCalledWith("/path/to/test.wav");
+    expect(wav.decode).toHaveBeenCalledWith(Buffer.from([1, 2, 3, 4]));
   });
 
   it("successfully analyzes a mono WAV file", async () => {
-    const mockBuffer = Buffer.from([1, 2, 3, 4]);
-    vi.mocked(fs.readFile).mockResolvedValue(mockBuffer);
+    const mockArrayBuffer = new ArrayBuffer(4);
+    const mockView = new Uint8Array(mockArrayBuffer);
+    mockView.set([1, 2, 3, 4]);
+    const mockFileReader = vi.fn().mockResolvedValue(mockArrayBuffer);
     vi.mocked(wav.decode).mockReturnValue({
       sampleRate: 48000,
       channelData: [new Float32Array(100)], // 1 channel
     });
 
-    const input = { filePath: "/path/to/mono.wav" };
+    const input = {
+      filePath: "/path/to/mono.wav",
+      fileReader: mockFileReader,
+    };
     const result = await scanWAVAnalysis(input);
 
     expect(result.success).toBe(true);
@@ -83,13 +88,17 @@ describe("scanWAVAnalysis", () => {
 
     expect(result.success).toBe(true);
     expect(customFileReader).toHaveBeenCalledWith("/path/to/test.wav");
-    expect(fs.readFile).not.toHaveBeenCalled();
   });
 
   it("handles file reading errors", async () => {
-    vi.mocked(fs.readFile).mockRejectedValue(new Error("File not found"));
+    const mockFileReader = vi
+      .fn()
+      .mockRejectedValue(new Error("File not found"));
 
-    const input = { filePath: "/path/to/missing.wav" };
+    const input = {
+      filePath: "/path/to/missing.wav",
+      fileReader: mockFileReader,
+    };
     const result = await scanWAVAnalysis(input);
 
     expect(result.success).toBe(false);
@@ -97,13 +106,18 @@ describe("scanWAVAnalysis", () => {
   });
 
   it("handles WAV decoding errors", async () => {
-    const mockBuffer = Buffer.from([1, 2, 3, 4]);
-    vi.mocked(fs.readFile).mockResolvedValue(mockBuffer);
+    const mockArrayBuffer = new ArrayBuffer(4);
+    const mockView = new Uint8Array(mockArrayBuffer);
+    mockView.set([1, 2, 3, 4]);
+    const mockFileReader = vi.fn().mockResolvedValue(mockArrayBuffer);
     vi.mocked(wav.decode).mockImplementation(() => {
       throw new Error("Invalid WAV format");
     });
 
-    const input = { filePath: "/path/to/invalid.wav" };
+    const input = {
+      filePath: "/path/to/invalid.wav",
+      fileReader: mockFileReader,
+    };
     const result = await scanWAVAnalysis(input);
 
     expect(result.success).toBe(false);
@@ -112,11 +126,16 @@ describe("scanWAVAnalysis", () => {
   });
 
   it("handles invalid WAV decode result", async () => {
-    const mockBuffer = Buffer.from([1, 2, 3, 4]);
-    vi.mocked(fs.readFile).mockResolvedValue(mockBuffer);
+    const mockArrayBuffer = new ArrayBuffer(4);
+    const mockView = new Uint8Array(mockArrayBuffer);
+    mockView.set([1, 2, 3, 4]);
+    const mockFileReader = vi.fn().mockResolvedValue(mockArrayBuffer);
     vi.mocked(wav.decode).mockReturnValue(null);
 
-    const input = { filePath: "/path/to/corrupted.wav" };
+    const input = {
+      filePath: "/path/to/corrupted.wav",
+      fileReader: mockFileReader,
+    };
     const result = await scanWAVAnalysis(input);
 
     expect(result.success).toBe(false);
@@ -124,14 +143,19 @@ describe("scanWAVAnalysis", () => {
   });
 
   it("handles WAV file with no channel data", async () => {
-    const mockBuffer = Buffer.from([1, 2, 3, 4]);
-    vi.mocked(fs.readFile).mockResolvedValue(mockBuffer);
+    const mockArrayBuffer = new ArrayBuffer(4);
+    const mockView = new Uint8Array(mockArrayBuffer);
+    mockView.set([1, 2, 3, 4]);
+    const mockFileReader = vi.fn().mockResolvedValue(mockArrayBuffer);
     vi.mocked(wav.decode).mockReturnValue({
       sampleRate: 44100,
       channelData: [],
     });
 
-    const input = { filePath: "/path/to/empty.wav" };
+    const input = {
+      filePath: "/path/to/empty.wav",
+      fileReader: mockFileReader,
+    };
     const result = await scanWAVAnalysis(input);
 
     expect(result.success).toBe(false);

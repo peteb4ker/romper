@@ -112,13 +112,10 @@ async function runWizardTest(
       console.log(`[${testName || "E2E"}] [renderer log] ${msg.args()[i]}`);
   });
 
-  await window.waitForSelector('button[aria-label="Local Store Setup"]', {
+  // Wait for the wizard to auto-open (no button click needed)
+  await window.waitForSelector('[data-testid="local-store-wizard"]', {
     state: "visible",
   });
-  await window.click('button[aria-label="Local Store Setup"]');
-  await window.screenshot({ path: "after-local-store-setup-click.png" });
-  const htmlAfterClick = await window.content();
-  await window.waitForSelector('[data-testid="local-store-wizard"]');
 
   // 1. source
   const sourceSelector = `[data-testid="wizard-source-${source}"]`;

@@ -41,40 +41,9 @@ async function writeSettings(
 }
 
 contextBridge.exposeInMainWorld("electronAPI", {
-  scanSdCard: (localStorePath: string): Promise<string[]> => {
-    console.log("[Preload] scanSdCard invoked", localStorePath);
-    return ipcRenderer.invoke("scan-sd-card", localStorePath);
-  },
   selectSdCard: (): Promise<string | null> => {
     console.log("[Preload] selectSdCard invoked");
     return ipcRenderer.invoke("select-sd-card");
-  },
-  watchSdCard: (
-    localStorePath: string,
-    callback: () => void,
-  ): { close: () => Promise<void> } => {
-    console.log("[Preload] watchSdCard invoked", localStorePath);
-    let watcherId: string | undefined;
-    ipcRenderer.invoke("watch-sd-card", localStorePath).then((id: string) => {
-      watcherId = id;
-      console.log("watchSdCard invoked with path:", localStorePath);
-      ipcRenderer.on("sd-card-changed", (_event: unknown, _data: unknown) =>
-        callback(),
-      );
-    });
-    // Always return an object with a close method that waits for watcherId to be set
-    return {
-      close: async () => {
-        // Wait for watcherId to be set if not already
-        if (!watcherId) {
-          await new Promise((resolve) => setTimeout(resolve, 50));
-        }
-        if (watcherId) {
-          console.log("Closing watcher with ID:", watcherId);
-          return ipcRenderer.invoke("unwatch-sd-card", watcherId);
-        }
-      },
-    };
   },
   getSetting: async (
     key: keyof {

@@ -26,10 +26,7 @@ function copyRecursiveSync(src: string, dest: string) {
   }
 }
 
-export function registerIpcHandlers(
-  watchers: { [key: string]: fs.FSWatcher },
-  inMemorySettings: Record<string, any>,
-) {
+export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("read-settings", (_event) => inMemorySettings);
   ipcMain.handle("write-settings", (_event, key: string, value: any) => {
     console.log("[Main] write-settings called with key:", key, "value:", value);
@@ -83,36 +80,12 @@ export function registerIpcHandlers(
     app.quit();
   });
 
-  ipcMain.handle("scan-sd-card", async (event, localStorePath) => {
-    return fs
-      .readdirSync(localStorePath)
-      .filter((folder) => /^[A-Z][0-9]{1,2}$/.test(folder));
-  });
   ipcMain.handle("select-sd-card", async () => {
     const result = await dialog.showOpenDialog({
       properties: ["openDirectory"],
       title: "Select SD Card Path",
     });
     return result.canceled ? null : result.filePaths[0];
-  });
-  ipcMain.handle("watch-sd-card", (event, localStorePath: string) => {
-    const watcherId = `${localStorePath}-${Date.now()}`;
-    const watcher = fs.watch(
-      localStorePath,
-      { persistent: true },
-      (eventType, filename) => {
-        if (filename)
-          event.sender.send("sd-card-changed", { eventType, filename });
-      },
-    );
-    watchers[watcherId] = watcher;
-    return watcherId;
-  });
-  ipcMain.handle("unwatch-sd-card", (event, watcherId: string) => {
-    if (watchers[watcherId]) {
-      watchers[watcherId].close();
-      delete watchers[watcherId];
-    }
   });
   ipcMain.handle("get-user-data-path", () => app.getPath("userData"));
   ipcMain.handle(

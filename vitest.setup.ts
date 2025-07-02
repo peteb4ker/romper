@@ -23,21 +23,25 @@ beforeAll(() => {
       },
     };
     window.electronAPI = {
-      scanSdCard: async (localStorePath) => ["KitA", "KitB", "KitC"],
       selectSdCard: async () => "/sd",
-      watchSdCard: () => ({ close: () => {} }),
       getUserHomeDir: async () => "/mock/home", // Fix: make this async to match production API
       readSettings: async () => ({ localStorePath: "/sd" }),
       setSetting: async () => {},
       getSetting: async () => "/sd",
       createKit: async () => {},
       copyKit: async () => {},
-      listFilesInRoot: async (kitPath) => [
-        "1 kick.wav",
-        "2 snare.wav",
-        "3 hat.wav",
-        "4 tom.wav",
-      ],
+      listFilesInRoot: async (path) => {
+        // When called with common local store paths, return kit folders
+        if (
+          path === "/sd" ||
+          path === "/mock/local/store" ||
+          path.includes("local")
+        ) {
+          return ["A0", "A1", "B0"];
+        }
+        // When called with specific kit paths, return WAV files
+        return ["1 kick.wav", "2 snare.wav", "3 hat.wav", "4 tom.wav"];
+      },
       getAudioBuffer: async () => new ArrayBuffer(8),
       readFile: async (filePath) => ({
         success: true,

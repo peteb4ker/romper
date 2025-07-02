@@ -37,9 +37,7 @@ describe("preload/index.tsx", () => {
     expect(mockContextBridge.exposeInMainWorld).toHaveBeenCalledWith(
       "electronAPI",
       expect.objectContaining({
-        scanSdCard: expect.any(Function),
         selectSdCard: expect.any(Function),
-        watchSdCard: expect.any(Function),
         getSetting: expect.any(Function),
         setSetting: expect.any(Function),
         readSettings: expect.any(Function),
@@ -78,23 +76,6 @@ describe("preload/index.tsx", () => {
         getDroppedFilePath: expect.any(Function),
       }),
     );
-  });
-
-  it("calls ipcRenderer.invoke for scanSdCard", async () => {
-    await import("../index");
-    // Find the electronAPI call (should be the first one)
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue(["file1", "file2"]);
-    const result = await api.scanSdCard("/mock/sd");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "scan-sd-card",
-      "/mock/sd",
-    );
-    expect(result).toEqual(["file1", "file2"]);
   });
 
   it("calls webUtils.getPathForFile for getDroppedFilePath", async () => {
@@ -177,26 +158,6 @@ describe("preload/index.tsx", () => {
     mockIpcRenderer.invoke.mockRejectedValue(new Error("fail"));
     const errorSettings = await api.readSettings();
     expect(errorSettings).toEqual({});
-  });
-
-  it("watchSdCard returns close method and calls unwatch", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    let closeCalled = false;
-    mockIpcRenderer.invoke.mockResolvedValueOnce("watcher-id");
-    mockIpcRenderer.invoke.mockResolvedValueOnce(undefined);
-    const watcher = api.watchSdCard("/mock/sd", () => {});
-    // Wait for watcherId to be set
-    await new Promise((r) => setTimeout(r, 60));
-    await watcher.close();
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "unwatch-sd-card",
-      "watcher-id",
-    );
   });
 
   it("calls ipcRenderer.invoke for ensureDir", async () => {
@@ -624,38 +585,5 @@ describe("preload/index.tsx", () => {
     );
 
     consoleSpy.mockRestore();
-  });
-
-  it("watchSdCard handles case when watcherId is not immediately available", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-
-    // Mock delayed watcherId resolution
-    let resolveWatcherId: (id: string) => void;
-    const watcherIdPromise = new Promise<string>((resolve) => {
-      resolveWatcherId = resolve;
-    });
-
-    mockIpcRenderer.invoke.mockReturnValue(watcherIdPromise);
-
-    const watcher = api.watchSdCard("/mock/sd", () => {});
-
-    // Try to close before watcherId is available
-    const closePromise = watcher.close();
-
-    // Resolve the watcherId after a delay
-    setTimeout(() => resolveWatcherId("delayed-watcher-id"), 10);
-
-    await closePromise;
-
-    // Should eventually call unwatch with the delayed watcher ID
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "unwatch-sd-card",
-      "delayed-watcher-id",
-    );
   });
 });

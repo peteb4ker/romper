@@ -45,24 +45,24 @@ const KitsView = () => {
   const safeListFilesInRoot = window.electronAPI?.listFilesInRoot?.bind(
     window.electronAPI,
   );
-  const safeScanSdCard = window.electronAPI?.scanSdCard?.bind(
-    window.electronAPI,
-  );
 
   // Load all kits, samples, and labels on local store change
   useEffect(() => {
     if (!localStorePath || needsLocalStoreSetup) return;
     (async () => {
-      // 1. Scan all kits
-      if (!safeScanSdCard) {
-        console.warn("scanSdCard is not available");
+      // 1. Scan all kits using listFilesInRoot and filter for kit folder pattern
+      if (!safeListFilesInRoot) {
+        console.warn("listFilesInRoot is not available");
         setKits([]);
         return;
       }
       let kitNames: string[] = [];
       try {
-        const scanResult = safeScanSdCard(localStorePath);
-        kitNames = await (scanResult || Promise.resolve([]));
+        const allFiles = await safeListFilesInRoot(localStorePath);
+        // Filter for kit folder pattern (A0-Z99)
+        kitNames = allFiles.filter((folder: string) =>
+          /^[A-Z][0-9]{1,2}$/.test(folder),
+        );
         setKits(kitNames);
       } catch (error) {
         console.warn("Error scanning local store:", error);
@@ -88,12 +88,7 @@ const KitsView = () => {
       }
       setAllKitSamples(samples);
     })();
-  }, [
-    localStorePath,
-    needsLocalStoreSetup,
-    safeScanSdCard,
-    safeListFilesInRoot,
-  ]);
+  }, [localStorePath, needsLocalStoreSetup, safeListFilesInRoot]);
 
   // When a kit is selected, set its samples
   useEffect(() => {
@@ -162,10 +157,14 @@ const KitsView = () => {
     }
     if (refresh) {
       // Re-scan all kits and samples
-      if (localStorePath) {
-        const kitNames = await window.electronAPI
-          .scanSdCard(localStorePath)
-          .catch(() => []);
+      if (localStorePath && safeListFilesInRoot) {
+        const allFiles = await safeListFilesInRoot(localStorePath).catch(
+          () => [],
+        );
+        // Filter for kit folder pattern (A0-Z99)
+        const kitNames = allFiles.filter((folder: string) =>
+          /^[A-Z][0-9]{1,2}$/.test(folder),
+        );
         setKits(kitNames);
         const samples: { [kit: string]: VoiceSamples } = {};
         for (const kit of kitNames) {

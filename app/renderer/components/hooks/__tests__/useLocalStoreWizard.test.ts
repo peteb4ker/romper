@@ -2,8 +2,8 @@ import { act, renderHook } from "@testing-library/react";
 import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useLocalStoreWizard } from "../useLocalStoreWizard";
 import { executeFullKitScan } from "../../utils/scanners/orchestrationFunctions";
+import { useLocalStoreWizard } from "../useLocalStoreWizard";
 
 // Mock the scanner orchestration functions
 vi.mock("../../utils/scanners/orchestrationFunctions", () => ({
@@ -38,7 +38,7 @@ describe("useLocalStoreWizard", () => {
           voiceNames: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
         },
         rtfArtist: {
-          bankArtists: { "A0": "Test Artist", "B12": "Another Artist" },
+          bankArtists: { A0: "Test Artist", B12: "Another Artist" },
         },
       },
       errors: [],
@@ -461,9 +461,9 @@ describe("useLocalStoreWizard", () => {
     );
 
     // Verify scanning progress was reported
-    expect(progressEvents.some((e) => e.phase === "Scanning kits for metadata...")).toBe(
-      true,
-    );
+    expect(
+      progressEvents.some((e) => e.phase === "Scanning kits for metadata..."),
+    ).toBe(true);
   });
 
   it("handles scanning errors gracefully and continues with other kits", async () => {
@@ -479,7 +479,7 @@ describe("useLocalStoreWizard", () => {
       .mockResolvedValueOnce({
         success: true,
         results: {
-          rtfArtist: { bankArtists: { "B12": "Another Artist" } },
+          rtfArtist: { bankArtists: { B12: "Another Artist" } },
         },
         errors: [],
         completedOperations: 3,

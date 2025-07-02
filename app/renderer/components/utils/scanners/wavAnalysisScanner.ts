@@ -1,6 +1,5 @@
 // WAV file analysis scanner - analyzes WAV files for audio properties
 
-import * as fs from "fs/promises";
 import * as wav from "node-wav";
 
 import type { ScanResult, WAVAnalysisInput, WAVAnalysisOutput } from "./types";
@@ -16,16 +15,14 @@ export async function scanWAVAnalysis(
   try {
     const { filePath, fileReader } = input;
 
-    // Use provided file reader or read from file system
-    let buffer: Buffer;
-
-    if (fileReader) {
-      const arrayBuffer = await fileReader(filePath);
-      buffer = Buffer.from(arrayBuffer);
-    } else {
-      // Read file directly using Node.js fs
-      buffer = await fs.readFile(filePath);
+    if (!fileReader) {
+      throw new Error(
+        "fileReader is required for WAV analysis in renderer process",
+      );
     }
+
+    const arrayBuffer = await fileReader(filePath);
+    const buffer = Buffer.from(arrayBuffer);
 
     // Parse WAV file using node-wav
     const result = parseWAVFile(buffer);

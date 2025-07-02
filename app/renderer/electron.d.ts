@@ -1,10 +1,5 @@
 export interface ElectronAPI {
-  scanSdCard: (localStorePath: string) => Promise<string[]>;
   selectSdCard: () => Promise<string | null>;
-  watchSdCard: (
-    localStorePath: string,
-    callback: () => void,
-  ) => { close: () => Promise<void> };
   readSettings: () => Promise<{
     localStorePath?: string;
     darkMode?: boolean;

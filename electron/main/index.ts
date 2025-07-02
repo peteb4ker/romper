@@ -23,7 +23,6 @@ type Settings = {
   [key: string]: unknown;
 };
 
-const watchers: { [key: string]: fs.FSWatcher } = {};
 let inMemorySettings: Settings = {}; // Store settings in memory
 let currentSamplePlayer: unknown = null; // TODO: Refine type if possible
 
@@ -146,11 +145,10 @@ app.whenReady().then(async () => {
 
     // Register all IPC handlers
     console.log(
-      "[Romper Electron] Registering IPC handlers with:",
-      Object.keys(watchers),
+      "[Romper Electron] Registering IPC handlers with settings:",
       Object.keys(inMemorySettings),
     );
-    registerIpcHandlers(watchers, inMemorySettings);
+    registerIpcHandlers(inMemorySettings);
     registerDbIpcHandlers();
     console.log("[Romper Electron] IPC handlers registered");
   } catch (error: unknown) {

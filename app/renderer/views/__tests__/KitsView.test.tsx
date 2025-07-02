@@ -20,15 +20,19 @@ describe("KitsView", () => {
 
     // Mock all electronAPI methods outside of the test body for isolation
     window.electronAPI = {
-      scanSdCard: vi.fn().mockResolvedValue(["A0", "A1"]),
-      listFilesInRoot: vi
-        .fn()
-        .mockResolvedValue([
+      listFilesInRoot: vi.fn().mockImplementation((path: string) => {
+        // When called with the local store path, return kit folders
+        if (path === "/mock/local/store") {
+          return Promise.resolve(["A0", "A1"]);
+        }
+        // When called with specific kit paths, return WAV files
+        return Promise.resolve([
           "1 Kick.wav",
           "2 Snare.wav",
           "3 Hat.wav",
           "4 Tom.wav",
-        ]),
+        ]);
+      }),
       readRampleLabels: vi.fn().mockResolvedValue({
         kits: {
           A0: {
@@ -45,7 +49,6 @@ describe("KitsView", () => {
       writeRampleLabels: vi.fn().mockResolvedValue(undefined),
       // Add other required methods that might be missing
       selectSdCard: vi.fn().mockResolvedValue("/sd"),
-      watchSdCard: vi.fn().mockReturnValue({ close: vi.fn() }),
       getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),
       readSettings: vi
         .fn()

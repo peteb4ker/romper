@@ -312,8 +312,12 @@ export function useLocalStoreWizard(
         return;
       }
 
-      console.log("[Hook] Starting scanning operations for", kitNames.length, "kits");
-      
+      console.log(
+        "[Hook] Starting scanning operations for",
+        kitNames.length,
+        "kits",
+      );
+
       // Create a file reader that works with Electron APIs
       const createFileReader = () => {
         return async (filePath: string): Promise<ArrayBuffer> => {
@@ -337,7 +341,7 @@ export function useLocalStoreWizard(
             if (!api.listFilesInRoot) {
               throw new Error("listFilesInRoot is not available");
             }
-            
+
             const files = await api.listFilesInRoot(kitPath);
             const wavFiles = files
               .filter((f: string) => /\.wav$/i.test(f))
@@ -345,7 +349,7 @@ export function useLocalStoreWizard(
             const rtfFiles = files
               .filter((f: string) => /\.rtf$/i.test(f))
               .map((f: string) => `${kitPath}/${f}`);
-            
+
             // Group samples by voice for voice inference
             const wavFileNames = files.filter((f: string) => /\.wav$/i.test(f));
             const samples = groupSamplesByVoice(wavFileNames);
@@ -373,7 +377,10 @@ export function useLocalStoreWizard(
               description?: string;
             } = {};
 
-            if (scanResult.success && scanResult.results.rtfArtist?.bankArtists) {
+            if (
+              scanResult.success &&
+              scanResult.results.rtfArtist?.bankArtists
+            ) {
               const bankArtists = scanResult.results.rtfArtist.bankArtists;
               if (bankArtists[kitName]) {
                 updates.artist = bankArtists[kitName];
@@ -381,9 +388,14 @@ export function useLocalStoreWizard(
             }
 
             // Apply voice inference results as tags if available
-            if (scanResult.success && scanResult.results.voiceInference?.voiceNames) {
+            if (
+              scanResult.success &&
+              scanResult.results.voiceInference?.voiceNames
+            ) {
               const voiceNames = scanResult.results.voiceInference.voiceNames;
-              const voiceTags = Object.values(voiceNames).filter((name): name is string => Boolean(name));
+              const voiceTags = Object.values(voiceNames).filter(
+                (name): name is string => Boolean(name),
+              );
               if (voiceTags.length > 0) {
                 updates.tags = voiceTags;
               }
@@ -391,19 +403,31 @@ export function useLocalStoreWizard(
 
             // Update kit metadata if we have any updates
             if (Object.keys(updates).length > 0 && api.updateKitMetadata) {
-              const updateResult = await api.updateKitMetadata(dbDir, kitName, updates);
+              const updateResult = await api.updateKitMetadata(
+                dbDir,
+                kitName,
+                updates,
+              );
               if (!updateResult.success) {
-                console.warn(`[Hook] Failed to update metadata for kit ${kitName}:`, updateResult.error);
+                console.warn(
+                  `[Hook] Failed to update metadata for kit ${kitName}:`,
+                  updateResult.error,
+                );
               } else {
-                console.log(`[Hook] Updated metadata for kit ${kitName}:`, updates);
+                console.log(
+                  `[Hook] Updated metadata for kit ${kitName}:`,
+                  updates,
+                );
               }
             }
 
             // Log scan results for debugging
             if (scanResult.errors.length > 0) {
-              console.warn(`[Hook] Scan warnings for kit ${kitName}:`, scanResult.errors);
+              console.warn(
+                `[Hook] Scan warnings for kit ${kitName}:`,
+                scanResult.errors,
+              );
             }
-
           } catch (error) {
             console.error(`[Hook] Scanning failed for kit ${kitName}:`, error);
             // Continue with other kits even if one fails
@@ -457,12 +481,12 @@ export function useLocalStoreWizard(
       console.log("[Hook] initialize - creating and populating database");
       const { dbDir, validKits } = await createAndPopulateDb(state.targetPath);
       console.log("[Hook] initialize - database creation completed");
-      
+
       // Run scanning operations as the final step
       console.log("[Hook] initialize - starting scanning operations");
       await runScanning(state.targetPath, dbDir, validKits);
       console.log("[Hook] initialize - scanning operations completed");
-      
+
       console.log("[Hook] initialize completed successfully");
     } catch (e: any) {
       console.error("[Hook] initialize error:", e);

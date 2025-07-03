@@ -24,7 +24,16 @@ romper/
   shared/          # Shared utilities between renderer and main
   docs/            # Documentation
   tests/           # End-to-end tests
+  .github/chatmodes/ # GitHub Copilot Chatmodes for development workflows
 ```
+
+## 💬 Chatmodes
+
+The project uses GitHub Copilot chatmodes to streamline development workflows:
+
+- [**Define.chatmode.md**](.github/chatmodes/Define.chatmode.md) - Helps create detailed Product Requirements Documents (PRDs) by asking clarifying questions and generating structured PRD files
+- [**Plan.chatmode.md**](.github/chatmodes/Plan.chatmode.md) - Generates implementation task lists from PRDs, breaking features into manageable steps with proper file organization
+- [**Build.chatmode.md**](.github/chatmodes/Build.chatmode.md) - Executes tasks one by one, updating progress in task files and ensuring methodical implementation
 
 ## 🚀 Getting Started
 

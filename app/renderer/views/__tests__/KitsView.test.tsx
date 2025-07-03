@@ -96,11 +96,11 @@ describe("KitsView", () => {
 
     // Store the current call count
     const initialCallCount = window.electronAPI.listFilesInRoot.mock.calls.length;
-    
+
     // Force a component update by changing a prop in a parent component
     // This is simulated by waiting a bit and checking if more calls were made
     await new Promise((resolve) => setTimeout(resolve, 500));
-    
+
     // The call count should not have increased from the initial calls
     // We check that no additional calls have been made, which would indicate an infinite loop
     expect(window.electronAPI.listFilesInRoot.mock.calls.length).toBe(initialCallCount);

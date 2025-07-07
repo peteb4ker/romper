@@ -91,11 +91,14 @@ describe("KitsView", () => {
 
     // Wait for initial rendering and data loading to complete
     await waitFor(() => {
-      expect(window.electronAPI.listFilesInRoot).toHaveBeenCalledWith("/mock/local/store");
+      expect(window.electronAPI.listFilesInRoot).toHaveBeenCalledWith(
+        "/mock/local/store",
+      );
     });
 
     // Store the current call count
-    const initialCallCount = window.electronAPI.listFilesInRoot.mock.calls.length;
+    const initialCallCount =
+      window.electronAPI.listFilesInRoot.mock.calls.length;
 
     // Force a component update by changing a prop in a parent component
     // This is simulated by waiting a bit and checking if more calls were made
@@ -103,6 +106,8 @@ describe("KitsView", () => {
 
     // The call count should not have increased from the initial calls
     // We check that no additional calls have been made, which would indicate an infinite loop
-    expect(window.electronAPI.listFilesInRoot.mock.calls.length).toBe(initialCallCount);
+    expect(window.electronAPI.listFilesInRoot.mock.calls.length).toBe(
+      initialCallCount,
+    );
   });
 });

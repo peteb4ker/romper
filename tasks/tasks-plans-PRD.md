@@ -100,59 +100,69 @@
         - [x] 2.1.3.1.3 If blank folder is chosen, no files are copied
     - [x] 2.1.4 Progress bar is used for: downloading zip, unzipping/moving files, writing to DB
     - [x] 2.1.5 Enforce step order: cannot proceed to next step until current is valid; allow going back to previous steps. The steps are a) choose source b) choose target c) initialize
-    - [ ] 2.1.7 Cancel action is always available and stops any in-progress operation
+    - [ ] 2.1.6 Cancel action is always available and stops any in-progress operation
   - [x] 2.2 Create and initialize Romper DB in `.romperdb` folder within local store.
   - [x] 2.3 Persist local store location in settings; allow changing location
   - [x] 2.4 Upon selection and instantiation of local store files, insert new records into the Romper DB.
-    - [x] 2.13 Update Romper DB schema to remove plan table, add new kit and sample fields, and update docs/ERD
-    - [x] 2.14 Implement initial import to create kit and sample records (no plan table), with new fields
-    - [x] 2.15 Update documentation and ERD to match new schema (docs/romper-db.md, docs/romper-db.mmd)
   - [x] 2.5 Unit tests for initialization, validation, and error handling.
-  - [x] 2.8 Store exactly one local store path and associated Romper DB location in application settings; load them on startup if present.
-  - [x] 2.9 Transition from SD card-based startup to local store-based startup
-    - [x] 2.9.1 Update app startup logic to use local store path instead of SD card path
-    - [x] 2.9.2 Show local store wizard immediately on startup if local store is not configured or invalid
-    - [x] 2.9.3 Display info message that local store must be set up before app can be used
-    - [x] 2.9.4 Close app if user cancels the auto-triggered wizard
-    - [x] 2.9.5 Remove "Select SD Card" button from KitBrowserHeader
-    - [x] 2.9.6 Update StatusBar to show local store path with database icon instead of SD card info
-    - [x] 2.9.7 Update all related unit tests for the SD card to local store transition
-  - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
-  - [ ] 2.10 Implement composable scanning operations and database storage
-    - [x] 2.10.1 Extend database schema for metadata storage
-      - [x] 2.10.1.1 Add kit_alias, kit_artist, locked fields to kits table
-      - [x] 2.10.1.2 Add voice_alias field to existing voice-related structure
-      - [x] 2.10.1.3 Add step_pattern field for step sequencer use
-      - [x] 2.10.1.4 Add wav_bitrate, wav_sample_rate, is_stereo fields to samples table
-      - [x] 2.10.1.5 Update database schema documentation in docs/romper-db.md
-    - [x] 2.10.2 Implement core scanning operations as composable functions
-      - [x] 2.10.2.1 Create voice name inference scanner (from existing function)
-      - [x] 2.10.2.2 Create WAV file analysis scanner (bitrate, sample rate, stereo detection)
-      - [x] 2.10.2.3 Create RTF artist metadata scanner (from existing function) - Extract artist names from RTF filenames (e.g., "A - Artist Name.rtf") and update the artist field on all kits in that bank
-      - [x] 2.10.2.4 Create step pattern scanner for sequencer metadata (SKIPPED - step patterns are internal to app/database)
-      - [x] 2.10.2.5 Design scanner orchestration system for composable operation chains
-    - [x] 2.10.3 Remove JSON file dependency and migrate to database storage
-      - [x] 2.10.3.1 Update scanning logic to store results in database instead of JSON
-      - [x] 2.10.3.2 Remove JSON file reading/writing code
-      - [x] 2.10.3.3 Update all components to read metadata from database
-    - [x] 2.10.4 Unit tests for core scanning operations and database storage
-  - [x] 2.17 Integrate scanning operations into wizard initialization
-    - [x] 2.17.1 Add automatic scanning as final step in wizard initialization
-      - [x] 2.17.1.1 After database records created, run scanning operation chain
-      - [x] 2.17.1.2 Chain: voice inference → WAV analysis → RTF artist scan
-      - [x] 2.17.1.3 Show scanning progress on existing wizard progress bar
-      - [x] 2.17.1.4 Handle partial failures gracefully (continue chain on errors)
-    - [x] 2.17.2 Unit tests for wizard scanning integration
-  - [x] 2.18 Update manual scanning functionality
-    - [x] 2.18.1 Keep existing "Scan Kit" button in KitDetails page using new operations
-    - [x] 2.18.2 Keep existing "Scan All Kits" option in KitBrowser using new operations
-    - [x] 2.18.3 Use toast progress bar for manual scanning operations
-    - [x] 2.18.4 Simplified to always perform a comprehensive scan (removing individual operation selection)
-    - [x] 2.18.5 Handle unscanned kits (prompt user, show appropriate UI state)
-    - [x] 2.18.6 Unit tests for manual scanning UI and operations
-  - [ ] 2.11 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata and plans.
-  - [ ] 2.12 If the Romper DB metadata or plans are out of sync with the local store, present an error to the user and indicate that manual intervention may be required.
-  - [x] 2.16 Flip local store setup flow: user chooses source first, then target, then import. Update UI, logic, and tests. Decouple UI tests from IPC/Electron.
+  - [x] 2.6 Update Romper DB schema to remove plan table, add new kit and sample fields, and update docs/ERD
+  - [x] 2.7 Implement initial import to create kit and sample records (no plan table), with new fields
+  - [x] 2.8 Update documentation and ERD to match new schema (docs/romper-db.md, docs/romper-db.mmd)
+  - [x] 2.9 Store exactly one local store path and associated Romper DB location in application settings; load them on startup if present.
+  - [x] 2.10 Transition from SD card-based startup to local store-based startup
+    - [x] 2.10.1 Update app startup logic to use local store path instead of SD card path
+    - [x] 2.10.2 Show local store wizard immediately on startup if local store is not configured or invalid
+    - [x] 2.10.3 Display info message that local store must be set up before app can be used
+    - [x] 2.10.4 Close app if user cancels the auto-triggered wizard
+    - [x] 2.10.5 Remove "Select SD Card" button from KitBrowserHeader
+    - [x] 2.10.6 Update StatusBar to show local store path with database icon instead of SD card info
+    - [x] 2.10.7 Update all related unit tests for the SD card to local store transition
+  - [x] 2.11 Implement composable scanning operations and database storage
+    - [x] 2.11.1 Extend database schema for metadata storage
+      - [x] 2.11.1.1 Add kit_alias, kit_artist, locked fields to kits table
+      - [x] 2.11.1.2 Add voice_alias field to existing voice-related structure
+      - [x] 2.11.1.3 Add step_pattern field for step sequencer use
+      - [x] 2.11.1.4 Add wav_bitrate, wav_sample_rate, is_stereo fields to samples table
+      - [x] 2.11.1.5 Update database schema documentation in docs/romper-db.md
+    - [x] 2.11.2 Implement core scanning operations as composable functions
+      - [x] 2.11.2.1 Create voice name inference scanner (from existing function)
+      - [x] 2.11.2.2 Create WAV file analysis scanner (bitrate, sample rate, stereo detection)
+      - [x] 2.11.2.3 Create RTF artist metadata scanner (from existing function) - Extract artist names from RTF filenames (e.g., "A - Artist Name.rtf") and update the artist field on all kits in that bank
+      - [x] 2.11.2.4 Create step pattern scanner for sequencer metadata (SKIPPED - step patterns are internal to app/database)
+      - [x] 2.11.2.5 Design scanner orchestration system for composable operation chains
+    - [x] 2.11.3 Remove JSON file dependency and migrate to database storage
+      - [x] 2.11.3.1 Update scanning logic to store results in database instead of JSON
+      - [x] 2.11.3.2 Remove JSON file reading/writing code
+      - [x] 2.11.3.3 Update all components to read metadata from database
+    - [x] 2.11.4 Unit tests for core scanning operations and database storage
+  - [x] 2.12 Implement validation logic to check that the local store kit folders and sample files match the Romper DB metadata.
+    - [x] 2.12.1 Create function to retrieve all samples from DB for comparison
+    - [x] 2.12.2 Create validation function that checks filesystem against DB records
+    - [x] 2.12.3 Identify both missing files (in DB but not filesystem) and extra files (in filesystem but not DB)
+    - [x] 2.12.4 Add IPC handler and electron API for validation
+    - [x] 2.12.5 Create unit tests for the validation logic
+  - [ ] 2.13 If the Romper DB metadata is out of sync with the local store, present validation results to the user.
+    - [ ] 2.13.1 Display a list of kits with validation errors, grouped by error type
+    - [ ] 2.13.2 Offer the option to rescan problematic kits to correct the database
+    - [ ] 2.13.3 Clearly inform users that rescanning will update the DB with the current filesystem state
+    - [ ] 2.13.4 Create unit tests for the validation result UI and rescan functionality
+    - [ ] 2.13.5 Integrate validation check into a maintenance menu in the UI
+    - [ ] 2.13.6 Implement rescan functionality to overwrite DB records with current filesystem state for selected kits
+  - [x] 2.14 Flip local store setup flow: user chooses source first, then target, then import. Update UI, logic, and tests. Decouple UI tests from IPC/Electron.
+  - [x] 2.15 Integrate scanning operations into wizard initialization
+    - [x] 2.15.1 Add automatic scanning as final step in wizard initialization
+      - [x] 2.15.1.1 After database records created, run scanning operation chain
+      - [x] 2.15.1.2 Chain: voice inference → WAV analysis → RTF artist scan
+      - [x] 2.15.1.3 Show scanning progress on existing wizard progress bar
+      - [x] 2.15.1.4 Handle partial failures gracefully (continue chain on errors)
+    - [x] 2.15.2 Unit tests for wizard scanning integration
+  - [x] 2.16 Update manual scanning functionality
+    - [x] 2.16.1 Keep existing "Scan Kit" button in KitDetails page using new operations
+    - [x] 2.16.2 Keep existing "Scan All Kits" option in KitBrowser using new operations
+    - [x] 2.16.3 Use toast progress bar for manual scanning operations
+    - [x] 2.16.4 Simplified to always perform a comprehensive scan (removing individual operation selection)
+    - [x] 2.16.5 Handle unscanned kits (prompt user, show appropriate UI state)
+    - [x] 2.16.6 Unit tests for manual scanning UI and operations
 
 - [ ] 3.0 Sample Assignment and Slot Management
   - [ ] 3.1 Implement drag-and-drop for adding samples to slots (single and multiple).

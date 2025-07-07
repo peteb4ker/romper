@@ -61,7 +61,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         } catch (e) {}
       }
     };
-  }, [filePath, onError]);
+  }, [filePath]); // onError is intentionally not included to prevent infinite loops from inline function recreation
 
   // Draw waveform
   function drawWaveform(buffer: AudioBuffer) {
@@ -154,7 +154,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   // Notify parent about playing state changes
   useEffect(() => {
     if (onPlayingChange) onPlayingChange(isPlaying);
-  }, [isPlaying, onPlayingChange]);
+  }, [isPlaying]); // onPlayingChange is intentionally not included to prevent infinite loops from inline function recreation
 
   // Draw playhead
   useEffect(() => {

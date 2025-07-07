@@ -34,6 +34,11 @@ describe("KitBrowser", () => {
       copyKit: vi.fn().mockResolvedValue(undefined),
       selectSdCard: vi.fn().mockResolvedValue("/mock/sd"),
       setSetting: vi.fn(),
+      validateLocalStore: vi.fn().mockResolvedValue({
+        isValid: true,
+        errors: [],
+        errorSummary: undefined,
+      }),
     };
     // Mock scrollTo for jsdom
     Object.defineProperty(HTMLElement.prototype, "scrollTo", {
@@ -206,6 +211,41 @@ describe("KitBrowser", () => {
           },
           { timeout: 2000 },
         );
+      });
+    });
+  });
+
+  describe("Validation Results", () => {
+    it("should open validation dialog when validate button is clicked", async () => {
+      // Mock validation results for test
+      window.electronAPI.validateLocalStore = vi.fn().mockResolvedValue({
+        isValid: false,
+        errors: [
+          {
+            kitName: "A1",
+            missingFiles: ["kick.wav"],
+            extraFiles: [],
+          },
+        ],
+        errorSummary: "Found validation errors",
+      });
+
+      render(
+        <MockMessageDisplayProvider>
+          <KitBrowser {...baseProps} />
+        </MockMessageDisplayProvider>,
+      );
+
+      // Find and click the validate button
+      const validateButton = screen.getByText("Validate Local Store");
+      fireEvent.click(validateButton);
+
+      // Wait for dialog to appear
+      await waitFor(() => {
+        expect(
+          screen.getByText("Local Store Validation Results"),
+        ).toBeInTheDocument();
+        expect(window.electronAPI.validateLocalStore).toHaveBeenCalled();
       });
     });
   });

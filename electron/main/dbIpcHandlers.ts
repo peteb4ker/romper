@@ -1,9 +1,12 @@
 // DB-related IPC handlers for Romper (modular, testable)
 import { ipcMain } from "electron";
 
+import { KitRecord, SampleRecord } from "../../shared/dbTypesShared";
 import {
   createRomperDbFile,
   getAllKits,
+  getAllSamples,
+  getAllSamplesForKit,
   getKitByName,
   insertKitRecord,
   insertSampleRecord,
@@ -11,6 +14,7 @@ import {
   updateStepPattern,
   updateVoiceAlias,
 } from "./db/romperDbCore.js";
+import { validateLocalStoreAgainstDb } from "./localStoreValidator.js";
 
 export function registerDbIpcHandlers() {
   ipcMain.handle("create-romper-db", async (_event, dbDir: string) => {
@@ -19,35 +23,14 @@ export function registerDbIpcHandlers() {
 
   ipcMain.handle(
     "insert-kit",
-    async (
-      _event,
-      dbDir: string,
-      kit: {
-        name: string;
-        alias?: string;
-        artist?: string;
-        plan_enabled: boolean;
-      },
-    ) => {
+    async (_event, dbDir: string, kit: KitRecord) => {
       return insertKitRecord(dbDir, kit);
     },
   );
 
   ipcMain.handle(
     "insert-sample",
-    async (
-      _event,
-      dbDir: string,
-      sample: {
-        kit_name: string;
-        filename: string;
-        voice_number: number;
-        slot_number: number;
-        is_stereo: boolean;
-        wav_bitrate?: number;
-        wav_sample_rate?: number;
-      },
-    ) => {
+    async (_event, dbDir: string, sample: SampleRecord) => {
       return insertSampleRecord(dbDir, sample);
     },
   );
@@ -97,6 +80,24 @@ export function registerDbIpcHandlers() {
     "update-step-pattern",
     async (_event, dbDir: string, kitName: string, stepPattern: number[][]) => {
       return updateStepPattern(dbDir, kitName, stepPattern);
+    },
+  );
+
+  ipcMain.handle(
+    "validate-local-store",
+    async (_event, localStorePath: string) => {
+      return validateLocalStoreAgainstDb(localStorePath);
+    },
+  );
+
+  ipcMain.handle("get-all-samples", async (_event, dbDir: string) => {
+    return getAllSamples(dbDir);
+  });
+
+  ipcMain.handle(
+    "get-all-samples-for-kit",
+    async (_event, dbDir: string, kitName: string) => {
+      return getAllSamplesForKit(dbDir, kitName);
     },
   );
 }

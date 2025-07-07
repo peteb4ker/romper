@@ -2,6 +2,7 @@
 export interface RomperConfig {
   squarpArchiveUrl: string;
   localStorePath?: string;
+  sdCardPath?: string;
   // Add more config options here as needed
 }
 
@@ -35,7 +36,8 @@ function createConfig(): RomperConfig {
         "ROMPER_SQUARP_ARCHIVE_URL",
         "https://data.squarp.net/RampleSamplesV1-2.zip",
       ) || "https://data.squarp.net/RampleSamplesV1-2.zip",
-    localStorePath: getConfigValue("ROMPER_SDCARD_PATH"),
+    localStorePath: getConfigValue("ROMPER_LOCAL_PATH"), // Target path for local store
+    sdCardPath: getConfigValue("ROMPER_SDCARD_PATH"), // Source path for SD card
   };
 
   return config;

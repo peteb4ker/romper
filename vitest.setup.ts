@@ -48,6 +48,11 @@ beforeAll(() => {
         data: new ArrayBuffer(1024), // Mock file data
       }),
       selectLocalStorePath: async () => "/mock/custom/path", // mock for tests
+      validateLocalStore: async () => ({
+        isValid: true,
+        errors: [],
+        errorSummary: undefined,
+      }),
 
       // Database API methods for new metadata system
       getKitMetadata: async (dbDir, kitName) => ({

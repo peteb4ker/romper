@@ -124,8 +124,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: npm run test:e2e
         env:
-          ROMPER_E2E_SDCARD_PATH: /tmp/e2e-sdcard
-          ROMPER_E2E_TMPDIR: /tmp
+          ROMPER_SDCARD_PATH: /tmp/e2e-sdcard
           CI: true
           DISPLAY: ':99'
 
@@ -133,8 +132,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: npm run test:e2e
         env:
-          ROMPER_E2E_SDCARD_PATH: C:\temp\e2e-sdcard
-          ROMPER_E2E_TMPDIR: C:\temp
+          ROMPER_SDCARD_PATH: C:\temp\e2e-sdcard
           CI: true
 
       - name: Upload test results

@@ -44,7 +44,7 @@ const KitsView = () => {
   // Add type guards for possibly undefined Electron APIs - memoized to prevent infinite effect loops
   const safeListFilesInRoot = React.useMemo(
     () => window.electronAPI?.listFilesInRoot?.bind(window.electronAPI),
-    [] // Empty deps array ensures this function is created once
+    [], // Empty deps array ensures this function is created once
   );
 
   // Load all kits, samples, and labels on local store change

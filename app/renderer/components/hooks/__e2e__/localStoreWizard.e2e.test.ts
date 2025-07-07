@@ -69,8 +69,8 @@ async function runWizardTest(
       ...(source === "squarp" && squarpArchiveUrl
         ? { ROMPER_SQUARP_ARCHIVE_URL: squarpArchiveUrl }
         : {}),
-      ROMPER_E2E_TARGET_PATH: path.join(
-        process.env.ROMPER_E2E_TMPDIR || "/tmp",
+      ROMPER_LOCAL_PATH: path.join(
+        "/tmp",
         `romper-e2e-${source}-${Date.now()}`,
       ),
     }).filter(([_, v]) => typeof v === "string"),
@@ -145,7 +145,7 @@ async function runWizardTest(
   }
 
   // 2. target
-  const targetPath = env.ROMPER_E2E_TARGET_PATH;
+  const targetPath = env.ROMPER_LOCAL_PATH;
   await window.waitForSelector("#local-store-path-input", { state: "visible" });
   await window.fill("#local-store-path-input", targetPath);
 
@@ -158,8 +158,11 @@ async function runWizardTest(
 
   // Initialize to kick off the import
   await window.click('[data-testid="wizard-initialize-btn"]');
-  await window.waitForSelector("text=Local store initialized successfully!", {
-    timeout: 10000,
+
+  // Wait for the wizard to disappear (indicates success)
+  await window.waitForSelector('[data-testid="local-store-wizard"]', {
+    state: "hidden",
+    timeout: 15000,
   });
 
   // Assert that the db exists

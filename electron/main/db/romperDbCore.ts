@@ -3,50 +3,68 @@ import BetterSqlite3 from "better-sqlite3";
 import * as fs from "fs";
 import * as path from "path";
 
-// Types
-export interface DbResult<T = void> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
-export interface KitRecord {
-  name: string;
-  alias?: string;
-  artist?: string;
-  plan_enabled: boolean;
-  locked?: boolean;
-  step_pattern?: number[][];
-}
-
-export interface VoiceRecord {
-  kit_name: string;
-  voice_number: number;
-  voice_alias?: string;
-}
-
-export interface SampleRecord {
-  kit_name: string;
-  filename: string;
-  voice_number: number;
-  slot_number: number;
-  is_stereo: boolean;
-  wav_bitrate?: number;
-  wav_sample_rate?: number;
-}
+import {
+  DbResult,
+  KitRecord,
+  KitWithVoices,
+  SampleRecord,
+  VoiceRecord,
+} from "../../../shared/dbTypesShared";
 
 // Constants
 export const DB_FILENAME = "romper.sqlite";
 export const MAX_SLOT_NUMBER = 12;
 export const MIN_SLOT_NUMBER = 1;
 
+// Logging utilities
+const log = {
+  info: (message: string, ...args: any[]) =>
+    console.log(`[Romper Electron] ${message}`, ...args),
+  error: (message: string, ...args: any[]) =>
+    console.error(`[Romper Electron] ${message}`, ...args),
+};
+
+/**
+ * Utility function to convert JS boolean to SQLite integer (0/1) for database operations
+ * SQLite doesn't support direct boolean binding
+ */
+function boolToSqliteInt(value: boolean | undefined | null): number {
+  if (value === undefined || value === null) {
+    return 0;
+  }
+  return value ? 1 : 0;
+}
+
+/**
+ * Wraps database operations with connection handling and error handling
+ * @param dbDir - The directory containing the database
+ * @param operation - The operation to perform on the database
+ * @returns A result containing the operation result or an error
+ */
+function withDb<T>(
+  dbDir: string,
+  operation: (db: BetterSqlite3.Database) => T,
+): DbResult<T> {
+  const dbPath = getDbPath(dbDir);
+  let db: BetterSqlite3.Database | null = null;
+
+  try {
+    db = createDbConnection(dbPath);
+    const result = operation(db);
+    return { success: true, data: result };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    return { success: false, error };
+  } finally {
+    if (db) {
+      db.close();
+    }
+  }
+}
+
 // Utility functions
 export function getDbPath(dbDir: string): string {
   return path.join(dbDir, DB_FILENAME);
-}
-
-export function booleanToSqlite(value: boolean): number {
-  return value ? 1 : 0;
 }
 
 export function isDbCorruptionError(error: string): boolean {
@@ -66,10 +84,12 @@ export function encodeStepPatternToBlob(
 
   // Create a 64-byte array (16 steps x 4 voices)
   const blob = new Uint8Array(64);
+  const STEPS = 16;
+  const VOICES = 4;
 
-  for (let step = 0; step < 16; step++) {
-    for (let voice = 0; voice < 4; voice++) {
-      const index = step * 4 + voice;
+  for (let step = 0; step < STEPS; step++) {
+    for (let voice = 0; voice < VOICES; voice++) {
+      const index = step * VOICES + voice;
       const velocity = stepPattern[voice]?.[step] || 0;
       // Ensure velocity is within valid range (0-127)
       blob[index] = Math.max(0, Math.min(127, velocity));
@@ -86,12 +106,16 @@ export function decodeStepPatternFromBlob(
     return null;
   }
 
+  const STEPS = 16;
+  const VOICES = 4;
   // Create 4 voices x 16 steps pattern
-  const stepPattern: number[][] = [[], [], [], []];
+  const stepPattern: number[][] = Array(VOICES)
+    .fill(0)
+    .map(() => Array(STEPS));
 
-  for (let step = 0; step < 16; step++) {
-    for (let voice = 0; voice < 4; voice++) {
-      const index = step * 4 + voice;
+  for (let step = 0; step < STEPS; step++) {
+    for (let voice = 0; voice < VOICES; voice++) {
+      const index = step * VOICES + voice;
       stepPattern[voice][step] = blob[index];
     }
   }
@@ -175,12 +199,7 @@ export async function createRomperDbFile(dbDir: string): Promise<{
   error?: string;
 }> {
   const dbPath = getDbPath(dbDir);
-  console.log(
-    "[Romper Electron] createRomperDbFile called with dbDir:",
-    dbDir,
-    "dbPath:",
-    dbPath,
-  );
+  log.info("createRomperDbFile called with dbDir:", dbDir, "dbPath:", dbPath);
 
   let triedRecreate = false;
 
@@ -188,37 +207,30 @@ export async function createRomperDbFile(dbDir: string): Promise<{
     try {
       ensureDbDirectory(dbDir);
       const db = createDbConnection(dbPath);
-      console.log("[Romper Electron] Opened DB at", dbPath);
+      log.info("Opened DB at", dbPath);
 
       setupDbSchema(db);
       db.close();
 
-      console.log("[Romper Electron] DB created and closed at", dbPath);
+      log.info("DB created and closed at", dbPath);
       return { success: true, dbPath };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[Romper Electron] Error in createRomperDbFile:", msg);
+      log.error("Error in createRomperDbFile:", msg);
 
       if (!triedRecreate && isDbCorruptionError(msg)) {
         triedRecreate = true;
-        console.log(
-          "[Romper Electron] DB corruption detected, attempting to recreate...",
-        );
+        log.info("DB corruption detected, attempting to recreate...");
         try {
           await forceCloseDbConnection(dbPath);
           await deleteDbFileWithRetry(dbPath);
-          console.log(
-            "[Romper Electron] Successfully handled corrupted DB file",
-          );
+          log.info("Successfully handled corrupted DB file");
         } catch (deleteError) {
-          console.error(
-            "[Romper Electron] Failed to delete corrupted DB file:",
-            deleteError,
-          );
+          log.error("Failed to delete corrupted DB file:", deleteError);
           // On Windows, if we can't delete the file, we might still be able to recreate
           if (process.platform === "win32") {
-            console.log(
-              "[Romper Electron] Attempting to continue despite deletion failure on Windows",
+            log.info(
+              "Attempting to continue despite deletion failure on Windows",
             );
             // Try to continue anyway - sometimes SQLite can overwrite the file
           } else {
@@ -246,52 +258,39 @@ async function deleteDbFileWithRetry(
       }
 
       fs.unlinkSync(dbPath);
-      console.log(
-        `[Romper Electron] Successfully deleted DB file on attempt ${i + 1}`,
-      );
+      log.info(`Successfully deleted DB file on attempt ${i + 1}`);
 
       // Verify file is actually gone
       if (!fs.existsSync(dbPath)) {
-        console.log(`[Romper Electron] Verified DB file is deleted`);
+        log.info(`Verified DB file is deleted`);
         return;
       } else {
-        console.log(
-          `[Romper Electron] File still exists after deletion, retrying...`,
-        );
+        log.info(`File still exists after deletion, retrying...`);
         throw new Error("File still exists after deletion");
       }
     } catch (error) {
       lastError = error as Error;
-      console.log(
-        `[Romper Electron] Delete attempt ${i + 1} failed:`,
-        lastError.message,
-      );
+      log.info(`Delete attempt ${i + 1} failed:`, lastError.message);
 
       // If deletion fails, try renaming first (common Windows issue)
       if (process.platform === "win32" && i < maxRetries - 1) {
         try {
           const backupPath = `${dbPath}.corrupted.${Date.now()}.${i}`;
           fs.renameSync(dbPath, backupPath);
-          console.log(
-            `[Romper Electron] Successfully renamed DB file to backup on attempt ${i + 1}`,
+          log.info(
+            `Successfully renamed DB file to backup on attempt ${i + 1}`,
           );
 
           // Verify original file is gone
           if (!fs.existsSync(dbPath)) {
-            console.log(
-              `[Romper Electron] Verified original DB file is gone after rename`,
-            );
+            log.info(`Verified original DB file is gone after rename`);
             return;
           } else {
-            console.log(
-              `[Romper Electron] Original file still exists after rename, retrying...`,
-            );
+            log.info(`Original file still exists after rename, retrying...`);
             throw new Error("Original file still exists after rename");
           }
         } catch (renameError) {
-          console.log(
-            `[Romper Electron] Rename attempt ${i + 1} failed, waiting...`,
-          );
+          log.info(`Rename attempt ${i + 1} failed, waiting...`);
           // Wait progressively longer on Windows
           await new Promise((resolve) => setTimeout(resolve, 500 * (i + 1)));
         }
@@ -309,20 +308,16 @@ async function deleteDbFileWithRetry(
       const timestamp = Date.now();
       const backupPath = `${dbPath}.locked.${timestamp}`;
       fs.renameSync(dbPath, backupPath);
-      console.log("[Romper Electron] Final rename attempt succeeded");
+      log.info("Final rename attempt succeeded");
 
       // Verify original file is gone
       if (!fs.existsSync(dbPath)) {
-        console.log(
-          `[Romper Electron] Verified original DB file is gone after final rename`,
-        );
+        log.info(`Verified original DB file is gone after final rename`);
         return;
       }
     } catch {
       // If even rename fails, we'll have to proceed anyway
-      console.error(
-        "[Romper Electron] All deletion/rename attempts failed, proceeding anyway",
-      );
+      log.error("All deletion/rename attempts failed, proceeding anyway");
       // On Windows, sometimes we just have to accept that the file is locked
       // and try to overwrite it directly
       return;
@@ -337,8 +332,8 @@ export function insertKitRecord(
   kit: KitRecord,
 ): { success: boolean; error?: string } {
   const dbPath = getDbPath(dbDir);
-  console.log(
-    "[Romper Electron] insertKitRecord called with dbDir:",
+  log.info(
+    "insertKitRecord called with dbDir:",
     dbDir,
     "dbPath:",
     dbPath,
@@ -346,25 +341,22 @@ export function insertKitRecord(
     kit,
   );
 
-  let db: BetterSqlite3.Database | null = null;
-  try {
-    db = createDbConnection(dbPath);
-
+  return withDb(dbDir, (db) => {
     // Insert the kit
     const kitStmt = db.prepare(
       "INSERT INTO kits (name, alias, artist, plan_enabled, locked, step_pattern) VALUES (?, ?, ?, ?, ?, ?)",
     );
     const stepPatternBlob = encodeStepPatternToBlob(kit.step_pattern);
-    const kitResult = kitStmt.run(
+    kitStmt.run(
       kit.name,
       kit.alias || null,
       kit.artist || null,
-      booleanToSqlite(kit.plan_enabled),
-      booleanToSqlite(kit.locked || false),
+      boolToSqliteInt(kit.plan_enabled),
+      boolToSqliteInt(kit.locked || false),
       stepPatternBlob,
     );
 
-    console.log("[Romper Electron] Kit inserted:", kit.name);
+    log.info("Kit inserted:", kit.name);
 
     // Create exactly 4 voice records for this kit
     const voiceStmt = db.prepare(
@@ -375,17 +367,9 @@ export function insertKitRecord(
       voiceStmt.run(kit.name, voiceNumber, null);
     }
 
-    console.log("[Romper Electron] Created 4 voice records for kit:", kit.name);
+    log.info("Created 4 voice records for kit:", kit.name);
     return { success: true };
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    console.error("[Romper Electron] Error in insertKitRecord:", error);
-    return { success: false, error };
-  } finally {
-    if (db) {
-      db.close();
-    }
-  }
+  });
 }
 
 export function updateVoiceAlias(
@@ -393,10 +377,10 @@ export function updateVoiceAlias(
   kitName: string,
   voiceNumber: number,
   voiceAlias: string | null,
-): { success: boolean; error?: string } {
+): DbResult<void> {
   const dbPath = getDbPath(dbDir);
-  console.log(
-    "[Romper Electron] updateVoiceAlias to:",
+  log.info(
+    "updateVoiceAlias to:",
     dbPath,
     "kitName:",
     kitName,
@@ -406,39 +390,28 @@ export function updateVoiceAlias(
     voiceAlias,
   );
 
-  let db: BetterSqlite3.Database | null = null;
-  try {
-    db = createDbConnection(dbPath);
+  return withDb<void>(dbDir, (db) => {
     const stmt = db.prepare(
       "UPDATE voices SET voice_alias = ? WHERE kit_name = ? AND voice_number = ?",
     );
     const result = stmt.run(voiceAlias, kitName, voiceNumber);
 
     if (result.changes === 0) {
-      return { success: false, error: "Voice not found" };
+      throw new Error("Voice not found");
     }
 
-    console.log("[Romper Electron] Voice alias updated");
-    return { success: true };
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    console.error("[Romper Electron] Error in updateVoiceAlias:", error);
-    return { success: false, error };
-  } finally {
-    if (db) {
-      db.close();
-    }
-  }
+    log.info("Voice alias updated");
+  });
 }
 
 export function updateStepPattern(
   dbDir: string,
   kitName: string,
-  stepPattern: number[][] | null,
-): { success: boolean; error?: string } {
+  stepPattern: number[][] | undefined,
+): DbResult<void> {
   const dbPath = getDbPath(dbDir);
-  console.log(
-    "[Romper Electron] updateStepPattern to:",
+  log.info(
+    "updateStepPattern to:",
     dbPath,
     "kitName:",
     kitName,
@@ -446,39 +419,27 @@ export function updateStepPattern(
     stepPattern,
   );
 
-  let db: BetterSqlite3.Database | null = null;
-  try {
-    db = createDbConnection(dbPath);
+  return withDb<void>(dbDir, (db) => {
     const stmt = db.prepare("UPDATE kits SET step_pattern = ? WHERE name = ?");
     const stepPatternBlob = encodeStepPatternToBlob(stepPattern);
     const result = stmt.run(stepPatternBlob, kitName);
 
     if (result.changes === 0) {
-      return { success: false, error: "Kit not found" };
+      throw new Error("Kit not found");
     }
 
-    console.log("[Romper Electron] Step pattern updated");
+    log.info("Step pattern updated");
     return { success: true };
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    console.error("[Romper Electron] Error in updateStepPattern:", error);
-    return { success: false, error };
-  } finally {
-    if (db) {
-      db.close();
-    }
-  }
+  });
 }
 
 export function insertSampleRecord(
   dbDir: string,
   sample: SampleRecord,
-): { success: boolean; sampleId?: number; error?: string } {
+): DbResult<{ sampleId: number }> {
   const dbPath = getDbPath(dbDir);
-  let db: BetterSqlite3.Database | null = null;
 
-  try {
-    db = createDbConnection(dbPath);
+  return withDb<{ sampleId: number }>(dbDir, (db) => {
     const stmt = db.prepare(
       "INSERT INTO samples (kit_name, filename, voice_number, slot_number, is_stereo, wav_bitrate, wav_sample_rate) VALUES (?, ?, ?, ?, ?, ?, ?)",
     );
@@ -487,49 +448,83 @@ export function insertSampleRecord(
       sample.filename,
       sample.voice_number,
       sample.slot_number,
-      booleanToSqlite(sample.is_stereo),
+      boolToSqliteInt(sample.is_stereo),
       sample.wav_bitrate || null,
       sample.wav_sample_rate || null,
     );
 
-    return { success: true, sampleId: Number(result.lastInsertRowid) };
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    return { success: false, error };
-  } finally {
-    if (db) {
-      db.close();
+    return { sampleId: Number(result.lastInsertRowid) };
+  });
+}
+
+/**
+ * Maps a raw database row to a typed SampleRecord object
+ * @param row - The database row representing a sample
+ * @returns A properly typed SampleRecord object
+ */
+export function mapToSampleRecord(row: any): SampleRecord {
+  return {
+    kit_name: row.kit_name,
+    filename: row.filename,
+    voice_number: row.voice_number,
+    slot_number: row.slot_number,
+    is_stereo: Boolean(row.is_stereo),
+    wav_bitrate: row.wav_bitrate,
+    wav_sample_rate: row.wav_sample_rate,
+  };
+}
+
+/**
+ * Maps raw database rows to a typed KitWithVoices object
+ * @param kitRow - The database row representing a kit
+ * @param voiceRows - The database rows representing voices for this kit
+ * @returns A properly typed KitWithVoices object
+ */
+export function mapToKitWithVoices(
+  kitRow: any,
+  voiceRows: any[],
+): KitWithVoices {
+  // Extract kit data
+  const kit: KitRecord = {
+    name: kitRow.name,
+    alias: kitRow.alias,
+    artist: kitRow.artist,
+    plan_enabled: Boolean(kitRow.plan_enabled),
+    locked: Boolean(kitRow.locked),
+    step_pattern: kitRow.step_pattern
+      ? decodeStepPatternFromBlob(kitRow.step_pattern)
+      : undefined,
+  };
+
+  // Create voice map (voice_number -> voice_alias)
+  const voices: { [voiceNumber: number]: string } = {};
+
+  // Add all voice aliases from the voiceRows
+  for (const voiceRow of voiceRows) {
+    if (voiceRow.voice_number && voiceRow.voice_alias) {
+      voices[voiceRow.voice_number] = voiceRow.voice_alias;
     }
   }
+
+  return {
+    ...kit,
+    voices,
+    locked: Boolean(kitRow.locked), // Ensure locked is always a boolean
+  };
 }
 
 // Query functions
-export interface KitWithVoices {
-  name: string;
-  alias?: string;
-  artist?: string;
-  plan_enabled: boolean;
-  locked: boolean;
-  step_pattern?: number[][];
-  voices: { [voiceNumber: number]: string };
-}
-
 export function getKitByName(
   dbDir: string,
   kitName: string,
 ): DbResult<KitWithVoices> {
-  const dbPath = getDbPath(dbDir);
-  let db: BetterSqlite3.Database | null = null;
-
-  try {
-    db = createDbConnection(dbPath);
-
+  return withDb<KitWithVoices>(dbDir, (db) => {
     // Get kit record
     const kitStmt = db.prepare("SELECT * FROM kits WHERE name = ?");
     const kitRow = kitStmt.get(kitName) as any;
 
     if (!kitRow) {
-      return { success: false, error: "Kit not found" };
+      throw new Error("Kit not found");
     }
 
     // Get voice aliases
@@ -538,40 +533,8 @@ export function getKitByName(
     );
     const voiceRows = voiceStmt.all(kitName) as any[];
 
-    const voices: { [voiceNumber: number]: string } = {};
-    for (const voice of voiceRows) {
-      voices[voice.voice_number] = voice.voice_alias || "";
-    }
-
-    // Ensure all 4 voices exist
-    for (let i = 1; i <= 4; i++) {
-      if (!(i in voices)) {
-        voices[i] = "";
-      }
-    }
-
-    const kit: KitWithVoices = {
-      name: kitRow.name,
-      alias: kitRow.alias,
-      artist: kitRow.artist,
-      plan_enabled: Boolean(kitRow.plan_enabled),
-      locked: Boolean(kitRow.locked),
-      step_pattern: kitRow.step_pattern
-        ? decodeStepPatternFromBlob(new Uint8Array(kitRow.step_pattern)) ||
-          undefined
-        : undefined,
-      voices,
-    };
-
-    return { success: true, data: kit };
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    return { success: false, error };
-  } finally {
-    if (db) {
-      db.close();
-    }
-  }
+    return mapToKitWithVoices(kitRow, voiceRows);
+  });
 }
 
 export function updateKitMetadata(
@@ -585,11 +548,8 @@ export function updateKitMetadata(
   },
 ): DbResult {
   const dbPath = getDbPath(dbDir);
-  let db: BetterSqlite3.Database | null = null;
 
-  try {
-    db = createDbConnection(dbPath);
-
+  return withDb<void>(dbDir, (db) => {
     // Build dynamic update query
     const setParts: string[] = [];
     const values: any[] = [];
@@ -604,7 +564,7 @@ export function updateKitMetadata(
     }
 
     if (setParts.length === 0) {
-      return { success: true }; // No updates to make
+      return; // No updates to make
     }
 
     values.push(kitName); // WHERE clause parameter
@@ -614,27 +574,15 @@ export function updateKitMetadata(
     const result = stmt.run(...values);
 
     if (result.changes === 0) {
-      return { success: false, error: "Kit not found" };
+      throw new Error("Kit not found");
     }
-
-    return { success: true };
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    return { success: false, error };
-  } finally {
-    if (db) {
-      db.close();
-    }
-  }
+  });
 }
 
 export function getAllKits(dbDir: string): DbResult<KitWithVoices[]> {
   const dbPath = getDbPath(dbDir);
-  let db: BetterSqlite3.Database | null = null;
 
-  try {
-    db = createDbConnection(dbPath);
-
+  return withDb<KitWithVoices[]>(dbDir, (db) => {
     // Get all kits
     const kitStmt = db.prepare("SELECT * FROM kits ORDER BY name");
     const kitRows = kitStmt.all() as any[];
@@ -648,41 +596,55 @@ export function getAllKits(dbDir: string): DbResult<KitWithVoices[]> {
       );
       const voiceRows = voiceStmt.all(kitRow.name) as any[];
 
-      const voices: { [voiceNumber: number]: string } = {};
-      for (const voice of voiceRows) {
-        voices[voice.voice_number] = voice.voice_alias || "";
-      }
-
-      // Ensure all 4 voices exist
-      for (let i = 1; i <= 4; i++) {
-        if (!(i in voices)) {
-          voices[i] = "";
-        }
-      }
-
-      const kit: KitWithVoices = {
-        name: kitRow.name,
-        alias: kitRow.alias,
-        artist: kitRow.artist,
-        plan_enabled: Boolean(kitRow.plan_enabled),
-        locked: Boolean(kitRow.locked),
-        step_pattern: kitRow.step_pattern
-          ? decodeStepPatternFromBlob(new Uint8Array(kitRow.step_pattern)) ||
-            undefined
-          : undefined,
-        voices,
-      };
+      const kit: KitWithVoices = mapToKitWithVoices(kitRow, voiceRows);
 
       kits.push(kit);
     }
 
-    return { success: true, data: kits };
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    return { success: false, error };
-  } finally {
-    if (db) {
-      db.close();
-    }
-  }
+    return kits;
+  });
+}
+
+/**
+ * Gets all samples for a specific kit.
+ * @param dbDir - The directory containing the Romper database
+ * @param kitName - The name of the kit to get samples for
+ * @returns A result containing an array of sample records if successful
+ */
+export function getAllSamplesForKit(
+  dbDir: string,
+  kitName: string,
+): DbResult<SampleRecord[]> {
+  const dbPath = getDbPath(dbDir);
+
+  return withDb<SampleRecord[]>(dbDir, (db) => {
+    const sampleStmt = db.prepare(
+      "SELECT * FROM samples WHERE kit_name = ? ORDER BY voice_number, slot_number",
+    );
+    const sampleRows = sampleStmt.all(kitName) as any[];
+
+    const samples: SampleRecord[] = sampleRows.map(mapToSampleRecord);
+
+    return samples;
+  });
+}
+
+/**
+ * Gets all samples from the database.
+ * @param dbDir - The directory containing the Romper database
+ * @returns A result containing an array of sample records if successful
+ */
+export function getAllSamples(dbDir: string): DbResult<SampleRecord[]> {
+  const dbPath = getDbPath(dbDir);
+
+  return withDb<SampleRecord[]>(dbDir, (db) => {
+    const sampleStmt = db.prepare(
+      "SELECT * FROM samples ORDER BY kit_name, voice_number, slot_number",
+    );
+    const sampleRows = sampleStmt.all() as any[];
+
+    const samples: SampleRecord[] = sampleRows.map(mapToSampleRecord);
+
+    return samples;
+  });
 }

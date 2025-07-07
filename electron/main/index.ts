@@ -31,6 +31,7 @@ const isDev = process.env.NODE_ENV === "development";
 function createWindow() {
   console.log("[Electron Main] Environment variables:");
   console.log("  ROMPER_SDCARD_PATH:", process.env.ROMPER_SDCARD_PATH);
+  console.log("  ROMPER_LOCAL_PATH:", process.env.ROMPER_LOCAL_PATH);
   console.log(
     "  ROMPER_SQUARP_ARCHIVE_URL:",
     process.env.ROMPER_SQUARP_ARCHIVE_URL,

@@ -34,5 +34,9 @@ prompt: |
   - If a task affects the Romper DB schema, update `/docs/romper-db.md` to reflect the change.
   - The ERD must match `/src/main/dbIpcHandlers.ts` and any DB-related logic.
 
+  ## Testing
+  - All unit tests are run via `npm run test:unit`
+  - All integration tests are run via `npm run test:integration`
+
   ## Summary
   Follow the task list step-by-step. Pause after each sub-task. Don’t skip ahead. Update the task list file after each sub-task is complete, and verify that all instructions are followed before moving on.

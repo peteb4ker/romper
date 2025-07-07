@@ -6,12 +6,7 @@ import React, {
   useReducer,
 } from "react";
 
-interface LocalStoreStatus {
-  hasLocalStore: boolean;
-  localStorePath: string | null;
-  isValid: boolean;
-  error?: string | null;
-}
+import { LocalStoreValidationDetailedResult } from "../../../shared/dbTypesShared";
 
 interface Settings {
   localStorePath: string | null;
@@ -20,7 +15,7 @@ interface Settings {
 
 interface SettingsState {
   settings: Settings;
-  localStoreStatus: LocalStoreStatus | null;
+  localStoreStatus: LocalStoreValidationDetailedResult | null;
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
@@ -32,14 +27,17 @@ type SettingsAction =
   | { type: "INIT_ERROR"; payload: string }
   | { type: "UPDATE_LOCAL_STORE_PATH"; payload: string }
   | { type: "UPDATE_DARK_MODE"; payload: boolean }
-  | { type: "UPDATE_LOCAL_STORE_STATUS"; payload: LocalStoreStatus | null }
+  | {
+      type: "UPDATE_LOCAL_STORE_STATUS";
+      payload: LocalStoreValidationDetailedResult | null;
+    }
   | { type: "CLEAR_ERROR" };
 
 interface SettingsContextProps {
   // Current settings
   localStorePath: string | null;
   darkMode: boolean;
-  localStoreStatus: LocalStoreStatus | null;
+  localStoreStatus: LocalStoreValidationDetailedResult | null;
 
   // State
   isLoading: boolean;
@@ -129,10 +127,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Refresh local store status
   const refreshLocalStoreStatus = useCallback(async () => {
     try {
-      if (window.electronAPI?.getLocalStoreStatus) {
-        const status = await window.electronAPI.getLocalStoreStatus();
-        dispatch({ type: "UPDATE_LOCAL_STORE_STATUS", payload: status });
-      }
+      const status = await window.electronAPI.getLocalStoreStatus();
+      dispatch({ type: "UPDATE_LOCAL_STORE_STATUS", payload: status });
     } catch (error) {
       console.error("Failed to refresh local store status:", error);
       dispatch({ type: "UPDATE_LOCAL_STORE_STATUS", payload: null });
@@ -145,6 +141,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       const loadedSettings = await window.electronAPI.readSettings();
+
       const settings: Settings = {
         localStorePath: loadedSettings.localStorePath || null,
         darkMode: loadedSettings.darkMode ?? false,
@@ -236,5 +233,6 @@ export const useSettings = (): SettingsContextProps => {
 };
 
 // Export types for external use
-export type { LocalStoreStatus, Settings, SettingsContextProps };
+export type { Settings, SettingsContextProps };
+export type { LocalStoreValidationDetailedResult } from "../../../shared/dbTypesShared";
 export { SettingsContext };

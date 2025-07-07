@@ -350,46 +350,13 @@ describe("KitDetails", () => {
       expect(handleScanKit).toHaveBeenCalledTimes(1);
     });
 
-    // Skipping this test as it requires more complex setup with dismiss functionality
-    it.skip("hides the prompt after dismiss button is clicked", async () => {
-      // Mock the kit as unscanned
+    it("hides the prompt after dismiss button is clicked", async () => {
+      // Mock the kit as unscanned - use the createMockLogic helper for consistency
       const mockLogic = {
+        ...createMockLogic(),
         metadata: {
+          ...createMockLogic().metadata,
           kitLabel: { label: "Test Kit", voiceNames: {} }, // No voice names = unscanned
-          editingKitLabel: false,
-          kitLabelInput: "Test Kit",
-          labelsLoading: false,
-          setEditingKitLabel: vi.fn(),
-          setKitLabelInput: vi.fn(),
-          handleSaveKitLabel: vi.fn(),
-          handleRescanAllVoiceNames: vi.fn(),
-          handleRescanVoiceName: vi.fn(),
-        },
-        samples: { 1: [], 2: [], 3: [], 4: [] },
-        handleScanKit: vi.fn(),
-        selectedVoice: 1,
-        selectedSampleIdx: 0,
-        sequencerOpen: false,
-        setSelectedVoice: vi.fn(),
-        setSelectedSampleIdx: vi.fn(),
-        setSequencerOpen: vi.fn(),
-        sequencerGridRef: { current: null },
-        kitVoicePanels: {
-          onKeyNavigation: vi.fn(),
-          focusedSlotRef: { current: null },
-          handleSlotClick: vi.fn(),
-          samples: { 1: [], 2: [], 3: [], 4: [] },
-          selectedVoice: 1,
-          selectedSampleIdx: 0,
-          setSelectedVoice: vi.fn(),
-          setSelectedSampleIdx: vi.fn(),
-        },
-        stepSequencer: {
-          stepPattern: Array(64).fill(0),
-          handleStepToggle: vi.fn(),
-          playbackActive: false,
-          handlePlayToggle: vi.fn(),
-          currentStep: -1,
         },
       };
 

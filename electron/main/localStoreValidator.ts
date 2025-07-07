@@ -1,11 +1,18 @@
 import fs from "fs";
 import path from "path";
 
-export interface LocalStoreValidationResult {
-  isValid: boolean;
-  error?: string;
-  romperDbPath?: string;
-}
+import {
+  DbResult,
+  KitValidationError,
+  KitWithVoices,
+  LocalStoreValidationDetailedResult,
+  SampleRecord,
+} from "../../shared/dbTypesShared";
+import {
+  getAllKits,
+  getAllSamples,
+  getAllSamplesForKit,
+} from "./db/romperDbCore.js";
 
 /**
  * Validates that a local store path exists and contains a valid Romper database.
@@ -14,7 +21,7 @@ export interface LocalStoreValidationResult {
  */
 export function validateLocalStoreAndDb(
   localStorePath: string,
-): LocalStoreValidationResult {
+): LocalStoreValidationDetailedResult {
   try {
     // Check if local store directory exists
     if (!fs.existsSync(localStorePath)) {
@@ -55,4 +62,123 @@ export function validateLocalStoreAndDb(
  */
 export function getRomperDbPath(localStorePath: string): string {
   return path.join(localStorePath, ".romperdb", "romper.sqlite");
+}
+
+/**
+ * Validates that the files in the local store match the records in the Romper database.
+ * @param localStorePath - The path to the local store directory
+ * @returns Detailed validation result with specific errors if any found
+ */
+export function validateLocalStoreAgainstDb(
+  localStorePath: string,
+): LocalStoreValidationDetailedResult {
+  // First check basic validity
+  const basicValidation = validateLocalStoreAndDb(localStorePath);
+  if (!basicValidation.isValid) {
+    return {
+      isValid: false,
+      errorSummary: basicValidation.error,
+    };
+  }
+
+  const romperDbPath = basicValidation.romperDbPath!;
+  const dbDir = path.dirname(romperDbPath);
+
+  // Get all kits from the database
+  const kitsResult = getAllKits(dbDir);
+  if (!kitsResult.success || !kitsResult.data) {
+    return {
+      isValid: false,
+      errorSummary: `Failed to retrieve kits from database: ${kitsResult.error}`,
+    };
+  }
+
+  const kitErrors: KitValidationError[] = [];
+  let isValid = true;
+
+  // For each kit, check if the folder exists and validate samples
+  for (const kit of kitsResult.data) {
+    const missingFiles: string[] = [];
+    const extraFiles: string[] = [];
+
+    // Check if kit folder exists
+    const kitFolderPath = path.join(localStorePath, kit.name);
+    if (
+      !fs.existsSync(kitFolderPath) ||
+      !fs.statSync(kitFolderPath).isDirectory()
+    ) {
+      // Kit folder doesn't exist but is in DB
+      isValid = false;
+      kitErrors.push({
+        kitName: kit.name,
+        missingFiles: [`Kit folder ${kit.name} does not exist`],
+        extraFiles: [],
+      });
+      continue;
+    }
+
+    // Get samples for this kit
+    const samplesResult = getAllSamplesForKit(dbDir, kit.name);
+    if (!samplesResult.success || !samplesResult.data) {
+      isValid = false;
+      kitErrors.push({
+        kitName: kit.name,
+        missingFiles: [`Failed to retrieve samples: ${samplesResult.error}`],
+        extraFiles: [],
+      });
+      continue;
+    }
+
+    // Check that all samples in DB exist in filesystem
+    for (const sample of samplesResult.data) {
+      const samplePath = path.join(kitFolderPath, sample.filename);
+      if (!fs.existsSync(samplePath)) {
+        missingFiles.push(sample.filename);
+        isValid = false;
+      }
+    }
+
+    // Check for extra files in filesystem not in DB
+    try {
+      const filesInDir = fs
+        .readdirSync(kitFolderPath)
+        .filter((file) => file.toLowerCase().endsWith(".wav"));
+
+      const dbFiles = new Set(
+        samplesResult.data.map((s) => s.filename.toLowerCase()),
+      );
+
+      for (const file of filesInDir) {
+        if (!dbFiles.has(file.toLowerCase())) {
+          extraFiles.push(file);
+          isValid = false;
+        }
+      }
+    } catch (error) {
+      // Error reading directory
+      isValid = false;
+      missingFiles.push(
+        `Error reading kit directory: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
+    // Add to errors if any issues found
+    if (missingFiles.length > 0 || extraFiles.length > 0) {
+      kitErrors.push({
+        kitName: kit.name,
+        missingFiles,
+        extraFiles,
+      });
+    }
+  }
+
+  return {
+    isValid,
+    errors: kitErrors.length > 0 ? kitErrors : undefined,
+    errorSummary: isValid
+      ? undefined
+      : `Found ${kitErrors.length} kit(s) with validation errors`,
+  };
 }

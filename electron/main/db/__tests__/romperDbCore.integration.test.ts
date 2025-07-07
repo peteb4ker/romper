@@ -151,7 +151,7 @@ describe("romperDbCore.ts integration", () => {
     expect(kit.name).toBe("A01");
     expect(kit.alias).toBe("TR-808");
     expect(kit.artist).toBe("Roland");
-    expect(kit.plan_enabled).toBe(0);
+    expect(kit.plan_enabled).toEqual(0); // Using toEqual for integer or boolean
     closeDb(db);
   });
 
@@ -164,15 +164,17 @@ describe("romperDbCore.ts integration", () => {
       is_stereo: true,
     });
     expect(sampleRes.success).toBe(true);
+    expect(sampleRes.data).toBeDefined();
     const db = createDb(dbPath);
     const sample = db
       .prepare("SELECT * FROM samples WHERE id = ?")
-      .get(sampleRes.sampleId);
+      .get(sampleRes.data?.sampleId);
     expect(sample.kit_name).toBe(kitName);
     expect(sample.filename).toBe("kick.wav");
     expect(sample.voice_number).toBe(1);
     expect(sample.slot_number).toBe(1);
-    expect(sample.is_stereo).toBe(1);
+    // When retrieved directly from the database, SQLite returns booleans as integers
+    expect(sample.is_stereo).toEqual(1); // Using toEqual for integer or boolean
     closeDb(db);
   });
 

@@ -4,7 +4,6 @@ import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  booleanToSqlite,
   createDbConnection,
   DB_FILENAME,
   decodeStepPatternFromBlob,
@@ -17,6 +16,8 @@ import {
   insertSampleRecord,
   isDbCorruptionError,
   type KitRecord,
+  mapToKitWithVoices,
+  mapToSampleRecord,
   MAX_SLOT_NUMBER,
   MIN_SLOT_NUMBER,
   type SampleRecord,
@@ -50,16 +51,6 @@ describe("romperDbCore", () => {
         const dbDir = "C:\\test\\dir";
         const result = getDbPath(dbDir);
         expect(result).toBe(path.join(dbDir, DB_FILENAME));
-      });
-    });
-
-    describe("booleanToSqlite", () => {
-      it("converts true to 1", () => {
-        expect(booleanToSqlite(true)).toBe(1);
-      });
-
-      it("converts false to 0", () => {
-        expect(booleanToSqlite(false)).toBe(0);
       });
     });
 
@@ -360,8 +351,8 @@ describe("romperDbCore", () => {
         "Test Kit",
         "TK",
         "Test Artist",
-        1,
-        0,
+        1, // true converted to 1 for SQLite
+        0, // false converted to 0 for SQLite
         null,
       );
 
@@ -392,8 +383,8 @@ describe("romperDbCore", () => {
         "Minimal Kit",
         null,
         null,
-        0,
-        0,
+        0, // false converted to 0 for SQLite
+        0, // false converted to 0 for SQLite
         null,
       );
       expect(mockVoiceStmt.run).toHaveBeenCalledTimes(4); // Still creates 4 voices
@@ -413,8 +404,8 @@ describe("romperDbCore", () => {
         "Locked Kit",
         null,
         null,
-        1,
-        1,
+        1, // true converted to 1 for SQLite
+        1, // true converted to 1 for SQLite
         null,
       );
       expect(mockVoiceStmt.run).toHaveBeenCalledTimes(4); // Still creates 4 voices
@@ -442,8 +433,8 @@ describe("romperDbCore", () => {
         "Pattern Kit",
         null,
         null,
-        1,
-        0,
+        1, // true converted to 1 for SQLite
+        0, // false converted to 0 for SQLite
         expectedBlob,
       );
       expect(mockVoiceStmt.run).toHaveBeenCalledTimes(4); // Still creates 4 voices
@@ -666,7 +657,7 @@ describe("romperDbCore", () => {
       const result = insertSampleRecord(dbDir, sample);
 
       expect(result.success).toBe(true);
-      expect(result.sampleId).toBe(456);
+      expect(result.data?.sampleId).toBe(456);
       expect(result.error).toBeUndefined();
 
       expect(mockBetterSqlite3).toHaveBeenCalledWith(getDbPath(dbDir));
@@ -678,14 +669,14 @@ describe("romperDbCore", () => {
         "kick.wav",
         1,
         1,
-        1,
+        1, // true converted to 1 for SQLite
         null,
         null,
       );
       expect(mockDb.close).toHaveBeenCalled();
     });
 
-    it("converts boolean to sqlite format", () => {
+    it("handles boolean values in sqlite format", () => {
       const dbDir = "/test/dir";
       const sample: SampleRecord = {
         kit_name: "TestKit",
@@ -702,7 +693,7 @@ describe("romperDbCore", () => {
         "mono.wav",
         2,
         2,
-        0,
+        0, // false converted to 0 for SQLite
         null,
         null,
       );
@@ -728,7 +719,7 @@ describe("romperDbCore", () => {
         "hd_sample.wav",
         3,
         5,
-        1,
+        1, // true converted to 1 for SQLite
         1411200,
         44100,
       );
@@ -785,6 +776,133 @@ describe("romperDbCore", () => {
     it("has correct slot number constraints", () => {
       expect(MIN_SLOT_NUMBER).toBe(1);
       expect(MAX_SLOT_NUMBER).toBe(12);
+    });
+  });
+
+  describe("mapping functions", () => {
+    describe("mapToSampleRecord", () => {
+      it("maps a database row to a SampleRecord", () => {
+        const dbRow = {
+          kit_name: "test-kit",
+          filename: "test.wav",
+          voice_number: 1,
+          slot_number: 2,
+          is_stereo: 1, // SQLite boolean as integer
+          wav_bitrate: 16,
+          wav_sample_rate: 44100,
+        };
+
+        const result = mapToSampleRecord(dbRow);
+
+        expect(result).toEqual({
+          kit_name: "test-kit",
+          filename: "test.wav",
+          voice_number: 1,
+          slot_number: 2,
+          is_stereo: true, // Should convert SQLite integer to boolean
+          wav_bitrate: 16,
+          wav_sample_rate: 44100,
+        });
+      });
+
+      it("handles missing optional fields correctly", () => {
+        const dbRow = {
+          kit_name: "test-kit",
+          filename: "test.wav",
+          voice_number: 1,
+          slot_number: 2,
+          is_stereo: 0,
+          // wav_bitrate and wav_sample_rate are omitted
+        };
+
+        const result = mapToSampleRecord(dbRow);
+
+        expect(result).toEqual({
+          kit_name: "test-kit",
+          filename: "test.wav",
+          voice_number: 1,
+          slot_number: 2,
+          is_stereo: false,
+          wav_bitrate: undefined, // Should be undefined, not null
+          wav_sample_rate: undefined, // Should be undefined, not null
+        });
+      });
+    });
+
+    describe("mapToKitWithVoices", () => {
+      it("maps a kit row and voice rows to a KitWithVoices object", () => {
+        const kitRow = {
+          name: "test-kit",
+          alias: "Test Kit",
+          artist: "Test Artist",
+          plan_enabled: 1,
+          locked: 0,
+          step_pattern: null,
+        };
+
+        const voiceRows = [
+          { voice_number: 1, voice_alias: "Kicks" },
+          { voice_number: 3, voice_alias: "Hats" },
+        ];
+
+        const result = mapToKitWithVoices(kitRow, voiceRows);
+
+        expect(result).toEqual({
+          name: "test-kit",
+          alias: "Test Kit",
+          artist: "Test Artist",
+          plan_enabled: true,
+          locked: false,
+          step_pattern: undefined,
+          voices: {
+            1: "Kicks",
+            3: "Hats",
+          },
+        });
+      });
+
+      it("handles empty voice rows correctly", () => {
+        const kitRow = {
+          name: "test-kit",
+          plan_enabled: 0,
+          locked: 1,
+        };
+
+        const voiceRows: any[] = [];
+
+        const result = mapToKitWithVoices(kitRow, voiceRows);
+
+        expect(result).toEqual({
+          name: "test-kit",
+          alias: undefined,
+          artist: undefined,
+          plan_enabled: false,
+          locked: true,
+          step_pattern: undefined,
+          voices: {},
+        });
+      });
+
+      it("skips voice entries with missing voice_alias", () => {
+        const kitRow = {
+          name: "test-kit",
+          plan_enabled: 1,
+          locked: 0,
+        };
+
+        const voiceRows = [
+          { voice_number: 1, voice_alias: "Kicks" },
+          { voice_number: 2 }, // Missing voice_alias
+          { voice_number: 3, voice_alias: "" }, // Empty voice_alias
+        ];
+
+        const result = mapToKitWithVoices(kitRow, voiceRows);
+
+        expect(result.voices).toEqual({
+          1: "Kicks",
+          // 2 and 3 should be excluded due to missing/empty voice_alias
+        });
+      });
     });
   });
 });

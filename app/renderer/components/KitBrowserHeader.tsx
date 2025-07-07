@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiRefreshCw } from "react-icons/fi";
+import { FiDatabase, FiRefreshCw } from "react-icons/fi";
 
 import { useKitBrowserHeader } from "./hooks/useKitBrowserHeader";
 
@@ -11,6 +11,7 @@ interface KitBrowserHeaderProps {
   nextKitSlot: string | null;
   bankNav?: React.ReactNode;
   onShowLocalStoreWizard: () => void;
+  onValidateLocalStore: () => void;
 }
 
 const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
@@ -55,6 +56,14 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
             disabled={!nextKitSlot}
           >
             + Next Kit
+          </button>
+          <button
+            className="px-2 py-1 text-xs bg-teal-600 text-white rounded shadow hover:bg-teal-700 transition font-semibold"
+            onClick={props.onValidateLocalStore}
+            title="Validate local store and database consistency"
+          >
+            <FiDatabase className="inline-block mr-1" />
+            Validate Local Store
           </button>
           <button
             className="px-2 py-1 text-xs bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition font-semibold"

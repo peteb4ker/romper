@@ -63,6 +63,28 @@ npm test         # Run unit and integration tests
 npm run test:e2e # Run end-to-end tests
 ```
 
+## ⚙️ Environment Variables
+
+Romper supports the following environment variables for configuration:
+
+- **`ROMPER_SDCARD_PATH`** - Path to your Rample SD card directory (for backward compatibility)
+- **`ROMPER_LOCAL_PATH`** - Path to your local sample library directory (takes precedence over ROMPER_SDCARD_PATH)
+- **`ROMPER_SQUARP_ARCHIVE_URL`** - URL to the Squarp factory samples archive (defaults to official Squarp URL)
+
+Example usage:
+```sh
+# Point to your SD card
+export ROMPER_SDCARD_PATH="/Volumes/RAMPLE/KITS"
+
+# Or use a local directory
+export ROMPER_LOCAL_PATH="/Users/yourusername/RampleSamples"
+
+# Use a custom sample archive
+export ROMPER_SQUARP_ARCHIVE_URL="https://custom-url.com/samples.zip"
+
+npm run dev
+```
+
 ## 🎯 Getting Started with Romper
 
 Romper can work with your SD card in several ways:

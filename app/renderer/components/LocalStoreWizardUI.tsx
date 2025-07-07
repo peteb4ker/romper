@@ -82,8 +82,10 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
   const stepLabels = ["Source", "Target", "Initialize"];
 
   const handleInitialize = async () => {
-    await initialize();
-    if (onSuccess) onSuccess();
+    const result = await initialize();
+    if (result.success && onSuccess) {
+      onSuccess();
+    }
   };
 
   return (
@@ -97,7 +99,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
           sourceOptions={sourceOptions}
           stateSource={state.source}
           handleSourceSelect={handleSourceSelect}
-          localStorePath={state.localStorePath}
+          localStorePath={state.sdCardSourcePath}
           setSdCardPath={setSdCardPath}
           sourceConfirmed={state.sourceConfirmed}
           setSourceConfirmed={setSourceConfirmed}
@@ -116,7 +118,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
           }
           sourceUrl={
             state.source === "sdcard"
-              ? state.localStorePath || ""
+              ? state.sdCardSourcePath || ""
               : state.source === "squarp"
                 ? config.squarpArchiveUrl || ""
                 : ""

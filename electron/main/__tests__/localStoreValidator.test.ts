@@ -1,11 +1,21 @@
 import fs from "fs";
 import path from "path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import * as romperDbCore from "../db/romperDbCore.js";
 import {
   getRomperDbPath,
+  validateLocalStoreAgainstDb,
   validateLocalStoreAndDb,
 } from "../localStoreValidator";
+
+// Mock the romperDbCore functions for validation tests
+vi.mock("../db/romperDbCore.js", () => {
+  return {
+    getAllKits: vi.fn(),
+    getAllSamplesForKit: vi.fn(),
+  };
+});
 
 describe("localStoreValidator", () => {
   const testDir = "/tmp/romper-test-validation";
@@ -94,6 +104,144 @@ describe("localStoreValidator", () => {
 
       // Restore original function
       fs.existsSync = originalExistsSync;
+    });
+  });
+
+  describe("validateLocalStoreAgainstDb", () => {
+    beforeEach(() => {
+      // Setup mock directory structure
+      fs.mkdirSync(testDir, { recursive: true });
+      fs.mkdirSync(localStorePath, { recursive: true });
+      fs.mkdirSync(romperDbDir, { recursive: true });
+      fs.writeFileSync(romperDbPath, "mock-db-content");
+
+      // Create kit folders
+      const kitA0Path = path.join(localStorePath, "A0");
+      const kitB1Path = path.join(localStorePath, "B1");
+      fs.mkdirSync(kitA0Path);
+      fs.mkdirSync(kitB1Path);
+
+      // Create sample files
+      fs.writeFileSync(path.join(kitA0Path, "1 Kick.wav"), "mock-wav");
+      fs.writeFileSync(path.join(kitA0Path, "2 Snare.wav"), "mock-wav");
+      fs.writeFileSync(path.join(kitA0Path, "extra.wav"), "mock-wav");
+      fs.writeFileSync(path.join(kitB1Path, "3 Hat.wav"), "mock-wav");
+
+      // Mock DB functions
+      vi.mocked(romperDbCore.getAllKits).mockReturnValue({
+        success: true,
+        data: [
+          { name: "A0", voices: {}, plan_enabled: false },
+          { name: "B1", voices: {}, plan_enabled: false },
+          { name: "C2", voices: {}, plan_enabled: false }, // Missing folder
+        ],
+      });
+
+      vi.mocked(romperDbCore.getAllSamplesForKit).mockImplementation(
+        (dbDir, kitName) => {
+          if (kitName === "A0") {
+            return {
+              success: true,
+              data: [
+                {
+                  kit_name: "A0",
+                  filename: "1 Kick.wav",
+                  voice_number: 1,
+                  slot_number: 1,
+                  is_stereo: false,
+                },
+                {
+                  kit_name: "A0",
+                  filename: "2 Snare.wav",
+                  voice_number: 1,
+                  slot_number: 2,
+                  is_stereo: false,
+                },
+                {
+                  kit_name: "A0",
+                  filename: "missing.wav",
+                  voice_number: 1,
+                  slot_number: 3,
+                  is_stereo: false,
+                },
+              ],
+            };
+          }
+          if (kitName === "B1") {
+            return {
+              success: true,
+              data: [
+                {
+                  kit_name: "B1",
+                  filename: "3 Hat.wav",
+                  voice_number: 1,
+                  slot_number: 1,
+                  is_stereo: false,
+                },
+              ],
+            };
+          }
+          return { success: false, error: "Kit not found" };
+        },
+      );
+    });
+
+    it("should detect missing files, extra files, and missing kit folders", () => {
+      const result = validateLocalStoreAgainstDb(localStorePath);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toBeDefined();
+      expect(result.errors!.length).toBe(2); // A0 (missing/extra file) and C2 (missing folder)
+
+      // Check A0 errors
+      const a0Error = result.errors!.find((e) => e.kitName === "A0");
+      expect(a0Error).toBeDefined();
+      expect(a0Error!.missingFiles).toContain("missing.wav");
+      expect(a0Error!.extraFiles).toContain("extra.wav");
+
+      // Check C2 errors
+      const c2Error = result.errors!.find((e) => e.kitName === "C2");
+      expect(c2Error).toBeDefined();
+      expect(c2Error!.missingFiles[0]).toContain(
+        "Kit folder C2 does not exist",
+      );
+    });
+
+    it("should return valid when all files match DB records", () => {
+      // Mock B1 correctly (no missing or extra files)
+      vi.mocked(romperDbCore.getAllKits).mockReturnValue({
+        success: true,
+        data: [{ name: "B1", voices: {}, plan_enabled: false }],
+      });
+
+      const result = validateLocalStoreAgainstDb(localStorePath);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toBeUndefined();
+      expect(result.errorSummary).toBeUndefined();
+    });
+
+    it("should return error when basic validation fails", () => {
+      // Remove DB file to make basic validation fail
+      fs.rmSync(romperDbPath);
+
+      const result = validateLocalStoreAgainstDb(localStorePath);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errorSummary).toBeDefined();
+      expect(result.errorSummary).toContain("Romper DB file not found");
+    });
+
+    it("should return error when getAllKits fails", () => {
+      vi.mocked(romperDbCore.getAllKits).mockReturnValue({
+        success: false,
+        error: "Database query failed",
+      });
+
+      const result = validateLocalStoreAgainstDb(localStorePath);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errorSummary).toContain("Failed to retrieve kits");
     });
   });
 });

@@ -1,17 +1,42 @@
+// Import shared types from the dbTypesShared file
+import {
+  DbResult,
+  KitValidationError,
+  LocalStoreValidationDetailedResult,
+  LocalStoreValidationResult,
+  SampleRecord,
+} from "../../shared/dbTypesShared";
+
+export {
+  DbResult,
+  KitValidationError,
+  LocalStoreValidationDetailedResult,
+  LocalStoreValidationResult,
+  SampleRecord,
+};
+
+// Custom type for createRomperDb return value
+interface RomperDbResult extends DbResult<void> {
+  dbPath?: string;
+}
+
+// Custom type for insertSample return value
+interface InsertSampleResult extends DbResult<void> {
+  sampleId?: number;
+}
+
 export interface ElectronAPI {
   selectSdCard: () => Promise<string | null>;
   readSettings: () => Promise<{
     localStorePath?: string;
     darkMode?: boolean;
     theme?: string;
-    localStorePath?: string;
   }>;
   setSetting: (
     key: keyof {
       localStorePath?: string;
       darkMode?: boolean;
       theme?: string;
-      localStorePath?: string;
     },
     value: any,
   ) => Promise<void>;
@@ -20,7 +45,6 @@ export interface ElectronAPI {
       localStorePath?: string;
       darkMode?: boolean;
       theme?: string;
-      localStorePath?: string;
     },
   ) => Promise<any>;
   createKit?: (localStorePath: string, kitSlot: string) => Promise<void>;
@@ -36,13 +60,22 @@ export interface ElectronAPI {
   onSamplePlaybackEnded?: (cb: () => void) => void;
   onSamplePlaybackError?: (cb: (errMsg: string) => void) => void;
   getAudioBuffer?: (filePath: string) => Promise<ArrayBuffer>;
+  readFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // Returns file content as ArrayBuffer
+  readAudioFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // ArrayBuffer for audio files
+  validateLocalStore: (
+    localStorePath: string,
+  ) => Promise<LocalStoreValidationDetailedResult>;
+  getAllSamples?: (dbDir: string) => Promise<DbResult<SampleRecord[]>>;
+  getAllSamplesForKit?: (
+    dbDir: string,
+    kitName: string,
+  ) => Promise<DbResult<SampleRecord[]>>;
   // Database methods for kit metadata (replacing JSON file dependency)
   getKitMetadata?: (
     dbDir: string,
     kitName: string,
-  ) => Promise<{
-    success: boolean;
-    data?: {
+  ) => Promise<
+    DbResult<{
       id: number;
       name: string;
       alias?: string;
@@ -51,9 +84,8 @@ export interface ElectronAPI {
       locked: boolean;
       step_pattern?: number[][];
       voices: { [voiceNumber: number]: string };
-    };
-    error?: string;
-  }>;
+    }>
+  >;
   updateKitMetadata?: (
     dbDir: string,
     kitName: string,
@@ -63,76 +95,57 @@ export interface ElectronAPI {
       tags?: string[];
       description?: string;
     },
-  ) => Promise<{ success: boolean; error?: string }>;
-  getAllKits?: (dbDir: string) => Promise<{
-    success: boolean;
-    data?: Array<{
-      id: number;
-      name: string;
-      alias?: string;
-      artist?: string;
-      plan_enabled: boolean;
-      locked: boolean;
-      step_pattern?: number[][];
-      voices: { [voiceNumber: number]: string };
-    }>;
-    error?: string;
-  }>;
+  ) => Promise<DbResult>;
+  getAllKits?: (dbDir: string) => Promise<
+    DbResult<
+      Array<{
+        id: number;
+        name: string;
+        alias?: string;
+        artist?: string;
+        plan_enabled: boolean;
+        locked: boolean;
+        step_pattern?: number[][];
+        voices: { [voiceNumber: number]: string };
+      }>
+    >
+  >;
   updateVoiceAlias?: (
     dbDir: string,
     kitName: string,
     voiceNumber: number,
     voiceAlias: string,
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<DbResult>;
   updateStepPattern?: (
     dbDir: string,
     kitName: string,
     stepPattern: number[][],
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<DbResult>;
   getUserHomeDir?: () => Promise<string>;
-  selectLocalStorePath?: () => Promise<string>;
+  readRampleLabels?: (localStorePath: string) => Promise<any>;
+  writeRampleLabels?: (localStorePath: string, data: any) => Promise<void>;
+
+  // Missing methods causing errors
+  createRomperDb?: (dbDir: string) => Promise<RomperDbResult>;
+  insertKit?: (dbDir: string, kit: KitRecord) => Promise<DbResult>;
+  insertSample?: (
+    dbDir: string,
+    sample: SampleRecord,
+  ) => Promise<InsertSampleResult>;
+  copyDir?: (src: string, dest: string) => Promise<void>;
   downloadAndExtractArchive?: (
     url: string,
     destDir: string,
     onProgress?: (p: any) => void,
     onError?: (e: any) => void,
-  ) => Promise<{ success: boolean; error?: string }>;
-  ensureDir?: (dir: string) => Promise<any>;
-  copyDir?: (src: string, dest: string) => Promise<any>;
-  createRomperDb?: (
-    dbDir: string,
-  ) => Promise<{ success: boolean; error?: string; dbPath?: string }>;
-  insertKit?: (
-    dbDir: string,
-    kit: {
-      name: string;
-      alias?: string;
-      artist?: string;
-      plan_enabled: boolean;
-    },
-  ) => Promise<any>;
-  insertSample?: (
-    dbDir: string,
-    sample: {
-      kit_name: string;
-      filename: string;
-      voice_number: number;
-      slot_number: number;
-      is_stereo: boolean;
-    },
-  ) => Promise<any>;
-  getLocalStoreStatus?: () => Promise<{
-    hasLocalStore: boolean;
-    localStorePath: string | null;
-    isValid: boolean;
-    error?: string | null;
-  }>;
-  readFile?: (filePath: string) => Promise<{
-    success: boolean;
-    data?: ArrayBuffer;
-    error?: string;
-  }>;
-  openExternal?: (url: string) => void;
+  ) => Promise<DbResult>;
+  ensureDir?: (dir: string) => Promise<void>;
+  selectLocalStorePath?: () => Promise<string | undefined>;
+  getLocalStoreStatus: () => Promise<LocalStoreValidationDetailedResult>;
+  validateLocalStore: (
+    localStorePath: string,
+  ) => Promise<LocalStoreValidationDetailedResult>;
+  openExternal?: (url: string) => Promise<void>;
 }
 
 declare global {

@@ -1,8 +1,11 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 
+import { KitRecord, SampleRecord } from "../../shared/dbTypesShared";
+
 // Expose environment variables to renderer for E2E testing
 contextBridge.exposeInMainWorld("romperEnv", {
   ROMPER_SDCARD_PATH: process.env.ROMPER_SDCARD_PATH,
+  ROMPER_LOCAL_PATH: process.env.ROMPER_LOCAL_PATH,
   ROMPER_SQUARP_ARCHIVE_URL: process.env.ROMPER_SQUARP_ARCHIVE_URL,
 });
 
@@ -18,10 +21,22 @@ async function readSettings(): Promise<{
 }> {
   try {
     const settings = await ipcRenderer.invoke("read-settings");
-    return typeof settings === "string" ? JSON.parse(settings) : settings || {};
+    const parsedSettings = typeof settings === "string" ? JSON.parse(settings) : settings || {};
+
+    // Override localStorePath with environment variable if set
+    if (process.env.ROMPER_LOCAL_PATH) {
+      parsedSettings.localStorePath = process.env.ROMPER_LOCAL_PATH;
+    }
+
+    return parsedSettings;
   } catch (e) {
     console.error("Failed to read settings:", e);
-    return {}; // Return an empty object if settings cannot be read
+    // Even if reading settings fails, check for environment variable
+    const fallbackSettings: any = {};
+    if (process.env.ROMPER_LOCAL_PATH) {
+      fallbackSettings.localStorePath = process.env.ROMPER_LOCAL_PATH;
+    }
+    return fallbackSettings;
   }
 }
 
@@ -53,6 +68,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
   ): Promise<any> => {
     console.log("[Preload] getSetting invoked", key);
+
+    // For localStorePath, check environment variable first
+    if (key === "localStorePath" && process.env.ROMPER_LOCAL_PATH) {
+      return process.env.ROMPER_LOCAL_PATH;
+    }
+
     const settings = await readSettings();
     return settings[key];
   },
@@ -234,32 +255,25 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[Preload] createRomperDb invoked", dbDir);
     return ipcRenderer.invoke("create-romper-db", dbDir);
   },
-  insertKit: (
-    dbDir: string,
-    kit: {
-      name: string;
-      alias?: string;
-      artist?: string;
-      plan_enabled: boolean;
-    },
-  ) => {
+  insertKit: (dbDir: string, kit: KitRecord) => {
     console.log("[Preload] insertKit invoked", dbDir, kit);
     return ipcRenderer.invoke("insert-kit", dbDir, kit);
   },
-  insertSample: (
-    dbDir: string,
-    sample: {
-      kit_name: string;
-      filename: string;
-      voice_number: number;
-      slot_number: number;
-      is_stereo: boolean;
-      wav_bitrate?: number;
-      wav_sample_rate?: number;
-    },
-  ) => {
+  insertSample: (dbDir: string, sample: SampleRecord) => {
     console.log("[Preload] insertSample invoked", dbDir, sample);
     return ipcRenderer.invoke("insert-sample", dbDir, sample);
+  },
+  validateLocalStore: (localStorePath: string) => {
+    console.log("[Preload] validateLocalStore invoked", localStorePath);
+    return ipcRenderer.invoke("validate-local-store", localStorePath);
+  },
+  getAllSamples: (dbDir: string) => {
+    console.log("[Preload] getAllSamples invoked", dbDir);
+    return ipcRenderer.invoke("get-all-samples", dbDir);
+  },
+  getAllSamplesForKit: (dbDir: string, kitName: string) => {
+    console.log("[Preload] getAllSamplesForKit invoked", dbDir, kitName);
+    return ipcRenderer.invoke("get-all-samples-for-kit", dbDir, kitName);
   },
 });
 

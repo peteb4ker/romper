@@ -47,8 +47,11 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   // Add local store status handler
   ipcMain.handle("get-local-store-status", (_event) => {
     console.log("[Main] get-local-store-status called");
-    const localStorePath = inMemorySettings.localStorePath;
-    console.log("[Main] Current localStorePath in settings:", localStorePath);
+    // Check environment variable first, then fall back to stored settings
+    const localStorePath = process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath;
+    console.log("[Main] Current localStorePath:", localStorePath);
+    console.log("[Main] From environment:", process.env.ROMPER_LOCAL_PATH);
+    console.log("[Main] From settings:", inMemorySettings.localStorePath);
 
     if (!localStorePath) {
       console.log("[Main] No local store configured");

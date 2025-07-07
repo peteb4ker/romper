@@ -517,6 +517,7 @@ describe("preload/index.tsx", () => {
       "romperEnv",
       {
         ROMPER_SDCARD_PATH: process.env.ROMPER_SDCARD_PATH,
+        ROMPER_LOCAL_PATH: process.env.ROMPER_LOCAL_PATH,
         ROMPER_SQUARP_ARCHIVE_URL: process.env.ROMPER_SQUARP_ARCHIVE_URL,
       },
     );

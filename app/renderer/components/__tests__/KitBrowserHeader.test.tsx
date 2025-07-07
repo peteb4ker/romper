@@ -19,6 +19,7 @@ describe("KitBrowserHeader", () => {
     onCreateNextKit: vi.fn(),
     nextKitSlot: null,
     onShowLocalStoreWizard: vi.fn(),
+    onValidateLocalStore: vi.fn(),
   };
 
   it("calls onRescanAllVoiceNames when Rescan All Kit Voice Names button is clicked", () => {
@@ -47,6 +48,18 @@ describe("KitBrowserHeader", () => {
     );
     fireEvent.click(screen.getByText("Scan All Kits"));
     expect(onScanAllKits).toHaveBeenCalled();
+  });
+
+  it("calls onValidateLocalStore when Validate Local Store button is clicked", () => {
+    const onValidateLocalStore = vi.fn();
+    render(
+      <KitBrowserHeader
+        {...defaultProps}
+        onValidateLocalStore={onValidateLocalStore}
+      />,
+    );
+    fireEvent.click(screen.getByText("Validate Local Store"));
+    expect(onValidateLocalStore).toHaveBeenCalled();
   });
 
   // No separate tests for scan options dropdown as it's been removed

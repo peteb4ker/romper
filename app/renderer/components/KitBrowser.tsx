@@ -10,6 +10,7 @@ import KitDialogs from "./KitDialogs";
 import KitList, { KitListHandle } from "./KitList";
 import type { RampleKitLabel } from "./kitTypes";
 import LocalStoreWizardUI from "./LocalStoreWizardUI";
+import ValidationResultsDialog from "./ValidationResultsDialog";
 
 interface KitBrowserProps {
   onSelectKit: (kitName: string) => void;
@@ -27,6 +28,8 @@ interface KitBrowserProps {
 const KitBrowser: React.FC<KitBrowserProps> = (props) => {
   const { onMessage, setLocalStorePath } = props;
   const kitListRef = useRef<KitListHandle>(null);
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
+
   // Ensure localStorePath is always a string (never null)
   const logic = useKitBrowser({
     ...props,
@@ -288,6 +291,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         onCreateNextKit={handleCreateNextKit}
         nextKitSlot={nextKitSlot}
         onShowLocalStoreWizard={() => setShowLocalStoreWizard(true)}
+        onValidateLocalStore={() => setShowValidationDialog(true)}
         bankNav={
           <KitBankNav
             kits={kits}
@@ -361,6 +365,16 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
             />
           </div>
         </div>
+      )}
+
+      {/* ValidationResultsDialog */}
+      {showValidationDialog && (
+        <ValidationResultsDialog
+          isOpen={showValidationDialog}
+          localStorePath={props.localStorePath || ""}
+          onClose={() => setShowValidationDialog(false)}
+          onMessage={props.onMessage}
+        />
       )}
     </div>
   );

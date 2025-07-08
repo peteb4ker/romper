@@ -447,9 +447,9 @@ function getSamples(
     const sql = kitName
       ? "SELECT * FROM samples WHERE kit_name = ? ORDER BY voice_number, slot_number"
       : "SELECT * FROM samples ORDER BY kit_name, voice_number, slot_number";
-    
+
     const sampleStmt = db.prepare(sql);
-    const sampleRows = kitName 
+    const sampleRows = kitName
       ? sampleStmt.all(kitName) as any[]
       : sampleStmt.all() as any[];
 
@@ -472,4 +472,138 @@ export function getAllSamplesForKit(
  */
 export function getAllSamples(dbDir: string): DbResult<SampleRecord[]> {
   return getSamples(dbDir);
+}
+
+/**
+ * Deletes all sample records for a specific kit.
+ * Used during rescanning to clear existing samples before inserting current ones.
+ */
+export function deleteAllSamplesForKit(
+  dbDir: string,
+  kitName: string,
+): DbResult<void> {
+  return withDb<void>(dbDir, (db) => {
+    const stmt = db.prepare("DELETE FROM samples WHERE kit_name = ?");
+    const result = stmt.run(kitName);
+
+    log.info(`Deleted ${result.changes} sample records for kit: ${kitName}`);
+  });
+}
+
+/**
+ * Rescans a kit by updating the database to match the current filesystem state.
+ * This function:
+ * 1. Deletes all existing sample records for the kit
+ * 2. Scans the kit directory for current WAV files
+ * 3. Inserts new sample records for found files
+ * 4. Updates voice aliases based on file analysis
+ */
+export function rescanKitFromFilesystem(
+  dbDir: string,
+  localStorePath: string,
+  kitName: string,
+): DbResult<{ scannedSamples: number; updatedVoices: number }> {
+  return withDb<{ scannedSamples: number; updatedVoices: number }>(dbDir, (db) => {
+    // Step 1: Delete all existing samples for this kit
+    const deleteStmt = db.prepare("DELETE FROM samples WHERE kit_name = ?");
+    const deleteResult = deleteStmt.run(kitName);
+    log.info(`Deleted ${deleteResult.changes} existing sample records for kit: ${kitName}`);
+
+    // Step 2: Scan kit directory for current WAV files
+    const kitPath = path.join(localStorePath, kitName);
+    if (!fs.existsSync(kitPath)) {
+      throw new Error(`Kit directory not found: ${kitPath}`);
+    }
+
+    let scannedSamples = 0;
+    const files = fs.readdirSync(kitPath);
+    const wavFiles = files.filter(file => file.toLowerCase().endsWith('.wav'));
+
+    // Group files by voice (based on voice folder or naming convention)
+    const samplesByVoice: { [voice: number]: string[] } = { 1: [], 2: [], 3: [], 4: [] };
+
+    for (const wavFile of wavFiles) {
+      // Try to determine voice from subdirectory structure first
+      let voice = 1; // default voice
+
+      // Check if the file is in a voice subdirectory (1/, 2/, 3/, 4/)
+      const filePath = path.join(kitPath, wavFile);
+      const relativePath = path.relative(kitPath, filePath);
+      const pathParts = relativePath.split(path.sep);
+
+      if (pathParts.length > 1) {
+        const voiceDir = pathParts[0];
+        const voiceMatch = voiceDir.match(/^([1-4])$/);
+        if (voiceMatch) {
+          voice = parseInt(voiceMatch[1]);
+        }
+      }
+
+      // If no voice subdirectory, try to infer from filename
+      if (voice === 1 && pathParts.length === 1) {
+        // Simple heuristic: distribute files across voices by index
+        const index = scannedSamples % 4;
+        voice = index + 1;
+      }
+
+      samplesByVoice[voice].push(wavFile);
+    }
+
+    // Step 3: Insert new sample records
+    const insertStmt = db.prepare(
+      "INSERT INTO samples (kit_name, filename, voice_number, slot_number, is_stereo) VALUES (?, ?, ?, ?, ?)"
+    );
+
+    for (let voiceNum = 1; voiceNum <= 4; voiceNum++) {
+      const voiceFiles = samplesByVoice[voiceNum];
+      voiceFiles.forEach((filename, index) => {
+        const slotNumber = index + 1; // 1-indexed slots
+        if (slotNumber <= MAX_SLOT_NUMBER) {
+          // Simple stereo detection based on filename
+          const isStereo = filename.toLowerCase().includes('stereo') ||
+                          filename.toLowerCase().includes('_s.wav') ||
+                          filename.toLowerCase().includes('_st.wav');
+
+          insertStmt.run(kitName, filename, voiceNum, slotNumber, boolToSqliteInt(isStereo));
+          scannedSamples++;
+        }
+      });
+    }
+
+    log.info(`Inserted ${scannedSamples} new sample records for kit: ${kitName}`);
+
+    // Step 4: Update voice aliases based on filenames (simple inference)
+    let updatedVoices = 0;
+    const voiceUpdateStmt = db.prepare(
+      "UPDATE voices SET voice_alias = ? WHERE kit_name = ? AND voice_number = ?"
+    );
+
+    for (let voiceNum = 1; voiceNum <= 4; voiceNum++) {
+      const voiceFiles = samplesByVoice[voiceNum];
+      if (voiceFiles.length > 0) {
+        // Simple voice name inference from first filename
+        const firstFile = voiceFiles[0].toLowerCase();
+        let voiceAlias = null;
+
+        if (firstFile.includes('kick') || firstFile.includes('bd')) voiceAlias = 'Kick';
+        else if (firstFile.includes('snare') || firstFile.includes('sd')) voiceAlias = 'Snare';
+        else if (firstFile.includes('hihat') || firstFile.includes('hh')) voiceAlias = 'HH';
+        else if (firstFile.includes('clap') || firstFile.includes('cp')) voiceAlias = 'Clap';
+        else if (firstFile.includes('crash') || firstFile.includes('cy')) voiceAlias = 'Crash';
+        else if (firstFile.includes('ride')) voiceAlias = 'Ride';
+        else if (firstFile.includes('tom')) voiceAlias = 'Tom';
+        else if (firstFile.includes('perc')) voiceAlias = 'Perc';
+
+        if (voiceAlias) {
+          const result = voiceUpdateStmt.run(voiceAlias, kitName, voiceNum);
+          if (result.changes > 0) {
+            updatedVoices++;
+            log.info(`Updated voice ${voiceNum} alias to: ${voiceAlias}`);
+          }
+        }
+      }
+    }
+
+    return { scannedSamples, updatedVoices };
+  });
 }

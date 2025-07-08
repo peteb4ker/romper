@@ -4,12 +4,14 @@ import { ipcMain } from "electron";
 import { KitRecord, SampleRecord } from "../../shared/dbTypesShared";
 import {
   createRomperDbFile,
+  deleteAllSamplesForKit,
   getAllKits,
   getAllSamples,
   getAllSamplesForKit,
   getKitByName,
   insertKitRecord,
   insertSampleRecord,
+  rescanKitFromFilesystem,
   updateKitMetadata,
   updateStepPattern,
   updateVoiceAlias,
@@ -98,6 +100,20 @@ export function registerDbIpcHandlers() {
     "get-all-samples-for-kit",
     async (_event, dbDir: string, kitName: string) => {
       return getAllSamplesForKit(dbDir, kitName);
+    },
+  );
+
+  ipcMain.handle(
+    "rescan-kit",
+    async (_event, dbDir: string, localStorePath: string, kitName: string) => {
+      return rescanKitFromFilesystem(dbDir, localStorePath, kitName);
+    },
+  );
+
+  ipcMain.handle(
+    "delete-all-samples-for-kit",
+    async (_event, dbDir: string, kitName: string) => {
+      return deleteAllSamplesForKit(dbDir, kitName);
     },
   );
 }

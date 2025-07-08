@@ -275,6 +275,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[Preload] getAllSamplesForKit invoked", dbDir, kitName);
     return ipcRenderer.invoke("get-all-samples-for-kit", dbDir, kitName);
   },
+  rescanKit: (dbDir: string, localStorePath: string, kitName: string) => {
+    console.log("[Preload] rescanKit invoked", dbDir, localStorePath, kitName);
+    return ipcRenderer.invoke("rescan-kit", dbDir, localStorePath, kitName);
+  },
 });
 
 // Expose a function to get the file path from a dropped File object (Electron only)

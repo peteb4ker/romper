@@ -66,6 +66,14 @@
 - `app/renderer/components/utils/scanners/__tests__/orchestrationFunctions.test.ts` - Unit tests for high-level scanning orchestration functions.
 - `shared/kitUtilsShared.ts` - Shared kit utility logic for both app and electron workspaces.
 - `shared/__tests__/kitUtilsShared.test.ts` - Unit tests for shared kit utility logic.
+- `app/renderer/components/ValidationResultsDialog.tsx` - UI dialog for displaying validation results, kit selection, and rescan operations.
+- `app/renderer/components/__tests__/ValidationResultsDialog.test.tsx` - Unit tests for validation results dialog UI and user interactions.
+- `app/renderer/components/hooks/useValidationResults.ts` - Hook for validation logic, kit selection state, and rescan operations with error handling.
+- `app/renderer/components/hooks/__tests__/useValidationResults.test.ts` - Unit tests for validation hook including rescan functionality and dialog state management.
+- `electron/main/db/romperDbCore.ts` - Extended with rescan functionality: deleteAllSamplesForKit and rescanKitFromFilesystem functions to rebuild DB records from filesystem.
+- `electron/main/dbIpcHandlers.ts` - Extended with IPC handlers for rescan operations and kit validation.
+- `electron/preload/index.ts` - Extended with rescanKit method for secure rescan operations.
+- `app/renderer/electron.d.ts` - Extended with rescanKit API type definitions.
 
 ### Notes
 
@@ -141,13 +149,13 @@
     - [x] 2.12.3 Identify both missing files (in DB but not filesystem) and extra files (in filesystem but not DB)
     - [x] 2.12.4 Add IPC handler and electron API for validation
     - [x] 2.12.5 Create unit tests for the validation logic
-  - [ ] 2.13 If the Romper DB metadata is out of sync with the local store, present validation results to the user.
-    - [ ] 2.13.1 Display a list of kits with validation errors, grouped by error type
-    - [ ] 2.13.2 Offer the option to rescan problematic kits to correct the database
-    - [ ] 2.13.3 Clearly inform users that rescanning will update the DB with the current filesystem state
-    - [ ] 2.13.4 Create unit tests for the validation result UI and rescan functionality
+  - [x] 2.13 If the Romper DB metadata is out of sync with the local store, present validation results to the user.
+    - [x] 2.13.1 Display a list of kits with validation errors, grouped by error type
+    - [x] 2.13.2 Offer the option to rescan problematic kits to correct the database
+    - [x] 2.13.3 Clearly inform users that rescanning will update the DB with the current filesystem state
+    - [x] 2.13.4 Create unit tests for the validation result UI and rescan functionality
     - [ ] 2.13.5 Integrate validation check into a maintenance menu in the UI
-    - [ ] 2.13.6 Implement rescan functionality to overwrite DB records with current filesystem state for selected kits
+    - [x] 2.13.6 Implement rescan functionality to overwrite DB records with current filesystem state for selected kits
   - [x] 2.14 Flip local store setup flow: user chooses source first, then target, then import. Update UI, logic, and tests. Decouple UI tests from IPC/Electron.
   - [x] 2.15 Integrate scanning operations into wizard initialization
     - [x] 2.15.1 Add automatic scanning as final step in wizard initialization

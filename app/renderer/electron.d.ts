@@ -145,6 +145,11 @@ export interface ElectronAPI {
   validateLocalStore: (
     localStorePath: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
+  rescanKit: (
+    dbDir: string,
+    localStorePath: string,
+    kitName: string,
+  ) => Promise<DbResult<{ scannedSamples: number; updatedVoices: number }>>;
   openExternal?: (url: string) => Promise<void>;
 }
 

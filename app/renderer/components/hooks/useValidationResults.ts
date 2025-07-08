@@ -102,18 +102,58 @@ export function useValidationResults({
     setIsRescanning(true);
 
     try {
-      // For each selected kit, we need to rescan its directory
-      // This would be implemented in a future task, but we prepare the UI now
-      if (onMessage) {
-        onMessage({
-          text: "Rescanning kits will be implemented in task 2.13.6",
-          type: "info",
-        });
+      const dbDir = `${localStorePath}/.romperdb`;
+      let totalScannedSamples = 0;
+      let totalUpdatedVoices = 0;
+      const errors: string[] = [];
+
+      // Rescan each selected kit
+      for (const kitName of selectedKits) {
+        try {
+          const result = await window.electronAPI.rescanKit(dbDir, localStorePath, kitName);
+
+          if (result.success && result.data) {
+            totalScannedSamples += result.data.scannedSamples;
+            totalUpdatedVoices += result.data.updatedVoices;
+          } else {
+            errors.push(`${kitName}: ${result.error || 'Rescan failed'}`);
+          }
+        } catch (error) {
+          errors.push(`${kitName}: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
 
-      // For now, just close the dialog after a delay to simulate rescanning
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      closeValidationDialog();
+      // Show results
+      if (onMessage) {
+        if (errors.length === 0) {
+          onMessage({
+            text: `Successfully rescanned ${selectedKits.length} kit(s). Found ${totalScannedSamples} samples, updated ${totalUpdatedVoices} voices.`,
+            type: "success",
+            duration: 5000,
+          });
+        } else if (errors.length < selectedKits.length) {
+          onMessage({
+            text: `Partially completed rescan. ${selectedKits.length - errors.length} kit(s) succeeded, ${errors.length} failed. Found ${totalScannedSamples} samples.`,
+            type: "warning",
+            duration: 7000,
+          });
+        } else {
+          onMessage({
+            text: `Rescan failed for all ${selectedKits.length} kit(s). First error: ${errors[0]}`,
+            type: "error",
+            duration: 7000,
+          });
+        }
+      }
+
+      // Re-validate to show updated results
+      const updatedValidation = await window.electronAPI.validateLocalStore(localStorePath);
+      setValidationResult(updatedValidation);
+
+      // Close dialog only if all rescans succeeded AND no validation errors remain
+      if (errors.length === 0 && updatedValidation.isValid) {
+        closeValidationDialog();
+      }
     } catch (error) {
       if (onMessage) {
         onMessage({
@@ -124,7 +164,7 @@ export function useValidationResults({
     } finally {
       setIsRescanning(false);
     }
-  }, [selectedKits, localStorePath, onMessage, closeValidationDialog]);
+  }, [selectedKits, localStorePath, onMessage, closeValidationDialog, validateLocalStore]);
 
   return {
     isOpen,

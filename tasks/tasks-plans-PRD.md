@@ -225,10 +225,10 @@
   - [ ] 10.2 Provide visible focus indicators and keyboard navigation for all plan actions.
   - [ ] 10.3 Unit tests for accessibility and UI consistency.
 
-- [ ] 11.0 Menu System and Scanning Options
-  - [ ] 11.1 Move "Scan All Kits" option from KitBrowser to application menu
-  - [ ] 11.2 Implement application menu structure for scanning and maintenance operations
-  - [ ] 11.3 Unit tests for menu functionality and scanning operations
+- [x] 11.0 Menu System and Scanning Options
+  - [x] 11.1 Move "Scan All Kits" option from KitBrowser to application menu
+  - [x] 11.2 Implement application menu structure for scanning and maintenance operations
+  - [x] 11.3 Unit tests for menu functionality and scanning operations
 
 - `src/renderer/components/KitPlanManager.tsx` - (Deprecated: see KitDetails.tsx) [If still present, this file should be removed after migration.]
 - `src/renderer/components/KitPlanManager.test.tsx` - (Deprecated: see KitDetails.test.tsx) [If still present, this file should be removed after migration.]

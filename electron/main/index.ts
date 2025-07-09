@@ -11,6 +11,7 @@ import {
   groupSamplesByVoice,
   inferVoiceTypeFromFilename,
 } from "../../shared/kitUtilsShared";
+import { createApplicationMenu, registerMenuIpcHandlers } from "./applicationMenu.js";
 import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
 // Import IPC handlers
 import { registerIpcHandlers } from "./ipcHandlers.js";
@@ -78,6 +79,10 @@ app.whenReady().then(async () => {
     console.log("App is ready. Configuring...");
 
     createWindow();
+
+    // Create application menu with Tools menu
+    createApplicationMenu();
+    registerMenuIpcHandlers();
 
     // Load settings into memory
     const userDataPath = app.getPath("userData");
@@ -152,6 +157,9 @@ app.whenReady().then(async () => {
     registerIpcHandlers(inMemorySettings);
     registerDbIpcHandlers();
     console.log("[Romper Electron] IPC handlers registered");
+
+    // Create application menu
+    createApplicationMenu();
   } catch (error: unknown) {
     console.error(
       "Error during app initialization:",

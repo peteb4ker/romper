@@ -281,6 +281,23 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 });
 
+// Handle menu events from main process and forward to renderer as DOM events
+ipcRenderer.on("menu-scan-all-kits", () => {
+  window.dispatchEvent(new CustomEvent("menu-scan-all-kits"));
+});
+
+ipcRenderer.on("menu-validate-database", () => {
+  window.dispatchEvent(new CustomEvent("menu-validate-database"));
+});
+
+ipcRenderer.on("menu-setup-local-store", () => {
+  window.dispatchEvent(new CustomEvent("menu-setup-local-store"));
+});
+
+ipcRenderer.on("menu-about", () => {
+  window.dispatchEvent(new CustomEvent("menu-about"));
+});
+
 // Expose a function to get the file path from a dropped File object (Electron only)
 contextBridge.exposeInMainWorld("electronFileAPI", {
   getDroppedFilePath: async (file: File) => {

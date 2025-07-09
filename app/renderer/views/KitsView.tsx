@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   compareKitSlots,
   groupSamplesByVoice,
 } from "../../../shared/kitUtilsShared";
 import { useKitMetadata } from "../components/hooks/useKitMetadata";
-import KitBrowser from "../components/KitBrowser";
+import { useMenuEvents } from "../components/hooks/useMenuEvents";
+import { useValidationResults } from "../components/hooks/useValidationResults";
+import KitBrowser, { KitBrowserHandle } from "../components/KitBrowser";
 import KitDetails from "../components/KitDetails";
 import type { VoiceSamples } from "../components/kitTypes";
 import LocalStoreWizardUI from "../components/LocalStoreWizardUI";
@@ -26,6 +28,42 @@ const KitsView = () => {
   const [selectedKitSamples, setSelectedKitSamples] =
     useState<VoiceSamples | null>(null);
   const [showWizard, setShowWizard] = useState<boolean>(false);
+
+  // Ref to access KitBrowser scan functionality
+  const kitBrowserRef = useRef<KitBrowserHandle | null>(null);
+
+  // Validation results hook for database validation
+  const {
+    openValidationDialog,
+  } = useValidationResults({
+    localStorePath: localStorePath || "",
+    onMessage: (msg) => {
+      // You can integrate with a toast system here if needed
+      console.log("[KitsView] Validation message:", msg);
+    },
+  });
+
+  // Menu event handlers
+  useMenuEvents({
+    onScanAllKits: () => {
+      console.log("[KitsView] Menu scan all kits triggered");
+      if (kitBrowserRef.current?.handleScanAllKits) {
+        kitBrowserRef.current.handleScanAllKits();
+      }
+    },
+    onValidateDatabase: () => {
+      console.log("[KitsView] Menu validate database triggered");
+      openValidationDialog();
+    },
+    onSetupLocalStore: () => {
+      console.log("[KitsView] Menu setup local store triggered");
+      setShowWizard(true);
+    },
+    onAbout: () => {
+      console.log("[KitsView] Menu about triggered");
+      // Could show an about dialog here
+    },
+  });
 
   // Check if local store needs to be set up
   const needsLocalStoreSetup = !localStoreStatus?.isValid || !localStorePath;
@@ -242,6 +280,7 @@ const KitsView = () => {
         />
       ) : (
         <KitBrowser
+          ref={kitBrowserRef}
           localStorePath={localStorePath}
           kits={sortedKits}
           onSelectKit={handleSelectKit}

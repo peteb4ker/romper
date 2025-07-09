@@ -9,12 +9,12 @@ import {
   KitWithVoices,
   SampleRecord,
   VoiceRecord,
-} from "../../../shared/dbTypesShared";
-import { deleteDbFileWithRetry } from "./fileOperations";
+} from "../../../shared/dbTypesShared.js";
+import { deleteDbFileWithRetry } from "./fileOperations.js";
 import {
   encodeStepPatternToBlob,
   decodeStepPatternFromBlob,
-} from "./stepPatternUtils";
+} from "./stepPatternUtils.js";
 
 // Re-export step pattern utilities for backward compatibility
 export { encodeStepPatternToBlob, decodeStepPatternFromBlob };

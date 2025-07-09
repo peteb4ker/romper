@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useImperativeHandle, useRef, useState } from "react";
 import { FiChevronDown, FiPlusCircle } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -25,7 +25,11 @@ interface KitBrowserProps {
   setLocalStorePath?: (path: string) => void;
 }
 
-const KitBrowser: React.FC<KitBrowserProps> = (props) => {
+export interface KitBrowserHandle {
+  handleScanAllKits: () => void;
+}
+
+const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>((props, ref) => {
   const { onMessage, setLocalStorePath } = props;
   const kitListRef = useRef<KitListHandle>(null);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
@@ -279,6 +283,11 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     [kits, props.localStorePath, props.onRefreshKits],
   );
 
+  // Expose handleScanAllKits through ref for parent components
+  useImperativeHandle(ref, () => ({
+    handleScanAllKits,
+  }));
+
   return (
     <div
       ref={scrollContainerRef}
@@ -378,6 +387,6 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
       )}
     </div>
   );
-};
+});
 
 export default React.memo(KitBrowser);

@@ -13,15 +13,29 @@ vi.mock("electron", () => {
   const app = {
     getPath: vi.fn(() => "/mock/userData"),
     whenReady: vi.fn(() => Promise.resolve()),
+    getName: vi.fn(() => "Romper"),
+    quit: vi.fn(),
   };
   const BrowserWindow = vi.fn().mockImplementation(() => ({
     loadURL: vi.fn(() => Promise.resolve()),
     loadFile: vi.fn(() => Promise.resolve()),
     webContents: {
       on: vi.fn(),
+      send: vi.fn(),
     },
+    getAllWindows: vi.fn().mockReturnValue([]),
+    getFocusedWindow: vi.fn(),
   }));
-  return { app, BrowserWindow };
+  const Menu = {
+    setApplicationMenu: vi.fn(),
+    buildFromTemplate: vi.fn().mockReturnValue({}),
+  };
+  const ipcMain = {
+    handle: vi.fn(),
+    on: vi.fn(),
+    emit: vi.fn(),
+  };
+  return { app, BrowserWindow, Menu, ipcMain };
 });
 vi.mock("path", () => {
   const mock = {
@@ -33,6 +47,10 @@ vi.mock("path", () => {
 });
 vi.mock("../ipcHandlers.js", () => ({
   registerIpcHandlers: vi.fn(),
+}));
+vi.mock("../applicationMenu.js", () => ({
+  createApplicationMenu: vi.fn(),
+  registerMenuIpcHandlers: vi.fn(),
 }));
 
 // Clear cache before each test to reload the module

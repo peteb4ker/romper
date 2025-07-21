@@ -1,188 +1,318 @@
 ## Relevant Files
 
-- `src/renderer/components/KitBrowser.tsx` - Main kit browser UI, kit navigation, and kit list rendering.
-- `src/renderer/components/KitDetails.tsx` - Kit detail page, voice/slot management, and sample assignment.
-- `src/renderer/components/KitVoicePanel.tsx` - UI for managing voices and sample slots within a kit.
-- `src/renderer/components/KitVoicePanels.tsx` - Renders all 4 KitVoicePanel components and centralizes cross-voice navigation logic.
-- `src/renderer/components/SampleWaveform.tsx` - Displays waveform previews for samples.
-- `src/renderer/components/StatusBar.tsx` - Status bar for progress indicators and messages.
-- `src/renderer/components/KitDialogs.tsx` - Dialogs for warnings, errors, confirmations, and factory restore.
-- `src/renderer/components/KitBankNav.tsx` - A-Z bank navigation UI and hotkey handling.
-- `src/renderer/components/hooks/useKitDetails.ts` - Business logic for kit details and sample management.
-- `src/renderer/components/hooks/useKitItem.ts` - Business logic for kit type inference and metadata display.
-- `src/renderer/components/hooks/useKitPlan.ts` - Business logic for kit plan creation, duplication, and editing.
-- `src/renderer/components/hooks/useSamplePreview.ts` - Business logic for sample and kit previewing.
-- `src/renderer/components/hooks/useKitPreview.ts` - Business logic for full kit preview playback (MIDI test pattern), play/stop state, and error handling.
-- `src/renderer/components/utils/settingsManager.ts` - Manages app settings (e.g., stereo/mono toggle, theme persistence).
-- `src/renderer/components/__tests__/KitBrowser.test.tsx` - Unit tests for kit browser UI and navigation.
-- `src/renderer/components/__tests__/KitDetails.test.tsx` - Unit tests for kit detail page and sample assignment.
-- `src/renderer/components/__tests__/KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel sample slot selection and keyboard navigation. Now focused only on single-voice panel logic; multi-voice/cross-panel tests have been moved to KitVoicePanels.test.tsx for clarity and separation of concerns.
-- `src/renderer/components/__tests__/KitVoicePanels.test.tsx` - Unit tests for KitVoicePanels, covering multi-voice/cross-panel navigation and integration scenarios (newly created as part of this refactor).
-- `src/renderer/components/__tests__/SampleWaveform.test.tsx` - Unit tests for waveform preview.
-- `src/renderer/components/__tests__/StatusBar.test.tsx` - Unit tests for status bar and progress indicators.
-- `src/renderer/components/__tests__/KitDialogs.test.tsx` - Unit tests for dialogs and error handling.
-- `src/renderer/components/__tests__/KitBankNav.test.tsx` - Unit tests for A-Z navigation and hotkeys.
-- `src/renderer/components/hooks/__tests__/useKitDetails.test.ts` - Unit tests for kit details logic.
-- `src/renderer/components/hooks/__tests__/useKitItem.test.ts` - Unit tests for kit type inference logic.
-- `src/renderer/components/hooks/__tests__/useKitPlan.test.ts` - Unit tests for kit plan logic.
-- `src/renderer/components/hooks/__tests__/useSamplePreview.test.ts` - Unit tests for preview logic.
-- `src/renderer/components/utils/__tests__/settingsManager.test.ts` - Unit tests for settings management.
-- `electron/main/index.ts` - Type safety improvements for inMemorySettings and currentSamplePlayer.
+### UI Components
+- `app/renderer/components/KitDetails.tsx` - Main UI for kit details, extended to support comprehensive kit editing with editable mode toggle, slot management, and action controls.
+- `app/renderer/components/__tests__/KitDetails.test.tsx` - Unit tests for KitDetails including editable mode, slot actions, and UI interactions.
+- `app/renderer/components/KitVoicePanel.tsx` - UI for voice slot drag-and-drop, add/replace/delete actions, editable mode feedback, and stereo assignment.
+- `app/renderer/components/__tests__/KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel editable mode, slot actions, and drag-and-drop.
+- `app/renderer/components/KitVoicePanels.tsx` - Renders all voice panels, coordinates editable mode state, and handles multi-voice operations.
+- `app/renderer/components/__tests__/KitVoicePanels.test.tsx` - Unit tests for KitVoicePanels editable mode integration and voice coordination.
+- `app/renderer/components/StatusBar.tsx` - Displays progress, notifications, and status for editing actions and operations.
+- `app/renderer/components/__tests__/StatusBar.test.tsx` - Unit tests for StatusBar edit-related notifications and progress display.
+- `app/renderer/components/MessageDisplay.tsx` - Notification system for info, warning, error, and progress messages in editing operations.
+- `app/renderer/components/__tests__/MessageDisplay.test.tsx` - Unit tests for MessageDisplay editing integration.
+- `app/renderer/components/KitBrowser.tsx` - Main kit browser interface with navigation, filtering, and kit management.
+- `app/renderer/components/__tests__/KitBrowser.test.tsx` - Unit tests for kit browser functionality and interaction.
+- `app/renderer/components/KitStepSequencer.tsx` - 4-channel, 16-step XOX-style step sequencer for kit preview.
+- `app/renderer/components/__tests__/KitStepSequencer.test.tsx` - Unit tests for step sequencer functionality and keyboard navigation.
+- `app/renderer/components/SampleWaveform.tsx` - Waveform display component for sample visualization.
+- `app/renderer/components/__tests__/SampleWaveform.test.tsx` - Unit tests for waveform display and audio analysis.
+
+### Dialog Components
+- `app/renderer/components/dialogs/SyncUpdateDialog.tsx` - UI dialog for SD card sync confirmation, change summary, and progress display.
+- `app/renderer/components/dialogs/__tests__/SyncUpdateDialog.test.tsx` - Unit tests for sync dialog UI and user interactions.
+- `app/renderer/components/dialogs/StereoAssignmentDialog.tsx` - UI dialog for handling stereo sample assignment conflicts and user choices.
+- `app/renderer/components/dialogs/__tests__/StereoAssignmentDialog.test.tsx` - Unit tests for stereo assignment dialog and conflict resolution.
+- `app/renderer/components/dialogs/NewKitDialog.tsx` - UI dialog for creating new kits with name validation and conflict resolution.
+- `app/renderer/components/dialogs/__tests__/NewKitDialog.test.tsx` - Unit tests for new kit creation dialog.
+- `app/renderer/components/LocalStoreWizardUI.tsx` - Local store setup wizard UI component with immutable baseline initialization.
+- `app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx` - Unit tests for local store wizard functionality.
+
+### React Hooks
+- `app/renderer/components/hooks/useKitEditor.ts` - Hook for all business logic related to kit editing, including editable state, slot management, undo/redo, and persistence.
+- `app/renderer/components/hooks/__tests__/useKitEditor.test.ts` - Unit tests for useKitEditor hook covering all editing operations and state management.
+- `app/renderer/components/hooks/useSyncUpdate.ts` - Hook for SD card sync operations, file copying, format conversion, and progress tracking.
+- `app/renderer/components/hooks/__tests__/useSyncUpdate.test.ts` - Unit tests for SD card sync operations and progress handling.
+- `app/renderer/components/hooks/useStereoHandling.ts` - Hook for stereo sample assignment logic, conflict detection, and settings integration.
+- `app/renderer/components/hooks/__tests__/useStereoHandling.test.ts` - Unit tests for stereo handling logic and settings integration.
+- `app/renderer/components/hooks/useFilePreview.ts` - Hook for sample preview functionality with reference-only playback, format handling, and playback management.
+- `app/renderer/components/hooks/__tests__/useFilePreview.test.ts` - Unit tests for file preview and playback functionality.
+- `app/renderer/components/hooks/useKitBrowser.ts` - Hook for kit browser business logic, navigation, filtering, and kit management.
+- `app/renderer/components/hooks/__tests__/useKitBrowser.test.ts` - Unit tests for kit browser hook functionality.
+- `app/renderer/components/hooks/useStepSequencer.ts` - Hook for step sequencer business logic, pattern management, and playback control.
+- `app/renderer/components/hooks/__tests__/useStepSequencer.test.ts` - Unit tests for step sequencer hook functionality.
+
+### Utility Functions
+- `app/renderer/components/utils/kitEditUtils.ts` - Utility functions for kit editing validation, sample assignment, format checks, and stereo handling.
+- `app/renderer/components/utils/__tests__/kitEditUtils.test.ts` - Unit tests for all kit editing utility functions.
+- `app/renderer/components/utils/formatValidation.ts` - WAV format validation, conversion rules, and format compatibility checking.
+- `app/renderer/components/utils/__tests__/formatValidation.test.ts` - Unit tests for format validation and conversion logic.
+- `app/renderer/components/utils/settingsManager.ts` - Manages global settings including 'default to mono samples', confirmation preferences, and editing settings.
+- `app/renderer/components/utils/__tests__/settingsManager.test.ts` - Unit tests for settings management and persistence.
+- `app/renderer/components/utils/actionHistory.ts` - Action history management for undo/redo operations, including action recording and playback.
+- `app/renderer/components/utils/__tests__/actionHistory.test.ts` - Unit tests for action history and undo/redo functionality.
+- `app/renderer/components/utils/kitUtils.ts` - Kit management utilities, navigation helpers, and metadata processing.
+- `app/renderer/components/utils/__tests__/kitUtils.test.ts` - Unit tests for kit utility functions.
+- `app/renderer/components/utils/audioUtils.ts` - Audio processing utilities, format conversion, and waveform analysis with reference-only file handling.
+- `app/renderer/components/utils/__tests__/audioUtils.test.ts` - Unit tests for audio processing functionality.
+
+### Context and Settings
+- `app/renderer/utils/SettingsContext.tsx` - React context for settings management, including editing-related settings and local store status.
+- `app/renderer/utils/__tests__/SettingsContext.test.tsx` - Unit tests for settings context and editing-related state management.
+
+### TypeScript Definitions
+- `app/renderer/electron.d.ts` - TypeScript definitions for Electron IPC, extended with editing-related method signatures.
+
+### Database Layer (Main Process) with ORM Implementation
+- `electron/main/db/romperDbCore.ts` - Core database operations with Drizzle ORM implementation, connection management, and type-safe query execution.
+- `electron/main/db/__tests__/romperDbCore.test.ts` - Unit tests for database operations including editing-related schema and operations.
+- `electron/main/db/schema.ts` - Drizzle schema definitions for kits, samples, voices, and action history tables (fresh implementation).
+- `electron/main/db/__tests__/schema.test.ts` - Unit tests for schema definitions and type safety.
+- `electron/main/db/editActions.ts` - Database operations specific to editing actions, action history, and undo/redo support using Drizzle ORM.
+- `electron/main/db/__tests__/editActions.test.ts` - Unit tests for editing-specific database operations.
+- `electron/main/db/initialization.ts` - Fresh database initialization with Drizzle schema (no migrations needed).
+- `electron/main/db/__tests__/initialization.test.ts` - Unit tests for fresh database initialization and schema creation.
+
+### File Operations (Main Process)
+- `electron/main/fileOperations.ts` - Secure file operations for SD card sync, sample copying with reference resolution, and format conversion.
+- `electron/main/__tests__/fileOperations.test.ts` - Unit tests for file operations and security validation.
+- `electron/main/formatConverter.ts` - Audio format conversion utilities for sample processing during SD card sync.
+- `electron/main/__tests__/formatConverter.test.ts` - Unit tests for format conversion and audio processing.
+
+### IPC Layer
+- `electron/main/dbIpcHandlers.ts` - Main process IPC handlers for editing operations, extended with editing-specific endpoints.
+- `electron/main/__tests__/dbIpcHandlers.test.ts` - Unit tests for IPC handlers and data validation.
+
+### Shared Types and Utilities
+- `shared/editTypesShared.ts` - Shared TypeScript types and interfaces for editing operations between main and renderer processes.
+- `shared/__tests__/editTypesShared.test.ts` - Unit tests for shared editing types and validation.
 
 ### Notes
 
-- Unit tests should be placed alongside the code files they are testing (e.g., `MyComponent.tsx` and `MyComponent.test.tsx` in the same directory).
-- Use `npx vitest` to run tests. Running without a path executes all tests found by the Vitest configuration.
+- **Immutable Baseline Architecture**: Local store serves as an immutable baseline that preserves the exact initial state chosen during setup (SD card contents, factory samples, or empty folder). This baseline is never modified after initialization.
+- **Reference-Only Sample Management**: User-added samples are referenced by absolute path (`source_path`) without copying to local store. This prevents local store bloat and maintains clean separation between baseline content and user additions.
+- **Editable Mode**: Editable mode is enabled by default for new/user kits (`editable = true`) and disabled for imported/factory kits (`editable = false`). Users can toggle editable mode manually.
+- **Database Schema**: No separate plan table - editable state is tracked via the `editable` boolean field in the kits table. Uses `kit_name` as foreign key rather than `kit_id` for natural human-readable references.
+- **Voice Tracking**: Explicit `voice_number` field (1-4) provides reliable voice identification rather than inferring from sample ordering.
+- **ORM Implementation**: Fresh implementation with Drizzle ORM for improved type safety, modularity, and maintainability (no migration needed - scorched earth approach).
+- **Type-Safe Queries**: All database operations are compile-time type-checked with full TypeScript integration.
+- **Clean API Design**: Direct, simple function signatures that leverage TypeScript's native error handling.
+- **Schema-First Approach**: Fresh database entities using Drizzle's schema definition for clear data modeling and automatic type generation.
+- **Format Validation**: Only WAV files accepted. Must be 8/16 bit, 44100 Hz. Conversion happens when syncing to SD card, not during editing.
+- **File Security**: All file operations must validate paths to prevent directory traversal attacks. Use proper file locking during operations.
+- **Undo/Redo**: Complete action history with support for ADD_SAMPLE, REPLACE_SAMPLE, DELETE_SAMPLE, and TOGGLE_EDITABLE_MODE actions. History persisted in database.
+- **UI/UX**: All operations must provide clear feedback, confirmation prompts for destructive actions, and progress indicators for long operations.
+- **Sample Storage**: Samples remain in their original filesystem locations referenced by `source_path`. No copying to local store until SD card sync.
+- **Local Store Role**: Local store serves as the immutable baseline from initial setup. User samples are NOT copied to local store - they remain in external locations until sync.
+- **SD Card Sync**: During sync, samples are copied directly from source locations to SD card with format conversion as needed.
+- **Testing Structure**: Unit tests must be placed in `__tests__` subdirectories alongside the code they test. All editing operations, error conditions, and edge cases must be tested.
+- **File Organization**: Follow existing project structure with components, hooks, utils, and dialogs properly organized in their respective directories.
+- **Accessibility**: All UI must work in light/dark modes with keyboard navigation and screen reader support.
+- Use `npx vitest` to run all tests. Use `npx tsc --noEmit` to validate TypeScript before marking tasks complete.
 
 ## Tasks
 
-- [x] 1.0 Implement UI/UX Structure and Navigation
-  - [x] 1.1 Implement main kit browser and kit detail page
-    - [x] 1.1.1 Build kit browser UI with kit list and navigation
-    - [x] 1.1.2 Build kit detail page for voice/slot/sample management
-    - [x] 1.1.3 Write unit tests for browser and detail page navigation
-  - [x] 1.2 Place action buttons at the top of the page
-    - [x] 1.2.1 Add action buttons (create, duplicate, sync, etc.) to top bar
-    - [x] 1.2.2 Write unit tests for action button functionality
-  - [x] 1.3 Implement status bar at the bottom with pertinent information (including progress indicators)
-    - [x] 1.3.1 Build status bar UI and integrate progress indicators
-    - [x] 1.3.2 Write unit tests for status bar and progress
-  - [x] 1.4 Display information, error, and warning messages in a central location at the top of the screen
-    - [x] 1.4.1 Centralize message display logic
-    - [x] 1.4.2 Style messages according to type (info, warning, error)
-    - [x] 1.4.3 Write unit tests for message display
-  - [x] 1.5 Implement A-Z hotkeys and UI for bank navigation
-    - [x] 1.5.2 Highlight selected bank in UI
-    - [x] 1.5.3 Write unit tests for hotkey navigation
-    - [x] 1.5.4 Fix: A-Z hotkeys must move keyboard focus to the first kit in the selected bank
-  - [x] 1.6 Implement keyboard navigation for sample slots
-      [x] 1.6.1 Remove all kit and voice keyboard navigation from the app. A-Z bank navigation should remain.
-    - [x] 1.6.3 Implement keyboard navigation for sample slots (up/down arrows, space)
-      - [x] 1.6.3.1 Add keyboard event handlers for sample slot navigation (up/down, space)
-      - [x] 1.6.3.2 Disable navigation at first/last slot as appropriate
-      - [x] 1.6.3.3 Ensure selection highlight and focus update correctly on navigation
-      - [x] 1.6.3.4 Write unit tests for sample slot keyboard navigation (including edge cases)
-  - [x] 1.7 Implement persistent light/dark mode toggle
-    - [x] 1.7.1 Add toggle UI and persist theme setting
-    - [x] 1.7.2 Write unit tests for theme toggle and persistence
-  - [x] 1.8 Add link to Squarp Rample manual (opens in system browser)
-    - [x] 1.8.1 Add external link to manual in UI
-    - [x] 1.8.2 Write unit tests for manual link
-  - [x] 1.12 Precompute and memoize kit sample counts and voice label sets in kit browser for performance
-    - [x] 1.12.1 Compute these values once per kit list load/change, not on every render
-    - [x] 1.12.2 Pass precomputed values as props to KitList/KitItem
-    - [x] 1.12.3 Write unit tests to verify memoization and correct display
-  - [x] 1.13 Voice panels clearly indicate the slot number, and there is no confusion between the slot number and the sample name, especially if the sample name starts with a number.
-    - [x] 1.13.1 Slot numbers take up a uniform amount of space so the play buttons, filenames and waveforms are all aligned.
-  - [x] 1.14 The 4 voice panels are laid out in a single row of 4 columns, left to right across the screen.
-  - [x] 1.15 Within the voice panel, the sample list is in a single column.
-  - [x] 1.16 Each voice has exactly 12 slots.  If a sample is not assigned, an empty slot is shown.
-    - [x] 1.16.1 An empty slot is the same height as a slot with an assigned sample
+- [x] 1.0 UI/UX Structure and Navigation (Complete)
+  - [x] 1.1 Main kit browser and kit detail page implementation
+  - [x] 1.2 Action buttons at top of page
+  - [x] 1.3 Status bar with progress indicators
+  - [x] 1.4 Central message display system
+  - [x] 1.5 A-Z bank navigation with hotkeys
+  - [x] 1.6 Keyboard navigation for sample slots
+  - [x] 1.7 Light/dark mode toggle
+  - [x] 1.8 Link to Squarp Rample manual
+  - [x] 1.9 Performance optimizations (memoization)
+  - [x] 1.10 Voice panel layout and design
+  - [x] 1.11 Sample slot organization and display
 
-- [ ] 2.0 Implement Kit Planning and Metadata Management
- - Defined in `tasks/task-plans-PRD.md`
+- [x] 2.0 Preview and Audio Features (Complete)
+  - [x] 2.1 Individual sample preview functionality
+  - [x] 2.2 XOX step sequencer implementation (4x16 grid, stable)
+    - [ ] 2.2.1 Move play control and BPM label to left of grid for better layout
+    - [ ] 2.2.2 Update sequencer to work with new reference-only architecture
+    - [ ] 2.2.3 Integrate with voice_number field for accurate sample mapping
+  - [x] 2.3 Waveform display for samples
+  - [x] 2.4 Keyboard navigation for previewing
+  - [x] 2.5 Sequencer show/hide functionality with 'S' key
+  - [x] 2.6 Navigation mode switching between sample and sequencer
 
-- [x] 3.0 Implement Previewing and Audio Features
-  - [x] 3.1 Implement preview for individual `.wav` samples (UI and audio engine)
-    - [x] 3.1.1 Add play/stop controls for samples in UI
-    - [x] 3.1.2 Integrate audio playback engine for `.wav` files
-    - [x] 3.1.3 Write unit tests for sample preview logic
-  - [x] 3.2 Implement preview for full kits
-    - [x] 3.2.2 Implement 4-channel, 16-step XOX-style step sequencer for kit preview
-      - [x] 3.2.2.1 Render a 4x16 step grid at the bottom of KitDetails, color-coded by voice.
-         - [x] 3.2.2.1.1 The step buttons are square
-         - [x] 3.2.2.1.2 The step buttons should ideally look like backlit LED buttons when lit.
-         - [x] 3.2.2.1.3 The grid is fixed and is not responsive to UI resizing
-         - [x] 3.2.2.1.4 The step sequencer should be visually different to the rest of the application, appearing as if its coming out of a drawer at the bottom of the app.  clicking on the edge of the control should show and hide it via animation.
-         - [x] 3.2.2.1.5 The step sequencer should be centered in the middle of its parent control
-         - [x] 3.2.2.1.6 There should be a visual separation between each 4 of the 16 steps to indicate that its a beat in the bar
-         - [x] 3.2.2.1.7 Its possible to show and hide the step sequencer.
-       - [x] 3.2.2.2 Allow mouse and keyboard navigation/toggling of steps (arrow keys, spacebar)
-      - [x] 3.2.2.3 Implement play/stop controls for sequencer playback (looping at 120 BPM)
-        - [] 3.2.2.3.1 Play control and BPM label should be to the left of the grid to optimize whitespace in the sequencer drawer
-      - [x] 3.2.2.4 Play first sample in each voice for each active step; mute if no sample
-      - [x] 3.2.2.5 Persist pattern per kit in labels JSON file
-      - [x] 3.2.2.6 Unit tests for sequencer UI, playback, persistence, and navigation
-      - [x] 3.2.2.7 The sequencer is hidden by default.
-  - [x] 3.3 Display waveform view for each sample in the UI
-    - [x] 3.3.1 Render waveform for each sample slot
-    - [x] 3.3.2 Write unit tests for waveform rendering
-  - [x] 3.4 Implement keyboard navigation for previewing (spacebar to preview sample)
-    - [x] 3.4.1 Add keyboard event handlers for sample preview
-    - [x] 3.4.3 Browser focus / accessibility is not important for keyboard navigation. Custom selection is fine.
-    - [x] 3.4.4 One sample per kit should be selectable at any time.  Going down beyond the end of a voice should move selection to the top of the next voice
-    - [x] 3.4.5 Keyboard navigation should always take precedence over screen scrolling
-    - [x] 3.4.6 Keyboard navigation should work independently from sequencer navigation.  if the sequencer navigation is active, waveform navigation is ignored, if waveform navigation is active, sequencer navigation is ignored
-    - [x] 3.4.7 When selection moves to the first sample in a voice, subsequent up/down navigation should work as expected and not scroll the app
-  - [x] 3.5 Disable sequencer keyboard navigation when the sequencer is closed.
-  - [x] 3.6 Enable sample navigation when the sequencer is closed.
-  - [x] 3.7 Enable sequencer keyboard navigation when the sequencer is open.
-  - [x] 3.8 Disable sample navigation when the sequencer is open.
-  - [x] 3.9 When opening or closing the sequencer, the selection focus should always immediately switch so the user can start keyboard nabigation straight away, and not need to click on the sequencer to give it focus.
-  - [x] 3.10 Hitting the 'S' key opens and closes the sequencer.
+- [x] 3.0 Local Store and Database Initialization (Complete)
+  - [x] 3.1 Immutable baseline local store setup wizard
+  - [x] 3.2 Local store source selection (SD card, factory samples, blank)
+  - [x] 3.3 Database initialization and schema creation
+  - [x] 3.4 Transition from SD card to local store as primary data source
+  - [x] 3.5 Kit browser integration with database scanning
+    - [ ] 3.5.1 Replace current SQL implementation with Drizzle ORM
+    - [ ] 3.5.2 Implement fresh ORM schema (no migration needed)
+    - [ ] 3.5.3 Update IPC handlers to use ORM-based functions
+    - [ ] 3.5.4 Add comprehensive TypeScript error handling
 
-- [ ] 4.0 Implement SD Card Sync and File Operations
-  - [ ] 4.1 Implement option to initialize app state from SD card
-    - [ ] 4.1.1 Scan SD card for existing kits and samples
-    - [ ] 4.1.2 Initialize local metadata from SD card contents
-    - [ ] 4.1.3 Write unit tests for SD card initialization
-  - [ ] 4.2 Only allow sync when SD card is mounted
-    - [ ] 4.2.1 Detect SD card mount/unmount events
-    - [ ] 4.2.2 Enable/disable sync actions based on SD card state
-    - [ ] 4.2.3 Write unit tests for SD card detection logic
-  - [ ] 4.3 Prevent sync if any samples in the plan are missing from disk
-    - [ ] 4.3.1 Check for missing samples before sync
-    - [ ] 4.3.2 Block sync and display warning if missing
-    - [ ] 4.3.3 Write unit tests for sync prevention logic
-  - [ ] 4.4 Copy samples destructively to SD card (after user confirmation)
-    - [ ] 4.4.1 Prompt user for confirmation before destructive sync
-    - [ ] 4.4.2 Copy samples and metadata to SD card, deleting old data as needed
-    - [ ] 4.4.3 Write unit tests for destructive sync workflow
-  - [ ] 4.5 Sync both metadata and sample files to SD card
-    - [ ] 4.5.1 Ensure both sample files and metadata are copied
-    - [ ] 4.5.2 Write unit tests for sync completeness
-  - [ ] 4.6 Implement SD card folder structure and kit validation logic
-    - [ ] 4.6.1 Enforce Rample SD card folder structure (banks, kits, voices)
-    - [ ] 4.6.2 Validate kit folders and sample files before sync
-    - [ ] 4.6.3 Write unit tests for folder structure and validation
-  - [ ] 4.7 Implement factory sample restore workflow with warning, progress, and error handling
-    - [ ] 4.7.1 Add UI for factory restore with warning dialog
-    - [ ] 4.7.2 Download and unzip factory sample pack
-    - [ ] 4.7.3 Replace user folders with factory samples, rescan metadata
-    - [ ] 4.7.4 Show progress indicator and handle errors gracefully
-    - [ ] 4.7.5 Write unit tests for factory restore workflow
+- [x] 4.0 Menu System and Scanning Operations (Complete)
+  - [x] 4.1 "Scan All Kits" moved to application menu
+  - [x] 4.2 Menu structure for maintenance operations
+  - [x] 4.3 Progress indicators for scanning operations
+  - [x] 4.4 Error handling for scan operations
 
-- [ ] 5.0 Implement Sample Management Features
-  - [ ] 5.1 Implement drag-and-drop sample assignment to kit voices/slots in the UI
-    - [ ] 5.1.1 Add drag-and-drop handlers to kit voice/slot UI components
-    - [ ] 5.1.2 Provide visual feedback (highlight/placeholder) during drag-over
-    - [ ] 5.1.3 Support multi-file drop, enforcing slot limits and warnings
-    - [ ] 5.1.4 Write unit tests for drag-and-drop assignment and feedback
-  - [ ] 5.2 Enforce 4 voices per kit and up to 12 slots per voice in the UI
-    - [ ] 5.2.2 Limit each voice to 12 sample slots
-    - [ ] 5.2.3 Display warnings if slot/voice limits are exceeded
-    - [ ] 5.2.4 Write unit tests for slot/voice enforcement and warnings
-  - [ ] 5.3 Validate dropped files as `.wav` and display warnings for invalid files
-    - [ ] 5.3.1 Check file extensions on drop
-    - [ ] 5.3.2 Ignore invalid files and show warning message
-    - [ ] 5.3.3 Write unit tests for file validation and warning display
-  - [ ] 5.4 Prevent duplicate samples in a voice and warn for duplicates across voices
-    - [ ] 5.4.1 Check for duplicate samples within a voice and prevent assignment
-    - [ ] 5.4.2 Allow but warn for duplicates across voices in a kit
-    - [ ] 5.4.3 Write unit tests for duplicate detection and warnings
-  - [ ] 5.5 Implement stereo/mono handling and global/per-sample toggles
-    - [ ] 5.5.1 Add global stereo/mono toggle in app settings
-    - [ ] 5.5.2 Allow per-sample stereo/mono override in sample list
-    - [ ] 5.5.3 Implement logic for stereo sample slot assignment (fills two slots/voices)
-    - [ ] 5.5.4 Convert stereo samples to mono on SD sync if needed
-    - [ ] 5.5.5 Write unit tests for stereo/mono toggles and assignment logic
-  - [ ] 5.6 Store kit plan/sample assignment metadata in SQLite and persist changes immediately
-    - [ ] 5.6.1 Integrate `better-sqlite3` for local metadata storage
-    - [ ] 5.6.2 Persist all kit/sample assignment changes immediately
-    - [ ] 5.6.3 Write unit tests for persistence and data integrity
-  - [ ] 5.7 Display warnings/errors for slot/voice limit violations and duplicate samples
-    - [ ] 5.7.1 Centralize warning/error display at top of app
-    - [ ] 5.7.2 Ensure all relevant warnings/errors are triggered by UI actions
-    - [ ] 5.7.3 Write unit tests for warning/error display
+- [ ] 5.0 Kit Editing and Slot Management (New Architecture)
+  - [ ] 5.1 Implement editable mode system:
+    - [ ] 5.1.1 Default ON for user kits, OFF for factory/imported kits
+    - [ ] 5.1.2 Manual toggle control with persistence to database
+    - [ ] 5.1.3 Visual indicators and UI feedback for mode changes
+    - [ ] 5.1.4 Disable editing actions when mode is off
+  - [ ] 5.2 Implement reference-only sample management:
+    - [ ] 5.2.1 Store external samples via source_path field (no copying to local store)
+    - [ ] 5.2.2 Drag-and-drop sample assignment to voice slots
+    - [ ] 5.2.3 Add/Replace/Delete sample operations with source_path tracking
+    - [ ] 5.2.4 12-slot limit per voice using explicit voice_number field (1-4)
+    - [ ] 5.2.5 Validate source file existence during operations
+  - [ ] 5.3 Implement modification state tracking:
+    - [ ] 5.3.1 Mark kits as 'modified' when changes made after last sync
+    - [ ] 5.3.2 Display modification status in UI
+    - [ ] 5.3.3 Clear modified flag after successful SD card sync
 
+- [ ] 6.0 Format Validation and Conversion
+  - [ ] 6.1 Implement WAV format validation for reference files:
+    - [ ] 6.1.1 Check file extension (.wav only)
+    - [ ] 6.1.2 Validate bit depth (8 or 16 bit only)
+    - [ ] 6.1.3 Validate sample rate (44100 Hz only)
+    - [ ] 6.1.4 Validate mono/stereo channel configuration
+    - [ ] 6.1.5 Handle validation for external source_path files
+  - [ ] 6.2 Implement format warning system:
+    - [ ] 6.2.1 Show warnings for non-compliant formats during assignment
+    - [ ] 6.2.2 List format issues in kit UI before SD card sync
+    - [ ] 6.2.3 Allow proceeding with warnings (conversion during sync)
+  - [ ] 6.3 Implement format conversion during SD card sync:
+    - [ ] 6.3.1 Convert from source_path to SD card with format conversion
+    - [ ] 6.3.2 Handle bit depth, sample rate, and stereo-to-mono conversion
+    - [ ] 6.3.3 Preserve original files (no destructive editing)
 
+- [ ] 7.0 Stereo Sample Handling
+  - [ ] 7.1 Implement 'default to mono samples' global setting:
+    - [ ] 7.1.1 Create setting in application preferences (default: true)
+    - [ ] 7.1.2 Apply setting to new sample assignments
+    - [ ] 7.1.3 Allow per-sample override
+  - [ ] 7.2 Implement stereo assignment logic with voice_number:
+    - [ ] 7.2.1 Auto-assign as mono when global setting ON
+    - [ ] 7.2.2 Dual-slot assignment: left→voice N, right→voice N+1 when OFF
+    - [ ] 7.2.3 Handle conflicts when target voice has existing samples
+    - [ ] 7.2.4 Handle edge case: stereo to voice 4 (no voice 5 available)
+  - [ ] 7.3 Implement stereo conflict resolution:
+    - [ ] 7.3.1 Show dialog with options: force mono, replace existing, cancel
+    - [ ] 7.3.2 Apply choice and update kit with proper voice_number tracking
+  - [ ] 7.4 Implement stereo preview with reference-only playback:
+    - [ ] 7.4.1 Preview stereo as mono when setting ON
+    - [ ] 7.4.2 Preview left/right channels separately when OFF
+
+- [ ] 8.0 SD Card Sync Operations
+  - [ ] 8.1 Implement SD card sync workflow:
+    - [ ] 8.1.1 Create sync confirmation dialog with change summary
+    - [ ] 8.1.2 Display files to be copied/converted from source_path
+    - [ ] 8.1.3 Show estimated time and disk space requirements
+    - [ ] 8.1.4 Validate all source_path files exist before sync
+  - [ ] 8.2 Implement sync file operations:
+    - [ ] 8.2.1 Copy referenced samples from source_path to SD card
+    - [ ] 8.2.2 Convert samples to required format during copy
+    - [ ] 8.2.3 Handle stereo-to-mono based on settings
+    - [ ] 8.2.4 Update database to reflect successful sync
+  - [ ] 8.3 Implement sync state management:
+    - [ ] 8.3.1 Mark kit as 'synced' after successful operation
+    - [ ] 8.3.2 Clear 'modified changes' flag
+    - [ ] 8.3.3 Handle sync rollback on failure
+  - [ ] 8.4 Implement batch sync for multiple kits
+  - [ ] 8.5 Implement detailed progress and error handling
+
+- [ ] 9.0 Undo/Redo System
+  - [ ] 9.1 Implement action history with ORM:
+    - [ ] 9.1.1 Create edit_actions table with Drizzle schema
+    - [ ] 9.1.2 Define action types: ADD_SAMPLE, REPLACE_SAMPLE, DELETE_SAMPLE
+    - [ ] 9.1.3 Store action metadata as JSON with source_path references
+  - [ ] 9.2 Implement action recording with reference tracking:
+    - [ ] 9.2.1 Record all modifications with source_path metadata
+    - [ ] 9.2.2 Generate sequence numbers for action ordering
+    - [ ] 9.2.3 Handle batch actions (multiple samples)
+  - [ ] 9.3 Implement undo functionality:
+    - [ ] 9.3.1 Reverse most recent action including source_path restoration
+    - [ ] 9.3.2 Update kit state and UI to reflect undo
+    - [ ] 9.3.3 Handle complex actions (stereo pairs, voice_number adjustments)
+  - [ ] 9.4 Implement redo functionality and history management:
+    - [ ] 9.4.1 Re-apply undone actions with source_path handling
+    - [ ] 9.4.2 Maintain redo stack and clear on new actions
+    - [ ] 9.4.3 Limit history depth and auto-cleanup old records
+    - [ ] 9.4.4 Clear history on SD card sync (fresh start)
+
+- [ ] 10.0 Enhanced User Interface
+  - [ ] 10.1 Implement editable mode UI indicators:
+    - [ ] 10.1.1 Visual indicator of editable mode status
+    - [ ] 10.1.2 Kit modification status display
+    - [ ] 10.1.3 Undo/redo availability indicators
+  - [ ] 10.2 Implement progress indicators for operations:
+    - [ ] 10.2.1 Progress bars for sync, batch operations, reference resolution
+    - [ ] 10.2.2 Detailed progress text with file information
+    - [ ] 10.2.3 Cancellation support for long operations
+  - [ ] 10.3 Implement comprehensive confirmation prompts:
+    - [ ] 10.3.1 Destructive actions (replace, delete samples)
+    - [ ] 10.3.2 SD card sync with change summary
+    - [ ] 10.3.3 Batch operations affecting multiple kits
+  - [ ] 10.4 Implement error handling with recovery suggestions
+  - [ ] 10.5 Enhance keyboard shortcuts and accessibility
+
+- [ ] 11.0 Kit Browser Enhancements
+  - [ ] 11.1 Implement editable status indicators in browser:
+    - [ ] 11.1.1 Show editable mode status for each kit
+    - [ ] 11.1.2 Indicate kits with unsaved changes
+    - [ ] 11.1.3 Visual distinction between factory and user kits
+  - [ ] 11.2 Implement filtering and sorting:
+    - [ ] 11.2.1 Filter by editable mode status
+    - [ ] 11.2.2 Filter by modification status
+    - [ ] 11.2.3 Sort by modification date
+  - [ ] 11.3 Implement bulk operations:
+    - [ ] 11.3.1 Bulk enable/disable editable mode
+    - [ ] 11.3.2 Batch SD card sync for selected kits
+    - [ ] 11.3.3 Context menu with editing actions
+
+- [ ] 12.0 Settings and Configuration
+  - [ ] 12.1 Implement global editing settings:
+    - [ ] 12.1.1 'default to mono samples' setting
+    - [ ] 12.1.2 'confirm destructive actions' setting
+    - [ ] 12.1.3 'auto-sync on close' setting
+    - [ ] 12.1.4 'max undo history' setting
+  - [ ] 12.2 Implement settings persistence and validation
+  - [ ] 12.3 Create settings UI in preferences panel
+
+- [ ] 13.0 Database Layer ORM Migration (Replace Current Implementation)
+  - [ ] 13.1 Install and configure Drizzle ORM:
+    - [ ] 13.1.1 Install Drizzle ORM with better-sqlite3 driver
+    - [ ] 13.1.2 Define schema-first table definitions matching current architecture
+    - [ ] 13.1.3 Create type-safe query interfaces
+    - [ ] 13.1.4 Implement connection management
+  - [ ] 13.2 Replace existing database operations:
+    - [ ] 13.2.1 Replace raw SQL in romperDbCore.ts with Drizzle equivalents
+    - [ ] 13.2.2 Update IPC handlers to use ORM functions
+    - [ ] 13.2.3 Add comprehensive TypeScript error handling
+  - [ ] 13.3 Enhance database schema:
+    - [ ] 13.3.1 Add source_path field to samples table
+    - [ ] 13.3.2 Ensure voice_number field validation (1-4)
+    - [ ] 13.3.3 Use kit_name as foreign key for natural references
+  - [ ] 13.4 Fresh database initialization (no migration system needed):
+    - [ ] 13.4.1 Create initialization with complete Drizzle schema
+    - [ ] 13.4.2 Remove old initialization code
+    - [ ] 13.4.3 Update setup wizard for ORM-based database
+
+- [ ] 14.0 Integration Testing and Performance
+  - [ ] 14.1 Comprehensive integration tests:
+    - [ ] 14.1.1 Complete kit creation workflow with reference-only architecture
+    - [ ] 14.1.2 Kit modification workflow with editable mode
+    - [ ] 14.1.3 Undo/redo across multiple actions with ORM
+    - [ ] 14.1.4 Stereo handling with voice_number tracking
+  - [ ] 14.2 Error recovery testing:
+    - [ ] 14.2.1 Database corruption recovery with ORM
+    - [ ] 14.2.2 Missing source_path file handling
+    - [ ] 14.2.3 Failed SD card operation recovery
+  - [ ] 14.3 Performance testing:
+    - [ ] 14.3.1 Large kit collections (2600+ kits) with Drizzle
+    - [ ] 14.3.2 Database query performance with edit history
+    - [ ] 14.3.3 UI responsiveness with reference file handling
+  - [ ] 14.4 Accessibility testing for all new features
+
+---
+_Last updated: 2025-07-17_

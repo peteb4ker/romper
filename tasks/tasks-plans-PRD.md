@@ -1,98 +1,114 @@
-<!-- fi- `app/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now supports progress/error state for Squarp.net archive initialization, handles blank folder (no files copied, only folder created), and SD card folder validation/copy logic. Updated to only set targetPath after source selection. **Extended with automatic scanning integration as final step in wizard initialization, including voice inference, WAV analysis, and RTF artist scanning with progress reporting and graceful error handling.**
-- `app/renderer/components/hooks/__tests__/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook, now cover progress, error handling, blank folder initialization, and SD card folder validation/copy. Updated to expect targetPath to be empty on mount. **Extended with comprehensive tests for scanning integration including successful scanning, error handling, and empty kit scenarios.**
-- `app/renderer/electron.d.ts` - TypeScript definitions for Electron IPC, updated with local store status interface. **Extended with readFile method for scanner file access during wizard initialization.**
-- `electron/main/ipcHandlers.ts` - Main process IPC handlers, now uses shared validation logic for local store status checks. **Extended with readFile handler for secure file access during scanning operations.**
-- `electron/preload/index.ts` - Electron preload script for secure IPC communication, updated insertSample interface to include wav_bitrate and wav_sample_rate fields. **Extended with readFile method exposure for scanner operations.**
-- `vitest.setup.ts` - Centralized test setup with mocks and utilities. **Extended with readFile mock for scanner testing.**path: /Users/pete/workspace/romper/tasks/tasks-plans-PRD.md -->
 ## Relevant Files
 
-- `app/renderer/components/KitDetails.tsx` - Main UI for kit details, now extended to support kit planning (plan mode integration, actions, and UI). Updated for comprehensive scanning.
-- `app/renderer/components/KitDetails.test.tsx` - Unit tests for KitDetails, including plan mode and kit planning integration.
-- `app/renderer/components/KitHeader.tsx` - Updated to simplify scanning UI and logic, removing individual scan operation selection.
-- `app/renderer/components/KitBrowserHeader.tsx` - Updated to simplify scanning UI and logic, removing individual scan operation selection.
-- `app/renderer/components/hooks/useKitDetailsLogic.ts` - Updated scanning logic to always perform comprehensive scans.
-- `app/renderer/components/UnscannedKitPrompt.tsx` - Updated UI for unscanned kit prompts.
-- `app/renderer/components/utils/scanners/types.ts` - Updated types for simplified scanning operations.
-- `app/renderer/components/utils/scanners/orchestrationFunctions.ts` - Updated orchestration functions for simplified scanning flow.
-- `app/renderer/components/__tests__/KitHeader.test.tsx` - Updated tests for simplified scanning UI.
-- `app/renderer/components/__tests__/KitBrowserHeader.test.tsx` - Updated tests for simplified scanning UI.
-- `app/renderer/components/__tests__/KitDetails.test.tsx` - Updated tests for simplified scanning logic.
-- `app/renderer/components/__tests__/UnscannedKitPrompt.test.tsx` - Updated tests for unscanned kit prompts.
-- `app/renderer/components/utils/scanners/__tests__/orchestrationFunctions.test.ts` - Updated tests for scanning orchestration.
-- `app/renderer/components/utils/__tests__/scannerOrchestrator.test.ts` - Updated tests for scanner orchestrator.
-- `app/renderer/views/KitsView.tsx` - Fixed continuous invocation of listFilesInRoot on app load.
-- `app/renderer/views/__tests__/KitsView.test.tsx` - Added tests to validate fix for continuous listFilesInRoot invocation.
-- `app/renderer/components/LocalStoreWizardUI.tsx` - UI for local store setup wizard, now supports progress bar, robust error display, and a flipped flow (choose source > choose target > import). UI and accessibility improvements.
-- `app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx` - Unit tests for LocalStoreWizardUI, now fully decoupled from IPC/Electron, only test UI logic and user interaction. Updated to match new step logic and label expectations.
-- `app/renderer/components/hooks/useLocalStoreWizard.ts` - Hook for local store setup wizard business logic, now exposes progress/error state for Squarp.net archive initialization, handles blank folder (no files copied, only folder created), and SD card folder validation/copy logic. Updated to only set targetPath after source selection.
-- `app/renderer/components/hooks/useLocalStoreWizard.test.ts` - Unit tests for useLocalStoreWizard hook, now cover progress, error handling, blank folder initialization, and SD card folder validation/copy. Updated to expect targetPath to be empty on mount.
-- `app/renderer/components/hooks/useKitPlan.ts` - Hook for all business logic related to kit plans, including plan state, actions, and persistence.
-- `app/renderer/components/hooks/useKitPlan.test.ts` - Unit tests for useKitPlan hook.
-- `app/renderer/components/utils/planUtils.ts` - Utility functions for plan validation, sample assignment, and format checks.
-- `app/renderer/components/utils/planUtils.test.ts` - Unit tests for planUtils.
-- `app/renderer/components/utils/settingsManager.ts` - Manages global settings such as 'default to mono samples' and local store location.
-- `app/renderer/components/utils/settingsManager.test.ts` - Unit tests for settingsManager.
-- `app/renderer/utils/SettingsContext.tsx` - React context for settings management, including local store status validation.
-- `electron/main/localStoreValidator.ts` - Shared validation logic for local store paths and Romper DB validation, used by both main process and IPC handlers.
-- `electron/main/__tests__/localStoreValidator.test.ts` - Unit tests for shared local store validation logic.
-- `electron/main/index.ts` - Main Electron process entry point, now validates local store on startup and removes invalid paths from settings.
-- `electron/main/ipcHandlers.ts` - Main process IPC handlers, now uses shared validation logic for local store status checks.
-- `app/renderer/electron.d.ts` - TypeScript definitions for Electron IPC, updated with local store status interface.
-- `app/renderer/components/KitVoicePanel.tsx` - UI for voice slot drag-and-drop, add/replace/delete actions, and plan mode feedback.
-- `app/renderer/components/KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel plan mode and slot actions.
-- `app/renderer/components/KitVoicePanels.tsx` - Renders all voice panels and coordinates plan mode state.
-- `app/renderer/components/KitVoicePanels.test.tsx` - Unit tests for KitVoicePanels plan mode integration.
-- `app/renderer/components/StatusBar.tsx` - Displays progress and notifications for plan actions.
-- `app/renderer/components/StatusBar.test.tsx` - Unit tests for StatusBar notifications.
-- `app/renderer/components/MessageDisplay.tsx` - Notification system for info, warning, error, and progress messages.
-- `app/renderer/components/MessageDisplay.test.tsx` - Unit tests for MessageDisplay.
-- `app/renderer/components/utils/romperDb.ts` - Handles Romper DB (SQLite) operations for plans, kits, and samples.
-- `app/renderer/components/utils/romperDb.test.ts` - Unit tests for romperDb.
-- `app/renderer/components/utils/scannerOrchestrator.ts` - Unified scanning operations including voice inference, WAV analysis, and RTF parsing. Consolidates all scanning logic in one place for better maintainability.
-- `app/renderer/components/utils/__tests__/scannerOrchestrator.test.ts` - Integration tests for the unified scanning orchestrator. Tests the complete scanning pipeline including voice inference, WAV analysis, and RTF artist metadata extraction.
-- `app/renderer/components/utils/scannerOrchestrator.ts` - Orchestrates scanning operation chains with progress tracking and error handling.
-- `app/renderer/components/utils/scannerOrchestrator.test.ts` - Unit tests for scanner orchestration.
-- `electron/main/ipcHandlers.ts` - Main process IPC handlers, including robust, testable Squarp.net archive download/extract logic with progress and error reporting.
-- `electron/main/__tests__/archiveExtract.test.ts` - Unit tests for Squarp.net archive download/extract handler, with full async/streaming and error simulation. (Premature close test removed as non-robust in test env)
-- `electron/main/__tests__/isValidEntry.test.ts` - Unit tests for isValidEntry helper in archiveUtils, covering all valid and invalid entry cases.
-- `electron/main/db/romperDbCore.ts` - Core logic for Romper DB creation, record insertion, and error handling (including corrupt/overwrite cases). Now includes step pattern encoding/decoding utilities for BLOB storage (Uint8Array, 64 bytes, 0-127 per step) and extended SampleRecord interface with wav_bitrate, wav_sample_rate fields.
-- `electron/main/db/__tests__/romperDbCore.test.ts` - Integration and edge-case tests for DB creation, overwrite, validation, and error handling. Updated with comprehensive tests for step pattern BLOB encoding/decoding functions and new wav metadata fields in samples.
-- `electron/main/dbIpcHandlers.ts` - Main process IPC handlers for database operations, updated with new wav metadata fields for sample insertion.
-- `electron/preload/index.ts` - Electron preload script for secure IPC communication, updated insertSample interface to include wav_bitrate and wav_sample_rate fields.
-- `app/renderer/components/utils/scanners/__tests__/voiceInferenceScanner.test.ts` - Unit tests for voice name inference from sample filenames.
-- `app/renderer/components/utils/scanners/__tests__/wavAnalysisScanner.test.ts` - Unit tests for WAV file analysis including bitrate, sample rate, and stereo detection.
-- `app/renderer/components/utils/scanners/__tests__/rtfArtistScanner.test.ts` - Unit tests for RTF artist metadata extraction from filenames.
-- `app/renderer/components/utils/scanners/__tests__/orchestrator.test.ts` - Unit tests for scanner chain orchestration and error handling.
-- `app/renderer/components/utils/scanners/__tests__/orchestrationFunctions.test.ts` - Unit tests for high-level scanning orchestration functions.
-- `shared/kitUtilsShared.ts` - Shared kit utility logic for both app and electron workspaces.
-- `shared/__tests__/kitUtilsShared.test.ts` - Unit tests for shared kit utility logic.
-- `app/renderer/components/ValidationResultsDialog.tsx` - UI dialog for displaying validation results, kit selection, and rescan operations.
-- `app/renderer/components/__tests__/ValidationResultsDialog.test.tsx` - Unit tests for validation results dialog UI and user interactions.
-- `app/renderer/components/hooks/useValidationResults.ts` - Hook for validation logic, kit selection state, and rescan operations with error handling.
-- `app/renderer/components/hooks/__tests__/useValidationResults.test.ts` - Unit tests for validation hook including rescan functionality and dialog state management.
-- `electron/main/db/romperDbCore.ts` - Extended with rescan functionality: deleteAllSamplesForKit and rescanKitFromFilesystem functions to rebuild DB records from filesystem.
-- `electron/main/dbIpcHandlers.ts` - Extended with IPC handlers for rescan operations and kit validation.
-- `electron/preload/index.ts` - Extended with rescanKit method for secure rescan operations.
-- `app/renderer/electron.d.ts` - Extended with rescanKit API type definitions.
+### UI Components
+- `app/renderer/components/KitDetails.tsx` - Main UI for kit details, extended to support comprehensive kit planning with plan mode toggle, slot management, and action controls.
+- `app/renderer/components/__tests__/KitDetails.test.tsx` - Unit tests for KitDetails including plan mode, slot actions, and UI interactions.
+- `app/renderer/components/KitVoicePanel.tsx` - UI for voice slot drag-and-drop, add/replace/delete actions, plan mode feedback, and stereo assignment.
+- `app/renderer/components/__tests__/KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel plan mode, slot actions, and drag-and-drop.
+- `app/renderer/components/KitVoicePanels.tsx` - Renders all voice panels, coordinates plan mode state, and handles multi-voice operations.
+- `app/renderer/components/__tests__/KitVoicePanels.test.tsx` - Unit tests for KitVoicePanels plan mode integration and voice coordination.
+- `app/renderer/components/StatusBar.tsx` - Displays progress, notifications, and status for plan actions and operations.
+- `app/renderer/components/__tests__/StatusBar.test.tsx` - Unit tests for StatusBar plan-related notifications and progress display.
+- `app/renderer/components/MessageDisplay.tsx` - Notification system for info, warning, error, and progress messages in plan operations.
+- `app/renderer/components/__tests__/MessageDisplay.test.tsx` - Unit tests for MessageDisplay plan integration.
+
+### Dialog Components
+- `app/renderer/components/dialogs/PlanUpdateDialog.tsx` - UI dialog for SD card update confirmation, change summary, and progress display.
+- `app/renderer/components/dialogs/__tests__/PlanUpdateDialog.test.tsx` - Unit tests for update dialog UI and user interactions.
+- `app/renderer/components/dialogs/StereoAssignmentDialog.tsx` - UI dialog for handling stereo sample assignment conflicts and user choices.
+- `app/renderer/components/dialogs/__tests__/StereoAssignmentDialog.test.tsx` - Unit tests for stereo assignment dialog and conflict resolution.
+- `app/renderer/components/dialogs/NewKitDialog.tsx` - UI dialog for creating new kits with name validation and conflict resolution.
+- `app/renderer/components/dialogs/__tests__/NewKitDialog.test.tsx` - Unit tests for new kit creation dialog.
+
+### React Hooks
+- `app/renderer/components/hooks/useKitPlan.ts` - Hook for all business logic related to kit plans, including plan state, slot management, undo/redo, and persistence.
+- `app/renderer/components/hooks/__tests__/useKitPlan.test.ts` - Unit tests for useKitPlan hook covering all plan operations and state management.
+- `app/renderer/components/hooks/usePlanUpdate.ts` - Hook for SD card update operations, file copying, format conversion, and progress tracking.
+- `app/renderer/components/hooks/__tests__/usePlanUpdate.test.ts` - Unit tests for SD card update operations and progress handling.
+- `app/renderer/components/hooks/useStereoHandling.ts` - Hook for stereo sample assignment logic, conflict detection, and settings integration.
+- `app/renderer/components/hooks/__tests__/useStereoHandling.test.ts` - Unit tests for stereo handling logic and settings integration.
+- `app/renderer/components/hooks/useFilePreview.ts` - Hook for sample preview functionality, format handling, and playback management.
+- `app/renderer/components/hooks/__tests__/useFilePreview.test.ts` - Unit tests for file preview and playback functionality.
+
+### Utility Functions
+- `app/renderer/components/utils/planUtils.ts` - Utility functions for plan validation, sample assignment, format checks, and stereo handling.
+- `app/renderer/components/utils/__tests__/planUtils.test.ts` - Unit tests for all plan utility functions.
+- `app/renderer/components/utils/formatValidation.ts` - WAV format validation, conversion rules, and format compatibility checking.
+- `app/renderer/components/utils/__tests__/formatValidation.test.ts` - Unit tests for format validation and conversion logic.
+- `app/renderer/components/utils/settingsManager.ts` - Manages global settings including 'default to mono samples', confirmation preferences, and plan settings.
+- `app/renderer/components/utils/__tests__/settingsManager.test.ts` - Unit tests for settings management and persistence.
+- `app/renderer/components/utils/actionHistory.ts` - Action history management for undo/redo operations, including action recording and playback.
+- `app/renderer/components/utils/__tests__/actionHistory.test.ts` - Unit tests for action history and undo/redo functionality.
+
+### Context and Settings
+- `app/renderer/utils/SettingsContext.tsx` - React context for settings management, including plan-related settings and local store status.
+- `app/renderer/utils/__tests__/SettingsContext.test.tsx` - Unit tests for settings context and plan-related state management.
+
+### TypeScript Definitions
+- `app/renderer/electron.d.ts` - TypeScript definitions for Electron IPC, extended with plan-related method signatures.
+
+### Database Layer (Main Process)
+- `electron/main/db/romperDbCore.ts` - Core logic for Romper DB operations, extended with plan-related tables, action history, and plan state management.
+- `electron/main/db/__tests__/romperDbCore.test.ts` - Unit tests for database operations including plan-related schema and operations.
+- `electron/main/db/planActions.ts` - Database operations specific to plan actions, action history, and undo/redo support.
+- `electron/main/db/__tests__/planActions.test.ts` - Unit tests for plan-specific database operations.
+- `electron/main/db/migrations.ts` - Database migration system for schema updates and backwards compatibility.
+- `electron/main/db/__tests__/migrations.test.ts` - Unit tests for database migrations and schema validation.
+
+### File Operations (Main Process)
+- `electron/main/fileOperations.ts` - Secure file operations for SD card updates, sample copying, and format conversion.
+- `electron/main/__tests__/fileOperations.test.ts` - Unit tests for file operations and security validation.
+- `electron/main/formatConverter.ts` - Audio format conversion utilities for sample processing during SD card updates.
+- `electron/main/__tests__/formatConverter.test.ts` - Unit tests for format conversion and audio processing.
+
+### IPC Layer
+- `electron/main/dbIpcHandlers.ts` - Main process IPC handlers for plan operations, extended with plan-specific endpoints.
+- `electron/main/__tests__/dbIpcHandlers.test.ts` - Unit tests for plan-related IPC handlers.
+- `electron/preload/index.ts` - Electron preload script, extended with plan-related IPC method exposure.
+- `electron/preload/__tests__/planIpcMethods.test.ts` - Unit tests for plan-related preload IPC method exposure.
+
+### Shared Types and Utilities
+- `shared/planTypesShared.ts` - Shared TypeScript types and interfaces for plan operations between main and renderer processes.
+- `shared/__tests__/planTypesShared.test.ts` - Unit tests for shared plan types and validation.
 
 ### Notes
 
-- SD card source can be any folder. It is valid if it contains at least one subfolder matching ^[A-Z].*?(?:[1-9]?\d)$; otherwise, a warning is shown and the user must choose another folder.
-- Unit tests must be placed alongside the code files they are testing.
-- All plan actions and state changes must be covered by unit tests.
-- Use `npx vitest` to run all tests.
+- **Plan Mode**: Plan mode is enabled by default for new/user kits (plan_enabled = true) and disabled for imported/factory kits (plan_enabled = false). Users can toggle plan mode manually.
+- **Database Schema**: No separate plan table - plan state is tracked via the plan_enabled boolean field in the kits table. Action history is stored in a separate plan_actions table.
+- **Stereo Handling**: Complex logic involving the 'default to mono' setting, dual-slot assignment (left→voice N, right→voice N+1), and user prompts for conflicts.
+- **Format Validation**: Only WAV files accepted. Must be 8/16 bit, 44100 Hz. Conversion happens when updating SD card, not during planning.
+- **File Security**: All file operations must validate paths to prevent directory traversal attacks. Use proper file locking during operations.
+- **Undo/Redo**: Complete action history with support for ADD_SAMPLE, REPLACE_SAMPLE, DELETE_SAMPLE, and TOGGLE_PLAN_MODE actions. History persisted in database.
+- **UI/UX**: All operations must provide clear feedback, confirmation prompts for destructive actions, and progress indicators for long operations.
+- **Sample Storage**: Samples remain in their original filesystem locations. Only source paths are stored in database. No copying to local store until SD card sync.
+- **Local Store Role**: Local store serves as the original/factory sample set baseline. User samples are NOT copied to local store - they remain in external locations.
+- **SD Card Sync**: During sync, samples are copied directly from source locations to SD card with format conversion as needed.
+- **Testing Structure**: Unit tests must be placed in `__tests__` subdirectories alongside the code they test. All plan operations, error conditions, and edge cases must be tested.
+- **File Organization**: Follow existing project structure with components, hooks, utils, and dialogs properly organized in their respective directories.
+- **Accessibility**: All UI must work in light/dark modes with keyboard navigation and screen reader support.
+- Use `npx vitest` to run all tests. Use `npx tsc --noEmit` to validate TypeScript before marking tasks complete.
 
 ## Tasks
 
 - [ ] 1.0 Plan Mode Core Functionality
-  - [ ] 1.1 Implement plan mode toggle (on/off) for each kit, defaulting to on for new and empty kits and off for pre-existing kits.
-  - [ ] 1.2 Ensure each kit has exactly one plan, integral to the kit.
-  - [ ] 1.3 Integrate plan mode status and controls into KitDetails UI.
-  - [ ] 1.4 Persist plan mode state in Romper DB and settings.
-  - [ ] 1.5 Unit tests for plan mode toggle, persistence, and UI feedback.
+  - [ ] 1.1 Implement plan mode enablement logic:
+    - [ ] 1.1.1 Plan mode is ON by default for new/user-created kits (plan_enabled = true)
+    - [ ] 1.1.2 Plan mode is OFF by default for imported/factory kits (plan_enabled = false)
+    - [ ] 1.1.3 Users can manually toggle plan mode on/off for any kit
+    - [ ] 1.1.4 Plan mode state persisted in kits.plan_enabled database field
+  - [ ] 1.2 Integrate plan mode status and controls into KitDetails UI:
+    - [ ] 1.2.1 Display clear visual indicator of plan mode status (on/off)
+    - [ ] 1.2.2 Provide toggle control for enabling/disabling plan mode
+    - [ ] 1.2.3 Show appropriate UI feedback when plan mode changes
+    - [ ] 1.2.4 Disable plan actions when plan mode is off
+  - [ ] 1.3 Implement plan state tracking:
+    - [ ] 1.3.1 Track whether plan has unsaved changes
+    - [ ] 1.3.2 Mark plan as 'modified' when changes are made after last SD card update
+    - [ ] 1.3.3 Display modified status in UI
+  - [ ] 1.4 Unit tests for plan mode toggle, persistence, state tracking, and UI feedback.
 
 - [ ] 2.0 Local Store and Romper DB Initialization
-  - [x] 2.1 Implement local store setup wizard with the following flow:
+  - [x] 2.1 Implement setup wizard with the following flow:
     - [ ] 2.1.1 User chooses the target of the local store:
       - [x] 2.1.1.1 Default is the OS-equivalent 'Documents' folder
       - [x] 2.1.1.2 User can choose a custom path (via folder picker dialog, always appending '/romper' if not present)
@@ -119,7 +135,7 @@
   - [x] 2.9 Store exactly one local store path and associated Romper DB location in application settings; load them on startup if present.
   - [x] 2.10 Transition from SD card-based startup to local store-based startup
     - [x] 2.10.1 Update app startup logic to use local store path instead of SD card path
-    - [x] 2.10.2 Show local store wizard immediately on startup if local store is not configured or invalid
+    - [x] 2.10.2 Show setup wizard immediately on startup if local store is not configured or invalid
     - [x] 2.10.3 Display info message that local store must be set up before app can be used
     - [x] 2.10.4 Close app if user cancels the auto-triggered wizard
     - [x] 2.10.5 Remove "Select SD Card" button from KitBrowserHeader
@@ -156,7 +172,7 @@
     - [x] 2.13.4 Create unit tests for the validation result UI and rescan functionality
     - [ ] 2.13.5 Integrate validation check into a maintenance menu in the UI
     - [x] 2.13.6 Implement rescan functionality to overwrite DB records with current filesystem state for selected kits
-  - [x] 2.14 Flip local store setup flow: user chooses source first, then target, then import. Update UI, logic, and tests. Decouple UI tests from IPC/Electron.
+  - [x] 2.14 Flip setup flow: user chooses source first, then target, then import. Update UI, logic, and tests. Decouple UI tests from IPC/Electron.
   - [x] 2.15 Integrate scanning operations into wizard initialization
     - [x] 2.15.1 Add automatic scanning as final step in wizard initialization
       - [x] 2.15.1.1 After database records created, run scanning operation chain
@@ -173,62 +189,257 @@
     - [x] 2.16.6 Unit tests for manual scanning UI and operations
 
 - [ ] 3.0 Sample Assignment and Slot Management
-  - [ ] 3.1 Implement drag-and-drop for adding samples to slots (single and multiple).
-  - [ ] 3.2 Enforce 12-slot limit per voice and 4 voices per kit.
-  - [ ] 3.6 Unit tests for all slot actions, drag-and-drop, and undo/redo.
+  - [ ] 3.1 Implement drag-and-drop sample assignment:
+    - [ ] 3.1.1 Support dragging single samples to specific slots
+    - [ ] 3.1.2 Support dragging multiple samples with auto-assignment to available slots
+    - [ ] 3.1.3 Provide clear visual feedback during drag operations
+    - [ ] 3.1.4 Show appropriate action messages ("Add sample", "Replace sample")
+  - [ ] 3.2 Implement slot action logic:
+    - [ ] 3.2.1 Add sample action when dragging to empty slot
+    - [ ] 3.2.2 Replace sample action when dragging to occupied slot (with confirmation)
+    - [ ] 3.2.3 Delete/remove sample action via UI controls
+    - [ ] 3.2.4 All actions must be reversible via undo/redo
+  - [ ] 3.3 Enforce hardware constraints:
+    - [ ] 3.3.1 Limit to exactly 12 slots per voice (reject assignment beyond limit)
+    - [ ] 3.3.2 Limit to exactly 4 voices per kit
+    - [ ] 3.3.3 Display slot counts and limits in UI
+  - [ ] 3.4 Implement slot validation:
+    - [ ] 3.4.1 Validate sample file existence before assignment
+    - [ ] 3.4.2 Check file format compatibility (WAV only)
+    - [ ] 3.4.3 Show warnings for format issues without blocking assignment
+  - [ ] 3.5 Persist all slot changes immediately to Romper DB
+  - [ ] 3.6 Unit tests for all slot actions, drag-and-drop logic, constraints, and validation
 
 - [ ] 4.0 WAV Format Validation and Conversion
-  - [ ] 4.1 Validate that only valid WAV files (8/16 bit, 44100 Hz, mono/stereo) can be added to plans.
-  - [ ] 4.2 Display warnings for samples that will be converted on commit.
-  - [ ] 4.3 Reject non-WAV files before adding to plan.
-  - [ ] 4.4 Implement sample format conversion on plan commit (to 16 bit 44100 Hz, mono/stereo as needed).
-  - [ ] 4.5 Unit tests for format validation, warnings, and conversion logic.
+  - [ ] 4.1 Implement format validation rules:
+    - [ ] 4.1.1 Accept only WAV files (reject all other formats)
+    - [ ] 4.1.2 Validate bit depth: 8 or 16 bit (reject 24/32 bit)
+    - [ ] 4.1.3 Validate sample rate: 44100 Hz (warn for other rates)
+    - [ ] 4.1.4 Support both mono and stereo channels
+  - [ ] 4.2 Implement validation feedback:
+    - [ ] 4.2.1 Display clear error messages for rejected files
+    - [ ] 4.2.2 Show warning indicators for samples requiring conversion
+    - [ ] 4.2.3 List all format issues in plan UI before SD card update
+    - [ ] 4.2.4 Allow users to proceed with warnings (conversion during update)
+  - [ ] 4.3 Implement format conversion during SD card update:
+    - [ ] 4.3.1 Convert sample rate to 44100 Hz if needed
+    - [ ] 4.3.2 Convert bit depth to 16 bit if needed
+    - [ ] 4.3.3 Handle mono/stereo conversion based on settings
+    - [ ] 4.3.4 Preserve original files, create converted copies
+  - [ ] 4.4 Error handling and validation:
+    - [ ] 4.4.1 Handle conversion failures gracefully
+    - [ ] 4.4.2 Validate converted files before finalizing SD card update
+    - [ ] 4.4.3 Rollback changes if conversion fails
+  - [ ] 4.5 Unit tests for validation rules, warnings, conversion logic, and error handling
 
 - [ ] 5.0 Stereo Sample Handling and Global Settings
-  - [ ] 5.1 Implement 'default to mono samples' global setting (default on, persisted in settings).
-  - [ ] 5.2 Handle stereo sample assignment logic:
-    - [ ] 5.2.1 If the sample is stereo and 'default to mono' is ON, treat the stereo sample as mono.
-    - [ ] 5.2.2 If the sample is stereo and 'default to mono' is OFF:
-      - [ ] 5.2.2.1 If the same slot in the next voice already has a sample, prompt the user whether to use mono (occupy one slot) or replace the sample in the next voice slot (to have a stereo sample).
-      - [ ] 5.2.2.2 The left channel is attributed to the voice and slot it was added to.
-      - [ ] 5.2.2.3 The right channel is attributed to the same slot in the next voice (e.g., left: voice 1, slot 5; right: voice 2, slot 5).
-      - [ ] 5.2.2.4 If the stereo sample is added to voice 4 (no next voice), add as mono and warn the user about its mono status.
-  - [ ] 5.3 Prompt user for ambiguous stereo assignment cases.
-  - [ ] 5.4 Unit tests for stereo handling, prompts, and settings persistence.
+  - [ ] 5.1 Implement 'default to mono samples' global setting:
+    - [ ] 5.1.1 Create setting with default value ON
+    - [ ] 5.1.2 Persist setting in application settings
+    - [ ] 5.1.3 Provide UI toggle in settings/preferences
+    - [ ] 5.1.4 Apply setting consistently across all stereo operations
+  - [ ] 5.2 Implement stereo sample assignment logic:
+    - [ ] 5.2.1 When 'default to mono' is ON: treat all stereo samples as mono
+    - [ ] 5.2.2 When 'default to mono' is OFF: implement dual-slot stereo logic
+      - [ ] 5.2.2.1 Left channel assigned to target voice/slot
+      - [ ] 5.2.2.2 Right channel assigned to same slot in next voice (voice+1)
+      - [ ] 5.2.2.3 Check for conflicts in target right-channel slot
+    - [ ] 5.2.3 Handle voice 4 edge case: force mono conversion with user warning
+    - [ ] 5.2.4 Handle slot conflicts: prompt user to choose mono or replace existing
+  - [ ] 5.3 Implement user prompts for ambiguous cases:
+    - [ ] 5.3.1 Stereo sample on voice 4: warn about mono conversion
+    - [ ] 5.3.2 Right channel slot occupied: offer mono or replace options
+    - [ ] 5.3.3 Format conversion required: show impact of mono/stereo choice
+  - [ ] 5.4 Implement stereo preview and playback:
+    - [ ] 5.4.1 Preview stereo samples as they will sound in target format
+    - [ ] 5.4.2 Show visual indicators for stereo pairs in UI
+    - [ ] 5.4.3 Handle stereo-to-mono preview mixing
+  - [ ] 5.5 Unit tests for stereo logic, settings persistence, user prompts, and preview
 
-- [ ] 6.0 Plan Commit and State Management
-  - [ ] 6.1 Implement 'commit plan' action and UI, with confirmation prompt.
-  - [ ] 6.2 Copy and convert all samples to local store on commit; update kit state to 'committed.'
-  - [ ] 6.3 Mark plan as 'uncommitted' if further changes are made after commit.
-  - [ ] 6.4 Support batch commit of multiple plans.
-  - [ ] 6.5 Unit tests for commit, state transitions, and batch commit.
+- [ ] 6.0 SD Card Update and State Management
+  - [ ] 6.1 Implement SD card update workflow:
+    - [ ] 6.1.1 Create SD card update confirmation dialog with change summary
+    - [ ] 6.1.2 Display list of files to be copied/converted
+    - [ ] 6.1.3 Show estimated time and disk space requirements
+    - [ ] 6.1.4 Require explicit user confirmation before proceeding
+  - [ ] 6.2 Implement SD card update file operations:
+    - [ ] 6.2.1 Copy all planned samples to SD card with proper naming
+    - [ ] 6.2.2 Convert samples to required format during copy (16-bit, 44100Hz)
+    - [ ] 6.2.3 Handle stereo-to-mono conversion based on settings
+    - [ ] 6.2.4 Update database to reflect successful SD card sync
+  - [ ] 6.3 Implement update state management:
+    - [ ] 6.3.1 Mark kit as 'synced' after successful SD card update
+    - [ ] 6.3.2 Clear 'modified changes' flag
+    - [ ] 6.3.3 Update database with final sync status and metadata
+    - [ ] 6.3.4 Handle update rollback on failure
+  - [ ] 6.4 Implement batch update functionality:
+    - [ ] 6.4.1 Support updating multiple plans to SD card simultaneously
+    - [ ] 6.4.2 Show combined progress for batch operations
+    - [ ] 6.4.3 Handle partial failures in batch updates
+    - [ ] 6.4.4 Provide detailed results for each kit in batch
+  - [ ] 6.5 Implement update progress and error handling:
+    - [ ] 6.5.1 Show detailed progress during file operations
+    - [ ] 6.5.2 Handle file system errors (disk full, permissions, etc.)
+    - [ ] 6.5.3 Handle format conversion failures
+    - [ ] 6.5.4 Provide clear error messages and recovery options
+  - [ ] 6.6 Unit tests for SD card update workflow, file operations, state management, and error handling
 
 - [ ] 7.0 Preview and Playback
-  - [ ] 7.1 Allow previewing of planned samples from source location (uncommitted) and local store (committed).
-  - [ ] 7.2 Support sequencer playback for planned samples.
-  - [ ] 7.3 Merge stereo to mono on preview if required by settings.
-  - [ ] 7.4 Unit tests for preview, playback, and mono merge logic.
+  - [ ] 7.1 Implement sample preview functionality:
+    - [ ] 7.1.1 Preview unsaved samples from their source locations
+    - [ ] 7.1.2 Preview synced samples from SD card when available
+    - [ ] 7.1.3 Handle different file formats during preview (before conversion)
+    - [ ] 7.1.4 Show loading state during preview file access
+  - [ ] 7.2 Implement stereo-to-mono preview:
+    - [ ] 7.2.1 Mix stereo samples to mono when 'default to mono' setting is ON
+    - [ ] 7.2.2 Preview left/right channels separately when setting is OFF
+    - [ ] 7.2.3 Show visual indicators for stereo/mono preview mode
+  - [ ] 7.3 Implement sequencer integration:
+    - [ ] 7.3.1 Support step sequencer playback with planned samples
+    - [ ] 7.3.2 Handle sample loading for sequencer from various sources
+    - [ ] 7.3.3 Apply format conversion virtually for sequencer preview
+    - [ ] 7.3.4 Provide play/stop controls for planned kits
+  - [ ] 7.4 Implement preview error handling:
+    - [ ] 7.4.1 Handle missing or inaccessible source files
+    - [ ] 7.4.2 Handle corrupt or invalid audio files
+    - [ ] 7.4.3 Show clear error messages for preview failures
+    - [ ] 7.4.4 Gracefully degrade when preview is unavailable
+  - [ ] 7.5 Unit tests for preview functionality, stereo mixing, sequencer integration, and error handling
 
 - [ ] 8.0 Undo/Redo and Action History
-  - [ ] 8.1 Implement undo/redo for all plan actions (add, replace, delete).
-  - [ ] 8.2 Persist action history in Romper DB.
-  - [ ] 8.3 Unit tests for undo/redo and action history persistence.
+  - [ ] 8.1 Design action history data structure:
+    - [ ] 8.1.1 Define action types (ADD_SAMPLE, REPLACE_SAMPLE, DELETE_SAMPLE, TOGGLE_PLAN_MODE)
+    - [ ] 8.1.2 Store action metadata (timestamp, user, affected slots, file paths)
+    - [ ] 8.1.3 Maintain action order with sequence numbers
+    - [ ] 8.1.4 Design efficient storage in Romper DB
+  - [ ] 8.2 Implement undo functionality:
+    - [ ] 8.2.1 Reverse ADD_SAMPLE actions (remove sample from slot)
+    - [ ] 8.2.2 Reverse REPLACE_SAMPLE actions (restore previous sample)
+    - [ ] 8.2.3 Reverse DELETE_SAMPLE actions (restore deleted sample)
+    - [ ] 8.2.4 Handle cascading undos for multi-slot operations
+  - [ ] 8.3 Implement redo functionality:
+    - [ ] 8.3.1 Re-apply previously undone actions
+    - [ ] 8.3.2 Maintain redo stack until new actions are performed
+    - [ ] 8.3.3 Clear redo stack when new actions break history chain
+  - [ ] 8.4 Implement UI controls:
+    - [ ] 8.4.1 Add undo/redo buttons with keyboard shortcuts (Ctrl+Z, Ctrl+Y)
+    - [ ] 8.4.2 Show action descriptions in tooltips ("Undo: Add sample to slot 3")
+    - [ ] 8.4.3 Enable/disable controls based on available actions
+    - [ ] 8.4.4 Show visual feedback during undo/redo operations
+  - [ ] 8.5 Implement history persistence:
+    - [ ] 8.5.1 Store action history in Romper DB per kit
+    - [ ] 8.5.2 Preserve history across app restarts
+    - [ ] 8.5.3 Implement history pruning (limit to last N actions)
+    - [ ] 8.5.4 Clear history on SD card update (fresh start for synced state)
+  - [ ] 8.6 Unit tests for action recording, undo/redo logic, UI controls, and persistence
 
 - [ ] 9.0 Notifications, Progress, and Error Handling
-  - [ ] 9.1 Integrate with notification system for info, warning, error, and progress messages.
-  - [ ] 9.2 Display progress for long-running actions (e.g., commit, batch commit).
-  - [ ] 9.3 Prompt user for destructive actions (delete, overwrite).
-  - [ ] 9.4 Unit tests for notifications, progress, and prompts.
+  - [ ] 9.1 Integrate with existing notification system:
+    - [ ] 9.1.1 Use MessageDisplay component for all plan-related messages
+    - [ ] 9.1.2 Show success notifications for completed actions
+    - [ ] 9.1.3 Display warning messages for format issues and conflicts
+    - [ ] 9.1.4 Show error notifications for failed operations
+  - [ ] 9.2 Implement progress indicators:
+    - [ ] 9.2.1 Show progress bars for long-running operations (SD card update, batch update)
+    - [ ] 9.2.2 Display detailed progress text ("Copying file 3 of 15...")
+    - [ ] 9.2.3 Allow cancellation of long-running operations
+    - [ ] 9.2.4 Show estimated time remaining for complex operations
+  - [ ] 9.3 Implement confirmation prompts:
+    - [ ] 9.3.1 Confirm destructive actions (replace sample, delete sample)
+    - [ ] 9.3.2 Confirm SD card update with change summary
+    - [ ] 9.3.3 Confirm batch operations affecting multiple kits
+    - [ ] 9.3.4 Allow users to disable confirmations for non-destructive actions
+  - [ ] 9.4 Implement comprehensive error handling:
+    - [ ] 9.4.1 Handle file system errors (permissions, disk space, corruption)
+    - [ ] 9.4.2 Handle network errors (for remote file access)
+    - [ ] 9.4.3 Handle database errors (corruption, locking, constraint violations)
+    - [ ] 9.4.4 Provide recovery suggestions for common error scenarios
+  - [ ] 9.5 Unit tests for notifications, progress tracking, confirmations, and error handling
 
 - [ ] 10.0 Accessibility and UI Consistency
-  - [ ] 10.1 Ensure all plan-related UI is accessible in light and dark modes.
-  - [ ] 10.2 Provide visible focus indicators and keyboard navigation for all plan actions.
-  - [ ] 10.3 Unit tests for accessibility and UI consistency.
+  - [ ] 10.1 Implement comprehensive accessibility:
+    - [ ] 10.1.1 Ensure all plan UI works in light and dark modes
+    - [ ] 10.1.2 Provide keyboard navigation for all plan actions
+    - [ ] 10.1.3 Add visible focus indicators for all interactive elements
+    - [ ] 10.1.4 Implement proper ARIA labels and roles for screen readers
+    - [ ] 10.1.5 Ensure sufficient color contrast for all UI elements
+  - [ ] 10.2 Implement consistent visual design:
+    - [ ] 10.2.1 Use consistent styling for plan mode indicators
+    - [ ] 10.2.2 Standardize drag-and-drop visual feedback
+    - [ ] 10.2.3 Ensure consistent button and control styling
+    - [ ] 10.2.4 Implement loading states for all async operations
+  - [ ] 10.3 Implement responsive layout:
+    - [ ] 10.3.1 Ensure plan UI works at different window sizes
+    - [ ] 10.3.2 Optimize layout for different screen densities
+    - [ ] 10.3.3 Handle overflow scenarios gracefully
+  - [ ] 10.4 Implement internationalization foundation:
+    - [ ] 10.4.1 Use consistent text keys for all user-visible strings
+    - [ ] 10.4.2 Ensure proper text truncation and wrapping
+    - [ ] 10.4.3 Support RTL layouts where applicable
+  - [ ] 10.5 Unit tests for accessibility features, visual consistency, and responsive behavior
 
 - [x] 11.0 Menu System and Scanning Options
   - [x] 11.1 Move "Scan All Kits" option from KitBrowser to application menu
   - [x] 11.2 Implement application menu structure for scanning and maintenance operations
   - [x] 11.3 Unit tests for menu functionality and scanning operations
+
+- [ ] 12.0 Database Schema and Data Model Updates
+  - [ ] 12.1 Implement updated kits table schema:
+    - [ ] 12.1.1 Add plan_enabled BOOLEAN field (default false for imported, true for new kits)
+    - [ ] 12.1.2 Add plan_synced BOOLEAN field to track SD card sync status
+    - [ ] 12.1.3 Add plan_modified_date TIMESTAMP for tracking last changes
+    - [ ] 12.1.4 Create indexes for plan-related queries
+  - [ ] 12.2 Implement action history table:
+    - [ ] 12.2.1 Create plan_actions table (id, kit_id, action_type, action_data, timestamp, sequence)
+    - [ ] 12.2.2 Define action_type enumeration (ADD_SAMPLE, REPLACE_SAMPLE, DELETE_SAMPLE, etc.)
+    - [ ] 12.2.3 Store action_data as JSON for flexible metadata storage
+    - [ ] 12.2.4 Implement efficient querying for undo/redo operations
+  - [ ] 12.3 Implement database migration system:
+    - [ ] 12.3.1 Create versioned migration scripts for schema updates
+    - [ ] 12.3.2 Handle backwards compatibility for existing databases
+    - [ ] 12.3.3 Validate schema integrity after migrations
+  - [ ] 12.4 Unit tests for schema updates, migrations, and data integrity
+
+- [ ] 13.0 Settings and Configuration Management
+  - [ ] 13.1 Implement global plan settings:
+    - [ ] 13.1.1 Add 'default to mono samples' setting (boolean, default true)
+    - [ ] 13.1.2 Add 'confirm destructive actions' setting (boolean, default true)
+    - [ ] 13.1.3 Add 'auto-sync on close' setting (boolean, default false)
+    - [ ] 13.1.4 Add 'max undo history' setting (number, default 50)
+  - [ ] 13.2 Implement settings persistence and validation:
+    - [ ] 13.2.1 Store settings in application configuration
+    - [ ] 13.2.2 Validate setting values and provide defaults
+    - [ ] 13.2.3 Provide settings UI in preferences/settings panel
+    - [ ] 13.2.4 Apply settings changes immediately without restart
+  - [ ] 13.3 Unit tests for settings management and validation
+
+- [ ] 14.0 Kit Creation and Duplication
+  - [ ] 14.1 Implement new kit creation:
+    - [ ] 14.1.1 Create UI for new kit creation with name input
+    - [ ] 14.1.2 Validate kit names (format: [A-Z][0-9]{1,2})
+    - [ ] 14.1.3 Check for name conflicts and suggest alternatives
+    - [ ] 14.1.4 Create kit with plan_enabled = true by default
+  - [ ] 14.2 Implement kit duplication:
+    - [ ] 14.2.1 Create UI for duplicating existing kits
+    - [ ] 14.2.2 Copy all samples and metadata to new kit
+    - [ ] 14.2.3 Enable plan mode on duplicated kit
+    - [ ] 14.2.4 Handle name generation for duplicated kits
+  - [ ] 14.3 Unit tests for kit creation, duplication, and validation
+
+- [ ] 15.0 File System Integration and Management
+  - [ ] 15.1 Implement secure file access:
+    - [ ] 15.1.1 Validate all file paths for security (prevent directory traversal)
+    - [ ] 15.1.2 Handle file system permissions and access errors
+    - [ ] 15.1.3 Implement file locking during operations
+  - [ ] 15.2 Implement file organization:
+    - [ ] 15.2.1 Create proper directory structure in local store
+    - [ ] 15.2.2 Generate unique filenames to prevent conflicts
+    - [ ] 15.2.3 Handle file cleanup on plan deletion or rollback
+  - [ ] 15.3 Implement file monitoring:
+    - [ ] 15.3.1 Watch for changes to source files during planning
+    - [ ] 15.3.2 Notify users if source files become unavailable
+    - [ ] 15.3.3 Handle moved or renamed source files gracefully
+  - [ ] 15.4 Unit tests for file security, organization, and monitoring
 
 - `src/renderer/components/KitPlanManager.tsx` - (Deprecated: see KitDetails.tsx) [If still present, this file should be removed after migration.]
 - `src/renderer/components/KitPlanManager.test.tsx` - (Deprecated: see KitDetails.test.tsx) [If still present, this file should be removed after migration.]

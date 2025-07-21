@@ -65,3 +65,4 @@ prompt: |
   - The task list must reflect the scope and intent of the PRD.
   - Do not skip the user confirmation step after generating parent tasks.
   - Assume the task list will guide a junior developer. Be clear and explicit.
+  - Focus on technical implementation rather than business strategy, as this is appropriate for open-source hobby projects.

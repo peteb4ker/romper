@@ -33,9 +33,7 @@ const KitsView = () => {
   const kitBrowserRef = useRef<KitBrowserHandle | null>(null);
 
   // Validation results hook for database validation
-  const {
-    openValidationDialog,
-  } = useValidationResults({
+  const { openValidationDialog } = useValidationResults({
     localStorePath: localStorePath || "",
     onMessage: (msg) => {
       // You can integrate with a toast system here if needed

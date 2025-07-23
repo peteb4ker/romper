@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   KitValidationError,
   LocalStoreValidationDetailedResult,
-} from "../../../../shared/dbTypesShared";
+} from "../../../../shared/schema";
 
 interface UseValidationResultsProps {
   localStorePath: string;
@@ -110,16 +110,22 @@ export function useValidationResults({
       // Rescan each selected kit
       for (const kitName of selectedKits) {
         try {
-          const result = await window.electronAPI.rescanKit(dbDir, localStorePath, kitName);
+          const result = await window.electronAPI.rescanKit(
+            dbDir,
+            localStorePath,
+            kitName,
+          );
 
           if (result.success && result.data) {
             totalScannedSamples += result.data.scannedSamples;
             totalUpdatedVoices += result.data.updatedVoices;
           } else {
-            errors.push(`${kitName}: ${result.error || 'Rescan failed'}`);
+            errors.push(`${kitName}: ${result.error || "Rescan failed"}`);
           }
         } catch (error) {
-          errors.push(`${kitName}: ${error instanceof Error ? error.message : String(error)}`);
+          errors.push(
+            `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
+          );
         }
       }
 
@@ -147,7 +153,8 @@ export function useValidationResults({
       }
 
       // Re-validate to show updated results
-      const updatedValidation = await window.electronAPI.validateLocalStore(localStorePath);
+      const updatedValidation =
+        await window.electronAPI.validateLocalStore(localStorePath);
       setValidationResult(updatedValidation);
 
       // Close dialog only if all rescans succeeded AND no validation errors remain
@@ -164,7 +171,7 @@ export function useValidationResults({
     } finally {
       setIsRescanning(false);
     }
-  }, [selectedKits, localStorePath, onMessage, closeValidationDialog, validateLocalStore]);
+  }, [selectedKits, localStorePath, onMessage, closeValidationDialog]);
 
   return {
     isOpen,

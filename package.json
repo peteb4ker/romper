@@ -5,7 +5,10 @@
     "type": "module",
     "main": "dist/electron/main/index.js",
     "scripts": {
-        "build": "tsc --project tsconfig.json && npm run build:preload && vite build --config vite.config.ts",
+        "build": "npm run build:main && npm run build:preload && npm run build:renderer",
+        "build:main": "vite build --config vite.main.config.ts",
+        "build:preload": "tsc -p electron/preload/tsconfig.preload.json && mv dist/electron/preload/index.js dist/electron/preload/index.cjs",
+        "build:renderer": "vite build --config vite.config.ts",
         "test": "npm run test:unit && npm run test:integration",
         "test:unit": "vitest --config vite.config.ts --run",
         "test:integration": "node electron/run-vitest-in-electron.cjs",
@@ -13,9 +16,12 @@
         "test:play": "playwright test",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
         "dev": "npm run build && concurrently \"vite dev --config vite.config.ts\" \"sleep 2 && npm run electron:dev\"",
-        "electron:dev": "NODE_ENV=development electron --inspect=5858 .",
+        "electron:dev": "NODE_ENV=development electron --inspect=5858 dist/electron/main/index.js",
         "postinstall": "npx electron-rebuild -f -w better-sqlite3",
-        "build:preload": "tsc --project electron/preload/tsconfig.preload.json"
+        "db:generate": "drizzle-kit generate",
+        "db:migrate": "drizzle-kit migrate",
+        "db:push": "drizzle-kit push",
+        "db:studio": "drizzle-kit studio"
     },
     "devDependencies": {
         "@electron/rebuild": "^4.0.1",
@@ -39,6 +45,7 @@
         "eslint-plugin-prettier": "^5.4.1",
         "eslint-plugin-react-hooks": "^5.2.0",
         "eslint-plugin-simple-import-sort": "^12.1.1",
+        "jsdom": "^26.1.0",
         "playwright": "^1.53.0",
         "rollup": "^4.43.0",
         "tailwindcss": "^4.1.8",
@@ -56,6 +63,8 @@
         "@typescript-eslint/parser": "^8.0.0",
         "@vitejs/plugin-react": "^4.5.2",
         "better-sqlite3": "^11.10.0",
+        "drizzle-kit": "^0.31.4",
+        "drizzle-orm": "^0.44.3",
         "electron": "^36.4.0",
         "lightningcss": "^1.30.1",
         "node-wav": "^0.0.2",

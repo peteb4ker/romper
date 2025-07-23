@@ -11,7 +11,10 @@ import {
   groupSamplesByVoice,
   inferVoiceTypeFromFilename,
 } from "../../shared/kitUtilsShared";
-import { createApplicationMenu, registerMenuIpcHandlers } from "./applicationMenu.js";
+import {
+  createApplicationMenu,
+  registerMenuIpcHandlers,
+} from "./applicationMenu.js";
 import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
 // Import IPC handlers
 import { registerIpcHandlers } from "./ipcHandlers.js";
@@ -29,6 +32,9 @@ let currentSamplePlayer: unknown = null; // TODO: Refine type if possible
 
 const isDev = process.env.NODE_ENV === "development";
 
+const preloadPath = path.resolve(__dirname, "../preload/index.mjs");
+console.log(" Electron will use preload:", preloadPath);
+
 function createWindow() {
   console.log("[Electron Main] Environment variables:");
   console.log("  ROMPER_SDCARD_PATH:", process.env.ROMPER_SDCARD_PATH);
@@ -43,7 +49,7 @@ function createWindow() {
     height: 800,
     icon: path.resolve(__dirname, "../resources/app-icon.icns"), // Set app icon for built app
     webPreferences: {
-      preload: path.resolve(__dirname, "../preload/index.js"), // Always read from dist folder
+      preload: path.resolve(__dirname, "../preload/index.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
     },

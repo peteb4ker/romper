@@ -1,21 +1,20 @@
-// DB-related IPC handlers for Romper (modular, testable)
 import { ipcMain } from "electron";
+import * as fs from "fs";
+import * as path from "path";
 
-import { KitRecord, SampleRecord } from "../../shared/dbTypesShared";
+import type { Kit, NewKit, NewSample } from "../../shared/schema.js";
 import {
+  addKit,
+  addSample,
   createRomperDbFile,
-  deleteAllSamplesForKit,
-  getAllKits,
+  deleteSamples,
   getAllSamples,
-  getAllSamplesForKit,
-  getKitByName,
-  insertKitRecord,
-  insertSampleRecord,
-  rescanKitFromFilesystem,
-  updateKitMetadata,
-  updateStepPattern,
+  getKit,
+  getKits,
+  getKitSamples as getAllSamplesForKit,
+  updateKit,
   updateVoiceAlias,
-} from "./db/romperDbCore.js";
+} from "./db/romperDbCoreORM.js";
 import { validateLocalStoreAgainstDb } from "./localStoreValidator.js";
 
 export function registerDbIpcHandlers() {
@@ -23,24 +22,21 @@ export function registerDbIpcHandlers() {
     return createRomperDbFile(dbDir);
   });
 
-  ipcMain.handle(
-    "insert-kit",
-    async (_event, dbDir: string, kit: KitRecord) => {
-      return insertKitRecord(dbDir, kit);
-    },
-  );
+  ipcMain.handle("insert-kit", async (_event, dbDir: string, kit: NewKit) => {
+    return addKit(dbDir, kit);
+  });
 
   ipcMain.handle(
     "insert-sample",
-    async (_event, dbDir: string, sample: SampleRecord) => {
-      return insertSampleRecord(dbDir, sample);
+    async (_event, dbDir: string, sample: NewSample) => {
+      return addSample(dbDir, sample);
     },
   );
 
   ipcMain.handle(
     "get-kit-metadata",
     async (_event, dbDir: string, kitName: string) => {
-      return getKitByName(dbDir, kitName);
+      return getKit(dbDir, kitName);
     },
   );
 
@@ -57,12 +53,12 @@ export function registerDbIpcHandlers() {
         description?: string;
       },
     ) => {
-      return updateKitMetadata(dbDir, kitName, updates);
+      return updateKit(dbDir, kitName, updates);
     },
   );
 
   ipcMain.handle("get-all-kits", async (_event, dbDir: string) => {
-    return getAllKits(dbDir);
+    return getKits(dbDir);
   });
 
   ipcMain.handle(
@@ -81,7 +77,7 @@ export function registerDbIpcHandlers() {
   ipcMain.handle(
     "update-step-pattern",
     async (_event, dbDir: string, kitName: string, stepPattern: number[][]) => {
-      return updateStepPattern(dbDir, kitName, stepPattern);
+      return updateKit(dbDir, kitName, { step_pattern: stepPattern });
     },
   );
 
@@ -106,14 +102,74 @@ export function registerDbIpcHandlers() {
   ipcMain.handle(
     "rescan-kit",
     async (_event, dbDir: string, localStorePath: string, kitName: string) => {
-      return rescanKitFromFilesystem(dbDir, localStorePath, kitName);
+      // Step 1: Delete all existing samples for this kit
+      const deleteResult = deleteSamples(dbDir, kitName);
+      if (!deleteResult.success) {
+        return deleteResult;
+      }
+
+      // Step 2: Scan kit directory for current WAV files
+      const kitPath = path.join(localStorePath, kitName);
+      if (!fs.existsSync(kitPath)) {
+        return { success: false, error: `Kit directory not found: ${kitPath}` };
+      }
+
+      let scannedSamples = 0;
+      try {
+        const files = fs.readdirSync(kitPath);
+        const wavFiles = files.filter((file) =>
+          file.toLowerCase().endsWith(".wav"),
+        );
+
+        // Step 3: Insert new sample records for found files
+        for (let i = 0; i < wavFiles.length; i++) {
+          const wavFile = wavFiles[i];
+
+          // Simple heuristic: distribute files across 4 voices by index
+          const voiceNumber = (i % 4) + 1;
+
+          // Determine if stereo based on filename patterns
+          const isStereo = /stereo|st|_s\.|_S\./i.test(wavFile);
+
+          // Create sample record using ORM
+          const samplePath = path.join(kitPath, wavFile);
+          const sampleRecord: NewSample = {
+            kit_name: kitName,
+            filename: wavFile,
+            voice_number: voiceNumber,
+            slot_number: Math.floor(i / 4) + 1, // Multiple samples per voice go in different slots
+            source_path: samplePath,
+            is_stereo: isStereo,
+          };
+
+          const insertResult = addSample(dbDir, sampleRecord);
+          if (!insertResult.success) {
+            return insertResult;
+          }
+
+          scannedSamples++;
+        }
+
+        // Return success with scan results
+        return {
+          success: true,
+          data: { scannedSamples, updatedVoices: 0 },
+        };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          error: `Failed to scan kit directory: ${errorMessage}`,
+        };
+      }
     },
   );
 
   ipcMain.handle(
     "delete-all-samples-for-kit",
     async (_event, dbDir: string, kitName: string) => {
-      return deleteAllSamplesForKit(dbDir, kitName);
+      return deleteSamples(dbDir, kitName);
     },
   );
 }

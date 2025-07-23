@@ -64,6 +64,10 @@
 - `app/renderer/electron.d.ts` - TypeScript definitions for Electron IPC, extended with editing-related method signatures.
 
 ### Database Layer (Main Process) with ORM Implementation
+- `electron/main/db/romperDbCoreORM.ts` - Drizzle ORM implementation with simplified withDrizzle pattern (COMPLETED)
+- `electron/main/db/__tests__/romperDbCoreORM.integration.test.ts` - Comprehensive ORM integration tests (17 tests) (COMPLETED)
+- `electron/main/db/__tests__/romperDbCoreORM.test.ts` - ORM unit tests (18 tests) (COMPLETED)
+- `electron/main/dbIpcHandlers.ts` - IPC handlers updated to use ORM functions seamlessly (COMPLETED)
 - `electron/main/db/romperDbCore.ts` - Core database operations with Drizzle ORM implementation, connection management, and type-safe query execution.
 - `electron/main/db/__tests__/romperDbCore.test.ts` - Unit tests for database operations including editing-related schema and operations.
 - `electron/main/db/schema.ts` - Drizzle schema definitions for kits, samples, voices, and action history tables (fresh implementation).
@@ -142,9 +146,9 @@
   - [x] 3.3 Database initialization and schema creation
   - [x] 3.4 Transition from SD card to local store as primary data source
   - [x] 3.5 Kit browser integration with database scanning
-    - [ ] 3.5.1 Replace current SQL implementation with Drizzle ORM
-    - [ ] 3.5.2 Implement fresh ORM schema (no migration needed)
-    - [ ] 3.5.3 Update IPC handlers to use ORM-based functions
+    - [x] 3.5.1 Replace current SQL implementation with Drizzle ORM
+    - [x] 3.5.2 Implement fresh ORM schema (no migration needed)
+    - [x] 3.5.3 Update IPC handlers to use ORM-based functions
     - [ ] 3.5.4 Add comprehensive TypeScript error handling
 
 - [x] 4.0 Menu System and Scanning Operations (Complete)

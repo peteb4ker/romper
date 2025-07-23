@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock electron ipcRenderer and contextBridge
 const mockIpcRenderer = {
@@ -66,13 +66,16 @@ describe("Preload Menu Event Forwarding", () => {
     await import("../index");
 
     // Get the registered event handlers
-    const menuHandlers = mockIpcRenderer.on.mock.calls.reduce((acc, call) => {
-      const [eventName, handler] = call;
-      if (eventName.startsWith("menu-")) {
-        acc[eventName] = handler;
-      }
-      return acc;
-    }, {} as Record<string, Function>);
+    const menuHandlers = mockIpcRenderer.on.mock.calls.reduce(
+      (acc, call) => {
+        const [eventName, handler] = call;
+        if (eventName.startsWith("menu-")) {
+          acc[eventName] = handler;
+        }
+        return acc;
+      },
+      {} as Record<string, Function>,
+    );
 
     // Simulate IPC events from main process
     if (menuHandlers["menu-scan-all-kits"]) {

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 
-import { KitRecord, SampleRecord } from "../../shared/dbTypesShared";
+import type { Kit, NewKit, NewSample } from "../../shared/db/types.js";
 
 // Expose environment variables to renderer for E2E testing
 contextBridge.exposeInMainWorld("romperEnv", {
@@ -21,7 +21,8 @@ async function readSettings(): Promise<{
 }> {
   try {
     const settings = await ipcRenderer.invoke("read-settings");
-    const parsedSettings = typeof settings === "string" ? JSON.parse(settings) : settings || {};
+    const parsedSettings =
+      typeof settings === "string" ? JSON.parse(settings) : settings || {};
 
     // Override localStorePath with environment variable if set
     if (process.env.ROMPER_LOCAL_PATH) {
@@ -158,7 +159,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[Preload] getKitMetadata invoked", dbDir, kitName);
     return ipcRenderer.invoke("get-kit-metadata", dbDir, kitName);
   },
-  updateKitMetadata: (
+  updateKit: (
     dbDir: string,
     kitName: string,
     updates: {
@@ -168,11 +169,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
       description?: string;
     },
   ) => {
-    console.log("[Preload] updateKitMetadata invoked", dbDir, kitName, updates);
+    console.log("[Preload] updateKit invoked", dbDir, kitName, updates);
     return ipcRenderer.invoke("update-kit-metadata", dbDir, kitName, updates);
   },
-  getAllKits: (dbDir: string) => {
-    console.log("[Preload] getAllKits invoked", dbDir);
+  getKits: (dbDir: string) => {
+    console.log("[Preload] getKits invoked", dbDir);
     return ipcRenderer.invoke("get-all-kits", dbDir);
   },
   updateVoiceAlias: (
@@ -255,11 +256,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[Preload] createRomperDb invoked", dbDir);
     return ipcRenderer.invoke("create-romper-db", dbDir);
   },
-  insertKit: (dbDir: string, kit: KitRecord) => {
+  insertKit: (dbDir: string, kit: NewKit) => {
     console.log("[Preload] insertKit invoked", dbDir, kit);
     return ipcRenderer.invoke("insert-kit", dbDir, kit);
   },
-  insertSample: (dbDir: string, sample: SampleRecord) => {
+  insertSample: (dbDir: string, sample: NewSample) => {
     console.log("[Preload] insertSample invoked", dbDir, sample);
     return ipcRenderer.invoke("insert-sample", dbDir, sample);
   },

@@ -2,18 +2,18 @@ import fs from "fs";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import * as romperDbCore from "../db/romperDbCore.js";
+import * as romperDbCore from "../db/romperDbCoreORM.js";
 import {
   getRomperDbPath,
   validateLocalStoreAgainstDb,
   validateLocalStoreAndDb,
 } from "../localStoreValidator";
 
-// Mock the romperDbCore functions for validation tests
-vi.mock("../db/romperDbCore.js", () => {
+// Mock the romperDbCoreORM functions for validation tests
+vi.mock("../db/romperDbCoreORM.js", () => {
   return {
-    getAllKits: vi.fn(),
-    getAllSamplesForKit: vi.fn(),
+    getKits: vi.fn(),
+    getKitSamples: vi.fn(),
   };
 });
 
@@ -128,16 +128,16 @@ describe("localStoreValidator", () => {
       fs.writeFileSync(path.join(kitB1Path, "3 Hat.wav"), "mock-wav");
 
       // Mock DB functions
-      vi.mocked(romperDbCore.getAllKits).mockReturnValue({
+      vi.mocked(romperDbCore.getKits).mockReturnValue({
         success: true,
         data: [
-          { name: "A0", voices: {}, plan_enabled: false },
-          { name: "B1", voices: {}, plan_enabled: false },
-          { name: "C2", voices: {}, plan_enabled: false }, // Missing folder
+          { name: "A0", editable: false },
+          { name: "B1", editable: false },
+          { name: "C2", editable: false }, // Missing folder
         ],
       });
 
-      vi.mocked(romperDbCore.getAllSamplesForKit).mockImplementation(
+      vi.mocked(romperDbCore.getKitSamples).mockImplementation(
         (dbDir, kitName) => {
           if (kitName === "A0") {
             return {
@@ -209,9 +209,9 @@ describe("localStoreValidator", () => {
 
     it("should return valid when all files match DB records", () => {
       // Mock B1 correctly (no missing or extra files)
-      vi.mocked(romperDbCore.getAllKits).mockReturnValue({
+      vi.mocked(romperDbCore.getKits).mockReturnValue({
         success: true,
-        data: [{ name: "B1", voices: {}, plan_enabled: false }],
+        data: [{ name: "B1", editable: false }],
       });
 
       const result = validateLocalStoreAgainstDb(localStorePath);
@@ -232,8 +232,8 @@ describe("localStoreValidator", () => {
       expect(result.errorSummary).toContain("Romper DB file not found");
     });
 
-    it("should return error when getAllKits fails", () => {
-      vi.mocked(romperDbCore.getAllKits).mockReturnValue({
+    it("should return error when getKits fails", () => {
+      vi.mocked(romperDbCore.getKits).mockReturnValue({
         success: false,
         error: "Database query failed",
       });

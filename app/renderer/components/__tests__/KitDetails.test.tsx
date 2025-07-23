@@ -50,7 +50,7 @@ function mockElectronAPI() {
     onSamplePlaybackEnded: vi.fn(),
     onSamplePlaybackError: vi.fn(),
     getKitMetadata: vi.fn().mockResolvedValue({ success: true, data: null }),
-    updateKitMetadata: vi.fn().mockResolvedValue({ success: true }),
+    updateKit: vi.fn().mockResolvedValue({ success: true }),
     updateVoiceAlias: vi.fn().mockResolvedValue({ success: true }),
     updateStepPattern: vi.fn().mockResolvedValue({ success: true }),
   };

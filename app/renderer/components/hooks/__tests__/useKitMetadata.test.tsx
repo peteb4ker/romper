@@ -16,7 +16,7 @@ vi.mock("../../../utils/SettingsContext", () => ({
 // Mock window.electronAPI
 const mockElectronAPI = {
   getKitMetadata: vi.fn(),
-  updateKitMetadata: vi.fn(),
+  updateKit: vi.fn(),
   updateVoiceAlias: vi.fn(),
   updateStepPattern: vi.fn(),
 };
@@ -43,7 +43,7 @@ describe("useKitMetadata", () => {
       name: "A1",
       alias: "Test Kit",
       artist: "Test Artist",
-      plan_enabled: false,
+      editable: false,
       locked: false,
       voices: { 1: "Kick", 2: "Snare", 3: "HiHat", 4: "Cymbal" },
     };
@@ -86,7 +86,7 @@ describe("useKitMetadata", () => {
     expect(result.current.kitMetadata).toEqual({
       id: 0,
       name: "A1",
-      plan_enabled: false,
+      editable: false,
       locked: false,
       voices: { 1: "", 2: "", 3: "", 4: "" },
     });
@@ -113,7 +113,7 @@ describe("useKitMetadata", () => {
     const mockMetadata = {
       id: 1,
       name: "A1",
-      plan_enabled: false,
+      editable: false,
       locked: false,
       voices: { 1: "", 2: "", 3: "", 4: "" },
     };
@@ -125,7 +125,7 @@ describe("useKitMetadata", () => {
         data: { ...mockMetadata, alias: "Updated Kit" },
       });
 
-    mockElectronAPI.updateKitMetadata.mockResolvedValue({ success: true });
+    mockElectronAPI.updateKit.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() => useKitMetadata(defaultProps), {
       wrapper,
@@ -137,18 +137,16 @@ describe("useKitMetadata", () => {
 
     await result.current.handleSaveKitLabel("Updated Kit");
 
-    expect(mockElectronAPI.updateKitMetadata).toHaveBeenCalledWith(
-      "/test/path",
-      "A1",
-      { alias: "Updated Kit" },
-    );
+    expect(mockElectronAPI.updateKit).toHaveBeenCalledWith("/test/path", "A1", {
+      alias: "Updated Kit",
+    });
   });
 
   it("updates voice alias successfully", async () => {
     const mockMetadata = {
       id: 1,
       name: "A1",
-      plan_enabled: false,
+      editable: false,
       locked: false,
       voices: { 1: "", 2: "", 3: "", 4: "" },
     };
@@ -184,7 +182,7 @@ describe("useKitMetadata", () => {
     const mockMetadata = {
       id: 1,
       name: "A1",
-      plan_enabled: false,
+      editable: false,
       locked: false,
       voices: { 1: "", 2: "", 3: "", 4: "" },
     };
@@ -226,7 +224,7 @@ describe("useKitMetadata", () => {
     const mockMetadata = {
       id: 1,
       name: "A1",
-      plan_enabled: false,
+      editable: false,
       locked: false,
       voices: { 1: "", 2: "", 3: "", 4: "" },
     };

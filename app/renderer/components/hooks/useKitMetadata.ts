@@ -8,7 +8,7 @@ export interface KitMetadata {
   name: string;
   alias?: string;
   artist?: string;
-  plan_enabled: boolean;
+  editable: boolean;
   locked: boolean;
   step_pattern?: number[][];
   voices: { [voiceNumber: number]: string };
@@ -46,7 +46,7 @@ export function useKitMetadata(props: KitDetailsProps) {
         const defaultMetadata: KitMetadata = {
           id: 0, // Will be set when inserted
           name: kitName,
-          plan_enabled: false,
+          editable: false,
           locked: false,
           voices: { 1: "", 2: "", 3: "", 4: "" },
         };
@@ -80,10 +80,10 @@ export function useKitMetadata(props: KitDetailsProps) {
     tags?: string[];
     description?: string;
   }) => {
-    if (!window.electronAPI?.updateKitMetadata || !dbDir || !kitName) return;
+    if (!window.electronAPI?.updateKit || !dbDir || !kitName) return;
 
     try {
-      const result = await window.electronAPI.updateKitMetadata(
+      const result = await window.electronAPI.updateKit(
         dbDir,
         kitName,
         updates,

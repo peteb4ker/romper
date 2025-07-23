@@ -1,4 +1,4 @@
-import { app, Menu, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, Menu } from "electron";
 
 /**
  * Creates and sets the application menu with Tools menu containing scanning and maintenance operations

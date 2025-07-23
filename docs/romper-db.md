@@ -21,7 +21,7 @@ This document describes the schema for the Romper local SQLite database, which i
 - `name` TEXT NOT NULL - Kit name/identifier
 - `alias` TEXT - Optional display alias for the kit
 - `artist` TEXT - Optional artist/creator information
-- `plan_enabled` BOOLEAN NOT NULL DEFAULT 0 - Whether kit is enabled for sequencing plans
+- `editable` BOOLEAN NOT NULL DEFAULT 0 - Whether kit is enabled for sequencing plans
 - `locked` BOOLEAN NOT NULL DEFAULT 0 - Whether kit is locked from editing
 - `step_pattern` BLOB - Step sequencer pattern data (64 bytes: 16 steps × 4 voices, velocity 0-127 per step)
 

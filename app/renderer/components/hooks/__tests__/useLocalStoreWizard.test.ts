@@ -67,7 +67,7 @@ describe("useLocalStoreWizard", () => {
       copyDir: vi.fn(async (src, dest) => {}),
       insertKit: vi.fn(async (_dbDir, _kit) => ({ success: true })),
       insertSample: vi.fn(async (_dbDir, _sample) => ({ success: true })),
-      updateKitMetadata: vi.fn(async (_dbDir, _kitName, _updates) => ({
+      updateKit: vi.fn(async (_dbDir, _kitName, _updates) => ({
         success: true,
       })),
       readFile: vi.fn(async (_filePath) => ({
@@ -451,7 +451,7 @@ describe("useLocalStoreWizard", () => {
     );
 
     // Verify kit metadata was updated
-    expect(window.electronAPI.updateKitMetadata).toHaveBeenCalledWith(
+    expect(window.electronAPI.updateKit).toHaveBeenCalledWith(
       "/mock/home/Documents/romper/.romperdb",
       "A0",
       expect.objectContaining({
@@ -514,8 +514,8 @@ describe("useLocalStoreWizard", () => {
     expect(mockExecuteFullKitScan).toHaveBeenCalledTimes(2);
 
     // Should only update metadata for the successful kit
-    expect(window.electronAPI.updateKitMetadata).toHaveBeenCalledTimes(1);
-    expect(window.electronAPI.updateKitMetadata).toHaveBeenCalledWith(
+    expect(window.electronAPI.updateKit).toHaveBeenCalledTimes(1);
+    expect(window.electronAPI.updateKit).toHaveBeenCalledWith(
       "/mock/home/Documents/romper/.romperdb",
       "B12",
       expect.objectContaining({
@@ -549,6 +549,6 @@ describe("useLocalStoreWizard", () => {
 
     // Should not call scanning when no kits found
     expect(mockExecuteFullKitScan).not.toHaveBeenCalled();
-    expect(window.electronAPI.updateKitMetadata).not.toHaveBeenCalled();
+    expect(window.electronAPI.updateKit).not.toHaveBeenCalled();
   });
 });

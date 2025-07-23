@@ -1,11 +1,32 @@
 import fs from "fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock better-sqlite3 to avoid native module errors
+// Mock better-sqlite3 to avoid native module errors - must be hoisted
 vi.mock("better-sqlite3", () => ({
   default: vi.fn(() => ({
     exec: vi.fn(),
+    close: vi.fn(),
+    prepare: vi.fn(() => ({
+      all: vi.fn(),
+      run: vi.fn(),
+      get: vi.fn(),
+    })),
   })),
+}));
+
+// Mock drizzle-orm better-sqlite3 modules
+vi.mock("drizzle-orm/better-sqlite3", () => ({
+  drizzle: vi.fn(() => ({
+    query: vi.fn(),
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  })),
+}));
+
+vi.mock("drizzle-orm/better-sqlite3/migrator", () => ({
+  migrate: vi.fn(),
 }));
 
 // Mocks for Electron and Node APIs
@@ -47,6 +68,9 @@ vi.mock("path", () => {
 });
 vi.mock("../ipcHandlers.js", () => ({
   registerIpcHandlers: vi.fn(),
+}));
+vi.mock("../dbIpcHandlers.js", () => ({
+  registerDbIpcHandlers: vi.fn(),
 }));
 vi.mock("../applicationMenu.js", () => ({
   createApplicationMenu: vi.fn(),

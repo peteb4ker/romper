@@ -1,7 +1,8 @@
-import { deleteDbFileWithRetry } from "../fileOperations";
 import * as fs from "fs";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { deleteDbFileWithRetry } from "../fileOperations";
 
 // Mock fs functions
 vi.mock("fs");
@@ -54,7 +55,9 @@ describe("fileOperations", () => {
       mockFs.renameSync.mockImplementation(() => {});
       mockFs.existsSync.mockReturnValue(false);
 
-      await expect(deleteDbFileWithRetry(testDbPath, 1)).resolves.toBeUndefined();
+      await expect(
+        deleteDbFileWithRetry(testDbPath, 1),
+      ).resolves.toBeUndefined();
       expect(mockFs.renameSync).toHaveBeenCalled();
 
       Object.defineProperty(process, "platform", { value: originalPlatform });

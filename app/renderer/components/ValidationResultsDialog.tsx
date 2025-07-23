@@ -6,7 +6,7 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { KitValidationError } from "../../../shared/dbTypesShared";
+import { KitValidationError } from "../../../shared/schema";
 import { useValidationResults } from "./hooks/useValidationResults";
 
 interface ValidationResultsDialogProps {

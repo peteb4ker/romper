@@ -61,17 +61,16 @@ beforeAll(() => {
           id: 1,
           name: kitName,
           alias: kitName,
-          plan_enabled: false,
+          editable: false,
           locked: false,
           voices: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
           step_pattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
         },
       }),
-      updateKitMetadata: async (dbDir, kitName, updates) => ({ success: true }),
+      updateKit: async (dbDir, kitName, updates) => ({ success: true }),
       updateVoiceAlias: async (dbDir, kitId, voiceNumber, alias) => ({
         success: true,
       }),
-      updateStepPattern: async (dbDir, kitName, pattern) => ({ success: true }),
     };
 
     // Mock scrollIntoView for all elements

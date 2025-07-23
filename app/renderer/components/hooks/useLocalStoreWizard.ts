@@ -228,7 +228,10 @@ export function useLocalStoreWizard(
         phase: "Copying kits...",
         onStep: async (kit) => {
           if (!api.copyDir) throw new Error("Missing Electron API");
-          await api.copyDir(`${sdCardSourcePath}/${kit}`, `${targetPath}/${kit}`);
+          await api.copyDir(
+            `${sdCardSourcePath}/${kit}`,
+            `${targetPath}/${kit}`,
+          );
         },
       });
     },
@@ -271,7 +274,7 @@ export function useLocalStoreWizard(
             const wavFiles = files.filter((f: string) => /\.wav$/i.test(f));
             const insertedKitName = await insertKit(dbDir, {
               name: kitName,
-              plan_enabled: false,
+              editable: false,
             });
             const voices = groupSamplesByVoice(wavFiles);
             for (const voiceNum of Object.keys(voices)) {
@@ -402,12 +405,8 @@ export function useLocalStoreWizard(
             }
 
             // Update kit metadata if we have any updates
-            if (Object.keys(updates).length > 0 && api.updateKitMetadata) {
-              const updateResult = await api.updateKitMetadata(
-                dbDir,
-                kitName,
-                updates,
-              );
+            if (Object.keys(updates).length > 0 && api.updateKit) {
+              const updateResult = await api.updateKit(dbDir, kitName, updates);
               if (!updateResult.success) {
                 console.warn(
                   `[Hook] Failed to update metadata for kit ${kitName}:`,
@@ -469,16 +468,20 @@ export function useLocalStoreWizard(
       }
 
       if (state.source === "sdcard") {
-        if (!state.sdCardSourcePath) throw new Error("No SD card path selected");
+        if (!state.sdCardSourcePath)
+          throw new Error("No SD card path selected");
         console.log("[Hook] initialize - copying SD card kits");
-        await validateAndCopySdCardKits(state.sdCardSourcePath, state.targetPath);
+        await validateAndCopySdCardKits(
+          state.sdCardSourcePath,
+          state.targetPath,
+        );
       }
       if (state.source === "squarp") {
         console.log("[Hook] initialize - extracting Squarp archive");
         await extractSquarpArchive(state.targetPath);
         console.log("[Hook] initialize - Squarp archive extraction completed");
         // Add a small delay to ensure filesystem sync
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         console.log("[Hook] initialize - filesystem sync delay completed");
       }
       console.log("[Hook] initialize - creating and populating database");

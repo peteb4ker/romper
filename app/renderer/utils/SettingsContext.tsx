@@ -6,7 +6,7 @@ import React, {
   useReducer,
 } from "react";
 
-import { LocalStoreValidationDetailedResult } from "../../../shared/dbTypesShared";
+import { LocalStoreValidationDetailedResult } from "../../../shared/schema";
 
 interface Settings {
   localStorePath: string | null;
@@ -234,5 +234,5 @@ export const useSettings = (): SettingsContextProps => {
 
 // Export types for external use
 export type { Settings, SettingsContextProps };
-export type { LocalStoreValidationDetailedResult } from "../../../shared/dbTypesShared";
+export type { LocalStoreValidationDetailedResult } from "../../../shared/schema";
 export { SettingsContext };

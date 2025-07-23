@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Integration Tests for Menu Event Forwarding (Preload Script)
@@ -25,7 +25,7 @@ describe("Menu Event Forwarding Integration Tests", () => {
     vi.clearAllMocks();
 
     // Setup window mock for different environments
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       Object.defineProperty(window, "dispatchEvent", {
         value: mockDispatchEvent,
         writable: true,
@@ -51,11 +51,11 @@ describe("Menu Event Forwarding Integration Tests", () => {
       "menu-scan-all-kits",
       "menu-validate-database",
       "menu-setup-local-store",
-      "menu-about"
+      "menu-about",
     ];
 
     // Mock the preload script behavior
-    menuEvents.forEach(eventName => {
+    menuEvents.forEach((eventName) => {
       mockIpcRenderer.on(eventName, expect.any(Function));
     });
 
@@ -66,7 +66,7 @@ describe("Menu Event Forwarding Integration Tests", () => {
     // Simulate the preload script receiving and forwarding an event
     const eventHandler = vi.fn((eventName) => {
       const event = new CustomEvent(eventName);
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         window.dispatchEvent(event);
       } else {
         mockWindow.dispatchEvent(event);
@@ -78,10 +78,10 @@ describe("Menu Event Forwarding Integration Tests", () => {
       "menu-scan-all-kits",
       "menu-validate-database",
       "menu-setup-local-store",
-      "menu-about"
+      "menu-about",
     ];
 
-    menuEvents.forEach(eventName => {
+    menuEvents.forEach((eventName) => {
       eventHandler(eventName);
     });
 
@@ -93,13 +93,15 @@ describe("Menu Event Forwarding Integration Tests", () => {
         index + 1,
         expect.objectContaining({
           type: eventName,
-        })
+        }),
       );
     });
   });
 
   it("should handle IPC errors gracefully", () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     // Simulate an IPC error
     const errorHandler = vi.fn(() => {
@@ -113,7 +115,7 @@ describe("Menu Event Forwarding Integration Tests", () => {
     errorHandler();
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       "Failed to forward menu event:",
-      expect.any(Error)
+      expect.any(Error),
     );
 
     consoleErrorSpy.mockRestore();
@@ -125,12 +127,12 @@ describe("Menu Event Forwarding Integration Tests", () => {
         "menu-scan-all-kits",
         "menu-validate-database",
         "menu-setup-local-store",
-        "menu-about"
+        "menu-about",
       ];
 
       if (validEvents.includes(eventName)) {
         const event = new CustomEvent(eventName);
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           window.dispatchEvent(event);
         } else {
           mockWindow.dispatchEvent(event);

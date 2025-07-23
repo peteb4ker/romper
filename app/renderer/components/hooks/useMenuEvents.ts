@@ -50,8 +50,14 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
     // Cleanup event listeners
     return () => {
       window.removeEventListener("menu-scan-all-kits", handleScanAllKits);
-      window.removeEventListener("menu-validate-database", handleValidateDatabase);
-      window.removeEventListener("menu-setup-local-store", handleSetupLocalStore);
+      window.removeEventListener(
+        "menu-validate-database",
+        handleValidateDatabase,
+      );
+      window.removeEventListener(
+        "menu-setup-local-store",
+        handleSetupLocalStore,
+      );
       window.removeEventListener("menu-about", handleAbout);
     };
   }, [handlers]);

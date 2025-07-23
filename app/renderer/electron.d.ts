@@ -1,18 +1,20 @@
-// Import shared types from the dbTypesShared file
-import {
+// Import shared types from the schema file
+import type {
   DbResult,
+  Kit,
   KitValidationError,
   LocalStoreValidationDetailedResult,
-  LocalStoreValidationResult,
-  SampleRecord,
-} from "../../shared/dbTypesShared";
+  NewKit,
+  NewSample,
+  Sample,
+} from "../../shared/schema";
 
 export {
   DbResult,
   KitValidationError,
   LocalStoreValidationDetailedResult,
-  LocalStoreValidationResult,
-  SampleRecord,
+  NewKit,
+  Sample,
 };
 
 // Custom type for createRomperDb return value
@@ -65,11 +67,11 @@ export interface ElectronAPI {
   validateLocalStore: (
     localStorePath: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
-  getAllSamples?: (dbDir: string) => Promise<DbResult<SampleRecord[]>>;
+  getAllSamples?: (dbDir: string) => Promise<DbResult<Sample[]>>;
   getAllSamplesForKit?: (
     dbDir: string,
     kitName: string,
-  ) => Promise<DbResult<SampleRecord[]>>;
+  ) => Promise<DbResult<Sample[]>>;
   // Database methods for kit metadata (replacing JSON file dependency)
   getKitMetadata?: (
     dbDir: string,
@@ -80,13 +82,13 @@ export interface ElectronAPI {
       name: string;
       alias?: string;
       artist?: string;
-      plan_enabled: boolean;
+      editable: boolean;
       locked: boolean;
       step_pattern?: number[][];
       voices: { [voiceNumber: number]: string };
     }>
   >;
-  updateKitMetadata?: (
+  updateKit?: (
     dbDir: string,
     kitName: string,
     updates: {
@@ -96,14 +98,14 @@ export interface ElectronAPI {
       description?: string;
     },
   ) => Promise<DbResult>;
-  getAllKits?: (dbDir: string) => Promise<
+  getKits?: (dbDir: string) => Promise<
     DbResult<
       Array<{
         id: number;
         name: string;
         alias?: string;
         artist?: string;
-        plan_enabled: boolean;
+        editable: boolean;
         locked: boolean;
         step_pattern?: number[][];
         voices: { [voiceNumber: number]: string };
@@ -127,10 +129,10 @@ export interface ElectronAPI {
 
   // Missing methods causing errors
   createRomperDb?: (dbDir: string) => Promise<RomperDbResult>;
-  insertKit?: (dbDir: string, kit: KitRecord) => Promise<DbResult>;
+  insertKit?: (dbDir: string, kit: NewKit) => Promise<DbResult>;
   insertSample?: (
     dbDir: string,
-    sample: SampleRecord,
+    sample: NewSample,
   ) => Promise<InsertSampleResult>;
   copyDir?: (src: string, dest: string) => Promise<void>;
   downloadAndExtractArchive?: (

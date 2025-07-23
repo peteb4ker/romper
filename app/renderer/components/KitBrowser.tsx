@@ -29,364 +29,371 @@ export interface KitBrowserHandle {
   handleScanAllKits: () => void;
 }
 
-const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>((props, ref) => {
-  const { onMessage, setLocalStorePath } = props;
-  const kitListRef = useRef<KitListHandle>(null);
-  const [showValidationDialog, setShowValidationDialog] = useState(false);
+const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
+  (props, ref) => {
+    const { onMessage, setLocalStorePath } = props;
+    const kitListRef = useRef<KitListHandle>(null);
+    const [showValidationDialog, setShowValidationDialog] = useState(false);
 
-  // Ensure localStorePath is always a string (never null)
-  const logic = useKitBrowser({
-    ...props,
-    kits: props.kits ?? [],
-    kitListRef: kitListRef,
-    localStorePath: props.localStorePath ?? "",
-    onMessage: props.onMessage,
-  });
-  const {
-    kits,
-    error,
-    sdCardWarning,
-    showNewKit,
-    setShowNewKit,
-    newKitSlot,
-    setNewKitSlot,
-    newKitError,
-    nextKitSlot,
-    duplicateKitSource,
-    setDuplicateKitSource,
-    duplicateKitDest,
-    setDuplicateKitDest,
-    duplicateKitError,
-    bankNames,
-    scrollContainerRef,
-    handleCreateKit,
-    handleCreateNextKit,
-    handleDuplicateKit,
-    handleBankClick,
-    selectedBank,
-    focusedKit,
-    setFocusedKit,
-    globalBankHotkeyHandler,
-  } = logic;
+    // Ensure localStorePath is always a string (never null)
+    const logic = useKitBrowser({
+      ...props,
+      kits: props.kits ?? [],
+      kitListRef: kitListRef,
+      localStorePath: props.localStorePath ?? "",
+      onMessage: props.onMessage,
+    });
+    const {
+      kits,
+      error,
+      sdCardWarning,
+      showNewKit,
+      setShowNewKit,
+      newKitSlot,
+      setNewKitSlot,
+      newKitError,
+      nextKitSlot,
+      duplicateKitSource,
+      setDuplicateKitSource,
+      duplicateKitDest,
+      setDuplicateKitDest,
+      duplicateKitError,
+      bankNames,
+      scrollContainerRef,
+      handleCreateKit,
+      handleCreateNextKit,
+      handleDuplicateKit,
+      handleBankClick,
+      selectedBank,
+      focusedKit,
+      setFocusedKit,
+      globalBankHotkeyHandler,
+    } = logic;
 
-  const [showLocalStoreWizard, setShowLocalStoreWizard] = React.useState(false);
-  const [showScanOptions, setShowScanOptions] = useState(false);
+    const [showLocalStoreWizard, setShowLocalStoreWizard] =
+      React.useState(false);
+    const [showScanOptions, setShowScanOptions] = useState(false);
 
-  const scanOperations = [
-    {
-      id: "full",
-      name: "Full Scan All Kits",
-      description: "Voice names, WAV analysis, artist metadata",
-    },
-    {
-      id: "voiceInference",
-      name: "Voice Names Only",
-      description: "Infer voice names from samples",
-    },
-    {
-      id: "wavAnalysis",
-      name: "WAV Analysis Only",
-      description: "Analyze sample files",
-    },
-    {
-      id: "rtfArtist",
-      name: "Artist Metadata Only",
-      description: "Parse RTF files for artist info",
-    },
-  ];
+    const scanOperations = [
+      {
+        id: "full",
+        name: "Full Scan All Kits",
+        description: "Voice names, WAV analysis, artist metadata",
+      },
+      {
+        id: "voiceInference",
+        name: "Voice Names Only",
+        description: "Infer voice names from samples",
+      },
+      {
+        id: "wavAnalysis",
+        name: "WAV Analysis Only",
+        description: "Analyze sample files",
+      },
+      {
+        id: "rtfArtist",
+        name: "Artist Metadata Only",
+        description: "Parse RTF files for artist info",
+      },
+    ];
 
-  React.useEffect(() => {
-    if (logic.sdCardWarning && onMessage) {
-      onMessage({
-        text: logic.sdCardWarning,
-        type: "warning",
-        duration: 5000,
-      });
-    }
-  }, [logic.sdCardWarning, onMessage]);
-  React.useEffect(() => {
-    if (logic.error && onMessage) {
-      onMessage({ text: logic.error, type: "error", duration: 7000 });
-    }
-  }, [logic.error, onMessage]);
-
-  // Register global A-Z navigation for bank selection and kit focus
-  React.useEffect(() => {
-    window.addEventListener("keydown", globalBankHotkeyHandler);
-    return () => window.removeEventListener("keydown", globalBankHotkeyHandler);
-  }, [globalBankHotkeyHandler]);
-
-  // Find the first kit index for a given bank letter
-  const scrollToBank = (bank: string) => {
-    const kitsArr = kits || [];
-    const idx = kitsArr.findIndex(
-      (k) => k && typeof k === "string" && k[0] && k[0].toUpperCase() === bank,
-    );
-    if (idx !== -1 && kitListRef.current) {
-      kitListRef.current.scrollAndFocusKitByIndex(idx);
-    }
-  };
-
-  // Handler for KitBankNav and KitList keyboard navigation
-  const focusBankInKitList = (bank: string) => {
-    if (logic.focusBankInKitList) logic.focusBankInKitList(bank);
-  };
-
-  // Handler for KitBankNav (renamed to avoid conflict)
-  const onBankClickWithScroll = (bank: string) => {
-    focusBankInKitList(bank);
-  };
-
-  // Handler for KitList keyboard navigation to update selectedBank
-  const handleBankFocus = (bank: string) => {
-    focusBankInKitList(bank);
-  };
-
-  // Handler for scanning all kits
-  const handleScanAllKits = React.useCallback(
-    async (operations?: string[]) => {
-      if (!props.localStorePath || !kits || kits.length === 0) {
-        toast.error("Local store path and kits are required for scanning");
-        return;
+    React.useEffect(() => {
+      if (logic.sdCardWarning && onMessage) {
+        onMessage({
+          text: logic.sdCardWarning,
+          type: "warning",
+          duration: 5000,
+        });
       }
+    }, [logic.sdCardWarning, onMessage]);
+    React.useEffect(() => {
+      if (logic.error && onMessage) {
+        onMessage({ text: logic.error, type: "error", duration: 7000 });
+      }
+    }, [logic.error, onMessage]);
 
-      const scanType = operations?.length === 1 ? operations[0] : "full";
-      const scanTypeDisplay =
-        operations?.length === 1
-          ? {
-              voiceInference: "voice name inference",
-              wavAnalysis: "WAV analysis",
-              rtfArtist: "artist metadata",
-            }[operations[0]] || operations[0]
-          : "comprehensive";
+    // Register global A-Z navigation for bank selection and kit focus
+    React.useEffect(() => {
+      window.addEventListener("keydown", globalBankHotkeyHandler);
+      return () =>
+        window.removeEventListener("keydown", globalBankHotkeyHandler);
+    }, [globalBankHotkeyHandler]);
 
-      const toastId = toast.loading(
-        `Starting ${scanTypeDisplay} scan of all kits...`,
-        {
-          duration: Infinity,
-        },
+    // Find the first kit index for a given bank letter
+    const scrollToBank = (bank: string) => {
+      const kitsArr = kits || [];
+      const idx = kitsArr.findIndex(
+        (k) =>
+          k && typeof k === "string" && k[0] && k[0].toUpperCase() === bank,
       );
+      if (idx !== -1 && kitListRef.current) {
+        kitListRef.current.scrollAndFocusKitByIndex(idx);
+      }
+    };
 
-      try {
-        // Import scanning functions
-        const {
-          executeFullKitScan,
-          executeVoiceInferenceScan,
-          executeWAVAnalysisScan,
-          executeRTFArtistScan,
-        } = await import("./utils/scanners/orchestrationFunctions");
+    // Handler for KitBankNav and KitList keyboard navigation
+    const focusBankInKitList = (bank: string) => {
+      if (logic.focusBankInKitList) logic.focusBankInKitList(bank);
+    };
 
-        let successCount = 0;
-        let errorCount = 0;
-        const errors: string[] = [];
+    // Handler for KitBankNav (renamed to avoid conflict)
+    const onBankClickWithScroll = (bank: string) => {
+      focusBankInKitList(bank);
+    };
 
-        for (let i = 0; i < kits.length; i++) {
-          const kitName = kits[i];
+    // Handler for KitList keyboard navigation to update selectedBank
+    const handleBankFocus = (bank: string) => {
+      focusBankInKitList(bank);
+    };
 
-          toast.loading(
-            `Scanning kit ${i + 1}/${kits.length}: ${kitName} (${scanTypeDisplay})`,
-            {
-              id: toastId,
-              duration: Infinity,
-            },
-          );
+    // Handler for scanning all kits
+    const handleScanAllKits = React.useCallback(
+      async (operations?: string[]) => {
+        if (!props.localStorePath || !kits || kits.length === 0) {
+          toast.error("Local store path and kits are required for scanning");
+          return;
+        }
 
-          try {
-            // Get kit samples - we'll need to load them for each kit
-            // For now, we'll just do a basic scan without samples data
-            const kitPath = `${props.localStorePath}/${kitName}`;
+        const scanType = operations?.length === 1 ? operations[0] : "full";
+        const scanTypeDisplay =
+          operations?.length === 1
+            ? {
+                voiceInference: "voice name inference",
+                wavAnalysis: "WAV analysis",
+                rtfArtist: "artist metadata",
+              }[operations[0]] || operations[0]
+            : "comprehensive";
 
-            // Get RTF files (artist metadata files)
-            const rtfFiles: string[] = [];
-            const bankName = kitName.charAt(0);
-            if (bankName >= "A" && bankName <= "Z") {
-              rtfFiles.push(`${props.localStorePath}/${bankName}.rtf`);
-            }
+        const toastId = toast.loading(
+          `Starting ${scanTypeDisplay} scan of all kits...`,
+          {
+            duration: Infinity,
+          },
+        );
 
-            // Adapt electron API fileReader to scanner interface
-            const fileReader = async (
-              filePath: string,
-            ): Promise<ArrayBuffer> => {
-              if (!window.electronAPI?.readFile) {
-                throw new Error("File reader not available");
+        try {
+          // Import scanning functions
+          const {
+            executeFullKitScan,
+            executeVoiceInferenceScan,
+            executeWAVAnalysisScan,
+            executeRTFArtistScan,
+          } = await import("./utils/scanners/orchestrationFunctions");
+
+          let successCount = 0;
+          let errorCount = 0;
+          const errors: string[] = [];
+
+          for (let i = 0; i < kits.length; i++) {
+            const kitName = kits[i];
+
+            toast.loading(
+              `Scanning kit ${i + 1}/${kits.length}: ${kitName} (${scanTypeDisplay})`,
+              {
+                id: toastId,
+                duration: Infinity,
+              },
+            );
+
+            try {
+              // Get kit samples - we'll need to load them for each kit
+              // For now, we'll just do a basic scan without samples data
+              const kitPath = `${props.localStorePath}/${kitName}`;
+
+              // Get RTF files (artist metadata files)
+              const rtfFiles: string[] = [];
+              const bankName = kitName.charAt(0);
+              if (bankName >= "A" && bankName <= "Z") {
+                rtfFiles.push(`${props.localStorePath}/${bankName}.rtf`);
               }
-              const result = await window.electronAPI.readFile(filePath);
-              if (!result.success || !result.data) {
-                throw new Error(result.error || "Failed to read file");
-              }
-              return result.data;
-            };
 
-            // Execute appropriate scan based on operation selection
-            let result;
-            if (scanType === "voiceInference") {
-              // For voice inference, we need sample data, but we don't have it here
-              // Just passing empty samples for now
-              const emptySamples = { 1: [], 2: [], 3: [], 4: [] };
-              result = await executeVoiceInferenceScan(emptySamples);
-            } else if (scanType === "wavAnalysis") {
-              // For WAV analysis, we'd need to list all WAV files in the kit folder
-              const wavFiles: string[] = []; // Would need to populate this
-              result = await executeWAVAnalysisScan(wavFiles, fileReader);
-            } else if (scanType === "rtfArtist") {
-              result = await executeRTFArtistScan(rtfFiles);
-            } else {
-              // Full scan by default
-              const scanInput = {
-                samples: { 1: [], 2: [], 3: [], 4: [] }, // Empty for batch scan
-                wavFiles: [], // Would need to populate this
-                rtfFiles,
-                fileReader,
+              // Adapt electron API fileReader to scanner interface
+              const fileReader = async (
+                filePath: string,
+              ): Promise<ArrayBuffer> => {
+                if (!window.electronAPI?.readFile) {
+                  throw new Error("File reader not available");
+                }
+                const result = await window.electronAPI.readFile(filePath);
+                if (!result.success || !result.data) {
+                  throw new Error(result.error || "Failed to read file");
+                }
+                return result.data;
               };
-              result = await executeFullKitScan(scanInput);
-            }
 
-            if (result.success) {
-              successCount++;
-            } else {
+              // Execute appropriate scan based on operation selection
+              let result;
+              if (scanType === "voiceInference") {
+                // For voice inference, we need sample data, but we don't have it here
+                // Just passing empty samples for now
+                const emptySamples = { 1: [], 2: [], 3: [], 4: [] };
+                result = await executeVoiceInferenceScan(emptySamples);
+              } else if (scanType === "wavAnalysis") {
+                // For WAV analysis, we'd need to list all WAV files in the kit folder
+                const wavFiles: string[] = []; // Would need to populate this
+                result = await executeWAVAnalysisScan(wavFiles, fileReader);
+              } else if (scanType === "rtfArtist") {
+                result = await executeRTFArtistScan(rtfFiles);
+              } else {
+                // Full scan by default
+                const scanInput = {
+                  samples: { 1: [], 2: [], 3: [], 4: [] }, // Empty for batch scan
+                  wavFiles: [], // Would need to populate this
+                  rtfFiles,
+                  fileReader,
+                };
+                result = await executeFullKitScan(scanInput);
+              }
+
+              if (result.success) {
+                successCount++;
+              } else {
+                errorCount++;
+                errors.push(
+                  `${kitName}: ${result.errors.map((e) => e.error).join(", ")}`,
+                );
+              }
+            } catch (error) {
               errorCount++;
               errors.push(
-                `${kitName}: ${result.errors.map((e) => e.error).join(", ")}`,
+                `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
               );
             }
-          } catch (error) {
-            errorCount++;
-            errors.push(
-              `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
-            );
           }
-        }
 
-        if (errorCount === 0) {
-          toast.success(
-            `All kits ${scanTypeDisplay} scan completed successfully! ${successCount} kits processed.`,
-            { id: toastId, duration: 5000 },
+          if (errorCount === 0) {
+            toast.success(
+              `All kits ${scanTypeDisplay} scan completed successfully! ${successCount} kits processed.`,
+              { id: toastId, duration: 5000 },
+            );
+          } else {
+            const message = `Scan completed: ${successCount} successful, ${errorCount} failed. ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? "..." : ""}`;
+            toast.warning(message, { id: toastId, duration: 8000 });
+          }
+
+          // Refresh kits to reflect changes
+          if (props.onRefreshKits) {
+            props.onRefreshKits();
+          }
+        } catch (error) {
+          toast.error(
+            `Scan error: ${error instanceof Error ? error.message : String(error)}`,
+            { id: toastId, duration: 8000 },
           );
-        } else {
-          const message = `Scan completed: ${successCount} successful, ${errorCount} failed. ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? "..." : ""}`;
-          toast.warning(message, { id: toastId, duration: 8000 });
         }
+      },
+      // Destructure specific props to avoid unnecessary rerenders
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [kits, props.localStorePath, props.onRefreshKits],
+    );
 
-        // Refresh kits to reflect changes
-        if (props.onRefreshKits) {
-          props.onRefreshKits();
-        }
-      } catch (error) {
-        toast.error(
-          `Scan error: ${error instanceof Error ? error.message : String(error)}`,
-          { id: toastId, duration: 8000 },
-        );
-      }
-    },
-    // Destructure specific props to avoid unnecessary rerenders
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [kits, props.localStorePath, props.onRefreshKits],
-  );
+    // Expose handleScanAllKits through ref for parent components
+    useImperativeHandle(ref, () => ({
+      handleScanAllKits,
+    }));
 
-  // Expose handleScanAllKits through ref for parent components
-  useImperativeHandle(ref, () => ({
-    handleScanAllKits,
-  }));
-
-  return (
-    <div
-      ref={scrollContainerRef}
-      className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded m-2"
-    >
-      <KitBrowserHeader
-        onRescanAllVoiceNames={props.onRescanAllVoiceNames}
-        onScanAllKits={handleScanAllKits}
-        onShowNewKit={() => setShowNewKit(true)}
-        onCreateNextKit={handleCreateNextKit}
-        nextKitSlot={nextKitSlot}
-        onShowLocalStoreWizard={() => setShowLocalStoreWizard(true)}
-        onValidateLocalStore={() => setShowValidationDialog(true)}
-        bankNav={
-          <KitBankNav
-            kits={kits}
-            onBankClick={onBankClickWithScroll}
-            bankNames={bankNames}
-            selectedBank={selectedBank}
-          />
-        }
-      />
-      <KitDialogs
-        showNewKit={showNewKit}
-        newKitSlot={newKitSlot}
-        newKitError={newKitError}
-        onNewKitSlotChange={setNewKitSlot}
-        onCreateKit={handleCreateKit}
-        onCancelNewKit={() => {
-          setShowNewKit(false);
-          setNewKitSlot("");
-          // Fix: setNewKitError and setDuplicateKitError should be called from logic, not as standalone names
-          logic.setNewKitError(null);
-        }}
-        showDuplicateKit={!!duplicateKitSource}
-        duplicateKitSource={duplicateKitSource}
-        duplicateKitDest={duplicateKitDest}
-        duplicateKitError={duplicateKitError}
-        onDuplicateKitDestChange={setDuplicateKitDest}
-        onDuplicateKit={handleDuplicateKit}
-        onCancelDuplicateKit={() => {
-          setDuplicateKitSource(null);
-          setDuplicateKitDest("");
-          logic.setDuplicateKitError(null);
-        }}
-      />
-      <div className="flex-1 min-h-0">
-        <KitList
-          ref={kitListRef}
-          kits={kits}
-          onSelectKit={props.onSelectKit}
-          bankNames={bankNames}
-          onDuplicate={(kit) => {
-            setDuplicateKitSource(kit);
+    return (
+      <div
+        ref={scrollContainerRef}
+        className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded m-2"
+      >
+        <KitBrowserHeader
+          onRescanAllVoiceNames={props.onRescanAllVoiceNames}
+          onScanAllKits={handleScanAllKits}
+          onShowNewKit={() => setShowNewKit(true)}
+          onCreateNextKit={handleCreateNextKit}
+          nextKitSlot={nextKitSlot}
+          onShowLocalStoreWizard={() => setShowLocalStoreWizard(true)}
+          onValidateLocalStore={() => setShowValidationDialog(true)}
+          bankNav={
+            <KitBankNav
+              kits={kits}
+              onBankClick={onBankClickWithScroll}
+              bankNames={bankNames}
+              selectedBank={selectedBank}
+            />
+          }
+        />
+        <KitDialogs
+          showNewKit={showNewKit}
+          newKitSlot={newKitSlot}
+          newKitError={newKitError}
+          onNewKitSlotChange={setNewKitSlot}
+          onCreateKit={handleCreateKit}
+          onCancelNewKit={() => {
+            setShowNewKit(false);
+            setNewKitSlot("");
+            // Fix: setNewKitError and setDuplicateKitError should be called from logic, not as standalone names
+            logic.setNewKitError(null);
+          }}
+          showDuplicateKit={!!duplicateKitSource}
+          duplicateKitSource={duplicateKitSource}
+          duplicateKitDest={duplicateKitDest}
+          duplicateKitError={duplicateKitError}
+          onDuplicateKitDestChange={setDuplicateKitDest}
+          onDuplicateKit={handleDuplicateKit}
+          onCancelDuplicateKit={() => {
+            setDuplicateKitSource(null);
             setDuplicateKitDest("");
             logic.setDuplicateKitError(null);
           }}
-          localStorePath={props.localStorePath || ""}
-          kitLabels={props.kitLabels}
-          sampleCounts={props.sampleCounts}
-          voiceLabelSets={props.voiceLabelSets}
-          focusedKit={focusedKit}
-          onBankFocus={handleBankFocus}
-          onFocusKit={setFocusedKit} // NEW: keep parent in sync
         />
-      </div>
-      {/* Local Store Wizard Modal */}
-      {showLocalStoreWizard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white dark:bg-slate-900 rounded shadow-lg p-6 w-full max-w-lg">
-            <h2 className="text-xl font-bold mb-4">Romper Local Store Setup</h2>
-            <LocalStoreWizardUI
-              onClose={() => setShowLocalStoreWizard(false)}
-              onSuccess={() => {
-                setShowLocalStoreWizard(false);
-                {
-                  /* TODO replace with proper message handling */
-                }
-                toast.success("Local store initialized successfully!", {
-                  duration: 5000,
-                });
-              }}
-              setLocalStorePath={setLocalStorePath || (() => {})}
-            />
-          </div>
+        <div className="flex-1 min-h-0">
+          <KitList
+            ref={kitListRef}
+            kits={kits}
+            onSelectKit={props.onSelectKit}
+            bankNames={bankNames}
+            onDuplicate={(kit) => {
+              setDuplicateKitSource(kit);
+              setDuplicateKitDest("");
+              logic.setDuplicateKitError(null);
+            }}
+            localStorePath={props.localStorePath || ""}
+            kitLabels={props.kitLabels}
+            sampleCounts={props.sampleCounts}
+            voiceLabelSets={props.voiceLabelSets}
+            focusedKit={focusedKit}
+            onBankFocus={handleBankFocus}
+            onFocusKit={setFocusedKit} // NEW: keep parent in sync
+          />
         </div>
-      )}
+        {/* Local Store Wizard Modal */}
+        {showLocalStoreWizard && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white dark:bg-slate-900 rounded shadow-lg p-6 w-full max-w-lg">
+              <h2 className="text-xl font-bold mb-4">
+                Romper Local Store Setup
+              </h2>
+              <LocalStoreWizardUI
+                onClose={() => setShowLocalStoreWizard(false)}
+                onSuccess={() => {
+                  setShowLocalStoreWizard(false);
+                  {
+                    /* TODO replace with proper message handling */
+                  }
+                  toast.success("Local store initialized successfully!", {
+                    duration: 5000,
+                  });
+                }}
+                setLocalStorePath={setLocalStorePath || (() => {})}
+              />
+            </div>
+          </div>
+        )}
 
-      {/* ValidationResultsDialog */}
-      {showValidationDialog && (
-        <ValidationResultsDialog
-          isOpen={showValidationDialog}
-          localStorePath={props.localStorePath || ""}
-          onClose={() => setShowValidationDialog(false)}
-          onMessage={props.onMessage}
-        />
-      )}
-    </div>
-  );
-});
+        {/* ValidationResultsDialog */}
+        {showValidationDialog && (
+          <ValidationResultsDialog
+            isOpen={showValidationDialog}
+            localStorePath={props.localStorePath || ""}
+            onClose={() => setShowValidationDialog(false)}
+            onMessage={props.onMessage}
+          />
+        )}
+      </div>
+    );
+  },
+);
 
 export default React.memo(KitBrowser);

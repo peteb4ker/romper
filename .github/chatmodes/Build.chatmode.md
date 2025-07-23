@@ -38,5 +38,9 @@ prompt: |
   - All unit tests are run via `npm run test:unit`
   - All integration tests are run via `npm run test:integration`
 
+  ## Database
+  When writing Drizzle ORM queries with the synchronous better‑sqlite3 driver, always call a terminal method to execute the prepared statement. Use .all() for multiple rows, .get() for one row, .values() for scalar arrays, or .run() for mutations. Do not use await with these methods since execution is synchronous. (If switching to an async driver, drop the terminal call and await the query instead.)
+
   ## Summary
   Follow the task list step-by-step. Pause after each sub-task. Don’t skip ahead. Update the task list file after each sub-task is complete, and verify that all instructions are followed before moving on.
+

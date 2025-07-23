@@ -37,7 +37,7 @@ describe("romperDb", () => {
   });
 
   it("should call insertKit and return kitId", async () => {
-    const kit = { name: "Test Kit", plan_enabled: true };
+    const kit = { name: "Test Kit", editable: true };
     const kitId = await insertKit("/mock/path", kit);
     expect(window.electronAPI.insertKit).toHaveBeenCalledWith(
       "/mock/path",
@@ -53,7 +53,7 @@ describe("romperDb", () => {
       error: "kit fail",
     }));
     await expect(
-      insertKit("/fail/path", { name: "fail", plan_enabled: false }),
+      insertKit("/fail/path", { name: "fail", editable: false }),
     ).rejects.toThrow("kit fail");
   });
 
@@ -65,10 +65,15 @@ describe("romperDb", () => {
       is_stereo: false,
     };
     const sampleId = await insertSample("/mock/path", sample);
-    expect(window.electronAPI.insertSample).toHaveBeenCalledWith(
-      "/mock/path",
-      sample,
-    );
+    expect(window.electronAPI.insertSample).toHaveBeenCalledWith("/mock/path", {
+      kit_id: 1,
+      filename: "kick.wav",
+      slot_number: 1,
+      is_stereo: false,
+      source_path: "",
+      wav_bitrate: null,
+      wav_sample_rate: null,
+    });
     expect(sampleId).toBe(99);
   });
 

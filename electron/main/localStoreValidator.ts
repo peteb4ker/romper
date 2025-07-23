@@ -1,18 +1,13 @@
 import fs from "fs";
 import path from "path";
 
-import {
+import type {
   DbResult,
   KitValidationError,
-  KitWithVoices,
   LocalStoreValidationDetailedResult,
-  SampleRecord,
-} from "../../shared/dbTypesShared";
-import {
-  getAllKits,
-  getAllSamples,
-  getAllSamplesForKit,
-} from "./db/romperDbCore.js";
+  Sample,
+} from "../../shared/schema.js";
+import { getAllSamples, getKits, getKitSamples } from "./db/romperDbCoreORM.js";
 
 /**
  * Validates that a local store path exists and contains a valid Romper database.
@@ -85,7 +80,7 @@ export function validateLocalStoreAgainstDb(
   const dbDir = path.dirname(romperDbPath);
 
   // Get all kits from the database
-  const kitsResult = getAllKits(dbDir);
+  const kitsResult = getKits(dbDir);
   if (!kitsResult.success || !kitsResult.data) {
     return {
       isValid: false,
@@ -101,7 +96,7 @@ export function validateLocalStoreAgainstDb(
     const missingFiles: string[] = [];
     const extraFiles: string[] = [];
 
-    // Check if kit folder exists
+    // Check if kit folder exists (kit.name is the direct property from Drizzle)
     const kitFolderPath = path.join(localStorePath, kit.name);
     if (
       !fs.existsSync(kitFolderPath) ||
@@ -118,7 +113,7 @@ export function validateLocalStoreAgainstDb(
     }
 
     // Get samples for this kit
-    const samplesResult = getAllSamplesForKit(dbDir, kit.name);
+    const samplesResult = getKitSamples(dbDir, kit.name);
     if (!samplesResult.success || !samplesResult.data) {
       isValid = false;
       kitErrors.push({

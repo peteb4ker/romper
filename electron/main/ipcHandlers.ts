@@ -8,8 +8,8 @@ import {
   downloadArchive,
   extractZipEntries,
 } from "./archiveUtils.js";
-import { insertKitRecord } from "./db/romperDbCore.js";
-import { getKitByName } from "./db/romperDbCore.js";
+import { addKit } from "./db/romperDbCoreORM.js";
+import { getKit } from "./db/romperDbCoreORM.js";
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
 
 // Utility: recursively copy a directory
@@ -48,7 +48,8 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("get-local-store-status", (_event) => {
     console.log("[Main] get-local-store-status called");
     // Check environment variable first, then fall back to stored settings
-    const localStorePath = process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath;
+    const localStorePath =
+      process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath;
     console.log("[Main] Current localStorePath:", localStorePath);
     console.log("[Main] From environment:", process.env.ROMPER_LOCAL_PATH);
     console.log("[Main] From settings:", inMemorySettings.localStorePath);
@@ -104,10 +105,13 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
       try {
         const kitRecord = {
           name: kitSlot,
-          plan_enabled: false,
+          alias: null,
+          artist: null,
+          editable: false,
           locked: false,
+          step_pattern: null,
         };
-        await insertKitRecord(localStorePath, kitRecord);
+        addKit(localStorePath, kitRecord);
       } catch (error) {
         // If database insertion fails, remove the created directory
         fs.rmSync(kitPath, { recursive: true, force: true });
@@ -138,23 +142,28 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
 
       // Copy kit metadata in database
       try {
-        const sourceKitData = await getKitByName(localStorePath, sourceKit);
+        const sourceKitData = getKit(localStorePath, sourceKit);
         if (sourceKitData.success && sourceKitData.data) {
           const destKitRecord = {
             name: destKit,
             alias: destKit,
-            plan_enabled: sourceKitData.data.plan_enabled,
+            artist: sourceKitData.data.artist,
+            editable: sourceKitData.data.editable,
             locked: sourceKitData.data.locked,
+            step_pattern: sourceKitData.data.step_pattern,
           };
-          await insertKitRecord(localStorePath, destKitRecord);
+          addKit(localStorePath, destKitRecord);
         } else {
           // If source kit doesn't exist in database, create default entry
           const defaultKitRecord = {
             name: destKit,
-            plan_enabled: false,
+            alias: null,
+            artist: null,
+            editable: false,
             locked: false,
+            step_pattern: null,
           };
-          await insertKitRecord(localStorePath, defaultKitRecord);
+          addKit(localStorePath, defaultKitRecord);
         }
       } catch (error) {
         // If database operation fails, remove the copied directory

@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { useMenuEvents } from "../useMenuEvents";
 
 // Mock DOM event handling
@@ -90,16 +91,16 @@ describe("useMenuEvents", () => {
 
     // Get the registered event handlers
     const scanHandler = mockAddEventListener.mock.calls.find(
-      call => call[0] === "menu-scan-all-kits",
+      (call) => call[0] === "menu-scan-all-kits",
     )?.[1];
     const validateHandler = mockAddEventListener.mock.calls.find(
-      call => call[0] === "menu-validate-database",
+      (call) => call[0] === "menu-validate-database",
     )?.[1];
     const setupHandler = mockAddEventListener.mock.calls.find(
-      call => call[0] === "menu-setup-local-store",
+      (call) => call[0] === "menu-setup-local-store",
     )?.[1];
     const aboutHandler = mockAddEventListener.mock.calls.find(
-      call => call[0] === "menu-about",
+      (call) => call[0] === "menu-about",
     )?.[1];
 
     // Trigger the events

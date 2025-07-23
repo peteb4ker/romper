@@ -73,8 +73,8 @@
 
 ### Notes
 
-- **Plan Mode**: Plan mode is enabled by default for new/user kits (plan_enabled = true) and disabled for imported/factory kits (plan_enabled = false). Users can toggle plan mode manually.
-- **Database Schema**: No separate plan table - plan state is tracked via the plan_enabled boolean field in the kits table. Action history is stored in a separate plan_actions table.
+- **Plan Mode**: Plan mode is enabled by default for new/user kits (editable = true) and disabled for imported/factory kits (editable = false). Users can toggle plan mode manually.
+- **Database Schema**: No separate plan table - plan state is tracked via the editable boolean field in the kits table. Action history is stored in a separate plan_actions table.
 - **Stereo Handling**: Complex logic involving the 'default to mono' setting, dual-slot assignment (left→voice N, right→voice N+1), and user prompts for conflicts.
 - **Format Validation**: Only WAV files accepted. Must be 8/16 bit, 44100 Hz. Conversion happens when updating SD card, not during planning.
 - **File Security**: All file operations must validate paths to prevent directory traversal attacks. Use proper file locking during operations.
@@ -92,10 +92,10 @@
 
 - [ ] 1.0 Plan Mode Core Functionality
   - [ ] 1.1 Implement plan mode enablement logic:
-    - [ ] 1.1.1 Plan mode is ON by default for new/user-created kits (plan_enabled = true)
-    - [ ] 1.1.2 Plan mode is OFF by default for imported/factory kits (plan_enabled = false)
+    - [ ] 1.1.1 Plan mode is ON by default for new/user-created kits (editable = true)
+    - [ ] 1.1.2 Plan mode is OFF by default for imported/factory kits (editable = false)
     - [ ] 1.1.3 Users can manually toggle plan mode on/off for any kit
-    - [ ] 1.1.4 Plan mode state persisted in kits.plan_enabled database field
+    - [ ] 1.1.4 Plan mode state persisted in kits.editable database field
   - [ ] 1.2 Integrate plan mode status and controls into KitDetails UI:
     - [ ] 1.2.1 Display clear visual indicator of plan mode status (on/off)
     - [ ] 1.2.2 Provide toggle control for enabling/disabling plan mode
@@ -385,7 +385,7 @@
 
 - [ ] 12.0 Database Schema and Data Model Updates
   - [ ] 12.1 Implement updated kits table schema:
-    - [ ] 12.1.1 Add plan_enabled BOOLEAN field (default false for imported, true for new kits)
+    - [ ] 12.1.1 Add editable BOOLEAN field (default false for imported, true for new kits)
     - [ ] 12.1.2 Add plan_synced BOOLEAN field to track SD card sync status
     - [ ] 12.1.3 Add plan_modified_date TIMESTAMP for tracking last changes
     - [ ] 12.1.4 Create indexes for plan-related queries
@@ -418,7 +418,7 @@
     - [ ] 14.1.1 Create UI for new kit creation with name input
     - [ ] 14.1.2 Validate kit names (format: [A-Z][0-9]{1,2})
     - [ ] 14.1.3 Check for name conflicts and suggest alternatives
-    - [ ] 14.1.4 Create kit with plan_enabled = true by default
+    - [ ] 14.1.4 Create kit with editable = true by default
   - [ ] 14.2 Implement kit duplication:
     - [ ] 14.2.1 Create UI for duplicating existing kits
     - [ ] 14.2.2 Copy all samples and metadata to new kit

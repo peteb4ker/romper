@@ -52,8 +52,8 @@ describe("preload/index.tsx", () => {
         onSamplePlaybackError: expect.any(Function),
         getAudioBuffer: expect.any(Function),
         getKitMetadata: expect.any(Function),
-        updateKitMetadata: expect.any(Function),
-        getAllKits: expect.any(Function),
+        updateKit: expect.any(Function),
+        getKits: expect.any(Function),
         updateVoiceAlias: expect.any(Function),
         updateStepPattern: expect.any(Function),
         getUserHomeDir: expect.any(Function),
@@ -476,7 +476,7 @@ describe("preload/index.tsx", () => {
       name: "Test Kit",
       alias: "TK",
       artist: "Test Artist",
-      plan_enabled: true,
+      editable: true,
     };
     mockIpcRenderer.invoke.mockResolvedValue({ id: 1 });
     const result = await api.insertKit("/mock/db/dir", kit);

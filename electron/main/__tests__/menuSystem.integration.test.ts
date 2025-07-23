@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Integration Tests for Menu IPC System
@@ -95,7 +95,9 @@ describe("Menu IPC Integration Tests", () => {
     registerMenuIpcHandlers();
 
     // Verify that the registration was logged (since no actual IPC handlers are registered)
-    expect(consoleSpy).toHaveBeenCalledWith("[Menu] Menu IPC handlers registered");
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[Menu] Menu IPC handlers registered",
+    );
 
     consoleSpy.mockRestore();
   });
@@ -122,7 +124,9 @@ describe("Menu IPC Integration Tests", () => {
     const submenu = toolsMenu.submenu;
 
     // Find and trigger the "Scan All Kits" menu item
-    const scanMenuItem = submenu.find((item: any) => item.label === "Scan All Kits");
+    const scanMenuItem = submenu.find(
+      (item: any) => item.label === "Scan All Kits",
+    );
     expect(scanMenuItem).toBeDefined();
     expect(scanMenuItem.click).toBeDefined();
 
@@ -130,7 +134,9 @@ describe("Menu IPC Integration Tests", () => {
     scanMenuItem.click();
 
     // Verify that the IPC message was sent to renderer
-    expect(mockWindow.webContents.send).toHaveBeenCalledWith("menu-scan-all-kits");
+    expect(mockWindow.webContents.send).toHaveBeenCalledWith(
+      "menu-scan-all-kits",
+    );
   });
 
   it("should handle all menu items correctly", async () => {
@@ -157,8 +163,16 @@ describe("Menu IPC Integration Tests", () => {
     // Test each menu item
     const menuItems = [
       { label: "Scan All Kits", event: "menu-scan-all-kits", menu: "Tools" },
-      { label: "Validate Database", event: "menu-validate-database", menu: "Tools" },
-      { label: "Setup Local Store...", event: "menu-setup-local-store", menu: "Tools" },
+      {
+        label: "Validate Database",
+        event: "menu-validate-database",
+        menu: "Tools",
+      },
+      {
+        label: "Setup Local Store...",
+        event: "menu-setup-local-store",
+        menu: "Tools",
+      },
       { label: "About Romper", event: "menu-about", menu: "Help" },
     ];
 
@@ -196,7 +210,9 @@ describe("Menu IPC Integration Tests", () => {
     const submenu = toolsMenu.submenu;
 
     // Find and trigger the "Scan All Kits" menu item
-    const scanMenuItem = submenu.find((item: any) => item.label === "Scan All Kits");
+    const scanMenuItem = submenu.find(
+      (item: any) => item.label === "Scan All Kits",
+    );
 
     // This should not throw an error even with no windows
     expect(() => {

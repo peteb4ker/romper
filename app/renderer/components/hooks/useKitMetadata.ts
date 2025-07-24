@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
+import {
+  executeFullKitScan,
+  executeVoiceInferenceScan,
+} from "../utils/scanners/orchestrationFunctions";
 
 // Database-backed hook for kit metadata (replacing JSON file dependency)
 export interface KitMetadata {
@@ -168,11 +172,6 @@ export function useKitMetadata(props: KitDetailsProps) {
     voice: number,
     voices: { [key: number]: string[] },
   ) => {
-    // Use the new scanning operations for individual voice rescanning
-    const { executeVoiceInferenceScan } = await import(
-      "../utils/scanners/orchestrationFunctions"
-    );
-
     // Create samples object with only the requested voice
     const voiceSamples = { [voice]: voices[voice] || [] };
 
@@ -188,11 +187,6 @@ export function useKitMetadata(props: KitDetailsProps) {
   const handleRescanAllVoiceNames = async (
     voices: { [key: number]: string[] } | undefined,
   ) => {
-    // Use the new scanning operations for comprehensive voice name scanning
-    const { executeVoiceInferenceScan } = await import(
-      "../utils/scanners/orchestrationFunctions"
-    );
-
     const safeVoices = voices || { 1: [], 2: [], 3: [], 4: [] };
 
     const result = await executeVoiceInferenceScan(safeVoices);
@@ -221,11 +215,6 @@ export function useKitMetadata(props: KitDetailsProps) {
     }
 
     try {
-      // Import the comprehensive scanning operations
-      const { executeFullKitScan } = await import(
-        "../utils/scanners/orchestrationFunctions"
-      );
-
       const safeVoices = voices || { 1: [], 2: [], 3: [], 4: [] };
       const kitPath = `${dbDir}/${kitName}`;
 

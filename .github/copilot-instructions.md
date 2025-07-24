@@ -1,5 +1,7 @@
 # GitHub Copilot Coding Standards for Romper
 
+> **Quick Reference**: For comprehensive project context, see [CLAUDE.md](../CLAUDE.md), [docs/developer/architecture.md](../docs/developer/architecture.md), and [.agent/context.md](../.agent/context.md) for context-aware standards.
+
 ## General
 - All business logic for UI components must live in a hook file named `hooks/use<ComponentName>`, and UI components must only contain rendering logic and hook calls.
 - Empty or unused hook files should be deleted.

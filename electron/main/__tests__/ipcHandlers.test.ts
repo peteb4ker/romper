@@ -33,6 +33,7 @@ vi.mock("path", () => {
   const mock = {
     join: vi.fn((...args) => args.join("/")),
     resolve: vi.fn((...args) => args.join("/")),
+    dirname: vi.fn(() => "/mock/dirname"),
   };
   return { ...mock, default: mock };
 });

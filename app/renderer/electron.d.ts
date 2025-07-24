@@ -7,7 +7,7 @@ import type {
   NewKit,
   NewSample,
   Sample,
-} from "../../shared/schema";
+} from "../../shared/db/schema.js";
 
 export {
   DbResult,

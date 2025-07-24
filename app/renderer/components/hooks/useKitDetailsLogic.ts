@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { inferVoiceTypeFromFilename } from "../../../../shared/kitUtilsShared";
 import type { KitDetailsProps, RampleKitLabel } from "../kitTypes";
+import { executeFullKitScan } from "../utils/scanners/orchestrationFunctions";
 import { useKitDetails } from "./useKitDetails";
 import { useKitMetadata } from "./useKitMetadata";
 import { useKitPlayback } from "./useKitPlayback";
@@ -53,11 +54,6 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     });
 
     try {
-      // Import scanning functions
-      const { executeFullKitScan } = await import(
-        "../utils/scanners/orchestrationFunctions"
-      );
-
       // Prepare scan input data
       const kitPath = `${props.localStorePath}/${props.kitName}`;
 
@@ -172,7 +168,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     onWaveformPlayingChange: playback.handleWaveformPlayingChange,
     localStorePath: props.localStorePath,
     kitName: props.kitName,
-    onSampleSelect: (voice, idx) => {
+    onSampleSelect: (voice: number, idx: number) => {
       setSelectedVoice(voice);
       setSelectedSampleIdx(idx);
     },

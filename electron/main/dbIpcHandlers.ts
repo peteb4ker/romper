@@ -2,7 +2,7 @@ import { ipcMain } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 
-import type { Kit, NewKit, NewSample } from "../../shared/schema.js";
+import type { Kit, NewKit, NewSample } from "../../shared/db/schema.js";
 import {
   addKit,
   addSample,

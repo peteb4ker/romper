@@ -78,7 +78,6 @@ function createWindow() {
   }
 }
 
-
 function loadSettings(): Settings {
   const userDataPath = app.getPath("userData");
   const settingsPath = path.join(userDataPath, "settings.json");
@@ -91,13 +90,20 @@ function loadSettings(): Settings {
         settings = parsed as Settings;
         console.info("[Startup] Settings loaded from file:", settings);
       } else {
-        console.warn("[Startup] Settings file did not contain an object. Using empty settings.");
+        console.warn(
+          "[Startup] Settings file did not contain an object. Using empty settings.",
+        );
       }
     } catch (error) {
-      console.error("[Startup] Failed to parse settings file. Using empty settings:", error);
+      console.error(
+        "[Startup] Failed to parse settings file. Using empty settings:",
+        error,
+      );
     }
   } else {
-    console.warn("[Startup] Settings file not found. Starting with empty settings.");
+    console.warn(
+      "[Startup] Settings file not found. Starting with empty settings.",
+    );
   }
   return settings;
 }
@@ -106,17 +112,31 @@ function validateAndFixLocalStore(settings: Settings): Settings {
   const userDataPath = app.getPath("userData");
   const settingsPath = path.join(userDataPath, "settings.json");
   if (settings.localStorePath) {
-    console.log("[Startup] Validating saved local store path:", settings.localStorePath);
+    console.log(
+      "[Startup] Validating saved local store path:",
+      settings.localStorePath,
+    );
     const validation = validateLocalStoreAndDb(settings.localStorePath);
     if (validation.isValid) {
-      console.info("[Startup] Local store validated successfully:", { localStorePath: settings.localStorePath });
+      console.info("[Startup] Local store validated successfully:", {
+        localStorePath: settings.localStorePath,
+      });
     } else {
-      console.warn("[Startup] Saved local store path is invalid:", validation.error);
+      console.warn(
+        "[Startup] Saved local store path is invalid:",
+        validation.error,
+      );
       console.warn("[Startup] Clearing invalid local store settings");
       delete settings.localStorePath;
       try {
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf-8");
-        console.log("[Startup] Invalid local store path removed from settings file.");
+        fs.writeFileSync(
+          settingsPath,
+          JSON.stringify(settings, null, 2),
+          "utf-8",
+        );
+        console.log(
+          "[Startup] Invalid local store path removed from settings file.",
+        );
       } catch (writeError) {
         console.error("[Startup] Failed to update settings file:", writeError);
       }
@@ -128,7 +148,10 @@ function validateAndFixLocalStore(settings: Settings): Settings {
 }
 
 function registerAllIpcHandlers(settings: Settings) {
-  console.log("[Startup] Registering IPC handlers with settings:", Object.keys(settings));
+  console.log(
+    "[Startup] Registering IPC handlers with settings:",
+    Object.keys(settings),
+  );
   registerIpcHandlers(settings);
   registerDbIpcHandlers();
   console.log("[Startup] IPC handlers registered");
@@ -150,7 +173,10 @@ app.whenReady().then(async () => {
     registerAllIpcHandlers(inMemorySettings);
     createApplicationMenu();
   } catch (error: unknown) {
-    console.error("[Startup] Error during app initialization:", error instanceof Error ? error.message : String(error));
+    console.error(
+      "[Startup] Error during app initialization:",
+      error instanceof Error ? error.message : String(error),
+    );
   }
 });
 

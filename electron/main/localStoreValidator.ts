@@ -6,8 +6,13 @@ import type {
   KitValidationError,
   LocalStoreValidationDetailedResult,
   Sample,
-} from "../../shared/schema.js";
-import { getAllSamples, getKits, getKitSamples, validateDatabaseSchema } from "./db/romperDbCoreORM.js";
+} from "../../shared/db/schema.js";
+import {
+  getAllSamples,
+  getKits,
+  getKitSamples,
+  validateDatabaseSchema,
+} from "./db/romperDbCoreORM.js";
 
 /**
  * Validates that a local store path exists and contains a valid Romper database.
@@ -45,7 +50,7 @@ export function validateLocalStoreAndDb(
     if (!schemaValidation.success) {
       return {
         isValid: false,
-        error: `Database schema validation failed: ${schemaValidation.error}`
+        error: `Database schema validation failed: ${schemaValidation.error}`,
       };
     }
 

@@ -1,0 +1,141 @@
+# General Standards (Always Apply)
+
+## Core Patterns
+
+### DbResult Pattern (CRITICAL)
+```typescript
+// ✅ ALWAYS use for database operations
+type DbResult<T> = { success: true; data: T } | { success: false; error: string };
+
+async function getKit(name: string): Promise<DbResult<Kit>> {
+  try {
+    const kit = db.select().from(kitsTable).where(eq(kitsTable.name, name)).get();
+    return kit ? { success: true, data: kit } : { success: false, error: 'Kit not found' };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+```
+
+### Reference-Only Architecture
+Store sample paths, never copy files until SD card sync:
+```typescript
+const sample = { sourcePath: '/path/to/kick.wav', filename: 'kick.wav' };
+```
+
+## Quality Requirements
+
+### TypeScript Validation (CRITICAL)
+- **MUST pass**: `npx tsc --noEmit` before any task completion
+- **Zero compilation errors**: Fix all TypeScript errors immediately
+- **No `any` types**: Use proper typing or `unknown` with type guards
+
+### ESM Module System (CRITICAL)
+```typescript
+// ✅ CORRECT: Always use ES modules (except preload script)
+import React, { useCallback, useState } from 'react';        // ES module imports
+import { toast } from 'sonner';                              
+import { useKitBrowser } from './hooks/useKitBrowser';       
+import { toCapitalCase } from '../../../../shared/utils';    
+
+// Export using ES modules
+export { KitEditor };
+export default KitEditor;
+
+// ❌ WRONG: CommonJS (only allowed in preload script)
+const React = require('react');           // Don't use require()
+module.exports = { KitEditor };           // Don't use module.exports
+
+// ⚠️ EXCEPTION: Preload script only - electron/preload/index.ts can use CommonJS
+```
+
+### Import Organization
+```typescript
+// ✅ CORRECT order with ES modules:
+import React, { useCallback, useState } from 'react';        // 1. React
+import { toast } from 'sonner';                              // 2. Third-party
+import { useKitBrowser } from './hooks/useKitBrowser';       // 3. Local relative
+import { toCapitalCase } from '../../../../shared/utils';    // 4. Shared absolute
+```
+
+### File Size Limits
+- **Components**: Maximum 350 lines
+- **Hooks**: Maximum 200 lines  
+- **Utils**: Maximum 150 lines
+- **Refactor when exceeded**: Split into focused modules
+
+## Performance Standards
+
+### React Optimization
+```typescript
+// ✅ REQUIRED: Memoize expensive operations
+const KitCard = React.memo(({ kit, onSelect }: Props) => {
+  const displayName = useMemo(() => kit.alias || kit.name, [kit.alias, kit.name]);
+  const handleClick = useCallback(() => onSelect(kit.name), [kit.name, onSelect]);
+  return <div onClick={handleClick}>{displayName}</div>;
+});
+```
+
+### Database Efficiency
+```typescript
+// ✅ CORRECT: Batch operations
+db.transaction(() => {
+  samples.forEach(sample => db.insert(samplesTable).values(sample).run());
+});
+
+// ❌ WRONG: Individual operations
+samples.forEach(sample => db.insert(samplesTable).values(sample).run());
+```
+
+## Security Validation
+
+### Path Validation (CRITICAL)
+```typescript
+// ✅ ALWAYS validate file paths
+function validateSamplePath(sourcePath: string): boolean {
+  const resolved = path.resolve(sourcePath);
+  return resolved.endsWith('.wav') && !resolved.includes('..') && fs.existsSync(resolved);
+}
+```
+
+## Error Handling
+
+### User-Friendly Messages
+```typescript
+// ✅ CORRECT: User-friendly error messages
+if (error.includes('ENOENT')) {
+  toast.error('Sample file not found. Please check if the file still exists.');
+} else {
+  toast.error('Unable to load sample. Please try again.');
+}
+
+// ❌ WRONG: Technical errors exposed to user
+toast.error(error.message); // May show technical details
+```
+
+## Testing Requirements
+
+### Coverage and Quality
+- **80% minimum coverage**: Maintain across all modules
+- **Test isolation**: Each test independent with proper cleanup
+- **Mock external dependencies**: Test only the code under test
+- **Descriptive test names**: Explain behavior being tested
+
+### Test Organization
+```typescript
+// ✅ CORRECT: Clear test structure
+describe('useKitEditor', () => {
+  beforeEach(() => { /* setup */ });
+  afterEach(() => { /* cleanup */ });
+  
+  describe('when kit is editable', () => {
+    it('should allow adding samples to voice slots', () => {
+      // Test implementation
+    });
+  });
+});
+```
+
+---
+
+*These general standards apply to ALL Romper development regardless of file type. Additional file-specific standards are loaded based on the current working file pattern.*

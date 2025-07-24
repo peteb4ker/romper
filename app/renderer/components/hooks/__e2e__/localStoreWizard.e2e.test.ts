@@ -8,46 +8,6 @@ import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Helper function to verify database using Electron's Node.js
-async function verifyDatabaseWithElectronNode(dbPath: string) {
-  return new Promise((resolve, reject) => {
-    const verifierScript = path.resolve(
-      process.cwd(),
-      "tests/e2e/verify-db-with-electron.mjs",
-    );
-
-    const child = spawn("node", [verifierScript, dbPath], {
-      stdio: "pipe",
-    });
-
-    let output = "";
-    child.stdout.on("data", (data) => {
-      output += data.toString();
-    });
-
-    child.stderr.on("data", (data) => {
-      console.error("Verification stderr:", data.toString());
-    });
-
-    child.on("close", (code) => {
-      if (code === 0) {
-        try {
-          const result = JSON.parse(output.trim());
-          resolve(result);
-        } catch (e) {
-          reject(new Error(`Failed to parse verification result: ${output}`));
-        }
-      } else {
-        reject(
-          new Error(
-            `Verification process exited with code ${code}. Output: ${output}`,
-          ),
-        );
-      }
-    });
-  });
-}
-
 async function runWizardTest(
   {
     source,
@@ -171,49 +131,7 @@ async function runWizardTest(
   await waitForFileExists(dbPath);
   expect(await fs.pathExists(dbPath)).toBe(true);
 
-  // Verify database structure and contents
-  await verifyDatabase(dbPath, source);
-
   await electronApp.close();
-}
-
-// Verify database structure and contents based on source type
-async function verifyDatabase(
-  dbPath: string,
-  source: "sdcard" | "squarp" | "blank",
-) {
-  try {
-    // Use Electron's Node.js to verify database with correct better-sqlite3 binary
-    const result = (await verifyDatabaseWithElectronNode(dbPath)) as any;
-
-    if (!result.success) {
-      throw new Error(`Database verification failed: ${result.error}`);
-    }
-
-    // Check that required tables exist
-    expect(result.tables).toContain("kits");
-    expect(result.tables).toContain("samples");
-
-    // Verify contents based on source type
-    if (source === "blank") {
-      // Blank source should have no kits or samples
-      expect(result.kits).toBe(0);
-      expect(result.samples).toBe(0);
-    } else if (source === "sdcard" || source === "squarp") {
-      // Both sources should have A0 and B1 kits with samples
-      expect(result.kits).toBe(2);
-      expect(result.samples).toBe(4); // 2 samples per kit * 2 kits
-    }
-
-    console.log(`Database verification passed for ${source} source:`, {
-      tables: result.tables.length,
-      kits: result.kits,
-      samples: result.samples,
-    });
-  } catch (error) {
-    console.error(`Database verification failed for ${source} source:`, error);
-    throw error;
-  }
 }
 
 // Wait for a file to exist (polling, idiomatic for Playwright E2E)

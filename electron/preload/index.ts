@@ -58,7 +58,7 @@ async function writeSettings(
 
 contextBridge.exposeInMainWorld("electronAPI", {
   selectSdCard: (): Promise<string | null> => {
-    console.log("[Preload] selectSdCard invoked");
+    console.log("[IPC] selectSdCard invoked");
     return ipcRenderer.invoke("select-sd-card");
   },
   getSetting: async (
@@ -68,7 +68,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       theme?: string;
     },
   ): Promise<any> => {
-    console.log("[Preload] getSetting invoked", key);
+    console.log("[IPC] getSetting invoked", key);
 
     // For localStorePath, check environment variable first
     if (key === "localStorePath" && process.env.ROMPER_LOCAL_PATH) {
@@ -86,7 +86,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
     value: any,
   ): Promise<void> => {
-    console.log(`[Preload] setSetting called with key: ${key}, value:`, value);
+    console.log(`[IPC] setSetting called with key: ${key}, value:`, value);
     await writeSettings(key, value);
   },
   readSettings: async (): Promise<{
@@ -94,15 +94,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
     darkMode?: boolean;
     theme?: string;
   }> => {
-    console.log("[Preload] readSettings invoked");
+    console.log("[IPC] readSettings invoked");
     return readSettings();
   },
   getLocalStoreStatus: async () => {
-    console.log("[Preload] getLocalStoreStatus invoked");
+    console.log("[IPC] getLocalStoreStatus invoked");
     return await ipcRenderer.invoke("get-local-store-status");
   },
   createKit: (localStorePath: string, kitSlot: string): Promise<void> => {
-    console.log("[Preload] createKit invoked", localStorePath, kitSlot);
+    console.log("[IPC] createKit invoked", localStorePath, kitSlot);
     return ipcRenderer.invoke("create-kit", localStorePath, kitSlot);
   },
   copyKit: (
@@ -110,53 +110,48 @@ contextBridge.exposeInMainWorld("electronAPI", {
     sourceKit: string,
     destKit: string,
   ): Promise<void> => {
-    console.log(
-      "[Preload] copyKit invoked",
-      localStorePath,
-      sourceKit,
-      destKit,
-    );
+    console.log("[IPC] copyKit invoked", localStorePath, sourceKit, destKit);
     return ipcRenderer.invoke("copy-kit", localStorePath, sourceKit, destKit);
   },
   listFilesInRoot: (localStorePath: string): Promise<string[]> => {
-    console.log("[Preload] listFilesInRoot invoked", localStorePath);
+    console.log("[IPC] listFilesInRoot invoked", localStorePath);
     return ipcRenderer.invoke("list-files-in-root", localStorePath);
   },
   closeApp: (): Promise<void> => {
-    console.log("[Preload] closeApp invoked");
+    console.log("[IPC] closeApp invoked");
     return ipcRenderer.invoke("close-app");
   },
   playSample: (filePath: string) => {
-    console.log("[Preload] playSample invoked", filePath);
+    console.log("[IPC] playSample invoked", filePath);
     return ipcRenderer.invoke("play-sample", filePath);
   },
   stopSample: () => {
-    console.log("[Preload] stopSample invoked");
+    console.log("[IPC] stopSample invoked");
     return ipcRenderer.invoke("stop-sample");
   },
   onSamplePlaybackEnded: (cb: () => void) => {
-    console.log("[Preload] onSamplePlaybackEnded registered");
+    console.log("[IPC] onSamplePlaybackEnded registered");
     ipcRenderer.removeAllListeners("sample-playback-ended");
     ipcRenderer.on("sample-playback-ended", cb);
   },
   onSamplePlaybackError: (cb: (errMsg: string) => void) => {
-    console.log("[Preload] onSamplePlaybackError registered");
+    console.log("[IPC] onSamplePlaybackError registered");
     ipcRenderer.removeAllListeners("sample-playback-error");
     ipcRenderer.on("sample-playback-error", (_event: any, errMsg: string) =>
       cb(errMsg),
     );
   },
   getAudioBuffer: (filePath: string) => {
-    console.log("[Preload] getAudioBuffer invoked", filePath);
+    console.log("[IPC] getAudioBuffer invoked", filePath);
     return ipcRenderer.invoke("get-audio-buffer", filePath);
   },
   readFile: (filePath: string) => {
-    console.log("[Preload] readFile invoked", filePath);
+    console.log("[IPC] readFile invoked", filePath);
     return ipcRenderer.invoke("read-file", filePath);
   },
   // Database methods for kit metadata (replacing JSON file dependency)
   getKitMetadata: (dbDir: string, kitName: string) => {
-    console.log("[Preload] getKitMetadata invoked", dbDir, kitName);
+    console.log("[IPC] getKitMetadata invoked", dbDir, kitName);
     return ipcRenderer.invoke("get-kit-metadata", dbDir, kitName);
   },
   updateKit: (
@@ -169,11 +164,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
       description?: string;
     },
   ) => {
-    console.log("[Preload] updateKit invoked", dbDir, kitName, updates);
+    console.log("[IPC] updateKit invoked", dbDir, kitName, updates);
     return ipcRenderer.invoke("update-kit-metadata", dbDir, kitName, updates);
   },
   getKits: (dbDir: string) => {
-    console.log("[Preload] getKits invoked", dbDir);
+    console.log("[IPC] getKits invoked", dbDir);
     return ipcRenderer.invoke("get-all-kits", dbDir);
   },
   updateVoiceAlias: (
@@ -183,7 +178,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceAlias: string,
   ) => {
     console.log(
-      "[Preload] updateVoiceAlias invoked",
+      "[IPC] updateVoiceAlias invoked",
       dbDir,
       kitName,
       voiceNumber,
@@ -202,12 +197,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     kitName: string,
     stepPattern: number[][],
   ) => {
-    console.log(
-      "[Preload] updateStepPattern invoked",
-      dbDir,
-      kitName,
-      stepPattern,
-    );
+    console.log("[IPC] updateStepPattern invoked", dbDir, kitName, stepPattern);
     return ipcRenderer.invoke(
       "update-step-pattern",
       dbDir,
@@ -216,11 +206,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     );
   },
   getUserHomeDir: () => {
-    console.log("[Preload] getUserHomeDir invoked");
+    console.log("[IPC] getUserHomeDir invoked");
     return ipcRenderer.invoke("get-user-home-dir");
   },
   selectLocalStorePath: () => {
-    console.log("[Preload] selectLocalStorePath invoked");
+    console.log("[IPC] selectLocalStorePath invoked");
     return ipcRenderer.invoke("select-local-store-path");
   },
   downloadAndExtractArchive: (
@@ -229,7 +219,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     onProgress?: (p: any) => void,
     onError?: (e: any) => void,
   ) => {
-    console.log("[Preload] downloadAndExtractArchive invoked", url, destDir);
+    console.log("[IPC] downloadAndExtractArchive invoked", url, destDir);
     if (onProgress) {
       ipcRenderer.removeAllListeners("archive-progress");
       ipcRenderer.on("archive-progress", (_event: any, progress: any) =>
@@ -245,39 +235,39 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("download-and-extract-archive", url, destDir);
   },
   ensureDir: (dir: string) => {
-    console.log("[Preload] ensureDir invoked", dir);
+    console.log("[IPC] ensureDir invoked", dir);
     return ipcRenderer.invoke("ensure-dir", dir);
   },
   copyDir: (src: string, dest: string) => {
-    console.log("[Preload] copyDir invoked", src, dest);
+    console.log("[IPC] copyDir invoked", src, dest);
     return ipcRenderer.invoke("copy-dir", src, dest);
   },
   createRomperDb: (dbDir: string) => {
-    console.log("[Preload] createRomperDb invoked", dbDir);
+    console.log("[IPC] createRomperDb invoked", dbDir);
     return ipcRenderer.invoke("create-romper-db", dbDir);
   },
   insertKit: (dbDir: string, kit: NewKit) => {
-    console.log("[Preload] insertKit invoked", dbDir, kit);
+    console.log("[IPC] insertKit invoked", dbDir, kit);
     return ipcRenderer.invoke("insert-kit", dbDir, kit);
   },
   insertSample: (dbDir: string, sample: NewSample) => {
-    console.log("[Preload] insertSample invoked", dbDir, sample);
+    console.log("[IPC] insertSample invoked", dbDir, sample);
     return ipcRenderer.invoke("insert-sample", dbDir, sample);
   },
   validateLocalStore: (localStorePath: string) => {
-    console.log("[Preload] validateLocalStore invoked", localStorePath);
+    console.log("[IPC] validateLocalStore invoked", localStorePath);
     return ipcRenderer.invoke("validate-local-store", localStorePath);
   },
   getAllSamples: (dbDir: string) => {
-    console.log("[Preload] getAllSamples invoked", dbDir);
+    console.log("[IPC] getAllSamples invoked", dbDir);
     return ipcRenderer.invoke("get-all-samples", dbDir);
   },
   getAllSamplesForKit: (dbDir: string, kitName: string) => {
-    console.log("[Preload] getAllSamplesForKit invoked", dbDir, kitName);
+    console.log("[IPC] getAllSamplesForKit invoked", dbDir, kitName);
     return ipcRenderer.invoke("get-all-samples-for-kit", dbDir, kitName);
   },
   rescanKit: (dbDir: string, localStorePath: string, kitName: string) => {
-    console.log("[Preload] rescanKit invoked", dbDir, localStorePath, kitName);
+    console.log("[IPC] rescanKit invoked", dbDir, localStorePath, kitName);
     return ipcRenderer.invoke("rescan-kit", dbDir, localStorePath, kitName);
   },
 });

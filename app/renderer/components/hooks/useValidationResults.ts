@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   KitValidationError,
   LocalStoreValidationDetailedResult,
-} from "../../../../shared/schema";
+} from "../../../../shared/db/schema.js";
 
 interface UseValidationResultsProps {
   localStorePath: string;
@@ -29,7 +29,7 @@ export function useValidationResults({
     const extra: KitValidationError[] = [];
     const both: KitValidationError[] = [];
 
-    validationResult.errors.forEach((error) => {
+    validationResult.errors.forEach((error: KitValidationError) => {
       if (error.missingFiles.length > 0 && error.extraFiles.length > 0) {
         both.push(error);
       } else if (error.missingFiles.length > 0) {
@@ -90,7 +90,9 @@ export function useValidationResults({
 
   const selectAllKits = useCallback(() => {
     if (validationResult?.errors && validationResult.errors.length > 0) {
-      const kitNames = validationResult.errors.map((e) => e.kitName);
+      const kitNames = validationResult.errors.map(
+        (e: KitValidationError) => e.kitName,
+      );
       setSelectedKits(kitNames);
     }
   }, [validationResult]);

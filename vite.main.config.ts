@@ -1,12 +1,12 @@
-import { defineConfig } from "vite";
-import { resolve } from "path";
 import { copyFileSync, mkdirSync, readdirSync, statSync } from "fs";
-import { join, dirname } from "path";
+import { resolve } from "path";
+import { dirname, join } from "path";
+import { defineConfig } from "vite";
 
 // Plugin to copy migrations directory
 function copyMigrations() {
   return {
-    name: 'copy-migrations',
+    name: "copy-migrations",
     writeBundle() {
       const src = resolve(__dirname, "electron/main/db/migrations");
       const dest = resolve(__dirname, "dist/electron/main/db/migrations");
@@ -29,7 +29,7 @@ function copyMigrations() {
       }
 
       copyDir(src, dest);
-    }
+    },
   };
 }
 
@@ -79,22 +79,22 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "."),
-        "node:crypto": "crypto",
-        "node:fs": "fs",
-        "node:path": "path",
-        "node:os": "os",
-        "node:util": "util",
-        "node:stream": "stream",
-        "node:buffer": "buffer",
-        "node:url": "url",
-        "node:events": "events",
-        "node:querystring": "querystring",
-        "node:child_process": "child_process",
-        "node:net": "net",
-        "node:tls": "tls",
-        "node:http": "http",
-        "node:https": "https",
-        "node:zlib": "zlib",
+      "node:crypto": "crypto",
+      "node:fs": "fs",
+      "node:path": "path",
+      "node:os": "os",
+      "node:util": "util",
+      "node:stream": "stream",
+      "node:buffer": "buffer",
+      "node:url": "url",
+      "node:events": "events",
+      "node:querystring": "querystring",
+      "node:child_process": "child_process",
+      "node:net": "net",
+      "node:tls": "tls",
+      "node:http": "http",
+      "node:https": "https",
+      "node:zlib": "zlib",
     },
   },
 });

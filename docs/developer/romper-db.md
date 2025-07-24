@@ -1,10 +1,11 @@
 ---
 layout: default
+title: Database Schema
 ---
 
 # Romper Database Schema
 
-This document describes the schema for the Romper local SQLite database, which is created in the `.romperdb` folder inside the local store.
+This document describes the schema for the Romper local SQLite database, which is created in the `.romperdb` folder inside the local store. The schema is implemented using **Drizzle ORM** for type safety and maintainability.
 
 ## Entity-Relationship Diagram (ERD)
 
@@ -34,31 +35,37 @@ This document describes the schema for the Romper local SQLite database, which i
 
 ### samples
 - `id` INTEGER PRIMARY KEY AUTOINCREMENT
-- `kit_name` TEXT - Foreign key to kits.name
-- `filename` TEXT NOT NULL - Sample filename
+- `kit_name` TEXT NOT NULL - Foreign key to kits.name
 - `voice_number` INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4) - Voice this sample belongs to
 - `slot_number` INTEGER NOT NULL CHECK(slot_number BETWEEN 1 AND 12) - Slot position within the voice (1-12)
+- `source_path` TEXT NOT NULL - Absolute path to original sample file for external references
+- `filename` TEXT NOT NULL - Filename used on SD card
 - `is_stereo` BOOLEAN NOT NULL DEFAULT 0 - Whether sample is stereo
-- `wav_bitrate` INTEGER - WAV file bitrate (e.g., 1411200 for 16-bit/44.1kHz stereo)
-- `wav_sample_rate` INTEGER - WAV file sample rate (e.g., 44100, 48000)
 
 ## Data Constraints and Business Rules
 
 ### Kit Structure
 - Each kit must have exactly 4 voice records (voice_number 1-4) created automatically upon kit insertion
-- Step patterns are stored as 64-byte BLOBs with layout: [step0_voice0, step0_voice1, step0_voice2, step0_voice3, step1_voice0, ...]
-- Each byte in step_pattern represents velocity (0-127) for that step/voice combination
+- Step patterns stored as TEXT (JSON format) for XOX sequencer integration
+- Editable mode controls whether kit can be modified (default: true for user kits, false for factory kits)
 
 ### Sample Organization
 - Maximum 12 samples per voice (slots 1-12)
-- Samples are organized by voice (1-4) and slot (1-12)
+- Samples organized by voice (1-4) and slot (1-12) with explicit `voice_number` tracking
 - Voice numbering in database is 1-indexed (1, 2, 3, 4)
+- **Reference-only storage**: Samples stored via `source_path` field, not copied locally
+
+### Sample Reference Architecture
+- `source_path` contains absolute path to original sample file
+- `filename` contains the name used when copying to SD card
+- Files remain in original locations until SD card sync
+- Missing `source_path` files detected and reported before sync operations
 
 ### WAV File Requirements
-- Supported formats: 16-bit or 24-bit WAV files
-- Supported sample rates: 44.1kHz, 48kHz, or 96kHz
+- Supported formats: 8-bit or 16-bit WAV files only
+- Required sample rate: 44100 Hz (Rample hardware requirement)
 - Supported channels: Mono or stereo
-- Bitrate calculation: sample_rate × bit_depth × channels (e.g., 44100 × 16 × 2 = 1,411,200 for 16-bit/44.1kHz stereo)
+- Format conversion handled during SD card sync, not during editing
 
 ## Relationships
 - kits (1) → voices (4) - Each kit has exactly 4 voices

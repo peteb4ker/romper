@@ -1,25 +1,26 @@
 // Unit tests for Drizzle ORM implementation
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import type { Kit, Sample } from "../../../../shared/db/schema.js";
 import {
-  createRomperDbFile,
   addKit,
   addSample,
+  createRomperDbFile,
+  deleteSamples,
+  getAllSamples,
+  getKit,
   getKits,
   getKitSamples,
   isDbCorruptionError,
-  deleteSamples,
-  updateVoiceAlias,
-  getKit,
   updateKit,
-  getAllSamples
-} from '../romperDbCoreORM.js';
-import type { Kit, Sample } from '../../../../shared/schema.js';
+  updateVoiceAlias,
+} from "../romperDbCoreORM.js";
 
 // Test utilities
-const TEST_DB_DIR = path.join(__dirname, 'test-data');
-const TEST_DB_PATH = path.join(TEST_DB_DIR, 'romper.sqlite');
+const TEST_DB_DIR = path.join(__dirname, "test-data");
+const TEST_DB_PATH = path.join(TEST_DB_DIR, "romper.sqlite");
 
 function ensureTestDirClean() {
   if (fs.existsSync(TEST_DB_DIR)) {
@@ -34,7 +35,7 @@ function cleanupTestDb() {
   }
 }
 
-describe('Drizzle ORM Database Operations', () => {
+describe("Drizzle ORM Database Operations", () => {
   beforeEach(() => {
     ensureTestDirClean();
   });
@@ -43,8 +44,8 @@ describe('Drizzle ORM Database Operations', () => {
     cleanupTestDb();
   });
 
-  describe('Database Creation', () => {
-    it('should create database file successfully', async () => {
+  describe("Database Creation", () => {
+    it("should create database file successfully", async () => {
       const result = createRomperDbFile(TEST_DB_DIR);
 
       expect(result.success).toBe(true);
@@ -52,7 +53,7 @@ describe('Drizzle ORM Database Operations', () => {
       expect(fs.existsSync(TEST_DB_PATH)).toBe(true);
     });
 
-    it('should handle database creation with existing directory', async () => {
+    it("should handle database creation with existing directory", async () => {
       // Create database once
       const result1 = createRomperDbFile(TEST_DB_DIR);
       expect(result1.success).toBe(true);
@@ -64,16 +65,16 @@ describe('Drizzle ORM Database Operations', () => {
     });
   });
 
-  describe('Kit Operations with ORM', () => {
+  describe("Kit Operations with ORM", () => {
     beforeEach(async () => {
       createRomperDbFile(TEST_DB_DIR);
     });
 
-    it('should insert kit record with editable mode mapping', async () => {
+    it("should insert kit record with editable mode mapping", async () => {
       const testKit: Kit = {
-        name: 'A0',
-        alias: 'Test Kit',
-        artist: 'Test Artist',
+        name: "A0",
+        alias: "Test Kit",
+        artist: "Test Artist",
         editable: true, // This should map to editable=true in new architecture
         locked: false,
         // step_pattern can be omitted or set to null - JSON mode handles this automatically
@@ -81,14 +82,14 @@ describe('Drizzle ORM Database Operations', () => {
 
       const result = addKit(TEST_DB_DIR, testKit);
       if (!result.success) {
-        console.error('Kit insert failed:', result.error);
+        console.error("Kit insert failed:", result.error);
       }
       expect(result.success).toBe(true);
     });
 
-    it('should create 4 voice records when inserting kit', async () => {
+    it("should create 4 voice records when inserting kit", async () => {
       const testKit: Kit = {
-        name: 'A1',
+        name: "A1",
         editable: true, // Use the correct schema field name
       };
 
@@ -99,13 +100,13 @@ describe('Drizzle ORM Database Operations', () => {
       const kitsResult = getKits(TEST_DB_DIR);
       expect(kitsResult.success).toBe(true);
 
-      const kit = kitsResult.data?.find(k => k.name === 'A1');
+      const kit = kitsResult.data?.find((k) => k.name === "A1");
       expect(kit).toBeDefined();
       expect(kit?.voices).toHaveLength(4); // Should have 4 voice records
       // Note: voice_alias will be null initially since no aliases are set
     });
 
-    it('should handle kit with step pattern correctly', async () => {
+    it("should handle kit with step pattern correctly", async () => {
       const stepPattern = [
         [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
         [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
@@ -114,7 +115,7 @@ describe('Drizzle ORM Database Operations', () => {
       ];
 
       const testKit: Kit = {
-        name: 'A2',
+        name: "A2",
         editable: true,
         step_pattern: stepPattern,
       };
@@ -125,31 +126,31 @@ describe('Drizzle ORM Database Operations', () => {
       const kitsResult = getKits(TEST_DB_DIR);
       expect(kitsResult.success).toBe(true);
 
-      const kit = kitsResult.data?.find(k => k.name === 'A2');
+      const kit = kitsResult.data?.find((k) => k.name === "A2");
       expect(kit).toBeDefined();
       expect(kit?.step_pattern).toEqual(stepPattern);
     });
   });
 
-  describe('Sample Operations with Reference Architecture', () => {
+  describe("Sample Operations with Reference Architecture", () => {
     beforeEach(async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
       // Insert a test kit first
       const testKit: Kit = {
-        name: 'A0',
+        name: "A0",
         editable: true,
       };
       await addKit(TEST_DB_DIR, testKit);
     });
 
-    it('should insert sample record with source_path support', async () => {
+    it("should insert sample record with source_path support", async () => {
       const testSample: Sample = {
-        kit_name: 'A0',
-        filename: 'kick.wav',
+        kit_name: "A0",
+        filename: "kick.wav",
         voice_number: 1,
         slot_number: 1,
-        source_path: '/test/path/kick.wav', // Required field
+        source_path: "/test/path/kick.wav", // Required field
         is_stereo: false,
         wav_bitrate: 16,
         wav_sample_rate: 44100,
@@ -157,25 +158,25 @@ describe('Drizzle ORM Database Operations', () => {
 
       const result = addSample(TEST_DB_DIR, testSample);
       expect(result.success).toBe(true);
-      expect(result.data?.sampleId).toBeTypeOf('number');
+      expect(result.data?.sampleId).toBeTypeOf("number");
     });
 
-    it('should fetch samples for kit using ORM', async () => {
+    it("should fetch samples for kit using ORM", async () => {
       const testSamples: Sample[] = [
         {
-          kit_name: 'A0',
-          filename: 'kick.wav',
+          kit_name: "A0",
+          filename: "kick.wav",
           voice_number: 1,
           slot_number: 1,
-          source_path: '/test/path/kick.wav',
+          source_path: "/test/path/kick.wav",
           is_stereo: false,
         },
         {
-          kit_name: 'A0',
-          filename: 'snare.wav',
+          kit_name: "A0",
+          filename: "snare.wav",
           voice_number: 2,
           slot_number: 1,
-          source_path: '/test/path/snare.wav',
+          source_path: "/test/path/snare.wav",
           is_stereo: false,
         },
       ];
@@ -187,21 +188,42 @@ describe('Drizzle ORM Database Operations', () => {
       }
 
       // Fetch samples
-      const fetchResult = getKitSamples(TEST_DB_DIR, 'A0');
+      const fetchResult = getKitSamples(TEST_DB_DIR, "A0");
       expect(fetchResult.success).toBe(true);
       expect(fetchResult.data).toHaveLength(2);
 
       const fetchedSamples = fetchResult.data!;
-      expect(fetchedSamples[0].filename).toBe('kick.wav');
-      expect(fetchedSamples[1].filename).toBe('snare.wav');
+      expect(fetchedSamples[0].filename).toBe("kick.wav");
+      expect(fetchedSamples[1].filename).toBe("snare.wav");
     });
 
-    it('should delete all samples for kit using ORM', async () => {
+    it("should delete all samples for kit using ORM", async () => {
       // Insert test samples
       const testSamples: Sample[] = [
-        { kit_name: 'A0', filename: 'kick.wav', voice_number: 1, slot_number: 1, source_path: '/test/path/kick.wav', is_stereo: false },
-        { kit_name: 'A0', filename: 'snare.wav', voice_number: 2, slot_number: 1, source_path: '/test/path/snare.wav', is_stereo: false },
-        { kit_name: 'A0', filename: 'hihat.wav', voice_number: 3, slot_number: 1, source_path: '/test/path/hihat.wav', is_stereo: false },
+        {
+          kit_name: "A0",
+          filename: "kick.wav",
+          voice_number: 1,
+          slot_number: 1,
+          source_path: "/test/path/kick.wav",
+          is_stereo: false,
+        },
+        {
+          kit_name: "A0",
+          filename: "snare.wav",
+          voice_number: 2,
+          slot_number: 1,
+          source_path: "/test/path/snare.wav",
+          is_stereo: false,
+        },
+        {
+          kit_name: "A0",
+          filename: "hihat.wav",
+          voice_number: 3,
+          slot_number: 1,
+          source_path: "/test/path/hihat.wav",
+          is_stereo: false,
+        },
       ];
 
       for (const sample of testSamples) {
@@ -209,52 +231,52 @@ describe('Drizzle ORM Database Operations', () => {
       }
 
       // Verify samples exist
-      const beforeDelete = await getKitSamples(TEST_DB_DIR, 'A0');
+      const beforeDelete = await getKitSamples(TEST_DB_DIR, "A0");
       expect(beforeDelete.data).toHaveLength(3);
 
       // Delete all samples
-      const deleteResult = deleteSamples(TEST_DB_DIR, 'A0');
+      const deleteResult = deleteSamples(TEST_DB_DIR, "A0");
       expect(deleteResult.success).toBe(true);
 
       // Verify samples are gone
-      const afterDelete = await getKitSamples(TEST_DB_DIR, 'A0');
+      const afterDelete = await getKitSamples(TEST_DB_DIR, "A0");
       expect(afterDelete.data).toHaveLength(0);
     });
   });
 
-  describe('Voice Operations with ORM', () => {
+  describe("Voice Operations with ORM", () => {
     beforeEach(async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
-      const testKit: Kit = { name: 'A0', editable: true };
+      const testKit: Kit = { name: "A0", editable: true };
       await addKit(TEST_DB_DIR, testKit);
     });
 
-    it('should update voice alias using ORM', async () => {
-      const result = updateVoiceAlias(TEST_DB_DIR, 'A0', 1, 'Kick');
+    it("should update voice alias using ORM", async () => {
+      const result = updateVoiceAlias(TEST_DB_DIR, "A0", 1, "Kick");
       expect(result.success).toBe(true);
 
       // Verify the alias was set
       const kitsResult = getKits(TEST_DB_DIR);
       expect(kitsResult.success).toBe(true);
 
-      const kit = kitsResult.data?.find(k => k.name === 'A0');
+      const kit = kitsResult.data?.find((k) => k.name === "A0");
       expect(kit).toBeDefined();
-      const kickVoice = kit?.voices.find(v => v.voice_number === 1);
-      expect(kickVoice?.voice_alias).toBe('Kick');
+      const kickVoice = kit?.voices.find((v) => v.voice_number === 1);
+      expect(kickVoice?.voice_alias).toBe("Kick");
     });
 
-    it('should handle multiple voice aliases', async () => {
+    it("should handle multiple voice aliases", async () => {
       const voiceAliases = [
-        { voice: 1, alias: 'Kick' },
-        { voice: 2, alias: 'Snare' },
-        { voice: 3, alias: 'Hi-Hat' },
-        { voice: 4, alias: 'Percussion' },
+        { voice: 1, alias: "Kick" },
+        { voice: 2, alias: "Snare" },
+        { voice: 3, alias: "Hi-Hat" },
+        { voice: 4, alias: "Percussion" },
       ];
 
       // Set all voice aliases
       for (const { voice, alias } of voiceAliases) {
-        const result = updateVoiceAlias(TEST_DB_DIR, 'A0', voice, alias);
+        const result = updateVoiceAlias(TEST_DB_DIR, "A0", voice, alias);
         expect(result.success).toBe(true);
       }
 
@@ -262,28 +284,28 @@ describe('Drizzle ORM Database Operations', () => {
       const kitsResult = getKits(TEST_DB_DIR);
       expect(kitsResult.success).toBe(true);
 
-      const kit = kitsResult.data?.find(k => k.name === 'A0');
+      const kit = kitsResult.data?.find((k) => k.name === "A0");
       expect(kit).toBeDefined();
-      const kickVoice = kit?.voices.find(v => v.voice_number === 1);
-      const snareVoice = kit?.voices.find(v => v.voice_number === 2);
-      const hiHatVoice = kit?.voices.find(v => v.voice_number === 3);
-      const percVoice = kit?.voices.find(v => v.voice_number === 4);
-      expect(kickVoice?.voice_alias).toBe('Kick');
-      expect(snareVoice?.voice_alias).toBe('Snare');
-      expect(hiHatVoice?.voice_alias).toBe('Hi-Hat');
-      expect(percVoice?.voice_alias).toBe('Percussion');
+      const kickVoice = kit?.voices.find((v) => v.voice_number === 1);
+      const snareVoice = kit?.voices.find((v) => v.voice_number === 2);
+      const hiHatVoice = kit?.voices.find((v) => v.voice_number === 3);
+      const percVoice = kit?.voices.find((v) => v.voice_number === 4);
+      expect(kickVoice?.voice_alias).toBe("Kick");
+      expect(snareVoice?.voice_alias).toBe("Snare");
+      expect(hiHatVoice?.voice_alias).toBe("Hi-Hat");
+      expect(percVoice?.voice_alias).toBe("Percussion");
     });
   });
 
-  describe('Step Pattern Operations with ORM', () => {
+  describe("Step Pattern Operations with ORM", () => {
     beforeEach(async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
-      const testKit: Kit = { name: 'A0', editable: true };
+      const testKit: Kit = { name: "A0", editable: true };
       await addKit(TEST_DB_DIR, testKit);
     });
 
-    it('should update step pattern using ORM', async () => {
+    it("should update step pattern using ORM", async () => {
       const newPattern = [
         [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
         [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
@@ -291,50 +313,55 @@ describe('Drizzle ORM Database Operations', () => {
         [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
       ];
 
-      const result = updateKit(TEST_DB_DIR, 'A0', { step_pattern: newPattern });
+      const result = updateKit(TEST_DB_DIR, "A0", { step_pattern: newPattern });
       expect(result.success).toBe(true);
 
       // Verify pattern was updated
       const kitsResult = getKits(TEST_DB_DIR);
       expect(kitsResult.success).toBe(true);
 
-      const kit = kitsResult.data?.find(k => k.name === 'A0');
+      const kit = kitsResult.data?.find((k) => k.name === "A0");
       expect(kit).toBeDefined();
       expect(kit?.step_pattern).toEqual(newPattern);
     });
 
-    it('should clear step pattern when undefined', async () => {
+    it("should clear step pattern when undefined", async () => {
       // First set a pattern
-      const initialPattern = [[1, 0, 1, 0], [0, 1, 0, 1], [1, 1, 0, 0], [0, 0, 1, 1]];
-      await updateKit(TEST_DB_DIR, 'A0', { step_pattern: initialPattern });
+      const initialPattern = [
+        [1, 0, 1, 0],
+        [0, 1, 0, 1],
+        [1, 1, 0, 0],
+        [0, 0, 1, 1],
+      ];
+      await updateKit(TEST_DB_DIR, "A0", { step_pattern: initialPattern });
 
       // Then clear it
-      const clearResult = updateKit(TEST_DB_DIR, 'A0', { step_pattern: null });
+      const clearResult = updateKit(TEST_DB_DIR, "A0", { step_pattern: null });
       expect(clearResult.success).toBe(true);
 
       // Verify pattern is cleared (null in DB, which is correct)
       const kitsResult = getKits(TEST_DB_DIR);
       expect(kitsResult.success).toBe(true);
 
-      const kit = kitsResult.data?.find(k => k.name === 'A0');
+      const kit = kitsResult.data?.find((k) => k.name === "A0");
       expect(kit).toBeDefined();
       expect(kit?.step_pattern).toBeNull(); // Database stores NULL, not undefined
     });
   });
 
-  describe('Error Handling and Edge Cases', () => {
-    it('should detect database corruption errors', () => {
-      expect(isDbCorruptionError('file is not a database')).toBe(true);
-      expect(isDbCorruptionError('file is encrypted')).toBe(true);
-      expect(isDbCorruptionError('malformed database')).toBe(true);
-      expect(isDbCorruptionError('some other error')).toBe(false);
+  describe("Error Handling and Edge Cases", () => {
+    it("should detect database corruption errors", () => {
+      expect(isDbCorruptionError("file is not a database")).toBe(true);
+      expect(isDbCorruptionError("file is encrypted")).toBe(true);
+      expect(isDbCorruptionError("malformed database")).toBe(true);
+      expect(isDbCorruptionError("some other error")).toBe(false);
     });
 
-    it('should handle operations on non-existent database gracefully', async () => {
-      const nonExistentDir = path.join(TEST_DB_DIR, 'nonexistent');
+    it("should handle operations on non-existent database gracefully", async () => {
+      const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");
 
       const result = addKit(nonExistentDir, {
-        name: 'A0',
+        name: "A0",
         editable: true,
       });
 
@@ -342,10 +369,10 @@ describe('Drizzle ORM Database Operations', () => {
       expect(result.error).toBeDefined();
     });
 
-    it('should handle constraint violations gracefully', async () => {
+    it("should handle constraint violations gracefully", async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
-      const testKit: Kit = { name: 'A0', editable: true };
+      const testKit: Kit = { name: "A0", editable: true };
 
       // Insert kit once
       const result1 = await addKit(TEST_DB_DIR, testKit);
@@ -358,16 +385,16 @@ describe('Drizzle ORM Database Operations', () => {
     });
   });
 
-  describe('Backward Compatibility', () => {
+  describe("Backward Compatibility", () => {
     beforeEach(async () => {
       await createRomperDbFile(TEST_DB_DIR);
     });
 
-    it('should maintain compatibility with existing Kit interface', async () => {
+    it("should maintain compatibility with existing Kit interface", async () => {
       // Test the simplified Kit interface using editable directly
       const kitRecord: Kit = {
-        name: 'A0',
-        alias: 'Old Style',
+        name: "A0",
+        alias: "Old Style",
         editable: true,
         locked: false,
       };
@@ -378,24 +405,24 @@ describe('Drizzle ORM Database Operations', () => {
       const kitsResult = getKits(TEST_DB_DIR);
       expect(kitsResult.success).toBe(true);
 
-      const kit = kitsResult.data?.find(k => k.name === 'A0');
+      const kit = kitsResult.data?.find((k) => k.name === "A0");
       expect(kit).toBeDefined();
       expect(kit?.editable).toBe(true); // Using editable directly now
-      expect(kit?.alias).toBe('Old Style');
+      expect(kit?.alias).toBe("Old Style");
     });
 
-    it('should support legacy sample record format', async () => {
+    it("should support legacy sample record format", async () => {
       // Insert a kit first
-      const testKit: Kit = { name: 'A0', editable: true };
+      const testKit: Kit = { name: "A0", editable: true };
       await addKit(TEST_DB_DIR, testKit);
 
       // Insert sample using legacy interface
       const legacySample: Sample = {
-        kit_name: 'A0',
-        filename: 'legacy_sample.wav',
+        kit_name: "A0",
+        filename: "legacy_sample.wav",
         voice_number: 1,
         slot_number: 1,
-        source_path: '/test/path/legacy_sample.wav',
+        source_path: "/test/path/legacy_sample.wav",
         is_stereo: false,
       };
 
@@ -403,10 +430,10 @@ describe('Drizzle ORM Database Operations', () => {
       expect(result.success).toBe(true);
 
       // Verify sample was inserted correctly
-      const samplesResult = getKitSamples(TEST_DB_DIR, 'A0');
+      const samplesResult = getKitSamples(TEST_DB_DIR, "A0");
       expect(samplesResult.success).toBe(true);
       expect(samplesResult.data).toHaveLength(1);
-      expect(samplesResult.data![0].filename).toBe('legacy_sample.wav');
+      expect(samplesResult.data![0].filename).toBe("legacy_sample.wav");
     });
   });
 });

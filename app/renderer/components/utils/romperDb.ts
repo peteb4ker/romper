@@ -1,7 +1,7 @@
 // Handles Romper DB (SQLite) operations for plans, kits, and samples.
 // This is a stub for initial DB creation logic for 2.2
 
-import type { NewKit } from "../../../../shared/schema";
+import type { NewKit } from "../../../../shared/db/schema.js";
 
 export async function createRomperDb(dbDir: string) {
   if (!window.electronAPI?.createRomperDb) {
@@ -17,10 +17,7 @@ export async function createRomperDb(dbDir: string) {
   return result.dbPath;
 }
 
-export async function insertKit(
-  dbDir: string,
-  kit: NewKit,
-) {
+export async function insertKit(dbDir: string, kit: NewKit) {
   if (!window.electronAPI?.insertKit) throw new Error("IPC not available");
 
   const result = await window.electronAPI.insertKit(dbDir, kit);

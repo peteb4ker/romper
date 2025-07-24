@@ -57,7 +57,9 @@ export function useKitBrowser({
   }, [kits]);
 
   useEffect(() => {
+    // Fetch bank names from the database (not by scanning RTF files)
     (async () => {
+      // TODO: Replace this with a DB query when DB API is available
       setBankNames(await getBankNames(localStorePath));
     })();
   }, [localStorePath]);

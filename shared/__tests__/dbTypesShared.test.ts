@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import type { Kit, Sample, Voice } from "../schema";
 import {
   DbResult,
   KitValidationError,
   LocalStoreValidationDetailedResult,
   LocalStoreValidationResult,
 } from "../schema";
-import type { Kit, Sample, Voice } from "../schema";
 
 describe("dbTypesShared", () => {
   it("should export all required interfaces", () => {

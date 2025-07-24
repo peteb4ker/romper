@@ -1,5 +1,5 @@
-import { defineConfig } from "vite";
 import { resolve } from "path";
+import { defineConfig } from "vite";
 
 export default defineConfig({
   build: {
@@ -12,9 +12,7 @@ export default defineConfig({
     outDir: "dist/electron/preload",
     emptyOutDir: false,
     rollupOptions: {
-      external: [
-        "electron",
-      ],
+      external: ["electron"],
       output: {
         entryFileNames: "[name].mjs",
       },

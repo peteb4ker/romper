@@ -14,6 +14,7 @@ vi.mock("../db/romperDbCoreORM.js", () => {
   return {
     getKits: vi.fn(),
     getKitSamples: vi.fn(),
+    validateDatabaseSchema: vi.fn(() => ({ success: true, data: true })),
   };
 });
 

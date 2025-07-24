@@ -5,14 +5,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/peteb4ker/romper.svg)](https://github.com/peteb4ker/romper/releases/latest)
 
-A cross-platform desktop app to manage sample kits for the **Squarp Rample** — a 4-voice Eurorack sampler. Built with **Electron**, **React**, and **Vite**, this app makes it easy to organize, preview, and protect your SD card kits.
+A cross-platform desktop app to manage sample kits for the **Squarp Rample** — a 4-voice Eurorack sampler. Built with **Electron**, **React**, **TypeScript**, and **Drizzle ORM**, this app makes it easy to organize, preview, and sync your sample kits.
 
 ## ✨ Features
 
-- 🎵 **Kit Browser** - Browse and organize your Rample sample kits
-- 🔊 **Sample Preview** - Listen to samples with built-in audio playback, including 4-channel xox sampler.
-- 📁 **SD Card Management** - Direct integration with Rample SD card structure
-- 💾 **Safe Operations** - Protect your samples with validation and backups
+- 🎵 **Kit Browser** - Browse and organize your Rample sample kits with metadata
+- 🔊 **Sample Preview** - Listen to samples with built-in audio playback and XOX sequencer
+- 📁 **Local Store Management** - Safe, non-destructive sample management with reference-only architecture
+- ✏️ **Kit Editing** - Add, replace, and organize samples with undo/redo support
+- 💾 **Safe Operations** - Validate and sync changes to SD card with format conversion
 - 🌙 **Dark/Light Theme** - Modern UI that adapts to your preference
 
 ## 🏗️ Project Structure
@@ -27,13 +28,38 @@ romper/
   .github/chatmodes/ # GitHub Copilot Chatmodes for development workflows
 ```
 
-## 💬 Chatmodes
+## 📚 Documentation
 
-The project uses GitHub Copilot chatmodes to streamline development workflows:
+### For Users
+- **[Getting Started Guide](docs/user/getting-started.md)** - Installation and first-time setup
+- **[User Documentation](docs/index.md)** - Complete user guide and feature overview
+- **[Keyboard Shortcuts](docs/user/keyboard-shortcuts.md)** - Speed up your workflow
+- **[Settings Guide](docs/user/settings.md)** - Configure Romper preferences
 
-- [**Define.chatmode.md**](.github/chatmodes/Define.chatmode.md) - Helps create detailed Product Requirements Documents (PRDs) by asking clarifying questions and generating structured PRD files
-- [**Plan.chatmode.md**](.github/chatmodes/Plan.chatmode.md) - Generates implementation task lists from PRDs, breaking features into manageable steps with proper file organization
-- [**Build.chatmode.md**](.github/chatmodes/Build.chatmode.md) - Executes tasks one by one, updating progress in task files and ensuring methodical implementation
+### For Developers
+- **[Architecture Overview](docs/developer/architecture.md)** - Core design patterns and decisions
+- **[Contributing Guide](docs/developer/contributing.md)** - How to contribute to the project
+- **[Development Setup](docs/developer/development.md)** - Set up your development environment
+- **[Development Workflow](docs/developer/development-workflow.md)** - Task execution and quality standards
+- **[Coding Guide](docs/developer/coding-guide.md)** - Human-readable development best practices
+- **[Database Schema](docs/developer/romper-db.md)** - Complete database documentation
+
+### For AI Development Tools
+- **[CLAUDE.md](CLAUDE.md)** - Claude Code project instructions with context-aware loading
+- **[Agent Instructions](.agent/)** - Machine-readable coding standards and patterns
+- **[GitHub Copilot Instructions](.github/copilot-instructions.md)** - Copilot development standards
+
+### Project Management
+- **[Product Requirements](tasks/PRD.md)** - Complete project vision and requirements
+- **[Current Tasks](tasks/tasks-PRD.md)** - Development progress and task tracking
+
+## 💬 Development Workflows
+
+The project uses structured workflows for different development tasks:
+
+- [**Define.chatmode.md**](.github/chatmodes/Define.chatmode.md) - Create detailed Product Requirements Documents (PRDs)
+- [**Plan.chatmode.md**](.github/chatmodes/Plan.chatmode.md) - Generate implementation task lists from PRDs
+- [**Build.chatmode.md**](.github/chatmodes/Build.chatmode.md) - Execute tasks methodically with progress tracking
 
 ## 🚀 Getting Started
 

@@ -1,3 +1,19 @@
+/**
+ * Extracts the bank and name from a single RTF filename (e.g. "A - MyBank.rtf")
+ * Returns { bank, name } or null if not a valid bank RTF filename
+ */
+export function getBankNameFromRtfFilename(
+  filename: string,
+): { bank: string; name: string } | null {
+  const match = /^([A-Z]) - (.+)\.rtf$/i.exec(filename);
+  if (match) {
+    return {
+      bank: match[1].toUpperCase(),
+      name: toCapitalCase(match[2]),
+    };
+  }
+  return null;
+}
 // Bank operations utilities
 
 import { toCapitalCase } from "../../../../shared/kitUtilsShared";
@@ -12,23 +28,17 @@ export interface BankNames {
  */
 export async function getBankNames(localStorePath: string): Promise<BankNames> {
   if (!localStorePath) return {};
-
   try {
     const files = await window.electronAPI?.listFilesInRoot?.(localStorePath);
     if (!files) return {};
-
     const rtfFiles = files.filter((f: string) => /^[A-Z] - .+\.rtf$/i.test(f));
-
     const bankNames: BankNames = {};
     for (const file of rtfFiles) {
-      const match = /^([A-Z]) - (.+)\.rtf$/i.exec(file);
-      if (match) {
-        const bank = match[1].toUpperCase();
-        const name = toCapitalCase(match[2]);
-        bankNames[bank] = name;
+      const result = getBankNameFromRtfFilename(file);
+      if (result) {
+        bankNames[result.bank] = result.name;
       }
     }
-
     return bankNames;
   } catch (e) {
     return {};

@@ -11,7 +11,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import type { DbResult } from "../../../shared/db/schema.js";
-import type { Kit, NewKit, NewSample, Sample } from "../../../shared/db/schema.js";
+import type {
+  Kit,
+  NewKit,
+  NewSample,
+  Sample,
+} from "../../../shared/db/schema.js";
 import * as schema from "../../../shared/db/schema.js";
 export const DB_FILENAME = "romper.sqlite";
 
@@ -36,7 +41,10 @@ function withDb<T>(
       if (migrationResult.success) {
         console.log(`[DB] Migrations ensured for: ${dbPath}`);
       } else {
-        console.warn(`[DB] Migration warning for ${dbPath}:`, migrationResult.error);
+        console.warn(
+          `[DB] Migration warning for ${dbPath}:`,
+          migrationResult.error,
+        );
       }
       migrationCheckedDbs.add(dbPath);
     }
@@ -58,7 +66,6 @@ function withDb<T>(
 export function isDbCorruptionError(error: string): boolean {
   return /file is not a database|file is encrypted|malformed/i.test(error);
 }
-
 
 function getMigrationsPath(): string | null {
   // Production: built output
@@ -95,7 +102,9 @@ export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
       console.log("[Main] Migrations completed successfully");
       return { success: true, data: true };
     } else {
-      console.log("[Main] No migrations folder found - this is OK for existing databases");
+      console.log(
+        "[Main] No migrations folder found - this is OK for existing databases",
+      );
       return { success: true, data: false };
     }
   } catch (e) {
@@ -128,7 +137,6 @@ export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
   });
 }
 
-
 // Initialize database with schema using Drizzle migrations
 export function createRomperDbFile(dbDir: string): {
   success: boolean;
@@ -142,11 +150,16 @@ export function createRomperDbFile(dbDir: string): {
     const db = drizzle(sqlite, { schema });
     const migrationsPath = getMigrationsPath();
     if (migrationsPath) {
-      console.log("[Main] Creating database with migrations path:", migrationsPath);
+      console.log(
+        "[Main] Creating database with migrations path:",
+        migrationsPath,
+      );
       migrate(db, { migrationsFolder: migrationsPath });
       console.log("[Main] Initial migrations completed successfully");
     } else {
-      console.error("[Main] Migrations folder not found at any known location.");
+      console.error(
+        "[Main] Migrations folder not found at any known location.",
+      );
       sqlite.close();
       return { success: false, error: `Migrations folder not found.` };
     }
@@ -154,8 +167,14 @@ export function createRomperDbFile(dbDir: string): {
     // Validate the schema was created correctly
     const validation = validateDatabaseSchema(dbDir);
     if (!validation.success) {
-      console.error("[Main] Database validation failed after creation:", validation.error);
-      return { success: false, error: `Database validation failed: ${validation.error}` };
+      console.error(
+        "[Main] Database validation failed after creation:",
+        validation.error,
+      );
+      return {
+        success: false,
+        error: `Database validation failed: ${validation.error}`,
+      };
     }
     console.log("[Main] Database created and validated successfully");
     return { success: true, dbPath };

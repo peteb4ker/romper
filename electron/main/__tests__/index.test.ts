@@ -136,7 +136,7 @@ describe("main/index.ts", () => {
     await import("../index");
     expect(spy).toHaveBeenCalledWith(
       expect.stringContaining(
-        "Failed to parse settings file. Using empty settings:",
+        "[Startup] Failed to parse settings file. Using empty settings:",
       ),
       expect.any(Error),
     );
@@ -149,7 +149,7 @@ describe("main/index.ts", () => {
     const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
     await import("../index");
     expect(spy).toHaveBeenCalledWith(
-      "Settings file not found. Starting with empty settings.",
+      "[Startup] Settings file not found. Starting with empty settings.",
     );
     spy.mockRestore();
     existsSyncSpy.mockRestore();
@@ -161,7 +161,7 @@ describe("main/index.ts", () => {
       .mockReturnValue('{"foo": "bar"}');
     const spy = vi.spyOn(console, "info").mockImplementation(() => {});
     await import("../index");
-    expect(spy).toHaveBeenCalledWith("Settings loaded from file:", {
+    expect(spy).toHaveBeenCalledWith("[Startup] Settings loaded from file:", {
       foo: "bar",
     });
     spy.mockRestore();

@@ -84,6 +84,18 @@ export function createApplicationMenu() {
             }
           },
         },
+        {
+          label: "Change Local Store Directory...",
+          click: () => {
+            // Send IPC message to renderer to open change directory dialog
+            const focusedWindow = BrowserWindow.getFocusedWindow();
+            if (focusedWindow) {
+              focusedWindow.webContents.send(
+                "menu-change-local-store-directory",
+              );
+            }
+          },
+        },
       ],
     },
 

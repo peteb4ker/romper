@@ -1,3 +1,22 @@
+## 15.0 Administrative: Change Local Store Directory
+
+- [x] 15.1 Add a "Change Local Store Directory" item to the Tools menu
+  - [x] 15.1.1 Add menu item under Tools for changing the local store directory
+  - [x] 15.1.2 Wire up menu item to open a dialog/modal
+- [x] 15.2 Menu selection > Show current local store directory and option to change
+  - [x] 15.2.1 Display the current local store directory in monospace read-only box at top
+  - [x] 15.2.2 Provide a "Choose Directory" button with loading state and validation
+- [x] 15.3 Menu selection > Directory selection and validation
+  - [x] 15.3.1 Allow user to select a new directory using the system file picker
+  - [x] 15.3.2 Validate that the selected directory contains a `.romperdb` folder
+  - [x] 15.3.3 If valid, save the new local store directory to settings and refresh app
+  - [x] 15.3.4 If invalid or same directory, show inline warning/error and disable update button
+- [x] 15.4 Menu selection > Post-update handling
+  - [x] 15.4.1 After a successful update, automatically refresh the app with the new directory (no restart required)
+  - [x] 15.4.2 Show success message confirming the directory change and app refresh
+
+---
+_Last updated: 2025-07-17_
 ## Relevant Files
 
 ### UI Components

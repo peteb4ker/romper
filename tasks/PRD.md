@@ -217,11 +217,20 @@ The three main user journeys are:
 - As a Rample owner, I want to toggle between light and dark mode so I can use the app comfortably in different lighting conditions.
 - As a Rample owner, I want clear visual feedback and progress indicators so I understand what the application is doing.
 
+
 ### Setup and Configuration User Stories
 - As a Rample owner, I want to easily set up the application for first use so I can start working with my kits quickly.
 - As a Rample owner, I want to choose my local store location so I can organize my files where I prefer.
 - As a Rample owner, I want to initialize from different sources (SD card, factory samples, blank) so I can start with the content I prefer as my immutable baseline.
 - As a Rample owner, I want my chosen initialization source to become a permanent baseline that preserves my starting point, so I can always reference my original content.
+
+### 4.5 User Interface and Navigation Capabilities
+
+#### Administrative: Change Local Store Directory
+- As an admin user, I want to see the current local store directory so I know where my kits and samples are managed
+- As an admin user, I want to change the local store directory to a new valid location so I can manage a different set of kits
+- As an admin user, I want to be warned if the selected directory is not a valid Romper local store (missing .romperdb folder)
+- As an admin user, I want clear instructions to restart the app after changing the local store directory so the new location is used
 
 ## 4. Functional Requirements
 
@@ -281,9 +290,8 @@ The three main user journeys are:
 - Preserve original files while storing converted versions on SD card
 - Validate minimum kit requirements (voice 1 sample) for sync eligibility
 
-### 4.4 Setup and Configuration Capabilities
 
-### Setup and Configuration Capabilities
+### 4.4 Setup and Configuration Capabilities
 
 **Initial Setup & Immutable Baseline Creation**
 - Setup wizard for first-time configuration
@@ -306,7 +314,14 @@ The three main user journeys are:
 - User prompts when stereo samples conflict with existing samples in next voice
 - Auto-convert stereo samples to mono with warning when added to voice 4 (no next voice available)
 
-### 4.5 User Interface and Navigation Capabilities
+**Administrative: Change Local Store Directory**
+1. Add a "Change Local Store Directory" item to the Tools menu
+2. When selected, show a dialog displaying the current local store directory and an option to change it
+3. Allow the user to select a new directory using a system file picker
+4. Validate that the selected directory contains a `.romperdb` folder
+5. If valid, save the new local store directory path to settings
+6. If invalid, show a warning and do not update the directory
+7. After a successful update, inform the user that the app must be restarted for the change to take effect
 
 **Kit Browser Interface**
 - Display kit metadata cards with ID, name, type icon, and sample counts
@@ -515,8 +530,9 @@ Pull requests are welcome! We encourage contributions from the Rample community 
 
 ## 9. Open Questions
 
+
 ### General Application Open Questions
-- None at this time.
+-- None at this time.
 
 ### Kit Open Questions
 - Should there be a way to export/import kits for sharing between users?

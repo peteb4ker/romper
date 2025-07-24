@@ -15,7 +15,10 @@ import {
   updateKit,
   updateVoiceAlias,
 } from "./db/romperDbCoreORM.js";
-import { validateLocalStoreAgainstDb } from "./localStoreValidator.js";
+import {
+  validateLocalStoreAgainstDb,
+  validateLocalStoreBasic,
+} from "./localStoreValidator.js";
 
 export function registerDbIpcHandlers() {
   ipcMain.handle("create-romper-db", async (_event, dbDir: string) => {
@@ -85,6 +88,13 @@ export function registerDbIpcHandlers() {
     "validate-local-store",
     async (_event, localStorePath: string) => {
       return validateLocalStoreAgainstDb(localStorePath);
+    },
+  );
+
+  ipcMain.handle(
+    "validate-local-store-basic",
+    async (_event, localStorePath: string) => {
+      return validateLocalStoreBasic(localStorePath);
     },
   );
 

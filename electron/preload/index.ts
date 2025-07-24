@@ -258,6 +258,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] validateLocalStore invoked", localStorePath);
     return ipcRenderer.invoke("validate-local-store", localStorePath);
   },
+  validateLocalStoreBasic: (localStorePath: string) => {
+    console.log("[IPC] validateLocalStoreBasic invoked", localStorePath);
+    return ipcRenderer.invoke("validate-local-store-basic", localStorePath);
+  },
   getAllSamples: (dbDir: string) => {
     console.log("[IPC] getAllSamples invoked", dbDir);
     return ipcRenderer.invoke("get-all-samples", dbDir);
@@ -283,6 +287,10 @@ ipcRenderer.on("menu-validate-database", () => {
 
 ipcRenderer.on("menu-setup-local-store", () => {
   window.dispatchEvent(new CustomEvent("menu-setup-local-store"));
+});
+
+ipcRenderer.on("menu-change-local-store-directory", () => {
+  window.dispatchEvent(new CustomEvent("menu-change-local-store-directory"));
 });
 
 ipcRenderer.on("menu-about", () => {

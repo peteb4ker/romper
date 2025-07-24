@@ -4,6 +4,7 @@ export interface MenuEventHandlers {
   onScanAllKits?: () => void;
   onValidateDatabase?: () => void;
   onSetupLocalStore?: () => void;
+  onChangeLocalStoreDirectory?: () => void;
   onAbout?: () => void;
 }
 
@@ -31,6 +32,12 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
       }
     };
 
+    const handleChangeLocalStoreDirectory = () => {
+      if (handlers.onChangeLocalStoreDirectory) {
+        handlers.onChangeLocalStoreDirectory();
+      }
+    };
+
     const handleAbout = () => {
       if (handlers.onAbout) {
         handlers.onAbout();
@@ -44,6 +51,10 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
       window.addEventListener("menu-scan-all-kits", handleScanAllKits);
       window.addEventListener("menu-validate-database", handleValidateDatabase);
       window.addEventListener("menu-setup-local-store", handleSetupLocalStore);
+      window.addEventListener(
+        "menu-change-local-store-directory",
+        handleChangeLocalStoreDirectory,
+      );
       window.addEventListener("menu-about", handleAbout);
     }
 
@@ -57,6 +68,10 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
       window.removeEventListener(
         "menu-setup-local-store",
         handleSetupLocalStore,
+      );
+      window.removeEventListener(
+        "menu-change-local-store-directory",
+        handleChangeLocalStoreDirectory,
       );
       window.removeEventListener("menu-about", handleAbout);
     };

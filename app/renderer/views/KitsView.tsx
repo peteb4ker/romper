@@ -4,8 +4,10 @@ import {
   compareKitSlots,
   groupSamplesByVoice,
 } from "../../../shared/kitUtilsShared";
+import ChangeLocalStoreDirectoryDialog from "../components/ChangeLocalStoreDirectoryDialog";
 import { useKitMetadata } from "../components/hooks/useKitMetadata";
 import { useMenuEvents } from "../components/hooks/useMenuEvents";
+import { useMessageDisplay } from "../components/hooks/useMessageDisplay";
 import { useValidationResults } from "../components/hooks/useValidationResults";
 import KitBrowser, { KitBrowserHandle } from "../components/KitBrowser";
 import KitDetails from "../components/KitDetails";
@@ -20,6 +22,7 @@ const KitsView = () => {
     refreshLocalStoreStatus,
     setLocalStorePath,
   } = useSettings();
+  const { showMessage } = useMessageDisplay();
   const [kits, setKits] = useState<string[]>([]);
   const [allKitSamples, setAllKitSamples] = useState<{
     [kit: string]: VoiceSamples;
@@ -28,6 +31,8 @@ const KitsView = () => {
   const [selectedKitSamples, setSelectedKitSamples] =
     useState<VoiceSamples | null>(null);
   const [showWizard, setShowWizard] = useState<boolean>(false);
+  const [showChangeDirectoryDialog, setShowChangeDirectoryDialog] =
+    useState<boolean>(false);
 
   // Ref to access KitBrowser scan functionality
   const kitBrowserRef = useRef<KitBrowserHandle | null>(null);
@@ -56,6 +61,10 @@ const KitsView = () => {
     onSetupLocalStore: () => {
       console.log("[KitsView] Menu setup local store triggered");
       setShowWizard(true);
+    },
+    onChangeLocalStoreDirectory: () => {
+      console.log("[KitsView] Menu change local store directory triggered");
+      setShowChangeDirectoryDialog(true);
     },
     onAbout: () => {
       console.log("[KitsView] Menu about triggered");
@@ -323,6 +332,15 @@ const KitsView = () => {
           </div>
         </div>
       )}
+
+      {/* Change Local Store Directory Dialog */}
+      <ChangeLocalStoreDirectoryDialog
+        isOpen={showChangeDirectoryDialog}
+        onClose={() => setShowChangeDirectoryDialog(false)}
+        onMessage={(msg) => {
+          showMessage(msg.text, msg.type, msg.duration);
+        }}
+      />
     </div>
   );
 };

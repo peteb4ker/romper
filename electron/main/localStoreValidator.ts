@@ -15,11 +15,12 @@ import {
 } from "./db/romperDbCoreORM.js";
 
 /**
- * Validates that a local store path exists and contains a valid Romper database.
+ * Basic validation that checks if a directory contains a Romper database structure.
+ * Does not perform deep schema validation - use validateLocalStoreAndDb for thorough validation.
  * @param localStorePath - The path to the local store directory
  * @returns Validation result with isValid flag, optional error message, and derived DB path
  */
-export function validateLocalStoreAndDb(
+export function validateLocalStoreBasic(
   localStorePath: string,
 ): LocalStoreValidationDetailedResult {
   try {
@@ -36,7 +37,11 @@ export function validateLocalStoreAndDb(
     // Check for .romperdb folder
     const romperDbDir = path.join(localStorePath, ".romperdb");
     if (!fs.existsSync(romperDbDir)) {
-      return { isValid: false, error: "Romper DB directory not found" };
+      return {
+        isValid: false,
+        error:
+          "This directory does not contain a valid Romper database (.romperdb folder).",
+      };
     }
 
     // Check for romper.sqlite file
@@ -45,6 +50,35 @@ export function validateLocalStoreAndDb(
       return { isValid: false, error: "Romper DB file not found" };
     }
 
+    return { isValid: true, romperDbPath };
+  } catch (error) {
+    return {
+      isValid: false,
+      error:
+        error instanceof Error ? error.message : "Unknown validation error",
+    };
+  }
+}
+
+/**
+ * Validates that a local store path exists and contains a valid Romper database.
+ * Performs thorough schema validation including database queries.
+ * @param localStorePath - The path to the local store directory
+ * @returns Validation result with isValid flag, optional error message, and derived DB path
+ */
+export function validateLocalStoreAndDb(
+  localStorePath: string,
+): LocalStoreValidationDetailedResult {
+  // First check basic structure
+  const basicValidation = validateLocalStoreBasic(localStorePath);
+  if (!basicValidation.isValid) {
+    return basicValidation;
+  }
+
+  const romperDbDir = path.join(localStorePath, ".romperdb");
+  const romperDbPath = basicValidation.romperDbPath!;
+
+  try {
     // Validate database schema
     const schemaValidation = validateDatabaseSchema(romperDbDir);
     if (!schemaValidation.success) {

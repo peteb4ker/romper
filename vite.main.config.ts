@@ -67,6 +67,7 @@ export default defineConfig({
         "unzipper",
         "play-sound",
       ],
+      preserveEntrySignatures: "strict",
       output: {
         entryFileNames: "[name].js",
       },
@@ -78,6 +79,22 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "."),
+        "node:crypto": "crypto",
+        "node:fs": "fs",
+        "node:path": "path",
+        "node:os": "os",
+        "node:util": "util",
+        "node:stream": "stream",
+        "node:buffer": "buffer",
+        "node:url": "url",
+        "node:events": "events",
+        "node:querystring": "querystring",
+        "node:child_process": "child_process",
+        "node:net": "net",
+        "node:tls": "tls",
+        "node:http": "http",
+        "node:https": "https",
+        "node:zlib": "zlib",
     },
   },
 });

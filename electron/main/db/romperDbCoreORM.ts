@@ -5,6 +5,10 @@ import { BetterSQLite3Database, drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import type { DbResult } from "../../../shared/db/schema.js";
 import type { Kit, NewKit, NewSample, Sample } from "../../../shared/db/schema.js";
@@ -12,6 +16,9 @@ import * as schema from "../../../shared/db/schema.js";
 export const DB_FILENAME = "romper.sqlite";
 
 const { kits, voices, samples, editActions } = schema;
+
+// Track which databases have been migration-checked this session
+const migrationCheckedDbs = new Set<string>();
 
 // Lightweight, idiomatic Drizzle connection helper
 function withDb<T>(
@@ -22,6 +29,18 @@ function withDb<T>(
   let sqlite: BetterSqlite3.Database | null = null;
 
   try {
+    // Ensure migrations are run once per database per session
+    if (!migrationCheckedDbs.has(dbPath) && fs.existsSync(dbPath)) {
+      console.log(`[DB] Ensuring migrations for database: ${dbPath}`);
+      const migrationResult = ensureDatabaseMigrations(dbDir);
+      if (migrationResult.success) {
+        console.log(`[DB] Migrations ensured for: ${dbPath}`);
+      } else {
+        console.warn(`[DB] Migration warning for ${dbPath}:`, migrationResult.error);
+      }
+      migrationCheckedDbs.add(dbPath);
+    }
+
     sqlite = new BetterSqlite3(dbPath);
     const db = drizzle(sqlite, { schema });
     const result = operation(db);
@@ -40,6 +59,76 @@ export function isDbCorruptionError(error: string): boolean {
   return /file is not a database|file is encrypted|malformed/i.test(error);
 }
 
+
+function getMigrationsPath(): string | null {
+  // Production: built output
+  const builtPath = path.join(__dirname, "db", "migrations");
+  if (fs.existsSync(builtPath)) {
+    console.log("[DB] Using built migrations path:", builtPath);
+    return builtPath;
+  }
+  // Development: source directory
+  const devPath = path.join(process.cwd(), "electron/main/db/migrations");
+  if (fs.existsSync(devPath)) {
+    console.log("[DB] Using dev migrations path:", devPath);
+    return devPath;
+  }
+  console.error("[DB] No migrations folder found at either built or dev path.");
+  return null;
+}
+
+// Run migrations to ensure database is up to date
+export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
+  const dbPath = path.join(dbDir, DB_FILENAME);
+  if (!fs.existsSync(dbPath)) {
+    console.log("[Main] Database does not exist, skipping migrations");
+    return { success: false, error: "Database file does not exist" };
+  }
+  let sqlite: BetterSqlite3.Database | null = null;
+  try {
+    sqlite = new BetterSqlite3(dbPath);
+    const db = drizzle(sqlite, { schema });
+    const migrationsPath = getMigrationsPath();
+    if (migrationsPath) {
+      console.log("[Main] Running migrations from:", migrationsPath);
+      migrate(db, { migrationsFolder: migrationsPath });
+      console.log("[Main] Migrations completed successfully");
+      return { success: true, data: true };
+    } else {
+      console.log("[Main] No migrations folder found - this is OK for existing databases");
+      return { success: true, data: false };
+    }
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    console.error("[Main] Migration error:", error);
+    return { success: false, error };
+  } finally {
+    if (sqlite) {
+      sqlite.close();
+    }
+  }
+}
+
+// Validate that database has the expected schema
+export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
+  return withDb(dbDir, (db) => {
+    try {
+      // Check if the main tables exist by running a simple query
+      db.select().from(kits).limit(1).all();
+      db.select().from(voices).limit(1).all();
+      db.select().from(samples).limit(1).all();
+      db.select().from(editActions).limit(1).all();
+
+      console.log("[Main] Database schema validation passed");
+      return true;
+    } catch (error) {
+      console.error("[Main] Database schema validation failed:", error);
+      throw new Error(`Database schema validation failed: ${error}`);
+    }
+  });
+}
+
+
 // Initialize database with schema using Drizzle migrations
 export function createRomperDbFile(dbDir: string): {
   success: boolean;
@@ -47,32 +136,40 @@ export function createRomperDbFile(dbDir: string): {
   error?: string;
 } {
   const dbPath = path.join(dbDir, DB_FILENAME);
-
   try {
     fs.mkdirSync(dbDir, { recursive: true });
-
     const sqlite = new BetterSqlite3(dbPath);
     const db = drizzle(sqlite, { schema });
-
-    // Use Drizzle migrations to create the schema
-    const migrationsPath = path.join(__dirname, "migrations");
-    migrate(db, { migrationsFolder: migrationsPath });
-
+    const migrationsPath = getMigrationsPath();
+    if (migrationsPath) {
+      console.log("[Main] Creating database with migrations path:", migrationsPath);
+      migrate(db, { migrationsFolder: migrationsPath });
+      console.log("[Main] Initial migrations completed successfully");
+    } else {
+      console.error("[Main] Migrations folder not found at any known location.");
+      sqlite.close();
+      return { success: false, error: `Migrations folder not found.` };
+    }
     sqlite.close();
+    // Validate the schema was created correctly
+    const validation = validateDatabaseSchema(dbDir);
+    if (!validation.success) {
+      console.error("[Main] Database validation failed after creation:", validation.error);
+      return { success: false, error: `Database validation failed: ${validation.error}` };
+    }
+    console.log("[Main] Database created and validated successfully");
     return { success: true, dbPath };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
-
+    console.error("[Main] Database creation error:", error);
     if (isDbCorruptionError(error)) {
       try {
-        // Simple sync deletion for recovery
         fs.unlinkSync(dbPath);
         return createRomperDbFile(dbDir);
       } catch {
         return { success: false, error };
       }
     }
-
     return { success: false, error };
   }
 }

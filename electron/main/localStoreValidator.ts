@@ -7,7 +7,7 @@ import type {
   LocalStoreValidationDetailedResult,
   Sample,
 } from "../../shared/schema.js";
-import { getAllSamples, getKits, getKitSamples } from "./db/romperDbCoreORM.js";
+import { getAllSamples, getKits, getKitSamples, validateDatabaseSchema } from "./db/romperDbCoreORM.js";
 
 /**
  * Validates that a local store path exists and contains a valid Romper database.
@@ -38,6 +38,15 @@ export function validateLocalStoreAndDb(
     const romperDbPath = path.join(romperDbDir, "romper.sqlite");
     if (!fs.existsSync(romperDbPath)) {
       return { isValid: false, error: "Romper DB file not found" };
+    }
+
+    // Validate database schema
+    const schemaValidation = validateDatabaseSchema(romperDbDir);
+    if (!schemaValidation.success) {
+      return {
+        isValid: false,
+        error: `Database schema validation failed: ${schemaValidation.error}`
+      };
     }
 
     return { isValid: true, romperDbPath };

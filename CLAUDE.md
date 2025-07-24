@@ -100,9 +100,10 @@ Based on the file you're working on, additional specific standards are automatic
 - Maintain test coverage during development
 
 ### Git Workflow
-- Use conventional commit messages (`feat:`, `fix:`, `refactor:`)
-- Include test status in commit messages
-- Reference task numbers in commits
+- Follow project commit standards (see CONTRIBUTING.md)
+- Reference task numbers when applicable
+- Mention test status if relevant
+- **IMPORTANT:** Do not add authorship or co-author tags to commit messages
 
 ## Key Documentation Links
 - [Product Requirements Document](./tasks/PRD.md) - Complete project vision

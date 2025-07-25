@@ -312,6 +312,17 @@ export function updateKit(
     );
     // Note: tags and description aren't in our schema yet
 
+    // Check if kit exists, create if it doesn't
+    const existingKit = db.select().from(kits).where(eq(kits.name, kitName)).get();
+    if (!existingKit) {
+      // Create the kit with default values
+      db.insert(kits).values({
+        name: kitName,
+        editable: true,
+        locked: false,
+      }).run();
+    }
+
     db.update(kits).set(updateData).where(eq(kits.name, kitName)).run();
   });
 }

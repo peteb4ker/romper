@@ -105,8 +105,14 @@ export function useKitStepSequencerLogic(
       const voiceSamples = samples[voiceNumber];
       const sample = voiceSamples?.[0]; // Use first sample from the voice
       
-      if (isStepActive && sample) {
-        onPlaySample(voiceNumber, sample);
+      // Debug logging to help diagnose issues
+      if (isStepActive) {
+        console.log(`[Sequencer] Step ${currentSeqStep} voice ${voiceNumber}: active=${isStepActive}, sample=${sample}, voiceSamples=`, voiceSamples);
+        if (sample) {
+          onPlaySample(voiceNumber, sample);
+        } else {
+          console.log(`[Sequencer] No sample available for voice ${voiceNumber}`);
+        }
       }
     }
   }, [isSeqPlaying, currentSeqStep, stepPattern, samples, onPlaySample]);
@@ -128,13 +134,20 @@ export function useKitStepSequencerLogic(
   const toggleStep = React.useCallback(
     (voiceIdx: number, stepIdx: number) => {
       if (!stepPattern) return;
+      const oldVelocity = stepPattern[voiceIdx][stepIdx];
+      const newVelocity = oldVelocity > 0 ? 0 : 127;
+      
+      console.log(`[Sequencer] Toggling step voice ${voiceIdx + 1}, step ${stepIdx}: ${oldVelocity} -> ${newVelocity}`);
+      
       const newPattern = stepPattern.map((row, v) =>
         v === voiceIdx
           ? row.map((velocity, s) =>
-              s === stepIdx ? (velocity > 0 ? 0 : 127) : velocity,
+              s === stepIdx ? newVelocity : velocity,
             )
           : row,
       );
+      
+      console.log(`[Sequencer] New pattern for voice ${voiceIdx + 1}:`, newPattern[voiceIdx]);
       setStepPattern(newPattern);
     },
     [stepPattern, setStepPattern],

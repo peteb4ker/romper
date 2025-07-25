@@ -127,6 +127,9 @@ export function useKitMetadata(props: KitDetailsProps) {
   const updateStepPattern = async (pattern: number[][]) => {
     if (!window.electronAPI?.updateStepPattern || !dbDir || !kitName) return;
 
+    console.log(`[useKitMetadata] Saving step pattern for ${kitName}:`, pattern);
+
+    // Update UI state immediately for responsive feedback
     setStepPatternState(pattern);
 
     try {
@@ -135,15 +138,21 @@ export function useKitMetadata(props: KitDetailsProps) {
         kitName,
         pattern,
       );
-      if (result.success) {
-        await loadKitMetadata(); // Reload to get updated data
-      } else {
+      if (!result.success) {
+        console.error(`[useKitMetadata] Failed to save step pattern:`, result.error);
         setError(result.error || "Failed to update step pattern");
+        // Revert UI state on failure
+        await loadKitMetadata();
+      } else {
+        console.log(`[useKitMetadata] Successfully saved step pattern for ${kitName}`);
       }
     } catch (e) {
+      console.error(`[useKitMetadata] Exception saving step pattern:`, e);
       setError(
         e instanceof Error ? e.message : "Failed to update step pattern",
       );
+      // Revert UI state on failure
+      await loadKitMetadata();
     }
   };
 
@@ -315,9 +324,10 @@ export function useKitMetadata(props: KitDetailsProps) {
     metadataChanged,
     setMetadataChanged,
     stepPattern, // Return raw velocity values for direct access
-    setStepPattern: async (velocityPattern: number[][]) => {
-      // Accept velocity pattern directly
-      await updateStepPattern(velocityPattern);
+    setStepPattern: (velocityPattern: number[][]) => {
+      // Accept velocity pattern directly - call async function but don't await
+      // This allows the UI to update immediately while the DB save happens in background
+      updateStepPattern(velocityPattern);
     },
     // Compatibility methods for existing components
     kitLabel: kitMetadata

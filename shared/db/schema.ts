@@ -9,11 +9,20 @@ import {
 } from "drizzle-orm/sqlite-core";
 // Using text({ mode: 'json' }) for step patterns - much simpler than custom encoding!
 
+// Banks table - contains artist metadata for each bank (A-Z)
+export const banks = sqliteTable("banks", {
+  letter: text("letter").primaryKey(), // A, B, C, etc.
+  artist: text("artist"), // Artist name extracted from RTF filename
+  rtf_filename: text("rtf_filename"), // Original RTF filename for reference
+  scanned_at: integer("scanned_at", { mode: "timestamp" }), // When bank was last scanned
+});
+
 // Kits table - main table for kit information
 export const kits = sqliteTable("kits", {
   name: text("name").primaryKey(), // Natural key (A0, B1, etc.)
+  bank_letter: text("bank_letter").references(() => banks.letter), // FK to banks.letter (derived from kit name)
   alias: text("alias"), // Optional human-readable name
-  artist: text("artist"), // Optional artist name
+  artist: text("artist"), // DEPRECATED: Use bank.artist instead, kept for migration
   editable: integer("editable", { mode: "boolean" }).notNull().default(false), // New architecture: editable mode
   locked: integer("locked", { mode: "boolean" }).notNull().default(false), // Kit locking for protection
   step_pattern: text("step_pattern", { mode: "json" }).$type<
@@ -59,6 +68,9 @@ export const editActions = sqliteTable("edit_actions", {
 });
 
 // Export types inferred from schema
+export type Bank = typeof banks.$inferSelect;
+export type NewBank = typeof banks.$inferInsert;
+
 export type Kit = typeof kits.$inferSelect;
 export type NewKit = typeof kits.$inferInsert;
 
@@ -101,7 +113,15 @@ export interface LocalStoreValidationDetailedResult {
 }
 
 // Relations (for Drizzle query capabilities)
-export const kitsRelations = relations(kits, ({ many }) => ({
+export const banksRelations = relations(banks, ({ many }) => ({
+  kits: many(kits),
+}));
+
+export const kitsRelations = relations(kits, ({ one, many }) => ({
+  bank: one(banks, {
+    fields: [kits.bank_letter],
+    references: [banks.letter],
+  }),
   voices: many(voices),
   samples: many(samples),
   editActions: many(editActions),

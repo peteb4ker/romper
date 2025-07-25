@@ -63,6 +63,8 @@ Based on the file you're working on, additional specific standards are automatic
 - **TypeScript strict**: Zero compilation errors required
 - **Reference-only samples**: Store paths, don't copy files until sync
 - **80% test coverage**: Maintain high coverage across codebase
+- **NO trailing whitespace**: Never add whitespace at the end of lines
+- **Keep code DRY**: Avoid unnecessary complexity, duplication, or code bloat
 
 ## Current Architecture Concepts
 

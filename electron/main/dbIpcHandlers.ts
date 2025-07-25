@@ -8,10 +8,12 @@ import {
   addSample,
   createRomperDbFile,
   deleteSamples,
+  getAllBanks,
   getAllSamples,
   getKit,
   getKits,
   getKitSamples as getAllSamplesForKit,
+  updateBank,
   updateKit,
   updateVoiceAlias,
 } from "./db/romperDbCoreORM.js";
@@ -182,4 +184,65 @@ export function registerDbIpcHandlers() {
       return deleteSamples(dbDir, kitName);
     },
   );
+
+  // Bank operations
+  ipcMain.handle("get-all-banks", async (_event, dbDir: string) => {
+    return getAllBanks(dbDir);
+  });
+
+  ipcMain.handle(
+    "scan-banks",
+    async (_event, dbDir: string, localStorePath: string) => {
+      try {
+        // Scan local store root for RTF files matching "A - Artist Name.rtf" pattern
+        if (!fs.existsSync(localStorePath)) {
+          return { success: false, error: `Local store path not found: ${localStorePath}` };
+        }
+
+        const files = fs.readdirSync(localStorePath);
+        const rtfFiles = files.filter((file) => 
+          /^[A-Z] - .+\.rtf$/i.test(file)
+        );
+
+        let updatedBanks = 0;
+        const scannedAt = new Date();
+
+        for (const rtfFile of rtfFiles) {
+          // Extract bank letter and artist name from filename
+          const match = /^([A-Z]) - (.+)\.rtf$/i.exec(rtfFile);
+          if (match) {
+            const bankLetter = match[1].toUpperCase();
+            const artistName = match[2];
+
+            // Update bank in database
+            const updateResult = updateBank(dbDir, bankLetter, {
+              artist: artistName,
+              rtf_filename: rtfFile,
+              scanned_at: scannedAt,
+            });
+
+            if (updateResult.success) {
+              updatedBanks++;
+            }
+          }
+        }
+
+        return {
+          success: true,
+          data: {
+            scannedFiles: rtfFiles.length,
+            updatedBanks,
+            scannedAt,
+          },
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          error: `Failed to scan banks: ${errorMessage}`,
+        };
+      }
+    },
+  );
+
 }

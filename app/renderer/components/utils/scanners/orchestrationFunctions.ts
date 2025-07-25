@@ -57,6 +57,7 @@ export async function executeFullKitScan(
             const analysis = await scanWAVAnalysis({
               wavData,
               filePath,
+              fileReader,
             });
 
             if (analysis.success && analysis.data) {
@@ -168,6 +169,7 @@ export async function executeWAVAnalysisScan(
             const analysis = await scanWAVAnalysis({
               wavData,
               filePath,
+              fileReader,
             });
 
             if (analysis.success && analysis.data) {

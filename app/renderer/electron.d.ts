@@ -1,5 +1,6 @@
 // Import shared types from the schema file
 import type {
+  Bank,
   DbResult,
   Kit,
   KitValidationError,
@@ -10,6 +11,7 @@ import type {
 } from "../../shared/db/schema.js";
 
 export {
+  Bank,
   DbResult,
   KitValidationError,
   LocalStoreValidationDetailedResult,
@@ -156,6 +158,14 @@ export interface ElectronAPI {
     kitName: string,
   ) => Promise<DbResult<{ scannedSamples: number; updatedVoices: number }>>;
   openExternal?: (url: string) => Promise<void>;
+  // Bank operations
+  getAllBanks?: (dbDir: string) => Promise<DbResult<Bank[]>>;
+  scanBanks?: (
+    dbDir: string,
+    localStorePath: string,
+  ) => Promise<DbResult<{ scannedFiles: number; updatedBanks: number; scannedAt: Date }>>;
+  // Existing local store selection
+  selectExistingLocalStore?: () => Promise<{ success: boolean; path: string | null; error: string | null }>;
 }
 
 declare global {

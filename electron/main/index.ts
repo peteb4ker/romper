@@ -36,13 +36,17 @@ const preloadPath = path.resolve(__dirname, "../preload/index.mjs");
 console.log(" Electron will use preload:", preloadPath);
 
 function createWindow() {
-  console.log("[Electron Main] Environment variables:");
-  console.log("  ROMPER_SDCARD_PATH:", process.env.ROMPER_SDCARD_PATH);
-  console.log("  ROMPER_LOCAL_PATH:", process.env.ROMPER_LOCAL_PATH);
+  console.log("[Electron Main] Environment variables check:");
+  console.log("  ROMPER_SDCARD_PATH:", process.env.ROMPER_SDCARD_PATH || "(not set)");
+  console.log("  ROMPER_LOCAL_PATH:", process.env.ROMPER_LOCAL_PATH || "(not set)");
   console.log(
     "  ROMPER_SQUARP_ARCHIVE_URL:",
-    process.env.ROMPER_SQUARP_ARCHIVE_URL,
+    process.env.ROMPER_SQUARP_ARCHIVE_URL || "(not set)",
   );
+  
+  if (process.env.ROMPER_LOCAL_PATH) {
+    console.log("[Electron Main] Environment override: Using ROMPER_LOCAL_PATH for local store");
+  }
 
   const win: BrowserWindow = new BrowserWindow({
     width: 1200,
@@ -80,15 +84,42 @@ function createWindow() {
 
 function loadSettings(): Settings {
   const userDataPath = app.getPath("userData");
-  const settingsPath = path.join(userDataPath, "settings.json");
+  const newSettingsPath = path.join(userDataPath, "romper-settings.json");
+  const oldSettingsPath = path.join(userDataPath, "settings.json");
+  
+  // Migration: rename old settings file if it exists and new one doesn't
+  if (fs.existsSync(oldSettingsPath) && !fs.existsSync(newSettingsPath)) {
+    try {
+      fs.renameSync(oldSettingsPath, newSettingsPath);
+      console.log("[Startup] Migrated settings.json to romper-settings.json");
+    } catch (error) {
+      console.warn("[Startup] Failed to migrate settings file:", error);
+    }
+  }
+  
+  const settingsPath = newSettingsPath;
+  
+  // Log settings file status only if there are issues
+  if (!fs.existsSync(settingsPath)) {
+    console.log("[Startup] Settings file not found:", settingsPath);
+  }
+  
   let settings: Settings = {};
   if (fs.existsSync(settingsPath)) {
     try {
       const fileContent = fs.readFileSync(settingsPath, "utf-8");
+      // Only log content details if file is empty or corrupted
+      if (fileContent.length <= 2) {
+        console.log("[Startup] Settings file appears empty or corrupted:", fileContent);
+      }
+      
       const parsed = JSON.parse(fileContent);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         settings = parsed as Settings;
-        console.info("[Startup] Settings loaded from file:", settings);
+        // Only log settings details if localStorePath is missing or for debugging
+        if (!settings.localStorePath) {
+          console.info("[Startup] Settings loaded but no local store configured");
+        }
       } else {
         console.warn(
           "[Startup] Settings file did not contain an object. Using empty settings.",
@@ -100,33 +131,24 @@ function loadSettings(): Settings {
         error,
       );
     }
-  } else {
-    console.warn(
-      "[Startup] Settings file not found. Starting with empty settings.",
-    );
   }
   return settings;
 }
 
 function validateAndFixLocalStore(settings: Settings): Settings {
   const userDataPath = app.getPath("userData");
-  const settingsPath = path.join(userDataPath, "settings.json");
+  const settingsPath = path.join(userDataPath, "romper-settings.json");
+  
+  
   if (settings.localStorePath) {
-    console.log(
-      "[Startup] Validating saved local store path:",
-      settings.localStorePath,
-    );
     const validation = validateLocalStoreAndDb(settings.localStorePath);
-    if (validation.isValid) {
-      console.info("[Startup] Local store validated successfully:", {
-        localStorePath: settings.localStorePath,
-      });
-    } else {
-      console.warn(
-        "[Startup] Saved local store path is invalid:",
-        validation.error,
-      );
-      console.warn("[Startup] Clearing invalid local store settings");
+    
+    if (!validation.isValid) {
+      console.warn("[Startup] ✗ Saved local store path is invalid");
+      console.warn("  - Path:", settings.localStorePath);
+      console.warn("  - Error:", validation.error);
+      console.warn("[Startup] Removing invalid path from settings...");
+      
       delete settings.localStorePath;
       try {
         fs.writeFileSync(
@@ -134,27 +156,19 @@ function validateAndFixLocalStore(settings: Settings): Settings {
           JSON.stringify(settings, null, 2),
           "utf-8",
         );
-        console.log(
-          "[Startup] Invalid local store path removed from settings file.",
-        );
+        console.log("[Startup] Invalid local store path removed from settings file");
       } catch (writeError) {
         console.error("[Startup] Failed to update settings file:", writeError);
       }
     }
-  } else {
-    console.log("[Startup] No local store path found in settings.");
   }
+  
   return settings;
 }
 
 function registerAllIpcHandlers(settings: Settings) {
-  console.log(
-    "[Startup] Registering IPC handlers with settings:",
-    Object.keys(settings),
-  );
   registerIpcHandlers(settings);
   registerDbIpcHandlers();
-  console.log("[Startup] IPC handlers registered");
 }
 
 app.whenReady().then(async () => {
@@ -168,6 +182,16 @@ app.whenReady().then(async () => {
     // Load and validate settings
     inMemorySettings = loadSettings();
     inMemorySettings = validateAndFixLocalStore(inMemorySettings);
+
+    // Final summary of local store configuration
+    console.log("[Startup] Final local store configuration:");
+    if (process.env.ROMPER_LOCAL_PATH) {
+      console.log("  - Using environment override:", process.env.ROMPER_LOCAL_PATH);
+    } else if (inMemorySettings.localStorePath) {
+      console.log("  - Using settings file path:", inMemorySettings.localStorePath);
+    } else {
+      console.log("  - No local store configured - wizard will be shown");
+    }
 
     // Register IPC handlers
     registerAllIpcHandlers(inMemorySettings);

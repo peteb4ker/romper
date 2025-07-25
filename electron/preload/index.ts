@@ -274,6 +274,19 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] rescanKit invoked", dbDir, localStorePath, kitName);
     return ipcRenderer.invoke("rescan-kit", dbDir, localStorePath, kitName);
   },
+  // Bank operations
+  getAllBanks: (dbDir: string) => {
+    console.log("[IPC] getAllBanks invoked", dbDir);
+    return ipcRenderer.invoke("get-all-banks", dbDir);
+  },
+  scanBanks: (dbDir: string, localStorePath: string) => {
+    console.log("[IPC] scanBanks invoked", dbDir, localStorePath);
+    return ipcRenderer.invoke("scan-banks", dbDir, localStorePath);
+  },
+  selectExistingLocalStore: () => {
+    console.log("[IPC] selectExistingLocalStore invoked");
+    return ipcRenderer.invoke("select-existing-local-store");
+  },
 });
 
 // Handle menu events from main process and forward to renderer as DOM events

@@ -104,14 +104,19 @@ export function useKitStepSequencerLogic(
       const isStepActive = stepPattern[voiceIdx][currentSeqStep] > 0; // Check if velocity > 0
       const voiceSamples = samples[voiceNumber];
       const sample = voiceSamples?.[0]; // Use first sample from the voice
-      
+
       // Debug logging to help diagnose issues
       if (isStepActive) {
-        console.log(`[Sequencer] Step ${currentSeqStep} voice ${voiceNumber}: active=${isStepActive}, sample=${sample}, voiceSamples=`, voiceSamples);
+        console.log(
+          `[Sequencer] Step ${currentSeqStep} voice ${voiceNumber}: active=${isStepActive}, sample=${sample}, voiceSamples=`,
+          voiceSamples,
+        );
         if (sample) {
           onPlaySample(voiceNumber, sample);
         } else {
-          console.log(`[Sequencer] No sample available for voice ${voiceNumber}`);
+          console.log(
+            `[Sequencer] No sample available for voice ${voiceNumber}`,
+          );
         }
       }
     }
@@ -136,18 +141,21 @@ export function useKitStepSequencerLogic(
       if (!stepPattern) return;
       const oldVelocity = stepPattern[voiceIdx][stepIdx];
       const newVelocity = oldVelocity > 0 ? 0 : 127;
-      
-      console.log(`[Sequencer] Toggling step voice ${voiceIdx + 1}, step ${stepIdx}: ${oldVelocity} -> ${newVelocity}`);
-      
+
+      console.log(
+        `[Sequencer] Toggling step voice ${voiceIdx + 1}, step ${stepIdx}: ${oldVelocity} -> ${newVelocity}`,
+      );
+
       const newPattern = stepPattern.map((row, v) =>
         v === voiceIdx
-          ? row.map((velocity, s) =>
-              s === stepIdx ? newVelocity : velocity,
-            )
+          ? row.map((velocity, s) => (s === stepIdx ? newVelocity : velocity))
           : row,
       );
-      
-      console.log(`[Sequencer] New pattern for voice ${voiceIdx + 1}:`, newPattern[voiceIdx]);
+
+      console.log(
+        `[Sequencer] New pattern for voice ${voiceIdx + 1}:`,
+        newPattern[voiceIdx],
+      );
       setStepPattern(newPattern);
     },
     [stepPattern, setStepPattern],

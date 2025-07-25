@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
+import { getBankNames } from "../utils/bankOperations";
 import {
   executeFullKitScan,
   executeVoiceInferenceScan,
@@ -127,7 +128,10 @@ export function useKitMetadata(props: KitDetailsProps) {
   const updateStepPattern = async (pattern: number[][]) => {
     if (!window.electronAPI?.updateStepPattern || !dbDir || !kitName) return;
 
-    console.log(`[useKitMetadata] Saving step pattern for ${kitName}:`, pattern);
+    console.log(
+      `[useKitMetadata] Saving step pattern for ${kitName}:`,
+      pattern,
+    );
 
     // Update UI state immediately for responsive feedback
     setStepPatternState(pattern);
@@ -139,12 +143,17 @@ export function useKitMetadata(props: KitDetailsProps) {
         pattern,
       );
       if (!result.success) {
-        console.error(`[useKitMetadata] Failed to save step pattern:`, result.error);
+        console.error(
+          `[useKitMetadata] Failed to save step pattern:`,
+          result.error,
+        );
         setError(result.error || "Failed to update step pattern");
         // Revert UI state on failure
         await loadKitMetadata();
       } else {
-        console.log(`[useKitMetadata] Successfully saved step pattern for ${kitName}`);
+        console.log(
+          `[useKitMetadata] Successfully saved step pattern for ${kitName}`,
+        );
       }
     } catch (e) {
       console.error(`[useKitMetadata] Exception saving step pattern:`, e);
@@ -225,7 +234,12 @@ export function useKitMetadata(props: KitDetailsProps) {
 
     try {
       const safeVoices = voices || { 1: [], 2: [], 3: [], 4: [] };
-      const kitPath = `${dbDir}/${kitName}`;
+      const actualLocalStorePath = localStorePath || contextLocalStorePath;
+      if (!actualLocalStorePath) {
+        throw new Error("Local store path is required for scanning");
+      }
+      
+      const kitPath = `${actualLocalStorePath}/${kitName}`;
 
       // Get all WAV files from samples
       const wavFiles: string[] = [];
@@ -237,11 +251,12 @@ export function useKitMetadata(props: KitDetailsProps) {
         });
       });
 
-      // Get RTF files (artist metadata files)
+      // Get RTF files (artist metadata files) using proper bank scanning
+      const bankNames = await getBankNames(actualLocalStorePath);
+      const bankName = kitName.charAt(0).toUpperCase();
       const rtfFiles: string[] = [];
-      const bankName = kitName.charAt(0);
-      if (bankName >= "A" && bankName <= "Z") {
-        rtfFiles.push(`${dbDir}/${bankName}.rtf`);
+      if (bankNames[bankName]) {
+        rtfFiles.push(`${actualLocalStorePath}/${bankName} - ${bankNames[bankName]}.rtf`);
       }
 
       // Adapt electron API fileReader to scanner interface

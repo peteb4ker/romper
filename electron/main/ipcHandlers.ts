@@ -31,7 +31,7 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("write-settings", (_event, key: string, value: any) => {
     console.log("[Main] write-settings called with key:", key, "value:", value);
     const userDataPath = app.getPath("userData");
-    const settingsPath = path.join(userDataPath, "settings.json");
+    const settingsPath = path.join(userDataPath, "romper-settings.json");
     console.log("[Main] Settings path:", settingsPath);
     inMemorySettings[key] = value;
     console.log("[Main] Updated inMemorySettings:", inMemorySettings);
@@ -213,6 +213,33 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
     });
     if (result.canceled || !result.filePaths.length) return null;
     return result.filePaths[0];
+  });
+
+  ipcMain.handle("select-existing-local-store", async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ["openDirectory"],
+      title: "Choose Existing Local Store",
+      message: "Select a folder that contains a .romperdb directory",
+    });
+    
+    if (result.canceled || !result.filePaths[0]) {
+      return { success: false, path: null, error: "Selection cancelled" };
+    }
+    
+    const selectedPath = result.filePaths[0];
+    
+    // Validate that the selected path contains a .romperdb directory
+    const validation = validateLocalStoreAndDb(selectedPath);
+    
+    if (validation.isValid) {
+      return { success: true, path: selectedPath, error: null };
+    } else {
+      return { 
+        success: false, 
+        path: null, 
+        error: validation.error || "Selected directory does not contain a valid Romper database" 
+      };
+    }
   });
   ipcMain.handle(
     "download-and-extract-archive",

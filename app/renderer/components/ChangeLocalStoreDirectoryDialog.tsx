@@ -8,6 +8,7 @@ import {
 } from "react-icons/fi";
 
 import { useSettings } from "../utils/SettingsContext";
+import FilePickerButton from "./utils/FilePickerButton";
 
 interface ChangeLocalStoreDirectoryDialogProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
 > = ({ isOpen, onClose, onMessage }) => {
   const { localStorePath, setLocalStorePath } = useSettings();
   const [isValidating, setIsValidating] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [validationResult, setValidationResult] = useState<{
     isValid: boolean;
@@ -28,6 +30,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleSelectDirectory = async () => {
+    setIsSelecting(true);
     try {
       if (!window.electronAPI?.selectLocalStorePath) {
         throw new Error("Directory selection not available");
@@ -45,6 +48,8 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
         text: `Failed to select directory: ${error instanceof Error ? error.message : String(error)}`,
         type: "error",
       });
+    } finally {
+      setIsSelecting(false);
     }
   };
 
@@ -147,7 +152,9 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
             <div className="p-4 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700">
               <p className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all">
                 {localStorePath || (
-                  <span className="text-gray-500 dark:text-gray-400 italic">Not set</span>
+                  <span className="text-gray-500 dark:text-gray-400 italic">
+                    Not set
+                  </span>
                 )}
               </p>
             </div>
@@ -158,16 +165,19 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Select New Directory
             </h3>
-            
+
             {/* Directory path and button row */}
             <div className="flex gap-3 items-start">
               <div className="flex-1">
                 {selectedPath ? (
-                  <div className={`p-3 rounded-lg border ${
-                    validationResult?.isValid && selectedPath !== localStorePath
-                      ? "border-green-300 bg-green-50 dark:border-green-500 dark:bg-green-900/20"
-                      : "border-gray-200 bg-gray-50 dark:border-slate-600 dark:bg-slate-700"
-                  }`}>
+                  <div
+                    className={`p-3 rounded-lg border ${
+                      validationResult?.isValid &&
+                      selectedPath !== localStorePath
+                        ? "border-green-300 bg-green-50 dark:border-green-500 dark:bg-green-900/20"
+                        : "border-gray-200 bg-gray-50 dark:border-slate-600 dark:bg-slate-700"
+                    }`}
+                  >
                     <p className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all">
                       {selectedPath}
                     </p>
@@ -180,70 +190,77 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
                   </div>
                 )}
               </div>
-              
-              <button
+
+              <FilePickerButton
                 onClick={handleSelectDirectory}
-                className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium whitespace-nowrap"
+                className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 font-medium whitespace-nowrap"
                 disabled={isValidating || isUpdating}
+                isSelecting={isSelecting}
+                icon={<FiFolder size={18} />}
               >
-                {isValidating ? (
-                  <FiRefreshCw className="animate-spin" size={18} />
-                ) : (
-                  <FiFolder size={18} />
-                )}
-                {isValidating ? "Validating..." : "Choose Directory"}
-              </button>
+                Choose Directory
+              </FilePickerButton>
             </div>
 
             {/* Validation Messages - Only show warnings/errors */}
             {validationResult && selectedPath === localStorePath && (
               <div className="flex items-center gap-2 p-3 rounded-lg border border-yellow-300 bg-yellow-50 dark:border-yellow-500 dark:bg-yellow-900/20">
-                <FiAlertTriangle className="text-yellow-600 dark:text-yellow-400 flex-shrink-0" size={16} />
+                <FiAlertTriangle
+                  className="text-yellow-600 dark:text-yellow-400 flex-shrink-0"
+                  size={16}
+                />
                 <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  This is the same as your current directory. Choose a different directory to make changes.
+                  This is the same as your current directory. Choose a different
+                  directory to make changes.
                 </p>
               </div>
             )}
 
-            {validationResult && selectedPath !== localStorePath && !validationResult.isValid && (
-              <div className="flex items-center gap-2 p-3 rounded-lg border border-red-300 bg-red-50 dark:border-red-500 dark:bg-red-900/20">
-                <FiAlertTriangle className="text-red-600 dark:text-red-400 flex-shrink-0" size={16} />
-                <p className="text-sm text-red-700 dark:text-red-300">
-                  {validationResult.error || "This directory does not contain a valid Romper database."}
-                </p>
-              </div>
-            )}
+            {validationResult &&
+              selectedPath !== localStorePath &&
+              !validationResult.isValid && (
+                <div className="flex items-center gap-2 p-3 rounded-lg border border-red-300 bg-red-50 dark:border-red-500 dark:bg-red-900/20">
+                  <FiAlertTriangle
+                    className="text-red-600 dark:text-red-400 flex-shrink-0"
+                    size={16}
+                  />
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    {validationResult.error ||
+                      "This directory does not contain a valid Romper database."}
+                  </p>
+                </div>
+              )}
           </div>
         </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-600">
-            <button
-              onClick={handleClose}
-              className="px-6 py-2.5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 font-medium transition-colors"
-              disabled={isUpdating}
-            >
-              Cancel
-            </button>
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-600">
+          <button
+            onClick={handleClose}
+            className="px-6 py-2.5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 font-medium transition-colors"
+            disabled={isUpdating}
+          >
+            Cancel
+          </button>
 
-            <button
-              onClick={handleUpdateDirectory}
-              className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-colors"
-              disabled={
-                !selectedPath || 
-                !validationResult?.isValid || 
-                isUpdating || 
-                selectedPath === localStorePath
-              }
-            >
-              {isUpdating ? (
-                <FiRefreshCw className="animate-spin" size={16} />
-              ) : (
-                <FiCheckCircle size={16} />
-              )}
-              {isUpdating ? "Updating..." : "Update Directory"}
-            </button>
-          </div>
+          <button
+            onClick={handleUpdateDirectory}
+            className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-colors"
+            disabled={
+              !selectedPath ||
+              !validationResult?.isValid ||
+              isUpdating ||
+              selectedPath === localStorePath
+            }
+          >
+            {isUpdating ? (
+              <FiRefreshCw className="animate-spin" size={16} />
+            ) : (
+              <FiCheckCircle size={16} />
+            )}
+            {isUpdating ? "Updating..." : "Update Directory"}
+          </button>
+        </div>
       </div>
     </div>
   );

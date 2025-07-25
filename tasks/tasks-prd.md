@@ -160,6 +160,22 @@ _Last updated: 2025-07-17_
   - [x] 4.3 Progress indicators for scanning operations
   - [x] 4.4 Error handling for scan operations
 
+- [ ] 4.5 Bank-Based Scanning Architecture (New)
+  - [x] 4.5.1 Add banks table to database schema (A-Z with artist metadata)
+  - [x] 4.5.2 Initialize 26 banks during database creation
+  - [ ] 4.5.3 Implement bank scanning separate from kit scanning
+    - [ ] 4.5.3.1 Scan local store root for RTF files matching "A - Artist Name.rtf" pattern
+    - [ ] 4.5.3.2 Update banks table with artist metadata from RTF filenames
+    - [ ] 4.5.3.3 Add IPC handler for bank scanning operations
+  - [ ] 4.5.4 Update kit scanning to exclude RTF operations
+    - [ ] 4.5.4.1 Remove RTF scanning from individual kit scan operations
+    - [ ] 4.5.4.2 Update kit metadata to reference bank.artist instead of kit.artist
+    - [ ] 4.5.4.3 Keep kit.artist field for backwards compatibility during transition
+  - [ ] 4.5.5 Update UI to use bank-based artist display
+    - [ ] 4.5.5.1 Kit browser shows artist from bank relationship
+    - [ ] 4.5.5.2 Kit details page shows artist from bank
+    - [ ] 4.5.5.3 Remove old RTF scanning UI references
+
 - [ ] 5.0 Kit Editing and Slot Management (New Architecture)
   - [ ] 5.1 Implement editable mode system:
     - [ ] 5.1.1 Default ON for user kits, OFF for factory/imported kits
@@ -338,6 +354,28 @@ _Last updated: 2025-07-17_
   - [x] 15.4.1 After a successful update, automatically refresh the app with the new directory (no restart required)
   - [x] 15.4.2 Show success message confirming the directory change and app refresh
 
+## 16.0 Settings File and Local Store Recovery Fixes
+
+- [ ] 16.1 Fix settings file naming collision
+  - [ ] 16.1.1 Change settings filename from `settings.json` to `romper-settings.json` to avoid conflicts with other Electron apps
+  - [ ] 16.1.2 Update all settings read/write operations to use new filename
+  - [ ] 16.1.3 Add migration logic to rename existing `settings.json` to `romper-settings.json` if present
+  - [ ] 16.1.4 Update settings path logging to show new filename
+
+- [ ] 16.2 Implement "Choose Existing Local Store" functionality
+  - [ ] 16.2.1 Add "Choose Existing Local Store" button to bottom-right corner of local store setup wizard
+  - [ ] 16.2.2 Create dialog/modal for browsing and selecting existing `.romperdb` directory
+  - [ ] 16.2.3 Validate selected directory contains valid romper database structure
+  - [ ] 16.2.4 Save selected path to romper-settings.json and refresh app state
+  - [ ] 16.2.5 Add "Back to Setup" button to return to normal wizard flow if needed
+  - [ ] 16.2.6 Only show this option when no valid local store is configured (not in menu-driven change flow)
+
+- [ ] 16.3 Enhanced error recovery for lost settings
+  - [ ] 16.3.1 Detect when settings file exists but is empty or corrupt
+  - [ ] 16.3.2 Provide clear user guidance when settings need to be reconfigured
+  - [ ] 16.3.3 Preserve any valid settings during recovery operations
+  - [ ] 16.3.4 Add validation of recovered settings before accepting them
+
 
 ---
-_Last updated: 2025-07-17_
+_Last updated: 2025-07-25_

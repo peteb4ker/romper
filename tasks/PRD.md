@@ -53,6 +53,9 @@ The three main user journeys are:
 #### Setup Edge Cases & Recovery
 - **Corrupted SD card**: Auto-detect corruption, offer factory samples as fallback
 - **Network failure during download**: Resume download, offer retry with exponential backoff
+- **Settings file collision**: Use romper-specific settings filename to avoid conflicts with other Electron apps
+- **Lost/corrupt settings**: Provide "Choose Existing Local Store" option when user already has a local store but settings are missing
+- **Existing local store recovery**: Allow user to browse and select existing `.romperdb` directory when settings are lost
 - **Insufficient space**: Calculate space needed, guide user to free space or choose different location
 - **Permission denied**: Guide user to fix permissions or choose accessible location
 - **Partial previous installation**: Detect existing state, offer to clean up or resume

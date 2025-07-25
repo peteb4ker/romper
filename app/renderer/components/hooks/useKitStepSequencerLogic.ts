@@ -98,11 +98,15 @@ export function useKitStepSequencerLogic(
 
     lastStepRef.current = currentSeqStep;
 
+    // Use explicit voice numbers 1-4 to match the voice_number field architecture
     for (let voiceIdx = 0; voiceIdx < NUM_VOICES; voiceIdx++) {
+      const voiceNumber = voiceIdx + 1; // Convert 0-based index to 1-based voice number
       const isStepActive = stepPattern[voiceIdx][currentSeqStep] > 0; // Check if velocity > 0
-      const sample = samples[voiceIdx + 1]?.[0];
+      const voiceSamples = samples[voiceNumber];
+      const sample = voiceSamples?.[0]; // Use first sample from the voice
+      
       if (isStepActive && sample) {
-        onPlaySample(voiceIdx + 1, sample);
+        onPlaySample(voiceNumber, sample);
       }
     }
   }, [isSeqPlaying, currentSeqStep, stepPattern, samples, onPlaySample]);

@@ -51,7 +51,7 @@ const FilePickerButton: React.FC<FilePickerButtonProps> = ({
     >
       {isSelecting ? (
         <>
-          <Spinner size={18} className="mr-2" /> {selectingText}
+          <Spinner size={18} className="mr-2" data-testid="spinner" /> {selectingText}
         </>
       ) : (
         <>

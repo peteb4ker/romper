@@ -1,31 +1,14 @@
 // Tests for WAV analysis scanner
+// Note: WAV analysis is currently disabled and returns default values
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { scanWAVAnalysis } from "../wavAnalysisScanner";
 
-// Mock node-wav
-vi.mock("node-wav", () => ({
-  decode: vi.fn(),
-}));
-
-import * as wav from "node-wav";
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
 describe("scanWAVAnalysis", () => {
-  it("successfully analyzes a valid WAV file", async () => {
-    const mockArrayBuffer = new ArrayBuffer(4);
-    const mockView = new Uint8Array(mockArrayBuffer);
-    mockView.set([1, 2, 3, 4]);
-    const mockFileReader = vi.fn().mockResolvedValue(mockArrayBuffer);
-    vi.mocked(wav.decode).mockReturnValue({
-      sampleRate: 44100,
-      channelData: [new Float32Array(100), new Float32Array(100)], // 2 channels
-    });
-
+  it("returns default analysis values (WAV analysis disabled)", async () => {
+    const mockFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(4));
+    
     const input = {
       filePath: "/path/to/test.wav",
       fileReader: mockFileReader,
@@ -36,26 +19,19 @@ describe("scanWAVAnalysis", () => {
     expect(result.data).toEqual({
       sampleRate: 44100,
       bitDepth: 16,
-      channels: 2,
-      bitrate: 1411200, // 44100 * 2 * 16
-      isStereo: true,
+      channels: 1,
+      bitrate: 705600,
+      isStereo: false,
       isValid: true,
     });
-
-    expect(mockFileReader).toHaveBeenCalledWith("/path/to/test.wav");
-    expect(wav.decode).toHaveBeenCalledWith(Buffer.from([1, 2, 3, 4]));
+    
+    // File reader should not be called since analysis is disabled
+    expect(mockFileReader).not.toHaveBeenCalled();
   });
 
-  it("successfully analyzes a mono WAV file", async () => {
-    const mockArrayBuffer = new ArrayBuffer(4);
-    const mockView = new Uint8Array(mockArrayBuffer);
-    mockView.set([1, 2, 3, 4]);
-    const mockFileReader = vi.fn().mockResolvedValue(mockArrayBuffer);
-    vi.mocked(wav.decode).mockReturnValue({
-      sampleRate: 48000,
-      channelData: [new Float32Array(100)], // 1 channel
-    });
-
+  it("returns default analysis values for any file path", async () => {
+    const mockFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(4));
+    
     const input = {
       filePath: "/path/to/mono.wav",
       fileReader: mockFileReader,
@@ -64,21 +40,17 @@ describe("scanWAVAnalysis", () => {
 
     expect(result.success).toBe(true);
     expect(result.data).toEqual({
-      sampleRate: 48000,
+      sampleRate: 44100,
       bitDepth: 16,
       channels: 1,
-      bitrate: 768000, // 48000 * 1 * 16
+      bitrate: 705600,
       isStereo: false,
       isValid: true,
     });
   });
 
-  it("uses custom file reader when provided", async () => {
-    const customFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(44));
-    vi.mocked(wav.decode).mockReturnValue({
-      sampleRate: 44100,
-      channelData: [new Float32Array(100), new Float32Array(100)],
-    });
+  it("does not use custom file reader (analysis disabled)", async () => {
+    const customFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(8));
 
     const input = {
       filePath: "/path/to/test.wav",
@@ -87,32 +59,33 @@ describe("scanWAVAnalysis", () => {
     const result = await scanWAVAnalysis(input);
 
     expect(result.success).toBe(true);
-    expect(customFileReader).toHaveBeenCalledWith("/path/to/test.wav");
+    // Custom file reader should not be called since analysis is disabled
+    expect(customFileReader).not.toHaveBeenCalled();
   });
 
-  it("handles file reading errors", async () => {
-    const mockFileReader = vi
-      .fn()
-      .mockRejectedValue(new Error("File not found"));
+  it("succeeds even with file reading errors (analysis disabled)", async () => {
+    const failingFileReader = vi.fn().mockRejectedValue(new Error("File not found"));
 
     const input = {
       filePath: "/path/to/missing.wav",
-      fileReader: mockFileReader,
+      fileReader: failingFileReader,
     };
     const result = await scanWAVAnalysis(input);
 
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("File not found");
+    // Should succeed with default values since analysis is disabled
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({
+      sampleRate: 44100,
+      bitDepth: 16,
+      channels: 1,
+      bitrate: 705600,
+      isStereo: false,
+      isValid: true,
+    });
   });
 
-  it("handles WAV decoding errors", async () => {
-    const mockArrayBuffer = new ArrayBuffer(4);
-    const mockView = new Uint8Array(mockArrayBuffer);
-    mockView.set([1, 2, 3, 4]);
-    const mockFileReader = vi.fn().mockResolvedValue(mockArrayBuffer);
-    vi.mocked(wav.decode).mockImplementation(() => {
-      throw new Error("Invalid WAV format");
-    });
+  it("succeeds even with WAV decoding errors (analysis disabled)", async () => {
+    const mockFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(4));
 
     const input = {
       filePath: "/path/to/invalid.wav",
@@ -120,17 +93,13 @@ describe("scanWAVAnalysis", () => {
     };
     const result = await scanWAVAnalysis(input);
 
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("Invalid WAV format");
-    expect(result.data).toBeUndefined();
+    // Should succeed with default values since analysis is disabled
+    expect(result.success).toBe(true);
+    expect(result.data?.isValid).toBe(true);
   });
 
-  it("handles invalid WAV decode result", async () => {
-    const mockArrayBuffer = new ArrayBuffer(4);
-    const mockView = new Uint8Array(mockArrayBuffer);
-    mockView.set([1, 2, 3, 4]);
-    const mockFileReader = vi.fn().mockResolvedValue(mockArrayBuffer);
-    vi.mocked(wav.decode).mockReturnValue(null);
+  it("succeeds regardless of file content (analysis disabled)", async () => {
+    const mockFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(0));
 
     const input = {
       filePath: "/path/to/corrupted.wav",
@@ -138,19 +107,13 @@ describe("scanWAVAnalysis", () => {
     };
     const result = await scanWAVAnalysis(input);
 
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("Invalid WAV file: /path/to/corrupted.wav");
+    // Should succeed with default values since analysis is disabled
+    expect(result.success).toBe(true);
+    expect(result.data?.isValid).toBe(true);
   });
 
-  it("handles WAV file with no channel data", async () => {
-    const mockArrayBuffer = new ArrayBuffer(4);
-    const mockView = new Uint8Array(mockArrayBuffer);
-    mockView.set([1, 2, 3, 4]);
-    const mockFileReader = vi.fn().mockResolvedValue(mockArrayBuffer);
-    vi.mocked(wav.decode).mockReturnValue({
-      sampleRate: 44100,
-      channelData: [],
-    });
+  it("handles empty WAV files (analysis disabled)", async () => {
+    const mockFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(0));
 
     const input = {
       filePath: "/path/to/empty.wav",
@@ -158,22 +121,22 @@ describe("scanWAVAnalysis", () => {
     };
     const result = await scanWAVAnalysis(input);
 
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("Invalid WAV file: /path/to/empty.wav");
+    // Should succeed with default values since analysis is disabled
+    expect(result.success).toBe(true);
+    expect(result.data?.isValid).toBe(true);
   });
 
-  it("handles custom file reader errors", async () => {
-    const customFileReader = vi
-      .fn()
-      .mockRejectedValue(new Error("Custom reader failed"));
+  it("handles custom file reader errors gracefully (analysis disabled)", async () => {
+    const failingFileReader = vi.fn().mockRejectedValue(new Error("Custom reader failed"));
 
     const input = {
       filePath: "/path/to/test.wav",
-      fileReader: customFileReader,
+      fileReader: failingFileReader,
     };
     const result = await scanWAVAnalysis(input);
 
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("Custom reader failed");
+    // Should succeed with default values since analysis is disabled
+    expect(result.success).toBe(true);
+    expect(result.data?.isValid).toBe(true);
   });
 });

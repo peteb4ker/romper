@@ -26,10 +26,9 @@ npm run build           # Build for production
 npx tsc --noEmit       # TypeScript validation (REQUIRED before task completion)
 
 # Testing
-npm test               # Run all tests
-npm run test:unit      # Unit tests only
+npm run test          # Run all tests (ALWAYS use this command)
+npm run test:unit     # Unit tests only
 npm run test:integration # Integration tests only
-npx vitest            # Interactive test runner
 
 # Linting
 npm run lint          # ESLint

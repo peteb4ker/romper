@@ -69,7 +69,7 @@ describe("localStoreValidator", () => {
 
       const result = validateLocalStoreAndDb(localStorePath);
       expect(result.isValid).toBe(false);
-      expect(result.error).toBe("Romper DB directory not found");
+      expect(result.error).toBe("This directory does not contain a valid Romper database (.romperdb folder).");
     });
 
     it("should return invalid if romper.sqlite file does not exist", () => {

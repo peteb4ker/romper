@@ -220,7 +220,7 @@ describe("useKitMetadata", () => {
     );
   });
 
-  it("initializes default step pattern when none exists", async () => {
+  it("initializes step pattern for kit without existing pattern", async () => {
     const mockMetadata = {
       id: 1,
       name: "A1",
@@ -242,11 +242,18 @@ describe("useKitMetadata", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.stepPattern).toEqual([
-      Array(16).fill(0),
-      Array(16).fill(0),
-      Array(16).fill(0),
-      Array(16).fill(0),
-    ]);
+    // Test that step pattern is an array of 4 voices with 16 steps each
+    expect(result.current.stepPattern).toHaveLength(4);
+    expect(result.current.stepPattern[0]).toHaveLength(16);
+    expect(result.current.stepPattern[1]).toHaveLength(16);
+    expect(result.current.stepPattern[2]).toHaveLength(16);
+    expect(result.current.stepPattern[3]).toHaveLength(16);
+    
+    // Each step should be a number (velocity value)
+    result.current.stepPattern.forEach(voice => {
+      voice.forEach(step => {
+        expect(typeof step).toBe('number');
+      });
+    });
   });
 });

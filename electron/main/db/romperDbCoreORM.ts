@@ -158,11 +158,6 @@ export function createRomperDbFile(dbDir: string): {
       migrate(db, { migrationsFolder: migrationsPath });
       console.log("[Main] Initial migrations completed successfully");
       
-      // Initialize 26 banks (A-Z) with empty artist data
-      const bankLetters = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
-      db.insert(banks)
-        .values(bankLetters.map(letter => ({ letter, artist: null, rtf_filename: null })))
-        .run();
     } else {
       console.error(
         "[Main] Migrations folder not found at any known location.",

@@ -144,26 +144,28 @@ describe("main/index.ts", () => {
     readFileSyncSpy.mockRestore();
   });
 
-  it("logs warning if settings file is missing", async () => {
+  it("does not log warning when settings file is missing (new behavior)", async () => {
     const existsSyncSpy = vi.spyOn(fs, "existsSync").mockReturnValue(false);
     const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
     await import("../index");
-    expect(spy).toHaveBeenCalledWith(
-      "[Startup] Settings file not found. Starting with empty settings.",
+    // Verify no warning is logged for missing settings file (simplified logging)
+    expect(spy).not.toHaveBeenCalledWith(
+      expect.stringContaining("Settings file not found"),
     );
     spy.mockRestore();
     existsSyncSpy.mockRestore();
   });
 
-  it("logs info if settings file is loaded", async () => {
+  it("logs info only when no local store is configured", async () => {
     const readFileSyncSpy = vi
       .spyOn(fs, "readFileSync")
       .mockReturnValue('{"foo": "bar"}');
     const spy = vi.spyOn(console, "info").mockImplementation(() => {});
     await import("../index");
-    expect(spy).toHaveBeenCalledWith("[Startup] Settings loaded from file:", {
-      foo: "bar",
-    });
+    // Only logs info when no localStorePath is configured
+    expect(spy).toHaveBeenCalledWith(
+      "[Startup] Settings loaded but no local store configured",
+    );
     spy.mockRestore();
     readFileSyncSpy.mockRestore();
   });

@@ -1,19 +1,23 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, afterEach } from "vitest";
 import { FaFolder } from "react-icons/fa";
 
 import FilePickerButton from "../FilePickerButton";
 
 describe("FilePickerButton", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("renders button with children text", () => {
     render(
-      <FilePickerButton isSelecting={false} onClick={() => {}}>
+      <FilePickerButton isSelecting={false} onClick={() => {}} data-testid="file-picker">
         Choose File
       </FilePickerButton>
     );
     
-    expect(screen.getByRole("button")).toHaveTextContent("Choose File");
+    expect(screen.getByTestId("file-picker")).toHaveTextContent("Choose File");
   });
 
   it("shows selecting state with spinner and custom text", () => {
@@ -22,23 +26,24 @@ describe("FilePickerButton", () => {
         isSelecting={true} 
         onClick={() => {}} 
         selectingText="Loading..."
+        data-testid="file-picker-selecting"
       >
         Choose File
       </FilePickerButton>
     );
     
-    expect(screen.getByRole("button")).toHaveTextContent("Loading...");
+    expect(screen.getByTestId("file-picker-selecting")).toHaveTextContent("Loading...");
     expect(screen.getByTestId("spinner")).toBeInTheDocument();
   });
 
   it("defaults to 'Selecting...' when no custom text provided", () => {
     render(
-      <FilePickerButton isSelecting={true} onClick={() => {}}>
+      <FilePickerButton isSelecting={true} onClick={() => {}} data-testid="file-picker-default">
         Choose File
       </FilePickerButton>
     );
     
-    expect(screen.getByRole("button")).toHaveTextContent("Selecting...");
+    expect(screen.getByTestId("file-picker-default")).toHaveTextContent("Selecting...");
   });
 
   it("shows icon when provided and not selecting", () => {
@@ -47,6 +52,7 @@ describe("FilePickerButton", () => {
         isSelecting={false} 
         onClick={() => {}} 
         icon={<FaFolder data-testid="folder-icon" />}
+        data-testid="file-picker-with-icon"
       >
         Choose File
       </FilePickerButton>
@@ -61,6 +67,7 @@ describe("FilePickerButton", () => {
         isSelecting={true} 
         onClick={() => {}} 
         icon={<FaFolder data-testid="folder-icon" />}
+        data-testid="file-picker-selecting-no-icon"
       >
         Choose File
       </FilePickerButton>
@@ -74,12 +81,12 @@ describe("FilePickerButton", () => {
     const onClick = vi.fn();
     
     render(
-      <FilePickerButton isSelecting={false} onClick={onClick}>
+      <FilePickerButton isSelecting={false} onClick={onClick} data-testid="file-picker-clickable">
         Choose File
       </FilePickerButton>
     );
     
-    await user.click(screen.getByRole("button"));
+    await user.click(screen.getByTestId("file-picker-clickable"));
     expect(onClick).toHaveBeenCalledOnce();
   });
 
@@ -88,12 +95,12 @@ describe("FilePickerButton", () => {
     const onClick = vi.fn();
     
     render(
-      <FilePickerButton isSelecting={true} onClick={onClick}>
+      <FilePickerButton isSelecting={true} onClick={onClick} data-testid="file-picker-disabled">
         Choose File
       </FilePickerButton>
     );
     
-    await user.click(screen.getByRole("button"));
+    await user.click(screen.getByTestId("file-picker-disabled"));
     expect(onClick).not.toHaveBeenCalled();
   });
 
@@ -102,31 +109,31 @@ describe("FilePickerButton", () => {
     const onClick = vi.fn();
     
     render(
-      <FilePickerButton isSelecting={false} onClick={onClick} disabled={true}>
+      <FilePickerButton isSelecting={false} onClick={onClick} disabled={true} data-testid="file-picker-explicitly-disabled">
         Choose File
       </FilePickerButton>
     );
     
-    await user.click(screen.getByRole("button"));
+    await user.click(screen.getByTestId("file-picker-explicitly-disabled"));
     expect(onClick).not.toHaveBeenCalled();
   });
 
   it("is disabled when selecting or explicitly disabled", () => {
     const { rerender } = render(
-      <FilePickerButton isSelecting={true} onClick={() => {}}>
+      <FilePickerButton isSelecting={true} onClick={() => {}} data-testid="file-picker-disabled-test">
         Choose File
       </FilePickerButton>
     );
     
-    expect(screen.getByRole("button")).toBeDisabled();
+    expect(screen.getByTestId("file-picker-disabled-test")).toBeDisabled();
     
     rerender(
-      <FilePickerButton isSelecting={false} onClick={() => {}} disabled={true}>
+      <FilePickerButton isSelecting={false} onClick={() => {}} disabled={true} data-testid="file-picker-disabled-test">
         Choose File
       </FilePickerButton>
     );
     
-    expect(screen.getByRole("button")).toBeDisabled();
+    expect(screen.getByTestId("file-picker-disabled-test")).toBeDisabled();
   });
 
   it("applies custom className", () => {
@@ -135,25 +142,12 @@ describe("FilePickerButton", () => {
         isSelecting={false} 
         onClick={() => {}} 
         className="custom-class"
+        data-testid="file-picker-custom-class"
       >
         Choose File
       </FilePickerButton>
     );
     
-    expect(screen.getByRole("button")).toHaveClass("custom-class");
-  });
-
-  it("applies test ID", () => {
-    render(
-      <FilePickerButton 
-        isSelecting={false} 
-        onClick={() => {}} 
-        data-testid="file-picker"
-      >
-        Choose File
-      </FilePickerButton>
-    );
-    
-    expect(screen.getByTestId("file-picker")).toBeInTheDocument();
+    expect(screen.getByTestId("file-picker-custom-class")).toHaveClass("custom-class");
   });
 });

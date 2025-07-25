@@ -1,8 +1,13 @@
 import React from "react";
 
-const Spinner: React.FC<{ size?: number; className?: string }> = ({
+const Spinner: React.FC<{ 
+  size?: number; 
+  className?: string;
+  "data-testid"?: string;
+}> = ({
   size = 20,
   className = "",
+  "data-testid": testId,
 }) => (
   <svg
     className={`animate-spin text-white ${className}`}
@@ -12,6 +17,7 @@ const Spinner: React.FC<{ size?: number; className?: string }> = ({
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     style={{ display: "inline-block", verticalAlign: "middle" }}
+    data-testid={testId}
   >
     <circle
       className="opacity-25"

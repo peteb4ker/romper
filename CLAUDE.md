@@ -15,27 +15,7 @@ Cross-platform desktop app for managing sample kits for the **Squarp Rample** Eu
 - **Node.js** native filesystem APIs
 
 ## Essential Commands
-```bash
-# Development
-npm run dev              # Start Vite dev server
-npm run electron:dev     # Start Electron in development
-npm run start           # Alternative Electron start
-
-# Building & Type Checking
-npm run build           # Build for production
-npx tsc --noEmit       # TypeScript validation (automated in pre-commit)
-
-# Testing
-npm run test          # Run all tests (ALWAYS use this command)
-npm run test:unit     # Unit tests only
-npm run test:integration # Integration tests only
-
-# Linting
-npm run lint          # ESLint
-
-# Quality Checks (Automated via Pre-commit Hooks)
-# All quality checks automated - see docs/developer/development-workflow.md
-```
+See [Development Workflow](./docs/developer/development-workflow.md) for complete command reference.
 
 ## Project Structure
 ```
@@ -54,47 +34,23 @@ romper/
 ## Code Standards & Architecture
 
 ### Context-Aware Instructions
-Based on the file you're working on, additional specific standards are automatically loaded:
-- **React Components** (`*.tsx`) → Hook-based architecture patterns
-- **Custom Hooks** (`hooks/use*.ts`) → Single responsibility and dependency injection
-- **Database** (`db/*.ts`) → Drizzle ORM and DbResult patterns
-- **Tests** (`__tests__/*.test.ts`) → Vitest and mocking patterns
+File-specific standards automatically load based on current working file:
+- **React Components** (`*.tsx`) → `.agent/standards/react-components.md`
+- **Custom Hooks** (`hooks/use*.ts`) → `.agent/standards/custom-hooks.md`
+- **Database** (`db/*.ts`) → `.agent/standards/database.md`
+- **Tests** (`__tests__/*.test.ts`) → `.agent/standards/testing.md`
 
-### Core Requirements (Always Apply)
-- **ESM modules ONLY**: Use ES modules everywhere except `electron/preload/index.ts`
-- **TypeScript strict**: Zero compilation errors required
-- **Reference-only samples**: Store paths, don't copy files until sync
-- **80% test coverage**: Maintain high coverage across codebase
-- **NO trailing whitespace**: Never add whitespace at the end of lines
-- **Keep code DRY**: Avoid unnecessary complexity, duplication, or code bloat
+See `.agent/context.md` for pattern matching rules and `.agent/standards/` for detailed coding standards.
 
-## Current Architecture Concepts
-
-### Immutable Baseline Architecture
-- **Local store** serves as immutable baseline from setup (SD card/factory samples/blank)
-- **User samples referenced by `source_path`** - never copied to local store
-- Only copied/converted during SD card sync operations
-- Reference: [Architecture Documentation](./docs/architecture.md) *(to be created)*
-
-### Kit Editing System
-- **Editable mode** - ON for user kits, OFF for factory kits
-- **Reference-only samples** - stored via `source_path` field
-- **Voice-based organization** - 4 voices per kit, 12 slots per voice
-- **Undo/redo system** with action history in database
-
-### Database Schema
-- **kit_name as foreign key** (not kit_id) for human-readable references
-- **voice_number field** (1-4) for explicit voice tracking  
-- **source_path field** for external sample references
-- **Drizzle ORM** with schema-first approach
+## Architecture Overview
+See [Architecture Documentation](./docs/developer/architecture.md) for comprehensive architectural concepts including:
+- Immutable baseline architecture
+- Reference-only sample management
+- Kit editing system
+- Database schema patterns
 
 ## Development Workflow
-
-### Task Execution Process
-1. **Read current task** from `tasks/tasks-PRD.md`
-2. **Implement one sub-task at a time**
-3. **Update task file** and mark sub-task complete
-4. **Ask for permission** before proceeding to next sub-task
+See [Development Workflow](./docs/developer/development-workflow.md) and [Task Execution](./.agent/task-execution.md) for complete workflow guidance.
 
 ### Documentation Organization Rule
 **CRITICAL**: Documentation belongs in specific locations:
@@ -102,35 +58,14 @@ Based on the file you're working on, additional specific standards are automatic
 - **Agent instructions** → `.agent/` directory  
 - **NEVER put documentation in CLAUDE.md** - this file is for project context only
 
-Quality validation is automated via pre-commit hooks - see `.agent/task-execution.md` for details.
-
-### Git Workflow
-- Follow project commit standards (see CONTRIBUTING.md)
-- Reference task numbers when applicable
-- Mention test status if relevant
-- **IMPORTANT:** Do not add authorship or co-author tags to commit messages
-
 ## Key Documentation Links
 - [Product Requirements Document](./tasks/PRD.md) - Complete project vision
 - [Current Task List](./tasks/tasks-PRD.md) - Development progress
 - [Architecture Overview](./docs/developer/architecture.md) - Core design patterns and decisions
-- [Context-Aware Standards](./.agent/context.md) - Auto-loading file-type specific instructions
-- [Coding Guide](./docs/developer/coding-guide.md) - Human-readable development guide
-- [Database Schema](./docs/developer/romper-db.md) - Current schema reference
 - [Development Workflow](./docs/developer/development-workflow.md) - Task execution and quality standards
-- [IPC Error Handling](./.agent/patterns/ipc-error-handling.md) - Electron IPC best practices
-
-## Error Handling & Edge Cases
-- **Graceful degradation** - app remains functional on non-critical errors
-- **File system safety** - validate paths, handle missing files
-- **Reference integrity** - handle missing `source_path` files
-- **User data protection** - confirm destructive actions
-
-## Performance Requirements
-- **Sub-50ms UI interactions**
-- **Handle 0-2600 kits efficiently**
-- **Memoize expensive computations**
-- **Reference-only file handling** (no unnecessary copying)
+- [Context-Aware Standards](./.agent/context.md) - Auto-loading file-type specific instructions
+- [Task Execution Framework](./.agent/task-execution.md) - Agent execution patterns
+- [Database Schema](./docs/developer/romper-db.md) - Current schema reference
 
 ## Current Development Focus
 Working on **Task 5.0: Kit Editing and Slot Management** - implementing editable mode system with reference-only sample management using the new Drizzle ORM architecture.

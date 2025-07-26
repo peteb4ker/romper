@@ -188,13 +188,25 @@ npm run build        # Production build validation
 
 ### Development Commands
 ```bash
-# Start development
-npm run dev              # Vite dev server
-npm run electron:dev     # Electron development mode
+# Development
+npm run dev              # Start Vite dev server
+npm run electron:dev     # Start Electron in development
+npm run start           # Alternative Electron start
 
-# Production build
+# Building & Type Checking
 npm run build           # Build for production
-npm run electron:prod   # Electron production mode
+npm run typecheck       # TypeScript validation
+
+# Testing
+npm run test            # Run all tests (unit + integration)
+npm run test:unit       # Unit tests only
+npm run test:integration # Integration tests only
+
+# Linting
+npm run lint            # ESLint with auto-fix
+
+# Quality Checks (Automated)
+npm run pre-commit      # All quality checks (automated on commit)
 ```
 
 ## Documentation Maintenance

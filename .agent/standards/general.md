@@ -26,8 +26,9 @@ const sample = { sourcePath: '/path/to/kick.wav', filename: 'kick.wav' };
 ## Quality Requirements
 
 ### TypeScript Validation (CRITICAL)
-- **MUST pass**: `npx tsc --noEmit` before any task completion
-- **Zero compilation errors**: Fix all TypeScript errors immediately
+- **Automated validation**: Pre-commit hooks handle TypeScript checking
+- **Zero compilation errors**: All TypeScript errors must be fixed
+- **Strict typing**: TypeScript strict mode required
 - **No `any` types**: Use proper typing or `unknown` with type guards
 
 ### ESM Module System (CRITICAL)
@@ -116,10 +117,13 @@ toast.error(error.message); // May show technical details
 ## Testing Requirements
 
 ### Coverage and Quality
-- **80% minimum coverage**: Maintain across all modules
+- **80% test coverage**: Maintain high coverage across codebase
 - **Test isolation**: Each test independent with proper cleanup
 - **Mock external dependencies**: Test only the code under test
 - **Descriptive test names**: Explain behavior being tested
+- **Vitest (not Jest)**: Use Vitest for all test operations
+- **NO trailing whitespace**: Never add whitespace at the end of lines
+- **Keep code DRY**: Avoid unnecessary complexity, duplication, or code bloat
 
 ### Test Organization
 ```typescript

@@ -49,6 +49,24 @@ User-added samples are **referenced by absolute path** rather than copied locall
 2. **Preview**: Direct playback from original file location
 3. **Sync**: Copy from `source_path` to SD card with format conversion
 
+### Immutable Baseline Architecture
+- **Local store baseline**: Serves as immutable baseline from setup (SD card/factory samples/blank)
+- **User samples as references**: Referenced by `source_path` - never copied to local store
+- **Sync-time processing**: Only copied/converted during SD card sync operations
+- **Baseline preservation**: Original baseline content remains untouched
+
+### Kit Editing System Architecture
+- **Editable mode control**: ON for user kits, OFF for factory kits
+- **Reference-only samples**: User samples stored via `source_path` field  
+- **Voice-based organization**: 4 voices per kit, 12 slots per voice
+- **Undo/redo system**: Action history stored in database for full operation tracking
+
+### Database Schema Architecture
+- **Human-readable keys**: kit_name as foreign key (not kit_id) for readable references
+- **Explicit voice tracking**: voice_number field (1-4) for unambiguous voice identification
+- **External references**: source_path field for user samples outside local store
+- **Schema-first approach**: Drizzle ORM with compile-time type safety
+
 ### Local Store Initialization
 During setup, Romper creates a local store from one of three sources (SD card, factory samples, or empty folder). This baseline remains unchanged - user modifications are tracked as references only.
 

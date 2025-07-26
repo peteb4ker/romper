@@ -33,13 +33,8 @@ npm run test:integration # Integration tests only
 # Linting
 npm run lint          # ESLint
 
-# Pre-commit Hooks (Automated)
-# These run automatically on git commit - no manual intervention needed:
-# - TypeScript type checking (npm run typecheck)
-# - ESLint with auto-fix (npm run lint)  
-# - Full test suite (npm run test)
-# - Production build validation (npm run build)
-# Manual override: npm run pre-commit
+# Quality Checks (Automated via Pre-commit Hooks)
+# All quality checks automated - see docs/developer/development-workflow.md
 ```
 
 ## Project Structure
@@ -101,25 +96,13 @@ Based on the file you're working on, additional specific standards are automatic
 3. **Update task file** and mark sub-task complete
 4. **Ask for permission** before proceeding to next sub-task
 
-### Automated Quality Gates (Streamlined Development)
-**All quality checks are now automated via pre-commit hooks:**
-- ✅ **TypeScript type checking** - catches compilation errors
-- ✅ **ESLint linting and auto-fix** - enforces code style
-- ✅ **Full test suite execution** - ensures functionality
-- ✅ **Production build validation** - confirms deployability
+### Documentation Organization Rule
+**CRITICAL**: Documentation belongs in specific locations:
+- **Human-readable docs** → `docs/` directory
+- **Agent instructions** → `.agent/` directory  
+- **NEVER put documentation in CLAUDE.md** - this file is for project context only
 
-**Manual testing**: `npm run pre-commit` (optional, runs automatically on commit)
-
-**Result**: Focus on implementation - quality gates handle the rest!
-
-### For AI Assistants (Claude)
-**Streamlined Instructions**: Pre-commit hooks now handle all quality checks automatically. No need to explicitly run or mention:
-- `npx tsc --noEmit` (automated)
-- `npm run lint` (automated)  
-- `npm run test` (automated)
-- `npm run build` (automated)
-
-Simply implement features and commit - the hooks ensure quality.
+Quality validation is automated via pre-commit hooks - see `.agent/task-execution.md` for details.
 
 ### Git Workflow
 - Follow project commit standards (see CONTRIBUTING.md)

@@ -12,22 +12,30 @@ This document describes the development workflow, task execution patterns, and q
 ### Step-by-Step Workflow
 1. **Read current task** from [tasks/tasks-PRD.md](../tasks/tasks-PRD.md)
 2. **Implement one sub-task at a time** - never skip ahead or work on multiple tasks
-3. **Run validation** - TypeScript check and tests after each sub-task
-4. **Update task file** - mark sub-task as complete `[x]`
+3. **Update task file** - mark sub-task as complete `[x]`
+4. **Commit changes** - pre-commit hooks automatically validate (TypeScript, linting, tests, build)
 5. **Ask for permission** before proceeding to next sub-task
 
-### Critical Validation Steps
-Before marking any task complete:
+### Automated Quality Gates (Pre-commit Hooks)
+**All quality checks are automated via pre-commit hooks** that run on every `git commit`:
+
+✅ **TypeScript type checking** - catches compilation errors  
+✅ **ESLint linting with auto-fix** - enforces code style  
+✅ **Full test suite execution** - ensures functionality  
+✅ **Production build validation** - confirms deployability
+
 ```bash
-# REQUIRED: TypeScript validation
-npx tsc --noEmit
+# Manual pre-commit validation (optional - runs automatically on commit)
+npm run pre-commit
 
-# REQUIRED: Run relevant tests
-npx vitest run path/to/modified/files
-
-# RECOMMENDED: Full test suite for major changes
-npm test
+# Individual validation commands (now automated)
+npm run typecheck    # TypeScript validation
+npm run lint         # ESLint with auto-fix  
+npm run test         # Full test suite
+npm run build        # Production build
 ```
+
+**Result**: Focus on implementation - quality gates handle validation automatically!
 
 ### Task File Management
 - Keep "Relevant Files" section up to date with created/modified files
@@ -162,20 +170,21 @@ Tests: <passing>/<total> passing
 
 ## Build and Release
 
-### Build Validation
+### Build Validation (Automated)
+Pre-commit hooks automatically run all validation steps. Manual commands available:
+
 ```bash
-# TypeScript validation
-npx tsc --noEmit
+# All validations in one command (runs automatically on commit)
+npm run pre-commit
 
-# Linting
-npm run lint
-
-# Full test suite
-npm test
-
-# Build validation
-npm run build
+# Individual validation steps (if needed)
+npm run typecheck    # TypeScript validation  
+npm run lint         # ESLint with auto-fix
+npm run test         # Full test suite
+npm run build        # Production build validation
 ```
+
+**Husky Configuration**: Pre-commit hooks are configured in `.husky/pre-commit` and use lint-staged for efficient file processing.
 
 ### Development Commands
 ```bash

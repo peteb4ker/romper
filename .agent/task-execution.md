@@ -7,18 +7,13 @@
 - Mark complete only when fully implemented and validated
 - Request user approval before proceeding to next task
 
-### Validation-First Approach
-Every task completion MUST pass these gates:
-```bash
-# 1. TypeScript validation (CRITICAL)
-npx tsc --noEmit
+### Automated Validation Approach
+Quality validation is **automated via pre-commit hooks**:
+- ✅ TypeScript checking, ESLint, tests, and build run automatically on commit
+- ✅ Focus on implementation - quality gates handle validation
+- ✅ Manual validation: `npm run pre-commit` (optional)
 
-# 2. Test validation
-npx vitest run [relevant-test-files]
-
-# 3. Lint validation
-npm run lint
-```
+**Result**: Commit changes to trigger automatic validation.
 
 ## Pre-Task Analysis
 
@@ -53,13 +48,12 @@ Before starting any task:
 5. Write unit tests if not already present
 ```
 
-### Phase 3: Validation
+### Phase 3: Validation (Automated)
 ```markdown
-1. Run TypeScript validation: `npx tsc --noEmit`
-2. Run relevant tests: `npx vitest run path/to/tests`
-3. Run linting: `npm run lint`
-4. Verify task meets acceptance criteria from PRD
-5. Check code follows .agent/ standards
+1. Verify task meets acceptance criteria from PRD
+2. Check code follows .agent/ standards
+3. Commit changes (triggers automatic TypeScript, linting, tests, build)
+4. Validation results reported by pre-commit hooks
 ```
 
 ### Phase 4: Documentation
@@ -116,7 +110,7 @@ Before starting any task:
 
 ### Task Execution
 - ❌ **Multi-task execution**: Never work on multiple tasks simultaneously
-- ❌ **Skipping validation**: Always run TypeScript and test validation
+- ❌ **Skipping validation**: Commit changes to trigger automatic validation
 - ❌ **Marking incomplete work**: Only mark [x] when fully implemented
 - ❌ **Ignoring dependencies**: Check prerequisites before starting
 
@@ -130,10 +124,9 @@ Before starting any task:
 
 ### Task Completion Checklist
 - [ ] Task requirement fully implemented
-- [ ] TypeScript validation passes (`npx tsc --noEmit`)
-- [ ] Relevant tests pass and coverage maintained
 - [ ] Code follows .agent/ standards for file type
 - [ ] Documentation updated (task list, relevant files, schema if needed)
+- [ ] Changes committed (automatic validation via pre-commit hooks)
 - [ ] No regressions introduced in existing functionality
 - [ ] User approval received before proceeding
 

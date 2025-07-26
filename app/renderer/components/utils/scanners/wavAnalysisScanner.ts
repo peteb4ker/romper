@@ -14,8 +14,10 @@ export async function scanWAVAnalysis(
 ): Promise<ScanResult<WAVAnalysisOutput>> {
   // TODO: WAV analysis needs to be moved to main process due to Buffer requirements
   // For now, return a successful default result to unblock scanning
-  console.warn(`[WAV Analysis] Skipping analysis for ${input.filePath} - needs main process implementation`);
-  
+  console.warn(
+    `[WAV Analysis] Skipping analysis for ${input.filePath} - needs main process implementation`,
+  );
+
   return {
     success: true,
     data: {
@@ -36,7 +38,7 @@ export async function scanWAVAnalysis(
  */
 // TODO: Move to main process - Buffer/node-wav not available in renderer
 function parseWAVFile(buffer: any): WAVAnalysisOutput {
-  // Disabled - needs main process implementation  
+  // Disabled - needs main process implementation
   return {
     sampleRate: 44100,
     bitDepth: 16,
@@ -45,7 +47,7 @@ function parseWAVFile(buffer: any): WAVAnalysisOutput {
     isStereo: false,
     isValid: true,
   };
-  
+
   /*
   // Decode WAV file using node-wav
   const result = wav.decode(buffer);

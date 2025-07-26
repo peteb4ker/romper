@@ -238,7 +238,7 @@ export function useKitMetadata(props: KitDetailsProps) {
       if (!actualLocalStorePath) {
         throw new Error("Local store path is required for scanning");
       }
-      
+
       const kitPath = `${actualLocalStorePath}/${kitName}`;
 
       // Get all WAV files from samples
@@ -251,13 +251,7 @@ export function useKitMetadata(props: KitDetailsProps) {
         });
       });
 
-      // Get RTF files (artist metadata files) using proper bank scanning
-      const bankNames = await getBankNames(actualLocalStorePath);
-      const bankName = kitName.charAt(0).toUpperCase();
-      const rtfFiles: string[] = [];
-      if (bankNames[bankName]) {
-        rtfFiles.push(`${actualLocalStorePath}/${bankName} - ${bankNames[bankName]}.rtf`);
-      }
+      // Artist metadata is now handled by bank scanning, not kit scanning
 
       // Adapt electron API fileReader to scanner interface
       const fileReader = async (filePath: string): Promise<ArrayBuffer> => {
@@ -274,7 +268,6 @@ export function useKitMetadata(props: KitDetailsProps) {
       const scanInput = {
         samples: safeVoices,
         wavFiles,
-        rtfFiles,
         fileReader,
       };
 
@@ -304,14 +297,7 @@ export function useKitMetadata(props: KitDetailsProps) {
           }
         }
 
-        // Update artist metadata if available
-        if (result.results.rtfArtist?.artists) {
-          const artists = result.results.rtfArtist.artists;
-          const bankName = kitName.charAt(0);
-          if (artists[bankName]) {
-            await updateMetadata({ artist: artists[bankName] });
-          }
-        }
+        // Artist metadata is now handled by bank scanning system
 
         // WAV analysis results are stored in the database automatically
         // through the scanning operations

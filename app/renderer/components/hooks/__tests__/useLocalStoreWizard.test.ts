@@ -443,7 +443,6 @@ describe("useLocalStoreWizard", () => {
           "/mock/home/Documents/romper/A0/1kick.wav",
           "/mock/home/Documents/romper/A0/2snare.wav",
         ],
-        rtfFiles: ["/mock/home/Documents/romper/A0/artist.rtf"],
         fileReader: expect.any(Function),
       }),
       undefined,
@@ -455,7 +454,6 @@ describe("useLocalStoreWizard", () => {
       "/mock/home/Documents/romper/.romperdb",
       "A0",
       expect.objectContaining({
-        artist: "Test Artist",
         tags: ["kick", "snare", "hat", "tom"],
       }),
     );
@@ -513,15 +511,7 @@ describe("useLocalStoreWizard", () => {
     // Should have called scanning for both kits
     expect(mockExecuteFullKitScan).toHaveBeenCalledTimes(2);
 
-    // Should only update metadata for the successful kit
-    expect(window.electronAPI.updateKit).toHaveBeenCalledTimes(1);
-    expect(window.electronAPI.updateKit).toHaveBeenCalledWith(
-      "/mock/home/Documents/romper/.romperdb",
-      "B12",
-      expect.objectContaining({
-        artist: "Another Artist",
-      }),
-    );
+    // Artist metadata updates are now handled by bank scanning system, not kit scanning
   });
 
   it("skips scanning when no kits are found", async () => {

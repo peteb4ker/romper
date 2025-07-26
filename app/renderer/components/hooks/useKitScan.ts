@@ -1,11 +1,9 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 
-import { getBankNames } from "../utils/bankOperations";
 // --- Utility Functions ---
 import {
   executeFullKitScan,
-  executeRTFArtistScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
 } from "../utils/scanners/orchestrationFunctions";
@@ -13,7 +11,6 @@ import {
 const scanTypeDisplayMap: Record<string, string> = {
   voiceInference: "voice name inference",
   wavAnalysis: "WAV analysis",
-  rtfArtist: "artist metadata",
 };
 
 export async function fileReader(filePath: string): Promise<ArrayBuffer> {
@@ -40,26 +37,17 @@ export async function scanSingleKit({
   scanTypeDisplay: string;
   fileReaderImpl: typeof fileReader;
 }) {
-  const bankNames = await getBankNames(localStorePath);
-  const bankName = kitName.charAt(0).toUpperCase();
-  const rtfFiles: string[] = [];
-  if (bankNames[bankName]) {
-    rtfFiles.push(`${localStorePath}/${bankName} - ${bankNames[bankName]}.rtf`);
-  }
-
   if (scanType === "voiceInference") {
     const emptySamples = { 1: [], 2: [], 3: [], 4: [] };
     return executeVoiceInferenceScan(emptySamples);
   } else if (scanType === "wavAnalysis") {
     const wavFiles: string[] = [];
     return executeWAVAnalysisScan(wavFiles, fileReaderImpl);
-  } else if (scanType === "rtfArtist") {
-    return executeRTFArtistScan(rtfFiles);
   } else {
+    // Full scan - voice inference and WAV analysis only
     const scanInput = {
       samples: { 1: [], 2: [], 3: [], 4: [] },
       wavFiles: [],
-      rtfFiles,
       fileReader: fileReaderImpl,
     };
     return executeFullKitScan(scanInput);

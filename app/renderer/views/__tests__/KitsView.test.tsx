@@ -61,6 +61,10 @@ describe("KitsView", () => {
       getLocalStoreStatus: vi
         .fn()
         .mockResolvedValue({ isValid: true, hasLocalStore: true }),
+      scanBanks: vi.fn().mockResolvedValue({
+        success: true,
+        data: { updatedBanks: 2 },
+      }),
     };
   });
   afterEach(() => {

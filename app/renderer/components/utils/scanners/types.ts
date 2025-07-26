@@ -70,12 +70,10 @@ export interface RTFArtistOutput {
 export interface FullKitScanInput {
   samples: Record<number, string[]>;
   wavFiles: string[];
-  rtfFiles: string[];
   fileReader?: (filePath: string) => Promise<ArrayBuffer>;
 }
 
 export interface FullKitScanOutput {
   voiceInference?: VoiceInferenceOutput;
   wavAnalysis?: WAVAnalysisOutput[];
-  rtfArtist?: RTFArtistOutput;
 }

@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   executeFullKitScan,
-  executeRTFArtistScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
   type ProgressCallback,
@@ -16,14 +15,9 @@ import {
 vi.mock("../scannerOperations", () => ({
   scanVoiceInference: vi.fn(),
   scanWAVAnalysis: vi.fn(),
-  scanRTFArtist: vi.fn(),
 }));
 
-import {
-  scanRTFArtist,
-  scanVoiceInference,
-  scanWAVAnalysis,
-} from "../scannerOperations";
+import { scanVoiceInference, scanWAVAnalysis } from "../scannerOperations";
 
 // Global mock progress callback for all tests
 let mockProgressCallback: ProgressCallback;
@@ -68,7 +62,7 @@ describe("ScannerOrchestrator", () => {
         op2: { result: "operation2" },
       });
       expect(result.errors).toEqual([]);
-      expect(result.completedOperations).toBe(2);
+      expect(result.completedOperations).toBe(2); // Both operations succeed
       expect(result.totalOperations).toBe(2);
 
       // Check progress callbacks
@@ -268,15 +262,11 @@ describe("executeFullKitScan", () => {
       },
     });
 
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: true,
-      data: { bankArtists: { A: "Artist Name" } },
-    });
+    // RTF scanning removed
 
     const kitData = {
       samples: { 1: ["kick.wav"], 2: ["snare.wav"] },
       wavFiles: ["kick.wav", "snare.wav"],
-      rtfFiles: ["A - Artist Name.rtf"],
     };
 
     const result = await executeFullKitScan(kitData, mockProgressCallback);
@@ -288,15 +278,13 @@ describe("executeFullKitScan", () => {
     });
     // wavAnalysis might not be in the expected format - skip this check
     // expect(result.results?.wavAnalysis).toHaveLength(2);
-    expect(result.results?.rtfArtist).toEqual({
-      bankArtists: { A: "Artist Name" },
-    });
+    expect(result.results?.rtfArtist).toBeUndefined(); // RTF scanning removed
     // The implementation adds errors for WAV analysis if no file reader is provided
     expect(result.errors).toContainEqual({
       operation: "wavAnalysis",
       error: expect.stringContaining("All WAV files failed analysis"),
     });
-    expect(result.completedOperations).toBe(2);
+    expect(result.completedOperations).toBe(1); // RTF operation removed
   });
 
   it("handles partial failures with continue strategy", async () => {
@@ -317,15 +305,12 @@ describe("executeFullKitScan", () => {
       },
     });
 
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: true,
-      data: { bankArtists: { A: "Artist Name" } },
-    });
+    // RTF scanning removed
 
     const kitData = {
       samples: { 1: ["kick.wav"] },
       wavFiles: ["kick.wav"],
-      rtfFiles: ["A - Artist Name.rtf"],
+      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
     };
 
     const result = await executeFullKitScan(
@@ -338,17 +323,11 @@ describe("executeFullKitScan", () => {
     expect(result.results?.voiceInference).toBeUndefined();
     // wavAnalysis might not be in the expected format - skip this check
     // expect(result.results?.wavAnalysis).toHaveLength(1);
-    expect(result.results?.rtfArtist).toEqual({
-      bankArtists: { A: "Artist Name" },
-    });
+    expect(result.results?.rtfArtist).toBeUndefined(); // RTF scanning removed
     // The implementation adds errors for both voiceInference and wavAnalysis
     expect(result.errors).toContainEqual({
       operation: "voiceInference",
       error: "Voice inference failed",
-    });
-    expect(result.errors).toContainEqual({
-      operation: "wavAnalysis",
-      error: expect.stringContaining("All WAV files failed analysis"),
     });
     expect(result.completedOperations).toBe(1);
   });
@@ -376,15 +355,11 @@ describe("executeFullKitScan", () => {
         error: "Invalid WAV format",
       });
 
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: true,
-      data: { bankArtists: { A: "Artist Name" } },
-    });
+    // RTF scanning removed
 
     const kitData = {
       samples: { 1: ["kick.wav"] },
       wavFiles: ["kick.wav", "invalid.wav"],
-      rtfFiles: ["A - Artist Name.rtf"],
     };
 
     const result = await executeFullKitScan(kitData, mockProgressCallback);
@@ -394,9 +369,7 @@ describe("executeFullKitScan", () => {
       voiceNames: { 1: "Kick" },
     });
     expect(result.results.wavAnalysis).toBeUndefined();
-    expect(result.results.rtfArtist).toEqual({
-      bankArtists: { A: "Artist Name" },
-    });
+    expect(result.results.rtfArtist).toBeUndefined(); // RTF scanning removed
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0].operation).toBe("wavAnalysis");
   });
@@ -421,10 +394,7 @@ describe("executeFullKitScan", () => {
       },
     });
 
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: true,
-      data: { bankArtists: {} },
-    });
+    // RTF scanning removed
 
     const kitData = {
       samples: { 1: ["kick.wav"] },
@@ -613,38 +583,4 @@ describe("executeWAVAnalysisScan", () => {
   });
 });
 
-describe("executeRTFArtistScan", () => {
-  it("executes RTF artist scan successfully", async () => {
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: true,
-      data: { bankArtists: { A: "Artist One", B: "Artist Two" } },
-    });
-
-    const rtfFiles = ["A - Artist One.rtf", "B - Artist Two.rtf"];
-    const result = await executeRTFArtistScan(rtfFiles, mockProgressCallback);
-
-    expect(result.success).toBe(true);
-    expect(result.results.rtfArtist).toEqual({
-      bankArtists: { A: "Artist One", B: "Artist Two" },
-    });
-    expect(result.errors).toEqual([]);
-    expect(result.completedOperations).toBe(1);
-  });
-
-  it("handles RTF artist scan failure", async () => {
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: false,
-      error: "No valid RTF files found",
-    });
-
-    const rtfFiles = ["invalid.txt"];
-    const result = await executeRTFArtistScan(rtfFiles, mockProgressCallback);
-
-    expect(result.success).toBe(false);
-    expect(result.results.rtfArtist).toBeUndefined();
-    expect(result.errors).toEqual([
-      { operation: "rtfArtist", error: "No valid RTF files found" },
-    ]);
-    expect(result.completedOperations).toBe(0);
-  });
-});
+// RTF artist scanning tests removed - functionality moved to bank scanning system

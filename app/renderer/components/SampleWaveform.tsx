@@ -61,7 +61,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         } catch (e) {}
       }
     };
-  }, [filePath]); // onError is intentionally not included to prevent infinite loops from inline function recreation
+  }, [filePath]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
 
   // Draw waveform
   function drawWaveform(buffer: AudioBuffer) {
@@ -154,7 +154,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   // Notify parent about playing state changes
   useEffect(() => {
     if (onPlayingChange) onPlayingChange(isPlaying);
-  }, [isPlaying]); // onPlayingChange is intentionally not included to prevent infinite loops from inline function recreation
+  }, [isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps -- onPlayingChange intentionally excluded to prevent infinite loops
 
   // Draw playhead
   useEffect(() => {

@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   executeFullKitScan,
-  executeRTFArtistScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
 } from "../orchestrationFunctions";
@@ -14,14 +13,9 @@ import type { ProgressCallback } from "../types";
 vi.mock("../../scannerOperations", () => ({
   scanVoiceInference: vi.fn(),
   scanWAVAnalysis: vi.fn(),
-  scanRTFArtist: vi.fn(),
 }));
 
-import {
-  scanRTFArtist,
-  scanVoiceInference,
-  scanWAVAnalysis,
-} from "../../scannerOperations";
+import { scanVoiceInference, scanWAVAnalysis } from "../../scannerOperations";
 
 // Global mock progress callback for all tests
 let mockProgressCallback: ProgressCallback;
@@ -50,28 +44,20 @@ describe("executeFullKitScan", () => {
       },
     });
 
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: true,
-      data: { bankArtists: { A: "Artist Name" } },
-    });
-
     const kitData = {
       samples: { 1: ["kick.wav"], 2: ["snare.wav"] },
       wavFiles: ["kick.wav", "snare.wav"],
-      rtfFiles: ["A - Artist Name.rtf"],
+      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
     };
 
     const result = await executeFullKitScan(kitData, mockProgressCallback);
 
-    // Fixed expectation to match actual implementation
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
     expect(result.results?.voiceInference).toEqual({
       voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" },
     });
-    // Skip wavAnalysis test since results.wavAnalysis might be undefined in the actual implementation
-    // Adjusted to match actual implementation
-    expect(result.errors).toHaveLength(1); // Based on actual implementation
-    expect(result.completedOperations).toBe(2); // Based on actual implementation
+    expect(result.completedOperations).toBe(2);
+    expect(result.totalOperations).toBe(2);
   });
 
   it("handles partial failures with continue strategy", async () => {
@@ -92,24 +78,18 @@ describe("executeFullKitScan", () => {
       },
     });
 
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: true,
-      data: { bankArtists: { A: "Artist Name" } },
-    });
-
     const kitData = {
       samples: { 1: ["kick.wav"], 2: ["snare.wav"] },
       wavFiles: ["kick.wav", "snare.wav"],
-      rtfFiles: ["A - Artist Name.rtf"],
+      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
     };
 
     const result = await executeFullKitScan(kitData, mockProgressCallback);
 
-    // Fixed expectation to match actual implementation
-    expect(result.success).toBe(false); // Even with continue strategy, overall success is marked as false if any operation fails
-    expect(result.errors).toHaveLength(2); // Adjusted to match actual implementation
+    expect(result.success).toBe(false);
+    expect(result.errors).toHaveLength(1);
     expect(result.errors[0].operation).toBe("voiceInference");
-    expect(result.completedOperations).toBe(1); // Based on actual implementation
+    expect(result.completedOperations).toBe(1);
   });
 
   it("calls progress callback for each operation", async () => {
@@ -130,21 +110,16 @@ describe("executeFullKitScan", () => {
       },
     });
 
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: true,
-      data: { bankArtists: { A: "Artist Name" } },
-    });
-
     const kitData = {
       samples: { 1: ["kick.wav"], 2: ["snare.wav"] },
       wavFiles: ["kick.wav", "snare.wav"],
-      rtfFiles: ["A - Artist Name.rtf"],
+      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
     };
 
     await executeFullKitScan(kitData, mockProgressCallback);
 
     // Should be called for each operation at least once, plus once for initialization
-    expect(mockProgressCallback).toHaveBeenCalledTimes(4);
+    expect(mockProgressCallback).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -169,7 +144,6 @@ describe("executeVoiceInferenceScan", () => {
     expect(scanVoiceInference).toHaveBeenCalledTimes(1);
     expect(scanVoiceInference).toHaveBeenCalledWith({ samples });
     expect(scanWAVAnalysis).not.toHaveBeenCalled();
-    expect(scanRTFArtist).not.toHaveBeenCalled();
   });
 
   it("handles failures correctly", async () => {
@@ -216,7 +190,6 @@ describe("executeWAVAnalysisScan", () => {
     expect(result.completedOperations).toBe(1);
     expect(result.totalOperations).toBe(1);
     expect(scanVoiceInference).not.toHaveBeenCalled();
-    expect(scanRTFArtist).not.toHaveBeenCalled();
   });
 
   it("handles file reader errors", async () => {
@@ -228,42 +201,5 @@ describe("executeWAVAnalysisScan", () => {
     expect(result.success).toBe(false);
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0].operation).toBe("wavAnalysis");
-  });
-});
-
-describe("executeRTFArtistScan", () => {
-  it("executes only RTF artist operation", async () => {
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: true,
-      data: { bankArtists: { A: "Artist Name" } },
-    });
-
-    const rtfFiles = ["A - Artist Name.rtf"];
-
-    const result = await executeRTFArtistScan(rtfFiles, mockProgressCallback);
-
-    expect(result.success).toBe(true);
-    expect(result.completedOperations).toBe(1);
-    expect(result.totalOperations).toBe(1);
-    expect(scanRTFArtist).toHaveBeenCalledTimes(1);
-    expect(scanRTFArtist).toHaveBeenCalledWith({ rtfFiles });
-    expect(scanVoiceInference).not.toHaveBeenCalled();
-    expect(scanWAVAnalysis).not.toHaveBeenCalled();
-  });
-
-  it("handles failures correctly", async () => {
-    vi.mocked(scanRTFArtist).mockReturnValue({
-      success: false,
-      error: "RTF parsing failed",
-    });
-
-    const rtfFiles = ["A - Artist Name.rtf"];
-
-    const result = await executeRTFArtistScan(rtfFiles);
-
-    expect(result.success).toBe(false);
-    expect(result.errors).toHaveLength(1);
-    expect(result.errors[0].operation).toBe("rtfArtist");
-    expect(result.completedOperations).toBe(0);
   });
 });

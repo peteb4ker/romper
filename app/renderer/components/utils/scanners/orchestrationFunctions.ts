@@ -1,25 +1,20 @@
 // Orchestration functions - high-level scanning operations
 
-import {
-  scanRTFArtist,
-  scanVoiceInference,
-  scanWAVAnalysis,
-} from "../scannerOperations";
+import { scanVoiceInference, scanWAVAnalysis } from "../scannerOperations";
 import { ScannerOrchestrator } from "./orchestrator";
 import type {
   ChainResult,
   ErrorHandlingStrategy,
   FullKitScanInput,
   ProgressCallback,
-  RTFArtistInput,
   VoiceInferenceInput,
   WAVAnalysisInput,
   WAVAnalysisOutput,
 } from "./types";
 
 /**
- * Executes a full kit scan including voice inference, WAV analysis, and RTF artist scanning
- * @param kitData Kit data containing samples, WAV files, and RTF files
+ * Executes a full kit scan including voice inference and WAV analysis
+ * @param kitData Kit data containing samples and WAV files
  * @param progressCallback Optional progress callback
  * @param errorStrategy Error handling strategy (default: "continue")
  * @returns Combined scan results
@@ -93,14 +88,6 @@ export async function executeFullKitScan(
         };
       },
       input: { wavFiles: kitData.wavFiles, fileReader: kitData.fileReader },
-    },
-    {
-      name: "rtfArtist",
-      scanner: scanRTFArtist,
-      input: {
-        rtfFiles: kitData.rtfFiles,
-        fileReader: kitData.fileReader,
-      } as RTFArtistInput,
     },
   ];
 
@@ -205,31 +192,6 @@ export async function executeWAVAnalysisScan(
         };
       },
       input: { wavFiles, fileReader },
-    },
-  ];
-
-  return await orchestrator.executeChain(operations);
-}
-
-/**
- * Executes RTF artist scanning only
- * @param rtfFiles Array of RTF file paths
- * @param progressCallback Optional progress callback
- * @param errorStrategy Error handling strategy (default: "continue")
- * @returns RTF artist results
- */
-export async function executeRTFArtistScan(
-  rtfFiles: string[],
-  progressCallback?: ProgressCallback,
-  errorStrategy: ErrorHandlingStrategy = "continue",
-): Promise<ChainResult> {
-  const orchestrator = new ScannerOrchestrator(progressCallback, errorStrategy);
-
-  const operations = [
-    {
-      name: "rtfArtist",
-      scanner: scanRTFArtist,
-      input: { rtfFiles } as RTFArtistInput,
     },
   ];
 

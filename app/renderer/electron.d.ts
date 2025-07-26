@@ -163,9 +163,15 @@ export interface ElectronAPI {
   scanBanks?: (
     dbDir: string,
     localStorePath: string,
-  ) => Promise<DbResult<{ scannedFiles: number; updatedBanks: number; scannedAt: Date }>>;
+  ) => Promise<
+    DbResult<{ scannedFiles: number; updatedBanks: number; scannedAt: Date }>
+  >;
   // Existing local store selection
-  selectExistingLocalStore?: () => Promise<{ success: boolean; path: string | null; error: string | null }>;
+  selectExistingLocalStore?: () => Promise<{
+    success: boolean;
+    path: string | null;
+    error: string | null;
+  }>;
 }
 
 declare global {

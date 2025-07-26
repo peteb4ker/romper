@@ -2,7 +2,6 @@
 
 import {
   executeFullKitScan,
-  executeRTFArtistScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
   type ProgressCallback,
@@ -51,7 +50,6 @@ export interface KitScanData {
   kitPath: string;
   samples: { [voice: number]: string[] };
   wavFiles: string[];
-  rtfFiles: string[];
 }
 
 /**
@@ -82,7 +80,6 @@ export async function scanKitToDatabase(
       {
         samples: kitScanData.samples,
         wavFiles: kitScanData.wavFiles,
-        rtfFiles: kitScanData.rtfFiles,
       },
       progressCallback,
       "continue", // Continue on errors to get partial results
@@ -147,15 +144,7 @@ export async function scanKitToDatabase(
       }
     }
 
-    // Store RTF artist results in database
-    if (scanResult.results.rtfArtist) {
-      const bankArtists = scanResult.results.rtfArtist.bankArtists;
-      result.scannedRtfFiles = Object.keys(bankArtists).length;
-
-      // Note: Artist information would need to be stored per kit
-      // This would require updating the kit record with artist information
-      // For now, we just count the RTF files processed
-    }
+    // RTF artist results are now handled by bank scanning system
 
     // Include any orchestration errors with their original operation names
     result.errors.push(...scanResult.errors);
@@ -359,46 +348,4 @@ export async function scanWavFilesToDatabase(
   return result;
 }
 
-/**
- * Scan RTF files and extract artist information
- *
- * @param rtfFiles Array of RTF filenames to analyze
- * @returns Database scan result with artist information
- */
-export async function scanRtfFilesToDatabase(
-  rtfFiles: string[],
-): Promise<
-  DatabaseScanResult & { artistsByBank?: { [bank: string]: string } }
-> {
-  const result: DatabaseScanResult & {
-    artistsByBank?: { [bank: string]: string };
-  } = {
-    success: true,
-    scannedKits: 0,
-    scannedVoices: 0,
-    scannedWavFiles: 0,
-    scannedRtfFiles: 0,
-    errors: [],
-  };
-
-  try {
-    const scanResult = await executeRTFArtistScan(rtfFiles);
-
-    if (scanResult.success && scanResult.results.rtfArtist) {
-      const bankArtists = scanResult.results.rtfArtist.bankArtists;
-      result.scannedRtfFiles = Object.keys(bankArtists).length;
-      result.artistsByBank = bankArtists;
-    } else {
-      result.success = false;
-      result.errors.push(...scanResult.errors);
-    }
-  } catch (error) {
-    result.success = false;
-    result.errors.push({
-      operation: "rtf-scan",
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-
-  return result;
-}
+// RTF scanning is now handled by the bank scanning system

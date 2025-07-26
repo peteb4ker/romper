@@ -221,23 +221,25 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
       title: "Choose Existing Local Store",
       message: "Select a folder that contains a .romperdb directory",
     });
-    
+
     if (result.canceled || !result.filePaths[0]) {
       return { success: false, path: null, error: "Selection cancelled" };
     }
-    
+
     const selectedPath = result.filePaths[0];
-    
+
     // Validate that the selected path contains a .romperdb directory
     const validation = validateLocalStoreAndDb(selectedPath);
-    
+
     if (validation.isValid) {
       return { success: true, path: selectedPath, error: null };
     } else {
-      return { 
-        success: false, 
-        path: null, 
-        error: validation.error || "Selected directory does not contain a valid Romper database" 
+      return {
+        success: false,
+        path: null,
+        error:
+          validation.error ||
+          "Selected directory does not contain a valid Romper database",
       };
     }
   });

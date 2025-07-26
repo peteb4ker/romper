@@ -79,7 +79,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       {
         id: "full",
         name: "Full Scan All Kits",
-        description: "Voice names, WAV analysis, artist metadata",
+        description: "Voice names and WAV analysis",
       },
       {
         id: "voiceInference",
@@ -90,11 +90,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         id: "wavAnalysis",
         name: "WAV Analysis Only",
         description: "Analyze sample files",
-      },
-      {
-        id: "rtfArtist",
-        name: "Artist Metadata Only",
-        description: "Parse RTF files for artist info",
       },
     ];
 

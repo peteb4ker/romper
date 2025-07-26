@@ -196,12 +196,15 @@ export function registerDbIpcHandlers() {
       try {
         // Scan local store root for RTF files matching "A - Artist Name.rtf" pattern
         if (!fs.existsSync(localStorePath)) {
-          return { success: false, error: `Local store path not found: ${localStorePath}` };
+          return {
+            success: false,
+            error: `Local store path not found: ${localStorePath}`,
+          };
         }
 
         const files = fs.readdirSync(localStorePath);
-        const rtfFiles = files.filter((file) => 
-          /^[A-Z] - .+\.rtf$/i.test(file)
+        const rtfFiles = files.filter((file) =>
+          /^[A-Z] - .+\.rtf$/i.test(file),
         );
 
         let updatedBanks = 0;
@@ -236,7 +239,8 @@ export function registerDbIpcHandlers() {
           },
         };
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         return {
           success: false,
           error: `Failed to scan banks: ${errorMessage}`,
@@ -244,5 +248,4 @@ export function registerDbIpcHandlers() {
       }
     },
   );
-
 }

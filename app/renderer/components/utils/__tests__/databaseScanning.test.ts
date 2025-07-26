@@ -6,7 +6,6 @@ import {
   type KitScanData,
   scanKitToDatabase,
   scanMultipleKitsToDatabase,
-  scanRtfFilesToDatabase,
   scanVoiceNamesToDatabase,
   scanWavFilesToDatabase,
   setDatabaseOperations,
@@ -17,12 +16,10 @@ vi.mock("../scanners", () => ({
   executeFullKitScan: vi.fn(),
   executeVoiceInferenceScan: vi.fn(),
   executeWAVAnalysisScan: vi.fn(),
-  executeRTFArtistScan: vi.fn(),
 }));
 
 import {
   executeFullKitScan,
-  executeRTFArtistScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
 } from "../scanners";
@@ -93,7 +90,7 @@ describe("databaseScanning", () => {
       expect(result.scannedKits).toBe(1);
       expect(result.scannedVoices).toBe(2);
       expect(result.scannedWavFiles).toBe(2);
-      expect(result.scannedRtfFiles).toBe(1);
+      expect(result.scannedRtfFiles).toBe(0); // RTF scanning removed
       expect(result.errors).toEqual([]);
 
       // Check that voice aliases were updated
@@ -138,7 +135,7 @@ describe("databaseScanning", () => {
       expect(result.scannedKits).toBe(0); // Kit not fully scanned due to WAV analysis failure
       expect(result.scannedVoices).toBe(1);
       expect(result.scannedWavFiles).toBe(0);
-      expect(result.scannedRtfFiles).toBe(1);
+      expect(result.scannedRtfFiles).toBe(0); // RTF scanning removed
       expect(result.errors).toContainEqual({
         operation: "wavAnalysis",
         error: "WAV analysis failed",
@@ -440,50 +437,5 @@ describe("databaseScanning", () => {
     });
   });
 
-  describe("scanRtfFilesToDatabase", () => {
-    it("scans RTF files and extracts artist information", async () => {
-      vi.mocked(executeRTFArtistScan).mockResolvedValue({
-        success: true,
-        results: {
-          rtfArtist: {
-            bankArtists: { A: "Artist One", B: "Artist Two" },
-          },
-        },
-        errors: [],
-        completedOperations: 1,
-        totalOperations: 1,
-      });
-
-      const rtfFiles = ["A - Artist One.rtf", "B - Artist Two.rtf"];
-      const result = await scanRtfFilesToDatabase(rtfFiles);
-
-      expect(result.success).toBe(true);
-      expect(result.scannedRtfFiles).toBe(2);
-      expect(result.artistsByBank).toEqual({
-        A: "Artist One",
-        B: "Artist Two",
-      });
-      expect(result.errors).toEqual([]);
-    });
-
-    it("handles RTF scanning failure", async () => {
-      vi.mocked(executeRTFArtistScan).mockResolvedValue({
-        success: false,
-        results: {},
-        errors: [{ operation: "rtfArtist", error: "No valid RTF files" }],
-        completedOperations: 0,
-        totalOperations: 1,
-      });
-
-      const result = await scanRtfFilesToDatabase(["invalid.txt"]);
-
-      expect(result.success).toBe(false);
-      expect(result.scannedRtfFiles).toBe(0);
-      expect(result.artistsByBank).toBeUndefined();
-      expect(result.errors).toContainEqual({
-        operation: "rtfArtist",
-        error: "No valid RTF files",
-      });
-    });
-  });
+  // RTF scanning tests removed - functionality moved to bank scanning system
 });

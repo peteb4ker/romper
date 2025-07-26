@@ -248,11 +248,11 @@ describe("useKitMetadata", () => {
     expect(result.current.stepPattern[1]).toHaveLength(16);
     expect(result.current.stepPattern[2]).toHaveLength(16);
     expect(result.current.stepPattern[3]).toHaveLength(16);
-    
+
     // Each step should be a number (velocity value)
-    result.current.stepPattern.forEach(voice => {
-      voice.forEach(step => {
-        expect(typeof step).toBe('number');
+    result.current.stepPattern.forEach((voice) => {
+      voice.forEach((step) => {
+        expect(typeof step).toBe("number");
       });
     });
   });

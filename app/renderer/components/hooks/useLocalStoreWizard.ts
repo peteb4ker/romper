@@ -272,8 +272,11 @@ export function useLocalStoreWizard(
               throw new Error("listFilesInRoot is not available");
             const files = await api.listFilesInRoot(kitPath);
             const wavFiles = files.filter((f: string) => /\.wav$/i.test(f));
+            // Extract bank letter from kit name (e.g., "A0" -> "A", "B12" -> "B")
+            const bankLetter = kitName.charAt(0);
             const insertedKitName = await insertKit(dbDir, {
               name: kitName,
+              bank_letter: bankLetter,
               editable: false,
             });
             const voices = groupSamplesByVoice(wavFiles);
@@ -349,9 +352,6 @@ export function useLocalStoreWizard(
             const wavFiles = files
               .filter((f: string) => /\.wav$/i.test(f))
               .map((f: string) => `${kitPath}/${f}`);
-            const rtfFiles = files
-              .filter((f: string) => /\.rtf$/i.test(f))
-              .map((f: string) => `${kitPath}/${f}`);
 
             // Group samples by voice for voice inference
             const wavFileNames = files.filter((f: string) => /\.wav$/i.test(f));
@@ -361,7 +361,6 @@ export function useLocalStoreWizard(
             const scanInput: FullKitScanInput = {
               samples,
               wavFiles,
-              rtfFiles,
               fileReader: createFileReader(),
             };
 
@@ -380,15 +379,7 @@ export function useLocalStoreWizard(
               description?: string;
             } = {};
 
-            if (
-              scanResult.success &&
-              scanResult.results.rtfArtist?.bankArtists
-            ) {
-              const bankArtists = scanResult.results.rtfArtist.bankArtists;
-              if (bankArtists[kitName]) {
-                updates.artist = bankArtists[kitName];
-              }
-            }
+            // Artist metadata is now handled by bank scanning, not kit scanning
 
             // Apply voice inference results as tags if available
             if (

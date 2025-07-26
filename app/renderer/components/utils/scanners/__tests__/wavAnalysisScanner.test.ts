@@ -8,7 +8,7 @@ import { scanWAVAnalysis } from "../wavAnalysisScanner";
 describe("scanWAVAnalysis", () => {
   it("returns default analysis values (WAV analysis disabled)", async () => {
     const mockFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(4));
-    
+
     const input = {
       filePath: "/path/to/test.wav",
       fileReader: mockFileReader,
@@ -24,14 +24,14 @@ describe("scanWAVAnalysis", () => {
       isStereo: false,
       isValid: true,
     });
-    
+
     // File reader should not be called since analysis is disabled
     expect(mockFileReader).not.toHaveBeenCalled();
   });
 
   it("returns default analysis values for any file path", async () => {
     const mockFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(4));
-    
+
     const input = {
       filePath: "/path/to/mono.wav",
       fileReader: mockFileReader,
@@ -64,7 +64,9 @@ describe("scanWAVAnalysis", () => {
   });
 
   it("succeeds even with file reading errors (analysis disabled)", async () => {
-    const failingFileReader = vi.fn().mockRejectedValue(new Error("File not found"));
+    const failingFileReader = vi
+      .fn()
+      .mockRejectedValue(new Error("File not found"));
 
     const input = {
       filePath: "/path/to/missing.wav",
@@ -127,7 +129,9 @@ describe("scanWAVAnalysis", () => {
   });
 
   it("handles custom file reader errors gracefully (analysis disabled)", async () => {
-    const failingFileReader = vi.fn().mockRejectedValue(new Error("Custom reader failed"));
+    const failingFileReader = vi
+      .fn()
+      .mockRejectedValue(new Error("Custom reader failed"));
 
     const input = {
       filePath: "/path/to/test.wav",

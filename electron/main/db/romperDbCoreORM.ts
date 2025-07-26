@@ -42,7 +42,10 @@ function withDb<T>(
           `[DB] Migration failed for ${dbPath}:`,
           migrationResult.error,
         );
-        return { success: false, error: `Migration failed: ${migrationResult.error}` };
+        return {
+          success: false,
+          error: `Migration failed: ${migrationResult.error}`,
+        };
       }
       migrationCheckedDbs.add(dbPath);
     }
@@ -91,7 +94,7 @@ export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
   try {
     sqlite = new BetterSqlite3(dbPath);
     const db = drizzle(sqlite, { schema });
-    
+
     const migrationsPath = getMigrationsPath();
     if (migrationsPath) {
       migrate(db, { migrationsFolder: migrationsPath });
@@ -132,7 +135,9 @@ export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
     } catch (error) {
       console.error("[Main] Database schema validation failed:", error);
       // This should not happen if migrations ran successfully
-      console.error("[Main] This suggests a migration issue or corrupted database");
+      console.error(
+        "[Main] This suggests a migration issue or corrupted database",
+      );
       throw new Error(`Database schema validation failed: ${error}`);
     }
   });
@@ -157,7 +162,6 @@ export function createRomperDbFile(dbDir: string): {
       );
       migrate(db, { migrationsFolder: migrationsPath });
       console.log("[Main] Initial migrations completed successfully");
-      
     } else {
       console.error(
         "[Main] Migrations folder not found at any known location.",
@@ -253,6 +257,7 @@ export function getKits(dbDir: string): DbResult<any[]> {
     const query = db.query.kits.findMany({
       with: {
         voices: true,
+        bank: true, // Include bank information for artist metadata
       },
     });
 
@@ -288,6 +293,7 @@ export function getKit(dbDir: string, kitName: string): DbResult<any | null> {
         with: {
           voices: true,
           samples: true,
+          bank: true, // Include bank information for artist metadata
         },
       })
       .sync();
@@ -357,10 +363,6 @@ export function updateBank(
       Object.entries(updates).filter(([_, value]) => value !== undefined),
     );
 
-    db.update(banks)
-      .set(updateData)
-      .where(eq(banks.letter, bankLetter))
-      .run();
+    db.update(banks).set(updateData).where(eq(banks.letter, bankLetter)).run();
   });
 }
-

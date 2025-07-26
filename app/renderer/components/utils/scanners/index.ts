@@ -29,7 +29,6 @@ export { scanWAVAnalysis } from "./wavAnalysisScanner";
 // High-level orchestration functions
 export {
   executeFullKitScan,
-  executeRTFArtistScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
 } from "./orchestrationFunctions";

@@ -1,4 +1,5 @@
 import React from "react";
+
 import Spinner from "./Spinner";
 
 interface FilePickerButtonProps {
@@ -40,7 +41,7 @@ const FilePickerButton: React.FC<FilePickerButtonProps> = ({
   };
 
   const isDisabled = isSelecting || disabled;
-  
+
   return (
     <button
       type="button"
@@ -51,7 +52,8 @@ const FilePickerButton: React.FC<FilePickerButtonProps> = ({
     >
       {isSelecting ? (
         <>
-          <Spinner size={18} className="mr-2" data-testid="spinner" /> {selectingText}
+          <Spinner size={18} className="mr-2" data-testid="spinner" />{" "}
+          {selectingText}
         </>
       ) : (
         <>

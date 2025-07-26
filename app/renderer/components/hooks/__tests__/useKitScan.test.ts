@@ -6,7 +6,6 @@ import { scanSingleKit } from "../useKitScan";
 vi.mock("../../utils/scanners/orchestrationFunctions", () => ({
   executeVoiceInferenceScan: vi.fn(),
   executeWAVAnalysisScan: vi.fn(),
-  executeRTFArtistScan: vi.fn(),
   executeFullKitScan: vi.fn(),
 }));
 
@@ -51,24 +50,6 @@ describe("scanSingleKit", () => {
     });
 
     expect(executeWAVAnalysisScan).toHaveBeenCalled();
-    expect(result.success).toBe(true);
-  });
-
-  it("calls executeRTFArtistScan for rtfArtist", async () => {
-    const { executeRTFArtistScan } = await import(
-      "../../utils/scanners/orchestrationFunctions"
-    );
-    vi.mocked(executeRTFArtistScan).mockResolvedValue({ success: true });
-
-    const result = await scanSingleKit({
-      kitName: "A01_Kick",
-      localStorePath: "/store",
-      scanType: "rtfArtist",
-      scanTypeDisplay: "artist metadata",
-      fileReaderImpl,
-    });
-
-    expect(executeRTFArtistScan).toHaveBeenCalled();
     expect(result.success).toBe(true);
   });
 

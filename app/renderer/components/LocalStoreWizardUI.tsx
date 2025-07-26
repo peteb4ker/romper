@@ -33,9 +33,12 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
     "[LocalStoreWizardUI] Rendered with setLocalStorePath:",
     !!setLocalStorePath,
   );
-  
-  const [showExistingStoreSelector, setShowExistingStoreSelector] = useState(false);
-  const [existingStoreError, setExistingStoreError] = useState<string | null>(null);
+
+  const [showExistingStoreSelector, setShowExistingStoreSelector] =
+    useState(false);
+  const [existingStoreError, setExistingStoreError] = useState<string | null>(
+    null,
+  );
   const [isSelectingExisting, setIsSelectingExisting] = useState(false);
   const {
     state,
@@ -95,17 +98,23 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
 
   const handleChooseExistingStore = async () => {
     console.log("electronAPI available:", !!window.electronAPI);
-    console.log("selectExistingLocalStore method available:", !!window.electronAPI?.selectExistingLocalStore);
-    
+    console.log(
+      "selectExistingLocalStore method available:",
+      !!window.electronAPI?.selectExistingLocalStore,
+    );
+
     if (!window.electronAPI?.selectExistingLocalStore) {
-      const errorMsg = !window.electronAPI 
-        ? "electronAPI not available (app may need restart)" 
+      const errorMsg = !window.electronAPI
+        ? "electronAPI not available (app may need restart)"
         : "selectExistingLocalStore method not found (preload issue)";
       setExistingStoreError(errorMsg);
       console.error("Debug info:", {
         electronAPI: !!window.electronAPI,
-        selectExistingLocalStore: !!window.electronAPI?.selectExistingLocalStore,
-        availableMethods: window.electronAPI ? Object.keys(window.electronAPI) : "none"
+        selectExistingLocalStore:
+          !!window.electronAPI?.selectExistingLocalStore,
+        availableMethods: window.electronAPI
+          ? Object.keys(window.electronAPI)
+          : "none",
       });
       return;
     }
@@ -117,7 +126,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
       console.log("Calling selectExistingLocalStore...");
       const result = await window.electronAPI.selectExistingLocalStore();
       console.log("selectExistingLocalStore result:", result);
-      
+
       if (result.success && result.path) {
         // Save the selected path to settings and close wizard
         setLocalStorePath(result.path);
@@ -156,22 +165,23 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
           )}
         </>
       )}
-      
+
       {showExistingStoreSelector && (
         <div className="mb-4">
           <label className="block font-semibold mb-1">
             Choose Existing Local Store
           </label>
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
-            Select a folder that contains an existing Romper database (.romperdb directory).
+            Select a folder that contains an existing Romper database (.romperdb
+            directory).
           </p>
-          
+
           {existingStoreError && (
             <div className="bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
               {existingStoreError}
             </div>
           )}
-          
+
           <div className="flex gap-2">
             <FilePickerButton
               className="bg-blue-600 text-white px-4 py-2 rounded"
@@ -182,7 +192,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
             >
               Browse for Existing Store
             </FilePickerButton>
-            
+
             <button
               className="bg-gray-400 text-white px-4 py-2 rounded"
               onClick={() => {
@@ -195,7 +205,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
           </div>
         </div>
       )}
-      
+
       {!showExistingStoreSelector && (
         <>
           {/* Show summary on both Target and Initialize steps */}
@@ -217,7 +227,9 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
                     : ""
               }
               targetUrl={
-                currentStep === WizardStep.Initialize ? state.targetPath : undefined
+                currentStep === WizardStep.Initialize
+                  ? state.targetPath
+                  : undefined
               }
             />
           )}
@@ -254,7 +266,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
                 Cancel
               </button>
             </div>
-            
+
             {/* Choose Existing Local Store button - bottom right */}
             <button
               className="bg-green-600 text-white px-4 py-2 rounded text-sm flex items-center gap-2 hover:bg-green-700"

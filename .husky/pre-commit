@@ -1,0 +1,11 @@
+echo "🚀 Running pre-commit checks..."
+echo "🔍 TypeScript → 🧹 Linting → 🧪 Testing → 🏗️ Building"
+
+npm run pre-commit
+
+if [ $? -eq 0 ]; then
+  echo "✅ All pre-commit checks passed!"
+else
+  echo "❌ Pre-commit checks failed. Commit aborted."
+  exit 1
+fi

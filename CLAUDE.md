@@ -23,7 +23,7 @@ npm run start           # Alternative Electron start
 
 # Building & Type Checking
 npm run build           # Build for production
-npx tsc --noEmit       # TypeScript validation (REQUIRED before task completion)
+npx tsc --noEmit       # TypeScript validation (automated in pre-commit)
 
 # Testing
 npm run test          # Run all tests (ALWAYS use this command)
@@ -32,6 +32,14 @@ npm run test:integration # Integration tests only
 
 # Linting
 npm run lint          # ESLint
+
+# Pre-commit Hooks (Automated)
+# These run automatically on git commit - no manual intervention needed:
+# - TypeScript type checking (npm run typecheck)
+# - ESLint with auto-fix (npm run lint)  
+# - Full test suite (npm run test)
+# - Production build validation (npm run build)
+# Manual override: npm run pre-commit
 ```
 
 ## Project Structure
@@ -90,15 +98,28 @@ Based on the file you're working on, additional specific standards are automatic
 ### Task Execution Process
 1. **Read current task** from `tasks/tasks-PRD.md`
 2. **Implement one sub-task at a time**
-3. **Run `npx tsc --noEmit`** to validate TypeScript
-4. **Run tests** to ensure functionality
-5. **Update task file** and mark sub-task complete
-6. **Ask for permission** before proceeding to next sub-task
+3. **Update task file** and mark sub-task complete
+4. **Ask for permission** before proceeding to next sub-task
 
-### Build Validation (CRITICAL)
-- **Always run `npx tsc --noEmit`** before marking tasks complete
-- Fix all TypeScript errors before proceeding
-- Maintain test coverage during development
+### Automated Quality Gates (Streamlined Development)
+**All quality checks are now automated via pre-commit hooks:**
+- ✅ **TypeScript type checking** - catches compilation errors
+- ✅ **ESLint linting and auto-fix** - enforces code style
+- ✅ **Full test suite execution** - ensures functionality
+- ✅ **Production build validation** - confirms deployability
+
+**Manual testing**: `npm run pre-commit` (optional, runs automatically on commit)
+
+**Result**: Focus on implementation - quality gates handle the rest!
+
+### For AI Assistants (Claude)
+**Streamlined Instructions**: Pre-commit hooks now handle all quality checks automatically. No need to explicitly run or mention:
+- `npx tsc --noEmit` (automated)
+- `npm run lint` (automated)  
+- `npm run test` (automated)
+- `npm run build` (automated)
+
+Simply implement features and commit - the hooks ensure quality.
 
 ### Git Workflow
 - Follow project commit standards (see CONTRIBUTING.md)

@@ -294,6 +294,10 @@ ipcRenderer.on("menu-scan-all-kits", () => {
   window.dispatchEvent(new CustomEvent("menu-scan-all-kits"));
 });
 
+ipcRenderer.on("menu-scan-banks", () => {
+  window.dispatchEvent(new CustomEvent("menu-scan-banks"));
+});
+
 ipcRenderer.on("menu-validate-database", () => {
   window.dispatchEvent(new CustomEvent("menu-validate-database"));
 });

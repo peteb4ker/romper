@@ -5,9 +5,11 @@ import {
   groupSamplesByVoice,
 } from "../../../shared/kitUtilsShared";
 import ChangeLocalStoreDirectoryDialog from "../components/ChangeLocalStoreDirectoryDialog";
+import { useBankScanning } from "../components/hooks/useBankScanning";
 import { useKitMetadata } from "../components/hooks/useKitMetadata";
 import { useMenuEvents } from "../components/hooks/useMenuEvents";
 import { useMessageDisplay } from "../components/hooks/useMessageDisplay";
+import { useStartupActions } from "../components/hooks/useStartupActions";
 import { useValidationResults } from "../components/hooks/useValidationResults";
 import KitBrowser, { KitBrowserHandle } from "../components/KitBrowser";
 import KitDetails from "../components/KitDetails";
@@ -37,6 +39,9 @@ const KitsView = () => {
   // Ref to access KitBrowser scan functionality
   const kitBrowserRef = useRef<KitBrowserHandle | null>(null);
 
+  // Check if local store needs to be set up
+  const needsLocalStoreSetup = !localStoreStatus?.isValid || !localStorePath;
+
   // Validation results hook for database validation
   const { openValidationDialog } = useValidationResults({
     localStorePath: localStorePath || "",
@@ -46,6 +51,18 @@ const KitsView = () => {
     },
   });
 
+  // Bank scanning hook
+  const { scanBanks } = useBankScanning({
+    localStorePath,
+    onMessage: showMessage,
+  });
+
+  // Startup actions hook
+  useStartupActions({
+    localStorePath,
+    needsLocalStoreSetup,
+  });
+
   // Menu event handlers
   useMenuEvents({
     onScanAllKits: () => {
@@ -53,6 +70,10 @@ const KitsView = () => {
       if (kitBrowserRef.current?.handleScanAllKits) {
         kitBrowserRef.current.handleScanAllKits();
       }
+    },
+    onScanBanks: () => {
+      console.log("[KitsView] Menu scan banks triggered");
+      scanBanks();
     },
     onValidateDatabase: () => {
       console.log("[KitsView] Menu validate database triggered");
@@ -72,8 +93,6 @@ const KitsView = () => {
     },
   });
 
-  // Check if local store needs to be set up
-  const needsLocalStoreSetup = !localStoreStatus?.isValid || !localStorePath;
   console.log("[KitsView] Local store status check:");
   console.log("[KitsView] localStorePath:", localStorePath);
   console.log("[KitsView] localStoreStatus:", localStoreStatus);

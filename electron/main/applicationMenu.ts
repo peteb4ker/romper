@@ -63,6 +63,17 @@ export function createApplicationMenu() {
           },
         },
         {
+          label: "Scan Banks",
+          accelerator: "CmdOrCtrl+Shift+B",
+          click: () => {
+            // Send IPC message to renderer to trigger bank scanning
+            const focusedWindow = BrowserWindow.getFocusedWindow();
+            if (focusedWindow) {
+              focusedWindow.webContents.send("menu-scan-banks");
+            }
+          },
+        },
+        {
           label: "Validate Database",
           accelerator: "CmdOrCtrl+Shift+V",
           click: () => {

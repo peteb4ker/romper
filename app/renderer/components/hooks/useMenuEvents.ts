@@ -2,6 +2,7 @@ import { useEffect } from "react";
 
 export interface MenuEventHandlers {
   onScanAllKits?: () => void;
+  onScanBanks?: () => void;
   onValidateDatabase?: () => void;
   onSetupLocalStore?: () => void;
   onChangeLocalStoreDirectory?: () => void;
@@ -17,6 +18,12 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
     const handleScanAllKits = () => {
       if (handlers.onScanAllKits) {
         handlers.onScanAllKits();
+      }
+    };
+
+    const handleScanBanks = () => {
+      if (handlers.onScanBanks) {
+        handlers.onScanBanks();
       }
     };
 
@@ -49,6 +56,7 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
       // Use electron's ipcRenderer.on equivalent through the preload script
       // We need to add these event listeners to the electron API
       window.addEventListener("menu-scan-all-kits", handleScanAllKits);
+      window.addEventListener("menu-scan-banks", handleScanBanks);
       window.addEventListener("menu-validate-database", handleValidateDatabase);
       window.addEventListener("menu-setup-local-store", handleSetupLocalStore);
       window.addEventListener(
@@ -61,6 +69,7 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
     // Cleanup event listeners
     return () => {
       window.removeEventListener("menu-scan-all-kits", handleScanAllKits);
+      window.removeEventListener("menu-scan-banks", handleScanBanks);
       window.removeEventListener(
         "menu-validate-database",
         handleValidateDatabase,

@@ -97,25 +97,28 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
     async (_event, localStorePath: string, kitSlot: string) => {
       if (!/^[A-Z][0-9]{1,2}$/.test(kitSlot))
         throw new Error("Invalid kit slot. Use format A0-Z99.");
-      const kitPath = path.join(localStorePath, kitSlot);
-      if (fs.existsSync(kitPath)) throw new Error("Kit already exists.");
-      fs.mkdirSync(kitPath);
 
-      // Create kit record in database instead of JSON
-      try {
-        const kitRecord = {
-          name: kitSlot,
-          alias: null,
-          artist: null,
-          editable: false,
-          locked: false,
-          step_pattern: null,
-        };
-        addKit(localStorePath, kitRecord);
-      } catch (error) {
-        // If database insertion fails, remove the created directory
-        fs.rmSync(kitPath, { recursive: true, force: true });
-        throw error;
+      const dbPath = path.join(localStorePath, ".romperdb");
+
+      // Check if kit already exists in database
+      const existingKit = getKit(dbPath, kitSlot);
+      if (existingKit.success && existingKit.data) {
+        throw new Error("Kit already exists.");
+      }
+
+      // Create kit record in database only (no folder creation)
+      const kitRecord = {
+        name: kitSlot,
+        alias: null,
+        artist: null,
+        editable: true, // User-created kits are editable by default
+        locked: false,
+        step_pattern: null,
+      };
+
+      const result = addKit(dbPath, kitRecord);
+      if (!result.success) {
+        throw new Error(`Failed to create kit: ${result.error}`);
       }
     },
   );
@@ -132,44 +135,38 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
         !/^[A-Z][0-9]{1,2}$/.test(destKit)
       )
         throw new Error("Invalid kit slot. Use format A0-Z99.");
-      const srcPath = path.join(localStorePath, sourceKit);
-      const destPath = path.join(localStorePath, destKit);
-      if (!fs.existsSync(srcPath))
-        throw new Error("Source kit does not exist.");
-      if (fs.existsSync(destPath))
-        throw new Error("Destination kit already exists.");
-      copyRecursiveSync(srcPath, destPath);
 
-      // Copy kit metadata in database
-      try {
-        const sourceKitData = getKit(localStorePath, sourceKit);
-        if (sourceKitData.success && sourceKitData.data) {
-          const destKitRecord = {
-            name: destKit,
-            alias: destKit,
-            artist: sourceKitData.data.artist,
-            editable: sourceKitData.data.editable,
-            locked: sourceKitData.data.locked,
-            step_pattern: sourceKitData.data.step_pattern,
-          };
-          addKit(localStorePath, destKitRecord);
-        } else {
-          // If source kit doesn't exist in database, create default entry
-          const defaultKitRecord = {
-            name: destKit,
-            alias: null,
-            artist: null,
-            editable: false,
-            locked: false,
-            step_pattern: null,
-          };
-          addKit(localStorePath, defaultKitRecord);
-        }
-      } catch (error) {
-        // If database operation fails, remove the copied directory
-        fs.rmSync(destPath, { recursive: true, force: true });
-        throw error;
+      const dbPath = path.join(localStorePath, ".romperdb");
+
+      // Check if source kit exists in database
+      const sourceKitData = getKit(dbPath, sourceKit);
+      if (!sourceKitData.success || !sourceKitData.data) {
+        throw new Error("Source kit does not exist.");
       }
+
+      // Check if destination kit already exists in database
+      const existingDestKit = getKit(dbPath, destKit);
+      if (existingDestKit.success && existingDestKit.data) {
+        throw new Error("Destination kit already exists.");
+      }
+
+      // Copy kit metadata in database only (no folder copying)
+      const destKitRecord = {
+        name: destKit,
+        alias: destKit,
+        artist: sourceKitData.data.artist,
+        editable: true, // Duplicated kits are editable by default
+        locked: false,
+        step_pattern: sourceKitData.data.step_pattern,
+      };
+
+      const result = addKit(dbPath, destKitRecord);
+      if (!result.success) {
+        throw new Error(`Failed to duplicate kit: ${result.error}`);
+      }
+
+      // TODO: Copy sample references in database as well
+      // This will be handled when sample management is fully implemented
     },
   );
   ipcMain.handle("list-files-in-root", async (_event, localStorePath: string) =>

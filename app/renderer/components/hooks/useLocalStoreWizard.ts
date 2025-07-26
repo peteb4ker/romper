@@ -287,11 +287,14 @@ export function useLocalStoreWizard(
                 const maxSamples = Math.min(voiceSamples.length, 12);
                 for (let idx = 0; idx < maxSamples; idx++) {
                   const filename = voiceSamples[idx];
+                  // Set source_path to the absolute path for reference-only architecture
+                  const sourcePath = `${kitPath}/${filename}`;
                   await insertSample(dbDir, {
                     kit_name: insertedKitName,
                     filename,
                     voice_number: Number(voiceNum),
                     slot_number: idx + 1,
+                    source_path: sourcePath,
                     is_stereo: false,
                   });
                 }

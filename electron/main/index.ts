@@ -182,7 +182,7 @@ function validateAndFixLocalStore(settings: Settings): Settings {
 
 function registerAllIpcHandlers(settings: Settings) {
   registerIpcHandlers(settings);
-  registerDbIpcHandlers();
+  registerDbIpcHandlers(settings);
 }
 
 app.whenReady().then(async () => {

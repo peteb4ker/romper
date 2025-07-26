@@ -70,10 +70,7 @@ export interface ElectronAPI {
     localStorePath: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
   getAllSamples?: (dbDir: string) => Promise<DbResult<Sample[]>>;
-  getAllSamplesForKit?: (
-    dbDir: string,
-    kitName: string,
-  ) => Promise<DbResult<Sample[]>>;
+  getAllSamplesForKit?: (kitName: string) => Promise<DbResult<Sample[]>>;
   // Database methods for kit metadata (replacing JSON file dependency)
   getKitMetadata?: (
     dbDir: string,
@@ -100,7 +97,7 @@ export interface ElectronAPI {
       description?: string;
     },
   ) => Promise<DbResult>;
-  getKits?: (dbDir: string) => Promise<
+  getKits?: () => Promise<
     DbResult<
       Array<{
         id: number;

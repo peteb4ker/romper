@@ -17,6 +17,7 @@ interface KitBrowserProps {
   onSelectKit: (kitName: string) => void;
   localStorePath: string | null;
   kits?: string[];
+  kitData?: any[];
   kitLabels?: { [kit: string]: RampleKitLabel };
   onRescanAllVoiceNames: () => void;
   sampleCounts?: Record<string, [number, number, number, number]>;
@@ -40,6 +41,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     const logic = useKitBrowser({
       ...props,
       kits: props.kits ?? [],
+      kitData: props.kitData ?? [],
       kitListRef: kitListRef,
       localStorePath: props.localStorePath ?? "",
       onMessage: props.onMessage,

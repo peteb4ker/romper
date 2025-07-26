@@ -167,9 +167,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] updateKit invoked", dbDir, kitName, updates);
     return ipcRenderer.invoke("update-kit-metadata", dbDir, kitName, updates);
   },
-  getKits: (dbDir: string) => {
-    console.log("[IPC] getKits invoked", dbDir);
-    return ipcRenderer.invoke("get-all-kits", dbDir);
+  getKits: () => {
+    console.log("[IPC] getKits invoked");
+    return ipcRenderer.invoke("get-all-kits");
   },
   updateVoiceAlias: (
     dbDir: string,
@@ -266,9 +266,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] getAllSamples invoked", dbDir);
     return ipcRenderer.invoke("get-all-samples", dbDir);
   },
-  getAllSamplesForKit: (dbDir: string, kitName: string) => {
-    console.log("[IPC] getAllSamplesForKit invoked", dbDir, kitName);
-    return ipcRenderer.invoke("get-all-samples-for-kit", dbDir, kitName);
+  getAllSamplesForKit: (kitName: string) => {
+    console.log("[IPC] getAllSamplesForKit invoked", kitName);
+    return ipcRenderer.invoke("get-all-samples-for-kit", kitName);
   },
   rescanKit: (dbDir: string, localStorePath: string, kitName: string) => {
     console.log("[IPC] rescanKit invoked", dbDir, localStorePath, kitName);

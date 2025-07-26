@@ -22,7 +22,7 @@ import {
   validateLocalStoreBasic,
 } from "./localStoreValidator.js";
 
-export function registerDbIpcHandlers() {
+export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("create-romper-db", async (_event, dbDir: string) => {
     return createRomperDbFile(dbDir);
   });
@@ -62,7 +62,12 @@ export function registerDbIpcHandlers() {
     },
   );
 
-  ipcMain.handle("get-all-kits", async (_event, dbDir: string) => {
+  ipcMain.handle("get-all-kits", async (_event) => {
+    const localStorePath = inMemorySettings.localStorePath;
+    if (!localStorePath) {
+      return { success: false, error: "No local store path configured" };
+    }
+    const dbDir = path.join(localStorePath, ".romperdb");
     return getKits(dbDir);
   });
 
@@ -104,12 +109,14 @@ export function registerDbIpcHandlers() {
     return getAllSamples(dbDir);
   });
 
-  ipcMain.handle(
-    "get-all-samples-for-kit",
-    async (_event, dbDir: string, kitName: string) => {
-      return getAllSamplesForKit(dbDir, kitName);
-    },
-  );
+  ipcMain.handle("get-all-samples-for-kit", async (_event, kitName: string) => {
+    const localStorePath = inMemorySettings.localStorePath;
+    if (!localStorePath) {
+      return { success: false, error: "No local store path configured" };
+    }
+    const dbDir = path.join(localStorePath, ".romperdb");
+    return getAllSamplesForKit(dbDir, kitName);
+  });
 
   ipcMain.handle(
     "rescan-kit",

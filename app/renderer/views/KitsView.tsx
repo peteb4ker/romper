@@ -17,6 +17,22 @@ import type { VoiceSamples } from "../components/kitTypes";
 import LocalStoreWizardUI from "../components/LocalStoreWizardUI";
 import { useSettings } from "../utils/SettingsContext";
 
+// Convert database sample objects to VoiceSamples format
+function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
+  const voices: VoiceSamples = { 1: [], 2: [], 3: [], 4: [] };
+
+  dbSamples.forEach((sample: any) => {
+    const voiceNumber = sample.voice_number;
+    if (voiceNumber >= 1 && voiceNumber <= 4) {
+      voices[voiceNumber].push(sample.filename);
+    }
+  });
+
+  // Sort samples within each voice
+  Object.keys(voices).forEach((v) => voices[+v].sort());
+  return voices;
+}
+
 const KitsView = () => {
   const {
     localStorePath,
@@ -26,6 +42,7 @@ const KitsView = () => {
   } = useSettings();
   const { showMessage } = useMessageDisplay();
   const [kits, setKits] = useState<string[]>([]);
+  const [kitData, setKitData] = useState<any[]>([]);
   const [allKitSamples, setAllKitSamples] = useState<{
     [kit: string]: VoiceSamples;
   }>({});
@@ -105,56 +122,56 @@ const KitsView = () => {
     }
   }, [needsLocalStoreSetup]);
 
-  // Add type guards for possibly undefined Electron APIs - memoized to prevent infinite effect loops
-  const safeListFilesInRoot = React.useMemo(
-    () => window.electronAPI?.listFilesInRoot?.bind(window.electronAPI),
-    [], // Empty deps array ensures this function is created once
-  );
+  // Database-only approach - no filesystem scanning needed
 
   // Load all kits, samples, and labels on local store change
   useEffect(() => {
     if (!localStorePath || needsLocalStoreSetup) return;
     console.log("[KitsView] Loading kits from", localStorePath); // Log when effect runs
     (async () => {
-      // 1. Scan all kits using listFilesInRoot and filter for kit folder pattern
-      if (!safeListFilesInRoot) {
-        console.warn("listFilesInRoot is not available");
-        setKits([]);
-        return;
-      }
+      // 1. Load kits from database (includes bank relationships)
       let kitNames: string[] = [];
       try {
-        const allFiles = await safeListFilesInRoot(localStorePath);
-        // Filter for kit folder pattern (A0-Z99)
-        kitNames = allFiles.filter((folder: string) =>
-          /^[A-Z][0-9]{1,2}$/.test(folder),
-        );
-        setKits(kitNames);
+        const kitsResult = await window.electronAPI?.getKits?.();
+        if (kitsResult?.success && kitsResult.data) {
+          const kitsWithBanks = kitsResult.data;
+          setKitData(kitsWithBanks);
+          // Extract kit names for compatibility with existing code
+          kitNames = kitsWithBanks.map((kit: any) => kit.name);
+          setKits(kitNames);
+        } else {
+          console.warn("Failed to load kits from database:", kitsResult?.error);
+          setKits([]);
+          setKitData([]);
+        }
       } catch (error) {
-        console.warn("Error scanning local store:", error);
+        console.warn("Error loading kits from database:", error);
         setKits([]);
+        setKitData([]);
       }
-      // 2. Scan all samples for each kit
+      // 2. Load samples for each kit from database
       const samples: { [kit: string]: VoiceSamples } = {};
       for (const kit of kitNames) {
-        const kitPath = `${localStorePath}/${kit}`;
-        if (!safeListFilesInRoot) {
-          console.warn("listFilesInRoot is not available");
-          samples[kit] = { 1: [], 2: [], 3: [], 4: [] };
-          continue;
-        }
         try {
-          const files = await safeListFilesInRoot(kitPath);
-          const wavs = files.filter((f: string) => /\.wav$/i.test(f));
-          samples[kit] = groupSamplesByVoice(wavs);
+          const samplesResult =
+            await window.electronAPI?.getAllSamplesForKit?.(kit);
+          if (samplesResult?.success && samplesResult.data) {
+            samples[kit] = groupDbSamplesByVoice(samplesResult.data);
+          } else {
+            console.warn(
+              `Failed to load samples for kit ${kit}:`,
+              samplesResult?.error,
+            );
+            samples[kit] = { 1: [], 2: [], 3: [], 4: [] };
+          }
         } catch (error) {
-          console.warn(`Error listing files for kit ${kit}:`, error);
+          console.warn(`Error loading samples for kit ${kit}:`, error);
           samples[kit] = { 1: [], 2: [], 3: [], 4: [] };
         }
       }
       setAllKitSamples(samples);
     })();
-  }, [localStorePath, needsLocalStoreSetup, safeListFilesInRoot]);
+  }, [localStorePath, needsLocalStoreSetup]);
 
   // When a kit is selected, set its samples
   useEffect(() => {
@@ -222,26 +239,44 @@ const KitsView = () => {
       scrollToKitName = scrollToKit;
     }
     if (refresh) {
-      // Re-scan all kits and samples
-      if (localStorePath && safeListFilesInRoot) {
-        const allFiles = await safeListFilesInRoot(localStorePath).catch(
-          () => [],
-        );
-        // Filter for kit folder pattern (A0-Z99)
-        const kitNames = allFiles.filter((folder: string) =>
-          /^[A-Z][0-9]{1,2}$/.test(folder),
-        );
-        setKits(kitNames);
-        const samples: { [kit: string]: VoiceSamples } = {};
-        for (const kit of kitNames) {
-          const kitPath = `${localStorePath}/${kit}`;
-          if (!safeListFilesInRoot)
-            throw new Error("listFilesInRoot is not available");
-          const files = await safeListFilesInRoot(kitPath).catch(() => []);
-          const wavs = files.filter((f: string) => /\.wav$/i.test(f));
-          samples[kit] = groupSamplesByVoice(wavs);
+      // Re-load all kits and samples from database
+      try {
+        // Load kits from database
+        const kitsResult = await window.electronAPI?.getKits?.();
+        if (kitsResult?.success && kitsResult.data) {
+          const kitsWithBanks = kitsResult.data;
+          setKitData(kitsWithBanks);
+          const kitNames = kitsWithBanks.map((kit: any) => kit.name);
+          setKits(kitNames);
+
+          // Load samples from database for each kit
+          const samples: { [kit: string]: VoiceSamples } = {};
+          for (const kit of kitNames) {
+            try {
+              const samplesResult =
+                await window.electronAPI?.getAllSamplesForKit?.(kit);
+              if (samplesResult?.success && samplesResult.data) {
+                samples[kit] = groupDbSamplesByVoice(samplesResult.data);
+              } else {
+                samples[kit] = { 1: [], 2: [], 3: [], 4: [] };
+              }
+            } catch (error) {
+              console.warn(`Error loading samples for kit ${kit}:`, error);
+              samples[kit] = { 1: [], 2: [], 3: [], 4: [] };
+            }
+          }
+          setAllKitSamples(samples);
+        } else {
+          console.warn("Failed to load kits from database:", kitsResult?.error);
+          setKits([]);
+          setKitData([]);
+          setAllKitSamples({});
         }
-        setAllKitSamples(samples);
+      } catch (error) {
+        console.warn("Error loading data from database:", error);
+        setKits([]);
+        setKitData([]);
+        setAllKitSamples({});
       }
     }
     setSelectedKit(null);
@@ -283,17 +318,31 @@ const KitsView = () => {
           }
           samples={selectedKitSamples}
           onRequestSamplesReload={async () => {
-            // Re-scan samples for this kit only
-            const kitPath = `${localStorePath}/${selectedKit}`;
-            if (!safeListFilesInRoot)
-              throw new Error("listFilesInRoot is not available");
-            const files: string[] = await safeListFilesInRoot(kitPath).catch(
-              () => [],
-            );
-            const wavFiles = files.filter((f) => /\.wav$/i.test(f));
-            const voices = groupSamplesByVoice(wavFiles);
-            setAllKitSamples((prev) => ({ ...prev, [selectedKit]: voices }));
-            setSelectedKitSamples(voices);
+            // Re-load samples for this kit from database
+            if (selectedKit) {
+              try {
+                const samplesResult =
+                  await window.electronAPI?.getAllSamplesForKit?.(selectedKit);
+                if (samplesResult?.success && samplesResult.data) {
+                  const voices = groupDbSamplesByVoice(samplesResult.data);
+                  setAllKitSamples((prev) => ({
+                    ...prev,
+                    [selectedKit]: voices,
+                  }));
+                  setSelectedKitSamples(voices);
+                } else {
+                  console.warn(
+                    `Failed to reload samples for kit ${selectedKit}:`,
+                    samplesResult?.error,
+                  );
+                }
+              } catch (error) {
+                console.warn(
+                  `Error reloading samples for kit ${selectedKit}:`,
+                  error,
+                );
+              }
+            }
           }}
           onNextKit={handleNextKit}
           onPrevKit={handlePrevKit}
@@ -309,6 +358,7 @@ const KitsView = () => {
           ref={kitBrowserRef}
           localStorePath={localStorePath}
           kits={sortedKits}
+          kitData={kitData}
           onSelectKit={handleSelectKit}
           onRescanAllVoiceNames={() => handleRescanAllVoiceNames(undefined)}
           sampleCounts={sampleCounts}

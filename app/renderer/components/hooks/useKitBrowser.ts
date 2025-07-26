@@ -22,6 +22,7 @@ import {
 
 interface UseKitBrowserProps {
   kits: string[];
+  kitData?: any[];
   localStorePath: string;
   onRefreshKits?: () => void;
   kitListRef: RefObject<any>;
@@ -30,6 +31,7 @@ interface UseKitBrowserProps {
 
 export function useKitBrowser({
   kits: externalKits = [],
+  kitData = [],
   localStorePath,
   onRefreshKits,
   kitListRef,
@@ -57,12 +59,18 @@ export function useKitBrowser({
   }, [kits]);
 
   useEffect(() => {
-    // Fetch bank names from the database (not by scanning RTF files)
-    (async () => {
-      // TODO: Replace this with a DB query when DB API is available
-      setBankNames(await getBankNames(localStorePath));
-    })();
-  }, [localStorePath]);
+    // Generate bank names from database kit data
+    const bankNamesFromData: BankNames = {};
+
+    kitData.forEach((kit: any) => {
+      if (kit.bank?.artist && kit.name?.[0]) {
+        const bankLetter = kit.name[0].toUpperCase();
+        bankNamesFromData[bankLetter] = kit.bank.artist;
+      }
+    });
+
+    setBankNames(bankNamesFromData);
+  }, [kitData]);
 
   const handleCreateKit = async () => {
     setNewKitError(null);

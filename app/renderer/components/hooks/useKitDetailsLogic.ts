@@ -64,7 +64,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
       3: "",
       4: "",
     };
-    
+
     // Transform raw database voice structure to legacy format
     if (kit.voices && Array.isArray(kit.voices)) {
       kit.voices.forEach((voice: any) => {

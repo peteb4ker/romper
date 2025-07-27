@@ -59,8 +59,7 @@ export function useKitSamples(
 
         // Load voice names from kit metadata
         if (window.electronAPI?.getKit) {
-          const metadataResult =
-            await window.electronAPI.getKit(kitName);
+          const metadataResult = await window.electronAPI.getKit(kitName);
           if (metadataResult.success && metadataResult.data?.voices) {
             // Transform voices array to object format for legacy compatibility
             const voiceNamesObj: { [key: number]: string } = {};

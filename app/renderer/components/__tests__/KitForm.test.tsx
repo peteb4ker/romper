@@ -18,11 +18,7 @@ describe("KitForm", () => {
 
   it("renders tags and Edit Tags button when tagsEditable", () => {
     render(
-      <KitForm
-        kitLabel={baseKitLabel}
-        tagsEditable={true}
-        onSave={vi.fn()}
-      />,
+      <KitForm kitLabel={baseKitLabel} tagsEditable={true} onSave={vi.fn()} />,
     );
     expect(screen.getByText("drum")).toBeInTheDocument();
     expect(screen.getByText("snare")).toBeInTheDocument();
@@ -32,11 +28,7 @@ describe("KitForm", () => {
   it("shows tag editing UI and allows adding/removing tags", () => {
     const onSave = vi.fn();
     render(
-      <KitForm
-        kitLabel={baseKitLabel}
-        tagsEditable={true}
-        onSave={onSave}
-      />,
+      <KitForm kitLabel={baseKitLabel} tagsEditable={true} onSave={onSave} />,
     );
     fireEvent.click(screen.getByText("Edit Tags"));
     // Remove a tag
@@ -52,11 +44,7 @@ describe("KitForm", () => {
 
   it("shows loading and error states", () => {
     const { rerender } = render(
-      <KitForm
-        kitLabel={baseKitLabel}
-        loading={true}
-        onSave={vi.fn()}
-      />,
+      <KitForm kitLabel={baseKitLabel} loading={true} onSave={vi.fn()} />,
     );
     expect(screen.getByText("Loading kit metadata...")).toBeInTheDocument();
     rerender(

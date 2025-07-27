@@ -1,8 +1,8 @@
 import React from "react";
 
 import { useKitDetailsLogic } from "./hooks/useKitDetailsLogic";
-import KitHeader from "./KitHeader";
 import KitForm from "./KitForm";
+import KitHeader from "./KitHeader";
 import KitStepSequencer from "./KitStepSequencer";
 import type { KitDetailsProps, RampleKitLabel } from "./kitTypes";
 import KitVoicePanels from "./KitVoicePanels";

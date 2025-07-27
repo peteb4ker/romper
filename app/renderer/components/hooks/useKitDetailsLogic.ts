@@ -77,10 +77,13 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
           await onRequestSamplesReload();
         }
 
-        // Rescan voice names based on updated samples
-        if (metadata.handleRescanAllVoiceNames) {
-          await metadata.handleRescanAllVoiceNames(samples);
+        // Reload metadata to show updated voice names from rescan
+        if (metadata.reloadKitLabel) {
+          await metadata.reloadKitLabel();
         }
+
+        // Note: Voice inference is now handled automatically by rescanKit
+        // No need to call handleRescanAllVoiceNames separately
       } else {
         toast.error(`Kit rescan failed: ${result.error}`, {
           id: toastId,

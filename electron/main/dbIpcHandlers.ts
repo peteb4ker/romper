@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type { Kit, NewKit, NewSample } from "../../shared/db/schema.js";
-import { groupSamplesByVoice } from "../../shared/kitUtilsShared.js";
+import { groupSamplesByVoice, inferVoiceTypeFromFilename } from "../../shared/kitUtilsShared.js";
 import {
   addKit,
   addSample,
@@ -161,14 +161,14 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
 
       // Step 3: Group samples by voice using filename prefix parsing
       const groupedSamples = groupSamplesByVoice(wavFiles);
-      
+
       // Step 4: Insert new sample records for found files
       for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
         const voice = parseInt(voiceNumber, 10);
-        
+
         for (let slotIndex = 0; slotIndex < voiceFiles.length; slotIndex++) {
           const wavFile = voiceFiles[slotIndex];
-          
+
           // Determine if stereo based on filename patterns
           const isStereo = /stereo|st|_s\.|_S\./i.test(wavFile);
 
@@ -192,10 +192,30 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
         }
       }
 
+      // Step 5: Run voice inference on the grouped samples
+      let updatedVoices = 0;
+      for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
+        const voice = parseInt(voiceNumber, 10);
+        
+        if (voiceFiles.length > 0) {
+          // Infer voice type from the first file in the voice
+          const firstFile = voiceFiles[0];
+          const inferredType = inferVoiceTypeFromFilename(firstFile);
+          
+          if (inferredType) {
+            // Update the voice alias in the database
+            const updateResult = updateVoiceAlias(dbDir, kitName, voice, inferredType);
+            if (updateResult.success) {
+              updatedVoices++;
+            }
+          }
+        }
+      }
+
       // Return success with scan results
       return {
         success: true,
-        data: { scannedSamples, updatedVoices: 0 },
+        data: { scannedSamples, updatedVoices },
       };
     } catch (error) {
       const errorMessage =

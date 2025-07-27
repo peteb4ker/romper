@@ -112,11 +112,7 @@ export function useValidationResults({
       // Rescan each selected kit
       for (const kitName of selectedKits) {
         try {
-          const result = await window.electronAPI.rescanKit(
-            dbDir,
-            localStorePath,
-            kitName,
-          );
+          const result = await window.electronAPI.rescanKit(kitName);
 
           if (result.success && result.data) {
             totalScannedSamples += result.data.scannedSamples;

@@ -63,10 +63,7 @@ describe("useKitMetadata", () => {
 
     expect(result.current.kitMetadata).toEqual(mockMetadata);
     expect(result.current.error).toBeNull();
-    expect(mockElectronAPI.getKitMetadata).toHaveBeenCalledWith(
-      "/test/path",
-      "A1",
-    );
+    expect(mockElectronAPI.getKitMetadata).toHaveBeenCalledWith("A1");
   });
 
   it("handles kit not found and creates default metadata", async () => {
@@ -137,7 +134,7 @@ describe("useKitMetadata", () => {
 
     await result.current.handleSaveKitLabel("Updated Kit");
 
-    expect(mockElectronAPI.updateKit).toHaveBeenCalledWith("/test/path", "A1", {
+    expect(mockElectronAPI.updateKit).toHaveBeenCalledWith("A1", {
       alias: "Updated Kit",
     });
   });
@@ -171,7 +168,6 @@ describe("useKitMetadata", () => {
     await result.current.handleSaveVoiceName(1, "Kick");
 
     expect(mockElectronAPI.updateVoiceAlias).toHaveBeenCalledWith(
-      "/test/path",
       "A1",
       1,
       "Kick",
@@ -214,7 +210,6 @@ describe("useKitMetadata", () => {
     await result.current.setStepPattern(stepPattern);
 
     expect(mockElectronAPI.updateStepPattern).toHaveBeenCalledWith(
-      "/test/path",
       "A1",
       stepPattern,
     );

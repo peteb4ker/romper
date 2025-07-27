@@ -46,7 +46,6 @@ const mockUseKitDetailsLogic = useKitDetailsLogic as ReturnType<typeof vi.fn>;
 // Helper to create a basic electronAPI mock
 function mockElectronAPI() {
   (window as any).electronAPI = {
-    listFilesInRoot: vi.fn().mockResolvedValue([]),
     onSamplePlaybackEnded: vi.fn(),
     onSamplePlaybackError: vi.fn(),
     getKitMetadata: vi.fn().mockResolvedValue({ success: true, data: null }),

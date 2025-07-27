@@ -28,7 +28,13 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   useEffect(() => {
     let cancelled = false;
     setError(null);
-    // @ts-ignore
+
+    if (!window.electronAPI?.getAudioBuffer) {
+      setError("Audio buffer API not available");
+      if (onError) onError("Audio buffer API not available");
+      return;
+    }
+
     window.electronAPI
       .getAudioBuffer(filePath)
       .then((arrayBuffer: ArrayBuffer) => {

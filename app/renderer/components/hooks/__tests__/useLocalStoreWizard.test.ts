@@ -451,7 +451,6 @@ describe("useLocalStoreWizard", () => {
 
     // Verify kit metadata was updated
     expect(window.electronAPI.updateKit).toHaveBeenCalledWith(
-      "/mock/home/Documents/romper/.romperdb",
       "A0",
       expect.objectContaining({
         tags: ["kick", "snare", "hat", "tom"],

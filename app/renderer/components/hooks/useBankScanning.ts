@@ -19,10 +19,7 @@ export function useBankScanning({
     }
 
     try {
-      const result = await window.electronAPI.scanBanks?.(
-        localStorePath + "/.romperdb",
-        localStorePath,
-      );
+      const result = await window.electronAPI.scanBanks?.();
       if (result?.success) {
         onMessage?.(
           `Bank scanning complete. Updated ${result.data?.updatedBanks} banks.`,

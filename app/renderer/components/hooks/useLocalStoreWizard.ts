@@ -400,7 +400,7 @@ export function useLocalStoreWizard(
 
             // Update kit metadata if we have any updates
             if (Object.keys(updates).length > 0 && api.updateKit) {
-              const updateResult = await api.updateKit(dbDir, kitName, updates);
+              const updateResult = await api.updateKit(kitName, updates);
               if (!updateResult.success) {
                 console.warn(
                   `[Hook] Failed to update metadata for kit ${kitName}:`,

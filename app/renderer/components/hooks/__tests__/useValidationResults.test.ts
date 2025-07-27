@@ -96,16 +96,8 @@ describe("useValidationResults", () => {
 
     // Should have called rescanKit for each selected kit
     expect(window.electronAPI.rescanKit).toHaveBeenCalledTimes(2);
-    expect(window.electronAPI.rescanKit).toHaveBeenCalledWith(
-      `${mockLocalStorePath}/.romperdb`,
-      mockLocalStorePath,
-      "A1",
-    );
-    expect(window.electronAPI.rescanKit).toHaveBeenCalledWith(
-      `${mockLocalStorePath}/.romperdb`,
-      mockLocalStorePath,
-      "B2",
-    );
+    expect(window.electronAPI.rescanKit).toHaveBeenCalledWith("A1");
+    expect(window.electronAPI.rescanKit).toHaveBeenCalledWith("B2");
 
     // Should show success message
     expect(mockOnMessage).toHaveBeenCalledWith({

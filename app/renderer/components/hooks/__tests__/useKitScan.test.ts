@@ -9,10 +9,7 @@ vi.mock("../../utils/scanners/orchestrationFunctions", () => ({
   executeFullKitScan: vi.fn(),
 }));
 
-// Mock getBankNames
-vi.mock("../../utils/bankOperations", () => ({
-  getBankNames: vi.fn().mockResolvedValue({ A: "Kick Bank" }),
-}));
+// No bankOperations mocks needed anymore
 
 describe("scanSingleKit", () => {
   const fileReaderImpl = vi.fn();

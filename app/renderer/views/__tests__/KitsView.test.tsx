@@ -18,26 +18,32 @@ describe("KitsView", () => {
       global.window = {} as any;
     }
 
-    // Mock all electronAPI methods outside of the test body for isolation
+    // Mock all electronAPI methods for database-first architecture
     window.electronAPI = {
-      listFilesInRoot: vi.fn().mockImplementation((path: string) => {
-        // When called with the local store path, return kit folders
-        if (path === "/mock/local/store") {
-          return Promise.resolve(["A0", "A1"]);
-        }
-        // When called with specific kit paths, return WAV files
-        return Promise.resolve([
-          "1 Kick.wav",
-          "2 Snare.wav",
-          "3 Hat.wav",
-          "4 Tom.wav",
-        ]);
+      // Database operations
+      getKits: vi.fn().mockResolvedValue({
+        success: true,
+        data: [
+          { name: "A0", bank: "A" },
+          { name: "A1", bank: "A" },
+        ],
       }),
+      getAllSamplesForKit: vi.fn().mockImplementation((kitName: string) => {
+        return Promise.resolve({
+          success: true,
+          data: [
+            { filename: "1 Kick.wav", voice_number: 1, slot_number: 0 },
+            { filename: "2 Snare.wav", voice_number: 2, slot_number: 0 },
+            { filename: "3 Hat.wav", voice_number: 3, slot_number: 0 },
+            { filename: "4 Tom.wav", voice_number: 4, slot_number: 0 },
+          ],
+        });
+      }),
+      
       readRampleLabels: vi.fn().mockResolvedValue({
         kits: {
           A0: {
             label: "A0",
-            // Directly mock the result of inference logic:
             voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" },
           },
           A1: { label: "A1", voiceNames: {} },
@@ -47,7 +53,8 @@ describe("KitsView", () => {
         .fn()
         .mockResolvedValue({ slice: () => new ArrayBuffer(8) }),
       writeRampleLabels: vi.fn().mockResolvedValue(undefined),
-      // Add other required methods that might be missing
+      
+      // Other required methods
       selectSdCard: vi.fn().mockResolvedValue("/sd"),
       getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),
       readSettings: vi
@@ -85,33 +92,4 @@ describe("KitsView", () => {
     expect(kitA1s.length).toBeGreaterThan(0);
   });
 
-  it("calls listFilesInRoot only once per render cycle", async () => {
-    // Render the component
-    render(
-      <TestSettingsProvider>
-        <KitsView />
-      </TestSettingsProvider>,
-    );
-
-    // Wait for initial rendering and data loading to complete
-    await waitFor(() => {
-      expect(window.electronAPI.listFilesInRoot).toHaveBeenCalledWith(
-        "/mock/local/store",
-      );
-    });
-
-    // Store the current call count
-    const initialCallCount =
-      window.electronAPI.listFilesInRoot.mock.calls.length;
-
-    // Force a component update by changing a prop in a parent component
-    // This is simulated by waiting a bit and checking if more calls were made
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // The call count should not have increased from the initial calls
-    // We check that no additional calls have been made, which would indicate an infinite loop
-    expect(window.electronAPI.listFilesInRoot.mock.calls.length).toBe(
-      initialCallCount,
-    );
-  });
 });

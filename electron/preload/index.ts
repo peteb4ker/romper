@@ -150,12 +150,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("read-file", filePath);
   },
   // Database methods for kit metadata (replacing JSON file dependency)
-  getKitMetadata: (dbDir: string, kitName: string) => {
-    console.log("[IPC] getKitMetadata invoked", dbDir, kitName);
-    return ipcRenderer.invoke("get-kit-metadata", dbDir, kitName);
+  getKitMetadata: (kitName: string) => {
+    console.log("[IPC] getKitMetadata invoked", kitName);
+    return ipcRenderer.invoke("get-kit-metadata", kitName);
   },
   updateKit: (
-    dbDir: string,
     kitName: string,
     updates: {
       alias?: string;
@@ -164,46 +163,34 @@ contextBridge.exposeInMainWorld("electronAPI", {
       description?: string;
     },
   ) => {
-    console.log("[IPC] updateKit invoked", dbDir, kitName, updates);
-    return ipcRenderer.invoke("update-kit-metadata", dbDir, kitName, updates);
+    console.log("[IPC] updateKit invoked", kitName, updates);
+    return ipcRenderer.invoke("update-kit-metadata", kitName, updates);
   },
   getKits: () => {
     console.log("[IPC] getKits invoked");
     return ipcRenderer.invoke("get-all-kits");
   },
   updateVoiceAlias: (
-    dbDir: string,
     kitName: string,
     voiceNumber: number,
     voiceAlias: string,
   ) => {
     console.log(
       "[IPC] updateVoiceAlias invoked",
-      dbDir,
       kitName,
       voiceNumber,
       voiceAlias,
     );
     return ipcRenderer.invoke(
       "update-voice-alias",
-      dbDir,
       kitName,
       voiceNumber,
       voiceAlias,
     );
   },
-  updateStepPattern: (
-    dbDir: string,
-    kitName: string,
-    stepPattern: number[][],
-  ) => {
-    console.log("[IPC] updateStepPattern invoked", dbDir, kitName, stepPattern);
-    return ipcRenderer.invoke(
-      "update-step-pattern",
-      dbDir,
-      kitName,
-      stepPattern,
-    );
+  updateStepPattern: (kitName: string, stepPattern: number[][]) => {
+    console.log("[IPC] updateStepPattern invoked", kitName, stepPattern);
+    return ipcRenderer.invoke("update-step-pattern", kitName, stepPattern);
   },
   getUserHomeDir: () => {
     console.log("[IPC] getUserHomeDir invoked");
@@ -270,18 +257,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] getAllSamplesForKit invoked", kitName);
     return ipcRenderer.invoke("get-all-samples-for-kit", kitName);
   },
-  rescanKit: (dbDir: string, localStorePath: string, kitName: string) => {
-    console.log("[IPC] rescanKit invoked", dbDir, localStorePath, kitName);
-    return ipcRenderer.invoke("rescan-kit", dbDir, localStorePath, kitName);
+  rescanKit: (kitName: string) => {
+    console.log("[IPC] rescanKit invoked", kitName);
+    return ipcRenderer.invoke("rescan-kit", kitName);
   },
   // Bank operations
-  getAllBanks: (dbDir: string) => {
-    console.log("[IPC] getAllBanks invoked", dbDir);
-    return ipcRenderer.invoke("get-all-banks", dbDir);
+  getAllBanks: () => {
+    console.log("[IPC] getAllBanks invoked");
+    return ipcRenderer.invoke("get-all-banks");
   },
-  scanBanks: (dbDir: string, localStorePath: string) => {
-    console.log("[IPC] scanBanks invoked", dbDir, localStorePath);
-    return ipcRenderer.invoke("scan-banks", dbDir, localStorePath);
+  scanBanks: () => {
+    console.log("[IPC] scanBanks invoked");
+    return ipcRenderer.invoke("scan-banks");
   },
   selectExistingLocalStore: () => {
     console.log("[IPC] selectExistingLocalStore invoked");

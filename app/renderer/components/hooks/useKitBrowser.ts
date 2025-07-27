@@ -10,7 +10,6 @@ import { getNextKitSlot } from "../../../../shared/kitUtilsShared";
 import {
   bankHasKits,
   type BankNames,
-  getBankNames,
   getFirstKitInBank,
 } from "../utils/bankOperations";
 import {

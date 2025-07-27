@@ -14,6 +14,7 @@ interface UseKitDetailsLogicParams extends KitDetailsProps {
   onRescanAllVoiceNames?: () => void;
   onCreateKit?: () => void;
   onMessage?: (msg: { type: string; text: string }) => void;
+  onRequestSamplesReload?: () => Promise<void>;
 }
 
 /**
@@ -42,91 +43,49 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     onRescanAllVoiceNames: () => metadata.handleRescanAllVoiceNames(samples),
   });
 
-  // Handler for comprehensive kit scanning
+  // Handler for kit rescanning (database-first approach)
+  const { kitName, onRequestSamplesReload } = props;
   const handleScanKit = React.useCallback(async () => {
-    if (!props.localStorePath || !props.kitName) {
-      toast.error("Kit path and name are required for scanning");
+    if (!kitName) {
+      toast.error("Kit name is required for scanning");
       return;
     }
 
-    const toastId = toast.loading("Starting comprehensive kit scan...", {
+    const toastId = toast.loading("Rescanning kit from local store...", {
       duration: Infinity,
     });
 
     try {
-      // Prepare scan input data
-      const kitPath = `${props.localStorePath}/${props.kitName}`;
-
-      // Get all WAV files from samples
-      const wavFiles: string[] = [];
-      Object.values(samples).forEach((voiceSamples: string[]) => {
-        voiceSamples.forEach((sample: string) => {
-          if (sample.endsWith(".wav")) {
-            wavFiles.push(`${kitPath}/${sample}`);
-          }
-        });
-      });
-
-      // Get RTF files (artist metadata files)
-      const rtfFiles: string[] = [];
-      // Check for bank-level RTF files (A.rtf, B.rtf, etc.)
-      const bankName = props.kitName.charAt(0);
-      if (bankName >= "A" && bankName <= "Z") {
-        rtfFiles.push(`${props.localStorePath}/${bankName}.rtf`);
+      // Use the rescanKit IPC method which:
+      // 1. Clears existing samples from database
+      // 2. Scans the kit folder for current WAV files
+      // 3. Updates database with found samples
+      if (!window.electronAPI?.rescanKit) {
+        throw new Error("Rescan API not available");
       }
 
-      // File reader function for scans
-      const fileReader = window.electronAPI?.readFile
-        ? async (filePath: string): Promise<ArrayBuffer> => {
-            if (!window.electronAPI?.readFile) {
-              throw new Error("Electron API not available");
-            }
-            const result = await window.electronAPI.readFile(filePath);
-            if (!result?.success || !result.data) {
-              throw new Error(result?.error || "Failed to read file");
-            }
-            return result.data;
-          }
-        : undefined;
-
-      // Setup progress callback
-      let lastProgress = 0;
-      const progressCallback = (
-        current: number,
-        total: number,
-        operation: string,
-      ) => {
-        const progress = Math.round((current / total) * 100);
-        if (progress > lastProgress) {
-          lastProgress = progress;
-          toast.loading(`${operation} (${progress}%)`, {
-            id: toastId,
-            duration: Infinity,
-          });
-        }
-      };
-
-      // Execute full kit scan with all operations
-      const scanInput = { samples, wavFiles, rtfFiles, fileReader };
-      const result = await executeFullKitScan(scanInput, progressCallback);
+      const result = await window.electronAPI.rescanKit(kitName);
 
       if (result.success) {
         toast.success(
-          `Kit scan completed successfully! ${result.completedOperations}/${result.totalOperations} operations completed.`,
+          `Kit rescanned successfully! Found ${result.data?.scannedSamples || 0} samples.`,
           { id: toastId, duration: 5000 },
         );
 
-        // Reload kit metadata to reflect changes
-        if (metadata.handleFullKitScan) {
-          await metadata.handleFullKitScan(samples);
+        // Trigger sample reload in parent component
+        if (onRequestSamplesReload) {
+          await onRequestSamplesReload();
+        }
+
+        // Rescan voice names based on updated samples
+        if (metadata.handleRescanAllVoiceNames) {
+          await metadata.handleRescanAllVoiceNames(samples);
         }
       } else {
-        const errorMessage =
-          result.errors.length > 0
-            ? `Scan completed with errors: ${result.errors.map((e) => e.error).join(", ")}`
-            : "Scan failed with unknown error";
-
-        toast.error(errorMessage, { id: toastId, duration: 8000 });
+        toast.error(`Kit rescan failed: ${result.error}`, {
+          id: toastId,
+          duration: 8000,
+        });
       }
     } catch (error) {
       toast.error(
@@ -134,13 +93,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
         { id: toastId, duration: 8000 },
       );
     }
-  }, [
-    samples,
-    props.localStorePath,
-    props.kitName,
-    metadata,
-    // metadata.handleFullKitScan is included in metadata already
-  ]);
+  }, [kitName, onRequestSamplesReload, samples, metadata]);
 
   // Navigation state
   const [selectedVoice, setSelectedVoice] = React.useState(1);

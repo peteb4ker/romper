@@ -8,6 +8,16 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Mock problematic imports
+vi.mock("../hooks/useLocalStoreWizard", () => ({
+  useLocalStoreWizard: () => ({
+    isInitializing: false,
+    error: null,
+    progress: null,
+    progressMessage: "",
+  }),
+}));
+
 import KitBrowser from "../KitBrowser";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 
@@ -39,6 +49,10 @@ describe("KitBrowser", () => {
         errors: [],
         errorSummary: undefined,
       }),
+      getAllBanks: vi.fn().mockResolvedValue({ success: true, data: [] }),
+      scanBanks: vi.fn().mockResolvedValue({ success: true, data: { updatedBanks: 0 } }),
+      getKitMetadata: vi.fn().mockResolvedValue({ success: true, data: null }),
+      getAllSamplesForKit: vi.fn().mockResolvedValue({ success: true, data: [] }),
     };
     // Mock scrollTo for jsdom
     Object.defineProperty(HTMLElement.prototype, "scrollTo", {

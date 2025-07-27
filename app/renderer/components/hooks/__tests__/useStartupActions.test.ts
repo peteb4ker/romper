@@ -42,10 +42,7 @@ describe("useStartupActions", () => {
     );
 
     await waitFor(() => {
-      expect(mockScanBanks).toHaveBeenCalledWith(
-        "/mock/local/store/.romperdb",
-        "/mock/local/store",
-      );
+      expect(mockScanBanks).toHaveBeenCalledWith();
     });
 
     expect(mockConsoleLog).toHaveBeenCalledWith(
@@ -143,10 +140,7 @@ describe("useStartupActions", () => {
     );
 
     await waitFor(() => {
-      expect(mockScanBanks).toHaveBeenCalledWith(
-        "/mock/store1/.romperdb",
-        "/mock/store1",
-      );
+      expect(mockScanBanks).toHaveBeenCalledWith();
     });
 
     mockScanBanks.mockClear();
@@ -157,10 +151,7 @@ describe("useStartupActions", () => {
     });
 
     await waitFor(() => {
-      expect(mockScanBanks).toHaveBeenCalledWith(
-        "/mock/store2/.romperdb",
-        "/mock/store2",
-      );
+      expect(mockScanBanks).toHaveBeenCalledWith();
     });
   });
 });

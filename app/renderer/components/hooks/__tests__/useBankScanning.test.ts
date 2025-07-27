@@ -38,10 +38,7 @@ describe("useBankScanning", () => {
       await result.current.scanBanks();
     });
 
-    expect(mockScanBanks).toHaveBeenCalledWith(
-      "/mock/local/store/.romperdb",
-      "/mock/local/store",
-    );
+    expect(mockScanBanks).toHaveBeenCalledWith();
     expect(mockOnMessage).toHaveBeenCalledWith(
       "Bank scanning complete. Updated 3 banks.",
       "success",

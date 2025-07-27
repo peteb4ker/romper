@@ -13,6 +13,7 @@ interface KitDetailsAllProps extends KitDetailsProps {
   onRescanAllVoiceNames?: () => void;
   onCreateKit?: () => void;
   onMessage?: (msg: { type: string; text: string }) => void;
+  onRequestSamplesReload?: () => Promise<void>;
 }
 
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
@@ -38,7 +39,9 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         kitLabelInput={logic.metadata.kitLabelInput}
         setKitLabelInput={logic.metadata.setKitLabelInput}
         handleSaveKitLabel={logic.metadata.handleSaveKitLabel}
-        kitLabelInputRef={undefined as any} // TODO: wire up ref if needed
+        kitLabelInputRef={
+          React.createRef<HTMLInputElement>() as React.RefObject<HTMLInputElement>
+        }
         onBack={props.onBack}
         onNextKit={props.onNextKit}
         onPrevKit={props.onPrevKit}

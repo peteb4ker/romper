@@ -17,7 +17,7 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
 }) => (
   <div className="flex flex-row flex-wrap gap-1 justify-center">
     {banks.map((bank) => {
-      const enabled = kits.some((k) => k.startsWith(bank));
+      const enabled = kits.some((k) => k && typeof k === "string" && k.startsWith(bank));
       const isSelected = enabled && selectedBank === bank;
       return (
         <button

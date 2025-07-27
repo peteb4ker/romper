@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
-import { getBankNames } from "../utils/bankOperations";
 import {
   executeFullKitScan,
   executeVoiceInferenceScan,
@@ -25,25 +24,21 @@ export interface KitDetailsProps {
 }
 
 export function useKitMetadata(props: KitDetailsProps) {
-  const { kitName, localStorePath } = props;
-  const { localStorePath: contextLocalStorePath } = useSettings();
+  const { kitName } = props;
   const [kitMetadata, setKitMetadata] = useState<KitMetadata | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadataChanged, setMetadataChanged] = useState(false);
   const [stepPattern, setStepPatternState] = useState<number[][] | null>(null);
 
-  // Get database directory from local store path
-  const dbDir = localStorePath || contextLocalStorePath;
-
   const loadKitMetadata = useCallback(async () => {
-    if (!window.electronAPI?.getKitMetadata || !dbDir || !kitName) return;
+    if (!window.electronAPI?.getKitMetadata || !kitName) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await window.electronAPI.getKitMetadata(dbDir, kitName);
+      const result = await window.electronAPI.getKitMetadata(kitName);
       if (result.success && result.data) {
         setKitMetadata(result.data);
       } else {
@@ -62,12 +57,12 @@ export function useKitMetadata(props: KitDetailsProps) {
     } finally {
       setLoading(false);
     }
-  }, [dbDir, kitName]);
+  }, [kitName]);
 
   useEffect(() => {
-    if (!dbDir || !kitName) return;
+    if (!kitName) return;
     loadKitMetadata();
-  }, [dbDir, kitName, loadKitMetadata]);
+  }, [kitName, loadKitMetadata]);
 
   // Load stepPattern when kitMetadata changes
   useEffect(() => {
@@ -85,14 +80,10 @@ export function useKitMetadata(props: KitDetailsProps) {
     tags?: string[];
     description?: string;
   }) => {
-    if (!window.electronAPI?.updateKit || !dbDir || !kitName) return;
+    if (!window.electronAPI?.updateKit || !kitName) return;
 
     try {
-      const result = await window.electronAPI.updateKit(
-        dbDir,
-        kitName,
-        updates,
-      );
+      const result = await window.electronAPI.updateKit(kitName, updates);
       if (result.success) {
         await loadKitMetadata(); // Reload to get updated data
         setMetadataChanged(true);
@@ -105,11 +96,10 @@ export function useKitMetadata(props: KitDetailsProps) {
   };
 
   const updateVoiceAlias = async (voiceNumber: number, voiceAlias: string) => {
-    if (!window.electronAPI?.updateVoiceAlias || !dbDir || !kitName) return;
+    if (!window.electronAPI?.updateVoiceAlias || !kitName) return;
 
     try {
       const result = await window.electronAPI.updateVoiceAlias(
-        dbDir,
         kitName,
         voiceNumber,
         voiceAlias,
@@ -126,7 +116,7 @@ export function useKitMetadata(props: KitDetailsProps) {
   };
 
   const updateStepPattern = async (pattern: number[][]) => {
-    if (!window.electronAPI?.updateStepPattern || !dbDir || !kitName) return;
+    if (!window.electronAPI?.updateStepPattern || !kitName) return;
 
     console.log(
       `[useKitMetadata] Saving step pattern for ${kitName}:`,
@@ -138,7 +128,6 @@ export function useKitMetadata(props: KitDetailsProps) {
 
     try {
       const result = await window.electronAPI.updateStepPattern(
-        dbDir,
         kitName,
         pattern,
       );
@@ -224,22 +213,17 @@ export function useKitMetadata(props: KitDetailsProps) {
     voices: { [key: number]: string[] } | undefined,
     progressCallback?: (phase: string, progress: number) => void,
   ) => {
-    if (!dbDir || !kitName) {
+    if (!kitName) {
       return {
         success: false,
-        errors: ["Database directory and kit name are required"],
+        errors: ["Kit name is required"],
         results: {},
       };
     }
 
     try {
       const safeVoices = voices || { 1: [], 2: [], 3: [], 4: [] };
-      const actualLocalStorePath = localStorePath || contextLocalStorePath;
-      if (!actualLocalStorePath) {
-        throw new Error("Local store path is required for scanning");
-      }
-
-      const kitPath = `${actualLocalStorePath}/${kitName}`;
+      const kitPath = `${props.localStorePath}/${kitName}`;
 
       // Get all WAV files from samples
       const wavFiles: string[] = [];

@@ -20,10 +20,7 @@ export function useStartupActions({
       // Run bank scanning on startup (after migrations)
       try {
         console.log("[Startup] Running bank scanning...");
-        const bankScanResult = await window.electronAPI.scanBanks?.(
-          localStorePath + "/.romperdb",
-          localStorePath,
-        );
+        const bankScanResult = await window.electronAPI.scanBanks?.();
         if (bankScanResult?.success) {
           console.log(
             `[Startup] Bank scanning complete. Updated ${bankScanResult.data?.updatedBanks} banks.`,

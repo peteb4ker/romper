@@ -3,6 +3,19 @@ vi.mock("../../../shared/kitUtilsShared", () => ({
   getNextKitSlot: () => "A1",
   toCapitalCase: (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
 }));
+
+vi.mock("../utils/bankOperations", () => ({
+  bankHasKits: () => true,
+  getBankNames: () => ({}),
+  getFirstKitInBank: () => "A0",
+}));
+
+vi.mock("../utils/kitOperations", () => ({
+  createKit: vi.fn(),
+  duplicateKit: vi.fn(),
+  formatKitError: (err: any) => err.toString(),
+  validateKitSlot: () => null,
+}));
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -28,6 +41,10 @@ beforeEach(() => {
     copyKit: mockCopyKit,
     selectSdCard: mockSelectSdCard,
     setSetting: mockSetSetting,
+    getAllBanks: vi.fn().mockResolvedValue({ success: true, data: [] }),
+    scanBanks: vi.fn().mockResolvedValue({ success: true, data: { updatedBanks: 0 } }),
+    getKitMetadata: vi.fn().mockResolvedValue({ success: true, data: null }),
+    getAllSamplesForKit: vi.fn().mockResolvedValue({ success: true, data: [] }),
   };
   vi.clearAllMocks();
 });

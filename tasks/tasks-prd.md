@@ -160,21 +160,21 @@ _Last updated: 2025-07-26_
   - [x] 4.3 Progress indicators for scanning operations
   - [x] 4.4 Error handling for scan operations
 
-- [ ] 4.5 Bank-Based Scanning Architecture (New)
+- [x] 4.5 Bank-Based Scanning Architecture (New)
   - [x] 4.5.1 Add banks table to database schema (A-Z with artist metadata)
   - [x] 4.5.2 Initialize 26 banks during database creation
-  - [ ] 4.5.3 Implement bank scanning separate from kit scanning
-    - [ ] 4.5.3.1 Scan local store root for RTF files matching "A - Artist Name.rtf" pattern
-    - [ ] 4.5.3.2 Update banks table with artist metadata from RTF filenames
-    - [ ] 4.5.3.3 Add IPC handler for bank scanning operations
+  - [x] 4.5.3 Implement bank scanning separate from kit scanning
+    - [x] 4.5.3.1 Scan local store root for RTF files matching "A - Artist Name.rtf" pattern
+    - [x] 4.5.3.2 Update banks table with artist metadata from RTF filenames
+    - [x] 4.5.3.3 Add IPC handler for bank scanning operations
   - [x] 4.5.4 Update kit scanning to exclude RTF operations
     - [x] 4.5.4.1 Remove RTF scanning from individual kit scan operations
-    - [ ] 4.5.4.2 Update kit metadata to reference bank.artist instead of kit.artist
-    - [ ] 4.5.4.3 Keep kit.artist field for backwards compatibility during transition
+    - [x] 4.5.4.2 Update kit metadata to reference bank.artist instead of kit.artist
+    - [x] 4.5.4.3 Keep kit.artist field for backwards compatibility during transition
   - [x] 4.5.5 Update UI to use bank-based artist display
     - [x] 4.5.5.1 Kit browser shows artist from bank relationship
-    - [ ] 4.5.5.2 Kit details page shows artist from bank
-    - [ ] 4.5.5.3 Remove old RTF scanning UI references
+    - [x] 4.5.5.2 Kit details page shows artist from bank (not needed - KitDetails won't show artist)
+    - [x] 4.5.5.3 Remove old RTF scanning UI references
 
 - [ ] 5.0 Kit Editing and Slot Management (New Architecture)
   - [ ] 5.1 Implement editable mode system:

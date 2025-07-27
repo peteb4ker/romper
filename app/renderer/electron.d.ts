@@ -72,10 +72,7 @@ export interface ElectronAPI {
   getAllSamples?: (dbDir: string) => Promise<DbResult<Sample[]>>;
   getAllSamplesForKit?: (kitName: string) => Promise<DbResult<Sample[]>>;
   // Database methods for kit metadata (replacing JSON file dependency)
-  getKitMetadata?: (
-    dbDir: string,
-    kitName: string,
-  ) => Promise<
+  getKitMetadata?: (kitName: string) => Promise<
     DbResult<{
       id: number;
       name: string;
@@ -88,7 +85,6 @@ export interface ElectronAPI {
     }>
   >;
   updateKit?: (
-    dbDir: string,
     kitName: string,
     updates: {
       alias?: string;
@@ -112,13 +108,11 @@ export interface ElectronAPI {
     >
   >;
   updateVoiceAlias?: (
-    dbDir: string,
     kitName: string,
     voiceNumber: number,
     voiceAlias: string,
   ) => Promise<DbResult>;
   updateStepPattern?: (
-    dbDir: string,
     kitName: string,
     stepPattern: number[][],
   ) => Promise<DbResult>;
@@ -150,17 +144,12 @@ export interface ElectronAPI {
     localStorePath: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
   rescanKit: (
-    dbDir: string,
-    localStorePath: string,
     kitName: string,
   ) => Promise<DbResult<{ scannedSamples: number; updatedVoices: number }>>;
   openExternal?: (url: string) => Promise<void>;
   // Bank operations
-  getAllBanks?: (dbDir: string) => Promise<DbResult<Bank[]>>;
-  scanBanks?: (
-    dbDir: string,
-    localStorePath: string,
-  ) => Promise<
+  getAllBanks?: () => Promise<DbResult<Bank[]>>;
+  scanBanks?: () => Promise<
     DbResult<{ scannedFiles: number; updatedBanks: number; scannedAt: Date }>
   >;
   // Existing local store selection

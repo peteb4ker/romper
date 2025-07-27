@@ -1,84 +1,16 @@
 // Tests for bank operations utilities
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
   bankHasKits,
   getAvailableBanks,
-  getBankNames,
   getFirstKitInBank,
   validateBankLetter,
 } from "../bankOperations";
 
-// Mock the global window.electronAPI
-const mockElectronAPI = {
-  listFilesInRoot: vi.fn(),
-};
+// No mocks needed for the remaining pure utility functions
 
-beforeEach(() => {
-  vi.clearAllMocks();
-  global.window = {
-    ...global.window,
-    electronAPI: mockElectronAPI,
-  } as any;
-});
-
-describe("getBankNames", () => {
-  it("extracts bank names from RTF files", async () => {
-    mockElectronAPI.listFilesInRoot.mockResolvedValue([
-      "A - Squarp.rtf",
-      "B - Roland.rtf",
-      "C - Elektron.rtf",
-      "kick.wav",
-      "snare.wav",
-    ]);
-
-    const result = await getBankNames("/test/path");
-
-    expect(result).toEqual({
-      A: "Squarp",
-      B: "Roland",
-      C: "Elektron",
-    });
-  });
-
-  it("handles empty local store path", async () => {
-    const result = await getBankNames("");
-    expect(result).toEqual({});
-  });
-
-  it("handles missing Electron API", async () => {
-    global.window = { electronAPI: {} } as any;
-
-    const result = await getBankNames("/test/path");
-    expect(result).toEqual({});
-  });
-
-  it("handles file listing errors", async () => {
-    mockElectronAPI.listFilesInRoot.mockRejectedValue(
-      new Error("Access denied"),
-    );
-
-    const result = await getBankNames("/test/path");
-    expect(result).toEqual({});
-  });
-
-  it("ignores non-RTF files and invalid patterns", async () => {
-    mockElectronAPI.listFilesInRoot.mockResolvedValue([
-      "A - Valid.rtf",
-      "Invalid.rtf",
-      "A-NoSpaces.rtf",
-      "1 - Number.rtf",
-      "kick.wav",
-    ]);
-
-    const result = await getBankNames("/test/path");
-
-    expect(result).toEqual({
-      A: "Valid",
-    });
-  });
-});
 
 describe("getFirstKitInBank", () => {
   const kits = ["A0", "A1", "A10", "B0", "B5", "C1", "Z99"];

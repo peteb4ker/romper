@@ -31,11 +31,27 @@ npm run pre-commit
 # Individual validation commands (now automated)
 npm run typecheck    # TypeScript validation
 npm run lint         # ESLint with auto-fix  
-npm run test         # Full test suite
+npm run test         # Full test suite (verbose for development)
 npm run build        # Production build
 ```
 
-**Result**: Focus on implementation - quality gates handle validation automatically!
+#### Token-Efficient Test Output
+**Pre-commit hooks use optimized test configuration** to minimize CI/automated output:
+
+- **`NO_COLOR=true`** - removes ANSI color codes for cleaner logs
+- **`--silent --reporter=dot`** - shows only dots (`.`) for passing tests and `x` for failures
+- **Failure details only** - verbose output only shown when tests fail
+- **Development vs CI** - regular `npm run test` keeps full output for debugging
+
+```bash
+# Token-efficient testing (used by pre-commit hooks)
+npm run test:husky   # Minimal output for automated workflows
+
+# Development testing (verbose output)
+npm run test         # Full details for interactive development
+```
+
+**Result**: Focus on implementation - quality gates handle validation automatically with minimal noise!
 
 ### Task File Management
 - Keep "Relevant Files" section up to date with created/modified files

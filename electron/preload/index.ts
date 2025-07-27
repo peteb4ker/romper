@@ -141,9 +141,23 @@ contextBridge.exposeInMainWorld("electronAPI", {
       cb(errMsg),
     );
   },
-  getSampleAudioBuffer: (kitName: string, voiceNumber: number, slotNumber: number) => {
-    console.log("[IPC] getSampleAudioBuffer invoked", kitName, voiceNumber, slotNumber);
-    return ipcRenderer.invoke("get-sample-audio-buffer", kitName, voiceNumber, slotNumber);
+  getSampleAudioBuffer: (
+    kitName: string,
+    voiceNumber: number,
+    slotNumber: number,
+  ) => {
+    console.log(
+      "[IPC] getSampleAudioBuffer invoked",
+      kitName,
+      voiceNumber,
+      slotNumber,
+    );
+    return ipcRenderer.invoke(
+      "get-sample-audio-buffer",
+      kitName,
+      voiceNumber,
+      slotNumber,
+    );
   },
   readFile: (filePath: string) => {
     console.log("[IPC] readFile invoked", filePath);

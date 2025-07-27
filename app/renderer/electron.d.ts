@@ -63,7 +63,11 @@ export interface ElectronAPI {
   stopSample?: () => Promise<any>;
   onSamplePlaybackEnded?: (cb: () => void) => void;
   onSamplePlaybackError?: (cb: (errMsg: string) => void) => void;
-  getSampleAudioBuffer?: (kitName: string, voiceNumber: number, slotNumber: number) => Promise<ArrayBuffer | null>;
+  getSampleAudioBuffer?: (
+    kitName: string,
+    voiceNumber: number,
+    slotNumber: number,
+  ) => Promise<ArrayBuffer | null>;
   readFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // Returns file content as ArrayBuffer
   readAudioFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // ArrayBuffer for audio files
   validateLocalStore: (

@@ -25,19 +25,7 @@ vi.mock("../hooks/useKitDetailsLogic", () => ({
   useKitDetailsLogic: vi.fn(),
 }));
 
-vi.mock("../UnscannedKitPrompt", () => ({
-  default: ({ kitName, onScan, onDismiss }: any) => (
-    <div data-testid="unscanned-kit-prompt">
-      <div data-testid="unscanned-kit-name">{kitName}</div>
-      <button onClick={onScan} data-testid="unscanned-scan-button">
-        Scan Now
-      </button>
-      <button onClick={onDismiss} data-testid="unscanned-dismiss-button">
-        Dismiss
-      </button>
-    </div>
-  ),
-}));
+// UnscannedKitPrompt feature was removed during database migration
 
 // Import after mocking and access the mocked function
 import { useKitDetailsLogic } from "../hooks/useKitDetailsLogic";
@@ -349,44 +337,7 @@ describe("KitDetails", () => {
       expect(handleScanKit).toHaveBeenCalledTimes(1);
     });
 
-    it("hides the prompt after dismiss button is clicked", async () => {
-      // Mock the kit as unscanned - use the createMockLogic helper for consistency
-      const mockLogic = {
-        ...createMockLogic(),
-        metadata: {
-          ...createMockLogic().metadata,
-          kitLabel: { label: "Test Kit", voiceNames: {} }, // No voice names = unscanned
-        },
-      };
-
-      mockUseKitDetailsLogic.mockReturnValue(mockLogic);
-
-      renderWithSettings(
-        <KitDetails
-          kitName="UnscannedKit"
-          localStorePath="/sd"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
-          onBack={vi.fn()}
-          onMessage={vi.fn()}
-        />,
-      );
-
-      // Prompt should be shown initially
-      expect(
-        await screen.findByTestId("unscanned-kit-prompt"),
-      ).toBeInTheDocument();
-
-      // Click the dismiss button
-      const dismissButton = screen.getByTestId("unscanned-dismiss-button");
-      fireEvent.click(dismissButton);
-
-      // Prompt should be hidden
-      await waitFor(() => {
-        expect(
-          screen.queryByTestId("unscanned-kit-prompt"),
-        ).not.toBeInTheDocument();
-      });
-    });
+    // NOTE: Unscanned kit prompt feature was removed during database migration
 
     it("does not show the prompt if the kit is already scanned", async () => {
       // Mock the kit as scanned

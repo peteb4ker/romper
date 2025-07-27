@@ -2,8 +2,8 @@ import React from "react";
 import { toast } from "sonner";
 
 import type { KitDetailsProps, RampleKitLabel } from "../kitTypes";
-import { useKitDetails } from "./useKitDetails";
 import { useKit } from "./useKit";
+import { useKitDetails } from "./useKitDetails";
 import { useKitPlayback } from "./useKitPlayback";
 import { useKitVoicePanels } from "./useKitVoicePanels";
 import { useStepPattern } from "./useStepPattern";
@@ -23,11 +23,17 @@ interface UseKitDetailsLogicParams extends KitDetailsProps {
  */
 export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Core kit data
-  const { kit, loading: kitLoading, error: kitError, reloadKit, updateKitAlias } = useKit({
+  const {
+    kit,
+    loading: kitLoading,
+    error: kitError,
+    reloadKit,
+    updateKitAlias,
+  } = useKit({
     kitName: props.kitName,
   });
 
-  // Voice alias management  
+  // Voice alias management
   const { updateVoiceAlias } = useVoiceAlias({
     kitName: props.kitName,
     onUpdate: reloadKit,
@@ -51,11 +57,18 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Create legacy kitLabel for components that still need it (temporarily)
   const kitLabel = React.useMemo(() => {
     if (!kit) return null;
-    
-    const voiceNames: { [key: number]: string } = { 1: "", 2: "", 3: "", 4: "" };
-    kit.voices?.forEach((voice) => {
-      voiceNames[voice.voice_number] = voice.voice_alias || "";
-    });
+
+    const voiceNames: { [key: number]: string } = {
+      1: "",
+      2: "",
+      3: "",
+      4: "",
+    };
+    if (kit.voices) {
+      Object.entries(kit.voices).forEach(([voiceNumber, voiceAlias]) => {
+        voiceNames[parseInt(voiceNumber)] = voiceAlias || "";
+      });
+    }
 
     return {
       label: kit.alias || kit.name,

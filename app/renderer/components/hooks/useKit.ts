@@ -1,16 +1,26 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { Kit } from "../../../../shared/db/schema";
-
 export interface UseKitParams {
   kitName: string;
 }
+
+// Type matching what the API actually returns
+type KitMetadata = {
+  id: number;
+  name: string;
+  alias?: string;
+  artist?: string;
+  editable: boolean;
+  locked: boolean;
+  step_pattern?: number[][];
+  voices: { [voiceNumber: number]: string };
+};
 
 /**
  * Hook for loading and managing kit data from database
  */
 export function useKit({ kitName }: UseKitParams) {
-  const [kit, setKit] = useState<Kit | null>(null);
+  const [kit, setKit] = useState<KitMetadata | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

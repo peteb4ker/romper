@@ -11,7 +11,7 @@ import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 beforeAll(() => {
   // @ts-ignore
   window.electronAPI = {
-    getAudioBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+    getSampleAudioBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
   };
   // @ts-ignore
   window.AudioContext = vi.fn().mockImplementation(() => ({
@@ -48,7 +48,12 @@ describe("SampleWaveform", () => {
     await act(async () => {
       render(
         <MockMessageDisplayProvider>
-          <SampleWaveform filePath="/fake/path/kick.wav" playTrigger={0} />
+          <SampleWaveform
+            kitName="A1"
+            voiceNumber={1}
+            slotNumber={1}
+            playTrigger={0}
+          />
         </MockMessageDisplayProvider>,
       );
     });
@@ -59,25 +64,44 @@ describe("SampleWaveform", () => {
   it("loads and decodes audio buffer on mount", async () => {
     await act(async () => {
       render(
-        <SampleWaveform filePath="/fake/path/snare.wav" playTrigger={0} />,
+        <SampleWaveform
+          kitName="A1"
+          voiceNumber={2}
+          slotNumber={1}
+          playTrigger={0}
+        />,
       );
     });
-    expect(window.electronAPI.getAudioBuffer).toHaveBeenCalledWith(
-      "/fake/path/snare.wav",
+    expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith(
+      "A1",
+      2,
+      1,
     );
   });
 
-  it("re-loads audio buffer when filePath changes", async () => {
+  it("re-loads audio buffer when kit parameters change", async () => {
     const { rerender } = render(
-      <SampleWaveform filePath="/fake/path/one.wav" playTrigger={0} />,
+      <SampleWaveform
+        kitName="A1"
+        voiceNumber={1}
+        slotNumber={1}
+        playTrigger={0}
+      />,
     );
     await act(async () => {
       rerender(
-        <SampleWaveform filePath="/fake/path/two.wav" playTrigger={0} />,
+        <SampleWaveform
+          kitName="A2"
+          voiceNumber={1}
+          slotNumber={1}
+          playTrigger={0}
+        />,
       );
     });
-    expect(window.electronAPI.getAudioBuffer).toHaveBeenCalledWith(
-      "/fake/path/two.wav",
+    expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith(
+      "A2",
+      1,
+      1,
     );
   });
 
@@ -86,7 +110,9 @@ describe("SampleWaveform", () => {
     await act(async () => {
       render(
         <SampleWaveform
-          filePath="/fake/path/kick.wav"
+          kitName="A1"
+          voiceNumber={1}
+          slotNumber={1}
           playTrigger={1}
           onPlayingChange={onPlayingChange}
         />,
@@ -101,7 +127,9 @@ describe("SampleWaveform", () => {
     let stopTrigger = 0;
     const { rerender } = render(
       <SampleWaveform
-        filePath="/fake/path/kick.wav"
+        kitName="A1"
+        voiceNumber={1}
+        slotNumber={1}
         playTrigger={playTrigger}
         stopTrigger={stopTrigger}
       />,
@@ -111,7 +139,9 @@ describe("SampleWaveform", () => {
     await act(async () => {
       rerender(
         <SampleWaveform
-          filePath="/fake/path/kick.wav"
+          kitName="A1"
+          voiceNumber={1}
+          slotNumber={1}
           playTrigger={playTrigger}
           stopTrigger={stopTrigger}
         />,
@@ -122,7 +152,9 @@ describe("SampleWaveform", () => {
     await act(async () => {
       rerender(
         <SampleWaveform
-          filePath="/fake/path/kick.wav"
+          kitName="A1"
+          voiceNumber={1}
+          slotNumber={1}
           playTrigger={playTrigger}
           stopTrigger={stopTrigger}
         />,
@@ -131,27 +163,36 @@ describe("SampleWaveform", () => {
     // No crash = pass (can't check isPlaying directly)
   });
 
-  it("handles audio loading error gracefully", async () => {
+  it("handles missing API gracefully", async () => {
     // @ts-ignore
-    window.electronAPI.getAudioBuffer.mockRejectedValueOnce(new Error("fail"));
+    window.electronAPI = {}; // No getSampleAudioBuffer method
     const onError = vi.fn();
     await act(async () => {
       render(
         <MockMessageDisplayProvider>
           <SampleWaveform
-            filePath="/fake/path/bad.wav"
+            kitName="A1"
+            voiceNumber={1}
+            slotNumber={1}
             playTrigger={0}
             onError={onError}
           />
         </MockMessageDisplayProvider>,
       );
     });
-    expect(onError).toHaveBeenCalledWith("Failed to load audio.");
+    expect(onError).toHaveBeenCalledWith(
+      "Sample audio buffer API not available",
+    );
   });
 
   it("cleans up audio context and animation on unmount", async () => {
     const { unmount } = render(
-      <SampleWaveform filePath="/fake/path/kick.wav" playTrigger={0} />,
+      <SampleWaveform
+        kitName="A1"
+        voiceNumber={1}
+        slotNumber={1}
+        playTrigger={0}
+      />,
     );
     await act(async () => {
       unmount();

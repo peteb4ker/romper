@@ -50,7 +50,7 @@ describe("preload/index.tsx", () => {
         stopSample: expect.any(Function),
         onSamplePlaybackEnded: expect.any(Function),
         onSamplePlaybackError: expect.any(Function),
-        getAudioBuffer: expect.any(Function),
+        getSampleAudioBuffer: expect.any(Function),
         getKitMetadata: expect.any(Function),
         updateKit: expect.any(Function),
         getKits: expect.any(Function),
@@ -309,7 +309,7 @@ describe("preload/index.tsx", () => {
     expect(callback).toHaveBeenCalledWith("error message");
   });
 
-  it("calls ipcRenderer.invoke for getAudioBuffer", async () => {
+  it("calls ipcRenderer.invoke for getSampleAudioBuffer", async () => {
     await import("../index");
     const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
       (call) => call[0] === "electronAPI",
@@ -318,10 +318,12 @@ describe("preload/index.tsx", () => {
     const api = electronAPICall[1];
     const mockBuffer = new ArrayBuffer(1024);
     mockIpcRenderer.invoke.mockResolvedValue(mockBuffer);
-    const result = await api.getAudioBuffer("/mock/sample.wav");
+    const result = await api.getSampleAudioBuffer("A1", 1, 1);
     expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "get-audio-buffer",
-      "/mock/sample.wav",
+      "get-sample-audio-buffer",
+      "A1",
+      1,
+      1,
     );
     expect(result).toBe(mockBuffer);
   });

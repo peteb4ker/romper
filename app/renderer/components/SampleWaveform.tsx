@@ -5,7 +5,7 @@ interface SampleWaveformProps {
   kitName: string;
   voiceNumber: number;
   slotNumber: number;
-  
+
   playTrigger: number; // increment to trigger play externally
   stopTrigger?: number; // increment to trigger stop externally
   onPlayingChange?: (playing: boolean) => void;
@@ -41,19 +41,19 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       if (onError) onError("Sample audio buffer API not available");
       return;
     }
-    
+
     window.electronAPI
       .getSampleAudioBuffer(kitName, voiceNumber, slotNumber)
       .then((arrayBuffer: ArrayBuffer | null) => {
         if (cancelled) return;
-        
+
         // Handle null response for missing samples (empty slots)
         if (!arrayBuffer) {
           setAudioBuffer(null);
           setError(null);
           return;
         }
-        
+
         // Always close previous context before creating a new one
         if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
           try {
@@ -70,7 +70,10 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       .catch((err) => {
         if (!cancelled) {
           // Log the error for debugging but don't show user-facing error for missing samples
-          console.warn(`[SampleWaveform] Sample not found: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}:`, err);
+          console.warn(
+            `[SampleWaveform] Sample not found: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}:`,
+            err,
+          );
           setError(null); // Don't show error to user for missing samples
         }
         setAudioBuffer(null);

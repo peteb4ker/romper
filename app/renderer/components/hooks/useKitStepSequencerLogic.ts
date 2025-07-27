@@ -1,12 +1,12 @@
 import React from "react";
 
-import { 
-  ensureValidStepPattern, 
-  NUM_STEPS, 
+import {
+  ensureValidStepPattern,
+  type FocusedStep,
+  LED_GLOWS,
+  NUM_STEPS,
   NUM_VOICES,
   ROW_COLORS,
-  LED_GLOWS,
-  type FocusedStep
 } from "./stepPatternConstants";
 
 interface UseKitStepSequencerLogicParams {
@@ -124,7 +124,7 @@ export function useKitStepSequencerLogic(
     }
   }, [isSeqPlaying, currentSeqStep, stepPattern, samples, onPlaySample]);
 
-  // Step pattern management  
+  // Step pattern management
   const safeStepPattern = React.useMemo(() => {
     return ensureValidStepPattern(stepPattern);
   }, [stepPattern]);

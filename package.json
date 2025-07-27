@@ -10,8 +10,8 @@
     "build:preload": "tsc -p electron/preload/tsconfig.preload.json && mv dist/electron/preload/index.js dist/electron/preload/index.cjs",
     "build:renderer": "vite build --config vite.config.ts",
     "test": "npm run test:unit && npm run test:integration",
-    "test:unit": "vitest --config vite.config.ts --run",
-    "test:integration": "node electron/run-vitest-in-electron.cjs",
+    "test:unit": "npx vitest --config vite.config.ts --run --silent --reporter=dot",
+    "test:integration": "node electron/run-vitest-in-electron.cjs --run --silent --reporter=dot",
     "test:e2e": "npm run build && npm run test:play",
     "test:play": "playwright test",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
@@ -23,7 +23,10 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
-    "pre-commit": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "pre-commit": "npm run typecheck && npm run lint && npm run test:husky && npm run build",
+    "test:husky": "npm run test:unit:husky && npm run test:integration:husky",
+    "test:unit:husky": "NO_COLOR=true npm run test:unit",
+    "test:integration:husky": "NO_COLOR=true npm run test:integration",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -9,24 +9,27 @@ export interface UseVoiceAliasParams {
  * Hook for managing voice aliases
  */
 export function useVoiceAlias({ kitName, onUpdate }: UseVoiceAliasParams) {
-  const updateVoiceAlias = useCallback(async (voiceNumber: number, voiceAlias: string) => {
-    if (!window.electronAPI?.updateVoiceAlias || !kitName) return;
+  const updateVoiceAlias = useCallback(
+    async (voiceNumber: number, voiceAlias: string) => {
+      if (!window.electronAPI?.updateVoiceAlias || !kitName) return;
 
-    try {
-      const result = await window.electronAPI.updateVoiceAlias(
-        kitName,
-        voiceNumber,
-        voiceAlias,
-      );
-      if (result.success) {
-        onUpdate?.();
-      } else {
-        console.error("Failed to update voice alias:", result.error);
+      try {
+        const result = await window.electronAPI.updateVoiceAlias(
+          kitName,
+          voiceNumber,
+          voiceAlias,
+        );
+        if (result.success) {
+          onUpdate?.();
+        } else {
+          console.error("Failed to update voice alias:", result.error);
+        }
+      } catch (e) {
+        console.error("Failed to update voice alias:", e);
       }
-    } catch (e) {
-      console.error("Failed to update voice alias:", e);
-    }
-  }, [kitName, onUpdate]);
+    },
+    [kitName, onUpdate],
+  );
 
   return {
     updateVoiceAlias,

@@ -108,16 +108,11 @@ describe("KitHeader", () => {
     expect(onNextKit).not.toHaveBeenCalled();
   });
 
-  it("calls onRescanAllVoiceNames when Rescan Kit Voice Names is clicked", () => {
-    const onRescanAllVoiceNames = vi.fn();
-    render(
-      <KitHeader
-        {...baseProps}
-        onRescanAllVoiceNames={onRescanAllVoiceNames}
-      />,
-    );
-    fireEvent.click(screen.getByText("Rescan Kit Voice Names"));
-    expect(onRescanAllVoiceNames).toHaveBeenCalled();
+  it("calls onScanKit when Scan Kit button is clicked", () => {
+    const onScanKit = vi.fn();
+    render(<KitHeader {...baseProps} onScanKit={onScanKit} />);
+    fireEvent.click(screen.getByText("Scan Kit"));
+    expect(onScanKit).toHaveBeenCalled();
   });
 
   it("shows (no name) if kitLabel.label is empty", () => {

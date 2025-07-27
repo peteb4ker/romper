@@ -11,7 +11,7 @@ export interface FocusedStep {
 // UI styling constants for sequencer
 export const ROW_COLORS = [
   "bg-red-500 border-red-700", // Row 0 (Voice 1)
-  "bg-green-500 border-green-700", // Row 1 (Voice 2)  
+  "bg-green-500 border-green-700", // Row 1 (Voice 2)
   "bg-yellow-400 border-yellow-600", // Row 2 (Voice 3)
   "bg-purple-500 border-purple-700", // Row 3 (Voice 4)
 ];
@@ -44,7 +44,9 @@ export function isValidStepPattern(pattern: any): pattern is number[][] {
 /**
  * Ensures a step pattern is valid, returning default if invalid
  */
-export function ensureValidStepPattern(pattern: number[][] | null | undefined): number[][] {
+export function ensureValidStepPattern(
+  pattern: number[][] | null | undefined,
+): number[][] {
   if (!pattern || !isValidStepPattern(pattern)) {
     return createDefaultStepPattern();
   }

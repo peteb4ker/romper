@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export interface KitMetadataFormProps {
+export interface KitFormProps {
   kitLabel: {
     label: string;
     description?: string;
@@ -16,7 +16,7 @@ export interface KitMetadataFormProps {
   tagsEditable?: boolean;
 }
 
-const KitMetadataForm: React.FC<KitMetadataFormProps> = ({
+const KitForm: React.FC<KitFormProps> = ({
   kitLabel,
   loading,
   error,
@@ -129,4 +129,4 @@ const KitMetadataForm: React.FC<KitMetadataFormProps> = ({
   );
 };
 
-export default KitMetadataForm;
+export default KitForm;

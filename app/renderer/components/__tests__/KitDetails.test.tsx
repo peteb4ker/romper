@@ -36,7 +36,7 @@ function mockElectronAPI() {
   (window as any).electronAPI = {
     onSamplePlaybackEnded: vi.fn(),
     onSamplePlaybackError: vi.fn(),
-    getKitMetadata: vi.fn().mockResolvedValue({ success: true, data: null }),
+    getKit: vi.fn().mockResolvedValue({ success: true, data: null }),
     updateKit: vi.fn().mockResolvedValue({ success: true }),
     updateVoiceAlias: vi.fn().mockResolvedValue({ success: true }),
     updateStepPattern: vi.fn().mockResolvedValue({ success: true }),
@@ -69,27 +69,17 @@ function createMockLogic(overrides = {}) {
       handleStop: vi.fn(),
       handleWaveformPlayingChange: vi.fn(),
     },
-    metadata: {
-      handleSaveVoiceName: vi.fn(),
-      handleRescanVoiceName: vi.fn(),
-      handleRescanAllVoiceNames: vi.fn(),
-      handleFullKitScan: vi.fn(),
-      kitLabel: { voiceNames: { 1: "", 2: "", 3: "", 4: "" } },
-      setKitLabel: vi.fn(),
-      labelsLoading: false,
-      labelsError: null,
-      editingKitLabel: false,
-      setEditingKitLabel: vi.fn(),
-      kitLabelInput: "",
-      setKitLabelInput: vi.fn(),
-      handleSaveKitLabel: vi.fn(),
-      handleSaveKitTags: vi.fn(),
-      handleSaveKitMetadata: vi.fn(),
-      reloadKitLabel: vi.fn(),
-      stepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
-      setStepPattern: vi.fn(),
-      ...overrides,
-    },
+    // Kit data from useKitDetailsLogic
+    kit: null,
+    kitLabel: { voiceNames: { 1: "", 2: "", 3: "", 4: "" } },
+    stepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
+    setStepPattern: vi.fn(),
+    updateKitAlias: vi.fn(),
+    updateVoiceAlias: vi.fn(),
+    kitLoading: false,
+    kitError: null,
+    reloadKit: vi.fn(),
+    ...overrides,
     kitVoicePanels: {
       onSampleKeyNav: vi.fn(),
     },
@@ -139,16 +129,13 @@ describe("KitDetails", () => {
       // Create a new mock with explicit voice names
       const mockLogic = {
         ...createMockLogic(),
-        metadata: {
-          ...createMockLogic().metadata,
-          kitLabel: {
-            voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" },
-          },
+        kitLabel: {
+          voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" },
         },
       };
 
       // Ensure our mock is correctly set up
-      console.log("Mock kit label:", mockLogic.metadata.kitLabel);
+      console.log("Mock kit label:", mockLogic.kitLabel);
 
       // Clear previous calls and set return value
       mockUseKitDetailsLogic.mockReset();
@@ -191,226 +178,5 @@ describe("KitDetails", () => {
     });
   });
 
-  describe("unscanned kit prompt", () => {
-    it("shows the prompt if the kit is unscanned", async () => {
-      // Mock the kit as unscanned
-      const mockLogic = {
-        metadata: {
-          kitLabel: { label: "Test Kit", voiceNames: {} }, // No voice names = unscanned
-          editingKitLabel: false,
-          kitLabelInput: "Test Kit",
-          labelsLoading: false,
-          setEditingKitLabel: vi.fn(),
-          setKitLabelInput: vi.fn(),
-          handleSaveKitLabel: vi.fn(),
-          handleRescanAllVoiceNames: vi.fn(),
-          handleRescanVoiceName: vi.fn(),
-        },
-        samples: { 1: [], 2: [], 3: [], 4: [] },
-        handleScanKit: vi.fn(),
-        selectedVoice: 1,
-        selectedSampleIdx: 0,
-        sequencerOpen: false,
-        setSelectedVoice: vi.fn(),
-        setSelectedSampleIdx: vi.fn(),
-        setSequencerOpen: vi.fn(),
-        sequencerGridRef: { current: null },
-        playback: {
-          playbackError: null,
-          playTriggers: {},
-          stopTriggers: {},
-          samplePlaying: null,
-          handlePlay: vi.fn(),
-          handleStop: vi.fn(),
-          handleWaveformPlayingChange: vi.fn(),
-        },
-        kitVoicePanels: {
-          onKeyNavigation: vi.fn(),
-          focusedSlotRef: { current: null },
-          handleSlotClick: vi.fn(),
-          samples: { 1: [], 2: [], 3: [], 4: [] },
-          selectedVoice: 1,
-          selectedSampleIdx: 0,
-          setSelectedVoice: vi.fn(),
-          setSelectedSampleIdx: vi.fn(),
-        },
-        stepSequencer: {
-          stepPattern: Array(64).fill(0),
-          handleStepToggle: vi.fn(),
-          playbackActive: false,
-          handlePlayToggle: vi.fn(),
-          currentStep: -1,
-        },
-      };
-
-      mockUseKitDetailsLogic.mockReturnValue(mockLogic);
-
-      renderWithSettings(
-        <KitDetails
-          kitName="UnscannedKit"
-          localStorePath="/sd"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
-          onBack={vi.fn()}
-          onMessage={vi.fn()}
-        />,
-      );
-
-      // Prompt should be shown
-      expect(
-        await screen.findByTestId("unscanned-kit-prompt"),
-      ).toBeInTheDocument();
-      expect(screen.getByTestId("unscanned-kit-name")).toHaveTextContent(
-        "UnscannedKit",
-      );
-    });
-
-    it("calls handleScanKit when Scan Now button is clicked", async () => {
-      const handleScanKit = vi.fn();
-
-      // Mock the kit as unscanned
-      const mockLogic = {
-        metadata: {
-          kitLabel: { label: "Test Kit", voiceNames: {} }, // No voice names = unscanned
-          editingKitLabel: false,
-          kitLabelInput: "Test Kit",
-          labelsLoading: false,
-          setEditingKitLabel: vi.fn(),
-          setKitLabelInput: vi.fn(),
-          handleSaveKitLabel: vi.fn(),
-          handleRescanAllVoiceNames: vi.fn(),
-          handleRescanVoiceName: vi.fn(),
-        },
-        samples: { 1: [], 2: [], 3: [], 4: [] },
-        handleScanKit,
-        selectedVoice: 1,
-        selectedSampleIdx: 0,
-        sequencerOpen: false,
-        setSelectedVoice: vi.fn(),
-        setSelectedSampleIdx: vi.fn(),
-        setSequencerOpen: vi.fn(),
-        sequencerGridRef: { current: null },
-        playback: {
-          playbackError: null,
-          playTriggers: {},
-          stopTriggers: {},
-          samplePlaying: null,
-          handlePlay: vi.fn(),
-          handleStop: vi.fn(),
-          handleWaveformPlayingChange: vi.fn(),
-        },
-        kitVoicePanels: {
-          onKeyNavigation: vi.fn(),
-          focusedSlotRef: { current: null },
-          handleSlotClick: vi.fn(),
-          samples: { 1: [], 2: [], 3: [], 4: [] },
-          selectedVoice: 1,
-          selectedSampleIdx: 0,
-          setSelectedVoice: vi.fn(),
-          setSelectedSampleIdx: vi.fn(),
-        },
-        stepSequencer: {
-          stepPattern: Array(64).fill(0),
-          handleStepToggle: vi.fn(),
-          playbackActive: false,
-          handlePlayToggle: vi.fn(),
-          currentStep: -1,
-        },
-      };
-
-      mockUseKitDetailsLogic.mockReturnValue(mockLogic);
-
-      renderWithSettings(
-        <KitDetails
-          kitName="UnscannedKit"
-          localStorePath="/sd"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
-          onBack={vi.fn()}
-          onMessage={vi.fn()}
-        />,
-      );
-
-      // Click the Scan Now button
-      const scanButton = await screen.findByTestId("unscanned-scan-button");
-      fireEvent.click(scanButton);
-
-      // Check that handleScanKit was called
-      expect(handleScanKit).toHaveBeenCalledTimes(1);
-    });
-
-    // NOTE: Unscanned kit prompt feature was removed during database migration
-
-    it("does not show the prompt if the kit is already scanned", async () => {
-      // Mock the kit as scanned
-      const mockLogic = {
-        metadata: {
-          kitLabel: {
-            label: "Test Kit",
-            voiceNames: { 1: "Kick", 2: "Snare", 3: "Hi-Hat", 4: "Tom" }, // Has voice names = scanned
-          },
-          editingKitLabel: false,
-          kitLabelInput: "Test Kit",
-          labelsLoading: false,
-          setEditingKitLabel: vi.fn(),
-          setKitLabelInput: vi.fn(),
-          handleSaveKitLabel: vi.fn(),
-          handleRescanAllVoiceNames: vi.fn(),
-          handleRescanVoiceName: vi.fn(),
-        },
-        samples: { 1: [], 2: [], 3: [], 4: [] },
-        handleScanKit: vi.fn(),
-        selectedVoice: 1,
-        selectedSampleIdx: 0,
-        sequencerOpen: false,
-        setSelectedVoice: vi.fn(),
-        setSelectedSampleIdx: vi.fn(),
-        setSequencerOpen: vi.fn(),
-        sequencerGridRef: { current: null },
-        playback: {
-          playbackError: null,
-          playTriggers: {},
-          stopTriggers: {},
-          samplePlaying: null,
-          handlePlay: vi.fn(),
-          handleStop: vi.fn(),
-          handleWaveformPlayingChange: vi.fn(),
-        },
-        kitVoicePanels: {
-          onKeyNavigation: vi.fn(),
-          focusedSlotRef: { current: null },
-          handleSlotClick: vi.fn(),
-          samples: { 1: [], 2: [], 3: [], 4: [] },
-          selectedVoice: 1,
-          selectedSampleIdx: 0,
-          setSelectedVoice: vi.fn(),
-          setSelectedSampleIdx: vi.fn(),
-        },
-        stepSequencer: {
-          stepPattern: Array(64).fill(0),
-          handleStepToggle: vi.fn(),
-          playbackActive: false,
-          handlePlayToggle: vi.fn(),
-          currentStep: -1,
-        },
-      };
-
-      mockUseKitDetailsLogic.mockReturnValue(mockLogic);
-
-      renderWithSettings(
-        <KitDetails
-          kitName="ScannedKit"
-          localStorePath="/sd"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
-          onBack={vi.fn()}
-          onMessage={vi.fn()}
-        />,
-      );
-
-      // Prompt should not be shown
-      await waitFor(() => {
-        expect(
-          screen.queryByTestId("unscanned-kit-prompt"),
-        ).not.toBeInTheDocument();
-      });
-    });
-  });
+  // NOTE: Unscanned kit prompt feature was removed during database migration
 });

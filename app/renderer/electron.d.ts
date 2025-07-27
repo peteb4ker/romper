@@ -4,10 +4,12 @@ import type {
   DbResult,
   Kit,
   KitValidationError,
+  KitWithRelations,
   LocalStoreValidationDetailedResult,
   NewKit,
   NewSample,
   Sample,
+  Voice,
 } from "../../shared/db/schema.js";
 
 export {
@@ -76,18 +78,7 @@ export interface ElectronAPI {
   getAllSamples?: (dbDir: string) => Promise<DbResult<Sample[]>>;
   getAllSamplesForKit?: (kitName: string) => Promise<DbResult<Sample[]>>;
   // Database methods for kit metadata (replacing JSON file dependency)
-  getKitMetadata?: (kitName: string) => Promise<
-    DbResult<{
-      id: number;
-      name: string;
-      alias?: string;
-      artist?: string;
-      editable: boolean;
-      locked: boolean;
-      step_pattern?: number[][];
-      voices: { [voiceNumber: number]: string };
-    }>
-  >;
+  getKit?: (kitName: string) => Promise<DbResult<KitWithRelations>>;
   updateKit?: (
     kitName: string,
     updates: {

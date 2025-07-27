@@ -42,7 +42,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     },
   );
 
-  ipcMain.handle("get-kit-metadata", async (_event, kitName: string) => {
+  ipcMain.handle("get-kit", async (_event, kitName: string) => {
     const localStorePath = inMemorySettings.localStorePath;
     if (!localStorePath) {
       return { success: false, error: "No local store path configured" };

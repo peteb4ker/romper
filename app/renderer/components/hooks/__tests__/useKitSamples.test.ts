@@ -8,15 +8,15 @@ describe("useKitSamples", () => {
   const kitName = "TestKit";
   const localStorePath = "/sd";
   let getAllSamplesForKit: any;
-  let getKitMetadata: any;
+  let getKit: any;
   let setKitLabel: any;
   beforeEach(() => {
     getAllSamplesForKit = vi.fn();
-    getKitMetadata = vi.fn();
+    getKit = vi.fn();
     setKitLabel = vi.fn();
     window.electronAPI = {
       getAllSamplesForKit,
-      getKitMetadata,
+      getKit,
     };
   });
   afterEach(() => {
@@ -47,10 +47,15 @@ describe("useKitSamples", () => {
         { filename: "4 Tom.wav", voice_number: 4 },
       ],
     });
-    getKitMetadata.mockResolvedValue({
+    getKit.mockResolvedValue({
       success: true,
       data: {
-        voices: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" },
+        voices: [
+          { id: 1, kit_name: kitName, voice_number: 1, voice_alias: "Kick" },
+          { id: 2, kit_name: kitName, voice_number: 2, voice_alias: "Snare" },
+          { id: 3, kit_name: kitName, voice_number: 3, voice_alias: "Hat" },
+          { id: 4, kit_name: kitName, voice_number: 4, voice_alias: "Tom" },
+        ],
       },
     });
 
@@ -65,7 +70,7 @@ describe("useKitSamples", () => {
     rerender();
 
     expect(getAllSamplesForKit).toHaveBeenCalledWith(kitName);
-    expect(getKitMetadata).toHaveBeenCalledWith(kitName);
+    expect(getKit).toHaveBeenCalledWith(kitName);
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBeNull();
     expect(result.current.samples).toEqual({

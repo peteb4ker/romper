@@ -1,15 +1,15 @@
-// Test suite for KitMetadataForm component
+// Test suite for KitForm component
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import KitMetadataForm from "../KitMetadataForm";
+import KitForm from "../KitForm";
 
 afterEach(() => {
   cleanup();
 });
 
-describe("KitMetadataForm", () => {
+describe("KitForm", () => {
   const baseKitLabel = {
     label: "My Kit",
     description: "A description",
@@ -18,7 +18,7 @@ describe("KitMetadataForm", () => {
 
   it("renders tags and Edit Tags button when tagsEditable", () => {
     render(
-      <KitMetadataForm
+      <KitForm
         kitLabel={baseKitLabel}
         tagsEditable={true}
         onSave={vi.fn()}
@@ -32,7 +32,7 @@ describe("KitMetadataForm", () => {
   it("shows tag editing UI and allows adding/removing tags", () => {
     const onSave = vi.fn();
     render(
-      <KitMetadataForm
+      <KitForm
         kitLabel={baseKitLabel}
         tagsEditable={true}
         onSave={onSave}
@@ -52,7 +52,7 @@ describe("KitMetadataForm", () => {
 
   it("shows loading and error states", () => {
     const { rerender } = render(
-      <KitMetadataForm
+      <KitForm
         kitLabel={baseKitLabel}
         loading={true}
         onSave={vi.fn()}
@@ -60,7 +60,7 @@ describe("KitMetadataForm", () => {
     );
     expect(screen.getByText("Loading kit metadata...")).toBeInTheDocument();
     rerender(
-      <KitMetadataForm
+      <KitForm
         kitLabel={baseKitLabel}
         error="Something went wrong"
         onSave={vi.fn()}
@@ -71,7 +71,7 @@ describe("KitMetadataForm", () => {
 
   it('shows "No tags" if no tags present', () => {
     render(
-      <KitMetadataForm
+      <KitForm
         kitLabel={{ label: "Empty", tags: [] }}
         tagsEditable={true}
         onSave={vi.fn()}

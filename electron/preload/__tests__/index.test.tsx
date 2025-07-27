@@ -51,7 +51,7 @@ describe("preload/index.tsx", () => {
         onSamplePlaybackEnded: expect.any(Function),
         onSamplePlaybackError: expect.any(Function),
         getSampleAudioBuffer: expect.any(Function),
-        getKitMetadata: expect.any(Function),
+        getKit: expect.any(Function),
         updateKit: expect.any(Function),
         getKits: expect.any(Function),
         updateVoiceAlias: expect.any(Function),

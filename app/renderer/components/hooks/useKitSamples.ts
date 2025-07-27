@@ -58,11 +58,18 @@ export function useKitSamples(
         setSamples(groupedSamples);
 
         // Load voice names from kit metadata
-        if (window.electronAPI?.getKitMetadata) {
+        if (window.electronAPI?.getKit) {
           const metadataResult =
-            await window.electronAPI.getKitMetadata(kitName);
+            await window.electronAPI.getKit(kitName);
           if (metadataResult.success && metadataResult.data?.voices) {
-            setVoiceNames(metadataResult.data.voices);
+            // Transform voices array to object format for legacy compatibility
+            const voiceNamesObj: { [key: number]: string } = {};
+            metadataResult.data.voices.forEach((voice) => {
+              if (voice.voice_number && voice.voice_alias) {
+                voiceNamesObj[voice.voice_number] = voice.voice_alias;
+              }
+            });
+            setVoiceNames(voiceNamesObj);
           } else {
             setVoiceNames({});
           }

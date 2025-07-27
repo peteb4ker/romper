@@ -56,7 +56,7 @@ beforeAll(() => {
       }),
 
       // Database API methods for new metadata system (updated signatures)
-      getKitMetadata: async (kitName) => ({
+      getKit: async (kitName) => ({
         success: true,
         data: {
           id: 1,

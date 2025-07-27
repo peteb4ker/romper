@@ -64,9 +64,13 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
       3: "",
       4: "",
     };
-    if (kit.voices) {
-      Object.entries(kit.voices).forEach(([voiceNumber, voiceAlias]) => {
-        voiceNames[parseInt(voiceNumber)] = voiceAlias || "";
+    
+    // Transform raw database voice structure to legacy format
+    if (kit.voices && Array.isArray(kit.voices)) {
+      kit.voices.forEach((voice: any) => {
+        if (voice.voice_number && voice.voice_alias) {
+          voiceNames[voice.voice_number] = voice.voice_alias;
+        }
       });
     }
 

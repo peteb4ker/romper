@@ -164,9 +164,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("read-file", filePath);
   },
   // Database methods for kit metadata (replacing JSON file dependency)
-  getKitMetadata: (kitName: string) => {
-    console.log("[IPC] getKitMetadata invoked", kitName);
-    return ipcRenderer.invoke("get-kit-metadata", kitName);
+  getKit: (kitName: string) => {
+    console.log("[IPC] getKit invoked", kitName);
+    return ipcRenderer.invoke("get-kit", kitName);
   },
   updateKit: (
     kitName: string,

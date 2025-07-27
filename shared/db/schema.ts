@@ -83,6 +83,13 @@ export type NewSample = typeof samples.$inferInsert;
 export type EditAction = typeof editActions.$inferSelect;
 export type NewEditAction = typeof editActions.$inferInsert;
 
+// Kit with relations as returned by database queries
+export type KitWithRelations = Kit & {
+  voices?: Voice[];
+  samples?: Sample[];
+  bank?: Bank;
+};
+
 // Database operation result wrapper
 export interface DbResult<T = any> {
   success: boolean;

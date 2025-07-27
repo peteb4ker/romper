@@ -76,7 +76,7 @@ export const mockElectronAPI = {
   copyKit: vi.fn().mockResolvedValue(undefined),
 
   // Database operations (updated signatures without dbDir parameters)
-  getKitMetadata: vi.fn().mockResolvedValue({
+  getKit: vi.fn().mockResolvedValue({
     success: true,
     data: {
       id: 1,

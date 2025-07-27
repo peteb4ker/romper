@@ -1,37 +1,26 @@
 import { useCallback, useEffect, useState } from "react";
+import type { KitWithRelations } from "../../../../shared/db/schema.js";
 
 export interface UseKitParams {
   kitName: string;
 }
 
-// Type matching what the API actually returns
-type KitMetadata = {
-  id: number;
-  name: string;
-  alias?: string;
-  artist?: string;
-  editable: boolean;
-  locked: boolean;
-  step_pattern?: number[][];
-  voices: { [voiceNumber: number]: string };
-};
-
 /**
  * Hook for loading and managing kit data from database
  */
 export function useKit({ kitName }: UseKitParams) {
-  const [kit, setKit] = useState<KitMetadata | null>(null);
+  const [kit, setKit] = useState<KitWithRelations | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadKit = useCallback(async () => {
-    if (!window.electronAPI?.getKitMetadata || !kitName) return;
+    if (!window.electronAPI?.getKit || !kitName) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await window.electronAPI.getKitMetadata(kitName);
+      const result = await window.electronAPI.getKit(kitName);
       if (result.success && result.data) {
         setKit(result.data);
       } else {

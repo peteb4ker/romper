@@ -2,7 +2,7 @@ import React from "react";
 
 import { useKitDetailsLogic } from "./hooks/useKitDetailsLogic";
 import KitHeader from "./KitHeader";
-import KitMetadataForm from "./KitMetadataForm";
+import KitForm from "./KitForm";
 import KitStepSequencer from "./KitStepSequencer";
 import type { KitDetailsProps, RampleKitLabel } from "./kitTypes";
 import KitVoicePanels from "./KitVoicePanels";
@@ -58,7 +58,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         />
       )}
 
-      <KitMetadataForm
+      <KitForm
         kitLabel={logic.kitLabel}
         loading={logic.kitLoading}
         error={null} // error now handled by centralized message display

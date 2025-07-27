@@ -39,6 +39,7 @@ const KitsView = () => {
     localStoreStatus,
     refreshLocalStoreStatus,
     setLocalStorePath,
+    isInitialized,
   } = useSettings();
   const { showMessage } = useMessageDisplay();
   const [kits, setKits] = useState<string[]>([]);
@@ -56,8 +57,8 @@ const KitsView = () => {
   // Ref to access KitBrowser scan functionality
   const kitBrowserRef = useRef<KitBrowserHandle | null>(null);
 
-  // Check if local store needs to be set up
-  const needsLocalStoreSetup = !localStoreStatus?.isValid || !localStorePath;
+  // Check if local store needs to be set up (wait for initialization)
+  const needsLocalStoreSetup = isInitialized && (!localStoreStatus?.isValid || !localStorePath);
 
   // Validation results hook for database validation
   const { openValidationDialog } = useValidationResults({
@@ -126,7 +127,7 @@ const KitsView = () => {
 
   // Load all kits, samples, and labels on local store change
   useEffect(() => {
-    if (!localStorePath || needsLocalStoreSetup) return;
+    if (!isInitialized || !localStorePath || needsLocalStoreSetup) return;
     console.log("[KitsView] Loading kits from", localStorePath); // Log when effect runs
     (async () => {
       // 1. Load kits from database (includes bank relationships)
@@ -171,7 +172,7 @@ const KitsView = () => {
       }
       setAllKitSamples(samples);
     })();
-  }, [localStorePath, needsLocalStoreSetup]);
+  }, [isInitialized, localStorePath, needsLocalStoreSetup]);
 
   // When a kit is selected, set its samples
   useEffect(() => {

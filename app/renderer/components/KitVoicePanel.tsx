@@ -3,7 +3,6 @@ import {
   FiCheck,
   FiEdit2,
   FiPlay,
-  FiRefreshCw,
   FiSquare,
   FiX,
 } from "react-icons/fi";
@@ -35,6 +34,7 @@ interface KitVoicePanelProps {
   onSampleKeyNav?: (direction: "up" | "down") => void;
   onSampleSelect?: (voice: number, idx: number) => void;
   isActive?: boolean;
+  isEditable?: boolean;
 }
 
 const KitVoicePanel: React.FC<
@@ -58,6 +58,7 @@ const KitVoicePanel: React.FC<
   onSampleKeyNav,
   onSampleSelect,
   isActive = false,
+  isEditable = true,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(voiceName || "");
@@ -149,20 +150,15 @@ const KitVoicePanel: React.FC<
             >
               {voiceName ? toCapitalCase(voiceName) : "No voice name set"}
             </span>
-            <button
-              className="ml-1 text-blue-600 dark:text-blue-300"
-              onClick={() => setEditing(true)}
-              title="Edit voice name"
-            >
-              <FiEdit2 />
-            </button>
-            <button
-              className="ml-1 text-gray-600 dark:text-gray-300"
-              onClick={() => onRescanVoiceName(voice)}
-              title="Rescan voice name"
-            >
-              <FiRefreshCw />
-            </button>
+            {isEditable && (
+              <button
+                className="ml-1 text-blue-600 dark:text-blue-300"
+                onClick={() => setEditing(true)}
+                title="Edit voice name"
+              >
+                <FiEdit2 />
+              </button>
+            )}
           </>
         )}
       </div>

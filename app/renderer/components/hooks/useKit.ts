@@ -54,11 +54,31 @@ export function useKit({ kitName }: UseKitParams) {
     }
   };
 
+  const toggleEditableMode = async () => {
+    if (!window.electronAPI?.updateKit || !kitName || !kit) return;
+
+    const newEditableState = !kit.editable;
+
+    try {
+      const result = await window.electronAPI.updateKit(kitName, { 
+        editable: newEditableState 
+      });
+      if (result.success) {
+        await loadKit();
+      } else {
+        setError(result.error || "Failed to toggle editable mode");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to toggle editable mode");
+    }
+  };
+
   return {
     kit,
     loading,
     error,
     reloadKit: loadKit,
     updateKitAlias,
+    toggleEditableMode,
   };
 }

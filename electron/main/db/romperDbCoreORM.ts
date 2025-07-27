@@ -311,6 +311,7 @@ export function updateKit(
     step_pattern?: number[][] | null;
     tags?: string[];
     description?: string;
+    editable?: boolean;
   },
 ): DbResult<void> {
   return withDb(dbDir, (db) => {

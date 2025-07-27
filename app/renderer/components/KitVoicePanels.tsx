@@ -28,6 +28,7 @@ interface KitVoicePanelsProps {
   sequencerOpen: boolean;
   setSelectedVoice: (v: number) => void;
   setSelectedSampleIdx: (i: number) => void;
+  isEditable?: boolean;
 }
 
 const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
@@ -72,6 +73,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
             onSampleKeyNav={hookProps.onSampleKeyNav}
             onSampleSelect={hookProps.onSampleSelect}
             isActive={voice === hookProps.selectedVoice}
+            isEditable={props.isEditable ?? false}
           />
         </div>
       ))}

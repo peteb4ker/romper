@@ -48,6 +48,8 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         kits={props.kits}
         kitIndex={props.kitIndex}
         onScanKit={logic.handleScanKit}
+        onToggleEditableMode={logic.toggleEditableMode}
+        isEditable={logic.kit?.editable ?? false}
       />
 
       {needsScanning && (
@@ -93,6 +95,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
           localStorePath={props.localStorePath}
           kitName={props.kitName}
           onSampleKeyNav={logic.kitVoicePanels.onSampleKeyNav}
+          isEditable={logic.kit?.editable ?? false}
         />
       </div>
       <KitStepSequencer

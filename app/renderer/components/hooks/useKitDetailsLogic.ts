@@ -29,6 +29,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     error: kitError,
     reloadKit,
     updateKitAlias,
+    toggleEditableMode,
   } = useKit({
     kitName: props.kitName,
   });
@@ -312,6 +313,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     setStepPattern,
     updateKitAlias,
     updateVoiceAlias,
+    toggleEditableMode,
     kitLoading,
     kitError,
     reloadKit,

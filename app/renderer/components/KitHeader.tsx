@@ -3,7 +3,9 @@ import {
   FiArrowLeft,
   FiChevronLeft,
   FiChevronRight,
+  FiEdit3,
   FiFolder,
+  FiLock,
   FiRefreshCw,
 } from "react-icons/fi";
 
@@ -23,6 +25,8 @@ interface KitHeaderProps {
   onPrevKit?: () => void;
   onCreateKit?: () => void;
   onScanKit?: () => void;
+  onToggleEditableMode?: () => void;
+  isEditable?: boolean;
   kits?: string[];
   kitIndex?: number;
 }
@@ -41,6 +45,8 @@ const KitHeader: React.FC<KitHeaderProps> = ({
   onPrevKit,
   onCreateKit,
   onScanKit,
+  onToggleEditableMode,
+  isEditable,
   kits,
   kitIndex,
 }) => (
@@ -124,6 +130,34 @@ const KitHeader: React.FC<KitHeaderProps> = ({
       </button>
     )}
     <div className="flex-1" /> {/* Spacer */}
+    {onToggleEditableMode && (
+      <div className="ml-2 flex items-center gap-2">
+        <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-12">
+          {isEditable ? "Editable" : "Locked"}
+        </span>
+        <button
+          onClick={onToggleEditableMode}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
+            isEditable ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"
+          }`}
+          title={`${isEditable ? "Disable" : "Enable"} editable mode`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+              isEditable ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+          <span className="sr-only">
+            {isEditable ? "Disable" : "Enable"} editable mode
+          </span>
+        </button>
+        {isEditable ? (
+          <FiEdit3 className="w-4 h-4 text-orange-500" />
+        ) : (
+          <FiLock className="w-4 h-4 text-gray-500" />
+        )}
+      </div>
+    )}
     {onScanKit && (
       <button
         className="ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded shadow hover:bg-green-700 font-semibold flex items-center"

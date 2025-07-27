@@ -86,6 +86,7 @@ export interface ElectronAPI {
       artist?: string;
       tags?: string[];
       description?: string;
+      editable?: boolean;
     },
   ) => Promise<DbResult>;
   getKits?: () => Promise<

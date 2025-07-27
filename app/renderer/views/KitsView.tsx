@@ -6,7 +6,6 @@ import {
 } from "../../../shared/kitUtilsShared";
 import ChangeLocalStoreDirectoryDialog from "../components/ChangeLocalStoreDirectoryDialog";
 import { useBankScanning } from "../components/hooks/useBankScanning";
-import { useKitMetadata } from "../components/hooks/useKitMetadata";
 import { useMenuEvents } from "../components/hooks/useMenuEvents";
 import { useMessageDisplay } from "../components/hooks/useMessageDisplay";
 import { useStartupActions } from "../components/hooks/useStartupActions";
@@ -188,11 +187,7 @@ const KitsView = () => {
     );
   }, [selectedKit, allKitSamples]);
 
-  // Use the centralized hook instead
-  const { handleRescanAllVoiceNames } = useKitMetadata({
-    kitName: selectedKit || "",
-    localStorePath: localStorePath || "",
-  });
+  // TODO: Legacy voice rescanning method - can be removed since kit scanning now handles this
 
   // Memoize sample counts for all kits
   const sampleCounts = useMemo(() => {
@@ -317,9 +312,6 @@ const KitsView = () => {
           kitName={selectedKit || ""}
           localStorePath={localStorePath || ""}
           onBack={handleBack}
-          onRescanAllVoiceNames={() =>
-            handleRescanAllVoiceNames(selectedKitSamples)
-          }
           samples={selectedKitSamples}
           onRequestSamplesReload={async () => {
             // Re-load samples for this kit from database
@@ -364,7 +356,6 @@ const KitsView = () => {
           kits={sortedKits}
           kitData={kitData}
           onSelectKit={handleSelectKit}
-          onRescanAllVoiceNames={() => handleRescanAllVoiceNames(undefined)}
           sampleCounts={sampleCounts}
           onMessage={(msg) => {
             // Optionally handle messages here, e.g. show a toast or log

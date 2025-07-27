@@ -1,9 +1,6 @@
 import React from "react";
 
-interface FocusedStep {
-  voice: number;
-  step: number;
-}
+import type { FocusedStep } from "./hooks/stepPatternConstants";
 
 interface StepSequencerGridProps {
   safeStepPattern: number[][];

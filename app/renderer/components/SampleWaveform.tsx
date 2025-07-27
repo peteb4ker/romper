@@ -1,7 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 
 interface SampleWaveformProps {
-  filePath: string;
+  // Secure API - uses kit/voice/slot identifiers
+  kitName: string;
+  voiceNumber: number;
+  slotNumber: number;
+  
   playTrigger: number; // increment to trigger play externally
   stopTrigger?: number; // increment to trigger stop externally
   onPlayingChange?: (playing: boolean) => void;
@@ -9,7 +13,9 @@ interface SampleWaveformProps {
 }
 
 const SampleWaveform: React.FC<SampleWaveformProps> = ({
-  filePath,
+  kitName,
+  voiceNumber,
+  slotNumber,
   playTrigger,
   stopTrigger,
   onPlayingChange,
@@ -29,16 +35,25 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     let cancelled = false;
     setError(null);
 
-    if (!window.electronAPI?.getAudioBuffer) {
-      setError("Audio buffer API not available");
-      if (onError) onError("Audio buffer API not available");
+    // Use secure API with kit/voice/slot identifiers
+    if (!window.electronAPI?.getSampleAudioBuffer) {
+      setError("Sample audio buffer API not available");
+      if (onError) onError("Sample audio buffer API not available");
       return;
     }
-
+    
     window.electronAPI
-      .getAudioBuffer(filePath)
-      .then((arrayBuffer: ArrayBuffer) => {
+      .getSampleAudioBuffer(kitName, voiceNumber, slotNumber)
+      .then((arrayBuffer: ArrayBuffer | null) => {
         if (cancelled) return;
+        
+        // Handle null response for missing samples (empty slots)
+        if (!arrayBuffer) {
+          setAudioBuffer(null);
+          setError(null);
+          return;
+        }
+        
         // Always close previous context before creating a new one
         if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
           try {
@@ -54,8 +69,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       })
       .catch((err) => {
         if (!cancelled) {
-          setError("Failed to load audio.");
-          if (onError) onError("Failed to load audio.");
+          // Log the error for debugging but don't show user-facing error for missing samples
+          console.warn(`[SampleWaveform] Sample not found: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}:`, err);
+          setError(null); // Don't show error to user for missing samples
         }
         setAudioBuffer(null);
       });
@@ -67,7 +83,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         } catch (e) {}
       }
     };
-  }, [filePath]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
+  }, [kitName, voiceNumber, slotNumber]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
 
   // Draw waveform
   function drawWaveform(buffer: AudioBuffer) {

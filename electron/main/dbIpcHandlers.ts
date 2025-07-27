@@ -3,7 +3,10 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type { Kit, NewKit, NewSample } from "../../shared/db/schema.js";
-import { groupSamplesByVoice, inferVoiceTypeFromFilename } from "../../shared/kitUtilsShared.js";
+import {
+  groupSamplesByVoice,
+  inferVoiceTypeFromFilename,
+} from "../../shared/kitUtilsShared.js";
 import {
   addKit,
   addSample,
@@ -196,15 +199,20 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       let updatedVoices = 0;
       for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
         const voice = parseInt(voiceNumber, 10);
-        
+
         if (voiceFiles.length > 0) {
           // Infer voice type from the first file in the voice
           const firstFile = voiceFiles[0];
           const inferredType = inferVoiceTypeFromFilename(firstFile);
-          
+
           if (inferredType) {
             // Update the voice alias in the database
-            const updateResult = updateVoiceAlias(dbDir, kitName, voice, inferredType);
+            const updateResult = updateVoiceAlias(
+              dbDir,
+              kitName,
+              voice,
+              inferredType,
+            );
             if (updateResult.success) {
               updatedVoices++;
             }

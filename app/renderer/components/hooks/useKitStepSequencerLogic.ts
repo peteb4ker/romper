@@ -1,21 +1,23 @@
 import React from "react";
 
-export const NUM_VOICES = 4;
-export const NUM_STEPS = 16;
+import { 
+  ensureValidStepPattern, 
+  NUM_STEPS, 
+  NUM_VOICES,
+  ROW_COLORS,
+  LED_GLOWS,
+  type FocusedStep
+} from "./stepPatternConstants";
 
 interface UseKitStepSequencerLogicParams {
   samples: { [voice: number]: string[] };
   onPlaySample: (voice: number, sample: string) => void;
+  kitName?: string; // Add kit name for secure playback
   stepPattern: number[][] | null;
   setStepPattern: (pattern: number[][]) => void;
   sequencerOpen: boolean;
   setSequencerOpen: (open: boolean) => void;
   gridRef?: React.RefObject<HTMLDivElement>;
-}
-
-interface FocusedStep {
-  voice: number;
-  step: number;
 }
 
 /**
@@ -122,17 +124,9 @@ export function useKitStepSequencerLogic(
     }
   }, [isSeqPlaying, currentSeqStep, stepPattern, samples, onPlaySample]);
 
-  // Step pattern management
+  // Step pattern management  
   const safeStepPattern = React.useMemo(() => {
-    if (
-      !stepPattern ||
-      !Array.isArray(stepPattern) ||
-      stepPattern.length !== NUM_VOICES ||
-      stepPattern.some((row) => !Array.isArray(row) || row.length !== NUM_STEPS)
-    ) {
-      return Array.from({ length: NUM_VOICES }, () => Array(NUM_STEPS).fill(0));
-    }
-    return stepPattern;
+    return ensureValidStepPattern(stepPattern);
   }, [stepPattern]);
 
   // Step toggling
@@ -226,20 +220,7 @@ export function useKitStepSequencerLogic(
     }
   }, [sequencerOpen, gridRef]);
 
-  // UI styling constants
-  const ROW_COLORS = [
-    "bg-red-500 border-red-700", // Row 0
-    "bg-green-500 border-green-700", // Row 1
-    "bg-yellow-400 border-yellow-600", // Row 2
-    "bg-purple-500 border-purple-700", // Row 3
-  ];
-
-  const LED_GLOWS = [
-    "shadow-[0_0_12px_3px_rgba(239,68,68,0.7)]", // red
-    "shadow-[0_0_12px_3px_rgba(34,197,94,0.7)]", // green
-    "shadow-[0_0_12px_3px_rgba(234,179,8,0.7)]", // yellow
-    "shadow-[0_0_12px_3px_rgba(168,85,247,0.7)]", // purple
-  ];
+  // UI styling constants are now imported from shared constants
 
   return {
     // State

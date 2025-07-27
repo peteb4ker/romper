@@ -182,7 +182,7 @@ const KitVoicePanel: React.FC<
             if (sample) {
               const sampleKey = voice + ":" + sample;
               const isPlaying = samplePlaying[sampleKey];
-              let filePath = `${localStorePath}/${kitName}/${sample}`;
+              const slotNumber = i + 1; // Convert 0-based index to 1-based slot
               return (
                 <li
                   key={`${voice}-${i}-${sample}`}
@@ -253,7 +253,9 @@ const KitVoicePanel: React.FC<
                   </span>
                   <SampleWaveform
                     key={`${kitName}-${voice}-${i}-${sample}`}
-                    filePath={filePath}
+                    kitName={kitName}
+                    voiceNumber={voice}
+                    slotNumber={slotNumber}
                     playTrigger={playTriggers[sampleKey] || 0}
                     stopTrigger={stopTriggers[sampleKey] || 0}
                     onPlayingChange={(playing) =>

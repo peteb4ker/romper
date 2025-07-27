@@ -10,6 +10,7 @@ import {
 } from "./archiveUtils.js";
 import { addKit } from "./db/romperDbCoreORM.js";
 import { getKit } from "./db/romperDbCoreORM.js";
+import { getKitSamples } from "./db/romperDbCoreORM.js";
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
 
 // Utility: recursively copy a directory
@@ -172,8 +173,34 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("list-files-in-root", async (_event, localStorePath: string) =>
     fs.readdirSync(localStorePath),
   );
-  ipcMain.handle("get-audio-buffer", async (_event, filePath: string) => {
-    const data = fs.readFileSync(filePath);
+  // Secure method - get audio buffer by sample identifier
+  ipcMain.handle("get-sample-audio-buffer", async (_event, kitName: string, voiceNumber: number, slotNumber: number) => {
+    const localStorePath = inMemorySettings.localStorePath;
+    if (!localStorePath) {
+      throw new Error("No local store path configured");
+    }
+    
+    const dbDir = path.join(localStorePath, ".romperdb");
+    
+    // Get sample from database using static import
+    const samplesResult = getKitSamples(dbDir, kitName);
+    
+    if (!samplesResult.success || !samplesResult.data) {
+      throw new Error(`Failed to get samples for kit ${kitName}`);
+    }
+    
+    // Find the specific sample
+    const sample = samplesResult.data.find(
+      s => s.voice_number === voiceNumber && s.slot_number === slotNumber
+    );
+    
+    if (!sample) {
+      // Return null instead of throwing error for missing samples (empty slots)
+      return null;
+    }
+    
+    // Read the file using the database-stored source_path
+    const data = fs.readFileSync(sample.source_path);
     return data.buffer.slice(
       data.byteOffset,
       data.byteOffset + data.byteLength,

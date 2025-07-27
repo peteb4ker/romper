@@ -35,36 +35,25 @@ export const mockUseStartupActions = () => ({
   // No return value, just prevents execution
 });
 
-// Mock for useKitMetadata - simplified metadata operations
-export const mockUseKitMetadata = (kitName: string = "A0") => ({
-  kitMetadata: {
-    id: 1,
+// Mock for focused kit hooks - replaces legacy useKitMetadata
+export const mockUseKit = (kitName: string = "A0") => ({
+  kit: {
     name: kitName,
     alias: kitName,
     editable: false,
     locked: false,
-    voices: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
     step_pattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
-  },
-  kitLabel: {
-    label: kitName,
-    voiceNames: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
+    voices: [
+      { voice_number: 1, voice_alias: "kick" },
+      { voice_number: 2, voice_alias: "snare" },
+      { voice_number: 3, voice_alias: "hat" },
+      { voice_number: 4, voice_alias: "tom" },
+    ],
   },
   loading: false,
   error: null,
-  editingKitLabel: false,
-  kitLabelInput: kitName,
-  stepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
-  labelsLoading: false,
-  labelsError: null,
-  metadataChanged: false,
-  setEditingKitLabel: vi.fn(),
-  setKitLabelInput: vi.fn(),
-  handleSaveKitLabel: vi.fn(),
-  handleSaveVoiceName: vi.fn(),
-  handleRescanVoiceName: vi.fn(),
-  handleRescanAllVoiceNames: vi.fn(),
-  setStepPattern: vi.fn(),
+  reloadKit: vi.fn(),
+  updateKitAlias: vi.fn(),
 });
 
 // Comprehensive electronAPI mock that matches all current signatures
@@ -127,6 +116,7 @@ export const mockElectronAPI = {
 
   // Audio operations
   getAudioBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+  getSampleAudioBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
   playSample: vi.fn().mockResolvedValue(undefined),
   stopSample: vi.fn().mockResolvedValue(undefined),
   onSamplePlaybackEnded: vi.fn(),

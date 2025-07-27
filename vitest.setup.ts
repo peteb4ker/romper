@@ -43,6 +43,7 @@ beforeAll(() => {
         return ["1 kick.wav", "2 snare.wav", "3 hat.wav", "4 tom.wav"];
       },
       getAudioBuffer: async () => new ArrayBuffer(8),
+      getSampleAudioBuffer: async () => new ArrayBuffer(8),
       readFile: async (filePath) => ({
         success: true,
         data: new ArrayBuffer(1024), // Mock file data

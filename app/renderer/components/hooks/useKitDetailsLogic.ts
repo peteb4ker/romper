@@ -1,13 +1,13 @@
 import React from "react";
 import { toast } from "sonner";
 
-import { inferVoiceTypeFromFilename } from "../../../../shared/kitUtilsShared";
 import type { KitDetailsProps, RampleKitLabel } from "../kitTypes";
-import { executeFullKitScan } from "../utils/scanners/orchestrationFunctions";
 import { useKitDetails } from "./useKitDetails";
-import { useKitMetadata } from "./useKitMetadata";
+import { useKit } from "./useKit";
 import { useKitPlayback } from "./useKitPlayback";
 import { useKitVoicePanels } from "./useKitVoicePanels";
+import { useStepPattern } from "./useStepPattern";
+import { useVoiceAlias } from "./useVoiceAlias";
 
 interface UseKitDetailsLogicParams extends KitDetailsProps {
   kitLabel?: RampleKitLabel;
@@ -22,11 +22,25 @@ interface UseKitDetailsLogicParams extends KitDetailsProps {
  * Orchestrates all kit detail operations including playback, metadata, scanning, and navigation
  */
 export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
+  // Core kit data
+  const { kit, loading: kitLoading, error: kitError, reloadKit, updateKitAlias } = useKit({
+    kitName: props.kitName,
+  });
+
+  // Voice alias management  
+  const { updateVoiceAlias } = useVoiceAlias({
+    kitName: props.kitName,
+    onUpdate: reloadKit,
+  });
+
+  // Step pattern management
+  const { stepPattern, setStepPattern } = useStepPattern({
+    kitName: props.kitName,
+    initialPattern: kit?.step_pattern,
+  });
+
   // Playback logic
   const playback = useKitPlayback(props.samples);
-
-  // Metadata management
-  const metadata = useKitMetadata(props);
 
   // Default samples to avoid undefined errors
   const samples = React.useMemo(
@@ -34,13 +48,29 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     [props.samples],
   );
 
+  // Create legacy kitLabel for components that still need it (temporarily)
+  const kitLabel = React.useMemo(() => {
+    if (!kit) return null;
+    
+    const voiceNames: { [key: number]: string } = { 1: "", 2: "", 3: "", 4: "" };
+    kit.voices?.forEach((voice) => {
+      voiceNames[voice.voice_number] = voice.voice_alias || "";
+    });
+
+    return {
+      label: kit.alias || kit.name,
+      voiceNames,
+      stepPattern,
+    };
+  }, [kit, stepPattern]);
+
   // Auto-scan logic: triggers auto-rescan if all voice names are missing and samples are loaded
   useKitDetails({
-    kitLabel: metadata.kitLabel || undefined,
+    kitLabel: kitLabel || undefined,
     samples,
     localStorePath: props.localStorePath,
     kitName: props.kitName,
-    onRescanAllVoiceNames: () => metadata.handleRescanAllVoiceNames(samples),
+    onRescanAllVoiceNames: () => {}, // TODO: Remove this legacy method
   });
 
   // Handler for kit rescanning (database-first approach)
@@ -77,10 +107,8 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
           await onRequestSamplesReload();
         }
 
-        // Reload metadata to show updated voice names from rescan
-        if (metadata.reloadKitLabel) {
-          await metadata.reloadKitLabel();
-        }
+        // Reload kit to show updated voice names from rescan
+        await reloadKit();
 
         // Note: Voice inference is now handled automatically by rescanKit
         // No need to call handleRescanAllVoiceNames separately
@@ -96,7 +124,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
         { id: toastId, duration: 8000 },
       );
     }
-  }, [kitName, onRequestSamplesReload, samples, metadata]);
+  }, [kitName, onRequestSamplesReload, reloadKit]);
 
   // Navigation state
   const [selectedVoice, setSelectedVoice] = React.useState(1);
@@ -109,13 +137,13 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Use KitVoicePanels hook for navigation logic
   const kitVoicePanels = useKitVoicePanels({
     samples,
-    kitLabel: metadata.kitLabel,
+    kitLabel: kitLabel,
     selectedVoice,
     selectedSampleIdx,
     setSelectedVoice,
     setSelectedSampleIdx,
-    onSaveVoiceName: metadata.handleSaveVoiceName,
-    onRescanVoiceName: metadata.handleRescanVoiceName,
+    onSaveVoiceName: updateVoiceAlias,
+    onRescanVoiceName: () => {}, // TODO: Remove this legacy method
     samplePlaying: playback.samplePlaying,
     playTriggers: playback.playTriggers,
     stopTriggers: playback.stopTriggers,
@@ -141,10 +169,10 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   }, [playback.playbackError, onMessage]);
 
   React.useEffect(() => {
-    if (metadata.labelsError && onMessage) {
-      onMessage({ type: "error", text: metadata.labelsError });
+    if (kitError && onMessage) {
+      onMessage({ type: "error", text: kitError });
     }
-  }, [metadata.labelsError, onMessage]);
+  }, [kitError, onMessage]);
 
   // Listen for SampleWaveform errors bubbled up from children
   React.useEffect(() => {
@@ -171,7 +199,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     }
   }, [sequencerOpen]);
 
-  // Global keyboard navigation for sample preview and sequencer toggle
+  // Global keyboard navigation for sample preview, sequencer toggle, kit navigation, and scanning
   React.useEffect(() => {
     function handleGlobalKeyDown(e: KeyboardEvent) {
       // Ignore if a modal, input, textarea, or contenteditable is focused
@@ -183,6 +211,24 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
           active.tagName === "TEXTAREA" ||
           (active as HTMLElement).isContentEditable)
       ) {
+        return;
+      }
+
+      // Kit navigation shortcuts
+      if (e.key === ",") {
+        e.preventDefault();
+        props.onPrevKit?.();
+        return;
+      }
+      if (e.key === ".") {
+        e.preventDefault();
+        props.onNextKit?.();
+        return;
+      }
+      // Kit scanning shortcut
+      if (e.key === "/") {
+        e.preventDefault();
+        handleScanKit();
         return;
       }
       // S key toggles sequencer
@@ -221,6 +267,9 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     playback,
     playback.handlePlay,
     kitVoicePanels,
+    props.onPrevKit,
+    props.onNextKit,
+    handleScanKit,
   ]);
 
   return {
@@ -239,9 +288,19 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     // Handlers
     handleScanKit,
 
+    // Kit data
+    kit,
+    kitLabel, // Legacy compatibility
+    stepPattern,
+    setStepPattern,
+    updateKitAlias,
+    updateVoiceAlias,
+    kitLoading,
+    kitError,
+    reloadKit,
+
     // Sub-hooks
     playback,
-    metadata,
     kitVoicePanels,
   };
 }

@@ -31,13 +31,27 @@ Each kit contains four voices, and each voice can hold up to 12 sample slots. Th
 - Click the play icon on a sample to preview it.
 - Use the **Play Kit** button to audition the first sample of each voice using the step sequencer pattern.
 
+### Keyboard Navigation
+
+- **`,` (comma)**: Navigate to previous kit
+- **`.` (period)**: Navigate to next kit  
+- **`/` (slash)**: Scan/rescan current kit (analyzes samples and infers voice names)
+- **Up/Down arrows**: Navigate between sample slots
+- **Space/Enter**: Play selected sample
+- **`S`**: Toggle step sequencer visibility
+
 ### Step Sequencer
 
 A four‑row, 16‑step grid appears below the kit details:
 
-- Click steps or use the arrow keys and spacebar to toggle them.
+- Click steps or use keyboard navigation to toggle them.
 - The grid plays back at a fixed tempo when you press **Play**.
-- Patterns are saved to `.rample_labels.json` per kit.
+- Patterns are saved to the database per kit.
+
+**Step Sequencer Controls:**
+- **Arrow keys**: Navigate between steps
+- **Space**: Toggle current step on/off
+- **`S`**: Show/hide sequencer
 
 ## Locking Kits
 

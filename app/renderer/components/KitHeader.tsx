@@ -22,7 +22,6 @@ interface KitHeaderProps {
   onNextKit?: () => void;
   onPrevKit?: () => void;
   onCreateKit?: () => void;
-  onRescanAllVoiceNames?: () => void;
   onScanKit?: () => void;
   kits?: string[];
   kitIndex?: number;
@@ -41,7 +40,6 @@ const KitHeader: React.FC<KitHeaderProps> = ({
   onNextKit,
   onPrevKit,
   onCreateKit,
-  onRescanAllVoiceNames,
   onScanKit,
   kits,
   kitIndex,
@@ -136,12 +134,6 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         Scan Kit
       </button>
     )}
-    <button
-      className="ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded shadow hover:bg-blue-700 font-semibold"
-      onClick={onRescanAllVoiceNames}
-    >
-      Rescan Kit Voice Names
-    </button>
   </div>
 );
 

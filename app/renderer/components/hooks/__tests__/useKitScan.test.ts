@@ -22,7 +22,6 @@ describe("scanSingleKit", () => {
 
     const result = await scanSingleKit({
       kitName: "A01_Kick",
-      localStorePath: "/store",
       scanType: "voiceInference",
       scanTypeDisplay: "voice name inference",
       fileReaderImpl,
@@ -40,7 +39,6 @@ describe("scanSingleKit", () => {
 
     const result = await scanSingleKit({
       kitName: "A01_Kick",
-      localStorePath: "/store",
       scanType: "wavAnalysis",
       scanTypeDisplay: "WAV analysis",
       fileReaderImpl,
@@ -58,7 +56,6 @@ describe("scanSingleKit", () => {
 
     const result = await scanSingleKit({
       kitName: "A01_Kick",
-      localStorePath: "/store",
       scanType: "full",
       scanTypeDisplay: "comprehensive",
       fileReaderImpl,
@@ -74,9 +71,9 @@ import { act, renderHook } from "@testing-library/react";
 import { useKitScan } from "../useKitScan";
 
 describe("useKitScan", () => {
-  it("should show error if no kits or localStorePath", async () => {
+  it("should show error if no kits", async () => {
     const { result } = renderHook(() =>
-      useKitScan({ kits: [], localStorePath: "", onRefreshKits: vi.fn() }),
+      useKitScan({ kits: [], onRefreshKits: vi.fn() }),
     );
     await act(async () => {
       await result.current.handleScanAllKits();
@@ -87,7 +84,7 @@ describe("useKitScan", () => {
   it("should call onRefreshKits after scan", async () => {
     const onRefreshKits = vi.fn();
     const { result } = renderHook(() =>
-      useKitScan({ kits: ["KitA"], localStorePath: "/tmp", onRefreshKits }),
+      useKitScan({ kits: ["KitA"], onRefreshKits }),
     );
     // This test would be quite complex to properly mock, so let's simplify
     expect(result.current.handleScanAllKits).toBeDefined();

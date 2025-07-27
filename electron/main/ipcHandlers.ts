@@ -93,49 +93,53 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
     return result.canceled ? null : result.filePaths[0];
   });
   ipcMain.handle("get-user-data-path", () => app.getPath("userData"));
-  ipcMain.handle(
-    "create-kit",
-    async (_event, localStorePath: string, kitSlot: string) => {
-      if (!/^[A-Z][0-9]{1,2}$/.test(kitSlot))
-        throw new Error("Invalid kit slot. Use format A0-Z99.");
+  ipcMain.handle("create-kit", async (_event, kitSlot: string) => {
+    if (!/^[A-Z][0-9]{1,2}$/.test(kitSlot))
+      throw new Error("Invalid kit slot. Use format A0-Z99.");
 
-      const dbPath = path.join(localStorePath, ".romperdb");
+    const localStorePath =
+      process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath;
+    if (!localStorePath) {
+      throw new Error("No local store configured");
+    }
 
-      // Check if kit already exists in database
-      const existingKit = getKit(dbPath, kitSlot);
-      if (existingKit.success && existingKit.data) {
-        throw new Error("Kit already exists.");
-      }
+    const dbPath = path.join(localStorePath, ".romperdb");
 
-      // Create kit record in database only (no folder creation)
-      const kitRecord = {
-        name: kitSlot,
-        alias: null,
-        artist: null,
-        editable: true, // User-created kits are editable by default
-        locked: false,
-        step_pattern: null,
-      };
+    // Check if kit already exists in database
+    const existingKit = getKit(dbPath, kitSlot);
+    if (existingKit.success && existingKit.data) {
+      throw new Error("Kit already exists.");
+    }
 
-      const result = addKit(dbPath, kitRecord);
-      if (!result.success) {
-        throw new Error(`Failed to create kit: ${result.error}`);
-      }
-    },
-  );
+    // Create kit record in database only (no folder creation)
+    const kitRecord = {
+      name: kitSlot,
+      alias: null,
+      artist: null,
+      editable: true, // User-created kits are editable by default
+      locked: false,
+      step_pattern: null,
+    };
+
+    const result = addKit(dbPath, kitRecord);
+    if (!result.success) {
+      throw new Error(`Failed to create kit: ${result.error}`);
+    }
+  });
   ipcMain.handle(
     "copy-kit",
-    async (
-      _event,
-      localStorePath: string,
-      sourceKit: string,
-      destKit: string,
-    ) => {
+    async (_event, sourceKit: string, destKit: string) => {
       if (
         !/^[A-Z][0-9]{1,2}$/.test(sourceKit) ||
         !/^[A-Z][0-9]{1,2}$/.test(destKit)
       )
         throw new Error("Invalid kit slot. Use format A0-Z99.");
+
+      const localStorePath =
+        process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath;
+      if (!localStorePath) {
+        throw new Error("No local store configured");
+      }
 
       const dbPath = path.join(localStorePath, ".romperdb");
 

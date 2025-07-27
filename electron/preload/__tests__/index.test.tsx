@@ -197,12 +197,8 @@ describe("preload/index.tsx", () => {
     expect(electronAPICall).toBeDefined();
     const api = electronAPICall[1];
     mockIpcRenderer.invoke.mockResolvedValue();
-    await api.createKit("/mock/sd", "A01");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "create-kit",
-      "/mock/sd",
-      "A01",
-    );
+    await api.createKit("A01");
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("create-kit", "A01");
   });
 
   it("calls ipcRenderer.invoke for copyKit", async () => {
@@ -213,10 +209,9 @@ describe("preload/index.tsx", () => {
     expect(electronAPICall).toBeDefined();
     const api = electronAPICall[1];
     mockIpcRenderer.invoke.mockResolvedValue();
-    await api.copyKit("/mock/sd", "A01", "A02");
+    await api.copyKit("A01", "A02");
     expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
       "copy-kit",
-      "/mock/sd",
       "A01",
       "A02",
     );

@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { Kit } from "../../../../shared/db/schema";
 import KitForm from "../KitForm";
 
 afterEach(() => {
@@ -10,49 +11,35 @@ afterEach(() => {
 });
 
 describe("KitForm", () => {
-  const baseKitLabel = {
-    label: "My Kit",
-    description: "A description",
-    tags: ["drum", "snare"],
-  };
+  const baseKit = {
+    alias: "My Kit",
+  } as Kit;
 
-  it("renders tags and Edit Tags button when tagsEditable", () => {
-    render(
-      <KitForm kitLabel={baseKitLabel} tagsEditable={true} onSave={vi.fn()} />,
-    );
-    expect(screen.getByText("drum")).toBeInTheDocument();
-    expect(screen.getByText("snare")).toBeInTheDocument();
+  it("renders Edit Tags button when tagsEditable", () => {
+    render(<KitForm kit={baseKit} tagsEditable={true} onSave={vi.fn()} />);
     expect(screen.getByText("Edit Tags")).toBeInTheDocument();
   });
 
-  it("shows tag editing UI and allows adding/removing tags", () => {
+  it("shows tag editing UI and allows adding tags", () => {
     const onSave = vi.fn();
-    render(
-      <KitForm kitLabel={baseKitLabel} tagsEditable={true} onSave={onSave} />,
-    );
+    render(<KitForm kit={baseKit} tagsEditable={true} onSave={onSave} />);
     fireEvent.click(screen.getByText("Edit Tags"));
-    // Remove a tag
-    fireEvent.click(screen.getAllByTitle("Remove tag")[0]);
     // Add a tag
     const input = screen.getByPlaceholderText("Add tag");
     fireEvent.change(input, { target: { value: "kick" } });
     fireEvent.keyDown(input, { key: "Enter" });
     // Save
     fireEvent.click(screen.getByText("Save"));
-    expect(onSave).toHaveBeenCalledWith("My Kit", "", ["snare", "kick"]);
+    expect(onSave).toHaveBeenCalledWith("My Kit", "", ["kick"]);
   });
 
   it("shows loading and error states", () => {
     const { rerender } = render(
-      <KitForm kitLabel={baseKitLabel} loading={true} onSave={vi.fn()} />,
+      <KitForm kit={baseKit} loading={true} onSave={vi.fn()} />,
     );
     expect(screen.getByText("Loading kit metadata...")).toBeInTheDocument();
     rerender(
-      <KitForm
-        kitLabel={baseKitLabel}
-        error="Something went wrong"
-        onSave={vi.fn()}
-      />,
+      <KitForm kit={baseKit} error="Something went wrong" onSave={vi.fn()} />,
     );
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
   });
@@ -60,7 +47,7 @@ describe("KitForm", () => {
   it('shows "No tags" if no tags present', () => {
     render(
       <KitForm
-        kitLabel={{ label: "Empty", tags: [] }}
+        kit={{ alias: "Empty" } as Kit}
         tagsEditable={true}
         onSave={vi.fn()}
       />,

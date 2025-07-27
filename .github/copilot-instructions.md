@@ -80,11 +80,11 @@ Tests: <passing>/<total> passing
 ```
 feat: transition from SD card to local store as primary data source
 
-- Replace sdCardPath with localStorePath throughout main app logic
-- Remove Select SD Card button from KitBrowserHeader
-- Update StatusBar to show local store path with database icon
-- Refactor SettingsContext to use localStorePath consistently
-- Update all component props, types, and hooks to use localStorePath
+- ✅ Replaced sdCardPath with localStorePath throughout main app logic
+- ✅ Removed Select SD Card button from KitBrowserHeader
+- ✅ Updated StatusBar to show local store path with database icon
+- ✅ Refactored SettingsContext to use localStorePath consistently
+- ✅ Frontend components now use backend-managed localStorePath (no prop drilling)
 - Refactor 400+ unit tests to reflect local store usage
 
 Closes #2.9 - SD card to local store transition

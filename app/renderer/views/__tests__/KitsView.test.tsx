@@ -40,19 +40,10 @@ describe("KitsView", () => {
         });
       }),
 
-      readRampleLabels: vi.fn().mockResolvedValue({
-        kits: {
-          A0: {
-            label: "A0",
-            voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" },
-          },
-          A1: { label: "A1", voiceNames: {} },
-        },
-      }),
+      // Legacy methods removed - now using database
       getAudioBuffer: vi
         .fn()
         .mockResolvedValue({ slice: () => new ArrayBuffer(8) }),
-      writeRampleLabels: vi.fn().mockResolvedValue(undefined),
 
       // Other required methods
       selectSdCard: vi.fn().mockResolvedValue("/sd"),

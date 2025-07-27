@@ -53,12 +53,8 @@ export interface ElectronAPI {
       theme?: string;
     },
   ) => Promise<any>;
-  createKit?: (localStorePath: string, kitSlot: string) => Promise<void>;
-  copyKit?: (
-    localStorePath: string,
-    sourceKit: string,
-    destKit: string,
-  ) => Promise<void>;
+  createKit?: (kitSlot: string) => Promise<void>;
+  copyKit?: (sourceKit: string, destKit: string) => Promise<void>;
   listFilesInRoot?: (localStorePath: string) => Promise<string[]>;
   closeApp?: () => Promise<void>;
   playSample?: (filePath: string) => Promise<any>;
@@ -73,7 +69,7 @@ export interface ElectronAPI {
   readFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // Returns file content as ArrayBuffer
   readAudioFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // ArrayBuffer for audio files
   validateLocalStore: (
-    localStorePath: string,
+    localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
   getAllSamples?: (dbDir: string) => Promise<DbResult<Sample[]>>;
   getAllSamplesForKit?: (kitName: string) => Promise<DbResult<Sample[]>>;
@@ -113,8 +109,6 @@ export interface ElectronAPI {
     stepPattern: number[][],
   ) => Promise<DbResult>;
   getUserHomeDir?: () => Promise<string>;
-  readRampleLabels?: (localStorePath: string) => Promise<any>;
-  writeRampleLabels?: (localStorePath: string, data: any) => Promise<void>;
 
   // Missing methods causing errors
   createRomperDb?: (dbDir: string) => Promise<RomperDbResult>;
@@ -134,10 +128,10 @@ export interface ElectronAPI {
   selectLocalStorePath?: () => Promise<string | undefined>;
   getLocalStoreStatus: () => Promise<LocalStoreValidationDetailedResult>;
   validateLocalStore: (
-    localStorePath: string,
+    localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
   validateLocalStoreBasic: (
-    localStorePath: string,
+    localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
   rescanKit: (
     kitName: string,

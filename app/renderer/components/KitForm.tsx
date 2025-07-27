@@ -1,23 +1,21 @@
 import React, { useState } from "react";
 
+import type { Kit } from "../../../shared/db/schema";
+
 export interface KitFormProps {
-  kitLabel: {
-    label: string;
-    description?: string;
-    tags?: string[];
-  } | null;
+  kit: Kit | null;
   loading?: boolean;
   error?: string | null;
   editing?: boolean;
   onEdit?: () => void;
   onCancel?: () => void;
-  onSave: (label: string, description: string, tags: string[]) => void;
+  onSave: (alias: string, description: string, tags: string[]) => void;
   hideDescription?: boolean;
   tagsEditable?: boolean;
 }
 
 const KitForm: React.FC<KitFormProps> = ({
-  kitLabel,
+  kit,
   loading,
   error,
   editing = false,
@@ -27,13 +25,13 @@ const KitForm: React.FC<KitFormProps> = ({
   hideDescription,
   tagsEditable,
 }) => {
-  const [tags, setTags] = React.useState<string[]>(kitLabel?.tags || []);
+  const [tags, setTags] = React.useState<string[]>([]);
   const [editingTags, setEditingTags] = React.useState(false);
   const [tagInput, setTagInput] = React.useState("");
 
   React.useEffect(() => {
-    setTags(kitLabel?.tags || []);
-  }, [kitLabel]);
+    setTags([]); // Tags not currently in schema
+  }, [kit]);
 
   if (loading)
     return <div className="text-xs text-gray-400">Loading kit metadata...</div>;
@@ -82,7 +80,7 @@ const KitForm: React.FC<KitFormProps> = ({
                 className="ml-2 px-2 py-0.5 bg-blue-600 text-white rounded text-xs"
                 onClick={() => {
                   setEditingTags(false);
-                  onSave(kitLabel?.label || "", "", tags);
+                  onSave(kit?.alias || "", "", tags);
                 }}
                 type="button"
               >
@@ -92,7 +90,7 @@ const KitForm: React.FC<KitFormProps> = ({
                 className="ml-1 px-2 py-0.5 bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded text-xs"
                 onClick={() => {
                   setEditingTags(false);
-                  setTags(kitLabel?.tags || []);
+                  setTags([]); // Tags not currently in schema
                   setTagInput("");
                 }}
                 type="button"

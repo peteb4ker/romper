@@ -4,12 +4,11 @@ import { useKitDetailsLogic } from "./hooks/useKitDetailsLogic";
 import KitForm from "./KitForm";
 import KitHeader from "./KitHeader";
 import KitStepSequencer from "./KitStepSequencer";
-import type { KitDetailsProps, RampleKitLabel } from "./kitTypes";
+import type { KitDetailsProps } from "./kitTypes";
 import KitVoicePanels from "./KitVoicePanels";
 import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitDetailsAllProps extends KitDetailsProps {
-  kitLabel?: RampleKitLabel;
   onCreateKit?: () => void;
   onMessage?: (msg: { type: string; text: string }) => void;
   onRequestSamplesReload?: () => Promise<void>;
@@ -23,22 +22,23 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   // Check if kit needs scanning - this is just a simple heuristic for now
   // A more robust implementation would check the database for scan status
   const needsScanning =
-    logic.kitLabel &&
-    (!logic.kitLabel.voiceNames ||
-      Object.keys(logic.kitLabel.voiceNames).length === 0) &&
+    logic.kit &&
+    (!logic.kit.voices ||
+      logic.kit.voices.length === 0 ||
+      logic.kit.voices.every((v) => !v.voice_alias)) &&
     !dismissedUnscannedPrompt;
 
   return (
     <div className="flex flex-col flex-1 min-h-0 h-full p-2 pb-0 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-sm shadow">
       <KitHeader
         kitName={props.kitName}
-        kitLabel={logic.kitLabel}
-        editingKitLabel={false}
-        setEditingKitLabel={() => {}}
-        kitLabelInput={logic.kit?.alias || logic.kit?.name || ""}
-        setKitLabelInput={() => {}}
-        handleSaveKitLabel={logic.updateKitAlias}
-        kitLabelInputRef={
+        kit={logic.kit}
+        editingKitAlias={false}
+        setEditingKitAlias={() => {}}
+        kitAliasInput={logic.kit?.alias || logic.kit?.name || ""}
+        setKitAliasInput={() => {}}
+        handleSaveKitAlias={logic.updateKitAlias}
+        kitAliasInputRef={
           React.createRef<HTMLInputElement>() as React.RefObject<HTMLInputElement>
         }
         onBack={props.onBack}
@@ -61,7 +61,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
       )}
 
       <KitForm
-        kitLabel={logic.kitLabel}
+        kit={logic.kit}
         loading={logic.kitLoading}
         error={null} // error now handled by centralized message display
         editing={false}
@@ -74,7 +74,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
       <div className="flex-1 min-h-0 overflow-y-auto">
         <KitVoicePanels
           samples={logic.samples}
-          kitLabel={logic.kitLabel}
+          kit={logic.kit}
           selectedVoice={logic.selectedVoice}
           selectedSampleIdx={logic.selectedSampleIdx}
           setSelectedVoice={logic.setSelectedVoice}
@@ -92,7 +92,6 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
           onPlay={logic.playback.handlePlay}
           onStop={logic.playback.handleStop}
           onWaveformPlayingChange={logic.playback.handleWaveformPlayingChange}
-          localStorePath={props.localStorePath}
           kitName={props.kitName}
           onSampleKeyNav={logic.kitVoicePanels.onSampleKeyNav}
           isEditable={logic.kit?.editable ?? false}

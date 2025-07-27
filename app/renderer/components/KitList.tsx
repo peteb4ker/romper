@@ -7,20 +7,18 @@ import React, {
 } from "react";
 import { ListChildComponentProps, VariableSizeList } from "react-window";
 
+import type { Kit } from "../../../shared/db/schema";
 import { useKitListLogic } from "./hooks/useKitListLogic";
 import { useKitListNavigation } from "./hooks/useKitListNavigation";
 import KitItem from "./KitItem";
-import type { RampleKitLabel, RampleLabels } from "./kitTypes";
 
 interface KitListProps {
   kits: string[];
   onSelectKit: (kit: string) => void;
   bankNames: Record<string, string>;
   onDuplicate: (kit: string) => void;
-  localStorePath: string;
-  kitLabels?: { [kit: string]: RampleKitLabel };
+  kitData?: Kit[]; // Kit data from database
   sampleCounts?: Record<string, [number, number, number, number]>;
-  voiceLabelSets?: Record<string, string[]>;
   focusedKit?: string | null; // externally controlled focus
   onBankFocus?: (bank: string) => void;
   onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
@@ -42,10 +40,8 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       onSelectKit,
       bankNames,
       onDuplicate,
-      localStorePath,
-      kitLabels,
+      kitData,
       sampleCounts,
-      voiceLabelSets,
       focusedKit,
       onBankFocus,
       onFocusKit,
@@ -175,11 +171,8 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       const colorClass = getColorClass(kit);
       const showAnchor = rowHasAnchor[index];
       const isSelected = selectedIdx === index;
-      const kitLabel = kitLabels?.[kit] || {};
-      const dedupedVoiceNames =
-        voiceLabelSets && voiceLabelSets[kit]
-          ? { ...kitLabel, voiceNames: voiceLabelSets[kit] }
-          : kitLabel;
+      // Get kit data from kitData array
+      const kitDataItem = kitData?.find((k) => k.name === kit) || null;
       return (
         <div style={style}>
           {showAnchor && (
@@ -204,7 +197,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
             onSelect={() => handleSelectKit(kit, index)}
             onDuplicate={() => isValid && onDuplicate(kit)}
             sampleCounts={sampleCounts ? sampleCounts[kit] : undefined}
-            kitLabel={dedupedVoiceNames}
+            kitData={kitDataItem}
             data-kit={kit}
             data-testid={`kit-item-${kit}`}
             isSelected={isSelected}

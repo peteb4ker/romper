@@ -112,15 +112,23 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
 
   ipcMain.handle(
     "validate-local-store",
-    async (_event, localStorePath: string) => {
-      return validateLocalStoreAgainstDb(localStorePath);
+    async (_event, localStorePath?: string) => {
+      const pathToValidate = localStorePath || inMemorySettings.localStorePath;
+      if (!pathToValidate) {
+        throw new Error("No local store path provided or configured");
+      }
+      return validateLocalStoreAgainstDb(pathToValidate);
     },
   );
 
   ipcMain.handle(
     "validate-local-store-basic",
-    async (_event, localStorePath: string) => {
-      return validateLocalStoreBasic(localStorePath);
+    async (_event, localStorePath?: string) => {
+      const pathToValidate = localStorePath || inMemorySettings.localStorePath;
+      if (!pathToValidate) {
+        throw new Error("No local store path provided or configured");
+      }
+      return validateLocalStoreBasic(pathToValidate);
     },
   );
 

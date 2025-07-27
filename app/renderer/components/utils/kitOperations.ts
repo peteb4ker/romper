@@ -10,10 +10,7 @@ export function validateKitSlot(slot: string): boolean {
 /**
  * Creates a kit at the specified slot
  */
-export async function createKit(
-  localStorePath: string,
-  kitSlot: string,
-): Promise<void> {
+export async function createKit(kitSlot: string): Promise<void> {
   if (!validateKitSlot(kitSlot)) {
     throw new Error("Invalid kit slot. Use format A0-Z99.");
   }
@@ -22,14 +19,13 @@ export async function createKit(
     throw new Error("Electron API not available");
   }
 
-  await window.electronAPI.createKit(localStorePath, kitSlot);
+  await window.electronAPI.createKit(kitSlot);
 }
 
 /**
  * Duplicates/copies a kit from source to destination slot
  */
 export async function duplicateKit(
-  localStorePath: string,
   sourceSlot: string,
   destSlot: string,
 ): Promise<void> {
@@ -42,7 +38,7 @@ export async function duplicateKit(
   }
 
   try {
-    await window.electronAPI.copyKit(localStorePath, sourceSlot, destSlot);
+    await window.electronAPI.copyKit(sourceSlot, destSlot);
   } catch (err) {
     // Clean up error message
     let msg = String(err instanceof Error ? err.message : err);

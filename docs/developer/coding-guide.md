@@ -105,7 +105,7 @@ Each hook should have one clear job. If your hook is doing too many things, spli
 
 ```typescript
 // ✅ Good: Focused on kit browsing only
-function useKitBrowser(localStorePath: string) {
+function useKitBrowser() {
   const [kits, setKits] = useState<Kit[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -141,10 +141,11 @@ interface Dependencies {
   toast?: typeof toast;
 }
 
-function useKitScan(localStorePath: string, deps: Dependencies = {}) {
+function useKitScan(deps: Dependencies = {}) {
   const fileReader = deps.fileReader || window.electron.fileReader;
   const toastImpl = deps.toast || toast;
   
+  // Backend handles localStorePath from settings automatically
   // Now this hook can be easily tested with mocked dependencies
 }
 ```

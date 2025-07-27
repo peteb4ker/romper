@@ -1,12 +1,13 @@
 import React from "react";
 
+import type { KitWithRelations } from "../../../shared/db/schema";
 import { useKitVoicePanels } from "./hooks/useKitVoicePanels";
-import type { RampleKitLabel, VoiceSamples } from "./kitTypes";
+import type { VoiceSamples } from "./kitTypes";
 import KitVoicePanel from "./KitVoicePanel";
 
 interface KitVoicePanelsProps {
   samples: VoiceSamples;
-  kitLabel: RampleKitLabel | null;
+  kit: KitWithRelations | null;
   selectedVoice: number;
   selectedSampleIdx: number;
   onSaveVoiceName: (voice: number, newName: string) => void;
@@ -21,7 +22,6 @@ interface KitVoicePanelsProps {
     sample: string,
     playing: boolean,
   ) => void;
-  localStorePath: string;
   kitName: string;
   onSampleKeyNav: (direction: "up" | "down") => void;
   onSampleSelect: (voice: number, idx: number) => void;
@@ -51,7 +51,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           <KitVoicePanel
             voice={voice}
             samples={hookProps.samples[voice] || []}
-            voiceName={hookProps.kitLabel?.voiceNames?.[voice] || null}
+            voiceName={
+              hookProps.kit?.voices?.find((v) => v.voice_number === voice)
+                ?.voice_alias || null
+            }
             onSaveVoiceName={hookProps.onSaveVoiceName}
             onRescanVoiceName={() =>
               hookProps.onRescanVoiceName(voice, hookProps.samples)
@@ -62,7 +65,6 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
             onPlay={hookProps.onPlay}
             onStop={hookProps.onStop}
             onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
-            localStorePath={hookProps.localStorePath}
             kitName={hookProps.kitName}
             dataTestIdVoiceName={`voice-name-${voice}`}
             selectedIdx={

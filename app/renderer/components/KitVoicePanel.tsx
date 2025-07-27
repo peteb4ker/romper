@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  FiCheck,
-  FiEdit2,
-  FiPlay,
-  FiSquare,
-  FiX,
-} from "react-icons/fi";
+import { FiCheck, FiEdit2, FiPlay, FiSquare, FiX } from "react-icons/fi";
 
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
 import SampleWaveform from "./SampleWaveform";
@@ -26,7 +20,6 @@ interface KitVoicePanelProps {
     sample: string,
     playing: boolean,
   ) => void;
-  localStorePath: string;
   kitName: string;
 
   // New props for cross-voice navigation
@@ -51,7 +44,6 @@ const KitVoicePanel: React.FC<
   onPlay,
   onStop,
   onWaveformPlayingChange,
-  localStorePath,
   kitName,
   dataTestIdVoiceName,
   selectedIdx = -1,

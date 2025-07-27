@@ -51,13 +51,36 @@ const mockUseKitBrowser = vi.mocked(useKitBrowser);
 
 const baseProps = {
   onSelectKit: vi.fn(),
-  localStorePath: "/mock/sd",
   kits: ["A0", "A1", "B0"],
-  kitLabels: {
-    A0: { voiceNames: ["Kick", "Snare", "Hat", "Tom"] },
-    A1: { voiceNames: ["Kick", "Snare", "Hat", "Tom"] },
-    B0: { voiceNames: ["Kick", "Snare", "Hat", "Tom"] },
-  },
+  kitData: [
+    {
+      name: "A0",
+      voices: [
+        { voice_number: 1, voice_alias: "Kick" },
+        { voice_number: 2, voice_alias: "Snare" },
+        { voice_number: 3, voice_alias: "Hat" },
+        { voice_number: 4, voice_alias: "Tom" },
+      ],
+    },
+    {
+      name: "A1",
+      voices: [
+        { voice_number: 1, voice_alias: "Kick" },
+        { voice_number: 2, voice_alias: "Snare" },
+        { voice_number: 3, voice_alias: "Hat" },
+        { voice_number: 4, voice_alias: "Tom" },
+      ],
+    },
+    {
+      name: "B0",
+      voices: [
+        { voice_number: 1, voice_alias: "Kick" },
+        { voice_number: 2, voice_alias: "Snare" },
+        { voice_number: 3, voice_alias: "Hat" },
+        { voice_number: 4, voice_alias: "Tom" },
+      ],
+    },
+  ],
   onRescanAllVoiceNames: vi.fn(),
   sampleCounts: { A0: [1, 1, 1, 1], A1: [1, 1, 1, 1], B0: [1, 1, 1, 1] },
   onRefreshKits: vi.fn(),
@@ -215,12 +238,12 @@ describe("KitBrowser", () => {
       const navProps = {
         ...baseProps,
         kits: ["A1", "A2", "B1", "B2"],
-        kitLabels: {
-          A1: { label: "Kick" },
-          A2: { label: "Snare" },
-          B1: { label: "Hat" },
-          B2: { label: "Tom" },
-        },
+        kitData: [
+          { name: "A1", alias: "Kick", voices: [] },
+          { name: "A2", alias: "Snare", voices: [] },
+          { name: "B1", alias: "Hat", voices: [] },
+          { name: "B2", alias: "Tom", voices: [] },
+        ],
         sampleCounts: {
           A1: [1, 1, 1, 1],
           A2: [1, 1, 1, 1],

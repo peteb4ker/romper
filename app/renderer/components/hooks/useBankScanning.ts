@@ -1,23 +1,14 @@
 import { useCallback } from "react";
 
 interface UseBankScanningProps {
-  localStorePath: string | null;
   onMessage?: (message: string, type?: string) => void;
 }
 
 /**
  * Hook for bank scanning operations
  */
-export function useBankScanning({
-  localStorePath,
-  onMessage,
-}: UseBankScanningProps) {
+export function useBankScanning({ onMessage }: UseBankScanningProps) {
   const scanBanks = useCallback(async () => {
-    if (!localStorePath) {
-      onMessage?.("No local store configured", "error");
-      return;
-    }
-
     try {
       const result = await window.electronAPI.scanBanks?.();
       if (result?.success) {
@@ -34,7 +25,7 @@ export function useBankScanning({
         "error",
       );
     }
-  }, [localStorePath, onMessage]);
+  }, [onMessage]);
 
   return {
     scanBanks,

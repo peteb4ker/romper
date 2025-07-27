@@ -73,7 +73,6 @@ const KitsView = () => {
 
   // Bank scanning hook
   const { scanBanks } = useBankScanning({
-    localStorePath,
     onMessage: showMessage,
   });
 
@@ -310,7 +309,6 @@ const KitsView = () => {
       {selectedKit && selectedKitSamples ? (
         <KitDetails
           kitName={selectedKit || ""}
-          localStorePath={localStorePath || ""}
           onBack={handleBack}
           samples={selectedKitSamples}
           onRequestSamplesReload={async () => {

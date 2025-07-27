@@ -22,7 +22,6 @@ import {
 interface UseKitBrowserProps {
   kits: string[];
   kitData?: any[];
-  localStorePath: string;
   onRefreshKits?: () => void;
   kitListRef: RefObject<any>;
   onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
@@ -31,7 +30,6 @@ interface UseKitBrowserProps {
 export function useKitBrowser({
   kits: externalKits = [],
   kitData = [],
-  localStorePath,
   onRefreshKits,
   kitListRef,
   onMessage,
@@ -77,10 +75,9 @@ export function useKitBrowser({
       setNewKitError("Invalid kit slot. Use format A0-Z99.");
       return;
     }
-    if (!localStorePath) return;
 
     try {
-      await createKit(localStorePath, newKitSlot);
+      await createKit(newKitSlot);
       setShowNewKit(false);
       setNewKitSlot("");
       if (onRefreshKits) onRefreshKits();
@@ -101,10 +98,9 @@ export function useKitBrowser({
       setNewKitError("No next kit slot available.");
       return;
     }
-    if (!localStorePath) return;
 
     try {
-      await createKit(localStorePath, nextKitSlot);
+      await createKit(nextKitSlot);
       if (onRefreshKits) onRefreshKits();
     } catch (err) {
       setNewKitError(formatKitError(err));
@@ -117,10 +113,9 @@ export function useKitBrowser({
       setDuplicateKitError("Invalid destination slot. Use format A0-Z99.");
       return;
     }
-    if (!localStorePath) return;
 
     try {
-      await duplicateKit(localStorePath, duplicateKitSource, duplicateKitDest);
+      await duplicateKit(duplicateKitSource, duplicateKitDest);
       setDuplicateKitSource(null);
       setDuplicateKitDest("");
       if (onRefreshKits) onRefreshKits();

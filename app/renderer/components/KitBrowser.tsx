@@ -9,7 +9,6 @@ import KitBankNav from "./KitBankNav";
 import KitBrowserHeader from "./KitBrowserHeader";
 import KitDialogs from "./KitDialogs";
 import KitList, { KitListHandle } from "./KitList";
-import type { RampleKitLabel } from "./kitTypes";
 import LocalStoreWizardUI from "./LocalStoreWizardUI";
 import ValidationResultsDialog from "./ValidationResultsDialog";
 
@@ -18,10 +17,8 @@ interface KitBrowserProps {
   localStorePath: string | null;
   kits?: string[];
   kitData?: any[];
-  kitLabels?: { [kit: string]: RampleKitLabel };
   onRescanAllVoiceNames: () => void;
   sampleCounts?: Record<string, [number, number, number, number]>;
-  voiceLabelSets?: Record<string, string[]>;
   onRefreshKits?: () => void;
   onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
   setLocalStorePath?: (path: string) => void;
@@ -37,13 +34,11 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     const kitListRef = useRef<KitListHandle>(null);
     const [showValidationDialog, setShowValidationDialog] = useState(false);
 
-    // Ensure localStorePath is always a string (never null)
     const logic = useKitBrowser({
-      ...props,
       kits: props.kits ?? [],
       kitData: props.kitData ?? [],
       kitListRef: kitListRef,
-      localStorePath: props.localStorePath ?? "",
+      onRefreshKits: props.onRefreshKits,
       onMessage: props.onMessage,
     });
     const {
@@ -147,7 +142,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     // Use the new useKitScan hook for scanning logic
     const { handleScanAllKits } = useKitScan({
       kits,
-      localStorePath: props.localStorePath ?? "",
       onRefreshKits: props.onRefreshKits,
     });
 
@@ -213,10 +207,8 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
               setDuplicateKitDest("");
               logic.setDuplicateKitError(null);
             }}
-            localStorePath={props.localStorePath || ""}
-            kitLabels={props.kitLabels}
+            kitData={props.kitData}
             sampleCounts={props.sampleCounts}
-            voiceLabelSets={props.voiceLabelSets}
             focusedKit={focusedKit}
             onBankFocus={handleBankFocus}
             onFocusKit={setFocusedKit} // NEW: keep parent in sync
@@ -250,7 +242,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         {showValidationDialog && (
           <ValidationResultsDialog
             isOpen={showValidationDialog}
-            localStorePath={props.localStorePath || ""}
+            localStorePath={props.localStorePath || undefined}
             onClose={() => setShowValidationDialog(false)}
             onMessage={props.onMessage}
           />

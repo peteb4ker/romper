@@ -60,8 +60,8 @@ export function useKit({ kitName }: UseKitParams) {
     const newEditableState = !kit.editable;
 
     try {
-      const result = await window.electronAPI.updateKit(kitName, { 
-        editable: newEditableState 
+      const result = await window.electronAPI.updateKit(kitName, {
+        editable: newEditableState,
       });
       if (result.success) {
         await loadKit();
@@ -69,7 +69,9 @@ export function useKit({ kitName }: UseKitParams) {
         setError(result.error || "Failed to toggle editable mode");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to toggle editable mode");
+      setError(
+        e instanceof Error ? e.message : "Failed to toggle editable mode",
+      );
     }
   };
 

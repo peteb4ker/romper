@@ -70,8 +70,21 @@ function createMockLogic(overrides = {}) {
       handleWaveformPlayingChange: vi.fn(),
     },
     // Kit data from useKitDetailsLogic
-    kit: null,
-    kitLabel: { voiceNames: { 1: "", 2: "", 3: "", 4: "" } },
+    kit: {
+      name: "TestKit",
+      bank_letter: "T",
+      alias: null,
+      artist: null,
+      editable: false,
+      locked: false,
+      step_pattern: null,
+      voices: [
+        { id: 1, kit_name: "TestKit", voice_number: 1, voice_alias: null },
+        { id: 2, kit_name: "TestKit", voice_number: 2, voice_alias: null },
+        { id: 3, kit_name: "TestKit", voice_number: 3, voice_alias: null },
+        { id: 4, kit_name: "TestKit", voice_number: 4, voice_alias: null },
+      ],
+    },
     stepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
     setStepPattern: vi.fn(),
     updateKitAlias: vi.fn(),
@@ -106,12 +119,11 @@ describe("KitDetails", () => {
   });
 
   describe("voice name controls", () => {
-    it("shows edit/rescan controls and a no-name indicator if no voice name is set", async () => {
+    it("shows no-name indicator when no voice name is set", async () => {
       // Default mocks already have empty voice names
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          localStorePath="/sd"
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -119,40 +131,87 @@ describe("KitDetails", () => {
       );
       const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThan(0);
-      expect(screen.getAllByTitle("Edit voice name").length).toBeGreaterThan(0);
-      expect(screen.getAllByTitle("Rescan voice name").length).toBeGreaterThan(
-        0,
-      );
+
+      // Edit buttons only show when kit is in editable mode (default is false)
+      expect(screen.queryAllByTitle("Edit voice name").length).toBe(0);
     });
 
-    it("displays voice names from the kitLabel", async () => {
-      // Create a new mock with explicit voice names
+    it("shows edit buttons when kit is in editable mode", async () => {
+      // Mock kit with editable: true
       const mockLogic = {
         ...createMockLogic(),
-        kitLabel: {
-          voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" },
-        },
+        kit: { ...createMockLogic().kit, editable: true },
       };
-
-      // Ensure our mock is correctly set up
-      console.log("Mock kit label:", mockLogic.kitLabel);
-
-      // Clear previous calls and set return value
-      mockUseKitDetailsLogic.mockReset();
-      mockUseKitDetailsLogic.mockReturnValue(mockLogic);
+      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          localStorePath="/sd"
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
         />,
       );
-      expect(await screen.findByTestId("voice-name-1")).toHaveTextContent(
-        "Kick",
+
+      // Edit buttons should show when kit is editable
+      await waitFor(() => {
+        expect(screen.getAllByTitle("Edit voice name").length).toBeGreaterThan(
+          0,
+        );
+      });
+    });
+
+    it("displays voice names from kit voices", async () => {
+      // Create a new mock with explicit voice names
+      const mockLogic = {
+        ...createMockLogic(),
+        kit: {
+          name: "TestKit",
+          bank_letter: "T",
+          alias: null,
+          artist: null,
+          editable: false,
+          locked: false,
+          step_pattern: null,
+          voices: [
+            {
+              id: 1,
+              kit_name: "TestKit",
+              voice_number: 1,
+              voice_alias: "Kick",
+            },
+            {
+              id: 2,
+              kit_name: "TestKit",
+              voice_number: 2,
+              voice_alias: "Snare",
+            },
+            { id: 3, kit_name: "TestKit", voice_number: 3, voice_alias: "Hat" },
+            { id: 4, kit_name: "TestKit", voice_number: 4, voice_alias: "Tom" },
+          ],
+        },
+      };
+
+      // Ensure our mock is correctly set up
+      console.log("Mock kit:", mockLogic.kit);
+
+      // Clear previous calls and set return value
+      mockUseKitDetailsLogic.mockImplementation(() => mockLogic);
+
+      renderWithSettings(
+        <KitDetails
+          kitName="TestKit"
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
       );
+
+      // Debug: log what's actually rendered
+      const voicePanel = await screen.findByTestId("voice-name-1");
+      console.log("Voice panel content:", voicePanel.textContent);
+
+      expect(voicePanel).toHaveTextContent("Kick");
       expect(screen.getByTestId("voice-name-2")).toHaveTextContent("Snare");
       expect(screen.getByTestId("voice-name-3")).toHaveTextContent("Hat");
       expect(screen.getByTestId("voice-name-4")).toHaveTextContent("Tom");
@@ -165,7 +224,6 @@ describe("KitDetails", () => {
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          localStorePath="/sd"
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}

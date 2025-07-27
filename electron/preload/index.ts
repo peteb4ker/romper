@@ -101,17 +101,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] getLocalStoreStatus invoked");
     return await ipcRenderer.invoke("get-local-store-status");
   },
-  createKit: (localStorePath: string, kitSlot: string): Promise<void> => {
-    console.log("[IPC] createKit invoked", localStorePath, kitSlot);
-    return ipcRenderer.invoke("create-kit", localStorePath, kitSlot);
+  createKit: (kitSlot: string): Promise<void> => {
+    console.log("[IPC] createKit invoked", kitSlot);
+    return ipcRenderer.invoke("create-kit", kitSlot);
   },
-  copyKit: (
-    localStorePath: string,
-    sourceKit: string,
-    destKit: string,
-  ): Promise<void> => {
-    console.log("[IPC] copyKit invoked", localStorePath, sourceKit, destKit);
-    return ipcRenderer.invoke("copy-kit", localStorePath, sourceKit, destKit);
+  copyKit: (sourceKit: string, destKit: string): Promise<void> => {
+    console.log("[IPC] copyKit invoked", sourceKit, destKit);
+    return ipcRenderer.invoke("copy-kit", sourceKit, destKit);
   },
   listFilesInRoot: (localStorePath: string): Promise<string[]> => {
     console.log("[IPC] listFilesInRoot invoked", localStorePath);
@@ -255,11 +251,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] insertSample invoked", dbDir, sample);
     return ipcRenderer.invoke("insert-sample", dbDir, sample);
   },
-  validateLocalStore: (localStorePath: string) => {
+  validateLocalStore: (localStorePath?: string) => {
     console.log("[IPC] validateLocalStore invoked", localStorePath);
     return ipcRenderer.invoke("validate-local-store", localStorePath);
   },
-  validateLocalStoreBasic: (localStorePath: string) => {
+  validateLocalStoreBasic: (localStorePath?: string) => {
     console.log("[IPC] validateLocalStoreBasic invoked", localStorePath);
     return ipcRenderer.invoke("validate-local-store-basic", localStorePath);
   },

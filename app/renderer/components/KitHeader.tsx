@@ -9,17 +9,17 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 
-import type { RampleKitLabel } from "./kitTypes";
+import type { Kit } from "../../../shared/db/schema";
 
 interface KitHeaderProps {
   kitName: string;
-  kitLabel: RampleKitLabel | null;
-  editingKitLabel: boolean;
-  setEditingKitLabel: (v: boolean) => void;
-  kitLabelInput: string;
-  setKitLabelInput: (v: string) => void;
-  handleSaveKitLabel: (label: string) => void;
-  kitLabelInputRef: React.RefObject<HTMLInputElement>;
+  kit: Kit | null;
+  editingKitAlias: boolean;
+  setEditingKitAlias: (v: boolean) => void;
+  kitAliasInput: string;
+  setKitAliasInput: (v: string) => void;
+  handleSaveKitAlias: (alias: string) => void;
+  kitAliasInputRef: React.RefObject<HTMLInputElement>;
   onBack?: (scrollToKit?: string) => void;
   onNextKit?: () => void;
   onPrevKit?: () => void;
@@ -33,13 +33,13 @@ interface KitHeaderProps {
 
 const KitHeader: React.FC<KitHeaderProps> = ({
   kitName,
-  kitLabel,
-  editingKitLabel,
-  setEditingKitLabel,
-  kitLabelInput,
-  setKitLabelInput,
-  handleSaveKitLabel,
-  kitLabelInputRef,
+  kit,
+  editingKitAlias,
+  setEditingKitAlias,
+  kitAliasInput,
+  setKitAliasInput,
+  handleSaveKitAlias,
+  kitAliasInputRef,
   onBack,
   onNextKit,
   onPrevKit,
@@ -61,23 +61,23 @@ const KitHeader: React.FC<KitHeaderProps> = ({
     <span className="text-base font-bold text-gray-800 dark:text-gray-100 mr-1">
       :
     </span>
-    {editingKitLabel ? (
+    {editingKitAlias ? (
       <input
-        ref={kitLabelInputRef}
+        ref={kitAliasInputRef}
         className="border-b border-blue-500 bg-transparent text-base font-bold text-gray-800 dark:text-gray-100 focus:outline-none px-1 w-48"
-        value={kitLabelInput}
-        onChange={(e) => setKitLabelInput(e.target.value)}
+        value={kitAliasInput}
+        onChange={(e) => setKitAliasInput(e.target.value)}
         onBlur={() => {
-          setEditingKitLabel(false);
-          handleSaveKitLabel(kitLabelInput.trim());
+          setEditingKitAlias(false);
+          handleSaveKitAlias(kitAliasInput.trim());
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
-            setEditingKitLabel(false);
-            handleSaveKitLabel(kitLabelInput.trim());
+            setEditingKitAlias(false);
+            handleSaveKitAlias(kitAliasInput.trim());
           } else if (e.key === "Escape") {
-            setEditingKitLabel(false);
-            setKitLabelInput(kitLabel?.label || "");
+            setEditingKitAlias(false);
+            setKitAliasInput(kit?.alias || "");
           }
         }}
         autoFocus
@@ -85,12 +85,10 @@ const KitHeader: React.FC<KitHeaderProps> = ({
     ) : (
       <span
         className="font-bold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline min-w-[2rem]"
-        onClick={() => setEditingKitLabel(true)}
+        onClick={() => setEditingKitAlias(true)}
         title="Edit kit name"
       >
-        {kitLabel?.label || (
-          <span className="italic text-gray-400">(no name)</span>
-        )}
+        {kit?.alias || <span className="italic text-gray-400">(no name)</span>}
       </span>
     )}
     <div className="flex-1" /> {/* Spacer */}

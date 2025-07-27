@@ -85,7 +85,7 @@ function Select({ items }: { items: any[] }) {
 function useKitEditor(kitName: string) {
   const [editable, setEditable] = useState(false);
   const [samples, setSamples] = useState<Sample[]>([]);
-  
+
   const toggleEditMode = useCallback(() => {
     setEditable(prev => !prev);
   }, []);
@@ -95,7 +95,7 @@ function useKitEditor(kitName: string) {
 
 function KitEditor({ kitName }: KitEditorProps) {
   const { editable, samples, toggleEditMode } = useKitEditor(kitName);
-  
+
   return (
     <div>
       <button onClick={toggleEditMode}>
@@ -108,13 +108,13 @@ function KitEditor({ kitName }: KitEditorProps) {
 // ❌ BAD: Business logic mixed in component
 function KitEditor({ kitName }: KitEditorProps) {
   const [editable, setEditable] = useState(false);
-  
+
   // Business logic should be in hook
   const handleEdit = () => {
     // Complex business logic here
     setEditable(!editable);
   };
-  
+
   return <div>...</div>;
 }
 ```
@@ -123,14 +123,14 @@ function KitEditor({ kitName }: KitEditorProps) {
 ```typescript
 // ✅ GOOD: Proper memoization
 const KitCard = React.memo(({ kit, onSelect }: KitCardProps) => {
-  const displayName = useMemo(() => 
+  const displayName = useMemo(() =>
     kit.alias || kit.name, [kit.alias, kit.name]
   );
-  
+
   const handleClick = useCallback(() => {
     onSelect(kit.name);
   }, [kit.name, onSelect]);
-  
+
   return <div onClick={handleClick}>{displayName}</div>;
 });
 
@@ -138,7 +138,7 @@ const KitCard = React.memo(({ kit, onSelect }: KitCardProps) => {
 function KitCard({ kit, onSelect }: KitCardProps) {
   // Expensive computation on every render
   const displayName = processKitName(kit);
-  
+
   return <div onClick={() => onSelect(kit.name)}>{displayName}</div>;
 }
 ```
@@ -153,7 +153,7 @@ function KitCard({ kit, onSelect }: KitCardProps) {
 ### Hook Architecture
 ```typescript
 // ✅ GOOD: Focused hook with clear responsibility
-function useKitBrowser(localStorePath: string) {
+function useKitBrowser() {
   const [kits, setKits] = useState<Kit[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -189,7 +189,7 @@ function useKitManager() {
   const [editMode, setEditMode] = useState(false);
   // Also handles audio playback
   const [playing, setPlaying] = useState(false);
-  
+
   // Too many responsibilities in one hook
   return { kits, editMode, playing, /* ... */ };
 }
@@ -203,23 +203,20 @@ interface KitScanDependencies {
   toast?: typeof toast;
 }
 
-function useKitScan(
-  localStorePath: string, 
-  deps: KitScanDependencies = {}
-) {
+function useKitScan(deps: KitScanDependencies = {}) {
   const fileReader = deps.fileReader || window.electron.fileReader;
   const toastImpl = deps.toast || toast;
-  
+
   const scanKits = useCallback(async () => {
     try {
-      const result = await fileReader.scanDirectory(localStorePath);
+      const result = await fileReader.scanDirectory();
       toastImpl.success('Scan completed');
       return result;
     } catch (error) {
       toastImpl.error('Scan failed');
       throw error;
     }
-  }, [localStorePath, fileReader, toastImpl]);
+  }, [fileReader, toastImpl]);
 
   return { scanKits };
 }
@@ -268,7 +265,7 @@ async function getKitWithSamples(kitName: string): Promise<DbResult<Kit & { samp
       .from(kitsTable)
       .where(eq(kitsTable.name, kitName))
       .get();
-    
+
     if (!kit) {
       return { success: false, error: `Kit not found: ${kitName}` };
     }
@@ -319,7 +316,7 @@ function badOperation() {
 // ✅ GOOD: Well-organized test with setup/teardown
 describe('useKitEditor', () => {
   let mockDb: ReturnType<typeof vi.fn>;
-  
+
   beforeEach(() => {
     mockDb = vi.fn();
     vi.mocked(window.electron.db).mockReturnValue(mockDb);
@@ -334,26 +331,26 @@ describe('useKitEditor', () => {
     it('should allow adding samples', async () => {
       const mockKit = { name: 'A0', editable: true };
       mockDb.getKit = vi.fn().mockResolvedValue({ success: true, data: mockKit });
-      
+
       const { result } = renderHook(() => useKitEditor('A0'));
-      
+
       await act(async () => {
         await result.current.addSample('/path/to/sample.wav', 1, 1);
       });
-      
+
       expect(mockDb.addSample).toHaveBeenCalledWith('A0', '/path/to/sample.wav', 1, 1);
     });
   });
 
   describe('error handling', () => {
     it('should handle database errors gracefully', async () => {
-      mockDb.getKit = vi.fn().mockResolvedValue({ 
-        success: false, 
-        error: 'Database error' 
+      mockDb.getKit = vi.fn().mockResolvedValue({
+        success: false,
+        error: 'Database error'
       });
-      
+
       const { result } = renderHook(() => useKitEditor('A0'));
-      
+
       expect(result.current.error).toBe('Database error');
     });
   });
@@ -378,11 +375,11 @@ vi.mock('../electron/main/db/romperDbCore', () => ({
 
 // ✅ GOOD: Test-specific mock overrides
 it('should handle missing kit', () => {
-  vi.mocked(getKit).mockResolvedValue({ 
-    success: false, 
-    error: 'Kit not found' 
+  vi.mocked(getKit).mockResolvedValue({
+    success: false,
+    error: 'Kit not found'
   });
-  
+
   // Test implementation
 });
 
@@ -447,7 +444,7 @@ import { toast } from 'sonner';
 ### Result Pattern
 ```typescript
 // ✅ GOOD: Consistent result wrapper
-type DbResult<T> = 
+type DbResult<T> =
   | { success: true; data: T }
   | { success: false; error: string };
 
@@ -456,16 +453,16 @@ async function getKit(kitName: string): Promise<DbResult<Kit>> {
     const kit = await db.select().from(kitsTable)
       .where(eq(kitsTable.name, kitName))
       .get();
-    
+
     if (!kit) {
       return { success: false, error: `Kit not found: ${kitName}` };
     }
-    
+
     return { success: true, data: kit };
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 }
@@ -481,12 +478,12 @@ async function badGetKit(kitName: string) {
 ```typescript
 // ✅ GOOD: User-friendly error messages
 function handleKitLoadError(error: string) {
-  const userMessage = error.includes('ENOENT') 
+  const userMessage = error.includes('ENOENT')
     ? 'Kit file not found. Please check if the SD card is properly connected.'
     : error.includes('EACCES')
     ? 'Permission denied. Please check file permissions and try again.'
     : 'Unable to load kit. Please try again or contact support.';
-    
+
   toast.error(userMessage);
 }
 
@@ -502,11 +499,11 @@ function badErrorHandler(error: string) {
 ```typescript
 // ✅ GOOD: Proper memoization
 const KitList = React.memo(({ kits, onSelect }: KitListProps) => {
-  const sortedKits = useMemo(() => 
-    kits.sort((a, b) => a.name.localeCompare(b.name)), 
+  const sortedKits = useMemo(() =>
+    kits.sort((a, b) => a.name.localeCompare(b.name)),
     [kits]
   );
-  
+
   return (
     <div>
       {sortedKits.map(kit => (
@@ -520,7 +517,7 @@ const KitList = React.memo(({ kits, onSelect }: KitListProps) => {
 function BadKitList({ kits, onSelect }: KitListProps) {
   // Expensive sort on every render
   const sortedKits = kits.sort((a, b) => a.name.localeCompare(b.name));
-  
+
   return (
     <div>
       {sortedKits.map(kit => (
@@ -537,7 +534,7 @@ function BadKitList({ kits, onSelect }: KitListProps) {
 ```typescript
 // ✅ GOOD: Efficient batch operations
 async function addMultipleSamples(
-  kitName: string, 
+  kitName: string,
   samples: Array<{ path: string; voice: number; slot: number }>
 ): Promise<DbResult<void>> {
   return withDb((db) => {
@@ -572,16 +569,16 @@ import path from 'path';
 
 function validateSamplePath(sourcePath: string, allowedBasePaths: string[]): boolean {
   const resolvedPath = path.resolve(sourcePath);
-  
+
   // Check if path is within allowed directories
-  const isAllowed = allowedBasePaths.some(basePath => 
+  const isAllowed = allowedBasePaths.some(basePath =>
     resolvedPath.startsWith(path.resolve(basePath))
   );
-  
+
   // Additional validation
   const isWavFile = path.extname(resolvedPath).toLowerCase() === '.wav';
   const hasValidChars = !/[<>:"|?*]/.test(resolvedPath);
-  
+
   return isAllowed && isWavFile && hasValidChars;
 }
 
@@ -615,7 +612,7 @@ function badSanitize(input: string): string {
 // ❌ AVOID: Business logic in components
 function BadKitEditor() {
   const [samples, setSamples] = useState([]);
-  
+
   // Anti-pattern: Complex business logic in component
   const handleAddSample = async (file: File) => {
     const validation = validateWavFile(file);
@@ -623,12 +620,12 @@ function BadKitEditor() {
       toast.error(validation.error);
       return;
     }
-    
+
     const converted = await convertToRampleFormat(file);
     setSamples(prev => [...prev, converted]);
     await saveToDatabase(converted);
   };
-  
+
   return <div>...</div>;
 }
 
@@ -685,13 +682,13 @@ function badDbOperation() {
 // ❌ AVOID: N+1 queries
 async function badGetKitsWithSamples() {
   const kits = await db.select().from(kitsTable).all();
-  
+
   for (const kit of kits) {
     // N+1 query problem
     kit.samples = await db.select().from(samplesTable)
       .where(eq(samplesTable.kitName, kit.name)).all();
   }
-  
+
   return kits;
 }
 ```

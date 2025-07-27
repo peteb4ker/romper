@@ -21,7 +21,7 @@ describe("useBankScanning", () => {
     } as any;
   });
 
-  it("should call scanBanks with correct parameters when localStorePath is provided", async () => {
+  it("should call scanBanks and show success message", async () => {
     mockScanBanks.mockResolvedValue({
       success: true,
       data: { updatedBanks: 3 },
@@ -29,7 +29,6 @@ describe("useBankScanning", () => {
 
     const { result } = renderHook(() =>
       useBankScanning({
-        localStorePath: "/mock/local/store",
         onMessage: mockOnMessage,
       }),
     );
@@ -45,25 +44,6 @@ describe("useBankScanning", () => {
     );
   });
 
-  it("should show error message when localStorePath is not provided", async () => {
-    const { result } = renderHook(() =>
-      useBankScanning({
-        localStorePath: null,
-        onMessage: mockOnMessage,
-      }),
-    );
-
-    await act(async () => {
-      await result.current.scanBanks();
-    });
-
-    expect(mockScanBanks).not.toHaveBeenCalled();
-    expect(mockOnMessage).toHaveBeenCalledWith(
-      "No local store configured",
-      "error",
-    );
-  });
-
   it("should handle bank scanning failure", async () => {
     mockScanBanks.mockResolvedValue({
       success: false,
@@ -72,7 +52,6 @@ describe("useBankScanning", () => {
 
     const { result } = renderHook(() =>
       useBankScanning({
-        localStorePath: "/mock/local/store",
         onMessage: mockOnMessage,
       }),
     );
@@ -92,7 +71,6 @@ describe("useBankScanning", () => {
 
     const { result } = renderHook(() =>
       useBankScanning({
-        localStorePath: "/mock/local/store",
         onMessage: mockOnMessage,
       }),
     );
@@ -115,7 +93,6 @@ describe("useBankScanning", () => {
 
     const { result } = renderHook(() =>
       useBankScanning({
-        localStorePath: "/mock/local/store",
         onMessage: undefined,
       }),
     );

@@ -25,7 +25,6 @@ const baseProps = {
   onPlay: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  localStorePath: "/fake/path",
   kitName: "Kit1",
 };
 
@@ -34,17 +33,26 @@ afterEach(() => {
   cleanup();
 });
 
-// Utility to convert voices array to samples and kitLabel
+// Utility to convert voices array to samples and kit
 function voicesToProps(voices) {
   const samples = {};
-  const voiceNames = {};
+  const kitVoices = [];
   voices.forEach(({ voice, samples: s, voiceName }) => {
     samples[voice] = s;
-    voiceNames[voice] = voiceName;
+    kitVoices.push({
+      id: voice,
+      kit_name: "Kit1",
+      voice_number: voice,
+      voice_alias: voiceName,
+    });
   });
   return {
     samples,
-    kitLabel: { label: "Kit1", voiceNames },
+    kit: {
+      name: "Kit1",
+      alias: "Kit1",
+      voices: kitVoices,
+    },
   };
 }
 
@@ -59,7 +67,7 @@ function MultiVoicePanelsTestWrapper({
   const [selectedSampleIdx, setSelectedSampleIdx] = useState(
     initialSelectedSampleIdx,
   );
-  const { samples, kitLabel } = voicesToProps(voices);
+  const { samples, kit } = voicesToProps(voices);
   React.useEffect(() => {
     function handleGlobalKeyDown(e) {
       if (["ArrowUp", "ArrowDown", " ", "Enter"].includes(e.key)) {
@@ -94,7 +102,7 @@ function MultiVoicePanelsTestWrapper({
     <MockMessageDisplayProvider>
       <KitVoicePanels
         samples={samples}
-        kitLabel={kitLabel}
+        kit={kit}
         selectedVoice={selectedVoice}
         selectedSampleIdx={selectedSampleIdx}
         onSaveVoiceName={baseProps.onSaveVoiceName}
@@ -105,7 +113,6 @@ function MultiVoicePanelsTestWrapper({
         onPlay={onPlay}
         onStop={baseProps.onStop}
         onWaveformPlayingChange={baseProps.onWaveformPlayingChange}
-        localStorePath={baseProps.localStorePath}
         kitName={baseProps.kitName}
         onSampleKeyNav={() => {}}
         onSampleSelect={() => {}}

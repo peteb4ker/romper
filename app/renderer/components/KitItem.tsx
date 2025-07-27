@@ -5,6 +5,7 @@ import { GiDrumKit } from "react-icons/gi";
 import { MdAutoAwesome, MdMic } from "react-icons/md";
 import { TiArrowLoop } from "react-icons/ti";
 
+import type { KitWithRelations } from "../../../shared/db/schema";
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
 import { useKitItem } from "./hooks/useKitItem";
 
@@ -14,8 +15,8 @@ interface KitItemProps {
   isValid: boolean;
   onSelect: () => void;
   onDuplicate: () => void;
-  sampleCounts?: [number, number, number, number]; // New prop
-  kitLabel?: { voiceNames?: { [voice: number]: string | null } };
+  sampleCounts?: [number, number, number, number];
+  kitData?: KitWithRelations | null; // Kit data from database
 }
 
 // Add ref forwarding to support programmatic focus from KitList
@@ -32,20 +33,23 @@ const KitItem = React.memo(
         onSelect,
         onDuplicate,
         sampleCounts,
-        kitLabel,
+        kitData,
         isSelected,
         ...rest
       },
       ref,
     ) => {
-      // Filter out nulls from voiceNames before passing to useKitItem
-      const filteredVoiceNames = kitLabel?.voiceNames
+      // Get voice names from kitData.voices
+      const voiceNames = kitData?.voices
         ? Object.fromEntries(
-            Object.entries(kitLabel.voiceNames).filter(([_, v]) => v != null),
+            kitData.voices
+              .filter((v) => v.voice_alias)
+              .map((v) => [v.voice_number, v.voice_alias]),
           )
         : undefined;
+
       const { iconType, iconLabel } = useKitItem(
-        filteredVoiceNames as Record<string | number, string> | undefined,
+        voiceNames as Record<string | number, string> | undefined,
       );
       let icon: JSX.Element;
       switch (iconType) {
@@ -166,10 +170,10 @@ const KitItem = React.memo(
                 )}
               </div>
               {/* Bottom row: voice tags */}
-              {isValid && kitLabel?.voiceNames && (
+              {isValid && voiceNames && (
                 <div className="flex flex-wrap gap-1 mt-1 w-full min-h-[1.5rem] justify-end">
                   {Array.from(
-                    new Set(Object.values(kitLabel.voiceNames).filter(Boolean)),
+                    new Set(Object.values(voiceNames).filter(Boolean)),
                   ).map((label, i) => (
                     <span
                       key={i}

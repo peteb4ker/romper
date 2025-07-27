@@ -38,11 +38,11 @@ function expectOnlySelected(kits, selectedKit) {
 
 describe("KitList", () => {
   const kits = ["A1", "A2", "B1"];
-  const kitLabels = {
-    A1: { label: "Kick" },
-    A2: { label: "Snare" },
-    B1: { label: "Hat" },
-  };
+  const kitData = [
+    { name: "A1", alias: "Kick", voices: [] },
+    { name: "A2", alias: "Snare", voices: [] },
+    { name: "B1", alias: "Hat", voices: [] },
+  ];
   const bankNames = { A: "Drums", B: "Perc" };
   const sampleCounts = { A1: [1, 2, 3, 4], A2: [2, 2, 2, 2], B1: [0, 1, 0, 1] };
 
@@ -53,8 +53,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        localStorePath="/sd"
-        kitLabels={kitLabels}
+        kitData={kitData}
         sampleCounts={sampleCounts}
       />,
     );
@@ -75,8 +74,7 @@ describe("KitList", () => {
         onSelectKit={onSelectKit}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        localStorePath="/sd"
-        kitLabels={kitLabels}
+        kitData={kitData}
         sampleCounts={sampleCounts}
       />,
     );
@@ -92,8 +90,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={onDuplicate}
-        localStorePath="/sd"
-        kitLabels={kitLabels}
+        kitData={kitData}
         sampleCounts={sampleCounts}
       />,
     );
@@ -111,8 +108,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        localStorePath="/sd"
-        kitLabels={kitLabels}
+        kitData={kitData}
         sampleCounts={sampleCounts}
       />,
     );
@@ -136,8 +132,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        localStorePath="/sd"
-        kitLabels={kitLabels}
+        kitData={kitData}
         sampleCounts={sampleCounts}
       />,
     );
@@ -151,8 +146,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        localStorePath="/sd"
-        kitLabels={kitLabels}
+        kitData={kitData}
         sampleCounts={sampleCounts}
       />,
     );
@@ -173,8 +167,7 @@ describe("KitList", () => {
         onSelectKit={onSelectKit}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        localStorePath="/sd"
-        kitLabels={kitLabels}
+        kitData={kitData}
         sampleCounts={sampleCounts}
       />,
     );
@@ -197,17 +190,35 @@ describe("KitList", () => {
 
   it("renders deduped voice label sets for each kit", () => {
     const kits = ["A1", "A2", "B1"];
-    const kitLabels = {
-      A1: {
-        label: "Kick",
-        voiceNames: { 1: "kick", 2: "snare", 3: "kick", 4: "" },
+    const kitData = [
+      {
+        name: "A1",
+        voices: [
+          { voice_number: 1, voice_alias: "kick" },
+          { voice_number: 2, voice_alias: "snare" },
+          { voice_number: 3, voice_alias: "kick" },
+          { voice_number: 4, voice_alias: null },
+        ],
       },
-      A2: {
-        label: "Snare",
-        voiceNames: { 1: "snare", 2: "snare", 3: "", 4: "hat" },
+      {
+        name: "A2",
+        voices: [
+          { voice_number: 1, voice_alias: "snare" },
+          { voice_number: 2, voice_alias: "snare" },
+          { voice_number: 3, voice_alias: null },
+          { voice_number: 4, voice_alias: "hat" },
+        ],
       },
-      B1: { label: "Hat", voiceNames: { 1: "", 2: "", 3: "", 4: "" } },
-    };
+      {
+        name: "B1",
+        voices: [
+          { voice_number: 1, voice_alias: null },
+          { voice_number: 2, voice_alias: null },
+          { voice_number: 3, voice_alias: null },
+          { voice_number: 4, voice_alias: null },
+        ],
+      },
+    ];
     const bankNames = { A: "Drums", B: "Perc" };
     const sampleCounts = {
       A1: [1, 2, 3, 4],
@@ -220,8 +231,7 @@ describe("KitList", () => {
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}
-        localStorePath="/sd"
-        kitLabels={kitLabels}
+        kitData={kitData}
         sampleCounts={sampleCounts}
       />,
     );

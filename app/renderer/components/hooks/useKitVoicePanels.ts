@@ -1,10 +1,11 @@
 import { useCallback } from "react";
 
-import type { RampleKitLabel, VoiceSamples } from "../kitTypes";
+import type { KitWithRelations } from "../../../../shared/db/schema";
+import type { VoiceSamples } from "../kitTypes";
 
 export function useKitVoicePanels({
   samples,
-  kitLabel,
+  kit,
   selectedVoice,
   selectedSampleIdx,
   setSelectedVoice,
@@ -17,13 +18,12 @@ export function useKitVoicePanels({
   onPlay,
   onStop,
   onWaveformPlayingChange,
-  localStorePath,
   kitName,
   onSampleSelect,
   sequencerOpen = false,
 }: {
   samples: VoiceSamples;
-  kitLabel: RampleKitLabel | null;
+  kit: KitWithRelations | null;
   selectedVoice: number;
   selectedSampleIdx: number;
   setSelectedVoice: (v: number) => void;
@@ -40,7 +40,6 @@ export function useKitVoicePanels({
     sample: string,
     playing: boolean,
   ) => void;
-  localStorePath: string;
   kitName: string;
   onSampleSelect: (voice: number, idx: number) => void;
   sequencerOpen?: boolean;
@@ -94,7 +93,7 @@ export function useKitVoicePanels({
   // Return all props for KitVoicePanels
   return {
     samples,
-    kitLabel,
+    kit,
     selectedVoice,
     selectedSampleIdx,
     onSaveVoiceName,
@@ -105,7 +104,6 @@ export function useKitVoicePanels({
     onPlay,
     onStop,
     onWaveformPlayingChange,
-    localStorePath,
     kitName,
     onSampleKeyNav: handleSampleNavigation,
     onSampleSelect,

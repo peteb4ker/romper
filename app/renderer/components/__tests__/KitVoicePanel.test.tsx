@@ -25,7 +25,6 @@ const baseProps = {
   onPlay: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  localStorePath: "/fake/path",
   kitName: "Kit1",
 };
 

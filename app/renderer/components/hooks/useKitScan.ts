@@ -26,13 +26,11 @@ export async function fileReader(filePath: string): Promise<ArrayBuffer> {
 
 export async function scanSingleKit({
   kitName,
-  localStorePath,
   scanType,
   scanTypeDisplay,
   fileReaderImpl,
 }: {
   kitName: string;
-  localStorePath: string;
   scanType: string;
   scanTypeDisplay: string;
   fileReaderImpl: typeof fileReader;
@@ -56,21 +54,19 @@ export async function scanSingleKit({
 
 export async function scanAllKits({
   kits,
-  localStorePath,
   operations,
   onRefreshKits,
   toastImpl = toast,
   fileReaderImpl = fileReader,
 }: {
   kits: string[];
-  localStorePath: string;
   operations?: string[];
   onRefreshKits?: () => void;
   toastImpl?: typeof toast;
   fileReaderImpl?: typeof fileReader;
 }) {
-  if (!localStorePath || !kits || kits.length === 0) {
-    toastImpl.error("Local store path and kits are required for scanning");
+  if (!kits || kits.length === 0) {
+    toastImpl.error("Kits are required for scanning");
     return;
   }
 
@@ -104,7 +100,6 @@ export async function scanAllKits({
       try {
         const result = await scanSingleKit({
           kitName,
-          localStorePath,
           scanType,
           scanTypeDisplay,
           fileReaderImpl,
@@ -149,22 +144,19 @@ export async function scanAllKits({
 // --- useKitScan Hook ---
 export function useKitScan({
   kits,
-  localStorePath,
   onRefreshKits,
 }: {
   kits: string[];
-  localStorePath: string;
   onRefreshKits?: () => void;
 }) {
   const handleScanAllKits = useCallback(
     (operations?: string[]) =>
       scanAllKits({
         kits,
-        localStorePath,
         operations,
         onRefreshKits,
       }),
-    [kits, localStorePath, onRefreshKits],
+    [kits, onRefreshKits],
   );
   return { handleScanAllKits };
 }

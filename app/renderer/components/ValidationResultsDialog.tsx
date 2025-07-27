@@ -11,7 +11,7 @@ import { useValidationResults } from "./hooks/useValidationResults";
 
 interface ValidationResultsDialogProps {
   isOpen: boolean;
-  localStorePath: string;
+  localStorePath?: string;
   onClose: () => void;
   onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
 }

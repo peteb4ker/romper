@@ -1,16 +1,14 @@
 import React from "react";
 import { toast } from "sonner";
 
-import type { KitDetailsProps, RampleKitLabel } from "../kitTypes";
+import type { KitDetailsProps } from "../kitTypes";
 import { useKit } from "./useKit";
-import { useKitDetails } from "./useKitDetails";
 import { useKitPlayback } from "./useKitPlayback";
 import { useKitVoicePanels } from "./useKitVoicePanels";
 import { useStepPattern } from "./useStepPattern";
 import { useVoiceAlias } from "./useVoiceAlias";
 
 interface UseKitDetailsLogicParams extends KitDetailsProps {
-  kitLabel?: RampleKitLabel;
   onRescanAllVoiceNames?: () => void;
   onCreateKit?: () => void;
   onMessage?: (msg: { type: string; text: string }) => void;
@@ -54,42 +52,6 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     () => props.samples || { 1: [], 2: [], 3: [], 4: [] },
     [props.samples],
   );
-
-  // Create legacy kitLabel for components that still need it (temporarily)
-  const kitLabel = React.useMemo(() => {
-    if (!kit) return null;
-
-    const voiceNames: { [key: number]: string } = {
-      1: "",
-      2: "",
-      3: "",
-      4: "",
-    };
-
-    // Transform raw database voice structure to legacy format
-    if (kit.voices && Array.isArray(kit.voices)) {
-      kit.voices.forEach((voice: any) => {
-        if (voice.voice_number && voice.voice_alias) {
-          voiceNames[voice.voice_number] = voice.voice_alias;
-        }
-      });
-    }
-
-    return {
-      label: kit.alias || kit.name,
-      voiceNames,
-      stepPattern,
-    };
-  }, [kit, stepPattern]);
-
-  // Auto-scan logic: triggers auto-rescan if all voice names are missing and samples are loaded
-  useKitDetails({
-    kitLabel: kitLabel || undefined,
-    samples,
-    localStorePath: props.localStorePath,
-    kitName: props.kitName,
-    onRescanAllVoiceNames: () => {}, // TODO: Remove this legacy method
-  });
 
   // Handler for kit rescanning (database-first approach)
   const { kitName, onRequestSamplesReload } = props;
@@ -155,7 +117,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Use KitVoicePanels hook for navigation logic
   const kitVoicePanels = useKitVoicePanels({
     samples,
-    kitLabel: kitLabel,
+    kit,
     selectedVoice,
     selectedSampleIdx,
     setSelectedVoice,
@@ -168,7 +130,6 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     onPlay: playback.handlePlay,
     onStop: playback.handleStop,
     onWaveformPlayingChange: playback.handleWaveformPlayingChange,
-    localStorePath: props.localStorePath,
     kitName: props.kitName,
     onSampleSelect: (voice: number, idx: number) => {
       setSelectedVoice(voice);
@@ -308,7 +269,6 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
 
     // Kit data
     kit,
-    kitLabel, // Legacy compatibility
     stepPattern,
     setStepPattern,
     updateKitAlias,

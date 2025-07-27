@@ -49,13 +49,13 @@ describe("createKit", () => {
   it("successfully creates a kit with valid slot", async () => {
     mockElectronAPI.createKit.mockResolvedValue(undefined);
 
-    await createKit("/test/path", "A1");
+    await createKit("A1");
 
-    expect(mockElectronAPI.createKit).toHaveBeenCalledWith("/test/path", "A1");
+    expect(mockElectronAPI.createKit).toHaveBeenCalledWith("A1");
   });
 
   it("throws error for invalid kit slot", async () => {
-    await expect(createKit("/test/path", "invalid")).rejects.toThrow(
+    await expect(createKit("invalid")).rejects.toThrow(
       "Invalid kit slot. Use format A0-Z99.",
     );
 
@@ -65,15 +65,13 @@ describe("createKit", () => {
   it("throws error when Electron API is not available", async () => {
     global.window = { electronAPI: {} } as any;
 
-    await expect(createKit("/test/path", "A1")).rejects.toThrow(
-      "Electron API not available",
-    );
+    await expect(createKit("A1")).rejects.toThrow("Electron API not available");
   });
 
   it("propagates Electron API errors", async () => {
     mockElectronAPI.createKit.mockRejectedValue(new Error("Disk full"));
 
-    await expect(createKit("/test/path", "A1")).rejects.toThrow("Disk full");
+    await expect(createKit("A1")).rejects.toThrow("Disk full");
   });
 });
 
@@ -81,17 +79,13 @@ describe("duplicateKit", () => {
   it("successfully duplicates a kit with valid slots", async () => {
     mockElectronAPI.copyKit.mockResolvedValue(undefined);
 
-    await duplicateKit("/test/path", "A1", "B2");
+    await duplicateKit("A1", "B2");
 
-    expect(mockElectronAPI.copyKit).toHaveBeenCalledWith(
-      "/test/path",
-      "A1",
-      "B2",
-    );
+    expect(mockElectronAPI.copyKit).toHaveBeenCalledWith("A1", "B2");
   });
 
   it("throws error for invalid destination slot", async () => {
-    await expect(duplicateKit("/test/path", "A1", "invalid")).rejects.toThrow(
+    await expect(duplicateKit("A1", "invalid")).rejects.toThrow(
       "Invalid destination slot. Use format A0-Z99.",
     );
 
@@ -101,7 +95,7 @@ describe("duplicateKit", () => {
   it("throws error when Electron API is not available", async () => {
     global.window = { electronAPI: {} } as any;
 
-    await expect(duplicateKit("/test/path", "A1", "B2")).rejects.toThrow(
+    await expect(duplicateKit("A1", "B2")).rejects.toThrow(
       "Electron API not available",
     );
   });
@@ -113,7 +107,7 @@ describe("duplicateKit", () => {
       ),
     );
 
-    await expect(duplicateKit("/test/path", "A1", "B2")).rejects.toThrow(
+    await expect(duplicateKit("A1", "B2")).rejects.toThrow(
       "Source kit not found",
     );
   });
@@ -124,7 +118,7 @@ describe("duplicateKit", () => {
       new Error("Error: Kit already exists"),
     );
 
-    await expect(duplicateKit("/test/path", "A1", "B2")).rejects.toThrow(
+    await expect(duplicateKit("A1", "B2")).rejects.toThrow(
       "Kit already exists",
     );
   });

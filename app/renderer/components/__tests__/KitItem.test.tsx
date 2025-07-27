@@ -18,13 +18,14 @@ describe("KitItem", () => {
     onSelect: vi.fn(),
     onDuplicate: vi.fn(),
     sampleCounts: [12, 12, 12, 12],
-    kitLabel: {
-      voiceNames: {
-        1: "Loop",
-        2: "Loop",
-        3: "Kick",
-        4: "Loop",
-      },
+    kitData: {
+      name: "A1",
+      voices: [
+        { voice_number: 1, voice_alias: "Loop" },
+        { voice_number: 2, voice_alias: "Loop" },
+        { voice_number: 3, voice_alias: "Kick" },
+        { voice_number: 4, voice_alias: "Loop" },
+      ],
     },
   };
 
@@ -75,7 +76,15 @@ describe("KitItem", () => {
 
 describe("KitItem voice label deduplication", () => {
   it("renders each voice label only once (array)", () => {
-    const kitLabel = { voiceNames: ["vox", "vox", "synth", "synth", "fx"] };
+    const kitData = {
+      name: "Test Kit",
+      voices: [
+        { voice_number: 1, voice_alias: "vox" },
+        { voice_number: 2, voice_alias: "vox" },
+        { voice_number: 3, voice_alias: "synth" },
+        { voice_number: 4, voice_alias: "fx" },
+      ],
+    };
     render(
       <KitItem
         kit="Test Kit"
@@ -84,7 +93,7 @@ describe("KitItem voice label deduplication", () => {
         onSelect={() => {}}
         onDuplicate={() => {}}
         sampleCounts={[12, 12, 12, 12]}
-        kitLabel={kitLabel}
+        kitData={kitData}
       />,
     );
     // Always select the correct KitItem root to avoid confusion if multiple are rendered
@@ -97,7 +106,7 @@ describe("KitItem voice label deduplication", () => {
     };
     expect(getLabel("Vox").length).toBe(1);
     expect(getLabel("Synth").length).toBe(1);
-    expect(getLabel("FX").length).toBe(1);
+    expect(getLabel("FX").length).toBe(1); // Note: toCapitalCase converts "fx" to "FX"
     // Ensure no duplicate deduped labels
     expect(kitRoot.textContent?.match(/Vox/g)?.length || 0).toBe(1);
     expect(kitRoot.textContent?.match(/Synth/g)?.length || 0).toBe(1);

@@ -6,7 +6,7 @@ import {
 } from "../../../../shared/db/schema.js";
 
 interface UseValidationResultsProps {
-  localStorePath: string;
+  localStorePath?: string;
   onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
 }
 
@@ -43,8 +43,6 @@ export function useValidationResults({
   }, [validationResult]);
 
   const validateLocalStore = useCallback(async () => {
-    if (!localStorePath) return;
-
     setIsLoading(true);
     try {
       const result =
@@ -98,13 +96,12 @@ export function useValidationResults({
   }, [validationResult]);
 
   const rescanSelectedKits = useCallback(async () => {
-    if (selectedKits.length === 0 || !localStorePath) return;
+    if (selectedKits.length === 0) return;
 
     // Ensure we set isRescanning before anything else
     setIsRescanning(true);
 
     try {
-      const dbDir = `${localStorePath}/.romperdb`;
       let totalScannedSamples = 0;
       let totalUpdatedVoices = 0;
       const errors: string[] = [];

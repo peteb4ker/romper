@@ -5,8 +5,8 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { afterEach } from "vitest";
 
+import type { Kit } from "../../../../shared/db/schema";
 import KitHeader from "../KitHeader";
-import type { RampleKitLabel } from "../kitTypes";
 
 afterEach(() => {
   cleanup();
@@ -15,19 +15,20 @@ afterEach(() => {
 describe("KitHeader", () => {
   const baseProps = {
     kitName: "A1",
-    kitLabel: { label: "My Kit" } as RampleKitLabel,
-    editingKitLabel: false,
-    setEditingKitLabel: vi.fn(),
-    kitLabelInput: "My Kit",
-    setKitLabelInput: vi.fn(),
-    handleSaveKitLabel: vi.fn(),
-    kitLabelInputRef: { current: null },
+    kit: { alias: "My Kit" } as Kit,
+    editingKitAlias: false,
+    setEditingKitAlias: vi.fn(),
+    kitAliasInput: "My Kit",
+    setKitAliasInput: vi.fn(),
+    handleSaveKitAlias: vi.fn(),
+    kitAliasInputRef: { current: null },
     onBack: vi.fn(),
     onNextKit: vi.fn(),
     onPrevKit: vi.fn(),
     onCreateKit: vi.fn(),
-    onRescanAllVoiceNames: vi.fn(),
     onScanKit: vi.fn(),
+    onToggleEditableMode: vi.fn(),
+    isEditable: false,
     kits: ["A1", "A2", "A3"],
     kitIndex: 1,
   };
@@ -38,13 +39,13 @@ describe("KitHeader", () => {
     expect(screen.getByText("My Kit")).toBeInTheDocument();
   });
 
-  it("calls setEditingKitLabel(true) when label is clicked", () => {
-    const setEditingKitLabel = vi.fn();
+  it("calls setEditingKitAlias(true) when alias is clicked", () => {
+    const setEditingKitAlias = vi.fn();
     render(
-      <KitHeader {...baseProps} setEditingKitLabel={setEditingKitLabel} />,
+      <KitHeader {...baseProps} setEditingKitAlias={setEditingKitAlias} />,
     );
     fireEvent.click(screen.getByText("My Kit"));
-    expect(setEditingKitLabel).toHaveBeenCalledWith(true);
+    expect(setEditingKitAlias).toHaveBeenCalledWith(true);
   });
 
   it("calls onScanKit when Scan Kit button is clicked", () => {
@@ -55,32 +56,32 @@ describe("KitHeader", () => {
     expect(onScanKit).toHaveBeenCalled();
   });
 
-  it("shows input when editingKitLabel is true and handles input events", () => {
-    const setEditingKitLabel = vi.fn();
-    const setKitLabelInput = vi.fn();
-    const handleSaveKitLabel = vi.fn();
+  it("shows input when editingKitAlias is true and handles input events", () => {
+    const setEditingKitAlias = vi.fn();
+    const setKitAliasInput = vi.fn();
+    const handleSaveKitAlias = vi.fn();
     render(
       <KitHeader
         {...baseProps}
-        editingKitLabel={true}
-        setEditingKitLabel={setEditingKitLabel}
-        setKitLabelInput={setKitLabelInput}
-        handleSaveKitLabel={handleSaveKitLabel}
-        kitLabelInput="Edit Label"
+        editingKitAlias={true}
+        setEditingKitAlias={setEditingKitAlias}
+        setKitAliasInput={setKitAliasInput}
+        handleSaveKitAlias={handleSaveKitAlias}
+        kitAliasInput="Edit Alias"
       />,
     );
-    const input = screen.getByDisplayValue("Edit Label");
-    fireEvent.change(input, { target: { value: "New Label" } });
-    expect(setKitLabelInput).toHaveBeenCalledWith("New Label");
+    const input = screen.getByDisplayValue("Edit Alias");
+    fireEvent.change(input, { target: { value: "New Alias" } });
+    expect(setKitAliasInput).toHaveBeenCalledWith("New Alias");
     fireEvent.keyDown(input, { key: "Enter" });
-    expect(setEditingKitLabel).toHaveBeenCalledWith(false);
-    expect(handleSaveKitLabel).toHaveBeenCalledWith("Edit Label");
+    expect(setEditingKitAlias).toHaveBeenCalledWith(false);
+    expect(handleSaveKitAlias).toHaveBeenCalledWith("Edit Alias");
     fireEvent.keyDown(input, { key: "Escape" });
-    expect(setEditingKitLabel).toHaveBeenCalledWith(false);
-    expect(setKitLabelInput).toHaveBeenCalledWith("My Kit");
+    expect(setEditingKitAlias).toHaveBeenCalledWith(false);
+    expect(setKitAliasInput).toHaveBeenCalledWith("My Kit");
     fireEvent.blur(input);
-    expect(setEditingKitLabel).toHaveBeenCalledWith(false);
-    expect(handleSaveKitLabel).toHaveBeenCalledWith("Edit Label");
+    expect(setEditingKitAlias).toHaveBeenCalledWith(false);
+    expect(handleSaveKitAlias).toHaveBeenCalledWith("Edit Alias");
   });
 
   it("calls onBack when Back button is clicked", () => {
@@ -115,10 +116,8 @@ describe("KitHeader", () => {
     expect(onScanKit).toHaveBeenCalled();
   });
 
-  it("shows (no name) if kitLabel.label is empty", () => {
-    render(
-      <KitHeader {...baseProps} kitLabel={{ label: "" } as RampleKitLabel} />,
-    );
+  it("shows (no name) if kit.alias is empty", () => {
+    render(<KitHeader {...baseProps} kit={{ alias: "" } as Kit} />);
     expect(screen.getByText("(no name)")).toBeInTheDocument();
   });
 });

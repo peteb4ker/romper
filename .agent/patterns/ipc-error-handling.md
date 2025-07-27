@@ -28,7 +28,7 @@ async function badLoadKit(kitName: string) {
 ### Result Validation Pattern
 ```typescript
 // ✅ CORRECT: Always validate IPC result objects
-async function updateKitMetadata(kitName: string, metadata: KitMetadata) {
+async function updateKit(kitName: string, metadata: Kit) {
   const result = await window.electronAPI.updateKit(kitName, metadata);
   
   if (!result.success) {
@@ -39,7 +39,7 @@ async function updateKitMetadata(kitName: string, metadata: KitMetadata) {
 }
 
 // ❌ WRONG: Assuming success without validation
-async function badUpdateKit(kitName: string, metadata: KitMetadata) {
+async function badUpdateKit(kitName: string, metadata: Kit) {
   const result = await window.electronAPI.updateKit(kitName, metadata);
   return result.data; // May be undefined if result.success is false
 }
@@ -99,13 +99,13 @@ const result = await window.electronAPI.updateKit(kitName, data);
 ### Redundant Availability Checks
 ```typescript
 // ❌ ELIMINATE: Checking availability of guaranteed methods
-if (!window.electronAPI?.getKitMetadata) return;
+if (!window.electronAPI?.getKit) return;
 if (!window.electronAPI?.updateKit) return;
 if (!window.electronAPI?.updateVoiceAlias) return;
 
 // ✅ CORRECT: Direct usage with error handling
 try {
-  const metadata = await window.electronAPI.getKitMetadata(kitName);
+  const metadata = await window.electronAPI.getKit(kitName);
   await window.electronAPI.updateKit(kitName, updates);
   await window.electronAPI.updateVoiceAlias(kitName, voiceNumber, alias);
 } catch (error) {
@@ -183,7 +183,7 @@ For existing code with over-defensive IPC handling:
 ## Files Requiring Immediate Attention
 
 **High Priority (Over-defensive patterns):**
-- `app/renderer/components/hooks/useKitMetadata.ts`
+- `app/renderer/components/hooks/useKit.ts`
 - `app/renderer/components/utils/bankOperations.ts`
 - `app/renderer/components/hooks/useKitDetailsLogic.ts`
 

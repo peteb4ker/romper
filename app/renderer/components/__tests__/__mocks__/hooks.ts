@@ -35,7 +35,7 @@ export const mockUseStartupActions = () => ({
   // No return value, just prevents execution
 });
 
-// Mock for focused kit hooks - replaces legacy useKitMetadata
+// Mock for focused kit hooks - replaces legacy useKit
 export const mockUseKit = (kitName: string = "A0") => ({
   kit: {
     name: kitName,

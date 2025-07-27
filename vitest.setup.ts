@@ -54,8 +54,8 @@ beforeAll(() => {
         errorSummary: undefined,
       }),
 
-      // Database API methods for new metadata system
-      getKitMetadata: async (dbDir, kitName) => ({
+      // Database API methods for new metadata system (updated signatures)
+      getKitMetadata: async (kitName) => ({
         success: true,
         data: {
           id: 1,
@@ -67,9 +67,20 @@ beforeAll(() => {
           step_pattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
         },
       }),
-      updateKit: async (dbDir, kitName, updates) => ({ success: true }),
-      updateVoiceAlias: async (dbDir, kitId, voiceNumber, alias) => ({
+      updateKit: async (kitName, updates) => ({ success: true }),
+      updateVoiceAlias: async (kitName, voiceNumber, alias) => ({
         success: true,
+      }),
+      updateStepPattern: async (kitName, stepPattern) => ({ success: true }),
+      getAllSamplesForKit: async (kitName) => ({ success: true, data: [] }),
+      rescanKit: async (kitName) => ({
+        success: true,
+        data: { scannedSamples: 4, updatedVoices: 4 },
+      }),
+      getAllBanks: async () => ({ success: true, data: [] }),
+      scanBanks: async () => ({
+        success: true,
+        data: { updatedBanks: 0, scannedFiles: 0, scannedAt: new Date() },
       }),
     };
 

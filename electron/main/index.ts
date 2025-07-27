@@ -77,9 +77,11 @@ function createWindow() {
     });
   } else {
     const indexPath = path.resolve(__dirname, "../../renderer/index.html");
-    console.log("[Romper Electron] Attempting to load:", indexPath);
-    if (!fs.existsSync(indexPath)) {
-      console.error("[Romper Electron] index.html not found at:", indexPath);
+    if (process.env.NODE_ENV !== "test") {
+      console.log("[Romper Electron] Attempting to load:", indexPath);
+      if (!fs.existsSync(indexPath)) {
+        console.error("[Romper Electron] index.html not found at:", indexPath);
+      }
     }
     win.loadFile(indexPath).catch((err: unknown) => {
       console.error(

@@ -32,15 +32,23 @@ export function useKitSamples(
         }
 
         // Load samples from database
-        const samplesResult = await window.electronAPI.getAllSamplesForKit(kitName);
+        const samplesResult =
+          await window.electronAPI.getAllSamplesForKit(kitName);
         if (!samplesResult.success) {
-          throw new Error(samplesResult.error || "Failed to load samples from database");
+          throw new Error(
+            samplesResult.error || "Failed to load samples from database",
+          );
         }
 
         // Group samples by voice number into the expected format
         const sampleData = samplesResult.data || [];
-        const groupedSamples: { [voice: number]: string[] } = { 1: [], 2: [], 3: [], 4: [] };
-        
+        const groupedSamples: { [voice: number]: string[] } = {
+          1: [],
+          2: [],
+          3: [],
+          4: [],
+        };
+
         sampleData.forEach((sample: Sample) => {
           if (sample.voice_number >= 1 && sample.voice_number <= 4) {
             groupedSamples[sample.voice_number].push(sample.filename);
@@ -51,7 +59,8 @@ export function useKitSamples(
 
         // Load voice names from kit metadata
         if (window.electronAPI?.getKitMetadata) {
-          const metadataResult = await window.electronAPI.getKitMetadata(kitName);
+          const metadataResult =
+            await window.electronAPI.getKitMetadata(kitName);
           if (metadataResult.success && metadataResult.data?.voices) {
             setVoiceNames(metadataResult.data.voices);
           } else {
@@ -60,7 +69,7 @@ export function useKitSamples(
         } else {
           setVoiceNames({});
         }
-        
+
         setLoading(false);
       } catch (e: any) {
         setError("Failed to load kit samples.");

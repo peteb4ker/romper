@@ -39,7 +39,7 @@ describe("KitsView", () => {
           ],
         });
       }),
-      
+
       readRampleLabels: vi.fn().mockResolvedValue({
         kits: {
           A0: {
@@ -53,7 +53,7 @@ describe("KitsView", () => {
         .fn()
         .mockResolvedValue({ slice: () => new ArrayBuffer(8) }),
       writeRampleLabels: vi.fn().mockResolvedValue(undefined),
-      
+
       // Other required methods
       selectSdCard: vi.fn().mockResolvedValue("/sd"),
       getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),
@@ -91,5 +91,4 @@ describe("KitsView", () => {
     expect(kitA0s.length).toBeGreaterThan(0);
     expect(kitA1s.length).toBeGreaterThan(0);
   });
-
 });

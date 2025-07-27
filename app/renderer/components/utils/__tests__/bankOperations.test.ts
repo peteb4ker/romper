@@ -11,7 +11,6 @@ import {
 
 // No mocks needed for the remaining pure utility functions
 
-
 describe("getFirstKitInBank", () => {
   const kits = ["A0", "A1", "A10", "B0", "B5", "C1", "Z99"];
 

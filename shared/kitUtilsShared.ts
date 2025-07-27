@@ -1,7 +1,7 @@
 // Shared kit utilities for both main and renderer
 
 export function toCapitalCase(str: string): string {
-  if (!str) return "";
+  if (!str || typeof str !== "string") return "";
   let result = str
     .toLowerCase()
     .replace(/_/g, " ")

@@ -26,7 +26,9 @@ export interface BankNames {
  * Gets the first kit in a specific bank
  */
 export function getFirstKitInBank(kits: string[], bank: string): string | null {
-  return kits.find((k) => k && typeof k === "string" && k.startsWith(bank)) || null;
+  return (
+    kits.find((k) => k && typeof k === "string" && k.startsWith(bank)) || null
+  );
 }
 
 /**

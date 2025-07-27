@@ -11,6 +11,7 @@ export function toCapitalCase(str: string): string {
   return result;
 }
 
+// For a list of given files, map them to the corresponding voice number
 export function groupSamplesByVoice(files: string[]): {
   [voice: number]: string[];
 } {

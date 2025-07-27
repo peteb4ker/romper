@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type { Kit, NewKit, NewSample } from "../../shared/db/schema.js";
+import { groupSamplesByVoice } from "../../shared/kitUtilsShared.js";
 import {
   addKit,
   addSample,
@@ -158,33 +159,37 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
         file.toLowerCase().endsWith(".wav"),
       );
 
-      // Step 3: Insert new sample records for found files
-      for (let i = 0; i < wavFiles.length; i++) {
-        const wavFile = wavFiles[i];
+      // Step 3: Group samples by voice using filename prefix parsing
+      const groupedSamples = groupSamplesByVoice(wavFiles);
+      
+      // Step 4: Insert new sample records for found files
+      for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
+        const voice = parseInt(voiceNumber, 10);
+        
+        for (let slotIndex = 0; slotIndex < voiceFiles.length; slotIndex++) {
+          const wavFile = voiceFiles[slotIndex];
+          
+          // Determine if stereo based on filename patterns
+          const isStereo = /stereo|st|_s\.|_S\./i.test(wavFile);
 
-        // Simple heuristic: distribute files across 4 voices by index
-        const voiceNumber = (i % 4) + 1;
+          // Create sample record using ORM
+          const samplePath = path.join(kitPath, wavFile);
+          const sampleRecord: NewSample = {
+            kit_name: kitName,
+            filename: wavFile,
+            voice_number: voice,
+            slot_number: slotIndex + 1, // Slots are 1-indexed within each voice
+            source_path: samplePath,
+            is_stereo: isStereo,
+          };
 
-        // Determine if stereo based on filename patterns
-        const isStereo = /stereo|st|_s\.|_S\./i.test(wavFile);
+          const insertResult = addSample(dbDir, sampleRecord);
+          if (!insertResult.success) {
+            return insertResult;
+          }
 
-        // Create sample record using ORM
-        const samplePath = path.join(kitPath, wavFile);
-        const sampleRecord: NewSample = {
-          kit_name: kitName,
-          filename: wavFile,
-          voice_number: voiceNumber,
-          slot_number: Math.floor(i / 4) + 1, // Multiple samples per voice go in different slots
-          source_path: samplePath,
-          is_stereo: isStereo,
-        };
-
-        const insertResult = addSample(dbDir, sampleRecord);
-        if (!insertResult.success) {
-          return insertResult;
+          scannedSamples++;
         }
-
-        scannedSamples++;
       }
 
       // Return success with scan results

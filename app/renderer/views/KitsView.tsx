@@ -57,8 +57,11 @@ const KitsView = () => {
   // Ref to access KitBrowser scan functionality
   const kitBrowserRef = useRef<KitBrowserHandle | null>(null);
 
-  // Check if local store needs to be set up (wait for initialization)
-  const needsLocalStoreSetup = isInitialized && (!localStoreStatus?.isValid || !localStorePath);
+  // Check if local store needs to be set up (wait for initialization AND status to be loaded)
+  const needsLocalStoreSetup =
+    isInitialized &&
+    localStoreStatus !== null &&
+    (!localStoreStatus?.isValid || !localStorePath);
 
   // Validation results hook for database validation
   const { openValidationDialog } = useValidationResults({

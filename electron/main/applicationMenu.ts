@@ -13,6 +13,17 @@ export function createApplicationMenu() {
             submenu: [
               { role: "about" as const },
               { type: "separator" as const },
+              {
+                label: "Preferences...",
+                accelerator: "Cmd+,",
+                click: () => {
+                  const focusedWindow = BrowserWindow.getFocusedWindow();
+                  if (focusedWindow) {
+                    focusedWindow.webContents.send("menu-preferences");
+                  }
+                },
+              },
+              { type: "separator" as const },
               { role: "services" as const },
               { type: "separator" as const },
               { role: "hide" as const },
@@ -44,6 +55,21 @@ export function createApplicationMenu() {
         { role: "copy" as const },
         { role: "paste" as const },
         { role: "selectAll" as const },
+        ...(process.platform !== "darwin"
+          ? [
+              { type: "separator" as const },
+              {
+                label: "Preferences...",
+                accelerator: "Ctrl+,",
+                click: () => {
+                  const focusedWindow = BrowserWindow.getFocusedWindow();
+                  if (focusedWindow) {
+                    focusedWindow.webContents.send("menu-preferences");
+                  }
+                },
+              },
+            ]
+          : []),
       ],
     },
 

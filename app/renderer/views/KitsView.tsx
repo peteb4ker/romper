@@ -5,6 +5,7 @@ import {
   groupSamplesByVoice,
 } from "../../../shared/kitUtilsShared";
 import ChangeLocalStoreDirectoryDialog from "../components/ChangeLocalStoreDirectoryDialog";
+import PreferencesDialog from "../components/dialogs/PreferencesDialog";
 import { useBankScanning } from "../components/hooks/useBankScanning";
 import { useMenuEvents } from "../components/hooks/useMenuEvents";
 import { useMessageDisplay } from "../components/hooks/useMessageDisplay";
@@ -81,6 +82,8 @@ const KitsView = () => {
   const [showWizard, setShowWizard] = useState<boolean>(false);
   const [showChangeDirectoryDialog, setShowChangeDirectoryDialog] =
     useState<boolean>(false);
+  const [showPreferencesDialog, setShowPreferencesDialog] =
+    useState<boolean>(false);
 
   // Ref to access KitBrowser scan functionality
   const kitBrowserRef = useRef<KitBrowserHandle | null>(null);
@@ -134,6 +137,10 @@ const KitsView = () => {
     onChangeLocalStoreDirectory: () => {
       console.log("[KitsView] Menu change local store directory triggered");
       setShowChangeDirectoryDialog(true);
+    },
+    onPreferences: () => {
+      console.log("[KitsView] Menu preferences triggered");
+      setShowPreferencesDialog(true);
     },
     onAbout: () => {
       console.log("[KitsView] Menu about triggered");
@@ -431,6 +438,12 @@ const KitsView = () => {
         onMessage={(msg) => {
           showMessage(msg.text, msg.type, msg.duration);
         }}
+      />
+
+      {/* Preferences Dialog */}
+      <PreferencesDialog
+        isOpen={showPreferencesDialog}
+        onClose={() => setShowPreferencesDialog(false)}
       />
     </div>
   );

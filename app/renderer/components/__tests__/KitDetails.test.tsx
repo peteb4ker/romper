@@ -17,7 +17,7 @@ import {
   vi,
 } from "vitest";
 
-import { SettingsProvider } from "../../utils/SettingsContext";
+import { TestSettingsProvider } from "../../views/__tests__/TestSettingsProvider";
 import KitDetails from "../KitDetails";
 
 // Mock modules before importing them
@@ -46,9 +46,9 @@ function mockElectronAPI() {
   };
 }
 
-// Helper to render components with SettingsProvider
+// Helper to render components with TestSettingsProvider
 function renderWithSettings(component: React.ReactElement) {
-  return render(<SettingsProvider>{component}</SettingsProvider>);
+  return render(<TestSettingsProvider>{component}</TestSettingsProvider>);
 }
 
 // Helper to create default mock logic

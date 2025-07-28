@@ -8,9 +8,13 @@ import React, {
 
 import { LocalStoreValidationDetailedResult } from "../../../shared/db/schema.js";
 
+type ThemeMode = "light" | "system" | "dark";
+
 interface Settings {
   localStorePath: string | null;
-  darkMode: boolean;
+  themeMode: ThemeMode;
+  defaultToMonoSamples: boolean;
+  confirmDestructiveActions: boolean;
 }
 
 interface SettingsState {
@@ -26,7 +30,9 @@ type SettingsAction =
   | { type: "INIT_SUCCESS"; payload: Settings }
   | { type: "INIT_ERROR"; payload: string }
   | { type: "UPDATE_LOCAL_STORE_PATH"; payload: string }
-  | { type: "UPDATE_DARK_MODE"; payload: boolean }
+  | { type: "UPDATE_THEME_MODE"; payload: ThemeMode }
+  | { type: "UPDATE_DEFAULT_TO_MONO_SAMPLES"; payload: boolean }
+  | { type: "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS"; payload: boolean }
   | {
       type: "UPDATE_LOCAL_STORE_STATUS";
       payload: LocalStoreValidationDetailedResult | null;
@@ -36,7 +42,10 @@ type SettingsAction =
 interface SettingsContextProps {
   // Current settings
   localStorePath: string | null;
-  darkMode: boolean;
+  themeMode: ThemeMode;
+  isDarkMode: boolean; // Computed property for backwards compatibility
+  defaultToMonoSamples: boolean;
+  confirmDestructiveActions: boolean;
   localStoreStatus: LocalStoreValidationDetailedResult | null;
 
   // State
@@ -46,7 +55,9 @@ interface SettingsContextProps {
 
   // Actions
   setLocalStorePath: (path: string) => Promise<void>;
-  setDarkMode: (enabled: boolean) => Promise<void>;
+  setThemeMode: (mode: ThemeMode) => Promise<void>;
+  setDefaultToMonoSamples: (enabled: boolean) => Promise<void>;
+  setConfirmDestructiveActions: (enabled: boolean) => Promise<void>;
   refreshLocalStoreStatus: () => Promise<void>;
   clearError: () => void;
 }
@@ -54,7 +65,9 @@ interface SettingsContextProps {
 const initialState: SettingsState = {
   settings: {
     localStorePath: null,
-    darkMode: false,
+    themeMode: "system", // Default to system preference
+    defaultToMonoSamples: true, // Task 7.1.1: Default to true
+    confirmDestructiveActions: true, // Task 12.1.2: Default to true
   },
   localStoreStatus: null,
   isLoading: false,
@@ -93,10 +106,25 @@ function settingsReducer(
         settings: { ...state.settings, localStorePath: action.payload },
       };
 
-    case "UPDATE_DARK_MODE":
+    case "UPDATE_THEME_MODE":
       return {
         ...state,
-        settings: { ...state.settings, darkMode: action.payload },
+        settings: { ...state.settings, themeMode: action.payload },
+      };
+
+    case "UPDATE_DEFAULT_TO_MONO_SAMPLES":
+      return {
+        ...state,
+        settings: { ...state.settings, defaultToMonoSamples: action.payload },
+      };
+
+    case "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS":
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          confirmDestructiveActions: action.payload,
+        },
       };
 
     case "UPDATE_LOCAL_STORE_STATUS":
@@ -107,6 +135,28 @@ function settingsReducer(
 
     default:
       return state;
+  }
+}
+
+// Helper function to detect system theme preference
+function getSystemThemePreference(): boolean {
+  if (typeof window !== "undefined" && window.matchMedia) {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  return false;
+}
+
+// Helper function to determine if dark mode should be active
+function shouldUseDarkMode(themeMode: ThemeMode): boolean {
+  switch (themeMode) {
+    case "dark":
+      return true;
+    case "light":
+      return false;
+    case "system":
+      return getSystemThemePreference();
+    default:
+      return false;
   }
 }
 
@@ -144,11 +194,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const settings: Settings = {
         localStorePath: loadedSettings.localStorePath || null,
-        darkMode: loadedSettings.darkMode ?? false,
+        themeMode: loadedSettings.themeMode ?? "system", // Default to system preference
+        defaultToMonoSamples: loadedSettings.defaultToMonoSamples ?? true, // Task 7.1.1: Default to true
+        confirmDestructiveActions:
+          loadedSettings.confirmDestructiveActions ?? true, // Task 12.1.2: Default to true
       };
 
       dispatch({ type: "INIT_SUCCESS", payload: settings });
-      applyTheme(settings.darkMode);
+      applyTheme(shouldUseDarkMode(settings.themeMode));
 
       // Load local store status
       await refreshLocalStoreStatus();
@@ -175,19 +228,45 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     [refreshLocalStoreStatus],
   );
 
-  // Update dark mode setting
-  const setDarkMode = useCallback(
-    async (enabled: boolean) => {
+  // Update theme mode setting
+  const setThemeMode = useCallback(
+    async (mode: ThemeMode) => {
       try {
-        await window.electronAPI.setSetting("darkMode", enabled);
-        dispatch({ type: "UPDATE_DARK_MODE", payload: enabled });
-        applyTheme(enabled);
+        await window.electronAPI.setSetting("themeMode", mode);
+        dispatch({ type: "UPDATE_THEME_MODE", payload: mode });
+        applyTheme(shouldUseDarkMode(mode));
       } catch (error) {
-        console.error("Failed to update dark mode:", error);
+        console.error("Failed to update theme mode:", error);
       }
     },
     [applyTheme],
   );
+
+  // Update default to mono samples setting
+  const setDefaultToMonoSamples = useCallback(async (enabled: boolean) => {
+    try {
+      await window.electronAPI.setSetting("defaultToMonoSamples", enabled);
+      dispatch({ type: "UPDATE_DEFAULT_TO_MONO_SAMPLES", payload: enabled });
+    } catch (error) {
+      console.error("Failed to update defaultToMonoSamples setting:", error);
+    }
+  }, []);
+
+  // Update confirm destructive actions setting
+  const setConfirmDestructiveActions = useCallback(async (enabled: boolean) => {
+    try {
+      await window.electronAPI.setSetting("confirmDestructiveActions", enabled);
+      dispatch({
+        type: "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS",
+        payload: enabled,
+      });
+    } catch (error) {
+      console.error(
+        "Failed to update confirmDestructiveActions setting:",
+        error,
+      );
+    }
+  }, []);
 
   // Clear error state
   const clearError = useCallback(() => {
@@ -199,10 +278,36 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     initializeSettings();
   }, [initializeSettings]);
 
+  // Listen for system theme changes when using "system" mode
+  useEffect(() => {
+    if (
+      state.settings.themeMode === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia
+    ) {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+      const handleSystemThemeChange = () => {
+        if (state.settings.themeMode === "system") {
+          applyTheme(mediaQuery.matches);
+        }
+      };
+
+      mediaQuery.addEventListener("change", handleSystemThemeChange);
+
+      return () => {
+        mediaQuery.removeEventListener("change", handleSystemThemeChange);
+      };
+    }
+  }, [state.settings.themeMode, applyTheme]);
+
   const contextValue: SettingsContextProps = {
     // Current settings
     localStorePath: state.settings.localStorePath,
-    darkMode: state.settings.darkMode,
+    themeMode: state.settings.themeMode,
+    isDarkMode: shouldUseDarkMode(state.settings.themeMode), // Computed property
+    defaultToMonoSamples: state.settings.defaultToMonoSamples,
+    confirmDestructiveActions: state.settings.confirmDestructiveActions,
     localStoreStatus: state.localStoreStatus,
 
     // State
@@ -212,7 +317,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Actions
     setLocalStorePath,
-    setDarkMode,
+    setThemeMode,
+    setDefaultToMonoSamples,
+    setConfirmDestructiveActions,
     refreshLocalStoreStatus,
     clearError,
   };
@@ -233,6 +340,6 @@ export const useSettings = (): SettingsContextProps => {
 };
 
 // Export types for external use
-export type { Settings, SettingsContextProps };
+export type { Settings, SettingsContextProps, ThemeMode };
 export type { LocalStoreValidationDetailedResult } from "../../../shared/db/schema.js";
 export { SettingsContext };

@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
+import { MockSettingsProvider } from "./MockSettingsProvider";
 
 const baseProps = {
   voices: [
@@ -99,26 +100,28 @@ function MultiVoicePanelsTestWrapper({
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [selectedVoice, selectedSampleIdx, voices, onPlay]);
   return (
-    <MockMessageDisplayProvider>
-      <KitVoicePanels
-        samples={samples}
-        kit={kit}
-        selectedVoice={selectedVoice}
-        selectedSampleIdx={selectedSampleIdx}
-        onSaveVoiceName={baseProps.onSaveVoiceName}
-        onRescanVoiceName={baseProps.onRescanVoiceName}
-        samplePlaying={{}}
-        playTriggers={{}}
-        stopTriggers={{}}
-        onPlay={onPlay}
-        onStop={baseProps.onStop}
-        onWaveformPlayingChange={baseProps.onWaveformPlayingChange}
-        kitName={baseProps.kitName}
-        onSampleKeyNav={() => {}}
-        onSampleSelect={() => {}}
-        {...props}
-      />
-    </MockMessageDisplayProvider>
+    <MockSettingsProvider>
+      <MockMessageDisplayProvider>
+        <KitVoicePanels
+          samples={samples}
+          kit={kit}
+          selectedVoice={selectedVoice}
+          selectedSampleIdx={selectedSampleIdx}
+          onSaveVoiceName={baseProps.onSaveVoiceName}
+          onRescanVoiceName={baseProps.onRescanVoiceName}
+          samplePlaying={{}}
+          playTriggers={{}}
+          stopTriggers={{}}
+          onPlay={onPlay}
+          onStop={baseProps.onStop}
+          onWaveformPlayingChange={baseProps.onWaveformPlayingChange}
+          kitName={baseProps.kitName}
+          onSampleKeyNav={() => {}}
+          onSampleSelect={() => {}}
+          {...props}
+        />
+      </MockMessageDisplayProvider>
+    </MockSettingsProvider>
   );
 }
 

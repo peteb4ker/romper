@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { useKitVoicePanels } from "../hooks/useKitVoicePanels";
 import KitVoicePanel from "../KitVoicePanel";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
+import { MockSettingsProvider } from "./MockSettingsProvider";
 
 const baseProps = {
   voice: 1,
@@ -65,27 +66,31 @@ function SingleVoiceTestWrapper({
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [selectedIdx, samples, onPlay]);
   return (
-    <MockMessageDisplayProvider>
-      <KitVoicePanel
-        {...baseProps}
-        samples={samples}
-        selectedIdx={selectedIdx}
-        onSampleKeyNav={vi.fn()}
-        onSampleSelect={(_, idx) => setSelectedIdx(idx)}
-        onPlay={onPlay}
-        isActive={true}
-        {...props}
-      />
-    </MockMessageDisplayProvider>
+    <MockSettingsProvider>
+      <MockMessageDisplayProvider>
+        <KitVoicePanel
+          {...baseProps}
+          samples={samples}
+          selectedIdx={selectedIdx}
+          onSampleKeyNav={vi.fn()}
+          onSampleSelect={(_, idx) => setSelectedIdx(idx)}
+          onPlay={onPlay}
+          isActive={true}
+          {...props}
+        />
+      </MockMessageDisplayProvider>
+    </MockSettingsProvider>
   );
 }
 
 describe("KitVoicePanel", () => {
   it("renders all sample slots", () => {
     render(
-      <MockMessageDisplayProvider>
-        <KitVoicePanel {...controlledProps} />
-      </MockMessageDisplayProvider>,
+      <MockSettingsProvider>
+        <MockMessageDisplayProvider>
+          <KitVoicePanel {...controlledProps} />
+        </MockMessageDisplayProvider>
+      </MockSettingsProvider>,
     );
     expect(screen.getByText("kick.wav")).toBeInTheDocument();
     expect(screen.getByText("snare.wav")).toBeInTheDocument();
@@ -112,9 +117,11 @@ describe("KitVoicePanel", () => {
 
   it("shows visible focus indicator for selected sample", () => {
     render(
-      <MockMessageDisplayProvider>
-        <KitVoicePanel {...controlledProps} />
-      </MockMessageDisplayProvider>,
+      <MockSettingsProvider>
+        <MockMessageDisplayProvider>
+          <KitVoicePanel {...controlledProps} />
+        </MockMessageDisplayProvider>
+      </MockSettingsProvider>,
     );
     const lists = screen.getAllByTestId("sample-list-voice-1");
     const list = lists[0];
@@ -161,9 +168,11 @@ describe("KitVoicePanel", () => {
   it("renders slot number indicator for each sample, visually distinct and not part of sample name", () => {
     const samples = ["1kick.wav", "2snare.wav", "hat.wav"];
     render(
-      <MockMessageDisplayProvider>
-        <KitVoicePanel {...controlledProps} samples={samples} />
-      </MockMessageDisplayProvider>,
+      <MockSettingsProvider>
+        <MockMessageDisplayProvider>
+          <KitVoicePanel {...controlledProps} samples={samples} />
+        </MockMessageDisplayProvider>
+      </MockSettingsProvider>,
     );
     samples.forEach((sample, i) => {
       // Slot number indicator is always present, visually distinct, and not part of sample name
@@ -182,9 +191,11 @@ describe("KitVoicePanel", () => {
 
   it("slot number indicator uses accessible color classes for light and dark mode", () => {
     render(
-      <MockMessageDisplayProvider>
-        <KitVoicePanel {...controlledProps} />
-      </MockMessageDisplayProvider>,
+      <MockSettingsProvider>
+        <MockMessageDisplayProvider>
+          <KitVoicePanel {...controlledProps} />
+        </MockMessageDisplayProvider>
+      </MockSettingsProvider>,
     );
     // Check slot number indicator for first sample
     const slotNumber = screen.getAllByText("1.")[0];
@@ -199,9 +210,11 @@ describe("KitVoicePanel", () => {
   it("slot number indicator takes up uniform space for alignment", () => {
     const samples = ["1kick.wav", "2snare.wav", "hat.wav"];
     render(
-      <MockMessageDisplayProvider>
-        <KitVoicePanel {...controlledProps} samples={samples} />
-      </MockMessageDisplayProvider>,
+      <MockSettingsProvider>
+        <MockMessageDisplayProvider>
+          <KitVoicePanel {...controlledProps} samples={samples} />
+        </MockMessageDisplayProvider>
+      </MockSettingsProvider>,
     );
     // All slot number indicators should have the same computed width
     const slotNumbers = samples.map((_, i) =>
@@ -222,12 +235,14 @@ describe("KitVoicePanel", () => {
 
   it("renders exactly 12 slots, with empty slots for unassigned samples (1.16)", () => {
     render(
-      <MockMessageDisplayProvider>
-        <KitVoicePanel
-          {...controlledProps}
-          samples={["kick.wav", "snare.wav"]}
-        />
-      </MockMessageDisplayProvider>,
+      <MockSettingsProvider>
+        <MockMessageDisplayProvider>
+          <KitVoicePanel
+            {...controlledProps}
+            samples={["kick.wav", "snare.wav"]}
+          />
+        </MockMessageDisplayProvider>
+      </MockSettingsProvider>,
     );
     // Should always render 12 list items
     const slots = screen.getAllByRole("listitem");
@@ -246,9 +261,11 @@ describe("KitVoicePanel", () => {
 
   it("empty slots have the same min-height as filled slots (1.16.1)", () => {
     render(
-      <MockMessageDisplayProvider>
-        <KitVoicePanel {...controlledProps} samples={["kick.wav"]} />
-      </MockMessageDisplayProvider>,
+      <MockSettingsProvider>
+        <MockMessageDisplayProvider>
+          <KitVoicePanel {...controlledProps} samples={["kick.wav"]} />
+        </MockMessageDisplayProvider>
+      </MockSettingsProvider>,
     );
     const slots = screen.getAllByRole("listitem");
     // All slots (filled and empty) should have the same min-h-[28px] class

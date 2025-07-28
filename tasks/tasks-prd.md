@@ -192,21 +192,17 @@ _Last updated: 2025-07-26_
     - [x] 5.3.1 Mark kits as 'modified' when changes made after last sync
     - [x] 5.3.2 Display modification status in UI
 
-- [ ] 6.0 Format Validation and Conversion
-  - [ ] 6.1 Implement WAV format validation for reference files:
-    - [ ] 6.1.1 Check file extension (.wav only)
-    - [ ] 6.1.2 Validate bit depth (8 or 16 bit only)
-    - [ ] 6.1.3 Validate sample rate (44100 Hz only)
-    - [ ] 6.1.4 Validate mono/stereo channel configuration
-    - [ ] 6.1.5 Handle validation for external source_path files
-  - [ ] 6.2 Implement format warning system:
-    - [ ] 6.2.1 Show warnings for non-compliant formats during assignment
-    - [ ] 6.2.2 List format issues in kit UI before SD card sync
-    - [ ] 6.2.3 Allow proceeding with warnings (conversion during sync)
-  - [ ] 6.3 Implement format conversion during SD card sync:
-    - [ ] 6.3.1 Convert from source_path to SD card with format conversion
-    - [ ] 6.3.2 Handle bit depth, sample rate, and stereo-to-mono conversion
-    - [ ] 6.3.3 Preserve original files (no destructive editing)
+- [x] 6.0 Format Validation and Conversion
+  - [x] 6.1 Implement WAV format validation for reference files:
+    - [x] 6.1.1 Check file extension (.wav only)
+    - [x] 6.1.2 Validate bit depth (8 or 16 bit only)
+    - [x] 6.1.3 Validate sample rate (44100 Hz only)
+    - [x] 6.1.4 Validate mono/stereo channel configuration
+    - [x] 6.1.5 Handle validation for external source_path files
+  - [x] 6.2 Implement format warning system:
+    - [x] 6.2.1 Show warnings for non-compliant formats during assignment
+    - [x] 6.2.2 List format issues in kit UI before SD card sync
+    - [x] 6.2.3 Allow proceeding with warnings (conversion during sync)
 
 - [ ] 7.0 Stereo Sample Handling
   - [ ] 7.1 Implement 'default to mono samples' global setting:
@@ -233,7 +229,10 @@ _Last updated: 2025-07-26_
     - [ ] 8.1.4 Validate all source_path files exist before sync
   - [ ] 8.2 Implement sync file operations:
     - [ ] 8.2.1 Copy referenced samples from source_path to SD card
-    - [ ] 8.2.2 Convert samples to required format during copy
+    - [ ] 8.2.2 Convert samples to required format during copy (moved from 6.3):
+      - [ ] 8.2.2.1 Convert from source_path to SD card with format conversion
+      - [ ] 8.2.2.2 Handle bit depth, sample rate, and stereo-to-mono conversion
+      - [ ] 8.2.2.3 Preserve original files (no destructive editing)
     - [ ] 8.2.3 Handle stereo-to-mono based on settings
     - [ ] 8.2.4 Update database to reflect successful sync
   - [ ] 8.3 Implement sync state management:
@@ -296,8 +295,9 @@ _Last updated: 2025-07-26_
   - [ ] 12.1 Implement global editing settings:
     - [ ] 12.1.1 'default to mono samples' setting
     - [ ] 12.1.2 'confirm destructive actions' setting
-    - [ ] 12.1.3 'auto-sync on close' setting
-    - [ ] 12.1.4 'max undo history' setting
+    - [ ] 12.1.3 'dark mode / light mode / system' setting
+    - [ ] 12.1.4 'local store path' setting
+    - [ ] 12.1.5 'read only info' setting: local store, SD card path
   - [ ] 12.2 Implement settings persistence and validation
   - [ ] 12.3 Create settings UI in preferences panel
 

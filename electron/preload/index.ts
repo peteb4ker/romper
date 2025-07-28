@@ -5,7 +5,9 @@ import type { Kit, NewKit, NewSample } from "../../shared/db/types.js";
 // ===== SETTINGS MANAGER =====
 interface SettingsData {
   localStorePath?: string;
-  darkMode?: boolean;
+  themeMode?: "light" | "system" | "dark";
+  defaultToMonoSamples?: boolean;
+  confirmDestructiveActions?: boolean;
   theme?: string;
 }
 
@@ -70,6 +72,7 @@ interface MenuEventMap {
   "menu-validate-database": void;
   "menu-setup-local-store": void;
   "menu-change-local-store-directory": void;
+  "menu-preferences": void;
   "menu-about": void;
 }
 
@@ -86,6 +89,7 @@ class MenuEventForwarder {
       ipcEvent: "menu-change-local-store-directory",
       domEvent: "menu-change-local-store-directory",
     },
+    { ipcEvent: "menu-preferences", domEvent: "menu-preferences" },
     { ipcEvent: "menu-about", domEvent: "menu-about" },
   ];
 

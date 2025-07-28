@@ -39,13 +39,17 @@ export interface ElectronAPI {
   selectSdCard: () => Promise<string | null>;
   readSettings: () => Promise<{
     localStorePath?: string;
-    darkMode?: boolean;
+    themeMode?: "light" | "system" | "dark";
+    defaultToMonoSamples?: boolean;
+    confirmDestructiveActions?: boolean;
     theme?: string;
   }>;
   setSetting: (
     key: keyof {
       localStorePath?: string;
-      darkMode?: boolean;
+      themeMode?: "light" | "system" | "dark";
+      defaultToMonoSamples?: boolean;
+      confirmDestructiveActions?: boolean;
       theme?: string;
     },
     value: any,
@@ -53,7 +57,9 @@ export interface ElectronAPI {
   getSetting: (
     key: keyof {
       localStorePath?: string;
-      darkMode?: boolean;
+      themeMode?: "light" | "system" | "dark";
+      defaultToMonoSamples?: boolean;
+      confirmDestructiveActions?: boolean;
       theme?: string;
     },
   ) => Promise<any>;

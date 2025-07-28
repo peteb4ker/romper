@@ -1,9 +1,6 @@
 import React, { useState } from "react";
 
-import {
-  SettingsContext,
-  type SettingsContextProps,
-} from "../../utils/SettingsContext";
+import { SettingsContext, type ThemeMode } from "../../utils/SettingsContext";
 
 // Test wrapper that always provides initialized settings
 export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -12,39 +9,43 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Provide default settings for tests
   const [localStorePath, setLocalStorePathState] =
     useState("/mock/local/store");
-  const [darkMode, setDarkModeState] = useState(false);
+  const [themeMode, setThemeModeState] = useState<ThemeMode>("light");
+  const [defaultToMonoSamples, setDefaultToMonoSamplesState] = useState(true);
+  const [confirmDestructiveActions, setConfirmDestructiveActionsState] =
+    useState(true);
 
   const setLocalStorePath = async (path: string) => {
     setLocalStorePathState(path);
   };
 
-  const setDarkMode = async (enabled: boolean) => {
-    setDarkModeState(enabled);
+  const setThemeMode = (mode: ThemeMode) => {
+    setThemeModeState(mode);
   };
 
-  const refreshLocalStoreStatus = async () => {};
-  const clearError = () => {};
+  const setDefaultToMonoSamples = (enabled: boolean) => {
+    setDefaultToMonoSamplesState(enabled);
+  };
 
-  const contextValue: SettingsContextProps = {
+  const setConfirmDestructiveActions = (enabled: boolean) => {
+    setConfirmDestructiveActionsState(enabled);
+  };
+
+  const contextValue = {
     // Current settings
     localStorePath,
-    darkMode,
+    themeMode,
+    isDarkMode: themeMode === "dark" || (themeMode === "system" && false),
+    defaultToMonoSamples,
+    confirmDestructiveActions,
     localStoreStatus: {
-      hasLocalStore: true,
-      localStorePath,
       isValid: true,
     },
 
-    // State
-    isLoading: false,
-    isInitialized: true,
-    error: null,
-
     // Actions
     setLocalStorePath,
-    setDarkMode,
-    refreshLocalStoreStatus,
-    clearError,
+    setThemeMode,
+    setDefaultToMonoSamples,
+    setConfirmDestructiveActions,
   };
 
   return (

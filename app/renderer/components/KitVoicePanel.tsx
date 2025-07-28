@@ -10,6 +10,8 @@ import {
 import { toast } from "sonner";
 
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
+import { useSettings } from "../utils/SettingsContext";
+import { useStereoHandling } from "./hooks/useStereoHandling";
 import SampleWaveform from "./SampleWaveform";
 
 interface KitVoicePanelProps {
@@ -79,6 +81,14 @@ const KitVoicePanel: React.FC<
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(voiceName || "");
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
+
+  // Task 7.1.2: Get defaultToMonoSamples setting and stereo handling logic
+  const { defaultToMonoSamples } = useSettings();
+  const {
+    analyzeStereoAssignment,
+    handleStereoConflict,
+    applyStereoAssignment,
+  } = useStereoHandling();
 
   React.useEffect(() => {
     setEditValue(voiceName || "");
@@ -225,7 +235,13 @@ const KitVoicePanel: React.FC<
         }
       }
 
-      // Get current sample data for this kit to check for duplicates and find available slots
+      // Task 7.1.2 & 7.2: Apply stereo handling logic based on metadata
+      const channels = formatValidation.metadata?.channels || 1;
+      console.log(
+        `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}`,
+      );
+
+      // Get current sample data for this kit to check for duplicates and stereo conflicts
       if (!window.electronAPI?.getAllSamplesForKit) {
         console.error("Sample management not available");
         return;
@@ -248,42 +264,74 @@ const KitVoicePanel: React.FC<
         (s: any) => s.source_path === filePath,
       );
       if (isDuplicate) {
-        console.warn(
-          `Sample with path ${filePath} already exists in voice ${voice}`,
-        );
-        // Could show error message here
+        toast.warning("Duplicate sample", {
+          description: `Sample already exists in voice ${voice}`,
+          duration: 5000,
+        });
         return;
       }
 
-      // Determine if we should add or replace
+      // Task 7.2: Analyze stereo assignment requirements
+      const stereoResult = analyzeStereoAssignment(voice, channels, allSamples);
+
+      // Task 7.3: Handle stereo conflicts if needed
+      let assignmentOptions = {
+        forceMono: stereoResult.assignAsMono,
+        replaceExisting: false,
+        cancel: false,
+      };
+
+      if (stereoResult.requiresConfirmation && stereoResult.conflictInfo) {
+        assignmentOptions = await handleStereoConflict(
+          stereoResult.conflictInfo,
+        );
+      }
+
+      if (assignmentOptions.cancel) {
+        return;
+      }
+
+      // Determine if we should add or replace based on existing content in the slot
       const existingSample = samples[droppedSlotIndex];
 
       if (existingSample && onSampleReplace) {
         // Replace the sample in the exact slot where it was dropped
         await onSampleReplace(voice, droppedSlotIndex, filePath);
       } else if (!existingSample && onSampleAdd) {
-        // For external samples (not from local store), find the next available slot
-        // For local store samples, preserve slot order
-        const isFromLocalStore = filePath.includes(kitName); // Simple heuristic
+        // Task 7.3.2: Apply stereo assignment choice
+        const success = await applyStereoAssignment(
+          filePath,
+          stereoResult,
+          assignmentOptions,
+          async (targetVoice: number, slotIndex: number, path: string) => {
+            // For external samples (not from local store), find the next available slot
+            // For local store samples, preserve slot order
+            const isFromLocalStore = path.includes(kitName); // Simple heuristic
 
-        let targetSlot = droppedSlotIndex;
-        if (!isFromLocalStore) {
-          // Find next available slot for external samples
-          targetSlot = -1;
-          for (let i = 0; i < 12; i++) {
-            if (!samples[i]) {
-              targetSlot = i;
-              break;
+            let targetSlot = slotIndex >= 0 ? slotIndex : droppedSlotIndex;
+            if (!isFromLocalStore && slotIndex < 0) {
+              // Find next available slot for external samples
+              targetSlot = -1;
+              for (let i = 0; i < 12; i++) {
+                if (!samples[i]) {
+                  targetSlot = i;
+                  break;
+                }
+              }
+
+              if (targetSlot === -1) {
+                throw new Error(`No available slots in voice ${targetVoice}`);
+              }
             }
-          }
 
-          if (targetSlot === -1) {
-            console.warn(`No available slots in voice ${voice}`);
-            return;
-          }
+            await onSampleAdd(targetVoice, targetSlot, path);
+          },
+        );
+
+        if (!success) {
+          // Error already handled in applyStereoAssignment
+          return;
         }
-
-        await onSampleAdd(voice, targetSlot, filePath);
       }
     } catch (error) {
       console.error("Failed to assign sample:", error);

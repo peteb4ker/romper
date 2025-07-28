@@ -29,9 +29,9 @@ describe("ThemeToggle", () => {
       </TestSettingsProvider>,
     );
     const button = screen.getByRole("button");
-    expect(button).toHaveTextContent("Enable Dark Mode");
+    expect(button).toHaveTextContent("Light Mode");
     fireEvent.click(button);
-    // After click, should show 'Disable Dark Mode'
-    expect(button).toHaveTextContent("Disable Dark Mode");
+    // After click, should show 'Dark Mode'
+    expect(button).toHaveTextContent("Dark Mode");
   });
 });

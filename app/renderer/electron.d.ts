@@ -169,17 +169,17 @@ export interface ElectronAPI {
   ) => Promise<DbResult<void>>;
 
   // Task 5.2.5: Validate source_path files for existing samples
-  validateSampleSources?: (
-    kitName: string,
-  ) => Promise<DbResult<{
-    totalSamples: number;
-    invalidSamples: Array<{
-      filename: string;
-      source_path: string;
-      error: string;
-    }>;
-    validSamples: number;
-  }>>;
+  validateSampleSources?: (kitName: string) => Promise<
+    DbResult<{
+      totalSamples: number;
+      invalidSamples: Array<{
+        filename: string;
+        source_path: string;
+        error: string;
+      }>;
+      validSamples: number;
+    }>
+  >;
 }
 
 declare global {

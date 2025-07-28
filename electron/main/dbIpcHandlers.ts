@@ -2,7 +2,12 @@ import { ipcMain } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 
-import type { Kit, NewKit, NewSample } from "../../shared/db/schema.js";
+import type {
+  DbResult,
+  Kit,
+  NewKit,
+  NewSample,
+} from "../../shared/db/schema.js";
 import {
   groupSamplesByVoice,
   inferVoiceTypeFromFilename,
@@ -17,6 +22,7 @@ import {
   getKit,
   getKits,
   getKitSamples,
+  markKitAsModified,
   updateBank,
   updateKit,
   updateVoiceAlias,
@@ -30,7 +36,10 @@ import {
  * Task 5.2.5: Enhanced file validation for sample operations
  * Validates file existence, format, and basic WAV file integrity
  */
-function validateSampleFile(filePath: string): { isValid: boolean; error?: string } {
+function validateSampleFile(filePath: string): {
+  isValid: boolean;
+  error?: string;
+} {
   // Check file existence
   if (!fs.existsSync(filePath)) {
     return { isValid: false, error: "Sample file not found" };
@@ -56,12 +65,18 @@ function validateSampleFile(filePath: string): { isValid: boolean; error?: strin
 
     // Check RIFF signature
     if (buffer.toString("ascii", 0, 4) !== "RIFF") {
-      return { isValid: false, error: "Invalid WAV file: missing RIFF signature" };
+      return {
+        isValid: false,
+        error: "Invalid WAV file: missing RIFF signature",
+      };
     }
 
     // Check WAVE format
     if (buffer.toString("ascii", 8, 12) !== "WAVE") {
-      return { isValid: false, error: "Invalid WAV file: missing WAVE format identifier" };
+      return {
+        isValid: false,
+        error: "Invalid WAV file: missing WAVE format identifier",
+      };
     }
 
     return { isValid: true };
@@ -385,12 +400,18 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       try {
         // Task 5.2.4: Validate voice number (1-4)
         if (voiceNumber < 1 || voiceNumber > 4) {
-          return { success: false, error: "Voice number must be between 1 and 4" };
+          return {
+            success: false,
+            error: "Voice number must be between 1 and 4",
+          };
         }
 
         // Task 5.2.4: Validate slot index (0-11 for 12 slots total, converted to 1-12 for storage)
         if (slotIndex < 0 || slotIndex > 11) {
-          return { success: false, error: "Slot index must be between 0 and 11 (12 slots per voice)" };
+          return {
+            success: false,
+            error: "Slot index must be between 0 and 11 (12 slots per voice)",
+          };
         }
 
         // Task 5.2.5: Enhanced file validation during operations
@@ -412,7 +433,12 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
           is_stereo: isStereo,
         };
 
-        return addSample(dbDir, sampleRecord);
+        const addResult = addSample(dbDir, sampleRecord);
+        if (addResult.success) {
+          // Task 5.3.1: Mark kit as modified when sample is added
+          markKitAsModified(dbDir, kitName);
+        }
+        return addResult;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
@@ -442,12 +468,18 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       try {
         // Task 5.2.4: Validate voice number (1-4)
         if (voiceNumber < 1 || voiceNumber > 4) {
-          return { success: false, error: "Voice number must be between 1 and 4" };
+          return {
+            success: false,
+            error: "Voice number must be between 1 and 4",
+          };
         }
 
         // Task 5.2.4: Validate slot index (0-11 for 12 slots total, converted to 1-12 for storage)
         if (slotIndex < 0 || slotIndex > 11) {
-          return { success: false, error: "Slot index must be between 0 and 11 (12 slots per voice)" };
+          return {
+            success: false,
+            error: "Slot index must be between 0 and 11 (12 slots per voice)",
+          };
         }
 
         // Task 5.2.5: Enhanced file validation during operations
@@ -478,7 +510,12 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
           is_stereo: isStereo,
         };
 
-        return addSample(dbDir, sampleRecord);
+        const replaceResult = addSample(dbDir, sampleRecord);
+        if (replaceResult.success) {
+          // Task 5.3.1: Mark kit as modified when sample is replaced
+          markKitAsModified(dbDir, kitName);
+        }
+        return replaceResult;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
@@ -502,18 +539,29 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       try {
         // Task 5.2.4: Validate voice number (1-4)
         if (voiceNumber < 1 || voiceNumber > 4) {
-          return { success: false, error: "Voice number must be between 1 and 4" };
+          return {
+            success: false,
+            error: "Voice number must be between 1 and 4",
+          };
         }
 
         // Task 5.2.4: Validate slot index (0-11 for 12 slots total, converted to 1-12 for storage)
         if (slotIndex < 0 || slotIndex > 11) {
-          return { success: false, error: "Slot index must be between 0 and 11 (12 slots per voice)" };
+          return {
+            success: false,
+            error: "Slot index must be between 0 and 11 (12 slots per voice)",
+          };
         }
 
-        return deleteSamples(dbDir, kitName, {
+        const deleteResult = deleteSamples(dbDir, kitName, {
           voiceNumber,
           slotNumber: slotIndex + 1, // Convert 0-based to 1-based
         });
+        if (deleteResult.success) {
+          // Task 5.3.1: Mark kit as modified when sample is deleted
+          markKitAsModified(dbDir, kitName);
+        }
+        return deleteResult;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
@@ -526,57 +574,54 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
   );
 
   // Task 5.2.5: Validate source_path files for existing samples
-  ipcMain.handle(
-    "validate-sample-sources",
-    async (_event, kitName: string) => {
-      const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
-        return { success: false, error: "No local store path configured" };
+  ipcMain.handle("validate-sample-sources", async (_event, kitName: string) => {
+    const localStorePath = inMemorySettings.localStorePath;
+    if (!localStorePath) {
+      return { success: false, error: "No local store path configured" };
+    }
+    const dbDir = path.join(localStorePath, ".romperdb");
+
+    try {
+      const samplesResult = getKitSamples(dbDir, kitName);
+      if (!samplesResult.success) {
+        return samplesResult;
       }
-      const dbDir = path.join(localStorePath, ".romperdb");
 
-      try {
-        const samplesResult = getKitSamples(dbDir, kitName);
-        if (!samplesResult.success) {
-          return samplesResult;
-        }
+      const samples = samplesResult.data || [];
+      const invalidSamples: Array<{
+        filename: string;
+        source_path: string;
+        error: string;
+      }> = [];
 
-        const samples = samplesResult.data || [];
-        const invalidSamples: Array<{
-          filename: string;
-          source_path: string;
-          error: string;
-        }> = [];
-
-        for (const sample of samples) {
-          if (sample.source_path) {
-            const validation = validateSampleFile(sample.source_path);
-            if (!validation.isValid) {
-              invalidSamples.push({
-                filename: sample.filename,
-                source_path: sample.source_path,
-                error: validation.error || "Unknown validation error",
-              });
-            }
+      for (const sample of samples) {
+        if (sample.source_path) {
+          const validation = validateSampleFile(sample.source_path);
+          if (!validation.isValid) {
+            invalidSamples.push({
+              filename: sample.filename,
+              source_path: sample.source_path,
+              error: validation.error || "Unknown validation error",
+            });
           }
         }
-
-        return {
-          success: true,
-          data: {
-            totalSamples: samples.length,
-            invalidSamples,
-            validSamples: samples.length - invalidSamples.length,
-          },
-        };
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        return {
-          success: false,
-          error: `Failed to validate sample sources: ${errorMessage}`,
-        };
       }
-    },
-  );
+
+      return {
+        success: true,
+        data: {
+          totalSamples: samples.length,
+          invalidSamples,
+          validSamples: samples.length - invalidSamples.length,
+        },
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        error: `Failed to validate sample sources: ${errorMessage}`,
+      };
+    }
+  });
 }

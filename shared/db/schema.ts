@@ -28,6 +28,9 @@ export const kits = sqliteTable("kits", {
   step_pattern: text("step_pattern", { mode: "json" }).$type<
     number[][] | null
   >(), // JSON storage for step patterns
+  modified_since_sync: integer("modified_since_sync", { mode: "boolean" })
+    .notNull()
+    .default(false), // Task 5.3: Track if kit modified since last sync
 });
 
 // Voices table - each kit has exactly 4 voices

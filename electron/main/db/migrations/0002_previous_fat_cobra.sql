@@ -1,0 +1,1 @@
+ALTER TABLE `kits` ADD `modified_since_sync` integer DEFAULT false NOT NULL;

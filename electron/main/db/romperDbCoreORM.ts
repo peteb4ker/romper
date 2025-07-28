@@ -383,3 +383,16 @@ export function updateBank(
     db.update(banks).set(updateData).where(eq(banks.letter, bankLetter)).run();
   });
 }
+
+// Task 5.3.1: Mark kit as modified when sample operations are performed
+export function markKitAsModified(
+  dbDir: string,
+  kitName: string,
+): DbResult<void> {
+  return withDb(dbDir, (db) => {
+    db.update(kits)
+      .set({ modified_since_sync: true })
+      .where(eq(kits.name, kitName))
+      .run();
+  });
+}

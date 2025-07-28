@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock electron module
 vi.mock("electron", () => ({
@@ -26,8 +26,9 @@ vi.mock("fs", () => ({
 }));
 
 import { ipcMain } from "electron";
-import { registerDbIpcHandlers } from "../dbIpcHandlers";
+
 import { getKitSamples } from "../db/romperDbCoreORM.js";
+import { registerDbIpcHandlers } from "../dbIpcHandlers";
 
 const mockFs = vi.mocked(fs);
 const mockGetKitSamples = vi.mocked(getKitSamples);
@@ -44,9 +45,11 @@ describe("File Validation - Task 5.2.5", () => {
     handlers = {};
 
     // Mock ipcMain.handle to capture handlers
-    vi.mocked(ipcMain.handle).mockImplementation((channel: string, handler: Function) => {
-      handlers[channel] = handler;
-    });
+    vi.mocked(ipcMain.handle).mockImplementation(
+      (channel: string, handler: Function) => {
+        handlers[channel] = handler;
+      },
+    );
 
     // Set up default successful mock responses
     mockFs.existsSync.mockReturnValue(true);
@@ -66,16 +69,23 @@ describe("File Validation - Task 5.2.5", () => {
   describe("Enhanced WAV file validation", () => {
     it("validates basic WAV file structure in add-sample-to-slot", async () => {
       const handler = handlers["add-sample-to-slot"];
-      
+
       // Mock a valid WAV file header (RIFF + size + WAVE)
       const validWavHeader = Buffer.from("RIFF\x20\x00\x00\x00WAVE");
-      mockFs.readSync.mockImplementation((fd, buffer, offset, length, position) => {
-        validWavHeader.copy(buffer as Buffer, offset, 0, Math.min(length, validWavHeader.length));
-        return 12;
-      });
+      mockFs.readSync.mockImplementation(
+        (fd, buffer, offset, length, position) => {
+          validWavHeader.copy(
+            buffer as Buffer,
+            offset,
+            0,
+            Math.min(length, validWavHeader.length),
+          );
+          return 12;
+        },
+      );
 
       const result = await handler(null, "TestKit", 1, 0, "/test/valid.wav");
-      
+
       expect(mockFs.existsSync).toHaveBeenCalledWith("/test/valid.wav");
       expect(mockFs.statSync).toHaveBeenCalledWith("/test/valid.wav");
       expect(mockFs.openSync).toHaveBeenCalledWith("/test/valid.wav", "r");
@@ -114,13 +124,20 @@ describe("File Validation - Task 5.2.5", () => {
 
     it("rejects files without RIFF signature", async () => {
       const handler = handlers["add-sample-to-slot"];
-      
+
       // Mock invalid header without RIFF signature
       const invalidHeader = Buffer.from("FAKE\x20\x00\x00\x00WAVE");
-      mockFs.readSync.mockImplementation((fd, buffer, offset, length, position) => {
-        invalidHeader.copy(buffer as Buffer, offset, 0, Math.min(length, invalidHeader.length));
-        return 12;
-      });
+      mockFs.readSync.mockImplementation(
+        (fd, buffer, offset, length, position) => {
+          invalidHeader.copy(
+            buffer as Buffer,
+            offset,
+            0,
+            Math.min(length, invalidHeader.length),
+          );
+          return 12;
+        },
+      );
 
       const result = await handler(null, "TestKit", 1, 0, "/test/invalid.wav");
 
@@ -130,18 +147,27 @@ describe("File Validation - Task 5.2.5", () => {
 
     it("rejects files without WAVE format identifier", async () => {
       const handler = handlers["add-sample-to-slot"];
-      
+
       // Mock header with RIFF but invalid format
       const invalidHeader = Buffer.from("RIFF\x20\x00\x00\x00FAKE");
-      mockFs.readSync.mockImplementation((fd, buffer, offset, length, position) => {
-        invalidHeader.copy(buffer as Buffer, offset, 0, Math.min(length, invalidHeader.length));
-        return 12;
-      });
+      mockFs.readSync.mockImplementation(
+        (fd, buffer, offset, length, position) => {
+          invalidHeader.copy(
+            buffer as Buffer,
+            offset,
+            0,
+            Math.min(length, invalidHeader.length),
+          );
+          return 12;
+        },
+      );
 
       const result = await handler(null, "TestKit", 1, 0, "/test/invalid.wav");
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Invalid WAV file: missing WAVE format identifier");
+      expect(result.error).toBe(
+        "Invalid WAV file: missing WAVE format identifier",
+      );
     });
 
     it("handles file read errors gracefully", async () => {
@@ -153,21 +179,23 @@ describe("File Validation - Task 5.2.5", () => {
       const result = await handler(null, "TestKit", 1, 0, "/test/error.wav");
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("Failed to validate file: Permission denied");
+      expect(result.error).toContain(
+        "Failed to validate file: Permission denied",
+      );
     });
   });
 
   describe("Sample source validation", () => {
     it("validates all samples for a kit", async () => {
       const handler = handlers["validate-sample-sources"];
-      
+
       // Mock sample data with source paths
       const mockSamples = [
         { filename: "kick.wav", source_path: "/path/to/kick.wav" },
         { filename: "snare.wav", source_path: "/path/to/snare.wav" },
         { filename: "hihat.wav", source_path: "/path/to/hihat.wav" },
       ];
-      
+
       mockGetKitSamples.mockReturnValue({
         success: true,
         data: mockSamples,
@@ -175,10 +203,17 @@ describe("File Validation - Task 5.2.5", () => {
 
       // Mock valid WAV files
       const validWavHeader = Buffer.from("RIFF\x20\x00\x00\x00WAVE");
-      mockFs.readSync.mockImplementation((fd, buffer, offset, length, position) => {
-        validWavHeader.copy(buffer as Buffer, offset, 0, Math.min(length, validWavHeader.length));
-        return 12;
-      });
+      mockFs.readSync.mockImplementation(
+        (fd, buffer, offset, length, position) => {
+          validWavHeader.copy(
+            buffer as Buffer,
+            offset,
+            0,
+            Math.min(length, validWavHeader.length),
+          );
+          return 12;
+        },
+      );
 
       const result = await handler(null, "TestKit");
 
@@ -190,13 +225,13 @@ describe("File Validation - Task 5.2.5", () => {
 
     it("identifies invalid sample sources", async () => {
       const handler = handlers["validate-sample-sources"];
-      
+
       const mockSamples = [
         { filename: "kick.wav", source_path: "/path/to/kick.wav" },
         { filename: "missing.wav", source_path: "/path/to/missing.wav" },
         { filename: "corrupt.wav", source_path: "/path/to/corrupt.wav" },
       ];
-      
+
       mockGetKitSamples.mockReturnValue({
         success: true,
         data: mockSamples,
@@ -210,18 +245,32 @@ describe("File Validation - Task 5.2.5", () => {
       // Mock WAV validation
       const validWavHeader = Buffer.from("RIFF\x20\x00\x00\x00WAVE");
       const invalidWavHeader = Buffer.from("FAKE\x20\x00\x00\x00WAVE");
-      
-      mockFs.readSync.mockImplementation((fd, buffer, offset, length, position) => {
-        // Determine which file is being read based on the current call context
-        const pathArg = vi.mocked(mockFs.openSync).mock.calls[vi.mocked(mockFs.openSync).mock.calls.length - 1]?.[0];
-        
-        if (pathArg?.includes("corrupt.wav")) {
-          invalidWavHeader.copy(buffer as Buffer, offset, 0, Math.min(length, invalidWavHeader.length));
-        } else {
-          validWavHeader.copy(buffer as Buffer, offset, 0, Math.min(length, validWavHeader.length));
-        }
-        return 12;
-      });
+
+      mockFs.readSync.mockImplementation(
+        (fd, buffer, offset, length, position) => {
+          // Determine which file is being read based on the current call context
+          const pathArg = vi.mocked(mockFs.openSync).mock.calls[
+            vi.mocked(mockFs.openSync).mock.calls.length - 1
+          ]?.[0];
+
+          if (pathArg?.includes("corrupt.wav")) {
+            invalidWavHeader.copy(
+              buffer as Buffer,
+              offset,
+              0,
+              Math.min(length, invalidWavHeader.length),
+            );
+          } else {
+            validWavHeader.copy(
+              buffer as Buffer,
+              offset,
+              0,
+              Math.min(length, validWavHeader.length),
+            );
+          }
+          return 12;
+        },
+      );
 
       const result = await handler(null, "TestKit");
 
@@ -229,18 +278,24 @@ describe("File Validation - Task 5.2.5", () => {
       expect(result.data.totalSamples).toBe(3);
       expect(result.data.validSamples).toBe(1);
       expect(result.data.invalidSamples).toHaveLength(2);
-      
+
       // Check specific error details
-      const missingFile = result.data.invalidSamples.find(s => s.filename === "missing.wav");
+      const missingFile = result.data.invalidSamples.find(
+        (s) => s.filename === "missing.wav",
+      );
       expect(missingFile?.error).toBe("Sample file not found");
-      
-      const corruptFile = result.data.invalidSamples.find(s => s.filename === "corrupt.wav");
-      expect(corruptFile?.error).toBe("Invalid WAV file: missing RIFF signature");
+
+      const corruptFile = result.data.invalidSamples.find(
+        (s) => s.filename === "corrupt.wav",
+      );
+      expect(corruptFile?.error).toBe(
+        "Invalid WAV file: missing RIFF signature",
+      );
     });
 
     it("handles database query errors", async () => {
       const handler = handlers["validate-sample-sources"];
-      
+
       mockGetKitSamples.mockReturnValue({
         success: false,
         error: "Database connection failed",
@@ -254,12 +309,12 @@ describe("File Validation - Task 5.2.5", () => {
 
     it("handles samples without source_path", async () => {
       const handler = handlers["validate-sample-sources"];
-      
+
       const mockSamples = [
         { filename: "legacy.wav", source_path: null }, // Legacy sample without source_path
         { filename: "new.wav", source_path: "/path/to/new.wav" },
       ];
-      
+
       mockGetKitSamples.mockReturnValue({
         success: true,
         data: mockSamples,
@@ -267,10 +322,17 @@ describe("File Validation - Task 5.2.5", () => {
 
       // Mock valid WAV for the sample with source_path
       const validWavHeader = Buffer.from("RIFF\x20\x00\x00\x00WAVE");
-      mockFs.readSync.mockImplementation((fd, buffer, offset, length, position) => {
-        validWavHeader.copy(buffer as Buffer, offset, 0, Math.min(length, validWavHeader.length));
-        return 12;
-      });
+      mockFs.readSync.mockImplementation(
+        (fd, buffer, offset, length, position) => {
+          validWavHeader.copy(
+            buffer as Buffer,
+            offset,
+            0,
+            Math.min(length, validWavHeader.length),
+          );
+          return 12;
+        },
+      );
 
       const result = await handler(null, "TestKit");
 

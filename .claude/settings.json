@@ -1,0 +1,35 @@
+{
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cat:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(npm run test:integration:*)",
+      "Bash(grep:*)",
+      "Bash(npm run build:preload:*)",
+      "Bash(npm run build:main:*)",
+      "Bash(npm test)",
+      "Bash(git commit:*)",
+      "Bash(npm test:*)",
+      "Bash(git add:*)",
+      "Bash(find:*)",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(sqlite3:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run lint:*)",
+      "WebFetch(domain:tailwindcss.com)",
+      "Bash(npx vitest:*)",
+      "Bash(npx eslint:*)",
+      "Bash(VITEST_MODE=integration npx vitest --config vite.config.ts --run electron/main/db/__tests__/romperDbCoreORM.integration.test.ts)"
+    ],
+    "deny": []
+  }
+}

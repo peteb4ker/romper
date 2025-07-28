@@ -115,7 +115,7 @@ _Last updated: 2025-07-26_
 - **Testing Structure**: Unit tests must be placed in `__tests__` subdirectories alongside the code they test. All editing operations, error conditions, and edge cases must be tested.
 - **File Organization**: Follow existing project structure with components, hooks, utils, and dialogs properly organized in their respective directories.
 - **Accessibility**: All UI must work in light/dark modes with keyboard navigation and screen reader support.
-- Use `npx vitest` to run all tests. Use `npx tsc --noEmit` to validate TypeScript before marking tasks complete.
+- Use `npx vitest` to run unit tests. Use `node electron/run-vitest-in-electron.cjs` to run integration tests (required for better-sqlite3 compatibility). Use `npx tsc --noEmit` to validate TypeScript before marking tasks complete.
 
 ## Tasks
 
@@ -302,24 +302,24 @@ _Last updated: 2025-07-26_
   - [ ] 12.2 Implement settings persistence and validation
   - [ ] 12.3 Create settings UI in preferences panel
 
-- [ ] 13.0 Database Layer ORM Migration (Replace Current Implementation)
-  - [ ] 13.1 Install and configure Drizzle ORM:
-    - [ ] 13.1.1 Install Drizzle ORM with better-sqlite3 driver
-    - [ ] 13.1.2 Define schema-first table definitions matching current architecture
-    - [ ] 13.1.3 Create type-safe query interfaces
-    - [ ] 13.1.4 Implement connection management
-  - [ ] 13.2 Replace existing database operations:
-    - [ ] 13.2.1 Replace raw SQL in romperDbCore.ts with Drizzle equivalents
-    - [ ] 13.2.2 Update IPC handlers to use ORM functions
-    - [ ] 13.2.3 Add comprehensive TypeScript error handling
-  - [ ] 13.3 Enhance database schema:
-    - [ ] 13.3.1 Add source_path field to samples table
-    - [ ] 13.3.2 Ensure voice_number field validation (1-4)
-    - [ ] 13.3.3 Use kit_name as foreign key for natural references
-  - [ ] 13.4 Fresh database initialization (no migration system needed):
-    - [ ] 13.4.1 Create initialization with complete Drizzle schema
-    - [ ] 13.4.2 Remove old initialization code
-    - [ ] 13.4.3 Update setup wizard for ORM-based database
+- [x] 13.0 Database Layer ORM Migration (Replace Current Implementation) (Complete)
+  - [x] 13.1 Install and configure Drizzle ORM:
+    - [x] 13.1.1 Install Drizzle ORM with better-sqlite3 driver
+    - [x] 13.1.2 Define schema-first table definitions matching current architecture
+    - [x] 13.1.3 Create type-safe query interfaces
+    - [x] 13.1.4 Implement connection management
+  - [x] 13.2 Replace existing database operations:
+    - [x] 13.2.1 Replace raw SQL in romperDbCore.ts with Drizzle equivalents
+    - [x] 13.2.2 Update IPC handlers to use ORM functions
+    - [x] 13.2.3 Add comprehensive TypeScript error handling
+  - [x] 13.3 Enhance database schema:
+    - [x] 13.3.1 Add source_path field to samples table
+    - [x] 13.3.2 Ensure voice_number field validation (1-4)
+    - [x] 13.3.3 Use kit_name as foreign key for natural references
+  - [x] 13.4 Fresh database initialization (no migration system needed):
+    - [x] 13.4.1 Create initialization with complete Drizzle schema
+    - [x] 13.4.2 Remove old initialization code
+    - [x] 13.4.3 Update setup wizard for ORM-based database
 
 - [ ] 14.0 Integration Testing and Performance
   - [ ] 14.1 Comprehensive integration tests:

@@ -28,7 +28,7 @@ describe("KitService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     kitService = new KitService();
-    
+
     mockPath.join.mockImplementation((...args) => args.join("/"));
     mockAddKit.mockReturnValue({ success: true });
     mockGetKit.mockReturnValue({ success: false }); // Kit doesn't exist by default
@@ -50,7 +50,7 @@ describe("KitService", () => {
           locked: false,
           step_pattern: null,
           modified_since_sync: false,
-        })
+        }),
       );
     });
 
@@ -62,9 +62,9 @@ describe("KitService", () => {
     });
 
     it("rejects if kit already exists", () => {
-      mockGetKit.mockReturnValue({ 
-        success: true, 
-        data: { name: "A5", bank_letter: "A" } 
+      mockGetKit.mockReturnValue({
+        success: true,
+        data: { name: "A5", bank_letter: "A" },
       });
 
       const result = kitService.createKit(mockInMemorySettings, "A5");
@@ -85,13 +85,13 @@ describe("KitService", () => {
       const validSlots = ["A0", "B12", "Z99", "M5"];
       const invalidSlots = ["AA0", "A", "A100", "a5", "0A", ""];
 
-      validSlots.forEach(slot => {
+      validSlots.forEach((slot) => {
         mockGetKit.mockReturnValue({ success: false }); // Reset to "doesn't exist"
         const result = kitService.createKit(mockInMemorySettings, slot);
         expect(result.success).toBe(true, `${slot} should be valid`);
       });
 
-      invalidSlots.forEach(slot => {
+      invalidSlots.forEach((slot) => {
         expect(() => {
           kitService.createKit(mockInMemorySettings, slot);
         }).toThrow("Invalid kit slot. Use format A0-Z99.");
@@ -106,7 +106,7 @@ describe("KitService", () => {
         expect.objectContaining({
           name: "K7",
           bank_letter: "K",
-        })
+        }),
       );
     });
   });
@@ -147,7 +147,7 @@ describe("KitService", () => {
           locked: false, // Always unlocked for copied kits
           step_pattern: "1010101010101010", // Copied from source
           modified_since_sync: false, // Reset for new kit
-        })
+        }),
       );
     });
 
@@ -203,12 +203,17 @@ describe("KitService", () => {
     });
 
     it("handles database errors gracefully", () => {
-      mockAddKit.mockReturnValue({ success: false, error: "Database connection failed" });
+      mockAddKit.mockReturnValue({
+        success: false,
+        error: "Database connection failed",
+      });
 
       const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Failed to duplicate kit: Database connection failed");
+      expect(result.error).toBe(
+        "Failed to duplicate kit: Database connection failed",
+      );
     });
   });
 });

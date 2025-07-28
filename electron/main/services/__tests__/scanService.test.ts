@@ -28,16 +28,16 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
 }));
 
 import {
+  groupSamplesByVoice,
+  inferVoiceTypeFromFilename,
+} from "../../../../shared/kitUtilsShared.js";
+import {
   addSample,
   deleteSamples,
   updateBank,
   updateVoiceAlias,
 } from "../../db/romperDbCoreORM.js";
 import { ScanService } from "../scanService.js";
-import {
-  groupSamplesByVoice,
-  inferVoiceTypeFromFilename,
-} from "../../../../shared/kitUtilsShared.js";
 
 const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
@@ -57,7 +57,7 @@ describe("ScanService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     scanService = new ScanService();
-    
+
     mockPath.join.mockImplementation((...args) => args.join("/"));
     mockFs.existsSync.mockReturnValue(true);
     mockDeleteSamples.mockReturnValue({ success: true });
@@ -70,17 +70,17 @@ describe("ScanService", () => {
     beforeEach(() => {
       mockFs.readdirSync.mockReturnValue([
         "1_kick.wav",
-        "1_snare.wav", 
+        "1_snare.wav",
         "2_hihat.wav",
         "2_openhat.wav",
-        "readme.txt" // Non-WAV file should be ignored
+        "readme.txt", // Non-WAV file should be ignored
       ] as any);
-      
+
       mockGroupSamplesByVoice.mockReturnValue({
         "1": ["1_kick.wav", "1_snare.wav"],
-        "2": ["2_hihat.wav", "2_openhat.wav"]
+        "2": ["2_hihat.wav", "2_openhat.wav"],
       });
-      
+
       mockInferVoiceTypeFromFilename.mockImplementation((filename: string) => {
         if (filename.includes("kick")) return "KICK";
         if (filename.includes("hihat")) return "HIHAT";
@@ -89,18 +89,24 @@ describe("ScanService", () => {
     });
 
     it("successfully rescans a kit directory", async () => {
-      const result = await scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result.success).toBe(true);
       expect(result.data?.scannedSamples).toBe(4);
       expect(result.data?.updatedVoices).toBe(2);
-      
+
       // Should delete existing samples first
-      expect(mockDeleteSamples).toHaveBeenCalledWith("/test/path/.romperdb", "TestKit");
-      
+      expect(mockDeleteSamples).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        "TestKit",
+      );
+
       // Should scan kit directory
       expect(mockFs.readdirSync).toHaveBeenCalledWith("/test/path/TestKit");
-      
+
       // Should add new samples
       expect(mockAddSample).toHaveBeenCalledTimes(4);
       expect(mockAddSample).toHaveBeenCalledWith(
@@ -112,32 +118,38 @@ describe("ScanService", () => {
           slot_number: 1,
           source_path: "/test/path/TestKit/1_kick.wav",
           is_stereo: false,
-        })
+        }),
       );
-      
+
       // Should update voice aliases
       expect(mockUpdateVoiceAlias).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "TestKit",
         1,
-        "KICK"
+        "KICK",
       );
       expect(mockUpdateVoiceAlias).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "TestKit",
         2,
-        "HIHAT"
+        "HIHAT",
       );
     });
 
     it("detects stereo samples by filename patterns", async () => {
-      mockFs.readdirSync.mockReturnValue(["1_kick_stereo.wav", "2_hat_st.wav"] as any);
+      mockFs.readdirSync.mockReturnValue([
+        "1_kick_stereo.wav",
+        "2_hat_st.wav",
+      ] as any);
       mockGroupSamplesByVoice.mockReturnValue({
         "1": ["1_kick_stereo.wav"],
-        "2": ["2_hat_st.wav"]
+        "2": ["2_hat_st.wav"],
       });
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result.success).toBe(true);
       expect(mockAddSample).toHaveBeenCalledWith(
@@ -145,14 +157,14 @@ describe("ScanService", () => {
         expect.objectContaining({
           filename: "1_kick_stereo.wav",
           is_stereo: true,
-        })
+        }),
       );
       expect(mockAddSample).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
           filename: "2_hat_st.wav",
           is_stereo: true,
-        })
+        }),
       );
     });
 
@@ -164,20 +176,29 @@ describe("ScanService", () => {
     });
 
     it("returns error when kit directory does not exist", async () => {
-      mockFs.existsSync.mockImplementation((path: string) => 
-        !path.includes("TestKit")
+      mockFs.existsSync.mockImplementation(
+        (path: string) => !path.includes("TestKit"),
       );
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Kit directory not found");
     });
 
     it("handles delete samples failure", async () => {
-      mockDeleteSamples.mockReturnValue({ success: false, error: "Delete failed" });
+      mockDeleteSamples.mockReturnValue({
+        success: false,
+        error: "Delete failed",
+      });
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Delete failed");
@@ -187,7 +208,10 @@ describe("ScanService", () => {
     it("handles add sample failure", async () => {
       mockAddSample.mockReturnValue({ success: false, error: "Add failed" });
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Add failed");
@@ -198,10 +222,15 @@ describe("ScanService", () => {
         throw new Error("Permission denied");
       });
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("Failed to scan kit directory: Permission denied");
+      expect(result.error).toContain(
+        "Failed to scan kit directory: Permission denied",
+      );
     });
   });
 
@@ -213,7 +242,7 @@ describe("ScanService", () => {
         "C - Artist Three.rtf",
         "invalid-format.rtf",
         "D - Artist Four.txt", // Wrong extension
-        "regular-file.wav"
+        "regular-file.wav",
       ] as any);
     });
 
@@ -224,10 +253,10 @@ describe("ScanService", () => {
       expect(result.data?.scannedFiles).toBe(3); // Only valid RTF files
       expect(result.data?.updatedBanks).toBe(3);
       expect(result.data?.scannedAt).toBeInstanceOf(Date);
-      
+
       // Should scan local store root
       expect(mockFs.readdirSync).toHaveBeenCalledWith("/test/path");
-      
+
       // Should update banks for valid files
       expect(mockUpdateBank).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -235,7 +264,7 @@ describe("ScanService", () => {
         expect.objectContaining({
           artist: "Artist One",
           rtf_filename: "A - Artist One.rtf",
-        })
+        }),
       );
       expect(mockUpdateBank).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -243,7 +272,7 @@ describe("ScanService", () => {
         expect.objectContaining({
           artist: "Artist Two",
           rtf_filename: "B - Artist Two.rtf",
-        })
+        }),
       );
       expect(mockUpdateBank).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -251,7 +280,7 @@ describe("ScanService", () => {
         expect.objectContaining({
           artist: "Artist Three",
           rtf_filename: "C - Artist Three.rtf",
-        })
+        }),
       );
     });
 
@@ -267,7 +296,7 @@ describe("ScanService", () => {
         expect.objectContaining({
           artist: "Artist Lower",
           rtf_filename: "a - Artist Lower.rtf",
-        })
+        }),
       );
     });
 

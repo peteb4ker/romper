@@ -188,10 +188,9 @@ _Last updated: 2025-07-26_
     - [x] 5.2.3 Add/Replace/Delete sample operations with source_path tracking
     - [x] 5.2.4 12-slot limit per voice using explicit voice_number field (1-4)
     - [x] 5.2.5 Validate source file existence during operations
-  - [ ] 5.3 Implement modification state tracking:
-    - [ ] 5.3.1 Mark kits as 'modified' when changes made after last sync
-    - [ ] 5.3.2 Display modification status in UI
-    - [ ] 5.3.3 Clear modified flag after successful SD card sync
+  - [x] 5.3 Implement modification state tracking:
+    - [x] 5.3.1 Mark kits as 'modified' when changes made after last sync
+    - [x] 5.3.2 Display modification status in UI
 
 - [ ] 6.0 Format Validation and Conversion
   - [ ] 6.1 Implement WAV format validation for reference files:
@@ -239,7 +238,7 @@ _Last updated: 2025-07-26_
     - [ ] 8.2.4 Update database to reflect successful sync
   - [ ] 8.3 Implement sync state management:
     - [ ] 8.3.1 Mark kit as 'synced' after successful operation
-    - [ ] 8.3.2 Clear 'modified changes' flag
+    - [ ] 8.3.2 Clear 'modified changes' flag (formerly 5.3.3)
     - [ ] 8.3.3 Handle sync rollback on failure
   - [ ] 8.4 Implement batch sync for multiple kits
   - [ ] 8.5 Implement detailed progress and error handling

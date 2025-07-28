@@ -57,7 +57,7 @@ export class ScanService {
       // Step 1: Delete all existing samples for this kit
       const deleteResult = deleteSamples(dbDir, kitName);
       if (!deleteResult.success) {
-        return deleteResult;
+        return { success: false, error: deleteResult.error };
       }
 
       // Step 2: Scan kit directory for current WAV files
@@ -102,7 +102,7 @@ export class ScanService {
 
           const insertResult = addSample(dbDir, sampleRecord);
           if (!insertResult.success) {
-            return insertResult;
+            return { success: false, error: insertResult.error };
           }
 
           scannedSamples++;

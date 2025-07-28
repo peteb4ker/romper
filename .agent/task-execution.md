@@ -54,6 +54,7 @@ Before starting any task:
 2. Check code follows .agent/ standards
 3. Commit changes (triggers automatic TypeScript, linting, tests, build)
 4. Validation results reported by pre-commit hooks
+5. If pre-commit hooks fail, fix issues - do NOT use --no-verify without explicit user permission
 ```
 
 ### Phase 4: Documentation
@@ -71,6 +72,25 @@ Before starting any task:
 3. Request approval to proceed: "Ready for next task?"
 4. Wait for user confirmation before continuing
 ```
+
+## Git Commit Guidelines
+
+### Pre-commit Hook Policy
+- **NEVER use `git commit --no-verify` without explicit user permission**
+- **NEVER commit with failing tests - all tests must pass before committing**
+- Pre-commit hooks exist for quality assurance and should be respected
+- If hooks fail:
+  1. Fix the underlying issues (TypeScript errors, linting, test failures)
+  2. Only ask for `--no-verify` permission in exceptional circumstances
+  3. Clearly explain why bypassing hooks is necessary
+  4. Wait for explicit user approval before using `--no-verify`
+- **Test failures are blocking** - commits must not proceed with any failing tests
+
+### Commit Message Standards
+- Use conventional commit format: `type: description`
+- Common types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
+- Provide clear, concise descriptions of changes
+- Include context about why changes were made when not obvious
 
 ## Quality Gates
 

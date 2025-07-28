@@ -210,7 +210,7 @@ export class SampleService {
         slotNumber: slotIndex + 1,
       });
       if (!deleteResult.success) {
-        return deleteResult;
+        return { success: false, error: deleteResult.error };
       }
 
       // Then add new sample
@@ -316,7 +316,7 @@ export class SampleService {
     try {
       const samplesResult = getKitSamples(dbPath, kitName);
       if (!samplesResult.success) {
-        return samplesResult;
+        return { success: false, error: samplesResult.error };
       }
 
       const samples = samplesResult.data || [];

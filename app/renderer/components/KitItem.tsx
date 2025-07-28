@@ -1,6 +1,6 @@
 import React, { JSX } from "react";
 import { BiSolidPiano } from "react-icons/bi";
-import { FiCopy, FiFolder } from "react-icons/fi";
+import { FiCircle, FiCopy, FiFolder } from "react-icons/fi";
 import { GiDrumKit } from "react-icons/gi";
 import { MdAutoAwesome, MdMic } from "react-icons/md";
 import { TiArrowLoop } from "react-icons/ti";
@@ -128,6 +128,14 @@ const KitItem = React.memo(
                 >
                   {kit}
                 </span>
+                {isValid && kitData?.modified_since_sync && (
+                  <div className="flex items-center gap-1 ml-2">
+                    <FiCircle className="w-3 h-3 text-yellow-500 fill-current" />
+                    <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                      Modified
+                    </span>
+                  </div>
+                )}
                 {isValid && sampleCounts && (
                   <span className="flex items-center gap-1 ml-2">
                     {sampleCounts.map((count, idx) => {

@@ -19,35 +19,41 @@ vi.mock("path", () => ({
 // Mock local store validator
 vi.mock("../../localStoreValidator.js", () => ({
   validateLocalStoreAgainstDb: vi.fn(),
+  validateLocalStoreAndDb: vi.fn(),
   validateLocalStoreBasic: vi.fn(),
 }));
 
-import { validateLocalStoreAgainstDb, validateLocalStoreBasic } from "../../localStoreValidator.js";
+import {
+  validateLocalStoreAgainstDb,
+  validateLocalStoreAndDb,
+  validateLocalStoreBasic,
+} from "../../localStoreValidator.js";
 import { LocalStoreService } from "../localStoreService.js";
 
 const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
 const mockValidateAgainstDb = vi.mocked(validateLocalStoreAgainstDb);
+const mockValidateAndDb = vi.mocked(validateLocalStoreAndDb);
 const mockValidateBasic = vi.mocked(validateLocalStoreBasic);
 
 describe("LocalStoreService", () => {
   let localStoreService: LocalStoreService;
-  
+
   beforeEach(() => {
     vi.clearAllMocks();
     localStoreService = new LocalStoreService();
-    
+
     mockPath.join.mockImplementation((...args) => args.join("/"));
     mockFs.existsSync.mockReturnValue(true);
     mockFs.lstatSync.mockReturnValue({ isDirectory: () => true } as any);
-    
+
     // Silence console.error for tests
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   describe("getLocalStoreStatus", () => {
     beforeEach(() => {
-      mockValidateAgainstDb.mockReturnValue({
+      mockValidateAndDb.mockReturnValue({
         isValid: true,
         error: null,
         details: { hasDb: true, dbVersion: "1.0" },
@@ -63,7 +69,7 @@ describe("LocalStoreService", () => {
         isValid: true,
         error: null,
       });
-      expect(mockValidateAgainstDb).toHaveBeenCalledWith("/env/path");
+      expect(mockValidateAndDb).toHaveBeenCalledWith("/env/path");
     });
 
     it("returns configured status when local store path is provided", () => {
@@ -75,14 +81,17 @@ describe("LocalStoreService", () => {
         isValid: true,
         error: null,
       });
-      expect(mockValidateAgainstDb).toHaveBeenCalledWith("/local/path");
+      expect(mockValidateAndDb).toHaveBeenCalledWith("/local/path");
     });
 
     it("prioritizes environment path over local store path", () => {
-      const result = localStoreService.getLocalStoreStatus("/local/path", "/env/path");
+      const result = localStoreService.getLocalStoreStatus(
+        "/local/path",
+        "/env/path",
+      );
 
       expect(result.localStorePath).toBe("/env/path");
-      expect(mockValidateAgainstDb).toHaveBeenCalledWith("/env/path");
+      expect(mockValidateAndDb).toHaveBeenCalledWith("/env/path");
     });
 
     it("returns not configured when no path is provided", () => {
@@ -94,11 +103,11 @@ describe("LocalStoreService", () => {
         isValid: false,
         error: "No local store configured",
       });
-      expect(mockValidateAgainstDb).not.toHaveBeenCalled();
+      expect(mockValidateAndDb).not.toHaveBeenCalled();
     });
 
     it("returns invalid status when validation fails", () => {
-      mockValidateAgainstDb.mockReturnValue({
+      mockValidateAndDb.mockReturnValue({
         isValid: false,
         error: "Database not found",
         details: { hasDb: false },
@@ -155,7 +164,8 @@ describe("LocalStoreService", () => {
         details: { hasDb: true },
       });
 
-      const result = localStoreService.validateExistingLocalStore("/valid/path");
+      const result =
+        localStoreService.validateExistingLocalStore("/valid/path");
 
       expect(result).toEqual({
         success: true,
@@ -171,7 +181,8 @@ describe("LocalStoreService", () => {
         details: { hasDb: false },
       });
 
-      const result = localStoreService.validateExistingLocalStore("/invalid/path");
+      const result =
+        localStoreService.validateExistingLocalStore("/invalid/path");
 
       expect(result).toEqual({
         success: false,
@@ -187,7 +198,8 @@ describe("LocalStoreService", () => {
         details: { hasDb: false },
       });
 
-      const result = localStoreService.validateExistingLocalStore("/invalid/path");
+      const result =
+        localStoreService.validateExistingLocalStore("/invalid/path");
 
       expect(result).toEqual({
         success: false,
@@ -233,19 +245,19 @@ describe("LocalStoreService", () => {
     it("successfully reads file and returns ArrayBuffer", () => {
       const mockBuffer = Buffer.from("test file content");
       // Mock the buffer properties that the service uses
-      Object.defineProperty(mockBuffer, 'buffer', {
+      Object.defineProperty(mockBuffer, "buffer", {
         value: new ArrayBuffer(mockBuffer.length),
-        writable: false
+        writable: false,
       });
-      Object.defineProperty(mockBuffer, 'byteOffset', {
+      Object.defineProperty(mockBuffer, "byteOffset", {
         value: 0,
-        writable: false
+        writable: false,
       });
-      Object.defineProperty(mockBuffer, 'byteLength', {
+      Object.defineProperty(mockBuffer, "byteLength", {
         value: mockBuffer.length,
-        writable: false
+        writable: false,
       });
-      
+
       mockFs.readFileSync.mockReturnValue(mockBuffer);
 
       const result = localStoreService.readFile("/test/file.txt");
@@ -293,7 +305,7 @@ describe("LocalStoreService", () => {
       expect(consoleSpy).toHaveBeenCalledWith(
         "[LocalStoreService] Failed to read file:",
         "/error/file.txt",
-        expect.any(Error)
+        expect.any(Error),
       );
     });
   });
@@ -314,7 +326,9 @@ describe("LocalStoreService", () => {
       const result = localStoreService.ensureDirectory("/new/dir");
 
       expect(result).toEqual({ success: true });
-      expect(mockFs.mkdirSync).toHaveBeenCalledWith("/new/dir", { recursive: true });
+      expect(mockFs.mkdirSync).toHaveBeenCalledWith("/new/dir", {
+        recursive: true,
+      });
     });
 
     it("returns error when directory creation fails", () => {
@@ -348,7 +362,11 @@ describe("LocalStoreService", () => {
 
   describe("getLocalStorePath", () => {
     it("joins paths correctly", () => {
-      const result = localStoreService.getLocalStorePath("/base", "sub", "path");
+      const result = localStoreService.getLocalStorePath(
+        "/base",
+        "sub",
+        "path",
+      );
 
       expect(result).toBe("/base/sub/path");
       expect(mockPath.join).toHaveBeenCalledWith("/base", "sub", "path");

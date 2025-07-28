@@ -82,7 +82,10 @@ class MenuEventForwarder {
     { ipcEvent: "menu-scan-banks", domEvent: "menu-scan-banks" },
     { ipcEvent: "menu-validate-database", domEvent: "menu-validate-database" },
     { ipcEvent: "menu-setup-local-store", domEvent: "menu-setup-local-store" },
-    { ipcEvent: "menu-change-local-store-directory", domEvent: "menu-change-local-store-directory" },
+    {
+      ipcEvent: "menu-change-local-store-directory",
+      domEvent: "menu-change-local-store-directory",
+    },
     { ipcEvent: "menu-about", domEvent: "menu-about" },
   ];
 

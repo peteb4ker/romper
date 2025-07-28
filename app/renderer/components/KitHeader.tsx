@@ -3,6 +3,7 @@ import {
   FiArrowLeft,
   FiChevronLeft,
   FiChevronRight,
+  FiCircle,
   FiEdit3,
   FiFolder,
   FiLock,
@@ -130,6 +131,14 @@ const KitHeader: React.FC<KitHeaderProps> = ({
     <div className="flex-1" /> {/* Spacer */}
     {onToggleEditableMode && (
       <div className="ml-2 flex items-center gap-2">
+        {kit?.modified_since_sync && (
+          <div className="flex items-center gap-1 mr-2">
+            <FiCircle className="w-3 h-3 text-yellow-500 fill-current" />
+            <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
+              Modified
+            </span>
+          </div>
+        )}
         <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-12">
           {isEditable ? "Editable" : "Locked"}
         </span>

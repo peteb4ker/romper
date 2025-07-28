@@ -380,6 +380,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] validateSampleSources invoked", kitName);
     return ipcRenderer.invoke("validate-sample-sources", kitName);
   },
+
+  // Task 6.1: Format validation for WAV files
+  getAudioMetadata: (filePath: string) => {
+    console.log("[IPC] getAudioMetadata invoked", filePath);
+    return ipcRenderer.invoke("get-audio-metadata", filePath);
+  },
+
+  validateSampleFormat: (filePath: string) => {
+    console.log("[IPC] validateSampleFormat invoked", filePath);
+    return ipcRenderer.invoke("validate-sample-format", filePath);
+  },
 });
 
 // Initialize menu event forwarding

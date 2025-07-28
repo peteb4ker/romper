@@ -7,6 +7,7 @@ import {
   FiTrash2,
   FiX,
 } from "react-icons/fi";
+import { toast } from "sonner";
 
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
 import SampleWaveform from "./SampleWaveform";
@@ -146,17 +147,14 @@ const KitVoicePanel: React.FC<
     setDragOverSlot(null);
 
     const files = Array.from(e.dataTransfer.files);
-    const wavFiles = files.filter((file) =>
-      file.name.toLowerCase().endsWith(".wav"),
-    );
 
-    if (wavFiles.length === 0) {
-      // Could show error message here
+    if (files.length === 0) {
+      console.warn("No files dropped");
       return;
     }
 
-    // Use the first WAV file found
-    const file = wavFiles[0];
+    // Use the first file found - let format validation handle file type checking
+    const file = files[0];
 
     try {
       // Get the full file path using Electron's webUtils
@@ -166,6 +164,65 @@ const KitVoicePanel: React.FC<
       } else {
         // Fallback for non-Electron environments
         filePath = (file as any).path || file.name;
+      }
+
+      // Task 6.1: Validate file format before assignment via IPC
+      if (!window.electronAPI?.validateSampleFormat) {
+        console.error("Format validation not available");
+        return;
+      }
+
+      const formatValidationResult =
+        await window.electronAPI.validateSampleFormat(filePath);
+      if (!formatValidationResult.success || !formatValidationResult.data) {
+        console.error(
+          "Format validation failed:",
+          formatValidationResult.error,
+        );
+        return;
+      }
+
+      const formatValidation = formatValidationResult.data;
+      if (!formatValidation.isValid) {
+        // Check for critical issues that prevent assignment
+        const criticalIssues = formatValidation.issues.filter(
+          (issue) =>
+            issue.type === "extension" ||
+            issue.type === "fileAccess" ||
+            issue.type === "invalidFormat",
+        );
+
+        if (criticalIssues.length > 0) {
+          // Critical issues prevent assignment entirely
+          const errorMessage = criticalIssues.map((i) => i.message).join(", ");
+          console.error(
+            "Cannot assign sample due to critical format issues:",
+            errorMessage,
+          );
+
+          // Show user-friendly error toast
+          toast.error("Cannot assign sample", {
+            description: errorMessage,
+            duration: 5000,
+          });
+          return;
+        } else {
+          // Non-critical issues allow assignment but show warnings
+          const warningMessage = formatValidation.issues
+            .map((i) => i.message)
+            .join(", ");
+          console.warn(
+            "Sample has format issues that will require conversion during SD card sync:",
+            warningMessage,
+          );
+
+          // Show format warning toast
+          toast.warning("Sample format warning", {
+            description: `${warningMessage} The sample will be converted during SD card sync.`,
+            duration: 7000,
+          });
+          // Proceed with assignment
+        }
       }
 
       // Get current sample data for this kit to check for duplicates and find available slots

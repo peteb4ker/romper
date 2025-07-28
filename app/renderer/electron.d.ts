@@ -1,5 +1,9 @@
 // Import shared types from the schema file
 import type {
+  AudioMetadata,
+  FormatValidationResult,
+} from "../../electron/main/audioUtils.js";
+import type {
   Bank,
   DbResult,
   Kit,
@@ -180,6 +184,12 @@ export interface ElectronAPI {
       validSamples: number;
     }>
   >;
+
+  // Task 6.1: Format validation for WAV files
+  getAudioMetadata?: (filePath: string) => Promise<DbResult<AudioMetadata>>;
+  validateSampleFormat?: (
+    filePath: string,
+  ) => Promise<DbResult<FormatValidationResult>>;
 }
 
 declare global {

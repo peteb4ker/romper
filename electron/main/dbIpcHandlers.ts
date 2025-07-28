@@ -7,6 +7,7 @@ import type {
   NewKit,
   NewSample,
 } from "../../shared/db/schema.js";
+import { getAudioMetadata, validateSampleFormat } from "./audioUtils.js";
 import {
   addKit,
   addSample,
@@ -279,5 +280,14 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
 
   ipcMain.handle("validate-sample-sources", async (_event, kitName: string) => {
     return sampleService.validateSampleSources(inMemorySettings, kitName);
+  });
+
+  // Audio format validation
+  ipcMain.handle("get-audio-metadata", async (_event, filePath: string) => {
+    return getAudioMetadata(filePath);
+  });
+
+  ipcMain.handle("validate-sample-format", async (_event, filePath: string) => {
+    return validateSampleFormat(filePath);
   });
 }

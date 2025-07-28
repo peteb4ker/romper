@@ -177,15 +177,15 @@ _Last updated: 2025-07-26_
     - [x] 4.5.5.3 Remove old RTF scanning UI references
 
 - [ ] 5.0 Kit Editing and Slot Management (New Architecture)
-  - [ ] 5.1 Implement editable mode system:
+  - [x] 5.1 Implement editable mode system:
     - [x] 5.1.1 Default ON for user kits, OFF for factory/imported kits
-    - [ ] 5.1.2 Manual toggle control with persistence to database
-    - [ ] 5.1.3 Visual indicators and UI feedback for mode changes
-    - [ ] 5.1.4 Disable editing actions when mode is off
+    - [x] 5.1.2 Manual toggle control with persistence to database
+    - [x] 5.1.3 Visual indicators and UI feedback for mode changes
+    - [x] 5.1.4 Disable editing actions when mode is off
   - [x] 5.2 Implement reference-only sample management:
     - [x] 5.2.1 Store external samples via source_path field (no copying to local store)
-    - [ ] 5.2.2 Drag-and-drop sample assignment to voice slots
-    - [ ] 5.2.3 Add/Replace/Delete sample operations with source_path tracking
+    - [x] 5.2.2 Drag-and-drop sample assignment to voice slots
+    - [x] 5.2.3 Add/Replace/Delete sample operations with source_path tracking
     - [ ] 5.2.4 12-slot limit per voice using explicit voice_number field (1-4)
     - [ ] 5.2.5 Validate source file existence during operations
   - [ ] 5.3 Implement modification state tracking:

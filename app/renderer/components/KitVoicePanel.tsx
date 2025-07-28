@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiCheck, FiEdit2, FiPlay, FiSquare, FiX } from "react-icons/fi";
+import { FiCheck, FiEdit2, FiPlay, FiSquare, FiTrash2, FiX } from "react-icons/fi";
 
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
 import SampleWaveform from "./SampleWaveform";
@@ -28,6 +28,11 @@ interface KitVoicePanelProps {
   onSampleSelect?: (voice: number, idx: number) => void;
   isActive?: boolean;
   isEditable?: boolean;
+
+  // New props for drag-and-drop sample assignment (Task 5.2.2)
+  onSampleAdd?: (voice: number, slotIndex: number, filePath: string) => Promise<void>;
+  onSampleReplace?: (voice: number, slotIndex: number, filePath: string) => Promise<void>;
+  onSampleDelete?: (voice: number, slotIndex: number) => Promise<void>;
 }
 
 const KitVoicePanel: React.FC<
@@ -51,9 +56,13 @@ const KitVoicePanel: React.FC<
   onSampleSelect,
   isActive = false,
   isEditable = true,
+  onSampleAdd,
+  onSampleReplace,
+  onSampleDelete,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(voiceName || "");
+  const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
 
   React.useEffect(() => {
     setEditValue(voiceName || "");
@@ -96,6 +105,74 @@ const KitVoicePanel: React.FC<
       e.preventDefault();
       const sample = samples[selectedIdx];
       onPlay(voice, sample);
+    }
+  };
+
+  // Drag-and-drop handlers for Task 5.2.2
+  const handleDragOver = (e: React.DragEvent, slotIndex: number) => {
+    if (!isEditable) return;
+    
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    setDragOverSlot(slotIndex);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're actually leaving the slot area
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverSlot(null);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent, slotIndex: number) => {
+    if (!isEditable) return;
+    
+    e.preventDefault();
+    setDragOverSlot(null);
+
+    const files = Array.from(e.dataTransfer.files);
+    const wavFiles = files.filter(file => 
+      file.name.toLowerCase().endsWith('.wav')
+    );
+
+    if (wavFiles.length === 0) {
+      // Could show error message here
+      return;
+    }
+
+    // Use the first WAV file found
+    const file = wavFiles[0];
+    
+    try {
+      // Get the full file path using Electron's webUtils
+      let filePath: string;
+      if (window.electronFileAPI?.getDroppedFilePath) {
+        filePath = await window.electronFileAPI.getDroppedFilePath(file);
+      } else {
+        // Fallback for non-Electron environments
+        filePath = (file as any).path || file.name;
+      }
+
+      const existingSample = samples[slotIndex];
+      if (existingSample && onSampleReplace) {
+        await onSampleReplace(voice, slotIndex, filePath);
+      } else if (!existingSample && onSampleAdd) {
+        await onSampleAdd(voice, slotIndex, filePath);
+      }
+    } catch (error) {
+      console.error('Failed to assign sample:', error);
+      // Could show error message here
+    }
+  };
+
+  const handleDeleteSample = async (slotIndex: number) => {
+    if (!isEditable || !onSampleDelete) return;
+    
+    try {
+      await onSampleDelete(voice, slotIndex);
+    } catch (error) {
+      console.error('Failed to delete sample:', error);
+      // Could show error message here
     }
   };
 
@@ -167,6 +244,11 @@ const KitVoicePanel: React.FC<
             const sample = samples[i];
             const slotBaseClass =
               "truncate flex items-center gap-2 mb-1 min-h-[28px]"; // uniform height for all slots
+            const isDragOver = dragOverSlot === i;
+            const dragOverClass = isDragOver 
+              ? " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300" 
+              : "";
+            
             if (sample) {
               const sampleKey = voice + ":" + sample;
               const isPlaying = samplePlaying[sampleKey];
@@ -178,7 +260,7 @@ const KitVoicePanel: React.FC<
                     selectedIdx === i && isActive
                       ? " bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 font-bold ring-2 ring-blue-400 dark:ring-blue-300"
                       : ""
-                  }`}
+                  }${dragOverClass}`}
                   tabIndex={-1}
                   aria-selected={selectedIdx === i && isActive}
                   data-testid={
@@ -187,6 +269,9 @@ const KitVoicePanel: React.FC<
                       : undefined
                   }
                   onClick={() => onSampleSelect && onSampleSelect(voice, i)}
+                  onDragOver={isEditable ? (e) => handleDragOver(e, i) : undefined}
+                  onDragLeave={isEditable ? handleDragLeave : undefined}
+                  onDrop={isEditable ? (e) => handleDrop(e, i) : undefined}
                 >
                   <span
                     className="text-xs font-mono text-gray-500 dark:text-gray-400 px-1 select-none inline-block align-right"
@@ -234,11 +319,31 @@ const KitVoicePanel: React.FC<
                     </button>
                   )}
                   <span
-                    className="truncate text-xs font-mono text-gray-800 dark:text-gray-100"
+                    className="truncate text-xs font-mono text-gray-800 dark:text-gray-100 flex-1"
                     title={sample}
                   >
                     {sample}
                   </span>
+                  {isEditable && (
+                    <button
+                      className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-800 text-xs text-red-600 dark:text-red-400 ml-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSample(i);
+                      }}
+                      aria-label="Delete sample"
+                      title="Delete sample"
+                      style={{
+                        minWidth: 24,
+                        minHeight: 24,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <FiTrash2 />
+                    </button>
+                  )}
                   <SampleWaveform
                     key={`${kitName}-${voice}-${i}-${sample}`}
                     kitName={kitName}
@@ -270,11 +375,16 @@ const KitVoicePanel: React.FC<
               return (
                 <li
                   key={`${voice}-empty-${i}`}
-                  className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic`}
+                  className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass}${
+                    isEditable ? " border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500" : ""
+                  }`}
                   tabIndex={-1}
                   aria-selected={false}
                   data-testid={`empty-slot-${voice}-${i}`}
                   onClick={() => onSampleSelect && onSampleSelect(voice, i)}
+                  onDragOver={isEditable ? (e) => handleDragOver(e, i) : undefined}
+                  onDragLeave={isEditable ? handleDragLeave : undefined}
+                  onDrop={isEditable ? (e) => handleDrop(e, i) : undefined}
                 >
                   <span
                     className="text-xs font-mono text-gray-500 dark:text-gray-400 px-1 select-none inline-block align-right"
@@ -287,7 +397,9 @@ const KitVoicePanel: React.FC<
                   >
                     {i + 1}.
                   </span>
-                  <span className="ml-2">(empty)</span>
+                  <span className="ml-2 flex-1">
+                    {isEditable ? "Drop WAV file here or (empty)" : "(empty)"}
+                  </span>
                 </li>
               );
             }

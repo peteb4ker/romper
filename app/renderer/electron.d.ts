@@ -148,10 +148,32 @@ export interface ElectronAPI {
     path: string | null;
     error: string | null;
   }>;
+
+  // Task 5.2.2 & 5.2.3: Sample management operations for drag-and-drop editing
+  addSampleToSlot?: (
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+    filePath: string,
+  ) => Promise<DbResult<{ sampleId: number }>>;
+  replaceSampleInSlot?: (
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+    filePath: string,
+  ) => Promise<DbResult<{ sampleId: number }>>;
+  deleteSampleFromSlot?: (
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+  ) => Promise<DbResult<void>>;
 }
 
 declare global {
   interface Window {
     electronAPI: ElectronAPI;
+    electronFileAPI?: {
+      getDroppedFilePath: (file: File) => Promise<string>;
+    };
   }
 }

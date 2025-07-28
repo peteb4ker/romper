@@ -5,6 +5,7 @@ import type { KitDetailsProps } from "../kitTypes";
 import { useKit } from "./useKit";
 import { useKitPlayback } from "./useKitPlayback";
 import { useKitVoicePanels } from "./useKitVoicePanels";
+import { useSampleManagement } from "./useSampleManagement";
 import { useStepPattern } from "./useStepPattern";
 import { useVoiceAlias } from "./useVoiceAlias";
 
@@ -36,6 +37,19 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   const { updateVoiceAlias } = useVoiceAlias({
     kitName: props.kitName,
     onUpdate: reloadKit,
+  });
+
+  // Sample management for drag-and-drop operations (Task 5.2.2 & 5.2.3)
+  const sampleManagement = useSampleManagement({
+    kitName: props.kitName,
+    onSamplesChanged: async () => {
+      // Reload both kit data and samples when samples change
+      await reloadKit();
+      if (props.onRequestSamplesReload) {
+        await props.onRequestSamplesReload();
+      }
+    },
+    onMessage: props.onMessage,
   });
 
   // Step pattern management
@@ -281,5 +295,8 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     // Sub-hooks
     playback,
     kitVoicePanels,
+
+    // Sample management for drag-and-drop (Task 5.2.2 & 5.2.3)
+    sampleManagement,
   };
 }

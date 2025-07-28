@@ -318,4 +318,146 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       };
     }
   });
+
+  // Task 5.2.2 & 5.2.3: Sample management operations for drag-and-drop editing
+  ipcMain.handle(
+    "add-sample-to-slot",
+    async (
+      _event,
+      kitName: string,
+      voiceNumber: number,
+      slotIndex: number,
+      filePath: string,
+    ) => {
+      const localStorePath = inMemorySettings.localStorePath;
+      if (!localStorePath) {
+        return { success: false, error: "No local store path configured" };
+      }
+      const dbDir = path.join(localStorePath, ".romperdb");
+
+      try {
+        // Validate file exists
+        if (!fs.existsSync(filePath)) {
+          return { success: false, error: "Sample file not found" };
+        }
+
+        // Validate file is WAV
+        if (!filePath.toLowerCase().endsWith(".wav")) {
+          return { success: false, error: "Only WAV files are supported" };
+        }
+
+        // Create sample record
+        const filename = path.basename(filePath);
+        const isStereo = /stereo|st|_s\.|_S\./i.test(filename);
+
+        const sampleRecord: NewSample = {
+          kit_name: kitName,
+          filename,
+          voice_number: voiceNumber,
+          slot_number: slotIndex + 1, // Convert 0-based to 1-based
+          source_path: filePath,
+          is_stereo: isStereo,
+        };
+
+        return addSample(dbDir, sampleRecord);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          error: `Failed to add sample: ${errorMessage}`,
+        };
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "replace-sample-in-slot",
+    async (
+      _event,
+      kitName: string,
+      voiceNumber: number,
+      slotIndex: number,
+      filePath: string,
+    ) => {
+      const localStorePath = inMemorySettings.localStorePath;
+      if (!localStorePath) {
+        return { success: false, error: "No local store path configured" };
+      }
+      const dbDir = path.join(localStorePath, ".romperdb");
+
+      try {
+        // Validate file exists
+        if (!fs.existsSync(filePath)) {
+          return { success: false, error: "Sample file not found" };
+        }
+
+        // Validate file is WAV
+        if (!filePath.toLowerCase().endsWith(".wav")) {
+          return { success: false, error: "Only WAV files are supported" };
+        }
+
+        // First delete existing sample at this slot
+        const deleteResult = deleteSamples(dbDir, kitName, {
+          voiceNumber,
+          slotNumber: slotIndex + 1,
+        });
+        if (!deleteResult.success) {
+          return deleteResult;
+        }
+
+        // Then add new sample
+        const filename = path.basename(filePath);
+        const isStereo = /stereo|st|_s\.|_S\./i.test(filename);
+
+        const sampleRecord: NewSample = {
+          kit_name: kitName,
+          filename,
+          voice_number: voiceNumber,
+          slot_number: slotIndex + 1,
+          source_path: filePath,
+          is_stereo: isStereo,
+        };
+
+        return addSample(dbDir, sampleRecord);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          error: `Failed to replace sample: ${errorMessage}`,
+        };
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "delete-sample-from-slot",
+    async (
+      _event,
+      kitName: string,
+      voiceNumber: number,
+      slotIndex: number,
+    ) => {
+      const localStorePath = inMemorySettings.localStorePath;
+      if (!localStorePath) {
+        return { success: false, error: "No local store path configured" };
+      }
+      const dbDir = path.join(localStorePath, ".romperdb");
+
+      try {
+        return deleteSamples(dbDir, kitName, {
+          voiceNumber,
+          slotNumber: slotIndex + 1, // Convert 0-based to 1-based
+        });
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          error: `Failed to delete sample: ${errorMessage}`,
+        };
+      }
+    },
+  );
 }

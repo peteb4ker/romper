@@ -124,101 +124,113 @@ describe("KitHeader", () => {
   describe("Editable Mode Toggle - Task 5.1", () => {
     it("shows editable mode toggle when onToggleEditableMode is provided", () => {
       render(<KitHeader {...baseProps} onToggleEditableMode={vi.fn()} />);
-      
-      expect(screen.getByRole("button", { name: /enable editable mode/i })).toBeInTheDocument();
+
+      expect(
+        screen.getByRole("button", { name: /enable editable mode/i }),
+      ).toBeInTheDocument();
       expect(screen.getByText("Locked")).toBeInTheDocument();
       expect(screen.getByTitle("Enable editable mode")).toBeInTheDocument();
     });
 
     it("shows correct visual state when editable mode is off", () => {
       render(
-        <KitHeader 
-          {...baseProps} 
-          onToggleEditableMode={vi.fn()} 
-          isEditable={false} 
-        />
+        <KitHeader
+          {...baseProps}
+          onToggleEditableMode={vi.fn()}
+          isEditable={false}
+        />,
       );
-      
+
       expect(screen.getByText("Locked")).toBeInTheDocument();
       // The toggle switch should be in the "off" position (gray background)
-      const toggleButton = screen.getByRole("button", { name: /enable editable mode/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /enable editable mode/i,
+      });
       expect(toggleButton).toHaveClass("bg-gray-300");
     });
 
     it("shows correct visual state when editable mode is on", () => {
       render(
-        <KitHeader 
-          {...baseProps} 
-          onToggleEditableMode={vi.fn()} 
-          isEditable={true} 
-        />
+        <KitHeader
+          {...baseProps}
+          onToggleEditableMode={vi.fn()}
+          isEditable={true}
+        />,
       );
-      
+
       expect(screen.getByText("Editable")).toBeInTheDocument();
       // The toggle switch should be in the "on" position (orange background)
-      const toggleButton = screen.getByRole("button", { name: /disable editable mode/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /disable editable mode/i,
+      });
       expect(toggleButton).toHaveClass("bg-orange-500");
     });
 
     it("calls onToggleEditableMode when toggle button is clicked", () => {
       const onToggleEditableMode = vi.fn();
       render(
-        <KitHeader 
-          {...baseProps} 
-          onToggleEditableMode={onToggleEditableMode} 
-          isEditable={false} 
-        />
+        <KitHeader
+          {...baseProps}
+          onToggleEditableMode={onToggleEditableMode}
+          isEditable={false}
+        />,
       );
-      
-      const toggleButton = screen.getByRole("button", { name: /enable editable mode/i });
+
+      const toggleButton = screen.getByRole("button", {
+        name: /enable editable mode/i,
+      });
       fireEvent.click(toggleButton);
-      
+
       expect(onToggleEditableMode).toHaveBeenCalledOnce();
     });
 
     it("does not show editable mode toggle when onToggleEditableMode is not provided", () => {
       render(<KitHeader {...baseProps} onToggleEditableMode={undefined} />);
-      
+
       expect(screen.queryByText("Locked")).not.toBeInTheDocument();
       expect(screen.queryByText("Editable")).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /editable mode/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /editable mode/i }),
+      ).not.toBeInTheDocument();
     });
 
     it("toggle button has correct accessibility attributes", () => {
       render(
-        <KitHeader 
-          {...baseProps} 
-          onToggleEditableMode={vi.fn()} 
-          isEditable={false} 
-        />
+        <KitHeader
+          {...baseProps}
+          onToggleEditableMode={vi.fn()}
+          isEditable={false}
+        />,
       );
-      
-      const toggleButton = screen.getByRole("button", { name: /enable editable mode/i });
+
+      const toggleButton = screen.getByRole("button", {
+        name: /enable editable mode/i,
+      });
       expect(toggleButton).toHaveAttribute("title", "Enable editable mode");
-      
+
       // Check for screen reader text
       expect(screen.getByText("Enable editable mode")).toHaveClass("sr-only");
     });
 
     it("toggle button title changes based on editable state", () => {
       const { rerender } = render(
-        <KitHeader 
-          {...baseProps} 
-          onToggleEditableMode={vi.fn()} 
-          isEditable={false} 
-        />
+        <KitHeader
+          {...baseProps}
+          onToggleEditableMode={vi.fn()}
+          isEditable={false}
+        />,
       );
-      
+
       expect(screen.getByTitle("Enable editable mode")).toBeInTheDocument();
-      
+
       rerender(
-        <KitHeader 
-          {...baseProps} 
-          onToggleEditableMode={vi.fn()} 
-          isEditable={true} 
-        />
+        <KitHeader
+          {...baseProps}
+          onToggleEditableMode={vi.fn()}
+          isEditable={true}
+        />,
       );
-      
+
       expect(screen.getByTitle("Disable editable mode")).toBeInTheDocument();
     });
   });

@@ -272,9 +272,24 @@ export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
   });
 }
 
-export function deleteSamples(dbDir: string, kitName: string): DbResult<void> {
+export function deleteSamples(
+  dbDir: string,
+  kitName: string,
+  filter?: { voiceNumber?: number; slotNumber?: number },
+): DbResult<void> {
   return withDb(dbDir, (db) => {
-    db.delete(samples).where(eq(samples.kit_name, kitName)).run();
+    const conditions = [eq(samples.kit_name, kitName)];
+
+    if (filter?.voiceNumber !== undefined) {
+      conditions.push(eq(samples.voice_number, filter.voiceNumber));
+    }
+
+    if (filter?.slotNumber !== undefined) {
+      conditions.push(eq(samples.slot_number, filter.slotNumber));
+    }
+
+    const whereCondition = conditions.length === 1 ? conditions[0] : and(...conditions);
+    db.delete(samples).where(whereCondition).run();
   });
 }
 

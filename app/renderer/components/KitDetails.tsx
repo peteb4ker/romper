@@ -95,6 +95,9 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
           kitName={props.kitName}
           onSampleKeyNav={logic.kitVoicePanels.onSampleKeyNav}
           isEditable={logic.kit?.editable ?? false}
+          onSampleAdd={logic.sampleManagement.handleSampleAdd}
+          onSampleReplace={logic.sampleManagement.handleSampleReplace}
+          onSampleDelete={logic.sampleManagement.handleSampleDelete}
         />
       </div>
       <KitStepSequencer

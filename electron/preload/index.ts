@@ -284,6 +284,67 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] selectExistingLocalStore invoked");
     return ipcRenderer.invoke("select-existing-local-store");
   },
+  // Task 5.2.2 & 5.2.3: Sample management operations for drag-and-drop editing
+  addSampleToSlot: (
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+    filePath: string,
+  ) => {
+    console.log(
+      "[IPC] addSampleToSlot invoked",
+      kitName,
+      voiceNumber,
+      slotIndex,
+      filePath,
+    );
+    return ipcRenderer.invoke(
+      "add-sample-to-slot",
+      kitName,
+      voiceNumber,
+      slotIndex,
+      filePath,
+    );
+  },
+  replaceSampleInSlot: (
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+    filePath: string,
+  ) => {
+    console.log(
+      "[IPC] replaceSampleInSlot invoked",
+      kitName,
+      voiceNumber,
+      slotIndex,
+      filePath,
+    );
+    return ipcRenderer.invoke(
+      "replace-sample-in-slot",
+      kitName,
+      voiceNumber,
+      slotIndex,
+      filePath,
+    );
+  },
+  deleteSampleFromSlot: (
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+  ) => {
+    console.log(
+      "[IPC] deleteSampleFromSlot invoked",
+      kitName,
+      voiceNumber,
+      slotIndex,
+    );
+    return ipcRenderer.invoke(
+      "delete-sample-from-slot",
+      kitName,
+      voiceNumber,
+      slotIndex,
+    );
+  },
 });
 
 // Handle menu events from main process and forward to renderer as DOM events

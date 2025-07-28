@@ -261,11 +261,13 @@ describe("KitDetails", () => {
 
       // KitHeader should receive the toggle function and current editable state
       expect(screen.getByText("Editable")).toBeInTheDocument();
-      
+
       // Click the toggle button
-      const toggleButton = screen.getByRole("button", { name: /disable editable mode/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /disable editable mode/i,
+      });
       fireEvent.click(toggleButton);
-      
+
       expect(mockToggleEditableMode).toHaveBeenCalledOnce();
     });
 
@@ -288,7 +290,9 @@ describe("KitDetails", () => {
       // KitVoicePanels should receive isEditable={true}
       // This would be reflected in the voice panel edit buttons being visible
       await waitFor(() => {
-        expect(screen.getAllByTitle("Edit voice name").length).toBeGreaterThan(0);
+        expect(screen.getAllByTitle("Edit voice name").length).toBeGreaterThan(
+          0,
+        );
       });
     });
 
@@ -310,7 +314,7 @@ describe("KitDetails", () => {
 
       // KitHeader should show "Locked" state
       expect(screen.getByText("Locked")).toBeInTheDocument();
-      
+
       // Edit buttons should not be visible when kit is not editable
       expect(screen.queryAllByTitle("Edit voice name").length).toBe(0);
     });
@@ -332,7 +336,9 @@ describe("KitDetails", () => {
       );
 
       // Toggle should be visible with correct state
-      const toggleButton = screen.getByRole("button", { name: /enable editable mode/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /enable editable mode/i,
+      });
       expect(toggleButton).toBeInTheDocument();
       expect(toggleButton).toHaveClass("bg-gray-300");
     });
@@ -362,7 +368,9 @@ describe("KitDetails", () => {
         ...createMockLogic(),
         kit: { ...createMockLogic().kit, editable: false },
       };
-      const mockUseKitDetailsLogicInstance = (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+      const mockUseKitDetailsLogicInstance = (
+        useKitDetailsLogic as Mock
+      ).mockReturnValue(mockLogic);
 
       const { rerender } = renderWithSettings(
         <KitDetails

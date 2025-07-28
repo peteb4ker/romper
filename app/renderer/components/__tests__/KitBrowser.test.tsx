@@ -81,7 +81,6 @@ const baseProps = {
       ],
     },
   ],
-  onRescanAllVoiceNames: vi.fn(),
   sampleCounts: { A0: [1, 1, 1, 1], A1: [1, 1, 1, 1], B0: [1, 1, 1, 1] },
   onRefreshKits: vi.fn(),
 };
@@ -138,7 +137,6 @@ describe("KitBrowser", () => {
           <KitBrowser {...baseProps} />
         </MockMessageDisplayProvider>,
       );
-      expect(screen.getByText("Rescan All Kit Voice Names")).toBeTruthy();
       expect(screen.getByText("+ New Kit")).toBeTruthy();
       expect(screen.getByTestId("kit-item-A0")).toBeTruthy();
       expect(screen.getByTestId("kit-item-A1")).toBeTruthy();
@@ -196,15 +194,6 @@ describe("KitBrowser", () => {
 
       expect(screen.getByText("Kit Slot (A0-Z99):")).toBeTruthy();
       expect(screen.getByText("Create")).toBeTruthy();
-    });
-    it("calls onRescanAllVoiceNames when button is clicked", () => {
-      render(
-        <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>,
-      );
-      fireEvent.click(screen.getByText("Rescan All Kit Voice Names"));
-      expect(baseProps.onRescanAllVoiceNames).toHaveBeenCalled();
     });
   });
 

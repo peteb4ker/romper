@@ -13,7 +13,6 @@ afterEach(() => {
 
 describe("KitBrowserHeader", () => {
   const defaultProps = {
-    onRescanAllVoiceNames: vi.fn(),
     onScanAllKits: vi.fn(),
     onShowNewKit: vi.fn(),
     onCreateNextKit: vi.fn(),
@@ -21,18 +20,6 @@ describe("KitBrowserHeader", () => {
     onShowLocalStoreWizard: vi.fn(),
     onValidateLocalStore: vi.fn(),
   };
-
-  it("calls onRescanAllVoiceNames when Rescan All Kit Voice Names button is clicked", () => {
-    const onRescanAllVoiceNames = vi.fn();
-    render(
-      <KitBrowserHeader
-        {...defaultProps}
-        onRescanAllVoiceNames={onRescanAllVoiceNames}
-      />,
-    );
-    fireEvent.click(screen.getByText("Rescan All Kit Voice Names"));
-    expect(onRescanAllVoiceNames).toHaveBeenCalled();
-  });
 
   it("calls onShowNewKit when + New Kit button is clicked", () => {
     const onShowNewKit = vi.fn();

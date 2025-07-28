@@ -384,7 +384,6 @@ const KitsView = () => {
           kitData={kitData}
           onSelectKit={handleSelectKit}
           sampleCounts={sampleCounts}
-          onRescanAllVoiceNames={() => {}} // TODO: Implement or remove if no longer needed
           onMessage={(msg) => {
             // Optionally handle messages here, e.g. show a toast or log
             // For now, do nothing (parent can decide to handle or ignore)

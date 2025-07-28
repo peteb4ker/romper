@@ -17,7 +17,6 @@ interface KitBrowserProps {
   localStorePath: string | null;
   kits?: string[];
   kitData?: any[];
-  onRescanAllVoiceNames: () => void;
   sampleCounts?: Record<string, [number, number, number, number]>;
   onRefreshKits?: () => void;
   onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
@@ -156,7 +155,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded m-2"
       >
         <KitBrowserHeader
-          onRescanAllVoiceNames={props.onRescanAllVoiceNames}
           onScanAllKits={handleScanAllKits}
           onShowNewKit={() => setShowNewKit(true)}
           onCreateNextKit={handleCreateNextKit}

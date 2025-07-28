@@ -10,7 +10,6 @@ import { useStepPattern } from "./useStepPattern";
 import { useVoiceAlias } from "./useVoiceAlias";
 
 interface UseKitDetailsLogicParams extends KitDetailsProps {
-  onRescanAllVoiceNames?: () => void;
   onCreateKit?: () => void;
   onMessage?: (msg: { type: string; text: string }) => void;
   onRequestSamplesReload?: () => Promise<void>;

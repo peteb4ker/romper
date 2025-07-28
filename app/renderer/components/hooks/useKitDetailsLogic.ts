@@ -21,6 +21,9 @@ interface UseKitDetailsLogicParams extends KitDetailsProps {
  * Orchestrates all kit detail operations including playback, metadata, scanning, and navigation
  */
 export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
+  // Destructure props for useEffect dependencies
+  const { onPrevKit, onNextKit } = props;
+
   // Core kit data
   const {
     kit,
@@ -210,12 +213,12 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
       // Kit navigation shortcuts
       if (e.key === ",") {
         e.preventDefault();
-        props.onPrevKit?.();
+        onPrevKit?.();
         return;
       }
       if (e.key === ".") {
         e.preventDefault();
-        props.onNextKit?.();
+        onNextKit?.();
         return;
       }
       // Kit scanning shortcut
@@ -260,8 +263,8 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     playback,
     playback.handlePlay,
     kitVoicePanels,
-    props.onPrevKit,
-    props.onNextKit,
+    onPrevKit,
+    onNextKit,
     handleScanKit,
   ]);
 

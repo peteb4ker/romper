@@ -84,18 +84,34 @@ export class LocalStoreService {
     path: string | null;
     error: string | null;
   } {
+    console.log(
+      "[LocalStoreService] Validating existing local store:",
+      selectedPath,
+    );
+
     // Validate that the selected path contains a .romperdb directory
     const validation = validateLocalStoreAgainstDb(selectedPath);
 
+    console.log("[LocalStoreService] Validation result:", {
+      isValid: validation.isValid,
+      error: validation.error,
+      errorSummary: validation.errorSummary,
+      hasErrors: !!validation.errors,
+    });
+
     if (validation.isValid) {
+      console.log("[LocalStoreService] ✓ Validation passed");
       return { success: true, path: selectedPath, error: null };
     } else {
+      const errorMsg =
+        validation.error ||
+        validation.errorSummary ||
+        "Selected directory does not contain a valid Romper database";
+      console.log("[LocalStoreService] ✗ Validation failed:", errorMsg);
       return {
         success: false,
         path: null,
-        error:
-          validation.error ||
-          "Selected directory does not contain a valid Romper database",
+        error: errorMsg,
       };
     }
   }

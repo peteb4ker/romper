@@ -36,17 +36,20 @@ function withDb<T>(
   try {
     // Ensure migrations are run once per database per session
     if (!migrationCheckedDbs.has(dbPath) && fs.existsSync(dbPath)) {
+      console.log(`[DB] Running migrations for: ${dbPath}`);
       const migrationResult = ensureDatabaseMigrations(dbDir);
       if (!migrationResult.success) {
         console.error(
           `[DB] Migration failed for ${dbPath}:`,
           migrationResult.error,
         );
+
         return {
           success: false,
-          error: `Migration failed: ${migrationResult.error}`,
+          error: migrationResult.error,
         };
       }
+      console.log(`[DB] Migration completed successfully for: ${dbPath}`);
       migrationCheckedDbs.add(dbPath);
     }
 
@@ -86,18 +89,56 @@ function getMigrationsPath(): string | null {
 // Run migrations to ensure database is up to date
 export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
   const dbPath = path.join(dbDir, DB_FILENAME);
+  console.log("[Migration] Checking database at:", dbPath);
+  console.log("[Migration] Database exists:", fs.existsSync(dbPath));
+
   if (!fs.existsSync(dbPath)) {
     console.log("[Migration] Database does not exist, skipping migrations");
     return { success: false, error: "Database file does not exist" };
   }
+
   let sqlite: BetterSqlite3.Database | null = null;
   try {
+    console.log("[Migration] Opening database connection...");
     sqlite = new BetterSqlite3(dbPath);
     const db = drizzle(sqlite, { schema });
 
     const migrationsPath = getMigrationsPath();
+    console.log("[Migration] Migrations path:", migrationsPath);
+
     if (migrationsPath) {
+      console.log("[Migration] Starting migration process...");
+
+      // List migration files
+      const migrationFiles = fs.readdirSync(migrationsPath);
+      console.log("[Migration] Available migration files:", migrationFiles);
+
+      // Check current migration state
+      try {
+        const result = sqlite
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'",
+          )
+          .get();
+        console.log("[Migration] Drizzle migrations table exists:", !!result);
+
+        if (result) {
+          const appliedMigrations = sqlite
+            .prepare("SELECT * FROM __drizzle_migrations ORDER BY id")
+            .all();
+          console.log("[Migration] Applied migrations:", appliedMigrations);
+        }
+      } catch (e) {
+        console.log(
+          "[Migration] Could not check migration state (this is normal for first run):",
+          e,
+        );
+      }
+
+      console.log("[Migration] Executing migrate() function...");
       migrate(db, { migrationsFolder: migrationsPath });
+      console.log("[Migration] Migration completed successfully!");
+
       return { success: true, data: true };
     } else {
       console.warn(
@@ -111,9 +152,17 @@ export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
     if (e instanceof Error) {
       console.error("[Migration] Error stack:", e.stack);
     }
+
+    // Log additional debugging info
+    console.error("[Migration] Database path:", dbPath);
+    console.error("[Migration] Database dir:", dbDir);
+    console.error("[Migration] Error type:", typeof e);
+    console.error("[Migration] Full error object:", e);
+
     return { success: false, error };
   } finally {
     if (sqlite) {
+      console.log("[Migration] Closing database connection");
       sqlite.close();
     }
   }
@@ -121,23 +170,38 @@ export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
 
 // Validate that database has the expected schema
 export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
+  console.log("[Schema] Validating database schema for:", dbDir);
   return withDb(dbDir, (db) => {
     try {
       // Check if the main tables exist by running a simple query
       // Note: migrations should have run in withDb, so all tables should exist
+      console.log("[Schema] Checking banks table...");
       db.select().from(banks).limit(1).all();
+
+      console.log("[Schema] Checking kits table...");
       db.select().from(kits).limit(1).all();
+
+      console.log("[Schema] Checking voices table...");
       db.select().from(voices).limit(1).all();
+
+      console.log("[Schema] Checking samples table...");
       db.select().from(samples).limit(1).all();
+
+      console.log("[Schema] Checking editActions table...");
       db.select().from(editActions).limit(1).all();
 
+      console.log("[Schema] ✓ All tables validated successfully");
       return true;
     } catch (error) {
-      console.error("[Main] Database schema validation failed:", error);
-      // This should not happen if migrations ran successfully
+      console.error("[Schema] Database schema validation failed:", error);
+      console.error("[Schema] Error type:", typeof error);
       console.error(
-        "[Main] This suggests a migration issue or corrupted database",
+        "[Schema] Error message:",
+        error instanceof Error ? error.message : String(error),
       );
+      if (error instanceof Error && error.stack) {
+        console.error("[Schema] Error stack:", error.stack);
+      }
       throw new Error(`Database schema validation failed: ${error}`);
     }
   });
@@ -268,7 +332,12 @@ export function getKits(dbDir: string): DbResult<any[]> {
 
 export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
   return withDb(dbDir, (db) => {
-    return db.select().from(samples).where(eq(samples.kit_name, kitName)).all();
+    return db
+      .select()
+      .from(samples)
+      .where(eq(samples.kit_name, kitName))
+      .orderBy(samples.voice_number, samples.slot_number)
+      .all();
   });
 }
 

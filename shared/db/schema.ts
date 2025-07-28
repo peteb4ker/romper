@@ -6,6 +6,7 @@ import {
   integer,
   sqliteTable,
   text,
+  unique,
 } from "drizzle-orm/sqlite-core";
 // Using text({ mode: 'json' }) for step patterns - much simpler than custom encoding!
 
@@ -44,19 +45,38 @@ export const voices = sqliteTable("voices", {
 });
 
 // Samples table - sample files assigned to voice slots
-export const samples = sqliteTable("samples", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  kit_name: text("kit_name")
-    .notNull()
-    .references(() => kits.name), // FK to kits.name
-  filename: text("filename").notNull(), // Sample filename
-  voice_number: integer("voice_number").notNull(), // 1-4, explicit voice assignment
-  slot_number: integer("slot_number").notNull(), // 1-12, slot within voice
-  source_path: text("source_path").notNull(), // NEW: Absolute path to original sample file for reference-only management
-  is_stereo: integer("is_stereo", { mode: "boolean" }).notNull().default(false),
-  wav_bitrate: integer("wav_bitrate"), // Optional WAV metadata
-  wav_sample_rate: integer("wav_sample_rate"), // Optional WAV metadata
-});
+export const samples = sqliteTable(
+  "samples",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    kit_name: text("kit_name")
+      .notNull()
+      .references(() => kits.name), // FK to kits.name
+    filename: text("filename").notNull(), // Sample filename
+    voice_number: integer("voice_number").notNull(), // 1-4, explicit voice assignment
+    slot_number: integer("slot_number").notNull(), // 1-12, slot within voice
+    source_path: text("source_path").notNull(), // NEW: Absolute path to original sample file for reference-only management
+    is_stereo: integer("is_stereo", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    wav_bitrate: integer("wav_bitrate"), // Optional WAV metadata
+    wav_sample_rate: integer("wav_sample_rate"), // Optional WAV metadata
+  },
+  (table) => ({
+    // Unique constraint: only one sample per kit/voice/slot combination
+    unique_slot: unique().on(
+      table.kit_name,
+      table.voice_number,
+      table.slot_number,
+    ),
+    // Unique constraint: prevent duplicate source paths within the same voice
+    unique_voice_source: unique().on(
+      table.kit_name,
+      table.voice_number,
+      table.source_path,
+    ),
+  }),
+);
 
 // Edit actions table - tracking for kit edits
 export const editActions = sqliteTable("edit_actions", {

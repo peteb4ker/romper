@@ -22,6 +22,7 @@ import { validateLocalStoreAndDb } from "./localStoreValidator.js";
 
 type Settings = {
   localStorePath?: string;
+  sdCardPath?: string;
   darkMode?: boolean;
   theme?: string;
   [key: string]: unknown;
@@ -94,59 +95,49 @@ function createWindow() {
 
 function loadSettings(): Settings {
   const userDataPath = app.getPath("userData");
-  const newSettingsPath = path.join(userDataPath, "romper-settings.json");
-  const oldSettingsPath = path.join(userDataPath, "settings.json");
+  const settingsPath = path.join(userDataPath, "romper-settings.json");
 
-  // Migration: rename old settings file if it exists and new one doesn't
-  if (fs.existsSync(oldSettingsPath) && !fs.existsSync(newSettingsPath)) {
-    try {
-      fs.renameSync(oldSettingsPath, newSettingsPath);
-      console.log("[Startup] Migrated settings.json to romper-settings.json");
-    } catch (error) {
-      console.warn("[Startup] Failed to migrate settings file:", error);
-    }
-  }
+  console.log("[Settings] Loading settings from:", settingsPath);
+  console.log("[Settings] User data path:", userDataPath);
 
-  const settingsPath = newSettingsPath;
-
-  // Log settings file status only if there are issues
   if (!fs.existsSync(settingsPath)) {
-    console.log("[Startup] Settings file not found:", settingsPath);
+    console.log("[Settings] Settings file not found - will use empty settings");
+    return {};
   }
 
   let settings: Settings = {};
-  if (fs.existsSync(settingsPath)) {
-    try {
-      const fileContent = fs.readFileSync(settingsPath, "utf-8");
-      // Only log content details if file is empty or corrupted
-      if (fileContent.length <= 2) {
-        console.log(
-          "[Startup] Settings file appears empty or corrupted:",
-          fileContent,
-        );
-      }
+  try {
+    const fileContent = fs.readFileSync(settingsPath, "utf-8");
 
-      const parsed = JSON.parse(fileContent);
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        settings = parsed as Settings;
-        // Only log settings details if localStorePath is missing or for debugging
-        if (!settings.localStorePath) {
-          console.info(
-            "[Startup] Settings loaded but no local store configured",
-          );
-        }
-      } else {
-        console.warn(
-          "[Startup] Settings file did not contain an object. Using empty settings.",
-        );
-      }
-    } catch (error) {
-      console.error(
-        "[Startup] Failed to parse settings file. Using empty settings:",
-        error,
+    if (fileContent.length === 0) {
+      console.log("[Settings] Settings file is empty - using empty settings");
+      return {};
+    }
+
+    const parsed = JSON.parse(fileContent);
+
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      settings = parsed as Settings;
+      console.log(
+        "[Settings] Loaded settings:",
+        JSON.stringify(settings, null, 2),
+      );
+    } else {
+      console.warn(
+        "[Settings] Settings file did not contain an object. Using empty settings.",
+      );
+      console.warn(
+        "[Settings] Parsed type:",
+        typeof parsed,
+        "Is array:",
+        Array.isArray(parsed),
       );
     }
+  } catch (error) {
+    console.error("[Settings] Failed to parse settings file:", error);
+    console.error("[Settings] Using empty settings");
   }
+
   return settings;
 }
 
@@ -154,8 +145,23 @@ function validateAndFixLocalStore(settings: Settings): Settings {
   const userDataPath = app.getPath("userData");
   const settingsPath = path.join(userDataPath, "romper-settings.json");
 
+  console.log("[Validation] Starting local store validation");
+  console.log(
+    "[Validation] Settings have localStorePath:",
+    !!settings.localStorePath,
+  );
+
   if (settings.localStorePath) {
+    console.log(
+      "[Validation] Validating local store path:",
+      settings.localStorePath,
+    );
     const validation = validateLocalStoreAndDb(settings.localStorePath);
+    console.log("[Validation] Validation result:", {
+      isValid: validation.isValid,
+      error: validation.error,
+      errorSummary: validation.errorSummary,
+    });
 
     if (!validation.isValid) {
       console.warn("[Startup] ✗ Saved local store path is invalid");
@@ -176,7 +182,11 @@ function validateAndFixLocalStore(settings: Settings): Settings {
       } catch (writeError) {
         console.error("[Startup] Failed to update settings file:", writeError);
       }
+    } else {
+      console.log("[Validation] ✓ Local store path is valid");
     }
+  } else {
+    console.log("[Validation] No local store path to validate");
   }
 
   return settings;

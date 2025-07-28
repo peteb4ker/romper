@@ -384,17 +384,45 @@ export function useLocalStoreWizard(
 
             // Artist metadata is now handled by bank scanning, not kit scanning
 
-            // Apply voice inference results as tags if available
+            // Apply voice inference results to individual voices
             if (
               scanResult.success &&
               scanResult.results.voiceInference?.voiceNames
             ) {
               const voiceNames = scanResult.results.voiceInference.voiceNames;
-              const voiceTags = Object.values(voiceNames).filter(
-                (name): name is string => Boolean(name),
-              );
-              if (voiceTags.length > 0) {
-                updates.tags = voiceTags;
+
+              // Update each voice with its inferred alias
+              for (const [voiceNumber, voiceName] of Object.entries(
+                voiceNames,
+              )) {
+                if (
+                  voiceName &&
+                  typeof voiceName === "string" &&
+                  api.updateVoiceAlias
+                ) {
+                  try {
+                    const result = await api.updateVoiceAlias(
+                      kitName,
+                      parseInt(voiceNumber, 10),
+                      voiceName,
+                    );
+                    if (result.success) {
+                      console.log(
+                        `[Hook] Set voice ${voiceNumber} alias to "${voiceName}" for kit ${kitName}`,
+                      );
+                    } else {
+                      console.warn(
+                        `[Hook] Failed to set voice alias for kit ${kitName}, voice ${voiceNumber}:`,
+                        result.error,
+                      );
+                    }
+                  } catch (error) {
+                    console.warn(
+                      `[Hook] Error setting voice alias for kit ${kitName}, voice ${voiceNumber}:`,
+                      error,
+                    );
+                  }
+                }
               }
             }
 

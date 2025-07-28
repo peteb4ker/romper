@@ -70,6 +70,9 @@ describe("useLocalStoreWizard", () => {
       updateKit: vi.fn(async (_dbDir, _kitName, _updates) => ({
         success: true,
       })),
+      updateVoiceAlias: vi.fn(async (_kitName, _voiceNumber, _voiceAlias) => ({
+        success: true,
+      })),
       readFile: vi.fn(async (_filePath) => ({
         success: true,
         data: new ArrayBuffer(1024),
@@ -449,12 +452,26 @@ describe("useLocalStoreWizard", () => {
       "continue",
     );
 
-    // Verify kit metadata was updated
-    expect(window.electronAPI.updateKit).toHaveBeenCalledWith(
+    // Verify voice aliases were updated
+    expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
       "A0",
-      expect.objectContaining({
-        tags: ["kick", "snare", "hat", "tom"],
-      }),
+      1,
+      "kick",
+    );
+    expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
+      "A0",
+      2,
+      "snare",
+    );
+    expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
+      "A0",
+      3,
+      "hat",
+    );
+    expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
+      "A0",
+      4,
+      "tom",
     );
 
     // Verify scanning progress was reported

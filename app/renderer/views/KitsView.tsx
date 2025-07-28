@@ -20,15 +20,44 @@ import { useSettings } from "../utils/SettingsContext";
 function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
   const voices: VoiceSamples = { 1: [], 2: [], 3: [], 4: [] };
 
-  dbSamples.forEach((sample: any) => {
+  // First, sort samples by voice_number and slot_number to ensure proper ordering
+  const sortedSamples = dbSamples.sort((a, b) => {
+    if (a.voice_number !== b.voice_number) {
+      return a.voice_number - b.voice_number;
+    }
+    return a.slot_number - b.slot_number;
+  });
+
+  // Group samples by voice, maintaining slot order
+  sortedSamples.forEach((sample: any) => {
     const voiceNumber = sample.voice_number;
     if (voiceNumber >= 1 && voiceNumber <= 4) {
-      voices[voiceNumber].push(sample.filename);
+      // Create array with proper slot positions (12 slots per voice)
+      if (!Array.isArray(voices[voiceNumber])) {
+        voices[voiceNumber] = [];
+      }
+      // Use slot_number - 1 as index (slot_number is 1-based, array is 0-based)
+      const slotIndex = sample.slot_number - 1;
+      if (slotIndex >= 0 && slotIndex < 12) {
+        voices[voiceNumber][slotIndex] = sample.filename;
+      }
     }
   });
 
-  // Sort samples within each voice
-  Object.keys(voices).forEach((v) => voices[+v].sort());
+  // Fill empty slots with empty strings for consistent array length
+  Object.keys(voices).forEach((v) => {
+    const voice = voices[+v];
+    for (let i = 0; i < 12; i++) {
+      if (!voice[i]) {
+        voice[i] = "";
+      }
+    }
+    // Remove trailing empty slots to keep arrays compact
+    while (voice.length > 0 && voice[voice.length - 1] === "") {
+      voice.pop();
+    }
+  });
+
   return voices;
 }
 

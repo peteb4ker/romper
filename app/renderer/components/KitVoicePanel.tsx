@@ -139,7 +139,7 @@ const KitVoicePanel: React.FC<
     }
   };
 
-  const handleDrop = async (e: React.DragEvent, slotIndex: number) => {
+  const handleDrop = async (e: React.DragEvent, droppedSlotIndex: number) => {
     if (!isEditable) return;
 
     e.preventDefault();
@@ -168,11 +168,65 @@ const KitVoicePanel: React.FC<
         filePath = (file as any).path || file.name;
       }
 
-      const existingSample = samples[slotIndex];
+      // Get current sample data for this kit to check for duplicates and find available slots
+      if (!window.electronAPI?.getAllSamplesForKit) {
+        console.error("Sample management not available");
+        return;
+      }
+
+      const samplesResult =
+        await window.electronAPI.getAllSamplesForKit(kitName);
+      if (!samplesResult.success) {
+        console.error("Failed to get samples:", samplesResult.error);
+        return;
+      }
+
+      const allSamples = samplesResult.data || [];
+      const voiceSamples = allSamples.filter(
+        (s: any) => s.voice_number === voice,
+      );
+
+      // Check for duplicate source path in this voice
+      const isDuplicate = voiceSamples.some(
+        (s: any) => s.source_path === filePath,
+      );
+      if (isDuplicate) {
+        console.warn(
+          `Sample with path ${filePath} already exists in voice ${voice}`,
+        );
+        // Could show error message here
+        return;
+      }
+
+      // Determine if we should add or replace
+      const existingSample = samples[droppedSlotIndex];
+
       if (existingSample && onSampleReplace) {
-        await onSampleReplace(voice, slotIndex, filePath);
+        // Replace the sample in the exact slot where it was dropped
+        await onSampleReplace(voice, droppedSlotIndex, filePath);
       } else if (!existingSample && onSampleAdd) {
-        await onSampleAdd(voice, slotIndex, filePath);
+        // For external samples (not from local store), find the next available slot
+        // For local store samples, preserve slot order
+        const isFromLocalStore = filePath.includes(kitName); // Simple heuristic
+
+        let targetSlot = droppedSlotIndex;
+        if (!isFromLocalStore) {
+          // Find next available slot for external samples
+          targetSlot = -1;
+          for (let i = 0; i < 12; i++) {
+            if (!samples[i]) {
+              targetSlot = i;
+              break;
+            }
+          }
+
+          if (targetSlot === -1) {
+            console.warn(`No available slots in voice ${voice}`);
+            return;
+          }
+        }
+
+        await onSampleAdd(voice, targetSlot, filePath);
       }
     } catch (error) {
       console.error("Failed to assign sample:", error);

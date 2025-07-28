@@ -22,6 +22,13 @@
       "when": 1753715627217,
       "tag": "0002_previous_fat_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1753732537822,
+      "tag": "0003_graceful_paladin",
+      "breakpoints": true
     }
   ]
 }

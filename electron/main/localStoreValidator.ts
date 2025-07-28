@@ -115,9 +115,20 @@ export function getRomperDbPath(localStorePath: string): string {
 export function validateLocalStoreAgainstDb(
   localStorePath: string,
 ): LocalStoreValidationDetailedResult {
+  console.log(
+    "[Validation] Starting validateLocalStoreAgainstDb for:",
+    localStorePath,
+  );
+
   // First check basic validity
   const basicValidation = validateLocalStoreAndDb(localStorePath);
+  console.log("[Validation] Basic validation result:", {
+    isValid: basicValidation.isValid,
+    error: basicValidation.error,
+  });
+
   if (!basicValidation.isValid) {
+    console.log("[Validation] Basic validation failed, returning error");
     return {
       isValid: false,
       errorSummary: basicValidation.error,
@@ -127,9 +138,19 @@ export function validateLocalStoreAgainstDb(
   const romperDbPath = basicValidation.romperDbPath!;
   const dbDir = path.dirname(romperDbPath);
 
+  console.log("[Validation] Basic validation passed, checking kits...");
+  console.log("[Validation] DB directory:", dbDir);
+
   // Get all kits from the database
   const kitsResult = getKits(dbDir);
+  console.log("[Validation] Kits query result:", {
+    success: kitsResult.success,
+    error: kitsResult.error,
+    dataLength: kitsResult.data?.length,
+  });
+
   if (!kitsResult.success || !kitsResult.data) {
+    console.log("[Validation] Failed to get kits, returning error");
     return {
       isValid: false,
       errorSummary: `Failed to retrieve kits from database: ${kitsResult.error}`,
@@ -217,11 +238,24 @@ export function validateLocalStoreAgainstDb(
     }
   }
 
-  return {
+  console.log("[Validation] File validation completed:", {
+    isValid,
+    kitErrorsCount: kitErrors.length,
+    totalKits: kitsResult.data.length,
+  });
+
+  if (kitErrors.length > 0) {
+    console.log("[Validation] Kit errors found:", kitErrors);
+  }
+
+  const result = {
     isValid,
     errors: kitErrors.length > 0 ? kitErrors : undefined,
     errorSummary: isValid
       ? undefined
       : `Found ${kitErrors.length} kit(s) with validation errors`,
   };
+
+  console.log("[Validation] Final validation result:", result);
+  return result;
 }

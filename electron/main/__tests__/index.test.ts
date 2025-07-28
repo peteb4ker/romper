@@ -135,9 +135,7 @@ describe("main/index.ts", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     await import("../index");
     expect(spy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        "[Startup] Failed to parse settings file. Using empty settings:",
-      ),
+      "[Settings] Failed to parse settings file:",
       expect.any(Error),
     );
     spy.mockRestore();
@@ -160,11 +158,12 @@ describe("main/index.ts", () => {
     const readFileSyncSpy = vi
       .spyOn(fs, "readFileSync")
       .mockReturnValue('{"foo": "bar"}');
-    const spy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
     await import("../index");
-    // Only logs info when no localStorePath is configured
+    // Logs settings when loaded
     expect(spy).toHaveBeenCalledWith(
-      "[Startup] Settings loaded but no local store configured",
+      "[Settings] Loaded settings:",
+      expect.any(String),
     );
     spy.mockRestore();
     readFileSyncSpy.mockRestore();

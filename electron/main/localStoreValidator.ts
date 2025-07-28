@@ -165,21 +165,9 @@ export function validateLocalStoreAgainstDb(
     const missingFiles: string[] = [];
     const extraFiles: string[] = [];
 
-    // Check if kit folder exists (kit.name is the direct property from Drizzle)
+    // Note: In reference-first architecture, kit folders don't need to exist
+    // since samples live at their source_path locations, but we still check for extra files
     const kitFolderPath = path.join(localStorePath, kit.name);
-    if (
-      !fs.existsSync(kitFolderPath) ||
-      !fs.statSync(kitFolderPath).isDirectory()
-    ) {
-      // Kit folder doesn't exist but is in DB
-      isValid = false;
-      kitErrors.push({
-        kitName: kit.name,
-        missingFiles: [`Kit folder ${kit.name} does not exist`],
-        extraFiles: [],
-      });
-      continue;
-    }
 
     // Get samples for this kit
     const samplesResult = getKitSamples(dbDir, kit.name);
@@ -193,11 +181,10 @@ export function validateLocalStoreAgainstDb(
       continue;
     }
 
-    // Check that all samples in DB exist in filesystem
+    // Check that all samples in DB exist in filesystem using source_path
     for (const sample of samplesResult.data) {
-      const samplePath = path.join(kitFolderPath, sample.filename);
-      if (!fs.existsSync(samplePath)) {
-        missingFiles.push(sample.filename);
+      if (!fs.existsSync(sample.source_path)) {
+        missingFiles.push(path.basename(sample.source_path));
         isValid = false;
       }
     }
@@ -209,7 +196,9 @@ export function validateLocalStoreAgainstDb(
         .filter((file) => file.toLowerCase().endsWith(".wav"));
 
       const dbFiles = new Set(
-        samplesResult.data.map((s) => s.filename.toLowerCase()),
+        samplesResult.data.map((s) =>
+          path.basename(s.source_path).toLowerCase(),
+        ),
       );
 
       for (const file of filesInDir) {
@@ -219,13 +208,8 @@ export function validateLocalStoreAgainstDb(
         }
       }
     } catch (error) {
-      // Error reading directory
-      isValid = false;
-      missingFiles.push(
-        `Error reading kit directory: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
+      // Error reading directory - kit folder may not exist, which is valid
+      // in reference-first architecture, so we don't treat this as an error
     }
 
     // Add to errors if any issues found

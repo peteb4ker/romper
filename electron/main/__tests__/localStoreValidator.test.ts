@@ -136,7 +136,6 @@ describe("localStoreValidator", () => {
         data: [
           { name: "A0", editable: false },
           { name: "B1", editable: false },
-          { name: "C2", editable: false }, // Missing folder
         ],
       });
 
@@ -152,6 +151,7 @@ describe("localStoreValidator", () => {
                   voice_number: 1,
                   slot_number: 1,
                   is_stereo: false,
+                  source_path: path.join(localStorePath, "A0", "1 Kick.wav"),
                 },
                 {
                   kit_name: "A0",
@@ -159,6 +159,7 @@ describe("localStoreValidator", () => {
                   voice_number: 1,
                   slot_number: 2,
                   is_stereo: false,
+                  source_path: path.join(localStorePath, "A0", "2 Snare.wav"),
                 },
                 {
                   kit_name: "A0",
@@ -166,6 +167,7 @@ describe("localStoreValidator", () => {
                   voice_number: 1,
                   slot_number: 3,
                   is_stereo: false,
+                  source_path: path.join(localStorePath, "A0", "missing.wav"),
                 },
               ],
             };
@@ -180,6 +182,7 @@ describe("localStoreValidator", () => {
                   voice_number: 1,
                   slot_number: 1,
                   is_stereo: false,
+                  source_path: path.join(localStorePath, "B1", "3 Hat.wav"),
                 },
               ],
             };
@@ -189,25 +192,18 @@ describe("localStoreValidator", () => {
       );
     });
 
-    it("should detect missing files, extra files, and missing kit folders", () => {
+    it("should detect missing files and extra files", () => {
       const result = validateLocalStoreAgainstDb(localStorePath);
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toBeDefined();
-      expect(result.errors!.length).toBe(2); // A0 (missing/extra file) and C2 (missing folder)
+      expect(result.errors!.length).toBe(1); // Only A0 (missing/extra file)
 
       // Check A0 errors
       const a0Error = result.errors!.find((e) => e.kitName === "A0");
       expect(a0Error).toBeDefined();
       expect(a0Error!.missingFiles).toContain("missing.wav");
       expect(a0Error!.extraFiles).toContain("extra.wav");
-
-      // Check C2 errors
-      const c2Error = result.errors!.find((e) => e.kitName === "C2");
-      expect(c2Error).toBeDefined();
-      expect(c2Error!.missingFiles[0]).toContain(
-        "Kit folder C2 does not exist",
-      );
     });
 
     it("should return valid when all files match DB records", () => {

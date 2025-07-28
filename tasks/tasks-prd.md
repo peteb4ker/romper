@@ -206,8 +206,8 @@ _Last updated: 2025-07-26_
 
 - [ ] 7.0 Stereo Sample Handling
   - [ ] 7.1 Implement 'default to mono samples' global setting:
-    - [ ] 7.1.1 Create setting in application preferences (default: true)
-    - [ ] 7.1.2 Apply setting to new sample assignments
+    - [x] 7.1.1 Create setting in application preferences (default: true)
+    - [x] 7.1.2 Apply setting to new sample assignments
     - [ ] 7.1.3 Allow per-sample override
   - [ ] 7.2 Implement stereo assignment logic with voice_number:
     - [ ] 7.2.1 Auto-assign as mono when global setting ON

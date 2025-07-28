@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type { DbResult, NewSample, Sample } from "../../../shared/db/schema.js";
+import { getAudioMetadata } from "../audioUtils.js";
 import {
   addSample,
   deleteSamples,
@@ -142,7 +143,22 @@ export class SampleService {
     try {
       // Create sample record
       const filename = path.basename(filePath);
-      const isStereo = /stereo|st|_s\.|_S\./i.test(filename);
+
+      // Task 7.1.2: Apply 'default to mono samples' setting to new sample assignments
+      let isStereo = false;
+
+      // Get the defaultToMonoSamples setting (default: true)
+      const defaultToMonoSamples =
+        inMemorySettings.defaultToMonoSamples ?? true;
+
+      if (!defaultToMonoSamples) {
+        // Only check if file is actually stereo when setting is OFF
+        const metadataResult = getAudioMetadata(filePath);
+        if (metadataResult.success && metadataResult.data) {
+          isStereo = (metadataResult.data.channels || 1) > 1;
+        }
+      }
+      // If defaultToMonoSamples is true, isStereo remains false
 
       const sampleRecord: NewSample = {
         kit_name: kitName,
@@ -215,7 +231,22 @@ export class SampleService {
 
       // Then add new sample
       const filename = path.basename(filePath);
-      const isStereo = /stereo|st|_s\.|_S\./i.test(filename);
+
+      // Task 7.1.2: Apply 'default to mono samples' setting to new sample assignments
+      let isStereo = false;
+
+      // Get the defaultToMonoSamples setting (default: true)
+      const defaultToMonoSamples =
+        inMemorySettings.defaultToMonoSamples ?? true;
+
+      if (!defaultToMonoSamples) {
+        // Only check if file is actually stereo when setting is OFF
+        const metadataResult = getAudioMetadata(filePath);
+        if (metadataResult.success && metadataResult.data) {
+          isStereo = (metadataResult.data.channels || 1) > 1;
+        }
+      }
+      // If defaultToMonoSamples is true, isStereo remains false
 
       const sampleRecord: NewSample = {
         kit_name: kitName,

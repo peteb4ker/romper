@@ -26,6 +26,12 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
   markKitAsModified: vi.fn(),
 }));
 
+// Mock audioUtils
+vi.mock("../../audioUtils.js", () => ({
+  getAudioMetadata: vi.fn(),
+}));
+
+import { getAudioMetadata } from "../../audioUtils.js";
 import {
   addSample,
   deleteSamples,
@@ -40,6 +46,7 @@ const mockAddSample = vi.mocked(addSample);
 const mockDeleteSamples = vi.mocked(deleteSamples);
 const mockGetKitSamples = vi.mocked(getKitSamples);
 const mockMarkKitAsModified = vi.mocked(markKitAsModified);
+const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 
 describe("SampleService", () => {
   let sampleService: SampleService;
@@ -284,6 +291,119 @@ describe("SampleService", () => {
       expect(result.success).toBe(false);
       expect(mockMarkKitAsModified).not.toHaveBeenCalled();
     });
+
+    // Task 7.1.2 tests: Apply 'default to mono samples' setting
+    it("marks stereo file as mono when defaultToMonoSamples is true", () => {
+      mockGetAudioMetadata.mockReturnValue({
+        success: true,
+        data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
+      });
+
+      const settingsWithMono = {
+        ...mockInMemorySettings,
+        defaultToMonoSamples: true,
+      };
+
+      const result = sampleService.addSampleToSlot(
+        settingsWithMono,
+        "TestKit",
+        1,
+        0,
+        "/test/stereo.wav",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockAddSample).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        expect.objectContaining({
+          is_stereo: false, // Should be false even though file is stereo
+        }),
+      );
+      // Should NOT call getAudioMetadata when defaultToMonoSamples is true
+      expect(mockGetAudioMetadata).not.toHaveBeenCalled();
+    });
+
+    it("marks stereo file as stereo when defaultToMonoSamples is false", () => {
+      mockGetAudioMetadata.mockReturnValue({
+        success: true,
+        data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
+      });
+
+      const settingsWithStereo = {
+        ...mockInMemorySettings,
+        defaultToMonoSamples: false,
+      };
+
+      const result = sampleService.addSampleToSlot(
+        settingsWithStereo,
+        "TestKit",
+        1,
+        0,
+        "/test/stereo.wav",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockGetAudioMetadata).toHaveBeenCalledWith("/test/stereo.wav");
+      expect(mockAddSample).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        expect.objectContaining({
+          is_stereo: true, // Should be true because file is stereo and setting is OFF
+        }),
+      );
+    });
+
+    it("marks mono file as mono regardless of defaultToMonoSamples setting", () => {
+      mockGetAudioMetadata.mockReturnValue({
+        success: true,
+        data: { channels: 1, sampleRate: 44100, bitDepth: 16 },
+      });
+
+      const settingsWithStereo = {
+        ...mockInMemorySettings,
+        defaultToMonoSamples: false,
+      };
+
+      const result = sampleService.addSampleToSlot(
+        settingsWithStereo,
+        "TestKit",
+        1,
+        0,
+        "/test/mono.wav",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockGetAudioMetadata).toHaveBeenCalledWith("/test/mono.wav");
+      expect(mockAddSample).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        expect.objectContaining({
+          is_stereo: false, // Should be false because file is actually mono
+        }),
+      );
+    });
+
+    it("defaults to mono when defaultToMonoSamples is undefined", () => {
+      const settingsWithoutDefault = {
+        ...mockInMemorySettings,
+        // defaultToMonoSamples not set
+      };
+
+      const result = sampleService.addSampleToSlot(
+        settingsWithoutDefault,
+        "TestKit",
+        1,
+        0,
+        "/test/sample.wav",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockAddSample).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        expect.objectContaining({
+          is_stereo: false, // Should default to mono (true)
+        }),
+      );
+      expect(mockGetAudioMetadata).not.toHaveBeenCalled();
+    });
   });
 
   describe("deleteSampleFromSlot", () => {
@@ -385,6 +505,126 @@ describe("SampleService", () => {
       expect(result.data?.totalSamples).toBe(2);
       expect(result.data?.validSamples).toBe(2); // Legacy samples without source_path are counted as valid
       expect(result.data?.invalidSamples).toHaveLength(0);
+    });
+  });
+
+  describe("replaceSampleInSlot", () => {
+    it("successfully replaces sample", () => {
+      mockDeleteSamples.mockReturnValue({ success: true });
+      mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
+
+      const result = sampleService.replaceSampleInSlot(
+        mockInMemorySettings,
+        "TestKit",
+        2,
+        5,
+        "/test/new-sample.wav",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockDeleteSamples).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        "TestKit",
+        { voiceNumber: 2, slotNumber: 6 },
+      );
+      expect(mockAddSample).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        expect.objectContaining({
+          kit_name: "TestKit",
+          voice_number: 2,
+          slot_number: 6,
+          source_path: "/test/new-sample.wav",
+        }),
+      );
+      expect(mockMarkKitAsModified).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        "TestKit",
+      );
+    });
+
+    it("fails if delete operation fails", () => {
+      mockDeleteSamples.mockReturnValue({
+        success: false,
+        error: "Delete failed",
+      });
+
+      const result = sampleService.replaceSampleInSlot(
+        mockInMemorySettings,
+        "TestKit",
+        1,
+        0,
+        "/test/new-sample.wav",
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Delete failed");
+      expect(mockAddSample).not.toHaveBeenCalled();
+      expect(mockMarkKitAsModified).not.toHaveBeenCalled();
+    });
+
+    // Task 7.1.2 tests for replaceSampleInSlot
+    it("applies defaultToMonoSamples setting when replacing stereo sample", () => {
+      mockDeleteSamples.mockReturnValue({ success: true });
+      mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
+      mockGetAudioMetadata.mockReturnValue({
+        success: true,
+        data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
+      });
+
+      const settingsWithMono = {
+        ...mockInMemorySettings,
+        defaultToMonoSamples: true,
+      };
+
+      const result = sampleService.replaceSampleInSlot(
+        settingsWithMono,
+        "TestKit",
+        1,
+        0,
+        "/test/stereo-replace.wav",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockAddSample).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        expect.objectContaining({
+          is_stereo: false, // Should be false even though file is stereo
+        }),
+      );
+      expect(mockGetAudioMetadata).not.toHaveBeenCalled();
+    });
+
+    it("preserves stereo when defaultToMonoSamples is false for replacement", () => {
+      mockDeleteSamples.mockReturnValue({ success: true });
+      mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
+      mockGetAudioMetadata.mockReturnValue({
+        success: true,
+        data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
+      });
+
+      const settingsWithStereo = {
+        ...mockInMemorySettings,
+        defaultToMonoSamples: false,
+      };
+
+      const result = sampleService.replaceSampleInSlot(
+        settingsWithStereo,
+        "TestKit",
+        1,
+        0,
+        "/test/stereo-replace.wav",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockGetAudioMetadata).toHaveBeenCalledWith(
+        "/test/stereo-replace.wav",
+      );
+      expect(mockAddSample).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        expect.objectContaining({
+          is_stereo: true, // Should be true because file is stereo and setting is OFF
+        }),
+      );
     });
   });
 });

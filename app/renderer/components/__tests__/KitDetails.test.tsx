@@ -100,6 +100,11 @@ function createMockLogic(overrides = {}) {
     kitVoicePanels: {
       onSampleKeyNav: vi.fn(),
     },
+    sampleManagement: {
+      handleSampleAdd: vi.fn(),
+      handleSampleReplace: vi.fn(),
+      handleSampleDelete: vi.fn(),
+    },
   };
 }
 

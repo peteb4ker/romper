@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { FiCheck, FiEdit2, FiPlay, FiSquare, FiTrash2, FiX } from "react-icons/fi";
+import {
+  FiCheck,
+  FiEdit2,
+  FiPlay,
+  FiSquare,
+  FiTrash2,
+  FiX,
+} from "react-icons/fi";
 
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
 import SampleWaveform from "./SampleWaveform";
@@ -30,8 +37,16 @@ interface KitVoicePanelProps {
   isEditable?: boolean;
 
   // New props for drag-and-drop sample assignment (Task 5.2.2)
-  onSampleAdd?: (voice: number, slotIndex: number, filePath: string) => Promise<void>;
-  onSampleReplace?: (voice: number, slotIndex: number, filePath: string) => Promise<void>;
+  onSampleAdd?: (
+    voice: number,
+    slotIndex: number,
+    filePath: string,
+  ) => Promise<void>;
+  onSampleReplace?: (
+    voice: number,
+    slotIndex: number,
+    filePath: string,
+  ) => Promise<void>;
   onSampleDelete?: (voice: number, slotIndex: number) => Promise<void>;
 }
 
@@ -111,7 +126,7 @@ const KitVoicePanel: React.FC<
   // Drag-and-drop handlers for Task 5.2.2
   const handleDragOver = (e: React.DragEvent, slotIndex: number) => {
     if (!isEditable) return;
-    
+
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
     setDragOverSlot(slotIndex);
@@ -126,13 +141,13 @@ const KitVoicePanel: React.FC<
 
   const handleDrop = async (e: React.DragEvent, slotIndex: number) => {
     if (!isEditable) return;
-    
+
     e.preventDefault();
     setDragOverSlot(null);
 
     const files = Array.from(e.dataTransfer.files);
-    const wavFiles = files.filter(file => 
-      file.name.toLowerCase().endsWith('.wav')
+    const wavFiles = files.filter((file) =>
+      file.name.toLowerCase().endsWith(".wav"),
     );
 
     if (wavFiles.length === 0) {
@@ -142,7 +157,7 @@ const KitVoicePanel: React.FC<
 
     // Use the first WAV file found
     const file = wavFiles[0];
-    
+
     try {
       // Get the full file path using Electron's webUtils
       let filePath: string;
@@ -160,18 +175,18 @@ const KitVoicePanel: React.FC<
         await onSampleAdd(voice, slotIndex, filePath);
       }
     } catch (error) {
-      console.error('Failed to assign sample:', error);
+      console.error("Failed to assign sample:", error);
       // Could show error message here
     }
   };
 
   const handleDeleteSample = async (slotIndex: number) => {
     if (!isEditable || !onSampleDelete) return;
-    
+
     try {
       await onSampleDelete(voice, slotIndex);
     } catch (error) {
-      console.error('Failed to delete sample:', error);
+      console.error("Failed to delete sample:", error);
       // Could show error message here
     }
   };
@@ -245,10 +260,10 @@ const KitVoicePanel: React.FC<
             const slotBaseClass =
               "truncate flex items-center gap-2 mb-1 min-h-[28px]"; // uniform height for all slots
             const isDragOver = dragOverSlot === i;
-            const dragOverClass = isDragOver 
-              ? " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300" 
+            const dragOverClass = isDragOver
+              ? " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300"
               : "";
-            
+
             if (sample) {
               const sampleKey = voice + ":" + sample;
               const isPlaying = samplePlaying[sampleKey];
@@ -269,7 +284,9 @@ const KitVoicePanel: React.FC<
                       : undefined
                   }
                   onClick={() => onSampleSelect && onSampleSelect(voice, i)}
-                  onDragOver={isEditable ? (e) => handleDragOver(e, i) : undefined}
+                  onDragOver={
+                    isEditable ? (e) => handleDragOver(e, i) : undefined
+                  }
                   onDragLeave={isEditable ? handleDragLeave : undefined}
                   onDrop={isEditable ? (e) => handleDrop(e, i) : undefined}
                 >
@@ -376,13 +393,17 @@ const KitVoicePanel: React.FC<
                 <li
                   key={`${voice}-empty-${i}`}
                   className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass}${
-                    isEditable ? " border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500" : ""
+                    isEditable
+                      ? " border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500"
+                      : ""
                   }`}
                   tabIndex={-1}
                   aria-selected={false}
                   data-testid={`empty-slot-${voice}-${i}`}
                   onClick={() => onSampleSelect && onSampleSelect(voice, i)}
-                  onDragOver={isEditable ? (e) => handleDragOver(e, i) : undefined}
+                  onDragOver={
+                    isEditable ? (e) => handleDragOver(e, i) : undefined
+                  }
                   onDragLeave={isEditable ? handleDragLeave : undefined}
                   onDrop={isEditable ? (e) => handleDrop(e, i) : undefined}
                 >

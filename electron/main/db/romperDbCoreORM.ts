@@ -288,7 +288,8 @@ export function deleteSamples(
       conditions.push(eq(samples.slot_number, filter.slotNumber));
     }
 
-    const whereCondition = conditions.length === 1 ? conditions[0] : and(...conditions);
+    const whereCondition =
+      conditions.length === 1 ? conditions[0] : and(...conditions);
     db.delete(samples).where(whereCondition).run();
   });
 }

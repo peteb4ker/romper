@@ -433,12 +433,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
 
   ipcMain.handle(
     "delete-sample-from-slot",
-    async (
-      _event,
-      kitName: string,
-      voiceNumber: number,
-      slotIndex: number,
-    ) => {
+    async (_event, kitName: string, voiceNumber: number, slotIndex: number) => {
       const localStorePath = inMemorySettings.localStorePath;
       if (!localStorePath) {
         return { success: false, error: "No local store path configured" };

@@ -31,8 +31,16 @@ interface KitVoicePanelsProps {
   isEditable?: boolean;
 
   // New props for drag-and-drop sample management (Task 5.2.2 & 5.2.3)
-  onSampleAdd?: (voice: number, slotIndex: number, filePath: string) => Promise<void>;
-  onSampleReplace?: (voice: number, slotIndex: number, filePath: string) => Promise<void>;
+  onSampleAdd?: (
+    voice: number,
+    slotIndex: number,
+    filePath: string,
+  ) => Promise<void>;
+  onSampleReplace?: (
+    voice: number,
+    slotIndex: number,
+    filePath: string,
+  ) => Promise<void>;
   onSampleDelete?: (voice: number, slotIndex: number) => Promise<void>;
 }
 

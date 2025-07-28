@@ -24,8 +24,26 @@ describe("KitsView", () => {
       getKits: vi.fn().mockResolvedValue({
         success: true,
         data: [
-          { name: "A0", bank: "A" },
-          { name: "A1", bank: "A" },
+          {
+            name: "A0",
+            bank_letter: "A",
+            alias: null,
+            artist: null,
+            editable: false,
+            locked: false,
+            step_pattern: null,
+            modified_since_sync: false,
+          },
+          {
+            name: "A1",
+            bank_letter: "A",
+            alias: null,
+            artist: null,
+            editable: false,
+            locked: false,
+            step_pattern: null,
+            modified_since_sync: false,
+          },
         ],
       }),
       getAllSamplesForKit: vi.fn().mockImplementation((kitName: string) => {

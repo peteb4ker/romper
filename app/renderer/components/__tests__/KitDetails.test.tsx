@@ -397,12 +397,14 @@ describe("KitDetails", () => {
       mockUseKitDetailsLogicInstance.mockReturnValue(updatedMockLogic);
 
       rerender(
-        <KitDetails
-          kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
-          onBack={() => {}}
-          onMessage={vi.fn()}
-        />,
+        <TestSettingsProvider>
+          <KitDetails
+            kitName="TestKit"
+            samples={{ 1: [], 2: [], 3: [], 4: [] }}
+            onBack={() => {}}
+            onMessage={vi.fn()}
+          />
+        </TestSettingsProvider>,
       );
 
       // Should now show editable

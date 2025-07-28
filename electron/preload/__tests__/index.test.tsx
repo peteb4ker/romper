@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock electron with proper isolation
-vi.mock("electron", () => ({
+// Mock require before any imports
+const mockElectron = {
   contextBridge: { exposeInMainWorld: vi.fn() },
   ipcRenderer: {
     invoke: vi.fn(),
@@ -10,45 +10,41 @@ vi.mock("electron", () => ({
     removeListener: vi.fn(),
   },
   webUtils: { getPathForFile: vi.fn() },
-}));
+};
+
+const mockSettingsManager = {
+  getSetting: vi.fn(),
+  setSetting: vi.fn(),
+  readSettings: vi.fn(),
+};
+
+const mockMenuEventForwarder = {
+  initialize: vi.fn(),
+};
+
+// Override require to return our mocks
+vi.stubGlobal("require", (module: string) => {
+  if (module === "electron") {
+    return mockElectron;
+  }
+  return {};
+});
+
+// Mock electron module
+vi.mock("electron", () => mockElectron);
 
 // Define mock objects at module scope for access in tests
-let mockContextBridge: { exposeInMainWorld: ReturnType<typeof vi.fn> };
-let mockIpcRenderer: {
-  invoke: ReturnType<typeof vi.fn>;
-  on: ReturnType<typeof vi.fn>;
-  removeAllListeners: ReturnType<typeof vi.fn>;
-  removeListener: ReturnType<typeof vi.fn>;
-};
-let mockWebUtils: { getPathForFile: ReturnType<typeof vi.fn> };
-let mockSettingsManager: {
-  getSetting: ReturnType<typeof vi.fn>;
-  setSetting: ReturnType<typeof vi.fn>;
-  readSettings: ReturnType<typeof vi.fn>;
-};
-let mockMenuEventForwarder: {
-  initialize: ReturnType<typeof vi.fn>;
-};
+let mockContextBridge: typeof mockElectron.contextBridge;
+let mockIpcRenderer: typeof mockElectron.ipcRenderer;
+let mockWebUtils: typeof mockElectron.webUtils;
 
-vi.mock("./settingsManager", () => {
-  mockSettingsManager = {
-    getSetting: vi.fn(),
-    setSetting: vi.fn(),
-    readSettings: vi.fn(),
-  };
-  return {
-    settingsManager: mockSettingsManager,
-  };
-});
+vi.mock("./settingsManager", () => ({
+  settingsManager: mockSettingsManager,
+}));
 
-vi.mock("./menuEventForwarding", () => {
-  mockMenuEventForwarder = {
-    initialize: vi.fn(),
-  };
-  return {
-    menuEventForwarder: mockMenuEventForwarder,
-  };
-});
+vi.mock("./menuEventForwarding", () => ({
+  menuEventForwarder: mockMenuEventForwarder,
+}));
 
 vi.mock("../../shared/db/types.js", () => ({
   Kit: {},
@@ -61,11 +57,10 @@ describe.skip("preload/index.tsx", () => {
     vi.clearAllMocks();
     vi.resetModules();
 
-    // Get fresh references to the mocked electron module
-    const electron = (await vi.importMock("electron")) as any;
-    mockContextBridge = electron.contextBridge;
-    mockIpcRenderer = electron.ipcRenderer;
-    mockWebUtils = electron.webUtils;
+    // Get references to the hoisted mocks
+    mockContextBridge = mockElectron.contextBridge;
+    mockIpcRenderer = mockElectron.ipcRenderer;
+    mockWebUtils = mockElectron.webUtils;
   });
 
   it("exposes romperEnv in main world", async () => {
@@ -125,6 +120,7 @@ describe.skip("preload/index.tsx", () => {
         replaceSampleInSlot: expect.any(Function),
         deleteSampleFromSlot: expect.any(Function),
         validateSampleSources: expect.any(Function),
+        validateSampleFormat: expect.any(Function),
       }),
     );
   });

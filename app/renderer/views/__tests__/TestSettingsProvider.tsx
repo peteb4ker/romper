@@ -39,7 +39,12 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     confirmDestructiveActions,
     localStoreStatus: {
       isValid: true,
+      hasLocalStore: true,
+      localStorePath: "/mock/local/store",
     },
+
+    // State
+    isInitialized: true,
 
     // Actions
     setLocalStorePath,

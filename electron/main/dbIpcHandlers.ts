@@ -16,7 +16,7 @@ import {
   getAllSamples,
   getKit,
   getKits,
-  getKitSamples as getAllSamplesForKit,
+  getKitSamples,
   updateBank,
   updateKit,
   updateVoiceAlias,
@@ -25,6 +25,53 @@ import {
   validateLocalStoreAgainstDb,
   validateLocalStoreBasic,
 } from "./localStoreValidator.js";
+
+/**
+ * Task 5.2.5: Enhanced file validation for sample operations
+ * Validates file existence, format, and basic WAV file integrity
+ */
+function validateSampleFile(filePath: string): { isValid: boolean; error?: string } {
+  // Check file existence
+  if (!fs.existsSync(filePath)) {
+    return { isValid: false, error: "Sample file not found" };
+  }
+
+  // Check file extension
+  if (!filePath.toLowerCase().endsWith(".wav")) {
+    return { isValid: false, error: "Only WAV files are supported" };
+  }
+
+  try {
+    // Check file is readable and has minimum size for WAV header
+    const stats = fs.statSync(filePath);
+    if (stats.size < 44) {
+      return { isValid: false, error: "File too small to be a valid WAV file" };
+    }
+
+    // Read first 12 bytes to validate WAV header
+    const fd = fs.openSync(filePath, "r");
+    const buffer = Buffer.alloc(12);
+    fs.readSync(fd, buffer, 0, 12, 0);
+    fs.closeSync(fd);
+
+    // Check RIFF signature
+    if (buffer.toString("ascii", 0, 4) !== "RIFF") {
+      return { isValid: false, error: "Invalid WAV file: missing RIFF signature" };
+    }
+
+    // Check WAVE format
+    if (buffer.toString("ascii", 8, 12) !== "WAVE") {
+      return { isValid: false, error: "Invalid WAV file: missing WAVE format identifier" };
+    }
+
+    return { isValid: true };
+  } catch (error) {
+    return {
+      isValid: false,
+      error: `Failed to validate file: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
 
 export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("create-romper-db", async (_event, dbDir: string) => {
@@ -142,7 +189,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       return { success: false, error: "No local store path configured" };
     }
     const dbDir = path.join(localStorePath, ".romperdb");
-    return getAllSamplesForKit(dbDir, kitName);
+    return getKitSamples(dbDir, kitName);
   });
 
   ipcMain.handle("rescan-kit", async (_event, kitName: string) => {
@@ -336,14 +383,20 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       const dbDir = path.join(localStorePath, ".romperdb");
 
       try {
-        // Validate file exists
-        if (!fs.existsSync(filePath)) {
-          return { success: false, error: "Sample file not found" };
+        // Task 5.2.4: Validate voice number (1-4)
+        if (voiceNumber < 1 || voiceNumber > 4) {
+          return { success: false, error: "Voice number must be between 1 and 4" };
         }
 
-        // Validate file is WAV
-        if (!filePath.toLowerCase().endsWith(".wav")) {
-          return { success: false, error: "Only WAV files are supported" };
+        // Task 5.2.4: Validate slot index (0-11 for 12 slots total, converted to 1-12 for storage)
+        if (slotIndex < 0 || slotIndex > 11) {
+          return { success: false, error: "Slot index must be between 0 and 11 (12 slots per voice)" };
+        }
+
+        // Task 5.2.5: Enhanced file validation during operations
+        const fileValidation = validateSampleFile(filePath);
+        if (!fileValidation.isValid) {
+          return { success: false, error: fileValidation.error };
         }
 
         // Create sample record
@@ -387,14 +440,20 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       const dbDir = path.join(localStorePath, ".romperdb");
 
       try {
-        // Validate file exists
-        if (!fs.existsSync(filePath)) {
-          return { success: false, error: "Sample file not found" };
+        // Task 5.2.4: Validate voice number (1-4)
+        if (voiceNumber < 1 || voiceNumber > 4) {
+          return { success: false, error: "Voice number must be between 1 and 4" };
         }
 
-        // Validate file is WAV
-        if (!filePath.toLowerCase().endsWith(".wav")) {
-          return { success: false, error: "Only WAV files are supported" };
+        // Task 5.2.4: Validate slot index (0-11 for 12 slots total, converted to 1-12 for storage)
+        if (slotIndex < 0 || slotIndex > 11) {
+          return { success: false, error: "Slot index must be between 0 and 11 (12 slots per voice)" };
+        }
+
+        // Task 5.2.5: Enhanced file validation during operations
+        const fileValidation = validateSampleFile(filePath);
+        if (!fileValidation.isValid) {
+          return { success: false, error: fileValidation.error };
         }
 
         // First delete existing sample at this slot
@@ -441,6 +500,16 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       const dbDir = path.join(localStorePath, ".romperdb");
 
       try {
+        // Task 5.2.4: Validate voice number (1-4)
+        if (voiceNumber < 1 || voiceNumber > 4) {
+          return { success: false, error: "Voice number must be between 1 and 4" };
+        }
+
+        // Task 5.2.4: Validate slot index (0-11 for 12 slots total, converted to 1-12 for storage)
+        if (slotIndex < 0 || slotIndex > 11) {
+          return { success: false, error: "Slot index must be between 0 and 11 (12 slots per voice)" };
+        }
+
         return deleteSamples(dbDir, kitName, {
           voiceNumber,
           slotNumber: slotIndex + 1, // Convert 0-based to 1-based
@@ -451,6 +520,61 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
         return {
           success: false,
           error: `Failed to delete sample: ${errorMessage}`,
+        };
+      }
+    },
+  );
+
+  // Task 5.2.5: Validate source_path files for existing samples
+  ipcMain.handle(
+    "validate-sample-sources",
+    async (_event, kitName: string) => {
+      const localStorePath = inMemorySettings.localStorePath;
+      if (!localStorePath) {
+        return { success: false, error: "No local store path configured" };
+      }
+      const dbDir = path.join(localStorePath, ".romperdb");
+
+      try {
+        const samplesResult = getKitSamples(dbDir, kitName);
+        if (!samplesResult.success) {
+          return samplesResult;
+        }
+
+        const samples = samplesResult.data || [];
+        const invalidSamples: Array<{
+          filename: string;
+          source_path: string;
+          error: string;
+        }> = [];
+
+        for (const sample of samples) {
+          if (sample.source_path) {
+            const validation = validateSampleFile(sample.source_path);
+            if (!validation.isValid) {
+              invalidSamples.push({
+                filename: sample.filename,
+                source_path: sample.source_path,
+                error: validation.error || "Unknown validation error",
+              });
+            }
+          }
+        }
+
+        return {
+          success: true,
+          data: {
+            totalSamples: samples.length,
+            invalidSamples,
+            validSamples: samples.length - invalidSamples.length,
+          },
+        };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          error: `Failed to validate sample sources: ${errorMessage}`,
         };
       }
     },

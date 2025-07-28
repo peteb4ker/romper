@@ -186,8 +186,8 @@ _Last updated: 2025-07-26_
     - [x] 5.2.1 Store external samples via source_path field (no copying to local store)
     - [x] 5.2.2 Drag-and-drop sample assignment to voice slots
     - [x] 5.2.3 Add/Replace/Delete sample operations with source_path tracking
-    - [ ] 5.2.4 12-slot limit per voice using explicit voice_number field (1-4)
-    - [ ] 5.2.5 Validate source file existence during operations
+    - [x] 5.2.4 12-slot limit per voice using explicit voice_number field (1-4)
+    - [x] 5.2.5 Validate source file existence during operations
   - [ ] 5.3 Implement modification state tracking:
     - [ ] 5.3.1 Mark kits as 'modified' when changes made after last sync
     - [ ] 5.3.2 Display modification status in UI

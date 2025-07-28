@@ -345,6 +345,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
       slotIndex,
     );
   },
+  // Task 5.2.5: Validate source_path files for existing samples
+  validateSampleSources: (kitName: string) => {
+    console.log("[IPC] validateSampleSources invoked", kitName);
+    return ipcRenderer.invoke("validate-sample-sources", kitName);
+  },
 });
 
 // Handle menu events from main process and forward to renderer as DOM events

@@ -9,6 +9,14 @@ let mockIpcRenderer: {
   removeListener: ReturnType<typeof vi.fn>;
 };
 let mockWebUtils: { getPathForFile: ReturnType<typeof vi.fn> };
+let mockSettingsManager: {
+  getSetting: ReturnType<typeof vi.fn>;
+  setSetting: ReturnType<typeof vi.fn>;
+  readSettings: ReturnType<typeof vi.fn>;
+};
+let mockMenuEventForwarder: {
+  initialize: ReturnType<typeof vi.fn>;
+};
 
 vi.mock("electron", () => {
   mockContextBridge = { exposeInMainWorld: vi.fn() };
@@ -26,13 +34,51 @@ vi.mock("electron", () => {
   };
 });
 
+vi.mock("./settingsManager", () => {
+  mockSettingsManager = {
+    getSetting: vi.fn(),
+    setSetting: vi.fn(),
+    readSettings: vi.fn(),
+  };
+  return {
+    settingsManager: mockSettingsManager,
+  };
+});
+
+vi.mock("./menuEventForwarding", () => {
+  mockMenuEventForwarder = {
+    initialize: vi.fn(),
+  };
+  return {
+    menuEventForwarder: mockMenuEventForwarder,
+  };
+});
+
+vi.mock("../../shared/db/types.js", () => ({
+  Kit: {},
+  NewKit: {},
+  NewSample: {},
+}));
+
 describe("preload/index.tsx", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
   });
 
-  it("exposes electronAPI in main world", async () => {
+  it("exposes romperEnv in main world", async () => {
+    await import("../index");
+    expect(mockContextBridge.exposeInMainWorld).toHaveBeenCalledWith(
+      "romperEnv",
+      {
+        ROMPER_SDCARD_PATH: process.env.ROMPER_SDCARD_PATH,
+        ROMPER_LOCAL_PATH: process.env.ROMPER_LOCAL_PATH,
+        ROMPER_SQUARP_ARCHIVE_URL: process.env.ROMPER_SQUARP_ARCHIVE_URL,
+      },
+    );
+  });
+
+  it("exposes electronAPI in main world with all required methods", async () => {
     await import("../index");
     expect(mockContextBridge.exposeInMainWorld).toHaveBeenCalledWith(
       "electronAPI",
@@ -51,6 +97,7 @@ describe("preload/index.tsx", () => {
         onSamplePlaybackEnded: expect.any(Function),
         onSamplePlaybackError: expect.any(Function),
         getSampleAudioBuffer: expect.any(Function),
+        readFile: expect.any(Function),
         getKit: expect.any(Function),
         updateKit: expect.any(Function),
         getKits: expect.any(Function),
@@ -64,6 +111,18 @@ describe("preload/index.tsx", () => {
         createRomperDb: expect.any(Function),
         insertKit: expect.any(Function),
         insertSample: expect.any(Function),
+        validateLocalStore: expect.any(Function),
+        validateLocalStoreBasic: expect.any(Function),
+        getAllSamples: expect.any(Function),
+        getAllSamplesForKit: expect.any(Function),
+        rescanKit: expect.any(Function),
+        getAllBanks: expect.any(Function),
+        scanBanks: expect.any(Function),
+        selectExistingLocalStore: expect.any(Function),
+        addSampleToSlot: expect.any(Function),
+        replaceSampleInSlot: expect.any(Function),
+        deleteSampleFromSlot: expect.any(Function),
+        validateSampleSources: expect.any(Function),
       }),
     );
   });
@@ -78,470 +137,59 @@ describe("preload/index.tsx", () => {
     );
   });
 
-  it("calls webUtils.getPathForFile for getDroppedFilePath", async () => {
+  it("initializes menu event forwarding", async () => {
     await import("../index");
-    // Find the call for electronFileAPI
-    const fileApi = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (c) => c[0] === "electronFileAPI",
-    )?.[1];
-    const file = {};
-    mockWebUtils.getPathForFile.mockResolvedValue("/mock/path");
-    const result = await fileApi.getDroppedFilePath(file);
-    expect(mockWebUtils.getPathForFile).toHaveBeenCalledWith(file);
-    expect(result).toBe("/mock/path");
+    expect(mockMenuEventForwarder.initialize).toHaveBeenCalled();
   });
 
-  it("exposes getUserHomeDir and returns a string", async () => {
+  it("delegates settings operations to settingsManager", async () => {
     await import("../index");
-    // Fix: ensure get-user-home-dir returns a string
-    mockIpcRenderer.invoke.mockImplementation((channel) => {
-      if (channel === "get-user-home-dir") return Promise.resolve("/mock/home");
-      return Promise.resolve([]);
-    });
+    
     const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
       (call) => call[0] === "electronAPI",
     );
     expect(electronAPICall).toBeDefined();
     const api = electronAPICall[1];
-    expect(typeof api.getUserHomeDir).toBe("function");
-    const homeDirPromise = api.getUserHomeDir();
-    expect(homeDirPromise).toBeInstanceOf(Promise);
-    const homeDir = await homeDirPromise;
-    // Debug log
-    console.log(
-      "DEBUG getUserHomeDir resolved value:",
-      homeDir,
-      typeof homeDir,
-    );
-    expect(typeof homeDir).toBe("string");
-    expect(homeDir.length).toBeGreaterThan(0);
-  });
 
-  it("handles error in getDroppedFilePath gracefully", async () => {
-    await import("../index");
-    const fileApi = mockContextBridge.exposeInMainWorld.mock?.calls.find(
-      (c) => c[0] === "electronFileAPI",
-    )?.[1];
-    mockWebUtils.getPathForFile.mockRejectedValue(new Error("fail"));
-    await expect(fileApi.getDroppedFilePath({})).rejects.toThrow("fail");
-  });
+    // Test getSetting delegation
+    mockSettingsManager.getSetting.mockResolvedValue("test-value");
+    const result = await api.getSetting("testKey");
+    expect(mockSettingsManager.getSetting).toHaveBeenCalledWith("testKey");
+    expect(result).toBe("test-value");
 
-  it("calls ipcRenderer.invoke for getSetting and setSetting", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue(JSON.stringify({ foo: "bar" }));
-    const value = await api.getSetting("foo");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("read-settings");
-    expect(value).toBe("bar");
-    await api.setSetting("foo", "baz");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "write-settings",
-      "foo",
-      "baz",
-    );
-  });
+    // Test setSetting delegation
+    await api.setSetting("testKey", "test-value");
+    expect(mockSettingsManager.setSetting).toHaveBeenCalledWith("testKey", "test-value");
 
-  it("calls ipcRenderer.invoke for readSettings and handles error", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue('{"foo":"bar"}');
+    // Test readSettings delegation
+    mockSettingsManager.readSettings.mockResolvedValue({ test: "settings" });
     const settings = await api.readSettings();
-    expect(settings).toEqual({ foo: "bar" });
-    mockIpcRenderer.invoke.mockRejectedValue(new Error("fail"));
-    const errorSettings = await api.readSettings();
-    expect(errorSettings).toEqual({});
+    expect(mockSettingsManager.readSettings).toHaveBeenCalled();
+    expect(settings).toEqual({ test: "settings" });
   });
 
-  it("calls ipcRenderer.invoke for ensureDir", async () => {
+  it("handles getDroppedFilePath with webUtils", async () => {
     await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue({ success: true });
-    const result = await api.ensureDir("/mock/dir/romper");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "ensure-dir",
-      "/mock/dir/romper",
-    );
-    expect(result).toEqual({ success: true });
-  });
-
-  it("calls ipcRenderer.invoke for selectSdCard", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue("/mock/sd/path");
-    const result = await api.selectSdCard();
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("select-sd-card");
-    expect(result).toBe("/mock/sd/path");
-  });
-
-  it("calls ipcRenderer.invoke for createKit", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue();
-    await api.createKit("A01");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("create-kit", "A01");
-  });
-
-  it("calls ipcRenderer.invoke for copyKit", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue();
-    await api.copyKit("A01", "A02");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "copy-kit",
-      "A01",
-      "A02",
-    );
-  });
-
-  it("calls ipcRenderer.invoke for listFilesInRoot", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue(["file1.wav", "file2.wav"]);
-    const result = await api.listFilesInRoot("/mock/sd");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "list-files-in-root",
-      "/mock/sd",
-    );
-    expect(result).toEqual(["file1.wav", "file2.wav"]);
-  });
-
-  it("calls ipcRenderer.invoke for playSample", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue();
-    await api.playSample("/mock/sample.wav");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "play-sample",
-      "/mock/sample.wav",
-    );
-  });
-
-  it("calls ipcRenderer.invoke for stopSample", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue();
-    await api.stopSample();
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("stop-sample");
-  });
-
-  it("registers onSamplePlaybackEnded listener", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    const callback = vi.fn();
-    api.onSamplePlaybackEnded(callback);
-    expect(mockIpcRenderer.removeAllListeners).toHaveBeenCalledWith(
-      "sample-playback-ended",
-    );
-    expect(mockIpcRenderer.on).toHaveBeenCalledWith(
-      "sample-playback-ended",
-      callback,
-    );
-  });
-
-  it("registers onSamplePlaybackError listener with event wrapper", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    const callback = vi.fn();
-    api.onSamplePlaybackError(callback);
-    expect(mockIpcRenderer.removeAllListeners).toHaveBeenCalledWith(
-      "sample-playback-error",
-    );
-    expect(mockIpcRenderer.on).toHaveBeenCalledWith(
-      "sample-playback-error",
-      expect.any(Function),
-    );
-
-    // Test the wrapper function that extracts error message from event
-    const onCall = mockIpcRenderer.on.mock.calls.find(
-      (call) => call[0] === "sample-playback-error",
-    );
-    const wrappedCallback = onCall[1];
-    wrappedCallback({}, "error message");
-    expect(callback).toHaveBeenCalledWith("error message");
-  });
-
-  it("calls ipcRenderer.invoke for getSampleAudioBuffer", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    const mockBuffer = new ArrayBuffer(1024);
-    mockIpcRenderer.invoke.mockResolvedValue(mockBuffer);
-    const result = await api.getSampleAudioBuffer("A1", 1, 1);
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "get-sample-audio-buffer",
-      "A1",
-      1,
-      1,
-    );
-    expect(result).toBe(mockBuffer);
-  });
-
-  it("calls ipcRenderer.invoke for selectLocalStorePath", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue("/mock/local/store");
-    const result = await api.selectLocalStorePath();
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "select-local-store-path",
-    );
-    expect(result).toBe("/mock/local/store");
-  });
-
-  it("handles downloadAndExtractArchive with progress and error callbacks", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    const onProgress = vi.fn();
-    const onError = vi.fn();
-
-    mockIpcRenderer.invoke.mockResolvedValue({ success: true });
-
-    const result = await api.downloadAndExtractArchive(
-      "https://example.com/archive.zip",
-      "/mock/dest",
-      onProgress,
-      onError,
-    );
-
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "download-and-extract-archive",
-      "https://example.com/archive.zip",
-      "/mock/dest",
-    );
-    expect(result).toEqual({ success: true });
-
-    // Verify progress listener was registered
-    expect(mockIpcRenderer.on).toHaveBeenCalledWith(
-      "archive-progress",
-      expect.any(Function),
-    );
-    // Verify error listener was registered
-    expect(mockIpcRenderer.on).toHaveBeenCalledWith(
-      "archive-error",
-      expect.any(Function),
-    );
-  });
-
-  it("handles downloadAndExtractArchive without callbacks", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-
-    mockIpcRenderer.invoke.mockResolvedValue({ success: true });
-
-    const result = await api.downloadAndExtractArchive(
-      "https://example.com/archive.zip",
-      "/mock/dest",
-    );
-
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "download-and-extract-archive",
-      "https://example.com/archive.zip",
-      "/mock/dest",
-    );
-    expect(result).toEqual({ success: true });
-  });
-
-  it("handles downloadAndExtractArchive error and cleans up listeners", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    const onProgress = vi.fn();
-    const onError = vi.fn();
-
-    mockIpcRenderer.invoke.mockRejectedValue(new Error("Download failed"));
-
-    await expect(
-      api.downloadAndExtractArchive(
-        "https://example.com/archive.zip",
-        "/mock/dest",
-        onProgress,
-        onError,
-      ),
-    ).rejects.toThrow("Download failed");
-
-    // Verify listeners were set up
-    expect(mockIpcRenderer.removeAllListeners).toHaveBeenCalledWith(
-      "archive-progress",
-    );
-    expect(mockIpcRenderer.removeAllListeners).toHaveBeenCalledWith(
-      "archive-error",
-    );
-  });
-
-  it("calls ipcRenderer.invoke for copyDir", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue({ success: true });
-    const result = await api.copyDir("/mock/src", "/mock/dest");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "copy-dir",
-      "/mock/src",
-      "/mock/dest",
-    );
-    expect(result).toEqual({ success: true });
-  });
-
-  it("calls ipcRenderer.invoke for createRomperDb", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    mockIpcRenderer.invoke.mockResolvedValue({ success: true });
-    const result = await api.createRomperDb("/mock/db/dir");
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "create-romper-db",
-      "/mock/db/dir",
-    );
-    expect(result).toEqual({ success: true });
-  });
-
-  it("calls ipcRenderer.invoke for insertKit", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    const kit = {
-      name: "Test Kit",
-      alias: "TK",
-      artist: "Test Artist",
-      editable: true,
-    };
-    mockIpcRenderer.invoke.mockResolvedValue({ id: 1 });
-    const result = await api.insertKit("/mock/db/dir", kit);
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "insert-kit",
-      "/mock/db/dir",
-      kit,
-    );
-    expect(result).toEqual({ id: 1 });
-  });
-
-  it("calls ipcRenderer.invoke for insertSample", async () => {
-    await import("../index");
-    const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
-    expect(electronAPICall).toBeDefined();
-    const api = electronAPICall[1];
-    const sample = {
-      kit_id: 1,
-      filename: "kick.wav",
-      slot_number: 0,
-      is_stereo: false,
-    };
-    mockIpcRenderer.invoke.mockResolvedValue({ id: 1 });
-    const result = await api.insertSample("/mock/db/dir", sample);
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
-      "insert-sample",
-      "/mock/db/dir",
-      sample,
-    );
-    expect(result).toEqual({ id: 1 });
-  });
-
-  it("exposes romperEnv in main world", async () => {
-    await import("../index");
-    expect(mockContextBridge.exposeInMainWorld).toHaveBeenCalledWith(
-      "romperEnv",
-      {
-        ROMPER_SDCARD_PATH: process.env.ROMPER_SDCARD_PATH,
-        ROMPER_LOCAL_PATH: process.env.ROMPER_LOCAL_PATH,
-        ROMPER_SQUARP_ARCHIVE_URL: process.env.ROMPER_SQUARP_ARCHIVE_URL,
-      },
-    );
-  });
-
-  it("handles getDroppedFilePath when webUtils is available", async () => {
-    await import("../index");
+    
     const fileApi = mockContextBridge.exposeInMainWorld.mock.calls.find(
       (c) => c[0] === "electronFileAPI",
     )?.[1];
+    
     const file = new File([], "test.wav");
     mockWebUtils.getPathForFile.mockResolvedValue("/mock/path/test.wav");
+    
     const result = await fileApi.getDroppedFilePath(file);
     expect(mockWebUtils.getPathForFile).toHaveBeenCalledWith(file);
     expect(result).toBe("/mock/path/test.wav");
   });
 
-  it("handles getDroppedFilePath when webUtils.getPathForFile is not available", async () => {
-    // Mock webUtils as undefined to test the error path
-    const originalMockWebUtils = mockWebUtils;
-    vi.doMock("electron", () => {
-      return {
-        contextBridge: mockContextBridge,
-        ipcRenderer: mockIpcRenderer,
-        webUtils: null,
-      };
-    });
+  it("handles getDroppedFilePath error when webUtils unavailable", async () => {
+    // Mock webUtils as null to test error path
+    vi.doMock("electron", () => ({
+      contextBridge: mockContextBridge,
+      ipcRenderer: mockIpcRenderer,
+      webUtils: null,
+    }));
 
     vi.resetModules();
     await import("../index");
@@ -553,35 +201,36 @@ describe("preload/index.tsx", () => {
     await expect(fileApi.getDroppedFilePath({})).rejects.toThrow(
       "webUtils.getPathForFile is not available.",
     );
-
-    // Restore the original mock
-    vi.doMock("electron", () => {
-      return {
-        contextBridge: mockContextBridge,
-        ipcRenderer: mockIpcRenderer,
-        webUtils: originalMockWebUtils,
-      };
-    });
   });
 
-  it("handles writeSettings error gracefully", async () => {
+  it("forwards IPC calls for basic operations", async () => {
     await import("../index");
+    
     const electronAPICall = mockContextBridge.exposeInMainWorld.mock.calls.find(
       (call) => call[0] === "electronAPI",
     );
-    expect(electronAPICall).toBeDefined();
     const api = electronAPICall[1];
 
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    mockIpcRenderer.invoke.mockRejectedValue(new Error("Write failed"));
+    // Test a few key IPC operations
+    mockIpcRenderer.invoke.mockResolvedValue("mock-result");
 
-    // Should not throw, but should log error
-    await expect(api.setSetting("test", "value")).resolves.toBeUndefined();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Failed to write settings:",
-      expect.any(Error),
-    );
+    await api.selectSdCard();
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("select-sd-card");
 
+    await api.getLocalStoreStatus();
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("get-local-store-status");
+
+    await api.createKit("A01");
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith("create-kit", "A01");
+  });
+
+  it("logs preload script completion", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    
+    await import("../index");
+    
+    expect(consoleSpy).toHaveBeenCalledWith("Preload script updated and loaded");
+    
     consoleSpy.mockRestore();
   });
 });

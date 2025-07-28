@@ -94,7 +94,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
   unzipperStreams.length = 0;
   lastWriteStream = null;
-  const { registerIpcHandlers } = await import("../ipcHandlers");
+  const { registerIpcHandlers } = await import("../../ipcHandlers");
   registerIpcHandlers({}, {});
 });
 

@@ -1,0 +1,258 @@
+import * as fs from "fs";
+import * as path from "path";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock electron app
+vi.mock("electron", () => ({
+  app: {
+    getPath: vi.fn(),
+  },
+}));
+
+// Mock fs
+vi.mock("fs", () => ({
+  writeFileSync: vi.fn(),
+}));
+
+// Mock path
+vi.mock("path", () => ({
+  join: vi.fn((...args) => args.join("/")),
+}));
+
+import { app } from "electron";
+import { SettingsService } from "../settingsService.js";
+
+const mockApp = vi.mocked(app);
+const mockFs = vi.mocked(fs);
+const mockPath = vi.mocked(path);
+
+describe("SettingsService", () => {
+  let settingsService: SettingsService;
+  let mockInMemorySettings: Record<string, any>;
+  
+  beforeEach(() => {
+    vi.clearAllMocks();
+    settingsService = new SettingsService();
+    mockInMemorySettings = {
+      localStorePath: "/test/local/store",
+      theme: "dark",
+    };
+    
+    mockApp.getPath.mockReturnValue("/test/userData");
+    mockPath.join.mockImplementation((...args) => args.join("/"));
+    
+    // Silence console.log for tests
+    vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  describe("readSettings", () => {
+    it("returns the current in-memory settings", () => {
+      const result = settingsService.readSettings(mockInMemorySettings);
+      
+      expect(result).toBe(mockInMemorySettings);
+      expect(result).toEqual({
+        localStorePath: "/test/local/store",
+        theme: "dark",
+      });
+    });
+
+    it("returns empty object for empty settings", () => {
+      const emptySettings = {};
+      const result = settingsService.readSettings(emptySettings);
+      
+      expect(result).toBe(emptySettings);
+      expect(result).toEqual({});
+    });
+  });
+
+  describe("writeSetting", () => {
+    it("updates in-memory settings and writes to file", () => {
+      settingsService.writeSetting(mockInMemorySettings, "newKey", "newValue");
+
+      // Should update in-memory settings
+      expect(mockInMemorySettings.newKey).toBe("newValue");
+      expect(mockInMemorySettings).toEqual({
+        localStorePath: "/test/local/store",
+        theme: "dark",
+        newKey: "newValue",
+      });
+
+      // Should write to persistent storage
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "/test/userData/romper-settings.json",
+        JSON.stringify(mockInMemorySettings, null, 2),
+        "utf-8"
+      );
+    });
+
+    it("overwrites existing keys", () => {
+      settingsService.writeSetting(mockInMemorySettings, "theme", "light");
+
+      expect(mockInMemorySettings.theme).toBe("light");
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "/test/userData/romper-settings.json",
+        JSON.stringify({
+          localStorePath: "/test/local/store",
+          theme: "light",
+        }, null, 2),
+        "utf-8"
+      );
+    });
+
+    it("handles complex values", () => {
+      const complexValue = {
+        nested: { array: [1, 2, 3], boolean: true },
+        nullValue: null,
+      };
+      
+      settingsService.writeSetting(mockInMemorySettings, "complex", complexValue);
+
+      expect(mockInMemorySettings.complex).toEqual(complexValue);
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "/test/userData/romper-settings.json",
+        expect.stringContaining('"complex"'),
+        "utf-8"
+      );
+    });
+
+    it("constructs correct settings file path", () => {
+      mockApp.getPath.mockReturnValue("/custom/userData");
+      
+      settingsService.writeSetting(mockInMemorySettings, "test", "value");
+
+      expect(mockApp.getPath).toHaveBeenCalledWith("userData");
+      expect(mockPath.join).toHaveBeenCalledWith("/custom/userData", "romper-settings.json");
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "/custom/userData/romper-settings.json",
+        expect.any(String),
+        "utf-8"
+      );
+    });
+
+    it("logs operations for debugging", () => {
+      const consoleSpy = vi.spyOn(console, "log");
+      
+      settingsService.writeSetting(mockInMemorySettings, "debugKey", "debugValue");
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[SettingsService] write-setting called with key:",
+        "debugKey",
+        "value:",
+        "debugValue"
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[SettingsService] Settings path:",
+        "/test/userData/romper-settings.json"
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[SettingsService] Updated inMemorySettings:",
+        mockInMemorySettings
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[SettingsService] Settings written to file"
+      );
+    });
+  });
+
+  describe("getLocalStorePath", () => {
+    it("returns environment override when provided", () => {
+      const result = settingsService.getLocalStorePath(
+        mockInMemorySettings,
+        "/env/override/path"
+      );
+
+      expect(result).toBe("/env/override/path");
+    });
+
+    it("returns in-memory settings path when no environment override", () => {
+      const result = settingsService.getLocalStorePath(mockInMemorySettings);
+
+      expect(result).toBe("/test/local/store");
+    });
+
+    it("returns null when no path is configured", () => {
+      const emptySettings = {};
+      const result = settingsService.getLocalStorePath(emptySettings);
+
+      expect(result).toBeNull();
+    });
+
+    it("prioritizes environment override over in-memory settings", () => {
+      const result = settingsService.getLocalStorePath(
+        mockInMemorySettings,
+        "/priority/env/path"
+      );
+
+      expect(result).toBe("/priority/env/path");
+      // Should not use the in-memory setting
+      expect(result).not.toBe("/test/local/store");
+    });
+
+    it("handles falsy environment override", () => {
+      const result = settingsService.getLocalStorePath(
+        mockInMemorySettings,
+        ""
+      );
+
+      expect(result).toBe("/test/local/store");
+    });
+  });
+
+  describe("validateLocalStorePath", () => {
+    it("returns success when path is configured via environment", () => {
+      const result = settingsService.validateLocalStorePath(
+        {},
+        "/env/path"
+      );
+
+      expect(result).toEqual({
+        success: true,
+        path: "/env/path",
+      });
+    });
+
+    it("returns success when path is configured in memory", () => {
+      const result = settingsService.validateLocalStorePath(mockInMemorySettings);
+
+      expect(result).toEqual({
+        success: true,
+        path: "/test/local/store",
+      });
+    });
+
+    it("returns failure when no path is configured", () => {
+      const emptySettings = {};
+      const result = settingsService.validateLocalStorePath(emptySettings);
+
+      expect(result).toEqual({
+        success: false,
+        error: "No local store configured",
+      });
+    });
+
+    it("prioritizes environment override in validation", () => {
+      const result = settingsService.validateLocalStorePath(
+        mockInMemorySettings,
+        "/env/override"
+      );
+
+      expect(result).toEqual({
+        success: true,
+        path: "/env/override",
+      });
+    });
+
+    it("fails validation with empty environment override and no memory setting", () => {
+      const emptySettings = {};
+      const result = settingsService.validateLocalStorePath(
+        emptySettings,
+        ""
+      );
+
+      expect(result).toEqual({
+        success: false,
+        error: "No local store configured",
+      });
+    });
+  });
+});

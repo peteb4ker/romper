@@ -112,10 +112,10 @@ const KitsView = () => {
     },
   });
 
-  console.log("[KitsView] Local store status check:");
-  console.log("[KitsView] localStorePath:", localStorePath);
-  console.log("[KitsView] localStoreStatus:", localStoreStatus);
-  console.log("[KitsView] needsLocalStoreSetup:", needsLocalStoreSetup);
+  // Local store status logging (remove in production)
+  // console.log("[KitsView] localStorePath:", localStorePath);
+  // console.log("[KitsView] localStoreStatus:", JSON.stringify(localStoreStatus, null, 2));
+  // console.log("[KitsView] needsLocalStoreSetup:", needsLocalStoreSetup);
 
   // Auto-trigger wizard on startup if local store is not configured
   useEffect(() => {

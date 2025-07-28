@@ -1,6 +1,101 @@
-import { contextBridge, ipcRenderer, webUtils } from "electron";
+const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
 import type { Kit, NewKit, NewSample } from "../../shared/db/types.js";
+
+// ===== SETTINGS MANAGER =====
+interface SettingsData {
+  localStorePath?: string;
+  darkMode?: boolean;
+  theme?: string;
+}
+
+type SettingsKey = keyof SettingsData;
+
+class SettingsManager {
+  async readSettings(): Promise<SettingsData> {
+    try {
+      const settings = await ipcRenderer.invoke("read-settings");
+      const parsedSettings =
+        typeof settings === "string" ? JSON.parse(settings) : settings || {};
+
+      // Override localStorePath with environment variable if set
+      if (process.env.ROMPER_LOCAL_PATH) {
+        parsedSettings.localStorePath = process.env.ROMPER_LOCAL_PATH;
+      }
+
+      return parsedSettings;
+    } catch (e) {
+      console.error("Failed to read settings:", e);
+      // Even if reading settings fails, check for environment variable
+      const fallbackSettings: SettingsData = {};
+      if (process.env.ROMPER_LOCAL_PATH) {
+        fallbackSettings.localStorePath = process.env.ROMPER_LOCAL_PATH;
+      }
+      return fallbackSettings;
+    }
+  }
+
+  async writeSettings(key: SettingsKey, value: any): Promise<void> {
+    try {
+      await ipcRenderer.invoke("write-settings", key, value);
+    } catch (e) {
+      console.error("Failed to write settings:", e);
+    }
+  }
+
+  async getSetting(key: SettingsKey): Promise<any> {
+    console.log("[IPC] getSetting invoked", key);
+
+    // For localStorePath, check environment variable first
+    if (key === "localStorePath" && process.env.ROMPER_LOCAL_PATH) {
+      return process.env.ROMPER_LOCAL_PATH;
+    }
+
+    const settings = await this.readSettings();
+    return settings[key];
+  }
+
+  async setSetting(key: SettingsKey, value: any): Promise<void> {
+    console.log(`[IPC] setSetting called with key: ${key}, value:`, value);
+    await this.writeSettings(key, value);
+  }
+}
+
+const settingsManager = new SettingsManager();
+
+// ===== MENU EVENT FORWARDER =====
+interface MenuEventMap {
+  "menu-scan-all-kits": void;
+  "menu-scan-banks": void;
+  "menu-validate-database": void;
+  "menu-setup-local-store": void;
+  "menu-change-local-store-directory": void;
+  "menu-about": void;
+}
+
+class MenuEventForwarder {
+  private eventMappings: Array<{
+    ipcEvent: keyof MenuEventMap;
+    domEvent: string;
+  }> = [
+    { ipcEvent: "menu-scan-all-kits", domEvent: "menu-scan-all-kits" },
+    { ipcEvent: "menu-scan-banks", domEvent: "menu-scan-banks" },
+    { ipcEvent: "menu-validate-database", domEvent: "menu-validate-database" },
+    { ipcEvent: "menu-setup-local-store", domEvent: "menu-setup-local-store" },
+    { ipcEvent: "menu-change-local-store-directory", domEvent: "menu-change-local-store-directory" },
+    { ipcEvent: "menu-about", domEvent: "menu-about" },
+  ];
+
+  initialize(): void {
+    this.eventMappings.forEach(({ ipcEvent, domEvent }) => {
+      ipcRenderer.on(ipcEvent, () => {
+        window.dispatchEvent(new CustomEvent(domEvent));
+      });
+    });
+  }
+}
+
+const menuEventForwarder = new MenuEventForwarder();
 
 // Expose environment variables to renderer for E2E testing
 contextBridge.exposeInMainWorld("romperEnv", {
@@ -14,88 +109,20 @@ const getUserDataPath = async (): Promise<string> => {
   return await ipcRenderer.invoke("get-user-data-path");
 };
 
-async function readSettings(): Promise<{
-  localStorePath?: string;
-  darkMode?: boolean;
-  theme?: string;
-}> {
-  try {
-    const settings = await ipcRenderer.invoke("read-settings");
-    const parsedSettings =
-      typeof settings === "string" ? JSON.parse(settings) : settings || {};
-
-    // Override localStorePath with environment variable if set
-    if (process.env.ROMPER_LOCAL_PATH) {
-      parsedSettings.localStorePath = process.env.ROMPER_LOCAL_PATH;
-    }
-
-    return parsedSettings;
-  } catch (e) {
-    console.error("Failed to read settings:", e);
-    // Even if reading settings fails, check for environment variable
-    const fallbackSettings: any = {};
-    if (process.env.ROMPER_LOCAL_PATH) {
-      fallbackSettings.localStorePath = process.env.ROMPER_LOCAL_PATH;
-    }
-    return fallbackSettings;
-  }
-}
-
-async function writeSettings(
-  key: keyof {
-    localStorePath?: string;
-    darkMode?: boolean;
-    theme?: string;
-  },
-  value: any,
-): Promise<void> {
-  try {
-    await ipcRenderer.invoke("write-settings", key, value);
-  } catch (e) {
-    console.error("Failed to write settings:", e);
-  }
-}
-
 contextBridge.exposeInMainWorld("electronAPI", {
   selectSdCard: (): Promise<string | null> => {
     console.log("[IPC] selectSdCard invoked");
     return ipcRenderer.invoke("select-sd-card");
   },
-  getSetting: async (
-    key: keyof {
-      localStorePath?: string;
-      darkMode?: boolean;
-      theme?: string;
-    },
-  ): Promise<any> => {
-    console.log("[IPC] getSetting invoked", key);
-
-    // For localStorePath, check environment variable first
-    if (key === "localStorePath" && process.env.ROMPER_LOCAL_PATH) {
-      return process.env.ROMPER_LOCAL_PATH;
-    }
-
-    const settings = await readSettings();
-    return settings[key];
+  getSetting: async (key: string): Promise<any> => {
+    return await settingsManager.getSetting(key as SettingsKey);
   },
-  setSetting: async (
-    key: keyof {
-      localStorePath?: string;
-      darkMode?: boolean;
-      theme?: string;
-    },
-    value: any,
-  ): Promise<void> => {
-    console.log(`[IPC] setSetting called with key: ${key}, value:`, value);
-    await writeSettings(key, value);
+  setSetting: async (key: string, value: any): Promise<void> => {
+    return await settingsManager.setSetting(key as SettingsKey, value);
   },
-  readSettings: async (): Promise<{
-    localStorePath?: string;
-    darkMode?: boolean;
-    theme?: string;
-  }> => {
+  readSettings: async () => {
     console.log("[IPC] readSettings invoked");
-    return readSettings();
+    return await settingsManager.readSettings();
   },
   getLocalStoreStatus: async () => {
     console.log("[IPC] getLocalStoreStatus invoked");
@@ -352,30 +379,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 });
 
-// Handle menu events from main process and forward to renderer as DOM events
-ipcRenderer.on("menu-scan-all-kits", () => {
-  window.dispatchEvent(new CustomEvent("menu-scan-all-kits"));
-});
-
-ipcRenderer.on("menu-scan-banks", () => {
-  window.dispatchEvent(new CustomEvent("menu-scan-banks"));
-});
-
-ipcRenderer.on("menu-validate-database", () => {
-  window.dispatchEvent(new CustomEvent("menu-validate-database"));
-});
-
-ipcRenderer.on("menu-setup-local-store", () => {
-  window.dispatchEvent(new CustomEvent("menu-setup-local-store"));
-});
-
-ipcRenderer.on("menu-change-local-store-directory", () => {
-  window.dispatchEvent(new CustomEvent("menu-change-local-store-directory"));
-});
-
-ipcRenderer.on("menu-about", () => {
-  window.dispatchEvent(new CustomEvent("menu-about"));
-});
+// Initialize menu event forwarding
+menuEventForwarder.initialize();
 
 // Expose a function to get the file path from a dropped File object (Electron only)
 contextBridge.exposeInMainWorld("electronFileAPI", {

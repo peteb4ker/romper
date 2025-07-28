@@ -1,95 +1,274 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Use hoisted vi.mock for electron and romperDbCoreORM
-vi.mock("electron", () => {
-  // Define handleMock at the top level of the factory
-  const handleMock = vi.fn();
-  return {
-    ipcMain: { handle: handleMock },
-    __esModule: true,
-    handleMock, // Export for test access
-  };
-});
+// Mock electron
+vi.mock("electron", () => ({
+  ipcMain: {
+    handle: vi.fn(),
+  },
+}));
 
-vi.mock("../db/romperDbCoreORM", () => {
-  return {
-    createRomperDbFile: vi.fn(),
-    addKit: vi.fn(),
-    addSample: vi.fn(),
-    __esModule: true,
-  };
-});
+// Mock database operations (simple pass-through mocks)
+vi.mock("../db/romperDbCoreORM", () => ({
+  createRomperDbFile: vi.fn(),
+  addKit: vi.fn(),
+  addSample: vi.fn(),
+  getAllBanks: vi.fn(),
+  getAllSamples: vi.fn(),
+  getKit: vi.fn(),
+  getKits: vi.fn(),
+  getKitSamples: vi.fn(),
+  updateKit: vi.fn(),
+  updateVoiceAlias: vi.fn(),
+}));
 
-import * as electron from "electron";
+// Mock services
+vi.mock("../services/sampleService.js", () => ({
+  sampleService: {
+    addSampleToSlot: vi.fn(),
+    replaceSampleInSlot: vi.fn(),
+    deleteSampleFromSlot: vi.fn(),
+    validateSampleSources: vi.fn(),
+  },
+}));
 
+vi.mock("../services/scanService.js", () => ({
+  scanService: {
+    rescanKit: vi.fn(),
+    scanBanks: vi.fn(),
+  },
+}));
+
+import { ipcMain } from "electron";
 import * as romperDbCore from "../db/romperDbCoreORM";
+import { sampleService } from "../services/sampleService.js";
+import { scanService } from "../services/scanService.js";
 import { registerDbIpcHandlers } from "../dbIpcHandlers";
 
-const getHandleMock = () =>
-  (electron as any).handleMock || electron.ipcMain.handle;
+const mockIpcMain = vi.mocked(ipcMain);
+const mockSampleService = vi.mocked(sampleService);
+const mockScanService = vi.mocked(scanService);
 
-describe("dbIpcHandlers", () => {
+describe("dbIpcHandlers - Routing Tests", () => {
+  let handlerRegistry: Record<string, Function> = {};
+  const mockInMemorySettings = {
+    localStorePath: "/test/path",
+  };
+
   beforeEach(() => {
-    getHandleMock().mockClear();
-    (romperDbCore.createRomperDbFile as any).mockClear();
-    (romperDbCore.addKit as any).mockClear();
-    (romperDbCore.addSample as any).mockClear();
+    vi.clearAllMocks();
+    handlerRegistry = {};
+    
+    // Capture handler registrations
+    mockIpcMain.handle.mockImplementation((channel: string, handler: Function) => {
+      handlerRegistry[channel] = handler;
+      return undefined as any;
+    });
+
+    // Set up successful service responses
+    mockSampleService.addSampleToSlot.mockReturnValue({ success: true, data: { sampleId: 123 } });
+    mockSampleService.replaceSampleInSlot.mockReturnValue({ success: true, data: { sampleId: 456 } });
+    mockSampleService.deleteSampleFromSlot.mockReturnValue({ success: true });
+    mockSampleService.validateSampleSources.mockReturnValue({ 
+      success: true, 
+      data: { totalSamples: 0, validSamples: 0, invalidSamples: [] }
+    });
+    mockScanService.rescanKit.mockResolvedValue({ success: true, data: { scannedSamples: 5, updatedVoices: 2 } });
+    mockScanService.scanBanks.mockResolvedValue({ success: true, data: { scannedFiles: 3, updatedBanks: 3, scannedAt: new Date() } });
+
+    // Mock database operations
+    vi.mocked(romperDbCore.createRomperDbFile).mockResolvedValue({ success: true });
+    vi.mocked(romperDbCore.addKit).mockReturnValue({ success: true });
+    vi.mocked(romperDbCore.addSample).mockReturnValue({ success: true });
+    vi.mocked(romperDbCore.getAllBanks).mockReturnValue({ success: true, data: [] });
+    vi.mocked(romperDbCore.getKits).mockReturnValue({ success: true, data: [] });
+
+    registerDbIpcHandlers(mockInMemorySettings);
   });
 
-  it("registers all expected handlers", () => {
-    registerDbIpcHandlers();
-    const handleMock = getHandleMock();
-    expect(handleMock).toHaveBeenCalledWith(
-      "create-romper-db",
-      expect.any(Function),
-    );
-    expect(handleMock).toHaveBeenCalledWith("insert-kit", expect.any(Function));
-    expect(handleMock).toHaveBeenCalledWith(
-      "insert-sample",
-      expect.any(Function),
-    );
+  describe("Handler Registration", () => {
+    it("registers all expected IPC handlers", () => {
+      const expectedHandlers = [
+        "create-romper-db",
+        "insert-kit",
+        "insert-sample", 
+        "get-kit",
+        "update-kit-metadata",
+        "get-all-kits",
+        "update-voice-alias",
+        "update-step-pattern",
+        "validate-local-store",
+        "validate-local-store-basic",
+        "get-all-samples",
+        "get-all-samples-for-kit",
+        "rescan-kit",
+        "delete-all-samples-for-kit",
+        "get-all-banks",
+        "scan-banks",
+        "add-sample-to-slot",
+        "replace-sample-in-slot",
+        "delete-sample-from-slot",
+        "validate-sample-sources"
+      ];
+
+      expectedHandlers.forEach(handler => {
+        expect(handlerRegistry[handler]).toBeDefined();
+        expect(typeof handlerRegistry[handler]).toBe("function");
+      });
+    });
   });
 
-  it("handler for create-romper-db calls createRomperDbFile with correct args", async () => {
-    registerDbIpcHandlers();
-    const handleMock = getHandleMock();
-    const handler = handleMock.mock.calls.find(
-      ([ch]: any[]) => ch === "create-romper-db",
-    )[1];
-    (romperDbCore.createRomperDbFile as any).mockResolvedValue("ok");
-    const result = await handler({}, "dbDir");
-    expect(romperDbCore.createRomperDbFile).toHaveBeenCalledWith("dbDir");
-    expect(result).toBe("ok");
+  describe("Database Operation Handlers", () => {
+    it("create-romper-db routes to createRomperDbFile", async () => {
+      const handler = handlerRegistry["create-romper-db"];
+      await handler({}, "/test/db");
+
+      expect(romperDbCore.createRomperDbFile).toHaveBeenCalledWith("/test/db");
+    });
+
+    it("insert-kit routes to addKit", async () => {
+      const handler = handlerRegistry["insert-kit"];
+      const kit = { name: "A5", bank_letter: "A" };
+      await handler({}, "/test/db", kit);
+
+      expect(romperDbCore.addKit).toHaveBeenCalledWith("/test/db", kit);
+    });
+
+    it("get-all-kits routes to database with settings validation", async () => {
+      const handler = handlerRegistry["get-all-kits"];
+      await handler({});
+
+      expect(romperDbCore.getKits).toHaveBeenCalledWith("/test/path/.romperdb");
+    });
   });
 
-  it("handler for insert-kit calls addKit with correct args", async () => {
-    registerDbIpcHandlers();
-    const handleMock = getHandleMock();
-    const handler = handleMock.mock.calls.find(
-      ([ch]: any[]) => ch === "insert-kit",
-    )[1];
-    (romperDbCore.addKit as any).mockResolvedValue("kitResult");
-    const kit = { name: "foo", editable: true };
-    const result = await handler({}, "dbDir", kit);
-    expect(romperDbCore.addKit).toHaveBeenCalledWith("dbDir", kit);
-    expect(result).toBe("kitResult");
+  describe("Sample Service Handlers", () => {
+    it("add-sample-to-slot routes to sampleService.addSampleToSlot", async () => {
+      const handler = handlerRegistry["add-sample-to-slot"];
+      const result = await handler({}, "TestKit", 1, 0, "/test/file.wav");
+
+      expect(result.success).toBe(true);
+      expect(mockSampleService.addSampleToSlot).toHaveBeenCalledWith(
+        mockInMemorySettings,
+        "TestKit", 
+        1, 
+        0, 
+        "/test/file.wav"
+      );
+    });
+
+    it("replace-sample-in-slot routes to sampleService.replaceSampleInSlot", async () => {
+      const handler = handlerRegistry["replace-sample-in-slot"];
+      const result = await handler({}, "TestKit", 2, 5, "/test/new.wav");
+
+      expect(result.success).toBe(true);
+      expect(mockSampleService.replaceSampleInSlot).toHaveBeenCalledWith(
+        mockInMemorySettings,
+        "TestKit",
+        2,
+        5, 
+        "/test/new.wav"
+      );
+    });
+
+    it("delete-sample-from-slot routes to sampleService.deleteSampleFromSlot", async () => {
+      const handler = handlerRegistry["delete-sample-from-slot"];
+      const result = await handler({}, "TestKit", 3, 7);
+
+      expect(result.success).toBe(true);
+      expect(mockSampleService.deleteSampleFromSlot).toHaveBeenCalledWith(
+        mockInMemorySettings,
+        "TestKit",
+        3,
+        7
+      );
+    });
+
+    it("validate-sample-sources routes to sampleService.validateSampleSources", async () => {
+      const handler = handlerRegistry["validate-sample-sources"];
+      const result = await handler({}, "TestKit");
+
+      expect(result.success).toBe(true);
+      expect(mockSampleService.validateSampleSources).toHaveBeenCalledWith(
+        mockInMemorySettings,
+        "TestKit"
+      );
+    });
   });
 
-  it("handler for insert-sample calls addSample with correct args", async () => {
-    registerDbIpcHandlers();
-    const handleMock = getHandleMock();
-    const handler = handleMock.mock.calls.find(
-      ([ch]: any[]) => ch === "insert-sample",
-    )[1];
-    (romperDbCore.addSample as any).mockResolvedValue("sampleResult");
-    const sample = {
-      kit_id: 1,
-      filename: "a.wav",
-      slot_number: 2,
-      is_stereo: false,
-    };
-    const result = await handler({}, "dbDir", sample);
-    expect(romperDbCore.addSample).toHaveBeenCalledWith("dbDir", sample);
-    expect(result).toBe("sampleResult");
+  describe("Scan Service Handlers", () => {
+    it("rescan-kit routes to scanService.rescanKit", async () => {
+      const handler = handlerRegistry["rescan-kit"];
+      const result = await handler({}, "TestKit");
+
+      expect(result.success).toBe(true);
+      expect(mockScanService.rescanKit).toHaveBeenCalledWith(
+        mockInMemorySettings,
+        "TestKit"
+      );
+    });
+
+    it("scan-banks routes to scanService.scanBanks", async () => {
+      const handler = handlerRegistry["scan-banks"];
+      const result = await handler({});
+
+      expect(result.success).toBe(true);
+      expect(mockScanService.scanBanks).toHaveBeenCalledWith(mockInMemorySettings);
+    });
+  });
+
+  describe("Error Handling", () => {
+    it("handles missing local store path", async () => {
+      // Re-register with empty settings
+      registerDbIpcHandlers({});
+      
+      const handler = handlerRegistry["get-all-kits"];
+      const result = await handler({});
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("No local store path configured");
+    });
+
+    it("handles service errors gracefully", async () => {
+      mockSampleService.addSampleToSlot.mockReturnValue({ 
+        success: false, 
+        error: "Service error" 
+      });
+
+      const handler = handlerRegistry["add-sample-to-slot"];
+      const result = await handler({}, "TestKit", 1, 0, "/test/file.wav");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Service error");
+    });
+
+    it("validates required parameters for sample operations", async () => {
+      const handler = handlerRegistry["add-sample-to-slot"];
+      const result = await handler({}, "TestKit", 1, 0); // Missing filePath
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("File path required for add operation");
+    });
+  });
+
+  describe("Parameter Passing", () => {
+    it("passes all parameters correctly to services", async () => {
+      const handler = handlerRegistry["add-sample-to-slot"];
+      await handler({}, "MyKit", 4, 11, "/path/to/sample.wav");
+
+      expect(mockSampleService.addSampleToSlot).toHaveBeenCalledWith(
+        mockInMemorySettings,
+        "MyKit",
+        4,
+        11,
+        "/path/to/sample.wav"
+      );
+    });
+
+    it("constructs database path correctly from settings", async () => {
+      const handler = handlerRegistry["get-kit"];
+      await handler("A5");
+
+      expect(romperDbCore.getKit).toHaveBeenCalledWith("/test/path/.romperdb", "A5");
+    });
   });
 });

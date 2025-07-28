@@ -14,7 +14,14 @@ app/renderer/components/
 └── __tests__/
     └── KitEditor.test.tsx          // Test for the component
 
-// Test naming: [filename].test.[ts|tsx]
+// ✅ CORRECT: Service test naming
+electron/main/services/
+├── sampleService.ts
+└── __tests__/
+    └── sampleService.test.ts       // Test for the service
+
+// Test naming convention: [filename].test.[ts|tsx]
+// For services: The unit test file for "thisService.ts" should be "__tests__/thisService.test.ts"
 ```
 
 ### Test Structure Pattern

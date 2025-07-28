@@ -1,5 +1,4 @@
 import { ipcMain } from "electron";
-import * as fs from "fs";
 import * as path from "path";
 
 import type {
@@ -8,10 +7,6 @@ import type {
   NewKit,
   NewSample,
 } from "../../shared/db/schema.js";
-import {
-  groupSamplesByVoice,
-  inferVoiceTypeFromFilename,
-} from "../../shared/kitUtilsShared.js";
 import {
   addKit,
   addSample,
@@ -22,70 +17,119 @@ import {
   getKit,
   getKits,
   getKitSamples,
-  markKitAsModified,
-  updateBank,
   updateKit,
   updateVoiceAlias,
 } from "./db/romperDbCoreORM.js";
-import {
-  validateLocalStoreAgainstDb,
-  validateLocalStoreBasic,
-} from "./localStoreValidator.js";
+import { localStoreService } from "./services/localStoreService.js";
+import { sampleService } from "./services/sampleService.js";
+import { scanService } from "./services/scanService.js";
+
+// Common validation and helper functions
 
 /**
- * Task 5.2.5: Enhanced file validation for sample operations
- * Validates file existence, format, and basic WAV file integrity
+ * Validates local store path and returns database directory
  */
-function validateSampleFile(filePath: string): {
-  isValid: boolean;
+function validateAndGetDbDir(inMemorySettings: Record<string, any>): {
+  success: boolean;
+  dbDir?: string;
   error?: string;
 } {
-  // Check file existence
-  if (!fs.existsSync(filePath)) {
-    return { isValid: false, error: "Sample file not found" };
+  const localStorePath = inMemorySettings.localStorePath;
+  if (!localStorePath) {
+    return { success: false, error: "No local store path configured" };
   }
+  return { success: true, dbDir: path.join(localStorePath, ".romperdb") };
+}
 
-  // Check file extension
-  if (!filePath.toLowerCase().endsWith(".wav")) {
-    return { isValid: false, error: "Only WAV files are supported" };
-  }
-
-  try {
-    // Check file is readable and has minimum size for WAV header
-    const stats = fs.statSync(filePath);
-    if (stats.size < 44) {
-      return { isValid: false, error: "File too small to be a valid WAV file" };
+/**
+ * Creates a wrapper for IPC handlers that require database directory validation
+ */
+function createDbHandler<T extends any[], R>(
+  inMemorySettings: Record<string, any>,
+  handler: (dbDir: string, ...args: T) => Promise<R> | R,
+): (_event: any, ...args: T) => Promise<R> {
+  return async (_event: any, ...args: T): Promise<R> => {
+    const dbDirResult = validateAndGetDbDir(inMemorySettings);
+    if (!dbDirResult.success) {
+      return { success: false, error: dbDirResult.error } as R;
     }
+    return handler(dbDirResult.dbDir!, ...args);
+  };
+}
 
-    // Read first 12 bytes to validate WAV header
-    const fd = fs.openSync(filePath, "r");
-    const buffer = Buffer.alloc(12);
-    fs.readSync(fd, buffer, 0, 12, 0);
-    fs.closeSync(fd);
+/**
+ * Creates a sample operation handler using the sample service
+ */
+function createSampleOperationHandler(
+  inMemorySettings: Record<string, any>,
+  operationType: "add" | "replace" | "delete",
+) {
+  return async (
+    _event: any,
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+    filePath?: string,
+  ) => {
+    try {
+      let result: DbResult<any>;
 
-    // Check RIFF signature
-    if (buffer.toString("ascii", 0, 4) !== "RIFF") {
+      switch (operationType) {
+        case "add":
+          if (!filePath) {
+            return {
+              success: false,
+              error: "File path required for add operation",
+            };
+          }
+          result = sampleService.addSampleToSlot(
+            inMemorySettings,
+            kitName,
+            voiceNumber,
+            slotIndex,
+            filePath,
+          );
+          break;
+
+        case "replace":
+          if (!filePath) {
+            return {
+              success: false,
+              error: "File path required for replace operation",
+            };
+          }
+          result = sampleService.replaceSampleInSlot(
+            inMemorySettings,
+            kitName,
+            voiceNumber,
+            slotIndex,
+            filePath,
+          );
+          break;
+
+        case "delete":
+          result = sampleService.deleteSampleFromSlot(
+            inMemorySettings,
+            kitName,
+            voiceNumber,
+            slotIndex,
+          );
+          break;
+
+        default:
+          return { success: false, error: "Unknown operation type" };
+      }
+
+      return result;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
-        isValid: false,
-        error: "Invalid WAV file: missing RIFF signature",
+        success: false,
+        error: `Failed to perform sample operation: ${errorMessage}`,
       };
     }
-
-    // Check WAVE format
-    if (buffer.toString("ascii", 8, 12) !== "WAVE") {
-      return {
-        isValid: false,
-        error: "Invalid WAV file: missing WAVE format identifier",
-      };
-    }
-
-    return { isValid: true };
-  } catch (error) {
-    return {
-      isValid: false,
-      error: `Failed to validate file: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
+  };
 }
 
 export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
@@ -104,72 +148,62 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     },
   );
 
-  ipcMain.handle("get-kit", async (_event, kitName: string) => {
-    const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath) {
-      return { success: false, error: "No local store path configured" };
-    }
-    const dbDir = path.join(localStorePath, ".romperdb");
-    return getKit(dbDir, kitName);
-  });
+  ipcMain.handle(
+    "get-kit",
+    createDbHandler(inMemorySettings, (dbDir: string, kitName: string) => {
+      return getKit(dbDir, kitName);
+    }),
+  );
 
   ipcMain.handle(
     "update-kit-metadata",
-    async (
-      _event,
-      kitName: string,
-      updates: {
-        alias?: string;
-        artist?: string;
-        tags?: string[];
-        description?: string;
+    createDbHandler(
+      inMemorySettings,
+      (
+        dbDir: string,
+        kitName: string,
+        updates: {
+          alias?: string;
+          artist?: string;
+          tags?: string[];
+          description?: string;
+        },
+      ) => {
+        return updateKit(dbDir, kitName, updates);
       },
-    ) => {
-      const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
-        return { success: false, error: "No local store path configured" };
-      }
-      const dbDir = path.join(localStorePath, ".romperdb");
-      return updateKit(dbDir, kitName, updates);
-    },
+    ),
   );
 
-  ipcMain.handle("get-all-kits", async (_event) => {
-    const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath) {
-      return { success: false, error: "No local store path configured" };
-    }
-    const dbDir = path.join(localStorePath, ".romperdb");
-    return getKits(dbDir);
-  });
+  ipcMain.handle(
+    "get-all-kits",
+    createDbHandler(inMemorySettings, (dbDir: string) => {
+      return getKits(dbDir);
+    }),
+  );
 
   ipcMain.handle(
     "update-voice-alias",
-    async (
-      _event,
-      kitName: string,
-      voiceNumber: number,
-      voiceAlias: string,
-    ) => {
-      const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
-        return { success: false, error: "No local store path configured" };
-      }
-      const dbDir = path.join(localStorePath, ".romperdb");
-      return updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias);
-    },
+    createDbHandler(
+      inMemorySettings,
+      (
+        dbDir: string,
+        kitName: string,
+        voiceNumber: number,
+        voiceAlias: string,
+      ) => {
+        return updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias);
+      },
+    ),
   );
 
   ipcMain.handle(
     "update-step-pattern",
-    async (_event, kitName: string, stepPattern: number[][]) => {
-      const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
-        return { success: false, error: "No local store path configured" };
-      }
-      const dbDir = path.join(localStorePath, ".romperdb");
-      return updateKit(dbDir, kitName, { step_pattern: stepPattern });
-    },
+    createDbHandler(
+      inMemorySettings,
+      (dbDir: string, kitName: string, stepPattern: number[][]) => {
+        return updateKit(dbDir, kitName, { step_pattern: stepPattern });
+      },
+    ),
   );
 
   ipcMain.handle(
@@ -179,7 +213,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       if (!pathToValidate) {
         throw new Error("No local store path provided or configured");
       }
-      return validateLocalStoreAgainstDb(pathToValidate);
+      return localStoreService.validateLocalStore(pathToValidate);
     },
   );
 
@@ -190,7 +224,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       if (!pathToValidate) {
         throw new Error("No local store path provided or configured");
       }
-      return validateLocalStoreBasic(pathToValidate);
+      return localStoreService.validateLocalStoreBasic(pathToValidate);
     },
   );
 
@@ -198,111 +232,15 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     return getAllSamples(dbDir);
   });
 
-  ipcMain.handle("get-all-samples-for-kit", async (_event, kitName: string) => {
-    const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath) {
-      return { success: false, error: "No local store path configured" };
-    }
-    const dbDir = path.join(localStorePath, ".romperdb");
-    return getKitSamples(dbDir, kitName);
-  });
+  ipcMain.handle(
+    "get-all-samples-for-kit",
+    createDbHandler(inMemorySettings, (dbDir: string, kitName: string) => {
+      return getKitSamples(dbDir, kitName);
+    }),
+  );
 
   ipcMain.handle("rescan-kit", async (_event, kitName: string) => {
-    const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath) {
-      return { success: false, error: "No local store path configured" };
-    }
-    const dbDir = path.join(localStorePath, ".romperdb");
-    // Step 1: Delete all existing samples for this kit
-    const deleteResult = deleteSamples(dbDir, kitName);
-    if (!deleteResult.success) {
-      return deleteResult;
-    }
-
-    // Step 2: Scan kit directory for current WAV files
-    const kitPath = path.join(localStorePath, kitName);
-    if (!fs.existsSync(kitPath)) {
-      return { success: false, error: `Kit directory not found: ${kitPath}` };
-    }
-
-    let scannedSamples = 0;
-    try {
-      const files = fs.readdirSync(kitPath);
-      const wavFiles = files.filter((file) =>
-        file.toLowerCase().endsWith(".wav"),
-      );
-
-      // Step 3: Group samples by voice using filename prefix parsing
-      const groupedSamples = groupSamplesByVoice(wavFiles);
-
-      // Step 4: Insert new sample records for found files
-      for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
-        const voice = parseInt(voiceNumber, 10);
-
-        for (let slotIndex = 0; slotIndex < voiceFiles.length; slotIndex++) {
-          const wavFile = voiceFiles[slotIndex];
-
-          // Determine if stereo based on filename patterns
-          const isStereo = /stereo|st|_s\.|_S\./i.test(wavFile);
-
-          // Create sample record using ORM
-          const samplePath = path.join(kitPath, wavFile);
-          const sampleRecord: NewSample = {
-            kit_name: kitName,
-            filename: wavFile,
-            voice_number: voice,
-            slot_number: slotIndex + 1, // Slots are 1-indexed within each voice
-            source_path: samplePath,
-            is_stereo: isStereo,
-          };
-
-          const insertResult = addSample(dbDir, sampleRecord);
-          if (!insertResult.success) {
-            return insertResult;
-          }
-
-          scannedSamples++;
-        }
-      }
-
-      // Step 5: Run voice inference on the grouped samples
-      let updatedVoices = 0;
-      for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
-        const voice = parseInt(voiceNumber, 10);
-
-        if (voiceFiles.length > 0) {
-          // Infer voice type from the first file in the voice
-          const firstFile = voiceFiles[0];
-          const inferredType = inferVoiceTypeFromFilename(firstFile);
-
-          if (inferredType) {
-            // Update the voice alias in the database
-            const updateResult = updateVoiceAlias(
-              dbDir,
-              kitName,
-              voice,
-              inferredType,
-            );
-            if (updateResult.success) {
-              updatedVoices++;
-            }
-          }
-        }
-      }
-
-      // Return success with scan results
-      return {
-        success: true,
-        data: { scannedSamples, updatedVoices },
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return {
-        success: false,
-        error: `Failed to scan kit directory: ${errorMessage}`,
-      };
-    }
+    return scanService.rescanKit(inMemorySettings, kitName);
   });
 
   ipcMain.handle(
@@ -313,315 +251,33 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
   );
 
   // Bank operations
-  ipcMain.handle("get-all-banks", async (_event) => {
-    const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath) {
-      return { success: false, error: "No local store path configured" };
-    }
-    const dbDir = path.join(localStorePath, ".romperdb");
-    return getAllBanks(dbDir);
-  });
+  ipcMain.handle(
+    "get-all-banks",
+    createDbHandler(inMemorySettings, (dbDir: string) => {
+      return getAllBanks(dbDir);
+    }),
+  );
 
   ipcMain.handle("scan-banks", async (_event) => {
-    const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath) {
-      return { success: false, error: "No local store path configured" };
-    }
-    const dbDir = path.join(localStorePath, ".romperdb");
-    try {
-      // Scan local store root for RTF files matching "A - Artist Name.rtf" pattern
-      if (!fs.existsSync(localStorePath)) {
-        return {
-          success: false,
-          error: `Local store path not found: ${localStorePath}`,
-        };
-      }
-
-      const files = fs.readdirSync(localStorePath);
-      const rtfFiles = files.filter((file) => /^[A-Z] - .+\.rtf$/i.test(file));
-
-      let updatedBanks = 0;
-      const scannedAt = new Date();
-
-      for (const rtfFile of rtfFiles) {
-        // Extract bank letter and artist name from filename
-        const match = /^([A-Z]) - (.+)\.rtf$/i.exec(rtfFile);
-        if (match) {
-          const bankLetter = match[1].toUpperCase();
-          const artistName = match[2];
-
-          // Update bank in database
-          const updateResult = updateBank(dbDir, bankLetter, {
-            artist: artistName,
-            rtf_filename: rtfFile,
-            scanned_at: scannedAt,
-          });
-
-          if (updateResult.success) {
-            updatedBanks++;
-          }
-        }
-      }
-
-      return {
-        success: true,
-        data: {
-          scannedFiles: rtfFiles.length,
-          updatedBanks,
-          scannedAt,
-        },
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return {
-        success: false,
-        error: `Failed to scan banks: ${errorMessage}`,
-      };
-    }
+    return scanService.scanBanks(inMemorySettings);
   });
 
-  // Task 5.2.2 & 5.2.3: Sample management operations for drag-and-drop editing
   ipcMain.handle(
     "add-sample-to-slot",
-    async (
-      _event,
-      kitName: string,
-      voiceNumber: number,
-      slotIndex: number,
-      filePath: string,
-    ) => {
-      const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
-        return { success: false, error: "No local store path configured" };
-      }
-      const dbDir = path.join(localStorePath, ".romperdb");
-
-      try {
-        // Task 5.2.4: Validate voice number (1-4)
-        if (voiceNumber < 1 || voiceNumber > 4) {
-          return {
-            success: false,
-            error: "Voice number must be between 1 and 4",
-          };
-        }
-
-        // Task 5.2.4: Validate slot index (0-11 for 12 slots total, converted to 1-12 for storage)
-        if (slotIndex < 0 || slotIndex > 11) {
-          return {
-            success: false,
-            error: "Slot index must be between 0 and 11 (12 slots per voice)",
-          };
-        }
-
-        // Task 5.2.5: Enhanced file validation during operations
-        const fileValidation = validateSampleFile(filePath);
-        if (!fileValidation.isValid) {
-          return { success: false, error: fileValidation.error };
-        }
-
-        // Create sample record
-        const filename = path.basename(filePath);
-        const isStereo = /stereo|st|_s\.|_S\./i.test(filename);
-
-        const sampleRecord: NewSample = {
-          kit_name: kitName,
-          filename,
-          voice_number: voiceNumber,
-          slot_number: slotIndex + 1, // Convert 0-based to 1-based
-          source_path: filePath,
-          is_stereo: isStereo,
-        };
-
-        const addResult = addSample(dbDir, sampleRecord);
-        if (addResult.success) {
-          // Task 5.3.1: Mark kit as modified when sample is added
-          markKitAsModified(dbDir, kitName);
-        }
-        return addResult;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        return {
-          success: false,
-          error: `Failed to add sample: ${errorMessage}`,
-        };
-      }
-    },
+    createSampleOperationHandler(inMemorySettings, "add"),
   );
 
   ipcMain.handle(
     "replace-sample-in-slot",
-    async (
-      _event,
-      kitName: string,
-      voiceNumber: number,
-      slotIndex: number,
-      filePath: string,
-    ) => {
-      const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
-        return { success: false, error: "No local store path configured" };
-      }
-      const dbDir = path.join(localStorePath, ".romperdb");
-
-      try {
-        // Task 5.2.4: Validate voice number (1-4)
-        if (voiceNumber < 1 || voiceNumber > 4) {
-          return {
-            success: false,
-            error: "Voice number must be between 1 and 4",
-          };
-        }
-
-        // Task 5.2.4: Validate slot index (0-11 for 12 slots total, converted to 1-12 for storage)
-        if (slotIndex < 0 || slotIndex > 11) {
-          return {
-            success: false,
-            error: "Slot index must be between 0 and 11 (12 slots per voice)",
-          };
-        }
-
-        // Task 5.2.5: Enhanced file validation during operations
-        const fileValidation = validateSampleFile(filePath);
-        if (!fileValidation.isValid) {
-          return { success: false, error: fileValidation.error };
-        }
-
-        // First delete existing sample at this slot
-        const deleteResult = deleteSamples(dbDir, kitName, {
-          voiceNumber,
-          slotNumber: slotIndex + 1,
-        });
-        if (!deleteResult.success) {
-          return deleteResult;
-        }
-
-        // Then add new sample
-        const filename = path.basename(filePath);
-        const isStereo = /stereo|st|_s\.|_S\./i.test(filename);
-
-        const sampleRecord: NewSample = {
-          kit_name: kitName,
-          filename,
-          voice_number: voiceNumber,
-          slot_number: slotIndex + 1,
-          source_path: filePath,
-          is_stereo: isStereo,
-        };
-
-        const replaceResult = addSample(dbDir, sampleRecord);
-        if (replaceResult.success) {
-          // Task 5.3.1: Mark kit as modified when sample is replaced
-          markKitAsModified(dbDir, kitName);
-        }
-        return replaceResult;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        return {
-          success: false,
-          error: `Failed to replace sample: ${errorMessage}`,
-        };
-      }
-    },
+    createSampleOperationHandler(inMemorySettings, "replace"),
   );
 
   ipcMain.handle(
     "delete-sample-from-slot",
-    async (_event, kitName: string, voiceNumber: number, slotIndex: number) => {
-      const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
-        return { success: false, error: "No local store path configured" };
-      }
-      const dbDir = path.join(localStorePath, ".romperdb");
-
-      try {
-        // Task 5.2.4: Validate voice number (1-4)
-        if (voiceNumber < 1 || voiceNumber > 4) {
-          return {
-            success: false,
-            error: "Voice number must be between 1 and 4",
-          };
-        }
-
-        // Task 5.2.4: Validate slot index (0-11 for 12 slots total, converted to 1-12 for storage)
-        if (slotIndex < 0 || slotIndex > 11) {
-          return {
-            success: false,
-            error: "Slot index must be between 0 and 11 (12 slots per voice)",
-          };
-        }
-
-        const deleteResult = deleteSamples(dbDir, kitName, {
-          voiceNumber,
-          slotNumber: slotIndex + 1, // Convert 0-based to 1-based
-        });
-        if (deleteResult.success) {
-          // Task 5.3.1: Mark kit as modified when sample is deleted
-          markKitAsModified(dbDir, kitName);
-        }
-        return deleteResult;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        return {
-          success: false,
-          error: `Failed to delete sample: ${errorMessage}`,
-        };
-      }
-    },
+    createSampleOperationHandler(inMemorySettings, "delete"),
   );
 
-  // Task 5.2.5: Validate source_path files for existing samples
   ipcMain.handle("validate-sample-sources", async (_event, kitName: string) => {
-    const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath) {
-      return { success: false, error: "No local store path configured" };
-    }
-    const dbDir = path.join(localStorePath, ".romperdb");
-
-    try {
-      const samplesResult = getKitSamples(dbDir, kitName);
-      if (!samplesResult.success) {
-        return samplesResult;
-      }
-
-      const samples = samplesResult.data || [];
-      const invalidSamples: Array<{
-        filename: string;
-        source_path: string;
-        error: string;
-      }> = [];
-
-      for (const sample of samples) {
-        if (sample.source_path) {
-          const validation = validateSampleFile(sample.source_path);
-          if (!validation.isValid) {
-            invalidSamples.push({
-              filename: sample.filename,
-              source_path: sample.source_path,
-              error: validation.error || "Unknown validation error",
-            });
-          }
-        }
-      }
-
-      return {
-        success: true,
-        data: {
-          totalSamples: samples.length,
-          invalidSamples,
-          validSamples: samples.length - invalidSamples.length,
-        },
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return {
-        success: false,
-        error: `Failed to validate sample sources: ${errorMessage}`,
-      };
-    }
+    return sampleService.validateSampleSources(inMemorySettings, kitName);
   });
 }

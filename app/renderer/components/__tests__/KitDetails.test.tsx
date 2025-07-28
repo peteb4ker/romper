@@ -31,6 +31,9 @@ vi.mock("../hooks/useKitDetailsLogic", () => ({
 import { useKitDetailsLogic } from "../hooks/useKitDetailsLogic";
 const mockUseKitDetailsLogic = useKitDetailsLogic as ReturnType<typeof vi.fn>;
 
+// Add Mock type for TypeScript
+type Mock = ReturnType<typeof vi.fn>;
+
 // Helper to create a basic electronAPI mock
 function mockElectronAPI() {
   (window as any).electronAPI = {
@@ -89,6 +92,7 @@ function createMockLogic(overrides = {}) {
     setStepPattern: vi.fn(),
     updateKitAlias: vi.fn(),
     updateVoiceAlias: vi.fn(),
+    toggleEditableMode: vi.fn(),
     kitLoading: false,
     kitError: null,
     reloadKit: vi.fn(),
@@ -233,6 +237,163 @@ describe("KitDetails", () => {
       expect(screen.getByTestId("voice-name-2")).toBeInTheDocument();
       expect(screen.getByTestId("voice-name-3")).toBeInTheDocument();
       expect(screen.getByTestId("voice-name-4")).toBeInTheDocument();
+    });
+  });
+
+  describe("Editable Mode Integration - Task 5.1", () => {
+    it("passes editable mode toggle function to KitHeader", async () => {
+      const mockToggleEditableMode = vi.fn();
+      const mockLogic = {
+        ...createMockLogic(),
+        toggleEditableMode: mockToggleEditableMode,
+        kit: { ...createMockLogic().kit, editable: true },
+      };
+      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+
+      renderWithSettings(
+        <KitDetails
+          kitName="TestKit"
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
+      );
+
+      // KitHeader should receive the toggle function and current editable state
+      expect(screen.getByText("Editable")).toBeInTheDocument();
+      
+      // Click the toggle button
+      const toggleButton = screen.getByRole("button", { name: /disable editable mode/i });
+      fireEvent.click(toggleButton);
+      
+      expect(mockToggleEditableMode).toHaveBeenCalledOnce();
+    });
+
+    it("passes correct editable state to KitVoicePanels", async () => {
+      const mockLogic = {
+        ...createMockLogic(),
+        kit: { ...createMockLogic().kit, editable: true },
+      };
+      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+
+      const { container } = renderWithSettings(
+        <KitDetails
+          kitName="TestKit"
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
+      );
+
+      // KitVoicePanels should receive isEditable={true}
+      // This would be reflected in the voice panel edit buttons being visible
+      await waitFor(() => {
+        expect(screen.getAllByTitle("Edit voice name").length).toBeGreaterThan(0);
+      });
+    });
+
+    it("disables editing when editable mode is off", async () => {
+      const mockLogic = {
+        ...createMockLogic(),
+        kit: { ...createMockLogic().kit, editable: false },
+      };
+      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+
+      renderWithSettings(
+        <KitDetails
+          kitName="TestKit"
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
+      );
+
+      // KitHeader should show "Locked" state
+      expect(screen.getByText("Locked")).toBeInTheDocument();
+      
+      // Edit buttons should not be visible when kit is not editable
+      expect(screen.queryAllByTitle("Edit voice name").length).toBe(0);
+    });
+
+    it("shows editable toggle in header when kit is loaded", async () => {
+      const mockLogic = {
+        ...createMockLogic(),
+        kit: { ...createMockLogic().kit, editable: false },
+      };
+      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+
+      renderWithSettings(
+        <KitDetails
+          kitName="TestKit"
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
+      );
+
+      // Toggle should be visible with correct state
+      const toggleButton = screen.getByRole("button", { name: /enable editable mode/i });
+      expect(toggleButton).toBeInTheDocument();
+      expect(toggleButton).toHaveClass("bg-gray-300");
+    });
+
+    it("handles null kit gracefully", async () => {
+      const mockLogic = {
+        ...createMockLogic(),
+        kit: null,
+      };
+      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+
+      renderWithSettings(
+        <KitDetails
+          kitName="TestKit"
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
+      );
+
+      // Should not crash and should handle isEditable defaulting to false
+      expect(screen.getByText("Locked")).toBeInTheDocument();
+    });
+
+    it("reflects editable state changes through rerendering", async () => {
+      const mockLogic = {
+        ...createMockLogic(),
+        kit: { ...createMockLogic().kit, editable: false },
+      };
+      const mockUseKitDetailsLogicInstance = (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+
+      const { rerender } = renderWithSettings(
+        <KitDetails
+          kitName="TestKit"
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
+      );
+
+      // Initially locked
+      expect(screen.getByText("Locked")).toBeInTheDocument();
+
+      // Update mock to return editable: true
+      const updatedMockLogic = {
+        ...mockLogic,
+        kit: { ...mockLogic.kit, editable: true },
+      };
+      mockUseKitDetailsLogicInstance.mockReturnValue(updatedMockLogic);
+
+      rerender(
+        <KitDetails
+          kitName="TestKit"
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
+          onBack={() => {}}
+          onMessage={vi.fn()}
+        />,
+      );
+
+      // Should now show editable
+      expect(screen.getByText("Editable")).toBeInTheDocument();
     });
   });
 

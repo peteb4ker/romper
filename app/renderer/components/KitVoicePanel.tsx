@@ -51,6 +51,16 @@ interface KitVoicePanelProps {
     filePath: string,
   ) => Promise<void>;
   onSampleDelete?: (voice: number, slotIndex: number) => Promise<void>;
+
+  // Task 7.1.3: Props for coordinated stereo drop highlighting
+  isStereoDragTarget?: boolean;
+  stereoDragSlotIndex?: number;
+  onStereoDragOver?: (
+    voice: number,
+    slotIndex: number,
+    isStereo: boolean,
+  ) => void;
+  onStereoDragLeave?: () => void;
 }
 
 const KitVoicePanel: React.FC<
@@ -77,6 +87,10 @@ const KitVoicePanel: React.FC<
   onSampleAdd,
   onSampleReplace,
   onSampleDelete,
+  isStereoDragTarget = false,
+  stereoDragSlotIndex,
+  onStereoDragOver,
+  onStereoDragLeave,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(voiceName || "");
@@ -139,14 +153,36 @@ const KitVoicePanel: React.FC<
     if (!isEditable) return;
 
     e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
+
+    // Task 7.1.3: Show different drop effect based on modifier keys
+    const isForcedStereo = e.altKey || e.metaKey;
+    const isForcedMono = e.shiftKey;
+
+    if (isForcedMono) {
+      e.dataTransfer.dropEffect = "link"; // Visual hint for force mono
+    } else if (isForcedStereo) {
+      e.dataTransfer.dropEffect = "move"; // Visual hint for force stereo
+    } else {
+      e.dataTransfer.dropEffect = "copy"; // Normal behavior
+    }
+
     setDragOverSlot(slotIndex);
+
+    // Notify parent about potential stereo drop
+    if (onStereoDragOver) {
+      const willBeStereo =
+        isForcedStereo || (!isForcedMono && !defaultToMonoSamples);
+      onStereoDragOver(voice, slotIndex, willBeStereo);
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     // Only clear if we're actually leaving the slot area
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setDragOverSlot(null);
+      if (onStereoDragLeave) {
+        onStereoDragLeave();
+      }
     }
   };
 
@@ -155,6 +191,11 @@ const KitVoicePanel: React.FC<
 
     e.preventDefault();
     setDragOverSlot(null);
+
+    // Clear stereo drag state
+    if (onStereoDragLeave) {
+      onStereoDragLeave();
+    }
 
     const files = Array.from(e.dataTransfer.files);
 
@@ -165,6 +206,10 @@ const KitVoicePanel: React.FC<
 
     // Use the first file found - let format validation handle file type checking
     const file = files[0];
+
+    // Task 7.1.3: Check for modifier keys to override defaultToMonoSamples
+    const forceStereoDrop = e.altKey || e.metaKey; // Alt/Option or Cmd (Mac) forces stereo
+    const forceMonoDrop = e.shiftKey; // Shift forces mono
 
     try {
       // Get the full file path using Electron's webUtils
@@ -237,9 +282,18 @@ const KitVoicePanel: React.FC<
 
       // Task 7.1.2 & 7.2: Apply stereo handling logic based on metadata
       const channels = formatValidation.metadata?.channels || 1;
-      console.log(
-        `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}`,
-      );
+
+      // Task 7.1.3: Log modifier key overrides
+      if (forceMonoDrop || forceStereoDrop) {
+        console.log(
+          `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}, ` +
+            `override: ${forceMonoDrop ? "force mono" : "force stereo"}`,
+        );
+      } else {
+        console.log(
+          `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}`,
+        );
+      }
 
       // Get current sample data for this kit to check for duplicates and stereo conflicts
       if (!window.electronAPI?.getAllSamplesForKit) {
@@ -272,7 +326,15 @@ const KitVoicePanel: React.FC<
       }
 
       // Task 7.2: Analyze stereo assignment requirements
-      const stereoResult = analyzeStereoAssignment(voice, channels, allSamples);
+      // Task 7.1.3: Pass modifier key overrides
+      const stereoResult = analyzeStereoAssignment(
+        voice,
+        channels,
+        allSamples,
+        forceMonoDrop || forceStereoDrop
+          ? { forceMono: forceMonoDrop, forceStereo: forceStereoDrop }
+          : undefined,
+      );
 
       // Task 7.3: Handle stereo conflicts if needed
       let assignmentOptions = {
@@ -419,9 +481,29 @@ const KitVoicePanel: React.FC<
             const slotBaseClass =
               "truncate flex items-center gap-2 mb-1 min-h-[28px]"; // uniform height for all slots
             const isDragOver = dragOverSlot === i;
-            const dragOverClass = isDragOver
-              ? " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300"
-              : "";
+
+            // Task 7.1.3: Different visual feedback for modifier key overrides
+            let dragOverClass = "";
+            let dropHintTitle = "Drop to assign sample";
+
+            // Check if this slot should be highlighted for stereo drop
+            const isStereoHighlight =
+              isStereoDragTarget && stereoDragSlotIndex === i;
+
+            if (isDragOver || isStereoHighlight) {
+              if (isStereoHighlight) {
+                dragOverClass =
+                  " bg-purple-100 dark:bg-purple-800 ring-2 ring-purple-400 dark:ring-purple-300";
+                dropHintTitle =
+                  isStereoDragTarget && stereoDragSlotIndex === i && voice > 1
+                    ? "Right channel of stereo pair"
+                    : "Left channel of stereo pair";
+              } else {
+                dragOverClass =
+                  " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300";
+                dropHintTitle = `Drop to assign sample (default: ${defaultToMonoSamples ? "mono" : "stereo"})`;
+              }
+            }
 
             if (sample) {
               const sampleKey = voice + ":" + sample;
@@ -441,6 +523,9 @@ const KitVoicePanel: React.FC<
                     selectedIdx === i && isActive
                       ? `sample-selected-voice-${voice}`
                       : undefined
+                  }
+                  title={
+                    isDragOver || isStereoHighlight ? dropHintTitle : undefined
                   }
                   onClick={() => onSampleSelect && onSampleSelect(voice, i)}
                   onDragOver={
@@ -559,6 +644,9 @@ const KitVoicePanel: React.FC<
                   tabIndex={-1}
                   aria-selected={false}
                   data-testid={`empty-slot-${voice}-${i}`}
+                  title={
+                    isDragOver || isStereoHighlight ? dropHintTitle : undefined
+                  }
                   onClick={() => onSampleSelect && onSampleSelect(voice, i)}
                   onDragOver={
                     isEditable ? (e) => handleDragOver(e, i) : undefined

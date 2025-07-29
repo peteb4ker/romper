@@ -42,6 +42,7 @@ describe("useSampleManagement", () => {
         1,
         0,
         "/path/to/sample.wav",
+        undefined,
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
@@ -116,6 +117,7 @@ describe("useSampleManagement", () => {
         2,
         3,
         "/path/to/new.wav",
+        undefined,
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
       expect(defaultProps.onMessage).toHaveBeenCalledWith({

@@ -117,6 +117,7 @@ export class SampleService {
     voiceNumber: number,
     slotIndex: number,
     filePath: string,
+    options?: { forceMono?: boolean; forceStereo?: boolean },
   ): DbResult<{ sampleId: number }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -144,21 +145,27 @@ export class SampleService {
       // Create sample record
       const filename = path.basename(filePath);
 
-      // Task 7.1.2: Apply 'default to mono samples' setting to new sample assignments
+      // Task 7.1.2 & 7.1.3: Apply 'default to mono samples' setting with per-sample override
       let isStereo = false;
 
       // Get the defaultToMonoSamples setting (default: true)
       const defaultToMonoSamples =
         inMemorySettings.defaultToMonoSamples ?? true;
 
-      if (!defaultToMonoSamples) {
-        // Only check if file is actually stereo when setting is OFF
+      // Task 7.1.3: Check for per-sample override first
+      if (options?.forceMono) {
+        isStereo = false;
+      } else if (options?.forceStereo) {
+        // Force stereo even if file is mono - will be handled during preview/sync
+        isStereo = true;
+      } else if (!defaultToMonoSamples) {
+        // Only check if file is actually stereo when setting is OFF and no override
         const metadataResult = getAudioMetadata(filePath);
         if (metadataResult.success && metadataResult.data) {
           isStereo = (metadataResult.data.channels || 1) > 1;
         }
       }
-      // If defaultToMonoSamples is true, isStereo remains false
+      // If defaultToMonoSamples is true and no override, isStereo remains false
 
       const sampleRecord: NewSample = {
         kit_name: kitName,
@@ -196,6 +203,7 @@ export class SampleService {
     voiceNumber: number,
     slotIndex: number,
     filePath: string,
+    options?: { forceMono?: boolean; forceStereo?: boolean },
   ): DbResult<{ sampleId: number }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -232,21 +240,27 @@ export class SampleService {
       // Then add new sample
       const filename = path.basename(filePath);
 
-      // Task 7.1.2: Apply 'default to mono samples' setting to new sample assignments
+      // Task 7.1.2 & 7.1.3: Apply 'default to mono samples' setting with per-sample override
       let isStereo = false;
 
       // Get the defaultToMonoSamples setting (default: true)
       const defaultToMonoSamples =
         inMemorySettings.defaultToMonoSamples ?? true;
 
-      if (!defaultToMonoSamples) {
-        // Only check if file is actually stereo when setting is OFF
+      // Task 7.1.3: Check for per-sample override first
+      if (options?.forceMono) {
+        isStereo = false;
+      } else if (options?.forceStereo) {
+        // Force stereo even if file is mono - will be handled during preview/sync
+        isStereo = true;
+      } else if (!defaultToMonoSamples) {
+        // Only check if file is actually stereo when setting is OFF and no override
         const metadataResult = getAudioMetadata(filePath);
         if (metadataResult.success && metadataResult.data) {
           isStereo = (metadataResult.data.channels || 1) > 1;
         }
       }
-      // If defaultToMonoSamples is true, isStereo remains false
+      // If defaultToMonoSamples is true and no override, isStereo remains false
 
       const sampleRecord: NewSample = {
         kit_name: kitName,

@@ -151,9 +151,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] closeApp invoked");
     return ipcRenderer.invoke("close-app");
   },
-  playSample: (filePath: string) => {
-    console.log("[IPC] playSample invoked", filePath);
-    return ipcRenderer.invoke("play-sample", filePath);
+  playSample: (
+    filePath: string,
+    options?: { channel?: "left" | "right" | "mono" | "stereo" },
+  ) => {
+    console.log("[IPC] playSample invoked", filePath, options);
+    return ipcRenderer.invoke("play-sample", filePath, options);
   },
   stopSample: () => {
     console.log("[IPC] stopSample invoked");
@@ -324,6 +327,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     slotIndex: number,
     filePath: string,
+    options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
     console.log(
       "[IPC] addSampleToSlot invoked",
@@ -331,6 +335,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       voiceNumber,
       slotIndex,
       filePath,
+      options,
     );
     return ipcRenderer.invoke(
       "add-sample-to-slot",
@@ -338,6 +343,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       voiceNumber,
       slotIndex,
       filePath,
+      options,
     );
   },
   replaceSampleInSlot: (
@@ -345,6 +351,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     slotIndex: number,
     filePath: string,
+    options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
     console.log(
       "[IPC] replaceSampleInSlot invoked",
@@ -352,6 +359,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       voiceNumber,
       slotIndex,
       filePath,
+      options,
     );
     return ipcRenderer.invoke(
       "replace-sample-in-slot",
@@ -359,6 +367,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       voiceNumber,
       slotIndex,
       filePath,
+      options,
     );
   },
   deleteSampleFromSlot: (

@@ -36,15 +36,27 @@ export function useStereoHandling() {
   /**
    * Task 7.2.1: Auto-assign as mono when global setting ON
    * Task 7.2.2: Dual-slot assignment: left→voice N, right→voice N+1 when OFF
+   * Task 7.1.3: Allow per-sample override for mono/stereo
    */
   const analyzeStereoAssignment = useCallback(
     (
       targetVoice: number,
       channels: number,
       allSamples: Array<{ voice_number: number; filename: string }>,
+      overrideSetting?: { forceMono?: boolean; forceStereo?: boolean },
     ): StereoHandlingResult => {
-      // If mono sample or setting is ON, always assign as mono
-      if (channels === 1 || defaultToMonoSamples) {
+      // Task 7.1.3: Check for per-sample override first
+      let effectiveDefaultToMono = defaultToMonoSamples;
+      if (overrideSetting) {
+        if (overrideSetting.forceMono) {
+          effectiveDefaultToMono = true;
+        } else if (overrideSetting.forceStereo) {
+          effectiveDefaultToMono = false;
+        }
+      }
+
+      // If mono sample or effective setting is ON, always assign as mono
+      if (channels === 1 || effectiveDefaultToMono) {
         return {
           canAssign: true,
           targetVoice,
@@ -72,6 +84,7 @@ export function useStereoHandling() {
       }
 
       // Task 7.2.3: Handle conflicts when target voices have existing samples
+      // For stereo: check if voice N has samples AND if voice N+1 has samples (it needs to be empty)
       const targetVoiceSamples = allSamples.filter(
         (s) => s.voice_number === targetVoice,
       );
@@ -79,6 +92,7 @@ export function useStereoHandling() {
         (s) => s.voice_number === nextVoice,
       );
 
+      // Conflict if either voice has samples (voice N+1 must be empty for stereo)
       const hasConflicts =
         targetVoiceSamples.length > 0 || nextVoiceSamples.length > 0;
 
@@ -168,6 +182,7 @@ export function useStereoHandling() {
         voice: number,
         slotIndex: number,
         filePath: string,
+        options?: { forceMono?: boolean; forceStereo?: boolean },
       ) => Promise<void>,
     ): Promise<boolean> => {
       if (options.cancel) {
@@ -182,17 +197,21 @@ export function useStereoHandling() {
       try {
         if (options.forceMono || result.assignAsMono) {
           // Assign as mono to the target voice
-          await onSampleAdd(result.targetVoice, -1, filePath); // -1 means find next available slot
+          await onSampleAdd(result.targetVoice, -1, filePath, {
+            forceMono: true,
+          }); // -1 means find next available slot
           return true;
         }
 
-        // Assign as stereo (left to target voice, right to next voice)
-        // This would require special handling in the backend to split stereo samples
-        // For now, we'll assign as mono
-        await onSampleAdd(result.targetVoice, -1, filePath);
+        // Task 7.2.2: Stereo assignment: sample goes to voice N, voice N+1 is consumed
+        // Only add to the left voice - hardware will automatically use voice N+1 for right channel
+        await onSampleAdd(result.targetVoice, -1, filePath, {
+          forceStereo: true,
+        }); // Sample added to left voice only with stereo flag
+        // Voice N+1 is consumed by the stereo pair but no sample entry is created
 
-        toast.info("Stereo assignment", {
-          description: `Stereo sample assigned as mono to voice ${result.targetVoice}. Full stereo assignment will be implemented in a future update.`,
+        toast.success("Stereo assignment", {
+          description: `Stereo sample assigned to voices ${result.targetVoice} (left) and ${result.targetVoice + 1} (right).`,
           duration: 5000,
         });
 

@@ -41,6 +41,17 @@ function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
       const slotIndex = sample.slot_number - 1;
       if (slotIndex >= 0 && slotIndex < 12) {
         voices[voiceNumber][slotIndex] = sample.filename;
+
+        // Task 7: If this is a stereo sample, also show it in the next voice
+        // This indicates that the next voice slot is consumed by the stereo pair
+        if (sample.is_stereo && voiceNumber < 4) {
+          const nextVoice = voiceNumber + 1;
+          if (!Array.isArray(voices[nextVoice])) {
+            voices[nextVoice] = [];
+          }
+          // Show the same filename in the next voice to indicate it's consumed
+          voices[nextVoice][slotIndex] = sample.filename;
+        }
       }
     }
   });

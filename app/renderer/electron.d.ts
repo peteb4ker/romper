@@ -67,7 +67,10 @@ export interface ElectronAPI {
   copyKit?: (sourceKit: string, destKit: string) => Promise<void>;
   listFilesInRoot?: (localStorePath: string) => Promise<string[]>;
   closeApp?: () => Promise<void>;
-  playSample?: (filePath: string) => Promise<any>;
+  playSample?: (
+    filePath: string,
+    options?: { channel?: "left" | "right" | "mono" | "stereo" },
+  ) => Promise<any>;
   stopSample?: () => Promise<any>;
   onSamplePlaybackEnded?: (cb: () => void) => void;
   onSamplePlaybackError?: (cb: (errMsg: string) => void) => void;
@@ -165,12 +168,14 @@ export interface ElectronAPI {
     voiceNumber: number,
     slotIndex: number,
     filePath: string,
+    options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => Promise<DbResult<{ sampleId: number }>>;
   replaceSampleInSlot?: (
     kitName: string,
     voiceNumber: number,
     slotIndex: number,
     filePath: string,
+    options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => Promise<DbResult<{ sampleId: number }>>;
   deleteSampleFromSlot?: (
     kitName: string,

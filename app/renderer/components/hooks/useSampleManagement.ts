@@ -16,7 +16,12 @@ export function useSampleManagement({
   onMessage,
 }: UseSampleManagementParams) {
   const handleSampleAdd = useCallback(
-    async (voice: number, slotIndex: number, filePath: string) => {
+    async (
+      voice: number,
+      slotIndex: number,
+      filePath: string,
+      options?: { forceMono?: boolean; forceStereo?: boolean },
+    ) => {
       if (!window.electronAPI?.addSampleToSlot) {
         onMessage?.({
           type: "error",
@@ -31,6 +36,7 @@ export function useSampleManagement({
           voice,
           slotIndex,
           filePath,
+          options,
         );
 
         if (result.success) {
@@ -59,7 +65,12 @@ export function useSampleManagement({
   );
 
   const handleSampleReplace = useCallback(
-    async (voice: number, slotIndex: number, filePath: string) => {
+    async (
+      voice: number,
+      slotIndex: number,
+      filePath: string,
+      options?: { forceMono?: boolean; forceStereo?: boolean },
+    ) => {
       if (!window.electronAPI?.replaceSampleInSlot) {
         onMessage?.({
           type: "error",
@@ -74,6 +85,7 @@ export function useSampleManagement({
           voice,
           slotIndex,
           filePath,
+          options,
         );
 
         if (result.success) {

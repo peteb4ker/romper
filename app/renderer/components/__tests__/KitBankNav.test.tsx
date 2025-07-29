@@ -19,7 +19,12 @@ describe("KitBankNav", () => {
     locked: false,
     step_pattern: null,
     modified_since_sync: false,
-    bank: { letter: name[0], artist: `Test Artist ${name[0]}`, rtf_filename: null, scanned_at: null },
+    bank: {
+      letter: name[0],
+      artist: `Test Artist ${name[0]}`,
+      rtf_filename: null,
+      scanned_at: null,
+    },
   });
 
   it("renders all 26 bank buttons", () => {
@@ -94,17 +99,18 @@ describe("A-Z hotkey navigation and bank highlighting", () => {
     locked: false,
     step_pattern: null,
     modified_since_sync: false,
-    bank: { letter: name[0], artist: `Test Artist ${name[0]}`, rtf_filename: null, scanned_at: null },
+    bank: {
+      letter: name[0],
+      artist: `Test Artist ${name[0]}`,
+      rtf_filename: null,
+      scanned_at: null,
+    },
   });
 
   it("highlights the correct bank when selectedBank is set", () => {
     const mockKits = [createMockKit("A1"), createMockKit("B2")];
     render(
-      <KitBankNav
-        kits={mockKits}
-        onBankClick={() => {}}
-        selectedBank="B"
-      />,
+      <KitBankNav kits={mockKits} onBankClick={() => {}} selectedBank="B" />,
     );
     const bButton = screen.getByRole("button", { name: "Jump to bank B" });
     expect(bButton.className).toContain("bg-blue-800");

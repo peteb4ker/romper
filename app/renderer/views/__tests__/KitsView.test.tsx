@@ -14,16 +14,16 @@ import { TestSettingsProvider } from "./TestSettingsProvider";
 describe("KitsView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup IntersectionObserver mock
     const mockObserver = {
       observe: vi.fn(),
       unobserve: vi.fn(),
       disconnect: vi.fn(),
     };
-    
+
     global.IntersectionObserver = vi.fn(() => mockObserver);
-    Object.defineProperty(window, 'IntersectionObserver', {
+    Object.defineProperty(window, "IntersectionObserver", {
       writable: true,
       configurable: true,
       value: global.IntersectionObserver,

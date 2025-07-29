@@ -21,11 +21,9 @@ const mockElectron = {
   webUtils: mockWebUtils,
 };
 
-
 // Mock electron module (both require and import styles)
 vi.mock("electron", () => mockElectron);
 vi.doMock("electron", () => mockElectron);
-
 
 vi.mock("../../shared/db/types.js", () => ({
   Kit: {},
@@ -37,17 +35,17 @@ describe("preload/index.tsx", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.resetModules();
-    
+
     // Set up module cache mock before importing
-    const Module = require('module');
+    const Module = require("module");
     const originalRequire = Module.prototype.require;
-    Module.prototype.require = function(id: string) {
-      if (id === 'electron') {
+    Module.prototype.require = function (id: string) {
+      if (id === "electron") {
         return mockElectron;
       }
       return originalRequire.apply(this, arguments);
     };
-    
+
     // Mock global window for menuEventForwarder
     global.window = {
       dispatchEvent: vi.fn(),
@@ -131,15 +129,19 @@ describe("preload/index.tsx", () => {
     // Check that ipcRenderer.on was called to set up event listeners
     expect(mockElectron.ipcRenderer.on).toHaveBeenCalled();
     // Check for specific menu events
-    expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith("menu-scan-all-kits", expect.any(Function));
+    expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
+      "menu-scan-all-kits",
+      expect.any(Function),
+    );
   });
 
   it("delegates settings operations to settingsManager", async () => {
     await import("../index");
 
-    const electronAPICall = mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
+    const electronAPICall =
+      mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+        (call) => call[0] === "electronAPI",
+      );
     expect(electronAPICall).toBeDefined();
     const api = electronAPICall[1];
 
@@ -156,7 +158,9 @@ describe("preload/index.tsx", () => {
 
     // Test getSetting - should call read-settings via IPC
     const result = await api.getSetting("testKey");
-    expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith("read-settings");
+    expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
+      "read-settings",
+    );
     expect(result).toBe("test-value");
 
     // Test setSetting - should call write-settings via IPC
@@ -169,19 +173,24 @@ describe("preload/index.tsx", () => {
 
     // Test readSettings - should call read-settings via IPC
     const settings = await api.readSettings();
-    expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith("read-settings");
+    expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
+      "read-settings",
+    );
     expect(settings).toEqual({ testKey: "test-value" });
   });
 
   it("handles getDroppedFilePath with webUtils", async () => {
     await import("../index");
 
-    const fileApi = mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-      (c) => c[0] === "electronFileAPI",
-    )?.[1];
+    const fileApi =
+      mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+        (c) => c[0] === "electronFileAPI",
+      )?.[1];
 
     const file = new File([], "test.wav");
-    mockElectron.webUtils.getPathForFile.mockResolvedValue("/mock/path/test.wav");
+    mockElectron.webUtils.getPathForFile.mockResolvedValue(
+      "/mock/path/test.wav",
+    );
 
     const result = await fileApi.getDroppedFilePath(file);
     expect(mockElectron.webUtils.getPathForFile).toHaveBeenCalledWith(file);
@@ -190,10 +199,10 @@ describe("preload/index.tsx", () => {
 
   it("handles getDroppedFilePath error when webUtils unavailable", async () => {
     // Override the module require mock to return null webUtils
-    const Module = require('module');
+    const Module = require("module");
     const originalRequire = Module.prototype.require;
-    Module.prototype.require = function(id: string) {
-      if (id === 'electron') {
+    Module.prototype.require = function (id: string) {
+      if (id === "electron") {
         return {
           ...mockElectron,
           webUtils: null,
@@ -205,9 +214,10 @@ describe("preload/index.tsx", () => {
     vi.resetModules();
     await import("../index");
 
-    const fileApi = mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-      (c) => c[0] === "electronFileAPI",
-    )?.[1];
+    const fileApi =
+      mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+        (c) => c[0] === "electronFileAPI",
+      )?.[1];
 
     await expect(fileApi.getDroppedFilePath({})).rejects.toThrow(
       "webUtils.getPathForFile is not available.",
@@ -217,16 +227,19 @@ describe("preload/index.tsx", () => {
   it("forwards IPC calls for basic operations", async () => {
     await import("../index");
 
-    const electronAPICall = mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-      (call) => call[0] === "electronAPI",
-    );
+    const electronAPICall =
+      mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+        (call) => call[0] === "electronAPI",
+      );
     const api = electronAPICall[1];
 
     // Test a few key IPC operations
     mockElectron.ipcRenderer.invoke.mockResolvedValue("mock-result");
 
     await api.selectSdCard();
-    expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith("select-sd-card");
+    expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
+      "select-sd-card",
+    );
 
     await api.getLocalStoreStatus();
     expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
@@ -234,7 +247,10 @@ describe("preload/index.tsx", () => {
     );
 
     await api.createKit("A01");
-    expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith("create-kit", "A01");
+    expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
+      "create-kit",
+      "A01",
+    );
   });
 
   it("logs preload script completion", async () => {

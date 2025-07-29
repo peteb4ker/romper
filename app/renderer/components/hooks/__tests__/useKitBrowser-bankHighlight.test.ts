@@ -1,4 +1,4 @@
-import { renderHook, act } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { KitWithRelations } from "../../../../../shared/db/schema";
@@ -15,7 +15,12 @@ describe("useKitBrowser Bank Highlighting", () => {
       locked: false,
       step_pattern: null,
       modified_since_sync: false,
-      bank: { letter: "A", artist: "Test Artist A", rtf_filename: null, scanned_at: null },
+      bank: {
+        letter: "A",
+        artist: "Test Artist A",
+        rtf_filename: null,
+        scanned_at: null,
+      },
     },
     {
       name: "A2",
@@ -26,7 +31,12 @@ describe("useKitBrowser Bank Highlighting", () => {
       locked: false,
       step_pattern: null,
       modified_since_sync: false,
-      bank: { letter: "A", artist: "Test Artist A", rtf_filename: null, scanned_at: null },
+      bank: {
+        letter: "A",
+        artist: "Test Artist A",
+        rtf_filename: null,
+        scanned_at: null,
+      },
     },
     {
       name: "B1",
@@ -37,7 +47,12 @@ describe("useKitBrowser Bank Highlighting", () => {
       locked: false,
       step_pattern: null,
       modified_since_sync: false,
-      bank: { letter: "B", artist: "Test Artist B", rtf_filename: null, scanned_at: null },
+      bank: {
+        letter: "B",
+        artist: "Test Artist B",
+        rtf_filename: null,
+        scanned_at: null,
+      },
     },
     {
       name: "B2",
@@ -48,7 +63,12 @@ describe("useKitBrowser Bank Highlighting", () => {
       locked: false,
       step_pattern: null,
       modified_since_sync: false,
-      bank: { letter: "B", artist: "Test Artist B", rtf_filename: null, scanned_at: null },
+      bank: {
+        letter: "B",
+        artist: "Test Artist B",
+        rtf_filename: null,
+        scanned_at: null,
+      },
     },
   ];
 
@@ -130,7 +150,12 @@ describe("useKitBrowser Bank Highlighting", () => {
         locked: false,
         step_pattern: null,
         modified_since_sync: false,
-        bank: { letter: "A", artist: "Test Artist A", rtf_filename: null, scanned_at: null },
+        bank: {
+          letter: "A",
+          artist: "Test Artist A",
+          rtf_filename: null,
+          scanned_at: null,
+        },
       },
       {
         name: "B1",
@@ -141,7 +166,12 @@ describe("useKitBrowser Bank Highlighting", () => {
         locked: false,
         step_pattern: null,
         modified_since_sync: false,
-        bank: { letter: "B", artist: "Test Artist B", rtf_filename: null, scanned_at: null },
+        bank: {
+          letter: "B",
+          artist: "Test Artist B",
+          rtf_filename: null,
+          scanned_at: null,
+        },
       },
       {
         name: "C1",
@@ -152,7 +182,12 @@ describe("useKitBrowser Bank Highlighting", () => {
         locked: false,
         step_pattern: null,
         modified_since_sync: false,
-        bank: { letter: "C", artist: "Test Artist C", rtf_filename: null, scanned_at: null },
+        bank: {
+          letter: "C",
+          artist: "Test Artist C",
+          rtf_filename: null,
+          scanned_at: null,
+        },
       },
     ];
 

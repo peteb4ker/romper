@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor, cleanup } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -56,7 +62,9 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.queryByText("Sync All Kits to SD Card")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Sync All Kits to SD Card"),
+      ).not.toBeInTheDocument();
     });
   });
 

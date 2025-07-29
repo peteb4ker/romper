@@ -404,6 +404,54 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] validateSampleFormat invoked", filePath);
     return ipcRenderer.invoke("validate-sample-format", filePath);
   },
+
+  // Task 8.2.1: SD Card sync operations
+  generateSyncChangeSummary: () => {
+    console.log("[IPC] generateSyncChangeSummary invoked");
+    return ipcRenderer.invoke("generateSyncChangeSummary");
+  },
+
+  startKitSync: (syncData: {
+    filesToCopy: Array<{
+      filename: string;
+      sourcePath: string;
+      destinationPath: string;
+      operation: "copy" | "convert";
+    }>;
+    filesToConvert: Array<{
+      filename: string;
+      sourcePath: string;
+      destinationPath: string;
+      operation: "copy" | "convert";
+    }>;
+  }) => {
+    console.log("[IPC] startKitSync invoked", syncData);
+    return ipcRenderer.invoke("startKitSync", syncData);
+  },
+
+  cancelKitSync: () => {
+    console.log("[IPC] cancelKitSync invoked");
+    return ipcRenderer.invoke("cancelKitSync");
+  },
+
+  onSyncProgress: (
+    callback: (progress: {
+      currentFile: string;
+      filesCompleted: number;
+      totalFiles: number;
+      bytesTransferred: number;
+      totalBytes: number;
+      elapsedTime: number;
+      estimatedTimeRemaining: number;
+      status: "preparing" | "copying" | "converting" | "complete" | "error";
+    }) => void,
+  ) => {
+    console.log("[IPC] onSyncProgress listener registered");
+    ipcRenderer.removeAllListeners("sync-progress");
+    ipcRenderer.on("sync-progress", (_event: any, progress: any) =>
+      callback(progress),
+    );
+  },
 });
 
 // Initialize menu event forwarding

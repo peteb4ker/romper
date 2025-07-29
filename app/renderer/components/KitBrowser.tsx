@@ -2,21 +2,23 @@ import React, { useImperativeHandle, useRef, useState } from "react";
 import { FiChevronDown, FiPlusCircle } from "react-icons/fi";
 import { toast } from "sonner";
 
+import type { KitWithRelations } from "../../../shared/db/schema";
+import KitDialogs from "./dialogs/KitDialogs";
+import SyncUpdateDialog from "./dialogs/SyncUpdateDialog";
+import ValidationResultsDialog from "./dialogs/ValidationResultsDialog";
 import { useKitBrowser } from "./hooks/useKitBrowser";
 import { useKitScan } from "./hooks/useKitScan";
 import { useLocalStoreWizard } from "./hooks/useLocalStoreWizard";
+import { useSyncUpdate } from "./hooks/useSyncUpdate";
 import KitBankNav from "./KitBankNav";
 import KitBrowserHeader from "./KitBrowserHeader";
-import KitDialogs from "./KitDialogs";
 import KitList, { KitListHandle } from "./KitList";
 import LocalStoreWizardUI from "./LocalStoreWizardUI";
-import ValidationResultsDialog from "./ValidationResultsDialog";
 
 interface KitBrowserProps {
   onSelectKit: (kitName: string) => void;
   localStorePath: string | null;
-  kits?: string[];
-  kitData?: any[];
+  kits?: KitWithRelations[];
   sampleCounts?: Record<string, [number, number, number, number]>;
   onRefreshKits?: () => void;
   onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
@@ -35,7 +37,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
 
     const logic = useKitBrowser({
       kits: props.kits ?? [],
-      kitData: props.kitData ?? [],
       kitListRef: kitListRef,
       onRefreshKits: props.onRefreshKits,
       onMessage: props.onMessage,
@@ -65,11 +66,25 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       focusedKit,
       setFocusedKit,
       globalBankHotkeyHandler,
+      handleVisibleBankChange,
     } = logic;
 
     const [showLocalStoreWizard, setShowLocalStoreWizard] =
       React.useState(false);
     const [showScanOptions, setShowScanOptions] = useState(false);
+    const [showSyncDialog, setShowSyncDialog] = useState(false);
+    const [currentSyncKit, setCurrentSyncKit] = useState<string | null>(null);
+    const [currentChangeSummary, setCurrentChangeSummary] = useState<any>(null);
+
+    // Sync functionality
+    const {
+      generateChangeSummary,
+      startSync,
+      syncProgress,
+      isLoading: isSyncLoading,
+      error: syncError,
+      clearError: clearSyncError,
+    } = useSyncUpdate();
 
     const scanOperations = [
       {
@@ -115,8 +130,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     const scrollToBank = (bank: string) => {
       const kitsArr = kits || [];
       const idx = kitsArr.findIndex(
-        (k) =>
-          k && typeof k === "string" && k[0] && k[0].toUpperCase() === bank,
+        (k) => k && k.name && k.name[0] && k.name[0].toUpperCase() === bank,
       );
       if (idx !== -1 && kitListRef.current) {
         kitListRef.current.scrollAndFocusKitByIndex(idx);
@@ -144,6 +158,54 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       onRefreshKits: props.onRefreshKits,
     });
 
+    // Sync handlers
+    const handleSyncToSdCard = async () => {
+      // Sync all kits to SD card
+      setCurrentSyncKit("All Kits");
+
+      // Generate change summary before showing dialog
+      const changeSummary = await generateChangeSummary();
+      if (!changeSummary) {
+        if (onMessage && syncError) {
+          onMessage({
+            text: `Failed to analyze kits: ${syncError}`,
+            type: "error",
+          });
+        }
+        return;
+      }
+
+      setCurrentChangeSummary(changeSummary);
+      setShowSyncDialog(true);
+    };
+
+    const handleConfirmSync = async () => {
+      if (!currentChangeSummary) return;
+
+      const success = await startSync(currentChangeSummary);
+      if (success) {
+        setShowSyncDialog(false);
+        setCurrentSyncKit(null);
+        setCurrentChangeSummary(null);
+        if (onMessage) {
+          onMessage({
+            text: `All kits synced successfully!`,
+            type: "success",
+            duration: 3000,
+          });
+        }
+      } else if (onMessage && syncError) {
+        onMessage({ text: `Sync failed: ${syncError}`, type: "error" });
+      }
+    };
+
+    const handleCloseSyncDialog = () => {
+      setShowSyncDialog(false);
+      setCurrentSyncKit(null);
+      setCurrentChangeSummary(null);
+      clearSyncError();
+    };
+
     // Expose handleScanAllKits through ref for parent components
     useImperativeHandle(ref, () => ({
       handleScanAllKits,
@@ -161,6 +223,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           nextKitSlot={nextKitSlot}
           onShowLocalStoreWizard={() => setShowLocalStoreWizard(true)}
           onValidateLocalStore={() => setShowValidationDialog(true)}
+          onSyncToSdCard={handleSyncToSdCard}
           bankNav={
             <KitBankNav
               kits={kits}
@@ -205,11 +268,12 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
               setDuplicateKitDest("");
               logic.setDuplicateKitError(null);
             }}
-            kitData={props.kitData}
+            kitData={kits}
             sampleCounts={props.sampleCounts}
             focusedKit={focusedKit}
             onBankFocus={handleBankFocus}
             onFocusKit={setFocusedKit} // NEW: keep parent in sync
+            onVisibleBankChange={handleVisibleBankChange} // NEW: update selected bank on scroll
           />
         </div>
         {/* Local Store Wizard Modal */}
@@ -243,6 +307,18 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             localStorePath={props.localStorePath || undefined}
             onClose={() => setShowValidationDialog(false)}
             onMessage={props.onMessage}
+          />
+        )}
+
+        {/* SyncUpdateDialog */}
+        {showSyncDialog && currentSyncKit && currentChangeSummary && (
+          <SyncUpdateDialog
+            isOpen={showSyncDialog}
+            onClose={handleCloseSyncDialog}
+            onConfirm={handleConfirmSync}
+            kitName={currentSyncKit}
+            changeSummary={currentChangeSummary}
+            isLoading={isSyncLoading}
           />
         )}
       </div>

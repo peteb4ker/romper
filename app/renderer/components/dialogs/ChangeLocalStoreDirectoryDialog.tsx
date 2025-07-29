@@ -7,8 +7,8 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { useSettings } from "../utils/SettingsContext";
-import FilePickerButton from "./utils/FilePickerButton";
+import { useSettings } from "../../utils/SettingsContext";
+import FilePickerButton from "../utils/FilePickerButton";
 
 interface ChangeLocalStoreDirectoryDialogProps {
   isOpen: boolean;

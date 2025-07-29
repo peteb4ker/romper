@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import type { DbResult } from "../../../shared/db/schema.js";
+import type { DbResult, KitWithRelations } from "../../../shared/db/schema.js";
 import type {
   Kit,
   NewKit,
@@ -315,7 +315,7 @@ export function updateVoiceAlias(
   });
 }
 
-export function getKits(dbDir: string): DbResult<any[]> {
+export function getKits(dbDir: string): DbResult<KitWithRelations[]> {
   return withDb(dbDir, (db) => {
     // For relational queries with Drizzle + better-sqlite3, use sync method
     const query = db.query.kits.findMany({
@@ -369,7 +369,10 @@ export function getAllSamples(dbDir: string): DbResult<any[]> {
   });
 }
 
-export function getKit(dbDir: string, kitName: string): DbResult<any | null> {
+export function getKit(
+  dbDir: string,
+  kitName: string,
+): DbResult<KitWithRelations | null> {
   return withDb(dbDir, (db) => {
     // Use proper Drizzle relational query with sync execution
     const result = db.query.kits
@@ -463,5 +466,34 @@ export function markKitAsModified(
       .set({ modified_since_sync: true })
       .where(eq(kits.name, kitName))
       .run();
+  });
+}
+
+// Task 8.3.2: Clear modified flag after successful sync
+export function markKitAsSynced(
+  dbDir: string,
+  kitName: string,
+): DbResult<void> {
+  return withDb(dbDir, (db) => {
+    db.update(kits)
+      .set({ modified_since_sync: false })
+      .where(eq(kits.name, kitName))
+      .run();
+  });
+}
+
+// Task 8.3.2: Clear modified flag for multiple kits after successful sync
+export function markKitsAsSynced(
+  dbDir: string,
+  kitNames: string[],
+): DbResult<void> {
+  return withDb(dbDir, (db) => {
+    // Update all kits in the provided list
+    for (const kitName of kitNames) {
+      db.update(kits)
+        .set({ modified_since_sync: false })
+        .where(eq(kits.name, kitName))
+        .run();
+    }
   });
 }

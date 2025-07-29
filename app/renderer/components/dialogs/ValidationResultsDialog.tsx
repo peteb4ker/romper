@@ -6,8 +6,8 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { KitValidationError } from "../../../shared/db/schema.js";
-import { useValidationResults } from "./hooks/useValidationResults";
+import { KitValidationError } from "../../../../shared/db/schema.js";
+import { useValidationResults } from "../hooks/useValidationResults";
 
 interface ValidationResultsDialogProps {
   isOpen: boolean;

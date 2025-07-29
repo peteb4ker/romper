@@ -13,10 +13,21 @@ import { TestSettingsProvider } from "./TestSettingsProvider";
 
 describe("KitsView", () => {
   beforeEach(() => {
-    // Ensure we have a proper window object
-    if (typeof window === "undefined") {
-      global.window = {} as any;
-    }
+    vi.clearAllMocks();
+    
+    // Setup IntersectionObserver mock
+    const mockObserver = {
+      observe: vi.fn(),
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    };
+    
+    global.IntersectionObserver = vi.fn(() => mockObserver);
+    Object.defineProperty(window, 'IntersectionObserver', {
+      writable: true,
+      configurable: true,
+      value: global.IntersectionObserver,
+    });
 
     // Mock all electronAPI methods for database-first architecture
     window.electronAPI = {

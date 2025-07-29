@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiDatabase, FiRefreshCw } from "react-icons/fi";
+import { FiDatabase, FiDownload, FiRefreshCw } from "react-icons/fi";
 
 import { useKitBrowserHeader } from "./hooks/useKitBrowserHeader";
 
@@ -11,6 +11,7 @@ interface KitBrowserHeaderProps {
   bankNav?: React.ReactNode;
   onShowLocalStoreWizard: () => void;
   onValidateLocalStore: () => void;
+  onSyncToSdCard?: () => void;
 }
 
 const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
@@ -33,6 +34,16 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           )}
         </div>
         <div className="flex gap-2">
+          {props.onSyncToSdCard && (
+            <button
+              className="px-2 py-1 text-xs bg-orange-600 text-white rounded shadow hover:bg-orange-700 transition font-semibold flex items-center"
+              onClick={props.onSyncToSdCard}
+              title="Sync modified kits to SD card"
+            >
+              <FiDownload className="inline-block mr-1" />
+              Sync to SD Card
+            </button>
+          )}
           <button
             className="px-2 py-1 text-xs bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition font-semibold"
             onClick={handleShowNewKit}

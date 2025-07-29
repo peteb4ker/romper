@@ -110,7 +110,7 @@ export type NewEditAction = typeof editActions.$inferInsert;
 export type KitWithRelations = Kit & {
   voices?: Voice[];
   samples?: Sample[];
-  bank?: Bank;
+  bank?: Bank | null;
 };
 
 // Database operation result wrapper

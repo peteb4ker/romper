@@ -7,6 +7,50 @@ if (typeof globalThis.TextEncoder === "undefined") {
   globalThis.TextEncoder = TextEncoder;
 }
 
+// Mock IntersectionObserver globally for all tests
+const mockIntersectionObserver = vi.fn().mockImplementation((callback, options) => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+  root: null,
+  rootMargin: '0px',
+  thresholds: [0],
+}));
+
+globalThis.IntersectionObserver = mockIntersectionObserver;
+global.IntersectionObserver = mockIntersectionObserver;
+
+// Also mock on window object in beforeAll
+beforeAll(() => {
+  if (typeof globalThis.window !== 'undefined') {
+    globalThis.window.IntersectionObserver = mockIntersectionObserver;
+  }
+});
+
+// More complete document mock for all tests
+if (typeof global.document === 'undefined') {
+  global.document = {
+    getElementById: vi.fn(() => document.createElement('div')),
+    getElementsByTagName: vi.fn((tag) => {
+      if (tag === 'head') {
+        return [{ appendChild: vi.fn(), insertBefore: vi.fn() }];
+      }
+      return [];
+    }),
+    createElement: vi.fn((tag) => ({
+      type: '',
+      appendChild: vi.fn(),
+      setAttribute: vi.fn(),
+      style: {},
+    })),
+    createTextNode: vi.fn((text) => ({ nodeValue: text, textContent: text })),
+    head: {
+      appendChild: vi.fn(),
+      insertBefore: vi.fn(),
+    },
+  } as any;
+}
+
 // Mock ElectronAPI and AudioContext for all tests
 beforeAll(() => {
   if (typeof window !== "undefined") {
@@ -88,6 +132,15 @@ beforeAll(() => {
     // Mock scrollIntoView for all elements
     if (typeof window.HTMLElement !== "undefined") {
       window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    }
+
+    // Mock IntersectionObserver for all elements
+    if (typeof window.IntersectionObserver === "undefined") {
+      window.IntersectionObserver = vi.fn().mockImplementation(() => ({
+        observe: vi.fn(),
+        unobserve: vi.fn(),
+        disconnect: vi.fn(),
+      }));
     }
 
     // Mock AudioContext for SampleWaveform

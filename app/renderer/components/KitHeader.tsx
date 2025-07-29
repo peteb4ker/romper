@@ -10,7 +10,7 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 
-import type { Kit } from "../../../shared/db/schema";
+import type { Kit, KitWithRelations } from "../../../shared/db/schema";
 
 interface KitHeaderProps {
   kitName: string;
@@ -28,7 +28,7 @@ interface KitHeaderProps {
   onScanKit?: () => void;
   onToggleEditableMode?: () => void;
   isEditable?: boolean;
-  kits?: string[];
+  kits?: KitWithRelations[];
   kitIndex?: number;
 }
 

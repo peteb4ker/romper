@@ -1,7 +1,9 @@
 import React from "react";
 
+import type { KitWithRelations } from "../../../shared/db/schema";
+
 interface KitBankNavProps {
-  kits: string[];
+  kits: KitWithRelations[];
   onBankClick: (bank: string) => void;
   bankNames?: Record<string, string>;
   selectedBank?: string;
@@ -17,9 +19,7 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
 }) => (
   <div className="flex flex-row flex-wrap gap-1 justify-center">
     {banks.map((bank) => {
-      const enabled = kits.some(
-        (k) => k && typeof k === "string" && k.startsWith(bank),
-      );
+      const enabled = kits.some((k) => k && k.name && k.name.startsWith(bank));
       const isSelected = enabled && selectedBank === bank;
       return (
         <button

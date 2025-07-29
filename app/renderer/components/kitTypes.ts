@@ -1,6 +1,8 @@
 // kitTypes.ts
 // Central location for all UI TypeScript interfaces/types for kits
 
+import type { KitWithRelations } from "../../../shared/db/schema";
+
 export interface KitSamplePlanSlot {
   source: string;
   target: string;
@@ -16,7 +18,7 @@ export interface VoiceSamples {
 export interface KitDetailsProps {
   kitName: string;
   onBack: (scrollToKit?: string) => void;
-  kits?: string[];
+  kits?: KitWithRelations[];
   kitIndex?: number;
   onNextKit?: () => void;
   onPrevKit?: () => void;

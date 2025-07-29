@@ -7,21 +7,76 @@ import React, {
 } from "react";
 import { ListChildComponentProps, VariableSizeList } from "react-window";
 
-import type { Kit } from "../../../shared/db/schema";
+import type { Kit, KitWithRelations } from "../../../shared/db/schema";
 import { useKitListLogic } from "./hooks/useKitListLogic";
 import { useKitListNavigation } from "./hooks/useKitListNavigation";
 import KitItem from "./KitItem";
 
+// Bank header component with intersection observer
+interface BankHeaderProps {
+  bank: string;
+  bankName?: string;
+  onBankVisible?: (bank: string) => void;
+}
+
+const BankHeader: React.FC<BankHeaderProps> = ({
+  bank,
+  bankName,
+  onBankVisible,
+}) => {
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!headerRef.current || !onBankVisible) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          onBankVisible(bank);
+        }
+      },
+      {
+        threshold: 0.5, // Trigger when 50% of the header is visible
+        rootMargin: "-10% 0px -80% 0px", // Only consider the top 20% of the viewport
+      },
+    );
+
+    observer.observe(headerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [bank, onBankVisible]);
+
+  return (
+    <div
+      ref={headerRef}
+      id={`bank-${bank}`}
+      className="mt-2 mb-1 flex items-center gap-2"
+    >
+      <span className="font-bold text-xs tracking-widest text-blue-700 dark:text-blue-300">
+        Bank {bank}
+      </span>
+      {bankName && (
+        <span className="text-xs text-gray-600 dark:text-gray-300 italic">
+          {bankName}
+        </span>
+      )}
+    </div>
+  );
+};
+
 interface KitListProps {
-  kits: string[];
+  kits: KitWithRelations[];
   onSelectKit: (kit: string) => void;
   bankNames: Record<string, string>;
   onDuplicate: (kit: string) => void;
-  kitData?: Kit[]; // Kit data from database
+  kitData?: KitWithRelations[]; // Kit data from database
   sampleCounts?: Record<string, [number, number, number, number]>;
   focusedKit?: string | null; // externally controlled focus
   onBankFocus?: (bank: string) => void;
   onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
+  onVisibleBankChange?: (bank: string) => void; // NEW: notify when visible bank changes during scroll
 }
 
 // Expose imperative scroll/focus API for parent components
@@ -45,6 +100,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       focusedKit,
       onBankFocus,
       onFocusKit,
+      onVisibleBankChange,
     },
     ref,
   ) => {
@@ -115,7 +171,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
           console.warn("[KitList] listRef.current is null");
         }
         setFocus(idx);
-        if (onFocusKit) onFocusKit(kitsToDisplay[idx]);
+        if (onFocusKit) onFocusKit(kitsToDisplay[idx].name);
       },
       [kitsToDisplay, setFocus, onFocusKit, getOffsetForIndex],
     );
@@ -139,12 +195,11 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
         const bank = e.key.toUpperCase();
         const idx = kitsToDisplay.findIndex(
-          (k) =>
-            k && typeof k === "string" && k[0] && k[0].toUpperCase() === bank,
+          (k) => k && k.name && k.name[0] && k.name[0].toUpperCase() === bank,
         );
         if (idx !== -1) {
           if (typeof onBankFocus === "function") onBankFocus(bank);
-          if (onFocusKit) onFocusKit(kitsToDisplay[idx]);
+          if (onFocusKit) onFocusKit(kitsToDisplay[idx].name);
           setFocus(idx);
           e.preventDefault();
         } else {
@@ -156,10 +211,11 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
     };
 
     // Click handler: always notify parent
-    const handleSelectKit = (kit: string, idx: number) => {
+    const handleSelectKit = (kitName: string, idx: number) => {
+      const kit = kitsToDisplay[idx];
       if (isValidKit(kit)) {
-        onSelectKit(kit);
-        if (onFocusKit) onFocusKit(kit);
+        onSelectKit(kitName);
+        if (onFocusKit) onFocusKit(kitName);
         setFocus(idx);
       }
     };
@@ -167,39 +223,32 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
     // Virtualized row renderer
     const Row = ({ index, style }: ListChildComponentProps) => {
       const kit = kitsToDisplay[index];
+      const kitName = kit.name;
       const isValid = isValidKit(kit);
       const colorClass = getColorClass(kit);
       const showAnchor = rowHasAnchor[index];
       const isSelected = selectedIdx === index;
       // Get kit data from kitData array
-      const kitDataItem = kitData?.find((k) => k.name === kit) || null;
+      const kitDataItem = kitData?.find((k) => k.name === kitName) || null;
       return (
         <div style={style}>
           {showAnchor && (
-            <div
-              id={`bank-${kit[0]}`}
-              className="mt-2 mb-1 flex items-center gap-2"
-            >
-              <span className="font-bold text-xs tracking-widest text-blue-700 dark:text-blue-300">
-                Bank {kit[0]}
-              </span>
-              {bankNames[kit[0]] && (
-                <span className="text-xs text-gray-600 dark:text-gray-300 italic">
-                  {bankNames[kit[0]]}
-                </span>
-              )}
-            </div>
+            <BankHeader
+              bank={kitName[0]}
+              bankName={bankNames[kitName[0]]}
+              onBankVisible={onVisibleBankChange}
+            />
           )}
           <KitItem
-            kit={kit}
+            kit={kitName}
             colorClass={colorClass}
             isValid={isValid}
-            onSelect={() => handleSelectKit(kit, index)}
-            onDuplicate={() => isValid && onDuplicate(kit)}
-            sampleCounts={sampleCounts ? sampleCounts[kit] : undefined}
+            onSelect={() => handleSelectKit(kitName, index)}
+            onDuplicate={() => isValid && onDuplicate(kitName)}
+            sampleCounts={sampleCounts ? sampleCounts[kitName] : undefined}
             kitData={kitDataItem}
-            data-kit={kit}
-            data-testid={`kit-item-${kit}`}
+            data-kit={kitName}
+            data-testid={`kit-item-${kitName}`}
             isSelected={isSelected}
           />
         </div>

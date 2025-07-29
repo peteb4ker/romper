@@ -1,10 +1,17 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
+import type { KitWithRelations } from "../../../shared/db/schema";
 import {
   compareKitSlots,
   groupSamplesByVoice,
 } from "../../../shared/kitUtilsShared";
-import ChangeLocalStoreDirectoryDialog from "../components/ChangeLocalStoreDirectoryDialog";
+import ChangeLocalStoreDirectoryDialog from "../components/dialogs/ChangeLocalStoreDirectoryDialog";
 import PreferencesDialog from "../components/dialogs/PreferencesDialog";
 import { useBankScanning } from "../components/hooks/useBankScanning";
 import { useMenuEvents } from "../components/hooks/useMenuEvents";
@@ -82,8 +89,7 @@ const KitsView = () => {
     isInitialized,
   } = useSettings();
   const { showMessage } = useMessageDisplay();
-  const [kits, setKits] = useState<string[]>([]);
-  const [kitData, setKitData] = useState<any[]>([]);
+  const [kits, setKits] = useState<KitWithRelations[]>([]);
   const [allKitSamples, setAllKitSamples] = useState<{
     [kit: string]: VoiceSamples;
   }>({});
@@ -173,31 +179,30 @@ const KitsView = () => {
 
   // Database-only approach - no filesystem scanning needed
 
-  // Load all kits, samples, and labels on local store change
-  useEffect(() => {
-    if (!isInitialized || !localStorePath || needsLocalStoreSetup) return;
-    console.log("[KitsView] Loading kits from", localStorePath); // Log when effect runs
-    (async () => {
+  // Reusable function to load all kits and their data
+  const loadKitsData = useCallback(
+    async (scrollToKit?: string) => {
+      if (!isInitialized || !localStorePath || needsLocalStoreSetup) return;
+      console.log("[KitsView] Loading kits from", localStorePath);
+
       // 1. Load kits from database (includes bank relationships)
       let kitNames: string[] = [];
       try {
         const kitsResult = await window.electronAPI?.getKits?.();
         if (kitsResult?.success && kitsResult.data) {
-          const kitsWithBanks = kitsResult.data;
-          setKitData(kitsWithBanks);
-          // Extract kit names for compatibility with existing code
-          kitNames = kitsWithBanks.map((kit: any) => kit.name);
-          setKits(kitNames);
+          const kitsWithBanks =
+            kitsResult.data as unknown as KitWithRelations[];
+          setKits(kitsWithBanks);
+          kitNames = kitsWithBanks.map((kit: KitWithRelations) => kit.name);
         } else {
           console.warn("Failed to load kits from database:", kitsResult?.error);
           setKits([]);
-          setKitData([]);
         }
       } catch (error) {
         console.warn("Error loading kits from database:", error);
         setKits([]);
-        setKitData([]);
       }
+
       // 2. Load samples for each kit from database
       const samples: { [kit: string]: VoiceSamples } = {};
       for (const kit of kitNames) {
@@ -219,8 +224,37 @@ const KitsView = () => {
         }
       }
       setAllKitSamples(samples);
-    })();
-  }, [isInitialized, localStorePath, needsLocalStoreSetup]);
+
+      // If a specific kit should be scrolled to, do it after data loads
+      if (scrollToKit && kitBrowserRef.current) {
+        setTimeout(() => {
+          // Find kit index in the sorted kit list (need to sort names)
+          const kitNames = kits.map((k) => k.name);
+          const sortedKitNames = kitNames.slice().sort(compareKitSlots);
+          const kitIndex = sortedKitNames.findIndex(
+            (name) => name === scrollToKit,
+          );
+
+          if (kitIndex !== -1) {
+            // Use the KitList scroll method via the KitBrowser ref
+            const kitBrowser = kitBrowserRef.current;
+            // We need to access the KitList ref through the KitBrowser logic
+            // For now, let's use a simpler DOM-based scroll approach
+            const kitEl = document.querySelector(`[data-kit='${scrollToKit}']`);
+            if (kitEl) {
+              kitEl.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }
+        }, 100); // Small delay to ensure DOM is updated
+      }
+    },
+    [isInitialized, localStorePath, needsLocalStoreSetup, kits],
+  );
+
+  // Load all kits, samples, and labels on local store change
+  useEffect(() => {
+    loadKitsData();
+  }, [loadKitsData]);
 
   // When a kit is selected, set its samples
   useEffect(() => {
@@ -239,8 +273,9 @@ const KitsView = () => {
   const sampleCounts = useMemo(() => {
     const counts: Record<string, [number, number, number, number]> = {};
     for (const kit of kits) {
-      const voices = allKitSamples[kit] || { 1: [], 2: [], 3: [], 4: [] };
-      counts[kit] = [1, 2, 3, 4].map((v) => voices[v]?.length || 0) as [
+      const kitName = kit.name;
+      const voices = allKitSamples[kitName] || { 1: [], 2: [], 3: [], 4: [] };
+      counts[kitName] = [1, 2, 3, 4].map((v) => voices[v]?.length || 0) as [
         number,
         number,
         number,
@@ -250,19 +285,21 @@ const KitsView = () => {
     return counts;
   }, [kits, allKitSamples]);
 
-  const sortedKits = kits ? kits.slice().sort(compareKitSlots) : [];
-  const currentKitIndex = sortedKits.findIndex((k) => k === selectedKit);
+  const sortedKits = kits
+    ? kits.slice().sort((a, b) => compareKitSlots(a.name, b.name))
+    : [];
+  const currentKitIndex = sortedKits.findIndex((k) => k.name === selectedKit);
   const handleSelectKit = (kitName: string) => {
     setSelectedKit(kitName);
   };
   const handleNextKit = () => {
     if (sortedKits && currentKitIndex < sortedKits.length - 1) {
-      setSelectedKit(sortedKits[currentKitIndex + 1]);
+      setSelectedKit(sortedKits[currentKitIndex + 1].name);
     }
   };
   const handlePrevKit = () => {
     if (sortedKits && currentKitIndex > 0) {
-      setSelectedKit(sortedKits[currentKitIndex - 1]);
+      setSelectedKit(sortedKits[currentKitIndex - 1].name);
     }
   };
 
@@ -289,10 +326,12 @@ const KitsView = () => {
         // Load kits from database
         const kitsResult = await window.electronAPI?.getKits?.();
         if (kitsResult?.success && kitsResult.data) {
-          const kitsWithBanks = kitsResult.data;
-          setKitData(kitsWithBanks);
-          const kitNames = kitsWithBanks.map((kit: any) => kit.name);
-          setKits(kitNames);
+          const kitsWithBanks =
+            kitsResult.data as unknown as KitWithRelations[];
+          setKits(kitsWithBanks);
+          const kitNames = kitsWithBanks.map(
+            (kit: KitWithRelations) => kit.name,
+          );
 
           // Load samples from database for each kit
           const samples: { [kit: string]: VoiceSamples } = {};
@@ -314,13 +353,11 @@ const KitsView = () => {
         } else {
           console.warn("Failed to load kits from database:", kitsResult?.error);
           setKits([]);
-          setKitData([]);
           setAllKitSamples({});
         }
       } catch (error) {
         console.warn("Error loading data from database:", error);
         setKits([]);
-        setKitData([]);
         setAllKitSamples({});
       }
     }
@@ -399,9 +436,9 @@ const KitsView = () => {
           ref={kitBrowserRef}
           localStorePath={localStorePath}
           kits={sortedKits}
-          kitData={kitData}
           onSelectKit={handleSelectKit}
           sampleCounts={sampleCounts}
+          onRefreshKits={loadKitsData}
           onMessage={(msg) => {
             // Optionally handle messages here, e.g. show a toast or log
             // For now, do nothing (parent can decide to handle or ignore)

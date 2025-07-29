@@ -24,6 +24,7 @@ import {
 import { localStoreService } from "./services/localStoreService.js";
 import { sampleService } from "./services/sampleService.js";
 import { scanService } from "./services/scanService.js";
+import { syncService } from "./services/syncService.js";
 
 // Common validation and helper functions
 
@@ -293,4 +294,41 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("validate-sample-format", async (_event, filePath: string) => {
     return validateSampleFormat(filePath);
   });
+
+  // SD Card sync operations
+  ipcMain.handle("generateSyncChangeSummary", async (_event) => {
+    return syncService.generateChangeSummary(inMemorySettings);
+  });
+
+  ipcMain.handle(
+    "startKitSync",
+    async (
+      _event,
+      syncData: {
+        filesToCopy: Array<{
+          filename: string;
+          sourcePath: string;
+          destinationPath: string;
+          operation: "copy" | "convert";
+          kitName: string;
+        }>;
+        filesToConvert: Array<{
+          filename: string;
+          sourcePath: string;
+          destinationPath: string;
+          operation: "copy" | "convert";
+          kitName: string;
+        }>;
+      },
+    ) => {
+      return syncService.startKitSync(inMemorySettings, syncData);
+    },
+  );
+
+  ipcMain.handle("cancelKitSync", async (_event) => {
+    syncService.cancelSync();
+  });
+
+  // Progress events are handled via webContents.send in syncService
+  // No IPC handler needed for onSyncProgress as it's a renderer-side event listener
 }

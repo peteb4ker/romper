@@ -51,7 +51,62 @@ const mockUseKitBrowser = vi.mocked(useKitBrowser);
 
 const baseProps = {
   onSelectKit: vi.fn(),
-  kits: ["A0", "A1", "B0"],
+  kits: [
+    {
+      name: "A0",
+      alias: null,
+      artist: null,
+      locked: false,
+      editable: false,
+      modified_since_sync: false,
+      step_pattern: null,
+      bank_letter: "A",
+      voices: [
+        { voice_number: 1, voice_alias: "Kick", kit_name: "A0" },
+        { voice_number: 2, voice_alias: "Snare", kit_name: "A0" },
+        { voice_number: 3, voice_alias: "Hat", kit_name: "A0" },
+        { voice_number: 4, voice_alias: "Tom", kit_name: "A0" },
+      ],
+      samples: [],
+      bank: null,
+    },
+    {
+      name: "A1",
+      alias: null,
+      artist: null,
+      locked: false,
+      editable: false,
+      modified_since_sync: false,
+      step_pattern: null,
+      bank_letter: "A",
+      voices: [
+        { voice_number: 1, voice_alias: "Kick", kit_name: "A1" },
+        { voice_number: 2, voice_alias: "Snare", kit_name: "A1" },
+        { voice_number: 3, voice_alias: "Hat", kit_name: "A1" },
+        { voice_number: 4, voice_alias: "Tom", kit_name: "A1" },
+      ],
+      samples: [],
+      bank: null,
+    },
+    {
+      name: "B0",
+      alias: null,
+      artist: null,
+      locked: false,
+      editable: false,
+      modified_since_sync: false,
+      step_pattern: null,
+      bank_letter: "B",
+      voices: [
+        { voice_number: 1, voice_alias: "Kick", kit_name: "B0" },
+        { voice_number: 2, voice_alias: "Snare", kit_name: "B0" },
+        { voice_number: 3, voice_alias: "Hat", kit_name: "B0" },
+        { voice_number: 4, voice_alias: "Tom", kit_name: "B0" },
+      ],
+      samples: [],
+      bank: null,
+    },
+  ],
   kitData: [
     {
       name: "A0",
@@ -91,7 +146,7 @@ describe("KitBrowser", () => {
 
     // Set up default mock behavior
     mockUseKitBrowser.mockReturnValue({
-      kits: ["A0", "A1", "B0"],
+      kits: baseProps.kits,
       error: null,
       sdCardWarning: null,
       showNewKit: false,
@@ -158,7 +213,7 @@ describe("KitBrowser", () => {
     it("shows new kit dialog when + New Kit is clicked", () => {
       // Mock the hook to show the dialog after the button is clicked
       mockUseKitBrowser.mockReturnValue({
-        kits: ["A0", "A1", "B0"],
+        kits: baseProps.kits,
         error: null,
         sdCardWarning: null,
         showNewKit: true, // Dialog should be shown
@@ -201,7 +256,7 @@ describe("KitBrowser", () => {
     it("does not highlight/select a bank button when pressing a key for a bank with no kits", async () => {
       render(
         <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} kits={["A0", "A1", "B0"]} />
+          <KitBrowser {...baseProps} />
         </MockMessageDisplayProvider>,
       );
       const kitList = screen.getAllByTestId("kit-list")[0];
@@ -226,7 +281,60 @@ describe("KitBrowser", () => {
     describe("KitBrowser keyboard navigation bugs", () => {
       const navProps = {
         ...baseProps,
-        kits: ["A1", "A2", "B1", "B2"],
+        kits: [
+          {
+            name: "A1",
+            alias: "Kick",
+            artist: null,
+            locked: false,
+            editable: false,
+            modified_since_sync: false,
+            step_pattern: null,
+            bank_letter: "A",
+            voices: [],
+            samples: [],
+            bank: null,
+          },
+          {
+            name: "A2",
+            alias: "Snare",
+            artist: null,
+            locked: false,
+            editable: false,
+            modified_since_sync: false,
+            step_pattern: null,
+            bank_letter: "A",
+            voices: [],
+            samples: [],
+            bank: null,
+          },
+          {
+            name: "B1",
+            alias: "Hat",
+            artist: null,
+            locked: false,
+            editable: false,
+            modified_since_sync: false,
+            step_pattern: null,
+            bank_letter: "B",
+            voices: [],
+            samples: [],
+            bank: null,
+          },
+          {
+            name: "B2",
+            alias: "Tom",
+            artist: null,
+            locked: false,
+            editable: false,
+            modified_since_sync: false,
+            step_pattern: null,
+            bank_letter: "B",
+            voices: [],
+            samples: [],
+            bank: null,
+          },
+        ],
         kitData: [
           { name: "A1", alias: "Kick", voices: [] },
           { name: "A2", alias: "Snare", voices: [] },
@@ -244,7 +352,7 @@ describe("KitBrowser", () => {
       it("should highlight/select the first kit in a bank when a bank button is clicked", async () => {
         // Set up mock with B1 as focused kit to simulate the bank click behavior
         mockUseKitBrowser.mockReturnValue({
-          kits: ["A1", "A2", "B1", "B2"],
+          kits: navProps.kits,
           error: null,
           sdCardWarning: null,
           showNewKit: false,
@@ -306,7 +414,7 @@ describe("KitBrowser", () => {
       it("should highlight/select the first kit in a bank when A-Z hotkey is pressed", async () => {
         // Set up mock with B1 as focused kit to simulate the hotkey behavior
         mockUseKitBrowser.mockReturnValue({
-          kits: ["A1", "A2", "B1", "B2"],
+          kits: navProps.kits,
           error: null,
           sdCardWarning: null,
           showNewKit: false,

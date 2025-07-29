@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { KitWithRelations } from "../../../../shared/db/schema";
+
 export function useKitListNavigation(
-  kits: string[],
+  kits: KitWithRelations[],
   focusedKit: string | null,
 ) {
   const [focusedIdx, setFocusedIdx] = useState(0);
@@ -40,7 +42,9 @@ export function useKitListNavigation(
   // Externally controlled focus: only update if changed
   useEffect(() => {
     if (focusedKit) {
-      const idx = kits.findIndex((k: string) => k === focusedKit);
+      const idx = kits.findIndex(
+        (k: KitWithRelations) => k.name === focusedKit,
+      );
       if (idx !== -1 && lastExternalIdx.current !== idx) {
         setFocusedIdx(idx);
         lastExternalIdx.current = idx;

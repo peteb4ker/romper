@@ -201,6 +201,72 @@ export interface ElectronAPI {
   validateSampleFormat?: (
     filePath: string,
   ) => Promise<DbResult<FormatValidationResult>>;
+
+  // Task 8.1: SD Card Sync Operations
+  generateSyncChangeSummary?: () => Promise<
+    DbResult<{
+      filesToCopy: Array<{
+        filename: string;
+        sourcePath: string;
+        destinationPath: string;
+        operation: "copy" | "convert";
+        reason?: string;
+        originalFormat?: string;
+        targetFormat?: string;
+      }>;
+      filesToConvert: Array<{
+        filename: string;
+        sourcePath: string;
+        destinationPath: string;
+        operation: "copy" | "convert";
+        reason?: string;
+        originalFormat?: string;
+        targetFormat?: string;
+      }>;
+      estimatedTime: number;
+      estimatedSize: number;
+      hasFormatWarnings: boolean;
+      warnings: string[];
+      validationErrors: Array<{
+        filename: string;
+        sourcePath: string;
+        error: string;
+        type: "missing_file" | "access_denied" | "invalid_format" | "other";
+      }>;
+    }>
+  >;
+  startKitSync?: (syncData: {
+    filesToCopy: Array<{
+      filename: string;
+      sourcePath: string;
+      destinationPath: string;
+      operation: "copy" | "convert";
+    }>;
+    filesToConvert: Array<{
+      filename: string;
+      sourcePath: string;
+      destinationPath: string;
+      operation: "copy" | "convert";
+    }>;
+  }) => Promise<DbResult<{ syncedFiles: number }>>;
+  cancelKitSync?: () => void;
+  onSyncProgress?: (
+    callback: (progress: {
+      currentFile: string;
+      filesCompleted: number;
+      totalFiles: number;
+      bytesCompleted: number;
+      totalBytes: number;
+      status:
+        | "preparing"
+        | "copying"
+        | "converting"
+        | "finalizing"
+        | "completed"
+        | "error";
+      error?: string;
+    }) => void,
+  ) => void;
 }
 
 declare global {

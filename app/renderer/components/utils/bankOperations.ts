@@ -16,6 +16,7 @@ export function getBankNameFromRtfFilename(
 }
 // Bank operations utilities
 
+import type { KitWithRelations } from "../../../../shared/db/schema";
 import { toCapitalCase } from "../../../../shared/kitUtilsShared";
 
 export interface BankNames {
@@ -25,27 +26,29 @@ export interface BankNames {
 /**
  * Gets the first kit in a specific bank
  */
-export function getFirstKitInBank(kits: string[], bank: string): string | null {
-  return (
-    kits.find((k) => k && typeof k === "string" && k.startsWith(bank)) || null
-  );
+export function getFirstKitInBank(
+  kits: KitWithRelations[],
+  bank: string,
+): string | null {
+  const kit = kits.find((k) => k && k.name && k.name.startsWith(bank));
+  return kit ? kit.name : null;
 }
 
 /**
  * Checks if a bank has any kits
  */
-export function bankHasKits(kits: string[], bank: string): boolean {
-  return kits.some((k) => k && typeof k === "string" && k[0] === bank);
+export function bankHasKits(kits: KitWithRelations[], bank: string): boolean {
+  return kits.some((k) => k && k.name && k.name[0] === bank);
 }
 
 /**
  * Gets all banks that have kits (A-Z)
  */
-export function getAvailableBanks(kits: string[]): string[] {
+export function getAvailableBanks(kits: KitWithRelations[]): string[] {
   const banks = new Set<string>();
   for (const kit of kits) {
-    if (kit && kit.length > 0) {
-      banks.add(kit[0].toUpperCase());
+    if (kit && kit.name && kit.name.length > 0) {
+      banks.add(kit.name[0].toUpperCase());
     }
   }
   return Array.from(banks).sort();

@@ -25,8 +25,9 @@ function getKitItem(kit) {
 // Helper: expect only one kit to be selected/focused
 function expectOnlySelected(kits, selectedKit) {
   kits.forEach((k) => {
-    const el = getKitItem(k);
-    if (k === selectedKit) {
+    const kitName = typeof k === "string" ? k : k.name;
+    const el = getKitItem(kitName);
+    if (kitName === selectedKit) {
       expect(el.getAttribute("aria-selected")).toBe("true");
       expect(el.getAttribute("tabindex")).toBe("0");
     } else {
@@ -37,7 +38,47 @@ function expectOnlySelected(kits, selectedKit) {
 }
 
 describe("KitList", () => {
-  const kits = ["A1", "A2", "B1"];
+  const kits = [
+    {
+      name: "A1",
+      alias: "Kick",
+      artist: null,
+      locked: false,
+      editable: false,
+      modified_since_sync: false,
+      step_pattern: null,
+      bank_letter: "A",
+      voices: [],
+      samples: [],
+      bank: null,
+    },
+    {
+      name: "A2",
+      alias: "Snare",
+      artist: null,
+      locked: false,
+      editable: false,
+      modified_since_sync: false,
+      step_pattern: null,
+      bank_letter: "A",
+      voices: [],
+      samples: [],
+      bank: null,
+    },
+    {
+      name: "B1",
+      alias: "Hat",
+      artist: null,
+      locked: false,
+      editable: false,
+      modified_since_sync: false,
+      step_pattern: null,
+      bank_letter: "B",
+      voices: [],
+      samples: [],
+      bank: null,
+    },
+  ];
   const kitData = [
     { name: "A1", alias: "Kick", voices: [] },
     { name: "A2", alias: "Snare", voices: [] },
@@ -58,7 +99,7 @@ describe("KitList", () => {
       />,
     );
     kits.forEach((kit) => {
-      expect(getKitItem(kit)).toBeDefined();
+      expect(getKitItem(kit.name)).toBeDefined();
     });
     expect(screen.getByText("Bank A")).toBeDefined();
     expect(screen.getByText("Bank B")).toBeDefined();
@@ -113,9 +154,9 @@ describe("KitList", () => {
       />,
     );
     kits.forEach((kit) => {
-      const kitItem = getKitItem(kit);
+      const kitItem = getKitItem(kit.name);
       // For each count, check that the correct number of sample count elements are rendered
-      sampleCounts[kit].forEach((count, idx) => {
+      sampleCounts[kit.name].forEach((count, idx) => {
         // Use title to disambiguate
         const title = `Voice ${idx + 1} samples`;
         const countEls = within(kitItem).getAllByTitle(title);
@@ -189,7 +230,62 @@ describe("KitList", () => {
   });
 
   it("renders deduped voice label sets for each kit", () => {
-    const kits = ["A1", "A2", "B1"];
+    const testKits = [
+      {
+        name: "A1",
+        alias: null,
+        artist: null,
+        locked: false,
+        editable: false,
+        modified_since_sync: false,
+        step_pattern: null,
+        bank_letter: "A",
+        voices: [
+          { voice_number: 1, voice_alias: "kick", kit_name: "A1" },
+          { voice_number: 2, voice_alias: "snare", kit_name: "A1" },
+          { voice_number: 3, voice_alias: "kick", kit_name: "A1" },
+          { voice_number: 4, voice_alias: null, kit_name: "A1" },
+        ],
+        samples: [],
+        bank: null,
+      },
+      {
+        name: "A2",
+        alias: null,
+        artist: null,
+        locked: false,
+        editable: false,
+        modified_since_sync: false,
+        step_pattern: null,
+        bank_letter: "A",
+        voices: [
+          { voice_number: 1, voice_alias: "snare", kit_name: "A2" },
+          { voice_number: 2, voice_alias: "snare", kit_name: "A2" },
+          { voice_number: 3, voice_alias: null, kit_name: "A2" },
+          { voice_number: 4, voice_alias: "hat", kit_name: "A2" },
+        ],
+        samples: [],
+        bank: null,
+      },
+      {
+        name: "B1",
+        alias: null,
+        artist: null,
+        locked: false,
+        editable: false,
+        modified_since_sync: false,
+        step_pattern: null,
+        bank_letter: "B",
+        voices: [
+          { voice_number: 1, voice_alias: null, kit_name: "B1" },
+          { voice_number: 2, voice_alias: null, kit_name: "B1" },
+          { voice_number: 3, voice_alias: null, kit_name: "B1" },
+          { voice_number: 4, voice_alias: null, kit_name: "B1" },
+        ],
+        samples: [],
+        bank: null,
+      },
+    ];
     const kitData = [
       {
         name: "A1",
@@ -227,7 +323,7 @@ describe("KitList", () => {
     };
     render(
       <KitList
-        kits={kits}
+        kits={testKits}
         onSelectKit={vi.fn()}
         bankNames={bankNames}
         onDuplicate={vi.fn()}

@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 
+import type { KitWithRelations } from "../../../../shared/db/schema";
 // --- Utility Functions ---
 import {
   executeFullKitScan,
@@ -59,7 +60,7 @@ export async function scanAllKits({
   toastImpl = toast,
   fileReaderImpl = fileReader,
 }: {
-  kits: string[];
+  kits: KitWithRelations[];
   operations?: string[];
   onRefreshKits?: () => void;
   toastImpl?: typeof toast;
@@ -89,7 +90,7 @@ export async function scanAllKits({
     const errors: string[] = [];
 
     for (let i = 0; i < kits.length; i++) {
-      const kitName = kits[i];
+      const kitName = kits[i].name;
       toastImpl.loading(
         `Scanning kit ${i + 1}/${kits.length}: ${kitName} (${scanTypeDisplay})`,
         {
@@ -146,7 +147,7 @@ export function useKitScan({
   kits,
   onRefreshKits,
 }: {
-  kits: string[];
+  kits: KitWithRelations[];
   onRefreshKits?: () => void;
 }) {
   const handleScanAllKits = useCallback(

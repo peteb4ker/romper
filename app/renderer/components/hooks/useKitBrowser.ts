@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 
+import type { KitWithRelations } from "../../../../shared/db/schema";
 import { getNextKitSlot } from "../../../../shared/kitUtilsShared";
 import {
   bankHasKits,
@@ -20,21 +21,19 @@ import {
 } from "../utils/kitOperations";
 
 interface UseKitBrowserProps {
-  kits: string[];
-  kitData?: any[];
-  onRefreshKits?: () => void;
+  kits: KitWithRelations[];
+  onRefreshKits?: (scrollToKit?: string) => void;
   kitListRef: RefObject<any>;
   onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
 }
 
 export function useKitBrowser({
   kits: externalKits = [],
-  kitData = [],
   onRefreshKits,
   kitListRef,
   onMessage,
 }: UseKitBrowserProps) {
-  const kits: string[] = externalKits;
+  const kits: KitWithRelations[] = externalKits;
   const [error, setError] = useState<string | null>(null);
   const [sdCardWarning, setSdCardWarning] = useState<string | null>(null);
   const [showNewKit, setShowNewKit] = useState(false);
@@ -52,14 +51,15 @@ export function useKitBrowser({
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setNextKitSlot(getNextKitSlot(kits));
+    const kitNames = kits.map((kit) => kit.name);
+    setNextKitSlot(getNextKitSlot(kitNames));
   }, [kits]);
 
   useEffect(() => {
-    // Generate bank names from database kit data
+    // Generate bank names from kit data
     const bankNamesFromData: BankNames = {};
 
-    kitData.forEach((kit: any) => {
+    kits.forEach((kit: KitWithRelations) => {
       if (kit.bank?.artist && kit.name?.[0]) {
         const bankLetter = kit.name[0].toUpperCase();
         bankNamesFromData[bankLetter] = kit.bank.artist;
@@ -67,7 +67,7 @@ export function useKitBrowser({
     });
 
     setBankNames(bankNamesFromData);
-  }, [kitData]);
+  }, [kits]);
 
   const handleCreateKit = async () => {
     setNewKitError(null);
@@ -78,9 +78,10 @@ export function useKitBrowser({
 
     try {
       await createKit(newKitSlot);
+      const kitNameToScrollTo = newKitSlot;
       setShowNewKit(false);
       setNewKitSlot("");
-      if (onRefreshKits) onRefreshKits();
+      if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
       if (onMessage)
         onMessage({
           text: `Kit ${newKitSlot} created successfully!`,
@@ -101,7 +102,8 @@ export function useKitBrowser({
 
     try {
       await createKit(nextKitSlot);
-      if (onRefreshKits) onRefreshKits();
+      const kitNameToScrollTo = nextKitSlot;
+      if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
     } catch (err) {
       setNewKitError(formatKitError(err));
     }
@@ -116,9 +118,10 @@ export function useKitBrowser({
 
     try {
       await duplicateKit(duplicateKitSource, duplicateKitDest);
+      const kitNameToScrollTo = duplicateKitDest;
       setDuplicateKitSource(null);
       setDuplicateKitDest("");
-      if (onRefreshKits) onRefreshKits();
+      if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
     } catch (err) {
       setDuplicateKitError(err instanceof Error ? err.message : String(err));
     }
@@ -174,7 +177,7 @@ export function useKitBrowser({
   // On kits change, focus the first kit
   useEffect(() => {
     if (kits && kits.length > 0) {
-      setFocusedKit(kits[0]);
+      setFocusedKit(kits[0].name);
     }
   }, [kits]);
 
@@ -219,8 +222,7 @@ export function useKitBrowser({
   const focusBankInKitList = useCallback(
     (bank: string) => {
       const idx = kits.findIndex(
-        (k) =>
-          k && typeof k === "string" && k[0] && k[0].toUpperCase() === bank,
+        (k) => k && k.name && k.name[0] && k.name[0].toUpperCase() === bank,
       );
       if (
         idx !== -1 &&
@@ -230,13 +232,18 @@ export function useKitBrowser({
       ) {
         setSelectedBank(bank);
         kitListRef.current.scrollAndFocusKitByIndex(idx);
-        setFocusedKit(kits[idx]);
+        setFocusedKit(kits[idx].name);
       } else {
         // If no kit in that bank, do not update selectedBank or focusedKit
       }
     },
     [kits, kitListRef],
   );
+
+  // --- Handler for visible bank change during scroll ---
+  const handleVisibleBankChange = useCallback((bank: string) => {
+    setSelectedBank(bank);
+  }, []);
 
   return {
     kits,
@@ -272,5 +279,6 @@ export function useKitBrowser({
     setFocusedKit,
     globalBankHotkeyHandler,
     focusBankInKitList, // expose for UI
+    handleVisibleBankChange, // expose for KitList
   };
 }

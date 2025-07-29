@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -24,6 +24,18 @@ vi.mock("../components/StatusBar", () => ({
   default: () => <div data-testid="status-bar">StatusBar</div>,
 }));
 
+vi.mock("../components/hooks/useMessageDisplay", () => ({
+  useMessageDisplay: () => ({
+    addMessage: vi.fn(),
+    dismissMessage: vi.fn(),
+    messages: [],
+  }),
+}));
+
+vi.mock("../components/MessageDisplay", () => ({
+  default: () => <div data-testid="message-display">MessageDisplay</div>,
+}));
+
 // Mock ReactDOM.createRoot
 const renderMock = vi.fn();
 const createRootMock = vi.fn(() => ({ render: renderMock }));
@@ -31,6 +43,8 @@ vi.mock("react-dom/client", () => ({
   default: { createRoot: createRootMock },
   createRoot: createRootMock,
 }));
+
+// Document mock is now handled in vitest.setup.ts
 
 describe("renderer/main.tsx", () => {
   beforeEach(() => {
@@ -43,13 +57,17 @@ describe("renderer/main.tsx", () => {
     // Actually render the App to trigger useEffect
     const { App } = await import("../main");
     render(<App />);
-    expect(applyTheme).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(applyTheme).toHaveBeenCalled();
+    });
   });
 
   it("renders the app with SettingsProvider and main layout", async () => {
     await import("../main");
-    expect(createRootMock).toHaveBeenCalled();
-    expect(renderMock).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(createRootMock).toHaveBeenCalled();
+      expect(renderMock).toHaveBeenCalled();
+    });
     const [[element]] = renderMock.mock.calls;
     // Check that the SettingsProvider is present
     expect(element.props.children.type.name).toBe("App");

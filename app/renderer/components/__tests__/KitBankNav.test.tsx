@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { KitWithRelations } from "../../../../shared/db/schema";
 import KitBankNav from "../KitBankNav";
 
 afterEach(() => {
@@ -9,6 +10,18 @@ afterEach(() => {
 });
 
 describe("KitBankNav", () => {
+  const createMockKit = (name: string): KitWithRelations => ({
+    name,
+    bank_letter: name[0],
+    alias: null,
+    artist: null,
+    editable: false,
+    locked: false,
+    step_pattern: null,
+    modified_since_sync: false,
+    bank: { letter: name[0], artist: `Test Artist ${name[0]}`, rtf_filename: null, scanned_at: null },
+  });
+
   it("renders all 26 bank buttons", () => {
     render(<KitBankNav kits={[]} onBankClick={() => {}} />);
     for (let i = 0; i < 26; i++) {
@@ -19,7 +32,8 @@ describe("KitBankNav", () => {
   });
 
   it("disables banks with no kits", () => {
-    render(<KitBankNav kits={["A1", "B2"]} onBankClick={() => {}} />);
+    const mockKits = [createMockKit("A1"), createMockKit("B2")];
+    render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
     // Find all A buttons and check which is enabled/disabled
     const aButtons = screen.queryAllByText("A");
     const bButtons = screen.queryAllByText("B");
@@ -34,7 +48,8 @@ describe("KitBankNav", () => {
 
   it("calls onBankClick when enabled bank is clicked", () => {
     const onBankClick = vi.fn();
-    render(<KitBankNav kits={["A1", "B2"]} onBankClick={onBankClick} />);
+    const mockKits = [createMockKit("A1"), createMockKit("B2")];
+    render(<KitBankNav kits={mockKits} onBankClick={onBankClick} />);
     const aButtons = screen.getAllByRole("button", { name: "Jump to bank A" });
     const enabledA = aButtons.find((btn) => !btn.disabled);
 
@@ -46,7 +61,8 @@ describe("KitBankNav", () => {
 
   it("does not call onBankClick when disabled bank is clicked", () => {
     const onBankClick = vi.fn();
-    render(<KitBankNav kits={["A1"]} onBankClick={onBankClick} />);
+    const mockKits = [createMockKit("A1")];
+    render(<KitBankNav kits={mockKits} onBankClick={onBankClick} />);
     // Use getAllByRole to match the correct button by accessible name
     const bButtons = screen.getAllByRole("button", { name: "Jump to bank B" });
     const disabledB = bButtons.find((btn) => btn.disabled);
@@ -56,9 +72,10 @@ describe("KitBankNav", () => {
   });
 
   it("shows bankNames as title if provided", () => {
+    const mockKits = [createMockKit("A1")];
     render(
       <KitBankNav
-        kits={["A1"]}
+        kits={mockKits}
         onBankClick={() => {}}
         bankNames={{ A: "Alpha" }}
       />,
@@ -68,10 +85,23 @@ describe("KitBankNav", () => {
 });
 
 describe("A-Z hotkey navigation and bank highlighting", () => {
+  const createMockKit = (name: string): KitWithRelations => ({
+    name,
+    bank_letter: name[0],
+    alias: null,
+    artist: null,
+    editable: false,
+    locked: false,
+    step_pattern: null,
+    modified_since_sync: false,
+    bank: { letter: name[0], artist: `Test Artist ${name[0]}`, rtf_filename: null, scanned_at: null },
+  });
+
   it("highlights the correct bank when selectedBank is set", () => {
+    const mockKits = [createMockKit("A1"), createMockKit("B2")];
     render(
       <KitBankNav
-        kits={["A1", "B2"]}
+        kits={mockKits}
         onBankClick={() => {}}
         selectedBank="B"
       />,
@@ -82,21 +112,24 @@ describe("A-Z hotkey navigation and bank highlighting", () => {
   });
 
   it("all bank buttons are focusable and have visible focus ring", () => {
-    render(<KitBankNav kits={["A1"]} onBankClick={() => {}} />);
+    const mockKits = [createMockKit("A1")];
+    render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
     const aButton = screen.getByRole("button", { name: "Jump to bank A" });
     aButton.focus();
     expect(document.activeElement).toBe(aButton);
   });
 
   it("disabled banks are not clickable or focusable", () => {
-    render(<KitBankNav kits={["A1"]} onBankClick={() => {}} />);
+    const mockKits = [createMockKit("A1")];
+    render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
     const bButton = screen.getByRole("button", { name: "Jump to bank B" });
     expect(bButton.disabled).toBe(true);
   });
 
   it("calls onBankClick when enabled bank is clicked", () => {
     const onBankClick = vi.fn();
-    render(<KitBankNav kits={["A1", "B2"]} onBankClick={onBankClick} />);
+    const mockKits = [createMockKit("A1"), createMockKit("B2")];
+    render(<KitBankNav kits={mockKits} onBankClick={onBankClick} />);
     const aButton = screen.getByRole("button", { name: "Jump to bank A" });
     fireEvent.click(aButton);
     expect(onBankClick).toHaveBeenCalledWith("A");

@@ -222,26 +222,23 @@ _Last updated: 2025-07-26_
     - [x] 7.4.2 Display stereo samples in both voice slots in UI
     - [ ] 7.4.3 Preview implementation deferred - requires metadata refactor
 
-- [ ] 8.0 SD Card Sync Operations
-  - [ ] 8.1 Implement SD card sync workflow:
-    - [ ] 8.1.1 Create sync confirmation dialog with change summary
-    - [ ] 8.1.2 Display files to be copied/converted from source_path
-    - [ ] 8.1.3 Show estimated time and disk space requirements
-    - [ ] 8.1.4 Validate all source_path files exist before sync
-  - [ ] 8.2 Implement sync file operations:
-    - [ ] 8.2.1 Copy referenced samples from source_path to SD card
-    - [ ] 8.2.2 Convert samples to required format during copy (moved from 6.3):
-      - [ ] 8.2.2.1 Convert from source_path to SD card with format conversion
-      - [ ] 8.2.2.2 Handle bit depth, sample rate, and stereo-to-mono conversion
-      - [ ] 8.2.2.3 Preserve original files (no destructive editing)
-    - [ ] 8.2.3 Handle stereo-to-mono based on settings
-    - [ ] 8.2.4 Update database to reflect successful sync
-  - [ ] 8.3 Implement sync state management:
-    - [ ] 8.3.1 Mark kit as 'synced' after successful operation
-    - [ ] 8.3.2 Clear 'modified changes' flag (formerly 5.3.3)
-    - [ ] 8.3.3 Handle sync rollback on failure
-  - [ ] 8.4 Implement batch sync for multiple kits
-  - [ ] 8.5 Implement detailed progress and error handling
+- [x] 8.0 SD Card Sync Operations (Complete)
+  - [x] 8.1 Implement SD card sync workflow:
+    - [x] 8.1.1 Create sync confirmation dialog with change summary
+    - [x] 8.1.2 Display files to be copied/converted from source_path
+    - [x] 8.1.3 Show estimated time and disk space requirements
+    - [x] 8.1.4 Validate all source_path files exist before sync
+  - [x] 8.2 Implement sync file operations:
+    - [x] 8.2.1 Copy referenced samples from source_path to SD card
+    - [x] 8.2.2 Convert samples to required format during copy (moved from 6.3):
+      - [x] 8.2.2.1 Convert from source_path to SD card with format conversion
+      - [x] 8.2.2.2 Handle bit depth, sample rate, and stereo-to-mono conversion
+      - [x] 8.2.2.3 Preserve original files (no destructive editing)
+  - [x] 8.3 Implement sync state management:
+    - [x] 8.3.1 Mark kit as 'synced' after successful operation
+    - [x] 8.3.2 Clear 'modified changes' flag (formerly 5.3.3)
+    - [x] 8.3.3 Handle sync rollback on failure
+  - [x] 8.4 Implement detailed progress and error handling
 
 - [ ] 9.0 Undo/Redo System
   - [ ] 9.1 Implement action history with ORM:
@@ -356,11 +353,11 @@ _Last updated: 2025-07-26_
 
 ## 16.0 Settings File and Local Store Recovery Fixes
 
-- [ ] 16.1 Fix settings file naming collision
-  - [ ] 16.1.1 Change settings filename from `settings.json` to `romper-settings.json` to avoid conflicts with other Electron apps
-  - [ ] 16.1.2 Update all settings read/write operations to use new filename
-  - [ ] 16.1.3 Add migration logic to rename existing `settings.json` to `romper-settings.json` if present
-  - [ ] 16.1.4 Update settings path logging to show new filename
+- [x] 16.1 Fix settings file naming collision
+  - [x] 16.1.1 Change settings filename from `settings.json` to `romper-settings.json` to avoid conflicts with other Electron apps (Already implemented)
+  - [x] 16.1.2 Update all settings read/write operations to use new filename (Already implemented)
+  - [x] 16.1.3 Add migration logic to rename existing `settings.json` to `romper-settings.json` if present (Not needed - hard cutover already done)
+  - [x] 16.1.4 Update settings path logging to show new filename (Already implemented)
 
 - [ ] 16.2 Implement "Choose Existing Local Store" functionality
   - [ ] 16.2.1 Add "Choose Existing Local Store" button to bottom-right corner of local store setup wizard

@@ -46,9 +46,9 @@ describe("WizardSourceStep", () => {
     const user = userEvent.setup();
     const setSdCardPath = vi.fn();
     const setSourceConfirmed = vi.fn();
-    window.electronAPI = {
-      selectSdCard: vi.fn().mockResolvedValue("/mock/sdcard"),
-    };
+    vi.mocked(window.electronAPI.selectSdCard).mockResolvedValue(
+      "/mock/sdcard",
+    );
     render(
       <WizardSourceStep
         sourceOptions={sourceOptions}

@@ -47,37 +47,53 @@ describe("useLocalStoreWizard", () => {
     });
 
     // DRY: Always mock all required electronAPI methods for all tests
-    // @ts-ignore
-    window.electronAPI = {
-      ...window.electronAPI,
-      createRomperDb: vi.fn(async (dbDir: string) => ({
+    vi.mocked(window.electronAPI.createRomperDb).mockImplementation(
+      async (dbDir: string) => ({
         success: true,
         dbPath: dbDir + "/romper.sqlite",
-      })),
-      ensureDir: vi.fn(async () => true),
-      getSetting: vi.fn(async (key) => {
-        if (key === "localStorePath") return "/mock/saved/path/romper";
-        return undefined;
       }),
-      setSetting: vi.fn(async () => {}),
-      downloadAndExtractArchive: vi.fn(
-        async (url, destDir, onProgress, onError) => ({ success: true }),
-      ),
-      listFilesInRoot: vi.fn(async (path) => []),
-      copyDir: vi.fn(async (src, dest) => {}),
-      insertKit: vi.fn(async (_dbDir, _kit) => ({ success: true })),
-      insertSample: vi.fn(async (_dbDir, _sample) => ({ success: true })),
-      updateKit: vi.fn(async (_dbDir, _kitName, _updates) => ({
+    );
+    vi.mocked(window.electronAPI.ensureDir).mockResolvedValue(true);
+    vi.mocked(window.electronAPI.getSetting).mockImplementation(async (key) => {
+      if (key === "localStorePath") return "/mock/saved/path/romper";
+      return undefined;
+    });
+    vi.mocked(window.electronAPI.setSetting).mockResolvedValue(undefined);
+    vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
+      async (url, destDir, onProgress, onError) => ({ success: true }),
+    );
+    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+      async (path) => [],
+    );
+    vi.mocked(window.electronAPI.copyDir).mockImplementation(
+      async (src, dest) => {},
+    );
+    vi.mocked(window.electronAPI.insertKit).mockImplementation(
+      async (_dbDir, _kit) => ({
         success: true,
-      })),
-      updateVoiceAlias: vi.fn(async (_kitName, _voiceNumber, _voiceAlias) => ({
+      }),
+    );
+    vi.mocked(window.electronAPI.insertSample).mockImplementation(
+      async (_dbDir, _sample) => ({
         success: true,
-      })),
-      readFile: vi.fn(async (_filePath) => ({
+      }),
+    );
+    vi.mocked(window.electronAPI.updateKit).mockImplementation(
+      async (_dbDir, _kitName, _updates) => ({
+        success: true,
+      }),
+    );
+    vi.mocked(window.electronAPI.updateVoiceAlias).mockImplementation(
+      async (_kitName, _voiceNumber, _voiceAlias) => ({
+        success: true,
+      }),
+    );
+    vi.mocked(window.electronAPI.readFile).mockImplementation(
+      async (_filePath) => ({
         success: true,
         data: new ArrayBuffer(1024),
-      })),
-    };
+      }),
+    );
   });
 
   it("initializes with default state and loads defaultPath async", async () => {
@@ -155,11 +171,13 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("initializes from Squarp.net archive (downloads and extracts)", async () => {
-    window.electronAPI.downloadAndExtractArchive = async (url, destDir) => {
-      if (!url.endsWith(".zip")) throw new Error("Invalid URL");
-      if (!destDir.includes("romper")) throw new Error("Invalid destDir");
-      return { success: true };
-    };
+    vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
+      async (url, destDir) => {
+        if (!url.endsWith(".zip")) throw new Error("Invalid URL");
+        if (!destDir.includes("romper")) throw new Error("Invalid destDir");
+        return { success: true };
+      },
+    );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -174,10 +192,12 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("handles download/extract error", async () => {
-    window.electronAPI.downloadAndExtractArchive = async () => ({
-      success: false,
-      error: "fail",
-    });
+    vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
+      async () => ({
+        success: false,
+        error: "fail",
+      }),
+    );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -193,17 +213,15 @@ describe("useLocalStoreWizard", () => {
 
   it("sets and clears progress during Squarp.net archive initialization", async () => {
     let progressCb: any = null;
-    window.electronAPI.downloadAndExtractArchive = async (
-      url,
-      destDir,
-      onProgress,
-    ) => {
-      progressCb = onProgress;
-      // Simulate progress events
-      if (progressCb) progressCb({ phase: "Downloading", percent: 10 });
-      if (progressCb) progressCb({ phase: "Extracting", percent: 80 });
-      return { success: true };
-    };
+    vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
+      async (url, destDir, onProgress) => {
+        progressCb = onProgress;
+        // Simulate progress events
+        if (progressCb) progressCb({ phase: "Downloading", percent: 10 });
+        if (progressCb) progressCb({ phase: "Extracting", percent: 80 });
+        return { success: true };
+      },
+    );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -219,15 +237,12 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("handles premature close error with user-friendly message", async () => {
-    window.electronAPI.downloadAndExtractArchive = async (
-      url,
-      destDir,
-      onProgress,
-      onError,
-    ) => {
-      if (onError) onError({ message: "premature close" });
-      return { success: false, error: "premature close" };
-    };
+    vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
+      async (url, destDir, onProgress, onError) => {
+        if (onError) onError({ message: "premature close" });
+        return { success: false, error: "premature close" };
+      },
+    );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -244,11 +259,11 @@ describe("useLocalStoreWizard", () => {
 
   it("initializes blank folder (no files copied, only folder created)", async () => {
     let ensureDirCalled = false;
-    window.electronAPI.ensureDir = async (dir) => {
+    vi.mocked(window.electronAPI.ensureDir).mockImplementation(async (dir) => {
       ensureDirCalled = true;
       if (!dir.includes("romper")) throw new Error("Invalid dir");
       return true;
-    };
+    });
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -265,14 +280,16 @@ describe("useLocalStoreWizard", () => {
 
   it("initializes squarp source and ensures directory is created", async () => {
     let ensureDirCalled = false;
-    window.electronAPI.ensureDir = async (dir) => {
+    vi.mocked(window.electronAPI.ensureDir).mockImplementation(async (dir) => {
       ensureDirCalled = true;
       if (!dir.includes("romper")) throw new Error("Invalid dir");
       return true;
-    };
-    window.electronAPI.downloadAndExtractArchive = async (url, destDir) => {
-      return { success: true };
-    };
+    });
+    vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
+      async (url, destDir) => {
+        return { success: true };
+      },
+    );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -289,20 +306,23 @@ describe("useLocalStoreWizard", () => {
 
   it("initializes sdcard source and ensures directory is created (copy logic not yet implemented)", async () => {
     let ensureDirCalled = false;
-    window.electronAPI.ensureDir = async (dir) => {
+    vi.mocked(window.electronAPI.ensureDir).mockImplementation(async (dir) => {
       ensureDirCalled = true;
       if (!dir.includes("romper")) throw new Error("Invalid dir");
       return true;
-    };
+    });
     // SD card returns one kit folder, local store returns same kit folder
-    window.electronAPI.listFilesInRoot = vi
-      .fn()
+    vi.mocked(window.electronAPI.listFilesInRoot)
       .mockImplementationOnce(async () => ["A0"]) // SD card
       .mockImplementationOnce(async () => ["A0"]) // local store
       .mockImplementation(async () => []); // kit folder contents
-    window.electronAPI.copyDir = vi.fn();
-    window.electronAPI.insertKit = vi.fn(async () => ({ success: true }));
-    window.electronAPI.insertSample = vi.fn(async () => ({ success: true }));
+    vi.mocked(window.electronAPI.copyDir).mockImplementation();
+    vi.mocked(window.electronAPI.insertKit).mockImplementation(async () => ({
+      success: true,
+    }));
+    vi.mocked(window.electronAPI.insertSample).mockImplementation(async () => ({
+      success: true,
+    }));
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -320,15 +340,18 @@ describe("useLocalStoreWizard", () => {
 
   it("copies all valid kit folders from SD card to local store", async () => {
     // SD card returns two kit folders, local store returns same kit folders
-    window.electronAPI.listFilesInRoot = vi
-      .fn()
+    vi.mocked(window.electronAPI.listFilesInRoot)
       .mockImplementationOnce(async () => ["A0", "B12", "notakit"]) // SD card
       .mockImplementationOnce(async () => ["A0", "B12"]) // local store
       .mockImplementation(async () => []); // kit folder contents
     const copyDir = vi.fn();
-    window.electronAPI.copyDir = copyDir;
-    window.electronAPI.insertKit = vi.fn(async () => ({ success: true }));
-    window.electronAPI.insertSample = vi.fn(async () => ({ success: true }));
+    vi.mocked(window.electronAPI.copyDir).mockImplementation(copyDir);
+    vi.mocked(window.electronAPI.insertKit).mockImplementation(async () => ({
+      success: true,
+    }));
+    vi.mocked(window.electronAPI.insertSample).mockImplementation(async () => ({
+      success: true,
+    }));
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -363,9 +386,11 @@ describe("useLocalStoreWizard", () => {
 
   it("persists localStorePath after successful initialization", async () => {
     let setSettingCalled = false;
-    window.electronAPI.setSetting = vi.fn(async (key, value) => {
-      if (key === "localStorePath") setSettingCalled = value;
-    });
+    vi.mocked(window.electronAPI.setSetting).mockImplementation(
+      async (key, value) => {
+        if (key === "localStorePath") setSettingCalled = value;
+      },
+    );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -380,17 +405,23 @@ describe("useLocalStoreWizard", () => {
 
   it("shows progress for writing to database during DB import", async () => {
     const progressEvents: any[] = [];
-    window.electronAPI.listFilesInRoot = vi.fn(async (path) => {
-      if (path === "/mock/sd") return ["A0", "B12"];
-      if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
-      if (path === "/mock/home/Documents/romper/A0")
-        return ["kick.wav", "snare.wav"];
-      if (path === "/mock/home/Documents/romper/B12") return ["hat.wav"];
-      return [];
-    });
-    window.electronAPI.copyDir = vi.fn(async () => {});
-    window.electronAPI.insertKit = vi.fn(async () => ({ success: true }));
-    window.electronAPI.insertSample = vi.fn(async () => ({ success: true }));
+    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+      async (path) => {
+        if (path === "/mock/sd") return ["A0", "B12"];
+        if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
+        if (path === "/mock/home/Documents/romper/A0")
+          return ["kick.wav", "snare.wav"];
+        if (path === "/mock/home/Documents/romper/B12") return ["hat.wav"];
+        return [];
+      },
+    );
+    vi.mocked(window.electronAPI.copyDir).mockImplementation(async () => {});
+    vi.mocked(window.electronAPI.insertKit).mockImplementation(async () => ({
+      success: true,
+    }));
+    vi.mocked(window.electronAPI.insertSample).mockImplementation(async () => ({
+      success: true,
+    }));
     // Use the new progress callback for testability
     const { result } = renderHook(() =>
       useLocalStoreWizard((p) => progressEvents.push(p)),
@@ -411,14 +442,16 @@ describe("useLocalStoreWizard", () => {
 
   it("runs scanning operations after database creation", async () => {
     const progressEvents: any[] = [];
-    window.electronAPI.listFilesInRoot = vi.fn(async (path) => {
-      if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
-      if (path === "/mock/home/Documents/romper/A0")
-        return ["1kick.wav", "2snare.wav", "artist.rtf"];
-      if (path === "/mock/home/Documents/romper/B12")
-        return ["1hat.wav", "3tom.wav"];
-      return [];
-    });
+    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+      async (path) => {
+        if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
+        if (path === "/mock/home/Documents/romper/A0")
+          return ["1kick.wav", "2snare.wav", "artist.rtf"];
+        if (path === "/mock/home/Documents/romper/B12")
+          return ["1hat.wav", "3tom.wav"];
+        return [];
+      },
+    );
 
     const { result } = renderHook(() =>
       useLocalStoreWizard((p) => progressEvents.push(p)),
@@ -500,12 +533,14 @@ describe("useLocalStoreWizard", () => {
         totalOperations: 3,
       });
 
-    window.electronAPI.listFilesInRoot = vi.fn(async (path) => {
-      if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
-      if (path === "/mock/home/Documents/romper/A0") return ["1kick.wav"];
-      if (path === "/mock/home/Documents/romper/B12") return ["1hat.wav"];
-      return [];
-    });
+    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+      async (path) => {
+        if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
+        if (path === "/mock/home/Documents/romper/A0") return ["1kick.wav"];
+        if (path === "/mock/home/Documents/romper/B12") return ["1hat.wav"];
+        return [];
+      },
+    );
 
     const { result } = renderHook(() => useLocalStoreWizard());
 
@@ -531,10 +566,12 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("skips scanning when no kits are found", async () => {
-    window.electronAPI.listFilesInRoot = vi.fn(async (path) => {
-      if (path === "/mock/home/Documents/romper") return []; // No kit folders
-      return [];
-    });
+    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+      async (path) => {
+        if (path === "/mock/home/Documents/romper") return []; // No kit folders
+        return [];
+      },
+    );
 
     const { result } = renderHook(() => useLocalStoreWizard());
 

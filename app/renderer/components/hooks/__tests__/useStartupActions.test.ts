@@ -3,9 +3,6 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useStartupActions } from "../useStartupActions";
 
-// Mock electron API
-const mockScanBanks = vi.fn();
-
 // Mock console methods
 const mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
 const mockConsoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -13,14 +10,6 @@ const mockConsoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
 describe("useStartupActions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Ensure we have a proper window object
-    if (typeof window === "undefined") {
-      global.window = {} as any;
-    }
-    // Mock electronAPI for each test
-    window.electronAPI = {
-      scanBanks: mockScanBanks,
-    } as any;
   });
 
   afterAll(() => {
@@ -29,7 +18,7 @@ describe("useStartupActions", () => {
   });
 
   it("should run bank scanning when local store is configured", async () => {
-    mockScanBanks.mockResolvedValue({
+    vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
       success: true,
       data: { updatedBanks: 5 },
     });
@@ -42,7 +31,7 @@ describe("useStartupActions", () => {
     );
 
     await waitFor(() => {
-      expect(mockScanBanks).toHaveBeenCalledWith();
+      expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalledWith();
     });
 
     expect(mockConsoleLog).toHaveBeenCalledWith(
@@ -64,7 +53,7 @@ describe("useStartupActions", () => {
     // Wait a bit to ensure the effect doesn't run
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(mockScanBanks).not.toHaveBeenCalled();
+    expect(vi.mocked(window.electronAPI.scanBanks)).not.toHaveBeenCalled();
   });
 
   it("should not run when local store setup is needed", async () => {
@@ -78,11 +67,11 @@ describe("useStartupActions", () => {
     // Wait a bit to ensure the effect doesn't run
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(mockScanBanks).not.toHaveBeenCalled();
+    expect(vi.mocked(window.electronAPI.scanBanks)).not.toHaveBeenCalled();
   });
 
   it("should handle bank scanning failure gracefully", async () => {
-    mockScanBanks.mockResolvedValue({
+    vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
       success: false,
       error: "Permission denied",
     });
@@ -95,7 +84,7 @@ describe("useStartupActions", () => {
     );
 
     await waitFor(() => {
-      expect(mockScanBanks).toHaveBeenCalled();
+      expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalled();
     });
 
     expect(mockConsoleWarn).toHaveBeenCalledWith(
@@ -104,7 +93,9 @@ describe("useStartupActions", () => {
   });
 
   it("should handle bank scanning exception gracefully", async () => {
-    mockScanBanks.mockRejectedValue(new Error("Connection timeout"));
+    vi.mocked(window.electronAPI.scanBanks).mockRejectedValue(
+      new Error("Connection timeout"),
+    );
 
     renderHook(() =>
       useStartupActions({
@@ -114,7 +105,7 @@ describe("useStartupActions", () => {
     );
 
     await waitFor(() => {
-      expect(mockScanBanks).toHaveBeenCalled();
+      expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalled();
     });
 
     expect(mockConsoleWarn).toHaveBeenCalledWith(
@@ -123,7 +114,7 @@ describe("useStartupActions", () => {
   });
 
   it("should re-run when localStorePath changes", async () => {
-    mockScanBanks.mockResolvedValue({
+    vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
       success: true,
       data: { updatedBanks: 2 },
     });
@@ -140,10 +131,10 @@ describe("useStartupActions", () => {
     );
 
     await waitFor(() => {
-      expect(mockScanBanks).toHaveBeenCalledWith();
+      expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalledWith();
     });
 
-    mockScanBanks.mockClear();
+    vi.mocked(window.electronAPI.scanBanks).mockClear();
 
     rerender({
       localStorePath: "/mock/store2",
@@ -151,7 +142,7 @@ describe("useStartupActions", () => {
     });
 
     await waitFor(() => {
-      expect(mockScanBanks).toHaveBeenCalledWith();
+      expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalledWith();
     });
   });
 });

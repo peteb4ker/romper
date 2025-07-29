@@ -3,26 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useBankScanning } from "../useBankScanning";
 
-// Mock electron API
-const mockScanBanks = vi.fn();
-
 describe("useBankScanning", () => {
   const mockOnMessage = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Ensure we have a proper window object
-    if (typeof window === "undefined") {
-      global.window = {} as any;
-    }
-    // Mock electronAPI for each test
-    window.electronAPI = {
-      scanBanks: mockScanBanks,
-    } as any;
   });
 
   it("should call scanBanks and show success message", async () => {
-    mockScanBanks.mockResolvedValue({
+    vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
       success: true,
       data: { updatedBanks: 3 },
     });
@@ -37,7 +26,7 @@ describe("useBankScanning", () => {
       await result.current.scanBanks();
     });
 
-    expect(mockScanBanks).toHaveBeenCalledWith();
+    expect(window.electronAPI.scanBanks).toHaveBeenCalledWith();
     expect(mockOnMessage).toHaveBeenCalledWith(
       "Bank scanning complete. Updated 3 banks.",
       "success",
@@ -45,7 +34,7 @@ describe("useBankScanning", () => {
   });
 
   it("should handle bank scanning failure", async () => {
-    mockScanBanks.mockResolvedValue({
+    vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
       success: false,
       error: "Database connection failed",
     });
@@ -67,7 +56,9 @@ describe("useBankScanning", () => {
   });
 
   it("should handle scanning exception", async () => {
-    mockScanBanks.mockRejectedValue(new Error("Network error"));
+    vi.mocked(window.electronAPI.scanBanks).mockRejectedValue(
+      new Error("Network error"),
+    );
 
     const { result } = renderHook(() =>
       useBankScanning({
@@ -86,7 +77,7 @@ describe("useBankScanning", () => {
   });
 
   it("should work without onMessage callback", async () => {
-    mockScanBanks.mockResolvedValue({
+    vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
       success: true,
       data: { updatedBanks: 1 },
     });
@@ -101,7 +92,7 @@ describe("useBankScanning", () => {
       await result.current.scanBanks();
     });
 
-    expect(mockScanBanks).toHaveBeenCalled();
+    expect(window.electronAPI.scanBanks).toHaveBeenCalled();
     // Should not throw error when onMessage is not provided
   });
 });

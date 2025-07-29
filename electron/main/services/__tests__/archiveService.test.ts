@@ -77,7 +77,7 @@ vi.mock("https", () => ({
 }));
 
 const mockEvent = { sender: { send: vi.fn() } };
-let ipcMainHandlers: { [key: string]: any } = {};
+const ipcMainHandlers: { [key: string]: any } = {};
 vi.mock("electron", () => ({
   ipcMain: {
     handle: vi.fn((name, fn) => {

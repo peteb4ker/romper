@@ -31,25 +31,24 @@ describe("useValidationResults", () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    window.electronAPI = {
-      validateLocalStore: vi.fn().mockResolvedValue(mockValidationResult),
-      rescanKit: vi.fn().mockResolvedValue({
-        success: true,
-        data: { scannedSamples: 5, updatedVoices: 2 },
-      }),
-    } as any;
+    vi.mocked(window.electronAPI.validateLocalStore).mockResolvedValue(
+      mockValidationResult,
+    );
+    vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
+      success: true,
+      data: { scannedSamples: 5, updatedVoices: 2 },
+    });
   });
 
   test("should handle rescan selected kits", async () => {
     // Mock validation to return valid result after rescan
-    window.electronAPI.validateLocalStore = vi
-      .fn()
+    vi.mocked(window.electronAPI.validateLocalStore)
       .mockResolvedValueOnce(mockValidationResult) // Initial validation
       .mockResolvedValueOnce(mockValidationResult) // When opening dialog
       .mockResolvedValueOnce({ isValid: true, errors: [], errorSummary: "" }); // After rescan
 
     // Mock the rescanKit API
-    window.electronAPI.rescanKit = vi.fn().mockResolvedValue({
+    vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
       success: true,
       data: { scannedSamples: 5, updatedVoices: 2 },
     });
@@ -255,8 +254,7 @@ describe("useValidationResults", () => {
 
   test("should handle rescan errors gracefully", async () => {
     // Mock one success and one failure
-    window.electronAPI.rescanKit = vi
-      .fn()
+    vi.mocked(window.electronAPI.rescanKit)
       .mockResolvedValueOnce({
         success: true,
         data: { scannedSamples: 3, updatedVoices: 1 },
@@ -267,8 +265,7 @@ describe("useValidationResults", () => {
       });
 
     // Mock validation to return invalid result after failed rescan (dialog stays open)
-    window.electronAPI.validateLocalStore = vi
-      .fn()
+    vi.mocked(window.electronAPI.validateLocalStore)
       .mockResolvedValueOnce(mockValidationResult) // Initial validation
       .mockResolvedValueOnce(mockValidationResult) // When opening dialog
       .mockResolvedValueOnce(mockValidationResult); // After rescan (still invalid)

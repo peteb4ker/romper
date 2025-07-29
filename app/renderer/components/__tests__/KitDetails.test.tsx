@@ -34,16 +34,19 @@ const mockUseKitDetailsLogic = useKitDetailsLogic as ReturnType<typeof vi.fn>;
 // Add Mock type for TypeScript
 type Mock = ReturnType<typeof vi.fn>;
 
-// Helper to create a basic electronAPI mock
-function mockElectronAPI() {
-  (window as any).electronAPI = {
-    onSamplePlaybackEnded: vi.fn(),
-    onSamplePlaybackError: vi.fn(),
-    getKit: vi.fn().mockResolvedValue({ success: true, data: null }),
-    updateKit: vi.fn().mockResolvedValue({ success: true }),
-    updateVoiceAlias: vi.fn().mockResolvedValue({ success: true }),
-    updateStepPattern: vi.fn().mockResolvedValue({ success: true }),
-  };
+// Helper to set up specific mock behaviors for this test
+function setupElectronAPIMocks() {
+  vi.mocked(window.electronAPI.getKit).mockResolvedValue({
+    success: true,
+    data: null,
+  });
+  vi.mocked(window.electronAPI.updateKit).mockResolvedValue({ success: true });
+  vi.mocked(window.electronAPI.updateVoiceAlias).mockResolvedValue({
+    success: true,
+  });
+  vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
+    success: true,
+  });
 }
 
 // Helper to render components with TestSettingsProvider
@@ -116,7 +119,7 @@ describe("KitDetails", () => {
   });
 
   beforeEach(() => {
-    mockElectronAPI();
+    setupElectronAPIMocks();
     // Reset mock implementation to default
     mockUseKitDetailsLogic.mockClear();
     mockUseKitDetailsLogic.mockReturnValue(createMockLogic());

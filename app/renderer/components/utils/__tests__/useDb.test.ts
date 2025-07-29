@@ -4,13 +4,14 @@ import { createRomperDb } from "../useDb";
 
 describe("createRomperDb util", () => {
   beforeEach(() => {
-    // @ts-ignore
-    window.electronAPI = {
-      createRomperDb: vi.fn(async (dbDir: string) => ({
+    vi.clearAllMocks();
+    // Set up default mock behavior
+    vi.mocked(window.electronAPI.createRomperDb).mockImplementation(
+      async (dbDir: string) => ({
         success: true,
         dbPath: dbDir + "/romper.sqlite",
-      })),
-    };
+      }),
+    );
   });
 
   it("should create the Romper DB and return the sqlite path", async () => {
@@ -21,11 +22,10 @@ describe("createRomperDb util", () => {
   });
 
   it("should throw if electronAPI.createRomperDb fails", async () => {
-    // @ts-ignore
-    window.electronAPI.createRomperDb = vi.fn(async () => ({
+    vi.mocked(window.electronAPI.createRomperDb).mockResolvedValueOnce({
       success: false,
       error: "fail",
-    }));
+    });
     await expect(createRomperDb("/fail/path")).rejects.toThrow("fail");
   });
 });

@@ -9,9 +9,6 @@ afterEach(() => {
 });
 
 describe("AboutView", () => {
-  beforeEach(() => {
-    window.electronAPI = { openExternal: vi.fn() };
-  });
   it("renders app name, version, and MIT license", () => {
     render(<AboutView />);
     expect(screen.getByText("Romper")).toBeInTheDocument();

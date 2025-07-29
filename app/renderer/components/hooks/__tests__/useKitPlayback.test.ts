@@ -5,15 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useKitPlayback } from "../useKitPlayback";
 
 describe("useKitPlayback", () => {
-  let onSamplePlaybackEnded: any;
-  let onSamplePlaybackError: any;
   beforeEach(() => {
-    onSamplePlaybackEnded = vi.fn();
-    onSamplePlaybackError = vi.fn();
-    window.electronAPI = {
-      onSamplePlaybackEnded,
-      onSamplePlaybackError,
-    };
+    vi.clearAllMocks();
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -63,9 +56,11 @@ describe("useKitPlayback", () => {
 
   it("sets playbackError on error event", () => {
     let errorHandler: any;
-    onSamplePlaybackError.mockImplementation((cb) => {
-      errorHandler = cb;
-    });
+    vi.mocked(window.electronAPI.onSamplePlaybackError).mockImplementation(
+      (cb) => {
+        errorHandler = cb;
+      },
+    );
     const { result } = renderHook(() => useKitPlayback({}));
     act(() => {
       errorHandler("fail!");

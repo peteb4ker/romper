@@ -479,7 +479,7 @@ describe("KitBrowser", () => {
   describe("Validation Results", () => {
     it("should open validation dialog when validate button is clicked", async () => {
       // Mock validation results for test
-      window.electronAPI.validateLocalStore = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.validateLocalStore).mockResolvedValue({
         isValid: false,
         errors: [
           {

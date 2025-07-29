@@ -5,16 +5,15 @@ import { useDb } from "../useDb";
 
 describe("useDb", () => {
   beforeEach(() => {
-    // @ts-ignore
-    window.electronAPI = {
-      createRomperDb: vi.fn(async (dbDir: string) => ({
-        success: true,
-        dbPath: dbDir + "/romper.sqlite",
-      })),
-    };
+    vi.clearAllMocks();
   });
 
   it("should create the Romper DB and return the sqlite path", async () => {
+    vi.mocked(window.electronAPI.createRomperDb).mockResolvedValue({
+      success: true,
+      dbPath: "/mock/path/.romperdb/romper.sqlite",
+    });
+
     const { result } = renderHook(() => useDb());
     const dbDir = "/mock/path/.romperdb";
     const dbPath = await result.current.createRomperDb(dbDir);
@@ -23,11 +22,10 @@ describe("useDb", () => {
   });
 
   it("should throw if electronAPI.createRomperDb fails", async () => {
-    // @ts-ignore
-    window.electronAPI.createRomperDb = vi.fn(async () => ({
+    vi.mocked(window.electronAPI.createRomperDb).mockResolvedValue({
       success: false,
       error: "fail",
-    }));
+    });
     const { result } = renderHook(() => useDb());
     await expect(result.current.createRomperDb("/fail/path")).rejects.toThrow(
       "fail",

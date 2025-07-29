@@ -4,21 +4,26 @@ import { createRomperDb, insertKit, insertSample } from "../romperDb";
 
 describe("romperDb", () => {
   beforeEach(() => {
-    // @ts-ignore
-    window.electronAPI = {
-      createRomperDb: vi.fn(async (dbDir: string) => ({
+    vi.clearAllMocks();
+    // Set up default mock behaviors
+    vi.mocked(window.electronAPI.createRomperDb).mockImplementation(
+      async (dbDir: string) => ({
         success: true,
         dbPath: dbDir + "/romper.sqlite",
-      })),
-      insertKit: vi.fn(async (_dbDir: string, _kit: any) => ({
+      }),
+    );
+    vi.mocked(window.electronAPI.insertKit).mockImplementation(
+      async (_dbDir: string, _kit: any) => ({
         success: true,
         kitId: 42,
-      })),
-      insertSample: vi.fn(async (_dbDir: string, _sample: any) => ({
+      }),
+    );
+    vi.mocked(window.electronAPI.insertSample).mockImplementation(
+      async (_dbDir: string, _sample: any) => ({
         success: true,
         sampleId: 99,
-      })),
-    };
+      }),
+    );
   });
 
   it("should return the expected sqlite path for a given dbDir", async () => {
@@ -28,11 +33,10 @@ describe("romperDb", () => {
   });
 
   it("should throw if electronAPI.createRomperDb fails", async () => {
-    // @ts-ignore
-    window.electronAPI.createRomperDb = vi.fn(async () => ({
+    vi.mocked(window.electronAPI.createRomperDb).mockResolvedValueOnce({
       success: false,
       error: "fail",
-    }));
+    });
     await expect(createRomperDb("/fail/path")).rejects.toThrow("fail");
   });
 
@@ -47,11 +51,10 @@ describe("romperDb", () => {
   });
 
   it("should throw if insertKit fails", async () => {
-    // @ts-ignore
-    window.electronAPI.insertKit = vi.fn(async () => ({
+    vi.mocked(window.electronAPI.insertKit).mockResolvedValueOnce({
       success: false,
       error: "kit fail",
-    }));
+    });
     await expect(
       insertKit("/fail/path", { name: "fail", editable: false }),
     ).rejects.toThrow("kit fail");
@@ -78,11 +81,10 @@ describe("romperDb", () => {
   });
 
   it("should throw if insertSample fails", async () => {
-    // @ts-ignore
-    window.electronAPI.insertSample = vi.fn(async () => ({
+    vi.mocked(window.electronAPI.insertSample).mockResolvedValueOnce({
       success: false,
       error: "sample fail",
-    }));
+    });
     await expect(
       insertSample("/fail/path", {
         kit_id: 1,

@@ -313,18 +313,13 @@ describe("useSyncUpdate", () => {
 
   describe("dependency injection", () => {
     it("should use default window.electronAPI when no deps provided", () => {
-      // Mock global window.electronAPI
-      const globalAPI = {
-        generateSyncChangeSummary: vi.fn().mockResolvedValue({
+      // Mock the specific method we're testing
+      vi.mocked(window.electronAPI.generateSyncChangeSummary).mockResolvedValue(
+        {
           success: true,
           data: mockChangeSummary,
-        }),
-      };
-
-      Object.defineProperty(window, "electronAPI", {
-        value: globalAPI,
-        writable: true,
-      });
+        },
+      );
 
       const { result } = renderHook(() => useSyncUpdate());
 
@@ -332,7 +327,9 @@ describe("useSyncUpdate", () => {
         result.current.generateChangeSummary();
       });
 
-      expect(globalAPI.generateSyncChangeSummary).toHaveBeenCalledWith();
+      expect(
+        window.electronAPI.generateSyncChangeSummary,
+      ).toHaveBeenCalledWith();
     });
   });
 });

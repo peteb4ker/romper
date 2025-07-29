@@ -1,47 +1,16 @@
 // Test suite for SampleWaveform component
 import { act, render, screen } from "@testing-library/react";
-import { cleanup } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { setupAudioMocks } from "../../../tests/mocks/browser/audio";
+import { createElectronAPIMock } from "../../../tests/mocks/electron/electronAPI";
 import SampleWaveform from "../SampleWaveform";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 
-// Mock electronAPI and AudioContext
-beforeAll(() => {
-  // @ts-ignore
-  window.electronAPI = {
-    getSampleAudioBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
-  };
-  // @ts-ignore
-  window.AudioContext = vi.fn().mockImplementation(() => ({
-    decodeAudioData: (arrayBuffer, cb) => {
-      // Fake AudioBuffer
-      cb({
-        getChannelData: () => new Float32Array([0, 1, 0, -1]),
-        duration: 1,
-        length: 4,
-        sampleRate: 44100,
-      });
-    },
-    createBufferSource: () => ({
-      buffer: null,
-      connect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      disconnect: vi.fn(),
-      onended: null,
-    }),
-    destination: {},
-    currentTime: 0,
-    state: "running",
-    close: vi.fn(),
-  }));
-});
-afterEach(() => {
-  cleanup();
-  vi.clearAllMocks();
-});
+// Setup centralized test infrastructure
+
+// The global setup in vitest.setup.ts now handles electronAPI and audio mocks
 
 describe("SampleWaveform", () => {
   it("renders the waveform canvas", async () => {
@@ -164,8 +133,9 @@ describe("SampleWaveform", () => {
   });
 
   it("handles missing API gracefully", async () => {
-    // @ts-ignore
-    window.electronAPI = {}; // No getSampleAudioBuffer method
+    // Remove the getSampleAudioBuffer method to test missing API
+    const originalMethod = window.electronAPI.getSampleAudioBuffer;
+    delete (window.electronAPI as any).getSampleAudioBuffer;
     const onError = vi.fn();
     await act(async () => {
       render(
@@ -183,6 +153,9 @@ describe("SampleWaveform", () => {
     expect(onError).toHaveBeenCalledWith(
       "Sample audio buffer API not available",
     );
+
+    // Restore the method for other tests
+    (window.electronAPI as any).getSampleAudioBuffer = originalMethod;
   });
 
   it("cleans up audio context and animation on unmount", async () => {

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mocks for Electron and Node APIs
-let ipcMainHandlers: { [key: string]: any } = {};
+const ipcMainHandlers: { [key: string]: any } = {};
 vi.mock("electron", () => ({
   ipcMain: {
     handle: vi.fn((name, fn) => {
@@ -54,7 +54,7 @@ describe("registerIpcHandlers", () => {
 
   it("registers write-settings and updates inMemorySettings", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    let inMemorySettings: { [key: string]: any } = { foo: "bar" };
+    const inMemorySettings: { [key: string]: any } = { foo: "bar" };
     registerIpcHandlers(inMemorySettings);
     await ipcMainHandlers["write-settings"]({}, "baz", 42);
     expect(inMemorySettings.baz).toBe(42);

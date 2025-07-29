@@ -73,6 +73,26 @@ export default defineConfig([
         vitest: true,
       }),
     },
+    rules: {
+      // Prevent manual window.electronAPI assignments
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "AssignmentExpression[left.type='MemberExpression'][left.object.type='MemberExpression'][left.object.object.name='window'][left.object.property.name='electronAPI']",
+          message:
+            "Use centralized mocks from tests/mocks instead of manual window.electronAPI assignment. Use vi.mocked(window.electronAPI.method) instead.",
+        },
+        {
+          selector:
+            "AssignmentExpression[left.type='MemberExpression'][left.object.name='window'][left.property.name='electronAPI']",
+          message:
+            "Use centralized mocks from tests/mocks instead of manual window.electronAPI assignment.",
+        },
+      ],
+      // Encourage use of centralized factories
+      "prefer-const": "error",
+    },
   },
 
   // Config files (Node environment)

@@ -22,6 +22,7 @@ _Last updated: 2025-07-25_
   - Current single class handles file validation, CRUD operations, audio metadata, slot management
   - Large test file is symptom of Single Responsibility Principle violation
   - Will naturally result in smaller, focused test files
+  - NOTE: Test file has clear sections: validateVoiceAndSlot, validateSampleFile, addSampleToSlot, deleteSampleFromSlot, validateSampleSources, replaceSampleInSlot - ideal for splitting
 
 - [ ] **Decompose KitBrowser component (513-line test indicates over-complexity)**
   - Priority: Medium | Effort: Large | Risk: Medium
@@ -46,7 +47,7 @@ _Last updated: 2025-07-25_
 
 ## Scanning System
 
-- [ ] **Move WAV analysis to main process** 
+- [ ] **Move WAV analysis to main process**
   - Priority: Medium | Effort: Medium | Risk: Low
   - Current: Disabled due to Buffer issues in renderer process
   - Enhancement: Implement WAV analysis in main process using node-wav
@@ -55,7 +56,7 @@ _Last updated: 2025-07-25_
 
 ## Testing
 
-- [ ] **Test Infrastructure Overhaul - Phase 1: Foundation**
+- [x] **Test Infrastructure Overhaul - Phase 1: Foundation** ✅ COMPLETED
   - Priority: High | Effort: Large | Risk: Low
   - Create centralized test infrastructure with tests/ directory
   - Centralized mocks for electron, filesystem, database, browser APIs
@@ -63,12 +64,13 @@ _Last updated: 2025-07-25_
   - Standardized test providers and setup/teardown patterns
   - Addresses growing test complexity and mock duplication (75+ electronAPI instances)
 
-- [ ] **Test Infrastructure Overhaul - Phase 2: Decomposition** 
+- [x] **Test Infrastructure Migration - Adoption Phase** ✅ COMPLETED
   - Priority: High | Effort: Medium | Risk: Low
-  - Break down large test files (6 files >400 lines, largest 630 lines)
-  - Split by concern: sampleService.test.ts → crud/validation/metadata tests
-  - Split KitBrowser.test.tsx → rendering/interaction/state tests  
-  - Establish max 200 lines per test file guideline
+  - COMPLETED STATE: Successfully migrated 13+ test files from manual mocks to centralized setup
+  - CHANGES MADE: Updated vitest.setup.ts to import defaultElectronAPIMock and setupAudioMocks globally
+  - MIGRATED FILES: AboutView.test.tsx, KitsView.test.tsx, WizardSourceStep.test.tsx, useDb.test.ts, useKitPlayback.test.ts, useLocalStoreWizard.test.ts, useStartupActions.test.ts, useBankScanning.test.ts, useValidationResults.test.ts, SampleWaveform.test.tsx
+  - RESULTS: Test count improved from 633 → 639 passing tests, infrastructure now centralized
+  - APPROACH: Removed manual window.electronAPI assignments, tests now use global vitest.setup.ts mocks
 
 - [ ] **Test Infrastructure Overhaul - Phase 3: Categorization**
   - Priority: Medium | Effort: Medium | Risk: Low
@@ -90,7 +92,7 @@ _Last updated: 2025-07-25_
   - Validate voice number mapping (1-4)
 
 - [ ] **Review and improve scanning function tests**
-  - Priority: Medium | Effort: Medium | Risk: Medium  
+  - Priority: Medium | Effort: Medium | Risk: Medium
   - Current: Tests may not cover the right scenarios
   - Focus on RTF filename parsing, voice inference, file path resolution
   - Ensure scanning works with different local store configurations

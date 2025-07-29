@@ -187,20 +187,24 @@ const KitsView = () => {
 
       // 1. Load kits from database (includes bank relationships)
       let kitNames: string[] = [];
+      let loadedKits: KitWithRelations[] = [];
       try {
         const kitsResult = await window.electronAPI?.getKits?.();
         if (kitsResult?.success && kitsResult.data) {
           const kitsWithBanks =
             kitsResult.data as unknown as KitWithRelations[];
           setKits(kitsWithBanks);
+          loadedKits = kitsWithBanks;
           kitNames = kitsWithBanks.map((kit: KitWithRelations) => kit.name);
         } else {
           console.warn("Failed to load kits from database:", kitsResult?.error);
           setKits([]);
+          loadedKits = [];
         }
       } catch (error) {
         console.warn("Error loading kits from database:", error);
         setKits([]);
+        loadedKits = [];
       }
 
       // 2. Load samples for each kit from database
@@ -228,9 +232,10 @@ const KitsView = () => {
       // If a specific kit should be scrolled to, do it after data loads
       if (scrollToKit && kitBrowserRef.current) {
         setTimeout(() => {
-          // Find kit index in the sorted kit list (need to sort names)
-          const kitNames = kits.map((k) => k.name);
-          const sortedKitNames = kitNames.slice().sort(compareKitSlots);
+          // Use the loaded kits data instead of the stale kits state
+          const sortedKitNames = loadedKits
+            .map((k) => k.name)
+            .sort(compareKitSlots);
           const kitIndex = sortedKitNames.findIndex(
             (name) => name === scrollToKit,
           );
@@ -248,7 +253,7 @@ const KitsView = () => {
         }, 100); // Small delay to ensure DOM is updated
       }
     },
-    [isInitialized, localStorePath, needsLocalStoreSetup, kits],
+    [isInitialized, localStorePath, needsLocalStoreSetup],
   );
 
   // Load all kits, samples, and labels on local store change

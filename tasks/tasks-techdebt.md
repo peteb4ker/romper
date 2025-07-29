@@ -16,6 +16,20 @@ _Last updated: 2025-07-25_
   - Create shared error utility functions
   - Review file path validation duplication
 
+- [ ] **Decompose SampleService class (630-line test indicates over-complexity)**
+  - Priority: Medium | Effort: Large | Risk: Medium
+  - Split into: SampleValidator, SampleCrudService, SampleMetadataService
+  - Current single class handles file validation, CRUD operations, audio metadata, slot management
+  - Large test file is symptom of Single Responsibility Principle violation
+  - Will naturally result in smaller, focused test files
+
+- [ ] **Decompose KitBrowser component (513-line test indicates over-complexity)**
+  - Priority: Medium | Effort: Large | Risk: Medium
+  - Split into: KitList component, BankNavigation component, DialogManager hook
+  - Current component handles rendering, navigation, dialog management, keyboard interactions
+  - Consider extracting custom hooks for complex interaction logic
+  - Large test file indicates component has too many responsibilities
+
 ## Database Layer
 
 - [ ] **Add structured error types to ORM layer**
@@ -40,6 +54,28 @@ _Last updated: 2025-07-25_
   - Important for accurate audio metadata
 
 ## Testing
+
+- [ ] **Test Infrastructure Overhaul - Phase 1: Foundation**
+  - Priority: High | Effort: Large | Risk: Low
+  - Create centralized test infrastructure with tests/ directory
+  - Centralized mocks for electron, filesystem, database, browser APIs
+  - Test data factories for Kit, Sample, Settings objects
+  - Standardized test providers and setup/teardown patterns
+  - Addresses growing test complexity and mock duplication (75+ electronAPI instances)
+
+- [ ] **Test Infrastructure Overhaul - Phase 2: Decomposition** 
+  - Priority: High | Effort: Medium | Risk: Low
+  - Break down large test files (6 files >400 lines, largest 630 lines)
+  - Split by concern: sampleService.test.ts → crud/validation/metadata tests
+  - Split KitBrowser.test.tsx → rendering/interaction/state tests  
+  - Establish max 200 lines per test file guideline
+
+- [ ] **Test Infrastructure Overhaul - Phase 3: Categorization**
+  - Priority: Medium | Effort: Medium | Risk: Low
+  - Implement unit/integration/e2e test separation
+  - Create separate vitest configs for different test types
+  - Expand integration test coverage for renderer↔main IPC
+  - Add E2E tests for critical user journeys
 
 - [ ] **Increase error path test coverage**
   - Priority: Medium | Effort: Medium | Risk: Medium

@@ -61,3 +61,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: peteb4ker/romper
           files: ./coverage/merged/coverage-final.json
+          disable_search: true

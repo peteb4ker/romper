@@ -264,4 +264,293 @@ describe("preload/index.tsx", () => {
 
     consoleSpy.mockRestore();
   });
+
+  describe("SettingsManager", () => {
+    it("returns environment variable for localStorePath in getSetting", async () => {
+      process.env.ROMPER_LOCAL_PATH = "/env/test/path";
+      
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      const result = await api.getSetting("localStorePath");
+      expect(result).toBe("/env/test/path");
+      
+      delete process.env.ROMPER_LOCAL_PATH;
+    });
+
+    it("returns environment variable in readSettings when settings read fails", async () => {
+      process.env.ROMPER_LOCAL_PATH = "/env/fallback/path";
+      
+      // Mock console.error to avoid test noise
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      
+      mockElectron.ipcRenderer.invoke.mockImplementation((channel) => {
+        if (channel === "read-settings") {
+          throw new Error("Failed to read settings");
+        }
+        return Promise.resolve();
+      });
+
+      vi.resetModules();
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      const result = await api.readSettings();
+      expect(result).toEqual({ localStorePath: "/env/fallback/path" });
+      expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to read settings:", expect.any(Error));
+      
+      consoleErrorSpy.mockRestore();
+      delete process.env.ROMPER_LOCAL_PATH;
+    });
+
+    it("handles setSetting write errors gracefully", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      
+      mockElectron.ipcRenderer.invoke.mockImplementation((channel) => {
+        if (channel === "write-settings") {
+          throw new Error("Write failed");
+        }
+        return Promise.resolve();
+      });
+
+      vi.resetModules();
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      // Should not throw, but should log error
+      await api.setSetting("testKey", "testValue");
+      expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to write settings:", expect.any(Error));
+      
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("handles JSON parsing in readSettings", async () => {
+      mockElectron.ipcRenderer.invoke.mockImplementation((channel) => {
+        if (channel === "read-settings") {
+          return Promise.resolve('{"testKey": "jsonValue"}');
+        }
+        return Promise.resolve();
+      });
+
+      vi.resetModules();
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      const result = await api.readSettings();
+      expect(result).toEqual({ testKey: "jsonValue" });
+    });
+  });
+
+  describe("MenuEventForwarder", () => {
+    it("dispatches DOM events when IPC events are received", async () => {
+      await import("../index");
+
+      // Get the callback function that was registered for the menu-scan-all-kits event
+      const scanAllKitsCall = mockElectron.ipcRenderer.on.mock.calls.find(
+        call => call[0] === "menu-scan-all-kits"
+      );
+      expect(scanAllKitsCall).toBeDefined();
+      
+      const callback = scanAllKitsCall[1];
+      
+      // Clear previous calls to dispatchEvent
+      vi.clearAllMocks();
+      
+      // Trigger the callback
+      callback();
+      
+      // Check that a DOM event was dispatched
+      expect(global.window.dispatchEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "menu-scan-all-kits"
+        })
+      );
+    });
+
+    it("sets up event listeners for all menu events", async () => {
+      await import("../index");
+
+      const expectedEvents = [
+        "menu-scan-all-kits",
+        "menu-scan-banks", 
+        "menu-validate-database",
+        "menu-setup-local-store",
+        "menu-change-local-store-directory",
+        "menu-preferences",
+        "menu-about"
+      ];
+
+      expectedEvents.forEach(event => {
+        expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
+          event,
+          expect.any(Function)
+        );
+      });
+    });
+  });
+
+  describe("electronAPI event listeners", () => {
+    it("sets up onSamplePlaybackEnded listener correctly", async () => {
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      const callback = vi.fn();
+      
+      api.onSamplePlaybackEnded(callback);
+      
+      expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith("sample-playback-ended");
+      expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith("sample-playback-ended", callback);
+    });
+
+    it("sets up onSamplePlaybackError listener correctly", async () => {
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      const callback = vi.fn();
+      
+      api.onSamplePlaybackError(callback);
+      
+      expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith("sample-playback-error");
+      expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith("sample-playback-error", expect.any(Function));
+    });
+
+    it("sets up downloadAndExtractArchive progress listeners", async () => {
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      const onProgress = vi.fn();
+      const onError = vi.fn();
+      
+      mockElectron.ipcRenderer.invoke.mockResolvedValue("success");
+      
+      await api.downloadAndExtractArchive("http://test.com", "/dest", onProgress, onError);
+      
+      expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith("archive-progress");
+      expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith("archive-error");
+      expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith("archive-progress", expect.any(Function));
+      expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith("archive-error", expect.any(Function));
+      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith("download-and-extract-archive", "http://test.com", "/dest");
+    });
+
+    it("sets up onSyncProgress listener correctly", async () => {
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      const callback = vi.fn();
+      
+      api.onSyncProgress(callback);
+      
+      expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith("sync-progress");
+      expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith("sync-progress", expect.any(Function));
+    });
+  });
+
+  describe("electronAPI method coverage", () => {
+    it("forwards sample operations correctly", async () => {
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      mockElectron.ipcRenderer.invoke.mockResolvedValue("success");
+
+      await api.addSampleToSlot("testKit", 1, 0, "/path/to/sample.wav", { forceMono: true });
+      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
+        "add-sample-to-slot", "testKit", 1, 0, "/path/to/sample.wav", { forceMono: true }
+      );
+
+      await api.replaceSampleInSlot("testKit", 1, 0, "/path/to/sample.wav");
+      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
+        "replace-sample-in-slot", "testKit", 1, 0, "/path/to/sample.wav", undefined
+      );
+
+      await api.deleteSampleFromSlot("testKit", 1, 0);
+      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
+        "delete-sample-from-slot", "testKit", 1, 0
+      );
+    });
+
+    it("forwards sync operations correctly", async () => {
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      mockElectron.ipcRenderer.invoke.mockResolvedValue("success");
+
+      await api.generateSyncChangeSummary();
+      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith("generateSyncChangeSummary");
+
+      const syncData = { filesToCopy: [], filesToConvert: [] };
+      await api.startKitSync(syncData);
+      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith("startKitSync", syncData);
+
+      await api.cancelKitSync();
+      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith("cancelKitSync");
+    });
+
+    it("forwards audio operations correctly", async () => {
+      await import("../index");
+
+      const electronAPICall =
+        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+          (call) => call[0] === "electronAPI",
+        );
+      const api = electronAPICall[1];
+
+      mockElectron.ipcRenderer.invoke.mockResolvedValue("success");
+
+      await api.getAudioMetadata("/path/to/file.wav");
+      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith("get-audio-metadata", "/path/to/file.wav");
+
+      await api.validateSampleFormat("/path/to/file.wav");
+      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith("validate-sample-format", "/path/to/file.wav");
+    });
+  });
 });

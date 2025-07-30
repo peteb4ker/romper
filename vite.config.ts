@@ -34,8 +34,8 @@ export default defineConfig({
       setupFiles: ["./vitest.setup.ts"],
       coverage: {
         enabled: true,
-        reporter: ["json", "html"],
-        reportsDirectory: "./coverage",
+        reporter: ["json", "html", "text-summary"],
+        reportsDirectory: isIntegration ? "./coverage/integration" : "./coverage/unit",
         include: [
           "app/renderer/**/*.ts",
           "app/renderer/**/*.tsx",

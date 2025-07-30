@@ -70,6 +70,9 @@ See [Development Workflow](./docs/developer/development-workflow.md) and [Task E
 ## Current Development Focus
 Working on **Task 5.0: Kit Editing and Slot Management** - implementing editable mode system with reference-only sample management using the new Drizzle ORM architecture.
 
+## Testing Standards
+**CRITICAL**: NEVER skip tests with `.skip()` or similar methods. Always fix failing tests properly by addressing the root cause. If a test is failing, investigate and resolve the underlying issue rather than bypassing it.
+
 ## Git Commit Standards
 **CRITICAL**: When creating git commits, DO NOT add Claude attribution or Co-Authored-By lines. Commit messages should contain only the actual commit content without any AI attribution.
 

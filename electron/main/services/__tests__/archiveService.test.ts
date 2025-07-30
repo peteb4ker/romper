@@ -27,6 +27,7 @@ vi.mock("fs", () => ({
   createWriteStream: vi.fn(() => (lastWriteStream = new MockStream())),
   mkdir: vi.fn((dir, opts, cb) => cb && cb(null)),
   mkdirSync: vi.fn(),
+  existsSync: vi.fn(() => true),
   promises: { unlink: vi.fn() },
 }));
 vi.mock("path", () => ({
@@ -286,6 +287,108 @@ describe("download-and-extract-archive handler", () => {
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
       expect.objectContaining({ phase: expect.any(String) }),
+    );
+  }, 15000);
+
+  it("handles file:// URLs for local archive files", async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    
+    const handler = ipcMainHandlers["download-and-extract-archive"];
+    const result = await handler(
+      mockEvent as any,
+      "file:///mock/local/archive.zip",
+      "/mock/dest",
+    );
+    
+    expect(result.success).toBe(true);
+    expect(mockEvent.sender.send).toHaveBeenCalledWith(
+      expect.stringContaining("archive-progress"),
+      expect.objectContaining({ phase: expect.any(String) }),
+    );
+  }, 15000);
+
+  it("handles file:// URLs for non-existent local files", async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    
+    const handler = ipcMainHandlers["download-and-extract-archive"];
+    const result = await handler(
+      mockEvent as any,
+      "file:///mock/nonexistent/archive.zip",
+      "/mock/dest",
+    );
+    
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Local file does not exist");
+    expect(mockEvent.sender.send).toHaveBeenCalledWith(
+      "archive-error",
+      expect.objectContaining({ message: expect.any(String) }),
+    );
+  }, 15000);
+
+  it("handles response with no content-length header", async () => {
+    const https = await import("https");
+    (https.get as any).mockImplementationOnce((_url: any, cb: any) => {
+      const res = new MockStream();
+      res.headers = {}; // No content-length header
+      setTimeout(() => {
+        res.emit("data", Buffer.alloc(50));
+        res.emit("data", Buffer.alloc(50));
+        res.emit("end");
+        setTimeout(() => {
+          if (lastWriteStream) lastWriteStream.emit("finish");
+        }, 1);
+      }, 5);
+      cb(res);
+      return { on: vi.fn() };
+    });
+    
+    const handler = ipcMainHandlers["download-and-extract-archive"];
+    const result = await handler(
+      mockEvent as any,
+      "https://nocontent.com/archive.zip",
+      "/mock/dest",
+    );
+    
+    expect(result.success).toBe(true);
+    expect(mockEvent.sender.send).toHaveBeenCalledWith(
+      expect.stringContaining("archive-progress"),
+      expect.objectContaining({ phase: expect.any(String) }),
+    );
+  }, 15000);
+
+  it("handles large download progress reporting", async () => {
+    const https = await import("https");
+    (https.get as any).mockImplementationOnce((_url: any, cb: any) => {
+      const res = new MockStream();
+      res.headers = { "content-length": "2000" };
+      setTimeout(() => {
+        // Emit multiple data chunks to test progress reporting
+        for (let i = 0; i < 10; i++) {
+          res.emit("data", Buffer.alloc(200));
+        }
+        res.emit("end");
+        setTimeout(() => {
+          if (lastWriteStream) lastWriteStream.emit("finish");
+        }, 1);
+      }, 5);
+      cb(res);
+      return { on: vi.fn() };
+    });
+    
+    const handler = ipcMainHandlers["download-and-extract-archive"];
+    const result = await handler(
+      mockEvent as any,
+      "https://large.com/archive.zip",
+      "/mock/dest",
+    );
+    
+    expect(result.success).toBe(true);
+    expect(mockEvent.sender.send).toHaveBeenCalledWith(
+      expect.stringContaining("archive-progress"),
+      expect.objectContaining({ 
+        phase: expect.any(String),
+        percent: expect.any(Number)
+      }),
     );
   }, 15000);
 });

@@ -292,14 +292,14 @@ describe("download-and-extract-archive handler", () => {
 
   it("handles file:// URLs for local archive files", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    
+
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
       mockEvent as any,
       "file:///mock/local/archive.zip",
       "/mock/dest",
     );
-    
+
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
@@ -309,14 +309,14 @@ describe("download-and-extract-archive handler", () => {
 
   it("handles file:// URLs for non-existent local files", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
-    
+
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
       mockEvent as any,
       "file:///mock/nonexistent/archive.zip",
       "/mock/dest",
     );
-    
+
     expect(result.success).toBe(false);
     expect(result.error).toContain("Local file does not exist");
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
@@ -341,14 +341,14 @@ describe("download-and-extract-archive handler", () => {
       cb(res);
       return { on: vi.fn() };
     });
-    
+
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
       mockEvent as any,
       "https://nocontent.com/archive.zip",
       "/mock/dest",
     );
-    
+
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
@@ -374,20 +374,20 @@ describe("download-and-extract-archive handler", () => {
       cb(res);
       return { on: vi.fn() };
     });
-    
+
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
       mockEvent as any,
       "https://large.com/archive.zip",
       "/mock/dest",
     );
-    
+
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
-      expect.objectContaining({ 
+      expect.objectContaining({
         phase: expect.any(String),
-        percent: expect.any(Number)
+        percent: expect.any(Number),
       }),
     );
   }, 15000);

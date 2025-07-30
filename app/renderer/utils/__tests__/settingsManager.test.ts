@@ -91,7 +91,7 @@ describe("settingsManager", () => {
       expect(mockLocalStorage.getItem).toHaveBeenCalledWith("settings");
       expect(console.error).toHaveBeenCalledWith(
         "Failed to apply saved theme:",
-        expect.any(Error)
+        expect.any(Error),
       );
       expect(mockClassList.remove).toHaveBeenCalledWith("dark");
       expect(mockClassList.add).not.toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe("settingsManager", () => {
 
       expect(console.error).toHaveBeenCalledWith(
         "Failed to apply saved theme:",
-        expect.any(Error)
+        expect.any(Error),
       );
       expect(mockClassList.remove).toHaveBeenCalledWith("dark");
       expect(mockClassList.add).not.toHaveBeenCalled();

@@ -1,17 +1,21 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setupElectronAPIMock } from "../../../../../tests/mocks/electron/electronAPI";
 import { useVoiceAlias } from "../useVoiceAlias";
 
 describe("useVoiceAlias", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Mock electronAPI
-    window.electronAPI = {
-      updateVoiceAlias: vi.fn().mockResolvedValue({ success: true }),
-    } as any;
-    
+
+    // Re-setup electronAPI mock after clearAllMocks
+    setupElectronAPIMock();
+
+    // Mock electronAPI using centralized mocks
+    vi.mocked(window.electronAPI.updateVoiceAlias).mockResolvedValue({
+      success: true,
+    });
+
     // Mock console.error
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
@@ -24,7 +28,7 @@ describe("useVoiceAlias", () => {
     it("updates voice alias successfully", async () => {
       const onUpdate = vi.fn();
       const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0", onUpdate })
+        useVoiceAlias({ kitName: "A0", onUpdate }),
       );
 
       await act(async () => {
@@ -34,17 +38,17 @@ describe("useVoiceAlias", () => {
       expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
         "A0",
         1,
-        "Kick Drum"
+        "Kick Drum",
       );
       expect(onUpdate).toHaveBeenCalled();
     });
 
     it("does not call API when electronAPI is not available", async () => {
-      window.electronAPI = undefined as any;
+      (window as any).electronAPI = undefined;
       const onUpdate = vi.fn();
 
       const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0", onUpdate })
+        useVoiceAlias({ kitName: "A0", onUpdate }),
       );
 
       await act(async () => {
@@ -55,11 +59,11 @@ describe("useVoiceAlias", () => {
     });
 
     it("does not call API when updateVoiceAlias method is not available", async () => {
-      window.electronAPI = {} as any;
+      (window as any).electronAPI = {};
       const onUpdate = vi.fn();
 
       const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0", onUpdate })
+        useVoiceAlias({ kitName: "A0", onUpdate }),
       );
 
       await act(async () => {
@@ -73,7 +77,7 @@ describe("useVoiceAlias", () => {
       const onUpdate = vi.fn();
 
       const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "", onUpdate })
+        useVoiceAlias({ kitName: "", onUpdate }),
       );
 
       await act(async () => {
@@ -85,14 +89,14 @@ describe("useVoiceAlias", () => {
     });
 
     it("handles API failure gracefully", async () => {
-      window.electronAPI.updateVoiceAlias = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.updateVoiceAlias).mockResolvedValue({
         success: false,
         error: "Database error",
       });
 
       const onUpdate = vi.fn();
       const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0", onUpdate })
+        useVoiceAlias({ kitName: "A0", onUpdate }),
       );
 
       await act(async () => {
@@ -102,22 +106,24 @@ describe("useVoiceAlias", () => {
       expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
         "A0",
         1,
-        "Kick Drum"
+        "Kick Drum",
       );
       expect(onUpdate).not.toHaveBeenCalled();
       expect(console.error).toHaveBeenCalledWith(
         "Failed to update voice alias:",
-        "Database error"
+        "Database error",
       );
     });
 
     it("handles API exception gracefully", async () => {
       const apiError = new Error("Network error");
-      window.electronAPI.updateVoiceAlias = vi.fn().mockRejectedValue(apiError);
+      vi.mocked(window.electronAPI.updateVoiceAlias).mockRejectedValue(
+        apiError,
+      );
 
       const onUpdate = vi.fn();
       const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0", onUpdate })
+        useVoiceAlias({ kitName: "A0", onUpdate }),
       );
 
       await act(async () => {
@@ -127,19 +133,17 @@ describe("useVoiceAlias", () => {
       expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
         "A0",
         1,
-        "Kick Drum"
+        "Kick Drum",
       );
       expect(onUpdate).not.toHaveBeenCalled();
       expect(console.error).toHaveBeenCalledWith(
         "Failed to update voice alias:",
-        apiError
+        apiError,
       );
     });
 
     it("works without onUpdate callback", async () => {
-      const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0" })
-      );
+      const { result } = renderHook(() => useVoiceAlias({ kitName: "A0" }));
 
       await act(async () => {
         await result.current.updateVoiceAlias(1, "Kick Drum");
@@ -148,7 +152,7 @@ describe("useVoiceAlias", () => {
       expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
         "A0",
         1,
-        "Kick Drum"
+        "Kick Drum",
       );
       // Should not throw when onUpdate is undefined
     });
@@ -161,7 +165,7 @@ describe("useVoiceAlias", () => {
         ({ kitName }) => useVoiceAlias({ kitName, onUpdate }),
         {
           initialProps: { kitName: "A0" },
-        }
+        },
       );
 
       await act(async () => {
@@ -171,7 +175,7 @@ describe("useVoiceAlias", () => {
       expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
         "A0",
         1,
-        "Kick Drum"
+        "Kick Drum",
       );
 
       // Clear previous calls
@@ -187,7 +191,7 @@ describe("useVoiceAlias", () => {
       expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
         "B0",
         2,
-        "Snare Drum"
+        "Snare Drum",
       );
     });
 
@@ -199,7 +203,7 @@ describe("useVoiceAlias", () => {
         ({ onUpdate }) => useVoiceAlias({ kitName: "A0", onUpdate }),
         {
           initialProps: { onUpdate: onUpdate1 },
-        }
+        },
       );
 
       await act(async () => {
@@ -226,9 +230,7 @@ describe("useVoiceAlias", () => {
 
   describe("hook return interface", () => {
     it("returns correct interface structure", () => {
-      const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0" })
-      );
+      const { result } = renderHook(() => useVoiceAlias({ kitName: "A0" }));
 
       expect(result.current).toHaveProperty("updateVoiceAlias");
       expect(typeof result.current.updateVoiceAlias).toBe("function");
@@ -236,7 +238,7 @@ describe("useVoiceAlias", () => {
 
     it("maintains stable function reference", () => {
       const { result, rerender } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0" })
+        useVoiceAlias({ kitName: "A0" }),
       );
 
       const firstUpdateVoiceAlias = result.current.updateVoiceAlias;
@@ -253,7 +255,7 @@ describe("useVoiceAlias", () => {
     it("handles empty voice alias", async () => {
       const onUpdate = vi.fn();
       const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0", onUpdate })
+        useVoiceAlias({ kitName: "A0", onUpdate }),
       );
 
       await act(async () => {
@@ -263,7 +265,7 @@ describe("useVoiceAlias", () => {
       expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
         "A0",
         1,
-        ""
+        "",
       );
       expect(onUpdate).toHaveBeenCalled();
     });
@@ -271,7 +273,7 @@ describe("useVoiceAlias", () => {
     it("handles voice number 0", async () => {
       const onUpdate = vi.fn();
       const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0", onUpdate })
+        useVoiceAlias({ kitName: "A0", onUpdate }),
       );
 
       await act(async () => {
@@ -281,7 +283,7 @@ describe("useVoiceAlias", () => {
       expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
         "A0",
         0,
-        "Base Voice"
+        "Base Voice",
       );
       expect(onUpdate).toHaveBeenCalled();
     });
@@ -289,7 +291,7 @@ describe("useVoiceAlias", () => {
     it("handles special characters in voice alias", async () => {
       const onUpdate = vi.fn();
       const { result } = renderHook(() =>
-        useVoiceAlias({ kitName: "A0", onUpdate })
+        useVoiceAlias({ kitName: "A0", onUpdate }),
       );
 
       const specialAlias = "Kick & Snare (808)";
@@ -301,7 +303,7 @@ describe("useVoiceAlias", () => {
       expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
         "A0",
         1,
-        specialAlias
+        specialAlias,
       );
       expect(onUpdate).toHaveBeenCalled();
     });

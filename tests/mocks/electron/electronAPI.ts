@@ -52,7 +52,12 @@ export const createElectronAPIMock = (
       alias: "A0",
       editable: false,
       locked: false,
-      voices: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
+      voices: [
+        { id: 1, kit_name: "A0", voice_number: 1, voice_alias: null },
+        { id: 2, kit_name: "A0", voice_number: 2, voice_alias: null },
+        { id: 3, kit_name: "A0", voice_number: 3, voice_alias: null },
+        { id: 4, kit_name: "A0", voice_number: 4, voice_alias: null },
+      ],
       step_pattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
     },
   }),

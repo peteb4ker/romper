@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setupElectronAPIMock } from "../../../../../tests/mocks/electron/electronAPI";
 import { useStepPattern } from "../useStepPattern";
 
 // Mock the step pattern constants
@@ -27,12 +28,15 @@ vi.mock("../stepPatternConstants", () => ({
 describe("useStepPattern", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Mock electronAPI
-    window.electronAPI = {
-      updateStepPattern: vi.fn().mockResolvedValue({ success: true }),
-    } as any;
-    
+
+    // Re-setup electronAPI mock after clearAllMocks
+    setupElectronAPIMock();
+
+    // Mock electronAPI using centralized mocks
+    vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
+      success: true,
+    });
+
     // Mock console.error
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
@@ -43,9 +47,7 @@ describe("useStepPattern", () => {
 
   describe("initialization", () => {
     it("initializes with null pattern when no initial pattern provided", () => {
-      const { result } = renderHook(() =>
-        useStepPattern({ kitName: "A0" })
-      );
+      const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
 
       expect(result.current.stepPattern).toEqual([
         [1, 0, 1, 0],
@@ -62,10 +64,10 @@ describe("useStepPattern", () => {
       ];
 
       const { result } = renderHook(() =>
-        useStepPattern({ 
-          kitName: "A0", 
-          initialPattern 
-        })
+        useStepPattern({
+          kitName: "A0",
+          initialPattern,
+        }),
       );
 
       expect(result.current.stepPattern).toEqual(initialPattern);
@@ -76,7 +78,7 @@ describe("useStepPattern", () => {
         [1, 0, 1, 0],
         [0, 1, 0, 1],
       ];
-      
+
       const initialPattern2 = [
         [1, 1, 0, 0],
         [0, 0, 1, 1],
@@ -87,7 +89,7 @@ describe("useStepPattern", () => {
           useStepPattern({ kitName: "A0", initialPattern }),
         {
           initialProps: { initialPattern: initialPattern1 },
-        }
+        },
       );
 
       expect(result.current.stepPattern).toEqual(initialPattern1);
@@ -100,9 +102,7 @@ describe("useStepPattern", () => {
 
   describe("updateStepPattern", () => {
     it("updates step pattern successfully", async () => {
-      const { result } = renderHook(() =>
-        useStepPattern({ kitName: "A0" })
-      );
+      const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
 
       const newPattern = [
         [1, 1, 1, 1],
@@ -115,17 +115,15 @@ describe("useStepPattern", () => {
 
       expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
         "A0",
-        newPattern
+        newPattern,
       );
       expect(result.current.stepPattern).toEqual(newPattern);
     });
 
     it("does not call API when electronAPI is not available", async () => {
-      window.electronAPI = undefined as any;
+      (window as any).electronAPI = undefined;
 
-      const { result } = renderHook(() =>
-        useStepPattern({ kitName: "A0" })
-      );
+      const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
 
       const newPattern = [
         [1, 1, 1, 1],
@@ -146,11 +144,9 @@ describe("useStepPattern", () => {
     });
 
     it("does not call API when updateStepPattern method is not available", async () => {
-      window.electronAPI = {} as any;
+      (window as any).electronAPI = {};
 
-      const { result } = renderHook(() =>
-        useStepPattern({ kitName: "A0" })
-      );
+      const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
 
       const newPattern = [
         [1, 1, 1, 1],
@@ -171,9 +167,7 @@ describe("useStepPattern", () => {
     });
 
     it("does not call API when kitName is empty", async () => {
-      const { result } = renderHook(() =>
-        useStepPattern({ kitName: "" })
-      );
+      const { result } = renderHook(() => useStepPattern({ kitName: "" }));
 
       const newPattern = [
         [1, 1, 1, 1],
@@ -200,16 +194,16 @@ describe("useStepPattern", () => {
         [0, 1, 0, 1],
       ];
 
-      window.electronAPI.updateStepPattern = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
         success: false,
         error: "Database error",
       });
 
       const { result } = renderHook(() =>
-        useStepPattern({ 
-          kitName: "A0", 
-          initialPattern 
-        })
+        useStepPattern({
+          kitName: "A0",
+          initialPattern,
+        }),
       );
 
       const newPattern = [
@@ -223,14 +217,14 @@ describe("useStepPattern", () => {
 
       expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
         "A0",
-        newPattern
+        newPattern,
       );
-      
+
       // Should revert to initial pattern after failure
       expect(result.current.stepPattern).toEqual(initialPattern);
       expect(console.error).toHaveBeenCalledWith(
         "Failed to save step pattern:",
-        "Database error"
+        "Database error",
       );
     });
 
@@ -241,13 +235,15 @@ describe("useStepPattern", () => {
       ];
 
       const apiError = new Error("Network error");
-      window.electronAPI.updateStepPattern = vi.fn().mockRejectedValue(apiError);
+      vi.mocked(window.electronAPI.updateStepPattern).mockRejectedValue(
+        apiError,
+      );
 
       const { result } = renderHook(() =>
-        useStepPattern({ 
-          kitName: "A0", 
-          initialPattern 
-        })
+        useStepPattern({
+          kitName: "A0",
+          initialPattern,
+        }),
       );
 
       const newPattern = [
@@ -261,26 +257,24 @@ describe("useStepPattern", () => {
 
       expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
         "A0",
-        newPattern
+        newPattern,
       );
-      
+
       // Should revert to initial pattern after exception
       expect(result.current.stepPattern).toEqual(initialPattern);
       expect(console.error).toHaveBeenCalledWith(
         "Exception saving step pattern:",
-        apiError
+        apiError,
       );
     });
 
     it("reverts to default pattern when no initial pattern and API fails", async () => {
-      window.electronAPI.updateStepPattern = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
         success: false,
         error: "Database error",
       });
 
-      const { result } = renderHook(() =>
-        useStepPattern({ kitName: "A0" })
-      );
+      const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
 
       const newPattern = [
         [1, 1, 1, 1],
@@ -307,7 +301,7 @@ describe("useStepPattern", () => {
         ({ kitName }) => useStepPattern({ kitName }),
         {
           initialProps: { kitName: "A0" },
-        }
+        },
       );
 
       const newPattern = [
@@ -321,7 +315,7 @@ describe("useStepPattern", () => {
 
       expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
         "A0",
-        newPattern
+        newPattern,
       );
 
       // Clear previous calls
@@ -336,7 +330,7 @@ describe("useStepPattern", () => {
 
       expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
         "B0",
-        newPattern
+        newPattern,
       );
     });
 
@@ -351,7 +345,7 @@ describe("useStepPattern", () => {
         [0, 0, 0, 1],
       ];
 
-      window.electronAPI.updateStepPattern = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
         success: false,
         error: "Test error",
       });
@@ -361,7 +355,7 @@ describe("useStepPattern", () => {
           useStepPattern({ kitName: "A0", initialPattern }),
         {
           initialProps: { initialPattern: initialPattern1 },
-        }
+        },
       );
 
       const newPattern = [
@@ -390,9 +384,7 @@ describe("useStepPattern", () => {
 
   describe("hook return interface", () => {
     it("returns correct interface structure", () => {
-      const { result } = renderHook(() =>
-        useStepPattern({ kitName: "A0" })
-      );
+      const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
 
       expect(result.current).toHaveProperty("stepPattern");
       expect(result.current).toHaveProperty("setStepPattern");
@@ -401,7 +393,7 @@ describe("useStepPattern", () => {
 
     it("maintains stable function reference", () => {
       const { result, rerender } = renderHook(() =>
-        useStepPattern({ kitName: "A0" })
+        useStepPattern({ kitName: "A0" }),
       );
 
       const firstSetStepPattern = result.current.setStepPattern;

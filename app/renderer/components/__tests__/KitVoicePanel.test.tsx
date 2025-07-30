@@ -9,6 +9,7 @@ import {
 import React, { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { useKitVoicePanels } from "../hooks/useKitVoicePanels";
 import KitVoicePanel from "../KitVoicePanel";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
@@ -65,25 +66,26 @@ const controlledProps = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  
-  // Mock electronAPI methods
-  window.electronAPI = {
-    validateSampleFormat: vi.fn().mockResolvedValue({
-      success: true,
-      data: {
-        isValid: true,
-        issues: [],
-        metadata: { channels: 2, sampleRate: 44100 },
-      },
-    }),
-    getAllSamplesForKit: vi.fn().mockResolvedValue({
-      success: true,
-      data: [
-        { voice_number: 1, source_path: "/test/kick.wav" },
-        { voice_number: 1, source_path: "/test/snare.wav" },
-      ],
-    }),
-  } as any;
+
+  // Re-setup electronAPI mock after clearAllMocks
+  setupElectronAPIMock();
+
+  // Mock electronAPI methods using centralized mocks
+  vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue({
+    success: true,
+    data: {
+      isValid: true,
+      issues: [],
+      metadata: { channels: 2, sampleRate: 44100 },
+    },
+  });
+  vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+    success: true,
+    data: [
+      { voice_number: 1, source_path: "/test/kick.wav" },
+      { voice_number: 1, source_path: "/test/snare.wav" },
+    ],
+  });
 
   // Mock electronFileAPI
   window.electronFileAPI = {
@@ -352,7 +354,11 @@ describe("KitVoicePanel", () => {
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel {...baseProps} onSaveVoiceName={onSaveVoiceName} isEditable={true} />
+            <KitVoicePanel
+              {...baseProps}
+              onSaveVoiceName={onSaveVoiceName}
+              isEditable={true}
+            />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
       );
@@ -374,7 +380,11 @@ describe("KitVoicePanel", () => {
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel {...baseProps} onSaveVoiceName={onSaveVoiceName} isEditable={true} />
+            <KitVoicePanel
+              {...baseProps}
+              onSaveVoiceName={onSaveVoiceName}
+              isEditable={true}
+            />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
       );
@@ -397,7 +407,11 @@ describe("KitVoicePanel", () => {
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel {...baseProps} onSaveVoiceName={onSaveVoiceName} isEditable={true} />
+            <KitVoicePanel
+              {...baseProps}
+              onSaveVoiceName={onSaveVoiceName}
+              isEditable={true}
+            />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
       );
@@ -417,7 +431,11 @@ describe("KitVoicePanel", () => {
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel {...baseProps} onSaveVoiceName={onSaveVoiceName} isEditable={true} />
+            <KitVoicePanel
+              {...baseProps}
+              onSaveVoiceName={onSaveVoiceName}
+              isEditable={true}
+            />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
       );
@@ -467,11 +485,15 @@ describe("KitVoicePanel", () => {
     it("shows stop button when sample is playing", () => {
       const onStop = vi.fn();
       const samplePlaying = { "1:kick.wav": true };
-      
+
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel {...baseProps} samplePlaying={samplePlaying} onStop={onStop} />
+            <KitVoicePanel
+              {...baseProps}
+              samplePlaying={samplePlaying}
+              onStop={onStop}
+            />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
       );
@@ -503,7 +525,11 @@ describe("KitVoicePanel", () => {
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel {...baseProps} onSampleDelete={onSampleDelete} isEditable={true} />
+            <KitVoicePanel
+              {...baseProps}
+              onSampleDelete={onSampleDelete}
+              isEditable={true}
+            />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
       );
@@ -515,13 +541,21 @@ describe("KitVoicePanel", () => {
     });
 
     it("handles delete errors gracefully", async () => {
-      const onSampleDelete = vi.fn().mockRejectedValue(new Error("Delete failed"));
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      
+      const onSampleDelete = vi
+        .fn()
+        .mockRejectedValue(new Error("Delete failed"));
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel {...baseProps} onSampleDelete={onSampleDelete} isEditable={true} />
+            <KitVoicePanel
+              {...baseProps}
+              onSampleDelete={onSampleDelete}
+              isEditable={true}
+            />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
       );
@@ -530,7 +564,10 @@ describe("KitVoicePanel", () => {
       fireEvent.click(deleteButtons[0]);
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith("Failed to delete sample:", expect.any(Error));
+        expect(consoleSpy).toHaveBeenCalledWith(
+          "Failed to delete sample:",
+          expect.any(Error),
+        );
       });
 
       consoleSpy.mockRestore();
@@ -561,7 +598,6 @@ describe("KitVoicePanel", () => {
       // - error handling for invalid formats
       expect(true).toBe(true);
     });
-
   });
 
   describe("Stereo handling", () => {
@@ -569,8 +605,8 @@ describe("KitVoicePanel", () => {
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel 
-              {...baseProps} 
+            <KitVoicePanel
+              {...baseProps}
               isStereoDragTarget={true}
               stereoDragSlotIndex={3}
               isEditable={true}
@@ -599,8 +635,8 @@ describe("KitVoicePanel", () => {
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel 
-              {...baseProps} 
+            <KitVoicePanel
+              {...baseProps}
               onPlay={onPlay}
               isActive={true}
               selectedIdx={0}
@@ -624,8 +660,8 @@ describe("KitVoicePanel", () => {
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel 
-              {...baseProps} 
+            <KitVoicePanel
+              {...baseProps}
               onPlay={onPlay}
               isActive={false}
               selectedIdx={0}
@@ -635,7 +671,7 @@ describe("KitVoicePanel", () => {
       );
 
       const sampleList = screen.getByTestId("sample-list-voice-1");
-      
+
       fireEvent.keyDown(sampleList, { key: " " });
       expect(onPlay).not.toHaveBeenCalled();
     });
@@ -645,8 +681,8 @@ describe("KitVoicePanel", () => {
       render(
         <MockSettingsProvider>
           <MockMessageDisplayProvider>
-            <KitVoicePanel 
-              {...baseProps} 
+            <KitVoicePanel
+              {...baseProps}
               samples={[]}
               onPlay={onPlay}
               isActive={true}
@@ -657,7 +693,7 @@ describe("KitVoicePanel", () => {
       );
 
       const sampleList = screen.getByTestId("sample-list-voice-1");
-      
+
       fireEvent.keyDown(sampleList, { key: " " });
       expect(onPlay).not.toHaveBeenCalled();
     });

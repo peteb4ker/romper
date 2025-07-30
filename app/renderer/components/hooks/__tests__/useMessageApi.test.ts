@@ -18,7 +18,7 @@ describe("useMessageApi", () => {
       React.createElement(
         MessageDisplayContext.Provider,
         { value: mockContextValue },
-        children
+        children,
       );
 
     const { result } = renderHook(() => useMessageApi(), { wrapper });
@@ -28,7 +28,9 @@ describe("useMessageApi", () => {
 
   it("throws error when used outside MessageDisplayContext", () => {
     // Mock console.error to avoid test noise
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     expect(() => {
       renderHook(() => useMessageApi());
@@ -39,13 +41,15 @@ describe("useMessageApi", () => {
 
   it("throws error when context value is null", () => {
     // Mock console.error to avoid test noise
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(
         MessageDisplayContext.Provider,
         { value: null },
-        children
+        children,
       );
 
     expect(() => {
@@ -57,13 +61,15 @@ describe("useMessageApi", () => {
 
   it("throws error when context value is undefined", () => {
     // Mock console.error to avoid test noise
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(
         MessageDisplayContext.Provider,
         { value: undefined },
-        children
+        children,
       );
 
     expect(() => {

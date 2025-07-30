@@ -1,13 +1,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useKitDetailsLogic } from "../useKitDetailsLogic";
+import { setupElectronAPIMock } from "../../../../../tests/mocks/electron/electronAPI";
 import { useKit } from "../useKit";
-import { useVoiceAlias } from "../useVoiceAlias";
-import { useSampleManagement } from "../useSampleManagement";
+import { useKitDetailsLogic } from "../useKitDetailsLogic";
 import { useKitPlayback } from "../useKitPlayback";
 import { useKitVoicePanels } from "../useKitVoicePanels";
+import { useSampleManagement } from "../useSampleManagement";
 import { useStepPattern } from "../useStepPattern";
+import { useVoiceAlias } from "../useVoiceAlias";
 
 // Mock all the hooks that useKitDetailsLogic depends on
 vi.mock("../useKit", () => ({
@@ -99,10 +100,11 @@ describe("useKitDetailsLogic", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Setup default mock for electronAPI methods used in this hook
-    if (!window.electronAPI.rescanKit) {
-      window.electronAPI.rescanKit = vi.fn();
-    }
+
+    // Re-setup electronAPI mock after clearAllMocks
+    setupElectronAPIMock();
+
+    // Setup default mock for electronAPI methods used in this hook using centralized mocks
     vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
       success: true,
       data: { scannedSamples: 5 },
@@ -206,7 +208,9 @@ describe("useKitDetailsLogic", () => {
 
   it("initializes with default samples when not provided", () => {
     const propsWithoutSamples = { ...mockProps, samples: undefined };
-    const { result } = renderHook(() => useKitDetailsLogic(propsWithoutSamples));
+    const { result } = renderHook(() =>
+      useKitDetailsLogic(propsWithoutSamples),
+    );
 
     expect(result.current.samples).toEqual({ 1: [], 2: [], 3: [], 4: [] });
   });
@@ -307,7 +311,7 @@ describe("useKitDetailsLogic", () => {
     const mockGridElement = {
       focus: vi.fn(),
     } as any;
-    
+
     // Set the ref before opening the sequencer
     act(() => {
       result.current.sequencerGridRef.current = mockGridElement;
@@ -358,7 +362,9 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("handles global keyboard navigation for sequencer toggle", () => {
-    const { result, rerender } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result, rerender } = renderHook(() =>
+      useKitDetailsLogic(mockProps),
+    );
     expect(result.current.sequencerOpen).toBe(false);
 
     // Test sequencer toggle (s key)
@@ -367,7 +373,7 @@ describe("useKitDetailsLogic", () => {
     window.dispatchEvent(toggleEvent);
 
     expect(preventDefaultSpy).toHaveBeenCalled();
-    
+
     // Force re-render to get updated values
     rerender();
     expect(result.current.sequencerOpen).toBe(true);
@@ -378,7 +384,7 @@ describe("useKitDetailsLogic", () => {
     window.dispatchEvent(toggleEventCap);
 
     expect(preventDefaultSpyCap).toHaveBeenCalled();
-    
+
     // Force re-render to get updated values
     rerender();
     expect(result.current.sequencerOpen).toBe(false);
@@ -430,7 +436,15 @@ describe("useKitDetailsLogic", () => {
     const sampleProps = {
       ...mockProps,
       samples: {
-        1: [{ id: "sample1", name: "test.wav", voice: 1, slot: 0, filePath: "/test.wav" }],
+        1: [
+          {
+            id: "sample1",
+            name: "test.wav",
+            voice: 1,
+            slot: 0,
+            filePath: "/test.wav",
+          },
+        ],
         2: [],
         3: [],
         4: [],
@@ -467,7 +481,9 @@ describe("useKitDetailsLogic", () => {
       onSampleKeyNav: mockOnSampleKeyNav,
     });
 
-    const { result, rerender } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result, rerender } = renderHook(() =>
+      useKitDetailsLogic(mockProps),
+    );
 
     // Open sequencer first
     result.current.setSequencerOpen(true);
@@ -475,7 +491,7 @@ describe("useKitDetailsLogic", () => {
 
     // Create a fresh event for this test
     const downEvent = new KeyboardEvent("keydown", { key: "ArrowDown" });
-    
+
     // Instead of spying on preventDefault, let's check if onSampleKeyNav was called
     // since that's the actual behavior we're testing
     window.dispatchEvent(downEvent);

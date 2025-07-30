@@ -35,7 +35,9 @@ export default defineConfig({
       coverage: {
         enabled: true,
         reporter: ["json", "html", "text-summary"],
-        reportsDirectory: isIntegration ? "./coverage/integration" : "./coverage/unit",
+        reportsDirectory: isIntegration
+          ? "./coverage/integration"
+          : "./coverage/unit",
         include: [
           "app/renderer/**/*.ts",
           "app/renderer/**/*.tsx",

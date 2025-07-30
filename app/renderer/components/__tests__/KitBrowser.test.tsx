@@ -43,6 +43,7 @@ vi.mock("../hooks/useKitBrowser", () => ({
 }));
 
 import React from "react";
+
 import { useKitBrowser } from "../hooks/useKitBrowser";
 import { useKitScan } from "../hooks/useKitScan";
 import KitBrowser from "../KitBrowser";
@@ -500,7 +501,9 @@ describe("KitBrowser", () => {
       );
 
       // Find and click the validate button
-      const validateButton = screen.getByTitle("Validate local store and database consistency");
+      const validateButton = screen.getByTitle(
+        "Validate local store and database consistency",
+      );
       fireEvent.click(validateButton);
 
       // Wait for dialog to appear
@@ -614,9 +617,7 @@ describe("KitBrowser", () => {
       const setupButton = screen.getByText("Local Store Setup");
       fireEvent.click(setupButton);
 
-      expect(
-        screen.getByText("Romper Local Store Setup"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Romper Local Store Setup")).toBeInTheDocument();
     });
 
     it("closes local store wizard when close is clicked", () => {
@@ -629,9 +630,7 @@ describe("KitBrowser", () => {
       // Open wizard
       const setupButton = screen.getByText("Local Store Setup");
       fireEvent.click(setupButton);
-      expect(
-        screen.getByText("Romper Local Store Setup"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Romper Local Store Setup")).toBeInTheDocument();
 
       // Close wizard
       const closeButton = screen.getByText("Cancel");
@@ -841,7 +840,7 @@ describe("KitBrowser", () => {
       );
 
       // The ref should expose handleScanAllKits method
-      expect(typeof ref.current?.handleScanAllKits).toBe('function');
+      expect(typeof ref.current?.handleScanAllKits).toBe("function");
     });
   });
 

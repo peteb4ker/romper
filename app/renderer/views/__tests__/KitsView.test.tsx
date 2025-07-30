@@ -33,6 +33,8 @@ if (typeof window !== "undefined") {
 }
 
 import React from "react";
+
+import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { SettingsContext } from "../../utils/SettingsContext";
 import KitsView from "../KitsView";
 import { TestSettingsProvider } from "./TestSettingsProvider";
@@ -80,6 +82,9 @@ describe("KitsView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Re-setup electronAPI mock after clearAllMocks
+    setupElectronAPIMock();
+
     // Create mock for console methods
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(console, "log").mockImplementation(() => {});
@@ -90,25 +95,33 @@ describe("KitsView", () => {
       window.IntersectionObserver = MockIntersectionObserver as any;
     }
 
-    // Mock electronAPI methods
-    window.electronAPI = {
-      getKits: vi.fn().mockResolvedValue({
-        success: true,
-        data: [
-          { name: "A0", alias: null, bank_letter: "A", editable: false },
-          { name: "A1", alias: null, bank_letter: "A", editable: false },
-          { name: "B0", alias: null, bank_letter: "B", editable: false },
-        ],
-      }),
-      getAllSamplesForKit: vi.fn().mockResolvedValue({
-        success: true,
-        data: [
-          { filename: "kick.wav", voice_number: 1, slot_number: 1, is_stereo: false },
-          { filename: "snare.wav", voice_number: 2, slot_number: 1, is_stereo: false },
-        ],
-      }),
-      closeApp: vi.fn(),
-    } as any;
+    // Mock electronAPI methods using centralized mocks
+    vi.mocked(window.electronAPI.getKits).mockResolvedValue({
+      success: true,
+      data: [
+        { name: "A0", alias: null, bank_letter: "A", editable: false },
+        { name: "A1", alias: null, bank_letter: "A", editable: false },
+        { name: "B0", alias: null, bank_letter: "B", editable: false },
+      ],
+    });
+    vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+      success: true,
+      data: [
+        {
+          filename: "kick.wav",
+          voice_number: 1,
+          slot_number: 1,
+          is_stereo: false,
+        },
+        {
+          filename: "snare.wav",
+          voice_number: 2,
+          slot_number: 1,
+          is_stereo: false,
+        },
+      ],
+    });
+    vi.mocked(window.electronAPI.closeApp).mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -215,13 +228,17 @@ describe("KitsView", () => {
       });
 
       // Mock the KitBrowser ref
-      const kitBrowserRef = { current: { handleScanAllKits: mockHandleScanAllKits } };
-      
+      const kitBrowserRef = {
+        current: { handleScanAllKits: mockHandleScanAllKits },
+      };
+
       // Trigger the scan all kits menu event
       (globalThis as any).menuEventCallbacks.onScanAllKits();
 
       // Should log the scan action (since handleScanAllKits is mocked)
-      expect(console.log).toHaveBeenCalledWith("[KitsView] Menu scan all kits triggered");
+      expect(console.log).toHaveBeenCalledWith(
+        "[KitsView] Menu scan all kits triggered",
+      );
     });
 
     it("handles scan banks menu event", async () => {
@@ -238,7 +255,9 @@ describe("KitsView", () => {
       // Trigger the scan banks menu event
       (globalThis as any).menuEventCallbacks.onScanBanks();
 
-      expect(console.log).toHaveBeenCalledWith("[KitsView] Menu scan banks triggered");
+      expect(console.log).toHaveBeenCalledWith(
+        "[KitsView] Menu scan banks triggered",
+      );
     });
 
     it("handles validate database menu event", async () => {
@@ -255,7 +274,9 @@ describe("KitsView", () => {
       // Trigger the validate database menu event
       (globalThis as any).menuEventCallbacks.onValidateDatabase();
 
-      expect(console.log).toHaveBeenCalledWith("[KitsView] Menu validate database triggered");
+      expect(console.log).toHaveBeenCalledWith(
+        "[KitsView] Menu validate database triggered",
+      );
     });
 
     it("handles setup local store menu event", async () => {
@@ -272,7 +293,9 @@ describe("KitsView", () => {
       // Trigger the setup local store menu event
       (globalThis as any).menuEventCallbacks.onSetupLocalStore();
 
-      expect(console.log).toHaveBeenCalledWith("[KitsView] Menu setup local store triggered");
+      expect(console.log).toHaveBeenCalledWith(
+        "[KitsView] Menu setup local store triggered",
+      );
     });
 
     it("handles change local store directory menu event", async () => {
@@ -289,7 +312,9 @@ describe("KitsView", () => {
       // Trigger the change local store directory menu event
       (globalThis as any).menuEventCallbacks.onChangeLocalStoreDirectory();
 
-      expect(console.log).toHaveBeenCalledWith("[KitsView] Menu change local store directory triggered");
+      expect(console.log).toHaveBeenCalledWith(
+        "[KitsView] Menu change local store directory triggered",
+      );
     });
 
     it("handles preferences menu event", async () => {
@@ -306,7 +331,9 @@ describe("KitsView", () => {
       // Trigger the preferences menu event
       (globalThis as any).menuEventCallbacks.onPreferences();
 
-      expect(console.log).toHaveBeenCalledWith("[KitsView] Menu preferences triggered");
+      expect(console.log).toHaveBeenCalledWith(
+        "[KitsView] Menu preferences triggered",
+      );
     });
 
     it("handles about menu event", async () => {
@@ -323,7 +350,9 @@ describe("KitsView", () => {
       // Trigger the about menu event
       (globalThis as any).menuEventCallbacks.onAbout();
 
-      expect(console.log).toHaveBeenCalledWith("[KitsView] Menu about triggered");
+      expect(console.log).toHaveBeenCalledWith(
+        "[KitsView] Menu about triggered",
+      );
     });
   });
 
@@ -337,14 +366,20 @@ describe("KitsView", () => {
 
       await waitFor(() => {
         expect(window.electronAPI.getKits).toHaveBeenCalled();
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith("A0");
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith("A1");
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith("B0");
+        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
+          "A0",
+        );
+        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
+          "A1",
+        );
+        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
+          "B0",
+        );
       });
     });
 
     it("handles database errors gracefully", async () => {
-      window.electronAPI.getKits = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         success: false,
         error: "Database connection failed",
       });
@@ -361,7 +396,7 @@ describe("KitsView", () => {
     });
 
     it("handles sample loading errors gracefully", async () => {
-      window.electronAPI.getAllSamplesForKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
         success: false,
         error: "Sample loading failed",
       });
@@ -380,13 +415,33 @@ describe("KitsView", () => {
 
   describe("Sample data processing", () => {
     it("correctly groups samples by voice", async () => {
-      window.electronAPI.getAllSamplesForKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
         success: true,
         data: [
-          { filename: "kick.wav", voice_number: 1, slot_number: 1, is_stereo: false },
-          { filename: "snare.wav", voice_number: 2, slot_number: 1, is_stereo: false },
-          { filename: "hat.wav", voice_number: 1, slot_number: 2, is_stereo: false },
-          { filename: "stereo.wav", voice_number: 3, slot_number: 1, is_stereo: true },
+          {
+            filename: "kick.wav",
+            voice_number: 1,
+            slot_number: 1,
+            is_stereo: false,
+          },
+          {
+            filename: "snare.wav",
+            voice_number: 2,
+            slot_number: 1,
+            is_stereo: false,
+          },
+          {
+            filename: "hat.wav",
+            voice_number: 1,
+            slot_number: 2,
+            is_stereo: false,
+          },
+          {
+            filename: "stereo.wav",
+            voice_number: 3,
+            slot_number: 1,
+            is_stereo: true,
+          },
         ],
       });
 
@@ -496,14 +551,16 @@ describe("KitsView", () => {
 
       // Should show wizard
       await waitFor(() => {
-        expect(screen.getByText("Local Store Setup Required")).toBeInTheDocument();
+        expect(
+          screen.getByText("Local Store Setup Required"),
+        ).toBeInTheDocument();
       });
     });
 
     it("handles wizard close with app close", async () => {
       // Mock the app close
       const mockCloseApp = vi.fn();
-      window.electronAPI.closeApp = mockCloseApp;
+      vi.mocked(window.electronAPI.closeApp).mockImplementation(mockCloseApp);
 
       const TestSettingsProviderNeedsSetup: React.FC<{
         children: React.ReactNode;
@@ -600,10 +657,15 @@ describe("KitsView", () => {
       });
 
       // Mock the sample reload call
-      window.electronAPI.getAllSamplesForKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
         success: true,
         data: [
-          { filename: "new-kick.wav", voice_number: 1, slot_number: 1, is_stereo: false },
+          {
+            filename: "new-kick.wav",
+            voice_number: 1,
+            slot_number: 1,
+            is_stereo: false,
+          },
         ],
       });
 
@@ -614,7 +676,9 @@ describe("KitsView", () => {
 
   describe("Error handling", () => {
     it("handles kit loading exceptions", async () => {
-      window.electronAPI.getKits = vi.fn().mockRejectedValue(new Error("Network error"));
+      vi.mocked(window.electronAPI.getKits).mockRejectedValue(
+        new Error("Network error"),
+      );
 
       render(
         <TestSettingsProvider>
@@ -631,7 +695,9 @@ describe("KitsView", () => {
     });
 
     it("handles sample loading exceptions", async () => {
-      window.electronAPI.getAllSamplesForKit = vi.fn().mockRejectedValue(new Error("File not found"));
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(
+        new Error("File not found"),
+      );
 
       render(
         <TestSettingsProvider>
@@ -714,11 +780,21 @@ describe("KitsView", () => {
       });
 
       // Mock new sample data
-      window.electronAPI.getAllSamplesForKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
         success: true,
         data: [
-          { filename: "new-kick.wav", voice_number: 1, slot_number: 1, is_stereo: false },
-          { filename: "new-snare.wav", voice_number: 2, slot_number: 1, is_stereo: false },
+          {
+            filename: "new-kick.wav",
+            voice_number: 1,
+            slot_number: 1,
+            is_stereo: false,
+          },
+          {
+            filename: "new-snare.wav",
+            voice_number: 2,
+            slot_number: 1,
+            is_stereo: false,
+          },
         ],
       });
 
@@ -746,7 +822,7 @@ describe("KitsView", () => {
       });
 
       // Mock sample reload failure
-      window.electronAPI.getAllSamplesForKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
         success: false,
         error: "Sample reload failed",
       });
@@ -776,10 +852,15 @@ describe("KitsView", () => {
       });
 
       // Mock successful refresh data
-      window.electronAPI.getKits = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         success: true,
         data: [
-          { name: "A0", alias: "Updated Kit", bank_letter: "A", editable: true },
+          {
+            name: "A0",
+            alias: "Updated Kit",
+            bank_letter: "A",
+            editable: true,
+          },
           { name: "A1", alias: null, bank_letter: "A", editable: false },
         ],
       });
@@ -825,7 +906,7 @@ describe("KitsView", () => {
     it("handles wizard success and refreshes store status", async () => {
       // Mock refresh function
       const mockRefreshLocalStoreStatus = vi.fn().mockResolvedValue(undefined);
-      
+
       const TestSettingsProviderWithMock: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
@@ -863,7 +944,9 @@ describe("KitsView", () => {
 
       // Should show wizard
       await waitFor(() => {
-        expect(screen.getByText("Local Store Setup Required")).toBeInTheDocument();
+        expect(
+          screen.getByText("Local Store Setup Required"),
+        ).toBeInTheDocument();
       });
 
       // Click Complete Setup button
@@ -878,19 +961,39 @@ describe("KitsView", () => {
   describe("Memoized sample counts", () => {
     it("correctly calculates sample counts for all kits", async () => {
       // Mock detailed sample data
-      window.electronAPI.getAllSamplesForKit = vi.fn()
+      vi.mocked(window.electronAPI.getAllSamplesForKit)
         .mockResolvedValueOnce({
           success: true,
           data: [
-            { filename: "kick.wav", voice_number: 1, slot_number: 1, is_stereo: false },
-            { filename: "snare.wav", voice_number: 1, slot_number: 2, is_stereo: false },
-            { filename: "hat.wav", voice_number: 2, slot_number: 1, is_stereo: false },
+            {
+              filename: "kick.wav",
+              voice_number: 1,
+              slot_number: 1,
+              is_stereo: false,
+            },
+            {
+              filename: "snare.wav",
+              voice_number: 1,
+              slot_number: 2,
+              is_stereo: false,
+            },
+            {
+              filename: "hat.wav",
+              voice_number: 2,
+              slot_number: 1,
+              is_stereo: false,
+            },
           ],
         })
         .mockResolvedValueOnce({
           success: true,
           data: [
-            { filename: "bass.wav", voice_number: 1, slot_number: 1, is_stereo: false },
+            {
+              filename: "bass.wav",
+              voice_number: 1,
+              slot_number: 1,
+              is_stereo: false,
+            },
           ],
         })
         .mockResolvedValueOnce({
@@ -916,11 +1019,21 @@ describe("KitsView", () => {
 
   describe("Stereo sample handling", () => {
     it("correctly handles stereo samples spanning two voices", async () => {
-      window.electronAPI.getAllSamplesForKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
         success: true,
         data: [
-          { filename: "stereo-kick.wav", voice_number: 1, slot_number: 1, is_stereo: true },
-          { filename: "mono-snare.wav", voice_number: 3, slot_number: 1, is_stereo: false },
+          {
+            filename: "stereo-kick.wav",
+            voice_number: 1,
+            slot_number: 1,
+            is_stereo: true,
+          },
+          {
+            filename: "mono-snare.wav",
+            voice_number: 3,
+            slot_number: 1,
+            is_stereo: false,
+          },
         ],
       });
 
@@ -939,10 +1052,15 @@ describe("KitsView", () => {
     });
 
     it("handles stereo sample at voice 4 boundary", async () => {
-      window.electronAPI.getAllSamplesForKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
         success: true,
         data: [
-          { filename: "stereo-at-end.wav", voice_number: 4, slot_number: 1, is_stereo: true },
+          {
+            filename: "stereo-at-end.wav",
+            voice_number: 4,
+            slot_number: 1,
+            is_stereo: true,
+          },
         ],
       });
 
@@ -981,7 +1099,7 @@ describe("KitsView", () => {
       });
 
       // Mock kit refresh failure
-      window.electronAPI.getKits = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         success: false,
         error: "Database connection lost",
       });

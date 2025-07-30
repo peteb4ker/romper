@@ -5,11 +5,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "../audioUtils";
 import {
+  type ConversionOptions,
+  type ConversionResult,
   convertSampleToRampleFormat,
   convertToRampleDefault,
   getRequiredConversionOptions,
-  type ConversionOptions,
-  type ConversionResult,
 } from "../formatConverter";
 
 // Mock dependencies
@@ -26,7 +26,7 @@ const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 describe("formatConverter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock RAMPLE_FORMAT_REQUIREMENTS
     vi.mocked(RAMPLE_FORMAT_REQUIREMENTS).bitDepths = [16, 24];
     vi.mocked(RAMPLE_FORMAT_REQUIREMENTS).sampleRates = [44100, 48000];
@@ -39,7 +39,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "nonexistent.wav",
-        "output.wav"
+        "output.wav",
       );
 
       expect(result.success).toBe(false);
@@ -55,7 +55,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
-        "output.wav"
+        "output.wav",
       );
 
       expect(result.success).toBe(false);
@@ -73,7 +73,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options
+        options,
       );
 
       expect(result.success).toBe(false);
@@ -91,7 +91,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options
+        options,
       );
 
       expect(result.success).toBe(false);
@@ -130,7 +130,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options
+        options,
       );
 
       expect(result.success).toBe(true);
@@ -141,7 +141,7 @@ describe("formatConverter", () => {
           sampleRate: 44100,
           bitDepth: 16,
           float: false,
-        })
+        }),
       );
     });
 
@@ -169,7 +169,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options
+        options,
       );
 
       expect(result.success).toBe(true);
@@ -200,7 +200,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options
+        options,
       );
 
       expect(result.success).toBe(true);
@@ -228,7 +228,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
-        "/output/dir/output.wav"
+        "/output/dir/output.wav",
       );
 
       expect(mockFs.mkdirSync).toHaveBeenCalledWith("/output/dir", {
@@ -249,7 +249,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
-        "output.wav"
+        "output.wav",
       );
 
       expect(result.success).toBe(false);
@@ -268,7 +268,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
-        "output.wav"
+        "output.wav",
       );
 
       expect(result.success).toBe(false);
@@ -282,7 +282,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
-        "output.wav"
+        "output.wav",
       );
 
       expect(result.success).toBe(false);
@@ -313,7 +313,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options
+        options,
       );
 
       expect(result.success).toBe(true);
@@ -344,7 +344,7 @@ describe("formatConverter", () => {
       const result = await convertToRampleDefault(
         "input.wav",
         "output.wav",
-        true
+        true,
       );
 
       expect(result.success).toBe(true);

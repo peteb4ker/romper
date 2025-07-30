@@ -135,6 +135,45 @@ it('should handle scan errors with custom toast', async () => {
 - **Functions**: 80% minimum
 - **Lines**: 80% minimum
 
+### Coverage Report Types
+
+The project uses three coverage report formats via Vitest:
+
+```typescript
+// vite.config.ts coverage configuration
+coverage: {
+  enabled: true,
+  reporter: ["json", "html", "text-summary"],
+  reportsDirectory: "./coverage",
+}
+```
+
+**Usage Guidelines:**
+
+1. **text-summary** (Console Output)
+   - **Primary**: Token-efficient summary for quick analysis
+   - **Use case**: First review by both humans and agents
+   - **Format**: Printed to console during test runs
+   - **Content**: Overall percentages and totals
+
+2. **html** (Human Interface) 
+   - **Target**: Human developers
+   - **Use case**: Detailed line-by-line analysis and investigation
+   - **Location**: `./coverage/index.html`
+   - **Features**: Interactive browsing, visual highlighting, drill-down navigation
+
+3. **json** (Machine Readable)
+   - **Target**: Agents and automated analysis
+   - **Use case**: Programmatic processing when blow-by-blow information needed
+   - **Location**: `./coverage/coverage-final.json`
+   - **Content**: Complete coverage data for all files, functions, branches, and lines
+
+**Agent Coverage Analysis Workflow:**
+1. Review `text-summary` output first for overall coverage status
+2. If detailed analysis needed, parse `json` report for specific uncovered lines/functions
+3. Prioritize lowest coverage files for test implementation
+4. Focus on improving function coverage (often lowest) before statement coverage
+
 ### Test Categories
 ```typescript
 // ✅ Test both happy path and error conditions

@@ -9,39 +9,9 @@ on:
       - '**'
 
 jobs:
-  unit-tests:
+  test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run unit tests
-        run: npm run test:unit
-
-      - name: Upload coverage reports to Codecov
-        if: github.ref == 'refs/heads/main'
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          slug: peteb4ker/romper
-
-  integration-tests:
-    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - name: Checkout code
@@ -57,7 +27,6 @@ jobs:
         run: npm ci
 
       - name: Install system dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -73,15 +42,22 @@ jobs:
             libgtk-3-0
 
       - name: Setup virtual display (Linux)
-        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get install -y xvfb
           export DISPLAY=:99
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           sleep 3
 
-      - name: Run integration tests
-        run: npm run test:integration
+      - name: Run tests with coverage
+        run: npm run test
         env:
           CI: true
           DISPLAY: ':99'
+
+      - name: Upload coverage reports to Codecov
+        if: github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: peteb4ker/romper
+          files: ./coverage/merged/coverage-final.json

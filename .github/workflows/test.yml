@@ -60,5 +60,5 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: peteb4ker/romper
-          files: ./coverage/unit/coverage-final.json,./coverage/integration/coverage-final.json
+          files: ./coverage/coverage-final.json
           disable_search: true

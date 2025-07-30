@@ -14,7 +14,7 @@
     "test:integration": "node electron/run-vitest-in-electron.cjs --run --silent --reporter=dot",
     "test:e2e": "npm run build && npm run test:play",
     "test:play": "playwright test",
-    "coverage:merge": "mkdir -p coverage/merged && istanbul-merge --out coverage/merged/coverage-final.json coverage/unit/coverage-final.json coverage/integration/coverage-final.json",
+    "coverage:merge": "mkdir -p coverage/merged && istanbul-merge --out coverage/coverage-final.json coverage/unit/coverage-final.json coverage/integration/coverage-final.json",
     "coverage:total": "nyc report --temp-dir=coverage/merged --reporter=text-summary",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",

@@ -1,10 +1,4 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import {
   afterAll,
@@ -17,6 +11,7 @@ import {
   vi,
 } from "vitest";
 
+import { render } from "../../test-utils/renderWithProviders";
 import { TestSettingsProvider } from "../../views/__tests__/TestSettingsProvider";
 import KitDetails from "../KitDetails";
 

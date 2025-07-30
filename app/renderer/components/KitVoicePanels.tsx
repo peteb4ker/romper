@@ -3,7 +3,7 @@ import { FiLink } from "react-icons/fi";
 
 import type { KitWithRelations } from "../../../shared/db/schema";
 import { useKitVoicePanels } from "./hooks/useKitVoicePanels";
-import type { VoiceSamples } from "./kitTypes";
+import type { SampleData, VoiceSamples } from "./kitTypes";
 import KitVoicePanel from "./KitVoicePanel";
 
 interface KitVoicePanelsProps {
@@ -53,12 +53,48 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     sequencerOpen: props.sequencerOpen,
   });
 
+  // State for sample metadata lookup
+  const [sampleMetadata, setSampleMetadata] = useState<{
+    [filename: string]: SampleData;
+  }>({});
+
   // Task 7.1.3: State to track stereo drop targets
   const [stereoDragInfo, setStereoDragInfo] = useState<{
     targetVoice: number;
     nextVoice: number;
     slotIndex: number;
   } | null>(null);
+
+  // Load sample metadata when kit changes
+  React.useEffect(() => {
+    const loadSampleMetadata = async () => {
+      if (!hookProps.kitName || !window.electronAPI?.getAllSamplesForKit) {
+        setSampleMetadata({});
+        return;
+      }
+
+      try {
+        const samplesResult = await window.electronAPI.getAllSamplesForKit(
+          hookProps.kitName,
+        );
+        if (samplesResult?.success && samplesResult.data) {
+          const metadata: { [filename: string]: SampleData } = {};
+          samplesResult.data.forEach((sample: any) => {
+            metadata[sample.filename] = {
+              filename: sample.filename,
+              source_path: sample.source_path,
+            };
+          });
+          setSampleMetadata(metadata);
+        }
+      } catch (error) {
+        console.error("Failed to load sample metadata:", error);
+        setSampleMetadata({});
+      }
+    };
+
+    loadSampleMetadata();
+  }, [hookProps.kitName]);
 
   // Callback for voice panels to notify about stereo drops
   const handleStereoDragOver = (
@@ -92,6 +128,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
             <KitVoicePanel
               voice={voice}
               samples={hookProps.samples[voice] || []}
+              sampleMetadata={sampleMetadata}
               voiceName={
                 hookProps.kit?.voices?.find((v) => v.voice_number === voice)
                   ?.voice_alias || null

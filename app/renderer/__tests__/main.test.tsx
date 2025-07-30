@@ -69,7 +69,11 @@ describe("renderer/main.tsx", () => {
       expect(renderMock).toHaveBeenCalled();
     });
     const [[element]] = renderMock.mock.calls;
-    // Check that the SettingsProvider is present
-    expect(element.props.children.type.name).toBe("App");
+    // Check that the SettingsProvider is the outermost provider
+    expect(element.type.name).toBe("SettingsProvider");
+    // Check that InterfaceModeProvider is wrapped inside
+    expect(element.props.children.type.name).toBe("InterfaceModeProvider");
+    // Check that App is wrapped inside InterfaceModeProvider
+    expect(element.props.children.props.children.type.name).toBe("App");
   });
 });

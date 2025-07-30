@@ -56,16 +56,16 @@ const KitHeader: React.FC<KitHeaderProps> = ({
       className="inline-block mr-2 align-text-bottom text-gray-500 dark:text-gray-400"
       aria-label="Kit folder"
     />
-    <span className="font-mono text-base font-bold text-gray-800 dark:text-gray-100 mr-1">
+    <span className="font-sans text-lg font-bold text-gray-900 dark:text-gray-50 mr-1">
       {kitName}
     </span>
-    <span className="text-base font-bold text-gray-800 dark:text-gray-100 mr-1">
+    <span className="text-lg font-bold text-gray-900 dark:text-gray-50 mr-1">
       :
     </span>
     {editingKitAlias ? (
       <input
         ref={kitAliasInputRef}
-        className="border-b border-blue-500 bg-transparent text-base font-bold text-gray-800 dark:text-gray-100 focus:outline-none px-1 w-48"
+        className="border-b border-blue-500 bg-transparent text-base font-semibold text-gray-800 dark:text-gray-100 focus:outline-none px-1 w-48"
         value={kitAliasInput}
         onChange={(e) => setKitAliasInput(e.target.value)}
         onBlur={() => {
@@ -85,7 +85,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
       />
     ) : (
       <span
-        className="font-bold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline min-w-[2rem]"
+        className="font-semibold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline min-w-[2rem]"
         onClick={() => setEditingKitAlias(true)}
         title="Edit kit name"
       >

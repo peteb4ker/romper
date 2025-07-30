@@ -121,6 +121,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("[IPC] selectSdCard invoked");
     return ipcRenderer.invoke("select-sd-card");
   },
+  showItemInFolder: (path: string): Promise<void> => {
+    console.log("[IPC] showItemInFolder invoked", path);
+    return ipcRenderer.invoke("show-item-in-folder", path);
+  },
   getSetting: async (key: string): Promise<any> => {
     return await settingsManager.getSetting(key as SettingsKey);
   },

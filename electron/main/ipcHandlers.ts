@@ -1,4 +1,4 @@
-import { app, dialog, ipcMain } from "electron";
+import { app, dialog, ipcMain, shell } from "electron";
 
 import { archiveService } from "./services/archiveService.js";
 import { kitService } from "./services/kitService.js";
@@ -39,6 +39,11 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
       title: "Select SD Card Path",
     });
     return result.canceled ? null : result.filePaths[0];
+  });
+
+  // Show item in folder handler
+  ipcMain.handle("show-item-in-folder", async (_event, path: string) => {
+    shell.showItemInFolder(path);
   });
   ipcMain.handle("get-user-data-path", () => app.getPath("userData"));
   ipcMain.handle("create-kit", async (_event, kitSlot: string) => {

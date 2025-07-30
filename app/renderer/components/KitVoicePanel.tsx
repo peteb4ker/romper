@@ -12,11 +12,13 @@ import { toast } from "sonner";
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
 import { useSettings } from "../utils/SettingsContext";
 import { useStereoHandling } from "./hooks/useStereoHandling";
+import type { SampleData } from "./kitTypes";
 import SampleWaveform from "./SampleWaveform";
 
 interface KitVoicePanelProps {
   voice: number;
   samples: string[];
+  sampleMetadata?: { [filename: string]: SampleData }; // Optional metadata lookup
   voiceName: string | null;
   onSaveVoiceName: (voice: number, newName: string) => void;
   onRescanVoiceName: (voice: number) => void;
@@ -68,6 +70,7 @@ const KitVoicePanel: React.FC<
 > = ({
   voice,
   samples,
+  sampleMetadata,
   voiceName,
   onSaveVoiceName,
   onRescanVoiceName,
@@ -467,212 +470,244 @@ const KitVoicePanel: React.FC<
           </>
         )}
       </div>
-      <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
-        <ul
-          className="list-none ml-0 text-sm flex flex-col"
-          ref={listRef}
-          aria-label="Sample slots"
-          data-testid={`sample-list-voice-${voice}`}
-          tabIndex={isActive ? 0 : -1}
-          onKeyDown={handleKeyDown}
-        >
-          {[...Array(12)].map((_, i) => {
-            const sample = samples[i];
-            const slotBaseClass =
-              "truncate flex items-center gap-2 mb-1 min-h-[28px]"; // uniform height for all slots
-            const isDragOver = dragOverSlot === i;
+      <div className="flex flex-1">
+        {/* Slot numbers column */}
+        <div className="flex flex-col justify-start pt-3 pr-2">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={`slot-${i}`}
+              className="min-h-[28px] flex items-center justify-end"
+              style={{ marginBottom: 4 }}
+            >
+              <span
+                className="text-xs font-mono text-gray-500 dark:text-gray-400 select-none bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
+                data-testid={`slot-number-${voice}-${i}`}
+                style={{ width: "32px", display: "inline-block" }}
+              >
+                {i + 1}.
+              </span>
+            </div>
+          ))}
+        </div>
 
-            // Task 7.1.3: Different visual feedback for modifier key overrides
-            let dragOverClass = "";
-            let dropHintTitle = "Drop to assign sample";
+        {/* Voice panel content */}
+        <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
+          <ul
+            className="list-none ml-0 text-sm flex flex-col"
+            ref={listRef}
+            aria-label="Sample slots"
+            data-testid={`sample-list-voice-${voice}`}
+            tabIndex={isActive ? 0 : -1}
+            onKeyDown={handleKeyDown}
+          >
+            {[...Array(12)].map((_, i) => {
+              const sample = samples[i];
+              const slotBaseClass =
+                "truncate flex items-center gap-2 mb-1 min-h-[28px]"; // uniform height for all slots
+              const isDragOver = dragOverSlot === i;
 
-            // Check if this slot should be highlighted for stereo drop
-            const isStereoHighlight =
-              isStereoDragTarget && stereoDragSlotIndex === i;
+              // Task 7.1.3: Different visual feedback for modifier key overrides
+              let dragOverClass = "";
+              let dropHintTitle = "Drop to assign sample";
 
-            if (isDragOver || isStereoHighlight) {
-              if (isStereoHighlight) {
-                dragOverClass =
-                  " bg-purple-100 dark:bg-purple-800 ring-2 ring-purple-400 dark:ring-purple-300";
-                dropHintTitle =
-                  isStereoDragTarget && stereoDragSlotIndex === i && voice > 1
-                    ? "Right channel of stereo pair"
-                    : "Left channel of stereo pair";
-              } else {
-                dragOverClass =
-                  " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300";
-                dropHintTitle = `Drop to assign sample (default: ${defaultToMonoSamples ? "mono" : "stereo"})`;
+              // Check if this slot should be highlighted for stereo drop
+              const isStereoHighlight =
+                isStereoDragTarget && stereoDragSlotIndex === i;
+
+              if (isDragOver || isStereoHighlight) {
+                if (isStereoHighlight) {
+                  dragOverClass =
+                    " bg-purple-100 dark:bg-purple-800 ring-2 ring-purple-400 dark:ring-purple-300";
+                  dropHintTitle =
+                    isStereoDragTarget && stereoDragSlotIndex === i && voice > 1
+                      ? "Right channel of stereo pair"
+                      : "Left channel of stereo pair";
+                } else {
+                  dragOverClass =
+                    " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300";
+                  dropHintTitle = `Drop to assign sample (default: ${defaultToMonoSamples ? "mono" : "stereo"})`;
+                }
               }
-            }
 
-            if (sample) {
-              const sampleKey = voice + ":" + sample;
-              const isPlaying = samplePlaying[sampleKey];
-              const slotNumber = i + 1; // Convert 0-based index to 1-based slot
-              return (
-                <li
-                  key={`${voice}-${i}-${sample}`}
-                  className={`${slotBaseClass}${
-                    selectedIdx === i && isActive
-                      ? " bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 font-bold ring-2 ring-blue-400 dark:ring-blue-300"
-                      : ""
-                  }${dragOverClass}`}
-                  tabIndex={-1}
-                  aria-selected={selectedIdx === i && isActive}
-                  data-testid={
-                    selectedIdx === i && isActive
-                      ? `sample-selected-voice-${voice}`
-                      : undefined
-                  }
-                  title={
-                    isDragOver || isStereoHighlight ? dropHintTitle : undefined
-                  }
-                  onClick={() => onSampleSelect && onSampleSelect(voice, i)}
-                  onDragOver={
-                    isEditable ? (e) => handleDragOver(e, i) : undefined
-                  }
-                  onDragLeave={isEditable ? handleDragLeave : undefined}
-                  onDrop={isEditable ? (e) => handleDrop(e, i) : undefined}
-                >
-                  <span
-                    className="text-xs font-mono text-gray-500 dark:text-gray-400 px-1 select-none inline-block align-right"
-                    style={{
-                      minWidth: 32,
-                      textAlign: "right",
-                      display: "inline-block",
-                    }}
-                    data-testid={`slot-number-${voice}-${i}`}
-                  >
-                    {i + 1}.
-                  </span>
-                  {/* Slot number, always visible, not part of sample name */}
-                  {isPlaying ? (
-                    <button
-                      className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs text-red-600 dark:text-red-400`}
-                      onClick={() => onStop(voice, sample)}
-                      aria-label="Stop"
-                      style={{
-                        minWidth: 24,
-                        minHeight: 24,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <FiSquare />
-                    </button>
-                  ) : (
-                    <button
-                      className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs ${
-                        isPlaying ? "text-green-600 dark:text-green-400" : ""
-                      }`}
-                      onClick={() => onPlay(voice, sample)}
-                      aria-label="Play"
-                      style={{
-                        minWidth: 24,
-                        minHeight: 24,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <FiPlay />
-                    </button>
-                  )}
-                  <span
-                    className="truncate text-xs font-mono text-gray-800 dark:text-gray-100 flex-1"
-                    title={sample}
-                  >
-                    {sample}
-                  </span>
-                  {isEditable && (
-                    <button
-                      className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-800 text-xs text-red-600 dark:text-red-400 ml-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteSample(i);
-                      }}
-                      aria-label="Delete sample"
-                      title="Delete sample"
-                      style={{
-                        minWidth: 24,
-                        minHeight: 24,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <FiTrash2 />
-                    </button>
-                  )}
-                  <SampleWaveform
-                    key={`${kitName}-${voice}-${i}-${sample}`}
-                    kitName={kitName}
-                    voiceNumber={voice}
-                    slotNumber={slotNumber}
-                    playTrigger={playTriggers[sampleKey] || 0}
-                    stopTrigger={stopTriggers[sampleKey] || 0}
-                    onPlayingChange={(playing) =>
-                      onWaveformPlayingChange(voice, sample, playing)
+              if (sample) {
+                // sample is now always a string (filename)
+                const sampleName = sample;
+                const sampleKey = voice + ":" + sampleName;
+                const isPlaying = samplePlaying[sampleKey];
+                const slotNumber = i + 1; // Convert 0-based index to 1-based slot
+                const sampleData = sampleMetadata?.[sampleName]; // Get metadata if available
+                return (
+                  <li
+                    key={`${voice}-${i}-${sampleName}`}
+                    className={`${slotBaseClass}${
+                      selectedIdx === i && isActive
+                        ? " bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 font-bold ring-2 ring-blue-400 dark:ring-blue-300"
+                        : ""
+                    }${dragOverClass}`}
+                    tabIndex={-1}
+                    aria-selected={selectedIdx === i && isActive}
+                    data-testid={
+                      selectedIdx === i && isActive
+                        ? `sample-selected-voice-${voice}`
+                        : undefined
                     }
-                    onError={(err) => {
-                      // Bubble up error to parent if needed (to be handled in KitDetails)
+                    title={
+                      isDragOver || isStereoHighlight
+                        ? dropHintTitle
+                        : `Slot ${slotNumber}${sampleData?.source_path ? `\nSource: ${sampleData.source_path}` : ""}`
+                    }
+                    onClick={() => onSampleSelect && onSampleSelect(voice, i)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
                       if (
-                        typeof window !== "undefined" &&
-                        window.dispatchEvent
+                        sampleData?.source_path &&
+                        window.electronAPI?.showItemInFolder
                       ) {
-                        window.dispatchEvent(
-                          new CustomEvent("SampleWaveformError", {
-                            detail: err,
-                          }),
+                        window.electronAPI.showItemInFolder(
+                          sampleData.source_path,
                         );
                       }
                     }}
-                  />
-                </li>
-              );
-            } else {
-              // Empty slot
-              return (
-                <li
-                  key={`${voice}-empty-${i}`}
-                  className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass}${
-                    isEditable
-                      ? " border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500"
-                      : ""
-                  }`}
-                  tabIndex={-1}
-                  aria-selected={false}
-                  data-testid={`empty-slot-${voice}-${i}`}
-                  title={
-                    isDragOver || isStereoHighlight ? dropHintTitle : undefined
-                  }
-                  onClick={() => onSampleSelect && onSampleSelect(voice, i)}
-                  onDragOver={
-                    isEditable ? (e) => handleDragOver(e, i) : undefined
-                  }
-                  onDragLeave={isEditable ? handleDragLeave : undefined}
-                  onDrop={isEditable ? (e) => handleDrop(e, i) : undefined}
-                >
-                  <span
-                    className="text-xs font-mono text-gray-500 dark:text-gray-400 px-1 select-none inline-block align-right"
-                    style={{
-                      minWidth: 32,
-                      textAlign: "right",
-                      display: "inline-block",
-                    }}
-                    data-testid={`slot-number-${voice}-${i}`}
+                    onDragOver={
+                      isEditable ? (e) => handleDragOver(e, i) : undefined
+                    }
+                    onDragLeave={isEditable ? handleDragLeave : undefined}
+                    onDrop={isEditable ? (e) => handleDrop(e, i) : undefined}
                   >
-                    {i + 1}.
-                  </span>
-                  <span className="ml-2 flex-1">
-                    {isEditable ? "Drop WAV file here or (empty)" : "(empty)"}
-                  </span>
-                </li>
-              );
-            }
-          })}
-        </ul>
+                    {isPlaying ? (
+                      <button
+                        className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs text-red-600 dark:text-red-400`}
+                        onClick={() => onStop(voice, sampleName)}
+                        aria-label="Stop"
+                        style={{
+                          minWidth: 24,
+                          minHeight: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <FiSquare />
+                      </button>
+                    ) : (
+                      <button
+                        className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs ${
+                          isPlaying ? "text-green-600 dark:text-green-400" : ""
+                        }`}
+                        onClick={() => onPlay(voice, sampleName)}
+                        aria-label="Play"
+                        style={{
+                          minWidth: 24,
+                          minHeight: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <FiPlay />
+                      </button>
+                    )}
+                    {/* Primary: Show filename prominently */}
+                    <span
+                      className="truncate text-xs font-mono font-medium text-gray-700 dark:text-gray-200 flex-1"
+                      title={
+                        sampleData?.source_path
+                          ? `${sampleName}\nSource: ${sampleData.source_path}`
+                          : sampleName
+                      }
+                    >
+                      {sampleName}
+                    </span>
+
+                    {isEditable && (
+                      <button
+                        className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-800 text-xs text-red-600 dark:text-red-400 ml-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSample(i);
+                        }}
+                        aria-label="Delete sample"
+                        title="Delete sample"
+                        style={{
+                          minWidth: 24,
+                          minHeight: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    )}
+                    <SampleWaveform
+                      key={`${kitName}-${voice}-${i}-${sampleName}`}
+                      kitName={kitName}
+                      voiceNumber={voice}
+                      slotNumber={slotNumber}
+                      playTrigger={playTriggers[sampleKey] || 0}
+                      stopTrigger={stopTriggers[sampleKey] || 0}
+                      onPlayingChange={(playing) =>
+                        onWaveformPlayingChange(voice, sample, playing)
+                      }
+                      onError={(err) => {
+                        // Bubble up error to parent if needed (to be handled in KitDetails)
+                        if (
+                          typeof window !== "undefined" &&
+                          window.dispatchEvent
+                        ) {
+                          window.dispatchEvent(
+                            new CustomEvent("SampleWaveformError", {
+                              detail: err,
+                            }),
+                          );
+                        }
+                      }}
+                    />
+                  </li>
+                );
+              } else {
+                // Empty slot
+                return (
+                  <li
+                    key={`${voice}-empty-${i}`}
+                    className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass}${
+                      isEditable
+                        ? " border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500"
+                        : ""
+                    }`}
+                    tabIndex={-1}
+                    aria-selected={false}
+                    data-testid={`empty-slot-${voice}-${i}`}
+                    title={
+                      isDragOver || isStereoHighlight
+                        ? dropHintTitle
+                        : undefined
+                    }
+                    onClick={() => onSampleSelect && onSampleSelect(voice, i)}
+                    onDragOver={
+                      isEditable ? (e) => handleDragOver(e, i) : undefined
+                    }
+                    onDragLeave={isEditable ? handleDragLeave : undefined}
+                    onDrop={isEditable ? (e) => handleDrop(e, i) : undefined}
+                  >
+                    <div className="flex-1 flex items-center">
+                      {isEditable ? (
+                        <>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">
+                            Drop WAV file here
+                          </span>
+                          <div className="ml-2 w-2 h-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-sm"></div>
+                        </>
+                      ) : (
+                        <div className="w-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-sm"></div>
+                      )}
+                    </div>
+                  </li>
+                );
+              }
+            })}
+          </ul>
+        </div>
       </div>
     </div>
   );

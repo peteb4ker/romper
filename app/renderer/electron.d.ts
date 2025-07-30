@@ -37,6 +37,7 @@ interface InsertSampleResult extends DbResult<void> {
 
 export interface ElectronAPI {
   selectSdCard: () => Promise<string | null>;
+  showItemInFolder: (path: string) => Promise<void>;
   readSettings: () => Promise<{
     localStorePath?: string;
     themeMode?: "light" | "system" | "dark";

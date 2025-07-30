@@ -241,23 +241,141 @@ _Last updated: 2025-07-26_
   - [x] 8.4 Implement detailed progress and error handling
 
 - [ ] 9.0 Undo/Redo System
-  - [ ] 9.1 Implement action history with ORM:
-    - [ ] 9.1.1 Create edit_actions table with Drizzle schema
-    - [ ] 9.1.2 Define action types: ADD_SAMPLE, REPLACE_SAMPLE, DELETE_SAMPLE
-    - [ ] 9.1.3 Store action metadata as JSON with source_path references
+  - [ ] 9.1 Implement action history database layer with ORM:
+    - [ ] 9.1.1 Create edit_actions table with Drizzle schema:
+      - [ ] Fields: id, kit_name, action_type, action_data (JSON), sequence_number, timestamp, undone_at
+      - [ ] Foreign key constraint to kits table on kit_name
+      - [ ] Index on kit_name and sequence_number for performance
+    - [ ] 9.1.2 Define action types enum: ADD_SAMPLE, REPLACE_SAMPLE, DELETE_SAMPLE, TOGGLE_EDITABLE_MODE
+    - [ ] 9.1.3 Implement typed action metadata schemas with strict validation:
+      ```typescript
+      interface ActionMetadata {
+        ADD_SAMPLE: {
+          voice_number: number;
+          slot_number: number;
+          source_path: string;
+          sample_metadata: { name: string; size: number; format: string };
+          previous_sample?: Sample; // For slot conflicts
+          stereo_config?: { is_stereo: boolean; paired_voice?: number };
+        };
+        REPLACE_SAMPLE: {
+          voice_number: number;
+          slot_number: number;
+          old_sample: Sample;
+          new_source_path: string;
+          stereo_changes?: { old_is_stereo: boolean; new_is_stereo: boolean; paired_voice_changes?: number[] };
+        };
+        DELETE_SAMPLE: {
+          voice_number: number;
+          slot_number: number;
+          deleted_sample: Sample;
+          cascade_deletions?: Sample[]; // For stereo pairs
+          slot_compaction?: { moved_samples: Array<{from: number, to: number}> };
+        };
+        TOGGLE_EDITABLE_MODE: {
+          previous_editable: boolean;
+          new_editable: boolean;
+        };
+      }
+      ```
   - [ ] 9.2 Implement action recording with reference tracking:
-    - [ ] 9.2.1 Record all modifications with source_path metadata
-    - [ ] 9.2.2 Generate sequence numbers for action ordering
-    - [ ] 9.2.3 Handle batch actions (multiple samples)
+    - [ ] 9.2.1 Create action recorder utility with JSON schema validation
+    - [ ] 9.2.2 Record all modifications with complete source_path metadata and file validation
+    - [ ] 9.2.3 Generate atomic sequence numbers for action ordering within kit context
+    - [ ] 9.2.4 Handle batch actions (multiple samples) as single logical operations
+    - [ ] 9.2.5 Integrate with existing sample management hooks for automatic recording
   - [ ] 9.3 Implement undo functionality:
-    - [ ] 9.3.1 Reverse most recent action including source_path restoration
-    - [ ] 9.3.2 Update kit state and UI to reflect undo
-    - [ ] 9.3.3 Handle complex actions (stereo pairs, voice_number adjustments)
+    - [ ] 9.3.1 Create undo engine with reversal strategies for each action type:
+      - [ ] ADD_SAMPLE undo: Remove sample from slot, restore previous if existed
+      - [ ] REPLACE_SAMPLE undo: Restore original sample with all metadata
+      - [ ] DELETE_SAMPLE undo: Re-add deleted sample(s), handle stereo pair restoration
+      - [ ] TOGGLE_EDITABLE_MODE undo: Restore previous editable state
+    - [ ] 9.3.2 Update kit state and UI to reflect undo with optimistic updates
+    - [ ] 9.3.3 Handle complex stereo operations with voice_number adjustments
+    - [ ] 9.3.4 Validate source file existence before undo, handle missing files gracefully
   - [ ] 9.4 Implement redo functionality and history management:
-    - [ ] 9.4.1 Re-apply undone actions with source_path handling
-    - [ ] 9.4.2 Maintain redo stack and clear on new actions
-    - [ ] 9.4.3 Limit history depth and auto-cleanup old records
-    - [ ] 9.4.4 Clear history on SD card sync (fresh start)
+    - [ ] 9.4.1 Re-apply undone actions with complete source_path validation
+    - [ ] 9.4.2 Maintain separate undo/redo stacks and clear redo stack on new actions
+    - [ ] 9.4.3 Implement history limits: 50 actions per kit, cleanup after 7 days
+    - [ ] 9.4.4 Clear history on SD card sync (fresh start) with user confirmation
+  - [ ] 9.5 Implement UX integration and interface design:
+    - [ ] 9.5.1 Add undo/redo buttons to KitHeader toolbar (edit mode only):
+      - [ ] Position: Right side of toolbar, grouped with other edit actions
+      - [ ] Icons: Standard undo/redo arrows with Heroicons
+      - [ ] States: Enabled/disabled based on history availability
+      - [ ] Tooltips: "Undo: [action description]" / "Redo: [action description]"
+    - [ ] 9.5.2 Implement keyboard shortcuts with proper event handling:
+      - [ ] Ctrl+Z (Cmd+Z on Mac): Undo last action
+      - [ ] Ctrl+Y (Cmd+Y on Mac): Redo last undone action
+      - [ ] Ctrl+Shift+Z (Cmd+Shift+Z on Mac): Alternative redo shortcut
+      - [ ] Only active in Edit mode, properly scoped to avoid conflicts
+    - [ ] 9.5.3 Create visual feedback system:
+      - [ ] Toast notifications: "Undid: Delete sample from Voice 1, Slot 3"
+      - [ ] Loading states during undo/redo operations
+      - [ ] Error notifications for failed operations with recovery suggestions
+    - [ ] 9.5.4 Integrate with interface mode system:
+      - [ ] Browse mode: Undo/redo disabled and hidden
+      - [ ] Edit mode: Undo/redo enabled and visible
+      - [ ] Sync mode: Undo/redo disabled (prevent sync conflicts)
+  - [ ] 9.6 Implement comprehensive error handling and edge cases:
+    - [ ] 9.6.1 File system error handling:
+      - [ ] Source file moved/renamed: Show error, offer file browser to relocate
+      - [ ] Source file deleted: Show error, option to continue without file or skip undo
+      - [ ] Permission errors: Show error with instructions to fix permissions
+      - [ ] Disk space issues: Show error, offer cleanup suggestions
+    - [ ] 9.6.2 Concurrency and state management:
+      - [ ] Handle user modifications during undo/redo operations
+      - [ ] Prevent multiple concurrent undo/redo operations
+      - [ ] Database transaction rollback on partial failures
+      - [ ] State consistency validation after operations
+    - [ ] 9.6.3 Application lifecycle edge cases:
+      - [ ] History persistence across app restarts (until sync)
+      - [ ] Handle interrupted operations on app close
+      - [ ] Graceful degradation when action history is corrupted
+    - [ ] 9.6.4 Integration conflict handling:
+      - [ ] Conflicts with ongoing sync operations
+      - [ ] Conflicts with kit modification from other sources
+      - [ ] Handle mode transitions during undo/redo operations
+  - [ ] 9.7 Implement technical integration with existing architecture:
+    - [ ] 9.7.1 Integrate with existing React hooks:
+      - [ ] Extend useKitEditor hook with undo/redo methods
+      - [ ] Integrate with useSampleManagement for action recording
+      - [ ] Hook into useStereoHandling for complex stereo action handling
+    - [ ] 9.7.2 Create IPC handlers for main process operations:
+      - [ ] `undo-action`: Perform undo operation with validation
+      - [ ] `redo-action`: Perform redo operation with validation
+      - [ ] `get-action-history`: Retrieve action history for UI display
+      - [ ] `clear-action-history`: Clear history on sync or user request
+    - [ ] 9.7.3 Database operations with proper error handling:
+      - [ ] Atomic transactions for complex multi-table operations
+      - [ ] Proper foreign key constraint handling
+      - [ ] Database query optimization for large action histories
+    - [ ] 9.7.4 Message system integration:
+      - [ ] Use existing MessageDisplay component for user feedback
+      - [ ] Consistent error message patterns across the application
+      - [ ] Progress indicators for long-running operations
+  - [ ] 9.8 Implement comprehensive testing strategy:
+    - [ ] 9.8.1 Unit tests for action recording and playback:
+      - [ ] Test each action type recording with complete metadata
+      - [ ] Test undo/redo logic for each action type independently
+      - [ ] Test JSON schema validation for action metadata
+      - [ ] Test error handling for malformed action data
+    - [ ] 9.8.2 Integration tests with existing systems:
+      - [ ] Test integration with sample management workflows
+      - [ ] Test stereo handling integration with undo/redo
+      - [ ] Test interface mode restrictions and transitions
+      - [ ] Test keyboard shortcut handling and event propagation
+    - [ ] 9.8.3 End-to-end user workflow tests:
+      - [ ] Complete edit → undo → redo → sync workflow
+      - [ ] Complex multi-step editing with undo/redo validation
+      - [ ] Error recovery scenarios with user interaction
+      - [ ] Performance testing with large action histories (50+ actions)
+    - [ ] 9.8.4 Acceptance criteria and quality gates:
+      - [ ] Performance: Undo/redo operations complete within 100ms for simple actions
+      - [ ] Performance: Complex stereo operations complete within 500ms
+      - [ ] Reliability: 99%+ success rate for file-based operations
+      - [ ] Usability: Keyboard shortcuts work consistently across all contexts
+      - [ ] Accessibility: Screen reader support for undo/redo status and feedback
 
 - [ ] 10.0 UI System Components (Core Infrastructure)
   - [ ] 10.1 Implement progress indicators for operations:
@@ -363,118 +481,109 @@ _Last updated: 2025-07-26_
   - [ ] 16.3.3 Preserve any valid settings during recovery operations
   - [ ] 16.3.4 Add validation of recovered settings before accepting them
 
-## 17.0 UX Improvements: Kit List Layout and Information Hierarchy
+## 17.0 UX Improvements: Kit List Layout and Information Hierarchy (COMPLETE)
 
-- [ ] 17.1 Implement Kit Type Visual Identification System:
-  - [ ] 17.1.1 Add colored left borders to kit cards in KitBrowser.tsx
-    - [ ] Amber border (#F59E0B): Modified user kits (work-in-progress with unsaved changes)
-    - [ ] Green border (#10B981): Editable user kits (saved user-created content)
-    - [ ] Gray border (#6B7280): Factory kits (read-only baseline content)
-  - [ ] 17.1.2 Update kit card styling in Tailwind classes for visual hierarchy
-  - [ ] 17.1.3 Add database queries to distinguish kit types for border logic
-  - [ ] 17.1.4 Create utility function to determine kit type from editable status and modification state
+- [x] 17.1 Implement Kit Type Visual Identification System:
+  - [x] 17.1.1 Add colored left borders to kit cards in KitBrowser.tsx
+    - [x] Red border: Invalid kits with missing files
+    - [x] Amber border (#F59E0B): Modified user kits (work-in-progress with unsaved changes)
+    - [x] Green border (#10B981): Editable user kits (saved user-created content)
+    - [x] Gray border (#6B7280): Factory kits (read-only baseline content)
+  - [x] 17.1.2 Update kit card styling in Tailwind classes for visual hierarchy
+  - [x] 17.1.3 Add database queries to distinguish kit types for border logic
+  - [x] 17.1.4 Create utility function to determine kit type from editable status and modification state
 
-- [ ] 17.2 Implement Enhanced Status Badge System:
-  - [ ] 17.2.1 Replace single "Modified" indicator with comprehensive badge system
-  - [ ] 17.2.2 Create badge components for different states:
-    - [ ] "Unsaved" badge for work-in-progress changes requiring save action
-    - [ ] "Sync pending" badge for saved changes awaiting SD card sync  
-    - [ ] "Editable" badge for user-created kits available for modification
-    - [ ] Priority markers for high-priority kits in user workflow
-  - [ ] 17.2.3 Design responsive badge layout that adapts to screen size
-  - [ ] 17.2.4 Update database schema to track sync pending status
+- [x] 17.2 Implement Enhanced Status Badge System:
+  - [x] 17.2.1 Replace single "Modified" indicator with comprehensive badge system
+  - [x] 17.2.2 Create badge components for different states:
+    - [x] "Unsaved" badge for work-in-progress changes requiring save action
+    - [x] "Editable" badge for user-created kits available for modification
+  - [x] 17.2.3 Design responsive badge layout that adapts to screen size
 
-- [ ] 17.3 Implement Responsive Grid Layout System:
-  - [ ] 17.3.1 Replace VariableSizeList with FixedSizeGrid for multi-column display
-  - [ ] 17.3.2 Implement dynamic column calculation based on window width:
-    - [ ] Small windows (< 800px): 2 columns
-    - [ ] Medium windows (800-1200px): 3 columns
-    - [ ] Large windows (> 1200px): 4 columns
-    - [ ] Extra large (> 1600px): 5-6 columns
-  - [ ] 17.3.3 Add ResizeObserver for responsive layout updates
-  - [ ] 17.3.4 Update keyboard navigation for grid-based movement (arrow keys)
-  - [ ] 17.3.5 Maintain virtualization performance with react-window grid
+- [x] 17.3 Implement Responsive Grid Layout System:
+  - [x] 17.3.1 Replace VariableSizeList with CSS Grid for multi-column display
+  - [x] 17.3.2 Implement dynamic column calculation based on window width:
+    - [x] Small windows: 2 columns
+    - [x] Medium windows: 3 columns
+    - [x] Large windows: 4 columns
+    - [x] Extra large: 5-6 columns
+  - [x] 17.3.3 Add ResizeObserver for responsive layout updates
+  - [x] 17.3.4 Update keyboard navigation for grid-based movement (arrow keys)
 
-- [ ] 17.4 Redesign Kit Card Layout and Information Density:
-  - [ ] 17.4.1 Set optimal card dimensions (280-320px width × 120-140px height)
-  - [ ] 17.4.2 Implement compact vertical information hierarchy:
-    - [ ] Top row: smaller icon, kit name, status badges
-    - [ ] Middle row: voice tags, action buttons
-    - [ ] Bottom row: sample count indicators [1][2][3][4]
-  - [ ] 17.4.3 Reduce icon size from text-5xl to text-2xl/text-3xl
-  - [ ] 17.4.4 Implement smart truncation of kit names with full names on hover
-  - [ ] 17.4.5 Test layout with dozens and hundreds of kits for scalability
+- [x] 17.4 Redesign Kit Card Layout and Information Density:
+  - [x] 17.4.1 Set optimal card dimensions (300px width × 90px height)
+  - [x] 17.4.2 Implement compact vertical information hierarchy:
+    - [x] Top row: smaller icon, kit name, status badges
+    - [x] Bottom row: unified voice indicators with name + sample count
+  - [x] 17.4.3 Reduce icon size from text-5xl to text-2xl
+  - [x] 17.4.4 Implement smart truncation with full names on hover
 
-- [ ] 17.5 Grid Layout Integration and Performance:
-  - [ ] 17.5.1 Update bank navigation (A-Z hotkeys) to work with grid layout
-  - [ ] 17.5.2 Adapt focus management for multi-column grid navigation
-  - [ ] 17.5.3 Ensure all existing features work in grid: selection, preview, etc.
-  - [ ] 17.5.4 Performance testing with large kit collections in grid view
+- [x] 17.5 Grid Layout Integration and Performance:
+  - [x] 17.5.1 Update bank navigation (A-Z hotkeys) to work with grid layout
+  - [x] 17.5.2 Adapt focus management for multi-column grid navigation
+  - [x] 17.5.3 Ensure all existing features work in grid: selection, preview, etc.
 
-- [ ] 17.6 Implement Progressive Information Disclosure:
-  - [ ] 17.6.1 Define three-layer information hierarchy:
-    - [ ] Always visible: Kit name, type border, primary status badge
-    - [ ] On hover/focus: Voice tags, location labels, action buttons
-    - [ ] On-demand/expanded: Full metadata, edit history, detailed sample info
-  - [ ] 17.6.2 Create hover state components for secondary information
-  - [ ] 17.6.3 Implement expandable details panel for on-demand information
-  - [ ] 17.6.4 Add keyboard navigation support for progressive disclosure
+- [x] 17.6 Implement Progressive Information Disclosure:
+  - [x] 17.6.1 Define three-layer information hierarchy:
+    - [x] Always visible: Kit name, type border, primary status badge
+    - [x] On hover/focus: Status badges, duplicate button
+  - [x] 17.6.2 Tinted backgrounds matching left border colors
 
-## 18.0 UX Improvements: Journey-Based Navigation System
+## 18.0 UX Improvements: Journey-Based Navigation System (IN PROGRESS)
 
-- [ ] 18.1 Implement Interface Mode System:
-  - [ ] 18.1.1 Create mode context and state management (Browse/Edit/Sync modes)
-  - [ ] 18.1.2 Design mode switching UI components and indicators
-  - [ ] 18.1.3 Implement contextual toolbar that changes based on active mode
-  - [ ] 18.1.4 Add mode-specific keyboard shortcuts and help text
+- [x] 18.1 Implement Interface Mode System:
+  - [x] 18.1.1 Create mode context and state management (Browse/Edit/Sync modes)
+  - [x] 18.1.2 Design mode switching UI components and indicators
+  - [x] 18.1.3 Implement contextual toolbar that changes based on active mode
 
-- [ ] 18.2 Implement Browse Mode Interface:
-  - [ ] 18.2.1 Emphasize preview controls and kit metadata display
-  - [ ] 18.2.2 Hide editing tools to reduce cognitive load
-  - [ ] 18.2.3 Prominently display favorites and filtering options
-  - [ ] 18.2.4 Optimize for kit discovery workflow patterns
+- [x] 18.2 Implement Browse Mode Interface:
+  - [x] 18.2.1 Emphasize preview controls and kit metadata display
+  - [x] 18.2.2 Hide editing tools to reduce cognitive load
+  - [x] 18.2.3 Scan All Kits, Validate Local Store, and Setup buttons in browse mode
 
-- [ ] 18.3 Implement Edit Mode Interface:
-  - [ ] 18.3.1 Surface drag-and-drop targets and sample management tools
-  - [ ] 18.3.2 Show undo/redo controls and editable state indicators
-  - [ ] 18.3.3 Provide clear save and abandon change actions
-  - [ ] 18.3.4 Group all editing-related functions in logical sequence
+- [x] 18.3 Implement Edit Mode Interface:
+  - [x] 18.3.1 Surface drag-and-drop targets and sample management tools
+  - [x] 18.3.2 Show editable state toggle in kit details
+  - [x] 18.3.3 Provide kit creation actions (New Kit, Next Kit)
 
-- [ ] 18.4 Implement Sync Mode Interface:
-  - [ ] 18.4.1 Display sync status and batch operation controls
-  - [ ] 18.4.2 Show conflict resolution and missing file warnings
-  - [ ] 18.4.3 Group all sync-related actions in logical workflow sequence
-  - [ ] 18.4.4 Separate from other workflows to prevent accidental sync operations
+- [x] 18.4 Implement Sync Mode Interface:
+  - [x] 18.4.1 Display sync to SD card button only in sync mode
+  - [x] 18.4.2 Separate from other workflows to prevent accidental sync operations
 
-- [ ] 18.5 Restructure Top-Level Navigation:
-  - [ ] 18.5.1 Reorganize menu buttons based on user journey separation
-  - [ ] 18.5.2 Group related actions (separate "Sync to SD Card" from "Add Kit")
-  - [ ] 18.5.3 Add contextual button groupings that change with mode
-  - [ ] 18.5.4 Implement clear visual separators between different journey actions
+- [x] 18.5 Restructure Top-Level Navigation:
+  - [x] 18.5.1 Reorganize menu buttons based on user journey separation
+  - [x] 18.5.2 Group related actions (separate "Sync to SD Card" from "Add Kit")
+  - [x] 18.5.3 Add contextual button groupings that change with mode
+  - [x] 18.5.4 Implement clear visual separators between different journey actions
 
-## 19.0 UX Improvements: Smart Sample Location System
+- [ ] 18.6 Fix Test Suite Compatibility:
+  - [ ] 18.6.1 Update test utilities to include InterfaceModeProvider
+  - [ ] 18.6.2 Fix all failing tests due to missing context provider
+  - [ ] 18.6.3 Add mode-specific test cases for button visibility
 
-- [ ] 19.1 Implement Contextual Location Labels:
-  - [ ] 19.1.1 Create smart labeling system to replace full file paths:
-    - [ ] "Splice Pack" with cloud icon for Splice sample libraries
-    - [ ] "Local Store" with drive icon for immutable baseline samples
-    - [ ] "Ableton Library" with music icon for DAW sample collections
-    - [ ] "Custom" with folder icon for user-organized sample directories
-  - [ ] 19.1.2 Develop path analysis utility to categorize sample sources
-  - [ ] 19.1.3 Design icon system for different location types
-  - [ ] 19.1.4 Implement location detection logic for common sample library patterns
+## 19.0 UX Improvements: Smart Sample Location System (COMPLETE)
 
-- [ ] 19.2 Implement Progressive Path Disclosure:
-  - [ ] 19.2.1 Show contextual labels by default in kit cards
-  - [ ] 19.2.2 Reveal complete path information on hover for technical users
-  - [ ] 19.2.3 Add right-click context menu with "Show in Finder/Explorer" option
-  - [ ] 19.2.4 Create status tooltips explaining reference-first architecture benefits
+- [x] 19.1 Implement Contextual Location Labels:
+  - [x] 19.1.1 Create smart labeling system to replace full file paths:
+    - [x] "Splice Pack" with cloud icon for Splice sample libraries
+    - [x] "Local Store" with drive icon for immutable baseline samples
+    - [x] "Ableton Library" with music icon for DAW sample collections
+    - [x] "Custom" with folder icon for user-organized sample directories
+  - [x] 19.1.2 Develop path analysis utility to categorize sample sources
+  - [x] 19.1.3 Design icon system for different location types
+  - [x] 19.1.4 Implement location detection logic for common sample library patterns
 
-- [ ] 19.3 Improve Reference-First Architecture Communication:
-  - [ ] 19.3.1 Add visual indicators showing samples remain in original locations
-  - [ ] 19.3.2 Create informational tooltips explaining zero-bloat architecture
-  - [ ] 19.3.3 Show location awareness without overwhelming interface
-  - [ ] 19.3.4 Handle missing reference files with clear user guidance
+- [x] 19.2 Implement Progressive Path Disclosure:
+  - [x] 19.2.1 Show contextual labels by default in voice panels
+  - [x] 19.2.2 Reveal complete path information on hover for technical users
+  - [x] 19.2.3 Add "Show in Finder/Explorer" option on hover
+  - [x] 19.2.4 Create tooltips with location descriptions
+
+- [x] 19.3 Improve Reference-First Architecture Communication:
+  - [x] 19.3.1 Add visual indicators (icons) showing sample locations
+  - [x] 19.3.2 Create informational tooltips with location descriptions
+  - [x] 19.3.3 Show location awareness with subtle contextual labels
+  - [x] 19.3.4 Preserve full sample data for location display
 
 ## 20.0 UX Improvements: Favorites and Quick Access System
 

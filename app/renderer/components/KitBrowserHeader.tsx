@@ -18,10 +18,12 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
   const { handleShowNewKit, handleCreateNextKit, nextKitSlot } =
     useKitBrowserHeader(props);
   const { bankNav } = props;
+
   return (
     <div className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800 pt-2 pr-2 pl-2 pb-0 flex flex-col gap-2 items-stretch justify-between shadow-sm border-b border-gray-200 dark:border-slate-700 mt-0">
       <div className="flex items-center justify-between">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {/* Scanning operations */}
           {props.onScanAllKits && (
             <button
               className="px-2 py-1 text-xs bg-green-500 text-white rounded shadow hover:bg-green-700 font-semibold flex items-center"
@@ -34,16 +36,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           )}
         </div>
         <div className="flex gap-2">
-          {props.onSyncToSdCard && (
-            <button
-              className="px-2 py-1 text-xs bg-orange-600 text-white rounded shadow hover:bg-orange-700 transition font-semibold flex items-center"
-              onClick={props.onSyncToSdCard}
-              title="Sync modified kits to SD card"
-            >
-              <FiDownload className="inline-block mr-1" />
-              Sync to SD Card
-            </button>
-          )}
+          {/* Kit creation */}
           <button
             className="px-2 py-1 text-xs bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition font-semibold"
             onClick={handleShowNewKit}
@@ -57,6 +50,20 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           >
             + Next Kit
           </button>
+
+          {/* Sync operations */}
+          {props.onSyncToSdCard && (
+            <button
+              className="px-2 py-1 text-xs bg-orange-600 text-white rounded shadow hover:bg-orange-700 transition font-semibold flex items-center"
+              onClick={props.onSyncToSdCard}
+              title="Sync modified kits to SD card"
+            >
+              <FiDownload className="inline-block mr-1" />
+              Sync to SD Card
+            </button>
+          )}
+
+          {/* Validation and maintenance */}
           <button
             className="px-2 py-1 text-xs bg-teal-600 text-white rounded shadow hover:bg-teal-700 transition font-semibold"
             onClick={props.onValidateLocalStore}

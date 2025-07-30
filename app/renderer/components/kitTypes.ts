@@ -11,6 +11,13 @@ export interface KitSamplePlanSlot {
   meta?: Record<string, any>;
 }
 
+export interface SampleData {
+  filename: string;
+  source_path: string;
+  is_stereo?: boolean;
+  [key: string]: any;
+}
+
 export interface VoiceSamples {
   [voice: number]: string[];
 }

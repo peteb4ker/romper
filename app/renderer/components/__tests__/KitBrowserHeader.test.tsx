@@ -1,10 +1,9 @@
 // Test suite for KitBrowserHeader component
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
-import { afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { render } from "../../test-utils/renderWithProviders";
 import KitBrowserHeader from "../KitBrowserHeader";
 
 afterEach(() => {
@@ -20,6 +19,10 @@ describe("KitBrowserHeader", () => {
     onShowLocalStoreWizard: vi.fn(),
     onValidateLocalStore: vi.fn(),
   };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("calls onShowNewKit when + New Kit button is clicked", () => {
     const onShowNewKit = vi.fn();

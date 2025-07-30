@@ -1,12 +1,8 @@
 // Test suite for KitBrowser component
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { render } from "../../test-utils/renderWithProviders";
 
 // Mock problematic imports that can cause hanging
 vi.mock("../hooks/useLocalStoreWizard", () => ({
@@ -195,7 +191,10 @@ describe("KitBrowser", () => {
           <KitBrowser {...baseProps} />
         </MockMessageDisplayProvider>,
       );
+      // Should see all buttons available
       expect(screen.getByText("+ New Kit")).toBeTruthy();
+      expect(screen.getByText("Scan All Kits")).toBeTruthy();
+      expect(screen.getByText("Validate Local Store")).toBeTruthy();
       expect(screen.getByTestId("kit-item-A0")).toBeTruthy();
       expect(screen.getByTestId("kit-item-A1")).toBeTruthy();
       expect(screen.getByTestId("kit-item-B0")).toBeTruthy();
@@ -250,6 +249,7 @@ describe("KitBrowser", () => {
         </MockMessageDisplayProvider>,
       );
 
+      // Now we should see the New Kit dialog content
       expect(screen.getByText("Kit Slot (A0-Z99):")).toBeTruthy();
       expect(screen.getByText("Create")).toBeTruthy();
     });

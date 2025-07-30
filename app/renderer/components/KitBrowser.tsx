@@ -214,7 +214,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     return (
       <div
         ref={scrollContainerRef}
-        className="h-full min-h-0 flex-1 flex flex-col bg-gray-50 dark:bg-slate-800 rounded m-2"
+        className="h-full min-h-0 flex-1 flex flex-col bg-gray-50 dark:bg-slate-800 rounded"
       >
         <KitBrowserHeader
           onScanAllKits={handleScanAllKits}

@@ -15,7 +15,7 @@
     "test:e2e": "npm run build && npm run test:play",
     "test:play": "playwright test",
     "coverage:merge": "mkdir -p coverage/merged && istanbul-merge --out coverage/merged/coverage-final.json coverage/unit/coverage-final.json coverage/integration/coverage-final.json",
-    "coverage:total": "nyc report --temp-dir=coverage --reporter=text-summary",
+    "coverage:total": "nyc report --temp-dir=coverage/merged --reporter=text-summary",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
     "dev": "npm run build && concurrently \"vite dev --config vite.config.ts\" \"sleep 2 && npm run electron:dev\"",

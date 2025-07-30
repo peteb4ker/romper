@@ -262,8 +262,8 @@ describe("KitBrowser", () => {
           <KitBrowser {...baseProps} />
         </MockMessageDisplayProvider>,
       );
-      const kitList = screen.getAllByTestId("kit-list")[0];
-      kitList.focus();
+      const kitGrid = screen.getAllByTestId("kit-grid")[0];
+      kitGrid.focus();
       // Bank C has no kits, so pressing 'C' should not highlight/select the C button
       const cButtons = screen.getAllByRole("button", {
         name: "Jump to bank C",
@@ -272,7 +272,7 @@ describe("KitBrowser", () => {
       cButtons.forEach((cButton) => {
         expect(cButton.getAttribute("disabled")).not.toBeNull();
       });
-      fireEvent.keyDown(kitList, { key: "C" });
+      fireEvent.keyDown(kitGrid, { key: "C" });
       await waitFor(() => {
         cButtons.forEach((cButton) => {
           expect(cButton.getAttribute("aria-current")).not.toBe("true");

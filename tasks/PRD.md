@@ -421,6 +421,106 @@ The three main user journeys are:
 - **Respectful of user data**: Always confirm destructive actions
 - **Hardware-accurate**: Preview experience matches Rample hardware behavior
 
+## 6.1 Kit List and Navigation Design (Post-UX Improvements)
+
+### Kit Visual Identification System
+The kit browser uses a comprehensive visual system for instant kit recognition:
+
+**Kit Type Borders:** Colored left borders provide immediate visual identification
+- **Amber border**: Modified user kits (work-in-progress with unsaved changes)
+- **Green border**: Editable user kits (saved user-created content)
+- **Gray border**: Factory kits (read-only baseline content)
+
+**Enhanced Status System:** Multi-layered status indicators replace simple "Modified" badges
+- **Unsaved badge**: Work-in-progress changes requiring save action
+- **Sync pending badge**: Saved changes awaiting SD card sync
+- **Editable badge**: User-created kits available for modification
+- **Priority markers**: Visual indicators for high-priority kits in user workflow
+
+### Journey-Based Interface Modes
+The application separates distinct user workflows through contextual modes:
+
+**Browse Mode:** Optimized for kit discovery and preview
+- Emphasizes preview controls and kit metadata
+- Hides editing tools to reduce cognitive load
+- Prominently displays favorites and filtering options
+
+**Edit Mode:** Focused on kit creation and modification
+- Surfaces drag-and-drop targets and sample management tools
+- Shows undo/redo controls and editable state indicators
+- Provides clear save and abandon change actions
+
+**Sync Mode:** Dedicated to SD card operations
+- Displays sync status and batch operation controls
+- Shows conflict resolution and missing file warnings
+- Groups all sync-related actions in logical workflow sequence
+
+### Smart Sample Location System
+Sample location complexity is managed through progressive disclosure:
+
+**Contextual Location Labels:** Replace overwhelming file paths with user-friendly indicators
+- "Splice Pack" (cloud icon) for Splice sample libraries
+- "Local Store" (drive icon) for immutable baseline samples
+- "Ableton Library" (music icon) for DAW sample collections
+- "Custom" (folder icon) for user-organized sample directories
+
+**Progressive Path Disclosure:** Full file paths available on-demand
+- Hover reveals complete path information for technical users
+- Right-click context menu provides "Show in Finder/Explorer" option
+- Status tooltips explain reference-first architecture benefits
+
+### Favorites and Priority Management
+User-driven organization system for efficient kit navigation:
+
+**Favorites System:** Star-based marking for frequently accessed kits
+- Visual star indicators in kit cards
+- "Favorites" filter shows starred kits with count badge
+- Keyboard shortcut for rapid favorite toggling
+
+**Priority Access:** Quick navigation to important kits among dozens
+- Filter buttons with live counts (Modified: 3, Recent: 8, Favorites: 12)
+- "Quick Access" panel for live performance scenarios (~6 kit workflow)
+- Location-based filtering (by sample source) for organized browsing
+
+### Information Hierarchy and Density
+Optimized layout addresses whitespace and scanning efficiency:
+
+**Three-Layer Information Display:**
+- **Always visible**: Kit name, type border, primary status badge
+- **On hover/focus**: Voice tags, location labels, action buttons
+- **On-demand/expanded**: Full metadata, edit history, detailed sample info
+
+**Efficient Space Usage:** Responsive grid layout maximizes kit visibility
+- **Grid Layout**: Dynamic 2-6 columns based on window size (replaces full-width cards)
+- **Card Dimensions**: 280-320px width × 120-140px height (optimal information density)
+- **3-5x More Kits Visible**: Dramatically improved collection browsing efficiency
+- **Compact Information Hierarchy**: Vertical layout with smaller icons and organized sections
+- Smart truncation of kit names with full names on hover
+- Sample count indicators use color coding (red: 0, light green: 1-11, bold green: 12)
+
+## 6.2 Current State (Temporary - Pre-UX Implementation)
+
+> **Note**: The following describes current implementation limitations that will be addressed through the UX improvement tasks. These findings are temporary and will be removed once the design system above is implemented.
+
+**Current Kit List Issues (To Be Resolved):**
+- **Full-width cards waste horizontal space** - only 3-4 kits visible at once
+- Kit cards contain excessive whitespace reducing information density
+- Single "Modified" indicator insufficient for complex kit states
+- No visual distinction between factory, user, and work-in-progress kits
+- Full file paths displayed causing information overload
+
+**Current Navigation Issues (To Be Resolved):**
+- Top menu mixes different user journey actions (sync next to add kit)
+- No mode separation between browse/edit/sync workflows
+- No favorites or priority system for kit organization
+- A-Z bank navigation only method for large kit collections
+
+**Current Sample Location Issues (To Be Resolved):**
+- Reference-first architecture benefits not clear to users
+- Full file paths overwhelming in compact kit cards
+- No contextual labeling for different sample source types
+- Location awareness vs interface simplicity not balanced
+
 ### General Application Design
 - The app consists of a main kit browser and a kit detail page.
 - Action buttons are located at the top of the page.

@@ -12,7 +12,7 @@ import { useLocalStoreWizard } from "./hooks/useLocalStoreWizard";
 import { useSyncUpdate } from "./hooks/useSyncUpdate";
 import KitBankNav from "./KitBankNav";
 import KitBrowserHeader from "./KitBrowserHeader";
-import KitList, { KitListHandle } from "./KitList";
+import KitGrid, { KitGridHandle } from "./KitGrid";
 import LocalStoreWizardUI from "./LocalStoreWizardUI";
 
 interface KitBrowserProps {
@@ -32,12 +32,12 @@ export interface KitBrowserHandle {
 const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
   (props, ref) => {
     const { onMessage, setLocalStorePath } = props;
-    const kitListRef = useRef<KitListHandle>(null);
+    const kitGridRef = useRef<KitGridHandle>(null);
     const [showValidationDialog, setShowValidationDialog] = useState(false);
 
     const logic = useKitBrowser({
       kits: props.kits ?? [],
-      kitListRef: kitListRef,
+      kitListRef: kitGridRef,
       onRefreshKits: props.onRefreshKits,
       onMessage: props.onMessage,
     });
@@ -132,24 +132,24 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       const idx = kitsArr.findIndex(
         (k) => k && k.name && k.name[0] && k.name[0].toUpperCase() === bank,
       );
-      if (idx !== -1 && kitListRef.current) {
-        kitListRef.current.scrollAndFocusKitByIndex(idx);
+      if (idx !== -1 && kitGridRef.current) {
+        kitGridRef.current.scrollAndFocusKitByIndex(idx);
       }
     };
 
-    // Handler for KitBankNav and KitList keyboard navigation
-    const focusBankInKitList = (bank: string) => {
+    // Handler for KitBankNav and KitGrid keyboard navigation
+    const focusBankInKitGrid = (bank: string) => {
       if (logic.focusBankInKitList) logic.focusBankInKitList(bank);
     };
 
     // Handler for KitBankNav (renamed to avoid conflict)
     const onBankClickWithScroll = (bank: string) => {
-      focusBankInKitList(bank);
+      focusBankInKitGrid(bank);
     };
 
-    // Handler for KitList keyboard navigation to update selectedBank
+    // Handler for KitGrid keyboard navigation to update selectedBank
     const handleBankFocus = (bank: string) => {
-      focusBankInKitList(bank);
+      focusBankInKitGrid(bank);
     };
 
     // Use the new useKitScan hook for scanning logic
@@ -214,7 +214,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     return (
       <div
         ref={scrollContainerRef}
-        className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded m-2"
+        className="h-full min-h-0 flex-1 flex flex-col bg-gray-50 dark:bg-slate-800 rounded m-2"
       >
         <KitBrowserHeader
           onScanAllKits={handleScanAllKits}
@@ -257,9 +257,9 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             logic.setDuplicateKitError(null);
           }}
         />
-        <div className="flex-1 min-h-0">
-          <KitList
-            ref={kitListRef}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <KitGrid
+            ref={kitGridRef}
             kits={kits}
             onSelectKit={props.onSelectKit}
             bankNames={bankNames}

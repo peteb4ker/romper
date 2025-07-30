@@ -259,35 +259,25 @@ _Last updated: 2025-07-26_
     - [ ] 9.4.3 Limit history depth and auto-cleanup old records
     - [ ] 9.4.4 Clear history on SD card sync (fresh start)
 
-- [ ] 10.0 Enhanced User Interface
-  - [ ] 10.1 Implement editable mode UI indicators:
-    - [ ] 10.1.1 Visual indicator of editable mode status
-    - [ ] 10.1.2 Kit modification status display
-    - [ ] 10.1.3 Undo/redo availability indicators
-  - [ ] 10.2 Implement progress indicators for operations:
-    - [ ] 10.2.1 Progress bars for sync, batch operations, reference resolution
-    - [ ] 10.2.2 Detailed progress text with file information
-    - [ ] 10.2.3 Cancellation support for long operations
-  - [ ] 10.3 Implement comprehensive confirmation prompts:
-    - [ ] 10.3.1 Destructive actions (replace, delete samples)
-    - [ ] 10.3.2 SD card sync with change summary
-    - [ ] 10.3.3 Batch operations affecting multiple kits
-  - [ ] 10.4 Implement error handling with recovery suggestions
-  - [ ] 10.5 Enhance keyboard shortcuts and accessibility
+- [ ] 10.0 UI System Components (Core Infrastructure)
+  - [ ] 10.1 Implement progress indicators for operations:
+    - [ ] 10.1.1 Progress bars for sync, batch operations, reference resolution
+    - [ ] 10.1.2 Detailed progress text with file information
+    - [ ] 10.1.3 Cancellation support for long operations
+  - [ ] 10.2 Implement comprehensive confirmation prompts:
+    - [ ] 10.2.1 Destructive actions (replace, delete samples)
+    - [ ] 10.2.2 SD card sync with change summary
+    - [ ] 10.2.3 Batch operations affecting multiple kits
+  - [ ] 10.3 Implement error handling with recovery suggestions
+  - [ ] 10.4 Enhance accessibility compliance (beyond mode-specific shortcuts)
 
-- [ ] 11.0 Kit Browser Enhancements
-  - [ ] 11.1 Implement editable status indicators in browser:
-    - [ ] 11.1.1 Show editable mode status for each kit
-    - [ ] 11.1.2 Indicate kits with unsaved changes
-    - [ ] 11.1.3 Visual distinction between factory and user kits
-  - [ ] 11.2 Implement filtering and sorting:
-    - [ ] 11.2.1 Filter by editable mode status
-    - [ ] 11.2.2 Filter by modification status
-    - [ ] 11.2.3 Sort by modification date
-  - [ ] 11.3 Implement bulk operations:
-    - [ ] 11.3.1 Bulk enable/disable editable mode
-    - [ ] 11.3.2 Batch SD card sync for selected kits
-    - [ ] 11.3.3 Context menu with editing actions
+- [ ] 11.0 [DEPRECATED - SUPERSEDED BY TASKS 17-20]
+  > **Note**: Task 11.0 Kit Browser Enhancements has been superseded by the comprehensive UX improvement tasks:
+  > - 11.1 (status indicators) → Task 17.1-17.2 (visual identification + badge system)
+  > - 11.2 (filtering/sorting) → Task 20.2-20.4 (comprehensive organization system)  
+  > - 11.3 (bulk operations) → Task 20.4.4 (batch operations)
+  > 
+  > This task section will be removed once Tasks 17-20 are implemented.
 
 - [ ] 12.0 Settings and Configuration
   - [ ] 12.1 Implement global editing settings:
@@ -373,6 +363,171 @@ _Last updated: 2025-07-26_
   - [ ] 16.3.3 Preserve any valid settings during recovery operations
   - [ ] 16.3.4 Add validation of recovered settings before accepting them
 
+## 17.0 UX Improvements: Kit List Layout and Information Hierarchy
+
+- [ ] 17.1 Implement Kit Type Visual Identification System:
+  - [ ] 17.1.1 Add colored left borders to kit cards in KitBrowser.tsx
+    - [ ] Amber border (#F59E0B): Modified user kits (work-in-progress with unsaved changes)
+    - [ ] Green border (#10B981): Editable user kits (saved user-created content)
+    - [ ] Gray border (#6B7280): Factory kits (read-only baseline content)
+  - [ ] 17.1.2 Update kit card styling in Tailwind classes for visual hierarchy
+  - [ ] 17.1.3 Add database queries to distinguish kit types for border logic
+  - [ ] 17.1.4 Create utility function to determine kit type from editable status and modification state
+
+- [ ] 17.2 Implement Enhanced Status Badge System:
+  - [ ] 17.2.1 Replace single "Modified" indicator with comprehensive badge system
+  - [ ] 17.2.2 Create badge components for different states:
+    - [ ] "Unsaved" badge for work-in-progress changes requiring save action
+    - [ ] "Sync pending" badge for saved changes awaiting SD card sync  
+    - [ ] "Editable" badge for user-created kits available for modification
+    - [ ] Priority markers for high-priority kits in user workflow
+  - [ ] 17.2.3 Design responsive badge layout that adapts to screen size
+  - [ ] 17.2.4 Update database schema to track sync pending status
+
+- [ ] 17.3 Implement Responsive Grid Layout System:
+  - [ ] 17.3.1 Replace VariableSizeList with FixedSizeGrid for multi-column display
+  - [ ] 17.3.2 Implement dynamic column calculation based on window width:
+    - [ ] Small windows (< 800px): 2 columns
+    - [ ] Medium windows (800-1200px): 3 columns
+    - [ ] Large windows (> 1200px): 4 columns
+    - [ ] Extra large (> 1600px): 5-6 columns
+  - [ ] 17.3.3 Add ResizeObserver for responsive layout updates
+  - [ ] 17.3.4 Update keyboard navigation for grid-based movement (arrow keys)
+  - [ ] 17.3.5 Maintain virtualization performance with react-window grid
+
+- [ ] 17.4 Redesign Kit Card Layout and Information Density:
+  - [ ] 17.4.1 Set optimal card dimensions (280-320px width × 120-140px height)
+  - [ ] 17.4.2 Implement compact vertical information hierarchy:
+    - [ ] Top row: smaller icon, kit name, status badges
+    - [ ] Middle row: voice tags, action buttons
+    - [ ] Bottom row: sample count indicators [1][2][3][4]
+  - [ ] 17.4.3 Reduce icon size from text-5xl to text-2xl/text-3xl
+  - [ ] 17.4.4 Implement smart truncation of kit names with full names on hover
+  - [ ] 17.4.5 Test layout with dozens and hundreds of kits for scalability
+
+- [ ] 17.5 Grid Layout Integration and Performance:
+  - [ ] 17.5.1 Update bank navigation (A-Z hotkeys) to work with grid layout
+  - [ ] 17.5.2 Adapt focus management for multi-column grid navigation
+  - [ ] 17.5.3 Ensure all existing features work in grid: selection, preview, etc.
+  - [ ] 17.5.4 Performance testing with large kit collections in grid view
+
+- [ ] 17.6 Implement Progressive Information Disclosure:
+  - [ ] 17.6.1 Define three-layer information hierarchy:
+    - [ ] Always visible: Kit name, type border, primary status badge
+    - [ ] On hover/focus: Voice tags, location labels, action buttons
+    - [ ] On-demand/expanded: Full metadata, edit history, detailed sample info
+  - [ ] 17.6.2 Create hover state components for secondary information
+  - [ ] 17.6.3 Implement expandable details panel for on-demand information
+  - [ ] 17.6.4 Add keyboard navigation support for progressive disclosure
+
+## 18.0 UX Improvements: Journey-Based Navigation System
+
+- [ ] 18.1 Implement Interface Mode System:
+  - [ ] 18.1.1 Create mode context and state management (Browse/Edit/Sync modes)
+  - [ ] 18.1.2 Design mode switching UI components and indicators
+  - [ ] 18.1.3 Implement contextual toolbar that changes based on active mode
+  - [ ] 18.1.4 Add mode-specific keyboard shortcuts and help text
+
+- [ ] 18.2 Implement Browse Mode Interface:
+  - [ ] 18.2.1 Emphasize preview controls and kit metadata display
+  - [ ] 18.2.2 Hide editing tools to reduce cognitive load
+  - [ ] 18.2.3 Prominently display favorites and filtering options
+  - [ ] 18.2.4 Optimize for kit discovery workflow patterns
+
+- [ ] 18.3 Implement Edit Mode Interface:
+  - [ ] 18.3.1 Surface drag-and-drop targets and sample management tools
+  - [ ] 18.3.2 Show undo/redo controls and editable state indicators
+  - [ ] 18.3.3 Provide clear save and abandon change actions
+  - [ ] 18.3.4 Group all editing-related functions in logical sequence
+
+- [ ] 18.4 Implement Sync Mode Interface:
+  - [ ] 18.4.1 Display sync status and batch operation controls
+  - [ ] 18.4.2 Show conflict resolution and missing file warnings
+  - [ ] 18.4.3 Group all sync-related actions in logical workflow sequence
+  - [ ] 18.4.4 Separate from other workflows to prevent accidental sync operations
+
+- [ ] 18.5 Restructure Top-Level Navigation:
+  - [ ] 18.5.1 Reorganize menu buttons based on user journey separation
+  - [ ] 18.5.2 Group related actions (separate "Sync to SD Card" from "Add Kit")
+  - [ ] 18.5.3 Add contextual button groupings that change with mode
+  - [ ] 18.5.4 Implement clear visual separators between different journey actions
+
+## 19.0 UX Improvements: Smart Sample Location System
+
+- [ ] 19.1 Implement Contextual Location Labels:
+  - [ ] 19.1.1 Create smart labeling system to replace full file paths:
+    - [ ] "Splice Pack" with cloud icon for Splice sample libraries
+    - [ ] "Local Store" with drive icon for immutable baseline samples
+    - [ ] "Ableton Library" with music icon for DAW sample collections
+    - [ ] "Custom" with folder icon for user-organized sample directories
+  - [ ] 19.1.2 Develop path analysis utility to categorize sample sources
+  - [ ] 19.1.3 Design icon system for different location types
+  - [ ] 19.1.4 Implement location detection logic for common sample library patterns
+
+- [ ] 19.2 Implement Progressive Path Disclosure:
+  - [ ] 19.2.1 Show contextual labels by default in kit cards
+  - [ ] 19.2.2 Reveal complete path information on hover for technical users
+  - [ ] 19.2.3 Add right-click context menu with "Show in Finder/Explorer" option
+  - [ ] 19.2.4 Create status tooltips explaining reference-first architecture benefits
+
+- [ ] 19.3 Improve Reference-First Architecture Communication:
+  - [ ] 19.3.1 Add visual indicators showing samples remain in original locations
+  - [ ] 19.3.2 Create informational tooltips explaining zero-bloat architecture
+  - [ ] 19.3.3 Show location awareness without overwhelming interface
+  - [ ] 19.3.4 Handle missing reference files with clear user guidance
+
+## 20.0 UX Improvements: Favorites and Quick Access System
+
+- [ ] 20.1 Implement Favorites System:
+  - [ ] 20.1.1 Add favorites field to kits database table
+  - [ ] 20.1.2 Create star-based marking UI for kit cards
+  - [ ] 20.1.3 Implement keyboard shortcut for rapid favorite toggling
+  - [ ] 20.1.4 Add "Favorites" filter with count badge in kit browser
+
+- [ ] 20.2 Implement Priority Access System:
+  - [ ] 20.2.1 Create priority markers for high-priority kits in user workflow
+  - [ ] 20.2.2 Implement filter buttons with live counts (Modified: 3, Recent: 8, Favorites: 12)
+  - [ ] 20.2.3 Add "Quick Access" panel for live performance scenarios (~6 kit workflow)
+  - [ ] 20.2.4 Create location-based filtering by sample source for organized browsing
+
+- [ ] 20.3 Implement Efficient Kit Navigation:
+  - [ ] 20.3.1 Optimize A-Z bank navigation for large collections
+  - [ ] 20.3.2 Add recent kits tracking and quick access
+  - [ ] 20.3.3 Implement search/filter functionality for kit discovery
+  - [ ] 20.3.4 Create navigation patterns that support preview → copy/amend → sync workflow
+
+- [ ] 20.4 Implement Kit Organization Features:
+  - [ ] 20.4.1 Add tagging system for kit categorization
+  - [ ] 20.4.2 Implement sorting options (by modification date, favorites, type)
+  - [ ] 20.4.3 Create collection views for different use cases (live performance, studio work)
+  - [ ] 20.4.4 Add batch operations for managing multiple kits
+
+## 21.0 UX Improvements: Testing and Integration
+
+- [ ] 21.1 Create UX Component Tests:
+  - [ ] 21.1.1 Test kit type visual identification system
+  - [ ] 21.1.2 Test enhanced status badge system responsiveness
+  - [ ] 21.1.3 Test progressive information disclosure functionality
+  - [ ] 21.1.4 Test mode switching and contextual interface changes
+
+- [ ] 21.2 Create UX Integration Tests:
+  - [ ] 21.2.1 Test complete browse → edit → sync workflow separation
+  - [ ] 21.2.2 Test favorites and quick access system performance
+  - [ ] 21.2.3 Test smart location labeling with various sample library patterns
+  - [ ] 21.2.4 Test information density improvements with large kit collections
+
+- [ ] 21.3 User Experience Validation:
+  - [ ] 21.3.1 Validate quick kit state assessment capability
+  - [ ] 21.3.2 Test workflow efficiency improvements for new users
+  - [ ] 21.3.3 Validate location awareness without path overwhelm
+  - [ ] 21.3.4 Test scalability with dozens to hundreds of kits
+
+- [ ] 21.4 Accessibility and Performance:
+  - [ ] 21.4.1 Ensure all UX improvements work in light/dark modes
+  - [ ] 21.4.2 Test keyboard navigation for new UI elements
+  - [ ] 21.4.3 Validate performance with progressive disclosure system
+  - [ ] 21.4.4 Test screen reader compatibility for enhanced status system
+
 
 ---
-_Last updated: 2025-07-25_
+_Last updated: 2025-07-30_

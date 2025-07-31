@@ -15,6 +15,7 @@ import ChangeLocalStoreDirectoryDialog from "../components/dialogs/ChangeLocalSt
 import PreferencesDialog from "../components/dialogs/PreferencesDialog";
 import { useBankScanning } from "../components/hooks/useBankScanning";
 import { useGlobalKeyboardShortcuts } from "../components/hooks/useGlobalKeyboardShortcuts";
+import { useKit } from "../components/hooks/useKit";
 import { useMenuEvents } from "../components/hooks/useMenuEvents";
 import { useMessageDisplay } from "../components/hooks/useMessageDisplay";
 import { useStartupActions } from "../components/hooks/useStartupActions";
@@ -194,10 +195,8 @@ const KitsView = () => {
   });
 
   // Get current kit's editable state for keyboard shortcuts
-  const currentKit = useMemo(
-    () => kits.find((kit) => kit.name === selectedKit),
-    [kits, selectedKit],
-  );
+  // Note: Use useKit hook to get fresh kit data instead of stale kits array
+  const { kit: currentKit } = useKit({ kitName: selectedKit || "" });
 
   // Global keyboard shortcuts (Cmd+Z, Cmd+Shift+Z)
   const keyboardShortcuts = useGlobalKeyboardShortcuts({

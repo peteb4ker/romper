@@ -98,6 +98,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
           onSampleAdd={logic.sampleManagement.handleSampleAdd}
           onSampleReplace={logic.sampleManagement.handleSampleReplace}
           onSampleDelete={logic.sampleManagement.handleSampleDelete}
+          onSampleMove={logic.sampleManagement.handleSampleMove}
         />
       </div>
       <KitStepSequencer

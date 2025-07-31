@@ -35,50 +35,22 @@ export function useGlobalKeyboardShortcuts({
 
       // Undo: Cmd+Z (but not Shift+Cmd+Z)
       if (event.key === "z" && !event.shiftKey) {
-        console.log(
-          "[KeyboardShortcuts] Undo triggered, canUndo:",
-          undoRedo.canUndo,
-          "isUndoing:",
-          undoRedo.isUndoing,
-        );
         event.preventDefault();
         event.stopPropagation();
 
         if (undoRedo.canUndo && !undoRedo.isUndoing) {
-          console.log("[KeyboardShortcuts] Executing undo...");
           undoRedo.undo();
-        } else {
-          console.log(
-            "[KeyboardShortcuts] Undo not available - canUndo:",
-            undoRedo.canUndo,
-            "isUndoing:",
-            undoRedo.isUndoing,
-          );
         }
         return;
       }
 
       // Redo: Cmd+Shift+Z or Cmd+Y
       if ((event.key === "z" && event.shiftKey) || event.key === "y") {
-        console.log(
-          "[KeyboardShortcuts] Redo triggered, canRedo:",
-          undoRedo.canRedo,
-          "isRedoing:",
-          undoRedo.isRedoing,
-        );
         event.preventDefault();
         event.stopPropagation();
 
         if (undoRedo.canRedo && !undoRedo.isRedoing) {
-          console.log("[KeyboardShortcuts] Executing redo...");
           undoRedo.redo();
-        } else {
-          console.log(
-            "[KeyboardShortcuts] Redo not available - canRedo:",
-            undoRedo.canRedo,
-            "isRedoing:",
-            undoRedo.isRedoing,
-          );
         }
         return;
       }

@@ -26,3 +26,5 @@ jobs:
           projectBaseDir: .
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORGANIZATION: peteb4ker
+          SONAR_HOST_URL: https://sonarcloud.io

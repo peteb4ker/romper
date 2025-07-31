@@ -8,7 +8,6 @@ import type {
   FullKitScanInput,
   ProgressCallback,
   VoiceInferenceInput,
-  WAVAnalysisInput,
   WAVAnalysisOutput,
 } from "./types";
 

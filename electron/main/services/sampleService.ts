@@ -6,8 +6,10 @@ import { getAudioMetadata } from "../audioUtils.js";
 import {
   addSample,
   deleteSamples,
+  deleteSamplesWithoutCompaction,
   getKitSamples,
   markKitAsModified,
+  moveSample,
 } from "../db/romperDbCoreORM.js";
 
 /**
@@ -178,10 +180,10 @@ export class SampleService {
 
       // Check if there's an existing sample in this slot for conflict handling
       const existingSamplesResult = getKitSamples(dbPath, kitName);
-      let previousSample: Sample | undefined;
+      let _previousSample: Sample | undefined;
 
       if (existingSamplesResult.success && existingSamplesResult.data) {
-        previousSample = existingSamplesResult.data.find(
+        _previousSample = existingSamplesResult.data.find(
           (s) =>
             s.voice_number === voiceNumber && s.slot_number === slotIndex + 1,
         );
@@ -325,14 +327,15 @@ export class SampleService {
   }
 
   /**
-   * Delete a sample from a specific voice slot
+   * Delete a sample from a specific voice slot WITHOUT automatic contiguity maintenance
+   * Used for undo operations where we want precise control over slot positions
    */
-  deleteSampleFromSlot(
+  deleteSampleFromSlotWithoutCompaction(
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
     slotIndex: number,
-  ): DbResult<void> {
+  ): DbResult<{ deletedSamples: Sample[] }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
       return { success: false, error: "No local store path configured" };
@@ -350,24 +353,73 @@ export class SampleService {
     }
 
     try {
-      // Get the sample before deleting it
+      // Delete WITHOUT automatic contiguity maintenance
+      const deleteResult = deleteSamplesWithoutCompaction(dbPath, kitName, {
+        voiceNumber,
+        slotNumber: slotIndex + 1, // Convert 0-based to 1-based
+      });
+
+      // Mark kit as modified if operation succeeded
+      if (deleteResult.success) {
+        markKitAsModified(dbPath, kitName);
+      }
+
+      return deleteResult;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        error: `Failed to delete sample: ${errorMessage}`,
+      };
+    }
+  }
+
+  /**
+   * Delete a sample from a specific voice slot with automatic contiguity maintenance
+   */
+  deleteSampleFromSlot(
+    inMemorySettings: Record<string, any>,
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+  ): DbResult<{ deletedSamples: Sample[]; affectedSamples: Sample[] }> {
+    const localStorePath = this.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { success: false, error: "No local store path configured" };
+    }
+
+    const dbPath = this.getDbPath(localStorePath);
+
+    // Validate voice and slot
+    const voiceSlotValidation = this.validateVoiceAndSlot(
+      voiceNumber,
+      slotIndex,
+    );
+    if (!voiceSlotValidation.isValid) {
+      return { success: false, error: voiceSlotValidation.error };
+    }
+
+    try {
+      // Get the sample before deleting it for validation
       const existingSamplesResult = getKitSamples(dbPath, kitName);
-      let deletedSample: Sample | undefined;
+      let sampleExists = false;
 
       if (existingSamplesResult.success && existingSamplesResult.data) {
-        deletedSample = existingSamplesResult.data.find(
+        sampleExists = existingSamplesResult.data.some(
           (s) =>
             s.voice_number === voiceNumber && s.slot_number === slotIndex + 1,
         );
       }
 
-      if (!deletedSample) {
+      if (!sampleExists) {
         return {
           success: false,
           error: `No sample found in voice ${voiceNumber}, slot ${slotIndex + 1} to delete`,
         };
       }
 
+      // Delete with automatic contiguity maintenance
       const deleteResult = deleteSamples(dbPath, kitName, {
         voiceNumber,
         slotNumber: slotIndex + 1, // Convert 0-based to 1-based
@@ -508,6 +560,269 @@ export class SampleService {
       return {
         success: false,
         error: `Failed to read sample audio: ${errorMessage}`,
+      };
+    }
+  }
+
+  /**
+   * Move a sample from one slot to another with contiguity maintenance
+   * Task 22.2: Cross-voice sample movement within same kit
+   */
+  moveSampleInKit(
+    inMemorySettings: Record<string, any>,
+    kitName: string,
+    fromVoice: number,
+    fromSlot: number,
+    toVoice: number,
+    toSlot: number,
+    mode: "insert" | "overwrite",
+  ): DbResult<{
+    movedSample: Sample;
+    affectedSamples: (Sample & { original_slot_number: number })[];
+    replacedSample?: Sample;
+  }> {
+    const localStorePath = this.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { success: false, error: "No local store path configured" };
+    }
+
+    const dbPath = this.getDbPath(localStorePath);
+
+    // Validate voice and slot for both source and destination
+    const fromValidation = this.validateVoiceAndSlot(fromVoice, fromSlot);
+    if (!fromValidation.isValid) {
+      return { success: false, error: `Source ${fromValidation.error}` };
+    }
+
+    const toValidation = this.validateVoiceAndSlot(toVoice, toSlot);
+    if (!toValidation.isValid) {
+      return { success: false, error: `Destination ${toValidation.error}` };
+    }
+
+    // Prevent moving to the same location
+    if (fromVoice === toVoice && fromSlot === toSlot) {
+      return {
+        success: false,
+        error: "Cannot move sample to the same location",
+      };
+    }
+
+    try {
+      // Check for stereo conflicts
+      const existingSamplesResult = getKitSamples(dbPath, kitName);
+      if (existingSamplesResult.success && existingSamplesResult.data) {
+        const sampleToMove = existingSamplesResult.data.find(
+          (s) => s.voice_number === fromVoice && s.slot_number === fromSlot + 1,
+        );
+
+        if (!sampleToMove) {
+          return {
+            success: false,
+            error: `No sample found at voice ${fromVoice}, slot ${fromSlot + 1}`,
+          };
+        }
+
+        // Check for stereo conflicts if moving a stereo sample
+        if (sampleToMove.is_stereo && toVoice === 4) {
+          return {
+            success: false,
+            error:
+              "Cannot move stereo sample to voice 4 (no adjacent voice available)",
+          };
+        }
+
+        if (sampleToMove.is_stereo && mode === "insert") {
+          // Check if destination+1 would conflict
+          const conflictSample = existingSamplesResult.data.find(
+            (s) =>
+              s.voice_number === toVoice + 1 && s.slot_number === toSlot + 1,
+          );
+          if (conflictSample) {
+            return {
+              success: false,
+              error: `Stereo sample move would conflict with sample in voice ${toVoice + 1}, slot ${toSlot + 1}`,
+            };
+          }
+        }
+      }
+
+      // Perform the move with database-level contiguity maintenance
+      const moveResult = moveSample(
+        dbPath,
+        kitName,
+        fromVoice,
+        fromSlot + 1, // Convert to 1-based
+        toVoice,
+        toSlot + 1, // Convert to 1-based
+        mode,
+      );
+
+      // Mark kit as modified if operation succeeded
+      if (moveResult.success) {
+        markKitAsModified(dbPath, kitName);
+      }
+
+      return moveResult;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        error: `Failed to move sample: ${errorMessage}`,
+      };
+    }
+  }
+
+  /**
+   * Move a sample from one kit to another with source compaction
+   * Task: Cross-kit sample movement with gap prevention
+   */
+  moveSampleBetweenKits(
+    inMemorySettings: Record<string, any>,
+    fromKit: string,
+    fromVoice: number,
+    fromSlot: number,
+    toKit: string,
+    toVoice: number,
+    toSlot: number,
+    mode: "insert" | "overwrite",
+  ): DbResult<{
+    movedSample: Sample;
+    affectedSamples: (Sample & { original_slot_number: number })[];
+    replacedSample?: Sample;
+  }> {
+    const localStorePath = this.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { success: false, error: "No local store path configured" };
+    }
+
+    const dbPath = this.getDbPath(localStorePath);
+
+    // Validate voice and slot for both source and destination
+    const fromValidation = this.validateVoiceAndSlot(fromVoice, fromSlot);
+    if (!fromValidation.isValid) {
+      return { success: false, error: `Source ${fromValidation.error}` };
+    }
+
+    const toValidation = this.validateVoiceAndSlot(toVoice, toSlot);
+    if (!toValidation.isValid) {
+      return { success: false, error: `Destination ${toValidation.error}` };
+    }
+
+    try {
+      // Get the sample to move from source kit
+      const sourceSamplesResult = getKitSamples(dbPath, fromKit);
+      if (!sourceSamplesResult.success || !sourceSamplesResult.data) {
+        return { success: false, error: sourceSamplesResult.error };
+      }
+
+      const sampleToMove = sourceSamplesResult.data.find(
+        (s) => s.voice_number === fromVoice && s.slot_number === fromSlot + 1,
+      );
+
+      if (!sampleToMove) {
+        return {
+          success: false,
+          error: `No sample found at ${fromKit} voice ${fromVoice}, slot ${fromSlot + 1}`,
+        };
+      }
+
+      // Check for stereo conflicts at destination
+      if (sampleToMove.is_stereo && toVoice === 4) {
+        return {
+          success: false,
+          error:
+            "Cannot move stereo sample to voice 4 (no adjacent voice available)",
+        };
+      }
+
+      // Get destination kit samples to check for conflicts and replacements
+      const destSamplesResult = getKitSamples(dbPath, toKit);
+      let destSamples: Sample[] = [];
+      let replacedSample: Sample | undefined;
+
+      if (destSamplesResult.success && destSamplesResult.data) {
+        destSamples = destSamplesResult.data;
+
+        if (mode === "overwrite") {
+          replacedSample = destSamples.find(
+            (s) => s.voice_number === toVoice && s.slot_number === toSlot + 1,
+          );
+        }
+      }
+
+      // For insert mode with stereo samples, check conflict with adjacent voice
+      if (sampleToMove.is_stereo && mode === "insert") {
+        const conflictSample = destSamples.find(
+          (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot + 1,
+        );
+        if (conflictSample) {
+          return {
+            success: false,
+            error: `Stereo sample move would conflict with sample in ${toKit} voice ${toVoice + 1}, slot ${toSlot + 1}`,
+          };
+        }
+      }
+
+      // Step 1: Add the sample to destination kit
+      const addResult = this.addSampleToSlot(
+        inMemorySettings,
+        toKit,
+        toVoice,
+        toSlot,
+        sampleToMove.source_path,
+        {
+          forceMono: !sampleToMove.is_stereo,
+          forceStereo: sampleToMove.is_stereo,
+        },
+      );
+
+      if (!addResult.success) {
+        return {
+          success: false,
+          error: `Failed to add sample to destination: ${addResult.error}`,
+        };
+      }
+
+      // Step 2: Delete the sample from source kit (with compaction)
+      const deleteResult = this.deleteSampleFromSlot(
+        inMemorySettings,
+        fromKit,
+        fromVoice,
+        fromSlot,
+      );
+
+      if (!deleteResult.success) {
+        // Rollback: remove the sample we just added
+        this.deleteSampleFromSlot(inMemorySettings, toKit, toVoice, toSlot);
+        return {
+          success: false,
+          error: `Failed to delete source sample: ${deleteResult.error}`,
+        };
+      }
+
+      // Prepare the result data
+      const affectedSamples = (deleteResult.data?.affectedSamples || []).map(
+        (sample) => ({
+          ...sample,
+          original_slot_number: sample.slot_number, // Use current slot as original since it's from delete result
+        }),
+      );
+
+      return {
+        success: true,
+        data: {
+          movedSample: sampleToMove,
+          affectedSamples,
+          replacedSample,
+        },
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        error: `Failed to move sample between kits: ${errorMessage}`,
       };
     }
   }

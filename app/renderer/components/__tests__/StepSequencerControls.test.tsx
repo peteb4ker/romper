@@ -5,11 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import StepSequencerControls from "../StepSequencerControls";
 
 describe("StepSequencerControls", () => {
-  let isSeqPlaying;
   let setIsSeqPlaying;
 
   beforeEach(() => {
-    isSeqPlaying = false;
     setIsSeqPlaying = vi.fn();
   });
 

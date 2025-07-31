@@ -6,9 +6,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { FixedSizeGrid, GridChildComponentProps } from "react-window";
 
-import type { Kit, KitWithRelations } from "../../../shared/db/schema";
+import type { KitWithRelations } from "../../../shared/db/schema";
 import { useKitListLogic } from "./hooks/useKitListLogic";
 import { useKitListNavigation } from "./hooks/useKitListNavigation";
 import KitGridItem from "./KitGridItem";
@@ -151,19 +150,17 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     },
     ref,
   ) => {
-    const { kitsToDisplay, isValidKit, getColorClass } = useKitListLogic(kits);
+    const { kitsToDisplay, isValidKit } = useKitListLogic(kits);
     const { size, containerRef } = useContainerSize();
     const columnCount = useResponsiveColumns(size.width);
     const rowCount = Math.ceil(kitsToDisplay.length / columnCount);
 
     // Navigation logic adapted for grid
     const navFocusedKit = typeof focusedKit === "string" ? focusedKit : null;
-    const { focusedIdx, setFocus, moveFocus } = useKitListNavigation(
+    const { focusedIdx, setFocus } = useKitListNavigation(
       kitsToDisplay,
       navFocusedKit,
     );
-
-    const gridRef = useRef<FixedSizeGrid>(null);
 
     useEffect(() => {
       if (!navFocusedKit && kitsToDisplay.length > 0) {
@@ -283,59 +280,6 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       e.preventDefault();
     };
 
-    // Grid cell renderer
-    const GridCell = ({
-      columnIndex,
-      rowIndex,
-      style,
-    }: GridChildComponentProps) => {
-      const index = getFlatIndex(rowIndex, columnIndex);
-
-      // Handle empty cells
-      if (index >= kitsToDisplay.length) {
-        return <div style={style} />;
-      }
-
-      const kit = kitsToDisplay[index];
-      const isValid = isValidKit(kit);
-      const colorClass = getColorClass(kit);
-      const isSelected = focusedIdx === index;
-      const kitDataItem = kitData?.find((k) => k.name === kit.name) || null;
-
-      const handleSelectKit = () => {
-        if (isValid) {
-          onSelectKit(kit.name);
-          if (onFocusKit) onFocusKit(kit.name);
-          setFocus(index);
-        }
-      };
-
-      return (
-        <div
-          style={{
-            ...style,
-            left: (style.left as number) + GAP / 2,
-            top: (style.top as number) + GAP / 2,
-            width: (style.width as number) - GAP,
-            height: (style.height as number) - GAP,
-          }}
-        >
-          <KitGridItem
-            kit={kit.name}
-            colorClass={colorClass}
-            isValid={isValid}
-            onSelect={handleSelectKit}
-            onDuplicate={() => isValid && onDuplicate(kit.name)}
-            sampleCounts={sampleCounts ? sampleCounts[kit.name] : undefined}
-            kitData={kitDataItem}
-            isSelected={isSelected}
-            data-kit={kit.name}
-            data-testid={`kit-item-${kit.name}`}
-          />
-        </div>
-      );
-    };
-
     // Group kits by bank for rendering with headers
     const kitsByBank = kitsToDisplay.reduce(
       (acc, kit) => {
@@ -373,12 +317,11 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                 onBankVisible={onVisibleBankChange}
               />
               {/* Kit cards for this bank */}
-              {bankKits.map((kit, kitIndex) => {
+              {bankKits.map((kit) => {
                 const globalIndex = kitsToDisplay.findIndex(
                   (k) => k.name === kit.name,
                 );
                 const isValid = isValidKit(kit);
-                const colorClass = getColorClass(kit);
                 const isSelected = focusedIdx === globalIndex;
                 const kitDataItem =
                   kitData?.find((k) => k.name === kit.name) || null;
@@ -395,7 +338,6 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                   <div key={kit.name} style={{ height: CARD_HEIGHT }}>
                     <KitGridItem
                       kit={kit.name}
-                      colorClass={colorClass}
                       isValid={isValid}
                       onSelect={handleSelectKit}
                       onDuplicate={() => isValid && onDuplicate(kit.name)}

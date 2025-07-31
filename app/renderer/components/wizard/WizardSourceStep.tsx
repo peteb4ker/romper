@@ -12,7 +12,6 @@ interface WizardSourceStepProps {
   sourceOptions: SourceOption[];
   stateSource: string | null;
   handleSourceSelect: (value: string) => void;
-  localStorePath?: string;
   setSdCardPath?: (path: string) => void;
   sourceConfirmed?: boolean;
   setSourceConfirmed?: (confirmed: boolean) => void;
@@ -22,9 +21,8 @@ const WizardSourceStep: React.FC<WizardSourceStepProps> = ({
   sourceOptions,
   stateSource,
   handleSourceSelect,
-  localStorePath,
   setSdCardPath,
-  sourceConfirmed,
+  sourceConfirmed: _sourceConfirmed,
   setSourceConfirmed,
 }) => {
   // Only show SD card path if source is sdcard

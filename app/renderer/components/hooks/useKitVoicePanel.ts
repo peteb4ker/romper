@@ -2,7 +2,7 @@ import { useState } from "react";
 
 export function useKitVoicePanel({
   initialSelectedVoice = 1,
-  numVoices = 4,
+  numVoices: _numVoices = 4,
   onVoiceSelect,
 }: {
   initialSelectedVoice?: number;

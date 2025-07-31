@@ -11,7 +11,6 @@ import { useKitItem } from "./hooks/useKitItem";
 
 interface KitItemProps {
   kit: string;
-  colorClass: string;
   isValid: boolean;
   onSelect: () => void;
   onDuplicate: () => void;
@@ -28,7 +27,6 @@ const KitItem = React.memo(
     (
       {
         kit,
-        colorClass,
         isValid,
         onSelect,
         onDuplicate,

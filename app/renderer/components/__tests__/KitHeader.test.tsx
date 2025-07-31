@@ -1,9 +1,8 @@
 // Test suite for KitHeader component
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { cleanup } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
-import { afterEach } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Kit } from "../../../../shared/db/schema";
 import KitHeader from "../KitHeader";

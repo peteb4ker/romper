@@ -1,10 +1,4 @@
-import {
-  cleanup,
-  render,
-  screen,
-  waitForElementToBeRemoved,
-} from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // DRY: Common mock for useLocalStoreWizard

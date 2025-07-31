@@ -240,9 +240,54 @@ _Last updated: 2025-07-26_
     - [x] 8.3.3 Handle sync rollback on failure
   - [x] 8.4 Implement detailed progress and error handling
 
-- [ ] 9.0 Undo/Redo System
-  - [ ] 9.1 Implement action history database layer with ORM:
-    - [ ] 9.1.1 Create edit_actions table with Drizzle schema:
+- [x] 9.0 Undo/Redo System (Memory-Based Implementation Complete)
+  - [x] 9.1 Implement memory-based undo/redo system:
+    - [x] 9.1.1 Create useUndoRedo hook with in-memory action stacks
+    - [x] 9.1.2 Define action types: ADD_SAMPLE, REPLACE_SAMPLE, DELETE_SAMPLE, MOVE_SAMPLE, COMPACT_SLOTS
+    - [x] 9.1.3 Implement typed action schemas with complete state tracking
+  - [x] 9.2 Implement action recording and playback:
+    - [x] 9.2.1 Record all sample operations with full metadata
+    - [x] 9.2.2 Integrate with sample management hooks for automatic recording
+    - [x] 9.2.3 Handle complex operations affecting multiple samples
+  - [x] 9.3 Implement undo/redo operations:
+    - [x] 9.3.1 Complete reversal logic for all action types
+    - [x] 9.3.2 Event-driven UI refresh system for state updates
+    - [x] 9.3.3 Application menu integration with custom handlers
+  - [x] 9.4 Implement keyboard shortcuts and UX:
+    - [x] 9.4.1 Cmd+Z/Ctrl+Z for undo, Cmd+Shift+Z/Ctrl+Y for redo
+    - [x] 9.4.2 Visual feedback with action descriptions
+    - [x] 9.4.3 Proper state management and error handling
+
+- [ ] 22.0 Sample Contiguity and Drag-Drop Move System
+  - [ ] 22.1 Implement automatic contiguity maintenance:
+    - [ ] 22.1.1 Auto-compact slots after sample deletion (hard requirement)
+    - [ ] 22.1.2 Shift samples up to fill gaps automatically
+    - [ ] 22.1.3 Maintain contiguous numbering from slot 1 upwards
+  - [ ] 22.2 Implement drag-drop move operations:
+    - [ ] 22.2.1 Visual drop zones for insert-between vs overwrite-on operations
+    - [ ] 22.2.2 Cross-voice sample movement within same kit
+    - [ ] 22.2.3 Drag feedback with ghost elements and drop indicators
+  - [ ] 22.3 Implement stereo conflict handling for moves:
+    - [ ] 22.3.1 Detect stereo sample conflicts in destination voice
+    - [ ] 22.3.2 Throw clear error when destination+1 slot occupied by stereo
+    - [ ] 22.3.3 Prevent invalid moves that would break stereo pairs
+  - [ ] 22.4 Implement complex undo support for moves:
+    - [ ] 22.4.1 Full state restoration for multi-sample move operations
+    - [ ] 22.4.2 MOVE_SAMPLE action type with complete before/after state
+    - [ ] 22.4.3 COMPACT_SLOTS action type for deletion-triggered compaction
+    - [ ] 22.4.4 Restore all affected samples to previous positions on undo
+  - [ ] 22.5 Database operations for contiguity:
+    - [ ] 22.5.1 Batch slot updates for compaction operations
+    - [ ] 22.5.2 Transaction-based multi-sample moves
+    - [ ] 22.5.3 Efficient slot reordering with proper constraints
+  - [ ] 22.6 UI implementation:
+    - [ ] 22.6.1 Drag-drop event handling with visual feedback
+    - [ ] 22.6.2 Drop zone indicators for insert vs overwrite
+    - [ ] 22.6.3 Animation for smooth slot transitions (100ms)
+    - [ ] 22.6.4 Error states for invalid move attempts
+
+- [ ] 9.1 Legacy Database-Based Undo System (Future Enhancement):
+  - [ ] 9.1.1 Create edit_actions table with Drizzle schema:
       - [ ] Fields: id, kit_name, action_type, action_data (JSON), sequence_number, timestamp, undone_at
       - [ ] Foreign key constraint to kits table on kit_name
       - [ ] Index on kit_name and sequence_number for performance
@@ -392,9 +437,9 @@ _Last updated: 2025-07-26_
 - [ ] 11.0 [DEPRECATED - SUPERSEDED BY TASKS 17-20]
   > **Note**: Task 11.0 Kit Browser Enhancements has been superseded by the comprehensive UX improvement tasks:
   > - 11.1 (status indicators) → Task 17.1-17.2 (visual identification + badge system)
-  > - 11.2 (filtering/sorting) → Task 20.2-20.4 (comprehensive organization system)  
+  > - 11.2 (filtering/sorting) → Task 20.2-20.4 (comprehensive organization system)
   > - 11.3 (bulk operations) → Task 20.4.4 (batch operations)
-  > 
+  >
   > This task section will be removed once Tasks 17-20 are implemented.
 
 - [ ] 12.0 Settings and Configuration
@@ -556,11 +601,6 @@ _Last updated: 2025-07-26_
   - [x] 18.5.3 Add contextual button groupings that change with mode
   - [x] 18.5.4 Implement clear visual separators between different journey actions
 
-- [x] 18.6 Fix Test Suite Compatibility:
-  - [x] 18.6.1 Update test utilities to include InterfaceModeProvider
-  - [x] 18.6.2 Fix all failing tests due to missing context provider
-  - [x] 18.6.3 Add mode-specific test cases for button visibility
-  
 **Note:** Task 18.0 was implemented and then reverted in favor of simpler always-visible button approach. The interface mode system was successfully built but determined to add unnecessary complexity to the user experience.
 
 ## 19.0 UX Improvements: Smart Sample Location System (COMPLETE)

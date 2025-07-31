@@ -111,7 +111,7 @@ describe("useKitBrowser Bank Highlighting", () => {
   });
 
   it("handles edge cases with invalid bank letters", () => {
-    const { result, rerender } = renderHook(() => useKitBrowser(defaultProps));
+    const { result } = renderHook(() => useKitBrowser(defaultProps));
 
     // Should handle invalid bank letters gracefully
     act(() => {
@@ -191,7 +191,7 @@ describe("useKitBrowser Bank Highlighting", () => {
       },
     ];
 
-    const { result, rerender } = renderHook(() =>
+    const { result } = renderHook(() =>
       useKitBrowser({
         ...defaultProps,
         kits: testKits, // Ensure banks have kits

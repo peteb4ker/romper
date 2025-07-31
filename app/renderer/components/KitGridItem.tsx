@@ -1,6 +1,6 @@
 import React, { JSX } from "react";
 import { BiSolidPiano } from "react-icons/bi";
-import { FiCircle, FiCopy, FiFolder } from "react-icons/fi";
+import { FiCopy, FiFolder } from "react-icons/fi";
 import { GiDrumKit } from "react-icons/gi";
 import { MdAutoAwesome, MdMic } from "react-icons/md";
 import { TiArrowLoop } from "react-icons/ti";
@@ -11,7 +11,6 @@ import { useKitItem } from "./hooks/useKitItem";
 
 interface KitGridItemProps {
   kit: string;
-  colorClass: string;
   isValid: boolean;
   onSelect: () => void;
   onDuplicate: () => void;
@@ -28,7 +27,6 @@ const KitGridItem = React.memo(
     (
       {
         kit,
-        colorClass,
         isValid,
         onSelect,
         onDuplicate,

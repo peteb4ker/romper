@@ -33,7 +33,7 @@ export const createElectronAPIMock = (
       },
     ],
   }),
-  getAllSamplesForKit: vi.fn().mockImplementation((kitName: string) => {
+  getAllSamplesForKit: vi.fn().mockImplementation((_: string) => {
     return Promise.resolve({
       success: true,
       data: [

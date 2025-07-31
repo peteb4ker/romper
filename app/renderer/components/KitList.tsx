@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { ListChildComponentProps, VariableSizeList } from "react-window";
 
-import type { Kit, KitWithRelations } from "../../../shared/db/schema";
+import type { KitWithRelations } from "../../../shared/db/schema";
 import { useKitListLogic } from "./hooks/useKitListLogic";
 import { useKitListNavigation } from "./hooks/useKitListNavigation";
 import KitItem from "./KitItem";
@@ -104,11 +104,10 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
     },
     ref,
   ) => {
-    const { kitsToDisplay, isValidKit, getColorClass, showBankAnchor } =
-      useKitListLogic(kits);
+    const { kitsToDisplay, isValidKit, showBankAnchor } = useKitListLogic(kits);
     // Only use focusedKit if defined, otherwise undefined
     const navFocusedKit = typeof focusedKit === "string" ? focusedKit : null;
-    const { focusedIdx, setFocus, moveFocus } = useKitListNavigation(
+    const { focusedIdx, setFocus } = useKitListNavigation(
       kitsToDisplay,
       navFocusedKit,
     );
@@ -225,7 +224,6 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       const kit = kitsToDisplay[index];
       const kitName = kit.name;
       const isValid = isValidKit(kit);
-      const colorClass = getColorClass(kit);
       const showAnchor = rowHasAnchor[index];
       const isSelected = selectedIdx === index;
       // Get kit data from kitData array
@@ -241,7 +239,6 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
           )}
           <KitItem
             kit={kitName}
-            colorClass={colorClass}
             isValid={isValid}
             onSelect={() => handleSelectKit(kitName, index)}
             onDuplicate={() => isValid && onDuplicate(kitName)}

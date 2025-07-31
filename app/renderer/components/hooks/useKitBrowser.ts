@@ -1,10 +1,4 @@
-import React, {
-  RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
 import type { KitWithRelations } from "../../../../shared/db/schema";
 import { getNextKitSlot } from "../../../../shared/kitUtilsShared";

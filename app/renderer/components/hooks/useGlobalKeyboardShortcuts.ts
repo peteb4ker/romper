@@ -1,7 +1,7 @@
 // Global keyboard shortcuts hook
 // Handles app-wide keyboard shortcuts like Cmd+Z (undo) and Cmd+Shift+Z (redo)
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 import { useUndoRedo } from "./useUndoRedo";
 

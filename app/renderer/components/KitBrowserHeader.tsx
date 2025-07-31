@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { FiDatabase, FiDownload, FiRefreshCw } from "react-icons/fi";
 
 import { useKitBrowserHeader } from "./hooks/useKitBrowserHeader";

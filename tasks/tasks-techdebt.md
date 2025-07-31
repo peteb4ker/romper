@@ -111,6 +111,15 @@ _Last updated: 2025-07-25_
   - Common patterns and anti-patterns
   - Migration workflow
 
+## Development Experience
+
+- [ ] **Preserve route state during HMR reloads**
+  - Priority: Medium | Effort: Small | Risk: Low
+  - Current: HMR changes kick users back to main page instead of preserving current route
+  - Solution: Add HMR state preservation to maintain current route (kit details page) during development
+  - Implementation: Use `import.meta.hot` API with sessionStorage to save/restore route and selected kit state
+  - Files: `app/renderer/main.tsx`, `app/renderer/views/KitsView.tsx`, `vite.config.ts`
+
 ## Performance
 
 - [ ] **Profile database operations with large datasets**

@@ -5,11 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import StepSequencerDrawer from "../StepSequencerDrawer";
 
 describe("StepSequencerDrawer", () => {
-  let sequencerOpen;
   let setSequencerOpen;
 
   beforeEach(() => {
-    sequencerOpen = false;
     setSequencerOpen = vi.fn();
   });
 

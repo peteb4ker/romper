@@ -289,7 +289,7 @@ describe("KitVoicePanel", () => {
     });
   });
 
-  it("renders exactly 12 slots, with empty slots for unassigned samples (1.16)", () => {
+  it("renders only filled slots plus one drop target (simplified UI)", () => {
     render(
       <MockSettingsProvider>
         <MockMessageDisplayProvider>
@@ -300,19 +300,20 @@ describe("KitVoicePanel", () => {
         </MockMessageDisplayProvider>
       </MockSettingsProvider>,
     );
-    // Should always render 12 list items
+    // Should render 2 filled slots + 1 drop target = 3 total
     const slots = screen.getAllByRole("listitem");
-    expect(slots).toHaveLength(12);
-    // The first two are filled, the rest are empty
+    expect(slots).toHaveLength(3);
+
+    // The first two are filled
     expect(screen.getByText("kick.wav")).toBeInTheDocument();
     expect(screen.getByText("snare.wav")).toBeInTheDocument();
-    // Check for empty slot labels
-    for (let i = 2; i < 12; i++) {
-      expect(screen.getByTestId(`empty-slot-1-${i}`)).toBeInTheDocument();
-      expect(screen.getByTestId(`slot-number-1-${i}`)).toHaveTextContent(
-        `${i + 1}.`,
-      );
-    }
+
+    // The third slot should be the drop target (empty slot at index 2)
+    expect(screen.getByTestId("empty-slot-1-2")).toBeInTheDocument();
+
+    // Should NOT render empty slots beyond the drop target
+    expect(screen.queryByTestId("empty-slot-1-3")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("empty-slot-1-4")).not.toBeInTheDocument();
   });
 
   it("empty slots have the same min-height as filled slots (1.16.1)", () => {

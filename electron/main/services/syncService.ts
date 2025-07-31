@@ -327,7 +327,7 @@ class SyncService {
               } else {
                 this.currentSyncJob.bytesTransferred += fileSize;
               }
-            } catch (error) {
+            } catch {
               this.currentSyncJob.bytesTransferred += fileSize;
             }
           }

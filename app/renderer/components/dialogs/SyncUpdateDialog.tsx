@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   FiAlertTriangle,
   FiCheckCircle,
-  FiClock,
   FiDatabase,
   FiDownload,
   FiFile,

@@ -43,19 +43,13 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
   const {
     state,
     setTargetPath,
-    setSource,
-    setSdCardMounted,
-    setError,
-    setIsInitializing,
     setSdCardPath,
-    validateSdCardFolder,
     initialize,
     defaultPath,
     progress,
     handleSourceSelect, // from hook
     errorMessage, // from hook
     canInitialize, // from hook
-    isSdCardSource, // from hook
     setSourceConfirmed, // new setter from hook
   } = useLocalStoreWizard(undefined, setLocalStorePath);
 
@@ -157,7 +151,6 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
               sourceOptions={sourceOptions}
               stateSource={state.source}
               handleSourceSelect={handleSourceSelect}
-              localStorePath={state.sdCardSourcePath}
               setSdCardPath={setSdCardPath}
               sourceConfirmed={state.sourceConfirmed}
               setSourceConfirmed={setSourceConfirmed}

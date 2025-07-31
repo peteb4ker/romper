@@ -7,10 +7,7 @@ import React, {
 } from "react";
 
 import type { KitWithRelations } from "../../../shared/db/schema";
-import {
-  compareKitSlots,
-  groupSamplesByVoice,
-} from "../../../shared/kitUtilsShared";
+import { compareKitSlots } from "../../../shared/kitUtilsShared";
 import ChangeLocalStoreDirectoryDialog from "../components/dialogs/ChangeLocalStoreDirectoryDialog";
 import PreferencesDialog from "../components/dialogs/PreferencesDialog";
 import { useBankScanning } from "../components/hooks/useBankScanning";
@@ -281,7 +278,7 @@ const KitsView = () => {
 
           if (kitIndex !== -1) {
             // Use the KitList scroll method via the KitBrowser ref
-            const kitBrowser = kitBrowserRef.current;
+            // const kitBrowser = kitBrowserRef.current;
             // We need to access the KitList ref through the KitBrowser logic
             // For now, let's use a simpler DOM-based scroll approach
             const kitEl = document.querySelector(`[data-kit='${scrollToKit}']`);
@@ -518,7 +515,7 @@ const KitsView = () => {
           onPrevKit={handlePrevKit}
           kits={sortedKits}
           kitIndex={currentKitIndex}
-          onMessage={(msg) => {
+          onMessage={() => {
             // Optionally handle messages here, e.g. show a toast or log
             // For now, do nothing (parent can decide to handle or ignore)
           }}
@@ -532,7 +529,7 @@ const KitsView = () => {
           onSelectKit={handleSelectKit}
           sampleCounts={sampleCounts}
           onRefreshKits={loadKitsData}
-          onMessage={(msg) => {
+          onMessage={() => {
             // Optionally handle messages here, e.g. show a toast or log
             // For now, do nothing (parent can decide to handle or ignore)
           }}

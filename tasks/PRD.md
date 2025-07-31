@@ -178,6 +178,12 @@ The three main user journeys are:
 - **As a Rample owner, I want to add, replace, or remove samples in a kit and see the changes before saving, so I can experiment without risk.**
   - *Acceptance Criteria*: All changes show in preview mode, can undo/redo any action, clear visual distinction between original and modified state, can abandon changes without saving
 
+- **As a Rample owner, I want to move samples within a kit to reorganize them efficiently, so I can perfect my sample arrangement.**
+  - *Acceptance Criteria*: Can drag samples between slots and voices within a kit, samples maintain contiguity (no gaps), clear visual feedback for insert vs overwrite operations, supports undo for complex multi-sample moves
+
+- **As a Rample owner, I want sample slots to remain contiguous after deletions, so I don't have gaps in my sample arrangement.**
+  - *Acceptance Criteria*: When sample is deleted from slot N, all samples from N+1 automatically move up to fill gaps, contiguity is maintained from slot 1 upwards, undo can restore original positions
+
 - As a Rample owner, I want to drag and drop multiple samples into a kit and have them automatically assigned to available slots, so I can quickly build kits.
 - As a Rample owner, I want to undo or redo changes to my kit, so I can easily correct mistakes.
 - As a Rample owner, I want to lock kits to prevent accidental overwriting so my work is protected.
@@ -244,9 +250,16 @@ The three main user journeys are:
 **Core Kit Operations**
 - Create, duplicate, and delete kits locally without SD card present
 - Add, replace, and remove samples in kit slots via drag-and-drop from OS file explorer
+- Move samples within kit using drag-and-drop with automatic contiguity maintenance
 - Support for 4 voices per kit, each with up to 12 sample slots
 - Enable/disable editable mode for safe kit experimentation
-- Provide undo/redo functionality for all kit editing actions
+- Provide undo/redo functionality for all kit editing actions, including complex multi-sample moves
+
+**Sample Contiguity System**
+- Automatic slot compaction after sample deletion to maintain contiguity from slot 1 upwards
+- Drag-and-drop sample moves with visual distinction between insert and overwrite operations
+- Cross-voice sample movement within same kit with stereo conflict detection
+- Full state restoration for undo operations affecting multiple samples
 
 **File Handling & Validation**
 - Accept only valid WAV files (8 or 16 bit, 44100 Hz, mono or stereo)

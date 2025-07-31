@@ -32,7 +32,13 @@ export default defineConfig([
     rules: {
       ...js.configs.recommended.rules,
       ...prettierConfig.rules,
-      "no-unused-vars": "warn",
+      "no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_", // ignore unused variables starting with _
+          varsIgnorePattern: "^_",
+        },
+      ],
       "no-undef": "warn",
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
@@ -60,6 +66,15 @@ export default defineConfig([
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
       "prettier/prettier": "error",
+      // Catch unused imports and variables
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_", // ignore unused variables starting with _
+          varsIgnorePattern: "^_",
+        },
+      ],
+      "no-unused-vars": "off", // Turn off base rule to avoid conflicts
     },
   },
 

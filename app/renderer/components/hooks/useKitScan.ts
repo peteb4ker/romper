@@ -26,9 +26,9 @@ export async function fileReader(filePath: string): Promise<ArrayBuffer> {
 }
 
 export async function scanSingleKit({
-  kitName,
+  kitName: _kitName,
   scanType,
-  scanTypeDisplay,
+  scanTypeDisplay: _scanTypeDisplay,
   fileReaderImpl,
 }: {
   kitName: string;

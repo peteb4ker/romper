@@ -2,13 +2,10 @@ import fs from "fs";
 import path from "path";
 
 import type {
-  DbResult,
   KitValidationError,
   LocalStoreValidationDetailedResult,
-  Sample,
 } from "../../shared/db/schema.js";
 import {
-  getAllSamples,
   getKits,
   getKitSamples,
   validateDatabaseSchema,
@@ -207,7 +204,7 @@ export function validateLocalStoreAgainstDb(
           isValid = false;
         }
       }
-    } catch (error) {
+    } catch {
       // Error reading directory - kit folder may not exist, which is valid
       // in reference-first architecture, so we don't treat this as an error
     }

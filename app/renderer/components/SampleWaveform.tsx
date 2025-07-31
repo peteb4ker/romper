@@ -25,7 +25,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const animationRef = useRef<number | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -58,7 +58,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
           try {
             audioCtxRef.current.close();
-          } catch (e) {}
+          } catch {
+            // Ignore close errors
+          }
         }
         const ctx = new window.AudioContext();
         audioCtxRef.current = ctx;
@@ -83,7 +85,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
         try {
           audioCtxRef.current.close();
-        } catch (e) {}
+        } catch {
+          // Ignore close errors
+        }
       }
     };
   }, [kitName, voiceNumber, slotNumber]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
@@ -120,7 +124,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     if (sourceRef.current) {
       try {
         sourceRef.current.stop();
-      } catch (e) {}
+      } catch {
+        // Ignore stop errors
+      }
       sourceRef.current.disconnect();
       sourceRef.current = null;
     }
@@ -207,25 +213,12 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
         try {
           audioCtxRef.current.close();
-        } catch (e) {}
+        } catch {
+          // Ignore close errors
+        }
       }
     };
   }, []);
-
-  // Button click handler
-  const handleButtonClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isPlaying) {
-      stopPlayback();
-    } else {
-      // Simulate playTrigger increment
-      setPlayhead(0);
-      setIsPlaying(false);
-      // This will retrigger the play effect if parent increments playTrigger
-      // If you want to allow local play, you can call the play logic here
-      // But for now, parent should control playTrigger
-    }
-  };
 
   return (
     <div style={{ display: "flex", alignItems: "center" }}>

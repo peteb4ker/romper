@@ -24,7 +24,6 @@ interface KitHeaderProps {
   onBack?: (scrollToKit?: string) => void;
   onNextKit?: () => void;
   onPrevKit?: () => void;
-  onCreateKit?: () => void;
   onScanKit?: () => void;
   onToggleEditableMode?: () => void;
   isEditable?: boolean;
@@ -44,7 +43,6 @@ const KitHeader: React.FC<KitHeaderProps> = ({
   onBack,
   onNextKit,
   onPrevKit,
-  onCreateKit,
   onScanKit,
   onToggleEditableMode,
   isEditable,

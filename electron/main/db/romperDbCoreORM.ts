@@ -10,9 +10,9 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import type { DbResult, KitWithRelations } from "../../../shared/db/schema.js";
 import type {
-  Kit,
+  DbResult,
+  KitWithRelations,
   NewKit,
   NewSample,
   Sample,
@@ -337,11 +337,44 @@ export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
   });
 }
 
+// Non-compacting delete for undo operations
+export function deleteSamplesWithoutCompaction(
+  dbDir: string,
+  kitName: string,
+  filter?: { voiceNumber?: number; slotNumber?: number },
+): DbResult<{ deletedSamples: Sample[] }> {
+  return withDb(dbDir, (db) => {
+    const conditions = [eq(samples.kit_name, kitName)];
+    if (filter?.voiceNumber !== undefined) {
+      conditions.push(eq(samples.voice_number, filter.voiceNumber));
+    }
+    if (filter?.slotNumber !== undefined) {
+      conditions.push(eq(samples.slot_number, filter.slotNumber));
+    }
+    const whereCondition =
+      conditions.length === 1 ? conditions[0] : and(...conditions);
+
+    // Get samples that will be deleted for return value
+    const samplesToDelete = db
+      .select()
+      .from(samples)
+      .where(whereCondition)
+      .all();
+
+    // Delete the samples WITHOUT compaction
+    db.delete(samples).where(whereCondition).run();
+
+    return {
+      deletedSamples: samplesToDelete,
+    };
+  });
+}
+
 export function deleteSamples(
   dbDir: string,
   kitName: string,
   filter?: { voiceNumber?: number; slotNumber?: number },
-): DbResult<void> {
+): DbResult<{ deletedSamples: Sample[]; affectedSamples: Sample[] }> {
   return withDb(dbDir, (db) => {
     const conditions = [eq(samples.kit_name, kitName)];
 
@@ -355,7 +388,56 @@ export function deleteSamples(
 
     const whereCondition =
       conditions.length === 1 ? conditions[0] : and(...conditions);
+
+    // Get samples that will be deleted for return value
+    const samplesToDelete = db
+      .select()
+      .from(samples)
+      .where(whereCondition)
+      .all();
+
+    // Delete the samples
     db.delete(samples).where(whereCondition).run();
+
+    // Auto-compact slots for each affected voice
+    const affectedSamples: Sample[] = [];
+
+    // Group deleted samples by voice to handle compaction
+    const deletedByVoice = new Map<number, Sample[]>();
+    for (const sample of samplesToDelete) {
+      if (!deletedByVoice.has(sample.voice_number)) {
+        deletedByVoice.set(sample.voice_number, []);
+      }
+      deletedByVoice.get(sample.voice_number)!.push(sample);
+    }
+
+    // Compact each affected voice
+    for (const [voiceNumber, deletedSamplesInVoice] of deletedByVoice) {
+      // Sort by slot_number to handle multiple deletions correctly
+      const sortedDeleted = deletedSamplesInVoice.sort(
+        (a, b) => a.slot_number - b.slot_number,
+      );
+
+      // Compact after each deletion, starting from the lowest slot
+      for (let i = 0; i < sortedDeleted.length; i++) {
+        const deletedSlot = sortedDeleted[i].slot_number - i; // Adjust for previous deletions
+        const compactionResult = compactSlotsAfterDelete(
+          dbDir,
+          kitName,
+          voiceNumber,
+          deletedSlot,
+        );
+
+        if (compactionResult.success && compactionResult.data) {
+          affectedSamples.push(...compactionResult.data);
+        }
+      }
+    }
+
+    return {
+      deletedSamples: samplesToDelete,
+      affectedSamples,
+    };
   });
 }
 
@@ -491,5 +573,229 @@ export function markKitsAsSynced(
         .where(eq(kits.name, kitName))
         .run();
     }
+  });
+}
+
+// Task 22.1: Sample contiguity maintenance operations
+export function compactSlotsAfterDelete(
+  dbDir: string,
+  kitName: string,
+  voiceNumber: number,
+  deletedSlot: number,
+): DbResult<Sample[]> {
+  return withDb(dbDir, (db) => {
+    // Get all samples in this voice with slot_number > deletedSlot
+    const samplesToShift = db
+      .select()
+      .from(samples)
+      .where(
+        and(
+          eq(samples.kit_name, kitName),
+          eq(samples.voice_number, voiceNumber),
+          // Using gt would be better but using manual comparison for now
+        ),
+      )
+      .all()
+      .filter((sample) => sample.slot_number > deletedSlot)
+      .sort((a, b) => a.slot_number - b.slot_number);
+
+    // Shift each sample up by one slot
+    const affectedSamples: Sample[] = [];
+    for (const sample of samplesToShift) {
+      const newSlotNumber = sample.slot_number - 1;
+
+      db.update(samples)
+        .set({ slot_number: newSlotNumber })
+        .where(eq(samples.id, sample.id))
+        .run();
+
+      // Track the updated sample for return
+      affectedSamples.push({
+        ...sample,
+        slot_number: newSlotNumber,
+      });
+    }
+
+    return affectedSamples;
+  });
+}
+
+// Task 22.2: Move sample with contiguity maintenance
+export function moveSample(
+  dbDir: string,
+  kitName: string,
+  fromVoice: number,
+  fromSlot: number,
+  toVoice: number,
+  toSlot: number,
+  mode: "insert" | "overwrite",
+): DbResult<{
+  movedSample: Sample;
+  affectedSamples: (Sample & { original_slot_number: number })[];
+  replacedSample?: Sample;
+}> {
+  return withDb(dbDir, (db) => {
+    // Get the sample being moved
+    const sampleToMove = db
+      .select()
+      .from(samples)
+      .where(
+        and(
+          eq(samples.kit_name, kitName),
+          eq(samples.voice_number, fromVoice),
+          eq(samples.slot_number, fromSlot),
+        ),
+      )
+      .get();
+
+    if (!sampleToMove) {
+      throw new Error(
+        `Sample not found at voice ${fromVoice}, slot ${fromSlot}`,
+      );
+    }
+
+    const affectedSamples: (Sample & { original_slot_number: number })[] = [];
+    let replacedSample: Sample | undefined;
+
+    if (mode === "insert") {
+      // For same-voice moves, temporarily move the sample out of the way to avoid conflicts
+      if (fromVoice === toVoice) {
+        // Temporarily set the sample to a very high slot number to avoid conflicts
+        const tempSlot = 999;
+        db.update(samples)
+          .set({ slot_number: tempSlot })
+          .where(eq(samples.id, sampleToMove.id))
+          .run();
+      }
+
+      // Now handle the shifting based on move direction
+      const samplesToShift = db
+        .select()
+        .from(samples)
+        .where(
+          and(eq(samples.kit_name, kitName), eq(samples.voice_number, toVoice)),
+        )
+        .all()
+        .filter(
+          (sample) =>
+            sample.slot_number >= toSlot && sample.id !== sampleToMove.id,
+        )
+        .sort((a, b) => b.slot_number - a.slot_number); // Sort descending to avoid conflicts
+
+      for (const sample of samplesToShift) {
+        const newSlotNumber = sample.slot_number + 1;
+
+        db.update(samples)
+          .set({ slot_number: newSlotNumber })
+          .where(eq(samples.id, sample.id))
+          .run();
+
+        affectedSamples.push({
+          ...sample,
+          slot_number: newSlotNumber,
+          original_slot_number: sample.slot_number, // Store original position for undo
+        } as Sample & { original_slot_number: number });
+      }
+
+      // For same-voice moves, compact the source gap
+      if (fromVoice === toVoice) {
+        // Compact the gap left at fromSlot
+        const samplesToCompact = db
+          .select()
+          .from(samples)
+          .where(
+            and(
+              eq(samples.kit_name, kitName),
+              eq(samples.voice_number, fromVoice),
+            ),
+          )
+          .all()
+          .filter(
+            (sample) =>
+              sample.slot_number > fromSlot && sample.id !== sampleToMove.id,
+          )
+          .sort((a, b) => a.slot_number - b.slot_number); // Sort ascending
+
+        for (const sample of samplesToCompact) {
+          const newSlotNumber = sample.slot_number - 1;
+          db.update(samples)
+            .set({ slot_number: newSlotNumber })
+            .where(eq(samples.id, sample.id))
+            .run();
+
+          affectedSamples.push({
+            ...sample,
+            slot_number: newSlotNumber,
+            original_slot_number: sample.slot_number,
+          } as Sample & { original_slot_number: number });
+        }
+
+        // For forward moves, adjust the target slot since we compacted
+        if (fromSlot < toSlot) {
+          toSlot = toSlot - 1;
+        }
+      }
+    } else if (mode === "overwrite") {
+      // Check if there's a sample to replace
+      replacedSample = db
+        .select()
+        .from(samples)
+        .where(
+          and(
+            eq(samples.kit_name, kitName),
+            eq(samples.voice_number, toVoice),
+            eq(samples.slot_number, toSlot),
+          ),
+        )
+        .get();
+
+      // Delete the replaced sample if it exists
+      if (replacedSample) {
+        db.delete(samples).where(eq(samples.id, replacedSample.id)).run();
+      }
+    }
+
+    // Move the sample to its new position
+    db.update(samples)
+      .set({
+        voice_number: toVoice,
+        slot_number: toSlot,
+      })
+      .where(eq(samples.id, sampleToMove.id))
+      .run();
+
+    const movedSample = {
+      ...sampleToMove,
+      voice_number: toVoice,
+      slot_number: toSlot,
+    };
+
+    // Compact the source voice if needed
+    if (mode === "insert") {
+      // For same-voice moves, compaction was already handled above during the move
+      // For cross-voice moves, always compact the source voice to fill the gap
+      if (fromVoice !== toVoice) {
+        const compactionResult = compactSlotsAfterDelete(
+          dbDir,
+          kitName,
+          fromVoice,
+          fromSlot,
+        );
+        if (compactionResult.success && compactionResult.data) {
+          // Map compaction results to include original slot numbers
+          const compactedSamples = compactionResult.data.map((sample) => ({
+            ...sample,
+            original_slot_number: sample.slot_number + 1, // They were shifted up by 1 during compaction
+          }));
+          affectedSamples.push(...compactedSamples);
+        }
+      }
+    }
+
+    return {
+      movedSample,
+      affectedSamples,
+      replacedSample,
+    };
   });
 }

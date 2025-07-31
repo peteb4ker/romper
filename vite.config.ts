@@ -8,6 +8,16 @@ export default defineConfig({
   base: "./",
   plugins: [react(), tailwindcss()],
   root: ".",
+  server: {
+    watch: {
+      ignored: [
+        "**/coverage/**",
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/out/**",
+      ],
+    },
+  },
   build: {
     outDir: "dist/renderer",
     emptyOutDir: true,

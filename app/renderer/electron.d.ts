@@ -4,21 +4,14 @@ import type {
   FormatValidationResult,
 } from "../../electron/main/audioUtils.js";
 import type {
-  ActionMetadata,
-  ActionRecord,
-  ActionType,
-} from "../../shared/actionTypes.js";
-import type {
   Bank,
   DbResult,
-  Kit,
   KitValidationError,
   KitWithRelations,
   LocalStoreValidationDetailedResult,
   NewKit,
   NewSample,
   Sample,
-  Voice,
 } from "../../shared/db/schema.js";
 
 export {
@@ -187,7 +180,47 @@ export interface ElectronAPI {
     kitName: string,
     voiceNumber: number,
     slotIndex: number,
-  ) => Promise<DbResult<void>>;
+  ) => Promise<
+    DbResult<{ deletedSamples: Sample[]; affectedSamples: Sample[] }>
+  >;
+  deleteSampleFromSlotWithoutCompaction?: (
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+  ) => Promise<DbResult<{ deletedSamples: Sample[] }>>;
+
+  // Task 22.2: Move samples within kit with contiguity maintenance
+  moveSampleInKit?: (
+    kitName: string,
+    fromVoice: number,
+    fromSlot: number,
+    toVoice: number,
+    toSlot: number,
+    mode: "insert" | "overwrite",
+  ) => Promise<
+    DbResult<{
+      movedSample: Sample;
+      affectedSamples: Sample[];
+      replacedSample?: Sample;
+    }>
+  >;
+
+  // Cross-kit sample movement with source compaction
+  moveSampleBetweenKits?: (
+    fromKit: string,
+    fromVoice: number,
+    fromSlot: number,
+    toKit: string,
+    toVoice: number,
+    toSlot: number,
+    mode: "insert" | "overwrite",
+  ) => Promise<
+    DbResult<{
+      movedSample: Sample;
+      affectedSamples: (Sample & { original_slot_number: number })[];
+      replacedSample?: Sample;
+    }>
+  >;
 
   // Task 5.2.5: Validate source_path files for existing samples
   validateSampleSources?: (kitName: string) => Promise<

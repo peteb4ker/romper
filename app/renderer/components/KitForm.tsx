@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 
 import type { Kit } from "../../../shared/db/schema";
 
@@ -6,11 +6,7 @@ export interface KitFormProps {
   kit: Kit | null;
   loading?: boolean;
   error?: string | null;
-  editing?: boolean;
-  onEdit?: () => void;
-  onCancel?: () => void;
   onSave: (alias: string, description: string, tags: string[]) => void;
-  hideDescription?: boolean;
   tagsEditable?: boolean;
 }
 
@@ -18,11 +14,7 @@ const KitForm: React.FC<KitFormProps> = ({
   kit,
   loading,
   error,
-  editing = false,
-  onEdit,
-  onCancel,
   onSave,
-  hideDescription,
   tagsEditable,
 }) => {
   const [tags, setTags] = React.useState<string[]>([]);

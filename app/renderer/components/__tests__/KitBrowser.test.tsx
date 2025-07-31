@@ -41,7 +41,6 @@ vi.mock("../hooks/useKitBrowser", () => ({
 import React from "react";
 
 import { useKitBrowser } from "../hooks/useKitBrowser";
-import { useKitScan } from "../hooks/useKitScan";
 import KitBrowser from "../KitBrowser";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 

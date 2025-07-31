@@ -44,7 +44,6 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         onBack={props.onBack}
         onNextKit={props.onNextKit}
         onPrevKit={props.onPrevKit}
-        onCreateKit={props.onCreateKit}
         kits={props.kits}
         kitIndex={props.kitIndex}
         onScanKit={logic.handleScanKit}
@@ -64,11 +63,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         kit={logic.kit}
         loading={logic.kitLoading}
         error={null} // error now handled by centralized message display
-        editing={false}
-        onEdit={() => {}}
-        onCancel={() => {}}
         onSave={logic.updateKitAlias}
-        hideDescription={true}
         tagsEditable={false} // Remove tag editing
       />
       <div className="flex-1 min-h-0 overflow-y-auto">

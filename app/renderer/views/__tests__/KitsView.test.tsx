@@ -228,7 +228,7 @@ describe("KitsView", () => {
       });
 
       // Mock the KitBrowser ref
-      const kitBrowserRef = {
+      const _ = {
         current: { handleScanAllKits: mockHandleScanAllKits },
       };
 
@@ -565,7 +565,7 @@ describe("KitsView", () => {
       const TestSettingsProviderNeedsSetup: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
-        const contextValue = {
+        const _ = {
           localStorePath: null,
           themeMode: "light" as const,
           isDarkMode: false,

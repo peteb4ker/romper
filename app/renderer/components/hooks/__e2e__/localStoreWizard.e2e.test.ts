@@ -1,9 +1,7 @@
 // E2E test for Local Store Wizard flows using Playwright (or Spectron, or Electron E2E harness)
 // This is a scaffold. You must run this in an environment where the Electron renderer UI is available.
 
-import type { ElectronApplication, Page } from "@playwright/test";
 import { _electron as electron, expect, test } from "@playwright/test";
-import { spawn } from "child_process";
 import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";

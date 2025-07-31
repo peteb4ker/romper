@@ -1,5 +1,4 @@
 import React, { useImperativeHandle, useRef, useState } from "react";
-import { FiChevronDown, FiPlusCircle } from "react-icons/fi";
 import { toast } from "sonner";
 
 import type { KitWithRelations } from "../../../shared/db/schema";
@@ -8,7 +7,6 @@ import SyncUpdateDialog from "./dialogs/SyncUpdateDialog";
 import ValidationResultsDialog from "./dialogs/ValidationResultsDialog";
 import { useKitBrowser } from "./hooks/useKitBrowser";
 import { useKitScan } from "./hooks/useKitScan";
-import { useLocalStoreWizard } from "./hooks/useLocalStoreWizard";
 import { useSyncUpdate } from "./hooks/useSyncUpdate";
 import KitBankNav from "./KitBankNav";
 import KitBrowserHeader from "./KitBrowserHeader";
@@ -43,8 +41,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     });
     const {
       kits,
-      error,
-      sdCardWarning,
       showNewKit,
       setShowNewKit,
       newKitSlot,
@@ -61,7 +57,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       handleCreateKit,
       handleCreateNextKit,
       handleDuplicateKit,
-      handleBankClick,
       selectedBank,
       focusedKit,
       setFocusedKit,
@@ -71,7 +66,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
 
     const [showLocalStoreWizard, setShowLocalStoreWizard] =
       React.useState(false);
-    const [showScanOptions, setShowScanOptions] = useState(false);
     const [showSyncDialog, setShowSyncDialog] = useState(false);
     const [currentSyncKit, setCurrentSyncKit] = useState<string | null>(null);
     const [currentChangeSummary, setCurrentChangeSummary] = useState<any>(null);
@@ -80,29 +74,10 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     const {
       generateChangeSummary,
       startSync,
-      syncProgress,
       isLoading: isSyncLoading,
       error: syncError,
       clearError: clearSyncError,
     } = useSyncUpdate();
-
-    const scanOperations = [
-      {
-        id: "full",
-        name: "Full Scan All Kits",
-        description: "Voice names and WAV analysis",
-      },
-      {
-        id: "voiceInference",
-        name: "Voice Names Only",
-        description: "Infer voice names from samples",
-      },
-      {
-        id: "wavAnalysis",
-        name: "WAV Analysis Only",
-        description: "Analyze sample files",
-      },
-    ];
 
     React.useEffect(() => {
       if (logic.sdCardWarning && onMessage) {
@@ -125,17 +100,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       return () =>
         window.removeEventListener("keydown", globalBankHotkeyHandler);
     }, [globalBankHotkeyHandler]);
-
-    // Find the first kit index for a given bank letter
-    const scrollToBank = (bank: string) => {
-      const kitsArr = kits || [];
-      const idx = kitsArr.findIndex(
-        (k) => k && k.name && k.name[0] && k.name[0].toUpperCase() === bank,
-      );
-      if (idx !== -1 && kitGridRef.current) {
-        kitGridRef.current.scrollAndFocusKitByIndex(idx);
-      }
-    };
 
     // Handler for KitBankNav and KitGrid keyboard navigation
     const focusBankInKitGrid = (bank: string) => {

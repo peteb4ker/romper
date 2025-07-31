@@ -1,7 +1,5 @@
 // WAV file analysis scanner - analyzes WAV files for audio properties
 
-import * as wav from "node-wav";
-
 import type { ScanResult, WAVAnalysisInput, WAVAnalysisOutput } from "./types";
 
 /**
@@ -10,7 +8,7 @@ import type { ScanResult, WAVAnalysisInput, WAVAnalysisOutput } from "./types";
  * @returns Audio properties of the WAV file
  */
 export async function scanWAVAnalysis(
-  input: WAVAnalysisInput,
+  _input: WAVAnalysisInput,
 ): Promise<ScanResult<WAVAnalysisOutput>> {
   // TODO: WAV analysis needs to be moved to main process due to Buffer requirements
   // For now, return a successful default result to unblock scanning
@@ -46,7 +44,7 @@ export async function scanWAVAnalysis(
  * @returns WAV file properties
  */
 // TODO: Move to main process - Buffer/node-wav not available in renderer
-function parseWAVFile(buffer: any): WAVAnalysisOutput {
+function _parseWAVFile(_buffer: any): WAVAnalysisOutput {
   // Disabled - needs main process implementation
   return {
     sampleRate: 44100,
@@ -57,7 +55,7 @@ function parseWAVFile(buffer: any): WAVAnalysisOutput {
     isValid: true,
   };
 
-  /*
+  /* TODO: Re-enable when moving to main process
   // Decode WAV file using node-wav
   const result = wav.decode(buffer);
 

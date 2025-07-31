@@ -14,6 +14,7 @@ import {
   getKits,
   getKitSamples,
   isDbCorruptionError,
+  moveSample,
   updateKit,
   updateVoiceAlias,
 } from "../romperDbCoreORM.js";
@@ -437,6 +438,163 @@ describe("Drizzle ORM Database Operations", () => {
       expect(samplesResult.success).toBe(true);
       expect(samplesResult.data).toHaveLength(1);
       expect(samplesResult.data![0].filename).toBe("legacy_sample.wav");
+    });
+  });
+
+  describe("Sample Move Operations", () => {
+    beforeEach(() => {
+      // Create database and kit
+      createRomperDbFile(TEST_DB_DIR);
+      addKit(TEST_DB_DIR, { name: "TestKit", editable: true, locked: false });
+
+      // Add test samples to voice 1
+      const samples = [
+        {
+          kit_name: "TestKit",
+          filename: "sample1.wav",
+          voice_number: 1,
+          slot_number: 1,
+          source_path: "/test/sample1.wav",
+          is_stereo: false,
+        },
+        {
+          kit_name: "TestKit",
+          filename: "sample2.wav",
+          voice_number: 1,
+          slot_number: 2,
+          source_path: "/test/sample2.wav",
+          is_stereo: false,
+        },
+        {
+          kit_name: "TestKit",
+          filename: "sample3.wav",
+          voice_number: 1,
+          slot_number: 3,
+          source_path: "/test/sample3.wav",
+          is_stereo: false,
+        },
+        {
+          kit_name: "TestKit",
+          filename: "sample4.wav",
+          voice_number: 1,
+          slot_number: 4,
+          source_path: "/test/sample4.wav",
+          is_stereo: false,
+        },
+        {
+          kit_name: "TestKit",
+          filename: "sample5.wav",
+          voice_number: 1,
+          slot_number: 5,
+          source_path: "/test/sample5.wav",
+          is_stereo: false,
+        },
+        {
+          kit_name: "TestKit",
+          filename: "sample6.wav",
+          voice_number: 1,
+          slot_number: 6,
+          source_path: "/test/sample6.wav",
+          is_stereo: false,
+        },
+      ];
+
+      samples.forEach((sample) => {
+        addSample(TEST_DB_DIR, sample);
+      });
+    });
+
+    it("should move sample within same voice (backward move 6→4)", () => {
+      // Initial state: [sample1, sample2, sample3, sample4, sample5, sample6]
+      // Move sample6 from slot 6 to slot 4
+      // Expected: [sample1, sample2, sample3, sample6, sample4, sample5]
+
+      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 6, 1, 4, "insert");
+      expect(result.success).toBe(true);
+
+      // Verify final state
+      const samplesResult = getKitSamples(TEST_DB_DIR, "TestKit");
+      expect(samplesResult.success).toBe(true);
+
+      const samples = samplesResult
+        .data!.filter((s) => s.voice_number === 1)
+        .sort((a, b) => a.slot_number - b.slot_number);
+
+      expect(samples).toHaveLength(6);
+      expect(samples[0].filename).toBe("sample1.wav"); // slot 1
+      expect(samples[1].filename).toBe("sample2.wav"); // slot 2
+      expect(samples[2].filename).toBe("sample3.wav"); // slot 3
+      expect(samples[3].filename).toBe("sample6.wav"); // slot 4 (moved here)
+      expect(samples[4].filename).toBe("sample4.wav"); // slot 5 (shifted from 4)
+      expect(samples[5].filename).toBe("sample5.wav"); // slot 6 (shifted from 5)
+    });
+
+    it("should move sample within same voice (forward move 2→5)", () => {
+      // Initial state: [sample1, sample2, sample3, sample4, sample5, sample6]
+      // Move sample2 from slot 2 to slot 5
+      // After compaction: [sample1, sample3, sample4, sample2, sample5, sample6]
+
+      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 2, 1, 5, "insert");
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        throw new Error(`Forward move failed: ${result.error}`);
+      }
+
+      // Verify final state
+      const samplesResult = getKitSamples(TEST_DB_DIR, "TestKit");
+      expect(samplesResult.success).toBe(true);
+
+      const samples = samplesResult
+        .data!.filter((s) => s.voice_number === 1)
+        .sort((a, b) => a.slot_number - b.slot_number);
+
+      expect(samples).toHaveLength(6);
+      expect(samples[0].filename).toBe("sample1.wav"); // slot 1
+      expect(samples[1].filename).toBe("sample3.wav"); // slot 2 (compacted from 3)
+      expect(samples[2].filename).toBe("sample4.wav"); // slot 3 (compacted from 4)
+      expect(samples[3].filename).toBe("sample2.wav"); // slot 4 (moved here after compaction)
+      expect(samples[4].filename).toBe("sample5.wav"); // slot 5 (compacted from 6)
+      expect(samples[5].filename).toBe("sample6.wav"); // slot 6 (compacted from 7)
+    });
+
+    it("should move sample across voices with source compaction", () => {
+      // Add samples to voice 2
+      addSample(TEST_DB_DIR, {
+        kit_name: "TestKit",
+        filename: "voice2_sample1.wav",
+        voice_number: 2,
+        slot_number: 1,
+        source_path: "/test/v2s1.wav",
+        is_stereo: false,
+      });
+
+      // Move sample4 from voice 1 slot 4 to voice 2 slot 1 (insert mode)
+      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 4, 2, 1, "insert");
+      expect(result.success).toBe(true);
+
+      // Verify voice 1 was compacted (sample4 removed, others shifted up)
+      const voice1Result = getKitSamples(TEST_DB_DIR, "TestKit");
+      expect(voice1Result.success).toBe(true);
+
+      const voice1Samples = voice1Result
+        .data!.filter((s) => s.voice_number === 1)
+        .sort((a, b) => a.slot_number - b.slot_number);
+
+      expect(voice1Samples).toHaveLength(5); // One less sample
+      expect(voice1Samples[0].filename).toBe("sample1.wav"); // slot 1
+      expect(voice1Samples[1].filename).toBe("sample2.wav"); // slot 2
+      expect(voice1Samples[2].filename).toBe("sample3.wav"); // slot 3
+      expect(voice1Samples[3].filename).toBe("sample5.wav"); // slot 4 (compacted from 5)
+      expect(voice1Samples[4].filename).toBe("sample6.wav"); // slot 5 (compacted from 6)
+
+      // Verify voice 2 received the sample with proper insertion
+      const voice2Samples = voice1Result
+        .data!.filter((s) => s.voice_number === 2)
+        .sort((a, b) => a.slot_number - b.slot_number);
+
+      expect(voice2Samples).toHaveLength(2);
+      expect(voice2Samples[0].filename).toBe("sample4.wav"); // slot 1 (inserted)
+      expect(voice2Samples[1].filename).toBe("voice2_sample1.wav"); // slot 2 (shifted from 1)
     });
   });
 });

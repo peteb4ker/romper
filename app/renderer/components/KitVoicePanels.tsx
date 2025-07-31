@@ -43,6 +43,15 @@ interface KitVoicePanelsProps {
     filePath: string,
   ) => Promise<void>;
   onSampleDelete?: (voice: number, slotIndex: number) => Promise<void>;
+
+  // Task 22.2: Sample move operations with contiguity
+  onSampleMove?: (
+    fromVoice: number,
+    fromSlot: number,
+    toVoice: number,
+    toSlot: number,
+    mode: "insert" | "overwrite",
+  ) => Promise<void>;
 }
 
 const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
@@ -157,6 +166,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
               onSampleAdd={props.onSampleAdd}
               onSampleReplace={props.onSampleReplace}
               onSampleDelete={props.onSampleDelete}
+              onSampleMove={props.onSampleMove}
               isStereoDragTarget={
                 stereoDragInfo?.targetVoice === voice ||
                 stereoDragInfo?.nextVoice === voice

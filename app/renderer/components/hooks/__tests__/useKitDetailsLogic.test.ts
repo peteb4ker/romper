@@ -6,9 +6,6 @@ import { useKit } from "../useKit";
 import { useKitDetailsLogic } from "../useKitDetailsLogic";
 import { useKitPlayback } from "../useKitPlayback";
 import { useKitVoicePanels } from "../useKitVoicePanels";
-import { useSampleManagement } from "../useSampleManagement";
-import { useStepPattern } from "../useStepPattern";
-import { useVoiceAlias } from "../useVoiceAlias";
 
 // Mock all the hooks that useKitDetailsLogic depends on
 vi.mock("../useKit", () => ({

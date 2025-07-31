@@ -7,7 +7,7 @@ import { sampleService } from "./services/sampleService.js";
 import { settingsService } from "./services/settingsService.js";
 
 export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
-  ipcMain.handle("read-settings", (_event) =>
+  ipcMain.handle("read-settings", () =>
     settingsService.readSettings(inMemorySettings),
   );
 
@@ -16,7 +16,7 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   });
 
   // Add local store status handler
-  ipcMain.handle("get-local-store-status", (_event) => {
+  ipcMain.handle("get-local-store-status", (_) => {
     console.log("[Main] get-local-store-status called");
 
     const result = localStoreService.getLocalStoreStatus(
@@ -45,7 +45,6 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("show-item-in-folder", async (_event, path: string) => {
     shell.showItemInFolder(path);
   });
-  ipcMain.handle("get-user-data-path", () => app.getPath("userData"));
   ipcMain.handle("create-kit", async (_event, kitSlot: string) => {
     // Add environment override to settings for this operation
     const effectiveSettings = {

@@ -54,7 +54,7 @@ export async function deleteDbFileWithRetry(
             log.info(`Original file still exists after rename, retrying...`);
             throw new Error("Original file still exists after rename");
           }
-        } catch (renameError) {
+        } catch {
           log.info(`Rename attempt ${i + 1} failed, waiting...`);
           // Wait progressively longer on Windows
           await new Promise((resolve) => setTimeout(resolve, 500 * (i + 1)));

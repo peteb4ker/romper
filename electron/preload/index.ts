@@ -396,6 +396,75 @@ contextBridge.exposeInMainWorld("electronAPI", {
       slotIndex,
     );
   },
+  deleteSampleFromSlotWithoutCompaction: (
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+  ) => {
+    console.log(
+      "[IPC] deleteSampleFromSlotWithoutCompaction invoked",
+      kitName,
+      voiceNumber,
+      slotIndex,
+    );
+    return ipcRenderer.invoke(
+      "delete-sample-from-slot-without-compaction",
+      kitName,
+      voiceNumber,
+      slotIndex,
+    );
+  },
+  // Task 22.2: Move samples within kit with contiguity maintenance
+  moveSampleInKit: (
+    kitName: string,
+    fromVoice: number,
+    fromSlot: number,
+    toVoice: number,
+    toSlot: number,
+    mode: "insert" | "overwrite",
+  ) => {
+    console.log(
+      "[IPC] moveSampleInKit invoked",
+      kitName,
+      `${fromVoice}:${fromSlot} -> ${toVoice}:${toSlot}`,
+      mode,
+    );
+    return ipcRenderer.invoke(
+      "move-sample-in-kit",
+      kitName,
+      fromVoice,
+      fromSlot,
+      toVoice,
+      toSlot,
+      mode,
+    );
+  },
+  // Cross-kit sample movement with source compaction
+  moveSampleBetweenKits: (
+    fromKit: string,
+    fromVoice: number,
+    fromSlot: number,
+    toKit: string,
+    toVoice: number,
+    toSlot: number,
+    mode: "insert" | "overwrite",
+  ) => {
+    console.log(
+      "[IPC] moveSampleBetweenKits invoked",
+      `${fromKit}:${fromVoice}:${fromSlot} -> ${toKit}:${toVoice}:${toSlot}`,
+      mode,
+    );
+    return ipcRenderer.invoke(
+      "move-sample-between-kits",
+      fromKit,
+      fromVoice,
+      fromSlot,
+      toKit,
+      toVoice,
+      toSlot,
+      mode,
+    );
+  },
   // Task 5.2.5: Validate source_path files for existing samples
   validateSampleSources: (kitName: string) => {
     console.log("[IPC] validateSampleSources invoked", kitName);

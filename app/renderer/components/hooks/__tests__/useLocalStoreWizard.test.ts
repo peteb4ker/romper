@@ -1,5 +1,4 @@
 import { act, renderHook } from "@testing-library/react";
-import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { executeFullKitScan } from "../../utils/scanners/orchestrationFunctions";
@@ -60,13 +59,13 @@ describe("useLocalStoreWizard", () => {
     });
     vi.mocked(window.electronAPI.setSetting).mockResolvedValue(undefined);
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
-      async (url, destDir, onProgress, onError) => ({ success: true }),
+      async (_url, _destDir, _onProgress, _onError) => ({ success: true }),
     );
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-      async (path) => [],
+      async (_path) => [],
     );
     vi.mocked(window.electronAPI.copyDir).mockImplementation(
-      async (src, dest) => {},
+      async (_src, _dest) => {},
     );
     vi.mocked(window.electronAPI.insertKit).mockImplementation(
       async (_dbDir, _kit) => ({
@@ -286,7 +285,7 @@ describe("useLocalStoreWizard", () => {
       return true;
     });
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
-      async (url, destDir) => {
+      async (_url, _destDir) => {
         return { success: true };
       },
     );

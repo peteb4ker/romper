@@ -1,13 +1,6 @@
 // Drizzle schema definitions for Romper Database
 import { relations } from "drizzle-orm";
-import {
-  blob,
-  customType,
-  integer,
-  sqliteTable,
-  text,
-  unique,
-} from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
 // Using text({ mode: 'json' }) for step patterns - much simpler than custom encoding!
 
 // Banks table - contains artist metadata for each bank (A-Z)

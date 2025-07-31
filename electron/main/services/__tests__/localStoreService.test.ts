@@ -158,7 +158,7 @@ describe("LocalStoreService", () => {
 
   describe("validateExistingLocalStore", () => {
     it("returns success for valid local store", () => {
-      mockValidateAgainstDb.mockReturnValue({
+      mockValidateAndDb.mockReturnValue({
         isValid: true,
         error: null,
         details: { hasDb: true },
@@ -175,7 +175,7 @@ describe("LocalStoreService", () => {
     });
 
     it("returns failure for invalid local store", () => {
-      mockValidateAgainstDb.mockReturnValue({
+      mockValidateAndDb.mockReturnValue({
         isValid: false,
         error: "No database found",
         details: { hasDb: false },
@@ -192,7 +192,7 @@ describe("LocalStoreService", () => {
     });
 
     it("provides default error message when validation error is missing", () => {
-      mockValidateAgainstDb.mockReturnValue({
+      mockValidateAndDb.mockReturnValue({
         isValid: false,
         error: null,
         details: { hasDb: false },

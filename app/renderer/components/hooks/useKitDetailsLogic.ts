@@ -52,6 +52,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
       }
     },
     onMessage: props.onMessage,
+    onAddUndoAction: props.onAddUndoAction,
   });
 
   // Step pattern management

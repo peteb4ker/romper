@@ -210,6 +210,9 @@ describe("SampleService", () => {
 
   describe("addSampleToSlot", () => {
     it("successfully adds valid sample", () => {
+      // Mock that no existing samples exist for the check
+      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
+
       const result = sampleService.addSampleToSlot(
         mockInMemorySettings,
         "TestKit",
@@ -294,6 +297,8 @@ describe("SampleService", () => {
 
     // Task 7.1.2 tests: Apply 'default to mono samples' setting
     it("marks stereo file as mono when defaultToMonoSamples is true", () => {
+      // Mock that no existing samples exist for the check
+      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
       mockGetAudioMetadata.mockReturnValue({
         success: true,
         data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
@@ -324,6 +329,8 @@ describe("SampleService", () => {
     });
 
     it("marks stereo file as stereo when defaultToMonoSamples is false", () => {
+      // Mock that no existing samples exist for the check
+      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
       mockGetAudioMetadata.mockReturnValue({
         success: true,
         data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
@@ -353,6 +360,8 @@ describe("SampleService", () => {
     });
 
     it("marks mono file as mono regardless of defaultToMonoSamples setting", () => {
+      // Mock that no existing samples exist for the check
+      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
       mockGetAudioMetadata.mockReturnValue({
         success: true,
         data: { channels: 1, sampleRate: 44100, bitDepth: 16 },
@@ -382,6 +391,8 @@ describe("SampleService", () => {
     });
 
     it("defaults to mono when defaultToMonoSamples is undefined", () => {
+      // Mock that no existing samples exist for the check
+      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
       const settingsWithoutDefault = {
         ...mockInMemorySettings,
         // defaultToMonoSamples not set
@@ -408,6 +419,12 @@ describe("SampleService", () => {
 
   describe("deleteSampleFromSlot", () => {
     it("successfully deletes sample", () => {
+      // Mock existing sample at the slot
+      mockGetKitSamples.mockReturnValue({
+        success: true,
+        data: [{ voice_number: 2, slot_number: 6, filename: "existing.wav" }],
+      });
+
       const result = sampleService.deleteSampleFromSlot(
         mockInMemorySettings,
         "TestKit",
@@ -510,6 +527,11 @@ describe("SampleService", () => {
 
   describe("replaceSampleInSlot", () => {
     it("successfully replaces sample", () => {
+      // Mock existing sample at the slot
+      mockGetKitSamples.mockReturnValue({
+        success: true,
+        data: [{ voice_number: 2, slot_number: 6, filename: "old.wav" }],
+      });
       mockDeleteSamples.mockReturnValue({ success: true });
       mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
 
@@ -543,6 +565,11 @@ describe("SampleService", () => {
     });
 
     it("fails if delete operation fails", () => {
+      // Mock existing sample at the slot
+      mockGetKitSamples.mockReturnValue({
+        success: true,
+        data: [{ voice_number: 1, slot_number: 1, filename: "old.wav" }],
+      });
       mockDeleteSamples.mockReturnValue({
         success: false,
         error: "Delete failed",
@@ -564,6 +591,11 @@ describe("SampleService", () => {
 
     // Task 7.1.2 tests for replaceSampleInSlot
     it("applies defaultToMonoSamples setting when replacing stereo sample", () => {
+      // Mock existing sample at the slot
+      mockGetKitSamples.mockReturnValue({
+        success: true,
+        data: [{ voice_number: 1, slot_number: 1, filename: "old.wav" }],
+      });
       mockDeleteSamples.mockReturnValue({ success: true });
       mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
       mockGetAudioMetadata.mockReturnValue({
@@ -595,6 +627,11 @@ describe("SampleService", () => {
     });
 
     it("preserves stereo when defaultToMonoSamples is false for replacement", () => {
+      // Mock existing sample at the slot
+      mockGetKitSamples.mockReturnValue({
+        success: true,
+        data: [{ voice_number: 1, slot_number: 1, filename: "old.wav" }],
+      });
       mockDeleteSamples.mockReturnValue({ success: true });
       mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
       mockGetAudioMetadata.mockReturnValue({

@@ -8,6 +8,8 @@ export interface MenuEventHandlers {
   onChangeLocalStoreDirectory?: () => void;
   onPreferences?: () => void;
   onAbout?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 /**
@@ -58,6 +60,18 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
       }
     };
 
+    const handleUndo = () => {
+      if (handlers.onUndo) {
+        handlers.onUndo();
+      }
+    };
+
+    const handleRedo = () => {
+      if (handlers.onRedo) {
+        handlers.onRedo();
+      }
+    };
+
     // Register electron event listeners
     if (window.electronAPI) {
       // Use electron's ipcRenderer.on equivalent through the preload script
@@ -72,6 +86,8 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
       );
       window.addEventListener("menu-preferences", handlePreferences);
       window.addEventListener("menu-about", handleAbout);
+      window.addEventListener("menu-undo", handleUndo);
+      window.addEventListener("menu-redo", handleRedo);
     }
 
     // Cleanup event listeners
@@ -92,6 +108,8 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
       );
       window.removeEventListener("menu-preferences", handlePreferences);
       window.removeEventListener("menu-about", handleAbout);
+      window.removeEventListener("menu-undo", handleUndo);
+      window.removeEventListener("menu-redo", handleRedo);
     };
   }, [handlers]);
 }

@@ -176,6 +176,17 @@ export class SampleService {
         is_stereo: isStereo,
       };
 
+      // Check if there's an existing sample in this slot for conflict handling
+      const existingSamplesResult = getKitSamples(dbPath, kitName);
+      let previousSample: Sample | undefined;
+
+      if (existingSamplesResult.success && existingSamplesResult.data) {
+        previousSample = existingSamplesResult.data.find(
+          (s) =>
+            s.voice_number === voiceNumber && s.slot_number === slotIndex + 1,
+        );
+      }
+
       const result = addSample(dbPath, sampleRecord);
 
       // Mark kit as modified if operation succeeded
@@ -228,6 +239,30 @@ export class SampleService {
     }
 
     try {
+      // Get the existing sample before replacing it
+      const existingSamplesResult = getKitSamples(dbPath, kitName);
+      let oldSample: Sample | undefined;
+
+      if (existingSamplesResult.success && existingSamplesResult.data) {
+        oldSample = existingSamplesResult.data.find(
+          (s) =>
+            s.voice_number === voiceNumber && s.slot_number === slotIndex + 1,
+        );
+      }
+
+      // If no existing sample, this becomes an add operation
+      if (!oldSample) {
+        // Call addSampleToSlot instead
+        return this.addSampleToSlot(
+          inMemorySettings,
+          kitName,
+          voiceNumber,
+          slotIndex,
+          filePath,
+          options,
+        );
+      }
+
       // First delete existing sample at this slot
       const deleteResult = deleteSamples(dbPath, kitName, {
         voiceNumber,
@@ -315,6 +350,24 @@ export class SampleService {
     }
 
     try {
+      // Get the sample before deleting it
+      const existingSamplesResult = getKitSamples(dbPath, kitName);
+      let deletedSample: Sample | undefined;
+
+      if (existingSamplesResult.success && existingSamplesResult.data) {
+        deletedSample = existingSamplesResult.data.find(
+          (s) =>
+            s.voice_number === voiceNumber && s.slot_number === slotIndex + 1,
+        );
+      }
+
+      if (!deletedSample) {
+        return {
+          success: false,
+          error: `No sample found in voice ${voiceNumber}, slot ${slotIndex + 1} to delete`,
+        };
+      }
+
       const deleteResult = deleteSamples(dbPath, kitName, {
         voiceNumber,
         slotNumber: slotIndex + 1, // Convert 0-based to 1-based

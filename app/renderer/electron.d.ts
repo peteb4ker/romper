@@ -4,6 +4,11 @@ import type {
   FormatValidationResult,
 } from "../../electron/main/audioUtils.js";
 import type {
+  ActionMetadata,
+  ActionRecord,
+  ActionType,
+} from "../../shared/actionTypes.js";
+import type {
   Bank,
   DbResult,
   Kit,

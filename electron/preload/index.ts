@@ -74,6 +74,8 @@ interface MenuEventMap {
   "menu-change-local-store-directory": void;
   "menu-preferences": void;
   "menu-about": void;
+  "menu-undo": void;
+  "menu-redo": void;
 }
 
 class MenuEventForwarder {
@@ -91,6 +93,8 @@ class MenuEventForwarder {
     },
     { ipcEvent: "menu-preferences", domEvent: "menu-preferences" },
     { ipcEvent: "menu-about", domEvent: "menu-about" },
+    { ipcEvent: "menu-undo", domEvent: "menu-undo" },
+    { ipcEvent: "menu-redo", domEvent: "menu-redo" },
   ];
 
   initialize(): void {

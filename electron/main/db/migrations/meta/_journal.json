@@ -29,6 +29,20 @@
       "when": 1753732537822,
       "tag": "0003_graceful_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1753915994056,
+      "tag": "0004_elite_lily_hollister",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1753933820864,
+      "tag": "0005_small_mandarin",
+      "breakpoints": true
     }
   ]
 }

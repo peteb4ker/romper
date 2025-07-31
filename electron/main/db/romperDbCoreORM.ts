@@ -20,13 +20,13 @@ import type {
 import * as schema from "../../../shared/db/schema.js";
 export const DB_FILENAME = "romper.sqlite";
 
-const { banks, kits, voices, samples, editActions } = schema;
+const { banks, kits, voices, samples } = schema;
 
 // Track which databases have been migration-checked this session
 const migrationCheckedDbs = new Set<string>();
 
 // Lightweight, idiomatic Drizzle connection helper
-function withDb<T>(
+export function withDb<T>(
   dbDir: string,
   operation: (db: BetterSQLite3Database<typeof schema>) => T,
 ): DbResult<T> {
@@ -56,14 +56,13 @@ function withDb<T>(
     sqlite = new BetterSqlite3(dbPath);
     const db = drizzle(sqlite, { schema });
     const result = operation(db);
+
+    if (sqlite) sqlite.close();
     return { success: true, data: result };
   } catch (e) {
+    if (sqlite) sqlite.close();
     const error = e instanceof Error ? e.message : String(e);
     return { success: false, error };
-  } finally {
-    if (sqlite) {
-      sqlite.close();
-    }
   }
 }
 
@@ -186,9 +185,6 @@ export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
 
       console.log("[Schema] Checking samples table...");
       db.select().from(samples).limit(1).all();
-
-      console.log("[Schema] Checking editActions table...");
-      db.select().from(editActions).limit(1).all();
 
       console.log("[Schema] ✓ All tables validated successfully");
       return true;

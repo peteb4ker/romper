@@ -2,6 +2,7 @@
 // Central location for all UI TypeScript interfaces/types for kits
 
 import type { KitWithRelations } from "../../../shared/db/schema";
+import type { AnyUndoAction } from "../../../shared/undoTypes";
 
 export interface KitSamplePlanSlot {
   source: string;
@@ -31,4 +32,5 @@ export interface KitDetailsProps {
   onPrevKit?: () => void;
   samples?: VoiceSamples | null;
   onRequestSamplesReload?: () => void;
+  onAddUndoAction?: (action: AnyUndoAction) => void;
 }

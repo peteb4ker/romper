@@ -85,7 +85,7 @@ function createSampleOperationHandler(
               error: "File path required for add operation",
             };
           }
-          result = sampleService.addSampleToSlot(
+          result = await sampleService.addSampleToSlot(
             inMemorySettings,
             kitName,
             voiceNumber,
@@ -102,7 +102,7 @@ function createSampleOperationHandler(
               error: "File path required for replace operation",
             };
           }
-          result = sampleService.replaceSampleInSlot(
+          result = await sampleService.replaceSampleInSlot(
             inMemorySettings,
             kitName,
             voiceNumber,
@@ -113,7 +113,7 @@ function createSampleOperationHandler(
           break;
 
         case "delete":
-          result = sampleService.deleteSampleFromSlot(
+          result = await sampleService.deleteSampleFromSlot(
             inMemorySettings,
             kitName,
             voiceNumber,

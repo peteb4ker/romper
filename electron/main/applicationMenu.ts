@@ -48,8 +48,26 @@ export function createApplicationMenu() {
     {
       label: "Edit",
       submenu: [
-        { role: "undo" as const },
-        { role: "redo" as const },
+        {
+          label: "Undo",
+          accelerator: "CmdOrCtrl+Z",
+          click: () => {
+            const focusedWindow = BrowserWindow.getFocusedWindow();
+            if (focusedWindow) {
+              focusedWindow.webContents.send("menu-undo");
+            }
+          },
+        },
+        {
+          label: "Redo",
+          accelerator: "CmdOrCtrl+Shift+Z",
+          click: () => {
+            const focusedWindow = BrowserWindow.getFocusedWindow();
+            if (focusedWindow) {
+              focusedWindow.webContents.send("menu-redo");
+            }
+          },
+        },
         { type: "separator" as const },
         { role: "cut" as const },
         { role: "copy" as const },

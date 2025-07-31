@@ -89,8 +89,9 @@ export class LocalStoreService {
       selectedPath,
     );
 
-    // Validate that the selected path contains a .romperdb directory
-    const validation = validateLocalStoreAgainstDb(selectedPath);
+    // Validate that the selected path contains a .romperdb directory and database schema
+    // but don't validate all kits and their files - that's done separately
+    const validation = validateLocalStoreAndDb(selectedPath);
 
     console.log("[LocalStoreService] Validation result:", {
       isValid: validation.isValid,

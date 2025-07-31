@@ -14,6 +14,7 @@ import {
 import ChangeLocalStoreDirectoryDialog from "../components/dialogs/ChangeLocalStoreDirectoryDialog";
 import PreferencesDialog from "../components/dialogs/PreferencesDialog";
 import { useBankScanning } from "../components/hooks/useBankScanning";
+import { useGlobalKeyboardShortcuts } from "../components/hooks/useGlobalKeyboardShortcuts";
 import { useMenuEvents } from "../components/hooks/useMenuEvents";
 import { useMessageDisplay } from "../components/hooks/useMessageDisplay";
 import { useStartupActions } from "../components/hooks/useStartupActions";
@@ -163,6 +164,45 @@ const KitsView = () => {
       console.log("[KitsView] Menu about triggered");
       // Could show an about dialog here
     },
+    onUndo: () => {
+      console.log("[KitsView] Menu undo triggered");
+      if (keyboardShortcuts.canUndo) {
+        // Create and dispatch keyboard event to trigger undo
+        const event = new KeyboardEvent("keydown", {
+          key: "z",
+          metaKey: true, // For Mac
+          ctrlKey: true, // For Windows/Linux
+          bubbles: true,
+        });
+        document.dispatchEvent(event);
+      }
+    },
+    onRedo: () => {
+      console.log("[KitsView] Menu redo triggered");
+      if (keyboardShortcuts.canRedo) {
+        // Create and dispatch keyboard event to trigger redo
+        const event = new KeyboardEvent("keydown", {
+          key: "z",
+          metaKey: true, // For Mac
+          ctrlKey: true, // For Windows/Linux
+          shiftKey: true,
+          bubbles: true,
+        });
+        document.dispatchEvent(event);
+      }
+    },
+  });
+
+  // Get current kit's editable state for keyboard shortcuts
+  const currentKit = useMemo(
+    () => kits.find((kit) => kit.name === selectedKit),
+    [kits, selectedKit],
+  );
+
+  // Global keyboard shortcuts (Cmd+Z, Cmd+Shift+Z)
+  const keyboardShortcuts = useGlobalKeyboardShortcuts({
+    currentKitName: selectedKit || undefined,
+    isEditMode: currentKit?.editable ?? false,
   });
 
   // Local store status logging (remove in production)
@@ -309,6 +349,54 @@ const KitsView = () => {
   };
 
   // Mark handleBack as async if using await
+  // Function to reload samples for the currently selected kit
+  const reloadCurrentKitSamples = useCallback(async () => {
+    if (selectedKit) {
+      try {
+        const samplesResult =
+          await window.electronAPI?.getAllSamplesForKit?.(selectedKit);
+        if (samplesResult?.success && samplesResult.data) {
+          const voices = groupDbSamplesByVoice(samplesResult.data);
+          setAllKitSamples((prev) => ({
+            ...prev,
+            [selectedKit]: voices,
+          }));
+          setSelectedKitSamples(voices);
+        } else {
+          console.warn(
+            `Failed to reload samples for kit ${selectedKit}:`,
+            samplesResult?.error,
+          );
+        }
+      } catch (error) {
+        console.warn(`Error reloading samples for kit ${selectedKit}:`, error);
+      }
+    }
+  }, [selectedKit]);
+
+  // Listen for refresh events from undo operations
+  useEffect(() => {
+    const handleRefreshSamples = (event: Event) => {
+      const customEvent = event as CustomEvent<{ kitName: string }>;
+      if (customEvent.detail.kitName === selectedKit) {
+        console.log(
+          "[KitsView] Refreshing samples after undo operation for kit:",
+          selectedKit,
+        );
+        reloadCurrentKitSamples();
+      }
+    };
+
+    document.addEventListener("romper:refresh-samples", handleRefreshSamples);
+
+    return () => {
+      document.removeEventListener(
+        "romper:refresh-samples",
+        handleRefreshSamples,
+      );
+    };
+  }, [selectedKit, reloadCurrentKitSamples]);
+
   const handleBack = async (scrollToKit?: string) => {
     let scrollToKitName = null;
     let refresh = false;
@@ -435,6 +523,7 @@ const KitsView = () => {
             // Optionally handle messages here, e.g. show a toast or log
             // For now, do nothing (parent can decide to handle or ignore)
           }}
+          onAddUndoAction={keyboardShortcuts.addUndoAction}
         />
       ) : (
         <KitBrowser

@@ -48,6 +48,9 @@ describe("Drizzle ORM Database Operations", () => {
     it("should create database file successfully", async () => {
       const result = createRomperDbFile(TEST_DB_DIR);
 
+      if (!result.success) {
+        console.error("Database creation failed:", result.error);
+      }
       expect(result.success).toBe(true);
       expect(result.dbPath).toBe(TEST_DB_PATH);
       expect(fs.existsSync(TEST_DB_PATH)).toBe(true);

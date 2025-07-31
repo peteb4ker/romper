@@ -78,18 +78,6 @@ export const samples = sqliteTable(
   }),
 );
 
-// Edit actions table - tracking for kit edits
-export const editActions = sqliteTable("edit_actions", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  kit_name: text("kit_name")
-    .notNull()
-    .references(() => kits.name), // FK to kits.name
-  action_type: text("action_type").notNull(), // ADD_SAMPLE, REPLACE_SAMPLE, DELETE_SAMPLE, TOGGLE_EDITABLE_MODE
-  action_data: text("action_data"), // JSON metadata for action reversal
-  timestamp: integer("timestamp", { mode: "timestamp" }).notNull(),
-  sequence: integer("sequence").notNull(), // For action ordering
-});
-
 // Export types inferred from schema
 export type Bank = typeof banks.$inferSelect;
 export type NewBank = typeof banks.$inferInsert;
@@ -102,9 +90,6 @@ export type NewVoice = typeof voices.$inferInsert;
 
 export type Sample = typeof samples.$inferSelect;
 export type NewSample = typeof samples.$inferInsert;
-
-export type EditAction = typeof editActions.$inferSelect;
-export type NewEditAction = typeof editActions.$inferInsert;
 
 // Kit with relations as returned by database queries
 export type KitWithRelations = Kit & {
@@ -154,7 +139,6 @@ export const kitsRelations = relations(kits, ({ one, many }) => ({
   }),
   voices: many(voices),
   samples: many(samples),
-  editActions: many(editActions),
 }));
 
 export const voicesRelations = relations(voices, ({ one, many }) => ({
@@ -173,12 +157,5 @@ export const samplesRelations = relations(samples, ({ one }) => ({
   voice: one(voices, {
     fields: [samples.kit_name, samples.voice_number],
     references: [voices.kit_name, voices.voice_number],
-  }),
-}));
-
-export const editActionsRelations = relations(editActions, ({ one }) => ({
-  kit: one(kits, {
-    fields: [editActions.kit_name],
-    references: [kits.name],
   }),
 }));

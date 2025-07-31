@@ -34,6 +34,7 @@ export default defineConfig({
       setupFiles: ["./vitest.setup.ts"],
       coverage: {
         enabled: true,
+        all: !isIntegration, // true for unit tests, false for integration
         reporter: ["json", "html", "text-summary", "lcov"],
         reportsDirectory: isIntegration
           ? "./coverage/integration"

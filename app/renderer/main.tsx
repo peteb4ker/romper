@@ -14,7 +14,6 @@ import { useMessageDisplay } from "./components/hooks/useMessageDisplay";
 import MessageDisplay from "./components/MessageDisplay";
 import { MessageDisplayContext } from "./components/MessageDisplayContext";
 import StatusBar from "./components/StatusBar";
-import { InterfaceModeProvider } from "./contexts/InterfaceModeContext";
 import { SettingsProvider } from "./utils/SettingsContext";
 import { applyTheme } from "./utils/settingsManager";
 import AboutView from "./views/AboutView";
@@ -57,9 +56,7 @@ const App = () => {
 const root = ReactDOM.createRoot(document.getElementById("app")!);
 root.render(
   <SettingsProvider>
-    <InterfaceModeProvider>
-      <App />
-    </InterfaceModeProvider>
+    <App />
   </SettingsProvider>,
 );
 

@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type { DbResult, NewSample, Sample } from "../../../shared/db/schema.js";
-import { getAudioMetadata } from "../audioUtils.js";
+import { getErrorMessage } from "../../../shared/errorUtils.js";
 import {
   addSample,
   deleteSamples,
@@ -11,6 +11,11 @@ import {
   markKitAsModified,
   moveSample,
 } from "../db/romperDbCoreORM.js";
+import { ServicePathManager } from "../utils/fileSystemUtils.js";
+import {
+  determineStereoConfiguration,
+  type StereoOptions,
+} from "../utils/stereoProcessingUtils.js";
 
 /**
  * Service for sample validation and management operations
@@ -20,11 +25,11 @@ export class SampleService {
   private getLocalStorePath(
     inMemorySettings: Record<string, any>,
   ): string | null {
-    return inMemorySettings.localStorePath || null;
+    return ServicePathManager.getLocalStorePath(inMemorySettings);
   }
 
   private getDbPath(localStorePath: string): string {
-    return path.join(localStorePath, ".romperdb");
+    return ServicePathManager.getDbPath(localStorePath);
   }
 
   /**
@@ -105,7 +110,7 @@ export class SampleService {
     } catch (error) {
       return {
         isValid: false,
-        error: `Failed to validate file: ${error instanceof Error ? error.message : String(error)}`,
+        error: `Failed to validate file: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -119,7 +124,7 @@ export class SampleService {
     voiceNumber: number,
     slotIndex: number,
     filePath: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
+    options?: StereoOptions,
   ): DbResult<{ sampleId: number }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -148,26 +153,11 @@ export class SampleService {
       const filename = path.basename(filePath);
 
       // Task 7.1.2 & 7.1.3: Apply 'default to mono samples' setting with per-sample override
-      let isStereo = false;
-
-      // Get the defaultToMonoSamples setting (default: true)
-      const defaultToMonoSamples =
-        inMemorySettings.defaultToMonoSamples ?? true;
-
-      // Task 7.1.3: Check for per-sample override first
-      if (options?.forceMono) {
-        isStereo = false;
-      } else if (options?.forceStereo) {
-        // Force stereo even if file is mono - will be handled during preview/sync
-        isStereo = true;
-      } else if (!defaultToMonoSamples) {
-        // Only check if file is actually stereo when setting is OFF and no override
-        const metadataResult = getAudioMetadata(filePath);
-        if (metadataResult.success && metadataResult.data) {
-          isStereo = (metadataResult.data.channels || 1) > 1;
-        }
-      }
-      // If defaultToMonoSamples is true and no override, isStereo remains false
+      const isStereo = determineStereoConfiguration(
+        filePath,
+        inMemorySettings,
+        options,
+      );
 
       const sampleRecord: NewSample = {
         kit_name: kitName,
@@ -198,11 +188,9 @@ export class SampleService {
 
       return result;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `Failed to add sample: ${errorMessage}`,
+        error: `Failed to add sample: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -216,7 +204,7 @@ export class SampleService {
     voiceNumber: number,
     slotIndex: number,
     filePath: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
+    options?: StereoOptions,
   ): DbResult<{ sampleId: number }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -278,26 +266,11 @@ export class SampleService {
       const filename = path.basename(filePath);
 
       // Task 7.1.2 & 7.1.3: Apply 'default to mono samples' setting with per-sample override
-      let isStereo = false;
-
-      // Get the defaultToMonoSamples setting (default: true)
-      const defaultToMonoSamples =
-        inMemorySettings.defaultToMonoSamples ?? true;
-
-      // Task 7.1.3: Check for per-sample override first
-      if (options?.forceMono) {
-        isStereo = false;
-      } else if (options?.forceStereo) {
-        // Force stereo even if file is mono - will be handled during preview/sync
-        isStereo = true;
-      } else if (!defaultToMonoSamples) {
-        // Only check if file is actually stereo when setting is OFF and no override
-        const metadataResult = getAudioMetadata(filePath);
-        if (metadataResult.success && metadataResult.data) {
-          isStereo = (metadataResult.data.channels || 1) > 1;
-        }
-      }
-      // If defaultToMonoSamples is true and no override, isStereo remains false
+      const isStereo = determineStereoConfiguration(
+        filePath,
+        inMemorySettings,
+        options,
+      );
 
       const sampleRecord: NewSample = {
         kit_name: kitName,
@@ -317,11 +290,9 @@ export class SampleService {
 
       return result;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `Failed to replace sample: ${errorMessage}`,
+        error: `Failed to replace sample: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -366,11 +337,9 @@ export class SampleService {
 
       return deleteResult;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `Failed to delete sample: ${errorMessage}`,
+        error: `Failed to delete sample: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -432,11 +401,9 @@ export class SampleService {
 
       return deleteResult;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `Failed to delete sample: ${errorMessage}`,
+        error: `Failed to delete sample: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -498,11 +465,9 @@ export class SampleService {
         },
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `Failed to validate sample sources: ${errorMessage}`,
+        error: `Failed to validate sample sources: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -555,11 +520,9 @@ export class SampleService {
         ),
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `Failed to read sample audio: ${errorMessage}`,
+        error: `Failed to read sample audio: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -664,11 +627,9 @@ export class SampleService {
 
       return moveResult;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `Failed to move sample: ${errorMessage}`,
+        error: `Failed to move sample: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -818,11 +779,9 @@ export class SampleService {
         },
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `Failed to move sample between kits: ${errorMessage}`,
+        error: `Failed to move sample between kits: ${getErrorMessage(error)}`,
       };
     }
   }

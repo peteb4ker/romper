@@ -2,7 +2,12 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type { DbResult } from "../../../shared/db/schema.js";
+import { getErrorMessage } from "../../../shared/errorUtils.js";
 import { convertToRampleDefault } from "../formatConverter.js";
+import {
+  ensureDirectoryExists,
+  getFileSize,
+} from "../utils/fileSystemUtils.js";
 import type { SyncFileOperation } from "./syncPlannerService.js";
 
 export interface SyncErrorInfo {
@@ -32,9 +37,7 @@ export class SyncExecutorService {
     try {
       // Ensure destination directory exists
       const destDir = path.dirname(fileOp.destinationPath);
-      if (!fs.existsSync(destDir)) {
-        fs.mkdirSync(destDir, { recursive: true });
-      }
+      ensureDirectoryExists(destDir);
 
       let bytesTransferred = 0;
 
@@ -43,10 +46,7 @@ export class SyncExecutorService {
         fs.copyFileSync(fileOp.sourcePath, fileOp.destinationPath);
 
         // Get file size for tracking
-        if (fs.existsSync(fileOp.sourcePath)) {
-          const stats = fs.statSync(fileOp.sourcePath);
-          bytesTransferred = stats.size;
-        }
+        bytesTransferred = getFileSize(fileOp.sourcePath);
       } else if (fileOp.operation === "convert") {
         // Convert audio format during copy
         const conversionResult = await convertToRampleDefault(
@@ -62,10 +62,7 @@ export class SyncExecutorService {
         }
 
         // Get converted file size for tracking
-        if (fs.existsSync(fileOp.destinationPath)) {
-          const convertedStats = fs.statSync(fileOp.destinationPath);
-          bytesTransferred = convertedStats.size;
-        }
+        bytesTransferred = getFileSize(fileOp.destinationPath);
       }
 
       return { success: true, data: { bytesTransferred } };
@@ -82,15 +79,7 @@ export class SyncExecutorService {
    * Get file size for progress tracking
    */
   getFileSize(filePath: string): number {
-    try {
-      if (fs.existsSync(filePath)) {
-        const stats = fs.statSync(filePath);
-        return stats.size;
-      }
-    } catch (error) {
-      console.warn(`Failed to get file size for ${filePath}:`, error);
-    }
-    return 0;
+    return getFileSize(filePath);
   }
 
   /**
@@ -108,7 +97,7 @@ export class SyncExecutorService {
    * Categorize sync errors for better error reporting
    */
   categorizeError(error: any, filePath?: string): SyncErrorInfo {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorMessage = getErrorMessage(error);
     const errorLower = errorMessage.toLowerCase();
 
     if (

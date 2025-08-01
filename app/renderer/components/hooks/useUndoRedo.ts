@@ -361,6 +361,7 @@ export function useUndoRedo(kitName: string) {
       );
       setState((prev) => ({ ...prev, isUndoing: false }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitName, state.undoStack, state.isUndoing]);
 
   // Redo the most recent undone action

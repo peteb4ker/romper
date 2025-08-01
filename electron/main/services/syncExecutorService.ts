@@ -5,22 +5,14 @@ import type { DbResult } from "../../../shared/db/schema.js";
 import { getErrorMessage } from "../../../shared/errorUtils.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 import {
+  categorizeErrorByRules,
+  type SyncErrorInfo,
+} from "../utils/errorCategorizationUtils.js";
+import {
   ensureDirectoryExists,
   getFileSize,
 } from "../utils/fileSystemUtils.js";
 import type { SyncFileOperation } from "./syncPlannerService.js";
-
-export interface SyncErrorInfo {
-  type:
-    | "file_access"
-    | "format_error"
-    | "disk_space"
-    | "permission"
-    | "network"
-    | "unknown";
-  canRetry: boolean;
-  userMessage: string;
-}
 
 /**
  * Service for executing sync operations (copy/convert files)
@@ -98,63 +90,7 @@ export class SyncExecutorService {
    */
   categorizeError(error: any, filePath?: string): SyncErrorInfo {
     const errorMessage = getErrorMessage(error);
-    const errorLower = errorMessage.toLowerCase();
-
-    if (
-      errorLower.includes("enoent") ||
-      errorLower.includes("file not found")
-    ) {
-      return {
-        type: "file_access",
-        canRetry: false,
-        userMessage: `Source file not found: ${filePath || "unknown file"}`,
-      };
-    }
-
-    if (
-      errorLower.includes("eacces") ||
-      errorLower.includes("permission denied")
-    ) {
-      return {
-        type: "permission",
-        canRetry: true,
-        userMessage: "Permission denied. Check file/folder permissions.",
-      };
-    }
-
-    if (errorLower.includes("enospc") || errorLower.includes("no space")) {
-      return {
-        type: "disk_space",
-        canRetry: false,
-        userMessage: "Not enough disk space on destination drive.",
-      };
-    }
-
-    if (
-      errorLower.includes("format") ||
-      errorLower.includes("wav") ||
-      errorLower.includes("audio")
-    ) {
-      return {
-        type: "format_error",
-        canRetry: false,
-        userMessage: `Audio format error: ${errorMessage}`,
-      };
-    }
-
-    if (errorLower.includes("network") || errorLower.includes("connection")) {
-      return {
-        type: "network",
-        canRetry: true,
-        userMessage: "Network error. Check connection and try again.",
-      };
-    }
-
-    return {
-      type: "unknown",
-      canRetry: true,
-      userMessage: `Unexpected error: ${errorMessage}`,
-    };
+    return categorizeErrorByRules(errorMessage, filePath);
   }
 }
 

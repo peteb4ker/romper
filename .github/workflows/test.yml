@@ -62,3 +62,18 @@ jobs:
           slug: peteb4ker/romper
           files: ./coverage/coverage-final.json
           disable_search: true
+
+      - name: Setup Java (required for SonarCloud scanner)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          projectBaseDir: .
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORGANIZATION: peteb4ker
+          SONAR_HOST_URL: https://sonarcloud.io

@@ -1,7 +1,7 @@
 import { BrowserWindow } from "electron";
 import * as fs from "fs";
 import * as path from "path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock modules
 vi.mock("electron", () => ({
@@ -38,7 +38,7 @@ const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 const mockValidateSampleFormat = vi.mocked(validateSampleFormat);
 const mockGetKitSamples = vi.mocked(getKitSamples);
 const mockMarkKitsAsSynced = vi.mocked(markKitsAsSynced);
-const mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
+const _mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
 const mockBrowserWindow = vi.mocked(BrowserWindow);
 
 describe("SyncService", () => {

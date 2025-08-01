@@ -91,11 +91,7 @@ describe("KitIconRenderer", () => {
 
     it("should apply both size and custom classes", () => {
       const { container } = render(
-        <KitIconRenderer
-          iconType="piano"
-          size="lg"
-          className="custom-class"
-        />,
+        <KitIconRenderer iconType="piano" size="lg" className="custom-class" />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toHaveClass("text-3xl", "custom-class");
@@ -133,9 +129,7 @@ describe("KitIconRenderer", () => {
     });
 
     it("should handle null iconType gracefully", () => {
-      const { container } = render(
-        <KitIconRenderer iconType={null as any} />,
-      );
+      const { container } = render(<KitIconRenderer iconType={null as any} />);
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument(); // Should render default folder icon
     });

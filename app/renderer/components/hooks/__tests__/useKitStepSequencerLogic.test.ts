@@ -66,10 +66,9 @@ describe("useKitStepSequencerLogic", () => {
     it("should initialize worker correctly", () => {
       renderHook(() => useKitStepSequencerLogic(getDefaultParams()));
 
-      expect(global.Worker).toHaveBeenCalledWith(
-        expect.any(URL),
-        { type: "module" },
-      );
+      expect(global.Worker).toHaveBeenCalledWith(expect.any(URL), {
+        type: "module",
+      });
     });
 
     it("should handle null stepPattern by providing safe default", () => {
@@ -195,9 +194,7 @@ describe("useKitStepSequencerLogic", () => {
     });
 
     it("should not trigger samples when not playing", () => {
-      const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
-      );
+      renderHook(() => useKitStepSequencerLogic(getDefaultParams()));
 
       // Don't start playback
 

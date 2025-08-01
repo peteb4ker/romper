@@ -231,7 +231,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
         const bank = e.key.toUpperCase();
         const idx = kitsToDisplay.findIndex(
-          (k) => k && k.name && k.name[0] && k.name[0].toUpperCase() === bank,
+          (k) => k?.name?.[0]?.toUpperCase() === bank,
         );
         if (idx !== -1) {
           if (typeof onBankFocus === "function") onBankFocus(bank);

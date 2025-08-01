@@ -1148,16 +1148,15 @@ describe("SampleService", () => {
           data: [mockSample], // deleteSampleFromSlot call
         });
 
-      const result = sampleService.moveSampleBetweenKits(
-        mockInMemorySettings,
-        "SourceKit",
-        1,
-        0,
-        "DestKit",
-        2,
-        3,
-        "insert",
-      );
+      const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
+        fromKit: "SourceKit",
+        fromVoice: 1,
+        fromSlot: 0,
+        toKit: "DestKit",
+        toVoice: 2,
+        toSlot: 3,
+        mode: "insert",
+      });
 
       expect(result.success).toBe(true);
       expect(result.data?.movedSample).toEqual(mockSample);
@@ -1169,16 +1168,15 @@ describe("SampleService", () => {
         data: [], // No samples in source kit
       });
 
-      const result = sampleService.moveSampleBetweenKits(
-        mockInMemorySettings,
-        "SourceKit",
-        1,
-        0,
-        "DestKit",
-        2,
-        3,
-        "insert",
-      );
+      const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
+        fromKit: "SourceKit",
+        fromVoice: 1,
+        fromSlot: 0,
+        toKit: "DestKit",
+        toVoice: 2,
+        toSlot: 3,
+        mode: "insert",
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No sample found at SourceKit voice 1, slot 1");
@@ -1191,16 +1189,15 @@ describe("SampleService", () => {
         data: [stereoSample],
       });
 
-      const result = sampleService.moveSampleBetweenKits(
-        mockInMemorySettings,
-        "SourceKit",
-        1,
-        0,
-        "DestKit",
-        4,
-        3,
-        "insert",
-      );
+      const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
+        fromKit: "SourceKit",
+        fromVoice: 1,
+        fromSlot: 0,
+        toKit: "DestKit",
+        toVoice: 4,
+        toSlot: 3,
+        mode: "insert",
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
@@ -1228,16 +1225,15 @@ describe("SampleService", () => {
           data: [conflictSample], // Destination kit
         });
 
-      const result = sampleService.moveSampleBetweenKits(
-        mockInMemorySettings,
-        "SourceKit",
-        1,
-        0,
-        "DestKit",
-        2,
-        3,
-        "insert",
-      );
+      const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
+        fromKit: "SourceKit",
+        fromVoice: 1,
+        fromSlot: 0,
+        toKit: "DestKit",
+        toVoice: 2,
+        toSlot: 3,
+        mode: "insert",
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
@@ -1271,16 +1267,15 @@ describe("SampleService", () => {
         error: "Delete failed",
       });
 
-      const result = sampleService.moveSampleBetweenKits(
-        mockInMemorySettings,
-        "SourceKit",
-        1,
-        0,
-        "DestKit",
-        2,
-        3,
-        "insert",
-      );
+      const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
+        fromKit: "SourceKit",
+        fromVoice: 1,
+        fromSlot: 0,
+        toKit: "DestKit",
+        toVoice: 2,
+        toSlot: 3,
+        mode: "insert",
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
@@ -1294,16 +1289,15 @@ describe("SampleService", () => {
         error: "Database error",
       });
 
-      const result = sampleService.moveSampleBetweenKits(
-        mockInMemorySettings,
-        "SourceKit",
-        1,
-        0,
-        "DestKit",
-        2,
-        3,
-        "insert",
-      );
+      const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
+        fromKit: "SourceKit",
+        fromVoice: 1,
+        fromSlot: 0,
+        toKit: "DestKit",
+        toVoice: 2,
+        toSlot: 3,
+        mode: "insert",
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Database error");
@@ -1314,16 +1308,15 @@ describe("SampleService", () => {
         throw new Error("Unexpected error");
       });
 
-      const result = sampleService.moveSampleBetweenKits(
-        mockInMemorySettings,
-        "SourceKit",
-        1,
-        0,
-        "DestKit",
-        2,
-        3,
-        "insert",
-      );
+      const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
+        fromKit: "SourceKit",
+        fromVoice: 1,
+        fromSlot: 0,
+        toKit: "DestKit",
+        toVoice: 2,
+        toSlot: 3,
+        mode: "insert",
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(

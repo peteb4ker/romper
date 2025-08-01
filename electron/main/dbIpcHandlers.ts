@@ -331,24 +331,20 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     "move-sample-between-kits",
     async (
       _event,
-      fromKit: string,
-      fromVoice: number,
-      fromSlot: number,
-      toKit: string,
-      toVoice: number,
-      toSlot: number,
-      mode: "insert" | "overwrite",
+      params: {
+        fromKit: string;
+        fromVoice: number;
+        fromSlot: number;
+        toKit: string;
+        toVoice: number;
+        toSlot: number;
+        mode: "insert" | "overwrite";
+      },
     ) => {
       try {
         const result = sampleService.moveSampleBetweenKits(
           inMemorySettings,
-          fromKit,
-          fromVoice,
-          fromSlot,
-          toKit,
-          toVoice,
-          toSlot,
-          mode,
+          params,
         );
         return result;
       } catch (error) {

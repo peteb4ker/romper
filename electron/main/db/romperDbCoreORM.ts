@@ -455,7 +455,7 @@ function performVoiceCompaction(
   const deletedByVoice = groupSamplesByVoice(samplesToDelete);
 
   for (const [voiceNumber, deletedSamplesInVoice] of deletedByVoice) {
-    const sortedDeleted = deletedSamplesInVoice.sort(
+    const sortedDeleted = [...deletedSamplesInVoice].sort(
       (a, b) => a.slot_number - b.slot_number,
     );
 

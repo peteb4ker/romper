@@ -640,13 +640,15 @@ export class SampleService {
    */
   moveSampleBetweenKits(
     inMemorySettings: Record<string, any>,
-    fromKit: string,
-    fromVoice: number,
-    fromSlot: number,
-    toKit: string,
-    toVoice: number,
-    toSlot: number,
-    mode: "insert" | "overwrite",
+    params: {
+      fromKit: string;
+      fromVoice: number;
+      fromSlot: number;
+      toKit: string;
+      toVoice: number;
+      toSlot: number;
+      mode: "insert" | "overwrite";
+    },
   ): DbResult<{
     movedSample: Sample;
     affectedSamples: (Sample & { original_slot_number: number })[];
@@ -658,6 +660,9 @@ export class SampleService {
     }
 
     const dbPath = this.getDbPath(localStorePath);
+
+    const { fromKit, fromVoice, fromSlot, toKit, toVoice, toSlot, mode } =
+      params;
 
     // Validate voice and slot for both source and destination
     const fromValidation = this.validateVoiceAndSlot(fromVoice, fromSlot);

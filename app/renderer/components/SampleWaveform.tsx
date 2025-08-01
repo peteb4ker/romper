@@ -83,12 +83,11 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     return () => {
       cancelled = true;
       if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-        try {
-          audioCtxRef.current.close().catch(() => {
+        const closePromise = audioCtxRef.current.close();
+        if (closePromise && typeof closePromise.catch === "function") {
+          closePromise.catch(() => {
             // Ignore close errors
           });
-        } catch {
-          // Ignore close errors
         }
       }
     };
@@ -213,12 +212,11 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     return () => {
       stopPlayback();
       if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-        try {
-          audioCtxRef.current.close().catch(() => {
+        const closePromise = audioCtxRef.current.close();
+        if (closePromise && typeof closePromise.catch === "function") {
+          closePromise.catch(() => {
             // Ignore close errors
           });
-        } catch {
-          // Ignore close errors
         }
       }
     };

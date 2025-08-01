@@ -449,8 +449,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       `${fromKit}:${fromVoice}:${fromSlot} -> ${toKit}:${toVoice}:${toSlot}`,
       mode,
     );
-    return ipcRenderer.invoke(
-      "move-sample-between-kits",
+    return ipcRenderer.invoke("move-sample-between-kits", {
       fromKit,
       fromVoice,
       fromSlot,
@@ -458,7 +457,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       toVoice,
       toSlot,
       mode,
-    );
+    });
   },
   // Task 5.2.5: Validate source_path files for existing samples
   validateSampleSources: (kitName: string) => {

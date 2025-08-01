@@ -25,7 +25,7 @@ export function determineStereoConfiguration(
 
   // Check for per-sample override first
   if (options?.forceMono) {
-    isStereo = false;
+    // isStereo already false, no assignment needed
   } else if (options?.forceStereo) {
     // Force stereo even if file is mono - will be handled during preview/sync
     isStereo = true;

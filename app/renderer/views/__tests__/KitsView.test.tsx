@@ -34,6 +34,7 @@ if (typeof window !== "undefined") {
 
 import React from "react";
 
+import { setupAudioMocks } from "../../../../tests/mocks/browser/audio";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { SettingsContext } from "../../utils/SettingsContext";
 import KitsView from "../KitsView";
@@ -84,6 +85,9 @@ describe("KitsView", () => {
 
     // Re-setup electronAPI mock after clearAllMocks
     setupElectronAPIMock();
+
+    // Setup audio mocks for SampleWaveform component
+    setupAudioMocks();
 
     // Create mock for console methods
     vi.spyOn(console, "error").mockImplementation(() => {});

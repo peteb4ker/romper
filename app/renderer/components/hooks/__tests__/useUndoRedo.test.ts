@@ -9,6 +9,9 @@ const mockElectronAPI = {
   deleteSampleFromSlot: vi.fn(),
   deleteSampleFromSlotWithoutCompaction: vi.fn(),
   getAllSamplesForKit: vi.fn(),
+  replaceSampleInSlot: vi.fn(),
+  moveSampleInKit: vi.fn(),
+  moveSampleBetweenKits: vi.fn(),
 };
 
 // Setup window.electronAPI mock
@@ -445,6 +448,347 @@ describe("useUndoRedo - Basic Tests", () => {
       });
 
       expect(result.current.error).toBe(null);
+    });
+  });
+
+  describe("Redo Operations", () => {
+    it("should perform basic redo operation", async () => {
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
+
+      // Add action
+      act(() => {
+        result.current.addAction({
+          type: "ADD_SAMPLE",
+          data: {
+            voice: 1,
+            slot: 0,
+            addedSample: {
+              filename: "test.wav",
+              source_path: "/path/to/test.wav",
+              is_stereo: false,
+            },
+          },
+        });
+      });
+
+      // Undo it
+      await act(async () => {
+        await result.current.undo();
+      });
+
+      expect(result.current.canRedo).toBe(true);
+      expect(result.current.redoCount).toBe(1);
+      expect(result.current.redoDescription).toBe(
+        "Undo add sample to voice 1, slot 1",
+      );
+
+      // Now redo
+      await act(async () => {
+        await result.current.redo();
+      });
+
+      expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledWith(
+        "test-kit",
+        1,
+        0,
+        "/path/to/test.wav",
+        { forceMono: true },
+      );
+      expect(result.current.canRedo).toBe(false);
+      expect(result.current.canUndo).toBe(true);
+    });
+
+    it("should handle redo for DELETE_SAMPLE action", async () => {
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
+
+      act(() => {
+        result.current.addAction({
+          type: "DELETE_SAMPLE",
+          data: {
+            voice: 2,
+            slot: 1,
+            deletedSample: {
+              filename: "deleted.wav",
+              source_path: "/path/to/deleted.wav",
+              is_stereo: true,
+            },
+          },
+        });
+      });
+
+      await act(async () => {
+        await result.current.undo();
+      });
+
+      await act(async () => {
+        await result.current.redo();
+      });
+
+      expect(mockElectronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
+        "test-kit",
+        2,
+        1,
+      );
+    });
+
+    it("should handle redo failure gracefully", async () => {
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
+
+      act(() => {
+        result.current.addAction({
+          type: "ADD_SAMPLE",
+          data: {
+            voice: 1,
+            slot: 0,
+            addedSample: {
+              filename: "test.wav",
+              source_path: "/path/to/test.wav",
+              is_stereo: false,
+            },
+          },
+        });
+      });
+
+      await act(async () => {
+        await result.current.undo();
+      });
+
+      // Mock failure
+      mockElectronAPI.addSampleToSlot.mockResolvedValue({
+        success: false,
+        error: "Redo failed",
+      });
+
+      await act(async () => {
+        await result.current.redo();
+      });
+
+      expect(result.current.error).toBe("Redo failed");
+      expect(result.current.canRedo).toBe(true); // Should still have redo action
+    });
+  });
+
+  describe("DELETE_SAMPLE Undo Operations", () => {
+    it("should undo DELETE_SAMPLE by restoring the sample", async () => {
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
+
+      act(() => {
+        result.current.addAction({
+          type: "DELETE_SAMPLE",
+          data: {
+            voice: 2,
+            slot: 3,
+            deletedSample: {
+              filename: "deleted.wav",
+              source_path: "/path/to/deleted.wav",
+              is_stereo: true,
+            },
+          },
+        });
+      });
+
+      await act(async () => {
+        await result.current.undo();
+      });
+
+      expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledWith(
+        "test-kit",
+        2,
+        3,
+        "/path/to/deleted.wav",
+        { forceMono: false }, // stereo sample
+      );
+    });
+  });
+
+  describe("REPLACE_SAMPLE Undo Operations", () => {
+    it("should undo REPLACE_SAMPLE by restoring old sample", async () => {
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
+
+      act(() => {
+        result.current.addAction({
+          type: "REPLACE_SAMPLE",
+          data: {
+            voice: 1,
+            slot: 1,
+            oldSample: {
+              filename: "old.wav",
+              source_path: "/path/to/old.wav",
+              is_stereo: false,
+            },
+            newSample: {
+              filename: "new.wav",
+              source_path: "/path/to/new.wav",
+              is_stereo: true,
+            },
+          },
+        });
+      });
+
+      await act(async () => {
+        await result.current.undo();
+      });
+
+      expect(mockElectronAPI.replaceSampleInSlot).toHaveBeenCalledWith(
+        "test-kit",
+        1,
+        1,
+        "/path/to/old.wav",
+        { forceMono: true }, // old sample was mono
+      );
+    });
+  });
+
+  describe("Error Handling", () => {
+    it("should handle unknown action type in undo", async () => {
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
+
+      act(() => {
+        result.current.addAction({
+          type: "UNKNOWN_ACTION" as any,
+          data: {},
+        });
+      });
+
+      await act(async () => {
+        await result.current.undo();
+      });
+
+      expect(result.current.error).toContain("Unknown action type");
+    });
+
+    it("should clear error when clearError is called", async () => {
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
+
+      // Trigger an error by adding action with unknown type and undoing
+      act(() => {
+        result.current.addAction({
+          type: "UNKNOWN_ACTION" as any,
+          data: {},
+        });
+      });
+
+      await act(async () => {
+        await result.current.undo();
+      });
+
+      expect(result.current.error).toBeTruthy();
+
+      // Clear error
+      act(() => {
+        result.current.clearError();
+      });
+
+      expect(result.current.error).toBe(null);
+    });
+
+    it("should not undo when already undoing", async () => {
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
+
+      act(() => {
+        result.current.addAction({
+          type: "ADD_SAMPLE",
+          data: {
+            voice: 1,
+            slot: 0,
+            addedSample: {
+              filename: "test.wav",
+              source_path: "/path/to/test.wav",
+              is_stereo: false,
+            },
+          },
+        });
+      });
+
+      // Start undo but don't await
+      act(() => {
+        result.current.undo();
+      });
+
+      expect(result.current.isUndoing).toBe(true);
+
+      // Try to undo again while already undoing - should be ignored
+      await act(async () => {
+        await result.current.undo();
+      });
+
+      // Should only be called once
+      expect(mockElectronAPI.deleteSampleFromSlot).toHaveBeenCalledTimes(1);
+    });
+
+    it("should not redo when already redoing", async () => {
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
+
+      act(() => {
+        result.current.addAction({
+          type: "ADD_SAMPLE",
+          data: {
+            voice: 1,
+            slot: 0,
+            addedSample: {
+              filename: "test.wav",
+              source_path: "/path/to/test.wav",
+              is_stereo: false,
+            },
+          },
+        });
+      });
+
+      await act(async () => {
+        await result.current.undo();
+      });
+
+      // Clear mocks to count fresh calls
+      vi.clearAllMocks();
+
+      // Start redo but don't await
+      act(() => {
+        result.current.redo();
+      });
+
+      expect(result.current.isRedoing).toBe(true);
+
+      // Try to redo again while already redoing - should be ignored
+      await act(async () => {
+        await result.current.redo();
+      });
+
+      // Should only be called once
+      expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledTimes(1);
+    });
+
+    it("should emit refresh event after successful operations", async () => {
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
+
+      const eventListener = vi.fn();
+      document.addEventListener("romper:refresh-samples", eventListener);
+
+      act(() => {
+        result.current.addAction({
+          type: "ADD_SAMPLE",
+          data: {
+            voice: 1,
+            slot: 0,
+            addedSample: {
+              filename: "test.wav",
+              source_path: "/path/to/test.wav",
+              is_stereo: false,
+            },
+          },
+        });
+      });
+
+      await act(async () => {
+        await result.current.undo();
+      });
+
+      expect(eventListener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          detail: { kitName: "test-kit" },
+        }),
+      );
+
+      document.removeEventListener("romper:refresh-samples", eventListener);
     });
   });
 });

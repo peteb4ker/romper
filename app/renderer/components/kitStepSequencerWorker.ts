@@ -8,7 +8,13 @@ let interval: ReturnType<typeof setInterval> | null = null; // Fix setInterval t
 let stepDuration = 125; // ms
 
 self.onmessage = function (e) {
-  const { type, payload } = e.data;
+  // Handle malformed messages gracefully
+  if (!e.data || typeof e.data !== "object") {
+    return;
+  }
+  
+  const { type, payload = {} } = e.data;
+  
   if (type === "START") {
     isPlaying = true;
     numSteps = payload.numSteps || 16;
@@ -26,6 +32,6 @@ self.onmessage = function (e) {
     currentStep = 0;
     self.postMessage({ type: "STEP", payload: { currentStep } });
   } else if (type === "SET_STEP") {
-    currentStep = payload.currentStep;
+    currentStep = payload.currentStep || 0;
   }
 };

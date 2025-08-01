@@ -166,7 +166,7 @@ describe("KitService", () => {
     });
 
     it("rejects if source kit does not exist", () => {
-      mockGetKit.mockImplementation((dbPath: string, kitName: string) => {
+      mockGetKit.mockImplementation(() => {
         return { success: false }; // Source doesn't exist
       });
 

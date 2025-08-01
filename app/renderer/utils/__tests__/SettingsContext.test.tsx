@@ -3,11 +3,7 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
-import {
-  SettingsProvider,
-  type ThemeMode,
-  useSettings,
-} from "../SettingsContext";
+import { SettingsProvider, useSettings } from "../SettingsContext";
 
 // Mock electronAPI
 const mockElectronAPI = {
@@ -18,7 +14,7 @@ const mockElectronAPI = {
 
 // Mock matchMedia
 const mockMatchMedia = vi.fn((query: string) => ({
-  matches: query === "(prefers-color-scheme: dark)" ? false : false,
+  matches: query === "(prefers-color-scheme: dark)",
   media: query,
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),

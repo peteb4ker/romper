@@ -280,7 +280,7 @@ describe("KitDetails", () => {
       };
       (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
 
-      const { container } = renderWithSettings(
+      renderWithSettings(
         <KitDetails
           kitName="TestKit"
           samples={{ 1: [], 2: [], 3: [], 4: [] }}

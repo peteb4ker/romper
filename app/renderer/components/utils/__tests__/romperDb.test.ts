@@ -12,18 +12,14 @@ describe("romperDb", () => {
         dbPath: dbDir + "/romper.sqlite",
       }),
     );
-    vi.mocked(window.electronAPI.insertKit).mockImplementation(
-      async (_dbDir: string, _kit: any) => ({
-        success: true,
-        kitId: 42,
-      }),
-    );
-    vi.mocked(window.electronAPI.insertSample).mockImplementation(
-      async (_dbDir: string, _sample: any) => ({
-        success: true,
-        sampleId: 99,
-      }),
-    );
+    vi.mocked(window.electronAPI.insertKit).mockImplementation(async () => ({
+      success: true,
+      kitId: 42,
+    }));
+    vi.mocked(window.electronAPI.insertSample).mockImplementation(async () => ({
+      success: true,
+      sampleId: 99,
+    }));
   });
 
   it("should return the expected sqlite path for a given dbDir", async () => {

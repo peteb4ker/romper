@@ -25,7 +25,6 @@ type Settings = {
 };
 
 let inMemorySettings: Settings = {}; // Store settings in memory
-let currentSamplePlayer: unknown = null; // TODO: Refine type if possible
 
 const isDev = process.env.NODE_ENV === "development";
 

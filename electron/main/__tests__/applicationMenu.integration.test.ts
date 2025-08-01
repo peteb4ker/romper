@@ -157,8 +157,6 @@ describe("Menu IPC Integration Tests", () => {
 
     // Get the menu template
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
-    const toolsMenu = menuTemplate.find((item: any) => item.label === "Tools");
-    const submenu = toolsMenu.submenu;
 
     // Test each menu item
     const menuItems = [

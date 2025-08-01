@@ -31,7 +31,7 @@ export const createDocumentMock = () => ({
     }
     return [];
   }),
-  createElement: vi.fn((tag) => ({
+  createElement: vi.fn(() => ({
     type: "",
     appendChild: vi.fn(),
     setAttribute: vi.fn(),

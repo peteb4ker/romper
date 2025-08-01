@@ -1,9 +1,7 @@
 // Test suite for ThemeToggle component
-import { fireEvent, render, screen } from "@testing-library/react";
-import { cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
-import { afterEach } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { TestSettingsProvider } from "../../views/__tests__/TestSettingsProvider";
 import ThemeToggle from "../ThemeToggle";

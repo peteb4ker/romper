@@ -9,8 +9,6 @@ import {
   addSample,
   createRomperDbFile,
   deleteSamples,
-  getAllSamples,
-  getKit,
   getKits,
   getKitSamples,
   isDbCorruptionError,

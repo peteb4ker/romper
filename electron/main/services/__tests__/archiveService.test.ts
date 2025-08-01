@@ -134,7 +134,7 @@ describe("download-and-extract-archive handler", () => {
 
   it("handles download errors and emits archive-error", async () => {
     const https = await import("https");
-    (https.get as any).mockImplementationOnce((_url: any, cb: any) => {
+    (https.get as any).mockImplementationOnce(() => {
       const req = new MockStream();
       setTimeout(() => {
         req.emit("error", new Error("network fail"));

@@ -1,10 +1,6 @@
 import { useCallback, useState } from "react";
 
-import type { DbResult } from "../../../../shared/db/schema";
-import type {
-  SyncChangeSummary,
-  SyncFileOperation,
-} from "../dialogs/SyncUpdateDialog";
+import type { SyncChangeSummary } from "../dialogs/SyncUpdateDialog";
 
 interface SyncProgress {
   currentFile: string;

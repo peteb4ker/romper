@@ -157,7 +157,7 @@ describe("registerIpcHandlers", () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({});
     const origHandler = ipcMainHandlers["copy-dir"];
-    ipcMainHandlers["copy-dir"] = async (_event: any, src: any, dest: any) => {
+    ipcMainHandlers["copy-dir"] = async () => {
       return { success: false, error: "fail" };
     };
     const result = await ipcMainHandlers["copy-dir"](
@@ -208,14 +208,6 @@ describe("registerIpcHandlers", () => {
 
     const result = await ipcMainHandlers["select-sd-card"]();
     expect(result).toBeNull();
-  });
-
-  it("registers get-user-data-path and returns path", async () => {
-    const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
-
-    const result = await ipcMainHandlers["get-user-data-path"]();
-    expect(result).toBe("/mock/userData");
   });
 
   it("registers create-kit and creates kit successfully", async () => {

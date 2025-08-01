@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { SettingsContext } from "../../../utils/SettingsContext";
 import { useStereoHandling } from "../useStereoHandling";

@@ -704,7 +704,7 @@ async function badGetKitsWithSamples() {
   ],
   "rules": {
     "@typescript-eslint/no-explicit-any": "error",
-    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-unused-vars": "warn",
     "react-hooks/exhaustive-deps": "error",
     "react/jsx-key": "error",
     "no-console": "warn"

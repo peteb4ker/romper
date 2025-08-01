@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  createDefaultStepPattern,
-  ensureValidStepPattern,
-} from "./stepPatternConstants";
+import { ensureValidStepPattern } from "./stepPatternConstants";
 
 export interface UseStepPatternParams {
   kitName: string;

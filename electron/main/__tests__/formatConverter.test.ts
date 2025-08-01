@@ -6,7 +6,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "../audioUtils";
 import {
   type ConversionOptions,
-  type ConversionResult,
   convertSampleToRampleFormat,
   convertToRampleDefault,
   getRequiredConversionOptions,

@@ -68,17 +68,15 @@ describe("SampleService", () => {
 
     // Mock valid WAV file header
     const validWavHeader = Buffer.from("RIFF\x20\x00\x00\x00WAVE");
-    mockFs.readSync.mockImplementation(
-      (fd, buffer, offset, length, position) => {
-        validWavHeader.copy(
-          buffer as Buffer,
-          offset,
-          0,
-          Math.min(length, validWavHeader.length),
-        );
-        return 12;
-      },
-    );
+    mockFs.readSync.mockImplementation((fd, buffer, offset, length) => {
+      validWavHeader.copy(
+        buffer as Buffer,
+        offset,
+        0,
+        Math.min(length, validWavHeader.length),
+      );
+      return 12;
+    });
 
     mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
     mockDeleteSamples.mockReturnValue({ success: true });
@@ -157,17 +155,15 @@ describe("SampleService", () => {
 
     it("rejects files without RIFF signature", () => {
       const invalidHeader = Buffer.from("FAKE\x20\x00\x00\x00WAVE");
-      mockFs.readSync.mockImplementation(
-        (fd, buffer, offset, length, position) => {
-          invalidHeader.copy(
-            buffer as Buffer,
-            offset,
-            0,
-            Math.min(length, invalidHeader.length),
-          );
-          return 12;
-        },
-      );
+      mockFs.readSync.mockImplementation((fd, buffer, offset, length) => {
+        invalidHeader.copy(
+          buffer as Buffer,
+          offset,
+          0,
+          Math.min(length, invalidHeader.length),
+        );
+        return 12;
+      });
 
       const result = sampleService.validateSampleFile("/test/invalid.wav");
       expect(result.isValid).toBe(false);
@@ -176,17 +172,15 @@ describe("SampleService", () => {
 
     it("rejects files without WAVE format identifier", () => {
       const invalidHeader = Buffer.from("RIFF\x20\x00\x00\x00FAKE");
-      mockFs.readSync.mockImplementation(
-        (fd, buffer, offset, length, position) => {
-          invalidHeader.copy(
-            buffer as Buffer,
-            offset,
-            0,
-            Math.min(length, invalidHeader.length),
-          );
-          return 12;
-        },
-      );
+      mockFs.readSync.mockImplementation((fd, buffer, offset, length) => {
+        invalidHeader.copy(
+          buffer as Buffer,
+          offset,
+          0,
+          Math.min(length, invalidHeader.length),
+        );
+        return 12;
+      });
 
       const result = sampleService.validateSampleFile("/test/invalid.wav");
       expect(result.isValid).toBe(false);

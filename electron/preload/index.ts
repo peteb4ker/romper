@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
-import type { Kit, NewKit, NewSample } from "../../shared/db/types.js";
+import type { NewKit, NewSample } from "../../shared/db/types.js";
 
 // ===== SETTINGS MANAGER =====
 interface SettingsData {
@@ -114,11 +114,6 @@ contextBridge.exposeInMainWorld("romperEnv", {
   ROMPER_LOCAL_PATH: process.env.ROMPER_LOCAL_PATH,
   ROMPER_SQUARP_ARCHIVE_URL: process.env.ROMPER_SQUARP_ARCHIVE_URL,
 });
-
-// Ensure the userData directory and settings path are resolved via IPC
-const getUserDataPath = async (): Promise<string> => {
-  return await ipcRenderer.invoke("get-user-data-path");
-};
 
 contextBridge.exposeInMainWorld("electronAPI", {
   selectSdCard: (): Promise<string | null> => {

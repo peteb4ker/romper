@@ -146,7 +146,7 @@ describe("preload/index.tsx", () => {
     const api = electronAPICall[1];
 
     // Mock the IPC responses that the SettingsManager will call
-    mockElectron.ipcRenderer.invoke.mockImplementation((channel, ...args) => {
+    mockElectron.ipcRenderer.invoke.mockImplementation((channel) => {
       if (channel === "read-settings") {
         return Promise.resolve({ testKey: "test-value" });
       }

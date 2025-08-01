@@ -10,7 +10,6 @@ import React, { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
-import { useKitVoicePanels } from "../hooks/useKitVoicePanels";
 import KitVoicePanel from "../KitVoicePanel";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 import { MockSettingsProvider } from "./MockSettingsProvider";

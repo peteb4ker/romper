@@ -107,7 +107,6 @@ afterEach(() => {
 describe.sequential("main/index.ts", () => {
   it("calls createWindow and loads settings on app ready (settings file exists)", async () => {
     const { app } = await import("electron");
-    const { registerIpcHandlers } = await import("../ipcHandlers.js");
     await import("../index");
     expect(app.whenReady).toHaveBeenCalled();
     // Skipping this assertion for now due to test isolation issues:

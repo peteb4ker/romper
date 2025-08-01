@@ -1,10 +1,8 @@
 // Test suite for SampleWaveform component
-import { act, render, screen } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { setupAudioMocks } from "../../../tests/mocks/browser/audio";
-import { createElectronAPIMock } from "../../../tests/mocks/electron/electronAPI";
 import SampleWaveform from "../SampleWaveform";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 

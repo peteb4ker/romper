@@ -829,7 +829,6 @@ describe("KitBrowser", () => {
 
   describe("imperative handle ref", () => {
     it("exposes handleScanAllKits through ref", () => {
-      const mockHandleScanAllKits = vi.fn();
       const ref = React.createRef();
 
       render(

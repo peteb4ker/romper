@@ -230,7 +230,7 @@ describe("ValidationResultsDialog", () => {
       rescanSelectedKits: rescanSelectedKitsMock,
     });
 
-    const { container } = render(
+    render(
       <ValidationResultsDialog
         isOpen={true}
         localStorePath={mockLocalStorePath}

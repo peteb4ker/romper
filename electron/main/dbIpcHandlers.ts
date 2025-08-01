@@ -259,7 +259,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     }),
   );
 
-  ipcMain.handle("scan-banks", async (_event) => {
+  ipcMain.handle("scan-banks", async () => {
     return scanService.scanBanks(inMemorySettings);
   });
 
@@ -372,7 +372,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
   });
 
   // SD Card sync operations
-  ipcMain.handle("generateSyncChangeSummary", async (_event) => {
+  ipcMain.handle("generateSyncChangeSummary", async () => {
     return syncService.generateChangeSummary(inMemorySettings);
   });
 
@@ -401,7 +401,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     },
   );
 
-  ipcMain.handle("cancelKitSync", async (_event) => {
+  ipcMain.handle("cancelKitSync", async () => {
     syncService.cancelSync();
   });
 

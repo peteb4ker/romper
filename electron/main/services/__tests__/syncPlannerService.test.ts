@@ -96,12 +96,12 @@ describe("SyncPlannerService", () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({ size: 1024 } as any);
 
-      mockGetAudioMetadata.mockResolvedValue({
+      mockGetAudioMetadata.mockReturnValue({
         success: true,
         data: { bitDepth: 16, sampleRate: 44100 },
       });
 
-      mockValidateSampleFormat.mockResolvedValue({
+      mockValidateSampleFormat.mockReturnValue({
         success: true,
         data: { isValid: true, issues: [] },
       });
@@ -141,12 +141,12 @@ describe("SyncPlannerService", () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({ size: 2048 } as any);
 
-      mockGetAudioMetadata.mockResolvedValue({
+      mockGetAudioMetadata.mockReturnValue({
         success: true,
         data: { bitDepth: 24, sampleRate: 48000 },
       });
 
-      mockValidateSampleFormat.mockResolvedValue({
+      mockValidateSampleFormat.mockReturnValue({
         success: false,
         data: {
           isValid: false,
@@ -246,7 +246,7 @@ describe("SyncPlannerService", () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({ size: 1024 } as any);
 
-      mockValidateSampleFormat.mockResolvedValue({
+      mockValidateSampleFormat.mockReturnValue({
         success: true,
         data: { isValid: true, issues: [] },
       });
@@ -311,7 +311,7 @@ describe("SyncPlannerService", () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({ size: 1024 } as any);
 
-      mockValidateSampleFormat.mockResolvedValue({
+      mockValidateSampleFormat.mockReturnValue({
         success: true,
         data: { isValid: true, issues: [] },
       });

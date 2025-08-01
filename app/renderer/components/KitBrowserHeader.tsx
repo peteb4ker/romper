@@ -21,9 +21,6 @@ interface KitBrowserHeaderProps {
   showModifiedOnly?: boolean;
   onToggleModifiedFilter?: () => void;
   modifiedCount?: number;
-  showRecentOnly?: boolean;
-  onToggleRecentFilter?: () => void;
-  recentCount?: number;
 }
 
 const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {

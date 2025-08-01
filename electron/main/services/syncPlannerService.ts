@@ -112,8 +112,8 @@ export class SyncPlannerService {
         totalSize += stats.size;
 
         // Get audio metadata for format validation
-        const metadataResult = await getAudioMetadata(sourcePath);
-        const formatValidationResult = await validateSampleFormat(sourcePath);
+        const metadataResult = getAudioMetadata(sourcePath);
+        const formatValidationResult = validateSampleFormat(sourcePath);
 
         const destinationPath = this.getDestinationPath(
           localStorePath,

@@ -327,14 +327,12 @@ export function useSampleManagement({
         });
         return false;
       }
-    } else {
-      if (!(window as any).electronAPI?.moveSampleInKit) {
-        onMessage?.({
-          type: "error",
-          text: "Sample move not available",
-        });
-        return false;
-      }
+    } else if (!(window as any).electronAPI?.moveSampleInKit) {
+      onMessage?.({
+        type: "error",
+        text: "Sample move not available",
+      });
+      return false;
     }
     return true;
   };

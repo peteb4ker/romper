@@ -38,7 +38,7 @@ export function getFirstKitInBank(
  * Checks if a bank has any kits
  */
 export function bankHasKits(kits: KitWithRelations[], bank: string): boolean {
-  return kits.some((k) => k && k.name && k.name[0] === bank);
+  return kits.some((k) => k && k.name && k.name.startsWith(bank));
 }
 
 /**

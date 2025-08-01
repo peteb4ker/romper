@@ -227,7 +227,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       const showAnchor = rowHasAnchor[index];
       const isSelected = selectedIdx === index;
       // Get kit data from kitData array
-      const kitDataItem = kitData?.find((k) => k.name === kitName) || null;
+      const kitDataItem = kitData?.find((k) => k.name === kitName) ?? null;
       return (
         <div style={style}>
           {showAnchor && (

@@ -326,7 +326,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                 const isValid = isValidKit(kit);
                 const isSelected = focusedIdx === globalIndex;
                 const kitDataItem =
-                  kitData?.find((k) => k.name === kit.name) || null;
+                  kitData?.find((k) => k.name === kit.name) ?? null;
 
                 const handleSelectKit = () => {
                   if (isValid) {

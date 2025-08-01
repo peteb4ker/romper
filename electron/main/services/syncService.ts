@@ -81,7 +81,7 @@ class SyncService {
 
       // Get all kits first
       const { getKits } = await import("../db/romperDbCoreORM.js");
-      const kitsResult = await getKits(dbDir);
+      const kitsResult = getKits(dbDir);
       if (!kitsResult.success || !kitsResult.data) {
         return {
           success: false,
@@ -94,7 +94,7 @@ class SyncService {
 
       // Get all samples from all kits
       for (const kit of kits) {
-        const samplesResult = await getKitSamples(dbDir, kit.name);
+        const samplesResult = getKitSamples(dbDir, kit.name);
         if (samplesResult.success && samplesResult.data) {
           // Add kit context to each sample
           const samplesWithKit = samplesResult.data.map((sample) => ({
@@ -140,8 +140,8 @@ class SyncService {
         totalSize += stats.size;
 
         // Get audio metadata for format validation
-        const metadataResult = await getAudioMetadata(sourcePath);
-        const formatValidationResult = await validateSampleFormat(sourcePath);
+        const metadataResult = getAudioMetadata(sourcePath);
+        const formatValidationResult = validateSampleFormat(sourcePath);
 
         const destinationPath = this.getDestinationPath(
           localStorePath,

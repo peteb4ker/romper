@@ -82,13 +82,18 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         autoFocus
       />
     ) : (
-      <span
-        className="font-semibold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline min-w-[2rem]"
+      <button
+        className="font-semibold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline min-w-[2rem] bg-transparent border-none p-0"
         onClick={() => setEditingKitAlias(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            setEditingKitAlias(true);
+          }
+        }}
         title="Edit kit name"
       >
         {kit?.alias || <span className="italic text-gray-400">(no name)</span>}
-      </span>
+      </button>
     )}
     <div className="flex-1" /> {/* Spacer */}
     {onBack && (

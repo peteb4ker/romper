@@ -127,8 +127,8 @@ export function analyzeSampleLocation(path: string): SampleLocationInfo {
 
   // External drives (common patterns)
   if (
-    normalizedPath.match(/^\/volumes\//i) || // macOS external
-    normalizedPath.match(/^[d-z]:\//i) || // Windows external drives
+    /^\/volumes\//i.exec(normalizedPath) || // macOS external
+    /^[d-z]:\//i.exec(normalizedPath) || // Windows external drives
     normalizedPath.includes("/media/")
   ) {
     // Linux mounted drives

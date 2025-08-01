@@ -109,6 +109,59 @@ export function useSampleManagement({
     [kitName, onSamplesChanged, onMessage, skipUndoRecording, onAddUndoAction],
   );
 
+  // Helper function to get old sample for undo recording
+  const getOldSampleForUndo = useCallback(
+    async (voice: number, slotIndex: number) => {
+      if (!onAddUndoAction || skipUndoRecording) return null;
+
+      const samplesResult = await (
+        window as any
+      ).electronAPI?.getAllSamplesForKit?.(kitName);
+      if (samplesResult?.success && samplesResult.data) {
+        return samplesResult.data.find(
+          (s: any) =>
+            s.voice_number === voice && s.slot_number === slotIndex + 1,
+        );
+      }
+      return null;
+    },
+    [kitName, onAddUndoAction, skipUndoRecording],
+  );
+
+  // Helper function to create replace sample undo action
+  const createReplaceUndoAction = useCallback(
+    (
+      voice: number,
+      slotIndex: number,
+      oldSample: any,
+      filePath: string,
+      options?: { forceMono?: boolean; forceStereo?: boolean },
+    ) => {
+      const replaceAction: ReplaceSampleAction = {
+        type: "REPLACE_SAMPLE",
+        id: createActionId(),
+        timestamp: new Date(),
+        description: `Replace sample in voice ${voice}, slot ${slotIndex + 1}`,
+        data: {
+          voice,
+          slot: slotIndex,
+          oldSample: {
+            filename: oldSample.filename,
+            source_path: oldSample.source_path,
+            is_stereo: oldSample.is_stereo,
+          },
+          newSample: {
+            filename: filePath.split("/").pop() || "",
+            source_path: filePath,
+            is_stereo: options?.forceStereo || false,
+          },
+        },
+      };
+      return replaceAction;
+    },
+    [],
+  );
+
   const handleSampleReplace = useCallback(
     async (
       voice: number,
@@ -125,19 +178,7 @@ export function useSampleManagement({
       }
 
       try {
-        // Get the old sample before replacing for undo recording
-        let oldSample = null;
-        if (!skipUndoRecording && onAddUndoAction) {
-          const samplesResult = await (
-            window as any
-          ).electronAPI?.getAllSamplesForKit?.(kitName);
-          if (samplesResult?.success && samplesResult.data) {
-            oldSample = samplesResult.data.find(
-              (s: any) =>
-                s.voice_number === voice && s.slot_number === slotIndex + 1,
-            );
-          }
-        }
+        const oldSample = await getOldSampleForUndo(voice, slotIndex);
 
         const result = await (window as any).electronAPI.replaceSampleInSlot(
           kitName,
@@ -154,45 +195,16 @@ export function useSampleManagement({
           });
 
           // Record undo action unless explicitly skipped
-          if (
-            !skipUndoRecording &&
-            onAddUndoAction &&
-            oldSample &&
-            result.data
-          ) {
+          if (oldSample && result.data && onAddUndoAction) {
             console.log("[SAMPLE_MGT] Recording REPLACE_SAMPLE undo action");
-            const replaceAction: ReplaceSampleAction = {
-              type: "REPLACE_SAMPLE",
-              id: createActionId(),
-              timestamp: new Date(),
-              description: `Replace sample in voice ${voice}, slot ${slotIndex + 1}`,
-              data: {
-                voice,
-                slot: slotIndex,
-                oldSample: {
-                  filename: oldSample.filename,
-                  source_path: oldSample.source_path,
-                  is_stereo: oldSample.is_stereo,
-                },
-                newSample: {
-                  filename: filePath.split("/").pop() || "",
-                  source_path: filePath,
-                  is_stereo: options?.forceStereo || false,
-                },
-              },
-            };
-            onAddUndoAction(replaceAction);
-          } else {
-            console.log(
-              "[SAMPLE_MGT] NOT recording REPLACE_SAMPLE undo action - skipUndoRecording:",
-              skipUndoRecording,
-              "onAddUndoAction:",
-              !!onAddUndoAction,
-              "oldSample:",
-              !!oldSample,
-              "result.data:",
-              !!result.data,
+            const replaceAction = createReplaceUndoAction(
+              voice,
+              slotIndex,
+              oldSample,
+              filePath,
+              options,
             );
+            onAddUndoAction(replaceAction);
           }
 
           // Reload samples to reflect changes
@@ -212,7 +224,74 @@ export function useSampleManagement({
         });
       }
     },
-    [kitName, onSamplesChanged, onMessage, skipUndoRecording, onAddUndoAction],
+    [
+      kitName,
+      onSamplesChanged,
+      onMessage,
+      getOldSampleForUndo,
+      createReplaceUndoAction,
+      onAddUndoAction,
+    ],
+  );
+
+  // Helper function to get sample to delete for undo recording
+  const getSampleToDeleteForUndo = useCallback(
+    async (voice: number, slotIndex: number) => {
+      if (skipUndoRecording) return null;
+
+      try {
+        const samplesResult = await (
+          window as any
+        ).electronAPI?.getAllSamplesForKit?.(kitName);
+        if (samplesResult?.success && samplesResult.data) {
+          return samplesResult.data.find(
+            (sample: any) =>
+              sample.voice_number === voice &&
+              sample.slot_number === slotIndex + 1,
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[SampleManagement] Failed to get sample data for undo recording:",
+          error,
+        );
+      }
+      return null;
+    },
+    [kitName, skipUndoRecording],
+  );
+
+  // Helper function to create compact slots undo action
+  const createCompactSlotsUndoAction = useCallback(
+    (voice: number, slotIndex: number, sampleToDelete: any, result: any) => {
+      const compactAction: CompactSlotsAction = {
+        id: createActionId(),
+        type: "COMPACT_SLOTS",
+        timestamp: new Date(),
+        description: `Delete sample from voice ${voice}, slot ${slotIndex + 1} (with compaction)`,
+        data: {
+          voice,
+          deletedSlot: slotIndex,
+          deletedSample: {
+            filename: sampleToDelete.filename,
+            source_path: sampleToDelete.source_path,
+            is_stereo: sampleToDelete.is_stereo,
+          },
+          affectedSamples: result.data.affectedSamples.map((sample: any) => ({
+            voice: sample.voice_number,
+            oldSlot: sample.slot_number, // New position after compaction
+            newSlot: sample.slot_number - 1, // Original position before compaction
+            sample: {
+              filename: sample.filename,
+              source_path: sample.source_path,
+              is_stereo: sample.is_stereo,
+            },
+          })),
+        },
+      };
+      return compactAction;
+    },
+    [],
   );
 
   const handleSampleDelete = useCallback(
@@ -226,27 +305,7 @@ export function useSampleManagement({
       }
 
       try {
-        // Get the sample data BEFORE deleting it (for undo recording)
-        let sampleToDelete = null;
-        if (!skipUndoRecording) {
-          try {
-            const samplesResult = await (
-              window as any
-            ).electronAPI?.getAllSamplesForKit?.(kitName);
-            if (samplesResult?.success && samplesResult.data) {
-              sampleToDelete = samplesResult.data.find(
-                (sample: any) =>
-                  sample.voice_number === voice &&
-                  sample.slot_number === slotIndex + 1,
-              );
-            }
-          } catch (error) {
-            console.error(
-              "[SampleManagement] Failed to get sample data for undo recording:",
-              error,
-            );
-          }
-        }
+        const sampleToDelete = await getSampleToDeleteForUndo(voice, slotIndex);
 
         const result = await (window as any).electronAPI.deleteSampleFromSlot(
           kitName,
@@ -261,39 +320,13 @@ export function useSampleManagement({
           });
 
           // Record COMPACT_SLOTS action since deletion now triggers automatic compaction
-          if (
-            !skipUndoRecording &&
-            sampleToDelete &&
-            onAddUndoAction &&
-            result.data
-          ) {
-            const compactAction: CompactSlotsAction = {
-              id: createActionId(),
-              type: "COMPACT_SLOTS",
-              timestamp: new Date(),
-              description: `Delete sample from voice ${voice}, slot ${slotIndex + 1} (with compaction)`,
-              data: {
-                voice,
-                deletedSlot: slotIndex,
-                deletedSample: {
-                  filename: sampleToDelete.filename,
-                  source_path: sampleToDelete.source_path,
-                  is_stereo: sampleToDelete.is_stereo,
-                },
-                affectedSamples: result.data.affectedSamples.map(
-                  (sample: any) => ({
-                    voice: sample.voice_number,
-                    oldSlot: sample.slot_number, // New position after compaction
-                    newSlot: sample.slot_number - 1, // Original position before compaction
-                    sample: {
-                      filename: sample.filename,
-                      source_path: sample.source_path,
-                      is_stereo: sample.is_stereo,
-                    },
-                  }),
-                ),
-              },
-            };
+          if (sampleToDelete && onAddUndoAction && result.data) {
+            const compactAction = createCompactSlotsUndoAction(
+              voice,
+              slotIndex,
+              sampleToDelete,
+              result,
+            );
             onAddUndoAction(compactAction);
           }
 
@@ -314,7 +347,14 @@ export function useSampleManagement({
         });
       }
     },
-    [kitName, onSamplesChanged, onMessage, skipUndoRecording, onAddUndoAction],
+    [
+      kitName,
+      onSamplesChanged,
+      onMessage,
+      getSampleToDeleteForUndo,
+      createCompactSlotsUndoAction,
+      onAddUndoAction,
+    ],
   );
 
   // Helper functions to reduce cognitive complexity in handleSampleMove

@@ -272,7 +272,7 @@ describe("SyncPlannerService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
-        "Failed to generate sync summary: Database connection failed",
+        "Failed to load kits: Database connection failed",
       );
     });
 

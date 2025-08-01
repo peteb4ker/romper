@@ -86,7 +86,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         className="font-semibold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline min-w-[2rem] bg-transparent border-none p-0"
         onClick={() => setEditingKitAlias(true)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
+          if (e.key === "Enter" || e.key === " ") {
             setEditingKitAlias(true);
           }
         }}

@@ -17,11 +17,17 @@ async function getKit(name: string): Promise<DbResult<Kit>> {
 }
 ```
 
-### Reference-Only Architecture
-Store sample paths, never copy files until SD card sync:
+### Try catch
+
+Use catch `(_)` when you're explicitly ignoring errors and want to prevent ESLint or TypeScript from flagging the unused variable. This is preferred over naming the parameter err or e and leaving it unused.
+
 ```typescript
-const sample = { sourcePath: '/path/to/kick.wav', filename: 'kick.wav' };
 ```
+try {
+  maybeFails();
+} catch (_) {
+  // no-op: this error is intentionally ignored
+}```
 
 ## Quality Requirements
 
@@ -35,9 +41,9 @@ const sample = { sourcePath: '/path/to/kick.wav', filename: 'kick.wav' };
 ```typescript
 // ✅ CORRECT: Always use ES modules (except preload script)
 import React, { useCallback, useState } from 'react';        // ES module imports
-import { toast } from 'sonner';                              
-import { useKitBrowser } from './hooks/useKitBrowser';       
-import { toCapitalCase } from '../../../../shared/utils';    
+import { toast } from 'sonner';
+import { useKitBrowser } from './hooks/useKitBrowser';
+import { toCapitalCase } from '../../../../shared/utils';
 
 // Export using ES modules
 export { KitEditor };
@@ -61,7 +67,7 @@ import { toCapitalCase } from '../../../../shared/utils';    // 4. Shared absolu
 
 ### File Size Limits
 - **Components**: Maximum 350 lines
-- **Hooks**: Maximum 200 lines  
+- **Hooks**: Maximum 200 lines
 - **Utils**: Maximum 150 lines
 - **Refactor when exceeded**: Split into focused modules
 
@@ -131,7 +137,7 @@ toast.error(error.message); // May show technical details
 describe('useKitEditor', () => {
   beforeEach(() => { /* setup */ });
   afterEach(() => { /* cleanup */ });
-  
+
   describe('when kit is editable', () => {
     it('should allow adding samples to voice slots', () => {
       // Test implementation

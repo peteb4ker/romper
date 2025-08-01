@@ -38,7 +38,9 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Voice alias management
   const { updateVoiceAlias } = useVoiceAlias({
     kitName: props.kitName,
-    onUpdate: reloadKit,
+    onUpdate: () => {
+      reloadKit().catch(console.error);
+    },
   });
 
   // Sample management for drag-and-drop operations (Task 5.2.2 & 5.2.3)
@@ -139,7 +141,9 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     selectedSampleIdx,
     setSelectedVoice,
     setSelectedSampleIdx,
-    onSaveVoiceName: updateVoiceAlias,
+    onSaveVoiceName: (voice: number, alias: string | null) => {
+      updateVoiceAlias(voice, alias ?? "").catch(console.error);
+    },
     onRescanVoiceName: () => {}, // TODO: Remove this legacy method
     samplePlaying: playback.samplePlaying,
     playTriggers: playback.playTriggers,

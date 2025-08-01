@@ -44,7 +44,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
 
     window.electronAPI
       .getSampleAudioBuffer(kitName, voiceNumber, slotNumber)
-      .then((arrayBuffer: ArrayBuffer | null) => {
+      .then(async (arrayBuffer: ArrayBuffer | null) => {
         if (cancelled) return;
 
         // Handle null response for missing samples (empty slots)
@@ -57,7 +57,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         // Always close previous context before creating a new one
         if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
           try {
-            audioCtxRef.current.close();
+            await audioCtxRef.current.close();
           } catch {
             // Ignore close errors
           }
@@ -84,7 +84,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       cancelled = true;
       if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
         try {
-          audioCtxRef.current.close();
+          audioCtxRef.current.close().catch(() => {
+            // Ignore close errors
+          });
         } catch {
           // Ignore close errors
         }
@@ -212,7 +214,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       stopPlayback();
       if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
         try {
-          audioCtxRef.current.close();
+          audioCtxRef.current.close().catch(() => {
+            // Ignore close errors
+          });
         } catch {
           // Ignore close errors
         }

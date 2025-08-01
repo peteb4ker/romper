@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, useRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { KitWithRelations } from "../../../shared/db/schema";
@@ -33,8 +33,31 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     const kitGridRef = useRef<KitGridHandle>(null);
     const [showValidationDialog, setShowValidationDialog] = useState(false);
 
+    // Task 20.1.4: Favorites filter state
+    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+    const [favoritesCount, setFavoritesCount] = useState(0);
+
+    // Task 20.2.2: Modified filter state
+    const [showModifiedOnly, setShowModifiedOnly] = useState(false);
+    const [modifiedCount, setModifiedCount] = useState(0);
+
+    // Task 20.1.4 & 20.2.2: Filter kits based on active filters
+    const filteredKits = React.useMemo(() => {
+      let kits = props.kits ?? [];
+
+      if (showFavoritesOnly) {
+        kits = kits.filter((kit) => kit.is_favorite);
+      }
+
+      if (showModifiedOnly) {
+        kits = kits.filter((kit) => kit.modified_since_sync);
+      }
+
+      return kits;
+    }, [props.kits, showFavoritesOnly, showModifiedOnly]);
+
     const logic = useKitBrowser({
-      kits: props.kits ?? [],
+      kits: filteredKits,
       kitListRef: kitGridRef,
       onRefreshKits: props.onRefreshKits,
       onMessage: props.onMessage,
@@ -94,12 +117,71 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       }
     }, [logic.error, onMessage]);
 
+    // Task 20.1.2: Handler for favorites toggle
+    const handleToggleFavorite = React.useCallback(
+      async (kitName: string) => {
+        try {
+          const result = await window.electronAPI.toggleKitFavorite?.(kitName);
+          if (result?.success) {
+            const isFavorite = result.data?.is_favorite;
+            onMessage?.({
+              text: `Kit ${kitName} ${isFavorite ? "added to" : "removed from"} favorites`,
+              type: "success",
+              duration: 2000,
+            });
+            // Refresh kits to update the UI
+            props.onRefreshKits?.();
+
+            // Update favorites count
+            const countResult =
+              await window.electronAPI.getFavoriteKitsCount?.();
+            if (countResult?.success && typeof countResult.data === "number") {
+              setFavoritesCount(countResult.data);
+            }
+          } else {
+            onMessage?.({
+              text: `Failed to toggle favorite: ${result?.error || "Unknown error"}`,
+              type: "error",
+            });
+          }
+        } catch (error) {
+          onMessage?.({
+            text: `Failed to toggle favorite: ${error instanceof Error ? error.message : String(error)}`,
+            type: "error",
+          });
+        }
+      },
+      [onMessage, props],
+    );
+
+    // Task 20.1.3: Favorite toggle keyboard shortcut handler
+    const favoritesKeyboardHandler = React.useCallback(
+      (e: KeyboardEvent) => {
+        // Don't handle hotkeys when typing in inputs
+        const target = e.target as Element;
+        if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") {
+          return;
+        }
+
+        // F key to toggle favorite on focused kit
+        if (e.key.toLowerCase() === "f" && focusedKit) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleToggleFavorite(focusedKit);
+        }
+      },
+      [focusedKit, handleToggleFavorite],
+    );
+
     // Register global A-Z navigation for bank selection and kit focus
     React.useEffect(() => {
       window.addEventListener("keydown", globalBankHotkeyHandler);
-      return () =>
+      window.addEventListener("keydown", favoritesKeyboardHandler);
+      return () => {
         window.removeEventListener("keydown", globalBankHotkeyHandler);
-    }, [globalBankHotkeyHandler]);
+        window.removeEventListener("keydown", favoritesKeyboardHandler);
+      };
+    }, [globalBankHotkeyHandler, favoritesKeyboardHandler]);
 
     // Handler for KitBankNav and KitGrid keyboard navigation
     const focusBankInKitGrid = (bank: string) => {
@@ -163,6 +245,39 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       }
     };
 
+    // Task 20.1.4: Fetch favorites count when kits change
+    useEffect(() => {
+      const fetchFavoritesCount = async () => {
+        try {
+          const result = await window.electronAPI.getFavoriteKitsCount?.();
+          if (result?.success && typeof result.data === "number") {
+            setFavoritesCount(result.data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch favorites count:", error);
+        }
+      };
+
+      fetchFavoritesCount();
+    }, [props.kits]); // Re-fetch when kits change
+
+    // Task 20.2.2: Calculate modified count when kits change
+    useEffect(() => {
+      const modifiedKits =
+        props.kits?.filter((kit) => kit.modified_since_sync) ?? [];
+      setModifiedCount(modifiedKits.length);
+    }, [props.kits]);
+
+    // Task 20.1.4: Toggle favorites filter
+    const handleToggleFavoritesFilter = () => {
+      setShowFavoritesOnly(!showFavoritesOnly);
+    };
+
+    // Task 20.2.2: Toggle modified filter
+    const handleToggleModifiedFilter = () => {
+      setShowModifiedOnly(!showModifiedOnly);
+    };
+
     const handleCloseSyncDialog = () => {
       setShowSyncDialog(false);
       setCurrentSyncKit(null);
@@ -188,6 +303,12 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           onShowLocalStoreWizard={() => setShowLocalStoreWizard(true)}
           onValidateLocalStore={() => setShowValidationDialog(true)}
           onSyncToSdCard={handleSyncToSdCard}
+          showFavoritesOnly={showFavoritesOnly}
+          onToggleFavoritesFilter={handleToggleFavoritesFilter}
+          favoritesCount={favoritesCount}
+          showModifiedOnly={showModifiedOnly}
+          onToggleModifiedFilter={handleToggleModifiedFilter}
+          modifiedCount={modifiedCount}
           bankNav={
             <KitBankNav
               kits={kits}
@@ -238,6 +359,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             onBankFocus={handleBankFocus}
             onFocusKit={setFocusedKit} // NEW: keep parent in sync
             onVisibleBankChange={handleVisibleBankChange} // NEW: update selected bank on scroll
+            onToggleFavorite={handleToggleFavorite} // Task 20.1.2: Favorites toggle
           />
         </div>
         {/* Local Store Wizard Modal */}

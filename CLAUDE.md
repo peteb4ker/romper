@@ -50,12 +50,13 @@ See [Architecture Documentation](./docs/developer/architecture.md) for comprehen
 - Database schema patterns
 
 ## Development Workflow
-See [Development Workflow](./docs/developer/development-workflow.md) and [Task Execution](./.agent/task-execution.md) for complete workflow guidance.
+- See [Development Workflow](./docs/developer/development-workflow.md) and [Task Execution](./.agent/task-execution.md) for complete workflow guidance.
+- ALWAYS update the task file status upon completing a subtask and/or task.
 
 ### Documentation Organization Rule
 **CRITICAL**: Documentation belongs in specific locations:
 - **Human-readable docs** → `docs/` directory
-- **Agent instructions** → `.agent/` directory  
+- **Agent instructions** → `.agent/` directory
 - **NEVER put documentation in CLAUDE.md** - this file is for project context only
 
 ## Key Documentation Links

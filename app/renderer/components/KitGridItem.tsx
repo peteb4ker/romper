@@ -1,6 +1,7 @@
 import React, { JSX } from "react";
 import { BiSolidPiano } from "react-icons/bi";
-import { FiCopy, FiFolder } from "react-icons/fi";
+import { FaStar } from "react-icons/fa";
+import { FiCopy, FiFolder, FiStar } from "react-icons/fi";
 import { GiDrumKit } from "react-icons/gi";
 import { MdAutoAwesome, MdMic } from "react-icons/md";
 import { TiArrowLoop } from "react-icons/ti";
@@ -16,6 +17,7 @@ interface KitGridItemProps {
   onDuplicate: () => void;
   sampleCounts?: [number, number, number, number];
   kitData?: KitWithRelations | null;
+  onToggleFavorite?: (kitName: string) => void;
 }
 
 // Add ref forwarding and selection props
@@ -33,6 +35,7 @@ const KitGridItem = React.memo(
         sampleCounts,
         kitData,
         isSelected,
+        onToggleFavorite,
         ...rest
       },
       ref,
@@ -116,6 +119,21 @@ const KitGridItem = React.memo(
 
       const kitTypeStyles = getKitTypeStyles();
 
+      // Task 20.2.1: Determine if kit is high priority
+      const isHighPriority = () => {
+        if (!isValid || !kitData) return false;
+
+        // High priority conditions:
+        // 1. Favorite kits (user marked as important)
+        // 2. Modified kits with unsaved changes (need attention)
+        // 3. Well-loaded kits (high sample count across voices - useful for performance)
+        const wellLoaded =
+          sampleCounts &&
+          sampleCounts.filter((count) => count >= 8).length >= 2;
+
+        return kitData.is_favorite || kitData.modified_since_sync || wellLoaded;
+      };
+
       // Selection highlighting
       const selectedHighlight = isSelected
         ? "ring-2 ring-blue-400 dark:ring-blue-300 border-blue-400 dark:border-blue-300 bg-blue-50 dark:bg-blue-900"
@@ -125,7 +143,7 @@ const KitGridItem = React.memo(
       return (
         <div
           ref={ref}
-          className={`flex flex-col justify-between p-2 rounded border text-sm h-full w-full ${kitTypeStyles.border} ${kitTypeStyles.background} ${
+          className={`relative flex flex-col justify-between p-2 rounded border text-sm h-full w-full ${kitTypeStyles.border} ${kitTypeStyles.background} ${
             isValid
               ? "border-gray-300 dark:border-slate-700 hover:brightness-95 dark:hover:brightness-110"
               : "border-red-500"
@@ -137,6 +155,13 @@ const KitGridItem = React.memo(
           aria-selected={isSelected ? "true" : "false"}
           {...rest}
         >
+          {/* Task 20.2.1: High priority indicator */}
+          {isHighPriority() && (
+            <div
+              className="absolute top-1 left-1 w-2 h-2 bg-orange-500 rounded-full shadow-sm border border-orange-600"
+              title="High priority kit (favorite, modified, or well-loaded)"
+            />
+          )}
           {/* Top row: icon, kit name, status badges */}
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -164,6 +189,27 @@ const KitGridItem = React.memo(
                     Editable
                   </span>
                 )}
+              {/* Task 20.1.2: Star-based favorites UI */}
+              {isValid && onToggleFavorite && (
+                <button
+                  className={`p-1 text-xs hover:text-yellow-500 transition-colors ${
+                    kitData?.is_favorite
+                      ? "text-yellow-500"
+                      : "text-gray-400 dark:text-gray-500"
+                  }`}
+                  title={
+                    kitData?.is_favorite
+                      ? "Remove from favorites"
+                      : "Add to favorites"
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleFavorite(kit);
+                  }}
+                >
+                  {kitData?.is_favorite ? <FaStar /> : <FiStar />}
+                </button>
+              )}
               {isValid && (
                 <button
                   className="p-1 text-xs text-gray-500 hover:text-green-600 ml-1"

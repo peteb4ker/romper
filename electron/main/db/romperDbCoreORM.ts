@@ -799,3 +799,78 @@ export function moveSample(
     };
   });
 }
+
+// Task 20.1.1: Favorites system functions
+export function toggleKitFavorite(
+  dbDir: string,
+  kitName: string,
+): DbResult<{ is_favorite: boolean }> {
+  return withDb(dbDir, (db) => {
+    // Get current favorite status
+    const kit = db
+      .select({ is_favorite: kits.is_favorite })
+      .from(kits)
+      .where(eq(kits.name, kitName))
+      .get();
+
+    if (!kit) {
+      throw new Error(`Kit ${kitName} not found`);
+    }
+
+    const newFavoriteStatus = !kit.is_favorite;
+
+    // Update favorite status
+    db.update(kits)
+      .set({ is_favorite: newFavoriteStatus })
+      .where(eq(kits.name, kitName))
+      .run();
+
+    return { is_favorite: newFavoriteStatus };
+  });
+}
+
+export function setKitFavorite(
+  dbDir: string,
+  kitName: string,
+  isFavorite: boolean,
+): DbResult<void> {
+  return withDb(dbDir, (db) => {
+    const result = db
+      .update(kits)
+      .set({ is_favorite: isFavorite })
+      .where(eq(kits.name, kitName))
+      .run();
+
+    if (result.changes === 0) {
+      throw new Error(`Kit ${kitName} not found`);
+    }
+  });
+}
+
+export function getFavoriteKits(dbDir: string): DbResult<KitWithRelations[]> {
+  return withDb(dbDir, (db) => {
+    return db
+      .select()
+      .from(kits)
+      .leftJoin(banks, eq(kits.bank_letter, banks.letter))
+      .where(eq(kits.is_favorite, true))
+      .orderBy(kits.name)
+      .all()
+      .map((row) => ({
+        ...row.kits,
+        bank: row.banks,
+      }));
+  });
+}
+
+export function getFavoriteKitsCount(dbDir: string): DbResult<number> {
+  return withDb(dbDir, (db) => {
+    const result = db
+      .select()
+      .from(kits)
+      .where(eq(kits.is_favorite, true))
+      .all();
+
+    return result.length;
+  });
+}

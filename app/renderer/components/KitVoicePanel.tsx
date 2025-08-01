@@ -565,6 +565,285 @@ const KitVoicePanel: React.FC<
     await handleDrop(e, droppedSlotIndex);
   };
 
+  // Helper function to calculate render slots
+  const calculateRenderSlots = () => {
+    const lastSampleIndex = samples
+      .map((sample, index) => (sample !== "" ? index : -1))
+      .reduce((max, current) => Math.max(max, current), -1);
+    const nextAvailableSlot = lastSampleIndex + 1;
+    const slotsToRender = Math.min(nextAvailableSlot + 1, 12); // Show samples + 1 drop target, max 12
+    return { nextAvailableSlot, slotsToRender };
+  };
+
+  // Helper function to calculate slot styling and drag feedback
+  const getSlotStyling = (slotIndex: number, sample: string | undefined) => {
+    const slotBaseClass = "truncate flex items-center gap-2 mb-1 min-h-[28px]";
+    const isDragOver = dragOverSlot === slotIndex;
+    const isDropZone = dropZone?.slot === slotIndex;
+    const dropMode = dropZone?.mode;
+    const isStereoHighlight =
+      isStereoDragTarget && stereoDragSlotIndex === slotIndex;
+
+    let dragOverClass = "";
+    let dropHintTitle = "Drop to assign sample";
+
+    if (isDragOver || isStereoHighlight || isDropZone) {
+      if (isDropZone) {
+        // Internal sample move drop zone styling
+        if (dropMode === "insert") {
+          dragOverClass =
+            " bg-green-100 dark:bg-green-800 ring-2 ring-green-400 dark:ring-green-300 border-t-4 border-green-500";
+          dropHintTitle = "Insert sample here (other samples will shift down)";
+        } else {
+          dragOverClass =
+            " bg-yellow-100 dark:bg-yellow-800 ring-2 ring-yellow-400 dark:ring-yellow-300";
+          dropHintTitle = sample ? "Replace this sample" : "Move sample here";
+        }
+      } else if (isStereoHighlight) {
+        dragOverClass =
+          " bg-purple-100 dark:bg-purple-800 ring-2 ring-purple-400 dark:ring-purple-300";
+        dropHintTitle =
+          isStereoDragTarget && stereoDragSlotIndex === slotIndex && voice > 1
+            ? "Right channel of stereo pair"
+            : "Left channel of stereo pair";
+      } else {
+        dragOverClass =
+          " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300";
+        dropHintTitle = `Drop to assign sample (default: ${defaultToMonoSamples ? "mono" : "stereo"})`;
+      }
+    }
+
+    return {
+      slotBaseClass,
+      dragOverClass,
+      dropHintTitle,
+      isDragOver,
+      isDropZone,
+      isStereoHighlight,
+    };
+  };
+
+  // Helper function to render a filled sample slot
+  const renderSampleSlot = (slotIndex: number, sample: string) => {
+    const {
+      slotBaseClass,
+      dragOverClass,
+      dropHintTitle,
+      isDragOver,
+      isDropZone,
+      isStereoHighlight,
+    } = getSlotStyling(slotIndex, sample);
+    const sampleName = sample;
+    const sampleKey = voice + ":" + sampleName;
+    const isPlaying = samplePlaying[sampleKey];
+    const slotNumber = slotIndex + 1;
+    const sampleData = sampleMetadata?.[sampleName];
+
+    return (
+      <li
+        key={`${voice}-${slotIndex}-${sampleName}`}
+        className={`${slotBaseClass}${
+          selectedIdx === slotIndex && isActive
+            ? " bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 font-bold ring-2 ring-blue-400 dark:ring-blue-300"
+            : ""
+        }${dragOverClass}`}
+        tabIndex={-1}
+        aria-selected={selectedIdx === slotIndex && isActive}
+        data-testid={
+          selectedIdx === slotIndex && isActive
+            ? `sample-selected-voice-${voice}`
+            : undefined
+        }
+        title={
+          isDragOver || isStereoHighlight || isDropZone
+            ? dropHintTitle
+            : `Slot ${slotNumber}${sampleData?.source_path ? `\nSource: ${sampleData.source_path}` : ""}`
+        }
+        onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          if (sampleData?.source_path && window.electronAPI?.showItemInFolder) {
+            window.electronAPI.showItemInFolder(sampleData.source_path);
+          }
+        }}
+        draggable={isEditable}
+        onDragStart={
+          isEditable
+            ? (e) => handleSampleDragStart(e, slotIndex, sampleName)
+            : undefined
+        }
+        onDragEnd={isEditable ? handleSampleDragEnd : undefined}
+        onDragOver={
+          isEditable ? (e) => handleSampleDragOver(e, slotIndex) : undefined
+        }
+        onDragLeave={isEditable ? handleSampleDragLeave : undefined}
+        onDrop={isEditable ? (e) => handleSampleDrop(e, slotIndex) : undefined}
+      >
+        {renderPlayButton(isPlaying, sampleName)}
+        <span
+          className="truncate text-xs font-mono font-medium text-gray-700 dark:text-gray-200 flex-1"
+          title={
+            sampleData?.source_path
+              ? `${sampleName}\nSource: ${sampleData.source_path}`
+              : sampleName
+          }
+        >
+          {sampleName}
+        </span>
+        {isEditable && renderDeleteButton(slotIndex)}
+        <SampleWaveform
+          key={`${kitName}-${voice}-${slotIndex}-${sampleName}`}
+          kitName={kitName}
+          voiceNumber={voice}
+          slotNumber={slotNumber}
+          playTrigger={playTriggers[sampleKey] || 0}
+          stopTrigger={stopTriggers[sampleKey] || 0}
+          onPlayingChange={(playing) =>
+            onWaveformPlayingChange(voice, sample, playing)
+          }
+          onError={(err) => {
+            if (typeof window !== "undefined" && window.dispatchEvent) {
+              window.dispatchEvent(
+                new CustomEvent("SampleWaveformError", { detail: err }),
+              );
+            }
+          }}
+        />
+      </li>
+    );
+  };
+
+  // Helper function to render play/stop button
+  const renderPlayButton = (isPlaying: boolean, sampleName: string) => {
+    const buttonStyle = {
+      minWidth: 24,
+      minHeight: 24,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    };
+
+    if (isPlaying) {
+      return (
+        <button
+          className="p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs text-red-600 dark:text-red-400"
+          onClick={() => onStop(voice, sampleName)}
+          aria-label="Stop"
+          style={buttonStyle}
+        >
+          <FiSquare />
+        </button>
+      );
+    }
+
+    return (
+      <button
+        className="p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs"
+        onClick={() => onPlay(voice, sampleName)}
+        aria-label="Play"
+        style={buttonStyle}
+      >
+        <FiPlay />
+      </button>
+    );
+  };
+
+  // Helper function to render delete button
+  const renderDeleteButton = (slotIndex: number) => (
+    <button
+      className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-800 text-xs text-red-600 dark:text-red-400 ml-2"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleDeleteSample(slotIndex);
+      }}
+      aria-label="Delete sample"
+      title="Delete sample"
+      style={{
+        minWidth: 24,
+        minHeight: 24,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <FiTrash2 />
+    </button>
+  );
+
+  // Helper function to render an empty slot
+  const renderEmptySlot = (slotIndex: number, isDropTarget: boolean) => {
+    const {
+      slotBaseClass,
+      dragOverClass,
+      dropHintTitle,
+      isDragOver,
+      isDropZone,
+      isStereoHighlight,
+    } = getSlotStyling(slotIndex, undefined);
+
+    return (
+      <li
+        key={`${voice}-empty-${slotIndex}`}
+        className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass}${
+          isEditable
+            ? " border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500"
+            : ""
+        }`}
+        tabIndex={-1}
+        aria-selected={false}
+        data-testid={`empty-slot-${voice}-${slotIndex}`}
+        title={
+          isDragOver || isStereoHighlight || isDropZone
+            ? dropHintTitle
+            : undefined
+        }
+        onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
+        onDragOver={
+          isEditable && isDropTarget
+            ? (e) => handleSampleDragOver(e, slotIndex)
+            : undefined
+        }
+        onDragLeave={
+          isEditable && isDropTarget ? handleSampleDragLeave : undefined
+        }
+        onDrop={
+          isEditable && isDropTarget
+            ? (e) => handleSampleDrop(e, slotIndex)
+            : undefined
+        }
+      >
+        <div className="flex-1 flex items-center justify-center">
+          {isEditable ? (
+            <span className="text-xs text-gray-400 dark:text-gray-500 text-center">
+              Drop WAV file here
+            </span>
+          ) : (
+            <div className="w-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-sm"></div>
+          )}
+        </div>
+      </li>
+    );
+  };
+
+  // Main render function for all sample slots
+  const renderSampleSlots = () => {
+    const { nextAvailableSlot, slotsToRender } = calculateRenderSlots();
+    const renderedSlots = [];
+
+    for (let i = 0; i < slotsToRender; i++) {
+      const sample = samples[i];
+      const isDropTarget = i === nextAvailableSlot;
+
+      if (sample) {
+        renderedSlots.push(renderSampleSlot(i, sample));
+      } else if (isDropTarget) {
+        renderedSlots.push(renderEmptySlot(i, isDropTarget));
+      }
+    }
+
+    return renderedSlots;
+  };
+
   return (
     <div className="flex flex-col" role="region">
       <div className="font-semibold mb-1 text-gray-800 dark:text-gray-100 pl-1 flex items-center gap-2">
@@ -658,280 +937,7 @@ const KitVoicePanel: React.FC<
             tabIndex={isActive ? 0 : -1}
             onKeyDown={handleKeyDown}
           >
-            {(() => {
-              // Calculate which slots to render
-              const lastSampleIndex = samples
-                .map((sample, index) => (sample !== "" ? index : -1))
-                .reduce((max, current) => Math.max(max, current), -1);
-              const nextAvailableSlot = lastSampleIndex + 1;
-              const slotsToRender = Math.min(nextAvailableSlot + 1, 12); // Show samples + 1 drop target, max 12
-
-              const renderedSlots = [];
-
-              for (let i = 0; i < slotsToRender; i++) {
-                const sample = samples[i];
-                const slotBaseClass =
-                  "truncate flex items-center gap-2 mb-1 min-h-[28px]"; // uniform height for all slots
-                const isDragOver = dragOverSlot === i;
-
-                // Task 22.2: Check if this is the drop zone for internal sample moves
-                const isDropZone = dropZone?.slot === i;
-                const dropMode = dropZone?.mode;
-
-                // Only render drop functionality for the next available slot
-                const isDropTarget = i === nextAvailableSlot;
-
-                let slotElement;
-
-                // Task 7.1.3: Different visual feedback for modifier key overrides
-                let dragOverClass = "";
-                let dropHintTitle = "Drop to assign sample";
-
-                // Check if this slot should be highlighted for stereo drop
-                const isStereoHighlight =
-                  isStereoDragTarget && stereoDragSlotIndex === i;
-
-                if (isDragOver || isStereoHighlight || isDropZone) {
-                  if (isDropZone) {
-                    // Internal sample move drop zone styling
-                    if (dropMode === "insert") {
-                      dragOverClass =
-                        " bg-green-100 dark:bg-green-800 ring-2 ring-green-400 dark:ring-green-300 border-t-4 border-green-500";
-                      dropHintTitle =
-                        "Insert sample here (other samples will shift down)";
-                    } else {
-                      dragOverClass =
-                        " bg-yellow-100 dark:bg-yellow-800 ring-2 ring-yellow-400 dark:ring-yellow-300";
-                      dropHintTitle = sample
-                        ? "Replace this sample"
-                        : "Move sample here";
-                    }
-                  } else if (isStereoHighlight) {
-                    dragOverClass =
-                      " bg-purple-100 dark:bg-purple-800 ring-2 ring-purple-400 dark:ring-purple-300";
-                    dropHintTitle =
-                      isStereoDragTarget &&
-                      stereoDragSlotIndex === i &&
-                      voice > 1
-                        ? "Right channel of stereo pair"
-                        : "Left channel of stereo pair";
-                  } else {
-                    dragOverClass =
-                      " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300";
-                    dropHintTitle = `Drop to assign sample (default: ${defaultToMonoSamples ? "mono" : "stereo"})`;
-                  }
-                }
-
-                if (sample) {
-                  // sample is now always a string (filename)
-                  const sampleName = sample;
-                  const sampleKey = voice + ":" + sampleName;
-                  const isPlaying = samplePlaying[sampleKey];
-                  const slotNumber = i + 1; // Convert 0-based index to 1-based slot
-                  const sampleData = sampleMetadata?.[sampleName]; // Get metadata if available
-                  slotElement = (
-                    <li
-                      key={`${voice}-${i}-${sampleName}`}
-                      className={`${slotBaseClass}${
-                        selectedIdx === i && isActive
-                          ? " bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 font-bold ring-2 ring-blue-400 dark:ring-blue-300"
-                          : ""
-                      }${dragOverClass}`}
-                      tabIndex={-1}
-                      aria-selected={selectedIdx === i && isActive}
-                      data-testid={
-                        selectedIdx === i && isActive
-                          ? `sample-selected-voice-${voice}`
-                          : undefined
-                      }
-                      title={
-                        isDragOver || isStereoHighlight || isDropZone
-                          ? dropHintTitle
-                          : `Slot ${slotNumber}${sampleData?.source_path ? `\nSource: ${sampleData.source_path}` : ""}`
-                      }
-                      onClick={() => onSampleSelect && onSampleSelect(voice, i)}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        if (
-                          sampleData?.source_path &&
-                          window.electronAPI?.showItemInFolder
-                        ) {
-                          window.electronAPI.showItemInFolder(
-                            sampleData.source_path,
-                          );
-                        }
-                      }}
-                      // Task 22.2: Add drag attributes for internal sample moves
-                      draggable={isEditable}
-                      onDragStart={
-                        isEditable
-                          ? (e) => handleSampleDragStart(e, i, sampleName)
-                          : undefined
-                      }
-                      onDragEnd={isEditable ? handleSampleDragEnd : undefined}
-                      onDragOver={
-                        isEditable
-                          ? (e) => handleSampleDragOver(e, i)
-                          : undefined
-                      }
-                      onDragLeave={
-                        isEditable ? handleSampleDragLeave : undefined
-                      }
-                      onDrop={
-                        isEditable ? (e) => handleSampleDrop(e, i) : undefined
-                      }
-                    >
-                      {isPlaying ? (
-                        <button
-                          className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs text-red-600 dark:text-red-400`}
-                          onClick={() => onStop(voice, sampleName)}
-                          aria-label="Stop"
-                          style={{
-                            minWidth: 24,
-                            minHeight: 24,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <FiSquare />
-                        </button>
-                      ) : (
-                        <button
-                          className={`p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs ${
-                            isPlaying
-                              ? "text-green-600 dark:text-green-400"
-                              : ""
-                          }`}
-                          onClick={() => onPlay(voice, sampleName)}
-                          aria-label="Play"
-                          style={{
-                            minWidth: 24,
-                            minHeight: 24,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <FiPlay />
-                        </button>
-                      )}
-                      {/* Primary: Show filename prominently */}
-                      <span
-                        className="truncate text-xs font-mono font-medium text-gray-700 dark:text-gray-200 flex-1"
-                        title={
-                          sampleData?.source_path
-                            ? `${sampleName}\nSource: ${sampleData.source_path}`
-                            : sampleName
-                        }
-                      >
-                        {sampleName}
-                      </span>
-
-                      {isEditable && (
-                        <button
-                          className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-800 text-xs text-red-600 dark:text-red-400 ml-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteSample(i);
-                          }}
-                          aria-label="Delete sample"
-                          title="Delete sample"
-                          style={{
-                            minWidth: 24,
-                            minHeight: 24,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <FiTrash2 />
-                        </button>
-                      )}
-                      <SampleWaveform
-                        key={`${kitName}-${voice}-${i}-${sampleName}`}
-                        kitName={kitName}
-                        voiceNumber={voice}
-                        slotNumber={slotNumber}
-                        playTrigger={playTriggers[sampleKey] || 0}
-                        stopTrigger={stopTriggers[sampleKey] || 0}
-                        onPlayingChange={(playing) =>
-                          onWaveformPlayingChange(voice, sample, playing)
-                        }
-                        onError={(err) => {
-                          // Bubble up error to parent if needed (to be handled in KitDetails)
-                          if (
-                            typeof window !== "undefined" &&
-                            window.dispatchEvent
-                          ) {
-                            window.dispatchEvent(
-                              new CustomEvent("SampleWaveformError", {
-                                detail: err,
-                              }),
-                            );
-                          }
-                        }}
-                      />
-                    </li>
-                  );
-                } else if (isDropTarget) {
-                  // Empty slot - only render if it's the drop target
-                  slotElement = (
-                    <li
-                      key={`${voice}-empty-${i}`}
-                      className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass}${
-                        isEditable
-                          ? " border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500"
-                          : ""
-                      }`}
-                      tabIndex={-1}
-                      aria-selected={false}
-                      data-testid={`empty-slot-${voice}-${i}`}
-                      title={
-                        isDragOver || isStereoHighlight || isDropZone
-                          ? dropHintTitle
-                          : undefined
-                      }
-                      onClick={() => onSampleSelect && onSampleSelect(voice, i)}
-                      onDragOver={
-                        isEditable && isDropTarget
-                          ? (e) => handleSampleDragOver(e, i)
-                          : undefined
-                      }
-                      onDragLeave={
-                        isEditable && isDropTarget
-                          ? handleSampleDragLeave
-                          : undefined
-                      }
-                      onDrop={
-                        isEditable && isDropTarget
-                          ? (e) => handleSampleDrop(e, i)
-                          : undefined
-                      }
-                    >
-                      <div className="flex-1 flex items-center justify-center">
-                        {isEditable ? (
-                          <>
-                            <span className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                              Drop WAV file here
-                            </span>
-                          </>
-                        ) : (
-                          <div className="w-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-sm"></div>
-                        )}
-                      </div>
-                    </li>
-                  );
-                } else {
-                  // Don't render empty slots that aren't the drop target
-                  continue;
-                }
-
-                renderedSlots.push(slotElement);
-              }
-
-              return renderedSlots;
-            })()}
+            {renderSampleSlots()}
           </ul>
         </div>
       </div>

@@ -524,6 +524,27 @@ contextBridge.exposeInMainWorld("electronAPI", {
       callback(progress),
     );
   },
+
+  // Task 20.1: Favorites system
+  toggleKitFavorite: (kitName: string) => {
+    console.log("[IPC] toggleKitFavorite invoked", kitName);
+    return ipcRenderer.invoke("toggle-kit-favorite", kitName);
+  },
+
+  setKitFavorite: (kitName: string, isFavorite: boolean) => {
+    console.log("[IPC] setKitFavorite invoked", kitName, isFavorite);
+    return ipcRenderer.invoke("set-kit-favorite", kitName, isFavorite);
+  },
+
+  getFavoriteKits: () => {
+    console.log("[IPC] getFavoriteKits invoked");
+    return ipcRenderer.invoke("get-favorite-kits");
+  },
+
+  getFavoriteKitsCount: () => {
+    console.log("[IPC] getFavoriteKitsCount invoked");
+    return ipcRenderer.invoke("get-favorite-kits-count");
+  },
 });
 
 // Initialize menu event forwarding

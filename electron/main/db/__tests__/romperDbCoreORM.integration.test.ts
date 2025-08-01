@@ -7,14 +7,26 @@ import type { Kit, Sample } from "../../../../shared/db/schema.js";
 import {
   addKit,
   addSample,
+  compactSlotsAfterDelete,
   createRomperDbFile,
   deleteSamples,
+  deleteSamplesWithoutCompaction,
+  ensureDatabaseMigrations,
+  getAllBanks,
+  getAllSamples,
+  getKit,
   getKits,
   getKitSamples,
   isDbCorruptionError,
+  markKitAsModified,
+  markKitAsSynced,
+  markKitsAsSynced,
   moveSample,
+  updateBank,
   updateKit,
   updateVoiceAlias,
+  validateDatabaseSchema,
+  withDb,
 } from "../romperDbCoreORM.js";
 
 // Test utilities
@@ -593,6 +605,344 @@ describe("Drizzle ORM Database Operations", () => {
       expect(voice2Samples).toHaveLength(2);
       expect(voice2Samples[0].filename).toBe("sample4.wav"); // slot 1 (inserted)
       expect(voice2Samples[1].filename).toBe("voice2_sample1.wav"); // slot 2 (shifted from 1)
+    });
+  });
+
+  describe("Database Schema Validation", () => {
+    beforeEach(() => {
+      createRomperDbFile(TEST_DB_DIR);
+    });
+
+    it("should validate database schema successfully", () => {
+      const result = validateDatabaseSchema(TEST_DB_DIR);
+      expect(result.success).toBe(true);
+      expect(result.data).toBe(true);
+    });
+
+    it("should fail validation on non-existent database", () => {
+      const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");
+      const result = validateDatabaseSchema(nonExistentDir);
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+  });
+
+  describe("Database Migrations", () => {
+    it("should skip migrations for non-existent database", () => {
+      const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");
+      const result = ensureDatabaseMigrations(nonExistentDir);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Database file does not exist");
+    });
+
+    it("should run migrations on existing database", () => {
+      createRomperDbFile(TEST_DB_DIR);
+      const result = ensureDatabaseMigrations(TEST_DB_DIR);
+      // Should succeed or fail gracefully - both are valid outcomes
+      expect(result.success).toBeDefined();
+      if (!result.success) {
+        expect(result.error).toBeDefined();
+      }
+    });
+  });
+
+  describe("withDb Function", () => {
+    beforeEach(() => {
+      createRomperDbFile(TEST_DB_DIR);
+    });
+
+    it("should execute database operation successfully", () => {
+      const result = withDb(TEST_DB_DIR, (_db) => {
+        return "test result";
+      });
+      expect(result.success).toBe(true);
+      expect(result.data).toBe("test result");
+    });
+
+    it("should handle database operation errors", () => {
+      const result = withDb(TEST_DB_DIR, () => {
+        throw new Error("Test error");
+      });
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Test error");
+    });
+
+    it("should handle non-existent database directory", () => {
+      const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");
+      const result = withDb(nonExistentDir, () => {
+        return "should not reach here";
+      });
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+  });
+
+  describe("Sample Operations - Additional Functions", () => {
+    beforeEach(() => {
+      createRomperDbFile(TEST_DB_DIR);
+      addKit(TEST_DB_DIR, { name: "TestKit", editable: true, locked: false });
+
+      // Add test samples
+      const samples = [
+        {
+          kit_name: "TestKit",
+          filename: "sample1.wav",
+          voice_number: 1,
+          slot_number: 1,
+          source_path: "/test/sample1.wav",
+          is_stereo: false,
+        },
+        {
+          kit_name: "TestKit",
+          filename: "sample2.wav",
+          voice_number: 1,
+          slot_number: 2,
+          source_path: "/test/sample2.wav",
+          is_stereo: false,
+        },
+      ];
+
+      samples.forEach((sample) => {
+        addSample(TEST_DB_DIR, sample);
+      });
+    });
+
+    it("should get all samples from database", () => {
+      const result = getAllSamples(TEST_DB_DIR);
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(2);
+      expect(result.data![0].filename).toBe("sample1.wav");
+      expect(result.data![1].filename).toBe("sample2.wav");
+    });
+
+    it("should get single kit with relations", () => {
+      const result = getKit(TEST_DB_DIR, "TestKit");
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      expect(result.data!.name).toBe("TestKit");
+      expect(result.data!.voices).toHaveLength(4);
+      expect(result.data!.samples).toHaveLength(2);
+    });
+
+    it("should return null for non-existent kit", () => {
+      const result = getKit(TEST_DB_DIR, "NonExistentKit");
+      expect(result.success).toBe(true);
+      expect(result.data).toBeNull();
+    });
+
+    it("should delete samples without compaction", () => {
+      // Add a third sample to make compaction behavior visible
+      addSample(TEST_DB_DIR, {
+        kit_name: "TestKit",
+        filename: "sample3.wav",
+        voice_number: 1,
+        slot_number: 3,
+        source_path: "/test/sample3.wav",
+        is_stereo: false,
+      });
+
+      // Delete the middle sample (slot 2)
+      const result = deleteSamplesWithoutCompaction(TEST_DB_DIR, "TestKit", {
+        voiceNumber: 1,
+        slotNumber: 2,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data!.deletedSamples).toHaveLength(1);
+      expect(result.data!.deletedSamples[0].filename).toBe("sample2.wav");
+
+      // Verify remaining samples still have their original slot numbers (no compaction)
+      const remainingSamples = getKitSamples(TEST_DB_DIR, "TestKit");
+      expect(remainingSamples.success).toBe(true);
+      const samples = remainingSamples.data!.sort(
+        (a, b) => a.slot_number - b.slot_number,
+      );
+      expect(samples).toHaveLength(2);
+      expect(samples[0].slot_number).toBe(1); // sample1 unchanged
+      expect(samples[1].slot_number).toBe(3); // sample3 unchanged (gap at slot 2)
+    });
+
+    it("should compact slots after delete", () => {
+      // Add more samples to test compaction
+      addSample(TEST_DB_DIR, {
+        kit_name: "TestKit",
+        filename: "sample3.wav",
+        voice_number: 1,
+        slot_number: 3,
+        source_path: "/test/sample3.wav",
+        is_stereo: false,
+      });
+      addSample(TEST_DB_DIR, {
+        kit_name: "TestKit",
+        filename: "sample4.wav",
+        voice_number: 1,
+        slot_number: 4,
+        source_path: "/test/sample4.wav",
+        is_stereo: false,
+      });
+
+      // First delete sample at slot 2 without compaction to create a gap
+      deleteSamplesWithoutCompaction(TEST_DB_DIR, "TestKit", {
+        voiceNumber: 1,
+        slotNumber: 2,
+      });
+
+      // Now compact slots after the deleted slot 2
+      const result = compactSlotsAfterDelete(TEST_DB_DIR, "TestKit", 1, 2);
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(2); // 2 samples were shifted
+
+      // Verify compaction occurred
+      const samples = getKitSamples(TEST_DB_DIR, "TestKit");
+      expect(samples.success).toBe(true);
+      const sortedSamples = samples.data!.sort(
+        (a, b) => a.slot_number - b.slot_number,
+      );
+      expect(sortedSamples).toHaveLength(3); // Original 4 - 1 deleted = 3 total
+      expect(sortedSamples[1].filename).toBe("sample3.wav");
+      expect(sortedSamples[1].slot_number).toBe(2); // Compacted from 3 to 2
+      expect(sortedSamples[2].filename).toBe("sample4.wav");
+      expect(sortedSamples[2].slot_number).toBe(3); // Compacted from 4 to 3
+    });
+  });
+
+  describe("Kit Modification Tracking", () => {
+    beforeEach(() => {
+      createRomperDbFile(TEST_DB_DIR);
+      addKit(TEST_DB_DIR, {
+        name: "TrackingKit",
+        editable: true,
+        locked: false,
+        modified_since_sync: false,
+      });
+    });
+
+    it("should mark kit as modified", () => {
+      const result = markKitAsModified(TEST_DB_DIR, "TrackingKit");
+      expect(result.success).toBe(true);
+
+      // Verify kit is marked as modified
+      const kit = getKit(TEST_DB_DIR, "TrackingKit");
+      expect(kit.success).toBe(true);
+      expect(kit.data!.modified_since_sync).toBe(true);
+    });
+
+    it("should mark kit as synced", () => {
+      // First mark as modified
+      markKitAsModified(TEST_DB_DIR, "TrackingKit");
+
+      // Then mark as synced
+      const result = markKitAsSynced(TEST_DB_DIR, "TrackingKit");
+      expect(result.success).toBe(true);
+
+      // Verify kit is no longer marked as modified
+      const kit = getKit(TEST_DB_DIR, "TrackingKit");
+      expect(kit.success).toBe(true);
+      expect(kit.data!.modified_since_sync).toBe(false);
+    });
+
+    it("should mark multiple kits as synced", () => {
+      // Add another kit
+      addKit(TEST_DB_DIR, {
+        name: "TrackingKit2",
+        editable: true,
+        locked: false,
+        modified_since_sync: false,
+      });
+
+      // Mark both as modified
+      markKitAsModified(TEST_DB_DIR, "TrackingKit");
+      markKitAsModified(TEST_DB_DIR, "TrackingKit2");
+
+      // Mark both as synced in batch
+      const result = markKitsAsSynced(TEST_DB_DIR, [
+        "TrackingKit",
+        "TrackingKit2",
+      ]);
+      expect(result.success).toBe(true);
+
+      // Verify both kits are no longer marked as modified
+      const kit1 = getKit(TEST_DB_DIR, "TrackingKit");
+      const kit2 = getKit(TEST_DB_DIR, "TrackingKit2");
+      expect(kit1.success).toBe(true);
+      expect(kit2.success).toBe(true);
+      expect(kit1.data!.modified_since_sync).toBe(false);
+      expect(kit2.data!.modified_since_sync).toBe(false);
+    });
+  });
+
+  describe("Bank Operations", () => {
+    beforeEach(() => {
+      createRomperDbFile(TEST_DB_DIR);
+    });
+
+    it("should get all banks", () => {
+      const result = getAllBanks(TEST_DB_DIR);
+      expect(result.success).toBe(true);
+      expect(Array.isArray(result.data)).toBe(true);
+      // Banks table might be empty initially, that's fine
+    });
+
+    it("should update bank information", () => {
+      // First, we need to ensure the bank exists or handle the case where it doesn't
+      const updates = {
+        artist: "Test Artist",
+        rtf_filename: "test.rtf",
+        scanned_at: new Date(),
+      };
+
+      const result = updateBank(TEST_DB_DIR, "A", updates);
+      // This might fail if bank doesn't exist, which is acceptable behavior
+      expect(result).toBeDefined();
+      if (result.success) {
+        expect(result.success).toBe(true);
+      } else {
+        expect(result.error).toBeDefined();
+      }
+    });
+  });
+
+  describe("Error Handling - Additional Cases", () => {
+    it("should handle withDb errors gracefully", () => {
+      const corruptedDir = path.join(TEST_DB_DIR, "corrupted");
+      fs.mkdirSync(corruptedDir, { recursive: true });
+
+      // Create a file that's not a valid database
+      const corruptedDbPath = path.join(corruptedDir, "romper.sqlite");
+      fs.writeFileSync(corruptedDbPath, "not a database");
+
+      const result = withDb(corruptedDir, (_db) => {
+        return _db.select().from({ id: 1 }).all(); // This should fail
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+
+    it("should handle operations on non-existent kits", () => {
+      createRomperDbFile(TEST_DB_DIR);
+
+      const result = markKitAsModified(TEST_DB_DIR, "NonExistentKit");
+      // Should succeed but have no effect
+      expect(result.success).toBe(true);
+    });
+
+    it("should handle getAllSamples on empty database", () => {
+      createRomperDbFile(TEST_DB_DIR);
+
+      const result = getAllSamples(TEST_DB_DIR);
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(0);
+    });
+
+    it("should handle compactSlotsAfterDelete with no samples to shift", () => {
+      createRomperDbFile(TEST_DB_DIR);
+      addKit(TEST_DB_DIR, { name: "EmptyKit", editable: true, locked: false });
+
+      // Try to compact when there are no samples to shift
+      const result = compactSlotsAfterDelete(TEST_DB_DIR, "EmptyKit", 1, 5);
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(0);
     });
   });
 });

@@ -258,199 +258,43 @@ _Last updated: 2025-07-26_
     - [x] 9.4.2 Visual feedback with action descriptions
     - [x] 9.4.3 Proper state management and error handling
 
-- [ ] 22.0 Sample Contiguity and Drag-Drop Move System
-  - [ ] 22.1 Implement automatic contiguity maintenance:
-    - [ ] 22.1.1 Auto-compact slots after sample deletion (hard requirement)
-    - [ ] 22.1.2 Shift samples up to fill gaps automatically
-    - [ ] 22.1.3 Maintain contiguous numbering from slot 1 upwards
-  - [ ] 22.2 Implement drag-drop move operations:
-    - [ ] 22.2.1 Visual drop zones for insert-between vs overwrite-on operations
-    - [ ] 22.2.2 Cross-voice sample movement within same kit
-    - [ ] 22.2.3 Drag feedback with ghost elements and drop indicators
-  - [ ] 22.3 Implement stereo conflict handling for moves:
-    - [ ] 22.3.1 Detect stereo sample conflicts in destination voice
-    - [ ] 22.3.2 Throw clear error when destination+1 slot occupied by stereo
-    - [ ] 22.3.3 Prevent invalid moves that would break stereo pairs
-  - [ ] 22.4 Implement complex undo support for moves:
-    - [ ] 22.4.1 Full state restoration for multi-sample move operations
-    - [ ] 22.4.2 MOVE_SAMPLE action type with complete before/after state
-    - [ ] 22.4.3 COMPACT_SLOTS action type for deletion-triggered compaction
-    - [ ] 22.4.4 Restore all affected samples to previous positions on undo
-  - [ ] 22.5 Database operations for contiguity:
-    - [ ] 22.5.1 Batch slot updates for compaction operations
-    - [ ] 22.5.2 Transaction-based multi-sample moves
-    - [ ] 22.5.3 Efficient slot reordering with proper constraints
-  - [ ] 22.6 UI implementation:
-    - [ ] 22.6.1 Drag-drop event handling with visual feedback
-    - [ ] 22.6.2 Drop zone indicators for insert vs overwrite
-    - [ ] 22.6.3 Animation for smooth slot transitions (100ms)
-    - [ ] 22.6.4 Error states for invalid move attempts
+- [x] 22.0 Sample Contiguity and Drag-Drop Move System (Complete)
+  - [x] 22.1 Implement automatic contiguity maintenance:
+    - [x] 22.1.1 Auto-compact slots after sample deletion (hard requirement)
+    - [x] 22.1.2 Shift samples up to fill gaps automatically
+    - [x] 22.1.3 Maintain contiguous numbering from slot 1 upwards
+  - [x] 22.2 Implement drag-drop move operations:
+    - [x] 22.2.1 Visual drop zones for insert-between vs overwrite-on operations
+    - [x] 22.2.2 Cross-voice sample movement within same kit
+    - [x] 22.2.3 Drag feedback with ghost elements and drop indicators
+  - [x] 22.3 Implement stereo conflict handling for moves:
+    - [x] 22.3.1 Detect stereo sample conflicts in destination voice
+    - [x] 22.3.2 Throw clear error when destination+1 slot occupied by stereo
+    - [x] 22.3.3 Prevent invalid moves that would break stereo pairs
+  - [x] 22.4 Implement complex undo support for moves:
+    - [x] 22.4.1 Full state restoration for multi-sample move operations
+    - [x] 22.4.2 MOVE_SAMPLE action type with complete before/after state
+    - [x] 22.4.3 COMPACT_SLOTS action type for deletion-triggered compaction
+    - [x] 22.4.4 Restore all affected samples to previous positions on undo
+  - [x] 22.5 Database operations for contiguity:
+    - [x] 22.5.1 Batch slot updates for compaction operations
+    - [x] 22.5.2 Transaction-based multi-sample moves
+    - [x] 22.5.3 Efficient slot reordering with proper constraints
+  - [x] 22.6 UI implementation:
+    - [x] 22.6.1 Drag-drop event handling with visual feedback
+    - [x] 22.6.2 Drop zone indicators for insert vs overwrite
+    - [x] 22.6.3 Animation for smooth slot transitions (100ms)
+    - [x] 22.6.4 Error states for invalid move attempts
 
-- [ ] 9.1 Legacy Database-Based Undo System (Future Enhancement):
-  - [ ] 9.1.1 Create edit_actions table with Drizzle schema:
-      - [ ] Fields: id, kit_name, action_type, action_data (JSON), sequence_number, timestamp, undone_at
-      - [ ] Foreign key constraint to kits table on kit_name
-      - [ ] Index on kit_name and sequence_number for performance
-    - [ ] 9.1.2 Define action types enum: ADD_SAMPLE, REPLACE_SAMPLE, DELETE_SAMPLE, TOGGLE_EDITABLE_MODE
-    - [ ] 9.1.3 Implement typed action metadata schemas with strict validation:
-      ```typescript
-      interface ActionMetadata {
-        ADD_SAMPLE: {
-          voice_number: number;
-          slot_number: number;
-          source_path: string;
-          sample_metadata: { name: string; size: number; format: string };
-          previous_sample?: Sample; // For slot conflicts
-          stereo_config?: { is_stereo: boolean; paired_voice?: number };
-        };
-        REPLACE_SAMPLE: {
-          voice_number: number;
-          slot_number: number;
-          old_sample: Sample;
-          new_source_path: string;
-          stereo_changes?: { old_is_stereo: boolean; new_is_stereo: boolean; paired_voice_changes?: number[] };
-        };
-        DELETE_SAMPLE: {
-          voice_number: number;
-          slot_number: number;
-          deleted_sample: Sample;
-          cascade_deletions?: Sample[]; // For stereo pairs
-          slot_compaction?: { moved_samples: Array<{from: number, to: number}> };
-        };
-        TOGGLE_EDITABLE_MODE: {
-          previous_editable: boolean;
-          new_editable: boolean;
-        };
-      }
-      ```
-  - [ ] 9.2 Implement action recording with reference tracking:
-    - [ ] 9.2.1 Create action recorder utility with JSON schema validation
-    - [ ] 9.2.2 Record all modifications with complete source_path metadata and file validation
-    - [ ] 9.2.3 Generate atomic sequence numbers for action ordering within kit context
-    - [ ] 9.2.4 Handle batch actions (multiple samples) as single logical operations
-    - [ ] 9.2.5 Integrate with existing sample management hooks for automatic recording
-  - [ ] 9.3 Implement undo functionality:
-    - [ ] 9.3.1 Create undo engine with reversal strategies for each action type:
-      - [ ] ADD_SAMPLE undo: Remove sample from slot, restore previous if existed
-      - [ ] REPLACE_SAMPLE undo: Restore original sample with all metadata
-      - [ ] DELETE_SAMPLE undo: Re-add deleted sample(s), handle stereo pair restoration
-      - [ ] TOGGLE_EDITABLE_MODE undo: Restore previous editable state
-    - [ ] 9.3.2 Update kit state and UI to reflect undo with optimistic updates
-    - [ ] 9.3.3 Handle complex stereo operations with voice_number adjustments
-    - [ ] 9.3.4 Validate source file existence before undo, handle missing files gracefully
-  - [ ] 9.4 Implement redo functionality and history management:
-    - [ ] 9.4.1 Re-apply undone actions with complete source_path validation
-    - [ ] 9.4.2 Maintain separate undo/redo stacks and clear redo stack on new actions
-    - [ ] 9.4.3 Implement history limits: 50 actions per kit, cleanup after 7 days
-    - [ ] 9.4.4 Clear history on SD card sync (fresh start) with user confirmation
-  - [ ] 9.5 Implement UX integration and interface design:
-    - [ ] 9.5.1 Add undo/redo buttons to KitHeader toolbar (edit mode only):
-      - [ ] Position: Right side of toolbar, grouped with other edit actions
-      - [ ] Icons: Standard undo/redo arrows with Heroicons
-      - [ ] States: Enabled/disabled based on history availability
-      - [ ] Tooltips: "Undo: [action description]" / "Redo: [action description]"
-    - [ ] 9.5.2 Implement keyboard shortcuts with proper event handling:
-      - [ ] Ctrl+Z (Cmd+Z on Mac): Undo last action
-      - [ ] Ctrl+Y (Cmd+Y on Mac): Redo last undone action
-      - [ ] Ctrl+Shift+Z (Cmd+Shift+Z on Mac): Alternative redo shortcut
-      - [ ] Only active in Edit mode, properly scoped to avoid conflicts
-    - [ ] 9.5.3 Create visual feedback system:
-      - [ ] Toast notifications: "Undid: Delete sample from Voice 1, Slot 3"
-      - [ ] Loading states during undo/redo operations
-      - [ ] Error notifications for failed operations with recovery suggestions
-    - [ ] 9.5.4 Integrate with interface mode system:
-      - [ ] Browse mode: Undo/redo disabled and hidden
-      - [ ] Edit mode: Undo/redo enabled and visible
-      - [ ] Sync mode: Undo/redo disabled (prevent sync conflicts)
-  - [ ] 9.6 Implement comprehensive error handling and edge cases:
-    - [ ] 9.6.1 File system error handling:
-      - [ ] Source file moved/renamed: Show error, offer file browser to relocate
-      - [ ] Source file deleted: Show error, option to continue without file or skip undo
-      - [ ] Permission errors: Show error with instructions to fix permissions
-      - [ ] Disk space issues: Show error, offer cleanup suggestions
-    - [ ] 9.6.2 Concurrency and state management:
-      - [ ] Handle user modifications during undo/redo operations
-      - [ ] Prevent multiple concurrent undo/redo operations
-      - [ ] Database transaction rollback on partial failures
-      - [ ] State consistency validation after operations
-    - [ ] 9.6.3 Application lifecycle edge cases:
-      - [ ] History persistence across app restarts (until sync)
-      - [ ] Handle interrupted operations on app close
-      - [ ] Graceful degradation when action history is corrupted
-    - [ ] 9.6.4 Integration conflict handling:
-      - [ ] Conflicts with ongoing sync operations
-      - [ ] Conflicts with kit modification from other sources
-      - [ ] Handle mode transitions during undo/redo operations
-  - [ ] 9.7 Implement technical integration with existing architecture:
-    - [ ] 9.7.1 Integrate with existing React hooks:
-      - [ ] Extend useKitEditor hook with undo/redo methods
-      - [ ] Integrate with useSampleManagement for action recording
-      - [ ] Hook into useStereoHandling for complex stereo action handling
-    - [ ] 9.7.2 Create IPC handlers for main process operations:
-      - [ ] `undo-action`: Perform undo operation with validation
-      - [ ] `redo-action`: Perform redo operation with validation
-      - [ ] `get-action-history`: Retrieve action history for UI display
-      - [ ] `clear-action-history`: Clear history on sync or user request
-    - [ ] 9.7.3 Database operations with proper error handling:
-      - [ ] Atomic transactions for complex multi-table operations
-      - [ ] Proper foreign key constraint handling
-      - [ ] Database query optimization for large action histories
-    - [ ] 9.7.4 Message system integration:
-      - [ ] Use existing MessageDisplay component for user feedback
-      - [ ] Consistent error message patterns across the application
-      - [ ] Progress indicators for long-running operations
-  - [ ] 9.8 Implement comprehensive testing strategy:
-    - [ ] 9.8.1 Unit tests for action recording and playback:
-      - [ ] Test each action type recording with complete metadata
-      - [ ] Test undo/redo logic for each action type independently
-      - [ ] Test JSON schema validation for action metadata
-      - [ ] Test error handling for malformed action data
-    - [ ] 9.8.2 Integration tests with existing systems:
-      - [ ] Test integration with sample management workflows
-      - [ ] Test stereo handling integration with undo/redo
-      - [ ] Test interface mode restrictions and transitions
-      - [ ] Test keyboard shortcut handling and event propagation
-    - [ ] 9.8.3 End-to-end user workflow tests:
-      - [ ] Complete edit → undo → redo → sync workflow
-      - [ ] Complex multi-step editing with undo/redo validation
-      - [ ] Error recovery scenarios with user interaction
-      - [ ] Performance testing with large action histories (50+ actions)
-    - [ ] 9.8.4 Acceptance criteria and quality gates:
-      - [ ] Performance: Undo/redo operations complete within 100ms for simple actions
-      - [ ] Performance: Complex stereo operations complete within 500ms
-      - [ ] Reliability: 99%+ success rate for file-based operations
-      - [ ] Usability: Keyboard shortcuts work consistently across all contexts
-      - [ ] Accessibility: Screen reader support for undo/redo status and feedback
-
-- [ ] 10.0 UI System Components (Core Infrastructure)
-  - [ ] 10.1 Implement progress indicators for operations:
-    - [ ] 10.1.1 Progress bars for sync, batch operations, reference resolution
-    - [ ] 10.1.2 Detailed progress text with file information
-    - [ ] 10.1.3 Cancellation support for long operations
-  - [ ] 10.2 Implement comprehensive confirmation prompts:
-    - [ ] 10.2.1 Destructive actions (replace, delete samples)
-    - [ ] 10.2.2 SD card sync with change summary
-    - [ ] 10.2.3 Batch operations affecting multiple kits
-  - [ ] 10.3 Implement error handling with recovery suggestions
-  - [ ] 10.4 Enhance accessibility compliance (beyond mode-specific shortcuts)
-
-- [ ] 11.0 [DEPRECATED - SUPERSEDED BY TASKS 17-20]
-  > **Note**: Task 11.0 Kit Browser Enhancements has been superseded by the comprehensive UX improvement tasks:
-  > - 11.1 (status indicators) → Task 17.1-17.2 (visual identification + badge system)
-  > - 11.2 (filtering/sorting) → Task 20.2-20.4 (comprehensive organization system)
-  > - 11.3 (bulk operations) → Task 20.4.4 (batch operations)
-  >
-  > This task section will be removed once Tasks 17-20 are implemented.
-
-- [ ] 12.0 Settings and Configuration
-  - [ ] 12.1 Implement global editing settings:
-    - [ ] 12.1.1 'default to mono samples' setting
-    - [ ] 12.1.2 'confirm destructive actions' setting
-    - [ ] 12.1.3 'dark mode / light mode / system' setting
-    - [ ] 12.1.4 'local store path' setting
-    - [ ] 12.1.5 'read only info' setting: local store, SD card path
-  - [ ] 12.2 Implement settings persistence and validation
-  - [ ] 12.3 Create settings UI in preferences panel
+- [x] 12.0 Settings and Configuration (Complete)
+  - [x] 12.1 Implement global editing settings:
+    - [x] 12.1.1 'default to mono samples' setting
+    - [x] 12.1.2 'confirm destructive actions' setting
+    - [x] 12.1.3 'dark mode / light mode / system' setting
+    - [x] 12.1.4 'local store path' setting
+    - [x] 12.1.5 'read only info' setting: local store, SD card path
+  - [x] 12.2 Implement settings persistence and validation
+  - [x] 12.3 Create settings UI in preferences panel
 
 - [x] 13.0 Database Layer ORM Migration (Replace Current Implementation) (Complete)
   - [x] 13.1 Install and configure Drizzle ORM:
@@ -512,13 +356,13 @@ _Last updated: 2025-07-26_
   - [x] 16.1.3 Add migration logic to rename existing `settings.json` to `romper-settings.json` if present (Not needed - hard cutover already done)
   - [x] 16.1.4 Update settings path logging to show new filename (Already implemented)
 
-- [ ] 16.2 Implement "Choose Existing Local Store" functionality
-  - [ ] 16.2.1 Add "Choose Existing Local Store" button to bottom-right corner of local store setup wizard
-  - [ ] 16.2.2 Create dialog/modal for browsing and selecting existing `.romperdb` directory
-  - [ ] 16.2.3 Validate selected directory contains valid romper database structure
-  - [ ] 16.2.4 Save selected path to romper-settings.json and refresh app state
-  - [ ] 16.2.5 Add "Back to Setup" button to return to normal wizard flow if needed
-  - [ ] 16.2.6 Only show this option when no valid local store is configured (not in menu-driven change flow)
+- [x] 16.2 Implement "Choose Existing Local Store" functionality (Complete)
+  - [x] 16.2.1 Add "Choose Existing Local Store" button to bottom-right corner of local store setup wizard
+  - [x] 16.2.2 Create dialog/modal for browsing and selecting existing `.romperdb` directory
+  - [x] 16.2.3 Validate selected directory contains valid romper database structure
+  - [x] 16.2.4 Save selected path to romper-settings.json and refresh app state
+  - [x] 16.2.5 Add "Back to Setup" button to return to normal wizard flow if needed
+  - [x] 16.2.6 Only show this option when no valid local store is configured (not in menu-driven change flow)
 
 - [ ] 16.3 Enhanced error recovery for lost settings
   - [ ] 16.3.1 Detect when settings file exists but is empty or corrupt
@@ -629,15 +473,15 @@ _Last updated: 2025-07-26_
 
 ## 20.0 UX Improvements: Favorites and Quick Access System
 
-- [ ] 20.1 Implement Favorites System:
-  - [ ] 20.1.1 Add favorites field to kits database table
-  - [ ] 20.1.2 Create star-based marking UI for kit cards
-  - [ ] 20.1.3 Implement keyboard shortcut for rapid favorite toggling
-  - [ ] 20.1.4 Add "Favorites" filter with count badge in kit browser
+- [x] 20.1 Implement Favorites System: (Complete)
+  - [x] 20.1.1 Add favorites field to kits database table
+  - [x] 20.1.2 Create star-based marking UI for kit cards
+  - [x] 20.1.3 Implement keyboard shortcut for rapid favorite toggling
+  - [x] 20.1.4 Add "Favorites" filter with count badge in kit browser
 
-- [ ] 20.2 Implement Priority Access System:
-  - [ ] 20.2.1 Create priority markers for high-priority kits in user workflow
-  - [ ] 20.2.2 Implement filter buttons with live counts (Modified: 3, Recent: 8, Favorites: 12)
+- [ ] 20.2 Implement Priority Access System: (Partially Complete - Core features done)
+  - [x] 20.2.1 Create priority markers for high-priority kits in user workflow
+  - [x] 20.2.2 Implement filter buttons with live counts (Modified: 3, Favorites: 12)
   - [ ] 20.2.3 Add "Quick Access" panel for live performance scenarios (~6 kit workflow)
   - [ ] 20.2.4 Create location-based filtering by sample source for organized browsing
 

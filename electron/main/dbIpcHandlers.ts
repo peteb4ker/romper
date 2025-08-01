@@ -11,9 +11,13 @@ import {
   deleteSamples,
   getAllBanks,
   getAllSamples,
+  getFavoriteKits,
+  getFavoriteKitsCount,
   getKit,
   getKits,
   getKitSamples,
+  setKitFavorite,
+  toggleKitFavorite,
   updateKit,
   updateVoiceAlias,
 } from "./db/romperDbCoreORM.js";
@@ -404,6 +408,27 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("cancelKitSync", async () => {
     syncService.cancelSync();
   });
+
+  // Task 20.1: Favorites system IPC handlers
+  ipcMain.handle(
+    "toggle-kit-favorite",
+    createDbHandler(inMemorySettings, toggleKitFavorite),
+  );
+
+  ipcMain.handle(
+    "set-kit-favorite",
+    createDbHandler(inMemorySettings, setKitFavorite),
+  );
+
+  ipcMain.handle(
+    "get-favorite-kits",
+    createDbHandler(inMemorySettings, getFavoriteKits),
+  );
+
+  ipcMain.handle(
+    "get-favorite-kits-count",
+    createDbHandler(inMemorySettings, getFavoriteKitsCount),
+  );
 
   // Progress events are handled via webContents.send in syncService
   // No IPC handler needed for onSyncProgress as it's a renderer-side event listener

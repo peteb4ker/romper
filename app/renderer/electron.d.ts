@@ -306,6 +306,17 @@ export interface ElectronAPI {
       error?: string;
     }) => void,
   ) => void;
+
+  // Task 20.1: Favorites system
+  toggleKitFavorite?: (
+    kitName: string,
+  ) => Promise<DbResult<{ is_favorite: boolean }>>;
+  setKitFavorite?: (
+    kitName: string,
+    isFavorite: boolean,
+  ) => Promise<DbResult<void>>;
+  getFavoriteKits?: () => Promise<DbResult<KitWithRelations[]>>;
+  getFavoriteKitsCount?: () => Promise<DbResult<number>>;
 }
 
 declare global {

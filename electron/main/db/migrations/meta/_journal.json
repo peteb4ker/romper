@@ -43,6 +43,13 @@
       "when": 1753933820864,
       "tag": "0005_small_mandarin",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1754019286310,
+      "tag": "0006_next_bishop",
+      "breakpoints": true
     }
   ]
 }

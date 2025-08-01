@@ -19,6 +19,9 @@ export const kits = sqliteTable("kits", {
   artist: text("artist"), // DEPRECATED: Use bank.artist instead, kept for migration
   editable: integer("editable", { mode: "boolean" }).notNull().default(false), // New architecture: editable mode
   locked: integer("locked", { mode: "boolean" }).notNull().default(false), // Kit locking for protection
+  is_favorite: integer("is_favorite", { mode: "boolean" })
+    .notNull()
+    .default(false), // Task 20.1.1: Favorites system
   step_pattern: text("step_pattern", { mode: "json" }).$type<
     number[][] | null
   >(), // JSON storage for step patterns

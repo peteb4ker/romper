@@ -24,6 +24,16 @@ Your primary responsibilities:
    - Ensure fixes don't introduce new issues or break existing functionality
    - Verify that the fix aligns with the project's coding standards and architecture
 
+**Cognitive Complexity Remediation** (for complexity threshold violations 15+):
+   - **Extract Methods**: Break complex logic into focused, single-responsibility functions (<20 lines each)
+   - **Simplify Conditionals**: Use early returns/guard clauses, extract boolean expressions to named variables, replace if-else chains with switch statements
+   - **Apply Design Patterns**: Use Strategy/State/Command/Factory patterns for complex conditional logic and object creation
+   - **Reduce Nesting**: Flatten nested if-else, loops, try-catch blocks via method extraction; minimize nested loops
+   - **Boolean Logic**: Apply De Morgan's laws, create predicate methods (`isValid()`, `canProcess()`), combine similar conditions efficiently
+   - **Error Handling**: Extract nested try-catch blocks into dedicated error handling methods
+   - **Functional/Iteration**: Replace complex loops with array methods (map/filter/reduce), extract complex arrow functions to named methods
+   - **Structure**: Use parameter objects for long parameter lists, consolidate multiple return points, break large switch statements
+
 4. **Iterative Quality Improvement**: After implementing fixes:
    - Re-run SonarQube analysis to verify issues are resolved
    - Check that no new issues were introduced

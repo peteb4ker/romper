@@ -16,6 +16,7 @@ vi.mock("path", () => ({
 // Mock database operations
 vi.mock("../../db/romperDbCoreORM.js", () => ({
   getKitSamples: vi.fn(),
+  getKits: vi.fn(),
 }));
 
 // Mock audio utilities
@@ -25,11 +26,12 @@ vi.mock("../../audioUtils.js", () => ({
 }));
 
 import { getAudioMetadata, validateSampleFormat } from "../../audioUtils.js";
-import { getKitSamples } from "../../db/romperDbCoreORM.js";
+import { getKits, getKitSamples } from "../../db/romperDbCoreORM.js";
 import { SyncPlannerService } from "../syncPlannerService.js";
 
 const mockFs = vi.mocked(fs);
 const _mockPath = vi.mocked(path);
+const mockGetKits = vi.mocked(getKits);
 const mockGetKitSamples = vi.mocked(getKitSamples);
 const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 const mockValidateSampleFormat = vi.mocked(validateSampleFormat);
@@ -40,6 +42,12 @@ describe("SyncPlannerService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = new SyncPlannerService();
+
+    // Mock the dynamic import
+    vi.doMock("../../db/romperDbCoreORM.js", () => ({
+      getKits: mockGetKits,
+      getKitSamples: mockGetKitSamples,
+    }));
   });
 
   describe("generateChangeSummary", () => {
@@ -52,13 +60,10 @@ describe("SyncPlannerService", () => {
 
     it("should return error when failed to load kits", async () => {
       // Mock getKits to fail
-      vi.doMock("../../db/romperDbCoreORM.js", () => ({
-        getKits: vi.fn().mockResolvedValue({
-          success: false,
-          error: "Database error",
-        }),
-        getKitSamples: mockGetKitSamples,
-      }));
+      mockGetKits.mockReturnValue({
+        success: false,
+        error: "Database error",
+      });
 
       const result = await service.generateChangeSummary({
         localStorePath: "/test/path",
@@ -70,13 +75,10 @@ describe("SyncPlannerService", () => {
 
     it("should generate summary with files to copy when format is valid", async () => {
       // Mock getKits to return test kits
-      vi.doMock("../../db/romperDbCoreORM.js", () => ({
-        getKits: vi.fn().mockResolvedValue({
-          success: true,
-          data: [{ name: "TestKit1" }],
-        }),
-        getKitSamples: mockGetKitSamples,
-      }));
+      mockGetKits.mockReturnValue({
+        success: true,
+        data: [{ name: "TestKit1" }],
+      });
 
       // Mock sample data
       const testSample = {
@@ -86,7 +88,7 @@ describe("SyncPlannerService", () => {
         kitName: "TestKit1",
       };
 
-      mockGetKitSamples.mockResolvedValue({
+      mockGetKitSamples.mockReturnValue({
         success: true,
         data: [testSample],
       });
@@ -119,13 +121,10 @@ describe("SyncPlannerService", () => {
 
     it("should generate summary with files to convert when format is invalid", async () => {
       // Mock getKits to return test kits
-      vi.doMock("../../db/romperDbCoreORM.js", () => ({
-        getKits: vi.fn().mockResolvedValue({
-          success: true,
-          data: [{ name: "TestKit1" }],
-        }),
-        getKitSamples: mockGetKitSamples,
-      }));
+      mockGetKits.mockReturnValue({
+        success: true,
+        data: [{ name: "TestKit1" }],
+      });
 
       const testSample = {
         filename: "test.wav",
@@ -134,7 +133,7 @@ describe("SyncPlannerService", () => {
         kitName: "TestKit1",
       };
 
-      mockGetKitSamples.mockResolvedValue({
+      mockGetKitSamples.mockReturnValue({
         success: true,
         data: [testSample],
       });
@@ -182,13 +181,10 @@ describe("SyncPlannerService", () => {
 
     it("should add validation errors for missing files", async () => {
       // Mock getKits to return test kits
-      vi.doMock("../../db/romperDbCoreORM.js", () => ({
-        getKits: vi.fn().mockResolvedValue({
-          success: true,
-          data: [{ name: "TestKit1" }],
-        }),
-        getKitSamples: mockGetKitSamples,
-      }));
+      mockGetKits.mockReturnValue({
+        success: true,
+        data: [{ name: "TestKit1" }],
+      });
 
       const testSample = {
         filename: "missing.wav",
@@ -197,7 +193,7 @@ describe("SyncPlannerService", () => {
         kitName: "TestKit1",
       };
 
-      mockGetKitSamples.mockResolvedValue({
+      mockGetKitSamples.mockReturnValue({
         success: true,
         data: [testSample],
       });
@@ -222,13 +218,10 @@ describe("SyncPlannerService", () => {
 
     it("should skip samples without source path", async () => {
       // Mock getKits to return test kits
-      vi.doMock("../../db/romperDbCoreORM.js", () => ({
-        getKits: vi.fn().mockResolvedValue({
-          success: true,
-          data: [{ name: "TestKit1" }],
-        }),
-        getKitSamples: mockGetKitSamples,
-      }));
+      mockGetKits.mockReturnValue({
+        success: true,
+        data: [{ name: "TestKit1" }],
+      });
 
       const testSamples = [
         {
@@ -245,7 +238,7 @@ describe("SyncPlannerService", () => {
         },
       ];
 
-      mockGetKitSamples.mockResolvedValue({
+      mockGetKitSamples.mockReturnValue({
         success: true,
         data: testSamples,
       });
@@ -269,12 +262,9 @@ describe("SyncPlannerService", () => {
 
     it("should handle errors gracefully", async () => {
       // Mock getKits to throw an error
-      vi.doMock("../../db/romperDbCoreORM.js", () => ({
-        getKits: vi
-          .fn()
-          .mockRejectedValue(new Error("Database connection failed")),
-        getKitSamples: mockGetKitSamples,
-      }));
+      mockGetKits.mockImplementation(() => {
+        throw new Error("Database connection failed");
+      });
 
       const result = await service.generateChangeSummary({
         localStorePath: "/test/path",
@@ -288,17 +278,14 @@ describe("SyncPlannerService", () => {
 
     it("should process multiple kits correctly", async () => {
       // Mock getKits to return multiple kits
-      vi.doMock("../../db/romperDbCoreORM.js", () => ({
-        getKits: vi.fn().mockResolvedValue({
-          success: true,
-          data: [{ name: "Kit1" }, { name: "Kit2" }],
-        }),
-        getKitSamples: mockGetKitSamples,
-      }));
+      mockGetKits.mockReturnValue({
+        success: true,
+        data: [{ name: "Kit1" }, { name: "Kit2" }],
+      });
 
       // Mock different samples for each kit
       mockGetKitSamples
-        .mockResolvedValueOnce({
+        .mockReturnValueOnce({
           success: true,
           data: [
             {
@@ -309,7 +296,7 @@ describe("SyncPlannerService", () => {
             },
           ],
         })
-        .mockResolvedValueOnce({
+        .mockReturnValueOnce({
           success: true,
           data: [
             {

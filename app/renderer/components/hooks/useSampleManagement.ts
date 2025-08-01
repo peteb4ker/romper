@@ -366,7 +366,7 @@ export function useSampleManagement({
     fromSlot: number;
     toVoice: number;
     toSlot: number;
-    mode: string;
+    mode: "insert" | "overwrite";
     result: any;
     stateSnapshot: any[];
   }): MoveSampleAction => ({
@@ -413,7 +413,7 @@ export function useSampleManagement({
     fromSlot: number;
     toVoice: number;
     toSlot: number;
-    mode: string;
+    mode: "insert" | "overwrite";
     targetKit: string;
     result: any;
   }): MoveSampleBetweenKitsAction => ({

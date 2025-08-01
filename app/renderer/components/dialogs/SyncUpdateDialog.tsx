@@ -86,6 +86,28 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const hasValidationErrors =
     changeSummary.validationErrors && changeSummary.validationErrors.length > 0;
 
+  const getStatusMessage = () => {
+    if (hasValidationErrors) {
+      return (
+        <span className="text-red-600 dark:text-red-400">
+          Cannot sync - {changeSummary.validationErrors.length} file
+          {changeSummary.validationErrors.length !== 1 ? "s" : ""} missing
+        </span>
+      );
+    }
+
+    if (totalFiles === 0) {
+      return "No changes to sync";
+    }
+
+    return (
+      <>
+        This will copy {totalFiles} file{totalFiles !== 1 ? "s" : ""} to your SD
+        card
+      </>
+    );
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
@@ -164,8 +186,11 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                       The following files cannot be accessed:
                     </div>
                     <ul className="text-sm text-red-700 dark:text-red-300 mt-2 space-y-1">
-                      {changeSummary.validationErrors.map((error, index) => (
-                        <li key={index} className="flex items-start gap-1">
+                      {changeSummary.validationErrors.map((error) => (
+                        <li
+                          key={error.sourcePath}
+                          className="flex items-start gap-1"
+                        >
                           <span className="text-red-600 dark:text-red-400 mt-0.5">
                             •
                           </span>
@@ -195,8 +220,8 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                     Some samples need format conversion during sync:
                   </div>
                   <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-2 space-y-1">
-                    {changeSummary.warnings.map((warning, index) => (
-                      <li key={index} className="flex items-start gap-1">
+                    {changeSummary.warnings.map((warning) => (
+                      <li key={warning} className="flex items-start gap-1">
                         <span className="text-yellow-600 dark:text-yellow-400 mt-0.5">
                           •
                         </span>
@@ -250,9 +275,9 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                     Files to Copy
                   </h4>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {changeSummary.filesToCopy.map((file, index) => (
+                    {changeSummary.filesToCopy.map((file) => (
                       <div
-                        key={index}
+                        key={file.sourcePath}
                         className="text-sm p-2 bg-gray-50 dark:bg-slate-700 rounded"
                       >
                         <div className="font-mono text-gray-900 dark:text-gray-100">
@@ -273,9 +298,9 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                     Files to Convert
                   </h4>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {changeSummary.filesToConvert.map((file, index) => (
+                    {changeSummary.filesToConvert.map((file) => (
                       <div
-                        key={index}
+                        key={file.sourcePath}
                         className="text-sm p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded"
                       >
                         <div className="font-mono text-gray-900 dark:text-gray-100">
@@ -299,22 +324,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
         {/* Footer */}
         <div className="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            {hasValidationErrors ? (
-              <>
-                <span className="text-red-600 dark:text-red-400">
-                  Cannot sync - {changeSummary.validationErrors.length} file
-                  {changeSummary.validationErrors.length !== 1 ? "s" : ""}{" "}
-                  missing
-                </span>
-              </>
-            ) : totalFiles === 0 ? (
-              "No changes to sync"
-            ) : (
-              <>
-                This will copy {totalFiles} file{totalFiles !== 1 ? "s" : ""} to
-                your SD card
-              </>
-            )}
+            {getStatusMessage()}
           </div>
           <div className="flex gap-2">
             <button

@@ -35,9 +35,7 @@ const KitGridItem = React.memo(
       // Extract voice names using shared utility
       const voiceNames = extractVoiceNames(kitData);
 
-      const { iconType, iconLabel } = useKitItem(
-        voiceNames as Record<string | number, string> | undefined,
-      );
+      const { iconType, iconLabel } = useKitItem(voiceNames);
 
       // Use shared icon renderer with medium size for compact grid view
       const icon = <KitIconRenderer iconType={iconType} size="md" />;

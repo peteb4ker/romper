@@ -30,7 +30,7 @@ export function getFirstKitInBank(
   kits: KitWithRelations[],
   bank: string,
 ): string | null {
-  const kit = kits.find((k) => k && k.name && k.name.startsWith(bank));
+  const kit = kits.find((k) => k?.name?.startsWith(bank));
   return kit ? kit.name : null;
 }
 

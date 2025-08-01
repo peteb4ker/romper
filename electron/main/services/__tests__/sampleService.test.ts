@@ -33,6 +33,11 @@ vi.mock("../../audioUtils.js", () => ({
   getAudioMetadata: vi.fn(),
 }));
 
+// Mock stereoProcessingUtils
+vi.mock("../../utils/stereoProcessingUtils.js", () => ({
+  determineStereoConfiguration: vi.fn(),
+}));
+
 import { getAudioMetadata } from "../../audioUtils.js";
 import {
   addSample,
@@ -42,6 +47,7 @@ import {
   markKitAsModified,
   moveSample,
 } from "../../db/romperDbCoreORM.js";
+import { determineStereoConfiguration } from "../../utils/stereoProcessingUtils.js";
 import { SampleService } from "../sampleService.js";
 
 const mockFs = vi.mocked(fs);
@@ -54,7 +60,10 @@ const mockDeleteSamplesWithoutCompaction = vi.mocked(
 const mockGetKitSamples = vi.mocked(getKitSamples);
 const mockMarkKitAsModified = vi.mocked(markKitAsModified);
 const mockMoveSample = vi.mocked(moveSample);
-const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
+const _mockGetAudioMetadata = vi.mocked(getAudioMetadata);
+const mockDetermineStereoConfiguration = vi.mocked(
+  determineStereoConfiguration,
+);
 
 describe("SampleService", () => {
   let sampleService: SampleService;
@@ -94,6 +103,7 @@ describe("SampleService", () => {
     });
     mockMoveSample.mockReturnValue({ success: true });
     mockMarkKitAsModified.mockReturnValue({ success: true });
+    mockDetermineStereoConfiguration.mockReturnValue(false);
   });
 
   describe("validateVoiceAndSlot", () => {
@@ -306,10 +316,7 @@ describe("SampleService", () => {
     it("marks stereo file as mono when defaultToMonoSamples is true", () => {
       // Mock that no existing samples exist for the check
       mockGetKitSamples.mockReturnValue({ success: true, data: [] });
-      mockGetAudioMetadata.mockReturnValue({
-        success: true,
-        data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
-      });
+      mockDetermineStereoConfiguration.mockReturnValue(false);
 
       const settingsWithMono = {
         ...mockInMemorySettings,
@@ -331,17 +338,17 @@ describe("SampleService", () => {
           is_stereo: false, // Should be false even though file is stereo
         }),
       );
-      // Should NOT call getAudioMetadata when defaultToMonoSamples is true
-      expect(mockGetAudioMetadata).not.toHaveBeenCalled();
+      expect(mockDetermineStereoConfiguration).toHaveBeenCalledWith(
+        "/test/stereo.wav",
+        settingsWithMono,
+        undefined,
+      );
     });
 
     it("marks stereo file as stereo when defaultToMonoSamples is false", () => {
       // Mock that no existing samples exist for the check
       mockGetKitSamples.mockReturnValue({ success: true, data: [] });
-      mockGetAudioMetadata.mockReturnValue({
-        success: true,
-        data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
-      });
+      mockDetermineStereoConfiguration.mockReturnValue(true);
 
       const settingsWithStereo = {
         ...mockInMemorySettings,
@@ -357,7 +364,11 @@ describe("SampleService", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(mockGetAudioMetadata).toHaveBeenCalledWith("/test/stereo.wav");
+      expect(mockDetermineStereoConfiguration).toHaveBeenCalledWith(
+        "/test/stereo.wav",
+        settingsWithStereo,
+        undefined,
+      );
       expect(mockAddSample).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
@@ -369,10 +380,7 @@ describe("SampleService", () => {
     it("marks mono file as mono regardless of defaultToMonoSamples setting", () => {
       // Mock that no existing samples exist for the check
       mockGetKitSamples.mockReturnValue({ success: true, data: [] });
-      mockGetAudioMetadata.mockReturnValue({
-        success: true,
-        data: { channels: 1, sampleRate: 44100, bitDepth: 16 },
-      });
+      mockDetermineStereoConfiguration.mockReturnValue(false);
 
       const settingsWithStereo = {
         ...mockInMemorySettings,
@@ -388,7 +396,11 @@ describe("SampleService", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(mockGetAudioMetadata).toHaveBeenCalledWith("/test/mono.wav");
+      expect(mockDetermineStereoConfiguration).toHaveBeenCalledWith(
+        "/test/mono.wav",
+        settingsWithStereo,
+        undefined,
+      );
       expect(mockAddSample).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
@@ -400,6 +412,7 @@ describe("SampleService", () => {
     it("defaults to mono when defaultToMonoSamples is undefined", () => {
       // Mock that no existing samples exist for the check
       mockGetKitSamples.mockReturnValue({ success: true, data: [] });
+      mockDetermineStereoConfiguration.mockReturnValue(false);
       const settingsWithoutDefault = {
         ...mockInMemorySettings,
         // defaultToMonoSamples not set
@@ -420,7 +433,11 @@ describe("SampleService", () => {
           is_stereo: false, // Should default to mono (true)
         }),
       );
-      expect(mockGetAudioMetadata).not.toHaveBeenCalled();
+      expect(mockDetermineStereoConfiguration).toHaveBeenCalledWith(
+        "/test/sample.wav",
+        settingsWithoutDefault,
+        undefined,
+      );
     });
   });
 
@@ -605,10 +622,7 @@ describe("SampleService", () => {
       });
       mockDeleteSamples.mockReturnValue({ success: true });
       mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
-      mockGetAudioMetadata.mockReturnValue({
-        success: true,
-        data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
-      });
+      mockDetermineStereoConfiguration.mockReturnValue(false);
 
       const settingsWithMono = {
         ...mockInMemorySettings,
@@ -630,7 +644,11 @@ describe("SampleService", () => {
           is_stereo: false, // Should be false even though file is stereo
         }),
       );
-      expect(mockGetAudioMetadata).not.toHaveBeenCalled();
+      expect(mockDetermineStereoConfiguration).toHaveBeenCalledWith(
+        "/test/stereo-replace.wav",
+        settingsWithMono,
+        undefined,
+      );
     });
 
     it("preserves stereo when defaultToMonoSamples is false for replacement", () => {
@@ -641,10 +659,7 @@ describe("SampleService", () => {
       });
       mockDeleteSamples.mockReturnValue({ success: true });
       mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
-      mockGetAudioMetadata.mockReturnValue({
-        success: true,
-        data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
-      });
+      mockDetermineStereoConfiguration.mockReturnValue(true);
 
       const settingsWithStereo = {
         ...mockInMemorySettings,
@@ -660,8 +675,10 @@ describe("SampleService", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(mockGetAudioMetadata).toHaveBeenCalledWith(
+      expect(mockDetermineStereoConfiguration).toHaveBeenCalledWith(
         "/test/stereo-replace.wav",
+        settingsWithStereo,
+        undefined,
       );
       expect(mockAddSample).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -1328,13 +1345,10 @@ describe("SampleService", () => {
   describe("addSampleToSlot - forceMono/forceStereo options", () => {
     beforeEach(() => {
       mockGetKitSamples.mockReturnValue({ success: true, data: [] });
-      mockGetAudioMetadata.mockReturnValue({
-        success: true,
-        data: { channels: 2, sampleRate: 44100, bitDepth: 16 },
-      });
     });
 
     it("forceMono option overrides defaultToMonoSamples setting", () => {
+      mockDetermineStereoConfiguration.mockReturnValue(false);
       const settingsWithStereo = {
         ...mockInMemorySettings,
         defaultToMonoSamples: false,
@@ -1356,10 +1370,15 @@ describe("SampleService", () => {
           is_stereo: false, // Should be false due to forceMono
         }),
       );
-      expect(mockGetAudioMetadata).not.toHaveBeenCalled();
+      expect(mockDetermineStereoConfiguration).toHaveBeenCalledWith(
+        "/test/stereo.wav",
+        settingsWithStereo,
+        { forceMono: true },
+      );
     });
 
     it("forceStereo option overrides defaultToMonoSamples setting", () => {
+      mockDetermineStereoConfiguration.mockReturnValue(true);
       const settingsWithMono = {
         ...mockInMemorySettings,
         defaultToMonoSamples: true,
@@ -1381,10 +1400,15 @@ describe("SampleService", () => {
           is_stereo: true, // Should be true due to forceStereo
         }),
       );
-      expect(mockGetAudioMetadata).not.toHaveBeenCalled();
+      expect(mockDetermineStereoConfiguration).toHaveBeenCalledWith(
+        "/test/mono.wav",
+        settingsWithMono,
+        { forceStereo: true },
+      );
     });
 
     it("forceMono takes precedence over forceStereo", () => {
+      mockDetermineStereoConfiguration.mockReturnValue(false);
       const result = sampleService.addSampleToSlot(
         mockInMemorySettings,
         "TestKit",
@@ -1401,16 +1425,18 @@ describe("SampleService", () => {
           is_stereo: false, // forceMono takes precedence
         }),
       );
+      expect(mockDetermineStereoConfiguration).toHaveBeenCalledWith(
+        "/test/sample.wav",
+        mockInMemorySettings,
+        { forceMono: true, forceStereo: true },
+      );
     });
   });
 
   describe("error handling and edge cases", () => {
-    it("handles getAudioMetadata failure gracefully in addSampleToSlot", () => {
+    it("handles determineStereoConfiguration gracefully in addSampleToSlot", () => {
       mockGetKitSamples.mockReturnValue({ success: true, data: [] });
-      mockGetAudioMetadata.mockReturnValue({
-        success: false,
-        error: "Audio metadata error",
-      });
+      mockDetermineStereoConfiguration.mockReturnValue(false);
 
       const settingsWithStereoDetection = {
         ...mockInMemorySettings,
@@ -1432,34 +1458,10 @@ describe("SampleService", () => {
           is_stereo: false, // Should default to false when metadata fails
         }),
       );
-    });
-
-    it("handles getAudioMetadata returning null data", () => {
-      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
-      mockGetAudioMetadata.mockReturnValue({
-        success: true,
-        data: null,
-      });
-
-      const settingsWithStereoDetection = {
-        ...mockInMemorySettings,
-        defaultToMonoSamples: false,
-      };
-
-      const result = sampleService.addSampleToSlot(
-        settingsWithStereoDetection,
-        "TestKit",
-        1,
-        0,
+      expect(mockDetermineStereoConfiguration).toHaveBeenCalledWith(
         "/test/sample.wav",
-      );
-
-      expect(result.success).toBe(true);
-      expect(mockAddSample).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-        expect.objectContaining({
-          is_stereo: false, // Should default to false when data is null
-        }),
+        settingsWithStereoDetection,
+        undefined,
       );
     });
 
@@ -1604,6 +1606,495 @@ describe("SampleService", () => {
       expect(result.success).toBe(true);
       expect(mockDeleteSamples).not.toHaveBeenCalled(); // Should not try to delete
       expect(mockAddSample).toHaveBeenCalled(); // Should add instead
+    });
+  });
+
+  // Tests for the extracted helper methods
+  describe("Helper Methods", () => {
+    describe("validateAndGetSampleToMove", () => {
+      it("successfully validates and returns sample to move", () => {
+        const mockSample = {
+          id: 1,
+          voice_number: 2,
+          slot_number: 3,
+          filename: "test.wav",
+          source_path: "/path/to/test.wav",
+          is_stereo: false,
+        };
+
+        mockGetKitSamples.mockReturnValue({
+          success: true,
+          data: [mockSample],
+        });
+
+        // Access the private method through instance
+        const result = (sampleService as any).validateAndGetSampleToMove(
+          "/test/db/path",
+          "SourceKit",
+          2,
+          2, // 0-based slot index
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockSample);
+        expect(mockGetKitSamples).toHaveBeenCalledWith(
+          "/test/db/path",
+          "SourceKit",
+        );
+      });
+
+      it("returns error when getKitSamples fails", () => {
+        mockGetKitSamples.mockReturnValue({
+          success: false,
+          error: "Database connection error",
+        });
+
+        const result = (sampleService as any).validateAndGetSampleToMove(
+          "/test/db/path",
+          "SourceKit",
+          2,
+          2,
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe("Database connection error");
+      });
+
+      it("returns error when getKitSamples returns null data", () => {
+        mockGetKitSamples.mockReturnValue({
+          success: true,
+          data: null,
+        });
+
+        const result = (sampleService as any).validateAndGetSampleToMove(
+          "/test/db/path",
+          "SourceKit",
+          2,
+          2,
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBeUndefined(); // Will fall through to sample not found
+      });
+
+      it("returns error when sample not found at specified location", () => {
+        mockGetKitSamples.mockReturnValue({
+          success: true,
+          data: [
+            {
+              id: 1,
+              voice_number: 1,
+              slot_number: 1,
+              filename: "other.wav",
+              source_path: "/path/to/other.wav",
+              is_stereo: false,
+            },
+          ],
+        });
+
+        const result = (sampleService as any).validateAndGetSampleToMove(
+          "/test/db/path",
+          "SourceKit",
+          2,
+          2, // Looking for voice 2, slot 3 (2+1)
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe(
+          "No sample found at SourceKit voice 2, slot 3",
+        );
+      });
+
+      it("finds correct sample among multiple samples", () => {
+        const targetSample = {
+          id: 2,
+          voice_number: 3,
+          slot_number: 5,
+          filename: "target.wav",
+          source_path: "/path/to/target.wav",
+          is_stereo: true,
+        };
+
+        mockGetKitSamples.mockReturnValue({
+          success: true,
+          data: [
+            {
+              id: 1,
+              voice_number: 1,
+              slot_number: 1,
+              filename: "first.wav",
+              source_path: "/path/to/first.wav",
+              is_stereo: false,
+            },
+            targetSample,
+            {
+              id: 3,
+              voice_number: 4,
+              slot_number: 2,
+              filename: "third.wav",
+              source_path: "/path/to/third.wav",
+              is_stereo: false,
+            },
+          ],
+        });
+
+        const result = (sampleService as any).validateAndGetSampleToMove(
+          "/test/db/path",
+          "SourceKit",
+          3,
+          4, // 0-based slot index for slot 5
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(targetSample);
+      });
+    });
+
+    describe("checkStereoConflicts", () => {
+      const mockSample = {
+        id: 1,
+        voice_number: 1,
+        slot_number: 1,
+        filename: "test.wav",
+        source_path: "/path/to/test.wav",
+        is_stereo: false,
+      };
+
+      it("allows mono sample to any voice", () => {
+        const result = (sampleService as any).checkStereoConflicts(
+          mockSample,
+          4,
+          3,
+          [],
+          "insert",
+          "DestKit",
+        );
+
+        expect(result.hasConflict).toBe(false);
+        expect(result.error).toBeUndefined();
+      });
+
+      it("rejects stereo sample to voice 4", () => {
+        const stereoSample = { ...mockSample, is_stereo: true };
+
+        const result = (sampleService as any).checkStereoConflicts(
+          stereoSample,
+          4,
+          3,
+          [],
+          "insert",
+          "DestKit",
+        );
+
+        expect(result.hasConflict).toBe(true);
+        expect(result.error).toBe(
+          "Cannot move stereo sample to voice 4 (no adjacent voice available)",
+        );
+      });
+
+      it("allows stereo sample to voice 1-3 in overwrite mode", () => {
+        const stereoSample = { ...mockSample, is_stereo: true };
+
+        const result = (sampleService as any).checkStereoConflicts(
+          stereoSample,
+          3,
+          2,
+          [],
+          "overwrite",
+          "DestKit",
+        );
+
+        expect(result.hasConflict).toBe(false);
+        expect(result.error).toBeUndefined();
+      });
+
+      it("rejects stereo sample in insert mode when adjacent voice has conflict", () => {
+        const stereoSample = { ...mockSample, is_stereo: true };
+        const conflictingSample = {
+          id: 2,
+          voice_number: 3,
+          slot_number: 4,
+          filename: "conflict.wav",
+          source_path: "/path/to/conflict.wav",
+          is_stereo: false,
+        };
+
+        const result = (sampleService as any).checkStereoConflicts(
+          stereoSample,
+          2,
+          3, // Destination slot 4 (3+1)
+          [conflictingSample],
+          "insert",
+          "DestKit",
+        );
+
+        expect(result.hasConflict).toBe(true);
+        expect(result.error).toBe(
+          "Stereo sample move would conflict with sample in DestKit voice 3, slot 4",
+        );
+      });
+
+      it("allows stereo sample in insert mode when no adjacent voice conflict", () => {
+        const stereoSample = { ...mockSample, is_stereo: true };
+        const nonConflictingSample = {
+          id: 2,
+          voice_number: 3,
+          slot_number: 5, // Different slot
+          filename: "noconflict.wav",
+          source_path: "/path/to/noconflict.wav",
+          is_stereo: false,
+        };
+
+        const result = (sampleService as any).checkStereoConflicts(
+          stereoSample,
+          2,
+          3, // Destination slot 4 (3+1)
+          [nonConflictingSample],
+          "insert",
+          "DestKit",
+        );
+
+        expect(result.hasConflict).toBe(false);
+        expect(result.error).toBeUndefined();
+      });
+
+      it("allows stereo sample in insert mode when adjacent voice is different", () => {
+        const stereoSample = { ...mockSample, is_stereo: true };
+        const nonConflictingSample = {
+          id: 2,
+          voice_number: 4,
+          slot_number: 4, // Same slot but voice 4 instead of 3
+          filename: "noconflict.wav",
+          source_path: "/path/to/noconflict.wav",
+          is_stereo: false,
+        };
+
+        const result = (sampleService as any).checkStereoConflicts(
+          stereoSample,
+          2,
+          3, // Destination slot 4 (3+1), should check voice 3
+          [nonConflictingSample],
+          "insert",
+          "DestKit",
+        );
+
+        expect(result.hasConflict).toBe(false);
+        expect(result.error).toBeUndefined();
+      });
+    });
+
+    describe("getDestinationSamplesAndReplacements", () => {
+      it("successfully retrieves destination samples and no replacement in insert mode", () => {
+        const mockDestSamples = [
+          {
+            id: 1,
+            voice_number: 1,
+            slot_number: 1,
+            filename: "dest1.wav",
+            source_path: "/path/to/dest1.wav",
+            is_stereo: false,
+          },
+          {
+            id: 2,
+            voice_number: 2,
+            slot_number: 3,
+            filename: "dest2.wav",
+            source_path: "/path/to/dest2.wav",
+            is_stereo: true,
+          },
+        ];
+
+        mockGetKitSamples.mockReturnValue({
+          success: true,
+          data: mockDestSamples,
+        });
+
+        const result = (
+          sampleService as any
+        ).getDestinationSamplesAndReplacements(
+          "/test/db/path",
+          "DestKit",
+          2,
+          4, // 0-based slot index for slot 5
+          "insert",
+        );
+
+        expect(result.destSamples).toEqual(mockDestSamples);
+        expect(result.replacedSample).toBeUndefined();
+        expect(mockGetKitSamples).toHaveBeenCalledWith(
+          "/test/db/path",
+          "DestKit",
+        );
+      });
+
+      it("identifies replaced sample in overwrite mode", () => {
+        const replacedSample = {
+          id: 2,
+          voice_number: 2,
+          slot_number: 5,
+          filename: "replaced.wav",
+          source_path: "/path/to/replaced.wav",
+          is_stereo: false,
+        };
+
+        const mockDestSamples = [
+          {
+            id: 1,
+            voice_number: 1,
+            slot_number: 1,
+            filename: "dest1.wav",
+            source_path: "/path/to/dest1.wav",
+            is_stereo: false,
+          },
+          replacedSample,
+        ];
+
+        mockGetKitSamples.mockReturnValue({
+          success: true,
+          data: mockDestSamples,
+        });
+
+        const result = (
+          sampleService as any
+        ).getDestinationSamplesAndReplacements(
+          "/test/db/path",
+          "DestKit",
+          2,
+          4, // 0-based slot index for slot 5
+          "overwrite",
+        );
+
+        expect(result.destSamples).toEqual(mockDestSamples);
+        expect(result.replacedSample).toEqual(replacedSample);
+      });
+
+      it("handles no replacement when target slot is empty in overwrite mode", () => {
+        const mockDestSamples = [
+          {
+            id: 1,
+            voice_number: 1,
+            slot_number: 1,
+            filename: "dest1.wav",
+            source_path: "/path/to/dest1.wav",
+            is_stereo: false,
+          },
+          {
+            id: 2,
+            voice_number: 3,
+            slot_number: 2,
+            filename: "dest2.wav",
+            source_path: "/path/to/dest2.wav",
+            is_stereo: false,
+          },
+        ];
+
+        mockGetKitSamples.mockReturnValue({
+          success: true,
+          data: mockDestSamples,
+        });
+
+        const result = (
+          sampleService as any
+        ).getDestinationSamplesAndReplacements(
+          "/test/db/path",
+          "DestKit",
+          2,
+          4, // 0-based slot index for slot 5 - no sample at voice 2, slot 5
+          "overwrite",
+        );
+
+        expect(result.destSamples).toEqual(mockDestSamples);
+        expect(result.replacedSample).toBeUndefined();
+      });
+
+      it("handles getKitSamples failure gracefully", () => {
+        mockGetKitSamples.mockReturnValue({
+          success: false,
+          error: "Database error",
+        });
+
+        const result = (
+          sampleService as any
+        ).getDestinationSamplesAndReplacements(
+          "/test/db/path",
+          "DestKit",
+          2,
+          4,
+          "overwrite",
+        );
+
+        expect(result.destSamples).toEqual([]);
+        expect(result.replacedSample).toBeUndefined();
+      });
+
+      it("handles null data from getKitSamples", () => {
+        mockGetKitSamples.mockReturnValue({
+          success: true,
+          data: null,
+        });
+
+        const result = (
+          sampleService as any
+        ).getDestinationSamplesAndReplacements(
+          "/test/db/path",
+          "DestKit",
+          2,
+          4,
+          "insert",
+        );
+
+        expect(result.destSamples).toEqual([]);
+        expect(result.replacedSample).toBeUndefined();
+      });
+
+      it("correctly identifies replacement with multiple samples at different voices/slots", () => {
+        const targetSample = {
+          id: 3,
+          voice_number: 3,
+          slot_number: 7,
+          filename: "target.wav",
+          source_path: "/path/to/target.wav",
+          is_stereo: true,
+        };
+
+        const mockDestSamples = [
+          {
+            id: 1,
+            voice_number: 2,
+            slot_number: 7,
+            filename: "different-voice.wav",
+            source_path: "/path/to/different-voice.wav",
+            is_stereo: false,
+          },
+          {
+            id: 2,
+            voice_number: 3,
+            slot_number: 6,
+            filename: "different-slot.wav",
+            source_path: "/path/to/different-slot.wav",
+            is_stereo: false,
+          },
+          targetSample,
+        ];
+
+        mockGetKitSamples.mockReturnValue({
+          success: true,
+          data: mockDestSamples,
+        });
+
+        const result = (
+          sampleService as any
+        ).getDestinationSamplesAndReplacements(
+          "/test/db/path",
+          "DestKit",
+          3,
+          6, // 0-based slot index for slot 7
+          "overwrite",
+        );
+
+        expect(result.destSamples).toEqual(mockDestSamples);
+        expect(result.replacedSample).toEqual(targetSample);
+      });
     });
   });
 });

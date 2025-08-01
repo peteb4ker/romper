@@ -97,7 +97,7 @@ export async function convertSampleToRampleFormat(
     const inputBuffer = fs.readFileSync(inputPath);
     const decoded = wav.decode(inputBuffer);
 
-    if (!decoded || !decoded.channelData || decoded.channelData.length === 0) {
+    if (!decoded?.channelData?.length) {
       return { success: false, error: "Failed to decode input WAV file" };
     }
 

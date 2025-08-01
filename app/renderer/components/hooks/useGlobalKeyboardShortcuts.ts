@@ -52,7 +52,6 @@ export function useGlobalKeyboardShortcuts({
         if (undoRedo.canRedo && !undoRedo.isRedoing) {
           undoRedo.redo();
         }
-        return;
       }
     };
 

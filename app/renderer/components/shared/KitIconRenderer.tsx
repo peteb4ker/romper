@@ -5,14 +5,14 @@ import { GiDrumKit } from "react-icons/gi";
 import { MdAutoAwesome, MdMic } from "react-icons/md";
 import { TiArrowLoop } from "react-icons/ti";
 
-export type KitIconType =
+export type KnownKitIconType =
   | "mic"
   | "loop"
   | "fx"
   | "piano"
   | "drumkit"
-  | "folder"
-  | string;
+  | "folder";
+export type KitIconType = KnownKitIconType | string;
 
 interface KitIconRendererProps {
   iconType: KitIconType;

@@ -171,7 +171,7 @@ export type AnyUndoAction =
 
 // Helper to create action IDs
 export function createActionId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
 // Helper to create action descriptions

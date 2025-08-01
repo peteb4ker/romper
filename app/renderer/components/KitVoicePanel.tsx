@@ -110,7 +110,7 @@ const KitVoicePanel: React.FC<
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
 
   // Task 22.2: Internal sample drag state
-  const [, setDraggedSample] = useState<{
+  const [_draggedSample, setDraggedSample] = useState<{
     voice: number;
     slot: number;
     sampleName: string;
@@ -685,6 +685,71 @@ const KitVoicePanel: React.FC<
     };
   };
 
+  // Helper function to get sample slot CSS classes
+  const getSampleSlotClassName = (
+    slotIndex: number,
+    slotBaseClass: string,
+    dragOverClass: string,
+  ) => {
+    const isSelected = selectedIdx === slotIndex && isActive;
+    const selectedClass = isSelected
+      ? " bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 font-bold ring-2 ring-blue-400 dark:ring-blue-300"
+      : "";
+    return `${slotBaseClass}${selectedClass}${dragOverClass}`;
+  };
+
+  // Helper function to get sample slot title
+  const getSampleSlotTitle = (
+    slotNumber: number,
+    sampleData: SampleData | undefined,
+    isDragOver: boolean,
+    isStereoHighlight: boolean,
+    isDropZone: boolean,
+    dropHintTitle: string,
+  ) => {
+    if (isDragOver || isStereoHighlight || isDropZone) {
+      return dropHintTitle;
+    }
+
+    const baseTitle = `Slot ${slotNumber}`;
+    const sourceInfo = sampleData?.source_path
+      ? `\nSource: ${sampleData.source_path}`
+      : "";
+    return baseTitle + sourceInfo;
+  };
+
+  // Helper function to handle context menu
+  const handleSampleContextMenu = (
+    e: React.MouseEvent,
+    sampleData: SampleData | undefined,
+  ) => {
+    e.preventDefault();
+    if (sampleData?.source_path && window.electronAPI?.showItemInFolder) {
+      window.electronAPI.showItemInFolder(sampleData.source_path);
+    }
+  };
+
+  // Helper function to get drag event handlers
+  const getSampleDragHandlers = (slotIndex: number, sampleName: string) => {
+    if (!isEditable) {
+      return {
+        onDragStart: undefined,
+        onDragEnd: undefined,
+        onDragOver: undefined,
+        onDragLeave: undefined,
+        onDrop: undefined,
+      };
+    }
+    return {
+      onDragStart: (e: React.DragEvent) =>
+        handleSampleDragStart(e, slotIndex, sampleName),
+      onDragEnd: handleSampleDragEnd,
+      onDragOver: (e: React.DragEvent) => handleSampleDragOver(e, slotIndex),
+      onDragLeave: handleSampleDragLeave,
+      onDrop: (e: React.DragEvent) => handleSampleDrop(e, slotIndex),
+    };
+  };
+
   // Helper function to render a filled sample slot
   const renderSampleSlot = (slotIndex: number, sample: string) => {
     const {
@@ -700,46 +765,35 @@ const KitVoicePanel: React.FC<
     const isPlaying = samplePlaying[sampleKey];
     const slotNumber = slotIndex + 1;
     const sampleData = sampleMetadata?.[sampleName];
+    const isSelected = selectedIdx === slotIndex && isActive;
+
+    const className = getSampleSlotClassName(
+      slotIndex,
+      slotBaseClass,
+      dragOverClass,
+    );
+    const title = getSampleSlotTitle(
+      slotNumber,
+      sampleData,
+      isDragOver,
+      isStereoHighlight,
+      isDropZone,
+      dropHintTitle,
+    );
+    const dragHandlers = getSampleDragHandlers(slotIndex, sampleName);
 
     return (
       <li
         key={`${voice}-${slotIndex}-${sampleName}`}
-        className={`${slotBaseClass}${
-          selectedIdx === slotIndex && isActive
-            ? " bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 font-bold ring-2 ring-blue-400 dark:ring-blue-300"
-            : ""
-        }${dragOverClass}`}
+        className={className}
         tabIndex={-1}
-        aria-selected={selectedIdx === slotIndex && isActive}
-        data-testid={
-          selectedIdx === slotIndex && isActive
-            ? `sample-selected-voice-${voice}`
-            : undefined
-        }
-        title={
-          isDragOver || isStereoHighlight || isDropZone
-            ? dropHintTitle
-            : `Slot ${slotNumber}${sampleData?.source_path ? `\nSource: ${sampleData.source_path}` : ""}`
-        }
+        aria-selected={isSelected}
+        data-testid={isSelected ? `sample-selected-voice-${voice}` : undefined}
+        title={title}
         onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          if (sampleData?.source_path && window.electronAPI?.showItemInFolder) {
-            window.electronAPI.showItemInFolder(sampleData.source_path);
-          }
-        }}
+        onContextMenu={(e) => handleSampleContextMenu(e, sampleData)}
         draggable={isEditable}
-        onDragStart={
-          isEditable
-            ? (e) => handleSampleDragStart(e, slotIndex, sampleName)
-            : undefined
-        }
-        onDragEnd={isEditable ? handleSampleDragEnd : undefined}
-        onDragOver={
-          isEditable ? (e) => handleSampleDragOver(e, slotIndex) : undefined
-        }
-        onDragLeave={isEditable ? handleSampleDragLeave : undefined}
-        onDrop={isEditable ? (e) => handleSampleDrop(e, slotIndex) : undefined}
+        {...dragHandlers}
       >
         {renderPlayButton(isPlaying, sampleName)}
         <span
@@ -973,7 +1027,7 @@ const KitVoicePanel: React.FC<
 
             return [...Array(slotsToRender)].map((_, i) => (
               <div
-                key={`slot-${i}`}
+                key={`voice-${voice}-slot-${i}`}
                 className="min-h-[28px] flex items-center justify-end"
                 style={{ marginBottom: 4 }}
               >

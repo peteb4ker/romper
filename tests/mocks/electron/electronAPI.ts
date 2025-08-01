@@ -100,6 +100,7 @@ export const createElectronAPIMock = (
   selectLocalStorePath: vi.fn().mockResolvedValue("/mock/custom/path"),
   selectExistingLocalStore: vi.fn().mockResolvedValue("/mock/existing/path"),
   getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),
+  showItemInFolder: vi.fn().mockResolvedValue(undefined),
   readFile: vi.fn().mockResolvedValue({
     success: true,
     data: new ArrayBuffer(1024),

@@ -31,9 +31,7 @@ const KitItem = React.memo(
       // Extract voice names using shared utility
       const voiceNames = extractVoiceNames(kitData);
 
-      const { iconType, iconLabel } = useKitItem(
-        voiceNames as Record<string | number, string> | undefined,
-      );
+      const { iconType, iconLabel } = useKitItem(voiceNames);
 
       // Use shared icon renderer
       const icon = <KitIconRenderer iconType={iconType} size="lg" />;

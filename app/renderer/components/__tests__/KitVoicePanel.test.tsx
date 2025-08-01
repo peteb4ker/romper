@@ -698,4 +698,284 @@ describe("KitVoicePanel", () => {
       expect(onPlay).not.toHaveBeenCalled();
     });
   });
+
+  describe("Helper Methods - Integration Tests", () => {
+    // Since the helper methods are internal to the component, we test their behavior
+    // through integration tests that verify the results in the rendered component
+
+    describe("getSampleSlotClassName behavior", () => {
+      it("applies selected styling when slot is selected and active", () => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel {...baseProps} selectedIdx={0} isActive={true} />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const selectedSlot = screen.getByTestId("sample-selected-voice-1");
+        // Verify that selected styling classes are applied
+        expect(selectedSlot.className).toMatch(/bg-blue-100/);
+        expect(selectedSlot.className).toMatch(/dark:bg-blue-800/);
+        expect(selectedSlot.className).toMatch(/text-blue-800/);
+        expect(selectedSlot.className).toMatch(/font-bold/);
+        expect(selectedSlot.className).toMatch(/ring-2/);
+      });
+
+      it("does not apply selected styling when slot is not selected", () => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel
+                {...baseProps}
+                selectedIdx={1} // Select slot 1, not slot 0
+                isActive={true}
+              />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const slots = screen.getAllByRole("listitem");
+        const firstSlot = slots[0]; // This should not be selected
+
+        // Should not have selected styling classes
+        expect(firstSlot.className).not.toMatch(/bg-blue-100/);
+        expect(firstSlot.className).not.toMatch(/font-bold/);
+        expect(firstSlot.className).not.toMatch(/ring-2/);
+      });
+
+      it("does not apply selected styling when component is not active", () => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel
+                {...baseProps}
+                selectedIdx={0}
+                isActive={false} // Not active
+              />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const slots = screen.getAllByRole("listitem");
+        const firstSlot = slots[0];
+
+        // Should not have selected styling classes when not active
+        expect(firstSlot.className).not.toMatch(/bg-blue-100/);
+        expect(firstSlot.className).not.toMatch(/font-bold/);
+        expect(firstSlot.className).not.toMatch(/ring-2/);
+      });
+    });
+
+    describe("getSampleSlotTitle behavior", () => {
+      it("shows slot number in title when no sample metadata", () => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel {...baseProps} sampleMetadata={undefined} />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const slots = screen.getAllByRole("listitem");
+        const firstSlot = slots[0];
+
+        // Should have basic slot title
+        expect(firstSlot.title).toContain("Slot 1");
+      });
+
+      it("includes source path in title when sample metadata is available", () => {
+        const sampleMetadata = {
+          "kick.wav": { source_path: "/path/to/kick.wav" },
+        };
+
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel {...baseProps} sampleMetadata={sampleMetadata} />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const slots = screen.getAllByRole("listitem");
+        const firstSlot = slots[0];
+
+        // Should include source path in title
+        expect(firstSlot.title).toContain("Slot 1");
+        expect(firstSlot.title).toContain("Source: /path/to/kick.wav");
+      });
+
+      it("shows stereo highlighting title when isStereoDragTarget", () => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel
+                {...baseProps}
+                isStereoDragTarget={true}
+                stereoDragSlotIndex={3}
+                isEditable={true}
+              />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const highlightedSlot = screen.getByTestId("empty-slot-1-3");
+
+        // Should show stereo pair hint in title when highlighting
+        expect(highlightedSlot.title).toMatch(/channel of stereo pair/);
+      });
+    });
+
+    describe("handleSampleContextMenu behavior", () => {
+      it("calls showItemInFolder on context menu when sample has source path", () => {
+        const sampleMetadata = {
+          "kick.wav": { source_path: "/path/to/kick.wav" },
+        };
+
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel {...baseProps} sampleMetadata={sampleMetadata} />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const slots = screen.getAllByRole("listitem");
+        const firstSlot = slots[0];
+
+        // Simulate context menu
+        fireEvent.contextMenu(firstSlot);
+
+        expect(
+          vi.mocked(window.electronAPI.showItemInFolder),
+        ).toHaveBeenCalledWith("/path/to/kick.wav");
+      });
+
+      it("does not call showItemInFolder when no sample metadata", () => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel {...baseProps} sampleMetadata={undefined} />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const slots = screen.getAllByRole("listitem");
+        const firstSlot = slots[0];
+
+        // Simulate context menu
+        fireEvent.contextMenu(firstSlot);
+
+        expect(
+          vi.mocked(window.electronAPI.showItemInFolder),
+        ).not.toHaveBeenCalled();
+      });
+
+      it("does not call showItemInFolder when electronAPI is unavailable", () => {
+        // Mock electronAPI as undefined to test graceful handling
+        vi.mocked(window.electronAPI).showItemInFolder = undefined as any;
+
+        const sampleMetadata = {
+          "kick.wav": { source_path: "/path/to/kick.wav" },
+        };
+
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel {...baseProps} sampleMetadata={sampleMetadata} />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const slots = screen.getAllByRole("listitem");
+        const firstSlot = slots[0];
+
+        // Simulate context menu - should not throw error
+        expect(() => fireEvent.contextMenu(firstSlot)).not.toThrow();
+      });
+    });
+
+    describe("getSampleDragHandlers behavior", () => {
+      it("makes samples draggable when editable=true", () => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel {...baseProps} isEditable={true} />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const slots = screen.getAllByRole("listitem");
+        const sampleSlots = slots.filter(
+          (slot) => !slot.getAttribute("data-testid")?.includes("empty-slot"),
+        );
+
+        // All sample slots should be draggable
+        sampleSlots.forEach((slot) => {
+          expect(slot.getAttribute("draggable")).toBe("true");
+        });
+      });
+
+      it("makes samples not draggable when editable=false", () => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel {...baseProps} isEditable={false} />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const slots = screen.getAllByRole("listitem");
+        const sampleSlots = slots.filter(
+          (slot) => !slot.getAttribute("data-testid")?.includes("empty-slot"),
+        );
+
+        // Sample slots should not be draggable
+        sampleSlots.forEach((slot) => {
+          expect(slot.getAttribute("draggable")).toBe("false");
+        });
+      });
+
+      it("empty slots have drag handlers when editable and are drop targets", () => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel
+                {...baseProps}
+                samples={["kick.wav"]} // Only one sample, so slot 1 will be empty drop target
+                isEditable={true}
+              />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const emptySlot = screen.getByTestId("empty-slot-1-1");
+
+        // Empty drop target slots should have dragover, dragleave, and drop handlers
+        // (We can't directly test the handlers, but we can verify the element exists and is a drop target)
+        expect(emptySlot).toBeInTheDocument();
+        expect(emptySlot.className).toMatch(/border-dashed/); // Indicates it's a drop target
+      });
+
+      it("empty slots do not have drag handlers when not editable", () => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanel
+                {...baseProps}
+                samples={["kick.wav"]} // Only one sample, so slot 1 will be empty drop target
+                isEditable={false}
+              />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+
+        const emptySlot = screen.getByTestId("empty-slot-1-1");
+
+        // Empty slots should not have drop target styling when not editable
+        expect(emptySlot.className).not.toMatch(/border-dashed/);
+        expect(emptySlot.className).not.toMatch(/hover:border-orange/);
+      });
+    });
+  });
 });

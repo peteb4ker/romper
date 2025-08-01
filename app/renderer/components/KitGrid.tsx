@@ -219,29 +219,32 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       [scrollAndFocusKitByIndex],
     );
 
-    // Grid keyboard navigation
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      )
-        return;
-
-      // A-Z hotkey: select first kit in bank
-      if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
-        const bank = e.key.toUpperCase();
-        const idx = kitsToDisplay.findIndex(
-          (k) => k?.name?.[0]?.toUpperCase() === bank,
-        );
-        if (idx !== -1) {
-          if (typeof onBankFocus === "function") onBankFocus(bank);
-          scrollAndFocusKitByIndex(idx);
-          e.preventDefault();
-        }
-        return;
+    // Helper function to handle bank selection via A-Z keys
+    const handleBankSelection = (e: React.KeyboardEvent) => {
+      const bank = e.key.toUpperCase();
+      const idx = kitsToDisplay.findIndex(
+        (k) => k?.name?.[0]?.toUpperCase() === bank,
+      );
+      if (idx !== -1) {
+        if (typeof onBankFocus === "function") onBankFocus(bank);
+        scrollAndFocusKitByIndex(idx);
+        e.preventDefault();
       }
+    };
 
-      // Arrow key navigation for grid
+    // Helper function to handle kit selection (Enter/Space)
+    const handleKitSelection = (e: React.KeyboardEvent) => {
+      if (focusedIdx && focusedIdx < kitsToDisplay.length) {
+        const kit = kitsToDisplay[focusedIdx];
+        if (isValidKit(kit)) {
+          onSelectKit(kit.name);
+        }
+      }
+      e.preventDefault();
+    };
+
+    // Helper function to handle arrow key navigation
+    const handleArrowNavigation = (e: React.KeyboardEvent) => {
       if (!focusedIdx) return;
 
       const { rowIndex, columnIndex } = getGridCoords(focusedIdx);
@@ -261,18 +264,6 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
         case "ArrowRight":
           newColumnIndex = Math.min(columnCount - 1, columnIndex + 1);
           break;
-        case "Enter":
-        case " ":
-          if (focusedIdx < kitsToDisplay.length) {
-            const kit = kitsToDisplay[focusedIdx];
-            if (isValidKit(kit)) {
-              onSelectKit(kit.name);
-            }
-          }
-          e.preventDefault();
-          return;
-        default:
-          return;
       }
 
       const newIndex = getFlatIndex(newRowIndex, newColumnIndex);
@@ -280,6 +271,32 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
         scrollAndFocusKitByIndex(newIndex);
       }
       e.preventDefault();
+    };
+
+    // Grid keyboard navigation
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      )
+        return;
+
+      // A-Z hotkey: select first kit in bank
+      if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
+        handleBankSelection(e);
+        return;
+      }
+
+      // Enter/Space: select focused kit
+      if (e.key === "Enter" || e.key === " ") {
+        handleKitSelection(e);
+        return;
+      }
+
+      // Arrow key navigation for grid
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        handleArrowNavigation(e);
+      }
     };
 
     // Group kits by bank for rendering with headers

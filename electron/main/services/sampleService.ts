@@ -635,6 +635,97 @@ export class SampleService {
   }
 
   /**
+   * Helper method to validate and get sample to move for cross-kit operations
+   */
+  private validateAndGetSampleToMove(
+    dbPath: string,
+    fromKit: string,
+    fromVoice: number,
+    fromSlot: number,
+  ): DbResult<Sample> {
+    const sourceSamplesResult = getKitSamples(dbPath, fromKit);
+    if (!sourceSamplesResult.success || !sourceSamplesResult.data) {
+      return { success: false, error: sourceSamplesResult.error };
+    }
+
+    const sampleToMove = sourceSamplesResult.data.find(
+      (s) => s.voice_number === fromVoice && s.slot_number === fromSlot + 1,
+    );
+
+    if (!sampleToMove) {
+      return {
+        success: false,
+        error: `No sample found at ${fromKit} voice ${fromVoice}, slot ${fromSlot + 1}`,
+      };
+    }
+
+    return { success: true, data: sampleToMove };
+  }
+
+  /**
+   * Helper method to check stereo conflicts for cross-kit moves
+   */
+  private checkStereoConflicts(
+    sampleToMove: Sample,
+    toVoice: number,
+    toSlot: number,
+    destSamples: Sample[],
+    mode: "insert" | "overwrite",
+    toKit: string,
+  ): { hasConflict: boolean; error?: string } {
+    // Check for stereo conflicts at destination
+    if (sampleToMove.is_stereo && toVoice === 4) {
+      return {
+        hasConflict: true,
+        error:
+          "Cannot move stereo sample to voice 4 (no adjacent voice available)",
+      };
+    }
+
+    // For insert mode with stereo samples, check conflict with adjacent voice
+    if (sampleToMove.is_stereo && mode === "insert") {
+      const conflictSample = destSamples.find(
+        (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot + 1,
+      );
+      if (conflictSample) {
+        return {
+          hasConflict: true,
+          error: `Stereo sample move would conflict with sample in ${toKit} voice ${toVoice + 1}, slot ${toSlot + 1}`,
+        };
+      }
+    }
+
+    return { hasConflict: false };
+  }
+
+  /**
+   * Helper method to get destination kit samples and check for replacements
+   */
+  private getDestinationSamplesAndReplacements(
+    dbPath: string,
+    toKit: string,
+    toVoice: number,
+    toSlot: number,
+    mode: "insert" | "overwrite",
+  ): { destSamples: Sample[]; replacedSample?: Sample } {
+    const destSamplesResult = getKitSamples(dbPath, toKit);
+    let destSamples: Sample[] = [];
+    let replacedSample: Sample | undefined;
+
+    if (destSamplesResult.success && destSamplesResult.data) {
+      destSamples = destSamplesResult.data;
+
+      if (mode === "overwrite") {
+        replacedSample = destSamples.find(
+          (s) => s.voice_number === toVoice && s.slot_number === toSlot + 1,
+        );
+      }
+    }
+
+    return { destSamples, replacedSample };
+  }
+
+  /**
    * Move a sample from one kit to another with source compaction
    * Task: Cross-kit sample movement with gap prevention
    */
@@ -660,7 +751,6 @@ export class SampleService {
     }
 
     const dbPath = this.getDbPath(localStorePath);
-
     const { fromKit, fromVoice, fromSlot, toKit, toVoice, toSlot, mode } =
       params;
 
@@ -676,58 +766,42 @@ export class SampleService {
     }
 
     try {
-      // Get the sample to move from source kit
-      const sourceSamplesResult = getKitSamples(dbPath, fromKit);
-      if (!sourceSamplesResult.success || !sourceSamplesResult.data) {
-        return { success: false, error: sourceSamplesResult.error };
-      }
-
-      const sampleToMove = sourceSamplesResult.data.find(
-        (s) => s.voice_number === fromVoice && s.slot_number === fromSlot + 1,
+      // Get the sample to move from source kit using helper method
+      const sampleResult = this.validateAndGetSampleToMove(
+        dbPath,
+        fromKit,
+        fromVoice,
+        fromSlot,
       );
-
-      if (!sampleToMove) {
+      if (!sampleResult.success) {
         return {
           success: false,
-          error: `No sample found at ${fromKit} voice ${fromVoice}, slot ${fromSlot + 1}`,
+          error: sampleResult.error || "Failed to validate sample to move",
         };
       }
+      const sampleToMove = sampleResult.data!; // TypeScript assertion: data is guaranteed to exist when success is true
 
-      // Check for stereo conflicts at destination
-      if (sampleToMove.is_stereo && toVoice === 4) {
-        return {
-          success: false,
-          error:
-            "Cannot move stereo sample to voice 4 (no adjacent voice available)",
-        };
-      }
-
-      // Get destination kit samples to check for conflicts and replacements
-      const destSamplesResult = getKitSamples(dbPath, toKit);
-      let destSamples: Sample[] = [];
-      let replacedSample: Sample | undefined;
-
-      if (destSamplesResult.success && destSamplesResult.data) {
-        destSamples = destSamplesResult.data;
-
-        if (mode === "overwrite") {
-          replacedSample = destSamples.find(
-            (s) => s.voice_number === toVoice && s.slot_number === toSlot + 1,
-          );
-        }
-      }
-
-      // For insert mode with stereo samples, check conflict with adjacent voice
-      if (sampleToMove.is_stereo && mode === "insert") {
-        const conflictSample = destSamples.find(
-          (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot + 1,
+      // Get destination kit samples to check for conflicts and replacements using helper method
+      const { destSamples, replacedSample } =
+        this.getDestinationSamplesAndReplacements(
+          dbPath,
+          toKit,
+          toVoice,
+          toSlot,
+          mode,
         );
-        if (conflictSample) {
-          return {
-            success: false,
-            error: `Stereo sample move would conflict with sample in ${toKit} voice ${toVoice + 1}, slot ${toSlot + 1}`,
-          };
-        }
+
+      // Check for stereo conflicts using helper method
+      const conflictCheck = this.checkStereoConflicts(
+        sampleToMove,
+        toVoice,
+        toSlot,
+        destSamples,
+        mode,
+        toKit,
+      );
+      if (conflictCheck.hasConflict) {
+        return { success: false, error: conflictCheck.error };
       }
 
       // Step 1: Add the sample to destination kit

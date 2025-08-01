@@ -215,9 +215,7 @@ export function useKitBrowser({
   // --- Shared virtualization-based bank focus/scroll logic ---
   const focusBankInKitList = useCallback(
     (bank: string) => {
-      const idx = kits.findIndex(
-        (k) => k && k.name && k.name[0] && k.name[0].toUpperCase() === bank,
-      );
+      const idx = kits.findIndex((k) => k?.name?.[0]?.toUpperCase() === bank);
       if (
         idx !== -1 &&
         kitListRef &&

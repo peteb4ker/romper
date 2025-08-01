@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 
+import { getErrorMessage } from "../../../../shared/errorUtils";
 import type {
   AddSampleAction,
   AnyUndoAction,
@@ -220,7 +221,7 @@ export function useSampleManagement({
       } catch (error) {
         onMessage?.({
           type: "error",
-          text: `Failed to replace sample: ${error instanceof Error ? error.message : String(error)}`,
+          text: `Failed to replace sample: ${getErrorMessage(error)}`,
         });
       }
     },
@@ -343,7 +344,7 @@ export function useSampleManagement({
       } catch (error) {
         onMessage?.({
           type: "error",
-          text: `Failed to delete sample: ${error instanceof Error ? error.message : String(error)}`,
+          text: `Failed to delete sample: ${getErrorMessage(error)}`,
         });
       }
     },

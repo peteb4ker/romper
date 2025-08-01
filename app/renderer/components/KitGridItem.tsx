@@ -1,31 +1,23 @@
-import React, { JSX } from "react";
-import { BiSolidPiano } from "react-icons/bi";
+import React from "react";
 import { FaStar } from "react-icons/fa";
-import { FiCopy, FiFolder, FiStar } from "react-icons/fi";
-import { GiDrumKit } from "react-icons/gi";
-import { MdAutoAwesome, MdMic } from "react-icons/md";
-import { TiArrowLoop } from "react-icons/ti";
+import { FiCopy, FiStar } from "react-icons/fi";
 
-import type { KitWithRelations } from "../../../shared/db/schema";
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
 import { useKitItem } from "./hooks/useKitItem";
+import { KitIconRenderer } from "./shared/KitIconRenderer";
+import {
+  BaseKitItemProps,
+  extractVoiceNames,
+  KitItemRenderProps,
+} from "./shared/kitItemUtils";
 
-interface KitGridItemProps {
-  kit: string;
-  isValid: boolean;
-  onSelect: () => void;
-  onDuplicate: () => void;
-  sampleCounts?: [number, number, number, number];
-  kitData?: KitWithRelations | null;
+interface KitGridItemProps extends BaseKitItemProps {
   onToggleFavorite?: (kitName: string) => void;
 }
 
 // Add ref forwarding and selection props
 const KitGridItem = React.memo(
-  React.forwardRef<
-    HTMLDivElement,
-    KitGridItemProps & { "data-kit"?: string; isSelected?: boolean }
-  >(
+  React.forwardRef<HTMLDivElement, KitGridItemProps & KitItemRenderProps>(
     (
       {
         kit,
@@ -40,50 +32,15 @@ const KitGridItem = React.memo(
       },
       ref,
     ) => {
-      // Get voice names from kitData.voices
-      const voiceNames = kitData?.voices
-        ? Object.fromEntries(
-            kitData.voices
-              .filter((v) => v.voice_alias)
-              .map((v) => [v.voice_number, v.voice_alias]),
-          )
-        : undefined;
+      // Extract voice names using shared utility
+      const voiceNames = extractVoiceNames(kitData);
 
       const { iconType, iconLabel } = useKitItem(
         voiceNames as Record<string | number, string> | undefined,
       );
 
-      // Compact icon rendering (text-2xl instead of text-5xl)
-      let icon: JSX.Element;
-      switch (iconType) {
-        case "mic":
-          icon = (
-            <MdMic className="text-2xl text-pink-600 dark:text-pink-300" />
-          );
-          break;
-        case "loop":
-          icon = (
-            <TiArrowLoop className="text-2xl text-amber-600 dark:text-amber-300" />
-          );
-          break;
-        case "fx":
-          icon = (
-            <MdAutoAwesome className="text-2xl text-indigo-600 dark:text-indigo-300" />
-          );
-          break;
-        case "piano":
-          icon = (
-            <BiSolidPiano className="text-2xl text-blue-700 dark:text-blue-300" />
-          );
-          break;
-        case "drumkit":
-          icon = (
-            <GiDrumKit className="text-2xl text-yellow-700 dark:text-yellow-300" />
-          );
-          break;
-        default:
-          icon = <FiFolder className="text-2xl" />;
-      }
+      // Use shared icon renderer with medium size for compact grid view
+      const icon = <KitIconRenderer iconType={iconType} size="md" />;
 
       // Kit type visual identification borders and backgrounds
       const getKitTypeStyles = () => {

@@ -1,29 +1,20 @@
-import React, { JSX } from "react";
-import { BiSolidPiano } from "react-icons/bi";
-import { FiCircle, FiCopy, FiFolder } from "react-icons/fi";
-import { GiDrumKit } from "react-icons/gi";
-import { MdAutoAwesome, MdMic } from "react-icons/md";
-import { TiArrowLoop } from "react-icons/ti";
+import React from "react";
+import { FiCircle, FiCopy } from "react-icons/fi";
 
-import type { KitWithRelations } from "../../../shared/db/schema";
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
 import { useKitItem } from "./hooks/useKitItem";
+import { KitIconRenderer } from "./shared/KitIconRenderer";
+import {
+  BaseKitItemProps,
+  extractVoiceNames,
+  KitItemRenderProps,
+} from "./shared/kitItemUtils";
 
-interface KitItemProps {
-  kit: string;
-  isValid: boolean;
-  onSelect: () => void;
-  onDuplicate: () => void;
-  sampleCounts?: [number, number, number, number];
-  kitData?: KitWithRelations | null; // Kit data from database
-}
+interface KitItemProps extends BaseKitItemProps {}
 
 // Add ref forwarding to support programmatic focus from KitList
 const KitItem = React.memo(
-  React.forwardRef<
-    HTMLDivElement,
-    KitItemProps & { "data-kit"?: string; isSelected?: boolean }
-  >(
+  React.forwardRef<HTMLDivElement, KitItemProps & KitItemRenderProps>(
     (
       {
         kit,
@@ -37,48 +28,15 @@ const KitItem = React.memo(
       },
       ref,
     ) => {
-      // Get voice names from kitData.voices
-      const voiceNames = kitData?.voices
-        ? Object.fromEntries(
-            kitData.voices
-              .filter((v) => v.voice_alias)
-              .map((v) => [v.voice_number, v.voice_alias]),
-          )
-        : undefined;
+      // Extract voice names using shared utility
+      const voiceNames = extractVoiceNames(kitData);
 
       const { iconType, iconLabel } = useKitItem(
         voiceNames as Record<string | number, string> | undefined,
       );
-      let icon: JSX.Element;
-      switch (iconType) {
-        case "mic":
-          icon = (
-            <MdMic className="text-3xl text-pink-600 dark:text-pink-300" />
-          );
-          break;
-        case "loop":
-          icon = (
-            <TiArrowLoop className="text-3xl text-amber-600 dark:text-amber-300" />
-          );
-          break;
-        case "fx":
-          icon = (
-            <MdAutoAwesome className="text-3xl text-indigo-600 dark:text-indigo-300" />
-          );
-          break;
-        case "piano":
-          icon = (
-            <BiSolidPiano className="text-3xl text-blue-700 dark:text-blue-300" />
-          );
-          break;
-        case "drumkit":
-          icon = (
-            <GiDrumKit className="text-3xl text-yellow-700 dark:text-yellow-300" />
-          );
-          break;
-        default:
-          icon = <FiFolder className="text-3xl" />;
-      }
+
+      // Use shared icon renderer
+      const icon = <KitIconRenderer iconType={iconType} size="lg" />;
       // Add persistent selection highlight (independent of focus)
       const selectedHighlight = isSelected
         ? "ring-2 ring-blue-400 dark:ring-blue-300 border-blue-400 dark:border-blue-300 bg-blue-50 dark:bg-blue-900"

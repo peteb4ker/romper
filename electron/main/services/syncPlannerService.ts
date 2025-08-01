@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type { DbResult, Sample } from "../../../shared/db/schema.js";
+import { getErrorMessage } from "../../../shared/errorUtils.js";
 import { getAudioMetadata, validateSampleFormat } from "../audioUtils.js";
 import { getKitSamples } from "../db/romperDbCoreORM.js";
 
@@ -67,7 +68,7 @@ export class SyncPlannerService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to load kits: ${error instanceof Error ? error.message : String(error)}`,
+        error: `Failed to load kits: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -241,11 +242,9 @@ export class SyncPlannerService {
 
       return { success: true, data: summary };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `Failed to generate sync summary: ${errorMessage}`,
+        error: `Failed to generate sync summary: ${getErrorMessage(error)}`,
       };
     }
   }

@@ -12,9 +12,9 @@ self.onmessage = function (e) {
   if (!e.data || typeof e.data !== "object") {
     return;
   }
-  
+
   const { type, payload = {} } = e.data;
-  
+
   if (type === "START") {
     isPlaying = true;
     numSteps = payload.numSteps || 16;

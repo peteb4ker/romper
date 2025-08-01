@@ -18,7 +18,7 @@ const mockCanvasContext = {
   lineWidth: 1,
 };
 
-const mockCanvas = {
+const _mockCanvas = {
   getContext: vi.fn(() => mockCanvasContext),
   width: 80,
   height: 18,
@@ -27,18 +27,18 @@ const mockCanvas = {
 beforeEach(() => {
   vi.clearAllMocks();
   setupElectronAPIMock();
-  
+
   // Mock canvas methods
   HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCanvasContext);
-  Object.defineProperty(HTMLCanvasElement.prototype, 'width', {
+  Object.defineProperty(HTMLCanvasElement.prototype, "width", {
     get: () => 80,
     configurable: true,
   });
-  Object.defineProperty(HTMLCanvasElement.prototype, 'height', {
+  Object.defineProperty(HTMLCanvasElement.prototype, "height", {
     get: () => 18,
     configurable: true,
   });
-  
+
   // Mock AudioContext and related APIs
   global.AudioContext = vi.fn(() => ({
     currentTime: 0,
@@ -55,7 +55,7 @@ beforeEach(() => {
     close: vi.fn().mockResolvedValue(undefined),
     state: "running",
   }));
-  
+
   // Mock animation frame functions
   global.requestAnimationFrame = vi.fn((cb) => {
     setTimeout(cb, 16);
@@ -86,7 +86,9 @@ describe("SampleWaveform", () => {
   });
 
   it("loads and decodes audio buffer on mount", async () => {
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(new ArrayBuffer(1024));
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
+      new ArrayBuffer(1024),
+    );
 
     await act(async () => {
       render(
@@ -98,8 +100,12 @@ describe("SampleWaveform", () => {
         />,
       );
     });
-    
-    expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith("A1", 2, 1);
+
+    expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith(
+      "A1",
+      2,
+      1,
+    );
   });
 
   it("re-loads audio buffer when kit parameters change", async () => {
@@ -111,9 +117,9 @@ describe("SampleWaveform", () => {
         playTrigger={0}
       />,
     );
-    
+
     vi.clearAllMocks();
-    
+
     await act(async () => {
       rerender(
         <SampleWaveform
@@ -124,8 +130,12 @@ describe("SampleWaveform", () => {
         />,
       );
     });
-    
-    expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith("A2", 3, 2);
+
+    expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith(
+      "A2",
+      3,
+      2,
+    );
   });
 
   it("handles null audio buffer response gracefully (empty slot)", async () => {
@@ -144,7 +154,11 @@ describe("SampleWaveform", () => {
       );
     });
 
-    expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith("A1", 1, 1);
+    expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith(
+      "A1",
+      1,
+      1,
+    );
     expect(onError).not.toHaveBeenCalled();
   });
 
@@ -171,7 +185,7 @@ describe("SampleWaveform", () => {
     const originalMethod = window.electronAPI.getSampleAudioBuffer;
     delete (window.electronAPI as any).getSampleAudioBuffer;
     const onError = vi.fn();
-    
+
     await act(async () => {
       render(
         <MockMessageDisplayProvider>
@@ -185,8 +199,10 @@ describe("SampleWaveform", () => {
         </MockMessageDisplayProvider>,
       );
     });
-    
-    expect(onError).toHaveBeenCalledWith("Sample audio buffer API not available");
+
+    expect(onError).toHaveBeenCalledWith(
+      "Sample audio buffer API not available",
+    );
 
     // Restore for other tests
     (window.electronAPI as any).getSampleAudioBuffer = originalMethod;
@@ -195,7 +211,7 @@ describe("SampleWaveform", () => {
   it("handles audio buffer loading errors gracefully", async () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockRejectedValue(
-      new Error("File not found")
+      new Error("File not found"),
     );
     const onError = vi.fn();
 
@@ -214,13 +230,13 @@ describe("SampleWaveform", () => {
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
         "[SampleWaveform] Sample not found: kit=A1, voice=1, slot=1:",
-        expect.any(Error)
+        expect.any(Error),
       );
     });
-    
+
     // Should not call onError for missing samples
     expect(onError).not.toHaveBeenCalled();
-    
+
     consoleSpy.mockRestore();
   });
 
@@ -233,11 +249,11 @@ describe("SampleWaveform", () => {
         playTrigger={0}
       />,
     );
-    
+
     await act(async () => {
       unmount();
     });
-    
+
     // Should not crash on unmount
     expect(true).toBe(true);
   });
@@ -252,7 +268,7 @@ describe("SampleWaveform", () => {
         stopTrigger={0}
       />,
     );
-    
+
     // Change all parameters
     await act(async () => {
       rerender(
@@ -265,15 +281,19 @@ describe("SampleWaveform", () => {
         />,
       );
     });
-    
+
     // Should handle parameter changes without crashing
-    expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith("B2", 4, 12);
+    expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith(
+      "B2",
+      4,
+      12,
+    );
   });
 
   it("draws on canvas when audio buffer is available", async () => {
     const canvas = document.querySelector("canvas");
     expect(canvas).toBeTruthy();
-    
+
     // Mock basic canvas functionality
     expect(mockCanvasContext).toBeDefined();
   });

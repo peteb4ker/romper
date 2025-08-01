@@ -128,6 +128,258 @@ const KitVoicePanel: React.FC<
     applyStereoAssignment,
   } = useStereoHandling();
 
+  // Helper functions to reduce cognitive complexity
+  const getFilePathFromDrop = async (file: File): Promise<string> => {
+    if (window.electronFileAPI?.getDroppedFilePath) {
+      return await window.electronFileAPI.getDroppedFilePath(file);
+    }
+    return (file as any).path || file.name;
+  };
+
+  const validateDroppedFile = async (filePath: string) => {
+    if (!window.electronAPI?.validateSampleFormat) {
+      console.error("Format validation not available");
+      return null;
+    }
+
+    const result = await window.electronAPI.validateSampleFormat(filePath);
+    if (!result.success || !result.data) {
+      console.error("Format validation failed:", result.error);
+      return null;
+    }
+
+    const validation = result.data;
+    if (!validation.isValid) {
+      const handled = await handleValidationIssues(validation);
+      if (!handled) return null;
+    }
+
+    return validation;
+  };
+
+  const handleValidationIssues = async (validation: any): Promise<boolean> => {
+    const criticalIssues = validation.issues.filter((issue: any) =>
+      ["extension", "fileAccess", "invalidFormat"].includes(issue.type),
+    );
+
+    if (criticalIssues.length > 0) {
+      const errorMessage = criticalIssues.map((i: any) => i.message).join(", ");
+      console.error(
+        "Cannot assign sample due to critical format issues:",
+        errorMessage,
+      );
+
+      toast.error("Cannot assign sample", {
+        description: errorMessage,
+        duration: 5000,
+      });
+      return false;
+    }
+
+    const warningMessage = validation.issues
+      .map((i: any) => i.message)
+      .join(", ");
+    console.warn(
+      "Sample has format issues that will require conversion during SD card sync:",
+      warningMessage,
+    );
+
+    toast.warning("Sample format warning", {
+      description: `${warningMessage} The sample will be converted during SD card sync.`,
+      duration: 7000,
+    });
+    return true;
+  };
+
+  const getCurrentKitSamples = async () => {
+    if (!window.electronAPI?.getAllSamplesForKit) {
+      console.error("Sample management not available");
+      return null;
+    }
+
+    const result = await window.electronAPI.getAllSamplesForKit(kitName);
+    if (!result.success) {
+      console.error("Failed to get samples:", result.error);
+      return null;
+    }
+
+    return result.data || [];
+  };
+
+  const isDuplicateSample = async (
+    allSamples: any[],
+    filePath: string,
+  ): Promise<boolean> => {
+    const voiceSamples = allSamples.filter(
+      (s: any) => s.voice_number === voice,
+    );
+    const isDuplicate = voiceSamples.some(
+      (s: any) => s.source_path === filePath,
+    );
+
+    if (isDuplicate) {
+      toast.warning("Duplicate sample", {
+        description: `Sample already exists in voice ${voice}`,
+        duration: 5000,
+      });
+    }
+
+    return isDuplicate;
+  };
+
+  const processAssignment = async (
+    filePath: string,
+    formatValidation: any,
+    allSamples: any[],
+    modifierKeys: { forceStereoDrop: boolean; forceMonoDrop: boolean },
+    droppedSlotIndex: number,
+  ): Promise<boolean> => {
+    const channels = formatValidation.metadata?.channels || 1;
+
+    if (modifierKeys.forceMonoDrop || modifierKeys.forceStereoDrop) {
+      console.log(
+        `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}, ` +
+          `override: ${modifierKeys.forceMonoDrop ? "force mono" : "force stereo"}`,
+      );
+    } else {
+      console.log(
+        `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}`,
+      );
+    }
+
+    const stereoResult = analyzeStereoAssignment(
+      voice,
+      channels,
+      allSamples,
+      modifierKeys.forceMonoDrop || modifierKeys.forceStereoDrop
+        ? {
+            forceMono: modifierKeys.forceMonoDrop,
+            forceStereo: modifierKeys.forceStereoDrop,
+          }
+        : undefined,
+    );
+
+    let assignmentOptions = {
+      forceMono: stereoResult.assignAsMono,
+      replaceExisting: false,
+      cancel: false,
+    };
+
+    if (stereoResult.requiresConfirmation && stereoResult.conflictInfo) {
+      assignmentOptions = await handleStereoConflict(stereoResult.conflictInfo);
+    }
+
+    if (assignmentOptions.cancel) {
+      return false;
+    }
+
+    return await executeAssignment(
+      filePath,
+      stereoResult,
+      assignmentOptions,
+      droppedSlotIndex,
+    );
+  };
+
+  const executeAssignment = async (
+    filePath: string,
+    stereoResult: any,
+    assignmentOptions: any,
+    droppedSlotIndex: number,
+  ): Promise<boolean> => {
+    const existingSample = samples[droppedSlotIndex];
+
+    if (existingSample && onSampleReplace) {
+      await onSampleReplace(voice, droppedSlotIndex, filePath);
+      return true;
+    }
+
+    if (!existingSample && onSampleAdd) {
+      return await applyStereoAssignment(
+        filePath,
+        stereoResult,
+        assignmentOptions,
+        async (targetVoice: number, slotIndex: number, path: string) => {
+          const targetSlot = calculateTargetSlot(
+            path,
+            slotIndex,
+            droppedSlotIndex,
+          );
+          if (targetSlot === -1) {
+            throw new Error(`No available slots in voice ${targetVoice}`);
+          }
+          await onSampleAdd(targetVoice, targetSlot, path);
+        },
+      );
+    }
+
+    return false;
+  };
+
+  const calculateTargetSlot = (
+    path: string,
+    slotIndex: number,
+    droppedSlotIndex: number,
+  ): number => {
+    const isFromLocalStore = path.includes(kitName);
+    let targetSlot = slotIndex >= 0 ? slotIndex : droppedSlotIndex;
+
+    if (!isFromLocalStore && slotIndex < 0) {
+      for (let i = 0; i < 12; i++) {
+        if (!samples[i]) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    return targetSlot;
+  };
+
+  const calculateDragStyling = (params: {
+    isDragOver: boolean;
+    isDropZone: boolean;
+    isStereoHighlight: boolean;
+    dropMode?: string;
+    sample?: string;
+    voice: number;
+    defaultToMonoSamples: boolean;
+  }) => {
+    let dragOverClass = "";
+    let dropHintTitle = "Drop to assign sample";
+
+    if (!params.isDragOver && !params.isStereoHighlight && !params.isDropZone) {
+      return { dragOverClass, dropHintTitle };
+    }
+
+    if (params.isDropZone) {
+      if (params.dropMode === "insert") {
+        dragOverClass =
+          " bg-green-100 dark:bg-green-800 ring-2 ring-green-400 dark:ring-green-300 border-t-4 border-green-500";
+        dropHintTitle = "Insert sample here (other samples will shift down)";
+      } else {
+        dragOverClass =
+          " bg-yellow-100 dark:bg-yellow-800 ring-2 ring-yellow-400 dark:ring-yellow-300";
+        dropHintTitle = params.sample
+          ? "Replace this sample"
+          : "Move sample here";
+      }
+    } else if (params.isStereoHighlight) {
+      dragOverClass =
+        " bg-purple-100 dark:bg-purple-800 ring-2 ring-purple-400 dark:ring-purple-300";
+      dropHintTitle =
+        params.voice > 1
+          ? "Right channel of stereo pair"
+          : "Left channel of stereo pair";
+    } else {
+      dragOverClass =
+        " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300";
+      dropHintTitle = `Drop to assign sample (default: ${params.defaultToMonoSamples ? "mono" : "stereo"})`;
+    }
+
+    return { dragOverClass, dropHintTitle };
+  };
+
   React.useEffect(() => {
     setEditValue(voiceName || "");
   }, [voiceName]);
@@ -216,214 +468,44 @@ const KitVoicePanel: React.FC<
     e.preventDefault();
     setDragOverSlot(null);
 
-    // Clear stereo drag state
     if (onStereoDragLeave) {
       onStereoDragLeave();
     }
 
-    // No validation needed - only valid drop targets are rendered
-
     const files = Array.from(e.dataTransfer.files);
-
     if (files.length === 0) {
       console.warn("No files dropped");
       return;
     }
 
-    // Use the first file found - let format validation handle file type checking
     const file = files[0];
-
-    // Task 7.1.3: Check for modifier keys to override defaultToMonoSamples
-    const forceStereoDrop = e.altKey || e.metaKey; // Alt/Option or Cmd (Mac) forces stereo
-    const forceMonoDrop = e.shiftKey; // Shift forces mono
+    const modifierKeys = {
+      forceStereoDrop: e.altKey || e.metaKey,
+      forceMonoDrop: e.shiftKey,
+    };
 
     try {
-      // Get the full file path using Electron's webUtils
-      let filePath: string;
-      if (window.electronFileAPI?.getDroppedFilePath) {
-        filePath = await window.electronFileAPI.getDroppedFilePath(file);
-      } else {
-        // Fallback for non-Electron environments
-        filePath = (file as any).path || file.name;
-      }
+      const filePath = await getFilePathFromDrop(file);
+      const formatValidation = await validateDroppedFile(filePath);
 
-      // Task 6.1: Validate file format before assignment via IPC
-      if (!window.electronAPI?.validateSampleFormat) {
-        console.error("Format validation not available");
-        return;
-      }
+      if (!formatValidation) return;
 
-      const formatValidationResult =
-        await window.electronAPI.validateSampleFormat(filePath);
-      if (!formatValidationResult.success || !formatValidationResult.data) {
-        console.error(
-          "Format validation failed:",
-          formatValidationResult.error,
-        );
-        return;
-      }
+      const allSamples = await getCurrentKitSamples();
+      if (!allSamples) return;
 
-      const formatValidation = formatValidationResult.data;
-      if (!formatValidation.isValid) {
-        // Check for critical issues that prevent assignment
-        const criticalIssues = formatValidation.issues.filter(
-          (issue) =>
-            issue.type === "extension" ||
-            issue.type === "fileAccess" ||
-            issue.type === "invalidFormat",
-        );
+      if (await isDuplicateSample(allSamples, filePath)) return;
 
-        if (criticalIssues.length > 0) {
-          // Critical issues prevent assignment entirely
-          const errorMessage = criticalIssues.map((i) => i.message).join(", ");
-          console.error(
-            "Cannot assign sample due to critical format issues:",
-            errorMessage,
-          );
-
-          // Show user-friendly error toast
-          toast.error("Cannot assign sample", {
-            description: errorMessage,
-            duration: 5000,
-          });
-          return;
-        } else {
-          // Non-critical issues allow assignment but show warnings
-          const warningMessage = formatValidation.issues
-            .map((i) => i.message)
-            .join(", ");
-          console.warn(
-            "Sample has format issues that will require conversion during SD card sync:",
-            warningMessage,
-          );
-
-          // Show format warning toast
-          toast.warning("Sample format warning", {
-            description: `${warningMessage} The sample will be converted during SD card sync.`,
-            duration: 7000,
-          });
-          // Proceed with assignment
-        }
-      }
-
-      // Task 7.1.2 & 7.2: Apply stereo handling logic based on metadata
-      const channels = formatValidation.metadata?.channels || 1;
-
-      // Task 7.1.3: Log modifier key overrides
-      if (forceMonoDrop || forceStereoDrop) {
-        console.log(
-          `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}, ` +
-            `override: ${forceMonoDrop ? "force mono" : "force stereo"}`,
-        );
-      } else {
-        console.log(
-          `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}`,
-        );
-      }
-
-      // Get current sample data for this kit to check for duplicates and stereo conflicts
-      if (!window.electronAPI?.getAllSamplesForKit) {
-        console.error("Sample management not available");
-        return;
-      }
-
-      const samplesResult =
-        await window.electronAPI.getAllSamplesForKit(kitName);
-      if (!samplesResult.success) {
-        console.error("Failed to get samples:", samplesResult.error);
-        return;
-      }
-
-      const allSamples = samplesResult.data || [];
-      const voiceSamples = allSamples.filter(
-        (s: any) => s.voice_number === voice,
-      );
-
-      // Check for duplicate source path in this voice
-      const isDuplicate = voiceSamples.some(
-        (s: any) => s.source_path === filePath,
-      );
-      if (isDuplicate) {
-        toast.warning("Duplicate sample", {
-          description: `Sample already exists in voice ${voice}`,
-          duration: 5000,
-        });
-        return;
-      }
-
-      // Task 7.2: Analyze stereo assignment requirements
-      // Task 7.1.3: Pass modifier key overrides
-      const stereoResult = analyzeStereoAssignment(
-        voice,
-        channels,
+      const assignmentResult = await processAssignment(
+        filePath,
+        formatValidation,
         allSamples,
-        forceMonoDrop || forceStereoDrop
-          ? { forceMono: forceMonoDrop, forceStereo: forceStereoDrop }
-          : undefined,
+        modifierKeys,
+        droppedSlotIndex,
       );
 
-      // Task 7.3: Handle stereo conflicts if needed
-      let assignmentOptions = {
-        forceMono: stereoResult.assignAsMono,
-        replaceExisting: false,
-        cancel: false,
-      };
-
-      if (stereoResult.requiresConfirmation && stereoResult.conflictInfo) {
-        assignmentOptions = await handleStereoConflict(
-          stereoResult.conflictInfo,
-        );
-      }
-
-      if (assignmentOptions.cancel) {
-        return;
-      }
-
-      // Determine if we should add or replace based on existing content in the slot
-      const existingSample = samples[droppedSlotIndex];
-
-      if (existingSample && onSampleReplace) {
-        // Replace the sample in the exact slot where it was dropped
-        await onSampleReplace(voice, droppedSlotIndex, filePath);
-      } else if (!existingSample && onSampleAdd) {
-        // Task 7.3.2: Apply stereo assignment choice
-        const success = await applyStereoAssignment(
-          filePath,
-          stereoResult,
-          assignmentOptions,
-          async (targetVoice: number, slotIndex: number, path: string) => {
-            // For external samples (not from local store), find the next available slot
-            // For local store samples, preserve slot order
-            const isFromLocalStore = path.includes(kitName); // Simple heuristic
-
-            let targetSlot = slotIndex >= 0 ? slotIndex : droppedSlotIndex;
-            if (!isFromLocalStore && slotIndex < 0) {
-              // Find next available slot for external samples
-              targetSlot = -1;
-              for (let i = 0; i < 12; i++) {
-                if (!samples[i]) {
-                  targetSlot = i;
-                  break;
-                }
-              }
-
-              if (targetSlot === -1) {
-                throw new Error(`No available slots in voice ${targetVoice}`);
-              }
-            }
-
-            await onSampleAdd(targetVoice, targetSlot, path);
-          },
-        );
-
-        if (!success) {
-          // Error already handled in applyStereoAssignment
-          return;
-        }
-      }
+      if (!assignmentResult) return;
     } catch (error) {
       console.error("Failed to assign sample:", error);
-      // Could show error message here
     }
   };
 
@@ -580,43 +662,23 @@ const KitVoicePanel: React.FC<
     const slotBaseClass = "truncate flex items-center gap-2 mb-1 min-h-[28px]";
     const isDragOver = dragOverSlot === slotIndex;
     const isDropZone = dropZone?.slot === slotIndex;
-    const dropMode = dropZone?.mode;
     const isStereoHighlight =
       isStereoDragTarget && stereoDragSlotIndex === slotIndex;
 
-    let dragOverClass = "";
-    let dropHintTitle = "Drop to assign sample";
-
-    if (isDragOver || isStereoHighlight || isDropZone) {
-      if (isDropZone) {
-        // Internal sample move drop zone styling
-        if (dropMode === "insert") {
-          dragOverClass =
-            " bg-green-100 dark:bg-green-800 ring-2 ring-green-400 dark:ring-green-300 border-t-4 border-green-500";
-          dropHintTitle = "Insert sample here (other samples will shift down)";
-        } else {
-          dragOverClass =
-            " bg-yellow-100 dark:bg-yellow-800 ring-2 ring-yellow-400 dark:ring-yellow-300";
-          dropHintTitle = sample ? "Replace this sample" : "Move sample here";
-        }
-      } else if (isStereoHighlight) {
-        dragOverClass =
-          " bg-purple-100 dark:bg-purple-800 ring-2 ring-purple-400 dark:ring-purple-300";
-        dropHintTitle =
-          isStereoDragTarget && stereoDragSlotIndex === slotIndex && voice > 1
-            ? "Right channel of stereo pair"
-            : "Left channel of stereo pair";
-      } else {
-        dragOverClass =
-          " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300";
-        dropHintTitle = `Drop to assign sample (default: ${defaultToMonoSamples ? "mono" : "stereo"})`;
-      }
-    }
+    const dragStyling = calculateDragStyling({
+      isDragOver,
+      isDropZone,
+      isStereoHighlight,
+      dropMode: dropZone?.mode,
+      sample,
+      voice,
+      defaultToMonoSamples,
+    });
 
     return {
       slotBaseClass,
-      dragOverClass,
-      dropHintTitle,
+      dragOverClass: dragStyling.dragOverClass,
+      dropHintTitle: dragStyling.dropHintTitle,
       isDragOver,
       isDropZone,
       isStereoHighlight,

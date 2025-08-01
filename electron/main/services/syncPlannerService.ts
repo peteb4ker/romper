@@ -53,7 +53,7 @@ export class SyncPlannerService {
 
       // Get all kits first
       const { getKits } = await import("../db/romperDbCoreORM.js");
-      const kitsResult = await getKits(dbDir);
+      const kitsResult = getKits(dbDir);
       if (!kitsResult.success || !kitsResult.data) {
         return {
           success: false,
@@ -66,7 +66,7 @@ export class SyncPlannerService {
 
       // Get all samples from all kits
       for (const kit of kits) {
-        const samplesResult = await getKitSamples(dbDir, kit.name);
+        const samplesResult = getKitSamples(dbDir, kit.name);
         if (samplesResult.success && samplesResult.data) {
           // Add kit context to each sample
           const samplesWithKit = samplesResult.data.map((sample) => ({

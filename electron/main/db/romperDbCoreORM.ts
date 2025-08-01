@@ -106,39 +106,7 @@ export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
     console.log("[Migration] Migrations path:", migrationsPath);
 
     if (migrationsPath) {
-      console.log("[Migration] Starting migration process...");
-
-      // List migration files
-      const migrationFiles = fs.readdirSync(migrationsPath);
-      console.log("[Migration] Available migration files:", migrationFiles);
-
-      // Check current migration state
-      try {
-        const result = sqlite
-          .prepare(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'",
-          )
-          .get();
-        console.log("[Migration] Drizzle migrations table exists:", !!result);
-
-        if (result) {
-          const appliedMigrations = sqlite
-            .prepare("SELECT * FROM __drizzle_migrations ORDER BY id")
-            .all();
-          console.log("[Migration] Applied migrations:", appliedMigrations);
-        }
-      } catch (e) {
-        console.log(
-          "[Migration] Could not check migration state (this is normal for first run):",
-          e,
-        );
-      }
-
-      console.log("[Migration] Executing migrate() function...");
-      migrate(db, { migrationsFolder: migrationsPath });
-      console.log("[Migration] Migration completed successfully!");
-
-      return { success: true, data: true };
+      return executeMigrations(db, sqlite, migrationsPath);
     } else {
       console.warn(
         "[Migration] No migrations folder found - database may be missing required schema updates",
@@ -146,25 +114,75 @@ export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
       return { success: true, data: false };
     }
   } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    console.error("[Migration] Migration error:", error);
-    if (e instanceof Error) {
-      console.error("[Migration] Error stack:", e.stack);
-    }
-
-    // Log additional debugging info
-    console.error("[Migration] Database path:", dbPath);
-    console.error("[Migration] Database dir:", dbDir);
-    console.error("[Migration] Error type:", typeof e);
-    console.error("[Migration] Full error object:", e);
-
-    return { success: false, error };
+    logMigrationError(e, dbPath, dbDir);
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   } finally {
     if (sqlite) {
       console.log("[Migration] Closing database connection");
       sqlite.close();
     }
   }
+}
+
+function executeMigrations(
+  db: any,
+  sqlite: BetterSqlite3.Database,
+  migrationsPath: string,
+): DbResult<boolean> {
+  console.log("[Migration] Starting migration process...");
+
+  // List migration files
+  const migrationFiles = fs.readdirSync(migrationsPath);
+  console.log("[Migration] Available migration files:", migrationFiles);
+
+  // Check current migration state
+  checkMigrationState(sqlite);
+
+  console.log("[Migration] Executing migrate() function...");
+  migrate(db, { migrationsFolder: migrationsPath });
+  console.log("[Migration] Migration completed successfully!");
+
+  return { success: true, data: true };
+}
+
+function checkMigrationState(sqlite: BetterSqlite3.Database): void {
+  try {
+    const result = sqlite
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'",
+      )
+      .get();
+    console.log("[Migration] Drizzle migrations table exists:", !!result);
+
+    if (result) {
+      const appliedMigrations = sqlite
+        .prepare("SELECT * FROM __drizzle_migrations ORDER BY id")
+        .all();
+      console.log("[Migration] Applied migrations:", appliedMigrations);
+    }
+  } catch (e) {
+    console.log(
+      "[Migration] Could not check migration state (this is normal for first run):",
+      e,
+    );
+  }
+}
+
+function logMigrationError(e: unknown, dbPath: string, dbDir: string): void {
+  const error = e instanceof Error ? e.message : String(e);
+  console.error("[Migration] Migration error:", error);
+  if (e instanceof Error) {
+    console.error("[Migration] Error stack:", e.stack);
+  }
+
+  // Log additional debugging info
+  console.error("[Migration] Database path:", dbPath);
+  console.error("[Migration] Database dir:", dbDir);
+  console.error("[Migration] Error type:", typeof e);
+  console.error("[Migration] Full error object:", e);
 }
 
 // Validate that database has the expected schema
@@ -376,69 +394,87 @@ export function deleteSamples(
   filter?: { voiceNumber?: number; slotNumber?: number },
 ): DbResult<{ deletedSamples: Sample[]; affectedSamples: Sample[] }> {
   return withDb(dbDir, (db) => {
-    const conditions = [eq(samples.kit_name, kitName)];
-
-    if (filter?.voiceNumber !== undefined) {
-      conditions.push(eq(samples.voice_number, filter.voiceNumber));
-    }
-
-    if (filter?.slotNumber !== undefined) {
-      conditions.push(eq(samples.slot_number, filter.slotNumber));
-    }
-
-    const whereCondition =
-      conditions.length === 1 ? conditions[0] : and(...conditions);
-
-    // Get samples that will be deleted for return value
-    const samplesToDelete = db
-      .select()
-      .from(samples)
-      .where(whereCondition)
-      .all();
+    const whereCondition = buildDeleteConditions(kitName, filter);
+    const samplesToDelete = getSamplesToDelete(db, whereCondition);
 
     // Delete the samples
     db.delete(samples).where(whereCondition).run();
 
-    // Auto-compact slots for each affected voice
-    const affectedSamples: Sample[] = [];
-
-    // Group deleted samples by voice to handle compaction
-    const deletedByVoice = new Map<number, Sample[]>();
-    for (const sample of samplesToDelete) {
-      if (!deletedByVoice.has(sample.voice_number)) {
-        deletedByVoice.set(sample.voice_number, []);
-      }
-      deletedByVoice.get(sample.voice_number)!.push(sample);
-    }
-
-    // Compact each affected voice
-    for (const [voiceNumber, deletedSamplesInVoice] of deletedByVoice) {
-      // Sort by slot_number to handle multiple deletions correctly
-      const sortedDeleted = deletedSamplesInVoice.sort(
-        (a, b) => a.slot_number - b.slot_number,
-      );
-
-      // Compact after each deletion, starting from the lowest slot
-      for (let i = 0; i < sortedDeleted.length; i++) {
-        const deletedSlot = sortedDeleted[i].slot_number - i; // Adjust for previous deletions
-        const compactionResult = compactSlotsAfterDelete(
-          dbDir,
-          kitName,
-          voiceNumber,
-          deletedSlot,
-        );
-
-        if (compactionResult.success && compactionResult.data) {
-          affectedSamples.push(...compactionResult.data);
-        }
-      }
-    }
+    const affectedSamples = performVoiceCompaction(
+      dbDir,
+      kitName,
+      samplesToDelete,
+    );
 
     return {
       deletedSamples: samplesToDelete,
       affectedSamples,
     };
   });
+}
+
+// Helper functions to reduce cognitive complexity
+function buildDeleteConditions(
+  kitName: string,
+  filter?: { voiceNumber?: number; slotNumber?: number },
+) {
+  const conditions = [eq(samples.kit_name, kitName)];
+
+  if (filter?.voiceNumber !== undefined) {
+    conditions.push(eq(samples.voice_number, filter.voiceNumber));
+  }
+
+  if (filter?.slotNumber !== undefined) {
+    conditions.push(eq(samples.slot_number, filter.slotNumber));
+  }
+
+  return conditions.length === 1 ? conditions[0] : and(...conditions);
+}
+
+function getSamplesToDelete(db: any, whereCondition: any): Sample[] {
+  return db.select().from(samples).where(whereCondition).all();
+}
+
+function groupSamplesByVoice(samplesToDelete: Sample[]): Map<number, Sample[]> {
+  const deletedByVoice = new Map<number, Sample[]>();
+  for (const sample of samplesToDelete) {
+    if (!deletedByVoice.has(sample.voice_number)) {
+      deletedByVoice.set(sample.voice_number, []);
+    }
+    deletedByVoice.get(sample.voice_number)!.push(sample);
+  }
+  return deletedByVoice;
+}
+
+function performVoiceCompaction(
+  dbDir: string,
+  kitName: string,
+  samplesToDelete: Sample[],
+): Sample[] {
+  const affectedSamples: Sample[] = [];
+  const deletedByVoice = groupSamplesByVoice(samplesToDelete);
+
+  for (const [voiceNumber, deletedSamplesInVoice] of deletedByVoice) {
+    const sortedDeleted = deletedSamplesInVoice.sort(
+      (a, b) => a.slot_number - b.slot_number,
+    );
+
+    for (let i = 0; i < sortedDeleted.length; i++) {
+      const deletedSlot = sortedDeleted[i].slot_number - i;
+      const compactionResult = compactSlotsAfterDelete(
+        dbDir,
+        kitName,
+        voiceNumber,
+        deletedSlot,
+      );
+
+      if (compactionResult.success && compactionResult.data) {
+        affectedSamples.push(...compactionResult.data);
+      }
+    }
+  }
+
+  return affectedSamples;
 }
 
 export function getAllSamples(dbDir: string): DbResult<any[]> {

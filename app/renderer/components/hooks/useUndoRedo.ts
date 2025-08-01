@@ -76,15 +76,19 @@ export function useUndoRedo(kitName: string) {
       "[UNDO] Using snapshot-based restoration, snapshot length:",
       action.data.stateSnapshot.length,
     );
-    const affectedVoices = new Set([
-      action.data.fromVoice,
-      action.data.toVoice,
-    ]);
 
-    // Clear affected voices first
+    await clearAffectedVoices(action.data.fromVoice, action.data.toVoice);
+    await restoreFromSnapshot(action.data.stateSnapshot);
+
+    return { success: true };
+  };
+
+  const clearAffectedVoices = async (fromVoice: number, toVoice: number) => {
+    const affectedVoices = new Set([fromVoice, toVoice]);
     const currentSamplesResult = await (
       window as any
     ).electronAPI?.getAllSamplesForKit?.(kitName);
+
     if (currentSamplesResult?.success && currentSamplesResult.data) {
       const currentSamples = currentSamplesResult.data.filter((s: any) =>
         affectedVoices.has(s.voice_number),
@@ -100,9 +104,10 @@ export function useUndoRedo(kitName: string) {
         );
       }
     }
+  };
 
-    // Restore from snapshot
-    for (const { voice, slot, sample } of action.data.stateSnapshot) {
+  const restoreFromSnapshot = async (stateSnapshot: any[]) => {
+    for (const { voice, slot, sample } of stateSnapshot) {
       await (window as any).electronAPI?.addSampleToSlot?.(
         kitName,
         voice,
@@ -111,15 +116,23 @@ export function useUndoRedo(kitName: string) {
         { forceMono: !sample.is_stereo },
       );
     }
+  };
+
+  const undoMoveSampleLegacy = async (action: any) => {
+    const samplesToRestore = buildSamplesToRestore(action);
+    const slotsToClean = buildSlotsToClean(action);
+
+    await cleanSlots(slotsToClean);
+    await restoreSamples(samplesToRestore);
 
     return { success: true };
   };
 
-  const undoMoveSampleLegacy = async (action: any) => {
-    const samplesToRestore = [];
+  const buildSamplesToRestore = (action: any) => {
+    const samples = [];
 
     // Restore moved sample to original position
-    samplesToRestore.push({
+    samples.push({
       voice: action.data.fromVoice,
       slot: action.data.fromSlot,
       sample: action.data.movedSample,
@@ -127,7 +140,7 @@ export function useUndoRedo(kitName: string) {
 
     // Restore affected samples
     for (const affected of action.data.affectedSamples) {
-      samplesToRestore.push({
+      samples.push({
         voice: affected.voice,
         slot: affected.oldSlot,
         sample: affected.sample,
@@ -136,21 +149,28 @@ export function useUndoRedo(kitName: string) {
 
     // Restore replaced sample if any
     if (action.data.replacedSample) {
-      samplesToRestore.push({
+      samples.push({
         voice: action.data.toVoice,
         slot: action.data.toSlot,
         sample: action.data.replacedSample,
       });
     }
 
-    // Clean slots that need to be cleared
+    return samples;
+  };
+
+  const buildSlotsToClean = (action: any) => {
     const slotsToClean = new Set<string>();
     slotsToClean.add(`${action.data.toVoice}-${action.data.toSlot}`);
+
     for (const affected of action.data.affectedSamples) {
       slotsToClean.add(`${affected.voice}-${affected.newSlot}`);
     }
 
-    // Delete samples from slots to be cleaned
+    return slotsToClean;
+  };
+
+  const cleanSlots = async (slotsToClean: Set<string>) => {
     for (const slotKey of slotsToClean) {
       const [voice, slot] = slotKey.split("-").map(Number);
       await (
@@ -161,9 +181,11 @@ export function useUndoRedo(kitName: string) {
         slot,
       );
     }
+  };
 
-    // Restore samples in correct order
+  const restoreSamples = async (samplesToRestore: any[]) => {
     samplesToRestore.sort((a, b) => a.slot - b.slot);
+
     for (const { voice, slot, sample } of samplesToRestore) {
       await (window as any).electronAPI?.addSampleToSlot?.(
         kitName,
@@ -173,8 +195,6 @@ export function useUndoRedo(kitName: string) {
         { forceMono: !sample.is_stereo },
       );
     }
-
-    return { success: true };
   };
 
   const undoMoveSample = async (action: any) => {
@@ -229,46 +249,11 @@ export function useUndoRedo(kitName: string) {
     console.log(
       "[UNDO] Undoing COMPACT_SLOTS - restoring pre-compaction state",
     );
+
     try {
-      // Clear current samples in the voice
-      const currentSamplesResult = await (
-        window as any
-      ).electronAPI?.getAllSamplesForKit?.(kitName);
-      if (currentSamplesResult?.success && currentSamplesResult.data) {
-        const currentSamples = currentSamplesResult.data.filter(
-          (s: any) => s.voice_number === action.data.voice,
-        );
-
-        for (const sample of currentSamples) {
-          await (
-            window as any
-          ).electronAPI?.deleteSampleFromSlotWithoutCompaction?.(
-            kitName,
-            sample.voice_number,
-            sample.slot_number - 1,
-          );
-        }
-      }
-
-      // Restore deleted sample
-      await (window as any).electronAPI?.addSampleToSlot?.(
-        kitName,
-        action.data.voice,
-        action.data.deletedSlot,
-        action.data.deletedSample.source_path,
-        { forceMono: !action.data.deletedSample.is_stereo },
-      );
-
-      // Restore affected samples to original positions
-      for (const affectedSample of action.data.affectedSamples) {
-        await (window as any).electronAPI?.addSampleToSlot?.(
-          kitName,
-          affectedSample.voice,
-          affectedSample.newSlot,
-          affectedSample.sample.source_path,
-          { forceMono: !affectedSample.sample.is_stereo },
-        );
-      }
+      await clearCurrentVoiceSamples(action.data.voice);
+      await restoreDeletedSample(action.data);
+      await restoreAffectedSamples(action.data.affectedSamples);
 
       return { success: true };
     } catch (error) {
@@ -276,6 +261,50 @@ export function useUndoRedo(kitName: string) {
         success: false,
         error: error instanceof Error ? error.message : String(error),
       };
+    }
+  };
+
+  const clearCurrentVoiceSamples = async (voice: number) => {
+    const currentSamplesResult = await (
+      window as any
+    ).electronAPI?.getAllSamplesForKit?.(kitName);
+
+    if (currentSamplesResult?.success && currentSamplesResult.data) {
+      const currentSamples = currentSamplesResult.data.filter(
+        (s: any) => s.voice_number === voice,
+      );
+
+      for (const sample of currentSamples) {
+        await (
+          window as any
+        ).electronAPI?.deleteSampleFromSlotWithoutCompaction?.(
+          kitName,
+          sample.voice_number,
+          sample.slot_number - 1,
+        );
+      }
+    }
+  };
+
+  const restoreDeletedSample = async (actionData: any) => {
+    await (window as any).electronAPI?.addSampleToSlot?.(
+      kitName,
+      actionData.voice,
+      actionData.deletedSlot,
+      actionData.deletedSample.source_path,
+      { forceMono: !actionData.deletedSample.is_stereo },
+    );
+  };
+
+  const restoreAffectedSamples = async (affectedSamples: any[]) => {
+    for (const affectedSample of affectedSamples) {
+      await (window as any).electronAPI?.addSampleToSlot?.(
+        kitName,
+        affectedSample.voice,
+        affectedSample.newSlot,
+        affectedSample.sample.source_path,
+        { forceMono: !affectedSample.sample.is_stereo },
+      );
     }
   };
 
@@ -364,99 +393,103 @@ export function useUndoRedo(kitName: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitName, state.undoStack, state.isUndoing]);
 
+  // Helper functions to reduce cognitive complexity in redo
+  const executeRedoAction = async (action: any) => {
+    const redoOperations = {
+      DELETE_SAMPLE: () =>
+        (window as any).electronAPI?.deleteSampleFromSlot?.(
+          kitName,
+          action.data.voice,
+          action.data.slot,
+        ),
+      ADD_SAMPLE: () =>
+        (window as any).electronAPI?.addSampleToSlot?.(
+          kitName,
+          action.data.voice,
+          action.data.slot,
+          action.data.addedSample.source_path,
+          { forceMono: !action.data.addedSample.is_stereo },
+        ),
+      REPLACE_SAMPLE: () =>
+        (window as any).electronAPI?.replaceSampleInSlot?.(
+          kitName,
+          action.data.voice,
+          action.data.slot,
+          action.data.newSample.source_path,
+          { forceMono: !action.data.newSample.is_stereo },
+        ),
+      MOVE_SAMPLE: () =>
+        (window as any).electronAPI?.moveSampleInKit?.(
+          kitName,
+          action.data.fromVoice,
+          action.data.fromSlot,
+          action.data.toVoice,
+          action.data.toSlot,
+          action.data.mode,
+        ),
+      MOVE_SAMPLE_BETWEEN_KITS: () =>
+        (window as any).electronAPI?.moveSampleBetweenKits?.(
+          action.data.fromKit,
+          action.data.fromVoice,
+          action.data.fromSlot,
+          action.data.toKit,
+          action.data.toVoice,
+          action.data.toSlot,
+          action.data.mode,
+        ),
+      COMPACT_SLOTS: () =>
+        (window as any).electronAPI?.deleteSampleFromSlot?.(
+          kitName,
+          action.data.voice,
+          action.data.deletedSlot,
+        ),
+    };
+
+    const operation =
+      redoOperations[action.type as keyof typeof redoOperations];
+    if (!operation) {
+      throw new Error(`Unknown action type: ${action.type}`);
+    }
+
+    return await operation();
+  };
+
+  const handleRedoSuccess = (actionToRedo: any) => {
+    setState((prev) => ({
+      ...prev,
+      redoStack: prev.redoStack.slice(1),
+      undoStack: [actionToRedo, ...prev.undoStack],
+      error: null,
+    }));
+
+    document.dispatchEvent(
+      new CustomEvent("romper:refresh-samples", {
+        detail: { kitName },
+      }),
+    );
+  };
+
+  const handleRedoError = (error: any) => {
+    setState((prev) => ({
+      ...prev,
+      error: `Failed to redo action: ${error instanceof Error ? error.message : String(error)}`,
+    }));
+  };
+
   // Redo the most recent undone action
   const redo = useCallback(async () => {
-    // Check if we can redo
     if (!kitName || state.redoStack.length === 0 || state.isRedoing) {
       return;
     }
 
     const actionToRedo = state.redoStack[0];
-
     setState((prev) => ({ ...prev, isRedoing: true, error: null }));
 
     try {
-      // Execute redo by reversing the undo operation
-      let result;
-      switch (actionToRedo.type) {
-        case "DELETE_SAMPLE":
-          // Redo delete = delete the sample again
-          result = await (window as any).electronAPI?.deleteSampleFromSlot?.(
-            kitName,
-            actionToRedo.data.voice,
-            actionToRedo.data.slot,
-          );
-          break;
-        case "ADD_SAMPLE":
-          // Redo add = add the sample again
-          result = await (window as any).electronAPI?.addSampleToSlot?.(
-            kitName,
-            actionToRedo.data.voice,
-            actionToRedo.data.slot,
-            actionToRedo.data.addedSample.source_path,
-            { forceMono: !actionToRedo.data.addedSample.is_stereo },
-          );
-          break;
-        case "REPLACE_SAMPLE":
-          // Redo replace = replace with the new sample again
-          result = await (window as any).electronAPI?.replaceSampleInSlot?.(
-            kitName,
-            actionToRedo.data.voice,
-            actionToRedo.data.slot,
-            actionToRedo.data.newSample.source_path,
-            { forceMono: !actionToRedo.data.newSample.is_stereo },
-          );
-          break;
-        case "MOVE_SAMPLE":
-          // Redo move = move sample to the target position again
-          result = await (window as any).electronAPI?.moveSampleInKit?.(
-            kitName,
-            actionToRedo.data.fromVoice,
-            actionToRedo.data.fromSlot,
-            actionToRedo.data.toVoice,
-            actionToRedo.data.toSlot,
-            actionToRedo.data.mode,
-          );
-          break;
-        case "MOVE_SAMPLE_BETWEEN_KITS":
-          // Redo cross-kit move = move sample to target kit again
-          result = await (window as any).electronAPI?.moveSampleBetweenKits?.(
-            actionToRedo.data.fromKit,
-            actionToRedo.data.fromVoice,
-            actionToRedo.data.fromSlot,
-            actionToRedo.data.toKit,
-            actionToRedo.data.toVoice,
-            actionToRedo.data.toSlot,
-            actionToRedo.data.mode,
-          );
-          break;
-        case "COMPACT_SLOTS":
-          // Redo compaction = delete the sample again (will trigger automatic compaction)
-          result = await (window as any).electronAPI?.deleteSampleFromSlot?.(
-            kitName,
-            actionToRedo.data.voice,
-            actionToRedo.data.deletedSlot,
-          );
-          break;
-        default:
-          throw new Error(`Unknown action type: ${(actionToRedo as any).type}`);
-      }
+      const result = await executeRedoAction(actionToRedo);
 
       if (result?.success) {
-        // Move action from redo stack back to undo stack
-        setState((prev) => ({
-          ...prev,
-          redoStack: prev.redoStack.slice(1),
-          undoStack: [actionToRedo, ...prev.undoStack],
-          error: null,
-        }));
-
-        // Emit refresh event to update UI
-        document.dispatchEvent(
-          new CustomEvent("romper:refresh-samples", {
-            detail: { kitName },
-          }),
-        );
+        handleRedoSuccess(actionToRedo);
       } else {
         setState((prev) => ({
           ...prev,
@@ -464,13 +497,11 @@ export function useUndoRedo(kitName: string) {
         }));
       }
     } catch (error) {
-      setState((prev) => ({
-        ...prev,
-        error: `Failed to redo action: ${error instanceof Error ? error.message : String(error)}`,
-      }));
+      handleRedoError(error);
     } finally {
       setState((prev) => ({ ...prev, isRedoing: false }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitName, state.redoStack, state.isRedoing]);
 
   // Clear error

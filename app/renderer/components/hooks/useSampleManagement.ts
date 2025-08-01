@@ -317,6 +317,168 @@ export function useSampleManagement({
     [kitName, onSamplesChanged, onMessage, skipUndoRecording, onAddUndoAction],
   );
 
+  // Helper functions to reduce cognitive complexity in handleSampleMove
+  const validateMoveAPI = (isCrossKit: boolean) => {
+    if (isCrossKit) {
+      if (!(window as any).electronAPI?.moveSampleBetweenKits) {
+        onMessage?.({
+          type: "error",
+          text: "Cross-kit sample move not available",
+        });
+        return false;
+      }
+    } else {
+      if (!(window as any).electronAPI?.moveSampleInKit) {
+        onMessage?.({
+          type: "error",
+          text: "Sample move not available",
+        });
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const captureStateSnapshot = async (fromVoice: number, toVoice: number) => {
+    if (skipUndoRecording || !onAddUndoAction) return [];
+
+    const samplesResult = await (
+      window as any
+    ).electronAPI?.getAllSamplesForKit?.(kitName);
+    if (!samplesResult?.success || !samplesResult.data) return [];
+
+    const affectedVoices = new Set([fromVoice, toVoice]);
+    return samplesResult.data
+      .filter((s: any) => affectedVoices.has(s.voice_number))
+      .map((s: any) => ({
+        voice: s.voice_number,
+        slot: s.slot_number,
+        sample: {
+          filename: s.filename,
+          source_path: s.source_path,
+          is_stereo: s.is_stereo,
+        },
+      }));
+  };
+
+  const createSameKitMoveAction = (params: {
+    fromVoice: number;
+    fromSlot: number;
+    toVoice: number;
+    toSlot: number;
+    mode: string;
+    result: any;
+    stateSnapshot: any[];
+  }): MoveSampleAction => ({
+    type: "MOVE_SAMPLE",
+    id: createActionId(),
+    timestamp: new Date(),
+    description: `Move sample from voice ${params.fromVoice}, slot ${params.fromSlot + 1} to voice ${params.toVoice}, slot ${params.toSlot + 1}`,
+    data: {
+      fromVoice: params.fromVoice,
+      fromSlot: params.fromSlot,
+      toVoice: params.toVoice,
+      toSlot: params.toSlot,
+      mode: params.mode,
+      movedSample: {
+        filename: params.result.data.movedSample.filename,
+        source_path: params.result.data.movedSample.source_path,
+        is_stereo: params.result.data.movedSample.is_stereo,
+      },
+      affectedSamples: params.result.data.affectedSamples.map(
+        (sample: any) => ({
+          voice: sample.voice_number,
+          oldSlot: sample.original_slot_number,
+          newSlot: sample.slot_number,
+          sample: {
+            filename: sample.filename,
+            source_path: sample.source_path,
+            is_stereo: sample.is_stereo,
+          },
+        }),
+      ),
+      replacedSample: params.result.data.replacedSample
+        ? {
+            filename: params.result.data.replacedSample.filename,
+            source_path: params.result.data.replacedSample.source_path,
+            is_stereo: params.result.data.replacedSample.is_stereo,
+          }
+        : undefined,
+      stateSnapshot: params.stateSnapshot,
+    },
+  });
+
+  const createCrossKitMoveAction = (params: {
+    fromVoice: number;
+    fromSlot: number;
+    toVoice: number;
+    toSlot: number;
+    mode: string;
+    targetKit: string;
+    result: any;
+  }): MoveSampleBetweenKitsAction => ({
+    type: "MOVE_SAMPLE_BETWEEN_KITS",
+    id: createActionId(),
+    timestamp: new Date(),
+    description: `Move sample from ${kitName} voice ${params.fromVoice}, slot ${params.fromSlot + 1} to ${params.targetKit} voice ${params.toVoice}, slot ${params.toSlot + 1}`,
+    data: {
+      fromKit: kitName,
+      fromVoice: params.fromVoice,
+      fromSlot: params.fromSlot,
+      toKit: params.targetKit,
+      toVoice: params.toVoice,
+      toSlot: params.toSlot,
+      mode: params.mode,
+      movedSample: {
+        filename: params.result.data.movedSample.filename,
+        source_path: params.result.data.movedSample.source_path,
+        is_stereo: params.result.data.movedSample.is_stereo,
+      },
+      affectedSamples: params.result.data.affectedSamples.map(
+        (sample: any) => ({
+          voice: sample.voice_number,
+          oldSlot: sample.original_slot_number,
+          newSlot: sample.slot_number,
+          sample: {
+            filename: sample.filename,
+            source_path: sample.source_path,
+            is_stereo: sample.is_stereo,
+          },
+        }),
+      ),
+      replacedSample: params.result.data.replacedSample
+        ? {
+            filename: params.result.data.replacedSample.filename,
+            source_path: params.result.data.replacedSample.source_path,
+            is_stereo: params.result.data.replacedSample.is_stereo,
+          }
+        : undefined,
+    },
+  });
+
+  const handleMoveSuccess = async (
+    result: any,
+    isCrossKit: boolean,
+    targetKit: string,
+    fromVoice: number,
+    fromSlot: number,
+    toVoice: number,
+    toSlot: number,
+  ) => {
+    const moveDescription = isCrossKit
+      ? `Sample moved from ${kitName} voice ${fromVoice}, slot ${fromSlot + 1} to ${targetKit} voice ${toVoice}, slot ${toSlot + 1}`
+      : `Sample moved from voice ${fromVoice}, slot ${fromSlot + 1} to voice ${toVoice}, slot ${toSlot + 1}`;
+
+    onMessage?.({
+      type: "success",
+      text: moveDescription,
+    });
+
+    if (onSamplesChanged) {
+      await onSamplesChanged();
+    }
+  };
+
   const handleSampleMove = useCallback(
     async (
       fromVoice: number,
@@ -324,35 +486,17 @@ export function useSampleManagement({
       toVoice: number,
       toSlot: number,
       mode: "insert" | "overwrite",
-      toKit?: string, // Optional target kit for cross-kit moves
+      toKit?: string,
     ) => {
       const targetKit = toKit || kitName;
       const isCrossKit = targetKit !== kitName;
 
-      // Check if the appropriate API is available
-      if (isCrossKit) {
-        if (!(window as any).electronAPI?.moveSampleBetweenKits) {
-          onMessage?.({
-            type: "error",
-            text: "Cross-kit sample move not available",
-          });
-          return;
-        }
-      } else {
-        if (!(window as any).electronAPI?.moveSampleInKit) {
-          onMessage?.({
-            type: "error",
-            text: "Sample move not available",
-          });
-          return;
-        }
-      }
+      if (!validateMoveAPI(isCrossKit)) return;
 
       try {
         let result;
 
         if (isCrossKit) {
-          // Cross-kit move
           result = await (window as any).electronAPI.moveSampleBetweenKits(
             kitName,
             fromVoice,
@@ -363,29 +507,7 @@ export function useSampleManagement({
             mode,
           );
         } else {
-          // Same-kit move - capture state snapshot first for reliable undo
-          let stateSnapshot: any[] = [];
-          if (!skipUndoRecording && onAddUndoAction) {
-            const samplesResult = await (
-              window as any
-            ).electronAPI?.getAllSamplesForKit?.(kitName);
-            if (samplesResult?.success && samplesResult.data) {
-              // Get all samples in affected voices
-              const affectedVoices = new Set([fromVoice, toVoice]);
-              stateSnapshot = samplesResult.data
-                .filter((s: any) => affectedVoices.has(s.voice_number))
-                .map((s: any) => ({
-                  voice: s.voice_number,
-                  slot: s.slot_number, // Keep 1-based for API compatibility
-                  sample: {
-                    filename: s.filename,
-                    source_path: s.source_path,
-                    is_stereo: s.is_stereo,
-                  },
-                }));
-            }
-          }
-
+          const stateSnapshot = await captureStateSnapshot(fromVoice, toVoice);
           result = await (window as any).electronAPI.moveSampleInKit(
             kitName,
             fromVoice,
@@ -395,56 +517,25 @@ export function useSampleManagement({
             mode,
           );
 
-          // Record undo action for same-kit move
           if (
             result.success &&
             !skipUndoRecording &&
             onAddUndoAction &&
             result.data
           ) {
-            const moveAction: MoveSampleAction = {
-              type: "MOVE_SAMPLE",
-              id: createActionId(),
-              timestamp: new Date(),
-              description: `Move sample from voice ${fromVoice}, slot ${fromSlot + 1} to voice ${toVoice}, slot ${toSlot + 1}`,
-              data: {
-                fromVoice,
-                fromSlot,
-                toVoice,
-                toSlot,
-                mode,
-                movedSample: {
-                  filename: result.data.movedSample.filename,
-                  source_path: result.data.movedSample.source_path,
-                  is_stereo: result.data.movedSample.is_stereo,
-                },
-                affectedSamples: result.data.affectedSamples.map(
-                  (sample: any) => ({
-                    voice: sample.voice_number,
-                    oldSlot: sample.original_slot_number, // Use the original slot from backend
-                    newSlot: sample.slot_number, // New position after move
-                    sample: {
-                      filename: sample.filename,
-                      source_path: sample.source_path,
-                      is_stereo: sample.is_stereo,
-                    },
-                  }),
-                ),
-                replacedSample: result.data.replacedSample
-                  ? {
-                      filename: result.data.replacedSample.filename,
-                      source_path: result.data.replacedSample.source_path,
-                      is_stereo: result.data.replacedSample.is_stereo,
-                    }
-                  : undefined,
-                stateSnapshot, // Include the state snapshot for reliable undo
-              },
-            };
+            const moveAction = createSameKitMoveAction({
+              fromVoice,
+              fromSlot,
+              toVoice,
+              toSlot,
+              mode,
+              result,
+              stateSnapshot,
+            });
             onAddUndoAction(moveAction);
           }
         }
 
-        // Record undo action for cross-kit move
         if (
           isCrossKit &&
           result.success &&
@@ -452,62 +543,28 @@ export function useSampleManagement({
           onAddUndoAction &&
           result.data
         ) {
-          const crossKitMoveAction: MoveSampleBetweenKitsAction = {
-            type: "MOVE_SAMPLE_BETWEEN_KITS",
-            id: createActionId(),
-            timestamp: new Date(),
-            description: `Move sample from ${kitName} voice ${fromVoice}, slot ${fromSlot + 1} to ${targetKit} voice ${toVoice}, slot ${toSlot + 1}`,
-            data: {
-              fromKit: kitName,
-              fromVoice,
-              fromSlot,
-              toKit: targetKit,
-              toVoice,
-              toSlot,
-              mode,
-              movedSample: {
-                filename: result.data.movedSample.filename,
-                source_path: result.data.movedSample.source_path,
-                is_stereo: result.data.movedSample.is_stereo,
-              },
-              affectedSamples: result.data.affectedSamples.map(
-                (sample: any) => ({
-                  voice: sample.voice_number,
-                  oldSlot: sample.original_slot_number,
-                  newSlot: sample.slot_number,
-                  sample: {
-                    filename: sample.filename,
-                    source_path: sample.source_path,
-                    is_stereo: sample.is_stereo,
-                  },
-                }),
-              ),
-              replacedSample: result.data.replacedSample
-                ? {
-                    filename: result.data.replacedSample.filename,
-                    source_path: result.data.replacedSample.source_path,
-                    is_stereo: result.data.replacedSample.is_stereo,
-                  }
-                : undefined,
-            },
-          };
+          const crossKitMoveAction = createCrossKitMoveAction({
+            fromVoice,
+            fromSlot,
+            toVoice,
+            toSlot,
+            mode,
+            targetKit,
+            result,
+          });
           onAddUndoAction(crossKitMoveAction);
         }
 
         if (result.success) {
-          const moveDescription = isCrossKit
-            ? `Sample moved from ${kitName} voice ${fromVoice}, slot ${fromSlot + 1} to ${targetKit} voice ${toVoice}, slot ${toSlot + 1}`
-            : `Sample moved from voice ${fromVoice}, slot ${fromSlot + 1} to voice ${toVoice}, slot ${toSlot + 1}`;
-
-          onMessage?.({
-            type: "success",
-            text: moveDescription,
-          });
-
-          // Reload samples to reflect changes
-          if (onSamplesChanged) {
-            await onSamplesChanged();
-          }
+          await handleMoveSuccess(
+            result,
+            isCrossKit,
+            targetKit,
+            fromVoice,
+            fromSlot,
+            toVoice,
+            toSlot,
+          );
         } else {
           onMessage?.({
             type: "error",
@@ -521,6 +578,7 @@ export function useSampleManagement({
         });
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [kitName, onSamplesChanged, onMessage, skipUndoRecording, onAddUndoAction],
   );
 

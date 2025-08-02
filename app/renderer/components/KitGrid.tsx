@@ -316,6 +316,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
         className="h-full w-full bg-gray-50 dark:bg-slate-800 rounded pt-2 pb-2 pl-2 pr-2 overflow-y-auto"
         tabIndex={0}
         onKeyDown={handleKeyDown}
+        role="grid"
         aria-label="Kit grid"
         data-testid="kit-grid"
         style={{ minHeight: 400 }} // Ensure minimum height

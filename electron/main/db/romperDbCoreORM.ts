@@ -657,6 +657,116 @@ export function compactSlotsAfterDelete(
 }
 
 // Task 22.2: Move sample with contiguity maintenance
+// Helper function to handle sample shifting for insert mode
+function handleSampleShifting(
+  db: any,
+  kitName: string,
+  toVoice: number,
+  toSlot: number,
+  sampleToMove: Sample,
+): (Sample & { original_slot_number: number })[] {
+  const affectedSamples: (Sample & { original_slot_number: number })[] = [];
+
+  const samplesToShift = db
+    .select()
+    .from(samples)
+    .where(
+      and(eq(samples.kit_name, kitName), eq(samples.voice_number, toVoice)),
+    )
+    .all()
+    .filter(
+      (sample: Sample) =>
+        sample.slot_number >= toSlot && sample.id !== sampleToMove.id,
+    )
+    .sort((a: Sample, b: Sample) => b.slot_number - a.slot_number); // Sort descending to avoid conflicts
+
+  for (const sample of samplesToShift) {
+    const newSlotNumber = sample.slot_number + 1;
+
+    db.update(samples)
+      .set({ slot_number: newSlotNumber })
+      .where(eq(samples.id, sample.id))
+      .run();
+
+    affectedSamples.push({
+      ...sample,
+      slot_number: newSlotNumber,
+      original_slot_number: sample.slot_number,
+    } as Sample & { original_slot_number: number });
+  }
+
+  return affectedSamples;
+}
+
+// Helper function to handle same-voice move compaction
+function handleSameVoiceCompaction(
+  db: any,
+  kitName: string,
+  fromVoice: number,
+  fromSlot: number,
+  sampleToMove: Sample,
+): {
+  affectedSamples: (Sample & { original_slot_number: number })[];
+  adjustedToSlot: number;
+} {
+  const affectedSamples: (Sample & { original_slot_number: number })[] = [];
+
+  const samplesToCompact = db
+    .select()
+    .from(samples)
+    .where(
+      and(eq(samples.kit_name, kitName), eq(samples.voice_number, fromVoice)),
+    )
+    .all()
+    .filter(
+      (sample: Sample) =>
+        sample.slot_number > fromSlot && sample.id !== sampleToMove.id,
+    )
+    .sort((a: Sample, b: Sample) => a.slot_number - b.slot_number);
+
+  for (const sample of samplesToCompact) {
+    const newSlotNumber = sample.slot_number - 1;
+    db.update(samples)
+      .set({ slot_number: newSlotNumber })
+      .where(eq(samples.id, sample.id))
+      .run();
+
+    affectedSamples.push({
+      ...sample,
+      slot_number: newSlotNumber,
+      original_slot_number: sample.slot_number,
+    } as Sample & { original_slot_number: number });
+  }
+
+  return { affectedSamples, adjustedToSlot: fromSlot };
+}
+
+// Helper function to handle overwrite mode
+function handleOverwriteMode(
+  db: any,
+  kitName: string,
+  toVoice: number,
+  toSlot: number,
+): Sample | undefined {
+  const replacedSample = db
+    .select()
+    .from(samples)
+    .where(
+      and(
+        eq(samples.kit_name, kitName),
+        eq(samples.voice_number, toVoice),
+        eq(samples.slot_number, toSlot),
+      ),
+    )
+    .get();
+
+  if (replacedSample) {
+    db.delete(samples).where(eq(samples.id, replacedSample.id)).run();
+  }
+
+  return replacedSample;
+}
+
 export function moveSample(
   dbDir: string,
   kitName: string,
@@ -671,169 +781,252 @@ export function moveSample(
   replacedSample?: Sample;
 }> {
   return withDb(dbDir, (db) => {
-    // Get the sample being moved
-    const sampleToMove = db
-      .select()
-      .from(samples)
-      .where(
-        and(
-          eq(samples.kit_name, kitName),
-          eq(samples.voice_number, fromVoice),
-          eq(samples.slot_number, fromSlot),
-        ),
-      )
-      .get();
+    const sampleToMove = getSampleToMove(db, kitName, fromVoice, fromSlot);
 
-    if (!sampleToMove) {
-      throw new Error(
-        `Sample not found at voice ${fromVoice}, slot ${fromSlot}`,
-      );
-    }
+    const moveContext = initializeMoveContext(toSlot);
 
-    const affectedSamples: (Sample & { original_slot_number: number })[] = [];
-    let replacedSample: Sample | undefined;
+    const operationResult = executeMoveOperation(
+      db,
+      dbDir,
+      kitName,
+      sampleToMove,
+      fromVoice,
+      fromSlot,
+      toVoice,
+      mode,
+      moveContext,
+    );
 
-    if (mode === "insert") {
-      // For same-voice moves, temporarily move the sample out of the way to avoid conflicts
-      if (fromVoice === toVoice) {
-        // Temporarily set the sample to a very high slot number to avoid conflicts
-        const tempSlot = 999;
-        db.update(samples)
-          .set({ slot_number: tempSlot })
-          .where(eq(samples.id, sampleToMove.id))
-          .run();
-      }
+    const movedSample = updateSamplePosition(
+      db,
+      sampleToMove,
+      toVoice,
+      operationResult.finalToSlot,
+    );
 
-      // Now handle the shifting based on move direction
-      const samplesToShift = db
-        .select()
-        .from(samples)
-        .where(
-          and(eq(samples.kit_name, kitName), eq(samples.voice_number, toVoice)),
-        )
-        .all()
-        .filter(
-          (sample) =>
-            sample.slot_number >= toSlot && sample.id !== sampleToMove.id,
-        )
-        .sort((a, b) => b.slot_number - a.slot_number); // Sort descending to avoid conflicts
-
-      for (const sample of samplesToShift) {
-        const newSlotNumber = sample.slot_number + 1;
-
-        db.update(samples)
-          .set({ slot_number: newSlotNumber })
-          .where(eq(samples.id, sample.id))
-          .run();
-
-        affectedSamples.push({
-          ...sample,
-          slot_number: newSlotNumber,
-          original_slot_number: sample.slot_number, // Store original position for undo
-        } as Sample & { original_slot_number: number });
-      }
-
-      // For same-voice moves, compact the source gap
-      if (fromVoice === toVoice) {
-        // Compact the gap left at fromSlot
-        const samplesToCompact = db
-          .select()
-          .from(samples)
-          .where(
-            and(
-              eq(samples.kit_name, kitName),
-              eq(samples.voice_number, fromVoice),
-            ),
-          )
-          .all()
-          .filter(
-            (sample) =>
-              sample.slot_number > fromSlot && sample.id !== sampleToMove.id,
-          )
-          .sort((a, b) => a.slot_number - b.slot_number); // Sort ascending
-
-        for (const sample of samplesToCompact) {
-          const newSlotNumber = sample.slot_number - 1;
-          db.update(samples)
-            .set({ slot_number: newSlotNumber })
-            .where(eq(samples.id, sample.id))
-            .run();
-
-          affectedSamples.push({
-            ...sample,
-            slot_number: newSlotNumber,
-            original_slot_number: sample.slot_number,
-          } as Sample & { original_slot_number: number });
-        }
-
-        // For forward moves, adjust the target slot since we compacted
-        if (fromSlot < toSlot) {
-          toSlot = toSlot - 1;
-        }
-      }
-    } else if (mode === "overwrite") {
-      // Check if there's a sample to replace
-      replacedSample = db
-        .select()
-        .from(samples)
-        .where(
-          and(
-            eq(samples.kit_name, kitName),
-            eq(samples.voice_number, toVoice),
-            eq(samples.slot_number, toSlot),
-          ),
-        )
-        .get();
-
-      // Delete the replaced sample if it exists
-      if (replacedSample) {
-        db.delete(samples).where(eq(samples.id, replacedSample.id)).run();
-      }
-    }
-
-    // Move the sample to its new position
-    db.update(samples)
-      .set({
-        voice_number: toVoice,
-        slot_number: toSlot,
-      })
-      .where(eq(samples.id, sampleToMove.id))
-      .run();
-
-    const movedSample = {
-      ...sampleToMove,
-      voice_number: toVoice,
-      slot_number: toSlot,
-    };
-
-    // Compact the source voice if needed
-    if (mode === "insert") {
-      // For same-voice moves, compaction was already handled above during the move
-      // For cross-voice moves, always compact the source voice to fill the gap
-      if (fromVoice !== toVoice) {
-        const compactionResult = compactSlotsAfterDelete(
-          dbDir,
-          kitName,
-          fromVoice,
-          fromSlot,
-        );
-        if (compactionResult.success && compactionResult.data) {
-          // Map compaction results to include original slot numbers
-          const compactedSamples = compactionResult.data.map((sample) => ({
-            ...sample,
-            original_slot_number: sample.slot_number + 1, // They were shifted up by 1 during compaction
-          }));
-          affectedSamples.push(...compactedSamples);
-        }
-      }
-    }
+    const finalAffectedSamples = handlePostMoveCompaction(
+      dbDir,
+      kitName,
+      fromVoice,
+      fromSlot,
+      toVoice,
+      mode,
+      operationResult.affectedSamples,
+    );
 
     return {
       movedSample,
-      affectedSamples,
-      replacedSample,
+      affectedSamples: finalAffectedSamples,
+      replacedSample: operationResult.replacedSample,
     };
   });
+}
+
+/**
+ * Get the sample to be moved
+ */
+function getSampleToMove(
+  db: any,
+  kitName: string,
+  fromVoice: number,
+  fromSlot: number,
+): Sample {
+  const sampleToMove = db
+    .select()
+    .from(samples)
+    .where(
+      and(
+        eq(samples.kit_name, kitName),
+        eq(samples.voice_number, fromVoice),
+        eq(samples.slot_number, fromSlot),
+      ),
+    )
+    .get();
+
+  if (!sampleToMove) {
+    throw new Error(`Sample not found at voice ${fromVoice}, slot ${fromSlot}`);
+  }
+
+  return sampleToMove;
+}
+
+/**
+ * Initialize move context
+ */
+function initializeMoveContext(toSlot: number) {
+  return {
+    affectedSamples: [] as (Sample & { original_slot_number: number })[],
+    replacedSample: undefined as Sample | undefined,
+    finalToSlot: toSlot,
+  };
+}
+
+/**
+ * Execute the move operation based on mode
+ */
+function executeMoveOperation(
+  db: any,
+  dbDir: string,
+  kitName: string,
+  sampleToMove: Sample,
+  fromVoice: number,
+  fromSlot: number,
+  toVoice: number,
+  mode: "insert" | "overwrite",
+  moveContext: any,
+) {
+  if (mode === "insert") {
+    return handleInsertMode(
+      db,
+      kitName,
+      sampleToMove,
+      fromVoice,
+      fromSlot,
+      toVoice,
+      moveContext,
+    );
+  } else {
+    return handleOverwriteModeOperation(
+      db,
+      kitName,
+      toVoice,
+      moveContext.finalToSlot,
+      moveContext,
+    );
+  }
+}
+
+/**
+ * Handle insert mode operation
+ */
+function handleInsertMode(
+  db: any,
+  kitName: string,
+  sampleToMove: Sample,
+  fromVoice: number,
+  fromSlot: number,
+  toVoice: number,
+  moveContext: any,
+) {
+  // For same-voice moves, temporarily move the sample out of the way
+  if (fromVoice === toVoice) {
+    temporarilyMoveSample(db, sampleToMove.id);
+  }
+
+  // Handle sample shifting
+  const shiftedSamples = handleSampleShifting(
+    db,
+    kitName,
+    toVoice,
+    moveContext.finalToSlot,
+    sampleToMove,
+  );
+  moveContext.affectedSamples.push(...shiftedSamples);
+
+  // Handle same-voice compaction
+  if (fromVoice === toVoice) {
+    const compactionResult = handleSameVoiceCompaction(
+      db,
+      kitName,
+      fromVoice,
+      fromSlot,
+      sampleToMove,
+    );
+    moveContext.affectedSamples.push(...compactionResult.affectedSamples);
+
+    // Adjust target slot for forward moves
+    if (fromSlot < moveContext.finalToSlot) {
+      moveContext.finalToSlot = moveContext.finalToSlot - 1;
+    }
+  }
+
+  return moveContext;
+}
+
+/**
+ * Handle overwrite mode operation
+ */
+function handleOverwriteModeOperation(
+  db: any,
+  kitName: string,
+  toVoice: number,
+  toSlot: number,
+  moveContext: any,
+) {
+  moveContext.replacedSample = handleOverwriteMode(
+    db,
+    kitName,
+    toVoice,
+    toSlot,
+  );
+  return moveContext;
+}
+
+/**
+ * Temporarily move sample to avoid conflicts
+ */
+function temporarilyMoveSample(db: any, sampleId: number): void {
+  const tempSlot = 999;
+  db.update(samples)
+    .set({ slot_number: tempSlot })
+    .where(eq(samples.id, sampleId))
+    .run();
+}
+
+/**
+ * Update sample to its final position
+ */
+function updateSamplePosition(
+  db: any,
+  sampleToMove: Sample,
+  toVoice: number,
+  finalToSlot: number,
+): Sample {
+  db.update(samples)
+    .set({
+      voice_number: toVoice,
+      slot_number: finalToSlot,
+    })
+    .where(eq(samples.id, sampleToMove.id))
+    .run();
+
+  return {
+    ...sampleToMove,
+    voice_number: toVoice,
+    slot_number: finalToSlot,
+  };
+}
+
+/**
+ * Handle post-move compaction for cross-voice moves
+ */
+function handlePostMoveCompaction(
+  dbDir: string,
+  kitName: string,
+  fromVoice: number,
+  fromSlot: number,
+  toVoice: number,
+  mode: "insert" | "overwrite",
+  affectedSamples: (Sample & { original_slot_number: number })[],
+): (Sample & { original_slot_number: number })[] {
+  if (mode === "insert" && fromVoice !== toVoice) {
+    const compactionResult = compactSlotsAfterDelete(
+      dbDir,
+      kitName,
+      fromVoice,
+      fromSlot,
+    );
+
+    if (compactionResult.success && compactionResult.data) {
+      const compactedSamples = compactionResult.data.map((sample) => ({
+        ...sample,
+        original_slot_number: sample.slot_number + 1,
+      }));
+      affectedSamples.push(...compactedSamples);
+    }
+  }
+
+  return affectedSamples;
 }
 
 // Task 20.1.1: Favorites system functions

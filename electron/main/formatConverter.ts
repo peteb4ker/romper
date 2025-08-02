@@ -30,6 +30,176 @@ export interface ConversionResult {
 }
 
 /**
+ * Determines target channel count based on options and input metadata
+ */
+function determineTargetChannels(
+  options: ConversionOptions,
+  inputChannels: number,
+): number {
+  if (options.forceMonoConversion && inputChannels > 1) {
+    return 1;
+  }
+
+  if (options.targetChannels) {
+    return options.targetChannels;
+  }
+
+  return Math.min(inputChannels, RAMPLE_FORMAT_REQUIREMENTS.maxChannels);
+}
+
+/**
+ * Validates target format against Rample requirements
+ */
+function validateTargetFormat(
+  targetBitDepth: number,
+  targetSampleRate: number,
+): DbResult<void> {
+  if (!RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(targetBitDepth)) {
+    return {
+      success: false,
+      error: `Target bit depth ${targetBitDepth} not supported by Rample`,
+    };
+  }
+
+  if (!RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(targetSampleRate)) {
+    return {
+      success: false,
+      error: `Target sample rate ${targetSampleRate} not supported by Rample`,
+    };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Converts channel data to target channel count
+ */
+function convertChannelData(
+  channelData: Float32Array[],
+  targetChannels: number,
+  inputSamples: number,
+): Float32Array[] {
+  const inputChannels = channelData.length;
+
+  if (targetChannels === 1 && inputChannels > 1) {
+    return convertToMono(channelData, inputSamples);
+  }
+
+  if (targetChannels === 2 && inputChannels === 1) {
+    return convertToStereo(channelData[0]);
+  }
+
+  return adjustChannelCount(channelData, targetChannels, inputSamples);
+}
+
+/**
+ * Convert multi-channel to mono by averaging
+ */
+function convertToMono(
+  channelData: Float32Array[],
+  inputSamples: number,
+): Float32Array[] {
+  const inputChannels = channelData.length;
+  const monoData = new Float32Array(inputSamples);
+
+  for (let i = 0; i < inputSamples; i++) {
+    let sum = 0;
+    for (let ch = 0; ch < inputChannels; ch++) {
+      sum += channelData[ch][i];
+    }
+    monoData[i] = sum / inputChannels;
+  }
+
+  return [monoData];
+}
+
+/**
+ * Convert mono to stereo by duplicating channel
+ */
+function convertToStereo(monoChannel: Float32Array): Float32Array[] {
+  const leftChannel = monoChannel;
+  const rightChannel = new Float32Array(leftChannel);
+  return [leftChannel, rightChannel];
+}
+
+/**
+ * Adjust channel count by truncating or padding
+ */
+function adjustChannelCount(
+  channelData: Float32Array[],
+  targetChannels: number,
+  inputSamples: number,
+): Float32Array[] {
+  const inputChannels = channelData.length;
+  const outputChannelData: Float32Array[] = [];
+
+  for (let ch = 0; ch < targetChannels; ch++) {
+    if (ch < inputChannels) {
+      outputChannelData.push(channelData[ch]);
+    } else {
+      // Pad with silence for missing channels
+      outputChannelData.push(new Float32Array(inputSamples));
+    }
+  }
+
+  return outputChannelData;
+}
+
+/**
+ * Performs sample rate conversion using linear interpolation
+ */
+function resampleAudio(
+  channelData: Float32Array[],
+  inputSampleRate: number,
+  targetSampleRate: number,
+): Float32Array[] {
+  const ratio = targetSampleRate / inputSampleRate;
+  const outputSamples = Math.floor(channelData[0].length * ratio);
+
+  const resampledChannelData: Float32Array[] = [];
+  for (const [_ch, inputChannel] of channelData.entries()) {
+    const outputChannel = new Float32Array(outputSamples);
+
+    for (let i = 0; i < outputSamples; i++) {
+      const sourceIndex = i / ratio;
+      const leftIndex = Math.floor(sourceIndex);
+      const rightIndex = Math.min(leftIndex + 1, inputChannel.length - 1);
+      const fraction = sourceIndex - leftIndex;
+
+      // Linear interpolation
+      outputChannel[i] =
+        inputChannel[leftIndex] * (1 - fraction) +
+        inputChannel[rightIndex] * fraction;
+    }
+    resampledChannelData.push(outputChannel);
+  }
+  return resampledChannelData;
+}
+
+/**
+ * Writes audio data to output file
+ */
+function writeOutputFile(
+  outputPath: string,
+  channelData: Float32Array[],
+  targetSampleRate: number,
+  targetBitDepth: number,
+): void {
+  const outputBuffer = wav.encode(channelData, {
+    sampleRate: targetSampleRate,
+    float: false,
+    bitDepth: targetBitDepth,
+  });
+
+  const outputDir = path.dirname(outputPath);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  fs.writeFileSync(outputPath, outputBuffer);
+}
+
+/**
  * Converts a WAV file to Rample-compatible format
  * Handles bit depth, sample rate, and channel conversion
  */
@@ -57,43 +227,26 @@ export async function convertSampleToRampleFormat(
     }
 
     const inputMetadata = metadataResult.data;
-
-    // Set conversion targets with defaults
     const targetBitDepth = options.targetBitDepth || 16;
     const targetSampleRate = options.targetSampleRate || 44100;
-    let targetChannels = options.targetChannels;
+    const targetChannels = determineTargetChannels(
+      options,
+      inputMetadata.channels || 1,
+    );
 
-    // Apply forceMonoConversion setting if specified
-    if (
-      options.forceMonoConversion &&
-      inputMetadata.channels &&
-      inputMetadata.channels > 1
-    ) {
-      targetChannels = 1;
-    } else if (!targetChannels) {
-      // Default: preserve channel count unless it exceeds Rample limits
-      targetChannels = Math.min(
-        inputMetadata.channels || 1,
-        RAMPLE_FORMAT_REQUIREMENTS.maxChannels,
-      );
-    }
-
-    // Validate target format is supported by Rample
-    if (!RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(targetBitDepth)) {
+    // Validate target format
+    const validationResult = validateTargetFormat(
+      targetBitDepth,
+      targetSampleRate,
+    );
+    if (!validationResult.success) {
       return {
         success: false,
-        error: `Target bit depth ${targetBitDepth} not supported by Rample`,
+        error: validationResult.error,
       };
     }
 
-    if (!RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(targetSampleRate)) {
-      return {
-        success: false,
-        error: `Target sample rate ${targetSampleRate} not supported by Rample`,
-      };
-    }
-
-    // Read input WAV file
+    // Read and decode input WAV file
     const inputBuffer = fs.readFileSync(inputPath);
     const decoded = wav.decode(inputBuffer);
 
@@ -101,92 +254,36 @@ export async function convertSampleToRampleFormat(
       return { success: false, error: "Failed to decode input WAV file" };
     }
 
-    // Prepare conversion parameters
-    const inputChannels = decoded.channelData.length;
     const inputSampleRate = decoded.sampleRate;
     const inputSamples = decoded.channelData[0].length;
 
-    // Convert channel data to target format
-    let outputChannelData: Float32Array[];
+    // Convert channel data
+    let outputChannelData = convertChannelData(
+      [...decoded.channelData],
+      targetChannels,
+      inputSamples,
+    );
 
-    if (targetChannels === 1 && inputChannels > 1) {
-      // Convert stereo/multi-channel to mono by averaging channels
-      const monoData = new Float32Array(inputSamples);
-      for (let i = 0; i < inputSamples; i++) {
-        let sum = 0;
-        for (let ch = 0; ch < inputChannels; ch++) {
-          sum += decoded.channelData[ch][i];
-        }
-        monoData[i] = sum / inputChannels;
-      }
-      outputChannelData = [monoData];
-    } else if (targetChannels === 2 && inputChannels === 1) {
-      // Convert mono to stereo by duplicating channel
-      const leftChannel = decoded.channelData[0];
-      const rightChannel = new Float32Array(leftChannel);
-      outputChannelData = [leftChannel, rightChannel];
-    } else {
-      // Use existing channels (truncate if too many, or pad with zeros if too few)
-      outputChannelData = [];
-      for (let ch = 0; ch < targetChannels; ch++) {
-        if (ch < inputChannels) {
-          outputChannelData.push(decoded.channelData[ch]);
-        } else {
-          // Pad with silence for missing channels
-          outputChannelData.push(new Float32Array(inputSamples));
-        }
-      }
-    }
-
-    // Handle sample rate conversion (simple linear interpolation)
+    // Handle sample rate conversion if needed
     if (targetSampleRate !== inputSampleRate) {
-      const ratio = targetSampleRate / inputSampleRate;
-      const outputSamples = Math.floor(inputSamples * ratio);
-
-      const resampledChannelData: Float32Array[] = [];
-      for (let ch = 0; ch < outputChannelData.length; ch++) {
-        const inputChannel = outputChannelData[ch];
-        const outputChannel = new Float32Array(outputSamples);
-
-        for (let i = 0; i < outputSamples; i++) {
-          const sourceIndex = i / ratio;
-          const leftIndex = Math.floor(sourceIndex);
-          const rightIndex = Math.min(leftIndex + 1, inputChannel.length - 1);
-          const fraction = sourceIndex - leftIndex;
-
-          // Linear interpolation
-          outputChannel[i] =
-            inputChannel[leftIndex] * (1 - fraction) +
-            inputChannel[rightIndex] * fraction;
-        }
-        resampledChannelData.push(outputChannel);
-      }
-      outputChannelData = resampledChannelData;
-    }
-
-    // Encode to WAV with target format
-    const outputBuffer = wav.encode(outputChannelData, {
-      sampleRate: targetSampleRate,
-      float: false, // Use integer format
-      bitDepth: targetBitDepth,
-    });
-
-    // Ensure output directory exists
-    const outputDir = path.dirname(outputPath);
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+      outputChannelData = resampleAudio(
+        outputChannelData,
+        inputSampleRate,
+        targetSampleRate,
+      );
     }
 
     // Write output file
-    fs.writeFileSync(outputPath, outputBuffer);
+    writeOutputFile(
+      outputPath,
+      outputChannelData,
+      targetSampleRate,
+      targetBitDepth,
+    );
 
-    // Get output file stats
+    // Get output file stats and calculate result
     const outputStats = fs.statSync(outputPath);
-
-    // Calculate duration
-    const samplesPerSecond = targetSampleRate;
-    const outputSamples = outputChannelData[0].length;
-    const duration = outputSamples / samplesPerSecond;
+    const duration = outputChannelData[0].length / targetSampleRate;
 
     const result: ConversionResult = {
       inputPath,

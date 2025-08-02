@@ -297,4 +297,109 @@ describe("SampleWaveform", () => {
     // Mock basic canvas functionality
     expect(mockCanvasContext).toBeDefined();
   });
+
+  it("handles AudioContext close errors gracefully", async () => {
+    // Mock AudioContext.close to throw an error
+    const mockAudioContext = {
+      currentTime: 0,
+      destination: {},
+      createBufferSource: vi.fn(() => ({
+        buffer: null,
+        connect: vi.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+        disconnect: vi.fn(),
+        onended: null,
+      })),
+      decodeAudioData: vi.fn(),
+      close: vi.fn().mockRejectedValue(new Error("Close failed")),
+      state: "running",
+    };
+
+    global.AudioContext = vi.fn(() => mockAudioContext);
+
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
+      new ArrayBuffer(1024),
+    );
+
+    const { rerender } = render(
+      <SampleWaveform
+        kitName="A1"
+        voiceNumber={1}
+        slotNumber={1}
+        playTrigger={0}
+      />,
+    );
+
+    // Wait for initial setup
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+
+    // Trigger a re-render to cause previous AudioContext to be closed
+    await act(async () => {
+      rerender(
+        <SampleWaveform
+          kitName="A2"
+          voiceNumber={1}
+          slotNumber={1}
+          playTrigger={0}
+        />,
+      );
+    });
+
+    // Should handle close errors gracefully without throwing
+    expect(mockAudioContext.close).toHaveBeenCalled();
+  });
+
+  it("handles synchronous AudioContext close errors gracefully", async () => {
+    // Mock AudioContext.close to throw synchronously
+    const mockAudioContext = {
+      currentTime: 0,
+      destination: {},
+      createBufferSource: vi.fn(() => ({
+        buffer: null,
+        connect: vi.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+        disconnect: vi.fn(),
+        onended: null,
+      })),
+      decodeAudioData: vi.fn(),
+      close: vi.fn(() => {
+        throw new Error("Synchronous close failed");
+      }),
+      state: "running",
+    };
+
+    global.AudioContext = vi.fn(() => mockAudioContext);
+
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
+      new ArrayBuffer(1024),
+    );
+
+    const { rerender } = render(
+      <SampleWaveform
+        kitName="A1"
+        voiceNumber={1}
+        slotNumber={1}
+        playTrigger={0}
+      />,
+    );
+
+    // Trigger a re-render to cause previous AudioContext to be closed
+    await act(async () => {
+      rerender(
+        <SampleWaveform
+          kitName="A2"
+          voiceNumber={1}
+          slotNumber={1}
+          playTrigger={0}
+        />,
+      );
+    });
+
+    // Should handle synchronous close errors gracefully
+    expect(mockAudioContext.close).toHaveBeenCalled();
+  });
 });

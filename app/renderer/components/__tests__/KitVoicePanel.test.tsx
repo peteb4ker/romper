@@ -187,7 +187,7 @@ describe("KitVoicePanel", () => {
 
   it("updates selection when a sample slot is clicked", async () => {
     render(<SingleVoiceTestWrapper />);
-    const slots = screen.getAllByRole("listitem");
+    const slots = screen.getAllByRole("option");
     await act(async () => {
       fireEvent.click(slots[1]);
     });
@@ -300,7 +300,7 @@ describe("KitVoicePanel", () => {
       </MockSettingsProvider>,
     );
     // Should render 2 filled slots + 1 drop target = 3 total
-    const slots = screen.getAllByRole("listitem");
+    const slots = screen.getAllByRole("option");
     expect(slots).toHaveLength(3);
 
     // The first two are filled
@@ -323,7 +323,7 @@ describe("KitVoicePanel", () => {
         </MockMessageDisplayProvider>
       </MockSettingsProvider>,
     );
-    const slots = screen.getAllByRole("listitem");
+    const slots = screen.getAllByRole("option");
     // All slots (filled and empty) should have the same min-h-[28px] class
     slots.forEach((slot) => {
       expect(slot.className).toMatch(/min-h-\[28px\]/);
@@ -735,7 +735,7 @@ describe("KitVoicePanel", () => {
           </MockSettingsProvider>,
         );
 
-        const slots = screen.getAllByRole("listitem");
+        const slots = screen.getAllByRole("option");
         const firstSlot = slots[0]; // This should not be selected
 
         // Should not have selected styling classes
@@ -757,7 +757,7 @@ describe("KitVoicePanel", () => {
           </MockSettingsProvider>,
         );
 
-        const slots = screen.getAllByRole("listitem");
+        const slots = screen.getAllByRole("option");
         const firstSlot = slots[0];
 
         // Should not have selected styling classes when not active
@@ -777,7 +777,7 @@ describe("KitVoicePanel", () => {
           </MockSettingsProvider>,
         );
 
-        const slots = screen.getAllByRole("listitem");
+        const slots = screen.getAllByRole("option");
         const firstSlot = slots[0];
 
         // Should have basic slot title
@@ -797,7 +797,7 @@ describe("KitVoicePanel", () => {
           </MockSettingsProvider>,
         );
 
-        const slots = screen.getAllByRole("listitem");
+        const slots = screen.getAllByRole("option");
         const firstSlot = slots[0];
 
         // Should include source path in title
@@ -840,7 +840,7 @@ describe("KitVoicePanel", () => {
           </MockSettingsProvider>,
         );
 
-        const slots = screen.getAllByRole("listitem");
+        const slots = screen.getAllByRole("option");
         const firstSlot = slots[0];
 
         // Simulate context menu
@@ -860,7 +860,7 @@ describe("KitVoicePanel", () => {
           </MockSettingsProvider>,
         );
 
-        const slots = screen.getAllByRole("listitem");
+        const slots = screen.getAllByRole("option");
         const firstSlot = slots[0];
 
         // Simulate context menu
@@ -887,7 +887,7 @@ describe("KitVoicePanel", () => {
           </MockSettingsProvider>,
         );
 
-        const slots = screen.getAllByRole("listitem");
+        const slots = screen.getAllByRole("option");
         const firstSlot = slots[0];
 
         // Simulate context menu - should not throw error
@@ -905,7 +905,7 @@ describe("KitVoicePanel", () => {
           </MockSettingsProvider>,
         );
 
-        const slots = screen.getAllByRole("listitem");
+        const slots = screen.getAllByRole("option");
         const sampleSlots = slots.filter(
           (slot) => !slot.getAttribute("data-testid")?.includes("empty-slot"),
         );
@@ -925,7 +925,7 @@ describe("KitVoicePanel", () => {
           </MockSettingsProvider>,
         );
 
-        const slots = screen.getAllByRole("listitem");
+        const slots = screen.getAllByRole("option");
         const sampleSlots = slots.filter(
           (slot) => !slot.getAttribute("data-testid")?.includes("empty-slot"),
         );

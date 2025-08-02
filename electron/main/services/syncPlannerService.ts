@@ -92,10 +92,44 @@ export class SyncPlannerService {
       return; // Skip samples without source path
     }
 
-    const filename = sample.filename;
-    const sourcePath = sample.source_path;
+    const { filename, source_path: sourcePath, kitName } = sample;
 
-    // Check if source file exists
+    // Validate source file and handle errors
+    const fileValidation = this.validateSourceFile(
+      filename,
+      sourcePath,
+      results,
+    );
+    if (!fileValidation.isValid) {
+      return;
+    }
+
+    // Update total size from validation
+    results.totalSize += fileValidation.fileSize;
+
+    // Determine operation type and add to appropriate list
+    const destinationPath = this.getDestinationPath(
+      localStorePath,
+      kitName,
+      sample,
+    );
+    this.categorizeFileOperation(
+      sample,
+      filename,
+      sourcePath,
+      destinationPath,
+      results,
+    );
+  }
+
+  /**
+   * Validates source file existence and gets size
+   */
+  private validateSourceFile(
+    filename: string,
+    sourcePath: string,
+    results: any,
+  ): { isValid: boolean; fileSize: number } {
     if (!fs.existsSync(sourcePath)) {
       results.validationErrors.push({
         filename,
@@ -103,26 +137,30 @@ export class SyncPlannerService {
         error: `Source file not found: ${sourcePath}`,
         type: "missing_file",
       });
-      return;
+      return { isValid: false, fileSize: 0 };
     }
 
-    // Get file stats and update total size
     const stats = fs.statSync(sourcePath);
-    results.totalSize += stats.size;
+    return { isValid: true, fileSize: stats.size };
+  }
 
-    // Get audio metadata and validate format
+  /**
+   * Categorizes file operation as copy or convert
+   */
+  private categorizeFileOperation(
+    sample: any,
+    filename: string,
+    sourcePath: string,
+    destinationPath: string,
+    results: any,
+  ): void {
     const metadataResult = getAudioMetadata(sourcePath);
     const formatValidationResult = validateSampleFormat(sourcePath);
-    const destinationPath = this.getDestinationPath(
-      localStorePath,
-      sample.kitName,
-      sample,
-    );
 
-    if (
-      !formatValidationResult.success ||
-      !formatValidationResult.data?.isValid
-    ) {
+    const needsConversion =
+      !formatValidationResult.success || !formatValidationResult.data?.isValid;
+
+    if (needsConversion) {
       this.addFileToConvert(
         sample,
         filename,
@@ -257,7 +295,7 @@ export class SyncPlannerService {
     kitName: string,
     sample: Sample,
   ): string {
-    // TODO: This should use the actual SD card path once SD card detection is implemented
+    // NOTE: Future enhancement - use actual SD card path when SD card detection is implemented
     // For now, create a sync output directory in the local store
     const syncDir = path.join(localStorePath, "sync_output", kitName);
     const voiceDir = `${sample.voice_number}`;

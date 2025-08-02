@@ -82,7 +82,7 @@ const KitVoicePanel: React.FC<
   sampleMetadata,
   voiceName,
   onSaveVoiceName,
-  // onRescanVoiceName, // TODO: Implement voice name rescanning
+  // onRescanVoiceName, // Legacy - voice rescanning now handled by kit-level scanning
   samplePlaying,
   playTriggers,
   stopTriggers,
@@ -92,7 +92,7 @@ const KitVoicePanel: React.FC<
   kitName,
   dataTestIdVoiceName,
   selectedIdx = -1,
-  // onSampleKeyNav, // TODO: Implement keyboard navigation
+  // onSampleKeyNav, // Note: Keyboard navigation now handled by parent component
   onSampleSelect,
   isActive = false,
   isEditable = true,
@@ -110,7 +110,7 @@ const KitVoicePanel: React.FC<
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
 
   // Task 22.2: Internal sample drag state
-  const [_draggedSample, setDraggedSample] = useState<{
+  const [, setDraggedSample] = useState<{
     voice: number;
     slot: number;
     sampleName: string;
@@ -786,11 +786,18 @@ const KitVoicePanel: React.FC<
       <li
         key={`${voice}-${slotIndex}-${sampleName}`}
         className={className}
-        tabIndex={-1}
+        role="option"
+        tabIndex={0}
         aria-selected={isSelected}
         data-testid={isSelected ? `sample-selected-voice-${voice}` : undefined}
         title={title}
         onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSampleSelect && onSampleSelect(voice, slotIndex);
+          }
+        }}
         onContextMenu={(e) => handleSampleContextMenu(e, sampleData)}
         draggable={isEditable}
         {...dragHandlers}
@@ -905,7 +912,8 @@ const KitVoicePanel: React.FC<
             ? " border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500"
             : ""
         }`}
-        tabIndex={-1}
+        role="option"
+        tabIndex={0}
         aria-selected={false}
         data-testid={`empty-slot-${voice}-${slotIndex}`}
         title={
@@ -914,6 +922,12 @@ const KitVoicePanel: React.FC<
             : undefined
         }
         onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSampleSelect && onSampleSelect(voice, slotIndex);
+          }
+        }}
         onDragOver={
           isEditable && isDropTarget
             ? (e) => handleSampleDragOver(e, slotIndex)
@@ -1048,6 +1062,7 @@ const KitVoicePanel: React.FC<
           <ul
             className="list-none ml-0 text-sm flex flex-col"
             ref={listRef}
+            role="listbox"
             aria-label="Sample slots"
             data-testid={`sample-list-voice-${voice}`}
             tabIndex={isActive ? 0 : -1}

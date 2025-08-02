@@ -109,15 +109,15 @@ export function getRomperDbPath(localStorePath: string): string {
  * @param localStorePath - The path to the local store directory
  * @returns Detailed validation result with specific errors if any found
  */
-export function validateLocalStoreAgainstDb(
-  localStorePath: string,
-): LocalStoreValidationDetailedResult {
+/**
+ * Helper function to perform basic validation checks
+ */
+function performBasicValidation(localStorePath: string) {
   console.log(
     "[Validation] Starting validateLocalStoreAgainstDb for:",
     localStorePath,
   );
 
-  // First check basic validity
   const basicValidation = validateLocalStoreAndDb(localStorePath);
   console.log("[Validation] Basic validation result:", {
     isValid: basicValidation.isValid,
@@ -127,8 +127,8 @@ export function validateLocalStoreAgainstDb(
   if (!basicValidation.isValid) {
     console.log("[Validation] Basic validation failed, returning error");
     return {
-      isValid: false,
-      errorSummary: basicValidation.error,
+      success: false,
+      error: basicValidation.error,
     };
   }
 
@@ -138,8 +138,96 @@ export function validateLocalStoreAgainstDb(
   console.log("[Validation] Basic validation passed, checking kits...");
   console.log("[Validation] DB directory:", dbDir);
 
+  return { success: true, dbDir };
+}
+
+/**
+ * Helper function to validate kit samples
+ */
+function validateKitSamples(
+  dbDir: string,
+  kit: any,
+  localStorePath: string,
+): { missingFiles: string[]; extraFiles: string[]; isValid: boolean } {
+  const missingFiles: string[] = [];
+  const extraFiles: string[] = [];
+  let isValid = true;
+
+  const kitFolderPath = path.join(localStorePath, kit.name);
+
+  // Get samples for this kit
+  const samplesResult = getKitSamples(dbDir, kit.name);
+  if (!samplesResult.success || !samplesResult.data) {
+    return {
+      missingFiles: [`Failed to retrieve samples: ${samplesResult.error}`],
+      extraFiles: [],
+      isValid: false,
+    };
+  }
+
+  // Check that all samples in DB exist in filesystem using source_path
+  for (const sample of samplesResult.data) {
+    if (!fs.existsSync(sample.source_path)) {
+      missingFiles.push(path.basename(sample.source_path));
+      isValid = false;
+    }
+  }
+
+  // Check for extra files in filesystem not in DB
+  const extraFilesResult = findExtraFiles(kitFolderPath, samplesResult.data);
+  if (extraFilesResult.extraFiles.length > 0) {
+    extraFiles.push(...extraFilesResult.extraFiles);
+    isValid = false;
+  }
+
+  return { missingFiles, extraFiles, isValid };
+}
+
+/**
+ * Helper function to find extra files in kit folder
+ */
+function findExtraFiles(
+  kitFolderPath: string,
+  samplesData: any[],
+): { extraFiles: string[] } {
+  const extraFiles: string[] = [];
+
+  try {
+    const filesInDir = fs
+      .readdirSync(kitFolderPath)
+      .filter((file) => file.toLowerCase().endsWith(".wav"));
+
+    const dbFiles = new Set(
+      samplesData.map((s) => path.basename(s.source_path).toLowerCase()),
+    );
+
+    for (const file of filesInDir) {
+      if (!dbFiles.has(file.toLowerCase())) {
+        extraFiles.push(file);
+      }
+    }
+  } catch {
+    // Error reading directory - kit folder may not exist, which is valid
+    // in reference-first architecture, so we don't treat this as an error
+  }
+
+  return { extraFiles };
+}
+
+export function validateLocalStoreAgainstDb(
+  localStorePath: string,
+): LocalStoreValidationDetailedResult {
+  // Perform basic validation
+  const basicResult = performBasicValidation(localStorePath);
+  if (!basicResult.success) {
+    return {
+      isValid: false,
+      errorSummary: basicResult.error,
+    };
+  }
+
   // Get all kits from the database
-  const kitsResult = getKits(dbDir);
+  const kitsResult = getKits(basicResult.dbDir!);
   console.log("[Validation] Kits query result:", {
     success: kitsResult.success,
     error: kitsResult.error,
@@ -154,67 +242,23 @@ export function validateLocalStoreAgainstDb(
     };
   }
 
+  // Validate each kit
   const kitErrors: KitValidationError[] = [];
   let isValid = true;
 
-  // For each kit, check if the folder exists and validate samples
   for (const kit of kitsResult.data) {
-    const missingFiles: string[] = [];
-    const extraFiles: string[] = [];
+    const kitValidation = validateKitSamples(
+      basicResult.dbDir!,
+      kit,
+      localStorePath,
+    );
 
-    // Note: In reference-first architecture, kit folders don't need to exist
-    // since samples live at their source_path locations, but we still check for extra files
-    const kitFolderPath = path.join(localStorePath, kit.name);
-
-    // Get samples for this kit
-    const samplesResult = getKitSamples(dbDir, kit.name);
-    if (!samplesResult.success || !samplesResult.data) {
+    if (!kitValidation.isValid) {
       isValid = false;
       kitErrors.push({
         kitName: kit.name,
-        missingFiles: [`Failed to retrieve samples: ${samplesResult.error}`],
-        extraFiles: [],
-      });
-      continue;
-    }
-
-    // Check that all samples in DB exist in filesystem using source_path
-    for (const sample of samplesResult.data) {
-      if (!fs.existsSync(sample.source_path)) {
-        missingFiles.push(path.basename(sample.source_path));
-        isValid = false;
-      }
-    }
-
-    // Check for extra files in filesystem not in DB
-    try {
-      const filesInDir = fs
-        .readdirSync(kitFolderPath)
-        .filter((file) => file.toLowerCase().endsWith(".wav"));
-
-      const dbFiles = new Set(
-        samplesResult.data.map((s) =>
-          path.basename(s.source_path).toLowerCase(),
-        ),
-      );
-
-      for (const file of filesInDir) {
-        if (!dbFiles.has(file.toLowerCase())) {
-          extraFiles.push(file);
-          isValid = false;
-        }
-      }
-    } catch {
-      // Error reading directory - kit folder may not exist, which is valid
-      // in reference-first architecture, so we don't treat this as an error
-    }
-
-    // Add to errors if any issues found
-    if (missingFiles.length > 0 || extraFiles.length > 0) {
-      kitErrors.push({
-        kitName: kit.name,
-        missingFiles,
-        extraFiles,
+        missingFiles: kitValidation.missingFiles,
+        extraFiles: kitValidation.extraFiles,
       });
     }
   }

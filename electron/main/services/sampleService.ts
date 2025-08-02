@@ -528,6 +528,74 @@ export class SampleService {
   }
 
   /**
+   * Validate stereo sample move constraints
+   */
+  private validateStereoSampleMove(
+    sampleToMove: Sample,
+    toVoice: number,
+    toSlot: number,
+    mode: "insert" | "overwrite",
+    existingSamples: Sample[],
+  ): DbResult<void> {
+    if (!sampleToMove.is_stereo) {
+      return { success: true };
+    }
+
+    // Check if moving to voice 4 (no adjacent voice available)
+    if (toVoice === 4) {
+      return {
+        success: false,
+        error:
+          "Cannot move stereo sample to voice 4 (no adjacent voice available)",
+      };
+    }
+
+    // Check for destination conflicts in insert mode
+    if (mode === "insert") {
+      const conflictSample = existingSamples.find(
+        (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot + 1,
+      );
+      if (conflictSample) {
+        return {
+          success: false,
+          error: `Stereo sample move would conflict with sample in voice ${toVoice + 1}, slot ${toSlot + 1}`,
+        };
+      }
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Validate sample movement parameters
+   */
+  private validateSampleMovement(
+    fromVoice: number,
+    fromSlot: number,
+    toVoice: number,
+    toSlot: number,
+  ): DbResult<void> {
+    const fromValidation = this.validateVoiceAndSlot(fromVoice, fromSlot);
+    if (!fromValidation.isValid) {
+      return { success: false, error: `Source ${fromValidation.error}` };
+    }
+
+    const toValidation = this.validateVoiceAndSlot(toVoice, toSlot);
+    if (!toValidation.isValid) {
+      return { success: false, error: `Destination ${toValidation.error}` };
+    }
+
+    if (fromVoice === toVoice && fromSlot === toSlot) {
+      return {
+        success: false,
+        error: "Cannot move sample to the same location",
+      };
+    }
+
+    return { success: true };
+  }
+
+  /**
    * Move a sample from one slot to another with contiguity maintenance
    * Task 22.2: Cross-voice sample movement within same kit
    */
@@ -551,62 +619,45 @@ export class SampleService {
 
     const dbPath = this.getDbPath(localStorePath);
 
-    // Validate voice and slot for both source and destination
-    const fromValidation = this.validateVoiceAndSlot(fromVoice, fromSlot);
-    if (!fromValidation.isValid) {
-      return { success: false, error: `Source ${fromValidation.error}` };
-    }
-
-    const toValidation = this.validateVoiceAndSlot(toVoice, toSlot);
-    if (!toValidation.isValid) {
-      return { success: false, error: `Destination ${toValidation.error}` };
-    }
-
-    // Prevent moving to the same location
-    if (fromVoice === toVoice && fromSlot === toSlot) {
-      return {
-        success: false,
-        error: "Cannot move sample to the same location",
-      };
+    // Validate movement parameters
+    const validationResult = this.validateSampleMovement(
+      fromVoice,
+      fromSlot,
+      toVoice,
+      toSlot,
+    );
+    if (!validationResult.success) {
+      return { success: false, error: validationResult.error };
     }
 
     try {
-      // Check for stereo conflicts
+      // Get existing samples and find sample to move
       const existingSamplesResult = getKitSamples(dbPath, kitName);
-      if (existingSamplesResult.success && existingSamplesResult.data) {
-        const sampleToMove = existingSamplesResult.data.find(
-          (s) => s.voice_number === fromVoice && s.slot_number === fromSlot + 1,
-        );
+      if (!existingSamplesResult.success || !existingSamplesResult.data) {
+        return { success: false, error: existingSamplesResult.error };
+      }
 
-        if (!sampleToMove) {
-          return {
-            success: false,
-            error: `No sample found at voice ${fromVoice}, slot ${fromSlot + 1}`,
-          };
-        }
+      const sampleToMove = existingSamplesResult.data.find(
+        (s) => s.voice_number === fromVoice && s.slot_number === fromSlot + 1,
+      );
 
-        // Check for stereo conflicts if moving a stereo sample
-        if (sampleToMove.is_stereo && toVoice === 4) {
-          return {
-            success: false,
-            error:
-              "Cannot move stereo sample to voice 4 (no adjacent voice available)",
-          };
-        }
+      if (!sampleToMove) {
+        return {
+          success: false,
+          error: `No sample found at voice ${fromVoice}, slot ${fromSlot + 1}`,
+        };
+      }
 
-        if (sampleToMove.is_stereo && mode === "insert") {
-          // Check if destination+1 would conflict
-          const conflictSample = existingSamplesResult.data.find(
-            (s) =>
-              s.voice_number === toVoice + 1 && s.slot_number === toSlot + 1,
-          );
-          if (conflictSample) {
-            return {
-              success: false,
-              error: `Stereo sample move would conflict with sample in voice ${toVoice + 1}, slot ${toSlot + 1}`,
-            };
-          }
-        }
+      // Validate stereo sample constraints
+      const stereoValidation = this.validateStereoSampleMove(
+        sampleToMove,
+        toVoice,
+        toSlot,
+        mode,
+        existingSamplesResult.data,
+      );
+      if (!stereoValidation.success) {
+        return { success: false, error: stereoValidation.error };
       }
 
       // Perform the move with database-level contiguity maintenance

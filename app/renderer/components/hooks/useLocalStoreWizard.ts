@@ -341,119 +341,111 @@ export function useLocalStoreWizard(
         };
       };
 
-      await reportStepProgress({
-        items: kitNames,
-        phase: "Scanning kits for metadata...",
-        onStep: async (kitName) => {
-          try {
-            const kitPath = `${targetPath}/${kitName}`;
-            if (!api.listFilesInRoot) {
-              throw new Error("listFilesInRoot is not available");
-            }
+      // Helper function to process individual kit scan
+      const processSingleKit = async (kitName: string) => {
+        try {
+          const kitPath = `${targetPath}/${kitName}`;
+          if (!api.listFilesInRoot) {
+            throw new Error("listFilesInRoot is not available");
+          }
 
-            const files = await api.listFilesInRoot(kitPath);
-            const wavFiles = files
-              .filter((f: string) => /\.wav$/i.test(f))
-              .map((f: string) => `${kitPath}/${f}`);
+          const files = await api.listFilesInRoot(kitPath);
+          const wavFiles = files
+            .filter((f: string) => /\.wav$/i.test(f))
+            .map((f: string) => `${kitPath}/${f}`);
 
-            // Group samples by voice for voice inference
-            const wavFileNames = files.filter((f: string) => /\.wav$/i.test(f));
-            const samples = groupSamplesByVoice(wavFileNames);
+          // Group samples by voice for voice inference
+          const wavFileNames = files.filter((f: string) => /\.wav$/i.test(f));
+          const samples = groupSamplesByVoice(wavFileNames);
 
-            // Prepare scan input
-            const scanInput: FullKitScanInput = {
-              samples,
-              wavFiles,
-              fileReader: createFileReader(),
-            };
+          // Prepare scan input
+          const scanInput: FullKitScanInput = {
+            samples,
+            wavFiles,
+            fileReader: createFileReader(),
+          };
 
-            // Execute the full scan chain with error handling
-            const scanResult = await executeFullKitScan(
-              scanInput,
-              undefined, // No detailed progress callback for now
-              "continue", // Continue on errors
+          // Execute the full scan chain with error handling
+          const scanResult = await executeFullKitScan(
+            scanInput,
+            undefined, // No detailed progress callback for now
+            "continue", // Continue on errors
+          );
+
+          // Apply voice inference results to individual voices
+          await applyVoiceInferenceResults(kitName, scanResult);
+
+          // Log scan results for debugging
+          if (scanResult.errors.length > 0) {
+            console.warn(
+              `[Hook] Scan warnings for kit ${kitName}:`,
+              scanResult.errors,
             );
+          }
+        } catch (error) {
+          console.error(`[Hook] Scanning failed for kit ${kitName}:`, error);
+          // Continue with other kits even if one fails
+        }
+      };
 
-            // Update kit metadata based on scan results
-            const updates: {
-              alias?: string;
-              artist?: string;
-              tags?: string[];
-              description?: string;
-            } = {};
+      // Helper function to apply voice inference results
+      const applyVoiceInferenceResults = async (
+        kitName: string,
+        scanResult: any,
+      ) => {
+        if (
+          scanResult.success &&
+          scanResult.results.voiceInference?.voiceNames
+        ) {
+          const voiceNames = scanResult.results.voiceInference.voiceNames;
 
-            // Artist metadata is now handled by bank scanning, not kit scanning
+          // Update each voice with its inferred alias
+          for (const [voiceNumber, voiceName] of Object.entries(voiceNames)) {
+            await updateSingleVoiceAlias(kitName, voiceNumber, voiceName);
+          }
+        }
+      };
 
-            // Apply voice inference results to individual voices
-            if (
-              scanResult.success &&
-              scanResult.results.voiceInference?.voiceNames
-            ) {
-              const voiceNames = scanResult.results.voiceInference.voiceNames;
-
-              // Update each voice with its inferred alias
-              for (const [voiceNumber, voiceName] of Object.entries(
-                voiceNames,
-              )) {
-                if (
-                  voiceName &&
-                  typeof voiceName === "string" &&
-                  api.updateVoiceAlias
-                ) {
-                  try {
-                    const result = await api.updateVoiceAlias(
-                      kitName,
-                      parseInt(voiceNumber, 10),
-                      voiceName,
-                    );
-                    if (result.success) {
-                      console.log(
-                        `[Hook] Set voice ${voiceNumber} alias to "${voiceName}" for kit ${kitName}`,
-                      );
-                    } else {
-                      console.warn(
-                        `[Hook] Failed to set voice alias for kit ${kitName}, voice ${voiceNumber}:`,
-                        result.error,
-                      );
-                    }
-                  } catch (error) {
-                    console.warn(
-                      `[Hook] Error setting voice alias for kit ${kitName}, voice ${voiceNumber}:`,
-                      error,
-                    );
-                  }
-                }
-              }
-            }
-
-            // Update kit metadata if we have any updates
-            if (Object.keys(updates).length > 0 && api.updateKit) {
-              const updateResult = await api.updateKit(kitName, updates);
-              if (!updateResult.success) {
-                console.warn(
-                  `[Hook] Failed to update metadata for kit ${kitName}:`,
-                  updateResult.error,
-                );
-              } else {
-                console.log(
-                  `[Hook] Updated metadata for kit ${kitName}:`,
-                  updates,
-                );
-              }
-            }
-
-            // Log scan results for debugging
-            if (scanResult.errors.length > 0) {
+      // Helper function to update single voice alias
+      const updateSingleVoiceAlias = async (
+        kitName: string,
+        voiceNumber: string,
+        voiceName: any,
+      ) => {
+        if (
+          voiceName &&
+          typeof voiceName === "string" &&
+          api.updateVoiceAlias
+        ) {
+          try {
+            const result = await api.updateVoiceAlias(
+              kitName,
+              parseInt(voiceNumber, 10),
+              voiceName,
+            );
+            if (result.success) {
+              console.log(
+                `[Hook] Set voice ${voiceNumber} alias to "${voiceName}" for kit ${kitName}`,
+              );
+            } else {
               console.warn(
-                `[Hook] Scan warnings for kit ${kitName}:`,
-                scanResult.errors,
+                `[Hook] Failed to set voice alias for kit ${kitName}, voice ${voiceNumber}:`,
+                result.error,
               );
             }
           } catch (error) {
-            console.error(`[Hook] Scanning failed for kit ${kitName}:`, error);
-            // Continue with other kits even if one fails
+            console.warn(
+              `[Hook] Error setting voice alias for kit ${kitName}, voice ${voiceNumber}:`,
+              error,
+            );
           }
-        },
+        }
+      };
+
+      await reportStepProgress({
+        items: kitNames,
+        phase: "Scanning kits for metadata...",
+        onStep: processSingleKit,
       });
 
       console.log("[Hook] Scanning operations completed");

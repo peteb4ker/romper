@@ -36,9 +36,9 @@ import React from "react";
 
 import { setupAudioMocks } from "../../../../tests/mocks/browser/audio";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
+import { TestSettingsProvider } from "../../../../tests/providers/TestSettingsProvider";
 import { SettingsContext } from "../../utils/SettingsContext";
 import KitsView from "../KitsView";
-import { TestSettingsProvider } from "./TestSettingsProvider";
 
 // Mock the hooks used by KitsView
 vi.mock("../../components/hooks/useBankScanning", () => ({

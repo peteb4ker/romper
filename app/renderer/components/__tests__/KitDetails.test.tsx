@@ -10,8 +10,8 @@ import {
   vi,
 } from "vitest";
 
+import { TestSettingsProvider } from "../../../../tests/providers/TestSettingsProvider";
 import { render } from "../../../../tests/utils/renderWithProviders";
-import { TestSettingsProvider } from "../../views/__tests__/TestSettingsProvider";
 import KitDetails from "../KitDetails";
 
 // Mock modules before importing them

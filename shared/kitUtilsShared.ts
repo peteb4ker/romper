@@ -158,7 +158,7 @@ export function uniqueVoiceLabels(
 
 export function isValidKit(kit: string): boolean {
   // Valid kit: 1 uppercase letter A-Z, followed by 1-2 digits 0-99
-  return /^[A-Z][0-9]{1,2}$/.test(kit) && parseInt(kit.slice(1), 10) <= 99;
+  return /^\p{Lu}\d{1,2}$/u.test(kit) && parseInt(kit.slice(1), 10) <= 99;
 }
 
 export function showBankAnchor(

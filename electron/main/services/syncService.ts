@@ -519,7 +519,7 @@ class SyncService {
     originalFileSize: number,
     inMemorySettings: Record<string, any>,
   ): Promise<void> {
-    const forceMonoConversion = inMemorySettings.defaultToMonoSamples === true;
+    const forceMonoConversion = Boolean(inMemorySettings.defaultToMonoSamples);
     const conversionResult = await convertToRampleDefault(
       fileOp.sourcePath,
       fileOp.destinationPath,

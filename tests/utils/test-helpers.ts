@@ -114,8 +114,8 @@ export const createMockFileList = (files: File[]): FileList => {
     length: files.length,
     item: (index: number) => files[index] || null,
     [Symbol.iterator]: function* () {
-      for (let i = 0; i < files.length; i++) {
-        yield files[i];
+      for (const file of files) {
+        yield file;
       }
     },
   };

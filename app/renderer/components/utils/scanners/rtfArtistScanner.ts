@@ -31,7 +31,7 @@ export function scanRTFArtist(
       const filename = filePath.split(/[/\\]/).pop() || "";
 
       // Extract artist name from filename pattern: "A - Artist Name.rtf"
-      const match = filename.match(/^([A-Z])\s*-\s*(.+)\.rtf$/i);
+      const match = /^(\p{Lu})\s*-\s*(.+)\.rtf$/iu.exec(filename);
 
       if (match) {
         const bankLetter = match[1].toUpperCase();

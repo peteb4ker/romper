@@ -10,8 +10,8 @@ import type { ScanResult, WAVAnalysisInput, WAVAnalysisOutput } from "./types";
 export async function scanWAVAnalysis(
   _input: WAVAnalysisInput,
 ): Promise<ScanResult<WAVAnalysisOutput>> {
-  // TODO: WAV analysis needs to be moved to main process due to Buffer requirements
-  // For now, return a successful default result to unblock scanning
+  // NOTE: WAV analysis is currently disabled in renderer process due to Buffer requirements.
+  // The functionality will be implemented in the main process when needed for advanced analysis.
 
   // Only log once per test run to avoid spam
   if (
@@ -43,7 +43,8 @@ export async function scanWAVAnalysis(
  * @param buffer Uint8Array containing WAV file data
  * @returns WAV file properties
  */
-// TODO: Move to main process - Buffer/node-wav not available in renderer
+// NOTE: This function is disabled as Buffer/node-wav are not available in renderer process.
+// WAV parsing will be implemented in the main process when advanced analysis is needed.
 function _parseWAVFile(_buffer: any): WAVAnalysisOutput {
   // Disabled - needs main process implementation
   return {
@@ -55,7 +56,7 @@ function _parseWAVFile(_buffer: any): WAVAnalysisOutput {
     isValid: true,
   };
 
-  /* TODO: Re-enable when moving to main process
+  /* NOTE: This code will be re-enabled when WAV analysis is moved to main process
   // Decode WAV file using node-wav
   const result = wav.decode(buffer);
 

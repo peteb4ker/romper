@@ -5,7 +5,7 @@
 export function getBankNameFromRtfFilename(
   filename: string,
 ): { bank: string; name: string } | null {
-  const match = /^([A-Z]) - (.+)\.rtf$/i.exec(filename);
+  const match = /^(\p{Lu}) - (.+)\.rtf$/iu.exec(filename);
   if (match) {
     return {
       bank: match[1].toUpperCase(),
@@ -58,5 +58,5 @@ export function getAvailableBanks(kits: KitWithRelations[]): string[] {
  * Validates bank letter (A-Z)
  */
 export function validateBankLetter(bank: string): boolean {
-  return /^[A-Z]$/.test(bank.toUpperCase());
+  return /^\p{Lu}$/u.test(bank.toUpperCase());
 }

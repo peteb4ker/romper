@@ -308,8 +308,6 @@ const KitsView = () => {
     );
   }, [selectedKit, allKitSamples]);
 
-  // TODO: Legacy voice rescanning method - can be removed since kit scanning now handles this
-
   // Memoize sample counts for all kits
   const sampleCounts = useMemo(() => {
     const counts: Record<string, [number, number, number, number]> = {};

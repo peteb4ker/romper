@@ -113,7 +113,7 @@ export class SyncService {
     );
 
     // Execute the file operation
-    const forceMonoConversion = inMemorySettings.defaultToMonoSamples === true;
+    const forceMonoConversion = Boolean(inMemorySettings.defaultToMonoSamples);
     const result = await this.executorService.executeFileOperation(
       fileOp,
       forceMonoConversion,

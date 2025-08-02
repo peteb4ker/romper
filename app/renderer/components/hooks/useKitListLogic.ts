@@ -14,7 +14,8 @@ export function useKitListLogic(kits: KitWithRelations[]) {
   );
 
   // Helper to determine if a kit is valid
-  const isValidKit = (kit: KitWithRelations) => /^[A-Z]\d{1,2}$/.test(kit.name);
+  const isValidKit = (kit: KitWithRelations) =>
+    /^\p{Lu}\d{1,2}$/u.test(kit.name);
 
   // Helper to get color class
   const getColorClass = (kit: KitWithRelations) =>

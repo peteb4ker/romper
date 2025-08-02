@@ -4,7 +4,7 @@
  * Validates kit slot format (A0-Z99)
  */
 export function validateKitSlot(slot: string): boolean {
-  return /^[A-Z][0-9]{1,2}$/.test(slot);
+  return /^\p{Lu}\d{1,2}$/u.test(slot);
 }
 
 /**

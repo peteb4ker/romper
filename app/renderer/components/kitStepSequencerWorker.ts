@@ -17,8 +17,8 @@ self.onmessage = function (e) {
 
   if (type === "START") {
     isPlaying = true;
-    numSteps = payload.numSteps || 16;
-    stepDuration = payload.stepDuration || 125;
+    numSteps = payload.numSteps ?? 16;
+    stepDuration = payload.stepDuration ?? 125;
     if (interval) clearInterval(interval);
     interval = setInterval(() => {
       if (!isPlaying) return;
@@ -32,6 +32,6 @@ self.onmessage = function (e) {
     currentStep = 0;
     self.postMessage({ type: "STEP", payload: { currentStep } });
   } else if (type === "SET_STEP") {
-    currentStep = payload.currentStep || 0;
+    currentStep = payload.currentStep ?? 0;
   }
 };

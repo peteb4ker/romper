@@ -191,7 +191,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       )
         return;
       // A-Z hotkey: select first kit in bank
-      if (e.key.length === 1 && /^[A-Z]$/.test(e.key.toUpperCase())) {
+      if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {
         const bank = e.key.toUpperCase();
         const idx = kitsToDisplay.findIndex(
           (k) => k?.name?.[0]?.toUpperCase() === bank,

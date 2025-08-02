@@ -144,7 +144,9 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     onSaveVoiceName: (voice: number, alias: string | null) => {
       updateVoiceAlias(voice, alias ?? "").catch(console.error);
     },
-    onRescanVoiceName: () => {}, // TODO: Remove this legacy method
+    onRescanVoiceName: () => {
+      // Legacy voice rescanning is no longer needed as kit scanning handles voice inference
+    },
     samplePlaying: playback.samplePlaying,
     playTriggers: playback.playTriggers,
     stopTriggers: playback.stopTriggers,

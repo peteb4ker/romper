@@ -49,7 +49,7 @@ function useElectronAPI(): ElectronAPI {
 
 // --- Helpers ---
 function getKitFolders(files: string[]): string[] {
-  const kitRegex = /^[A-Z].*?(?:[1-9]?\d)$/;
+  const kitRegex = /^\p{Lu}.*?(?:[1-9]?\d)$/u;
   return files.filter((f) => kitRegex.test(f));
 }
 

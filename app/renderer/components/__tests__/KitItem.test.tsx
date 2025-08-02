@@ -108,8 +108,8 @@ describe("KitItem voice label deduplication", () => {
     expect(getLabel("Synth").length).toBe(1);
     expect(getLabel("FX").length).toBe(1); // Note: toCapitalCase converts "fx" to "FX"
     // Ensure no duplicate deduped labels
-    expect(kitRoot.textContent?.match(/Vox/g)?.length || 0).toBe(1);
-    expect(kitRoot.textContent?.match(/Synth/g)?.length || 0).toBe(1);
-    expect(kitRoot.textContent?.match(/FX/g)?.length || 0).toBe(1);
+    expect((kitRoot.textContent?.match(/Vox/g) || []).length).toBe(1);
+    expect((kitRoot.textContent?.match(/Synth/g) || []).length).toBe(1);
+    expect((kitRoot.textContent?.match(/FX/g) || []).length).toBe(1);
   });
 });

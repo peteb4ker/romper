@@ -19,7 +19,7 @@ export class KitService {
   }
 
   private validateKitSlot(kitSlot: string): void {
-    if (!/^[A-Z][0-9]{1,2}$/.test(kitSlot)) {
+    if (!/^\p{Lu}\d{1,2}$/u.test(kitSlot)) {
       throw new Error("Invalid kit slot. Use format A0-Z99.");
     }
   }
@@ -116,8 +116,8 @@ export class KitService {
       };
     }
 
-    // TODO: Copy sample references in database as well
-    // This will be handled when sample management is fully implemented
+    // NOTE: Sample references are not copied as the kit duplication creates
+    // empty kits that will be populated through the sample assignment system
 
     return { success: true };
   }

@@ -373,9 +373,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
                 onClose={() => setShowLocalStoreWizard(false)}
                 onSuccess={() => {
                   setShowLocalStoreWizard(false);
-                  {
-                    /* TODO replace with proper message handling */
-                  }
                   toast.success("Local store initialized successfully!", {
                     duration: 5000,
                   });

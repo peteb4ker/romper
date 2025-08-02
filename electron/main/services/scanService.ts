@@ -177,14 +177,16 @@ export class ScanService {
       }
 
       const files = fs.readdirSync(localStorePath);
-      const rtfFiles = files.filter((file) => /^[A-Z] - .+\.rtf$/i.test(file));
+      const rtfFiles = files.filter((file) =>
+        /^\p{Lu} - .+\.rtf$/iu.test(file),
+      );
 
       let updatedBanks = 0;
       const scannedAt = new Date();
 
       for (const rtfFile of rtfFiles) {
         // Extract bank letter and artist name from filename
-        const match = /^([A-Z]) - (.+)\.rtf$/i.exec(rtfFile);
+        const match = /^(\p{Lu}) - (.+)\.rtf$/iu.exec(rtfFile);
         if (match) {
           const bankLetter = match[1].toUpperCase();
           const artistName = match[2];

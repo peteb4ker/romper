@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { render } from "../../test-utils/renderWithProviders";
+import { render } from "../../../../tests/utils/renderWithProviders";
 
 // Mock problematic imports that can cause hanging
 vi.mock("../hooks/useLocalStoreWizard", () => ({

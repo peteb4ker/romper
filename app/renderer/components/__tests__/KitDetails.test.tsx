@@ -10,7 +10,7 @@ import {
   vi,
 } from "vitest";
 
-import { render } from "../../test-utils/renderWithProviders";
+import { render } from "../../../../tests/utils/renderWithProviders";
 import { TestSettingsProvider } from "../../views/__tests__/TestSettingsProvider";
 import KitDetails from "../KitDetails";
 

@@ -3,7 +3,7 @@ import { cleanup, fireEvent, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { render } from "../../test-utils/renderWithProviders";
+import { render } from "../../../../tests/utils/renderWithProviders";
 import KitBrowserHeader from "../KitBrowserHeader";
 
 afterEach(() => {

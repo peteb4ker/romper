@@ -785,7 +785,7 @@ export function moveSample(
 
     const moveContext = initializeMoveContext(toSlot);
 
-    const operationResult = executeMoveOperation(
+    const operationResult = executeMoveOperation({
       db,
       dbDir,
       kitName,
@@ -795,7 +795,7 @@ export function moveSample(
       toVoice,
       mode,
       moveContext,
-    );
+    });
 
     const movedSample = updateSamplePosition(
       db,
@@ -862,19 +862,34 @@ function initializeMoveContext(toSlot: number) {
 }
 
 /**
+ * Parameters for executing a move operation
+ */
+interface MoveOperationParams {
+  db: any;
+  dbDir: string;
+  kitName: string;
+  sampleToMove: Sample;
+  fromVoice: number;
+  fromSlot: number;
+  toVoice: number;
+  mode: "insert" | "overwrite";
+  moveContext: any;
+}
+
+/**
  * Execute the move operation based on mode
  */
-function executeMoveOperation(
-  db: any,
-  dbDir: string,
-  kitName: string,
-  sampleToMove: Sample,
-  fromVoice: number,
-  fromSlot: number,
-  toVoice: number,
-  mode: "insert" | "overwrite",
-  moveContext: any,
-) {
+function executeMoveOperation(params: MoveOperationParams) {
+  const {
+    db,
+    kitName,
+    sampleToMove,
+    fromVoice,
+    fromSlot,
+    toVoice,
+    mode,
+    moveContext,
+  } = params;
   if (mode === "insert") {
     return handleInsertMode(
       db,

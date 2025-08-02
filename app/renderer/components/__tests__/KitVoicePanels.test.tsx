@@ -140,17 +140,22 @@ describe("KitVoicePanels", () => {
     await act(async () => {
       fireEvent.keyDown(window, { key: "ArrowDown" });
     });
-    await screen.findByText("snare.wav");
+    const snareElement = await screen.findByText("snare.wav");
+    expect(snareElement).toBeInTheDocument();
+
     // Down to hat.wav (first sample of next voice)
     await act(async () => {
       fireEvent.keyDown(window, { key: "ArrowDown" });
     });
-    await screen.findByText("hat.wav");
+    const hatElement = await screen.findByText("hat.wav");
+    expect(hatElement).toBeInTheDocument();
+
     // Down to clap.wav (second sample of next voice)
     await act(async () => {
       fireEvent.keyDown(window, { key: "ArrowDown" });
     });
-    await screen.findByText("clap.wav");
+    const clapElement = await screen.findByText("clap.wav");
+    expect(clapElement).toBeInTheDocument();
   });
 
   it("triggers onPlay for cross-voice navigation (keyboard preview navigation)", async () => {

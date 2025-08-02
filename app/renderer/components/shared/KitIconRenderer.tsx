@@ -12,7 +12,7 @@ export type KnownKitIconType =
   | "piano"
   | "drumkit"
   | "folder";
-export type KitIconType = KnownKitIconType | (string & {});
+export type KitIconType = KnownKitIconType | string;
 
 interface KitIconRendererProps {
   iconType: KitIconType;

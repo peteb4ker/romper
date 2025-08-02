@@ -29,6 +29,77 @@ export class ScanService {
   }
 
   /**
+   * Helper method to process and insert samples for a voice
+   */
+  private processSamplesForVoice(
+    dbDir: string,
+    kitName: string,
+    kitPath: string,
+    voice: number,
+    voiceFiles: string[],
+  ): DbResult<number> {
+    let samplesProcessed = 0;
+
+    for (let slotIndex = 0; slotIndex < voiceFiles.length; slotIndex++) {
+      const wavFile = voiceFiles[slotIndex];
+      const isStereo = /stereo|st|_s\.|_S\./i.test(wavFile);
+      const samplePath = path.join(kitPath, wavFile);
+
+      const sampleRecord: NewSample = {
+        kit_name: kitName,
+        filename: wavFile,
+        voice_number: voice,
+        slot_number: slotIndex + 1,
+        source_path: samplePath,
+        is_stereo: isStereo,
+      };
+
+      const insertResult = addSample(dbDir, sampleRecord);
+      if (!insertResult.success) {
+        return { success: false, error: insertResult.error };
+      }
+
+      samplesProcessed++;
+    }
+
+    return { success: true, data: samplesProcessed };
+  }
+
+  /**
+   * Helper method to update voice aliases based on filename inference
+   */
+  private updateVoiceAliases(
+    dbDir: string,
+    kitName: string,
+    groupedSamples: { [voice: number]: string[] },
+  ): number {
+    let updatedVoices = 0;
+
+    for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
+      const voice = parseInt(voiceNumber, 10);
+
+      if (voiceFiles.length > 0) {
+        const firstFile = voiceFiles[0];
+        const inferredType = inferVoiceTypeFromFilename(firstFile);
+
+        if (inferredType) {
+          const updateResult = updateVoiceAlias(
+            dbDir,
+            kitName,
+            voice,
+            inferredType,
+          );
+          if (updateResult.success) {
+            updatedVoices++;
+          }
+        }
+      }
+    }
+
+    return updatedVoices;
+  }
+
+  /**
    * Rescan a kit directory and update the database with current WAV files
    * This is a complex operation that:
    * 1. Deletes existing sample records
@@ -82,57 +153,27 @@ export class ScanService {
       // Step 4: Insert new sample records for found files
       for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
         const voice = parseInt(voiceNumber, 10);
+        const processResult = this.processSamplesForVoice(
+          dbDir,
+          kitName,
+          kitPath,
+          voice,
+          voiceFiles,
+        );
 
-        for (let slotIndex = 0; slotIndex < voiceFiles.length; slotIndex++) {
-          const wavFile = voiceFiles[slotIndex];
-
-          // Determine if stereo based on filename patterns
-          const isStereo = /stereo|st|_s\.|_S\./i.test(wavFile);
-
-          // Create sample record using ORM
-          const samplePath = path.join(kitPath, wavFile);
-          const sampleRecord: NewSample = {
-            kit_name: kitName,
-            filename: wavFile,
-            voice_number: voice,
-            slot_number: slotIndex + 1, // Slots are 1-indexed within each voice
-            source_path: samplePath,
-            is_stereo: isStereo,
-          };
-
-          const insertResult = addSample(dbDir, sampleRecord);
-          if (!insertResult.success) {
-            return { success: false, error: insertResult.error };
-          }
-
-          scannedSamples++;
+        if (!processResult.success) {
+          return { success: false, error: processResult.error };
         }
+
+        scannedSamples += processResult.data || 0;
       }
 
       // Step 5: Run voice inference on the grouped samples
-      let updatedVoices = 0;
-      for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
-        const voice = parseInt(voiceNumber, 10);
-
-        if (voiceFiles.length > 0) {
-          // Infer voice type from the first file in the voice
-          const firstFile = voiceFiles[0];
-          const inferredType = inferVoiceTypeFromFilename(firstFile);
-
-          if (inferredType) {
-            // Update the voice alias in the database
-            const updateResult = updateVoiceAlias(
-              dbDir,
-              kitName,
-              voice,
-              inferredType,
-            );
-            if (updateResult.success) {
-              updatedVoices++;
-            }
-          }
-        }
-      }
+      const updatedVoices = this.updateVoiceAliases(
+        dbDir,
+        kitName,
+        groupedSamples,
+      );
 
       // Return success with scan results
       return {

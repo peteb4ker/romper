@@ -95,10 +95,65 @@ export function useValidationResults({
     }
   }, [validationResult]);
 
+  // Helper function to rescan a single kit
+  const rescanSingleKit = useCallback(async (kitName: string) => {
+    try {
+      const result = await window.electronAPI.rescanKit(kitName);
+
+      if (result.success && result.data) {
+        return {
+          success: true,
+          scannedSamples: result.data.scannedSamples,
+          updatedVoices: result.data.updatedVoices,
+        };
+      } else {
+        return {
+          success: false,
+          error: `${kitName}: ${result.error || "Rescan failed"}`,
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  }, []);
+
+  // Helper function to generate result message
+  const getRescanMessage = useCallback(
+    (
+      selectedKitsCount: number,
+      errors: string[],
+      totalScannedSamples: number,
+      totalUpdatedVoices: number,
+    ) => {
+      if (errors.length === 0) {
+        return {
+          text: `Successfully rescanned ${selectedKitsCount} kit(s). Found ${totalScannedSamples} samples, updated ${totalUpdatedVoices} voices.`,
+          type: "success" as const,
+          duration: 5000,
+        };
+      } else if (errors.length < selectedKitsCount) {
+        return {
+          text: `Partially completed rescan. ${selectedKitsCount - errors.length} kit(s) succeeded, ${errors.length} failed. Found ${totalScannedSamples} samples.`,
+          type: "warning" as const,
+          duration: 7000,
+        };
+      } else {
+        return {
+          text: `Rescan failed for all ${selectedKitsCount} kit(s). First error: ${errors[0]}`,
+          type: "error" as const,
+          duration: 7000,
+        };
+      }
+    },
+    [],
+  );
+
   const rescanSelectedKits = useCallback(async () => {
     if (selectedKits.length === 0) return;
 
-    // Ensure we set isRescanning before anything else
     setIsRescanning(true);
 
     try {
@@ -106,45 +161,27 @@ export function useValidationResults({
       let totalUpdatedVoices = 0;
       const errors: string[] = [];
 
-      // Rescan each selected kit
+      // Process each kit
       for (const kitName of selectedKits) {
-        try {
-          const result = await window.electronAPI.rescanKit(kitName);
+        const result = await rescanSingleKit(kitName);
 
-          if (result.success && result.data) {
-            totalScannedSamples += result.data.scannedSamples;
-            totalUpdatedVoices += result.data.updatedVoices;
-          } else {
-            errors.push(`${kitName}: ${result.error || "Rescan failed"}`);
-          }
-        } catch (error) {
-          errors.push(
-            `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
-          );
+        if (result.success) {
+          totalScannedSamples += result.scannedSamples || 0;
+          totalUpdatedVoices += result.updatedVoices || 0;
+        } else {
+          errors.push(result.error || "Unknown error");
         }
       }
 
-      // Show results
+      // Show results message
       if (onMessage) {
-        if (errors.length === 0) {
-          onMessage({
-            text: `Successfully rescanned ${selectedKits.length} kit(s). Found ${totalScannedSamples} samples, updated ${totalUpdatedVoices} voices.`,
-            type: "success",
-            duration: 5000,
-          });
-        } else if (errors.length < selectedKits.length) {
-          onMessage({
-            text: `Partially completed rescan. ${selectedKits.length - errors.length} kit(s) succeeded, ${errors.length} failed. Found ${totalScannedSamples} samples.`,
-            type: "warning",
-            duration: 7000,
-          });
-        } else {
-          onMessage({
-            text: `Rescan failed for all ${selectedKits.length} kit(s). First error: ${errors[0]}`,
-            type: "error",
-            duration: 7000,
-          });
-        }
+        const message = getRescanMessage(
+          selectedKits.length,
+          errors,
+          totalScannedSamples,
+          totalUpdatedVoices,
+        );
+        onMessage(message);
       }
 
       // Re-validate to show updated results
@@ -152,7 +189,7 @@ export function useValidationResults({
         await window.electronAPI.validateLocalStore(localStorePath);
       setValidationResult(updatedValidation);
 
-      // Close dialog only if all rescans succeeded AND no validation errors remain
+      // Close dialog if successful and valid
       if (errors.length === 0 && updatedValidation.isValid) {
         closeValidationDialog();
       }
@@ -166,7 +203,14 @@ export function useValidationResults({
     } finally {
       setIsRescanning(false);
     }
-  }, [selectedKits, localStorePath, onMessage, closeValidationDialog]);
+  }, [
+    selectedKits,
+    localStorePath,
+    onMessage,
+    closeValidationDialog,
+    rescanSingleKit,
+    getRescanMessage,
+  ]);
 
   return {
     isOpen,

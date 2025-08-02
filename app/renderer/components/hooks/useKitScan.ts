@@ -53,6 +53,72 @@ export async function scanSingleKit({
   }
 }
 
+// Helper function to determine scan type and display name
+function getScanConfiguration(operations?: string[]) {
+  const scanType = operations?.length === 1 ? operations[0] : "full";
+  const scanTypeDisplay =
+    operations?.length === 1
+      ? scanTypeDisplayMap[operations[0]] || operations[0]
+      : "comprehensive";
+
+  return { scanType, scanTypeDisplay };
+}
+
+// Helper function to process a single kit scan
+async function processSingleKitScan(
+  kitName: string,
+  scanType: string,
+  scanTypeDisplay: string,
+  fileReaderImpl: typeof fileReader,
+) {
+  try {
+    const result = await scanSingleKit({
+      kitName,
+      scanType,
+      scanTypeDisplay,
+      fileReaderImpl,
+    });
+
+    if (result.success) {
+      return { success: true };
+    } else {
+      return {
+        success: false,
+        error: `${kitName}: ${result.errors.map((e: any) => e.error).join(", ")}`,
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+// Helper function to generate completion message
+function getCompletionMessage(
+  successCount: number,
+  errorCount: number,
+  errors: string[],
+  scanTypeDisplay: string,
+) {
+  if (errorCount === 0) {
+    return {
+      type: "success" as const,
+      message: `All kits ${scanTypeDisplay} scan completed successfully! ${successCount} kits processed.`,
+      duration: 5000,
+    };
+  } else {
+    const errorSummary = errors.slice(0, 3).join("; ");
+    const truncated = errors.length > 3 ? "..." : "";
+    return {
+      type: "warning" as const,
+      message: `Scan completed: ${successCount} successful, ${errorCount} failed. ${errorSummary}${truncated}`,
+      duration: 8000,
+    };
+  }
+}
+
 export async function scanAllKits({
   kits,
   operations,
@@ -71,17 +137,11 @@ export async function scanAllKits({
     return;
   }
 
-  const scanType = operations?.length === 1 ? operations[0] : "full";
-  const scanTypeDisplay =
-    operations?.length === 1
-      ? scanTypeDisplayMap[operations[0]] || operations[0]
-      : "comprehensive";
+  const { scanType, scanTypeDisplay } = getScanConfiguration(operations);
 
   const toastId = toastImpl.loading(
     `Starting ${scanTypeDisplay} scan of all kits...`,
-    {
-      duration: Infinity,
-    },
+    { duration: Infinity },
   );
 
   try {
@@ -93,42 +153,41 @@ export async function scanAllKits({
       const kitName = kits[i].name;
       toastImpl.loading(
         `Scanning kit ${i + 1}/${kits.length}: ${kitName} (${scanTypeDisplay})`,
-        {
-          id: toastId,
-          duration: Infinity,
-        },
+        { id: toastId, duration: Infinity },
       );
-      try {
-        const result = await scanSingleKit({
-          kitName,
-          scanType,
-          scanTypeDisplay,
-          fileReaderImpl,
-        });
-        if (result.success) {
-          successCount++;
-        } else {
-          errorCount++;
-          errors.push(
-            `${kitName}: ${result.errors.map((e: any) => e.error).join(", ")}`,
-          );
-        }
-      } catch (error) {
+
+      const result = await processSingleKitScan(
+        kitName,
+        scanType,
+        scanTypeDisplay,
+        fileReaderImpl,
+      );
+
+      if (result.success) {
+        successCount++;
+      } else {
         errorCount++;
-        errors.push(
-          `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        errors.push(result.error || "Unknown error");
       }
     }
 
-    if (errorCount === 0) {
-      toastImpl.success(
-        `All kits ${scanTypeDisplay} scan completed successfully! ${successCount} kits processed.`,
-        { id: toastId, duration: 5000 },
-      );
+    const completion = getCompletionMessage(
+      successCount,
+      errorCount,
+      errors,
+      scanTypeDisplay,
+    );
+
+    if (completion.type === "success") {
+      toastImpl.success(completion.message, {
+        id: toastId,
+        duration: completion.duration,
+      });
     } else {
-      const message = `Scan completed: ${successCount} successful, ${errorCount} failed. ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? "..." : ""}`;
-      toastImpl.warning(message, { id: toastId, duration: 8000 });
+      toastImpl.warning(completion.message, {
+        id: toastId,
+        duration: completion.duration,
+      });
     }
 
     if (onRefreshKits) {

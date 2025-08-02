@@ -56,7 +56,7 @@ function _parseWAVFile(_buffer: any): WAVAnalysisOutput {
     isValid: true,
   };
 
-  /* NOTE: This code will be re-enabled when WAV analysis is moved to main process
+  /* FIXME: This code will be re-enabled when WAV analysis is moved to main process
   // Decode WAV file using node-wav
   const result = wav.decode(buffer);
 

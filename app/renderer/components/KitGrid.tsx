@@ -74,7 +74,7 @@ interface KitGridProps {
   onBankFocus?: (bank: string) => void;
   onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
   onVisibleBankChange?: (bank: string) => void; // NEW: notify when visible bank changes during scroll
-  onToggleFavorite?: (kitName: string) => void; // Task 20.1.2: Favorites functionality
+  // onToggleFavorite?: (kitName: string) => void; // Task 20.1.2: Favorites functionality - temporarily disabled
 }
 
 // Expose imperative scroll/focus API for parent components
@@ -148,7 +148,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       onBankFocus,
       onFocusKit,
       onVisibleBankChange,
-      onToggleFavorite,
+      // onToggleFavorite,
     },
     ref,
   ) => {
@@ -366,7 +366,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                       }
                       kitData={kitDataItem}
                       isSelected={isSelected}
-                      onToggleFavorite={onToggleFavorite}
+                      // onToggleFavorite={onToggleFavorite}
                       data-kit={kit.name}
                       data-testid={`kit-item-${kit.name}`}
                     />

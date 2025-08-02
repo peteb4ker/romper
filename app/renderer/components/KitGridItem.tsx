@@ -1,6 +1,5 @@
 import React from "react";
-import { FaStar } from "react-icons/fa";
-import { FiCopy, FiStar } from "react-icons/fi";
+import { FiCopy } from "react-icons/fi";
 
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
 import { useKitItem } from "./hooks/useKitItem";
@@ -11,9 +10,7 @@ import {
   KitItemRenderProps,
 } from "./shared/kitItemUtils";
 
-interface KitGridItemProps extends BaseKitItemProps {
-  onToggleFavorite?: (kitName: string) => void;
-}
+interface KitGridItemProps extends BaseKitItemProps {}
 
 // Add ref forwarding and selection props
 const KitGridItem = React.memo(
@@ -27,7 +24,6 @@ const KitGridItem = React.memo(
         sampleCounts,
         kitData,
         isSelected,
-        onToggleFavorite,
         ...rest
       },
       ref,
@@ -144,27 +140,7 @@ const KitGridItem = React.memo(
                     Editable
                   </span>
                 )}
-              {/* Task 20.1.2: Star-based favorites UI */}
-              {isValid && onToggleFavorite && (
-                <button
-                  className={`p-1 text-xs hover:text-yellow-500 transition-colors ${
-                    kitData?.is_favorite
-                      ? "text-yellow-500"
-                      : "text-gray-400 dark:text-gray-500"
-                  }`}
-                  title={
-                    kitData?.is_favorite
-                      ? "Remove from favorites"
-                      : "Add to favorites"
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleFavorite(kit);
-                  }}
-                >
-                  {kitData?.is_favorite ? <FaStar /> : <FiStar />}
-                </button>
-              )}
+              {/* Task 20.1.2: Star-based favorites UI - temporarily disabled */}
               {isValid && (
                 <button
                   className="p-1 text-xs text-gray-500 hover:text-green-600 ml-1"
@@ -211,7 +187,10 @@ const KitGridItem = React.memo(
                   <div
                     key={idx}
                     className="w-1/4 flex justify-center"
-                    title={`Voice ${voiceNumber}: ${count} samples${voiceName ? ` (${voiceName})` : ""}`}
+                    title={
+                      `Voice ${voiceNumber}: ${count} samples` +
+                      (voiceName ? ` (${voiceName})` : "")
+                    }
                   >
                     <span
                       className={`px-1 py-1 rounded text-xs font-mono ${color} ${fontWeight} text-center truncate w-full max-w-full`}

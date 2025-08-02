@@ -110,7 +110,7 @@ const KitVoicePanel: React.FC<
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
 
   // Task 22.2: Internal sample drag state
-  const [, setDraggedSample] = useState<{
+  const [_draggedSample, setDraggedSample] = useState<{
     voice: number;
     slot: number;
     sampleName: string;

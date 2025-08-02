@@ -64,7 +64,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
               setThemeMode("light");
             }
           }}
-          title={`Current: ${themeMode} ${themeMode === "system" ? `(${isDarkMode ? "dark" : "light"})` : ""}`}
+          title={`Current: ${themeMode}${themeMode === "system" ? ` (${isDarkMode ? "dark" : "light"})` : ""}`}
           aria-label="Toggle theme mode"
         >
           {themeMode === "system" ? (

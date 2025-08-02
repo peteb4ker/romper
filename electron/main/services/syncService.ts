@@ -75,7 +75,7 @@ class SyncService {
       if (!kitsResult.success || !kitsResult.data) {
         return {
           success: false,
-          error: kitsResult.error || "Failed to load kits",
+          error: kitsResult.error ?? "Failed to load kits",
         };
       }
 
@@ -834,7 +834,7 @@ class SyncService {
       return {
         type: "file_access",
         canRetry: false,
-        userMessage: `Source file not found: ${filePath || "unknown file"}`,
+        userMessage: `Source file not found: ${filePath ?? "unknown file"}`,
       };
     }
 

@@ -271,9 +271,7 @@ describe("download-and-extract-archive handler", () => {
       const s = new MockStream();
       setTimeout(() => {
         // Trigger unzipper events
-        unzipperStreams.forEach(
-          (z) => z.emitUnzipEvents && z.emitUnzipEvents(),
-        );
+        unzipperStreams.forEach((z) => z.emitUnzipEvents?.());
       }, 1);
       return s;
     });

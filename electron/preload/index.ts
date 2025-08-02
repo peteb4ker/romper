@@ -552,7 +552,7 @@ menuEventForwarder.initialize();
 // Expose a function to get the file path from a dropped File object (Electron only)
 contextBridge.exposeInMainWorld("electronFileAPI", {
   getDroppedFilePath: async (file: File) => {
-    if (webUtils && webUtils.getPathForFile) {
+    if (webUtils?.getPathForFile) {
       try {
         return await webUtils.getPathForFile(file);
       } catch (e) {

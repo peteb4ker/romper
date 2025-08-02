@@ -184,9 +184,9 @@ export function useUndoRedo(kitName: string) {
   };
 
   const restoreSamples = async (samplesToRestore: any[]) => {
-    samplesToRestore.sort((a, b) => a.slot - b.slot);
+    const sortedSamples = [...samplesToRestore].sort((a, b) => a.slot - b.slot);
 
-    for (const { voice, slot, sample } of samplesToRestore) {
+    for (const { voice, slot, sample } of sortedSamples) {
       await (window as any).electronAPI?.addSampleToSlot?.(
         kitName,
         voice,

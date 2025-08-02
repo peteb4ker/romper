@@ -155,7 +155,7 @@ export class LocalStoreService {
       );
       return {
         success: false,
-        error: error.message || "Failed to read file",
+        error: error.message ?? "Failed to read file",
       };
     }
   }

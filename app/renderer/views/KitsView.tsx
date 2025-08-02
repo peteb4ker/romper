@@ -28,7 +28,7 @@ function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
   const voices: VoiceSamples = { 1: [], 2: [], 3: [], 4: [] };
 
   // First, sort samples by voice_number and slot_number to ensure proper ordering
-  const sortedSamples = dbSamples.sort((a, b) => {
+  const sortedSamples = [...dbSamples].sort((a, b) => {
     if (a.voice_number !== b.voice_number) {
       return a.voice_number - b.voice_number;
     }
@@ -112,7 +112,7 @@ const KitsView = () => {
 
   // Validation results hook for database validation
   const { openValidationDialog } = useValidationResults({
-    localStorePath: localStorePath || "",
+    localStorePath: localStorePath ?? "",
     onMessage: (msg) => {
       // You can integrate with a toast system here if needed
       console.log("[KitsView] Validation message:", msg);
@@ -193,11 +193,11 @@ const KitsView = () => {
 
   // Get current kit's editable state for keyboard shortcuts
   // Note: Use useKit hook to get fresh kit data instead of stale kits array
-  const { kit: currentKit } = useKit({ kitName: selectedKit || "" });
+  const { kit: currentKit } = useKit({ kitName: selectedKit ?? "" });
 
   // Global keyboard shortcuts (Cmd+Z, Cmd+Shift+Z)
   const keyboardShortcuts = useGlobalKeyboardShortcuts({
-    currentKitName: selectedKit || undefined,
+    currentKitName: selectedKit ?? undefined,
     isEditMode: currentKit?.editable ?? false,
   });
 
@@ -304,7 +304,7 @@ const KitsView = () => {
       return;
     }
     setSelectedKitSamples(
-      allKitSamples[selectedKit] || { 1: [], 2: [], 3: [], 4: [] },
+      allKitSamples[selectedKit] ?? { 1: [], 2: [], 3: [], 4: [] },
     );
   }, [selectedKit, allKitSamples]);
 
@@ -313,8 +313,8 @@ const KitsView = () => {
     const counts: Record<string, [number, number, number, number]> = {};
     for (const kit of kits) {
       const kitName = kit.name;
-      const voices = allKitSamples[kitName] || { 1: [], 2: [], 3: [], 4: [] };
-      counts[kitName] = [1, 2, 3, 4].map((v) => voices[v]?.length || 0) as [
+      const voices = allKitSamples[kitName] ?? { 1: [], 2: [], 3: [], 4: [] };
+      counts[kitName] = [1, 2, 3, 4].map((v) => voices[v]?.length ?? 0) as [
         number,
         number,
         number,
@@ -479,7 +479,7 @@ const KitsView = () => {
     <div className="flex flex-col h-full min-h-0">
       {selectedKit && selectedKitSamples ? (
         <KitDetails
-          kitName={selectedKit || ""}
+          kitName={selectedKit ?? ""}
           onBack={handleBack}
           samples={selectedKitSamples}
           onRequestSamplesReload={async () => {

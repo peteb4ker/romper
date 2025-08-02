@@ -48,7 +48,7 @@ export class SyncPlannerService {
       if (!kitsResult.success || !kitsResult.data) {
         return {
           success: false,
-          error: kitsResult.error || "Failed to load kits",
+          error: kitsResult.error ?? "Failed to load kits",
         };
       }
 

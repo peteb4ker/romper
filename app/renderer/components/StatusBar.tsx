@@ -13,6 +13,25 @@ const StatusBar: React.FC<StatusBarProps> = ({
   progress = null,
 }) => {
   const { localStorePath, isDarkMode, themeMode, setThemeMode } = useSettings();
+
+  // Extract nested ternary operations into independent statements
+  const getThemeDisplayText = () => {
+    if (themeMode === "system") {
+      const currentMode = isDarkMode ? "dark" : "light";
+      return ` (${currentMode})`;
+    }
+    return "";
+  };
+
+  const getThemeIcon = () => {
+    if (themeMode === "system") {
+      return <FiMonitor size={16} />;
+    }
+    if (isDarkMode) {
+      return <FiSun size={16} />;
+    }
+    return <FiMoon size={16} />;
+  };
   return (
     <div className="fixed bottom-0 left-0 w-full flex items-center justify-between px-4 py-2 bg-gray-200 dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 border-t border-gray-300 dark:border-slate-700 z-20">
       <div className="flex items-center gap-3">
@@ -64,16 +83,10 @@ const StatusBar: React.FC<StatusBarProps> = ({
               setThemeMode("light");
             }
           }}
-          title={`Current: ${themeMode}${themeMode === "system" ? ` (${isDarkMode ? "dark" : "light"})` : ""}`}
+          title={`Current: ${themeMode}${getThemeDisplayText()}`}
           aria-label="Toggle theme mode"
         >
-          {themeMode === "system" ? (
-            <FiMonitor size={16} />
-          ) : isDarkMode ? (
-            <FiSun size={16} />
-          ) : (
-            <FiMoon size={16} />
-          )}
+          {getThemeIcon()}
         </button>
       </div>
     </div>

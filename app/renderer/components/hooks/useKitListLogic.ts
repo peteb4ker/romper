@@ -8,7 +8,7 @@ export function useKitListLogic(kits: KitWithRelations[]) {
   const kitsToDisplay = useMemo(
     () =>
       kits.length > 0
-        ? kits.slice().sort((a, b) => compareKitSlots(a.name, b.name))
+        ? [...kits].sort((a, b) => compareKitSlots(a.name, b.name))
         : [],
     [kits],
   );

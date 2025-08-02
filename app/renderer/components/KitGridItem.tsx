@@ -179,13 +179,17 @@ const KitGridItem = React.memo(
                 }
 
                 // Unified label: voice name + count, or just count
+                const voiceDisplayName =
+                  typeof voiceName === "string"
+                    ? toCapitalCase(voiceName)
+                    : voiceName;
                 const displayText = voiceName
-                  ? `${typeof voiceName === "string" ? toCapitalCase(voiceName) : voiceName} ${count}`
+                  ? `${voiceDisplayName} ${count}`
                   : count.toString();
 
                 return (
                   <div
-                    key={idx}
+                    key={`voice-${voiceNumber}`}
                     className="w-1/4 flex justify-center"
                     title={
                       `Voice ${voiceNumber}: ${count} samples` +

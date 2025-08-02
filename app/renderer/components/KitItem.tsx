@@ -108,7 +108,7 @@ const KitItem = React.memo(
                       }
                       return (
                         <span
-                          key={idx}
+                          key={`voice-${idx + 1}`}
                           className={`px-1 rounded text-xs font-mono ${color} ${fontWeight}`}
                           title={`Voice ${idx + 1} samples`}
                         >
@@ -138,7 +138,7 @@ const KitItem = React.memo(
                     new Set(Object.values(voiceNames).filter(Boolean)),
                   ).map((label, i) => (
                     <span
-                      key={i}
+                      key={`voice-label-${label}-${i}`}
                       className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-1 py-0.5 rounded-sm text-[10px] font-mono"
                     >
                       {typeof label === "string" ? toCapitalCase(label) : label}

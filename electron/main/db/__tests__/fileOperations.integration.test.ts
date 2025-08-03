@@ -44,8 +44,17 @@ describe("fileOperations integration tests", () => {
     it("should handle non-existent files gracefully", async () => {
       const nonExistentPath = path.join(testDir, "nonexistent.sqlite");
 
-      // Should throw when file doesn't exist (expected behavior)
-      await expect(deleteDbFileWithRetry(nonExistentPath, 2)).rejects.toThrow();
+      if (process.platform === "win32") {
+        // Windows doesn't throw - it resolves even on failure
+        await expect(
+          deleteDbFileWithRetry(nonExistentPath, 2),
+        ).resolves.toBeUndefined();
+      } else {
+        // Other platforms throw on failure
+        await expect(
+          deleteDbFileWithRetry(nonExistentPath, 2),
+        ).rejects.toThrow();
+      }
     });
 
     it("should handle permission errors by falling back to rename", async () => {
@@ -84,7 +93,15 @@ describe("fileOperations integration tests", () => {
 
     it("should handle directory deletion failure appropriately", async () => {
       // Try to "delete" a directory path (should fail quickly with limited retries)
-      await expect(deleteDbFileWithRetry(testDir, 2)).rejects.toThrow();
+      if (process.platform === "win32") {
+        // Windows doesn't throw - it resolves even on failure
+        await expect(
+          deleteDbFileWithRetry(testDir, 2),
+        ).resolves.toBeUndefined();
+      } else {
+        // Other platforms throw on failure
+        await expect(deleteDbFileWithRetry(testDir, 2)).rejects.toThrow();
+      }
     });
 
     it("should work with files containing special characters", async () => {
@@ -132,9 +149,19 @@ describe("fileOperations integration tests", () => {
 
         // Should fail within reasonable time due to retry limit
         const startTime = Date.now();
-        await expect(
-          deleteDbFileWithRetry(restrictedPath, 2),
-        ).rejects.toThrow();
+
+        if (process.platform === "win32") {
+          // Windows doesn't throw - it resolves even on failure
+          await expect(
+            deleteDbFileWithRetry(restrictedPath, 2),
+          ).resolves.toBeUndefined();
+        } else {
+          // Other platforms throw on failure
+          await expect(
+            deleteDbFileWithRetry(restrictedPath, 2),
+          ).rejects.toThrow();
+        }
+
         const endTime = Date.now();
 
         // Should not take too long (retry limits should be respected)

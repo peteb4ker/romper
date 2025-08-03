@@ -10,37 +10,62 @@ export function isValidEntry(entryPath: string): boolean {
   );
 }
 
+// Helper to track download progress
+function createProgressTracker(
+  totalBytes: number,
+  onProgress: (percent: number | null) => void,
+) {
+  let receivedBytes = 0;
+  let lastPercent = 0;
+
+  return (chunk: any) => {
+    receivedBytes += chunk.length;
+    if (totalBytes > 0) {
+      const percent = Math.floor((receivedBytes / totalBytes) * 100);
+      if (percent !== lastPercent) {
+        onProgress(percent);
+        lastPercent = percent;
+      }
+    } else {
+      onProgress(null);
+    }
+  };
+}
+
+// Helper to setup file stream handlers
+function setupFileStream(
+  fileStream: fs.WriteStream,
+  resolve: () => void,
+  reject: (error: any) => void,
+) {
+  fileStream.on("finish", () => {
+    fileStream.close(() => resolve());
+  });
+  fileStream.on("error", reject);
+}
+
 export async function downloadArchive(
   url: string,
   tmpZipPath: string,
   onProgress: (percent: number | null) => void,
 ): Promise<void> {
   const https = await import("https");
+
   return new Promise((resolve, reject) => {
+    const fileStream = fs.createWriteStream(tmpZipPath);
+    setupFileStream(fileStream, resolve, reject);
+
     const request = https.get(url, (response) => {
       const totalBytes = parseInt(
         response.headers["content-length"] || "0",
         10,
       );
-      let receivedBytes = 0;
-      let lastPercent = 0;
-      const fileStream = fs.createWriteStream(tmpZipPath);
-      response.on("data", (chunk) => {
-        receivedBytes += chunk.length;
-        if (totalBytes > 0) {
-          const percent = Math.floor((receivedBytes / totalBytes) * 100);
-          if (percent !== lastPercent) {
-            onProgress(percent);
-            lastPercent = percent;
-          }
-        } else {
-          onProgress(null);
-        }
-      });
+
+      const trackProgress = createProgressTracker(totalBytes, onProgress);
+      response.on("data", trackProgress);
       response.pipe(fileStream);
-      fileStream.on("finish", () => fileStream.close(() => resolve()));
-      fileStream.on("error", reject);
     });
+
     request.on("error", reject);
   });
 }

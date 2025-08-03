@@ -8,25 +8,34 @@ on:
     branches:
       - '**'
 
+env:
+  NODE_VERSION: '22'
+  JAVA_VERSION: '17'
+
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
+      # Code checkout
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
 
+      # Node.js setup
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install system dependencies (Linux)
+      # System dependencies for Electron
+      - name: Install Electron dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -39,22 +48,25 @@ jobs:
             libgbm1 \
             libxss1 \
             libasound2-dev \
-            libgtk-3-0
+            libgtk-3-0 \
+            xvfb
 
-      - name: Setup virtual display (Linux)
+      # Virtual display setup
+      - name: Setup virtual display
         run: |
-          sudo apt-get install -y xvfb
           export DISPLAY=:99
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           sleep 3
 
+      # Run tests
       - name: Run tests with coverage
         run: npm run test
         env:
           CI: true
           DISPLAY: ':99'
 
-      - name: Upload coverage reports to Codecov
+      # Code coverage upload (only on main branch)
+      - name: Upload coverage to Codecov
         if: github.ref == 'refs/heads/main'
         uses: codecov/codecov-action@v5
         with:
@@ -63,10 +75,11 @@ jobs:
           files: ./coverage/coverage-final.json
           disable_search: true
 
-      - name: Setup Java (required for SonarCloud scanner)
+      # SonarCloud analysis
+      - name: Setup Java for SonarCloud
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
 
       - name: SonarCloud Scan
@@ -74,6 +87,7 @@ jobs:
         with:
           projectBaseDir: .
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed for PR information
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_ORGANIZATION: peteb4ker
           SONAR_HOST_URL: https://sonarcloud.io

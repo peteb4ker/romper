@@ -9,24 +9,36 @@ const log = {
     console.error(`[Romper Electron] ${message}`, ...args),
 };
 
+// Calculate retry delay based on platform and failure type
+function calculateRetryDelay(
+  attempt: number,
+  isWindows: boolean,
+  isRenameFailure: boolean = false,
+): number {
+  if (!isWindows) {
+    // Non-Windows platforms
+    return attempt < 14 ? 100 * (attempt + 1) : 0;
+  }
+
+  // Windows platform
+  if (isRenameFailure) {
+    // Wait progressively longer after rename failures
+    return 500 * (attempt + 1);
+  }
+
+  // Standard Windows retry delay
+  return attempt > 0 ? 200 * attempt : 0;
+}
+
 // Helper to wait between retry attempts
 async function waitForRetry(
   attempt: number,
   isWindows: boolean,
   isRenameFailure: boolean = false,
 ): Promise<void> {
-  if (isWindows) {
-    if (isRenameFailure) {
-      // Wait progressively longer after rename failures
-      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
-    } else if (attempt > 0) {
-      // Standard Windows retry delay
-      await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
-    }
-  } else if (attempt < 14) {
-    // maxRetries - 1
-    // Non-Windows platforms
-    await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+  const delay = calculateRetryDelay(attempt, isWindows, isRenameFailure);
+  if (delay > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 }
 
@@ -95,6 +107,39 @@ function finalWindowsRename(dbPath: string): void {
   }
 }
 
+// Handle deletion attempt with appropriate retry logic
+async function handleDeleteAttempt(
+  dbPath: string,
+  attempt: number,
+  isWindows: boolean,
+  isLastAttempt: boolean,
+): Promise<boolean> {
+  try {
+    // Wait before retry on Windows
+    if (isWindows && attempt > 0) {
+      await waitForRetry(attempt, isWindows);
+    }
+
+    // Try to delete the file
+    return await tryDelete(dbPath, attempt);
+  } catch (error) {
+    const err = error as Error;
+    log.info(`Delete attempt ${attempt + 1} failed:`, err.message);
+
+    // Handle Windows fallback
+    if (isWindows && !isLastAttempt) {
+      return await tryWindowsRenameFallback(dbPath, attempt);
+    }
+
+    // Wait before next attempt on non-Windows
+    if (!isWindows) {
+      await waitForRetry(attempt, isWindows);
+    }
+
+    throw err;
+  }
+}
+
 export async function deleteDbFileWithRetry(
   dbPath: string,
   maxRetries = 15,
@@ -104,28 +149,17 @@ export async function deleteDbFileWithRetry(
 
   for (let i = 0; i < maxRetries; i++) {
     try {
-      // Wait before retry on Windows
-      if (isWindows && i > 0) {
-        await waitForRetry(i, isWindows);
-      }
-
-      // Try to delete the file
-      if (await tryDelete(dbPath, i)) {
+      const success = await handleDeleteAttempt(
+        dbPath,
+        i,
+        isWindows,
+        i === maxRetries - 1,
+      );
+      if (success) {
         return;
       }
     } catch (error) {
       lastError = error as Error;
-      log.info(`Delete attempt ${i + 1} failed:`, lastError.message);
-
-      // On Windows, try rename as fallback
-      if (isWindows && i < maxRetries - 1) {
-        if (await tryWindowsRenameFallback(dbPath, i)) {
-          return;
-        }
-      } else {
-        // Wait before next attempt on non-Windows
-        await waitForRetry(i, isWindows);
-      }
     }
   }
 

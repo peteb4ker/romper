@@ -12,6 +12,17 @@ import type {
 } from "./types";
 
 /**
+ * Formats error message when all WAV files fail analysis
+ * @param errors Array of error messages
+ * @returns Formatted error message
+ */
+function formatAllFailedError(errors: string[]): string {
+  const displayErrors = errors.slice(0, 3).join("; ");
+  const suffix = errors.length > 3 ? "..." : "";
+  return `All WAV files failed analysis: ${displayErrors}${suffix}`;
+}
+
+/**
  * Creates a WAV analysis scanner function
  * @param wavFiles Array of WAV file paths
  * @param fileReader File reader function
@@ -25,9 +36,12 @@ function createWAVAnalysisScanner(
     const results: WAVAnalysisOutput[] = [];
     const errors: string[] = [];
 
+    // Check fileReader once before the loop
+    const hasFileReader = !!fileReader;
+
     for (const filePath of wavFiles) {
       try {
-        if (!fileReader) {
+        if (!hasFileReader) {
           throw new Error("No file reader provided");
         }
 
@@ -59,9 +73,7 @@ function createWAVAnalysisScanner(
     if (errors.length > 0 && errors.length === wavFiles.length) {
       return {
         success: false,
-        error: `All WAV files failed analysis: ${errors.slice(0, 3).join("; ")}${
-          errors.length > 3 ? "..." : ""
-        }`,
+        error: formatAllFailedError(errors),
       };
     }
 

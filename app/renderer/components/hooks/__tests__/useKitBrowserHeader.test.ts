@@ -10,9 +10,9 @@ describe("useKitBrowserHeader", () => {
     const nextKitSlot = "A1";
     const { result } = renderHook(() =>
       useKitBrowserHeader({
-        onShowNewKit,
-        onCreateNextKit,
         nextKitSlot,
+        onCreateNextKit,
+        onShowNewKit,
       }),
     );
     act(() => result.current.handleShowNewKit());

@@ -1,35 +1,35 @@
 import React from "react";
 
 interface KitDialogsProps {
-  showNewKit: boolean;
-  newKitSlot: string;
-  newKitError: string | null;
-  onNewKitSlotChange: (v: string) => void;
-  onCreateKit: () => void;
-  onCancelNewKit: () => void;
-  showDuplicateKit: boolean;
-  duplicateKitSource: string | null;
   duplicateKitDest: string;
-  duplicateKitError: string | null;
-  onDuplicateKitDestChange: (v: string) => void;
-  onDuplicateKit: () => void;
+  duplicateKitError: null | string;
+  duplicateKitSource: null | string;
+  newKitError: null | string;
+  newKitSlot: string;
   onCancelDuplicateKit: () => void;
+  onCancelNewKit: () => void;
+  onCreateKit: () => void;
+  onDuplicateKit: () => void;
+  onDuplicateKitDestChange: (v: string) => void;
+  onNewKitSlotChange: (v: string) => void;
+  showDuplicateKit: boolean;
+  showNewKit: boolean;
 }
 
 const KitDialogs: React.FC<KitDialogsProps> = ({
-  showNewKit,
-  newKitSlot,
-  newKitError,
-  onNewKitSlotChange,
-  onCreateKit,
-  onCancelNewKit,
-  showDuplicateKit,
-  duplicateKitSource,
   duplicateKitDest,
   duplicateKitError,
-  onDuplicateKitDestChange,
-  onDuplicateKit,
+  duplicateKitSource,
+  newKitError,
+  newKitSlot,
   onCancelDuplicateKit,
+  onCancelNewKit,
+  onCreateKit,
+  onDuplicateKit,
+  onDuplicateKitDestChange,
+  onNewKitSlotChange,
+  showDuplicateKit,
+  showNewKit,
 }) => (
   <>
     {showNewKit && (
@@ -37,11 +37,11 @@ const KitDialogs: React.FC<KitDialogsProps> = ({
         <label className="text-xs font-semibold">
           Kit Slot (A0-Z99):
           <input
-            className="ml-2 px-2 py-1 rounded border border-gray-300 dark:border-slate-700 text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100"
-            value={newKitSlot}
-            onChange={(e) => onNewKitSlotChange(e.target.value.toUpperCase())}
-            maxLength={3}
             autoFocus
+            className="ml-2 px-2 py-1 rounded border border-gray-300 dark:border-slate-700 text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100"
+            maxLength={3}
+            onChange={(e) => onNewKitSlotChange(e.target.value.toUpperCase())}
+            value={newKitSlot}
           />
         </label>
         {newKitError && (
@@ -68,13 +68,13 @@ const KitDialogs: React.FC<KitDialogsProps> = ({
         <label className="text-xs font-semibold">
           Duplicate {duplicateKitSource} to:
           <input
+            autoFocus
             className="ml-2 px-2 py-1 rounded border border-gray-300 dark:border-slate-700 text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100"
-            value={duplicateKitDest}
+            maxLength={3}
             onChange={(e) =>
               onDuplicateKitDestChange(e.target.value.toUpperCase())
             }
-            maxLength={3}
-            autoFocus
+            value={duplicateKitDest}
           />
         </label>
         {duplicateKitError && (

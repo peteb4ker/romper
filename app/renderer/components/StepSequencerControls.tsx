@@ -16,14 +16,14 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
       data-testid="kit-step-sequencer-controls"
     >
       <button
-        type="button"
-        className="rounded p-2 border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
         aria-label={isSeqPlaying ? "Stop sequencer" : "Play sequencer"}
-        title={isSeqPlaying ? "Stop sequencer" : "Play sequencer"}
-        onClick={() => setIsSeqPlaying(!isSeqPlaying)}
+        className="rounded p-2 border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
         data-testid={
           isSeqPlaying ? "stop-step-sequencer" : "play-step-sequencer"
         }
+        onClick={() => setIsSeqPlaying(!isSeqPlaying)}
+        title={isSeqPlaying ? "Stop sequencer" : "Play sequencer"}
+        type="button"
       >
         {isSeqPlaying ? <FiSquare /> : <FiPlay />}
       </button>

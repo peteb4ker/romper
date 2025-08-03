@@ -4,17 +4,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // EventEmitter-based stream mock
 class MockStream extends EventEmitter {
-  headers?: Record<string, string>;
   emitUnzipEvents?: () => void;
+  headers?: Record<string, string>;
+  close(cb?: Function) {
+    if (cb) cb();
+  }
   pipe(dest: any) {
     if (dest && typeof dest.emitUnzipEvents === "function") {
       dest.emitUnzipEvents();
       return dest;
     }
     return dest;
-  }
-  close(cb?: Function) {
-    if (cb) cb();
   }
 }
 
@@ -25,14 +25,14 @@ let lastWriteStream: MockStream | null = null;
 vi.mock("fs", () => ({
   createReadStream: vi.fn(() => new MockStream()),
   createWriteStream: vi.fn(() => (lastWriteStream = new MockStream())),
+  existsSync: vi.fn(() => true),
   mkdir: vi.fn((dir, opts, cb) => cb && cb(null)),
   mkdirSync: vi.fn(),
-  existsSync: vi.fn(() => true),
   promises: { unlink: vi.fn() },
 }));
 vi.mock("path", () => ({
-  join: vi.fn((...args) => args.join("/")),
   dirname: vi.fn((p) => p.split("/").slice(0, -1).join("/")),
+  join: vi.fn((...args) => args.join("/")),
 }));
 
 // Unzipper mock: emits normal events unless test sets .emitUnzipEvents to emit error
@@ -42,16 +42,16 @@ vi.mock("unzipper", () => ({
     (stream as any).emitUnzipEvents = () => {
       setTimeout(() => {
         stream.emit("entry", {
-          path: "foo.wav",
-          type: "File",
           autodrain: () => {},
+          path: "foo.wav",
           pipe: () => new MockStream(),
+          type: "File",
         });
         stream.emit("entry", {
-          path: "bar/",
-          type: "Directory",
           autodrain: () => {},
+          path: "bar/",
           pipe: () => new MockStream(),
+          type: "Directory",
         });
         stream.emit("close");
       }, 10);
@@ -80,13 +80,13 @@ vi.mock("https", () => ({
 const mockEvent = { sender: { send: vi.fn() } };
 const ipcMainHandlers: { [key: string]: any } = {};
 vi.mock("electron", () => ({
+  app: { getPath: vi.fn(() => "/mock/userData") },
+  dialog: { showOpenDialog: vi.fn() },
   ipcMain: {
     handle: vi.fn((name, fn) => {
       ipcMainHandlers[name] = fn;
     }),
   },
-  app: { getPath: vi.fn(() => "/mock/userData") },
-  dialog: { showOpenDialog: vi.fn() },
 }));
 
 beforeEach(async () => {
@@ -162,16 +162,16 @@ describe("download-and-extract-archive handler", () => {
         (stream as any).emitUnzipEvents = () => {
           setTimeout(() => {
             stream.emit("entry", {
-              path: "__MACOSX/._foo.wav",
-              type: "File",
               autodrain: vi.fn(),
+              path: "__MACOSX/._foo.wav",
               pipe: vi.fn(),
+              type: "File",
             });
             stream.emit("entry", {
-              path: "._bar.wav",
-              type: "File",
               autodrain: vi.fn(),
+              path: "._bar.wav",
               pipe: vi.fn(),
+              type: "File",
             });
             stream.emit("close");
           }, 10);
@@ -249,15 +249,15 @@ describe("download-and-extract-archive handler", () => {
           setTimeout(() => {
             // Emit an entry to trigger file extraction
             stream.emit("entry", {
-              path: "foo.wav",
-              type: "File",
               autodrain: () => {},
+              path: "foo.wav",
               pipe: () => {
                 const s = new MockStream();
                 setTimeout(() => s.emit("error", new Error("write fail")), 5);
                 setTimeout(() => s.emit("finish"), 10);
                 return s;
               },
+              type: "File",
             });
             // End extraction
             setTimeout(() => stream.emit("close"), 20);
@@ -384,8 +384,8 @@ describe("download-and-extract-archive handler", () => {
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
       expect.objectContaining({
-        phase: expect.any(String),
         percent: expect.any(Number),
+        phase: expect.any(String),
       }),
     );
   }, 15000);

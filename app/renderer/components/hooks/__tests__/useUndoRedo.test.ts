@@ -9,9 +9,9 @@ const mockElectronAPI = {
   deleteSampleFromSlot: vi.fn(),
   deleteSampleFromSlotWithoutCompaction: vi.fn(),
   getAllSamplesForKit: vi.fn(),
-  replaceSampleInSlot: vi.fn(),
-  moveSampleInKit: vi.fn(),
   moveSampleBetweenKits: vi.fn(),
+  moveSampleInKit: vi.fn(),
+  replaceSampleInSlot: vi.fn(),
 };
 
 // Setup window.electronAPI mock
@@ -41,16 +41,16 @@ describe("useUndoRedo - Basic Tests", () => {
 
     act(() => {
       result.current.addAction({
-        type: "ADD_SAMPLE",
         data: {
-          voice: 1,
-          slot: 0,
           addedSample: {
             filename: "test.wav",
-            source_path: "/path/to/test.wav",
             is_stereo: false,
+            source_path: "/path/to/test.wav",
           },
+          slot: 0,
+          voice: 1,
         },
+        type: "ADD_SAMPLE",
       });
     });
 
@@ -66,16 +66,16 @@ describe("useUndoRedo - Basic Tests", () => {
 
     act(() => {
       result.current.addAction({
-        type: "ADD_SAMPLE",
         data: {
-          voice: 1,
-          slot: 2,
           addedSample: {
             filename: "test.wav",
-            source_path: "/path/to/test.wav",
             is_stereo: false,
+            source_path: "/path/to/test.wav",
           },
+          slot: 2,
+          voice: 1,
         },
+        type: "ADD_SAMPLE",
       });
     });
 
@@ -93,7 +93,7 @@ describe("useUndoRedo - Basic Tests", () => {
   });
 
   it("should clear stacks when kit changes", () => {
-    const { result, rerender } = renderHook(
+    const { rerender, result } = renderHook(
       ({ kitName }) => useUndoRedo(kitName),
       {
         initialProps: { kitName: "kit1" },
@@ -103,16 +103,16 @@ describe("useUndoRedo - Basic Tests", () => {
     // Add some actions
     act(() => {
       result.current.addAction({
-        type: "ADD_SAMPLE",
         data: {
-          voice: 1,
-          slot: 0,
           addedSample: {
             filename: "test.wav",
-            source_path: "/path/to/test.wav",
             is_stereo: false,
+            source_path: "/path/to/test.wav",
           },
+          slot: 0,
+          voice: 1,
         },
+        type: "ADD_SAMPLE",
       });
     });
 
@@ -132,112 +132,112 @@ describe("useUndoRedo - Basic Tests", () => {
       // Create the state snapshot that would be captured before the move
       const stateSnapshot = [
         {
-          voice: 1,
-          slot: 1,
           sample: {
             filename: "sample1.wav",
-            source_path: "/path/1.wav",
             is_stereo: false,
+            source_path: "/path/1.wav",
           },
+          slot: 1,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 2,
           sample: {
             filename: "sample2.wav",
-            source_path: "/path/2.wav",
             is_stereo: false,
+            source_path: "/path/2.wav",
           },
+          slot: 2,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 3,
           sample: {
             filename: "sample3.wav",
-            source_path: "/path/3.wav",
             is_stereo: false,
+            source_path: "/path/3.wav",
           },
+          slot: 3,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 4,
           sample: {
             filename: "sample4.wav",
-            source_path: "/path/4.wav",
             is_stereo: false,
+            source_path: "/path/4.wav",
           },
+          slot: 4,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 5,
           sample: {
             filename: "sample5.wav",
-            source_path: "/path/5.wav",
             is_stereo: false,
+            source_path: "/path/5.wav",
           },
+          slot: 5,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 6,
           sample: {
             filename: "sample6.wav",
-            source_path: "/path/6.wav",
             is_stereo: false,
+            source_path: "/path/6.wav",
           },
+          slot: 6,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 7,
           sample: {
             filename: "sample7.wav",
-            source_path: "/path/7.wav",
             is_stereo: false,
+            source_path: "/path/7.wav",
           },
+          slot: 7,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 8,
           sample: {
             filename: "sample8.wav",
-            source_path: "/path/8.wav",
             is_stereo: false,
+            source_path: "/path/8.wav",
           },
+          slot: 8,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 9,
           sample: {
             filename: "sample9.wav",
-            source_path: "/path/9.wav",
             is_stereo: false,
+            source_path: "/path/9.wav",
           },
+          slot: 9,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 10,
           sample: {
             filename: "sample10.wav",
-            source_path: "/path/10.wav",
             is_stereo: false,
+            source_path: "/path/10.wav",
           },
+          slot: 10,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 11,
           sample: {
             filename: "sample11.wav",
-            source_path: "/path/11.wav",
             is_stereo: false,
+            source_path: "/path/11.wav",
           },
+          slot: 11,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 12,
           sample: {
             filename: "sample12.wav",
-            source_path: "/path/12.wav",
             is_stereo: false,
+            source_path: "/path/12.wav",
           },
+          slot: 12,
+          voice: 1,
         },
       ];
 
@@ -245,159 +245,159 @@ describe("useUndoRedo - Basic Tests", () => {
       // sample12 moved to slot 9, samples 9-11 shifted right
       const currentStateAfterMove = [
         {
-          voice_number: 1,
-          slot_number: 1,
           filename: "sample1.wav",
+          is_stereo: false,
+          slot_number: 1,
           source_path: "/path/1.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          voice_number: 1,
-          slot_number: 2,
           filename: "sample2.wav",
+          is_stereo: false,
+          slot_number: 2,
           source_path: "/path/2.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          voice_number: 1,
-          slot_number: 3,
           filename: "sample3.wav",
+          is_stereo: false,
+          slot_number: 3,
           source_path: "/path/3.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          voice_number: 1,
-          slot_number: 4,
           filename: "sample4.wav",
+          is_stereo: false,
+          slot_number: 4,
           source_path: "/path/4.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          voice_number: 1,
-          slot_number: 5,
           filename: "sample5.wav",
+          is_stereo: false,
+          slot_number: 5,
           source_path: "/path/5.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          voice_number: 1,
-          slot_number: 6,
           filename: "sample6.wav",
+          is_stereo: false,
+          slot_number: 6,
           source_path: "/path/6.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          voice_number: 1,
-          slot_number: 7,
           filename: "sample7.wav",
+          is_stereo: false,
+          slot_number: 7,
           source_path: "/path/7.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          voice_number: 1,
-          slot_number: 8,
           filename: "sample8.wav",
-          source_path: "/path/8.wav",
           is_stereo: false,
+          slot_number: 8,
+          source_path: "/path/8.wav",
+          voice_number: 1,
         },
         {
-          voice_number: 1,
-          slot_number: 9,
           filename: "sample12.wav",
-          source_path: "/path/12.wav",
           is_stereo: false,
+          slot_number: 9,
+          source_path: "/path/12.wav",
+          voice_number: 1,
         }, // moved here
         {
-          voice_number: 1,
-          slot_number: 10,
           filename: "sample9.wav",
+          is_stereo: false,
+          slot_number: 10,
           source_path: "/path/9.wav",
-          is_stereo: false,
+          voice_number: 1,
         }, // shifted
         {
-          voice_number: 1,
-          slot_number: 11,
           filename: "sample10.wav",
-          source_path: "/path/10.wav",
           is_stereo: false,
+          slot_number: 11,
+          source_path: "/path/10.wav",
+          voice_number: 1,
         }, // shifted
         {
-          voice_number: 1,
-          slot_number: 12,
           filename: "sample11.wav",
-          source_path: "/path/11.wav",
           is_stereo: false,
+          slot_number: 12,
+          source_path: "/path/11.wav",
+          voice_number: 1,
         }, // shifted
       ];
 
       // Mock the getAllSamplesForKit call that happens during undo
       mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-        success: true,
         data: currentStateAfterMove,
+        success: true,
       });
 
       // Mock successful delete and add operations
       mockElectronAPI.deleteSampleFromSlotWithoutCompaction.mockResolvedValue({
-        success: true,
         data: { deletedSamples: [] },
+        success: true,
       });
 
       mockElectronAPI.addSampleToSlot.mockResolvedValue({
-        success: true,
         data: { sampleId: 123 },
+        success: true,
       });
 
       // Create the move action that would be recorded
       const moveAction = {
-        id: "test-action",
-        type: "MOVE_SAMPLE" as const,
-        timestamp: new Date(),
-        description: "Move sample from voice 1, slot 12 to voice 1, slot 9",
         data: {
-          fromVoice: 1,
+          affectedSamples: [
+            {
+              newSlot: 10,
+              oldSlot: 9,
+              sample: {
+                filename: "sample9.wav",
+                is_stereo: false,
+                source_path: "/path/9.wav",
+              },
+              voice: 1,
+            },
+            {
+              newSlot: 11,
+              oldSlot: 10,
+              sample: {
+                filename: "sample10.wav",
+                is_stereo: false,
+                source_path: "/path/10.wav",
+              },
+              voice: 1,
+            },
+            {
+              newSlot: 12,
+              oldSlot: 11,
+              sample: {
+                filename: "sample11.wav",
+                is_stereo: false,
+                source_path: "/path/11.wav",
+              },
+              voice: 1,
+            },
+          ],
           fromSlot: 11, // 0-based
-          toVoice: 1,
-          toSlot: 8, // 0-based
+          fromVoice: 1,
           mode: "insert" as const,
           movedSample: {
             filename: "sample12.wav",
-            source_path: "/path/12.wav",
             is_stereo: false,
+            source_path: "/path/12.wav",
           },
-          affectedSamples: [
-            {
-              voice: 1,
-              oldSlot: 9,
-              newSlot: 10,
-              sample: {
-                filename: "sample9.wav",
-                source_path: "/path/9.wav",
-                is_stereo: false,
-              },
-            },
-            {
-              voice: 1,
-              oldSlot: 10,
-              newSlot: 11,
-              sample: {
-                filename: "sample10.wav",
-                source_path: "/path/10.wav",
-                is_stereo: false,
-              },
-            },
-            {
-              voice: 1,
-              oldSlot: 11,
-              newSlot: 12,
-              sample: {
-                filename: "sample11.wav",
-                source_path: "/path/11.wav",
-                is_stereo: false,
-              },
-            },
-          ],
           stateSnapshot,
+          toSlot: 8, // 0-based
+          toVoice: 1,
         },
+        description: "Move sample from voice 1, slot 12 to voice 1, slot 9",
+        id: "test-action",
+        timestamp: new Date(),
+        type: "MOVE_SAMPLE" as const,
       };
 
       // Create undo hook and add the action
@@ -458,16 +458,16 @@ describe("useUndoRedo - Basic Tests", () => {
       // Add action
       act(() => {
         result.current.addAction({
-          type: "ADD_SAMPLE",
           data: {
-            voice: 1,
-            slot: 0,
             addedSample: {
               filename: "test.wav",
-              source_path: "/path/to/test.wav",
               is_stereo: false,
+              source_path: "/path/to/test.wav",
             },
+            slot: 0,
+            voice: 1,
           },
+          type: "ADD_SAMPLE",
         });
       });
 
@@ -503,16 +503,16 @@ describe("useUndoRedo - Basic Tests", () => {
 
       act(() => {
         result.current.addAction({
-          type: "DELETE_SAMPLE",
           data: {
-            voice: 2,
-            slot: 1,
             deletedSample: {
               filename: "deleted.wav",
-              source_path: "/path/to/deleted.wav",
               is_stereo: true,
+              source_path: "/path/to/deleted.wav",
             },
+            slot: 1,
+            voice: 2,
           },
+          type: "DELETE_SAMPLE",
         });
       });
 
@@ -536,16 +536,16 @@ describe("useUndoRedo - Basic Tests", () => {
 
       act(() => {
         result.current.addAction({
-          type: "ADD_SAMPLE",
           data: {
-            voice: 1,
-            slot: 0,
             addedSample: {
               filename: "test.wav",
-              source_path: "/path/to/test.wav",
               is_stereo: false,
+              source_path: "/path/to/test.wav",
             },
+            slot: 0,
+            voice: 1,
           },
+          type: "ADD_SAMPLE",
         });
       });
 
@@ -555,8 +555,8 @@ describe("useUndoRedo - Basic Tests", () => {
 
       // Mock failure
       mockElectronAPI.addSampleToSlot.mockResolvedValue({
-        success: false,
         error: "Redo failed",
+        success: false,
       });
 
       await act(async () => {
@@ -574,16 +574,16 @@ describe("useUndoRedo - Basic Tests", () => {
 
       act(() => {
         result.current.addAction({
-          type: "DELETE_SAMPLE",
           data: {
-            voice: 2,
-            slot: 3,
             deletedSample: {
               filename: "deleted.wav",
-              source_path: "/path/to/deleted.wav",
               is_stereo: true,
+              source_path: "/path/to/deleted.wav",
             },
+            slot: 3,
+            voice: 2,
           },
+          type: "DELETE_SAMPLE",
         });
       });
 
@@ -607,21 +607,21 @@ describe("useUndoRedo - Basic Tests", () => {
 
       act(() => {
         result.current.addAction({
-          type: "REPLACE_SAMPLE",
           data: {
-            voice: 1,
-            slot: 1,
-            oldSample: {
-              filename: "old.wav",
-              source_path: "/path/to/old.wav",
-              is_stereo: false,
-            },
             newSample: {
               filename: "new.wav",
-              source_path: "/path/to/new.wav",
               is_stereo: true,
+              source_path: "/path/to/new.wav",
             },
+            oldSample: {
+              filename: "old.wav",
+              is_stereo: false,
+              source_path: "/path/to/old.wav",
+            },
+            slot: 1,
+            voice: 1,
           },
+          type: "REPLACE_SAMPLE",
         });
       });
 
@@ -645,8 +645,8 @@ describe("useUndoRedo - Basic Tests", () => {
 
       act(() => {
         result.current.addAction({
-          type: "UNKNOWN_ACTION" as any,
           data: {},
+          type: "UNKNOWN_ACTION" as any,
         });
       });
 
@@ -663,8 +663,8 @@ describe("useUndoRedo - Basic Tests", () => {
       // Trigger an error by adding action with unknown type and undoing
       act(() => {
         result.current.addAction({
-          type: "UNKNOWN_ACTION" as any,
           data: {},
+          type: "UNKNOWN_ACTION" as any,
         });
       });
 
@@ -687,16 +687,16 @@ describe("useUndoRedo - Basic Tests", () => {
 
       act(() => {
         result.current.addAction({
-          type: "ADD_SAMPLE",
           data: {
-            voice: 1,
-            slot: 0,
             addedSample: {
               filename: "test.wav",
-              source_path: "/path/to/test.wav",
               is_stereo: false,
+              source_path: "/path/to/test.wav",
             },
+            slot: 0,
+            voice: 1,
           },
+          type: "ADD_SAMPLE",
         });
       });
 
@@ -721,16 +721,16 @@ describe("useUndoRedo - Basic Tests", () => {
 
       act(() => {
         result.current.addAction({
-          type: "ADD_SAMPLE",
           data: {
-            voice: 1,
-            slot: 0,
             addedSample: {
               filename: "test.wav",
-              source_path: "/path/to/test.wav",
               is_stereo: false,
+              source_path: "/path/to/test.wav",
             },
+            slot: 0,
+            voice: 1,
           },
+          type: "ADD_SAMPLE",
         });
       });
 
@@ -765,16 +765,16 @@ describe("useUndoRedo - Basic Tests", () => {
 
       act(() => {
         result.current.addAction({
-          type: "ADD_SAMPLE",
           data: {
-            voice: 1,
-            slot: 0,
             addedSample: {
               filename: "test.wav",
-              source_path: "/path/to/test.wav",
               is_stereo: false,
+              source_path: "/path/to/test.wav",
             },
+            slot: 0,
+            voice: 1,
           },
+          type: "ADD_SAMPLE",
         });
       });
 

@@ -3,16 +3,16 @@ import { useCallback, useEffect, useState } from "react";
 import { ensureValidStepPattern } from "./stepPatternConstants";
 
 export interface UseStepPatternParams {
+  initialPattern?: null | number[][];
   kitName: string;
-  initialPattern?: number[][] | null;
 }
 
 /**
  * Hook for managing step patterns
  */
 export function useStepPattern({
-  kitName,
   initialPattern,
+  kitName,
 }: UseStepPatternParams) {
   const [stepPattern, setStepPatternState] = useState<number[][] | null>(null);
 
@@ -47,7 +47,7 @@ export function useStepPattern({
   );
 
   return {
-    stepPattern,
     setStepPattern: updateStepPattern,
+    stepPattern,
   };
 }

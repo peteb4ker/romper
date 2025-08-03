@@ -58,23 +58,23 @@ describe("undoTypes", () => {
 
   const mockSample = {
     filename: "test.wav",
-    source_path: "/path/to/test.wav",
     is_stereo: false,
+    source_path: "/path/to/test.wav",
   };
 
   describe("getActionDescription", () => {
     describe("ADD_SAMPLE action", () => {
       it("returns correct description for add sample action", () => {
         const action: AddSampleAction = {
-          id: "test-id",
-          type: "ADD_SAMPLE",
-          timestamp: new Date(),
-          description: "Test action",
           data: {
-            voice: 1,
-            slot: 0,
             addedSample: mockSample,
+            slot: 0,
+            voice: 1,
           },
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "ADD_SAMPLE",
         };
 
         const description = getActionDescription(action);
@@ -84,15 +84,15 @@ describe("undoTypes", () => {
 
       it("handles different voice and slot numbers", () => {
         const action: AddSampleAction = {
-          id: "test-id",
-          type: "ADD_SAMPLE",
-          timestamp: new Date(),
-          description: "Test action",
           data: {
-            voice: 3,
-            slot: 7,
             addedSample: mockSample,
+            slot: 7,
+            voice: 3,
           },
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "ADD_SAMPLE",
         };
 
         const description = getActionDescription(action);
@@ -104,16 +104,16 @@ describe("undoTypes", () => {
     describe("REPLACE_SAMPLE action", () => {
       it("returns correct description for replace sample action", () => {
         const action: ReplaceSampleAction = {
-          id: "test-id",
-          type: "REPLACE_SAMPLE",
-          timestamp: new Date(),
-          description: "Test action",
           data: {
-            voice: 2,
-            slot: 3,
-            oldSample: mockSample,
             newSample: mockSample,
+            oldSample: mockSample,
+            slot: 3,
+            voice: 2,
           },
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "REPLACE_SAMPLE",
         };
 
         const description = getActionDescription(action);
@@ -125,15 +125,15 @@ describe("undoTypes", () => {
     describe("DELETE_SAMPLE action", () => {
       it("returns correct description for delete sample action", () => {
         const action: DeleteSampleAction = {
-          id: "test-id",
-          type: "DELETE_SAMPLE",
-          timestamp: new Date(),
-          description: "Test action",
           data: {
-            voice: 4,
-            slot: 1,
             deletedSample: mockSample,
+            slot: 1,
+            voice: 4,
           },
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "DELETE_SAMPLE",
         };
 
         const description = getActionDescription(action);
@@ -145,19 +145,19 @@ describe("undoTypes", () => {
     describe("MOVE_SAMPLE action", () => {
       it("returns correct description for move sample action", () => {
         const action: MoveSampleAction = {
-          id: "test-id",
-          type: "MOVE_SAMPLE",
-          timestamp: new Date(),
-          description: "Test action",
           data: {
-            fromVoice: 1,
+            affectedSamples: [],
             fromSlot: 0,
-            toVoice: 2,
-            toSlot: 3,
+            fromVoice: 1,
             mode: "insert",
             movedSample: mockSample,
-            affectedSamples: [],
+            toSlot: 3,
+            toVoice: 2,
           },
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "MOVE_SAMPLE",
         };
 
         const description = getActionDescription(action);
@@ -169,19 +169,19 @@ describe("undoTypes", () => {
 
       it("handles different move coordinates", () => {
         const action: MoveSampleAction = {
-          id: "test-id",
-          type: "MOVE_SAMPLE",
-          timestamp: new Date(),
-          description: "Test action",
           data: {
-            fromVoice: 3,
+            affectedSamples: [],
             fromSlot: 7,
-            toVoice: 1,
-            toSlot: 2,
+            fromVoice: 3,
             mode: "overwrite",
             movedSample: mockSample,
-            affectedSamples: [],
+            toSlot: 2,
+            toVoice: 1,
           },
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "MOVE_SAMPLE",
         };
 
         const description = getActionDescription(action);
@@ -195,21 +195,21 @@ describe("undoTypes", () => {
     describe("MOVE_SAMPLE_BETWEEN_KITS action", () => {
       it("returns correct description for move sample between kits action", () => {
         const action: MoveSampleBetweenKitsAction = {
-          id: "test-id",
-          type: "MOVE_SAMPLE_BETWEEN_KITS",
-          timestamp: new Date(),
-          description: "Test action",
           data: {
+            affectedSamples: [],
             fromKit: "A0",
-            fromVoice: 1,
             fromSlot: 0,
-            toKit: "B5",
-            toVoice: 3,
-            toSlot: 2,
+            fromVoice: 1,
             mode: "insert",
             movedSample: mockSample,
-            affectedSamples: [],
+            toKit: "B5",
+            toSlot: 2,
+            toVoice: 3,
           },
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "MOVE_SAMPLE_BETWEEN_KITS",
         };
 
         const description = getActionDescription(action);
@@ -221,21 +221,21 @@ describe("undoTypes", () => {
 
       it("handles same kit names", () => {
         const action: MoveSampleBetweenKitsAction = {
-          id: "test-id",
-          type: "MOVE_SAMPLE_BETWEEN_KITS",
-          timestamp: new Date(),
-          description: "Test action",
           data: {
+            affectedSamples: [],
             fromKit: "DrumKit",
-            fromVoice: 2,
             fromSlot: 5,
-            toKit: "DrumKit",
-            toVoice: 4,
-            toSlot: 0,
+            fromVoice: 2,
             mode: "overwrite",
             movedSample: mockSample,
-            affectedSamples: [],
+            toKit: "DrumKit",
+            toSlot: 0,
+            toVoice: 4,
           },
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "MOVE_SAMPLE_BETWEEN_KITS",
         };
 
         const description = getActionDescription(action);
@@ -249,16 +249,16 @@ describe("undoTypes", () => {
     describe("COMPACT_SLOTS action", () => {
       it("returns correct description for compact slots action", () => {
         const action: CompactSlotsAction = {
-          id: "test-id",
-          type: "COMPACT_SLOTS",
-          timestamp: new Date(),
-          description: "Test action",
           data: {
-            voice: 2,
-            deletedSlot: 1,
-            deletedSample: mockSample,
             affectedSamples: [],
+            deletedSample: mockSample,
+            deletedSlot: 1,
+            voice: 2,
           },
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "COMPACT_SLOTS",
         };
 
         const description = getActionDescription(action);
@@ -270,16 +270,16 @@ describe("undoTypes", () => {
 
       it("handles different voice and slot numbers", () => {
         const action: CompactSlotsAction = {
-          id: "test-id",
-          type: "COMPACT_SLOTS",
-          timestamp: new Date(),
-          description: "Test action",
           data: {
-            voice: 4,
-            deletedSlot: 9,
-            deletedSample: mockSample,
             affectedSamples: [],
+            deletedSample: mockSample,
+            deletedSlot: 9,
+            voice: 4,
           },
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "COMPACT_SLOTS",
         };
 
         const description = getActionDescription(action);
@@ -293,11 +293,11 @@ describe("undoTypes", () => {
     describe("default case", () => {
       it("returns default description for unknown action type", () => {
         const unknownAction = {
-          id: "test-id",
-          type: "UNKNOWN_ACTION" as any,
-          timestamp: new Date(),
-          description: "Test action",
           data: {},
+          description: "Test action",
+          id: "test-id",
+          timestamp: new Date(),
+          type: "UNKNOWN_ACTION" as any,
         } as AnyUndoAction;
 
         const description = getActionDescription(unknownAction);
@@ -310,19 +310,19 @@ describe("undoTypes", () => {
   describe("Type definitions", () => {
     it("allows creating valid AddSampleAction", () => {
       const action: AddSampleAction = {
-        id: "test-id",
-        type: "ADD_SAMPLE",
-        timestamp: new Date(),
-        description: "Add sample test",
         data: {
-          voice: 1,
-          slot: 0,
           addedSample: {
             filename: "kick.wav",
-            source_path: "/path/to/kick.wav",
             is_stereo: false,
+            source_path: "/path/to/kick.wav",
           },
+          slot: 0,
+          voice: 1,
         },
+        description: "Add sample test",
+        id: "test-id",
+        timestamp: new Date(),
+        type: "ADD_SAMPLE",
       };
 
       expect(action.type).toBe("ADD_SAMPLE");
@@ -332,24 +332,24 @@ describe("undoTypes", () => {
 
     it("allows creating valid ReplaceSampleAction", () => {
       const action: ReplaceSampleAction = {
-        id: "test-id",
-        type: "REPLACE_SAMPLE",
-        timestamp: new Date(),
-        description: "Replace sample test",
         data: {
-          voice: 2,
-          slot: 1,
-          oldSample: {
-            filename: "old.wav",
-            source_path: "/path/to/old.wav",
-            is_stereo: false,
-          },
           newSample: {
             filename: "new.wav",
-            source_path: "/path/to/new.wav",
             is_stereo: true,
+            source_path: "/path/to/new.wav",
           },
+          oldSample: {
+            filename: "old.wav",
+            is_stereo: false,
+            source_path: "/path/to/old.wav",
+          },
+          slot: 1,
+          voice: 2,
         },
+        description: "Replace sample test",
+        id: "test-id",
+        timestamp: new Date(),
+        type: "REPLACE_SAMPLE",
       };
 
       expect(action.type).toBe("REPLACE_SAMPLE");
@@ -359,34 +359,34 @@ describe("undoTypes", () => {
 
     it("allows creating valid MoveSampleAction with optional fields", () => {
       const action: MoveSampleAction = {
-        id: "test-id",
-        type: "MOVE_SAMPLE",
-        timestamp: new Date(),
-        description: "Move sample test",
         data: {
-          fromVoice: 1,
-          fromSlot: 0,
-          toVoice: 2,
-          toSlot: 1,
-          mode: "overwrite",
-          movedSample: mockSample,
           affectedSamples: [
             {
-              voice: 2,
-              oldSlot: 1,
               newSlot: 2,
+              oldSlot: 1,
               sample: mockSample,
+              voice: 2,
             },
           ],
+          fromSlot: 0,
+          fromVoice: 1,
+          mode: "overwrite",
+          movedSample: mockSample,
           replacedSample: mockSample,
           stateSnapshot: [
             {
-              voice: 2,
-              slot: 1,
               sample: mockSample,
+              slot: 1,
+              voice: 2,
             },
           ],
+          toSlot: 1,
+          toVoice: 2,
         },
+        description: "Move sample test",
+        id: "test-id",
+        timestamp: new Date(),
+        type: "MOVE_SAMPLE",
       };
 
       expect(action.data.replacedSample).toBeDefined();
@@ -397,30 +397,30 @@ describe("undoTypes", () => {
     it("AnyUndoAction union type accepts all action types", () => {
       const actions: AnyUndoAction[] = [
         {
-          id: "1",
-          type: "ADD_SAMPLE",
-          timestamp: new Date(),
+          data: { addedSample: mockSample, slot: 0, voice: 1 },
           description: "test",
-          data: { voice: 1, slot: 0, addedSample: mockSample },
+          id: "1",
+          timestamp: new Date(),
+          type: "ADD_SAMPLE",
         } as AddSampleAction,
         {
-          id: "2",
-          type: "DELETE_SAMPLE",
-          timestamp: new Date(),
+          data: { deletedSample: mockSample, slot: 0, voice: 1 },
           description: "test",
-          data: { voice: 1, slot: 0, deletedSample: mockSample },
+          id: "2",
+          timestamp: new Date(),
+          type: "DELETE_SAMPLE",
         } as DeleteSampleAction,
         {
-          id: "3",
-          type: "COMPACT_SLOTS",
-          timestamp: new Date(),
-          description: "test",
           data: {
-            voice: 1,
-            deletedSlot: 0,
-            deletedSample: mockSample,
             affectedSamples: [],
+            deletedSample: mockSample,
+            deletedSlot: 0,
+            voice: 1,
           },
+          description: "test",
+          id: "3",
+          timestamp: new Date(),
+          type: "COMPACT_SLOTS",
         } as CompactSlotsAction,
       ];
 
@@ -434,15 +434,15 @@ describe("undoTypes", () => {
   describe("slot number conversion", () => {
     it("correctly converts 0-based slot indices to 1-based slot numbers", () => {
       const action: AddSampleAction = {
-        id: "test-id",
-        type: "ADD_SAMPLE",
-        timestamp: new Date(),
-        description: "Test",
         data: {
-          voice: 1,
-          slot: 0, // 0-based
           addedSample: mockSample,
+          slot: 0, // 0-based
+          voice: 1,
         },
+        description: "Test",
+        id: "test-id",
+        timestamp: new Date(),
+        type: "ADD_SAMPLE",
       };
 
       const description = getActionDescription(action);
@@ -453,19 +453,19 @@ describe("undoTypes", () => {
 
     it("correctly converts higher slot indices", () => {
       const action: MoveSampleAction = {
-        id: "test-id",
-        type: "MOVE_SAMPLE",
-        timestamp: new Date(),
-        description: "Test",
         data: {
-          fromVoice: 1,
+          affectedSamples: [],
           fromSlot: 15, // 0-based
-          toVoice: 2,
-          toSlot: 7, // 0-based
+          fromVoice: 1,
           mode: "insert",
           movedSample: mockSample,
-          affectedSamples: [],
+          toSlot: 7, // 0-based
+          toVoice: 2,
         },
+        description: "Test",
+        id: "test-id",
+        timestamp: new Date(),
+        type: "MOVE_SAMPLE",
       };
 
       const description = getActionDescription(action);

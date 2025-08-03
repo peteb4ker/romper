@@ -11,8 +11,8 @@ import type {
  * Orchestrates the execution of scanning operations with progress tracking and error handling
  */
 export class ScannerOrchestrator {
-  private progressCallback?: ProgressCallback;
-  private errorStrategy: ErrorHandlingStrategy;
+  private readonly errorStrategy: ErrorHandlingStrategy;
+  private readonly progressCallback?: ProgressCallback;
 
   constructor(
     progressCallback?: ProgressCallback,
@@ -29,7 +29,7 @@ export class ScannerOrchestrator {
    */
   async executeChain(operations: ScanOperation[]): Promise<ChainResult> {
     const results: Record<string, any> = {};
-    const errors: Array<{ operation: string; error: string }> = [];
+    const errors: Array<{ error: string; operation: string }> = [];
     let completedOperations = 0;
 
     for (let i = 0; i < operations.length; i++) {
@@ -57,10 +57,10 @@ export class ScannerOrchestrator {
     this.progressCallback?.(operations.length, operations.length, "Complete");
 
     return {
-      success: errors.length === 0,
-      results,
-      errors,
       completedOperations,
+      errors,
+      results,
+      success: errors.length === 0,
       totalOperations: operations.length,
     };
   }
@@ -75,7 +75,7 @@ export class ScannerOrchestrator {
   private async executeOperation(
     operation: ScanOperation,
     results: Record<string, any>,
-    errors: Array<{ operation: string; error: string }>,
+    errors: Array<{ error: string; operation: string }>,
   ): Promise<boolean> {
     try {
       const result = await operation.scanner(operation.input);
@@ -104,10 +104,10 @@ export class ScannerOrchestrator {
   private handleOperationError(
     operation: ScanOperation,
     errorMessage: string | undefined,
-    errors: Array<{ operation: string; error: string }>,
+    errors: Array<{ error: string; operation: string }>,
   ): boolean {
     const message = errorMessage || "Unknown error";
-    errors.push({ operation: operation.name, error: message });
+    errors.push({ error: message, operation: operation.name });
 
     return this.errorStrategy !== "stop";
   }

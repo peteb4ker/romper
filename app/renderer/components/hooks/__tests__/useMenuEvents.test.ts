@@ -24,10 +24,10 @@ describe("useMenuEvents", () => {
 
   it("should register event listeners on mount", () => {
     const handlers = {
-      onScanAllKits: vi.fn(),
-      onValidateDatabase: vi.fn(),
-      onSetupLocalStore: vi.fn(),
       onAbout: vi.fn(),
+      onScanAllKits: vi.fn(),
+      onSetupLocalStore: vi.fn(),
+      onValidateDatabase: vi.fn(),
     };
 
     renderHook(() => useMenuEvents(handlers));
@@ -52,10 +52,10 @@ describe("useMenuEvents", () => {
 
   it("should remove event listeners on unmount", () => {
     const handlers = {
-      onScanAllKits: vi.fn(),
-      onValidateDatabase: vi.fn(),
-      onSetupLocalStore: vi.fn(),
       onAbout: vi.fn(),
+      onScanAllKits: vi.fn(),
+      onSetupLocalStore: vi.fn(),
+      onValidateDatabase: vi.fn(),
     };
 
     const { unmount } = renderHook(() => useMenuEvents(handlers));
@@ -81,10 +81,10 @@ describe("useMenuEvents", () => {
 
   it("should call appropriate handlers when events are triggered", () => {
     const handlers = {
-      onScanAllKits: vi.fn(),
-      onValidateDatabase: vi.fn(),
-      onSetupLocalStore: vi.fn(),
       onAbout: vi.fn(),
+      onScanAllKits: vi.fn(),
+      onSetupLocalStore: vi.fn(),
+      onValidateDatabase: vi.fn(),
     };
 
     renderHook(() => useMenuEvents(handlers));

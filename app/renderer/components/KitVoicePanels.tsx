@@ -2,48 +2,25 @@ import React, { useState } from "react";
 import { FiLink } from "react-icons/fi";
 
 import type { KitWithRelations } from "../../../shared/db/schema";
-import { useKitVoicePanels } from "./hooks/useKitVoicePanels";
 import type { SampleData, VoiceSamples } from "./kitTypes";
+
+import { useKitVoicePanels } from "./hooks/useKitVoicePanels";
 import KitVoicePanel from "./KitVoicePanel";
 
 interface KitVoicePanelsProps {
-  samples: VoiceSamples;
-  kit: KitWithRelations | null;
-  selectedVoice: number;
-  selectedSampleIdx: number;
-  onSaveVoiceName: (voice: number, newName: string) => void;
-  onRescanVoiceName: (voice: number, samples: VoiceSamples) => void;
-  samplePlaying: { [key: string]: boolean };
-  playTriggers: { [key: string]: number };
-  stopTriggers: { [key: string]: number };
-  onPlay: (voice: number, sample: string) => void;
-  onStop: (voice: number, sample: string) => void;
-  onWaveformPlayingChange: (
-    voice: number,
-    sample: string,
-    playing: boolean,
-  ) => void;
-  kitName: string;
-  onSampleKeyNav: (direction: "up" | "down") => void;
-  onSampleSelect: (voice: number, idx: number) => void;
-  sequencerOpen: boolean;
-  setSelectedVoice: (v: number) => void;
-  setSelectedSampleIdx: (i: number) => void;
-  isEditable?: boolean;
-
+  isEditable?: boolean; // Used directly in KitVoicePanel
+  kit: KitWithRelations | null; // Used by useKitVoicePanels hook
+  kitName: string; // Used by useKitVoicePanels hook
+  onPlay: (voice: number, sample: string) => void; // Used by useKitVoicePanels hook
+  onRescanVoiceName: (voice: number, samples: VoiceSamples) => void; // Used by useKitVoicePanels hook
   // New props for drag-and-drop sample management (Task 5.2.2 & 5.2.3)
   onSampleAdd?: (
     voice: number,
     slotIndex: number,
     filePath: string,
   ) => Promise<void>;
-  onSampleReplace?: (
-    voice: number,
-    slotIndex: number,
-    filePath: string,
-  ) => Promise<void>;
   onSampleDelete?: (voice: number, slotIndex: number) => Promise<void>;
-
+  onSampleKeyNav: (direction: "down" | "up") => void; // Used directly in KitVoicePanel
   // Task 22.2: Sample move operations with contiguity
   onSampleMove?: (
     fromVoice: number,
@@ -52,14 +29,38 @@ interface KitVoicePanelsProps {
     toSlot: number,
     mode: "insert" | "overwrite",
   ) => Promise<void>;
+  onSampleReplace?: (
+    voice: number,
+    slotIndex: number,
+    filePath: string,
+  ) => Promise<void>;
+  onSampleSelect: (voice: number, idx: number) => void; // Used by useKitVoicePanels hook
+  onSaveVoiceName: (voice: number, newName: string) => void; // Used by useKitVoicePanels hook
+  onStop: (voice: number, sample: string) => void; // Used by useKitVoicePanels hook
+  onWaveformPlayingChange: (
+    voice: number,
+    sample: string,
+    playing: boolean,
+  ) => void; // Used by useKitVoicePanels hook
+  playTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
+  samplePlaying: { [key: string]: boolean }; // Used by useKitVoicePanels hook
+  samples: VoiceSamples; // Used by useKitVoicePanels hook
+  selectedSampleIdx: number; // Used by useKitVoicePanels hook
+  selectedVoice: number; // Used by useKitVoicePanels hook
+
+  sequencerOpen: boolean; // Used by useKitVoicePanels hook
+  setSelectedSampleIdx: (i: number) => void; // Used by useKitVoicePanels hook
+  setSelectedVoice: (v: number) => void; // Used by useKitVoicePanels hook
+
+  stopTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
 }
 
 const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const hookProps = useKitVoicePanels({
     ...props,
-    setSelectedVoice: props.setSelectedVoice,
-    setSelectedSampleIdx: props.setSelectedSampleIdx,
     sequencerOpen: props.sequencerOpen,
+    setSelectedSampleIdx: props.setSelectedSampleIdx,
+    setSelectedVoice: props.setSelectedVoice,
   });
 
   // State for sample metadata lookup
@@ -69,9 +70,9 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
 
   // Task 7.1.3: State to track stereo drop targets
   const [stereoDragInfo, setStereoDragInfo] = useState<{
-    targetVoice: number;
     nextVoice: number;
     slotIndex: number;
+    targetVoice: number;
   } | null>(null);
 
   // Load sample metadata when kit changes
@@ -111,11 +112,14 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     slotIndex: number,
     isStereo: boolean,
   ) => {
-    if (isStereo && voice < 4) {
+    const canHandleStereo = isStereo && voice < 4;
+    const shouldSetDragInfo = canHandleStereo;
+    
+    if (shouldSetDragInfo) {
       setStereoDragInfo({
-        targetVoice: voice,
         nextVoice: voice + 1,
         slotIndex,
+        targetVoice: voice,
       });
     } else {
       setStereoDragInfo(null);
@@ -133,43 +137,39 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     >
       {[1, 2, 3, 4].map((voice) => (
         <React.Fragment key={`${hookProps.kitName}-voicepanel-${voice}`}>
-          <div data-testid={`voice-panel-${voice}`} className="relative">
+          <div className="relative" data-testid={`voice-panel-${voice}`}>
             <KitVoicePanel
-              voice={voice}
-              samples={hookProps.samples[voice] || []}
-              sampleMetadata={sampleMetadata}
-              voiceName={
-                hookProps.kit?.voices?.find((v) => v.voice_number === voice)
-                  ?.voice_alias || null
+              dataTestIdVoiceName={`voice-name-${voice}`}
+              isActive={voice === hookProps.selectedVoice}
+              isEditable={props.isEditable ?? false}
+              isStereoDragTarget={
+                stereoDragInfo?.targetVoice === voice ||
+                stereoDragInfo?.nextVoice === voice
               }
-              onSaveVoiceName={hookProps.onSaveVoiceName}
+              kitName={hookProps.kitName}
+              onPlay={hookProps.onPlay}
               onRescanVoiceName={() =>
                 hookProps.onRescanVoiceName(voice, hookProps.samples)
               }
-              samplePlaying={hookProps.samplePlaying}
-              playTriggers={hookProps.playTriggers}
-              stopTriggers={hookProps.stopTriggers}
-              onPlay={hookProps.onPlay}
+              onSampleAdd={props.onSampleAdd}
+              onSampleDelete={props.onSampleDelete}
+              onSampleKeyNav={hookProps.onSampleKeyNav}
+              onSampleMove={props.onSampleMove}
+              onSampleReplace={props.onSampleReplace}
+              onSampleSelect={hookProps.onSampleSelect}
+              onSaveVoiceName={hookProps.onSaveVoiceName}
+              onStereoDragLeave={handleStereoDragLeave}
+              onStereoDragOver={handleStereoDragOver}
               onStop={hookProps.onStop}
               onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
-              kitName={hookProps.kitName}
-              dataTestIdVoiceName={`voice-name-${voice}`}
+              playTriggers={hookProps.playTriggers}
+              sampleMetadata={sampleMetadata}
+              samplePlaying={hookProps.samplePlaying}
+              samples={hookProps.samples[voice] || []}
               selectedIdx={
                 voice === hookProps.selectedVoice
                   ? hookProps.selectedSampleIdx
                   : -1
-              }
-              onSampleKeyNav={hookProps.onSampleKeyNav}
-              onSampleSelect={hookProps.onSampleSelect}
-              isActive={voice === hookProps.selectedVoice}
-              isEditable={props.isEditable ?? false}
-              onSampleAdd={props.onSampleAdd}
-              onSampleReplace={props.onSampleReplace}
-              onSampleDelete={props.onSampleDelete}
-              onSampleMove={props.onSampleMove}
-              isStereoDragTarget={
-                stereoDragInfo?.targetVoice === voice ||
-                stereoDragInfo?.nextVoice === voice
               }
               stereoDragSlotIndex={
                 stereoDragInfo?.targetVoice === voice ||
@@ -177,8 +177,12 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   ? stereoDragInfo.slotIndex
                   : undefined
               }
-              onStereoDragOver={handleStereoDragOver}
-              onStereoDragLeave={handleStereoDragLeave}
+              stopTriggers={hookProps.stopTriggers}
+              voice={voice}
+              voiceName={
+                hookProps.kit?.voices?.find((v) => v.voice_number === voice)
+                  ?.voice_alias || null
+              }
             />
             {/* Task 7.1.3: Show link icon between voices for stereo drops */}
             {stereoDragInfo?.targetVoice === voice && (

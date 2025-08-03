@@ -12,7 +12,7 @@ export interface UseKitParams {
 export function useKit({ kitName }: UseKitParams) {
   const [kit, setKit] = useState<KitWithRelations | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<null | string>(null);
 
   const loadKit = useCallback(async () => {
     if (!window.electronAPI?.getKit || !kitName) return;
@@ -76,11 +76,11 @@ export function useKit({ kitName }: UseKitParams) {
   };
 
   return {
+    error,
     kit,
     loading,
-    error,
     reloadKit: loadKit,
-    updateKitAlias,
     toggleEditableMode,
+    updateKitAlias,
   };
 }

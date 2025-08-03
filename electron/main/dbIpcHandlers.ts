@@ -3,6 +3,7 @@ import { ipcMain } from "electron";
 import * as path from "path";
 
 import type { DbResult, NewKit, NewSample } from "../../shared/db/schema.js";
+
 import { getAudioMetadata, validateSampleFormat } from "./audioUtils.js";
 import {
   addKit,
@@ -27,115 +28,6 @@ import { scanService } from "./services/scanService.js";
 import { syncService } from "./services/syncService.js";
 
 // Common validation and helper functions
-
-/**
- * Validates local store path and returns database directory
- */
-function validateAndGetDbDir(inMemorySettings: Record<string, any>): {
-  success: boolean;
-  dbDir?: string;
-  error?: string;
-} {
-  const localStorePath = inMemorySettings.localStorePath;
-  if (!localStorePath) {
-    return { success: false, error: "No local store path configured" };
-  }
-  return { success: true, dbDir: path.join(localStorePath, ".romperdb") };
-}
-
-/**
- * Creates a wrapper for IPC handlers that require database directory validation
- */
-function createDbHandler<T extends any[], R>(
-  inMemorySettings: Record<string, any>,
-  handler: (dbDir: string, ...args: T) => Promise<R> | R,
-): (_event: any, ...args: T) => Promise<R> {
-  return async (_event: any, ...args: T): Promise<R> => {
-    const dbDirResult = validateAndGetDbDir(inMemorySettings);
-    if (!dbDirResult.success) {
-      return { success: false, error: dbDirResult.error } as R;
-    }
-    return handler(dbDirResult.dbDir!, ...args);
-  };
-}
-
-/**
- * Creates a sample operation handler using the sample service
- */
-function createSampleOperationHandler(
-  inMemorySettings: Record<string, any>,
-  operationType: "add" | "replace" | "delete",
-) {
-  return async (
-    _event: any,
-    kitName: string,
-    voiceNumber: number,
-    slotIndex: number,
-    filePath?: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
-  ) => {
-    try {
-      let result: DbResult<any>;
-
-      switch (operationType) {
-        case "add":
-          if (!filePath) {
-            return {
-              success: false,
-              error: "File path required for add operation",
-            };
-          }
-          result = sampleService.addSampleToSlot(
-            inMemorySettings,
-            kitName,
-            voiceNumber,
-            slotIndex,
-            filePath,
-            options,
-          );
-          break;
-
-        case "replace":
-          if (!filePath) {
-            return {
-              success: false,
-              error: "File path required for replace operation",
-            };
-          }
-          result = sampleService.replaceSampleInSlot(
-            inMemorySettings,
-            kitName,
-            voiceNumber,
-            slotIndex,
-            filePath,
-            options,
-          );
-          break;
-
-        case "delete":
-          result = sampleService.deleteSampleFromSlot(
-            inMemorySettings,
-            kitName,
-            voiceNumber,
-            slotIndex,
-          );
-          break;
-
-        default:
-          return { success: false, error: "Unknown operation type" };
-      }
-
-      return result;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return {
-        success: false,
-        error: `Failed to perform sample operation: ${errorMessage}`,
-      };
-    }
-  };
-}
 
 export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("create-romper-db", async (_event, dbDir: string) => {
@@ -170,8 +62,8 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
         updates: {
           alias?: string;
           artist?: string;
-          tags?: string[];
           description?: string;
+          tags?: string[];
         },
       ) => {
         return updateKit(dbDir, kitName, updates);
@@ -320,8 +212,8 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         return {
-          success: false,
           error: `Failed to move sample: ${errorMessage}`,
+          success: false,
         };
       }
     },
@@ -333,12 +225,12 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       _event,
       params: {
         fromKit: string;
-        fromVoice: number;
         fromSlot: number;
-        toKit: string;
-        toVoice: number;
-        toSlot: number;
+        fromVoice: number;
         mode: "insert" | "overwrite";
+        toKit: string;
+        toSlot: number;
+        toVoice: number;
       },
     ) => {
       try {
@@ -351,8 +243,8 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         return {
-          success: false,
           error: `Failed to move sample between kits: ${errorMessage}`,
+          success: false,
         };
       }
     },
@@ -381,19 +273,19 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     async (
       _event,
       syncData: {
-        filesToCopy: Array<{
-          filename: string;
-          sourcePath: string;
-          destinationPath: string;
-          operation: "copy" | "convert";
-          kitName: string;
-        }>;
         filesToConvert: Array<{
-          filename: string;
-          sourcePath: string;
           destinationPath: string;
-          operation: "copy" | "convert";
+          filename: string;
           kitName: string;
+          operation: "convert" | "copy";
+          sourcePath: string;
+        }>;
+        filesToCopy: Array<{
+          destinationPath: string;
+          filename: string;
+          kitName: string;
+          operation: "convert" | "copy";
+          sourcePath: string;
         }>;
       },
     ) => {
@@ -428,4 +320,113 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
 
   // Progress events are handled via webContents.send in syncService
   // No IPC handler needed for onSyncProgress as it's a renderer-side event listener
+}
+
+/**
+ * Creates a wrapper for IPC handlers that require database directory validation
+ */
+function createDbHandler<T extends any[], R>(
+  inMemorySettings: Record<string, any>,
+  handler: (dbDir: string, ...args: T) => Promise<R> | R,
+): (_event: any, ...args: T) => Promise<R> {
+  return async (_event: any, ...args: T): Promise<R> => {
+    const dbDirResult = validateAndGetDbDir(inMemorySettings);
+    if (!dbDirResult.success) {
+      return { error: dbDirResult.error, success: false } as R;
+    }
+    return handler(dbDirResult.dbDir!, ...args);
+  };
+}
+
+/**
+ * Creates a sample operation handler using the sample service
+ */
+function createSampleOperationHandler(
+  inMemorySettings: Record<string, any>,
+  operationType: "add" | "delete" | "replace",
+) {
+  return async (
+    _event: any,
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+    filePath?: string,
+    options?: { forceMono?: boolean; forceStereo?: boolean },
+  ) => {
+    try {
+      let result: DbResult<any>;
+
+      switch (operationType) {
+        case "add":
+          if (!filePath) {
+            return {
+              error: "File path required for add operation",
+              success: false,
+            };
+          }
+          result = sampleService.addSampleToSlot(
+            inMemorySettings,
+            kitName,
+            voiceNumber,
+            slotIndex,
+            filePath,
+            options,
+          );
+          break;
+
+        case "delete":
+          result = sampleService.deleteSampleFromSlot(
+            inMemorySettings,
+            kitName,
+            voiceNumber,
+            slotIndex,
+          );
+          break;
+
+        case "replace":
+          if (!filePath) {
+            return {
+              error: "File path required for replace operation",
+              success: false,
+            };
+          }
+          result = sampleService.replaceSampleInSlot(
+            inMemorySettings,
+            kitName,
+            voiceNumber,
+            slotIndex,
+            filePath,
+            options,
+          );
+          break;
+
+        default:
+          return { error: "Unknown operation type", success: false };
+      }
+
+      return result;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return {
+        error: `Failed to perform sample operation: ${errorMessage}`,
+        success: false,
+      };
+    }
+  };
+}
+
+/**
+ * Validates local store path and returns database directory
+ */
+function validateAndGetDbDir(inMemorySettings: Record<string, any>): {
+  dbDir?: string;
+  error?: string;
+  success: boolean;
+} {
+  const localStorePath = inMemorySettings.localStorePath;
+  if (!localStorePath) {
+    return { error: "No local store path configured", success: false };
+  }
+  return { dbDir: path.join(localStorePath, ".romperdb"), success: true };
 }

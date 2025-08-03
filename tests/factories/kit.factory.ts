@@ -5,18 +5,18 @@ import type { Kit, KitWithRelations, NewKit } from "../../shared/db/schema";
  * Reduces test data duplication and ensures consistent test data structure
  */
 export const createMockKit = (overrides: Partial<Kit> = {}): Kit => ({
-  id: 1,
-  name: "A0",
-  bank_letter: "A",
   alias: null,
   artist: null,
-  editable: false,
-  locked: false,
-  step_pattern: null,
-  modified_since_sync: false,
+  bank_letter: "A",
   created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
+  editable: false,
+  id: 1,
+  locked: false,
+  modified_since_sync: false,
+  name: "A0",
   scanned_at: new Date().toISOString(),
+  step_pattern: null,
+  updated_at: new Date().toISOString(),
   ...overrides,
 });
 
@@ -30,8 +30,8 @@ export const createMockKitWithRelations = (
   return {
     ...baseKit,
     bank: {
-      letter: overrides.bank_letter || baseKit.bank_letter || "A",
       artist: "Test Artist A",
+      letter: overrides.bank_letter || baseKit.bank_letter || "A",
       rtf_filename: null,
       scanned_at: new Date().toISOString(),
     },
@@ -44,14 +44,14 @@ export const createMockKitWithRelations = (
  * Factory for creating mock NewKit objects
  */
 export const createMockNewKit = (overrides: Partial<NewKit> = {}): NewKit => ({
-  name: "A0",
-  bank_letter: "A",
   alias: null,
   artist: null,
+  bank_letter: "A",
   editable: false,
   locked: false,
-  step_pattern: null,
   modified_since_sync: false,
+  name: "A0",
+  step_pattern: null,
   ...overrides,
 });
 
@@ -94,9 +94,9 @@ export const createMockBankKits = (
 ): Kit[] =>
   Array.from({ length: count }, (_, i) =>
     createMockKit({
+      bank_letter: bankLetter,
       id: i + 1,
       name: `${bankLetter}${i}`,
-      bank_letter: bankLetter,
     }),
   );
 

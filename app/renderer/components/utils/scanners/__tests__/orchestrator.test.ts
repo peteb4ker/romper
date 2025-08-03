@@ -2,8 +2,9 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ScannerOrchestrator } from "../orchestrator";
 import type { ProgressCallback, ScannerFunction } from "../types";
+
+import { ScannerOrchestrator } from "../orchestrator";
 
 // Global mock progress callback for all tests
 let mockProgressCallback: ProgressCallback;
@@ -24,20 +25,20 @@ describe("ScannerOrchestrator", () => {
       const mockOperation1: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation1" },
+          success: true,
         });
 
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -66,20 +67,20 @@ describe("ScannerOrchestrator", () => {
       const mockOperation1: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: false,
           error: "Operation 1 failed",
+          success: false,
         });
 
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -89,7 +90,7 @@ describe("ScannerOrchestrator", () => {
         op2: { result: "operation2" },
       });
       expect(result.errors).toEqual([
-        { operation: "op1", error: "Operation 1 failed" },
+        { error: "Operation 1 failed", operation: "op1" },
       ]);
       expect(result.completedOperations).toBe(1);
       expect(result.totalOperations).toBe(2);
@@ -104,20 +105,20 @@ describe("ScannerOrchestrator", () => {
       const mockOperation1: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: false,
           error: "Operation 1 failed",
+          success: false,
         });
 
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -125,7 +126,7 @@ describe("ScannerOrchestrator", () => {
       expect(result.success).toBe(false);
       expect(result.results).toEqual({});
       expect(result.errors).toEqual([
-        { operation: "op1", error: "Operation 1 failed" },
+        { error: "Operation 1 failed", operation: "op1" },
       ]);
       expect(result.completedOperations).toBe(0);
       expect(result.totalOperations).toBe(2);
@@ -147,13 +148,13 @@ describe("ScannerOrchestrator", () => {
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -163,7 +164,7 @@ describe("ScannerOrchestrator", () => {
         op2: { result: "operation2" },
       });
       expect(result.errors).toEqual([
-        { operation: "op1", error: "Unexpected error" },
+        { error: "Unexpected error", operation: "op1" },
       ]);
       expect(result.completedOperations).toBe(1);
       expect(result.totalOperations).toBe(2);
@@ -182,13 +183,13 @@ describe("ScannerOrchestrator", () => {
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -196,7 +197,7 @@ describe("ScannerOrchestrator", () => {
       expect(result.success).toBe(false);
       expect(result.results).toEqual({});
       expect(result.errors).toEqual([
-        { operation: "op1", error: "Unexpected error" },
+        { error: "Unexpected error", operation: "op1" },
       ]);
       expect(result.completedOperations).toBe(0);
       expect(result.totalOperations).toBe(2);
@@ -211,12 +212,12 @@ describe("ScannerOrchestrator", () => {
       const mockOperation: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation" },
+          success: true,
         });
 
       const operations = [
-        { name: "op", scanner: mockOperation, input: { test: "input" } },
+        { input: { test: "input" }, name: "op", scanner: mockOperation },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -247,12 +248,12 @@ describe("ScannerOrchestrator", () => {
       const mockOperation: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: undefined,
+          success: true,
         });
 
       const operations = [
-        { name: "op", scanner: mockOperation, input: { test: "input" } },
+        { input: { test: "input" }, name: "op", scanner: mockOperation },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -279,13 +280,13 @@ describe("ScannerOrchestrator", () => {
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -295,7 +296,7 @@ describe("ScannerOrchestrator", () => {
         op2: { result: "operation2" },
       });
       expect(result.errors).toEqual([
-        { operation: "op1", error: "Unknown error" },
+        { error: "Unknown error", operation: "op1" },
       ]);
       expect(result.completedOperations).toBe(1);
       expect(result.totalOperations).toBe(2);

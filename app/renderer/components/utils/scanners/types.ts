@@ -1,14 +1,26 @@
 // Scanner types and interfaces
 
-export interface ScanResult<T = any> {
+export interface ChainResult {
+  completedOperations: number;
+  errors: Array<{ error: string; operation: string }>;
+  results: Record<string, any>;
   success: boolean;
-  data?: T;
-  error?: string;
+  totalOperations: number;
 }
 
-export type ScannerFunction<TInput, TOutput> = (
-  input: TInput,
-) => ScanResult<TOutput> | Promise<ScanResult<TOutput>>;
+export type ErrorHandlingStrategy = "continue" | "stop";
+
+// Full kit scan types
+export interface FullKitScanInput {
+  fileReader?: (filePath: string) => Promise<ArrayBuffer>;
+  samples: Record<number, string[]>;
+  wavFiles: string[];
+}
+
+export interface FullKitScanOutput {
+  voiceInference?: VoiceInferenceOutput;
+  wavAnalysis?: WAVAnalysisOutput[];
+}
 
 export type ProgressCallback = (
   completed: number,
@@ -16,20 +28,29 @@ export type ProgressCallback = (
   currentOperation: string,
 ) => void;
 
-export type ErrorHandlingStrategy = "continue" | "stop";
-
-export interface ScanOperation<TInput = any, TOutput = any> {
-  name: string;
-  scanner: ScannerFunction<TInput, TOutput>;
-  input: TInput;
+// RTF artist types
+export interface RTFArtistInput {
+  rtfFiles: string[];
 }
 
-export interface ChainResult {
+export interface RTFArtistOutput {
+  bankArtists: Record<string, string>;
+}
+
+export type ScannerFunction<TInput, TOutput> = (
+  input: TInput,
+) => Promise<ScanResult<TOutput>> | ScanResult<TOutput>;
+
+export interface ScanOperation<TInput = any, TOutput = any> {
+  input: TInput;
+  name: string;
+  scanner: ScannerFunction<TInput, TOutput>;
+}
+
+export interface ScanResult<T = any> {
+  data?: T;
+  error?: string;
   success: boolean;
-  results: Record<string, any>;
-  errors: Array<{ operation: string; error: string }>;
-  completedOperations: number;
-  totalOperations: number;
 }
 
 // Voice inference types
@@ -49,31 +70,10 @@ export interface WAVAnalysisInput {
 }
 
 export interface WAVAnalysisOutput {
-  sampleRate: number;
   bitDepth: number;
-  channels: number;
   bitrate: number;
+  channels: number;
   isStereo: boolean;
   isValid: boolean;
-}
-
-// RTF artist types
-export interface RTFArtistInput {
-  rtfFiles: string[];
-}
-
-export interface RTFArtistOutput {
-  bankArtists: Record<string, string>;
-}
-
-// Full kit scan types
-export interface FullKitScanInput {
-  samples: Record<number, string[]>;
-  wavFiles: string[];
-  fileReader?: (filePath: string) => Promise<ArrayBuffer>;
-}
-
-export interface FullKitScanOutput {
-  voiceInference?: VoiceInferenceOutput;
-  wavAnalysis?: WAVAnalysisOutput[];
+  sampleRate: number;
 }

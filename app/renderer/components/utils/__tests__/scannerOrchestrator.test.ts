@@ -38,20 +38,20 @@ describe("ScannerOrchestrator", () => {
       const mockOperation1: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation1" },
+          success: true,
         });
 
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -80,20 +80,20 @@ describe("ScannerOrchestrator", () => {
       const mockOperation1: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: false,
           error: "Operation 1 failed",
+          success: false,
         });
 
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -103,7 +103,7 @@ describe("ScannerOrchestrator", () => {
         op2: { result: "operation2" },
       });
       expect(result.errors).toEqual([
-        { operation: "op1", error: "Operation 1 failed" },
+        { error: "Operation 1 failed", operation: "op1" },
       ]);
       expect(result.completedOperations).toBe(1);
       expect(result.totalOperations).toBe(2);
@@ -118,20 +118,20 @@ describe("ScannerOrchestrator", () => {
       const mockOperation1: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: false,
           error: "Operation 1 failed",
+          success: false,
         });
 
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -139,7 +139,7 @@ describe("ScannerOrchestrator", () => {
       expect(result.success).toBe(false);
       expect(result.results).toEqual({});
       expect(result.errors).toEqual([
-        { operation: "op1", error: "Operation 1 failed" },
+        { error: "Operation 1 failed", operation: "op1" },
       ]);
       expect(result.completedOperations).toBe(0);
       expect(result.totalOperations).toBe(2);
@@ -161,13 +161,13 @@ describe("ScannerOrchestrator", () => {
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -177,7 +177,7 @@ describe("ScannerOrchestrator", () => {
         op2: { result: "operation2" },
       });
       expect(result.errors).toEqual([
-        { operation: "op1", error: "Unexpected error" },
+        { error: "Unexpected error", operation: "op1" },
       ]);
       expect(result.completedOperations).toBe(1);
       expect(result.totalOperations).toBe(2);
@@ -196,13 +196,13 @@ describe("ScannerOrchestrator", () => {
       const mockOperation2: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation2" },
+          success: true,
         });
 
       const operations = [
-        { name: "op1", scanner: mockOperation1, input: { test: "input1" } },
-        { name: "op2", scanner: mockOperation2, input: { test: "input2" } },
+        { input: { test: "input1" }, name: "op1", scanner: mockOperation1 },
+        { input: { test: "input2" }, name: "op2", scanner: mockOperation2 },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -210,7 +210,7 @@ describe("ScannerOrchestrator", () => {
       expect(result.success).toBe(false);
       expect(result.results).toEqual({});
       expect(result.errors).toEqual([
-        { operation: "op1", error: "Unexpected error" },
+        { error: "Unexpected error", operation: "op1" },
       ]);
       expect(result.completedOperations).toBe(0);
       expect(result.totalOperations).toBe(2);
@@ -225,12 +225,12 @@ describe("ScannerOrchestrator", () => {
       const mockOperation: ScannerFunction<any, any> = vi
         .fn()
         .mockResolvedValue({
-          success: true,
           data: { result: "operation" },
+          success: true,
         });
 
       const operations = [
-        { name: "op", scanner: mockOperation, input: { test: "input" } },
+        { input: { test: "input" }, name: "op", scanner: mockOperation },
       ];
 
       const result = await orchestrator.executeChain(operations);
@@ -246,20 +246,20 @@ describe("ScannerOrchestrator", () => {
 describe("executeFullKitScan", () => {
   it("executes all scanning operations successfully", async () => {
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: true,
       data: { voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" } },
+      success: true,
     });
 
     vi.mocked(scanWAVAnalysis).mockResolvedValue({
-      success: true,
       data: {
-        sampleRate: 44100,
         bitDepth: 16,
-        channels: 2,
         bitrate: 1411200,
+        channels: 2,
         isStereo: true,
         isValid: true,
+        sampleRate: 44100,
       },
+      success: true,
     });
 
     // RTF scanning removed
@@ -281,36 +281,36 @@ describe("executeFullKitScan", () => {
     expect(result.results?.rtfArtist).toBeUndefined(); // RTF scanning removed
     // The implementation adds errors for WAV analysis if no file reader is provided
     expect(result.errors).toContainEqual({
-      operation: "wavAnalysis",
       error: expect.stringContaining("All WAV files failed analysis"),
+      operation: "wavAnalysis",
     });
     expect(result.completedOperations).toBe(1); // RTF operation removed
   });
 
   it("handles partial failures with continue strategy", async () => {
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: false,
       error: "Voice inference failed",
+      success: false,
     });
 
     vi.mocked(scanWAVAnalysis).mockResolvedValue({
-      success: true,
       data: {
-        sampleRate: 44100,
         bitDepth: 16,
-        channels: 2,
         bitrate: 1411200,
+        channels: 2,
         isStereo: true,
         isValid: true,
+        sampleRate: 44100,
       },
+      success: true,
     });
 
     // RTF scanning removed
 
     const kitData = {
+      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
       samples: { 1: ["kick.wav"] },
       wavFiles: ["kick.wav"],
-      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
     };
 
     const result = await executeFullKitScan(
@@ -326,33 +326,33 @@ describe("executeFullKitScan", () => {
     expect(result.results?.rtfArtist).toBeUndefined(); // RTF scanning removed
     // The implementation adds errors for both voiceInference and wavAnalysis
     expect(result.errors).toContainEqual({
-      operation: "voiceInference",
       error: "Voice inference failed",
+      operation: "voiceInference",
     });
     expect(result.completedOperations).toBe(1);
   });
 
   it("handles WAV analysis failures gracefully", async () => {
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: true,
       data: { voiceNames: { 1: "Kick" } },
+      success: true,
     });
 
     vi.mocked(scanWAVAnalysis)
       .mockResolvedValueOnce({
-        success: true,
         data: {
-          sampleRate: 44100,
           bitDepth: 16,
-          channels: 2,
           bitrate: 1411200,
+          channels: 2,
           isStereo: true,
           isValid: true,
+          sampleRate: 44100,
         },
+        success: true,
       })
       .mockResolvedValueOnce({
-        success: false,
         error: "Invalid WAV format",
+        success: false,
       });
 
     // RTF scanning removed
@@ -378,29 +378,29 @@ describe("executeFullKitScan", () => {
     const customFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(44));
 
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: true,
       data: { voiceNames: { 1: "Kick" } },
+      success: true,
     });
 
     vi.mocked(scanWAVAnalysis).mockResolvedValue({
-      success: true,
       data: {
-        sampleRate: 44100,
         bitDepth: 16,
-        channels: 2,
         bitrate: 1411200,
+        channels: 2,
         isStereo: true,
         isValid: true,
+        sampleRate: 44100,
       },
+      success: true,
     });
 
     // RTF scanning removed
 
     const kitData = {
+      fileReader: customFileReader,
+      rtfFiles: [],
       samples: { 1: ["kick.wav"] },
       wavFiles: ["kick.wav"],
-      rtfFiles: [],
-      fileReader: customFileReader,
     };
 
     await executeFullKitScan(kitData);
@@ -418,8 +418,8 @@ describe("executeFullKitScan", () => {
 describe("executeVoiceInferenceScan", () => {
   it("executes voice inference successfully", async () => {
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: true,
       data: { voiceNames: { 1: "Kick", 2: "Snare" } },
+      success: true,
     });
 
     const samples = { 1: ["kick.wav"], 2: ["snare.wav"] };
@@ -438,8 +438,8 @@ describe("executeVoiceInferenceScan", () => {
 
   it("handles voice inference failure", async () => {
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: false,
       error: "Voice inference failed",
+      success: false,
     });
 
     const samples = { 1: ["kick.wav"] };
@@ -451,7 +451,7 @@ describe("executeVoiceInferenceScan", () => {
     expect(result.success).toBe(false);
     expect(result.results.voiceInference).toBeUndefined();
     expect(result.errors).toEqual([
-      { operation: "voiceInference", error: "Voice inference failed" },
+      { error: "Voice inference failed", operation: "voiceInference" },
     ]);
     expect(result.completedOperations).toBe(0);
   });
@@ -461,26 +461,26 @@ describe("executeWAVAnalysisScan", () => {
   it("analyzes multiple WAV files successfully", async () => {
     vi.mocked(scanWAVAnalysis)
       .mockResolvedValueOnce({
-        success: true,
         data: {
-          sampleRate: 44100,
           bitDepth: 16,
-          channels: 2,
           bitrate: 1411200,
+          channels: 2,
           isStereo: true,
           isValid: true,
+          sampleRate: 44100,
         },
+        success: true,
       })
       .mockResolvedValueOnce({
-        success: true,
         data: {
-          sampleRate: 48000,
           bitDepth: 24,
-          channels: 1,
           bitrate: 1152000,
+          channels: 1,
           isStereo: false,
           isValid: true,
+          sampleRate: 48000,
         },
+        success: true,
       });
 
     const wavFiles = ["kick.wav", "snare.wav"];
@@ -498,27 +498,27 @@ describe("executeWAVAnalysisScan", () => {
     // expect(result.results?.wavAnalysis?.[1].sampleRate).toBe(48000);
     // The implementation adds errors for WAV analysis if no file reader is provided
     expect(result.errors).toContainEqual({
-      operation: "wavAnalysis",
       error: expect.stringContaining("All WAV files failed analysis"),
+      operation: "wavAnalysis",
     });
   });
 
   it("handles partial WAV analysis failures", async () => {
     vi.mocked(scanWAVAnalysis)
       .mockResolvedValueOnce({
-        success: true,
         data: {
-          sampleRate: 44100,
           bitDepth: 16,
-          channels: 2,
           bitrate: 1411200,
+          channels: 2,
           isStereo: true,
           isValid: true,
+          sampleRate: 44100,
         },
+        success: true,
       })
       .mockResolvedValueOnce({
-        success: false,
         error: "Invalid WAV format",
+        success: false,
       });
 
     const wavFiles = ["kick.wav", "invalid.wav"];
@@ -538,8 +538,8 @@ describe("executeWAVAnalysisScan", () => {
 
   it("handles complete WAV analysis failure", async () => {
     vi.mocked(scanWAVAnalysis).mockResolvedValue({
-      success: false,
       error: "Invalid WAV format",
+      success: false,
     });
 
     const wavFiles = ["invalid1.wav", "invalid2.wav"];
@@ -559,15 +559,15 @@ describe("executeWAVAnalysisScan", () => {
     const customFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(44));
 
     vi.mocked(scanWAVAnalysis).mockResolvedValue({
-      success: true,
       data: {
-        sampleRate: 44100,
         bitDepth: 16,
-        channels: 2,
         bitrate: 1411200,
+        channels: 2,
         isStereo: true,
         isValid: true,
+        sampleRate: 44100,
       },
+      success: true,
     });
 
     const wavFiles = ["kick.wav"];

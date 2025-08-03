@@ -10,7 +10,7 @@ afterEach(() => {
 describe("WizardStepNav", () => {
   it("renders all step labels and highlights current step", () => {
     const stepLabels = ["Source", "Target", "Initialize"];
-    render(<WizardStepNav stepLabels={stepLabels} currentStep={1} />);
+    render(<WizardStepNav currentStep={1} stepLabels={stepLabels} />);
     expect(screen.getByText("Source")).toBeInTheDocument();
     expect(screen.getByText("Target")).toBeInTheDocument();
     expect(screen.getByText("Initialize")).toBeInTheDocument();

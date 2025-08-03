@@ -90,8 +90,8 @@ describe("useVoiceAlias", () => {
 
     it("handles API failure gracefully", async () => {
       vi.mocked(window.electronAPI.updateVoiceAlias).mockResolvedValue({
-        success: false,
         error: "Database error",
+        success: false,
       });
 
       const onUpdate = vi.fn();
@@ -161,7 +161,7 @@ describe("useVoiceAlias", () => {
   describe("dependency updates", () => {
     it("updates callback when kitName changes", async () => {
       const onUpdate = vi.fn();
-      const { result, rerender } = renderHook(
+      const { rerender, result } = renderHook(
         ({ kitName }) => useVoiceAlias({ kitName, onUpdate }),
         {
           initialProps: { kitName: "A0" },
@@ -199,7 +199,7 @@ describe("useVoiceAlias", () => {
       const onUpdate1 = vi.fn();
       const onUpdate2 = vi.fn();
 
-      const { result, rerender } = renderHook(
+      const { rerender, result } = renderHook(
         ({ onUpdate }) => useVoiceAlias({ kitName: "A0", onUpdate }),
         {
           initialProps: { onUpdate: onUpdate1 },
@@ -237,7 +237,7 @@ describe("useVoiceAlias", () => {
     });
 
     it("maintains stable function reference", () => {
-      const { result, rerender } = renderHook(() =>
+      const { rerender, result } = renderHook(() =>
         useVoiceAlias({ kitName: "A0" }),
       );
 

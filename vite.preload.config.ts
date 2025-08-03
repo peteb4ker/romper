@@ -3,23 +3,23 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   build: {
+    emptyOutDir: false,
     lib: {
       entry: resolve(__dirname, "electron/preload/index.ts"),
-      name: "preload",
       fileName: "index",
       formats: ["es"],
+      name: "preload",
     },
+    minify: false,
     outDir: "dist/electron/preload",
-    emptyOutDir: false,
     rollupOptions: {
       external: ["electron"],
       output: {
         entryFileNames: "[name].mjs",
       },
     },
-    target: "node18",
-    minify: false,
     sourcemap: true,
+    target: "node18",
   },
   resolve: {
     alias: {

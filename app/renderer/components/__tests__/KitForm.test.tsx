@@ -4,6 +4,7 @@ import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Kit } from "../../../../shared/db/schema";
+
 import KitForm from "../KitForm";
 
 afterEach(() => {
@@ -16,13 +17,13 @@ describe("KitForm", () => {
   } as Kit;
 
   it("renders Edit Tags button when tagsEditable", () => {
-    render(<KitForm kit={baseKit} tagsEditable={true} onSave={vi.fn()} />);
+    render(<KitForm kit={baseKit} onSave={vi.fn()} tagsEditable={true} />);
     expect(screen.getByText("Edit Tags")).toBeInTheDocument();
   });
 
   it("shows tag editing UI and allows adding tags", () => {
     const onSave = vi.fn();
-    render(<KitForm kit={baseKit} tagsEditable={true} onSave={onSave} />);
+    render(<KitForm kit={baseKit} onSave={onSave} tagsEditable={true} />);
     fireEvent.click(screen.getByText("Edit Tags"));
     // Add a tag
     const input = screen.getByPlaceholderText("Add tag");
@@ -39,7 +40,7 @@ describe("KitForm", () => {
     );
     expect(screen.getByText("Loading kit metadata...")).toBeInTheDocument();
     rerender(
-      <KitForm kit={baseKit} error="Something went wrong" onSave={vi.fn()} />,
+      <KitForm error="Something went wrong" kit={baseKit} onSave={vi.fn()} />,
     );
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
   });
@@ -48,8 +49,8 @@ describe("KitForm", () => {
     render(
       <KitForm
         kit={{ alias: "Empty" } as Kit}
-        tagsEditable={true}
         onSave={vi.fn()}
+        tagsEditable={true}
       />,
     );
     expect(screen.getByText("No tags")).toBeInTheDocument();

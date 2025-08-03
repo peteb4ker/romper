@@ -50,8 +50,8 @@ describe("kitStepSequencerWorker", () => {
 
       const startMessage = {
         data: {
-          type: "START",
           payload: {},
+          type: "START",
         },
       } as MessageEvent;
 
@@ -69,11 +69,11 @@ describe("kitStepSequencerWorker", () => {
 
       const startMessage = {
         data: {
-          type: "START",
           payload: {
             numSteps: 8,
             stepDuration: 200,
           },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -91,15 +91,15 @@ describe("kitStepSequencerWorker", () => {
 
       const startMessage1 = {
         data: {
-          type: "START",
           payload: { stepDuration: 100 },
+          type: "START",
         },
       } as MessageEvent;
 
       const startMessage2 = {
         data: {
-          type: "START",
           payload: { stepDuration: 200 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -132,8 +132,8 @@ describe("kitStepSequencerWorker", () => {
 
       const startMessage = {
         data: {
-          type: "START",
           payload: { numSteps: 4 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -146,29 +146,29 @@ describe("kitStepSequencerWorker", () => {
       // First step
       intervalCallback!();
       expect(mockSelf.postMessage).toHaveBeenCalledWith({
-        type: "STEP",
         payload: { currentStep: 1 },
+        type: "STEP",
       });
 
       // Second step
       intervalCallback!();
       expect(mockSelf.postMessage).toHaveBeenCalledWith({
-        type: "STEP",
         payload: { currentStep: 2 },
+        type: "STEP",
       });
 
       // Third step
       intervalCallback!();
       expect(mockSelf.postMessage).toHaveBeenCalledWith({
-        type: "STEP",
         payload: { currentStep: 3 },
+        type: "STEP",
       });
 
       // Fourth step (should wrap back to 0)
       intervalCallback!();
       expect(mockSelf.postMessage).toHaveBeenCalledWith({
-        type: "STEP",
         payload: { currentStep: 0 },
+        type: "STEP",
       });
     });
 
@@ -185,8 +185,8 @@ describe("kitStepSequencerWorker", () => {
 
       const startMessage = {
         data: {
-          type: "START",
           payload: { numSteps: 3 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -214,7 +214,7 @@ describe("kitStepSequencerWorker", () => {
   describe("STOP message handling", () => {
     it("stops the sequencer and resets current step", async () => {
       let intervalCallback: (() => void) | null = null;
-      let intervalId: number | null = null;
+      let intervalId: null | number = null;
 
       mockSetInterval.mockImplementation(
         (callback: () => void, _delay: number) => {
@@ -229,8 +229,8 @@ describe("kitStepSequencerWorker", () => {
       // Start the sequencer
       const startMessage = {
         data: {
-          type: "START",
           payload: { numSteps: 8 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -243,8 +243,8 @@ describe("kitStepSequencerWorker", () => {
       // Stop the sequencer
       const stopMessage = {
         data: {
-          type: "STOP",
           payload: {},
+          type: "STOP",
         },
       } as MessageEvent;
 
@@ -252,8 +252,8 @@ describe("kitStepSequencerWorker", () => {
 
       expect(mockClearInterval).toHaveBeenCalledWith(intervalId);
       expect(mockSelf.postMessage).toHaveBeenLastCalledWith({
-        type: "STEP",
         payload: { currentStep: 0 },
+        type: "STEP",
       });
     });
 
@@ -277,8 +277,8 @@ describe("kitStepSequencerWorker", () => {
       // Start the sequencer
       const startMessage = {
         data: {
-          type: "START",
           payload: {},
+          type: "START",
         },
       } as MessageEvent;
 
@@ -290,8 +290,8 @@ describe("kitStepSequencerWorker", () => {
       // Stop the sequencer
       const stopMessage = {
         data: {
-          type: "STOP",
           payload: {},
+          type: "STOP",
         },
       } as MessageEvent;
 
@@ -304,8 +304,8 @@ describe("kitStepSequencerWorker", () => {
       // Should only have the reset step message, not a new step message
       expect(mockSelf.postMessage).toHaveBeenCalledTimes(1);
       expect(mockSelf.postMessage).toHaveBeenCalledWith({
-        type: "STEP",
         payload: { currentStep: 0 },
+        type: "STEP",
       });
     });
   });
@@ -316,8 +316,8 @@ describe("kitStepSequencerWorker", () => {
 
       const setStepMessage = {
         data: {
-          type: "SET_STEP",
           payload: { currentStep: 5 },
+          type: "SET_STEP",
         },
       } as MessageEvent;
 
@@ -337,8 +337,8 @@ describe("kitStepSequencerWorker", () => {
 
       const startMessage = {
         data: {
-          type: "START",
           payload: { numSteps: 8 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -347,8 +347,8 @@ describe("kitStepSequencerWorker", () => {
       // Next step should be 6 (5 + 1)
       intervalCallback!();
       expect(mockSelf.postMessage).toHaveBeenCalledWith({
-        type: "STEP",
         payload: { currentStep: 6 },
+        type: "STEP",
       });
     });
 
@@ -357,8 +357,8 @@ describe("kitStepSequencerWorker", () => {
 
       const setStepMessage = {
         data: {
-          type: "SET_STEP",
           payload: { currentStep: 0 },
+          type: "SET_STEP",
         },
       } as MessageEvent;
 
@@ -374,8 +374,8 @@ describe("kitStepSequencerWorker", () => {
 
       const startMessage = {
         data: {
-          type: "START",
           payload: { numSteps: 4 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -384,8 +384,8 @@ describe("kitStepSequencerWorker", () => {
       // Next step should be 1 (0 + 1)
       intervalCallback!();
       expect(mockSelf.postMessage).toHaveBeenCalledWith({
-        type: "STEP",
         payload: { currentStep: 1 },
+        type: "STEP",
       });
     });
 
@@ -395,8 +395,8 @@ describe("kitStepSequencerWorker", () => {
       // Set step to last step in sequence
       const setStepMessage = {
         data: {
-          type: "SET_STEP",
           payload: { currentStep: 15 }, // Last step in 16-step sequence
+          type: "SET_STEP",
         },
       } as MessageEvent;
 
@@ -412,8 +412,8 @@ describe("kitStepSequencerWorker", () => {
 
       const startMessage = {
         data: {
-          type: "START",
           payload: { numSteps: 16 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -422,8 +422,8 @@ describe("kitStepSequencerWorker", () => {
       // Next step should wrap to 0 (15 + 1) % 16
       intervalCallback!();
       expect(mockSelf.postMessage).toHaveBeenCalledWith({
-        type: "STEP",
         payload: { currentStep: 0 },
+        type: "STEP",
       });
     });
   });
@@ -434,8 +434,8 @@ describe("kitStepSequencerWorker", () => {
 
       const unknownMessage = {
         data: {
-          type: "UNKNOWN",
           payload: { someData: "test" },
+          type: "UNKNOWN",
         },
       } as MessageEvent;
 
@@ -486,8 +486,8 @@ describe("kitStepSequencerWorker", () => {
 
       const setStepMessage = {
         data: {
-          type: "SET_STEP",
           payload: {}, // No currentStep property
+          type: "SET_STEP",
         },
       } as MessageEvent;
 
@@ -510,8 +510,8 @@ describe("kitStepSequencerWorker", () => {
       // Start first sequencer
       const startMessage1 = {
         data: {
-          type: "START",
           payload: { stepDuration: 100 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -520,8 +520,8 @@ describe("kitStepSequencerWorker", () => {
       // Start second sequencer (should clear first)
       const startMessage2 = {
         data: {
-          type: "START",
           payload: { stepDuration: 200 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -532,8 +532,8 @@ describe("kitStepSequencerWorker", () => {
       // Stop sequencer (should clear second)
       const stopMessage = {
         data: {
-          type: "STOP",
           payload: {},
+          type: "STOP",
         },
       } as MessageEvent;
 
@@ -548,8 +548,8 @@ describe("kitStepSequencerWorker", () => {
       // Stop without starting (interval should be null)
       const stopMessage = {
         data: {
-          type: "STOP",
           payload: {},
+          type: "STOP",
         },
       } as MessageEvent;
 
@@ -558,8 +558,8 @@ describe("kitStepSequencerWorker", () => {
 
       // Should still post reset step message
       expect(mockSelf.postMessage).toHaveBeenCalledWith({
-        type: "STEP",
         payload: { currentStep: 0 },
+        type: "STEP",
       });
     });
   });
@@ -579,8 +579,8 @@ describe("kitStepSequencerWorker", () => {
       // Start sequencer
       const startMessage = {
         data: {
-          type: "START",
           payload: { numSteps: 4 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -593,8 +593,8 @@ describe("kitStepSequencerWorker", () => {
       // Stop
       const stopMessage = {
         data: {
-          type: "STOP",
           payload: {},
+          type: "STOP",
         },
       } as MessageEvent;
 
@@ -609,8 +609,8 @@ describe("kitStepSequencerWorker", () => {
       // First step after restart should be 1
       intervalCallback!();
       expect(mockSelf.postMessage).toHaveBeenCalledWith({
-        type: "STEP",
         payload: { currentStep: 1 },
+        type: "STEP",
       });
     });
 
@@ -628,8 +628,8 @@ describe("kitStepSequencerWorker", () => {
       // Start with 3 steps
       const startMessage = {
         data: {
-          type: "START",
           payload: { numSteps: 3 },
+          type: "START",
         },
       } as MessageEvent;
 
@@ -641,15 +641,15 @@ describe("kitStepSequencerWorker", () => {
       intervalCallback!(); // Step 0 (wrap)
 
       expect(mockSelf.postMessage).toHaveBeenLastCalledWith({
-        type: "STEP",
         payload: { currentStep: 0 },
+        type: "STEP",
       });
 
       // Set step manually
       const setStepMessage = {
         data: {
-          type: "SET_STEP",
           payload: { currentStep: 2 },
+          type: "SET_STEP",
         },
       } as MessageEvent;
 
@@ -658,8 +658,8 @@ describe("kitStepSequencerWorker", () => {
       // Next step should still respect numSteps=3
       intervalCallback!(); // Should wrap to 0
       expect(mockSelf.postMessage).toHaveBeenLastCalledWith({
-        type: "STEP",
         payload: { currentStep: 0 },
+        type: "STEP",
       });
     });
   });

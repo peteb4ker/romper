@@ -48,8 +48,8 @@ describe("formatConverter", () => {
     it("returns error when audio metadata cannot be read", async () => {
       mockFs.existsSync.mockReturnValue(true);
       mockGetAudioMetadata.mockReturnValue({
-        success: false,
         error: "Invalid audio file",
+        success: false,
       });
 
       const result = await convertSampleToRampleFormat(
@@ -64,8 +64,8 @@ describe("formatConverter", () => {
     it("returns error when target bit depth is not supported", async () => {
       mockFs.existsSync.mockReturnValue(true);
       mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 16, channels: 2, sampleRate: 44100 },
         success: true,
-        data: { bitDepth: 16, sampleRate: 44100, channels: 2 },
       });
 
       const options: ConversionOptions = { targetBitDepth: 32 };
@@ -82,8 +82,8 @@ describe("formatConverter", () => {
     it("returns error when target sample rate is not supported", async () => {
       mockFs.existsSync.mockReturnValue(true);
       mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 16, channels: 2, sampleRate: 44100 },
         success: true,
-        data: { bitDepth: 16, sampleRate: 44100, channels: 2 },
       });
 
       const options: ConversionOptions = { targetSampleRate: 96000 };
@@ -100,8 +100,8 @@ describe("formatConverter", () => {
     it("successfully converts stereo to mono with forceMonoConversion", async () => {
       mockFs.existsSync.mockReturnValue(true);
       mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 16, channels: 2, sampleRate: 44100 },
         success: true,
-        data: { bitDepth: 16, sampleRate: 44100, channels: 2 },
       });
 
       // Mock WAV decode
@@ -137,9 +137,9 @@ describe("formatConverter", () => {
       expect(mockWav.encode).toHaveBeenCalledWith(
         expect.any(Array),
         expect.objectContaining({
-          sampleRate: 44100,
           bitDepth: 16,
           float: false,
+          sampleRate: 44100,
         }),
       );
     });
@@ -147,8 +147,8 @@ describe("formatConverter", () => {
     it("converts mono to stereo when target channels is 2", async () => {
       mockFs.existsSync.mockReturnValue(true);
       mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
-        data: { bitDepth: 16, sampleRate: 44100, channels: 1 },
       });
 
       const mockChannelData = [new Float32Array([1.0, 0.5, -0.5])];
@@ -178,8 +178,8 @@ describe("formatConverter", () => {
     it("handles sample rate conversion", async () => {
       mockFs.existsSync.mockReturnValue(true);
       mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 16, channels: 1, sampleRate: 22050 },
         success: true,
-        data: { bitDepth: 16, sampleRate: 22050, channels: 1 },
       });
 
       const mockChannelData = [new Float32Array([1.0, 0.5])];
@@ -209,8 +209,8 @@ describe("formatConverter", () => {
     it("creates output directory if it doesn't exist", async () => {
       mockFs.existsSync.mockReturnValueOnce(true).mockReturnValueOnce(false);
       mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
-        data: { bitDepth: 16, sampleRate: 44100, channels: 1 },
       });
 
       const mockChannelData = [new Float32Array([1.0])];
@@ -239,8 +239,8 @@ describe("formatConverter", () => {
     it("handles WAV decode failure", async () => {
       mockFs.existsSync.mockReturnValue(true);
       mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
-        data: { bitDepth: 16, sampleRate: 44100, channels: 1 },
       });
 
       mockFs.readFileSync.mockReturnValue(Buffer.from("input wav data"));
@@ -258,8 +258,8 @@ describe("formatConverter", () => {
     it("handles empty channel data", async () => {
       mockFs.existsSync.mockReturnValue(true);
       mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
-        data: { bitDepth: 16, sampleRate: 44100, channels: 1 },
       });
 
       mockFs.readFileSync.mockReturnValue(Buffer.from("input wav data"));
@@ -291,8 +291,8 @@ describe("formatConverter", () => {
     it("pads with silence for missing channels", async () => {
       mockFs.existsSync.mockReturnValue(true);
       mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
-        data: { bitDepth: 16, sampleRate: 44100, channels: 1 },
       });
 
       const mockChannelData = [new Float32Array([1.0, 0.5])];
@@ -324,8 +324,8 @@ describe("formatConverter", () => {
     it("calls convertSampleToRampleFormat with default options", async () => {
       mockFs.existsSync.mockReturnValue(true);
       mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 24, channels: 1, sampleRate: 48000 },
         success: true,
-        data: { bitDepth: 24, sampleRate: 48000, channels: 1 },
       });
 
       const mockChannelData = [new Float32Array([1.0])];
@@ -349,59 +349,59 @@ describe("formatConverter", () => {
       expect(result.success).toBe(true);
       expect(result.data?.convertedFormat).toEqual({
         bitDepth: 16,
-        sampleRate: 44100,
         channels: 1,
+        sampleRate: 44100,
       });
     });
   });
 
   describe("getRequiredConversionOptions", () => {
     it("returns null when no conversion is needed", () => {
-      const metadata = { bitDepth: 16, sampleRate: 44100, channels: 2 };
+      const metadata = { bitDepth: 16, channels: 2, sampleRate: 44100 };
       const result = getRequiredConversionOptions(metadata);
 
       expect(result).toBeNull();
     });
 
     it("suggests conversion for unsupported bit depth", () => {
-      const metadata = { bitDepth: 32, sampleRate: 44100, channels: 2 };
+      const metadata = { bitDepth: 32, channels: 2, sampleRate: 44100 };
       const result = getRequiredConversionOptions(metadata);
 
       expect(result).toEqual({ targetBitDepth: 16 });
     });
 
     it("suggests conversion for unsupported sample rate", () => {
-      const metadata = { bitDepth: 16, sampleRate: 96000, channels: 2 };
+      const metadata = { bitDepth: 16, channels: 2, sampleRate: 96000 };
       const result = getRequiredConversionOptions(metadata);
 
       expect(result).toEqual({ targetSampleRate: 44100 });
     });
 
     it("suggests conversion for too many channels", () => {
-      const metadata = { bitDepth: 16, sampleRate: 44100, channels: 6 };
+      const metadata = { bitDepth: 16, channels: 6, sampleRate: 44100 };
       const result = getRequiredConversionOptions(metadata);
 
       expect(result).toEqual({ targetChannels: 2 });
     });
 
     it("suggests mono conversion when forceMonoConversion is true", () => {
-      const metadata = { bitDepth: 16, sampleRate: 44100, channels: 2 };
+      const metadata = { bitDepth: 16, channels: 2, sampleRate: 44100 };
       const result = getRequiredConversionOptions(metadata, true);
 
       expect(result).toEqual({
-        targetChannels: 1,
         forceMonoConversion: true,
+        targetChannels: 1,
       });
     });
 
     it("combines multiple conversion requirements", () => {
-      const metadata = { bitDepth: 32, sampleRate: 96000, channels: 6 };
+      const metadata = { bitDepth: 32, channels: 6, sampleRate: 96000 };
       const result = getRequiredConversionOptions(metadata);
 
       expect(result).toEqual({
         targetBitDepth: 16,
-        targetSampleRate: 44100,
         targetChannels: 2,
+        targetSampleRate: 44100,
       });
     });
 
@@ -415,8 +415,8 @@ describe("formatConverter", () => {
     it("handles undefined values in metadata", () => {
       const metadata = {
         bitDepth: undefined,
-        sampleRate: undefined,
         channels: undefined,
+        sampleRate: undefined,
       };
       const result = getRequiredConversionOptions(metadata);
 

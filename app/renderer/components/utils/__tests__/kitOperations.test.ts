@@ -11,8 +11,8 @@ import {
 
 // Mock the global window.electronAPI
 const mockElectronAPI = {
-  createKit: vi.fn(),
   copyKit: vi.fn(),
+  createKit: vi.fn(),
 };
 
 beforeEach(() => {

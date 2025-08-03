@@ -11,33 +11,33 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock electron APIs
 const mockIpcMain = {
+  emit: vi.fn(),
   handle: vi.fn(),
   on: vi.fn(),
-  emit: vi.fn(),
 };
 
 const mockMenu = {
-  setApplicationMenu: vi.fn(),
   buildFromTemplate: vi.fn().mockReturnValue({}),
+  setApplicationMenu: vi.fn(),
 };
 
 const mockBrowserWindow = {
+  getAllWindows: vi.fn().mockReturnValue([]),
+  getFocusedWindow: vi.fn(),
   webContents: {
     send: vi.fn(),
   },
-  getAllWindows: vi.fn().mockReturnValue([]),
-  getFocusedWindow: vi.fn(),
 };
 
 // Mock electron modules
 vi.mock("electron", () => ({
-  ipcMain: mockIpcMain,
-  Menu: mockMenu,
-  BrowserWindow: mockBrowserWindow,
   app: {
     getName: vi.fn().mockReturnValue("Romper"),
     quit: vi.fn(),
   },
+  BrowserWindow: mockBrowserWindow,
+  ipcMain: mockIpcMain,
+  Menu: mockMenu,
 }));
 
 describe("Menu IPC Integration Tests", () => {
@@ -160,21 +160,21 @@ describe("Menu IPC Integration Tests", () => {
 
     // Test each menu item
     const menuItems = [
-      { label: "Scan All Kits", event: "menu-scan-all-kits", menu: "Tools" },
+      { event: "menu-scan-all-kits", label: "Scan All Kits", menu: "Tools" },
       {
-        label: "Validate Database",
         event: "menu-validate-database",
+        label: "Validate Database",
         menu: "Tools",
       },
       {
-        label: "Setup Local Store...",
         event: "menu-setup-local-store",
+        label: "Setup Local Store...",
         menu: "Tools",
       },
-      { label: "About Romper", event: "menu-about", menu: "Help" },
+      { event: "menu-about", label: "About Romper", menu: "Help" },
     ];
 
-    menuItems.forEach(({ label, event, menu }) => {
+    menuItems.forEach(({ event, label, menu }) => {
       const targetMenu = menuTemplate.find((item: any) => item.label === menu);
       const submenu = targetMenu.submenu;
       const menuItem = submenu.find((item: any) => item.label === label);

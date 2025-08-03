@@ -90,8 +90,8 @@ describe("errorUtils", () => {
       const result = createErrorResult(error);
 
       expect(result).toEqual({
-        success: false,
         error: "Database connection failed",
+        success: false,
       });
     });
 
@@ -100,8 +100,8 @@ describe("errorUtils", () => {
       const result = createErrorResult(error, "Database operation");
 
       expect(result).toEqual({
-        success: false,
         error: "Database operation: Connection timeout",
+        success: false,
       });
     });
 
@@ -109,8 +109,8 @@ describe("errorUtils", () => {
       const result = createErrorResult("File not found");
 
       expect(result).toEqual({
-        success: false,
         error: "File not found",
+        success: false,
       });
     });
 
@@ -118,8 +118,8 @@ describe("errorUtils", () => {
       const result = createErrorResult("Invalid format", "File parsing");
 
       expect(result).toEqual({
-        success: false,
         error: "File parsing: Invalid format",
+        success: false,
       });
     });
 
@@ -127,8 +127,8 @@ describe("errorUtils", () => {
       const result = createErrorResult(null, "Operation");
 
       expect(result).toEqual({
-        success: false,
         error: "Operation: null",
+        success: false,
       });
     });
 
@@ -136,8 +136,8 @@ describe("errorUtils", () => {
       const result = createErrorResult(undefined);
 
       expect(result).toEqual({
-        success: false,
         error: "undefined",
+        success: false,
       });
     });
 
@@ -145,8 +145,8 @@ describe("errorUtils", () => {
       const result = createErrorResult(500, "HTTP Status");
 
       expect(result).toEqual({
-        success: false,
         error: "HTTP Status: 500",
+        success: false,
       });
     });
 
@@ -154,8 +154,8 @@ describe("errorUtils", () => {
       const result = createErrorResult(false, "Validation");
 
       expect(result).toEqual({
-        success: false,
         error: "Validation: false",
+        success: false,
       });
     });
 
@@ -164,8 +164,8 @@ describe("errorUtils", () => {
       const result = createErrorResult(errorObj, "API Call");
 
       expect(result).toEqual({
-        success: false,
         error: "API Call: [object Object]",
+        success: false,
       });
     });
 
@@ -174,8 +174,8 @@ describe("errorUtils", () => {
       const result = createErrorResult(error, "");
 
       expect(result).toEqual({
-        success: false,
         error: "Test error",
+        success: false,
       });
     });
 
@@ -283,7 +283,7 @@ describe("errorUtils", () => {
     });
 
     it("should log object errors", () => {
-      const errorObj = { status: 500, message: "Internal error" };
+      const errorObj = { message: "Internal error", status: 500 };
       logError(errorObj, "Object Handler");
 
       expect(console.error).toHaveBeenCalledTimes(1);
@@ -374,8 +374,8 @@ describe("errorUtils", () => {
       // Create error result
       const errorResult = createErrorResult(originalError, "Database Query");
       expect(errorResult).toEqual({
-        success: false,
         error: "Database Query: Original database error",
+        success: false,
       });
 
       // Log the error

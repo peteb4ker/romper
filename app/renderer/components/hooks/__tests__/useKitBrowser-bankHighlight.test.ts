@@ -2,81 +2,82 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { KitWithRelations } from "../../../../../shared/db/schema";
+
 import { useKitBrowser } from "../useKitBrowser";
 
 describe("useKitBrowser Bank Highlighting", () => {
   const mockKits: KitWithRelations[] = [
     {
+      alias: null,
+      artist: null,
+      bank: {
+        artist: "Test Artist A",
+        letter: "A",
+        rtf_filename: null,
+        scanned_at: null,
+      },
+      bank_letter: "A",
+      editable: false,
+      locked: false,
+      modified_since_sync: false,
       name: "A1",
-      bank_letter: "A",
+      step_pattern: null,
+    },
+    {
       alias: null,
       artist: null,
-      editable: false,
-      locked: false,
-      step_pattern: null,
-      modified_since_sync: false,
       bank: {
-        letter: "A",
         artist: "Test Artist A",
+        letter: "A",
         rtf_filename: null,
         scanned_at: null,
       },
-    },
-    {
+      bank_letter: "A",
+      editable: false,
+      locked: false,
+      modified_since_sync: false,
       name: "A2",
-      bank_letter: "A",
+      step_pattern: null,
+    },
+    {
       alias: null,
       artist: null,
-      editable: false,
-      locked: false,
-      step_pattern: null,
-      modified_since_sync: false,
       bank: {
-        letter: "A",
-        artist: "Test Artist A",
+        artist: "Test Artist B",
+        letter: "B",
         rtf_filename: null,
         scanned_at: null,
       },
-    },
-    {
+      bank_letter: "B",
+      editable: false,
+      locked: false,
+      modified_since_sync: false,
       name: "B1",
-      bank_letter: "B",
-      alias: null,
-      artist: null,
-      editable: false,
-      locked: false,
       step_pattern: null,
-      modified_since_sync: false,
-      bank: {
-        letter: "B",
-        artist: "Test Artist B",
-        rtf_filename: null,
-        scanned_at: null,
-      },
     },
     {
-      name: "B2",
-      bank_letter: "B",
       alias: null,
       artist: null,
-      editable: false,
-      locked: false,
-      step_pattern: null,
-      modified_since_sync: false,
       bank: {
-        letter: "B",
         artist: "Test Artist B",
+        letter: "B",
         rtf_filename: null,
         scanned_at: null,
       },
+      bank_letter: "B",
+      editable: false,
+      locked: false,
+      modified_since_sync: false,
+      name: "B2",
+      step_pattern: null,
     },
   ];
 
   const defaultProps = {
-    kits: mockKits,
-    onRefreshKits: vi.fn(),
     kitListRef: { current: null },
+    kits: mockKits,
     onMessage: vi.fn(),
+    onRefreshKits: vi.fn(),
   };
 
   beforeEach(() => {
@@ -126,7 +127,7 @@ describe("useKitBrowser Bank Highlighting", () => {
   });
 
   it("maintains selectedBank state across re-renders", () => {
-    const { result, rerender } = renderHook(() => useKitBrowser(defaultProps));
+    const { rerender, result } = renderHook(() => useKitBrowser(defaultProps));
 
     // Change to bank 'C'
     act(() => {
@@ -142,52 +143,52 @@ describe("useKitBrowser Bank Highlighting", () => {
   it("works with bank click handlers", () => {
     const testKits: KitWithRelations[] = [
       {
-        name: "A1",
-        bank_letter: "A",
         alias: null,
         artist: null,
-        editable: false,
-        locked: false,
-        step_pattern: null,
-        modified_since_sync: false,
         bank: {
-          letter: "A",
           artist: "Test Artist A",
+          letter: "A",
           rtf_filename: null,
           scanned_at: null,
         },
-      },
-      {
-        name: "B1",
-        bank_letter: "B",
-        alias: null,
-        artist: null,
+        bank_letter: "A",
         editable: false,
         locked: false,
-        step_pattern: null,
         modified_since_sync: false,
+        name: "A1",
+        step_pattern: null,
+      },
+      {
+        alias: null,
+        artist: null,
         bank: {
-          letter: "B",
           artist: "Test Artist B",
+          letter: "B",
           rtf_filename: null,
           scanned_at: null,
         },
-      },
-      {
-        name: "C1",
-        bank_letter: "C",
-        alias: null,
-        artist: null,
+        bank_letter: "B",
         editable: false,
         locked: false,
-        step_pattern: null,
         modified_since_sync: false,
+        name: "B1",
+        step_pattern: null,
+      },
+      {
+        alias: null,
+        artist: null,
         bank: {
-          letter: "C",
           artist: "Test Artist C",
+          letter: "C",
           rtf_filename: null,
           scanned_at: null,
         },
+        bank_letter: "C",
+        editable: false,
+        locked: false,
+        modified_since_sync: false,
+        name: "C1",
+        step_pattern: null,
       },
     ];
 

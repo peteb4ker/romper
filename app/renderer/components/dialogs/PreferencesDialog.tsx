@@ -20,19 +20,19 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
   onClose,
 }) => {
   const {
-    themeMode,
-    defaultToMonoSamples,
     confirmDestructiveActions,
+    defaultToMonoSamples,
     localStorePath,
     localStoreStatus,
-    setThemeMode,
-    setDefaultToMonoSamples,
     setConfirmDestructiveActions,
+    setDefaultToMonoSamples,
     setLocalStorePath,
+    setThemeMode,
+    themeMode,
   } = useSettings();
 
   const [activeTab, setActiveTab] = useState<
-    "samples" | "appearance" | "advanced"
+    "advanced" | "appearance" | "samples"
   >("samples");
 
   // Handle escape key
@@ -70,37 +70,39 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
   };
 
   const themeOptions: Array<{
-    value: ThemeMode;
-    label: string;
     icon: React.ReactNode;
+    label: string;
+    value: ThemeMode;
   }> = [
-    { value: "light", label: "Light", icon: <FiSun className="w-4 h-4" /> },
+    { icon: <FiSun className="w-4 h-4" />, label: "Light", value: "light" },
     {
-      value: "system",
-      label: "System",
       icon: <FiMonitor className="w-4 h-4" />,
+      label: "System",
+      value: "system",
     },
-    { value: "dark", label: "Dark", icon: <FiMoon className="w-4 h-4" /> },
+    { icon: <FiMoon className="w-4 h-4" />, label: "Dark", value: "dark" },
   ];
 
   return (
     <div
+      aria-labelledby="preferences-title"
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
+      role="dialog"
     >
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <FiSettings className="text-lg" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100" id="preferences-title">
               Preferences
             </h2>
           </div>
           <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400"
             aria-label="Close preferences"
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400"
+            onClick={onClose}
           >
             <FiX />
           </button>
@@ -111,32 +113,32 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
           <div className="w-48 bg-gray-50 dark:bg-slate-900 border-r border-gray-200 dark:border-gray-700">
             <nav className="p-2">
               <button
-                onClick={() => setActiveTab("samples")}
                 className={`w-full text-left px-3 py-2 rounded mb-1 transition-colors ${
                   activeTab === "samples"
                     ? "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800"
                 }`}
+                onClick={() => setActiveTab("samples")}
               >
                 Sample Management
               </button>
               <button
-                onClick={() => setActiveTab("appearance")}
                 className={`w-full text-left px-3 py-2 rounded mb-1 transition-colors ${
                   activeTab === "appearance"
                     ? "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800"
                 }`}
+                onClick={() => setActiveTab("appearance")}
               >
                 Appearance
               </button>
               <button
-                onClick={() => setActiveTab("advanced")}
                 className={`w-full text-left px-3 py-2 rounded transition-colors ${
                   activeTab === "advanced"
                     ? "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800"
                 }`}
+                onClick={() => setActiveTab("advanced")}
               >
                 Advanced
               </button>
@@ -156,7 +158,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
                   <div className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <label className="text-sm font-medium text-gray-900 dark:text-gray-100" htmlFor="default-mono-checkbox">
                           Default to mono samples
                         </label>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -176,19 +178,20 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
                       </div>
                       <label className="flex items-center ml-4">
                         <input
-                          type="checkbox"
                           checked={defaultToMonoSamples}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
+                          id="default-mono-checkbox"
                           onChange={(e) =>
                             setDefaultToMonoSamples(e.target.checked)
                           }
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
+                          type="checkbox"
                         />
                       </label>
                     </div>
 
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <label className="text-sm font-medium text-gray-900 dark:text-gray-100" htmlFor="confirm-destructive-checkbox">
                           Confirm destructive actions
                         </label>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -198,12 +201,13 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
                       </div>
                       <label className="flex items-center ml-4">
                         <input
-                          type="checkbox"
                           checked={confirmDestructiveActions}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
+                          id="confirm-destructive-checkbox"
                           onChange={(e) =>
                             setConfirmDestructiveActions(e.target.checked)
                           }
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
+                          type="checkbox"
                         />
                       </label>
                     </div>
@@ -227,16 +231,16 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
 
                           return (
                             <div
-                              key={option.value}
                               className="flex flex-col items-center gap-2"
+                              key={option.value}
                             >
                               <button
-                                onClick={() => setThemeMode(option.value)}
                                 className={`relative w-16 h-16 rounded-xl border-2 transition-all duration-200 overflow-hidden ${
                                   isSelected
                                     ? "border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800"
                                     : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
                                 }`}
+                                onClick={() => setThemeMode(option.value)}
                               >
                                 {option.value === "light" && (
                                   <div className="w-full h-full bg-white flex items-center justify-center">
@@ -307,16 +311,16 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2" htmlFor="local-store-path">
                         Local Store Path
                       </label>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 font-mono text-sm text-gray-700 dark:text-gray-300">
+                        <div className="flex-1 p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 font-mono text-sm text-gray-700 dark:text-gray-300" id="local-store-path">
                           {localStorePath || "No local store configured"}
                         </div>
                         <button
-                          onClick={handleChangeLocalStore}
                           className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center gap-2"
+                          onClick={handleChangeLocalStore}
                         >
                           <FiFolder className="text-sm" />
                           Change...
@@ -328,10 +332,10 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2" htmlFor="local-store-status">
                         Status
                       </label>
-                      <div className="p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 text-sm">
+                      <div className="p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 text-sm" id="local-store-status">
                         {localStoreStatus?.isValid ? (
                           <span className="text-green-600 dark:text-green-400">
                             ✓ Valid local store
@@ -353,8 +357,8 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
         {/* Footer */}
         <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
           <button
-            onClick={onClose}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            onClick={onClose}
           >
             Done
           </button>

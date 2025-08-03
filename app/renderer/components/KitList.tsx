@@ -8,6 +8,7 @@ import React, {
 import { ListChildComponentProps, VariableSizeList } from "react-window";
 
 import type { KitWithRelations } from "../../../shared/db/schema";
+
 import { useKitListLogic } from "./hooks/useKitListLogic";
 import { useKitListNavigation } from "./hooks/useKitListNavigation";
 import KitItem from "./KitItem";
@@ -36,8 +37,8 @@ const BankHeader: React.FC<BankHeaderProps> = ({
         }
       },
       {
-        threshold: 0.5, // Trigger when 50% of the header is visible
         rootMargin: "-10% 0px -80% 0px", // Only consider the top 20% of the viewport
+        threshold: 0.5, // Trigger when 50% of the header is visible
       },
     );
 
@@ -50,9 +51,9 @@ const BankHeader: React.FC<BankHeaderProps> = ({
 
   return (
     <div
-      ref={headerRef}
-      id={`bank-${bank}`}
       className="mt-2 mb-1 flex items-center gap-2"
+      id={`bank-${bank}`}
+      ref={headerRef}
     >
       <span className="font-bold text-xs tracking-widest text-blue-700 dark:text-blue-300">
         Bank {bank}
@@ -66,22 +67,22 @@ const BankHeader: React.FC<BankHeaderProps> = ({
   );
 };
 
-interface KitListProps {
-  kits: KitWithRelations[];
-  onSelectKit: (kit: string) => void;
-  bankNames: Record<string, string>;
-  onDuplicate: (kit: string) => void;
-  kitData?: KitWithRelations[]; // Kit data from database
-  sampleCounts?: Record<string, [number, number, number, number]>;
-  focusedKit?: string | null; // externally controlled focus
-  onBankFocus?: (bank: string) => void;
-  onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
-  onVisibleBankChange?: (bank: string) => void; // NEW: notify when visible bank changes during scroll
-}
-
 // Expose imperative scroll/focus API for parent components
 export interface KitListHandle {
   scrollAndFocusKitByIndex: (idx: number) => void;
+}
+
+interface KitListProps {
+  bankNames: Record<string, string>;
+  focusedKit?: null | string; // externally controlled focus
+  kitData?: KitWithRelations[]; // Kit data from database
+  kits: KitWithRelations[];
+  onBankFocus?: (bank: string) => void;
+  onDuplicate: (kit: string) => void;
+  onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
+  onSelectKit: (kit: string) => void;
+  onVisibleBankChange?: (bank: string) => void; // NEW: notify when visible bank changes during scroll
+  sampleCounts?: Record<string, [number, number, number, number]>;
 }
 
 const KIT_ROW_HEIGHT = 72; // px
@@ -91,20 +92,20 @@ const HEADER_HEIGHT = 5; // px, set to your fixed header height
 const KitList = forwardRef<KitListHandle, KitListProps>(
   (
     {
-      kits,
-      onSelectKit,
       bankNames,
-      onDuplicate,
-      kitData,
-      sampleCounts,
       focusedKit,
+      kitData,
+      kits,
       onBankFocus,
+      onDuplicate,
       onFocusKit,
+      onSelectKit,
       onVisibleBankChange,
+      sampleCounts,
     },
     ref,
   ) => {
-    const { kitsToDisplay, isValidKit, showBankAnchor } = useKitListLogic(kits);
+    const { isValidKit, kitsToDisplay, showBankAnchor } = useKitListLogic(kits);
     // Only use focusedKit if defined, otherwise undefined
     const navFocusedKit = typeof focusedKit === "string" ? focusedKit : null;
     const { focusedIdx, setFocus } = useKitListNavigation(
@@ -206,7 +207,6 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
         }
         return;
       }
-      // All other keys: do nothing
     };
 
     // Click handler: always notify parent
@@ -238,15 +238,15 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
             />
           )}
           <KitItem
-            kit={kitName}
-            isValid={isValid}
-            onSelect={() => handleSelectKit(kitName, index)}
-            onDuplicate={() => isValid && onDuplicate(kitName)}
-            sampleCounts={sampleCounts ? sampleCounts[kitName] : undefined}
-            kitData={kitDataItem}
             data-kit={kitName}
             data-testid={`kit-item-${kitName}`}
             isSelected={isSelected}
+            isValid={isValid}
+            kit={kitName}
+            kitData={kitDataItem}
+            onDuplicate={() => isValid && onDuplicate(kitName)}
+            onSelect={() => handleSelectKit(kitName, index)}
+            sampleCounts={sampleCounts ? sampleCounts[kitName] : undefined}
           />
         </div>
       );
@@ -254,17 +254,18 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
 
     return (
       <div
-        className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded pt-0 pb-2 pl-2 pr-2"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
         aria-label="Kit list"
+        className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded pt-0 pb-2 pl-2 pr-2"
         data-testid="kit-list"
+        onKeyDown={handleKeyDown}
+        role="listbox"
+        tabIndex={0}
       >
         <VariableSizeList
-          ref={listRef}
           height={600} // or use a prop or container height
           itemCount={kitsToDisplay.length}
           itemSize={getItemSize}
+          ref={listRef}
           width="100%"
         >
           {Row}

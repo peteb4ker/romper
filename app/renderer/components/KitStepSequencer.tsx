@@ -6,13 +6,13 @@ import StepSequencerDrawer from "./StepSequencerDrawer";
 import StepSequencerGrid from "./StepSequencerGrid";
 
 interface KitStepSequencerProps {
-  samples: { [voice: number]: string[] };
+  gridRef?: React.RefObject<HTMLDivElement>;
   onPlaySample: (voice: number, sample: string) => void;
-  stepPattern: number[][] | null;
-  setStepPattern: (pattern: number[][]) => void;
+  samples: { [voice: number]: string[] };
   sequencerOpen: boolean;
   setSequencerOpen: (open: boolean) => void;
-  gridRef?: React.RefObject<HTMLDivElement>;
+  setStepPattern: (pattern: number[][]) => void; // Used by useKitStepSequencerLogic hook
+  stepPattern: null | number[][]; // Used by useKitStepSequencerLogic hook
 }
 
 const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
@@ -29,18 +29,18 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
           setIsSeqPlaying={logic.setIsSeqPlaying}
         />
         <StepSequencerGrid
-          safeStepPattern={logic.safeStepPattern}
-          focusedStep={logic.focusedStep}
-          isSeqPlaying={logic.isSeqPlaying}
           currentSeqStep={logic.currentSeqStep}
-          ROW_COLORS={logic.ROW_COLORS}
+          focusedStep={logic.focusedStep}
+          gridRef={props.gridRef || logic.gridRefInternal}
+          handleStepGridKeyDown={logic.handleStepGridKeyDown}
+          isSeqPlaying={logic.isSeqPlaying}
           LED_GLOWS={logic.LED_GLOWS}
-          NUM_VOICES={logic.NUM_VOICES}
           NUM_STEPS={logic.NUM_STEPS}
+          NUM_VOICES={logic.NUM_VOICES}
+          ROW_COLORS={logic.ROW_COLORS}
+          safeStepPattern={logic.safeStepPattern}
           setFocusedStep={logic.setFocusedStep}
           toggleStep={logic.toggleStep}
-          handleStepGridKeyDown={logic.handleStepGridKeyDown}
-          gridRef={props.gridRef || logic.gridRefInternal}
         />
       </div>
     </StepSequencerDrawer>

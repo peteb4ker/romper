@@ -36,18 +36,18 @@ describe("SyncProgressService", () => {
     it("should initialize sync job correctly", () => {
       const fileOperations: SyncFileOperation[] = [
         {
-          filename: "test1.wav",
-          sourcePath: "/source/test1.wav",
           destinationPath: "/dest/test1.wav",
-          operation: "copy",
+          filename: "test1.wav",
           kitName: "Kit1",
+          operation: "copy",
+          sourcePath: "/source/test1.wav",
         },
         {
-          filename: "test2.wav",
-          sourcePath: "/source/test2.wav",
           destinationPath: "/dest/test2.wav",
-          operation: "convert",
+          filename: "test2.wav",
           kitName: "Kit2",
+          operation: "convert",
+          sourcePath: "/source/test2.wav",
         },
       ];
 
@@ -70,11 +70,11 @@ describe("SyncProgressService", () => {
     beforeEach(() => {
       const fileOperations: SyncFileOperation[] = [
         {
-          filename: "test.wav",
-          sourcePath: "/source/test.wav",
           destinationPath: "/dest/test.wav",
-          operation: "copy",
+          filename: "test.wav",
           kitName: "Kit1",
+          operation: "copy",
+          sourcePath: "/source/test.wav",
         },
       ];
       service.initializeSyncJob("TestKit", fileOperations, 1024);
@@ -86,14 +86,14 @@ describe("SyncProgressService", () => {
       expect(mockWindow.webContents.send).toHaveBeenCalledWith(
         "sync-progress",
         expect.objectContaining({
-          currentFile: "test.wav",
-          filesCompleted: 0,
-          totalFiles: 1,
           bytesTransferred: 512,
-          totalBytes: 1024,
-          status: "copying",
+          currentFile: "test.wav",
           currentFileProgress: 50,
           elapsedTime: expect.any(Number),
+          filesCompleted: 0,
+          status: "copying",
+          totalBytes: 1024,
+          totalFiles: 1,
         }),
       );
     });
@@ -116,10 +116,10 @@ describe("SyncProgressService", () => {
 
     it("should not update bytes on error", () => {
       service.updateProgress("test.wav", 0, "error", undefined, {
+        canRetry: false,
+        error: "File not found",
         fileName: "test.wav",
         operation: "copy",
-        error: "File not found",
-        canRetry: false,
       });
 
       const currentJob = service.getCurrentSyncJob();
@@ -129,10 +129,10 @@ describe("SyncProgressService", () => {
 
     it("should include error details in progress update", () => {
       const errorDetails = {
+        canRetry: false,
+        error: "File not found",
         fileName: "test.wav",
         operation: "copy" as const,
-        error: "File not found",
-        canRetry: false,
       };
 
       service.updateProgress("test.wav", 0, "error", undefined, errorDetails);
@@ -140,8 +140,8 @@ describe("SyncProgressService", () => {
       expect(mockWindow.webContents.send).toHaveBeenCalledWith(
         "sync-progress",
         expect.objectContaining({
-          status: "error",
           errorDetails,
+          status: "error",
         }),
       );
     });
@@ -168,11 +168,11 @@ describe("SyncProgressService", () => {
     it("should cancel active sync job", () => {
       const fileOperations: SyncFileOperation[] = [
         {
-          filename: "test.wav",
-          sourcePath: "/source/test.wav",
           destinationPath: "/dest/test.wav",
-          operation: "copy",
+          filename: "test.wav",
           kitName: "Kit1",
+          operation: "copy",
+          sourcePath: "/source/test.wav",
         },
       ];
       service.initializeSyncJob("TestKit", fileOperations, 1024);
@@ -199,11 +199,11 @@ describe("SyncProgressService", () => {
     it("should return false when job is not cancelled", () => {
       const fileOperations: SyncFileOperation[] = [
         {
-          filename: "test.wav",
-          sourcePath: "/source/test.wav",
           destinationPath: "/dest/test.wav",
-          operation: "copy",
+          filename: "test.wav",
           kitName: "Kit1",
+          operation: "copy",
+          sourcePath: "/source/test.wav",
         },
       ];
       service.initializeSyncJob("TestKit", fileOperations, 1024);
@@ -214,11 +214,11 @@ describe("SyncProgressService", () => {
     it("should return true when job is cancelled", () => {
       const fileOperations: SyncFileOperation[] = [
         {
-          filename: "test.wav",
-          sourcePath: "/source/test.wav",
           destinationPath: "/dest/test.wav",
-          operation: "copy",
+          filename: "test.wav",
           kitName: "Kit1",
+          operation: "copy",
+          sourcePath: "/source/test.wav",
         },
       ];
       service.initializeSyncJob("TestKit", fileOperations, 1024);
@@ -232,11 +232,11 @@ describe("SyncProgressService", () => {
     beforeEach(() => {
       const fileOperations: SyncFileOperation[] = [
         {
-          filename: "test.wav",
-          sourcePath: "/source/test.wav",
           destinationPath: "/dest/test.wav",
-          operation: "copy",
+          filename: "test.wav",
           kitName: "Kit1",
+          operation: "copy",
+          sourcePath: "/source/test.wav",
         },
       ];
       service.initializeSyncJob("TestKit", fileOperations, 1024);
@@ -250,10 +250,10 @@ describe("SyncProgressService", () => {
         "sync-progress",
         expect.objectContaining({
           currentFile: "",
-          filesCompleted: 1,
-          totalFiles: 1,
-          status: "complete",
           currentFileProgress: 100,
+          filesCompleted: 1,
+          status: "complete",
+          totalFiles: 1,
         }),
       );
 
@@ -289,11 +289,11 @@ describe("SyncProgressService", () => {
     it("should return current job when active", () => {
       const fileOperations: SyncFileOperation[] = [
         {
-          filename: "test.wav",
-          sourcePath: "/source/test.wav",
           destinationPath: "/dest/test.wav",
-          operation: "copy",
+          filename: "test.wav",
           kitName: "Kit1",
+          operation: "copy",
+          sourcePath: "/source/test.wav",
         },
       ];
       service.initializeSyncJob("TestKit", fileOperations, 1024);

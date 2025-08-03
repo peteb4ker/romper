@@ -3,9 +3,9 @@ import "./styles/index.css";
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import {
-  HashRouter as Router,
   Navigate,
   Route,
+  HashRouter as Router,
   Routes,
 } from "react-router-dom";
 import { toast } from "sonner";
@@ -40,9 +40,9 @@ const App = () => {
           <div className="flex flex-1 min-h-0">
             <main className="flex-1 min-h-0 flex flex-col h-full pb-10">
               <Routes>
-                <Route path="/" element={<Navigate to="/kits" replace />} />
-                <Route path="/kits" element={<KitsView />} />
-                <Route path="/about" element={<AboutView />} />
+                <Route element={<Navigate replace to="/kits" />} path="/" />
+                <Route element={<KitsView />} path="/kits" />
+                <Route element={<AboutView />} path="/about" />
               </Routes>
             </main>
           </div>

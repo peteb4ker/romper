@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 interface UseStartupActionsProps {
-  localStorePath: string | null;
+  localStorePath: null | string;
   needsLocalStoreSetup: boolean;
 }
 

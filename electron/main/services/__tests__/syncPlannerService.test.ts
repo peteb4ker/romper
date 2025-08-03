@@ -15,8 +15,8 @@ vi.mock("path", () => ({
 
 // Mock database operations
 vi.mock("../../db/romperDbCoreORM.js", () => ({
-  getKitSamples: vi.fn(),
   getKits: vi.fn(),
+  getKitSamples: vi.fn(),
 }));
 
 // Mock audio utilities
@@ -61,8 +61,8 @@ describe("SyncPlannerService", () => {
     it("should return error when failed to load kits", async () => {
       // Mock getKits to fail
       mockGetKits.mockReturnValue({
-        success: false,
         error: "Database error",
+        success: false,
       });
 
       const result = await service.generateChangeSummary({
@@ -76,34 +76,34 @@ describe("SyncPlannerService", () => {
     it("should generate summary with files to copy when format is valid", async () => {
       // Mock getKits to return test kits
       mockGetKits.mockReturnValue({
-        success: true,
         data: [{ name: "TestKit1" }],
+        success: true,
       });
 
       // Mock sample data
       const testSample = {
         filename: "test.wav",
+        kitName: "TestKit1",
         source_path: "/source/test.wav",
         voice_number: 1,
-        kitName: "TestKit1",
       };
 
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [testSample],
+        success: true,
       });
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({ size: 1024 } as any);
 
       mockGetAudioMetadata.mockReturnValue({
-        success: true,
         data: { bitDepth: 16, sampleRate: 44100 },
+        success: true,
       });
 
       mockValidateSampleFormat.mockReturnValue({
+        data: { issues: [], isValid: true },
         success: true,
-        data: { isValid: true, issues: [] },
       });
 
       const result = await service.generateChangeSummary({
@@ -122,39 +122,39 @@ describe("SyncPlannerService", () => {
     it("should generate summary with files to convert when format is invalid", async () => {
       // Mock getKits to return test kits
       mockGetKits.mockReturnValue({
-        success: true,
         data: [{ name: "TestKit1" }],
+        success: true,
       });
 
       const testSample = {
         filename: "test.wav",
+        kitName: "TestKit1",
         source_path: "/source/test.wav",
         voice_number: 1,
-        kitName: "TestKit1",
       };
 
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [testSample],
+        success: true,
       });
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({ size: 2048 } as any);
 
       mockGetAudioMetadata.mockReturnValue({
-        success: true,
         data: { bitDepth: 24, sampleRate: 48000 },
+        success: true,
       });
 
       mockValidateSampleFormat.mockReturnValue({
-        success: false,
         data: {
-          isValid: false,
           issues: [
             { message: "Bit depth must be 16" },
             { message: "Sample rate must be 44100Hz" },
           ],
+          isValid: false,
         },
+        success: false,
       });
 
       const result = await service.generateChangeSummary({
@@ -182,20 +182,20 @@ describe("SyncPlannerService", () => {
     it("should add validation errors for missing files", async () => {
       // Mock getKits to return test kits
       mockGetKits.mockReturnValue({
-        success: true,
         data: [{ name: "TestKit1" }],
+        success: true,
       });
 
       const testSample = {
         filename: "missing.wav",
+        kitName: "TestKit1",
         source_path: "/source/missing.wav",
         voice_number: 1,
-        kitName: "TestKit1",
       };
 
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [testSample],
+        success: true,
       });
 
       mockFs.existsSync.mockReturnValue(false);
@@ -209,9 +209,9 @@ describe("SyncPlannerService", () => {
       expect(result.data?.filesToConvert).toHaveLength(0);
       expect(result.data?.validationErrors).toHaveLength(1);
       expect(result.data?.validationErrors[0]).toEqual({
+        error: "Source file not found: /source/missing.wav",
         filename: "missing.wav",
         sourcePath: "/source/missing.wav",
-        error: "Source file not found: /source/missing.wav",
         type: "missing_file",
       });
     });
@@ -219,36 +219,36 @@ describe("SyncPlannerService", () => {
     it("should skip samples without source path", async () => {
       // Mock getKits to return test kits
       mockGetKits.mockReturnValue({
-        success: true,
         data: [{ name: "TestKit1" }],
+        success: true,
       });
 
       const testSamples = [
         {
           filename: "baseline.wav",
+          kitName: "TestKit1",
           source_path: null, // No source path - should be skipped
           voice_number: 1,
-          kitName: "TestKit1",
         },
         {
           filename: "user.wav",
+          kitName: "TestKit1",
           source_path: "/source/user.wav",
           voice_number: 2,
-          kitName: "TestKit1",
         },
       ];
 
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: testSamples,
+        success: true,
       });
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({ size: 1024 } as any);
 
       mockValidateSampleFormat.mockReturnValue({
+        data: { issues: [], isValid: true },
         success: true,
-        data: { isValid: true, issues: [] },
       });
 
       const result = await service.generateChangeSummary({
@@ -279,41 +279,41 @@ describe("SyncPlannerService", () => {
     it("should process multiple kits correctly", async () => {
       // Mock getKits to return multiple kits
       mockGetKits.mockReturnValue({
-        success: true,
         data: [{ name: "Kit1" }, { name: "Kit2" }],
+        success: true,
       });
 
       // Mock different samples for each kit
       mockGetKitSamples
         .mockReturnValueOnce({
-          success: true,
           data: [
             {
               filename: "kit1_sample.wav",
+              kitName: "Kit1",
               source_path: "/source/kit1_sample.wav",
               voice_number: 1,
-              kitName: "Kit1",
             },
           ],
+          success: true,
         })
         .mockReturnValueOnce({
-          success: true,
           data: [
             {
               filename: "kit2_sample.wav",
+              kitName: "Kit2",
               source_path: "/source/kit2_sample.wav",
               voice_number: 1,
-              kitName: "Kit2",
             },
           ],
+          success: true,
         });
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({ size: 1024 } as any);
 
       mockValidateSampleFormat.mockReturnValue({
+        data: { issues: [], isValid: true },
         success: true,
-        data: { isValid: true, issues: [] },
       });
 
       const result = await service.generateChangeSummary({

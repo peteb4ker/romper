@@ -2,28 +2,29 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SyncChangeSummary } from "../../dialogs/SyncUpdateDialog";
+
 import { useSyncUpdate } from "../useSyncUpdate";
 
 describe("useSyncUpdate", () => {
   const mockElectronAPI = {
-    generateSyncChangeSummary: vi.fn(),
-    startKitSync: vi.fn(),
     cancelKitSync: vi.fn(),
+    generateSyncChangeSummary: vi.fn(),
     onSyncProgress: vi.fn(),
+    startKitSync: vi.fn(),
   };
 
   const mockChangeSummary: SyncChangeSummary = {
+    estimatedSize: 1024000,
+    estimatedTime: 10,
+    filesToConvert: [],
     filesToCopy: [
       {
-        filename: "kick.wav",
-        sourcePath: "/path/to/kick.wav",
         destinationPath: "/sd/A0/kick.wav",
+        filename: "kick.wav",
         operation: "copy",
+        sourcePath: "/path/to/kick.wav",
       },
     ],
-    filesToConvert: [],
-    estimatedTime: 10,
-    estimatedSize: 1024000,
     hasFormatWarnings: false,
     warnings: [],
   };
@@ -51,15 +52,15 @@ describe("useSyncUpdate", () => {
   describe("generateChangeSummary", () => {
     it("should generate change summary successfully", async () => {
       mockElectronAPI.generateSyncChangeSummary.mockResolvedValue({
-        success: true,
         data: mockChangeSummary,
+        success: true,
       });
 
       const { result } = renderHook(() =>
         useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
-      let summary: SyncChangeSummary | null = null;
+      let summary: null | SyncChangeSummary = null;
       await act(async () => {
         summary = await result.current.generateChangeSummary();
       });
@@ -72,15 +73,15 @@ describe("useSyncUpdate", () => {
 
     it("should handle API errors", async () => {
       mockElectronAPI.generateSyncChangeSummary.mockResolvedValue({
-        success: false,
         error: "Failed to read kit files",
+        success: false,
       });
 
       const { result } = renderHook(() =>
         useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
-      let summary: SyncChangeSummary | null = null;
+      let summary: null | SyncChangeSummary = null;
       await act(async () => {
         summary = await result.current.generateChangeSummary();
       });
@@ -99,7 +100,7 @@ describe("useSyncUpdate", () => {
         useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
-      let summary: SyncChangeSummary | null = null;
+      let summary: null | SyncChangeSummary = null;
       await act(async () => {
         summary = await result.current.generateChangeSummary();
       });
@@ -119,7 +120,7 @@ describe("useSyncUpdate", () => {
         useSyncUpdate({ electronAPI: incompleteAPI }),
       );
 
-      let summary: SyncChangeSummary | null = null;
+      let summary: null | SyncChangeSummary = null;
       await act(async () => {
         summary = await result.current.generateChangeSummary();
       });
@@ -146,7 +147,7 @@ describe("useSyncUpdate", () => {
       expect(result.current.isLoading).toBe(true);
 
       await act(async () => {
-        resolvePromise({ success: true, data: mockChangeSummary });
+        resolvePromise({ data: mockChangeSummary, success: true });
         await promise;
       });
 
@@ -157,8 +158,8 @@ describe("useSyncUpdate", () => {
   describe("startSync", () => {
     it("should start sync successfully", async () => {
       mockElectronAPI.startKitSync.mockResolvedValue({
-        success: true,
         data: { syncedFiles: 1 },
+        success: true,
       });
 
       const { result } = renderHook(() =>
@@ -171,8 +172,8 @@ describe("useSyncUpdate", () => {
       });
 
       expect(mockElectronAPI.startKitSync).toHaveBeenCalledWith({
-        filesToCopy: mockChangeSummary.filesToCopy,
         filesToConvert: mockChangeSummary.filesToConvert,
+        filesToCopy: mockChangeSummary.filesToCopy,
       });
       expect(success).toBe(true);
       expect(result.current.syncProgress?.status).toBe("completed");
@@ -181,8 +182,8 @@ describe("useSyncUpdate", () => {
 
     it("should handle sync failure", async () => {
       mockElectronAPI.startKitSync.mockResolvedValue({
-        success: false,
         error: "SD card not found",
+        success: false,
       });
 
       const { result } = renderHook(() =>
@@ -201,8 +202,8 @@ describe("useSyncUpdate", () => {
 
     it("should initialize sync progress", async () => {
       mockElectronAPI.startKitSync.mockResolvedValue({
-        success: true,
         data: {},
+        success: true,
       });
 
       const { result } = renderHook(() =>
@@ -214,19 +215,19 @@ describe("useSyncUpdate", () => {
       });
 
       expect(result.current.syncProgress).toMatchObject({
+        bytesCompleted: 0,
         currentFile: "",
         filesCompleted: 0,
-        totalFiles: 1,
-        bytesCompleted: 0,
-        totalBytes: 1024000,
         status: "completed",
+        totalBytes: 1024000,
+        totalFiles: 1,
       });
     });
 
     it("should set up progress listener if available", async () => {
       mockElectronAPI.startKitSync.mockResolvedValue({
-        success: true,
         data: {},
+        success: true,
       });
 
       const { result } = renderHook(() =>
@@ -316,8 +317,8 @@ describe("useSyncUpdate", () => {
       // Mock the specific method we're testing
       vi.mocked(window.electronAPI.generateSyncChangeSummary).mockResolvedValue(
         {
-          success: true,
           data: mockChangeSummary,
+          success: true,
         },
       );
 

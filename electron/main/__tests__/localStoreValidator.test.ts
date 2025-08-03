@@ -14,7 +14,7 @@ vi.mock("../db/romperDbCoreORM.js", () => {
   return {
     getKits: vi.fn(),
     getKitSamples: vi.fn(),
-    validateDatabaseSchema: vi.fn(() => ({ success: true, data: true })),
+    validateDatabaseSchema: vi.fn(() => ({ data: true, success: true })),
   };
 });
 
@@ -27,14 +27,14 @@ describe("localStoreValidator", () => {
   beforeEach(() => {
     // Clean up any existing test directory
     if (fs.existsSync(testDir)) {
-      fs.rmSync(testDir, { recursive: true, force: true });
+      fs.rmSync(testDir, { force: true, recursive: true });
     }
   });
 
   afterEach(() => {
     // Clean up test directory
     if (fs.existsSync(testDir)) {
-      fs.rmSync(testDir, { recursive: true, force: true });
+      fs.rmSync(testDir, { force: true, recursive: true });
     }
   });
 
@@ -132,62 +132,62 @@ describe("localStoreValidator", () => {
 
       // Mock DB functions
       vi.mocked(romperDbCore.getKits).mockReturnValue({
-        success: true,
         data: [
-          { name: "A0", editable: false },
-          { name: "B1", editable: false },
+          { editable: false, name: "A0" },
+          { editable: false, name: "B1" },
         ],
+        success: true,
       });
 
       vi.mocked(romperDbCore.getKitSamples).mockImplementation(
         (dbDir, kitName) => {
           if (kitName === "A0") {
             return {
-              success: true,
               data: [
                 {
-                  kit_name: "A0",
                   filename: "1 Kick.wav",
-                  voice_number: 1,
+                  is_stereo: false,
+                  kit_name: "A0",
                   slot_number: 1,
-                  is_stereo: false,
                   source_path: path.join(localStorePath, "A0", "1 Kick.wav"),
+                  voice_number: 1,
                 },
                 {
-                  kit_name: "A0",
                   filename: "2 Snare.wav",
-                  voice_number: 1,
-                  slot_number: 2,
                   is_stereo: false,
+                  kit_name: "A0",
+                  slot_number: 2,
                   source_path: path.join(localStorePath, "A0", "2 Snare.wav"),
+                  voice_number: 1,
                 },
                 {
-                  kit_name: "A0",
                   filename: "missing.wav",
-                  voice_number: 1,
-                  slot_number: 3,
                   is_stereo: false,
+                  kit_name: "A0",
+                  slot_number: 3,
                   source_path: path.join(localStorePath, "A0", "missing.wav"),
+                  voice_number: 1,
                 },
               ],
+              success: true,
             };
           }
           if (kitName === "B1") {
             return {
-              success: true,
               data: [
                 {
-                  kit_name: "B1",
                   filename: "3 Hat.wav",
-                  voice_number: 1,
-                  slot_number: 1,
                   is_stereo: false,
+                  kit_name: "B1",
+                  slot_number: 1,
                   source_path: path.join(localStorePath, "B1", "3 Hat.wav"),
+                  voice_number: 1,
                 },
               ],
+              success: true,
             };
           }
-          return { success: false, error: "Kit not found" };
+          return { error: "Kit not found", success: false };
         },
       );
     });
@@ -209,8 +209,8 @@ describe("localStoreValidator", () => {
     it("should return valid when all files match DB records", () => {
       // Mock B1 correctly (no missing or extra files)
       vi.mocked(romperDbCore.getKits).mockReturnValue({
+        data: [{ editable: false, name: "B1" }],
         success: true,
-        data: [{ name: "B1", editable: false }],
       });
 
       const result = validateLocalStoreAgainstDb(localStorePath);
@@ -233,8 +233,8 @@ describe("localStoreValidator", () => {
 
     it("should return error when getKits fails", () => {
       vi.mocked(romperDbCore.getKits).mockReturnValue({
-        success: false,
         error: "Database query failed",
+        success: false,
       });
 
       const result = validateLocalStoreAgainstDb(localStorePath);

@@ -616,7 +616,7 @@ describe("useKitStepSequencer", () => {
 
   describe("function stability", () => {
     it("maintains stable function references", () => {
-      const { result, rerender } = renderHook(() => useKitStepSequencer());
+      const { rerender, result } = renderHook(() => useKitStepSequencer());
 
       const firstToggleStep = result.current.toggleStep;
       const firstSetSequencerPattern = result.current.setSequencerPattern;
@@ -651,7 +651,7 @@ describe("useKitStepSequencer", () => {
 
   describe("pattern mutations don't affect state", () => {
     it("prevents external mutation of pattern", () => {
-      const { result, rerender } = renderHook(() => useKitStepSequencer());
+      const { rerender, result } = renderHook(() => useKitStepSequencer());
 
       const originalPattern = result.current.pattern;
 

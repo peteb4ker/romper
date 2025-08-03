@@ -1,10 +1,6 @@
 import { useMemo } from "react";
 
-function isSynthOrBass(arr: string[]): boolean {
-  return arr.length > 0 && arr.every((v) => v === "synth" || v === "bass");
-}
-
-export function useKitItem(voiceNames?: Record<string | number, string>) {
+export function useKitItem(voiceNames?: Record<number | string, string>) {
   const arr = useMemo(
     () =>
       voiceNames
@@ -48,5 +44,9 @@ export function useKitItem(voiceNames?: Record<string | number, string>) {
     return "Drum Kit";
   }, [arr, unique]);
 
-  return { iconType, iconLabel };
+  return { iconLabel, iconType };
+}
+
+function isSynthOrBass(arr: string[]): boolean {
+  return arr.length > 0 && arr.every((v) => v === "synth" || v === "bass");
 }

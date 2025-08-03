@@ -46,7 +46,7 @@ export const databaseIntegrationSetup = () => {
 /**
  * Mock timer utilities for tests involving timeouts/intervals
  */
-export const withMockTimers = (callback: () => void | Promise<void>) => {
+export const withMockTimers = (callback: () => Promise<void> | void) => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -111,8 +111,8 @@ export const createMockFile = (
  */
 export const createMockFileList = (files: File[]): FileList => {
   const fileList = {
-    length: files.length,
     item: (index: number) => files[index] || null,
+    length: files.length,
     [Symbol.iterator]: function* () {
       for (const file of files) {
         yield file;

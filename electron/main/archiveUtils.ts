@@ -2,52 +2,26 @@ import * as fs from "fs";
 import * as path from "path";
 import * as unzipper from "unzipper";
 
-export function isValidEntry(entryPath: string): boolean {
-  return (
-    !entryPath.startsWith("__MACOSX/") &&
-    !entryPath.includes("/__MACOSX/") &&
-    !entryPath.split("/").some((p: string) => p.startsWith("._"))
-  );
-}
-
-// Helper to track download progress
-function createProgressTracker(
-  totalBytes: number,
-  onProgress: (percent: number | null) => void,
-) {
-  let receivedBytes = 0;
-  let lastPercent = 0;
-
-  return (chunk: any) => {
-    receivedBytes += chunk.length;
-    if (totalBytes > 0) {
-      const percent = Math.floor((receivedBytes / totalBytes) * 100);
-      if (percent !== lastPercent) {
-        onProgress(percent);
-        lastPercent = percent;
-      }
-    } else {
-      onProgress(null);
-    }
-  };
-}
-
-// Helper to setup file stream handlers
-function setupFileStream(
-  fileStream: fs.WriteStream,
-  resolve: () => void,
-  reject: (error: any) => void,
-) {
-  fileStream.on("finish", () => {
-    fileStream.close(() => resolve());
+export async function countZipEntries(zipPath: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    let count = 0;
+    fs.createReadStream(zipPath)
+      .pipe(unzipper.Parse())
+      .on("entry", (entry: any) => {
+        if (isValidEntry(entry.path)) {
+          count++;
+        }
+        entry.autodrain();
+      })
+      .on("close", () => resolve(count))
+      .on("error", reject);
   });
-  fileStream.on("error", reject);
 }
 
 export async function downloadArchive(
   url: string,
   tmpZipPath: string,
-  onProgress: (percent: number | null) => void,
+  onProgress: (percent: null | number) => void,
 ): Promise<void> {
   const https = await import("https");
 
@@ -70,20 +44,59 @@ export async function downloadArchive(
   });
 }
 
-export async function countZipEntries(zipPath: string): Promise<number> {
+export async function extractZipEntries(
+  zipPath: string,
+  destDir: string,
+  entryCount: number,
+  onProgress: (info: { file: string; percent: null | number }) => void,
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    let count = 0;
+    let processedCount = 0;
+
     fs.createReadStream(zipPath)
       .pipe(unzipper.Parse())
       .on("entry", (entry: any) => {
-        if (isValidEntry(entry.path)) {
-          count++;
-        }
-        entry.autodrain();
+        processedCount = processZipEntry(
+          entry,
+          destDir,
+          processedCount,
+          entryCount,
+          onProgress,
+        );
       })
-      .on("close", () => resolve(count))
+      .on("close", resolve)
       .on("error", reject);
   });
+}
+
+export function isValidEntry(entryPath: string): boolean {
+  return (
+    !entryPath.startsWith("__MACOSX/") &&
+    !entryPath.includes("/__MACOSX/") &&
+    !entryPath.split("/").some((p: string) => p.startsWith("._"))
+  );
+}
+
+// Helper to track download progress
+function createProgressTracker(
+  totalBytes: number,
+  onProgress: (percent: null | number) => void,
+) {
+  let receivedBytes = 0;
+  let lastPercent = 0;
+
+  return (chunk: any) => {
+    receivedBytes += chunk.length;
+    if (totalBytes > 0) {
+      const percent = Math.floor((receivedBytes / totalBytes) * 100);
+      if (percent !== lastPercent) {
+        onProgress(percent);
+        lastPercent = percent;
+      }
+    } else {
+      onProgress(null);
+    }
+  };
 }
 
 // Helper function to handle directory extraction
@@ -124,7 +137,7 @@ function processZipEntry(
   destDir: string,
   processedCount: number,
   entryCount: number,
-  onProgress: (info: { percent: number | null; file: string }) => void,
+  onProgress: (info: { file: string; percent: null | number }) => void,
 ): number {
   if (!isValidEntry(entry.path)) {
     entry.autodrain();
@@ -134,7 +147,7 @@ function processZipEntry(
   processedCount++;
   const percent =
     entryCount > 0 ? Math.floor((processedCount / entryCount) * 100) : null;
-  onProgress({ percent, file: entry.path });
+  onProgress({ file: entry.path, percent });
 
   const destPath = path.join(destDir, entry.path);
 
@@ -147,27 +160,14 @@ function processZipEntry(
   return processedCount;
 }
 
-export async function extractZipEntries(
-  zipPath: string,
-  destDir: string,
-  entryCount: number,
-  onProgress: (info: { percent: number | null; file: string }) => void,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    let processedCount = 0;
-
-    fs.createReadStream(zipPath)
-      .pipe(unzipper.Parse())
-      .on("entry", (entry: any) => {
-        processedCount = processZipEntry(
-          entry,
-          destDir,
-          processedCount,
-          entryCount,
-          onProgress,
-        );
-      })
-      .on("close", resolve)
-      .on("error", reject);
+// Helper to setup file stream handlers
+function setupFileStream(
+  fileStream: fs.WriteStream,
+  resolve: () => void,
+  reject: (error: any) => void,
+) {
+  fileStream.on("finish", () => {
+    fileStream.close(() => resolve());
   });
+  fileStream.on("error", reject);
 }

@@ -112,12 +112,12 @@ describe("ScanService", () => {
       expect(mockAddSample).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
-          kit_name: "TestKit",
           filename: "1_kick.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "TestKit",
           slot_number: 1,
           source_path: "/test/path/TestKit/1_kick.wav",
-          is_stereo: false,
+          voice_number: 1,
         }),
       );
 
@@ -191,8 +191,8 @@ describe("ScanService", () => {
 
     it("handles delete samples failure", async () => {
       mockDeleteSamples.mockReturnValue({
-        success: false,
         error: "Delete failed",
+        success: false,
       });
 
       const result = await scanService.rescanKit(
@@ -206,7 +206,7 @@ describe("ScanService", () => {
     });
 
     it("handles add sample failure", async () => {
-      mockAddSample.mockReturnValue({ success: false, error: "Add failed" });
+      mockAddSample.mockReturnValue({ error: "Add failed", success: false });
 
       const result = await scanService.rescanKit(
         mockInMemorySettings,
@@ -319,7 +319,7 @@ describe("ScanService", () => {
     it("handles partial bank update failures", async () => {
       mockUpdateBank.mockImplementation((dbDir: string, bankLetter: string) => {
         if (bankLetter === "B") {
-          return { success: false, error: "Update failed" };
+          return { error: "Update failed", success: false };
         }
         return { success: true };
       });

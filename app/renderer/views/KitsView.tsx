@@ -7,6 +7,8 @@ import React, {
 } from "react";
 
 import type { KitWithRelations } from "../../../shared/db/schema";
+import type { VoiceSamples } from "../components/kitTypes";
+
 import { compareKitSlots } from "../../../shared/kitUtilsShared";
 import ChangeLocalStoreDirectoryDialog from "../components/dialogs/ChangeLocalStoreDirectoryDialog";
 import PreferencesDialog from "../components/dialogs/PreferencesDialog";
@@ -19,7 +21,6 @@ import { useStartupActions } from "../components/hooks/useStartupActions";
 import { useValidationResults } from "../components/hooks/useValidationResults";
 import KitBrowser, { KitBrowserHandle } from "../components/KitBrowser";
 import KitDetails from "../components/KitDetails";
-import type { VoiceSamples } from "../components/kitTypes";
 import LocalStoreWizardUI from "../components/LocalStoreWizardUI";
 import { useSettings } from "../utils/SettingsContext";
 
@@ -81,20 +82,20 @@ function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
 
 const KitsView = () => {
   const {
+    isInitialized,
     localStorePath,
     localStoreStatus,
     refreshLocalStoreStatus,
     setLocalStorePath,
-    isInitialized,
   } = useSettings();
   const { showMessage } = useMessageDisplay();
   const [kits, setKits] = useState<KitWithRelations[]>([]);
   const [allKitSamples, setAllKitSamples] = useState<{
     [kit: string]: VoiceSamples;
   }>({});
-  const [selectedKit, setSelectedKit] = useState<string | null>(null);
+  const [selectedKit, setSelectedKit] = useState<null | string>(null);
   const [selectedKitSamples, setSelectedKitSamples] =
-    useState<VoiceSamples | null>(null);
+    useState<null | VoiceSamples>(null);
   const [showWizard, setShowWizard] = useState<boolean>(false);
   const [showChangeDirectoryDialog, setShowChangeDirectoryDialog] =
     useState<boolean>(false);
@@ -132,6 +133,32 @@ const KitsView = () => {
 
   // Menu event handlers
   useMenuEvents({
+    onAbout: () => {
+      console.log("[KitsView] Menu about triggered");
+      // Could show an about dialog here
+    },
+    onChangeLocalStoreDirectory: () => {
+      console.log("[KitsView] Menu change local store directory triggered");
+      setShowChangeDirectoryDialog(true);
+    },
+    onPreferences: () => {
+      console.log("[KitsView] Menu preferences triggered");
+      setShowPreferencesDialog(true);
+    },
+    onRedo: () => {
+      console.log("[KitsView] Menu redo triggered");
+      if (keyboardShortcuts.canRedo) {
+        // Create and dispatch keyboard event to trigger redo
+        const event = new KeyboardEvent("keydown", {
+          bubbles: true,
+          ctrlKey: true, // For Windows/Linux
+          key: "z",
+          metaKey: true, // For Mac
+          shiftKey: true,
+        });
+        document.dispatchEvent(event);
+      }
+    },
     onScanAllKits: () => {
       console.log("[KitsView] Menu scan all kits triggered");
       if (kitBrowserRef.current?.handleScanAllKits) {
@@ -142,52 +169,26 @@ const KitsView = () => {
       console.log("[KitsView] Menu scan banks triggered");
       scanBanks();
     },
-    onValidateDatabase: () => {
-      console.log("[KitsView] Menu validate database triggered");
-      openValidationDialog();
-    },
     onSetupLocalStore: () => {
       console.log("[KitsView] Menu setup local store triggered");
       setShowWizard(true);
-    },
-    onChangeLocalStoreDirectory: () => {
-      console.log("[KitsView] Menu change local store directory triggered");
-      setShowChangeDirectoryDialog(true);
-    },
-    onPreferences: () => {
-      console.log("[KitsView] Menu preferences triggered");
-      setShowPreferencesDialog(true);
-    },
-    onAbout: () => {
-      console.log("[KitsView] Menu about triggered");
-      // Could show an about dialog here
     },
     onUndo: () => {
       console.log("[KitsView] Menu undo triggered");
       if (keyboardShortcuts.canUndo) {
         // Create and dispatch keyboard event to trigger undo
         const event = new KeyboardEvent("keydown", {
+          bubbles: true,
+          ctrlKey: true, // For Windows/Linux
           key: "z",
           metaKey: true, // For Mac
-          ctrlKey: true, // For Windows/Linux
-          bubbles: true,
         });
         document.dispatchEvent(event);
       }
     },
-    onRedo: () => {
-      console.log("[KitsView] Menu redo triggered");
-      if (keyboardShortcuts.canRedo) {
-        // Create and dispatch keyboard event to trigger redo
-        const event = new KeyboardEvent("keydown", {
-          key: "z",
-          metaKey: true, // For Mac
-          ctrlKey: true, // For Windows/Linux
-          shiftKey: true,
-          bubbles: true,
-        });
-        document.dispatchEvent(event);
-      }
+    onValidateDatabase: () => {
+      console.log("[KitsView] Menu validate database triggered");
+      openValidationDialog();
     },
   });
 
@@ -410,7 +411,7 @@ const KitsView = () => {
       scrollToKitName = scrollToKit;
     }
 
-    return { scrollToKitName, refresh };
+    return { refresh, scrollToKitName };
   };
 
   // Helper function to load all kits and samples from database
@@ -457,7 +458,7 @@ const KitsView = () => {
   const scrollToKitElement = (scrollToKitName: string) => {
     setTimeout(() => {
       const kitEl = document.querySelector(`[data-kit='${scrollToKitName}']`);
-      const container = kitEl && kitEl.closest(".overflow-y-auto");
+      const container = kitEl?.closest(".overflow-y-auto");
 
       if (kitEl && container) {
         const containerRect = container.getBoundingClientRect();
@@ -468,7 +469,7 @@ const KitsView = () => {
           container.scrollTop -
           containerRect.height / 2 +
           kitRect.height / 2;
-        container.scrollTo({ top: offset, behavior: "smooth" });
+        container.scrollTo({ behavior: "smooth", top: offset });
       } else if (kitEl) {
         kitEl.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -476,7 +477,7 @@ const KitsView = () => {
   };
 
   const handleBack = async (scrollToKit?: string) => {
-    const { scrollToKitName, refresh } = parseScrollParameters(scrollToKit);
+    const { refresh, scrollToKitName } = parseScrollParameters(scrollToKit);
 
     if (refresh) {
       await refreshAllKitsAndSamples();
@@ -494,9 +495,17 @@ const KitsView = () => {
     <div className="flex flex-col h-full min-h-0">
       {selectedKit && selectedKitSamples ? (
         <KitDetails
+          kitIndex={currentKitIndex}
           kitName={selectedKit ?? ""}
+          kits={sortedKits}
+          onAddUndoAction={keyboardShortcuts.addUndoAction}
           onBack={handleBack}
-          samples={selectedKitSamples}
+          onMessage={() => {
+            // Optionally handle messages here, e.g. show a toast or log
+            // For now, do nothing (parent can decide to handle or ignore)
+          }}
+          onNextKit={handleNextKit}
+          onPrevKit={handlePrevKit}
           onRequestSamplesReload={async () => {
             // Re-load samples for this kit from database
             if (selectedKit) {
@@ -524,28 +533,20 @@ const KitsView = () => {
               }
             }
           }}
-          onNextKit={handleNextKit}
-          onPrevKit={handlePrevKit}
-          kits={sortedKits}
-          kitIndex={currentKitIndex}
-          onMessage={() => {
-            // Optionally handle messages here, e.g. show a toast or log
-            // For now, do nothing (parent can decide to handle or ignore)
-          }}
-          onAddUndoAction={keyboardShortcuts.addUndoAction}
+          samples={selectedKitSamples}
         />
       ) : (
         <KitBrowser
-          ref={kitBrowserRef}
-          localStorePath={localStorePath}
           kits={sortedKits}
-          onSelectKit={handleSelectKit}
-          sampleCounts={sampleCounts}
-          onRefreshKits={loadKitsData}
+          localStorePath={localStorePath}
           onMessage={() => {
             // Optionally handle messages here, e.g. show a toast or log
             // For now, do nothing (parent can decide to handle or ignore)
           }}
+          onRefreshKits={loadKitsData}
+          onSelectKit={handleSelectKit}
+          ref={kitBrowserRef}
+          sampleCounts={sampleCounts}
           setLocalStorePath={setLocalStorePath}
         />
       )}

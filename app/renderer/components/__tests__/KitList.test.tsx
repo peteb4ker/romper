@@ -17,11 +17,6 @@ import { describe, expect, it, vi } from "vitest";
 
 import KitList from "../KitList";
 
-// Helper: get kit item by data-kit attribute
-function getKitItem(kit) {
-  return screen.getByTestId(`kit-item-${kit}`);
-}
-
 // Helper: expect only one kit to be selected/focused
 function expectOnlySelected(kits, selectedKit) {
   kits.forEach((k) => {
@@ -37,52 +32,57 @@ function expectOnlySelected(kits, selectedKit) {
   });
 }
 
+// Helper: get kit item by data-kit attribute
+function getKitItem(kit) {
+  return screen.getByTestId(`kit-item-${kit}`);
+}
+
 describe("KitList", () => {
   const kits = [
     {
-      name: "A1",
       alias: "Kick",
       artist: null,
-      locked: false,
-      editable: false,
-      modified_since_sync: false,
-      step_pattern: null,
-      bank_letter: "A",
-      voices: [],
-      samples: [],
       bank: null,
+      bank_letter: "A",
+      editable: false,
+      locked: false,
+      modified_since_sync: false,
+      name: "A1",
+      samples: [],
+      step_pattern: null,
+      voices: [],
     },
     {
-      name: "A2",
       alias: "Snare",
       artist: null,
-      locked: false,
-      editable: false,
-      modified_since_sync: false,
-      step_pattern: null,
-      bank_letter: "A",
-      voices: [],
-      samples: [],
       bank: null,
+      bank_letter: "A",
+      editable: false,
+      locked: false,
+      modified_since_sync: false,
+      name: "A2",
+      samples: [],
+      step_pattern: null,
+      voices: [],
     },
     {
-      name: "B1",
       alias: "Hat",
       artist: null,
-      locked: false,
-      editable: false,
-      modified_since_sync: false,
-      step_pattern: null,
-      bank_letter: "B",
-      voices: [],
-      samples: [],
       bank: null,
+      bank_letter: "B",
+      editable: false,
+      locked: false,
+      modified_since_sync: false,
+      name: "B1",
+      samples: [],
+      step_pattern: null,
+      voices: [],
     },
   ];
   const kitData = [
-    { name: "A1", alias: "Kick", voices: [] },
-    { name: "A2", alias: "Snare", voices: [] },
-    { name: "B1", alias: "Hat", voices: [] },
+    { alias: "Kick", name: "A1", voices: [] },
+    { alias: "Snare", name: "A2", voices: [] },
+    { alias: "Hat", name: "B1", voices: [] },
   ];
   const bankNames = { A: "Drums", B: "Perc" };
   const sampleCounts = { A1: [1, 2, 3, 4], A2: [2, 2, 2, 2], B1: [0, 1, 0, 1] };
@@ -90,11 +90,11 @@ describe("KitList", () => {
   it("renders all kits and bank anchors", () => {
     render(
       <KitList
-        kits={kits}
-        onSelectKit={vi.fn()}
         bankNames={bankNames}
-        onDuplicate={vi.fn()}
         kitData={kitData}
+        kits={kits}
+        onDuplicate={vi.fn()}
+        onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
       />,
     );
@@ -111,11 +111,11 @@ describe("KitList", () => {
     const onSelectKit = vi.fn();
     render(
       <KitList
-        kits={kits}
-        onSelectKit={onSelectKit}
         bankNames={bankNames}
-        onDuplicate={vi.fn()}
         kitData={kitData}
+        kits={kits}
+        onDuplicate={vi.fn()}
+        onSelectKit={onSelectKit}
         sampleCounts={sampleCounts}
       />,
     );
@@ -127,11 +127,11 @@ describe("KitList", () => {
     const onDuplicate = vi.fn();
     render(
       <KitList
-        kits={kits}
-        onSelectKit={vi.fn()}
         bankNames={bankNames}
-        onDuplicate={onDuplicate}
         kitData={kitData}
+        kits={kits}
+        onDuplicate={onDuplicate}
+        onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
       />,
     );
@@ -145,11 +145,11 @@ describe("KitList", () => {
   it("renders sample counts for each kit", () => {
     render(
       <KitList
-        kits={kits}
-        onSelectKit={vi.fn()}
         bankNames={bankNames}
-        onDuplicate={vi.fn()}
         kitData={kitData}
+        kits={kits}
+        onDuplicate={vi.fn()}
+        onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
       />,
     );
@@ -169,11 +169,11 @@ describe("KitList", () => {
   it("focuses only the first kit on load", () => {
     render(
       <KitList
-        kits={kits}
-        onSelectKit={vi.fn()}
         bankNames={bankNames}
-        onDuplicate={vi.fn()}
         kitData={kitData}
+        kits={kits}
+        onDuplicate={vi.fn()}
+        onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
       />,
     );
@@ -183,11 +183,11 @@ describe("KitList", () => {
   it("A-Z hotkey focuses only the first kit in the selected bank", () => {
     render(
       <KitList
-        kits={kits}
-        onSelectKit={vi.fn()}
         bankNames={bankNames}
-        onDuplicate={vi.fn()}
         kitData={kitData}
+        kits={kits}
+        onDuplicate={vi.fn()}
+        onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
       />,
     );
@@ -204,11 +204,11 @@ describe("KitList", () => {
     const onSelectKit = vi.fn();
     render(
       <KitList
-        kits={kits}
-        onSelectKit={onSelectKit}
         bankNames={bankNames}
-        onDuplicate={vi.fn()}
         kitData={kitData}
+        kits={kits}
+        onDuplicate={vi.fn()}
+        onSelectKit={onSelectKit}
         sampleCounts={sampleCounts}
       />,
     );
@@ -232,86 +232,86 @@ describe("KitList", () => {
   it("renders deduped voice label sets for each kit", () => {
     const testKits = [
       {
+        alias: null,
+        artist: null,
+        bank: null,
+        bank_letter: "A",
+        editable: false,
+        locked: false,
+        modified_since_sync: false,
         name: "A1",
-        alias: null,
-        artist: null,
-        locked: false,
-        editable: false,
-        modified_since_sync: false,
-        step_pattern: null,
-        bank_letter: "A",
-        voices: [
-          { voice_number: 1, voice_alias: "kick", kit_name: "A1" },
-          { voice_number: 2, voice_alias: "snare", kit_name: "A1" },
-          { voice_number: 3, voice_alias: "kick", kit_name: "A1" },
-          { voice_number: 4, voice_alias: null, kit_name: "A1" },
-        ],
         samples: [],
-        bank: null,
+        step_pattern: null,
+        voices: [
+          { kit_name: "A1", voice_alias: "kick", voice_number: 1 },
+          { kit_name: "A1", voice_alias: "snare", voice_number: 2 },
+          { kit_name: "A1", voice_alias: "kick", voice_number: 3 },
+          { kit_name: "A1", voice_alias: null, voice_number: 4 },
+        ],
       },
       {
+        alias: null,
+        artist: null,
+        bank: null,
+        bank_letter: "A",
+        editable: false,
+        locked: false,
+        modified_since_sync: false,
         name: "A2",
-        alias: null,
-        artist: null,
-        locked: false,
-        editable: false,
-        modified_since_sync: false,
-        step_pattern: null,
-        bank_letter: "A",
-        voices: [
-          { voice_number: 1, voice_alias: "snare", kit_name: "A2" },
-          { voice_number: 2, voice_alias: "snare", kit_name: "A2" },
-          { voice_number: 3, voice_alias: null, kit_name: "A2" },
-          { voice_number: 4, voice_alias: "hat", kit_name: "A2" },
-        ],
         samples: [],
-        bank: null,
+        step_pattern: null,
+        voices: [
+          { kit_name: "A2", voice_alias: "snare", voice_number: 1 },
+          { kit_name: "A2", voice_alias: "snare", voice_number: 2 },
+          { kit_name: "A2", voice_alias: null, voice_number: 3 },
+          { kit_name: "A2", voice_alias: "hat", voice_number: 4 },
+        ],
       },
       {
-        name: "B1",
         alias: null,
         artist: null,
-        locked: false,
-        editable: false,
-        modified_since_sync: false,
-        step_pattern: null,
-        bank_letter: "B",
-        voices: [
-          { voice_number: 1, voice_alias: null, kit_name: "B1" },
-          { voice_number: 2, voice_alias: null, kit_name: "B1" },
-          { voice_number: 3, voice_alias: null, kit_name: "B1" },
-          { voice_number: 4, voice_alias: null, kit_name: "B1" },
-        ],
-        samples: [],
         bank: null,
+        bank_letter: "B",
+        editable: false,
+        locked: false,
+        modified_since_sync: false,
+        name: "B1",
+        samples: [],
+        step_pattern: null,
+        voices: [
+          { kit_name: "B1", voice_alias: null, voice_number: 1 },
+          { kit_name: "B1", voice_alias: null, voice_number: 2 },
+          { kit_name: "B1", voice_alias: null, voice_number: 3 },
+          { kit_name: "B1", voice_alias: null, voice_number: 4 },
+        ],
       },
     ];
     const kitData = [
       {
         name: "A1",
         voices: [
-          { voice_number: 1, voice_alias: "kick" },
-          { voice_number: 2, voice_alias: "snare" },
-          { voice_number: 3, voice_alias: "kick" },
-          { voice_number: 4, voice_alias: null },
+          { voice_alias: "kick", voice_number: 1 },
+          { voice_alias: "snare", voice_number: 2 },
+          { voice_alias: "kick", voice_number: 3 },
+          { voice_alias: null, voice_number: 4 },
         ],
       },
       {
         name: "A2",
         voices: [
-          { voice_number: 1, voice_alias: "snare" },
-          { voice_number: 2, voice_alias: "snare" },
-          { voice_number: 3, voice_alias: null },
-          { voice_number: 4, voice_alias: "hat" },
+          { voice_alias: "snare", voice_number: 1 },
+          { voice_alias: "snare", voice_number: 2 },
+          { voice_alias: null, voice_number: 3 },
+          { voice_alias: "hat", voice_number: 4 },
         ],
       },
       {
         name: "B1",
         voices: [
-          { voice_number: 1, voice_alias: null },
-          { voice_number: 2, voice_alias: null },
-          { voice_number: 3, voice_alias: null },
-          { voice_number: 4, voice_alias: null },
+          { voice_alias: null, voice_number: 1 },
+          { voice_alias: null, voice_number: 2 },
+          { voice_alias: null, voice_number: 3 },
+          { voice_alias: null, voice_number: 4 },
         ],
       },
     ];
@@ -323,11 +323,11 @@ describe("KitList", () => {
     };
     render(
       <KitList
-        kits={testKits}
-        onSelectKit={vi.fn()}
         bankNames={bankNames}
-        onDuplicate={vi.fn()}
         kitData={kitData}
+        kits={testKits}
+        onDuplicate={vi.fn()}
+        onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
       />,
     );

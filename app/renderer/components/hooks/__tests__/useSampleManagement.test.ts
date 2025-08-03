@@ -6,11 +6,11 @@ import { useSampleManagement } from "../useSampleManagement";
 // Mock window.electronAPI
 const mockElectronAPI = {
   addSampleToSlot: vi.fn(),
-  replaceSampleInSlot: vi.fn(),
   deleteSampleFromSlot: vi.fn(),
   deleteSampleFromSlotWithoutCompaction: vi.fn(),
-  moveSampleInKit: vi.fn(),
   getAllSamplesForKit: vi.fn(),
+  moveSampleInKit: vi.fn(),
+  replaceSampleInSlot: vi.fn(),
 };
 
 beforeEach(() => {
@@ -25,15 +25,15 @@ afterEach(() => {
 describe("useSampleManagement", () => {
   const defaultProps = {
     kitName: "TestKit",
-    onSamplesChanged: vi.fn(),
     onMessage: vi.fn(),
+    onSamplesChanged: vi.fn(),
   };
 
   describe("handleSampleAdd", () => {
     it("adds sample successfully", async () => {
       mockElectronAPI.addSampleToSlot.mockResolvedValue({
-        success: true,
         data: { sampleId: 123 },
+        success: true,
       });
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
@@ -49,15 +49,15 @@ describe("useSampleManagement", () => {
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "success",
         text: "Sample added to voice 1, slot 1",
+        type: "success",
       });
     });
 
     it("handles add sample failure", async () => {
       mockElectronAPI.addSampleToSlot.mockResolvedValue({
-        success: false,
         error: "File not found",
+        success: false,
       });
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
@@ -66,8 +66,8 @@ describe("useSampleManagement", () => {
 
       expect(defaultProps.onSamplesChanged).not.toHaveBeenCalled();
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "error",
         text: "File not found",
+        type: "error",
       });
     });
 
@@ -80,8 +80,8 @@ describe("useSampleManagement", () => {
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "error",
         text: "Sample management not available",
+        type: "error",
       });
 
       // Restore for other tests
@@ -98,8 +98,8 @@ describe("useSampleManagement", () => {
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "error",
         text: "Failed to add sample: Network error",
+        type: "error",
       });
     });
   });
@@ -107,8 +107,8 @@ describe("useSampleManagement", () => {
   describe("handleSampleReplace", () => {
     it("replaces sample successfully", async () => {
       mockElectronAPI.replaceSampleInSlot.mockResolvedValue({
-        success: true,
         data: { sampleId: 456 },
+        success: true,
       });
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
@@ -124,15 +124,15 @@ describe("useSampleManagement", () => {
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "success",
         text: "Sample replaced in voice 2, slot 4",
+        type: "success",
       });
     });
 
     it("handles replace sample failure", async () => {
       mockElectronAPI.replaceSampleInSlot.mockResolvedValue({
-        success: false,
         error: "Invalid format",
+        success: false,
       });
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
@@ -141,8 +141,8 @@ describe("useSampleManagement", () => {
 
       expect(defaultProps.onSamplesChanged).not.toHaveBeenCalled();
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "error",
         text: "Invalid format",
+        type: "error",
       });
     });
   });
@@ -164,15 +164,15 @@ describe("useSampleManagement", () => {
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "success",
         text: "Sample deleted from voice 3, slot 6",
+        type: "success",
       });
     });
 
     it("handles delete sample failure", async () => {
       mockElectronAPI.deleteSampleFromSlot.mockResolvedValue({
-        success: false,
         error: "Sample not found",
+        success: false,
       });
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
@@ -181,8 +181,8 @@ describe("useSampleManagement", () => {
 
       expect(defaultProps.onSamplesChanged).not.toHaveBeenCalled();
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "error",
         text: "Sample not found",
+        type: "error",
       });
     });
   });
@@ -190,8 +190,8 @@ describe("useSampleManagement", () => {
   describe("without callbacks", () => {
     it("works without onSamplesChanged callback", async () => {
       mockElectronAPI.addSampleToSlot.mockResolvedValue({
-        success: true,
         data: { sampleId: 123 },
+        success: true,
       });
 
       const { result } = renderHook(() =>
@@ -205,15 +205,15 @@ describe("useSampleManagement", () => {
 
       expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalled();
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "success",
         text: "Sample added to voice 1, slot 1",
+        type: "success",
       });
     });
 
     it("works without onMessage callback", async () => {
       mockElectronAPI.addSampleToSlot.mockResolvedValue({
-        success: true,
         data: { sampleId: 123 },
+        success: true,
       });
 
       const { result } = renderHook(() =>
@@ -233,14 +233,14 @@ describe("useSampleManagement", () => {
   describe("handleSampleMove", () => {
     it("should move sample within same voice (backward move)", async () => {
       mockElectronAPI.moveSampleInKit.mockResolvedValue({
-        success: true,
         data: {
-          movedSample: { voice: 1, slot: 4, filename: "test.wav" },
           affectedSamples: [
-            { voice: 1, slot: 5, filename: "sample1.wav", oldSlot: 4 },
-            { voice: 1, slot: 6, filename: "sample2.wav", oldSlot: 5 },
+            { filename: "sample1.wav", oldSlot: 4, slot: 5, voice: 1 },
+            { filename: "sample2.wav", oldSlot: 5, slot: 6, voice: 1 },
           ],
+          movedSample: { filename: "test.wav", slot: 4, voice: 1 },
         },
+        success: true,
       });
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
@@ -258,18 +258,18 @@ describe("useSampleManagement", () => {
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "success",
         text: "Sample moved from voice 1, slot 6 to voice 1, slot 4",
+        type: "success",
       });
     });
 
     it("should move sample within same voice (forward move)", async () => {
       mockElectronAPI.moveSampleInKit.mockResolvedValue({
-        success: true,
         data: {
-          movedSample: { voice: 1, slot: 6, filename: "test.wav" },
           affectedSamples: [],
+          movedSample: { filename: "test.wav", slot: 6, voice: 1 },
         },
+        success: true,
       });
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
@@ -290,8 +290,8 @@ describe("useSampleManagement", () => {
 
     it("should handle same-voice move errors", async () => {
       mockElectronAPI.moveSampleInKit.mockResolvedValue({
-        success: false,
         error: "Sample not found at specified location",
+        success: false,
       });
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
@@ -299,8 +299,8 @@ describe("useSampleManagement", () => {
       await result.current.handleSampleMove(1, 5, 1, 3, "insert");
 
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "error",
         text: "Sample not found at specified location",
+        type: "error",
       });
     });
   });
@@ -308,16 +308,16 @@ describe("useSampleManagement", () => {
   describe("Undo Operations", () => {
     const mockUndoHook = {
       addAction: vi.fn(),
-      undoCount: 0,
-      redoCount: 0,
-      canUndo: false,
       canRedo: false,
-      undo: vi.fn(),
-      redo: vi.fn(),
+      canUndo: false,
       clear: vi.fn(),
       error: null,
-      isUndoing: false,
       isRedoing: false,
+      isUndoing: false,
+      redo: vi.fn(),
+      redoCount: 0,
+      undo: vi.fn(),
+      undoCount: 0,
     };
 
     beforeEach(() => {
@@ -327,8 +327,8 @@ describe("useSampleManagement", () => {
     describe("Undo Add Sample", () => {
       it("should record add action for undo", async () => {
         mockElectronAPI.addSampleToSlot.mockResolvedValue({
-          success: true,
           data: { sampleId: 123 },
+          success: true,
         });
 
         const { result } = renderHook(() =>
@@ -341,26 +341,26 @@ describe("useSampleManagement", () => {
         await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
         expect(mockUndoHook.addAction).toHaveBeenCalledWith({
-          type: "ADD_SAMPLE",
-          id: expect.any(String),
-          timestamp: expect.any(Date),
-          description: "Add sample to voice 1, slot 1",
           data: {
-            voice: 1,
-            slot: 0,
             addedSample: {
               filename: "sample.wav",
-              source_path: "/path/to/sample.wav",
               is_stereo: false, // Default from forceStereo || false
+              source_path: "/path/to/sample.wav",
             },
+            slot: 0,
+            voice: 1,
           },
+          description: "Add sample to voice 1, slot 1",
+          id: expect.any(String),
+          timestamp: expect.any(Date),
+          type: "ADD_SAMPLE",
         });
       });
 
       it("should not record undo action when skipUndoRecording is true", async () => {
         mockElectronAPI.addSampleToSlot.mockResolvedValue({
-          success: true,
           data: { sampleId: 123 },
+          success: true,
         });
 
         const { result } = renderHook(() =>
@@ -381,31 +381,31 @@ describe("useSampleManagement", () => {
       it("should record compact slots action for delete with automatic compaction", async () => {
         // Mock getAllSamplesForKit to get sample before deletion
         mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-          success: true,
           data: [
             {
-              voice_number: 1,
-              slot_number: 1,
               filename: "deleted.wav",
-              source_path: "/path/to/deleted.wav",
               is_stereo: false,
+              slot_number: 1,
+              source_path: "/path/to/deleted.wav",
+              voice_number: 1,
             },
           ],
+          success: true,
         });
 
         mockElectronAPI.deleteSampleFromSlot.mockResolvedValue({
-          success: true,
           data: {
             affectedSamples: [
               {
-                voice_number: 1,
-                slot_number: 2,
                 filename: "sample2.wav",
-                source_path: "/path/2.wav",
                 is_stereo: true,
+                slot_number: 2,
+                source_path: "/path/2.wav",
+                voice_number: 1,
               },
             ],
           },
+          success: true,
         });
 
         const { result } = renderHook(() =>
@@ -418,31 +418,31 @@ describe("useSampleManagement", () => {
         await result.current.handleSampleDelete(1, 0);
 
         expect(mockUndoHook.addAction).toHaveBeenCalledWith({
-          type: "COMPACT_SLOTS",
-          id: expect.any(String),
-          timestamp: expect.any(Date),
-          description: "Delete sample from voice 1, slot 1 (with compaction)",
           data: {
-            voice: 1,
-            deletedSlot: 0,
-            deletedSample: {
-              filename: "deleted.wav",
-              source_path: "/path/to/deleted.wav",
-              is_stereo: false,
-            },
             affectedSamples: [
               {
-                voice: 1,
-                oldSlot: 2, // New position after compaction
                 newSlot: 1, // Original position before compaction
+                oldSlot: 2, // New position after compaction
                 sample: {
                   filename: "sample2.wav",
-                  source_path: "/path/2.wav",
                   is_stereo: true,
+                  source_path: "/path/2.wav",
                 },
+                voice: 1,
               },
             ],
+            deletedSample: {
+              filename: "deleted.wav",
+              is_stereo: false,
+              source_path: "/path/to/deleted.wav",
+            },
+            deletedSlot: 0,
+            voice: 1,
           },
+          description: "Delete sample from voice 1, slot 1 (with compaction)",
+          id: expect.any(String),
+          timestamp: expect.any(Date),
+          type: "COMPACT_SLOTS",
         });
       });
     });
@@ -451,27 +451,27 @@ describe("useSampleManagement", () => {
       it("should record replace action with old and new sample data", async () => {
         // Mock getAllSamplesForKit to provide the old sample data
         mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-          success: true,
           data: [
             {
-              voice_number: 1,
-              slot_number: 1,
               filename: "old.wav",
-              source_path: "/path/to/old.wav",
               is_stereo: true,
+              slot_number: 1,
+              source_path: "/path/to/old.wav",
+              voice_number: 1,
             },
           ],
+          success: true,
         });
 
         mockElectronAPI.replaceSampleInSlot.mockResolvedValue({
-          success: true,
           data: {
             replacedSample: {
               filename: "new.wav",
-              source_path: "/path/to/new.wav",
               is_stereo: false,
+              source_path: "/path/to/new.wav",
             },
           },
+          success: true,
         });
 
         const { result } = renderHook(() =>
@@ -484,24 +484,24 @@ describe("useSampleManagement", () => {
         await result.current.handleSampleReplace(1, 0, "/path/to/new.wav");
 
         expect(mockUndoHook.addAction).toHaveBeenCalledWith({
-          type: "REPLACE_SAMPLE",
-          id: expect.any(String),
-          timestamp: expect.any(Date),
-          description: "Replace sample in voice 1, slot 1",
           data: {
-            voice: 1,
-            slot: 0,
-            oldSample: {
-              filename: "old.wav",
-              source_path: "/path/to/old.wav",
-              is_stereo: true,
-            },
             newSample: {
               filename: "new.wav",
-              source_path: "/path/to/new.wav",
               is_stereo: false,
+              source_path: "/path/to/new.wav",
             },
+            oldSample: {
+              filename: "old.wav",
+              is_stereo: true,
+              source_path: "/path/to/old.wav",
+            },
+            slot: 0,
+            voice: 1,
           },
+          description: "Replace sample in voice 1, slot 1",
+          id: expect.any(String),
+          timestamp: expect.any(Date),
+          type: "REPLACE_SAMPLE",
         });
       });
     });
@@ -510,51 +510,51 @@ describe("useSampleManagement", () => {
       it("should record move action with state snapshot", async () => {
         // Mock the state snapshot capture
         mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-          success: true,
           data: [
             {
-              voice_number: 1,
-              slot_number: 1,
               filename: "sample1.wav",
-              source_path: "/path/1.wav",
               is_stereo: false,
-            },
-            {
-              voice_number: 1,
-              slot_number: 2,
-              filename: "sample2.wav",
-              source_path: "/path/2.wav",
-              is_stereo: true,
-            },
-            {
-              voice_number: 2,
               slot_number: 1,
+              source_path: "/path/1.wav",
+              voice_number: 1,
+            },
+            {
+              filename: "sample2.wav",
+              is_stereo: true,
+              slot_number: 2,
+              source_path: "/path/2.wav",
+              voice_number: 1,
+            },
+            {
               filename: "sample3.wav",
-              source_path: "/path/3.wav",
               is_stereo: false,
+              slot_number: 1,
+              source_path: "/path/3.wav",
+              voice_number: 2,
             },
           ],
+          success: true,
         });
 
         mockElectronAPI.moveSampleInKit.mockResolvedValue({
-          success: true,
           data: {
-            movedSample: {
-              filename: "sample2.wav",
-              source_path: "/path/2.wav",
-              is_stereo: true,
-            },
             affectedSamples: [
               {
-                voice_number: 2,
-                slot_number: 2,
                 filename: "sample3.wav",
-                source_path: "/path/3.wav",
                 is_stereo: false,
                 original_slot_number: 1,
+                slot_number: 2,
+                source_path: "/path/3.wav",
+                voice_number: 2,
               },
             ],
+            movedSample: {
+              filename: "sample2.wav",
+              is_stereo: true,
+              source_path: "/path/2.wav",
+            },
           },
+          success: true,
         });
 
         const { result } = renderHook(() =>
@@ -570,82 +570,82 @@ describe("useSampleManagement", () => {
           "TestKit",
         );
         expect(mockUndoHook.addAction).toHaveBeenCalledWith({
-          type: "MOVE_SAMPLE",
-          id: expect.any(String),
-          timestamp: expect.any(Date),
-          description: "Move sample from voice 1, slot 2 to voice 2, slot 1",
           data: {
-            fromVoice: 1,
+            affectedSamples: [
+              {
+                newSlot: 2,
+                oldSlot: 1,
+                sample: {
+                  filename: "sample3.wav",
+                  is_stereo: false,
+                  source_path: "/path/3.wav",
+                },
+                voice: 2,
+              },
+            ],
             fromSlot: 1,
-            toVoice: 2,
-            toSlot: 0,
+            fromVoice: 1,
             mode: "insert",
             movedSample: {
               filename: "sample2.wav",
-              source_path: "/path/2.wav",
               is_stereo: true,
+              source_path: "/path/2.wav",
             },
-            affectedSamples: [
-              {
-                voice: 2,
-                oldSlot: 1,
-                newSlot: 2,
-                sample: {
-                  filename: "sample3.wav",
-                  source_path: "/path/3.wav",
-                  is_stereo: false,
-                },
-              },
-            ],
             stateSnapshot: [
               {
-                voice: 1,
-                slot: 1,
                 sample: {
                   filename: "sample1.wav",
-                  source_path: "/path/1.wav",
                   is_stereo: false,
+                  source_path: "/path/1.wav",
                 },
+                slot: 1,
+                voice: 1,
               },
               {
-                voice: 1,
-                slot: 2,
                 sample: {
                   filename: "sample2.wav",
-                  source_path: "/path/2.wav",
                   is_stereo: true,
+                  source_path: "/path/2.wav",
                 },
+                slot: 2,
+                voice: 1,
               },
               {
-                voice: 2,
-                slot: 1,
                 sample: {
                   filename: "sample3.wav",
-                  source_path: "/path/3.wav",
                   is_stereo: false,
+                  source_path: "/path/3.wav",
                 },
+                slot: 1,
+                voice: 2,
               },
             ],
+            toSlot: 0,
+            toVoice: 2,
           },
+          description: "Move sample from voice 1, slot 2 to voice 2, slot 1",
+          id: expect.any(String),
+          timestamp: expect.any(Date),
+          type: "MOVE_SAMPLE",
         });
       });
 
       it("should handle move with failed state snapshot capture", async () => {
         mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-          success: false,
           error: "Database error",
+          success: false,
         });
 
         mockElectronAPI.moveSampleInKit.mockResolvedValue({
-          success: true,
           data: {
+            affectedSamples: [],
             movedSample: {
               filename: "sample2.wav",
-              source_path: "/path/2.wav",
               is_stereo: true,
+              source_path: "/path/2.wav",
             },
-            affectedSamples: [],
           },
+          success: true,
         });
 
         const { result } = renderHook(() =>
@@ -659,24 +659,24 @@ describe("useSampleManagement", () => {
 
         // Should still record the action but without state snapshot
         expect(mockUndoHook.addAction).toHaveBeenCalledWith({
-          type: "MOVE_SAMPLE",
-          id: expect.any(String),
-          timestamp: expect.any(Date),
-          description: "Move sample from voice 1, slot 2 to voice 2, slot 1",
           data: {
-            fromVoice: 1,
+            affectedSamples: [],
             fromSlot: 1,
-            toVoice: 2,
-            toSlot: 0,
+            fromVoice: 1,
             mode: "insert",
             movedSample: {
               filename: "sample2.wav",
-              source_path: "/path/2.wav",
               is_stereo: true,
+              source_path: "/path/2.wav",
             },
-            affectedSamples: [],
             stateSnapshot: [], // Empty due to failed capture
+            toSlot: 0,
+            toVoice: 2,
           },
+          description: "Move sample from voice 1, slot 2 to voice 2, slot 1",
+          id: expect.any(String),
+          timestamp: expect.any(Date),
+          type: "MOVE_SAMPLE",
         });
       });
     });
@@ -684,8 +684,8 @@ describe("useSampleManagement", () => {
     describe("Error Handling in Undo Operations", () => {
       it("should handle failed add operation gracefully", async () => {
         mockElectronAPI.addSampleToSlot.mockResolvedValue({
-          success: false,
           error: "File not found",
+          success: false,
         });
 
         const { result } = renderHook(() =>
@@ -703,8 +703,8 @@ describe("useSampleManagement", () => {
 
       it("should handle failed delete operation gracefully", async () => {
         mockElectronAPI.deleteSampleFromSlot.mockResolvedValue({
-          success: false,
           error: "Sample not found",
+          success: false,
         });
 
         const { result } = renderHook(() =>
@@ -721,8 +721,8 @@ describe("useSampleManagement", () => {
 
       it("should handle failed move operation gracefully", async () => {
         mockElectronAPI.moveSampleInKit.mockResolvedValue({
-          success: false,
           error: "Invalid move",
+          success: false,
         });
 
         const { result } = renderHook(() =>
@@ -893,16 +893,16 @@ describe("useSampleManagement", () => {
   describe("Cross-Kit Move Operations", () => {
     const mockUndoHook = {
       addAction: vi.fn(),
-      undoCount: 0,
-      redoCount: 0,
-      canUndo: false,
       canRedo: false,
-      undo: vi.fn(),
-      redo: vi.fn(),
+      canUndo: false,
       clear: vi.fn(),
       error: null,
-      isUndoing: false,
       isRedoing: false,
+      isUndoing: false,
+      redo: vi.fn(),
+      redoCount: 0,
+      undo: vi.fn(),
+      undoCount: 0,
     };
 
     beforeEach(() => {
@@ -917,24 +917,24 @@ describe("useSampleManagement", () => {
 
     it("should handle cross-kit move with insert mode", async () => {
       mockElectronAPI.moveSampleBetweenKits.mockResolvedValue({
-        success: true,
         data: {
-          movedSample: {
-            filename: "sample.wav",
-            source_path: "/path/to/sample.wav",
-            is_stereo: false,
-          },
           affectedSamples: [
             {
-              voice_number: 2,
-              slot_number: 2,
               filename: "shifted.wav",
-              source_path: "/path/to/shifted.wav",
               is_stereo: false,
               original_slot_number: 1,
+              slot_number: 2,
+              source_path: "/path/to/shifted.wav",
+              voice_number: 2,
             },
           ],
+          movedSample: {
+            filename: "sample.wav",
+            is_stereo: false,
+            source_path: "/path/to/sample.wav",
+          },
         },
+        success: true,
       });
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
@@ -953,8 +953,8 @@ describe("useSampleManagement", () => {
       );
 
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "success",
         text: "Sample moved from TestKit voice 1, slot 5 to TargetKit voice 2, slot 1",
+        type: "success",
       });
 
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
@@ -962,29 +962,29 @@ describe("useSampleManagement", () => {
 
     it("should record cross-kit move undo action", async () => {
       mockElectronAPI.moveSampleBetweenKits.mockResolvedValue({
-        success: true,
         data: {
-          movedSample: {
-            filename: "sample.wav",
-            source_path: "/path/to/sample.wav",
-            is_stereo: false,
-          },
           affectedSamples: [
             {
-              voice_number: 1,
-              slot_number: 2,
               filename: "affected.wav",
-              source_path: "/path/to/affected.wav",
               is_stereo: false,
               original_slot_number: 1,
+              slot_number: 2,
+              source_path: "/path/to/affected.wav",
+              voice_number: 1,
             },
           ],
+          movedSample: {
+            filename: "sample.wav",
+            is_stereo: false,
+            source_path: "/path/to/sample.wav",
+          },
           replacedSample: {
             filename: "replaced.wav",
-            source_path: "/path/to/replaced.wav",
             is_stereo: true,
+            source_path: "/path/to/replaced.wav",
           },
         },
+        success: true,
       });
 
       const { result } = renderHook(() =>
@@ -1004,42 +1004,42 @@ describe("useSampleManagement", () => {
       );
 
       expect(mockUndoHook.addAction).toHaveBeenCalledWith({
-        type: "MOVE_SAMPLE_BETWEEN_KITS",
-        id: expect.any(String),
-        timestamp: expect.any(Date),
-        description:
-          "Move sample from TestKit voice 1, slot 1 to TargetKit voice 2, slot 2",
         data: {
+          affectedSamples: [
+            {
+              newSlot: 2,
+              oldSlot: 1,
+              sample: {
+                filename: "affected.wav",
+                is_stereo: false,
+                source_path: "/path/to/affected.wav",
+              },
+              voice: 1,
+            },
+          ],
           fromKit: "TestKit",
-          fromVoice: 1,
           fromSlot: 0,
-          toKit: "TargetKit",
-          toVoice: 2,
-          toSlot: 1,
+          fromVoice: 1,
           mode: "overwrite",
           movedSample: {
             filename: "sample.wav",
-            source_path: "/path/to/sample.wav",
             is_stereo: false,
+            source_path: "/path/to/sample.wav",
           },
-          affectedSamples: [
-            {
-              voice: 1,
-              oldSlot: 1,
-              newSlot: 2,
-              sample: {
-                filename: "affected.wav",
-                source_path: "/path/to/affected.wav",
-                is_stereo: false,
-              },
-            },
-          ],
           replacedSample: {
             filename: "replaced.wav",
-            source_path: "/path/to/replaced.wav",
             is_stereo: true,
+            source_path: "/path/to/replaced.wav",
           },
+          toKit: "TargetKit",
+          toSlot: 1,
+          toVoice: 2,
         },
+        description:
+          "Move sample from TestKit voice 1, slot 1 to TargetKit voice 2, slot 2",
+        id: expect.any(String),
+        timestamp: expect.any(Date),
+        type: "MOVE_SAMPLE_BETWEEN_KITS",
       });
     });
 
@@ -1052,15 +1052,15 @@ describe("useSampleManagement", () => {
       await result.current.handleSampleMove(1, 0, 2, 0, "insert", "TargetKit");
 
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "error",
         text: "Cross-kit sample move not available",
+        type: "error",
       });
     });
 
     it("should handle cross-kit move failure", async () => {
       mockElectronAPI.moveSampleBetweenKits.mockResolvedValue({
-        success: false,
         error: "Target kit not found",
+        success: false,
       });
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
@@ -1075,8 +1075,8 @@ describe("useSampleManagement", () => {
       );
 
       expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        type: "error",
         text: "Target kit not found",
+        type: "error",
       });
 
       expect(defaultProps.onSamplesChanged).not.toHaveBeenCalled();
@@ -1086,16 +1086,16 @@ describe("useSampleManagement", () => {
   describe("Bug Regression Tests", () => {
     const mockUndoHook = {
       addAction: vi.fn(),
-      undoCount: 0,
-      redoCount: 0,
-      canUndo: false,
       canRedo: false,
-      undo: vi.fn(),
-      redo: vi.fn(),
+      canUndo: false,
       clear: vi.fn(),
       error: null,
-      isUndoing: false,
       isRedoing: false,
+      isUndoing: false,
+      redo: vi.fn(),
+      redoCount: 0,
+      undo: vi.fn(),
+      undoCount: 0,
     };
 
     beforeEach(() => {
@@ -1110,14 +1110,14 @@ describe("useSampleManagement", () => {
       // Expected after undo all: [1, 2, 3, 4, 5]
 
       mockElectronAPI.moveSampleInKit.mockResolvedValue({
-        success: true,
         data: {
-          movedSample: { voice: 1, slot: 2, filename: "sample4.wav" },
           affectedSamples: [
-            { voice: 1, slot: 3, filename: "sample2.wav", oldSlot: 2 },
-            { voice: 1, slot: 4, filename: "sample3.wav", oldSlot: 3 },
+            { filename: "sample2.wav", oldSlot: 2, slot: 3, voice: 1 },
+            { filename: "sample3.wav", oldSlot: 3, slot: 4, voice: 1 },
           ],
+          movedSample: { filename: "sample4.wav", slot: 2, voice: 1 },
         },
+        success: true,
       });
 
       const { result } = renderHook(() =>
@@ -1152,24 +1152,24 @@ describe("useSampleManagement", () => {
         callCount++;
         if (callCount === 1) {
           return Promise.resolve({
-            success: true,
             data: {
-              movedSample: { voice: 1, slot: 5, filename: "F.wav" },
               affectedSamples: [
-                { voice: 1, slot: 6, filename: "E.wav", oldSlot: 5 },
+                { filename: "E.wav", oldSlot: 5, slot: 6, voice: 1 },
               ],
+              movedSample: { filename: "F.wav", slot: 5, voice: 1 },
             },
+            success: true,
           });
         } else {
           return Promise.resolve({
-            success: true,
             data: {
-              movedSample: { voice: 1, slot: 4, filename: "E.wav" },
               affectedSamples: [
-                { voice: 1, slot: 5, filename: "D.wav", oldSlot: 4 },
-                { voice: 1, slot: 6, filename: "F.wav", oldSlot: 5 },
+                { filename: "D.wav", oldSlot: 4, slot: 5, voice: 1 },
+                { filename: "F.wav", oldSlot: 5, slot: 6, voice: 1 },
               ],
+              movedSample: { filename: "E.wav", slot: 4, voice: 1 },
             },
+            success: true,
           });
         }
       });
@@ -1197,54 +1197,54 @@ describe("useSampleManagement", () => {
 
       const stateSnapshot = [
         {
-          voice: 1,
-          slot: 1,
           sample: {
             filename: "1.wav",
-            source_path: "/1.wav",
             is_stereo: false,
+            source_path: "/1.wav",
           },
+          slot: 1,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 2,
           sample: {
             filename: "2.wav",
-            source_path: "/2.wav",
             is_stereo: false,
+            source_path: "/2.wav",
           },
+          slot: 2,
+          voice: 1,
         },
         {
-          voice: 1,
-          slot: 3,
           sample: {
             filename: "3.wav",
-            source_path: "/3.wav",
             is_stereo: false,
+            source_path: "/3.wav",
           },
+          slot: 3,
+          voice: 1,
         },
       ];
 
       mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-        success: true,
         data: stateSnapshot.map((s) => ({
-          voice_number: s.voice,
-          slot_number: s.slot,
           filename: s.sample.filename,
-          source_path: s.sample.source_path,
           is_stereo: s.sample.is_stereo,
+          slot_number: s.slot,
+          source_path: s.sample.source_path,
+          voice_number: s.voice,
         })),
+        success: true,
       });
 
       mockElectronAPI.moveSampleInKit.mockResolvedValue({
-        success: true,
         data: {
-          movedSample: { voice: 1, slot: 1, filename: "3.wav" },
           affectedSamples: [
-            { voice: 1, slot: 2, filename: "1.wav", oldSlot: 1 },
-            { voice: 1, slot: 3, filename: "2.wav", oldSlot: 2 },
+            { filename: "1.wav", oldSlot: 1, slot: 2, voice: 1 },
+            { filename: "2.wav", oldSlot: 2, slot: 3, voice: 1 },
           ],
+          movedSample: { filename: "3.wav", slot: 1, voice: 1 },
         },
+        success: true,
       });
 
       const { result } = renderHook(() =>

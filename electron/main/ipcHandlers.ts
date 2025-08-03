@@ -111,9 +111,9 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("select-local-store-path", async () => {
     const { dialog } = await import("electron");
     const result = await dialog.showOpenDialog({
+      message: "Choose a folder for your Romper local store.",
       properties: ["openDirectory", "createDirectory"],
       title: "Select Local Store Folder",
-      message: "Choose a folder for your Romper local store.",
     });
     if (result.canceled || !result.filePaths.length) return null;
     return result.filePaths[0];
@@ -121,13 +121,13 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
 
   ipcMain.handle("select-existing-local-store", async () => {
     const result = await dialog.showOpenDialog({
+      message: "Select a folder that contains a .romperdb directory",
       properties: ["openDirectory"],
       title: "Choose Existing Local Store",
-      message: "Select a folder that contains a .romperdb directory",
     });
 
     if (result.canceled || !result.filePaths[0]) {
-      return { success: false, path: null, error: "Selection cancelled" };
+      return { error: "Selection cancelled", path: null, success: false };
     }
 
     return localStoreService.validateExistingLocalStore(result.filePaths[0]);
@@ -152,7 +152,7 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         event.sender.send("archive-error", { message });
-        return { success: false, error: message };
+        return { error: message, success: false };
       }
     },
   );

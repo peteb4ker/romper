@@ -13,7 +13,7 @@ interface ValidationResultsDialogProps {
   isOpen: boolean;
   localStorePath?: string;
   onClose: () => void;
-  onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
+  onMessage?: (msg: { duration?: number; text: string; type?: string }) => void;
 }
 
 const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
@@ -23,15 +23,15 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
   onMessage,
 }) => {
   const {
+    groupedErrors,
     isLoading,
     isRescanning,
-    validationResult,
-    groupedErrors,
+    rescanSelectedKits,
+    selectAllKits,
     selectedKits,
     toggleKitSelection,
-    selectAllKits,
-    rescanSelectedKits,
     validateLocalStore,
+    validationResult,
   } = useValidationResults({
     localStorePath,
     onMessage,
@@ -57,19 +57,19 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
       <ul className="max-h-60 overflow-y-auto border border-gray-300 dark:border-slate-600 rounded">
         {errors.map((error) => (
           <li
-            key={error.kitName}
             className={`p-2 border-b border-gray-300 dark:border-slate-600 last:border-b-0 hover:bg-gray-100 dark:hover:bg-slate-700 ${
               selectedKits.includes(error.kitName)
                 ? "bg-blue-100 dark:bg-blue-900"
                 : ""
             }`}
+            key={error.kitName}
           >
             <label className="flex items-start gap-2 cursor-pointer">
               <input
-                type="checkbox"
                 checked={selectedKits.includes(error.kitName)}
-                onChange={() => toggleKitSelection(error.kitName)}
                 className="mt-1"
+                onChange={() => toggleKitSelection(error.kitName)}
+                type="checkbox"
               />
               <div className="flex-grow">
                 <div className="font-bold">{error.kitName}</div>
@@ -106,9 +106,9 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
             Local Store Validation Results
           </h2>
           <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             aria-label="Close"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            onClick={onClose}
           >
             <FiX size={24} />
           </button>
@@ -165,36 +165,36 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-300 dark:border-slate-600">
                   <div className="flex items-center">
                     <input
-                      type="checkbox"
-                      id="select-all"
                       checked={allSelected}
-                      onChange={selectAllKits}
                       className="mr-2"
                       disabled={isRescanning}
+                      id="select-all"
+                      onChange={selectAllKits}
+                      type="checkbox"
                     />
                     <label
-                      htmlFor="select-all"
                       className="cursor-pointer select-none"
+                      htmlFor="select-all"
                     >
                       Select All
                     </label>
                   </div>
                   <div className="flex gap-3">
                     <button
-                      onClick={onClose}
                       className="px-4 py-2 bg-gray-300 dark:bg-slate-700 rounded hover:bg-gray-400 dark:hover:bg-slate-600 transition-colors"
                       disabled={isRescanning}
+                      onClick={onClose}
                     >
                       Cancel
                     </button>
                     <button
-                      onClick={rescanSelectedKits}
                       className={`px-4 py-2 rounded flex items-center gap-2 ${
                         selectedKits.length === 0
                           ? "bg-blue-300 dark:bg-blue-900 cursor-not-allowed opacity-60"
                           : "bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-600"
                       } text-white transition-colors`}
                       disabled={selectedKits.length === 0 || isRescanning}
+                      onClick={rescanSelectedKits}
                     >
                       {isRescanning ? (
                         <>

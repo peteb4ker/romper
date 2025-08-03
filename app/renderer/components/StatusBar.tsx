@@ -4,15 +4,15 @@ import { FiDatabase, FiMonitor, FiMoon, FiSun } from "react-icons/fi";
 import { useSettings } from "../utils/SettingsContext";
 
 interface StatusBarProps {
+  progress?: null | number; // 0-100, or null for none
   status?: string;
-  progress?: number | null; // 0-100, or null for none
 }
 
 const StatusBar: React.FC<StatusBarProps> = ({
-  status = "Ready",
   progress = null,
+  status = "Ready",
 }) => {
-  const { localStorePath, isDarkMode, themeMode, setThemeMode } = useSettings();
+  const { isDarkMode, localStorePath, setThemeMode, themeMode } = useSettings();
 
   // Extract nested ternary operations into independent statements
   const getThemeDisplayText = () => {
@@ -58,20 +58,21 @@ const StatusBar: React.FC<StatusBarProps> = ({
       </div>
       <div className="flex items-center gap-4">
         <a
-          href="https://squarp.net/rample/manual/"
-          target="_blank"
-          rel="noopener noreferrer"
           className="underline hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+          href="https://squarp.net/rample/manual/"
+          rel="noopener noreferrer"
+          target="_blank"
         >
           Rample Manual
         </a>
         <a
-          href="/about"
           className="underline hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+          href="/about"
         >
           About
         </a>
         <button
+          aria-label="Toggle theme mode"
           className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-gray-300 dark:bg-slate-700 hover:bg-gray-400 dark:hover:bg-slate-600 transition"
           onClick={() => {
             // Cycle through: light -> dark -> system
@@ -84,7 +85,6 @@ const StatusBar: React.FC<StatusBarProps> = ({
             }
           }}
           title={`Current: ${themeMode}${getThemeDisplayText()}`}
-          aria-label="Toggle theme mode"
         >
           {getThemeIcon()}
         </button>

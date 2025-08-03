@@ -5,6 +5,7 @@ import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Kit } from "../../../../shared/db/schema";
+
 import KitHeader from "../KitHeader";
 
 afterEach(() => {
@@ -13,23 +14,23 @@ afterEach(() => {
 
 describe("KitHeader", () => {
   const baseProps = {
-    kitName: "A1",
-    kit: { alias: "My Kit" } as Kit,
     editingKitAlias: false,
-    setEditingKitAlias: vi.fn(),
-    kitAliasInput: "My Kit",
-    setKitAliasInput: vi.fn(),
     handleSaveKitAlias: vi.fn(),
+    isEditable: false,
+    kit: { alias: "My Kit" } as Kit,
+    kitAliasInput: "My Kit",
     kitAliasInputRef: { current: null },
+    kitIndex: 1,
+    kitName: "A1",
+    kits: ["A1", "A2", "A3"],
     onBack: vi.fn(),
+    onCreateKit: vi.fn(),
     onNextKit: vi.fn(),
     onPrevKit: vi.fn(),
-    onCreateKit: vi.fn(),
     onScanKit: vi.fn(),
     onToggleEditableMode: vi.fn(),
-    isEditable: false,
-    kits: ["A1", "A2", "A3"],
-    kitIndex: 1,
+    setEditingKitAlias: vi.fn(),
+    setKitAliasInput: vi.fn(),
   };
 
   it("renders kit name and label", () => {
@@ -63,10 +64,10 @@ describe("KitHeader", () => {
       <KitHeader
         {...baseProps}
         editingKitAlias={true}
-        setEditingKitAlias={setEditingKitAlias}
-        setKitAliasInput={setKitAliasInput}
         handleSaveKitAlias={handleSaveKitAlias}
         kitAliasInput="Edit Alias"
+        setEditingKitAlias={setEditingKitAlias}
+        setKitAliasInput={setKitAliasInput}
       />,
     );
     const input = screen.getByDisplayValue("Edit Alias");
@@ -92,7 +93,7 @@ describe("KitHeader", () => {
 
   it("calls onPrevKit and disables at first kit", () => {
     const onPrevKit = vi.fn();
-    render(<KitHeader {...baseProps} onPrevKit={onPrevKit} kitIndex={0} />);
+    render(<KitHeader {...baseProps} kitIndex={0} onPrevKit={onPrevKit} />);
     const prevBtn = screen.getByTitle("Previous Kit");
     expect(prevBtn).toBeDisabled();
     fireEvent.click(prevBtn);
@@ -101,7 +102,7 @@ describe("KitHeader", () => {
 
   it("calls onNextKit and disables at last kit", () => {
     const onNextKit = vi.fn();
-    render(<KitHeader {...baseProps} onNextKit={onNextKit} kitIndex={2} />);
+    render(<KitHeader {...baseProps} kitIndex={2} onNextKit={onNextKit} />);
     const nextBtn = screen.getByTitle("Next Kit");
     expect(nextBtn).toBeDisabled();
     fireEvent.click(nextBtn);
@@ -135,8 +136,8 @@ describe("KitHeader", () => {
       render(
         <KitHeader
           {...baseProps}
-          onToggleEditableMode={vi.fn()}
           isEditable={false}
+          onToggleEditableMode={vi.fn()}
         />,
       );
 
@@ -152,8 +153,8 @@ describe("KitHeader", () => {
       render(
         <KitHeader
           {...baseProps}
-          onToggleEditableMode={vi.fn()}
           isEditable={true}
+          onToggleEditableMode={vi.fn()}
         />,
       );
 
@@ -170,8 +171,8 @@ describe("KitHeader", () => {
       render(
         <KitHeader
           {...baseProps}
-          onToggleEditableMode={onToggleEditableMode}
           isEditable={false}
+          onToggleEditableMode={onToggleEditableMode}
         />,
       );
 
@@ -197,8 +198,8 @@ describe("KitHeader", () => {
       render(
         <KitHeader
           {...baseProps}
-          onToggleEditableMode={vi.fn()}
           isEditable={false}
+          onToggleEditableMode={vi.fn()}
         />,
       );
 
@@ -215,8 +216,8 @@ describe("KitHeader", () => {
       const { rerender } = render(
         <KitHeader
           {...baseProps}
-          onToggleEditableMode={vi.fn()}
           isEditable={false}
+          onToggleEditableMode={vi.fn()}
         />,
       );
 
@@ -225,8 +226,8 @@ describe("KitHeader", () => {
       rerender(
         <KitHeader
           {...baseProps}
-          onToggleEditableMode={vi.fn()}
           isEditable={true}
+          onToggleEditableMode={vi.fn()}
         />,
       );
 

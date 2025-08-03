@@ -13,9 +13,9 @@ describe("FilePickerButton", () => {
   it("renders button with children text", () => {
     render(
       <FilePickerButton
+        data-testid="file-picker"
         isSelecting={false}
         onClick={() => {}}
-        data-testid="file-picker"
       >
         Choose File
       </FilePickerButton>,
@@ -27,10 +27,10 @@ describe("FilePickerButton", () => {
   it("shows selecting state with spinner and custom text", () => {
     render(
       <FilePickerButton
+        data-testid="file-picker-selecting"
         isSelecting={true}
         onClick={() => {}}
         selectingText="Loading..."
-        data-testid="file-picker-selecting"
       >
         Choose File
       </FilePickerButton>,
@@ -45,9 +45,9 @@ describe("FilePickerButton", () => {
   it("defaults to 'Selecting...' when no custom text provided", () => {
     render(
       <FilePickerButton
+        data-testid="file-picker-default"
         isSelecting={true}
         onClick={() => {}}
-        data-testid="file-picker-default"
       >
         Choose File
       </FilePickerButton>,
@@ -61,10 +61,10 @@ describe("FilePickerButton", () => {
   it("shows icon when provided and not selecting", () => {
     render(
       <FilePickerButton
+        data-testid="file-picker-with-icon"
+        icon={<FaFolder data-testid="folder-icon" />}
         isSelecting={false}
         onClick={() => {}}
-        icon={<FaFolder data-testid="folder-icon" />}
-        data-testid="file-picker-with-icon"
       >
         Choose File
       </FilePickerButton>,
@@ -76,10 +76,10 @@ describe("FilePickerButton", () => {
   it("hides icon when selecting", () => {
     render(
       <FilePickerButton
+        data-testid="file-picker-selecting-no-icon"
+        icon={<FaFolder data-testid="folder-icon" />}
         isSelecting={true}
         onClick={() => {}}
-        icon={<FaFolder data-testid="folder-icon" />}
-        data-testid="file-picker-selecting-no-icon"
       >
         Choose File
       </FilePickerButton>,
@@ -94,9 +94,9 @@ describe("FilePickerButton", () => {
 
     render(
       <FilePickerButton
+        data-testid="file-picker-clickable"
         isSelecting={false}
         onClick={onClick}
-        data-testid="file-picker-clickable"
       >
         Choose File
       </FilePickerButton>,
@@ -112,9 +112,9 @@ describe("FilePickerButton", () => {
 
     render(
       <FilePickerButton
+        data-testid="file-picker-disabled"
         isSelecting={true}
         onClick={onClick}
-        data-testid="file-picker-disabled"
       >
         Choose File
       </FilePickerButton>,
@@ -130,10 +130,10 @@ describe("FilePickerButton", () => {
 
     render(
       <FilePickerButton
+        data-testid="file-picker-explicitly-disabled"
+        disabled={true}
         isSelecting={false}
         onClick={onClick}
-        disabled={true}
-        data-testid="file-picker-explicitly-disabled"
       >
         Choose File
       </FilePickerButton>,
@@ -146,9 +146,9 @@ describe("FilePickerButton", () => {
   it("is disabled when selecting or explicitly disabled", () => {
     const { rerender } = render(
       <FilePickerButton
+        data-testid="file-picker-disabled-test"
         isSelecting={true}
         onClick={() => {}}
-        data-testid="file-picker-disabled-test"
       >
         Choose File
       </FilePickerButton>,
@@ -158,10 +158,10 @@ describe("FilePickerButton", () => {
 
     rerender(
       <FilePickerButton
+        data-testid="file-picker-disabled-test"
+        disabled={true}
         isSelecting={false}
         onClick={() => {}}
-        disabled={true}
-        data-testid="file-picker-disabled-test"
       >
         Choose File
       </FilePickerButton>,
@@ -173,10 +173,10 @@ describe("FilePickerButton", () => {
   it("applies custom className", () => {
     render(
       <FilePickerButton
-        isSelecting={false}
-        onClick={() => {}}
         className="custom-class"
         data-testid="file-picker-custom-class"
+        isSelecting={false}
+        onClick={() => {}}
       >
         Choose File
       </FilePickerButton>,

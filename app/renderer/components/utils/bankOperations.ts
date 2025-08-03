@@ -1,38 +1,11 @@
-/**
- * Extracts the bank and name from a single RTF filename (e.g. "A - MyBank.rtf")
- * Returns { bank, name } or null if not a valid bank RTF filename
- */
-export function getBankNameFromRtfFilename(
-  filename: string,
-): { bank: string; name: string } | null {
-  const match = /^(\p{Lu}) - (.+)\.rtf$/iu.exec(filename);
-  if (match) {
-    return {
-      bank: match[1].toUpperCase(),
-      name: toCapitalCase(match[2]),
-    };
-  }
-  return null;
+export interface BankNames {
+  [bank: string]: string;
 }
 // Bank operations utilities
 
 import type { KitWithRelations } from "../../../../shared/db/schema";
+
 import { toCapitalCase } from "../../../../shared/kitUtilsShared";
-
-export interface BankNames {
-  [bank: string]: string;
-}
-
-/**
- * Gets the first kit in a specific bank
- */
-export function getFirstKitInBank(
-  kits: KitWithRelations[],
-  bank: string,
-): string | null {
-  const kit = kits.find((k) => k?.name?.startsWith(bank));
-  return kit ? kit.name : null;
-}
 
 /**
  * Checks if a bank has any kits
@@ -52,6 +25,34 @@ export function getAvailableBanks(kits: KitWithRelations[]): string[] {
     }
   }
   return Array.from(banks).sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Extracts the bank and name from a single RTF filename (e.g. "A - MyBank.rtf")
+ * Returns { bank, name } or null if not a valid bank RTF filename
+ */
+export function getBankNameFromRtfFilename(
+  filename: string,
+): { bank: string; name: string } | null {
+  const match = /^(\p{Lu}) - (.+)\.rtf$/iu.exec(filename);
+  if (match) {
+    return {
+      bank: match[1].toUpperCase(),
+      name: toCapitalCase(match[2]),
+    };
+  }
+  return null;
+}
+
+/**
+ * Gets the first kit in a specific bank
+ */
+export function getFirstKitInBank(
+  kits: KitWithRelations[],
+  bank: string,
+): null | string {
+  const kit = kits.find((k) => k?.name?.startsWith(bank));
+  return kit ? kit.name : null;
 }
 
 /**

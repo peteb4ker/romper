@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import type { KitWithRelations } from "../../../../shared/db/schema";
+
 import { compareKitSlots } from "../../../../shared/kitUtilsShared";
 
 export function useKitListLogic(kits: KitWithRelations[]) {
@@ -31,9 +32,9 @@ export function useKitListLogic(kits: KitWithRelations[]) {
     (idx === 0 || !kit.name.startsWith(arr[idx - 1].name[0]));
 
   return {
-    kitsToDisplay,
-    isValidKit,
     getColorClass,
+    isValidKit,
+    kitsToDisplay,
     showBankAnchor,
   };
 }

@@ -7,7 +7,7 @@ import {
 
 interface UseValidationResultsProps {
   localStorePath?: string;
-  onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
+  onMessage?: (msg: { duration?: number; text: string; type?: string }) => void;
 }
 
 export function useValidationResults({
@@ -39,7 +39,7 @@ export function useValidationResults({
       }
     });
 
-    return { missing, extra, both };
+    return { both, extra, missing };
   }, [validationResult]);
 
   const validateLocalStore = useCallback(async () => {
@@ -51,9 +51,9 @@ export function useValidationResults({
 
       if (!result.isValid && onMessage) {
         onMessage({
+          duration: 5000,
           text: result.errorSummary || "Validation errors found in local store",
           type: "error",
-          duration: 5000,
         });
       }
     } catch (error) {
@@ -102,20 +102,20 @@ export function useValidationResults({
 
       if (result.success && result.data) {
         return {
-          success: true,
           scannedSamples: result.data.scannedSamples,
+          success: true,
           updatedVoices: result.data.updatedVoices,
         };
       } else {
         return {
-          success: false,
           error: `${kitName}: ${result.error || "Rescan failed"}`,
+          success: false,
         };
       }
     } catch (error) {
       return {
-        success: false,
         error: `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
+        success: false,
       };
     }
   }, []);
@@ -130,21 +130,21 @@ export function useValidationResults({
     ) => {
       if (errors.length === 0) {
         return {
+          duration: 5000,
           text: `Successfully rescanned ${selectedKitsCount} kit(s). Found ${totalScannedSamples} samples, updated ${totalUpdatedVoices} voices.`,
           type: "success" as const,
-          duration: 5000,
         };
       } else if (errors.length < selectedKitsCount) {
         return {
+          duration: 7000,
           text: `Partially completed rescan. ${selectedKitsCount - errors.length} kit(s) succeeded, ${errors.length} failed. Found ${totalScannedSamples} samples.`,
           type: "warning" as const,
-          duration: 7000,
         };
       } else {
         return {
+          duration: 7000,
           text: `Rescan failed for all ${selectedKitsCount} kit(s). First error: ${errors[0]}`,
           type: "error" as const,
-          duration: 7000,
         };
       }
     },
@@ -213,17 +213,17 @@ export function useValidationResults({
   ]);
 
   return {
-    isOpen,
-    isLoading,
-    isRescanning,
-    validationResult,
-    groupedErrors: groupedErrors(),
-    selectedKits,
-    openValidationDialog,
     closeValidationDialog,
-    toggleKitSelection,
-    selectAllKits,
+    groupedErrors: groupedErrors(),
+    isLoading,
+    isOpen,
+    isRescanning,
+    openValidationDialog,
     rescanSelectedKits,
+    selectAllKits,
+    selectedKits,
+    toggleKitSelection,
     validateLocalStore,
+    validationResult,
   };
 }

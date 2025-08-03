@@ -13,46 +13,46 @@ import {
 import type { Kit, KitWithRelations } from "../../../shared/db/schema";
 
 interface KitHeaderProps {
-  kitName: string;
-  kit: Kit | null;
   editingKitAlias: boolean;
-  setEditingKitAlias: (v: boolean) => void;
-  kitAliasInput: string;
-  setKitAliasInput: (v: string) => void;
   handleSaveKitAlias: (alias: string) => void;
+  isEditable?: boolean;
+  kit: Kit | null;
+  kitAliasInput: string;
   kitAliasInputRef: React.RefObject<HTMLInputElement>;
+  kitIndex?: number;
+  kitName: string;
+  kits?: KitWithRelations[];
   onBack?: (scrollToKit?: string) => void;
   onNextKit?: () => void;
   onPrevKit?: () => void;
   onScanKit?: () => void;
   onToggleEditableMode?: () => void;
-  isEditable?: boolean;
-  kits?: KitWithRelations[];
-  kitIndex?: number;
+  setEditingKitAlias: (v: boolean) => void;
+  setKitAliasInput: (v: string) => void;
 }
 
 const KitHeader: React.FC<KitHeaderProps> = ({
-  kitName,
-  kit,
   editingKitAlias,
-  setEditingKitAlias,
-  kitAliasInput,
-  setKitAliasInput,
   handleSaveKitAlias,
+  isEditable,
+  kit,
+  kitAliasInput,
   kitAliasInputRef,
+  kitIndex,
+  kitName,
+  kits,
   onBack,
   onNextKit,
   onPrevKit,
   onScanKit,
   onToggleEditableMode,
-  isEditable,
-  kits,
-  kitIndex,
+  setEditingKitAlias,
+  setKitAliasInput,
 }) => (
   <div className="flex items-center mb-2 gap-2">
     <FiFolder
-      className="inline-block mr-2 align-text-bottom text-gray-500 dark:text-gray-400"
       aria-label="Kit folder"
+      className="inline-block mr-2 align-text-bottom text-gray-500 dark:text-gray-400"
     />
     <span className="font-sans text-lg font-bold text-gray-900 dark:text-gray-50 mr-1">
       {kitName}
@@ -62,14 +62,13 @@ const KitHeader: React.FC<KitHeaderProps> = ({
     </span>
     {editingKitAlias ? (
       <input
-        ref={kitAliasInputRef}
+        autoFocus
         className="border-b border-blue-500 bg-transparent text-base font-semibold text-gray-800 dark:text-gray-100 focus:outline-none px-1 w-48"
-        value={kitAliasInput}
-        onChange={(e) => setKitAliasInput(e.target.value)}
         onBlur={() => {
           setEditingKitAlias(false);
           handleSaveKitAlias(kitAliasInput.trim());
         }}
+        onChange={(e) => setKitAliasInput(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             setEditingKitAlias(false);
@@ -79,7 +78,8 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             setKitAliasInput(kit?.alias || "");
           }
         }}
-        autoFocus
+        ref={kitAliasInputRef}
+        value={kitAliasInput}
       />
     ) : (
       <button
@@ -108,10 +108,10 @@ const KitHeader: React.FC<KitHeaderProps> = ({
     {onPrevKit && kits && kitIndex !== undefined && (
       <button
         className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
-        onClick={onPrevKit}
-        title="Previous Kit"
         disabled={kitIndex === 0}
-        style={kitIndex === 0 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+        onClick={onPrevKit}
+        style={kitIndex === 0 ? { cursor: "not-allowed", opacity: 0.5 } : {}}
+        title="Previous Kit"
       >
         <FiChevronLeft className="inline-block mr-1" /> Previous
       </button>
@@ -119,14 +119,14 @@ const KitHeader: React.FC<KitHeaderProps> = ({
     {onNextKit && kits && kitIndex !== undefined && (
       <button
         className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
-        onClick={onNextKit}
-        title="Next Kit"
         disabled={kitIndex === kits.length - 1}
+        onClick={onNextKit}
         style={
           kitIndex === kits.length - 1
-            ? { opacity: 0.5, cursor: "not-allowed" }
+            ? { cursor: "not-allowed", opacity: 0.5 }
             : {}
         }
+        title="Next Kit"
       >
         Next <FiChevronRight className="inline-block ml-1" />
       </button>
@@ -146,10 +146,10 @@ const KitHeader: React.FC<KitHeaderProps> = ({
           {isEditable ? "Editable" : "Locked"}
         </span>
         <button
-          onClick={onToggleEditableMode}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
             isEditable ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"
           }`}
+          onClick={onToggleEditableMode}
           title={`${isEditable ? "Disable" : "Enable"} editable mode`}
         >
           <span

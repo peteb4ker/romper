@@ -4,10 +4,10 @@ import type { KitWithRelations } from "../../../../shared/db/schema";
 
 export function useKitListNavigation(
   kits: KitWithRelations[],
-  focusedKit: string | null,
+  focusedKit: null | string,
 ) {
   const [focusedIdx, setFocusedIdx] = useState(0);
-  const lastExternalIdx = useRef<number | null>(null);
+  const lastExternalIdx = useRef<null | number>(null);
 
   // Move focus by delta (row/col navigation)
   const moveFocus = useCallback(
@@ -54,7 +54,7 @@ export function useKitListNavigation(
 
   return {
     focusedIdx,
-    setFocus,
     moveFocus,
+    setFocus,
   };
 }

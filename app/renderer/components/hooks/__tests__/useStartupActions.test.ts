@@ -19,8 +19,8 @@ describe("useStartupActions", () => {
 
   it("should run bank scanning when local store is configured", async () => {
     vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
-      success: true,
       data: { updatedBanks: 5 },
+      success: true,
     });
 
     renderHook(() =>
@@ -72,8 +72,8 @@ describe("useStartupActions", () => {
 
   it("should handle bank scanning failure gracefully", async () => {
     vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
-      success: false,
       error: "Permission denied",
+      success: false,
     });
 
     renderHook(() =>
@@ -115,8 +115,8 @@ describe("useStartupActions", () => {
 
   it("should re-run when localStorePath changes", async () => {
     vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
-      success: true,
       data: { updatedBanks: 2 },
+      success: true,
     });
 
     const { rerender } = renderHook(

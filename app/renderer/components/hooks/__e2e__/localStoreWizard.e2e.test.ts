@@ -8,12 +8,12 @@ import { fileURLToPath } from "url";
 
 async function runWizardTest(
   {
-    source,
     fixturePath,
+    source,
     squarpArchiveUrl,
   }: {
-    source: "sdcard" | "squarp" | "blank";
     fixturePath?: string;
+    source: "blank" | "sdcard" | "squarp";
     squarpArchiveUrl?: string;
   },
   testName?: string,
@@ -84,7 +84,7 @@ async function runWizardTest(
   const sourceNameLabel = await window.textContent(
     '[data-testid="wizard-source-name"]',
   );
-  let sourceUrlLabel: string | null = null;
+  let sourceUrlLabel: null | string = null;
   if (source === "blank") {
     // For blank, the source URL label should not be present in the DOM
     const sourceUrlElem = await window.$('[data-testid="wizard-source-url"]');
@@ -155,7 +155,7 @@ test.describe("Local Store Wizard E2E", () => {
       __dirname,
       "../../../../../tests/fixtures/sdcard",
     );
-    await runWizardTest({ source: "sdcard", fixturePath: sdcardPath });
+    await runWizardTest({ fixturePath: sdcardPath, source: "sdcard" });
   });
 
   test("can initialize from Squarp.net archive fixture via UI", async () => {

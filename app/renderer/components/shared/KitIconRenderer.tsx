@@ -5,19 +5,19 @@ import { GiDrumKit } from "react-icons/gi";
 import { MdAutoAwesome, MdMic } from "react-icons/md";
 import { TiArrowLoop } from "react-icons/ti";
 
+export type KitIconType = KnownKitIconType;
 export type KnownKitIconType =
-  | "mic"
-  | "loop"
-  | "fx"
-  | "piano"
   | "drumkit"
-  | "folder";
-export type KitIconType = KnownKitIconType | string;
+  | "folder"
+  | "fx"
+  | "loop"
+  | "mic"
+  | "piano";
 
 interface KitIconRendererProps {
-  iconType: KitIconType;
-  size?: "sm" | "md" | "lg";
   className?: string;
+  iconType: KitIconType;
+  size?: "lg" | "md" | "sm";
 }
 
 /**
@@ -25,15 +25,15 @@ interface KitIconRendererProps {
  * Reduces duplication between KitItem and KitGridItem components
  */
 export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
+  className = "",
   iconType,
   size = "md",
-  className = "",
 }) => {
   // Size classes mapping
   const sizeClasses = {
-    sm: "text-xl",
-    md: "text-2xl",
     lg: "text-3xl",
+    md: "text-2xl",
+    sm: "text-xl",
   };
 
   const sizeClass = sizeClasses[size];
@@ -44,18 +44,11 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
   };
 
   switch (iconType) {
-    case "mic":
+    case "drumkit":
       return (
-        <MdMic
+        <GiDrumKit
           {...iconProps}
-          className={`${baseClassName} text-pink-600 dark:text-pink-300`}
-        />
-      );
-    case "loop":
-      return (
-        <TiArrowLoop
-          {...iconProps}
-          className={`${baseClassName} text-amber-600 dark:text-amber-300`}
+          className={`${baseClassName} text-yellow-700 dark:text-yellow-300`}
         />
       );
     case "fx":
@@ -65,18 +58,25 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
           className={`${baseClassName} text-indigo-600 dark:text-indigo-300`}
         />
       );
+    case "loop":
+      return (
+        <TiArrowLoop
+          {...iconProps}
+          className={`${baseClassName} text-amber-600 dark:text-amber-300`}
+        />
+      );
+    case "mic":
+      return (
+        <MdMic
+          {...iconProps}
+          className={`${baseClassName} text-pink-600 dark:text-pink-300`}
+        />
+      );
     case "piano":
       return (
         <BiSolidPiano
           {...iconProps}
           className={`${baseClassName} text-blue-700 dark:text-blue-300`}
-        />
-      );
-    case "drumkit":
-      return (
-        <GiDrumKit
-          {...iconProps}
-          className={`${baseClassName} text-yellow-700 dark:text-yellow-300`}
         />
       );
     default:

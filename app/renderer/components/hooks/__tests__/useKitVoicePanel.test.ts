@@ -55,7 +55,7 @@ describe("useKitVoicePanel", () => {
 
   it("handles numVoices parameter (for future use)", () => {
     const { result } = renderHook(() =>
-      useKitVoicePanel({ numVoices: 8, initialSelectedVoice: 2 }),
+      useKitVoicePanel({ initialSelectedVoice: 2, numVoices: 8 }),
     );
 
     expect(result.current.selectedVoice).toBe(2);

@@ -8,114 +8,107 @@ import React, {
 
 import { LocalStoreValidationDetailedResult } from "../../../shared/db/schema.js";
 
-type ThemeMode = "light" | "system" | "dark";
-
 interface Settings {
-  localStorePath: string | null;
-  themeMode: ThemeMode;
-  defaultToMonoSamples: boolean;
   confirmDestructiveActions: boolean;
-}
-
-interface SettingsState {
-  settings: Settings;
-  localStoreStatus: LocalStoreValidationDetailedResult | null;
-  isLoading: boolean;
-  isInitialized: boolean;
-  error: string | null;
+  defaultToMonoSamples: boolean;
+  localStorePath: null | string;
+  themeMode: ThemeMode;
 }
 
 type SettingsAction =
-  | { type: "INIT_START" }
-  | { type: "INIT_SUCCESS"; payload: Settings }
-  | { type: "INIT_ERROR"; payload: string }
-  | { type: "UPDATE_LOCAL_STORE_PATH"; payload: string }
-  | { type: "UPDATE_THEME_MODE"; payload: ThemeMode }
-  | { type: "UPDATE_DEFAULT_TO_MONO_SAMPLES"; payload: boolean }
-  | { type: "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS"; payload: boolean }
+  | { payload: boolean; type: "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS" }
+  | { payload: boolean; type: "UPDATE_DEFAULT_TO_MONO_SAMPLES" }
   | {
-      type: "UPDATE_LOCAL_STORE_STATUS";
       payload: LocalStoreValidationDetailedResult | null;
+      type: "UPDATE_LOCAL_STORE_STATUS";
     }
-  | { type: "CLEAR_ERROR" };
+  | { payload: Settings; type: "INIT_SUCCESS" }
+  | { payload: string; type: "INIT_ERROR" }
+  | { payload: string; type: "UPDATE_LOCAL_STORE_PATH" }
+  | { payload: ThemeMode; type: "UPDATE_THEME_MODE" }
+  | { type: "CLEAR_ERROR" }
+  | { type: "INIT_START" };
 
 interface SettingsContextProps {
-  // Current settings
-  localStorePath: string | null;
-  themeMode: ThemeMode;
-  isDarkMode: boolean; // Computed property for backwards compatibility
-  defaultToMonoSamples: boolean;
+  clearError: () => void;
   confirmDestructiveActions: boolean;
-  localStoreStatus: LocalStoreValidationDetailedResult | null;
+  defaultToMonoSamples: boolean;
+  error: null | string;
+  isDarkMode: boolean; // Computed property for backwards compatibility
+  isInitialized: boolean;
 
   // State
   isLoading: boolean;
-  isInitialized: boolean;
-  error: string | null;
+  // Current settings
+  localStorePath: null | string;
+  localStoreStatus: LocalStoreValidationDetailedResult | null;
 
+  refreshLocalStoreStatus: () => Promise<void>;
+  setConfirmDestructiveActions: (enabled: boolean) => Promise<void>;
+  setDefaultToMonoSamples: (enabled: boolean) => Promise<void>;
   // Actions
   setLocalStorePath: (path: string) => Promise<void>;
   setThemeMode: (mode: ThemeMode) => Promise<void>;
-  setDefaultToMonoSamples: (enabled: boolean) => Promise<void>;
-  setConfirmDestructiveActions: (enabled: boolean) => Promise<void>;
-  refreshLocalStoreStatus: () => Promise<void>;
-  clearError: () => void;
+  themeMode: ThemeMode;
 }
 
+interface SettingsState {
+  error: null | string;
+  isInitialized: boolean;
+  isLoading: boolean;
+  localStoreStatus: LocalStoreValidationDetailedResult | null;
+  settings: Settings;
+}
+
+type ThemeMode = "dark" | "light" | "system";
+
 const initialState: SettingsState = {
+  error: null,
+  isInitialized: false,
+  isLoading: false,
+  localStoreStatus: null,
   settings: {
+    confirmDestructiveActions: true, // Task 12.1.2: Default to true
+    defaultToMonoSamples: true, // Task 7.1.1: Default to true
     localStorePath: null,
     themeMode: "system", // Default to system preference
-    defaultToMonoSamples: true, // Task 7.1.1: Default to true
-    confirmDestructiveActions: true, // Task 12.1.2: Default to true
   },
-  localStoreStatus: null,
-  isLoading: false,
-  isInitialized: false,
-  error: null,
 };
+
+// Helper function to detect system theme preference
+function getSystemThemePreference(): boolean {
+  if (typeof window !== "undefined" && window.matchMedia) {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  return false;
+}
 
 function settingsReducer(
   state: SettingsState,
   action: SettingsAction,
 ): SettingsState {
   switch (action.type) {
-    case "INIT_START":
-      return { ...state, isLoading: true, error: null };
-
-    case "INIT_SUCCESS":
-      return {
-        ...state,
-        settings: action.payload,
-        isLoading: false,
-        isInitialized: true,
-        error: null,
-      };
+    case "CLEAR_ERROR":
+      return { ...state, error: null };
 
     case "INIT_ERROR":
       return {
         ...state,
-        isLoading: false,
-        isInitialized: true,
         error: action.payload,
+        isInitialized: true,
+        isLoading: false,
       };
 
-    case "UPDATE_LOCAL_STORE_PATH":
-      return {
-        ...state,
-        settings: { ...state.settings, localStorePath: action.payload },
-      };
+    case "INIT_START":
+      return { ...state, error: null, isLoading: true };
 
-    case "UPDATE_THEME_MODE":
+    case "INIT_SUCCESS":
       return {
         ...state,
-        settings: { ...state.settings, themeMode: action.payload },
-      };
-
-    case "UPDATE_DEFAULT_TO_MONO_SAMPLES":
-      return {
-        ...state,
-        settings: { ...state.settings, defaultToMonoSamples: action.payload },
+        error: null,
+        isInitialized: true,
+        isLoading: false,
+        settings: action.payload,
       };
 
     case "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS":
@@ -127,23 +120,30 @@ function settingsReducer(
         },
       };
 
+    case "UPDATE_DEFAULT_TO_MONO_SAMPLES":
+      return {
+        ...state,
+        settings: { ...state.settings, defaultToMonoSamples: action.payload },
+      };
+
+    case "UPDATE_LOCAL_STORE_PATH":
+      return {
+        ...state,
+        settings: { ...state.settings, localStorePath: action.payload },
+      };
+
     case "UPDATE_LOCAL_STORE_STATUS":
       return { ...state, localStoreStatus: action.payload };
 
-    case "CLEAR_ERROR":
-      return { ...state, error: null };
+    case "UPDATE_THEME_MODE":
+      return {
+        ...state,
+        settings: { ...state.settings, themeMode: action.payload },
+      };
 
     default:
       return state;
   }
-}
-
-// Helper function to detect system theme preference
-function getSystemThemePreference(): boolean {
-  if (typeof window !== "undefined" && window.matchMedia) {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  }
-  return false;
 }
 
 // Helper function to determine if dark mode should be active
@@ -178,10 +178,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const refreshLocalStoreStatus = useCallback(async () => {
     try {
       const status = await window.electronAPI.getLocalStoreStatus();
-      dispatch({ type: "UPDATE_LOCAL_STORE_STATUS", payload: status });
+      dispatch({ payload: status, type: "UPDATE_LOCAL_STORE_STATUS" });
     } catch (error) {
       console.error("Failed to refresh local store status:", error);
-      dispatch({ type: "UPDATE_LOCAL_STORE_STATUS", payload: null });
+      dispatch({ payload: null, type: "UPDATE_LOCAL_STORE_STATUS" });
     }
   }, []);
 
@@ -193,14 +193,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       const loadedSettings = await window.electronAPI.readSettings();
 
       const settings: Settings = {
-        localStorePath: loadedSettings.localStorePath || null,
-        themeMode: loadedSettings.themeMode ?? "system", // Default to system preference
-        defaultToMonoSamples: loadedSettings.defaultToMonoSamples ?? true, // Task 7.1.1: Default to true
         confirmDestructiveActions:
           loadedSettings.confirmDestructiveActions ?? true, // Task 12.1.2: Default to true
+        defaultToMonoSamples: loadedSettings.defaultToMonoSamples ?? true, // Task 7.1.1: Default to true
+        localStorePath: loadedSettings.localStorePath || null,
+        themeMode: loadedSettings.themeMode ?? "system", // Default to system preference
       };
 
-      dispatch({ type: "INIT_SUCCESS", payload: settings });
+      dispatch({ payload: settings, type: "INIT_SUCCESS" });
       applyTheme(shouldUseDarkMode(settings.themeMode));
 
       // Load local store status
@@ -210,7 +210,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         error instanceof Error
           ? error.message
           : "Failed to initialize settings";
-      dispatch({ type: "INIT_ERROR", payload: errorMessage });
+      dispatch({ payload: errorMessage, type: "INIT_ERROR" });
     }
   }, [applyTheme, refreshLocalStoreStatus]);
 
@@ -219,7 +219,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     async (path: string) => {
       try {
         await window.electronAPI.setSetting("localStorePath", path);
-        dispatch({ type: "UPDATE_LOCAL_STORE_PATH", payload: path });
+        dispatch({ payload: path, type: "UPDATE_LOCAL_STORE_PATH" });
         await refreshLocalStoreStatus();
       } catch (error) {
         console.error("Failed to update local store path:", error);
@@ -233,7 +233,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     async (mode: ThemeMode) => {
       try {
         await window.electronAPI.setSetting("themeMode", mode);
-        dispatch({ type: "UPDATE_THEME_MODE", payload: mode });
+        dispatch({ payload: mode, type: "UPDATE_THEME_MODE" });
         applyTheme(shouldUseDarkMode(mode));
       } catch (error) {
         console.error("Failed to update theme mode:", error);
@@ -246,7 +246,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const setDefaultToMonoSamples = useCallback(async (enabled: boolean) => {
     try {
       await window.electronAPI.setSetting("defaultToMonoSamples", enabled);
-      dispatch({ type: "UPDATE_DEFAULT_TO_MONO_SAMPLES", payload: enabled });
+      dispatch({ payload: enabled, type: "UPDATE_DEFAULT_TO_MONO_SAMPLES" });
     } catch (error) {
       console.error("Failed to update defaultToMonoSamples setting:", error);
     }
@@ -257,8 +257,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await window.electronAPI.setSetting("confirmDestructiveActions", enabled);
       dispatch({
-        type: "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS",
         payload: enabled,
+        type: "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS",
       });
     } catch (error) {
       console.error(
@@ -301,28 +301,43 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [state.settings.themeMode, applyTheme]);
 
-  const contextValue: SettingsContextProps = {
-    // Current settings
-    localStorePath: state.settings.localStorePath,
-    themeMode: state.settings.themeMode,
-    isDarkMode: shouldUseDarkMode(state.settings.themeMode), // Computed property
-    defaultToMonoSamples: state.settings.defaultToMonoSamples,
+  const contextValue: SettingsContextProps = useMemo(() => ({
+    clearError,
     confirmDestructiveActions: state.settings.confirmDestructiveActions,
-    localStoreStatus: state.localStoreStatus,
+    defaultToMonoSamples: state.settings.defaultToMonoSamples,
+    error: state.error,
+    isDarkMode: shouldUseDarkMode(state.settings.themeMode), // Computed property
+    isInitialized: state.isInitialized,
 
     // State
     isLoading: state.isLoading,
-    isInitialized: state.isInitialized,
-    error: state.error,
+    // Current settings
+    localStorePath: state.settings.localStorePath,
+    localStoreStatus: state.localStoreStatus,
 
+    refreshLocalStoreStatus,
+    setConfirmDestructiveActions,
+    setDefaultToMonoSamples,
     // Actions
     setLocalStorePath,
     setThemeMode,
-    setDefaultToMonoSamples,
-    setConfirmDestructiveActions,
-    refreshLocalStoreStatus,
+    themeMode: state.settings.themeMode,
+  }), [
     clearError,
-  };
+    state.settings.confirmDestructiveActions,
+    state.settings.defaultToMonoSamples,
+    state.error,
+    state.settings.themeMode,
+    state.isInitialized,
+    state.isLoading,
+    state.settings.localStorePath,
+    state.localStoreStatus,
+    refreshLocalStoreStatus,
+    setConfirmDestructiveActions,
+    setDefaultToMonoSamples,
+    setLocalStorePath,
+    setThemeMode,
+  ]);
 
   return (
     <SettingsContext.Provider value={contextValue}>

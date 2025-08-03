@@ -40,8 +40,8 @@ vi.mock("../components/MessageDisplay", () => ({
 const renderMock = vi.fn();
 const createRootMock = vi.fn(() => ({ render: renderMock }));
 vi.mock("react-dom/client", () => ({
-  default: { createRoot: createRootMock },
   createRoot: createRootMock,
+  default: { createRoot: createRootMock },
 }));
 
 // Document mock is now handled in vitest.setup.ts

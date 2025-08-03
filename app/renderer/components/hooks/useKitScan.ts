@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 
 import type { KitWithRelations } from "../../../../shared/db/schema";
+
 // --- Utility Functions ---
 import {
   executeFullKitScan,
@@ -25,112 +26,18 @@ export async function fileReader(filePath: string): Promise<ArrayBuffer> {
   return result.data;
 }
 
-export async function scanSingleKit({
-  kitName: _kitName,
-  scanType,
-  scanTypeDisplay: _scanTypeDisplay,
-  fileReaderImpl,
-}: {
-  kitName: string;
-  scanType: string;
-  scanTypeDisplay: string;
-  fileReaderImpl: typeof fileReader;
-}) {
-  if (scanType === "voiceInference") {
-    const emptySamples = { 1: [], 2: [], 3: [], 4: [] };
-    return executeVoiceInferenceScan(emptySamples);
-  } else if (scanType === "wavAnalysis") {
-    const wavFiles: string[] = [];
-    return executeWAVAnalysisScan(wavFiles, fileReaderImpl);
-  } else {
-    // Full scan - voice inference and WAV analysis only
-    const scanInput = {
-      samples: { 1: [], 2: [], 3: [], 4: [] },
-      wavFiles: [],
-      fileReader: fileReaderImpl,
-    };
-    return executeFullKitScan(scanInput);
-  }
-}
-
-// Helper function to determine scan type and display name
-function getScanConfiguration(operations?: string[]) {
-  const scanType = operations?.length === 1 ? operations[0] : "full";
-  const scanTypeDisplay =
-    operations?.length === 1
-      ? scanTypeDisplayMap[operations[0]] || operations[0]
-      : "comprehensive";
-
-  return { scanType, scanTypeDisplay };
-}
-
-// Helper function to process a single kit scan
-async function processSingleKitScan(
-  kitName: string,
-  scanType: string,
-  scanTypeDisplay: string,
-  fileReaderImpl: typeof fileReader,
-) {
-  try {
-    const result = await scanSingleKit({
-      kitName,
-      scanType,
-      scanTypeDisplay,
-      fileReaderImpl,
-    });
-
-    if (result.success) {
-      return { success: true };
-    } else {
-      return {
-        success: false,
-        error: `${kitName}: ${result.errors.map((e: any) => e.error).join(", ")}`,
-      };
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-}
-
-// Helper function to generate completion message
-function getCompletionMessage(
-  successCount: number,
-  errorCount: number,
-  errors: string[],
-  scanTypeDisplay: string,
-) {
-  if (errorCount === 0) {
-    return {
-      type: "success" as const,
-      message: `All kits ${scanTypeDisplay} scan completed successfully! ${successCount} kits processed.`,
-      duration: 5000,
-    };
-  } else {
-    const errorSummary = errors.slice(0, 3).join("; ");
-    const truncated = errors.length > 3 ? "..." : "";
-    return {
-      type: "warning" as const,
-      message: `Scan completed: ${successCount} successful, ${errorCount} failed. ${errorSummary}${truncated}`,
-      duration: 8000,
-    };
-  }
-}
-
 export async function scanAllKits({
-  kits,
-  operations,
-  onRefreshKits,
-  toastImpl = toast,
   fileReaderImpl = fileReader,
+  kits,
+  onRefreshKits,
+  operations,
+  toastImpl = toast,
 }: {
-  kits: KitWithRelations[];
-  operations?: string[];
-  onRefreshKits?: () => void;
-  toastImpl?: typeof toast;
   fileReaderImpl?: typeof fileReader;
+  kits: KitWithRelations[];
+  onRefreshKits?: () => void;
+  operations?: string[];
+  toastImpl?: typeof toast;
 }) {
   if (!kits || kits.length === 0) {
     toastImpl.error("Kits are required for scanning");
@@ -153,7 +60,7 @@ export async function scanAllKits({
       const kitName = kits[i].name;
       toastImpl.loading(
         `Scanning kit ${i + 1}/${kits.length}: ${kitName} (${scanTypeDisplay})`,
-        { id: toastId, duration: Infinity },
+        { duration: Infinity, id: toastId },
       );
 
       const result = await processSingleKitScan(
@@ -180,13 +87,13 @@ export async function scanAllKits({
 
     if (completion.type === "success") {
       toastImpl.success(completion.message, {
-        id: toastId,
         duration: completion.duration,
+        id: toastId,
       });
     } else {
       toastImpl.warning(completion.message, {
-        id: toastId,
         duration: completion.duration,
+        id: toastId,
       });
     }
 
@@ -196,8 +103,36 @@ export async function scanAllKits({
   } catch (error) {
     toastImpl.error(
       `Scan error: ${error instanceof Error ? error.message : String(error)}`,
-      { id: toastId, duration: 8000 },
+      { duration: 8000, id: toastId },
     );
+  }
+}
+
+export async function scanSingleKit({
+  fileReaderImpl,
+  kitName: _kitName,
+  scanType,
+  scanTypeDisplay: _scanTypeDisplay,
+}: {
+  fileReaderImpl: typeof fileReader;
+  kitName: string;
+  scanType: string;
+  scanTypeDisplay: string;
+}) {
+  if (scanType === "voiceInference") {
+    const emptySamples = { 1: [], 2: [], 3: [], 4: [] };
+    return executeVoiceInferenceScan(emptySamples);
+  } else if (scanType === "wavAnalysis") {
+    const wavFiles: string[] = [];
+    return executeWAVAnalysisScan(wavFiles, fileReaderImpl);
+  } else {
+    // Full scan - voice inference and WAV analysis only
+    const scanInput = {
+      fileReader: fileReaderImpl,
+      samples: { 1: [], 2: [], 3: [], 4: [] },
+      wavFiles: [],
+    };
+    return executeFullKitScan(scanInput);
   }
 }
 
@@ -213,10 +148,76 @@ export function useKitScan({
     (operations?: string[]) =>
       scanAllKits({
         kits,
-        operations,
         onRefreshKits,
+        operations,
       }),
     [kits, onRefreshKits],
   );
   return { handleScanAllKits };
+}
+
+// Helper function to generate completion message
+function getCompletionMessage(
+  successCount: number,
+  errorCount: number,
+  errors: string[],
+  scanTypeDisplay: string,
+) {
+  if (errorCount === 0) {
+    return {
+      duration: 5000,
+      message: `All kits ${scanTypeDisplay} scan completed successfully! ${successCount} kits processed.`,
+      type: "success" as const,
+    };
+  } else {
+    const errorSummary = errors.slice(0, 3).join("; ");
+    const truncated = errors.length > 3 ? "..." : "";
+    return {
+      duration: 8000,
+      message: `Scan completed: ${successCount} successful, ${errorCount} failed. ${errorSummary}${truncated}`,
+      type: "warning" as const,
+    };
+  }
+}
+
+// Helper function to determine scan type and display name
+function getScanConfiguration(operations?: string[]) {
+  const scanType = operations?.length === 1 ? operations[0] : "full";
+  const scanTypeDisplay =
+    operations?.length === 1
+      ? scanTypeDisplayMap[operations[0]] || operations[0]
+      : "comprehensive";
+
+  return { scanType, scanTypeDisplay };
+}
+
+// Helper function to process a single kit scan
+async function processSingleKitScan(
+  kitName: string,
+  scanType: string,
+  scanTypeDisplay: string,
+  fileReaderImpl: typeof fileReader,
+) {
+  try {
+    const result = await scanSingleKit({
+      fileReaderImpl,
+      kitName,
+      scanType,
+      scanTypeDisplay,
+    });
+
+    if (result.success) {
+      return { success: true };
+    } else {
+      return {
+        error: `${kitName}: ${result.errors.map((e: any) => e.error).join(", ")}`,
+        success: false,
+      };
+    }
+  } catch (error) {
+    return {
+      error: `${kitName}: ${error instanceof Error ? error.message : String(error)}`,
+      success: false,
+    };
+  }
 }

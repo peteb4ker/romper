@@ -13,7 +13,7 @@ import FilePickerButton from "../utils/FilePickerButton";
 interface ChangeLocalStoreDirectoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
+  onMessage?: (msg: { duration?: number; text: string; type?: string }) => void;
 }
 
 const ChangeLocalStoreDirectoryDialog: React.FC<
@@ -22,10 +22,10 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
   const { localStorePath, setLocalStorePath } = useSettings();
   const [isValidating, setIsValidating] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [selectedPath, setSelectedPath] = useState<null | string>(null);
   const [validationResult, setValidationResult] = useState<{
-    isValid: boolean;
     error?: string;
+    isValid: boolean;
   } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -62,8 +62,8 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
       // Check if it's the same directory first
       if (pathToUse === localStorePath) {
         setValidationResult({
-          isValid: false, // Set to false to disable the Update button
           error: "Same directory selected",
+          isValid: false, // Set to false to disable the Update button
         });
         return;
       }
@@ -75,13 +75,13 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
       const result =
         await window.electronAPI.validateLocalStoreBasic(pathToUse);
       setValidationResult({
-        isValid: result.isValid,
         error: result.error,
+        isValid: result.isValid,
       });
     } catch (error) {
       setValidationResult({
-        isValid: false,
         error: error instanceof Error ? error.message : String(error),
+        isValid: false,
       });
     } finally {
       setIsValidating(false);
@@ -97,9 +97,9 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
       await setLocalStorePath(selectedPath);
 
       onMessage?.({
+        duration: 5000,
         text: "Local store directory updated successfully! The application has been refreshed with the new directory.",
         type: "success",
-        duration: 5000,
       });
 
       // Reset dialog state
@@ -134,9 +134,9 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
             Change Local Store Directory
           </h2>
           <button
-            onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             aria-label="Close"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            onClick={handleClose}
           >
             <FiX size={24} />
           </button>
@@ -192,11 +192,11 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
               </div>
 
               <FilePickerButton
-                onClick={handleSelectDirectory}
                 className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 font-medium whitespace-nowrap"
                 disabled={isValidating || isUpdating}
-                isSelecting={isSelecting}
                 icon={<FiFolder size={18} />}
+                isSelecting={isSelecting}
+                onClick={handleSelectDirectory}
               >
                 Choose Directory
               </FilePickerButton>
@@ -236,15 +236,14 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-600">
           <button
-            onClick={handleClose}
             className="px-6 py-2.5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 font-medium transition-colors"
             disabled={isUpdating}
+            onClick={handleClose}
           >
             Cancel
           </button>
 
           <button
-            onClick={handleUpdateDirectory}
             className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-colors"
             disabled={
               !selectedPath ||
@@ -252,6 +251,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
               isUpdating ||
               selectedPath === localStorePath
             }
+            onClick={handleUpdateDirectory}
           >
             {isUpdating ? (
               <FiRefreshCw className="animate-spin" size={16} />

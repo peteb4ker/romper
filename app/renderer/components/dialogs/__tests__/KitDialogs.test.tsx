@@ -7,19 +7,19 @@ import KitDialogs from "../KitDialogs";
 
 describe("KitDialogs", () => {
   const defaultProps = {
-    showNewKit: false,
-    newKitSlot: "",
-    newKitError: null,
-    onNewKitSlotChange: vi.fn(),
-    onCreateKit: vi.fn(),
-    onCancelNewKit: vi.fn(),
-    showDuplicateKit: false,
-    duplicateKitSource: null,
     duplicateKitDest: "",
     duplicateKitError: null,
-    onDuplicateKitDestChange: vi.fn(),
-    onDuplicateKit: vi.fn(),
+    duplicateKitSource: null,
+    newKitError: null,
+    newKitSlot: "",
     onCancelDuplicateKit: vi.fn(),
+    onCancelNewKit: vi.fn(),
+    onCreateKit: vi.fn(),
+    onDuplicateKit: vi.fn(),
+    onDuplicateKitDestChange: vi.fn(),
+    onNewKitSlotChange: vi.fn(),
+    showDuplicateKit: false,
+    showNewKit: false,
   };
 
   afterEach(() => {
@@ -39,12 +39,12 @@ describe("KitDialogs", () => {
     render(
       <KitDialogs
         {...defaultProps}
-        showNewKit={true}
-        newKitSlot="A1"
         newKitError="Slot error"
-        onNewKitSlotChange={onNewKitSlotChange}
-        onCreateKit={onCreateKit}
+        newKitSlot="A1"
         onCancelNewKit={onCancelNewKit}
+        onCreateKit={onCreateKit}
+        onNewKitSlotChange={onNewKitSlotChange}
+        showNewKit={true}
       />,
     );
     expect(screen.getByLabelText("Kit Slot (A0-Z99):")).toHaveValue("A1");
@@ -66,13 +66,13 @@ describe("KitDialogs", () => {
     render(
       <KitDialogs
         {...defaultProps}
-        showDuplicateKit={true}
-        duplicateKitSource="A1"
         duplicateKitDest="B2"
         duplicateKitError="Duplicate error"
-        onDuplicateKitDestChange={onDuplicateKitDestChange}
-        onDuplicateKit={onDuplicateKit}
+        duplicateKitSource="A1"
         onCancelDuplicateKit={onCancelDuplicateKit}
+        onDuplicateKit={onDuplicateKit}
+        onDuplicateKitDestChange={onDuplicateKitDestChange}
+        showDuplicateKit={true}
       />,
     );
     expect(screen.getByLabelText("Duplicate A1 to:")).toHaveValue("B2");

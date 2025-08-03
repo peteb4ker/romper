@@ -7,10 +7,10 @@ export const MockMessageDisplayProvider: React.FC<{
 }> = ({ children }) => (
   <MessageDisplayContext.Provider
     value={{
-      showMessage: () => {},
-      dismissMessage: () => {},
       clearMessages: () => {},
+      dismissMessage: () => {},
       messages: [],
+      showMessage: () => {},
     }}
   >
     {children}

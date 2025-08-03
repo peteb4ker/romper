@@ -3,31 +3,31 @@ import React, { useEffect, useRef, useState } from "react";
 interface SampleWaveformProps {
   // Secure API - uses kit/voice/slot identifiers
   kitName: string;
-  voiceNumber: number;
-  slotNumber: number;
+  onError?: (error: string) => void;
+  onPlayingChange?: (playing: boolean) => void;
 
   playTrigger: number; // increment to trigger play externally
+  slotNumber: number;
   stopTrigger?: number; // increment to trigger stop externally
-  onPlayingChange?: (playing: boolean) => void;
-  onError?: (error: string) => void;
+  voiceNumber: number;
 }
 
 const SampleWaveform: React.FC<SampleWaveformProps> = ({
   kitName,
-  voiceNumber,
-  slotNumber,
-  playTrigger,
-  stopTrigger,
-  onPlayingChange,
   onError,
+  onPlayingChange,
+  playTrigger,
+  slotNumber,
+  stopTrigger,
+  voiceNumber,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
-  const [_error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<null | string>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
-  const animationRef = useRef<number | null>(null);
+  const animationRef = useRef<null | number>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   // Load audio file and decode
@@ -85,7 +85,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
         try {
           const closeResult = audioCtxRef.current.close();
-          if (typeof closeResult?.catch === "function") {
+          if (closeResult && typeof closeResult.catch === "function") {
             closeResult.catch(() => {
               // Ignore close errors
             });
@@ -111,8 +111,8 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     const amp = canvas.height / 2;
     ctx.beginPath();
     for (let i = 0; i < canvas.width; i++) {
-      let min = 1.0,
-        max = -1.0;
+      let max = -1.0,
+        min = 1.0;
       for (let j = 0; j < step; j++) {
         const datum = data[i * step + j] || 0;
         if (datum < min) min = datum;
@@ -218,7 +218,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
         try {
           const closeResult = audioCtxRef.current.close();
-          if (typeof closeResult?.catch === "function") {
+          if (closeResult && typeof closeResult.catch === "function") {
             closeResult.catch(() => {
               // Ignore close errors
             });
@@ -231,13 +231,13 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   }, []);
 
   return (
-    <div style={{ display: "flex", alignItems: "center" }}>
+    <div style={{ alignItems: "center", display: "flex" }}>
       <canvas
-        ref={canvasRef}
-        width={80}
-        height={18}
         className="rounded bg-slate-100 dark:bg-slate-800 shadow align-middle"
+        height={18}
+        ref={canvasRef}
         style={{ display: "inline-block", verticalAlign: "middle" }}
+        width={80}
       />
       {/* Remove inline error message, error is now shown via MessageDisplay */}
     </div>

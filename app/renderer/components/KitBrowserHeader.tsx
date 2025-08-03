@@ -5,26 +5,26 @@ import { FiDatabase, FiDownload, FiEdit3, FiRefreshCw } from "react-icons/fi";
 import { useKitBrowserHeader } from "./hooks/useKitBrowserHeader";
 
 interface KitBrowserHeaderProps {
-  onScanAllKits?: () => void;
-  onShowNewKit: () => void;
-  onCreateNextKit: () => void;
-  nextKitSlot: string | null;
   bankNav?: React.ReactNode;
+  favoritesCount?: number;
+  modifiedCount?: number;
+  nextKitSlot: null | string; // Used by useKitBrowserHeader hook
+  onCreateNextKit: () => void; // Used by useKitBrowserHeader hook
+  onScanAllKits?: () => void;
   onShowLocalStoreWizard: () => void;
-  onValidateLocalStore: () => void;
+  onShowNewKit: () => void; // Used by useKitBrowserHeader hook
   onSyncToSdCard?: () => void;
+  onToggleFavoritesFilter?: () => void;
+  onToggleModifiedFilter?: () => void;
+  onValidateLocalStore: () => void;
   // Task 20.1.4: Favorites filter props
   showFavoritesOnly?: boolean;
-  onToggleFavoritesFilter?: () => void;
-  favoritesCount?: number;
   // Task 20.2.2: Additional filter props
   showModifiedOnly?: boolean;
-  onToggleModifiedFilter?: () => void;
-  modifiedCount?: number;
 }
 
 const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
-  const { handleShowNewKit, handleCreateNextKit, nextKitSlot } =
+  const { handleCreateNextKit, handleShowNewKit, nextKitSlot } =
     useKitBrowserHeader(props);
   const { bankNav } = props;
 
@@ -54,8 +54,8 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           </button>
           <button
             className="px-2 py-1 text-xs bg-green-600 text-white rounded shadow hover:bg-green-700 transition font-semibold"
-            onClick={handleCreateNextKit}
             disabled={!nextKitSlot}
+            onClick={handleCreateNextKit}
           >
             + Next Kit
           </button>
@@ -82,9 +82,9 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
             Validate Local Store
           </button>
           <button
+            aria-label="Local Store Setup"
             className="px-2 py-1 text-xs bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition font-semibold"
             onClick={props.onShowLocalStoreWizard}
-            aria-label="Local Store Setup"
           >
             Local Store Setup
           </button>

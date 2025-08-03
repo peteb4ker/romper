@@ -1,15 +1,15 @@
 import { useEffect } from "react";
 
 export interface MenuEventHandlers {
-  onScanAllKits?: () => void;
-  onScanBanks?: () => void;
-  onValidateDatabase?: () => void;
-  onSetupLocalStore?: () => void;
+  onAbout?: () => void;
   onChangeLocalStoreDirectory?: () => void;
   onPreferences?: () => void;
-  onAbout?: () => void;
-  onUndo?: () => void;
   onRedo?: () => void;
+  onScanAllKits?: () => void;
+  onScanBanks?: () => void;
+  onSetupLocalStore?: () => void;
+  onUndo?: () => void;
+  onValidateDatabase?: () => void;
 }
 
 /**

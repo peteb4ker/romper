@@ -43,13 +43,13 @@ describe("KitService", () => {
       expect(mockAddKit).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
-          name: "A5",
-          bank_letter: "A",
           alias: null,
+          bank_letter: "A",
           editable: true,
           locked: false,
-          step_pattern: null,
           modified_since_sync: false,
+          name: "A5",
+          step_pattern: null,
         }),
       );
     });
@@ -63,8 +63,8 @@ describe("KitService", () => {
 
     it("rejects if kit already exists", () => {
       mockGetKit.mockReturnValue({
+        data: { bank_letter: "A", name: "A5" },
         success: true,
-        data: { name: "A5", bank_letter: "A" },
       });
 
       const result = kitService.createKit(mockInMemorySettings, "A5");
@@ -104,8 +104,8 @@ describe("KitService", () => {
       expect(mockAddKit).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
-          name: "K7",
           bank_letter: "K",
+          name: "K7",
         }),
       );
     });
@@ -113,19 +113,19 @@ describe("KitService", () => {
 
   describe("copyKit", () => {
     const sourceKitData = {
-      name: "A1",
-      bank_letter: "A",
       alias: "Original Kit",
+      bank_letter: "A",
       editable: false,
       locked: true,
-      step_pattern: "1010101010101010",
       modified_since_sync: true,
+      name: "A1",
+      step_pattern: "1010101010101010",
     };
 
     beforeEach(() => {
       mockGetKit.mockImplementation((dbPath: string, kitName: string) => {
         if (kitName === "A1") {
-          return { success: true, data: sourceKitData };
+          return { data: sourceKitData, success: true };
         }
         return { success: false }; // Destination doesn't exist
       });
@@ -140,13 +140,13 @@ describe("KitService", () => {
       expect(mockAddKit).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
-          name: "B2",
-          bank_letter: "B",
           alias: "B2", // Destination kit name as alias
+          bank_letter: "B",
           editable: true, // Always editable for copied kits
           locked: false, // Always unlocked for copied kits
-          step_pattern: "1010101010101010", // Copied from source
           modified_since_sync: false, // Reset for new kit
+          name: "B2",
+          step_pattern: "1010101010101010", // Copied from source
         }),
       );
     });
@@ -180,10 +180,10 @@ describe("KitService", () => {
     it("rejects if destination kit already exists", () => {
       mockGetKit.mockImplementation((dbPath: string, kitName: string) => {
         if (kitName === "A1") {
-          return { success: true, data: sourceKitData };
+          return { data: sourceKitData, success: true };
         }
         if (kitName === "B2") {
-          return { success: true, data: { name: "B2" } }; // Destination exists
+          return { data: { name: "B2" }, success: true }; // Destination exists
         }
         return { success: false };
       });
@@ -204,8 +204,8 @@ describe("KitService", () => {
 
     it("handles database errors gracefully", () => {
       mockAddKit.mockReturnValue({
-        success: false,
         error: "Database connection failed",
+        success: false,
       });
 
       const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");

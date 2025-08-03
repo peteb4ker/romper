@@ -12,16 +12,16 @@ import WizardStepNav from "./wizard/WizardStepNav";
 import WizardSummaryStep from "./wizard/WizardSummaryStep";
 import WizardTargetStep from "./wizard/WizardTargetStep";
 
+enum WizardStep {
+  Initialize = 2,
+  Source = 0,
+  Target = 1,
+}
+
 interface LocalStoreWizardUIProps {
   onClose: () => void;
   onSuccess?: () => void;
   setLocalStorePath: (path: string) => void;
-}
-
-enum WizardStep {
-  Source = 0,
-  Target = 1,
-  Initialize = 2,
 }
 
 const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
@@ -36,21 +36,21 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
 
   const [showExistingStoreSelector, setShowExistingStoreSelector] =
     useState(false);
-  const [existingStoreError, setExistingStoreError] = useState<string | null>(
+  const [existingStoreError, setExistingStoreError] = useState<null | string>(
     null,
   );
   const [isSelectingExisting, setIsSelectingExisting] = useState(false);
   const {
-    state,
-    setTargetPath,
-    setSdCardPath,
-    initialize,
-    defaultPath,
-    progress,
-    handleSourceSelect, // from hook
-    errorMessage, // from hook
     canInitialize, // from hook
+    defaultPath,
+    errorMessage, // from hook
+    handleSourceSelect, // from hook
+    initialize,
+    progress,
+    setSdCardPath,
     setSourceConfirmed, // new setter from hook
+    setTargetPath,
+    state,
   } = useLocalStoreWizard(undefined, setLocalStorePath);
 
   const safeSelectLocalStorePath =
@@ -58,19 +58,19 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
 
   const sourceOptions = [
     {
-      value: "sdcard",
-      label: "Rample SD Card",
       icon: <FaSdCard className="text-3xl mx-auto mb-2" />,
+      label: "Rample SD Card",
+      value: "sdcard",
     },
     {
-      value: "squarp",
-      label: "Squarp.net Factory Samples",
       icon: <FaArchive className="text-3xl mx-auto mb-2" />,
+      label: "Squarp.net Factory Samples",
+      value: "squarp",
     },
     {
-      value: "blank",
-      label: "Blank Folder",
       icon: <FaFolderOpen className="text-3xl mx-auto mb-2" />,
+      label: "Blank Folder",
+      value: "blank",
     },
   ];
 
@@ -106,17 +106,17 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
         : "selectExistingLocalStore method not found (preload issue)";
 
       console.error("Debug info:", {
-        electronAPI: !!window.electronAPI,
-        selectExistingLocalStore:
-          !!window.electronAPI?.selectExistingLocalStore,
         availableMethods: window.electronAPI
           ? Object.keys(window.electronAPI)
           : "none",
+        electronAPI: !!window.electronAPI,
+        selectExistingLocalStore:
+          !!window.electronAPI?.selectExistingLocalStore,
       });
 
-      return { isValid: false, error: errorMsg };
+      return { error: errorMsg, isValid: false };
     }
-    return { isValid: true, error: null };
+    return { error: null, isValid: true };
   };
 
   // Helper function to handle successful store selection
@@ -168,15 +168,15 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
     >
       {!showExistingStoreSelector && (
         <>
-          <WizardStepNav stepLabels={stepLabels} currentStep={currentStep} />
+          <WizardStepNav currentStep={currentStep} stepLabels={stepLabels} />
           {currentStep === WizardStep.Source && (
             <WizardSourceStep
-              sourceOptions={sourceOptions}
-              stateSource={state.source}
               handleSourceSelect={handleSourceSelect}
               setSdCardPath={setSdCardPath}
-              sourceConfirmed={state.sourceConfirmed}
               setSourceConfirmed={setSourceConfirmed}
+              sourceConfirmed={state.sourceConfirmed}
+              sourceOptions={sourceOptions}
+              stateSource={state.source}
             />
           )}
         </>
@@ -184,7 +184,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
 
       {showExistingStoreSelector && (
         <div className="mb-4">
-          <label className="block font-semibold mb-1">
+          <label className="block font-semibold mb-1" htmlFor="existing-store-selector">
             Choose Existing Local Store
           </label>
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
@@ -201,10 +201,11 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
           <div className="flex gap-2">
             <FilePickerButton
               className="bg-blue-600 text-white px-4 py-2 rounded"
-              onClick={handleChooseExistingStore}
-              isSelecting={isSelectingExisting}
               data-testid="browse-existing-store-btn"
               icon={<FaSearch size={14} />}
+              id="existing-store-selector"
+              isSelecting={isSelectingExisting}
+              onClick={handleChooseExistingStore}
             >
               Browse for Existing Store
             </FilePickerButton>
@@ -226,35 +227,44 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
         <>
           {/* Show summary on both Target and Initialize steps */}
           {(currentStep === WizardStep.Target ||
-            currentStep === WizardStep.Initialize) && (
-            <WizardSummaryStep
-              sourceName={
-                state.source === "sdcard"
-                  ? "Rample SD Card"
-                  : state.source === "squarp"
-                    ? "Squarp.net Factory Samples"
-                    : "Blank Folder"
+            currentStep === WizardStep.Initialize) &&
+            (() => {
+              let sourceName: string;
+              if (state.source === "sdcard") {
+                sourceName = "Rample SD Card";
+              } else if (state.source === "squarp") {
+                sourceName = "Squarp.net Factory Samples";
+              } else {
+                sourceName = "Blank Folder";
               }
-              sourceUrl={
-                state.source === "sdcard"
-                  ? state.sdCardSourcePath || ""
-                  : state.source === "squarp"
-                    ? config.squarpArchiveUrl || ""
-                    : ""
+
+              let sourceUrl: string;
+              if (state.source === "sdcard") {
+                sourceUrl = state.sdCardSourcePath || "";
+              } else if (state.source === "squarp") {
+                sourceUrl = config.squarpArchiveUrl || "";
+              } else {
+                sourceUrl = "";
               }
-              targetUrl={
-                currentStep === WizardStep.Initialize
-                  ? state.targetPath
-                  : undefined
-              }
-            />
-          )}
+
+              return (
+                <WizardSummaryStep
+                  sourceName={sourceName}
+                  sourceUrl={sourceUrl}
+                  targetUrl={
+                    currentStep === WizardStep.Initialize
+                      ? state.targetPath
+                      : undefined
+                  }
+                />
+              );
+            })()}
           {currentStep === WizardStep.Target && (
             <WizardTargetStep
-              stateTargetPath={state.targetPath}
               defaultPath={defaultPath}
-              setTargetPath={setTargetPath}
               safeSelectLocalStorePath={safeSelectLocalStorePath}
+              setTargetPath={setTargetPath}
+              stateTargetPath={state.targetPath}
             />
           )}
           <WizardErrorMessage errorMessage={errorMessage} />
@@ -263,13 +273,13 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
             <div className="flex gap-2">
               <button
                 className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2"
+                data-testid="wizard-initialize-btn"
                 disabled={!canInitialize || state.isInitializing}
                 onClick={handleInitialize}
-                data-testid="wizard-initialize-btn"
               >
                 {state.isInitializing ? (
                   <>
-                    <Spinner size={18} className="mr-2" /> Initializing...
+                    <Spinner className="mr-2" size={18} /> Initializing...
                   </>
                 ) : (
                   "Initialize Local Store"
@@ -286,8 +296,8 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
             {/* Choose Existing Local Store button - bottom right */}
             <button
               className="bg-green-600 text-white px-4 py-2 rounded text-sm flex items-center gap-2 hover:bg-green-700"
-              onClick={() => setShowExistingStoreSelector(true)}
               data-testid="choose-existing-store-btn"
+              onClick={() => setShowExistingStoreSelector(true)}
             >
               <FaSearch size={14} /> Choose Existing Store
             </button>
@@ -295,11 +305,11 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
         </>
       )}
       <button
-        className="hidden"
-        tabIndex={-1}
         aria-hidden="true"
+        className="hidden"
         data-testid="wizard-next-step"
         onClick={() => {}}
+        tabIndex={-1}
       />
     </div>
   );

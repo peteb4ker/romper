@@ -74,8 +74,8 @@ describe("SettingsService", () => {
       expect(mockInMemorySettings.newKey).toBe("newValue");
       expect(mockInMemorySettings).toEqual({
         localStorePath: "/test/local/store",
-        theme: "dark",
         newKey: "newValue",
+        theme: "dark",
       });
 
       // Should write to persistent storage
@@ -219,8 +219,8 @@ describe("SettingsService", () => {
       const result = settingsService.validateLocalStorePath({}, "/env/path");
 
       expect(result).toEqual({
-        success: true,
         path: "/env/path",
+        success: true,
       });
     });
 
@@ -229,8 +229,8 @@ describe("SettingsService", () => {
         settingsService.validateLocalStorePath(mockInMemorySettings);
 
       expect(result).toEqual({
-        success: true,
         path: "/test/local/store",
+        success: true,
       });
     });
 
@@ -239,8 +239,8 @@ describe("SettingsService", () => {
       const result = settingsService.validateLocalStorePath(emptySettings);
 
       expect(result).toEqual({
-        success: false,
         error: "No local store configured",
+        success: false,
       });
     });
 
@@ -251,8 +251,8 @@ describe("SettingsService", () => {
       );
 
       expect(result).toEqual({
-        success: true,
         path: "/env/override",
+        success: true,
       });
     });
 
@@ -261,8 +261,8 @@ describe("SettingsService", () => {
       const result = settingsService.validateLocalStorePath(emptySettings, "");
 
       expect(result).toEqual({
-        success: false,
         error: "No local store configured",
+        success: false,
       });
     });
   });

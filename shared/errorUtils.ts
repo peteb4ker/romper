@@ -1,15 +1,4 @@
 /**
- * Converts an unknown error to a string message
- * Reduces duplication across the codebase where this pattern is used
- *
- * @param error - Unknown error object, typically from catch blocks
- * @returns String representation of the error
- */
-export function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-/**
  * Creates a standardized error result object
  *
  * @param error - Unknown error object
@@ -19,12 +8,23 @@ export function getErrorMessage(error: unknown): string {
 export function createErrorResult(
   error: unknown,
   prefix?: string,
-): { success: false; error: string } {
+): { error: string; success: false } {
   const message = getErrorMessage(error);
   return {
-    success: false,
     error: prefix ? `${prefix}: ${message}` : message,
+    success: false,
   };
+}
+
+/**
+ * Converts an unknown error to a string message
+ * Reduces duplication across the codebase where this pattern is used
+ *
+ * @param error - Unknown error object, typically from catch blocks
+ * @returns String representation of the error
+ */
+export function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 /**

@@ -28,12 +28,12 @@ export async function insertKit(dbDir: string, kit: NewKit) {
 export async function insertSample(
   dbDir: string,
   sample: {
-    kit_name: string;
     filename: string;
-    voice_number: number;
-    slot_number: number;
     is_stereo: boolean;
+    kit_name: string;
+    slot_number: number;
     source_path?: string;
+    voice_number: number;
     wav_bitrate?: number;
     wav_sample_rate?: number;
   },

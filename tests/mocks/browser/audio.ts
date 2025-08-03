@@ -6,56 +6,56 @@ import { vi } from "vitest";
 export const createAudioContextMock = (
   overrides: Record<string, any> = {},
 ) => ({
-  // Audio context state
-  state: "running",
-  sampleRate: 44100,
-  currentTime: 0,
-  destination: {},
-  listener: {},
-
-  // Audio context methods
-  createBufferSource: vi.fn().mockReturnValue({
-    buffer: null,
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-    start: vi.fn(),
-    stop: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-  }),
-
-  createGain: vi.fn().mockReturnValue({
-    gain: { value: 1 },
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-  }),
-
-  createBuffer: vi.fn().mockReturnValue({
-    length: 1024,
-    numberOfChannels: 2,
-    sampleRate: 44100,
-    getChannelData: vi.fn().mockReturnValue(new Float32Array(1024)),
-  }),
-
-  decodeAudioData: vi.fn().mockResolvedValue({
-    length: 1024,
-    numberOfChannels: 2,
-    sampleRate: 44100,
-    getChannelData: vi.fn().mockReturnValue(new Float32Array(1024)),
-  }),
-
+  close: vi.fn().mockResolvedValue(undefined),
   createAnalyser: vi.fn().mockReturnValue({
+    connect: vi.fn(),
+    disconnect: vi.fn(),
     fftSize: 2048,
     frequencyBinCount: 1024,
-    connect: vi.fn(),
-    disconnect: vi.fn(),
     getByteFrequencyData: vi.fn(),
     getFloatFrequencyData: vi.fn(),
   }),
+  createBuffer: vi.fn().mockReturnValue({
+    getChannelData: vi.fn().mockReturnValue(new Float32Array(1024)),
+    length: 1024,
+    numberOfChannels: 2,
+    sampleRate: 44100,
+  }),
+  // Audio context methods
+  createBufferSource: vi.fn().mockReturnValue({
+    addEventListener: vi.fn(),
+    buffer: null,
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    removeEventListener: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn(),
+  }),
+  createGain: vi.fn().mockReturnValue({
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    gain: { value: 1 },
+  }),
 
-  suspend: vi.fn().mockResolvedValue(undefined),
+  currentTime: 0,
+
+  decodeAudioData: vi.fn().mockResolvedValue({
+    getChannelData: vi.fn().mockReturnValue(new Float32Array(1024)),
+    length: 1024,
+    numberOfChannels: 2,
+    sampleRate: 44100,
+  }),
+
+  destination: {},
+
+  listener: {},
+
   resume: vi.fn().mockResolvedValue(undefined),
-  close: vi.fn().mockResolvedValue(undefined),
+
+  sampleRate: 44100,
+  // Audio context state
+  state: "running",
+  suspend: vi.fn().mockResolvedValue(undefined),
 
   ...overrides,
 });
@@ -66,26 +66,26 @@ export const createAudioContextMock = (
 export const createHTMLAudioElementMock = (
   overrides: Record<string, any> = {},
 ) => ({
-  // Audio element properties
-  src: "",
-  currentTime: 0,
-  duration: 0,
-  volume: 1,
-  muted: false,
-  paused: true,
-  ended: false,
-  readyState: 4, // HAVE_ENOUGH_DATA
-
-  // Audio element methods
-  play: vi.fn().mockResolvedValue(undefined),
-  pause: vi.fn(),
-  load: vi.fn(),
-  canPlayType: vi.fn().mockReturnValue("probably"),
-
   // Event handling
   addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
+  canPlayType: vi.fn().mockReturnValue("probably"),
+  currentTime: 0,
   dispatchEvent: vi.fn(),
+  duration: 0,
+  ended: false,
+  load: vi.fn(),
+  muted: false,
+
+  pause: vi.fn(),
+  paused: true,
+  // Audio element methods
+  play: vi.fn().mockResolvedValue(undefined),
+  readyState: 4, // HAVE_ENOUGH_DATA
+
+  removeEventListener: vi.fn(),
+  // Audio element properties
+  src: "",
+  volume: 1,
 
   ...overrides,
 });
@@ -108,20 +108,6 @@ export const setupAudioMocks = () => {
   // Mock MediaDevices for audio input tests
   Object.defineProperty(globalThis.navigator, "mediaDevices", {
     value: {
-      getUserMedia: vi.fn().mockResolvedValue({
-        getTracks: () => [
-          {
-            kind: "audio",
-            stop: vi.fn(),
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn(),
-          },
-        ],
-        addTrack: vi.fn(),
-        removeTrack: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-      }),
       enumerateDevices: vi.fn().mockResolvedValue([
         {
           deviceId: "default",
@@ -129,6 +115,20 @@ export const setupAudioMocks = () => {
           label: "Default Microphone",
         },
       ]),
+      getUserMedia: vi.fn().mockResolvedValue({
+        addEventListener: vi.fn(),
+        addTrack: vi.fn(),
+        getTracks: () => [
+          {
+            addEventListener: vi.fn(),
+            kind: "audio",
+            removeEventListener: vi.fn(),
+            stop: vi.fn(),
+          },
+        ],
+        removeEventListener: vi.fn(),
+        removeTrack: vi.fn(),
+      }),
     },
     writable: true,
   });

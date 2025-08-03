@@ -4,27 +4,27 @@ import { SettingsContext, type ThemeMode } from "../../utils/SettingsContext";
 
 export const MockSettingsProvider: React.FC<{
   children: React.ReactNode;
-  themeMode?: ThemeMode;
-  defaultToMonoSamples?: boolean;
   confirmDestructiveActions?: boolean;
+  defaultToMonoSamples?: boolean;
+  themeMode?: ThemeMode;
 }> = ({
   children,
-  themeMode = "light",
-  defaultToMonoSamples = true,
   confirmDestructiveActions = true,
+  defaultToMonoSamples = true,
+  themeMode = "light",
 }) => (
   <SettingsContext.Provider
     value={{
-      themeMode,
-      setThemeMode: () => {},
-      isDarkMode: themeMode === "dark" || (themeMode === "system" && false),
-      defaultToMonoSamples,
-      setDefaultToMonoSamples: () => {},
       confirmDestructiveActions,
-      setConfirmDestructiveActions: () => {},
+      defaultToMonoSamples,
+      isDarkMode: themeMode === "dark" || (themeMode === "system" && false),
       localStorePath: "/mock/local/store",
-      setLocalStorePath: async () => {},
       localStoreStatus: { isValid: true },
+      setConfirmDestructiveActions: () => {},
+      setDefaultToMonoSamples: () => {},
+      setLocalStorePath: async () => {},
+      setThemeMode: () => {},
+      themeMode,
     }}
   >
     {children}

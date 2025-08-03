@@ -1,31 +1,15 @@
 import type { KitWithRelations } from "../../../../shared/db/schema";
 
 /**
- * Extracts voice names from kit data into a lookup map
- * Reduces duplication between KitItem and KitGridItem components
- */
-export function extractVoiceNames(
-  kitData?: KitWithRelations | null,
-): Record<string | number, string> | undefined {
-  return kitData?.voices
-    ? Object.fromEntries(
-        kitData.voices
-          .filter((v) => v.voice_alias !== null)
-          .map((v) => [v.voice_number, v.voice_alias!]),
-      )
-    : undefined;
-}
-
-/**
  * Common interface for kit item props
  */
 export interface BaseKitItemProps {
-  kit: string;
   isValid: boolean;
-  onSelect: () => void;
-  onDuplicate: () => void;
-  sampleCounts?: [number, number, number, number];
+  kit: string;
   kitData?: KitWithRelations | null;
+  onDuplicate: () => void;
+  onSelect: () => void;
+  sampleCounts?: [number, number, number, number];
 }
 
 /**
@@ -34,4 +18,20 @@ export interface BaseKitItemProps {
 export interface KitItemRenderProps {
   "data-kit"?: string;
   isSelected?: boolean;
+}
+
+/**
+ * Extracts voice names from kit data into a lookup map
+ * Reduces duplication between KitItem and KitGridItem components
+ */
+export function extractVoiceNames(
+  kitData?: KitWithRelations | null,
+): Record<number | string, string> | undefined {
+  return kitData?.voices
+    ? Object.fromEntries(
+        kitData.voices
+          .filter((v) => v.voice_alias !== null)
+          .map((v) => [v.voice_number, v.voice_alias!]),
+      )
+    : undefined;
 }

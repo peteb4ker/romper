@@ -7,42 +7,34 @@ import {
   type ProgressCallback,
 } from "./scanners";
 
-// Types for database operations (will be implemented via IPC)
-interface VoiceUpdateResult {
-  success: boolean;
-  error?: string;
-}
-
 // Database operations interface (to be implemented via IPC)
 interface DatabaseOperations {
   updateVoiceAlias: (
     dbDir: string,
     kitName: string,
     voiceNumber: number,
-    voiceAlias: string | null,
+    voiceAlias: null | string,
   ) => Promise<VoiceUpdateResult>;
   // Add more database operations as needed
+}
+
+// Types for database operations (will be implemented via IPC)
+interface VoiceUpdateResult {
+  error?: string;
+  success: boolean;
 }
 
 // Global database operations - will be injected
 let dbOps: DatabaseOperations | null = null;
 
-/**
- * Set the database operations implementation
- * This allows for dependency injection and testing
- */
-export function setDatabaseOperations(operations: DatabaseOperations): void {
-  dbOps = operations;
-}
-
 // Types for database scanning operations
 export interface DatabaseScanResult {
-  success: boolean;
+  errors: Array<{ error: string; operation: string }>;
   scannedKits: number;
+  scannedRtfFiles: number;
   scannedVoices: number;
   scannedWavFiles: number;
-  scannedRtfFiles: number;
-  errors: Array<{ operation: string; error: string }>;
+  success: boolean;
 }
 
 export interface KitScanData {
@@ -52,88 +44,18 @@ export interface KitScanData {
   wavFiles: string[];
 }
 
-/**
- * Scan a single kit and store all results in the database
- *
- * @param dbDir Path to the database directory
- * @param kitScanData Kit data to scan
- * @param progressCallback Optional progress tracking callback
- * @returns Database scan result
- */
-// Helper function to process voice inference results
-async function processVoiceInferenceResults(
-  dbDir: string,
-  kitName: string,
-  voiceNames: Record<number, string>,
-  result: DatabaseScanResult,
-): Promise<void> {
-  for (const voiceNumStr in voiceNames) {
-    const voiceNumber = parseInt(voiceNumStr, 10);
-    const voiceAlias = voiceNames[voiceNumber];
-
-    if (voiceAlias) {
-      if (!dbOps) {
-        result.errors.push({
-          operation: `voice-${voiceNumber}`,
-          error: "Database operations not initialized",
-        });
-        result.success = false;
-        continue;
-      }
-
-      const updateResult = await dbOps.updateVoiceAlias(
-        dbDir,
-        kitName,
-        voiceNumber,
-        voiceAlias,
-      );
-
-      if (updateResult.success) {
-        result.scannedVoices++;
-      } else {
-        result.errors.push({
-          operation: `voice-${voiceNumber}`,
-          error: updateResult.error || "Failed to update voice alias",
-        });
-        result.success = false;
-      }
-    }
-  }
-}
-
-// Helper function to process WAV analysis results
-function processWAVAnalysisResults(
-  wavAnalyses: any[],
-  wavFiles: string[],
-  result: DatabaseScanResult,
-): void {
-  for (let i = 0; i < wavAnalyses.length; i++) {
-    const analysis = wavAnalyses[i];
-    const filePath = wavFiles[i];
-
-    if (analysis.isValid) {
-      result.scannedWavFiles++;
-    } else {
-      result.errors.push({
-        operation: `wav-${filePath}`,
-        error: "Invalid WAV format",
-      });
-    }
-  }
-}
-
 export async function scanKitToDatabase(
   dbDir: string,
   kitScanData: KitScanData,
   progressCallback?: ProgressCallback,
 ): Promise<DatabaseScanResult> {
   const result: DatabaseScanResult = {
-    success: true,
+    errors: [],
     scannedKits: 0,
+    scannedRtfFiles: 0,
     scannedVoices: 0,
     scannedWavFiles: 0,
-    scannedRtfFiles: 0,
-    errors: [],
+    success: true,
   };
 
   try {
@@ -175,8 +97,8 @@ export async function scanKitToDatabase(
   } catch (error) {
     result.success = false;
     result.errors.push({
-      operation: "kit-scan",
       error: error instanceof Error ? error.message : String(error),
+      operation: "kit-scan",
     });
   }
 
@@ -197,12 +119,12 @@ export async function scanMultipleKitsToDatabase(
   progressCallback?: ProgressCallback,
 ): Promise<DatabaseScanResult> {
   const combinedResult: DatabaseScanResult = {
-    success: true,
+    errors: [],
     scannedKits: 0,
+    scannedRtfFiles: 0,
     scannedVoices: 0,
     scannedWavFiles: 0,
-    scannedRtfFiles: 0,
-    errors: [],
+    success: true,
   };
 
   for (let i = 0; i < kitsToScan.length; i++) {
@@ -249,12 +171,12 @@ export async function scanVoiceNamesToDatabase(
   samples: { [voice: number]: string[] },
 ): Promise<DatabaseScanResult> {
   const result: DatabaseScanResult = {
-    success: true,
+    errors: [],
     scannedKits: 0,
+    scannedRtfFiles: 0,
     scannedVoices: 0,
     scannedWavFiles: 0,
-    scannedRtfFiles: 0,
-    errors: [],
+    success: true,
   };
 
   try {
@@ -276,8 +198,8 @@ export async function scanVoiceNamesToDatabase(
   } catch (error) {
     result.success = false;
     result.errors.push({
-      operation: "voice-scan",
       error: error instanceof Error ? error.message : String(error),
+      operation: "voice-scan",
     });
   }
 
@@ -298,12 +220,12 @@ export async function scanWavFilesToDatabase(
   fileReader?: (filePath: string) => Promise<ArrayBuffer>,
 ): Promise<DatabaseScanResult> {
   const result: DatabaseScanResult = {
-    success: true,
+    errors: [],
     scannedKits: 0,
+    scannedRtfFiles: 0,
     scannedVoices: 0,
     scannedWavFiles: 0,
-    scannedRtfFiles: 0,
-    errors: [],
+    success: true,
   };
 
   try {
@@ -322,12 +244,90 @@ export async function scanWavFilesToDatabase(
   } catch (error) {
     result.success = false;
     result.errors.push({
-      operation: "wav-scan",
       error: error instanceof Error ? error.message : String(error),
+      operation: "wav-scan",
     });
   }
 
   return result;
+}
+
+/**
+ * Set the database operations implementation
+ * This allows for dependency injection and testing
+ */
+export function setDatabaseOperations(operations: DatabaseOperations): void {
+  dbOps = operations;
+}
+
+/**
+ * Scan a single kit and store all results in the database
+ *
+ * @param dbDir Path to the database directory
+ * @param kitScanData Kit data to scan
+ * @param progressCallback Optional progress tracking callback
+ * @returns Database scan result
+ */
+// Helper function to process voice inference results
+async function processVoiceInferenceResults(
+  dbDir: string,
+  kitName: string,
+  voiceNames: Record<number, string>,
+  result: DatabaseScanResult,
+): Promise<void> {
+  for (const voiceNumStr in voiceNames) {
+    const voiceNumber = parseInt(voiceNumStr, 10);
+    const voiceAlias = voiceNames[voiceNumber];
+
+    if (voiceAlias) {
+      if (!dbOps) {
+        result.errors.push({
+          error: "Database operations not initialized",
+          operation: `voice-${voiceNumber}`,
+        });
+        result.success = false;
+        continue;
+      }
+
+      const updateResult = await dbOps.updateVoiceAlias(
+        dbDir,
+        kitName,
+        voiceNumber,
+        voiceAlias,
+      );
+
+      if (updateResult.success) {
+        result.scannedVoices++;
+      } else {
+        result.errors.push({
+          error: updateResult.error || "Failed to update voice alias",
+          operation: `voice-${voiceNumber}`,
+        });
+        result.success = false;
+      }
+    }
+  }
+}
+
+// Helper function to process WAV analysis results
+function processWAVAnalysisResults(
+  wavAnalyses: any[],
+  wavFiles: string[],
+  result: DatabaseScanResult,
+): void {
+  for (let i = 0; i < wavAnalyses.length; i++) {
+    const analysis = wavAnalyses[i];
+    const filePath = wavFiles[i];
+
+    if (analysis.isValid) {
+      result.scannedWavFiles++;
+    } else {
+      result.errors.push({
+        error: "Invalid WAV format",
+        operation: `wav-${filePath}`,
+      });
+    }
+  }
 }
 
 // RTF scanning is now handled by the bank scanning system

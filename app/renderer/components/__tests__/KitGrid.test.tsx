@@ -6,16 +6,16 @@ import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronA
 import KitGrid from "../KitGrid";
 
 const mockKits = [
-  { id: 1, name: "AKit1", bank: "A", samples: [] },
-  { id: 2, name: "AKit2", bank: "A", samples: [] },
-  { id: 3, name: "BKit3", bank: "B", samples: [] },
+  { bank: "A", id: 1, name: "AKit1", samples: [] },
+  { bank: "A", id: 2, name: "AKit2", samples: [] },
+  { bank: "B", id: 3, name: "BKit3", samples: [] },
 ];
 
 const baseProps = {
-  kits: mockKits,
-  onSelectKit: vi.fn(),
   bankNames: { A: "Bank A", B: "Bank B", C: "Bank C" },
+  kits: mockKits,
   onDuplicate: vi.fn(),
+  onSelectKit: vi.fn(),
 };
 
 beforeEach(() => {
@@ -101,10 +101,10 @@ describe("KitGrid", () => {
 
   it("renders properly with minimal props", () => {
     const minimalProps = {
-      kits: [],
-      onSelectKit: vi.fn(),
       bankNames: {},
+      kits: [],
       onDuplicate: vi.fn(),
+      onSelectKit: vi.fn(),
     };
 
     render(<KitGrid {...minimalProps} />);

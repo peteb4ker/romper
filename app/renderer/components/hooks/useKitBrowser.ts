@@ -1,6 +1,7 @@
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
 import type { KitWithRelations } from "../../../../shared/db/schema";
+
 import { getNextKitSlot } from "../../../../shared/kitUtilsShared";
 import {
   bankHasKits,
@@ -15,30 +16,30 @@ import {
 } from "../utils/kitOperations";
 
 interface UseKitBrowserProps {
-  kits: KitWithRelations[];
-  onRefreshKits?: (scrollToKit?: string) => void;
   kitListRef: RefObject<any>;
-  onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
+  kits: KitWithRelations[];
+  onMessage?: (msg: { duration?: number; text: string; type?: string }) => void;
+  onRefreshKits?: (scrollToKit?: string) => void;
 }
 
 export function useKitBrowser({
-  kits: externalKits = [],
-  onRefreshKits,
   kitListRef,
+  kits: externalKits = [],
   onMessage,
+  onRefreshKits,
 }: UseKitBrowserProps) {
   const kits: KitWithRelations[] = externalKits;
-  const [error, setError] = useState<string | null>(null);
-  const [sdCardWarning, setSdCardWarning] = useState<string | null>(null);
+  const [error, setError] = useState<null | string>(null);
+  const [sdCardWarning, setSdCardWarning] = useState<null | string>(null);
   const [showNewKit, setShowNewKit] = useState(false);
   const [newKitSlot, setNewKitSlot] = useState("");
-  const [newKitError, setNewKitError] = useState<string | null>(null);
-  const [nextKitSlot, setNextKitSlot] = useState<string | null>(null);
-  const [duplicateKitSource, setDuplicateKitSource] = useState<string | null>(
+  const [newKitError, setNewKitError] = useState<null | string>(null);
+  const [nextKitSlot, setNextKitSlot] = useState<null | string>(null);
+  const [duplicateKitSource, setDuplicateKitSource] = useState<null | string>(
     null,
   );
   const [duplicateKitDest, setDuplicateKitDest] = useState("");
-  const [duplicateKitError, setDuplicateKitError] = useState<string | null>(
+  const [duplicateKitError, setDuplicateKitError] = useState<null | string>(
     null,
   );
   const [bankNames, setBankNames] = useState<BankNames>({});
@@ -78,9 +79,9 @@ export function useKitBrowser({
       if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
       if (onMessage)
         onMessage({
+          duration: 4000,
           text: `Kit ${newKitSlot} created successfully!`,
           type: "info",
-          duration: 4000,
         });
     } catch (err) {
       setNewKitError(formatKitError(err));
@@ -139,8 +140,8 @@ export function useKitBrowser({
       const offset = elRect.top - containerRect.top - headerHeight - 8;
 
       scrollContainerRef.current.scrollTo({
-        top: scrollContainerRef.current.scrollTop + offset,
         behavior: "auto",
+        top: scrollContainerRef.current.scrollTop + offset,
       });
     },
     [scrollContainerRef],
@@ -166,7 +167,7 @@ export function useKitBrowser({
   );
 
   // --- Kit focus state and A-Z navigation logic ---
-  const [focusedKit, setFocusedKit] = useState<string | null>(null);
+  const [focusedKit, setFocusedKit] = useState<null | string>(null);
 
   // On kits change, focus the first kit
   useEffect(() => {
@@ -218,8 +219,7 @@ export function useKitBrowser({
       const idx = kits.findIndex((k) => k?.name?.[0]?.toUpperCase() === bank);
       if (
         idx !== -1 &&
-        kitListRef &&
-        kitListRef.current &&
+        kitListRef?.current &&
         typeof kitListRef.current.scrollAndFocusKitByIndex === "function"
       ) {
         setSelectedBank(bank);
@@ -238,39 +238,39 @@ export function useKitBrowser({
   }, []);
 
   return {
-    kits,
-    error,
-    setError,
-    sdCardWarning,
-    setSdCardWarning,
-    showNewKit,
-    setShowNewKit,
-    newKitSlot,
-    setNewKitSlot,
-    newKitError,
-    setNewKitError,
-    nextKitSlot,
-    setNextKitSlot,
-    duplicateKitSource,
-    setDuplicateKitSource,
-    duplicateKitDest,
-    setDuplicateKitDest,
-    duplicateKitError,
-    setDuplicateKitError,
     bankNames,
-    setBankNames,
-    scrollContainerRef,
+    duplicateKitDest,
+    duplicateKitError,
+    duplicateKitSource,
+    error,
+    focusBankInKitList, // expose for UI
+    focusedKit,
+    globalBankHotkeyHandler,
+    handleBankClick,
+    handleBankClickWithScroll, // expose for UI
     handleCreateKit,
     handleCreateNextKit,
     handleDuplicateKit,
-    handleBankClick,
-    handleBankClickWithScroll, // expose for UI
-    selectedBank,
-    setSelectedBank,
-    focusedKit,
-    setFocusedKit,
-    globalBankHotkeyHandler,
-    focusBankInKitList, // expose for UI
     handleVisibleBankChange, // expose for KitList
+    kits,
+    newKitError,
+    newKitSlot,
+    nextKitSlot,
+    scrollContainerRef,
+    sdCardWarning,
+    selectedBank,
+    setBankNames,
+    setDuplicateKitDest,
+    setDuplicateKitError,
+    setDuplicateKitSource,
+    setError,
+    setFocusedKit,
+    setNewKitError,
+    setNewKitSlot,
+    setNextKitSlot,
+    setSdCardWarning,
+    setSelectedBank,
+    setShowNewKit,
+    showNewKit,
   };
 }

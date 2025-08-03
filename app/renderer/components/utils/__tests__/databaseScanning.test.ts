@@ -41,43 +41,43 @@ describe("databaseScanning", () => {
       kitId: 1,
       kitName: "Test Kit",
       kitPath: "/path/to/kit",
+      rtfFiles: ["A - Artist Name.rtf"],
       samples: { 1: ["kick.wav"], 2: ["snare.wav"] },
       wavFiles: ["kick.wav", "snare.wav"],
-      rtfFiles: ["A - Artist Name.rtf"],
     };
 
     it("successfully scans kit and stores results in database", async () => {
       // Mock successful orchestration
       vi.mocked(executeFullKitScan).mockResolvedValue({
-        success: true,
+        completedOperations: 3,
+        errors: [],
         results: {
+          rtfArtist: {
+            bankArtists: { A: "Artist Name" },
+          },
           voiceInference: {
             voiceNames: { 1: "Kick", 2: "Snare" },
           },
           wavAnalysis: [
             {
-              sampleRate: 44100,
               bitDepth: 16,
-              channels: 2,
               bitrate: 1411200,
+              channels: 2,
               isStereo: true,
               isValid: true,
+              sampleRate: 44100,
             },
             {
-              sampleRate: 44100,
               bitDepth: 16,
-              channels: 1,
               bitrate: 705600,
+              channels: 1,
               isStereo: false,
               isValid: true,
+              sampleRate: 44100,
             },
           ],
-          rtfArtist: {
-            bankArtists: { A: "Artist Name" },
-          },
         },
-        errors: [],
-        completedOperations: 3,
+        success: true,
         totalOperations: 3,
       });
 
@@ -111,18 +111,18 @@ describe("databaseScanning", () => {
     it("handles partial scanning failures gracefully", async () => {
       // Mock orchestration with partial failure
       vi.mocked(executeFullKitScan).mockResolvedValue({
-        success: false,
+        completedOperations: 2,
+        errors: [{ error: "WAV analysis failed", operation: "wavAnalysis" }],
         results: {
-          voiceInference: {
-            voiceNames: { 1: "Kick" },
-          },
           // WAV analysis failed
           rtfArtist: {
             bankArtists: { A: "Artist Name" },
           },
+          voiceInference: {
+            voiceNames: { 1: "Kick" },
+          },
         },
-        errors: [{ operation: "wavAnalysis", error: "WAV analysis failed" }],
-        completedOperations: 2,
+        success: false,
         totalOperations: 3,
       });
 
@@ -137,8 +137,8 @@ describe("databaseScanning", () => {
       expect(result.scannedWavFiles).toBe(0);
       expect(result.scannedRtfFiles).toBe(0); // RTF scanning removed
       expect(result.errors).toContainEqual({
-        operation: "wavAnalysis",
         error: "WAV analysis failed",
+        operation: "wavAnalysis",
       });
 
       // Only one voice should have been updated
@@ -154,29 +154,29 @@ describe("databaseScanning", () => {
     it("handles database update failures", async () => {
       // Mock successful orchestration
       vi.mocked(executeFullKitScan).mockResolvedValue({
-        success: true,
+        completedOperations: 1,
+        errors: [],
         results: {
           voiceInference: {
             voiceNames: { 1: "Kick", 2: "Snare" },
           },
         },
-        errors: [],
-        completedOperations: 1,
+        success: true,
         totalOperations: 1,
       });
 
       // Mock database failures
       mockDbOps.updateVoiceAlias
         .mockResolvedValueOnce({ success: true })
-        .mockResolvedValueOnce({ success: false, error: "Database error" });
+        .mockResolvedValueOnce({ error: "Database error", success: false });
 
       const result = await scanKitToDatabase("/mock/db", mockKitData);
 
       expect(result.success).toBe(false);
       expect(result.scannedVoices).toBe(1);
       expect(result.errors).toContainEqual({
-        operation: "voice-2",
         error: "Database error",
+        operation: "voice-2",
       });
     });
 
@@ -191,8 +191,8 @@ describe("databaseScanning", () => {
       expect(result.success).toBe(false);
       expect(result.scannedKits).toBe(0);
       expect(result.errors).toContainEqual({
-        operation: "kit-scan",
         error: "Unexpected error",
+        operation: "kit-scan",
       });
     });
 
@@ -200,10 +200,10 @@ describe("databaseScanning", () => {
       const mockProgressCallback = vi.fn();
 
       vi.mocked(executeFullKitScan).mockResolvedValue({
-        success: true,
-        results: {},
-        errors: [],
         completedOperations: 0,
+        errors: [],
+        results: {},
+        success: true,
         totalOperations: 0,
       });
 
@@ -222,29 +222,29 @@ describe("databaseScanning", () => {
       kitId: 1,
       kitName: "Kit 1",
       kitPath: "/path/to/kit1",
+      rtfFiles: [],
       samples: { 1: ["kick1.wav"] },
       wavFiles: ["kick1.wav"],
-      rtfFiles: [],
     };
 
     const mockKitData2: KitScanData = {
       kitId: 2,
       kitName: "Kit 2",
       kitPath: "/path/to/kit2",
+      rtfFiles: [],
       samples: { 1: ["kick2.wav"] },
       wavFiles: ["kick2.wav"],
-      rtfFiles: [],
     };
 
     it("scans multiple kits and combines results", async () => {
       // Mock successful orchestration for each kit
       vi.mocked(executeFullKitScan).mockResolvedValue({
-        success: true,
+        completedOperations: 1,
+        errors: [],
         results: {
           voiceInference: { voiceNames: { 1: "Kick" } },
         },
-        errors: [],
-        completedOperations: 1,
+        success: true,
         totalOperations: 1,
       });
 
@@ -284,19 +284,19 @@ describe("databaseScanning", () => {
       // Mock first kit success, second kit failure
       vi.mocked(executeFullKitScan)
         .mockResolvedValueOnce({
-          success: true,
-          results: { voiceInference: { voiceNames: { 1: "Kick" } } },
-          errors: [],
           completedOperations: 1,
+          errors: [],
+          results: { voiceInference: { voiceNames: { 1: "Kick" } } },
+          success: true,
           totalOperations: 1,
         })
         .mockResolvedValueOnce({
-          success: false,
-          results: {},
-          errors: [
-            { operation: "voiceInference", error: "Failed to infer voices" },
-          ],
           completedOperations: 0,
+          errors: [
+            { error: "Failed to infer voices", operation: "voiceInference" },
+          ],
+          results: {},
+          success: false,
           totalOperations: 1,
         });
 
@@ -311,8 +311,8 @@ describe("databaseScanning", () => {
       expect(result.scannedKits).toBe(1); // Only first kit succeeded
       expect(result.scannedVoices).toBe(1);
       expect(result.errors).toContainEqual({
-        operation: "voiceInference",
         error: "Failed to infer voices",
+        operation: "voiceInference",
       });
     });
   });
@@ -320,12 +320,12 @@ describe("databaseScanning", () => {
   describe("scanVoiceNamesToDatabase", () => {
     it("scans voice names and updates database", async () => {
       vi.mocked(executeVoiceInferenceScan).mockResolvedValue({
-        success: true,
+        completedOperations: 1,
+        errors: [],
         results: {
           voiceInference: { voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat" } },
         },
-        errors: [],
-        completedOperations: 1,
+        success: true,
         totalOperations: 1,
       });
 
@@ -360,12 +360,12 @@ describe("databaseScanning", () => {
 
     it("handles voice inference failure", async () => {
       vi.mocked(executeVoiceInferenceScan).mockResolvedValue({
-        success: false,
-        results: {},
-        errors: [
-          { operation: "voiceInference", error: "No recognizable voices" },
-        ],
         completedOperations: 0,
+        errors: [
+          { error: "No recognizable voices", operation: "voiceInference" },
+        ],
+        results: {},
+        success: false,
         totalOperations: 1,
       });
 
@@ -374,8 +374,8 @@ describe("databaseScanning", () => {
       expect(result.success).toBe(false);
       expect(result.scannedVoices).toBe(0);
       expect(result.errors).toContainEqual({
-        operation: "voiceInference",
         error: "No recognizable voices",
+        operation: "voiceInference",
       });
     });
   });
@@ -383,29 +383,29 @@ describe("databaseScanning", () => {
   describe("scanWavFilesToDatabase", () => {
     it("scans WAV files successfully", async () => {
       vi.mocked(executeWAVAnalysisScan).mockResolvedValue({
-        success: true,
+        completedOperations: 1,
+        errors: [],
         results: {
           wavAnalysis: [
             {
-              sampleRate: 44100,
               bitDepth: 16,
-              channels: 2,
               bitrate: 1411200,
+              channels: 2,
               isStereo: true,
               isValid: true,
+              sampleRate: 44100,
             },
             {
-              sampleRate: 48000,
               bitDepth: 24,
-              channels: 1,
               bitrate: 1152000,
+              channels: 1,
               isStereo: false,
               isValid: true,
+              sampleRate: 48000,
             },
           ],
         },
-        errors: [],
-        completedOperations: 1,
+        success: true,
         totalOperations: 1,
       });
 
@@ -419,10 +419,10 @@ describe("databaseScanning", () => {
 
     it("handles WAV analysis failure", async () => {
       vi.mocked(executeWAVAnalysisScan).mockResolvedValue({
-        success: false,
-        results: {},
-        errors: [{ operation: "wavAnalysis", error: "Invalid WAV format" }],
         completedOperations: 0,
+        errors: [{ error: "Invalid WAV format", operation: "wavAnalysis" }],
+        results: {},
+        success: false,
         totalOperations: 1,
       });
 
@@ -431,8 +431,8 @@ describe("databaseScanning", () => {
       expect(result.success).toBe(false);
       expect(result.scannedWavFiles).toBe(0);
       expect(result.errors).toContainEqual({
-        operation: "wavAnalysis",
         error: "Invalid WAV format",
+        operation: "wavAnalysis",
       });
     });
   });

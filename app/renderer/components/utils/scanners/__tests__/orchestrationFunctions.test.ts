@@ -2,12 +2,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { ProgressCallback } from "../types";
+
 import {
   executeFullKitScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
 } from "../orchestrationFunctions";
-import type { ProgressCallback } from "../types";
 
 // Mock the individual scanner operations
 vi.mock("../../scannerOperations", () => ({
@@ -28,26 +29,26 @@ beforeEach(() => {
 describe("executeFullKitScan", () => {
   it("executes all scanning operations successfully", async () => {
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: true,
       data: { voiceNames: { 1: "Kick", 2: "Snare", 3: "Hat", 4: "Tom" } },
+      success: true,
     });
 
     vi.mocked(scanWAVAnalysis).mockResolvedValue({
-      success: true,
       data: {
-        sampleRate: 44100,
         bitDepth: 16,
-        channels: 2,
         bitrate: 1411200,
+        channels: 2,
         isStereo: true,
         isValid: true,
+        sampleRate: 44100,
       },
+      success: true,
     });
 
     const kitData = {
+      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
       samples: { 1: ["kick.wav"], 2: ["snare.wav"] },
       wavFiles: ["kick.wav", "snare.wav"],
-      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
     };
 
     const result = await executeFullKitScan(kitData, mockProgressCallback);
@@ -62,26 +63,26 @@ describe("executeFullKitScan", () => {
 
   it("handles partial failures with continue strategy", async () => {
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: false,
       error: "Voice inference failed",
+      success: false,
     });
 
     vi.mocked(scanWAVAnalysis).mockResolvedValue({
-      success: true,
       data: {
-        sampleRate: 44100,
         bitDepth: 16,
-        channels: 2,
         bitrate: 1411200,
+        channels: 2,
         isStereo: true,
         isValid: true,
+        sampleRate: 44100,
       },
+      success: true,
     });
 
     const kitData = {
+      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
       samples: { 1: ["kick.wav"], 2: ["snare.wav"] },
       wavFiles: ["kick.wav", "snare.wav"],
-      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
     };
 
     const result = await executeFullKitScan(kitData, mockProgressCallback);
@@ -94,26 +95,26 @@ describe("executeFullKitScan", () => {
 
   it("calls progress callback for each operation", async () => {
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: true,
       data: { voiceNames: { 1: "Kick", 2: "Snare" } },
+      success: true,
     });
 
     vi.mocked(scanWAVAnalysis).mockResolvedValue({
-      success: true,
       data: {
-        sampleRate: 44100,
         bitDepth: 16,
-        channels: 1,
         bitrate: 705600,
+        channels: 1,
         isStereo: false,
         isValid: true,
+        sampleRate: 44100,
       },
+      success: true,
     });
 
     const kitData = {
+      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
       samples: { 1: ["kick.wav"], 2: ["snare.wav"] },
       wavFiles: ["kick.wav", "snare.wav"],
-      fileReader: vi.fn().mockResolvedValue(new ArrayBuffer(10)),
     };
 
     await executeFullKitScan(kitData, mockProgressCallback);
@@ -127,8 +128,8 @@ describe("executeFullKitScan", () => {
 describe("executeVoiceInferenceScan", () => {
   it("executes only voice inference operation", async () => {
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: true,
       data: { voiceNames: { 1: "Kick", 2: "Snare" } },
+      success: true,
     });
 
     const samples = { 1: ["kick.wav"], 2: ["snare.wav"] };
@@ -148,8 +149,8 @@ describe("executeVoiceInferenceScan", () => {
 
   it("handles failures correctly", async () => {
     vi.mocked(scanVoiceInference).mockReturnValue({
-      success: false,
       error: "Voice inference failed",
+      success: false,
     });
 
     const samples = { 1: ["kick.wav"], 2: ["snare.wav"] };
@@ -166,15 +167,15 @@ describe("executeVoiceInferenceScan", () => {
 describe("executeWAVAnalysisScan", () => {
   it("executes only WAV analysis operation", async () => {
     vi.mocked(scanWAVAnalysis).mockResolvedValue({
-      success: true,
       data: {
-        sampleRate: 44100,
         bitDepth: 16,
-        channels: 1,
         bitrate: 705600,
+        channels: 1,
         isStereo: false,
         isValid: true,
+        sampleRate: 44100,
       },
+      success: true,
     });
 
     const wavFiles = ["kick.wav", "snare.wav"];

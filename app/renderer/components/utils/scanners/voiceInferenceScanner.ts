@@ -1,11 +1,12 @@
 // Voice inference scanner - analyzes sample filenames to determine voice types
 
-import { inferVoiceTypeFromFilename } from "../../../../../shared/kitUtilsShared";
 import type {
   ScanResult,
   VoiceInferenceInput,
   VoiceInferenceOutput,
 } from "./types";
+
+import { inferVoiceTypeFromFilename } from "../../../../../shared/kitUtilsShared";
 
 /**
  * Scans sample files and infers voice types from filenames
@@ -39,22 +40,22 @@ export function scanVoiceInference(
     // Check if we found any voice names
     if (Object.keys(voiceNames).length === 0) {
       return {
-        success: false,
         error: "No voice types could be inferred from filenames",
+        success: false,
       };
     }
 
     return {
-      success: true,
       data: { voiceNames },
+      success: true,
     };
   } catch (error) {
     return {
-      success: false,
       error:
         error instanceof Error
           ? error.message
           : "Unknown error during voice inference",
+      success: false,
     };
   }
 }

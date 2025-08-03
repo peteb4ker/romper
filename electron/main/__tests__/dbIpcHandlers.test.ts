@@ -9,28 +9,28 @@ vi.mock("electron", () => ({
 
 // Mock database operations (simple pass-through mocks)
 vi.mock("../db/romperDbCoreORM", () => ({
-  createRomperDbFile: vi.fn(),
   addKit: vi.fn(),
   addSample: vi.fn(),
+  createRomperDbFile: vi.fn(),
   getAllBanks: vi.fn(),
   getAllSamples: vi.fn(),
+  getFavoriteKits: vi.fn(),
+  getFavoriteKitsCount: vi.fn(),
   getKit: vi.fn(),
   getKits: vi.fn(),
   getKitSamples: vi.fn(),
+  setKitFavorite: vi.fn(),
+  toggleKitFavorite: vi.fn(),
   updateKit: vi.fn(),
   updateVoiceAlias: vi.fn(),
-  toggleKitFavorite: vi.fn(),
-  setKitFavorite: vi.fn(),
-  getFavoriteKits: vi.fn(),
-  getFavoriteKitsCount: vi.fn(),
 }));
 
 // Mock services
 vi.mock("../services/sampleService.js", () => ({
   sampleService: {
     addSampleToSlot: vi.fn(),
-    replaceSampleInSlot: vi.fn(),
     deleteSampleFromSlot: vi.fn(),
+    replaceSampleInSlot: vi.fn(),
     validateSampleSources: vi.fn(),
   },
 }));
@@ -73,25 +73,25 @@ describe("dbIpcHandlers - Routing Tests", () => {
 
     // Set up successful service responses
     mockSampleService.addSampleToSlot.mockReturnValue({
-      success: true,
       data: { sampleId: 123 },
+      success: true,
     });
     mockSampleService.replaceSampleInSlot.mockReturnValue({
-      success: true,
       data: { sampleId: 456 },
+      success: true,
     });
     mockSampleService.deleteSampleFromSlot.mockReturnValue({ success: true });
     mockSampleService.validateSampleSources.mockReturnValue({
+      data: { invalidSamples: [], totalSamples: 0, validSamples: 0 },
       success: true,
-      data: { totalSamples: 0, validSamples: 0, invalidSamples: [] },
     });
     mockScanService.rescanKit.mockResolvedValue({
-      success: true,
       data: { scannedSamples: 5, updatedVoices: 2 },
+      success: true,
     });
     mockScanService.scanBanks.mockResolvedValue({
+      data: { scannedAt: new Date(), scannedFiles: 3, updatedBanks: 3 },
       success: true,
-      data: { scannedFiles: 3, updatedBanks: 3, scannedAt: new Date() },
     });
 
     // Mock database operations
@@ -101,12 +101,12 @@ describe("dbIpcHandlers - Routing Tests", () => {
     vi.mocked(romperDbCore.addKit).mockReturnValue({ success: true });
     vi.mocked(romperDbCore.addSample).mockReturnValue({ success: true });
     vi.mocked(romperDbCore.getAllBanks).mockReturnValue({
-      success: true,
       data: [],
+      success: true,
     });
     vi.mocked(romperDbCore.getKits).mockReturnValue({
-      success: true,
       data: [],
+      success: true,
     });
 
     registerDbIpcHandlers(mockInMemorySettings);
@@ -154,7 +154,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
 
     it("insert-kit routes to addKit", async () => {
       const handler = handlerRegistry["insert-kit"];
-      const kit = { name: "A5", bank_letter: "A" };
+      const kit = { bank_letter: "A", name: "A5" };
       await handler({}, "/test/db", kit);
 
       expect(romperDbCore.addKit).toHaveBeenCalledWith("/test/db", kit);
@@ -261,8 +261,8 @@ describe("dbIpcHandlers - Routing Tests", () => {
 
     it("handles service errors gracefully", async () => {
       mockSampleService.addSampleToSlot.mockReturnValue({
-        success: false,
         error: "Service error",
+        success: false,
       });
 
       const handler = handlerRegistry["add-sample-to-slot"];

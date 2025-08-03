@@ -6,6 +6,45 @@ import * as path from "path";
  */
 
 /**
+ * Common path operations for services
+ */
+export class ServicePathManager {
+  /**
+   * Get database path from local store path
+   */
+  static getDbPath(localStorePath: string): string {
+    return path.join(localStorePath, ".romperdb");
+  }
+
+  /**
+   * Get local store path from settings
+   */
+  static getLocalStorePath(
+    inMemorySettings: Record<string, any>,
+  ): null | string {
+    return inMemorySettings.localStorePath || null;
+  }
+
+  /**
+   * Validate and get paths for service operations
+   */
+  static validateAndGetPaths(inMemorySettings: Record<string, any>): {
+    dbPath?: string;
+    error?: string;
+    isValid: boolean;
+    localStorePath?: string;
+  } {
+    const localStorePath = this.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { error: "No local store path configured", isValid: false };
+    }
+
+    const dbPath = this.getDbPath(localStorePath);
+    return { dbPath, isValid: true, localStorePath };
+  }
+}
+
+/**
  * Ensures a directory exists, creating it recursively if needed
  */
 export function ensureDirectoryExists(dirPath: string): void {
@@ -33,63 +72,24 @@ export function getFileSize(filePath: string): number {
  * Validates file existence and basic properties
  */
 export function validateFileExists(filePath: string): {
-  exists: boolean;
   error?: string;
+  exists: boolean;
 } {
   try {
     if (!fs.existsSync(filePath)) {
-      return { exists: false, error: "File not found" };
+      return { error: "File not found", exists: false };
     }
 
     const stats = fs.statSync(filePath);
     if (!stats.isFile()) {
-      return { exists: false, error: "Path is not a file" };
+      return { error: "Path is not a file", exists: false };
     }
 
     return { exists: true };
   } catch (error) {
     return {
-      exists: false,
       error: `File validation failed: ${error instanceof Error ? error.message : String(error)}`,
+      exists: false,
     };
-  }
-}
-
-/**
- * Common path operations for services
- */
-export class ServicePathManager {
-  /**
-   * Get local store path from settings
-   */
-  static getLocalStorePath(
-    inMemorySettings: Record<string, any>,
-  ): string | null {
-    return inMemorySettings.localStorePath || null;
-  }
-
-  /**
-   * Get database path from local store path
-   */
-  static getDbPath(localStorePath: string): string {
-    return path.join(localStorePath, ".romperdb");
-  }
-
-  /**
-   * Validate and get paths for service operations
-   */
-  static validateAndGetPaths(inMemorySettings: Record<string, any>): {
-    isValid: boolean;
-    localStorePath?: string;
-    dbPath?: string;
-    error?: string;
-  } {
-    const localStorePath = this.getLocalStorePath(inMemorySettings);
-    if (!localStorePath) {
-      return { isValid: false, error: "No local store path configured" };
-    }
-
-    const dbPath = this.getDbPath(localStorePath);
-    return { isValid: true, localStorePath, dbPath };
   }
 }

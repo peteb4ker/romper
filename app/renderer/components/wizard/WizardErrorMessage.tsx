@@ -1,7 +1,7 @@
 import React from "react";
 
 interface WizardErrorMessageProps {
-  errorMessage: string | null;
+  errorMessage: null | string;
 }
 
 const WizardErrorMessage: React.FC<WizardErrorMessageProps> = ({

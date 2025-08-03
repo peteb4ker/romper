@@ -20,8 +20,8 @@ describe("UnscannedKitPrompt", () => {
     render(
       <UnscannedKitPrompt
         kitName="A01"
-        onScan={mockOnScan}
         onDismiss={mockOnDismiss}
+        onScan={mockOnScan}
       />,
     );
 
@@ -33,8 +33,8 @@ describe("UnscannedKitPrompt", () => {
     render(
       <UnscannedKitPrompt
         kitName="A01"
-        onScan={mockOnScan}
         onDismiss={mockOnDismiss}
+        onScan={mockOnScan}
       />,
     );
 
@@ -46,8 +46,8 @@ describe("UnscannedKitPrompt", () => {
     render(
       <UnscannedKitPrompt
         kitName="A01"
-        onScan={mockOnScan}
         onDismiss={mockOnDismiss}
+        onScan={mockOnScan}
       />,
     );
 

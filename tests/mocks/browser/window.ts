@@ -5,76 +5,76 @@ import { vi } from "vitest";
  * Reduces duplication across tests that need window object mocking
  */
 export const createWindowMock = (overrides: Record<string, any> = {}) => ({
-  // Location
-  location: {
-    href: "http://localhost:3000",
-    origin: "http://localhost:3000",
-    pathname: "/",
-    search: "",
-    hash: "",
-    reload: vi.fn(),
-    replace: vi.fn(),
-    assign: vi.fn(),
-  },
+  // Events
+  addEventListener: vi.fn(),
 
+  blur: vi.fn(),
+
+  clearInterval: vi.fn().mockImplementation(globalThis.clearInterval),
+
+  clearTimeout: vi.fn().mockImplementation(globalThis.clearTimeout),
+
+  // Console (for tests that need to mock console)
+  console: {
+    debug: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    log: vi.fn(),
+    warn: vi.fn(),
+  },
+  dispatchEvent: vi.fn(),
+  // Focus/blur
+  focus: vi.fn(),
   // History
   history: {
-    pushState: vi.fn(),
-    replaceState: vi.fn(),
     back: vi.fn(),
     forward: vi.fn(),
     go: vi.fn(),
     length: 1,
+    pushState: vi.fn(),
+    replaceState: vi.fn(),
   },
 
+  innerHeight: 768,
+  // Dimensions
+  innerWidth: 1024,
   // Storage
   localStorage: {
-    getItem: vi.fn().mockReturnValue(null),
-    setItem: vi.fn(),
-    removeItem: vi.fn(),
     clear: vi.fn(),
+    getItem: vi.fn().mockReturnValue(null),
     key: vi.fn(),
     length: 0,
+    removeItem: vi.fn(),
+    setItem: vi.fn(),
   },
 
+  // Location
+  location: {
+    assign: vi.fn(),
+    hash: "",
+    href: "http://localhost:3000",
+    origin: "http://localhost:3000",
+    pathname: "/",
+    reload: vi.fn(),
+    replace: vi.fn(),
+    search: "",
+  },
+  outerHeight: 768,
+  outerWidth: 1024,
+  removeEventListener: vi.fn(),
+
   sessionStorage: {
-    getItem: vi.fn().mockReturnValue(null),
-    setItem: vi.fn(),
-    removeItem: vi.fn(),
     clear: vi.fn(),
+    getItem: vi.fn().mockReturnValue(null),
     key: vi.fn(),
     length: 0,
+    removeItem: vi.fn(),
+    setItem: vi.fn(),
   },
+  setInterval: vi.fn().mockImplementation(globalThis.setInterval),
 
   // Timers
   setTimeout: vi.fn().mockImplementation(globalThis.setTimeout),
-  clearTimeout: vi.fn().mockImplementation(globalThis.clearTimeout),
-  setInterval: vi.fn().mockImplementation(globalThis.setInterval),
-  clearInterval: vi.fn().mockImplementation(globalThis.clearInterval),
-
-  // Events
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn(),
-
-  // Dimensions
-  innerWidth: 1024,
-  innerHeight: 768,
-  outerWidth: 1024,
-  outerHeight: 768,
-
-  // Focus/blur
-  focus: vi.fn(),
-  blur: vi.fn(),
-
-  // Console (for tests that need to mock console)
-  console: {
-    log: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  },
 
   ...overrides,
 });
@@ -83,62 +83,62 @@ export const createWindowMock = (overrides: Record<string, any> = {}) => ({
  * Centralized document API mocks
  */
 export const createDocumentMock = (overrides: Record<string, any> = {}) => ({
-  // DOM querying
-  getElementById: vi.fn().mockReturnValue(null),
-  querySelector: vi.fn().mockReturnValue(null),
-  querySelectorAll: vi.fn().mockReturnValue([]),
-  getElementsByClassName: vi.fn().mockReturnValue([]),
-  getElementsByTagName: vi.fn().mockReturnValue([]),
-
-  // DOM creation
-  createElement: vi.fn().mockImplementation((tagName: string) => ({
-    tagName: tagName.toUpperCase(),
+  // Events
+  addEventListener: vi.fn(),
+  body: {
+    appendChild: vi.fn(),
     classList: {
       add: vi.fn(),
-      remove: vi.fn(),
       contains: vi.fn().mockReturnValue(false),
-      toggle: vi.fn(),
+      remove: vi.fn(),
     },
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    setAttribute: vi.fn(),
-    getAttribute: vi.fn().mockReturnValue(null),
-    removeAttribute: vi.fn(),
-    appendChild: vi.fn(),
     removeChild: vi.fn(),
-    click: vi.fn(),
-    focus: vi.fn(),
-    blur: vi.fn(),
-  })),
-
+  },
   createDocumentFragment: vi.fn().mockReturnValue({
     appendChild: vi.fn(),
     children: [],
   }),
-
-  // Document properties
-  title: "Test Document",
-  body: {
+  // DOM creation
+  createElement: vi.fn().mockImplementation((tagName: string) => ({
+    addEventListener: vi.fn(),
+    appendChild: vi.fn(),
+    blur: vi.fn(),
     classList: {
       add: vi.fn(),
-      remove: vi.fn(),
       contains: vi.fn().mockReturnValue(false),
+      remove: vi.fn(),
+      toggle: vi.fn(),
     },
-    appendChild: vi.fn(),
+    click: vi.fn(),
+    focus: vi.fn(),
+    getAttribute: vi.fn().mockReturnValue(null),
+    removeAttribute: vi.fn(),
     removeChild: vi.fn(),
-  },
+    removeEventListener: vi.fn(),
+    setAttribute: vi.fn(),
+    tagName: tagName.toUpperCase(),
+  })),
+  dispatchEvent: vi.fn(),
+
+  // DOM querying
+  getElementById: vi.fn().mockReturnValue(null),
+
+  getElementsByClassName: vi.fn().mockReturnValue([]),
+
+  getElementsByTagName: vi.fn().mockReturnValue([]),
   head: {
     appendChild: vi.fn(),
     removeChild: vi.fn(),
   },
+  querySelector: vi.fn().mockReturnValue(null),
 
-  // Events
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn(),
-
+  querySelectorAll: vi.fn().mockReturnValue([]),
   // Ready state
   readyState: "complete",
+  removeEventListener: vi.fn(),
+
+  // Document properties
+  title: "Test Document",
 
   ...overrides,
 });
@@ -163,5 +163,5 @@ export const setupBrowserMocks = (
     writable: true,
   });
 
-  return { window: windowMock, document: documentMock };
+  return { document: documentMock, window: windowMock };
 };

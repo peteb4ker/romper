@@ -2,35 +2,36 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type { DbResult, Sample } from "../../../shared/db/schema.js";
+
 import { getErrorMessage } from "../../../shared/errorUtils.js";
 import { getAudioMetadata, validateSampleFormat } from "../audioUtils.js";
 import { getKitSamples } from "../db/romperDbCoreORM.js";
 
+export interface SyncChangeSummary {
+  filesToConvert: SyncFileOperation[];
+  filesToCopy: SyncFileOperation[];
+  hasFormatWarnings: boolean;
+  totalSize: number;
+  validationErrors: SyncValidationError[];
+  warnings: string[];
+}
+
 export interface SyncFileOperation {
-  filename: string;
-  sourcePath: string;
   destinationPath: string;
-  operation: "copy" | "convert";
-  reason?: string;
-  originalFormat?: string;
-  targetFormat?: string;
+  filename: string;
   kitName: string;
+  operation: "convert" | "copy";
+  originalFormat?: string;
+  reason?: string;
+  sourcePath: string;
+  targetFormat?: string;
 }
 
 export interface SyncValidationError {
+  error: string;
   filename: string;
   sourcePath: string;
-  error: string;
-  type: "missing_file" | "access_denied" | "invalid_format" | "other";
-}
-
-export interface SyncChangeSummary {
-  filesToCopy: SyncFileOperation[];
-  filesToConvert: SyncFileOperation[];
-  totalSize: number;
-  hasFormatWarnings: boolean;
-  warnings: string[];
-  validationErrors: SyncValidationError[];
+  type: "access_denied" | "invalid_format" | "missing_file" | "other";
 }
 
 /**
@@ -39,109 +40,109 @@ export interface SyncChangeSummary {
  */
 export class SyncPlannerService {
   /**
-   * Get all samples from all kits
+   * Generate a summary of changes needed to sync all kits to SD card
    */
-  private async getAllSamplesFromKits(dbDir: string): Promise<DbResult<any[]>> {
+  async generateChangeSummary(
+    inMemorySettings: Record<string, any>,
+  ): Promise<DbResult<SyncChangeSummary>> {
     try {
-      const { getKits } = await import("../db/romperDbCoreORM.js");
-      const kitsResult = getKits(dbDir);
-      if (!kitsResult.success || !kitsResult.data) {
-        return {
-          success: false,
-          error: kitsResult.error ?? "Failed to load kits",
-        };
+      const localStorePath = inMemorySettings.localStorePath;
+      if (!localStorePath) {
+        return { error: "No local store path configured", success: false };
       }
 
-      let allSamples: any[] = [];
-      for (const kit of kitsResult.data) {
-        const samplesResult = getKitSamples(dbDir, kit.name);
-        if (samplesResult.success && samplesResult.data) {
-          const samplesWithKit = samplesResult.data.map((sample) => ({
-            ...sample,
-            kitName: kit.name,
-          }));
-          allSamples = allSamples.concat(samplesWithKit);
-        }
+      const dbDir = path.join(localStorePath, ".romperdb");
+
+      // Get all samples from all kits
+      const samplesResult = await this.getAllSamplesFromKits(dbDir);
+      if (!samplesResult.success) {
+        return { error: samplesResult.error, success: false };
       }
 
-      return { success: true, data: allSamples };
+      // Initialize processing results
+      const results = {
+        filesToConvert: [] as SyncFileOperation[],
+        filesToCopy: [] as SyncFileOperation[],
+        hasFormatWarnings: false,
+        totalSize: 0,
+        validationErrors: [] as SyncValidationError[],
+        warnings: [] as string[],
+      };
+
+      // Process each sample
+      for (const sample of samplesResult.data || []) {
+        this.processSampleForSync(sample, localStorePath, results);
+      }
+
+      const summary: SyncChangeSummary = {
+        filesToConvert: results.filesToConvert,
+        filesToCopy: results.filesToCopy,
+        hasFormatWarnings: results.hasFormatWarnings,
+        totalSize: results.totalSize,
+        validationErrors: results.validationErrors,
+        warnings: results.warnings,
+      };
+
+      return { data: summary, success: true };
     } catch (error) {
       return {
+        error: `Failed to generate sync summary: ${getErrorMessage(error)}`,
         success: false,
-        error: `Failed to load kits: ${getErrorMessage(error)}`,
       };
     }
   }
 
   /**
-   * Process a single sample for sync planning
+   * Add file to conversion list
    */
-  private processSampleForSync(
+  private addFileToConvert(
     sample: any,
-    localStorePath: string,
-    results: {
-      filesToCopy: SyncFileOperation[];
-      filesToConvert: SyncFileOperation[];
-      warnings: string[];
-      validationErrors: SyncValidationError[];
-      totalSize: number;
-      hasFormatWarnings: boolean;
-    },
+    filename: string,
+    sourcePath: string,
+    destinationPath: string,
+    metadataResult: any,
+    formatValidationResult: any,
+    results: any,
   ): void {
-    if (!sample.source_path) {
-      return; // Skip samples without source path
-    }
+    const issues = formatValidationResult.data?.issues || [];
+    const issueMessages = issues.map((issue: any) => issue.message);
 
-    const { filename, source_path: sourcePath, kitName } = sample;
-
-    // Validate source file and handle errors
-    const fileValidation = this.validateSourceFile(
-      filename,
-      sourcePath,
-      results,
-    );
-    if (!fileValidation.isValid) {
-      return;
-    }
-
-    // Update total size from validation
-    results.totalSize += fileValidation.fileSize;
-
-    // Determine operation type and add to appropriate list
-    const destinationPath = this.getDestinationPath(
-      localStorePath,
-      kitName,
-      sample,
-    );
-    this.categorizeFileOperation(
-      sample,
-      filename,
-      sourcePath,
+    results.filesToConvert.push({
       destinationPath,
-      results,
+      filename,
+      kitName: sample.kitName,
+      operation: "convert",
+      originalFormat: metadataResult.success
+        ? `${metadataResult.data?.bitDepth}bit/${metadataResult.data?.sampleRate}Hz`
+        : "Unknown",
+      reason: issueMessages.join(", ") || "Format conversion required",
+      sourcePath,
+      targetFormat: "16bit/44100Hz WAV",
+    });
+
+    results.hasFormatWarnings = true;
+    results.warnings.push(
+      `${filename}: ${issueMessages.join(", ") || "Format conversion required"}`,
     );
   }
 
   /**
-   * Validates source file existence and gets size
+   * Add file to copy list
    */
-  private validateSourceFile(
+  private addFileToCopy(
     filename: string,
     sourcePath: string,
+    destinationPath: string,
+    kitName: string,
     results: any,
-  ): { isValid: boolean; fileSize: number } {
-    if (!fs.existsSync(sourcePath)) {
-      results.validationErrors.push({
-        filename,
-        sourcePath,
-        error: `Source file not found: ${sourcePath}`,
-        type: "missing_file",
-      });
-      return { isValid: false, fileSize: 0 };
-    }
-
-    const stats = fs.statSync(sourcePath);
-    return { isValid: true, fileSize: stats.size };
+  ): void {
+    results.filesToCopy.push({
+      destinationPath,
+      filename,
+      kitName,
+      operation: "copy",
+      sourcePath,
+    });
   }
 
   /**
@@ -182,107 +183,36 @@ export class SyncPlannerService {
   }
 
   /**
-   * Add file to conversion list
+   * Get all samples from all kits
    */
-  private addFileToConvert(
-    sample: any,
-    filename: string,
-    sourcePath: string,
-    destinationPath: string,
-    metadataResult: any,
-    formatValidationResult: any,
-    results: any,
-  ): void {
-    const issues = formatValidationResult.data?.issues || [];
-    const issueMessages = issues.map((issue: any) => issue.message);
-
-    results.filesToConvert.push({
-      filename,
-      sourcePath,
-      destinationPath,
-      operation: "convert",
-      reason: issueMessages.join(", ") || "Format conversion required",
-      originalFormat: metadataResult.success
-        ? `${metadataResult.data?.bitDepth}bit/${metadataResult.data?.sampleRate}Hz`
-        : "Unknown",
-      targetFormat: "16bit/44100Hz WAV",
-      kitName: sample.kitName,
-    });
-
-    results.hasFormatWarnings = true;
-    results.warnings.push(
-      `${filename}: ${issueMessages.join(", ") || "Format conversion required"}`,
-    );
-  }
-
-  /**
-   * Add file to copy list
-   */
-  private addFileToCopy(
-    filename: string,
-    sourcePath: string,
-    destinationPath: string,
-    kitName: string,
-    results: any,
-  ): void {
-    results.filesToCopy.push({
-      filename,
-      sourcePath,
-      destinationPath,
-      operation: "copy",
-      kitName,
-    });
-  }
-
-  /**
-   * Generate a summary of changes needed to sync all kits to SD card
-   */
-  async generateChangeSummary(
-    inMemorySettings: Record<string, any>,
-  ): Promise<DbResult<SyncChangeSummary>> {
+  private async getAllSamplesFromKits(dbDir: string): Promise<DbResult<any[]>> {
     try {
-      const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
-        return { success: false, error: "No local store path configured" };
+      const { getKits } = await import("../db/romperDbCoreORM.js");
+      const kitsResult = getKits(dbDir);
+      if (!kitsResult.success || !kitsResult.data) {
+        return {
+          error: kitsResult.error ?? "Failed to load kits",
+          success: false,
+        };
       }
 
-      const dbDir = path.join(localStorePath, ".romperdb");
-
-      // Get all samples from all kits
-      const samplesResult = await this.getAllSamplesFromKits(dbDir);
-      if (!samplesResult.success) {
-        return { success: false, error: samplesResult.error };
+      let allSamples: any[] = [];
+      for (const kit of kitsResult.data) {
+        const samplesResult = getKitSamples(dbDir, kit.name);
+        if (samplesResult.success && samplesResult.data) {
+          const samplesWithKit = samplesResult.data.map((sample) => ({
+            ...sample,
+            kitName: kit.name,
+          }));
+          allSamples = allSamples.concat(samplesWithKit);
+        }
       }
 
-      // Initialize processing results
-      const results = {
-        filesToCopy: [] as SyncFileOperation[],
-        filesToConvert: [] as SyncFileOperation[],
-        warnings: [] as string[],
-        validationErrors: [] as SyncValidationError[],
-        totalSize: 0,
-        hasFormatWarnings: false,
-      };
-
-      // Process each sample
-      for (const sample of samplesResult.data || []) {
-        this.processSampleForSync(sample, localStorePath, results);
-      }
-
-      const summary: SyncChangeSummary = {
-        filesToCopy: results.filesToCopy,
-        filesToConvert: results.filesToConvert,
-        totalSize: results.totalSize,
-        hasFormatWarnings: results.hasFormatWarnings,
-        warnings: results.warnings,
-        validationErrors: results.validationErrors,
-      };
-
-      return { success: true, data: summary };
+      return { data: allSamples, success: true };
     } catch (error) {
       return {
+        error: `Failed to load kits: ${getErrorMessage(error)}`,
         success: false,
-        error: `Failed to generate sync summary: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -300,6 +230,77 @@ export class SyncPlannerService {
     const syncDir = path.join(localStorePath, "sync_output", kitName);
     const voiceDir = `${sample.voice_number}`;
     return path.join(syncDir, voiceDir, sample.filename);
+  }
+
+  /**
+   * Process a single sample for sync planning
+   */
+  private processSampleForSync(
+    sample: any,
+    localStorePath: string,
+    results: {
+      filesToConvert: SyncFileOperation[];
+      filesToCopy: SyncFileOperation[];
+      hasFormatWarnings: boolean;
+      totalSize: number;
+      validationErrors: SyncValidationError[];
+      warnings: string[];
+    },
+  ): void {
+    if (!sample.source_path) {
+      return; // Skip samples without source path
+    }
+
+    const { filename, kitName, source_path: sourcePath } = sample;
+
+    // Validate source file and handle errors
+    const fileValidation = this.validateSourceFile(
+      filename,
+      sourcePath,
+      results,
+    );
+    if (!fileValidation.isValid) {
+      return;
+    }
+
+    // Update total size from validation
+    results.totalSize += fileValidation.fileSize;
+
+    // Determine operation type and add to appropriate list
+    const destinationPath = this.getDestinationPath(
+      localStorePath,
+      kitName,
+      sample,
+    );
+    this.categorizeFileOperation(
+      sample,
+      filename,
+      sourcePath,
+      destinationPath,
+      results,
+    );
+  }
+
+  /**
+   * Validates source file existence and gets size
+   */
+  private validateSourceFile(
+    filename: string,
+    sourcePath: string,
+    results: any,
+  ): { fileSize: number; isValid: boolean } {
+    if (!fs.existsSync(sourcePath)) {
+      results.validationErrors.push({
+        error: `Source file not found: ${sourcePath}`,
+        filename,
+        sourcePath,
+        type: "missing_file",
+      });
+      return { fileSize: 0, isValid: false };
+    }
+
+    const stats = fs.statSync(sourcePath);
+    return { fileSize: stats.size, isValid: true };
   }
 }
 

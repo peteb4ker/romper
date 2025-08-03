@@ -1,6 +1,7 @@
 import * as path from "path";
 
 import type { DbResult } from "../../../shared/db/schema.js";
+
 import { markKitsAsSynced } from "../db/romperDbCoreORM.js";
 import {
   type SyncExecutorService,
@@ -29,6 +30,13 @@ export class SyncService {
   ) {}
 
   /**
+   * Cancel the current sync operation
+   */
+  cancelSync(): void {
+    this.progressService.cancelSync();
+  }
+
+  /**
    * Generate a summary of changes needed to sync all kits to SD card
    */
   async generateChangeSummary(
@@ -43,8 +51,8 @@ export class SyncService {
   async startKitSync(
     inMemorySettings: Record<string, any>,
     syncData: {
-      filesToCopy: SyncFileOperation[];
       filesToConvert: SyncFileOperation[];
+      filesToCopy: SyncFileOperation[];
     },
   ): Promise<DbResult<{ syncedFiles: number }>> {
     try {
@@ -61,20 +69,83 @@ export class SyncService {
       this.progressService.completeSync();
 
       if (this.progressService.isCancelled()) {
-        return { success: false, error: "Sync operation was cancelled" };
+        return { error: "Sync operation was cancelled", success: false };
       }
 
       await this.markKitsAsSynced(inMemorySettings, allFiles, syncedFiles);
 
-      return { success: true, data: { syncedFiles } };
+      return { data: { syncedFiles }, success: true };
     } catch (error) {
       await this.handleSyncFailure(error);
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       return {
-        success: false,
         error: `Failed to sync kit: ${errorMessage}`,
+        success: false,
       };
+    }
+  }
+
+  private async handleFileError(
+    error: unknown,
+    fileOp: SyncFileOperation,
+  ): Promise<void> {
+    const errorInfo = this.executorService.categorizeError(
+      error,
+      fileOp.sourcePath,
+    );
+
+    console.error(
+      `Failed to process file ${fileOp.filename}:`,
+      errorInfo.userMessage,
+    );
+
+    // Emit error progress update
+    this.progressService.updateProgress(
+      fileOp.filename,
+      0,
+      "error",
+      undefined,
+      {
+        canRetry: errorInfo.canRetry,
+        error: errorInfo.userMessage,
+        fileName: fileOp.filename,
+        operation: fileOp.operation,
+      },
+    );
+
+    // Rethrow with enhanced error message
+    throw new Error(`${fileOp.filename}: ${errorInfo.userMessage}`);
+  }
+
+  private async handleSyncFailure(_error: unknown): Promise<void> {
+    const currentSyncJob = this.progressService.getCurrentSyncJob();
+    if (currentSyncJob) {
+      console.error("Sync failed, attempting cleanup...");
+      // Cleanup would be handled by a separate cleanup service in a full refactor
+    }
+    this.progressService.completeSync();
+  }
+
+  private async markKitsAsSynced(
+    inMemorySettings: Record<string, any>,
+    allFiles: SyncFileOperation[],
+    syncedFiles: number,
+  ): Promise<void> {
+    const localStorePath = inMemorySettings.localStorePath;
+    if (!localStorePath || syncedFiles === 0) return;
+
+    const dbDir = path.join(localStorePath, ".romperdb");
+    const syncedKitNames = [...new Set(allFiles.map((file) => file.kitName))];
+
+    const markSyncedResult = markKitsAsSynced(dbDir, syncedKitNames);
+    if (!markSyncedResult.success) {
+      console.warn("Failed to mark kits as synced:", markSyncedResult.error);
+    } else {
+      console.log(
+        `Marked ${syncedKitNames.length} kits as synced:`,
+        syncedKitNames,
+      );
     }
   }
 
@@ -132,76 +203,6 @@ export class SyncService {
     );
 
     return 1;
-  }
-
-  private async handleFileError(
-    error: unknown,
-    fileOp: SyncFileOperation,
-  ): Promise<void> {
-    const errorInfo = this.executorService.categorizeError(
-      error,
-      fileOp.sourcePath,
-    );
-
-    console.error(
-      `Failed to process file ${fileOp.filename}:`,
-      errorInfo.userMessage,
-    );
-
-    // Emit error progress update
-    this.progressService.updateProgress(
-      fileOp.filename,
-      0,
-      "error",
-      undefined,
-      {
-        fileName: fileOp.filename,
-        operation: fileOp.operation,
-        error: errorInfo.userMessage,
-        canRetry: errorInfo.canRetry,
-      },
-    );
-
-    // Rethrow with enhanced error message
-    throw new Error(`${fileOp.filename}: ${errorInfo.userMessage}`);
-  }
-
-  private async markKitsAsSynced(
-    inMemorySettings: Record<string, any>,
-    allFiles: SyncFileOperation[],
-    syncedFiles: number,
-  ): Promise<void> {
-    const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath || syncedFiles === 0) return;
-
-    const dbDir = path.join(localStorePath, ".romperdb");
-    const syncedKitNames = [...new Set(allFiles.map((file) => file.kitName))];
-
-    const markSyncedResult = markKitsAsSynced(dbDir, syncedKitNames);
-    if (!markSyncedResult.success) {
-      console.warn("Failed to mark kits as synced:", markSyncedResult.error);
-    } else {
-      console.log(
-        `Marked ${syncedKitNames.length} kits as synced:`,
-        syncedKitNames,
-      );
-    }
-  }
-
-  private async handleSyncFailure(_error: unknown): Promise<void> {
-    const currentSyncJob = this.progressService.getCurrentSyncJob();
-    if (currentSyncJob) {
-      console.error("Sync failed, attempting cleanup...");
-      // Cleanup would be handled by a separate cleanup service in a full refactor
-    }
-    this.progressService.completeSync();
-  }
-
-  /**
-   * Cancel the current sync operation
-   */
-  cancelSync(): void {
-    this.progressService.cancelSync();
   }
 }
 

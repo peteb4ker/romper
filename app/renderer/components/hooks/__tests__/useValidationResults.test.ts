@@ -8,25 +8,25 @@ describe("useValidationResults", () => {
   const mockOnMessage = vi.fn();
 
   const mockValidationResult = {
-    isValid: false,
     errors: [
       {
+        extraFiles: [],
         kitName: "A1",
         missingFiles: ["kick.wav"],
-        extraFiles: [],
       },
       {
+        extraFiles: ["snare.wav"],
         kitName: "B2",
         missingFiles: [],
-        extraFiles: ["snare.wav"],
       },
       {
+        extraFiles: ["clap.wav"],
         kitName: "C3",
         missingFiles: ["hihat.wav"],
-        extraFiles: ["clap.wav"],
       },
     ],
     errorSummary: "Found 3 kit(s) with validation errors",
+    isValid: false,
   };
 
   beforeEach(() => {
@@ -35,8 +35,8 @@ describe("useValidationResults", () => {
       mockValidationResult,
     );
     vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
-      success: true,
       data: { scannedSamples: 5, updatedVoices: 2 },
+      success: true,
     });
   });
 
@@ -45,12 +45,12 @@ describe("useValidationResults", () => {
     vi.mocked(window.electronAPI.validateLocalStore)
       .mockResolvedValueOnce(mockValidationResult) // Initial validation
       .mockResolvedValueOnce(mockValidationResult) // When opening dialog
-      .mockResolvedValueOnce({ isValid: true, errors: [], errorSummary: "" }); // After rescan
+      .mockResolvedValueOnce({ errors: [], errorSummary: "", isValid: true }); // After rescan
 
     // Mock the rescanKit API
     vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
-      success: true,
       data: { scannedSamples: 5, updatedVoices: 2 },
+      success: true,
     });
 
     const { result } = renderHook(() =>
@@ -100,9 +100,9 @@ describe("useValidationResults", () => {
 
     // Should show success message
     expect(mockOnMessage).toHaveBeenCalledWith({
+      duration: 5000,
       text: "Successfully rescanned 2 kit(s). Found 10 samples, updated 4 voices.",
       type: "success",
-      duration: 5000,
     });
 
     // Should re-validate and close dialog
@@ -143,22 +143,22 @@ describe("useValidationResults", () => {
     );
     expect(result.current.validationResult).toEqual(mockValidationResult);
     expect(mockOnMessage).toHaveBeenCalledWith({
+      duration: 5000,
       text: "Found 3 kit(s) with validation errors",
       type: "error",
-      duration: 5000,
     });
 
     // Check grouped errors
     expect(result.current.groupedErrors).toEqual({
-      missing: [{ kitName: "A1", missingFiles: ["kick.wav"], extraFiles: [] }],
-      extra: [{ kitName: "B2", missingFiles: [], extraFiles: ["snare.wav"] }],
       both: [
         {
+          extraFiles: ["clap.wav"],
           kitName: "C3",
           missingFiles: ["hihat.wav"],
-          extraFiles: ["clap.wav"],
         },
       ],
+      extra: [{ extraFiles: ["snare.wav"], kitName: "B2", missingFiles: [] }],
+      missing: [{ extraFiles: [], kitName: "A1", missingFiles: ["kick.wav"] }],
     });
   });
 
@@ -256,12 +256,12 @@ describe("useValidationResults", () => {
     // Mock one success and one failure
     vi.mocked(window.electronAPI.rescanKit)
       .mockResolvedValueOnce({
-        success: true,
         data: { scannedSamples: 3, updatedVoices: 1 },
+        success: true,
       })
       .mockResolvedValueOnce({
-        success: false,
         error: "Kit directory not found",
+        success: false,
       });
 
     // Mock validation to return invalid result after failed rescan (dialog stays open)
@@ -300,9 +300,9 @@ describe("useValidationResults", () => {
 
     // Should show partial success message
     expect(mockOnMessage).toHaveBeenCalledWith({
+      duration: 7000,
       text: "Partially completed rescan. 1 kit(s) succeeded, 1 failed. Found 3 samples.",
       type: "warning",
-      duration: 7000,
     });
 
     // Should not close dialog on partial failure

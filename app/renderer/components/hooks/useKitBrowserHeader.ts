@@ -1,13 +1,13 @@
 import { useCallback } from "react";
 
 export function useKitBrowserHeader({
-  onShowNewKit,
-  onCreateNextKit,
   nextKitSlot,
+  onCreateNextKit,
+  onShowNewKit,
 }: {
-  onShowNewKit: () => void;
+  nextKitSlot: null | string;
   onCreateNextKit: () => void;
-  nextKitSlot: string | null;
+  onShowNewKit: () => void;
 }) {
   const handleShowNewKit = useCallback(() => onShowNewKit(), [onShowNewKit]);
   const handleCreateNextKit = useCallback(
@@ -16,8 +16,8 @@ export function useKitBrowserHeader({
   );
 
   return {
-    handleShowNewKit,
     handleCreateNextKit,
+    handleShowNewKit,
     nextKitSlot,
   };
 }

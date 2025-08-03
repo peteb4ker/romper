@@ -56,7 +56,12 @@ function _parseWAVFile(_buffer: any): WAVAnalysisOutput {
     isValid: true,
   };
 
-  /* FIXME: This code will be re-enabled when WAV analysis is moved to main process
+  /* NOTE: This code is preserved for future main process implementation.
+   * When implementing WAV analysis in main process:
+   * 1. Move this function to electron/main/services/wavAnalysisService.ts
+   * 2. Add node-wav dependency for proper WAV parsing
+   * 3. Expose via IPC handler for renderer process communication
+   */
   // Decode WAV file using node-wav
   const result = wav.decode(buffer);
 

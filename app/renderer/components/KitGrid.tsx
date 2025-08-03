@@ -8,6 +8,7 @@ import React, {
 } from "react";
 
 import type { KitWithRelations } from "../../../shared/db/schema";
+
 import { useKitListLogic } from "./hooks/useKitListLogic";
 import { useKitListNavigation } from "./hooks/useKitListNavigation";
 import KitGridItem from "./KitGridItem";
@@ -36,8 +37,8 @@ const BankHeader: React.FC<BankHeaderProps> = ({
         }
       },
       {
-        threshold: 0.5,
         rootMargin: "-10% 0px -80% 0px",
+        threshold: 0.5,
       },
     );
 
@@ -47,9 +48,9 @@ const BankHeader: React.FC<BankHeaderProps> = ({
 
   return (
     <div
-      ref={headerRef}
-      id={`bank-${bank}`}
       className="col-span-full mt-4 mb-2 flex items-center gap-2 px-2"
+      id={`bank-${bank}`}
+      ref={headerRef}
     >
       <span className="font-bold text-sm tracking-widest text-blue-700 dark:text-blue-300">
         Bank {bank}
@@ -63,23 +64,23 @@ const BankHeader: React.FC<BankHeaderProps> = ({
   );
 };
 
-interface KitGridProps {
-  kits: KitWithRelations[];
-  onSelectKit: (kit: string) => void;
-  bankNames: Record<string, string>;
-  onDuplicate: (kit: string) => void;
-  kitData?: KitWithRelations[]; // Kit data from database
-  sampleCounts?: Record<string, [number, number, number, number]>;
-  focusedKit?: string | null; // externally controlled focus
-  onBankFocus?: (bank: string) => void;
-  onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
-  onVisibleBankChange?: (bank: string) => void; // NEW: notify when visible bank changes during scroll
-  // onToggleFavorite?: (kitName: string) => void; // Task 20.1.2: Favorites functionality - temporarily disabled
-}
-
 // Expose imperative scroll/focus API for parent components
 export interface KitGridHandle {
   scrollAndFocusKitByIndex: (idx: number) => void;
+}
+
+interface KitGridProps {
+  bankNames: Record<string, string>;
+  focusedKit?: null | string; // externally controlled focus
+  kitData?: KitWithRelations[]; // Kit data from database
+  kits: KitWithRelations[];
+  onBankFocus?: (bank: string) => void;
+  onDuplicate: (kit: string) => void;
+  onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
+  onSelectKit: (kit: string) => void;
+  onVisibleBankChange?: (bank: string) => void; // NEW: notify when visible bank changes during scroll
+  sampleCounts?: Record<string, [number, number, number, number]>;
+  // onToggleFavorite?: (kitName: string) => void; // Task 20.1.2: Favorites functionality - temporarily disabled
 }
 
 // Grid layout constants
@@ -99,7 +100,7 @@ const useResponsiveColumns = (containerWidth: number) => {
 
 // Hook for container size
 const useContainerSize = () => {
-  const [size, setSize] = useState({ width: 1200, height: 600 });
+  const [size, setSize] = useState({ height: 600, width: 1200 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,16 +111,16 @@ const useContainerSize = () => {
       // Fallback for test environment
       const rect = containerRef.current.getBoundingClientRect();
       setSize({
-        width: Math.floor(rect.width) || 1200,
         height: Math.floor(rect.height) || 600,
+        width: Math.floor(rect.width) || 1200,
       });
       return;
     }
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        setSize({ width: Math.floor(width), height: Math.floor(height) });
+        const { height, width } = entry.contentRect;
+        setSize({ height: Math.floor(height), width: Math.floor(width) });
       }
     });
 
@@ -127,33 +128,33 @@ const useContainerSize = () => {
 
     // Initial size
     const rect = containerRef.current.getBoundingClientRect();
-    setSize({ width: Math.floor(rect.width), height: Math.floor(rect.height) });
+    setSize({ height: Math.floor(rect.height), width: Math.floor(rect.width) });
 
     return () => observer.disconnect();
   }, []);
 
-  return { size, containerRef };
+  return { containerRef, size };
 };
 
 const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
   (
     {
-      kits,
-      onSelectKit,
       bankNames,
-      onDuplicate,
-      kitData,
-      sampleCounts,
       focusedKit,
+      kitData,
+      kits,
       onBankFocus,
+      onDuplicate,
       onFocusKit,
+      onSelectKit,
       onVisibleBankChange,
+      sampleCounts,
       // onToggleFavorite,
     },
     ref,
   ) => {
-    const { kitsToDisplay, isValidKit } = useKitListLogic(kits);
-    const { size, containerRef } = useContainerSize();
+    const { isValidKit, kitsToDisplay } = useKitListLogic(kits);
+    const { containerRef, size } = useContainerSize();
     const columnCount = useResponsiveColumns(size.width);
     const rowCount = Math.ceil(kitsToDisplay.length / columnCount);
 
@@ -175,7 +176,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       (index: number) => {
         const rowIndex = Math.floor(index / columnCount);
         const columnIndex = index % columnCount;
-        return { rowIndex, columnIndex };
+        return { columnIndex, rowIndex };
       },
       [columnCount],
     );
@@ -247,14 +248,11 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     const handleArrowNavigation = (e: React.KeyboardEvent) => {
       if (!focusedIdx) return;
 
-      const { rowIndex, columnIndex } = getGridCoords(focusedIdx);
+      const { columnIndex, rowIndex } = getGridCoords(focusedIdx);
       let newRowIndex = rowIndex;
       let newColumnIndex = columnIndex;
 
       switch (e.key) {
-        case "ArrowUp":
-          newRowIndex = Math.max(0, rowIndex - 1);
-          break;
         case "ArrowDown":
           newRowIndex = Math.min(rowCount - 1, rowIndex + 1);
           break;
@@ -263,6 +261,9 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
           break;
         case "ArrowRight":
           newColumnIndex = Math.min(columnCount - 1, columnIndex + 1);
+          break;
+        case "ArrowUp":
+          newRowIndex = Math.max(0, rowIndex - 1);
           break;
       }
 
@@ -294,7 +295,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       }
 
       // Arrow key navigation for grid
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      if (["ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp"].includes(e.key)) {
         handleArrowNavigation(e);
       }
     };
@@ -312,14 +313,14 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
 
     return (
       <div
-        ref={containerRef}
-        className="h-full w-full bg-gray-50 dark:bg-slate-800 rounded pt-2 pb-2 pl-2 pr-2 overflow-y-auto"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        role="grid"
         aria-label="Kit grid"
+        className="h-full w-full bg-gray-50 dark:bg-slate-800 rounded pt-2 pb-2 pl-2 pr-2 overflow-y-auto"
         data-testid="kit-grid"
+        onKeyDown={handleKeyDown}
+        ref={containerRef}
+        role="grid"
         style={{ minHeight: 400 }} // Ensure minimum height
+        tabIndex={0}
       >
         <div
           className="grid gap-3"
@@ -357,18 +358,18 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                 return (
                   <div key={kit.name} style={{ height: CARD_HEIGHT }}>
                     <KitGridItem
-                      kit={kit.name}
-                      isValid={isValid}
-                      onSelect={handleSelectKit}
-                      onDuplicate={() => isValid && onDuplicate(kit.name)}
-                      sampleCounts={
-                        sampleCounts ? sampleCounts[kit.name] : undefined
-                      }
-                      kitData={kitDataItem}
-                      isSelected={isSelected}
                       // onToggleFavorite={onToggleFavorite}
                       data-kit={kit.name}
                       data-testid={`kit-item-${kit.name}`}
+                      isSelected={isSelected}
+                      isValid={isValid}
+                      kit={kit.name}
+                      kitData={kitDataItem}
+                      onDuplicate={() => isValid && onDuplicate(kit.name)}
+                      onSelect={handleSelectKit}
+                      sampleCounts={
+                        sampleCounts ? sampleCounts[kit.name] : undefined
+                      }
                     />
                   </div>
                 );

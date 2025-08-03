@@ -16,8 +16,8 @@ export function scanRTFArtist(
 
     if (!rtfFiles || rtfFiles.length === 0) {
       return {
-        success: false,
         error: "No valid RTF files found",
+        success: false,
       };
     }
 
@@ -46,22 +46,22 @@ export function scanRTFArtist(
     // Check if we found any artists
     if (Object.keys(bankArtists).length === 0) {
       return {
-        success: false,
         error: "No valid RTF files found",
+        success: false,
       };
     }
 
     return {
-      success: true,
       data: { bankArtists },
+      success: true,
     };
   } catch (error) {
     return {
-      success: false,
       error:
         error instanceof Error
           ? error.message
           : "Unknown error during RTF artist scanning",
+      success: false,
     };
   }
 }

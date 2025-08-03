@@ -3,72 +3,231 @@ import * as wav from "node-wav";
 import * as path from "path";
 
 import type { DbResult } from "../../shared/db/schema.js";
+
 import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "./audioUtils.js";
 
 export interface ConversionOptions {
-  targetBitDepth?: number;
-  targetSampleRate?: number;
-  targetChannels?: number;
   forceMonoConversion?: boolean;
+  targetBitDepth?: number;
+  targetChannels?: number;
+  targetSampleRate?: number;
 }
 
 export interface ConversionResult {
-  inputPath: string;
-  outputPath: string;
-  originalFormat: {
-    bitDepth: number;
-    sampleRate: number;
-    channels: number;
-  };
   convertedFormat: {
     bitDepth: number;
-    sampleRate: number;
     channels: number;
+    sampleRate: number;
   };
-  fileSize: number;
   duration?: number;
+  fileSize: number;
+  inputPath: string;
+  originalFormat: {
+    bitDepth: number;
+    channels: number;
+    sampleRate: number;
+  };
+  outputPath: string;
 }
 
 /**
- * Determines target channel count based on options and input metadata
+ * Converts a WAV file to Rample-compatible format
+ * Handles bit depth, sample rate, and channel conversion
  */
-function determineTargetChannels(
-  options: ConversionOptions,
-  inputChannels: number,
-): number {
-  if (options.forceMonoConversion && inputChannels > 1) {
-    return 1;
-  }
+export async function convertSampleToRampleFormat(
+  inputPath: string,
+  outputPath: string,
+  options: ConversionOptions = {},
+): Promise<DbResult<ConversionResult>> {
+  try {
+    // Validate input file exists
+    if (!fs.existsSync(inputPath)) {
+      return {
+        error: `Input file does not exist: ${inputPath}`,
+        success: false,
+      };
+    }
 
-  if (options.targetChannels) {
-    return options.targetChannels;
-  }
+    // Get input file metadata
+    const metadataResult = getAudioMetadata(inputPath);
+    if (!metadataResult.success || !metadataResult.data) {
+      return {
+        error: `Failed to read input file metadata: ${metadataResult.error}`,
+        success: false,
+      };
+    }
 
-  return Math.min(inputChannels, RAMPLE_FORMAT_REQUIREMENTS.maxChannels);
+    const inputMetadata = metadataResult.data;
+    const targetBitDepth = options.targetBitDepth || 16;
+    const targetSampleRate = options.targetSampleRate || 44100;
+    const targetChannels = determineTargetChannels(
+      options,
+      inputMetadata.channels || 1,
+    );
+
+    // Validate target format
+    const validationResult = validateTargetFormat(
+      targetBitDepth,
+      targetSampleRate,
+    );
+    if (!validationResult.success) {
+      return {
+        error: validationResult.error,
+        success: false,
+      };
+    }
+
+    // Read and decode input WAV file
+    const inputBuffer = fs.readFileSync(inputPath);
+    const decoded = wav.decode(inputBuffer);
+
+    if (!decoded?.channelData?.length) {
+      return { error: "Failed to decode input WAV file", success: false };
+    }
+
+    const inputSampleRate = decoded.sampleRate;
+    const inputSamples = decoded.channelData[0].length;
+
+    // Convert channel data
+    let outputChannelData = convertChannelData(
+      [...decoded.channelData],
+      targetChannels,
+      inputSamples,
+    );
+
+    // Handle sample rate conversion if needed
+    if (targetSampleRate !== inputSampleRate) {
+      outputChannelData = resampleAudio(
+        outputChannelData,
+        inputSampleRate,
+        targetSampleRate,
+      );
+    }
+
+    // Write output file
+    writeOutputFile(
+      outputPath,
+      outputChannelData,
+      targetSampleRate,
+      targetBitDepth,
+    );
+
+    // Get output file stats and calculate result
+    const outputStats = fs.statSync(outputPath);
+    const duration = outputChannelData[0].length / targetSampleRate;
+
+    const result: ConversionResult = {
+      convertedFormat: {
+        bitDepth: targetBitDepth,
+        channels: targetChannels,
+        sampleRate: targetSampleRate,
+      },
+      duration,
+      fileSize: outputStats.size,
+      inputPath,
+      originalFormat: {
+        bitDepth: inputMetadata.bitDepth || 16,
+        channels: inputMetadata.channels || 1,
+        sampleRate: inputMetadata.sampleRate || 44100,
+      },
+      outputPath,
+    };
+
+    return { data: result, success: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      error: `Audio conversion failed: ${errorMessage}`,
+      success: false,
+    };
+  }
 }
 
 /**
- * Validates target format against Rample requirements
+ * Converts sample to Rample format with default settings
+ * This is a convenience function that applies the most common conversion settings
  */
-function validateTargetFormat(
-  targetBitDepth: number,
-  targetSampleRate: number,
-): DbResult<void> {
-  if (!RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(targetBitDepth)) {
-    return {
-      success: false,
-      error: `Target bit depth ${targetBitDepth} not supported by Rample`,
-    };
+export async function convertToRampleDefault(
+  inputPath: string,
+  outputPath: string,
+  forceMonoConversion = false,
+): Promise<DbResult<ConversionResult>> {
+  return convertSampleToRampleFormat(inputPath, outputPath, {
+    forceMonoConversion,
+    targetBitDepth: 16,
+    targetSampleRate: 44100,
+  });
+}
+
+/**
+ * Checks if a file needs conversion to meet Rample requirements
+ * Returns the conversion options needed, or null if no conversion is required
+ */
+export function getRequiredConversionOptions(
+  metadata: { bitDepth?: number; channels?: number; sampleRate?: number },
+  forceMonoConversion = false,
+): ConversionOptions | null {
+  const options: ConversionOptions = {};
+  let needsConversion = false;
+
+  // Check bit depth
+  if (
+    metadata.bitDepth &&
+    !RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(metadata.bitDepth)
+  ) {
+    options.targetBitDepth = 16; // Default to 16-bit
+    needsConversion = true;
   }
 
-  if (!RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(targetSampleRate)) {
-    return {
-      success: false,
-      error: `Target sample rate ${targetSampleRate} not supported by Rample`,
-    };
+  // Check sample rate
+  if (
+    metadata.sampleRate &&
+    !RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(metadata.sampleRate)
+  ) {
+    options.targetSampleRate = RAMPLE_FORMAT_REQUIREMENTS.sampleRates[0]; // 44100 Hz
+    needsConversion = true;
   }
 
-  return { success: true };
+  // Check channels
+  if (
+    metadata.channels &&
+    metadata.channels > RAMPLE_FORMAT_REQUIREMENTS.maxChannels
+  ) {
+    options.targetChannels = RAMPLE_FORMAT_REQUIREMENTS.maxChannels; // Convert to stereo
+    needsConversion = true;
+  }
+
+  // Apply force mono conversion if requested
+  if (forceMonoConversion && metadata.channels && metadata.channels > 1) {
+    options.targetChannels = 1;
+    options.forceMonoConversion = true;
+    needsConversion = true;
+  }
+
+  return needsConversion ? options : null;
+}
+
+/**
+ * Adjust channel count by truncating or padding
+ */
+function adjustChannelCount(
+  channelData: Float32Array[],
+  targetChannels: number,
+  inputSamples: number,
+): Float32Array[] {
+  const inputChannels = channelData.length;
+  const outputChannelData: Float32Array[] = [];
+
+  for (let ch = 0; ch < targetChannels; ch++) {
+    if (ch < inputChannels) {
+      outputChannelData.push(channelData[ch]);
+    } else {
+      // Pad with silence for missing channels
+      outputChannelData.push(new Float32Array(inputSamples));
+    }
+  }
+
+  return outputChannelData;
 }
 
 /**
@@ -123,26 +282,21 @@ function convertToStereo(monoChannel: Float32Array): Float32Array[] {
 }
 
 /**
- * Adjust channel count by truncating or padding
+ * Determines target channel count based on options and input metadata
  */
-function adjustChannelCount(
-  channelData: Float32Array[],
-  targetChannels: number,
-  inputSamples: number,
-): Float32Array[] {
-  const inputChannels = channelData.length;
-  const outputChannelData: Float32Array[] = [];
-
-  for (let ch = 0; ch < targetChannels; ch++) {
-    if (ch < inputChannels) {
-      outputChannelData.push(channelData[ch]);
-    } else {
-      // Pad with silence for missing channels
-      outputChannelData.push(new Float32Array(inputSamples));
-    }
+function determineTargetChannels(
+  options: ConversionOptions,
+  inputChannels: number,
+): number {
+  if (options.forceMonoConversion && inputChannels > 1) {
+    return 1;
   }
 
-  return outputChannelData;
+  if (options.targetChannels) {
+    return options.targetChannels;
+  }
+
+  return Math.min(inputChannels, RAMPLE_FORMAT_REQUIREMENTS.maxChannels);
 }
 
 /**
@@ -177,6 +331,30 @@ function resampleAudio(
 }
 
 /**
+ * Validates target format against Rample requirements
+ */
+function validateTargetFormat(
+  targetBitDepth: number,
+  targetSampleRate: number,
+): DbResult<void> {
+  if (!RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(targetBitDepth)) {
+    return {
+      error: `Target bit depth ${targetBitDepth} not supported by Rample`,
+      success: false,
+    };
+  }
+
+  if (!RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(targetSampleRate)) {
+    return {
+      error: `Target sample rate ${targetSampleRate} not supported by Rample`,
+      success: false,
+    };
+  }
+
+  return { success: true };
+}
+
+/**
  * Writes audio data to output file
  */
 function writeOutputFile(
@@ -186,9 +364,9 @@ function writeOutputFile(
   targetBitDepth: number,
 ): void {
   const outputBuffer = wav.encode(channelData, {
-    sampleRate: targetSampleRate,
-    float: false,
     bitDepth: targetBitDepth,
+    float: false,
+    sampleRate: targetSampleRate,
   });
 
   const outputDir = path.dirname(outputPath);
@@ -197,181 +375,4 @@ function writeOutputFile(
   }
 
   fs.writeFileSync(outputPath, outputBuffer);
-}
-
-/**
- * Converts a WAV file to Rample-compatible format
- * Handles bit depth, sample rate, and channel conversion
- */
-export async function convertSampleToRampleFormat(
-  inputPath: string,
-  outputPath: string,
-  options: ConversionOptions = {},
-): Promise<DbResult<ConversionResult>> {
-  try {
-    // Validate input file exists
-    if (!fs.existsSync(inputPath)) {
-      return {
-        success: false,
-        error: `Input file does not exist: ${inputPath}`,
-      };
-    }
-
-    // Get input file metadata
-    const metadataResult = getAudioMetadata(inputPath);
-    if (!metadataResult.success || !metadataResult.data) {
-      return {
-        success: false,
-        error: `Failed to read input file metadata: ${metadataResult.error}`,
-      };
-    }
-
-    const inputMetadata = metadataResult.data;
-    const targetBitDepth = options.targetBitDepth || 16;
-    const targetSampleRate = options.targetSampleRate || 44100;
-    const targetChannels = determineTargetChannels(
-      options,
-      inputMetadata.channels || 1,
-    );
-
-    // Validate target format
-    const validationResult = validateTargetFormat(
-      targetBitDepth,
-      targetSampleRate,
-    );
-    if (!validationResult.success) {
-      return {
-        success: false,
-        error: validationResult.error,
-      };
-    }
-
-    // Read and decode input WAV file
-    const inputBuffer = fs.readFileSync(inputPath);
-    const decoded = wav.decode(inputBuffer);
-
-    if (!decoded?.channelData?.length) {
-      return { success: false, error: "Failed to decode input WAV file" };
-    }
-
-    const inputSampleRate = decoded.sampleRate;
-    const inputSamples = decoded.channelData[0].length;
-
-    // Convert channel data
-    let outputChannelData = convertChannelData(
-      [...decoded.channelData],
-      targetChannels,
-      inputSamples,
-    );
-
-    // Handle sample rate conversion if needed
-    if (targetSampleRate !== inputSampleRate) {
-      outputChannelData = resampleAudio(
-        outputChannelData,
-        inputSampleRate,
-        targetSampleRate,
-      );
-    }
-
-    // Write output file
-    writeOutputFile(
-      outputPath,
-      outputChannelData,
-      targetSampleRate,
-      targetBitDepth,
-    );
-
-    // Get output file stats and calculate result
-    const outputStats = fs.statSync(outputPath);
-    const duration = outputChannelData[0].length / targetSampleRate;
-
-    const result: ConversionResult = {
-      inputPath,
-      outputPath,
-      originalFormat: {
-        bitDepth: inputMetadata.bitDepth || 16,
-        sampleRate: inputMetadata.sampleRate || 44100,
-        channels: inputMetadata.channels || 1,
-      },
-      convertedFormat: {
-        bitDepth: targetBitDepth,
-        sampleRate: targetSampleRate,
-        channels: targetChannels,
-      },
-      fileSize: outputStats.size,
-      duration,
-    };
-
-    return { success: true, data: result };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
-      success: false,
-      error: `Audio conversion failed: ${errorMessage}`,
-    };
-  }
-}
-
-/**
- * Converts sample to Rample format with default settings
- * This is a convenience function that applies the most common conversion settings
- */
-export async function convertToRampleDefault(
-  inputPath: string,
-  outputPath: string,
-  forceMonoConversion = false,
-): Promise<DbResult<ConversionResult>> {
-  return convertSampleToRampleFormat(inputPath, outputPath, {
-    targetBitDepth: 16,
-    targetSampleRate: 44100,
-    forceMonoConversion,
-  });
-}
-
-/**
- * Checks if a file needs conversion to meet Rample requirements
- * Returns the conversion options needed, or null if no conversion is required
- */
-export function getRequiredConversionOptions(
-  metadata: { bitDepth?: number; sampleRate?: number; channels?: number },
-  forceMonoConversion = false,
-): ConversionOptions | null {
-  const options: ConversionOptions = {};
-  let needsConversion = false;
-
-  // Check bit depth
-  if (
-    metadata.bitDepth &&
-    !RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(metadata.bitDepth)
-  ) {
-    options.targetBitDepth = 16; // Default to 16-bit
-    needsConversion = true;
-  }
-
-  // Check sample rate
-  if (
-    metadata.sampleRate &&
-    !RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(metadata.sampleRate)
-  ) {
-    options.targetSampleRate = RAMPLE_FORMAT_REQUIREMENTS.sampleRates[0]; // 44100 Hz
-    needsConversion = true;
-  }
-
-  // Check channels
-  if (
-    metadata.channels &&
-    metadata.channels > RAMPLE_FORMAT_REQUIREMENTS.maxChannels
-  ) {
-    options.targetChannels = RAMPLE_FORMAT_REQUIREMENTS.maxChannels; // Convert to stereo
-    needsConversion = true;
-  }
-
-  // Apply force mono conversion if requested
-  if (forceMonoConversion && metadata.channels && metadata.channels > 1) {
-    options.targetChannels = 1;
-    options.forceMonoConversion = true;
-    needsConversion = true;
-  }
-
-  return needsConversion ? options : null;
 }

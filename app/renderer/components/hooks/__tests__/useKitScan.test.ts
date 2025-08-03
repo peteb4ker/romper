@@ -4,9 +4,9 @@ import { scanSingleKit } from "../useKitScan";
 
 // Mock the orchestration functions
 vi.mock("../../utils/scanners/orchestrationFunctions", () => ({
+  executeFullKitScan: vi.fn(),
   executeVoiceInferenceScan: vi.fn(),
   executeWAVAnalysisScan: vi.fn(),
-  executeFullKitScan: vi.fn(),
 }));
 
 // No bankOperations mocks needed anymore
@@ -21,10 +21,10 @@ describe("scanSingleKit", () => {
     vi.mocked(executeVoiceInferenceScan).mockResolvedValue({ success: true });
 
     const result = await scanSingleKit({
+      fileReaderImpl,
       kitName: "A01_Kick",
       scanType: "voiceInference",
       scanTypeDisplay: "voice name inference",
-      fileReaderImpl,
     });
 
     expect(executeVoiceInferenceScan).toHaveBeenCalled();
@@ -38,10 +38,10 @@ describe("scanSingleKit", () => {
     vi.mocked(executeWAVAnalysisScan).mockResolvedValue({ success: true });
 
     const result = await scanSingleKit({
+      fileReaderImpl,
       kitName: "A01_Kick",
       scanType: "wavAnalysis",
       scanTypeDisplay: "WAV analysis",
-      fileReaderImpl,
     });
 
     expect(executeWAVAnalysisScan).toHaveBeenCalled();
@@ -55,10 +55,10 @@ describe("scanSingleKit", () => {
     vi.mocked(executeFullKitScan).mockResolvedValue({ success: true });
 
     const result = await scanSingleKit({
+      fileReaderImpl,
       kitName: "A01_Kick",
       scanType: "full",
       scanTypeDisplay: "comprehensive",
-      fileReaderImpl,
     });
 
     expect(executeFullKitScan).toHaveBeenCalled();

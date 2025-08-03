@@ -1,10 +1,10 @@
 import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
-  testDir: ".",
   projects: [
     {
       name: "electron",
+      testMatch: /.*\.e2e\.test\.(ts|js)$/,
       use: {
         launchOptions: {
           args: [
@@ -25,7 +25,6 @@ export default defineConfig({
           // Add headless configuration for CI
           ...(process.env.CI
             ? {
-                headless: false, // Electron doesn't support true headless, but we can disable GPU
                 args: [
                   ".",
                   "--no-sandbox",
@@ -39,11 +38,12 @@ export default defineConfig({
                   "--disable-features=TranslateUI",
                   "--disable-ipc-flooding-protection",
                 ],
+                headless: false, // Electron doesn't support true headless, but we can disable GPU
               }
             : {}),
         },
       },
-      testMatch: /.*\.e2e\.test\.(ts|js)$/,
     },
   ],
+  testDir: ".",
 });

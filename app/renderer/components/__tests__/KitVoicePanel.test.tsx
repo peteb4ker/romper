@@ -19,15 +19,15 @@ vi.mock("../hooks/useStereoHandling", () => ({
   useStereoHandling: vi.fn(() => ({
     analyzeStereoAssignment: vi.fn().mockReturnValue({
       assignAsMono: false,
-      requiresConfirmation: false,
       conflictInfo: null,
-    }),
-    handleStereoConflict: vi.fn().mockResolvedValue({
-      forceMono: false,
-      replaceExisting: false,
-      cancel: false,
+      requiresConfirmation: false,
     }),
     applyStereoAssignment: vi.fn().mockResolvedValue(true),
+    handleStereoConflict: vi.fn().mockResolvedValue({
+      cancel: false,
+      forceMono: false,
+      replaceExisting: false,
+    }),
   })),
 }));
 
@@ -35,32 +35,32 @@ vi.mock("../hooks/useStereoHandling", () => ({
 vi.mock("sonner", () => ({
   toast: {
     error: vi.fn(),
-    warning: vi.fn(),
     success: vi.fn(),
+    warning: vi.fn(),
   },
 }));
 
 const baseProps = {
-  voice: 1,
-  samples: ["kick.wav", "snare.wav", "hat.wav"],
-  voiceName: "Kick",
-  onSaveVoiceName: vi.fn(),
-  onRescanVoiceName: vi.fn(),
-  samplePlaying: {},
-  playTriggers: {},
-  stopTriggers: {},
+  kitName: "Kit1",
   onPlay: vi.fn(),
+  onRescanVoiceName: vi.fn(),
+  onSaveVoiceName: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  kitName: "Kit1",
+  playTriggers: {},
+  samplePlaying: {},
+  samples: ["kick.wav", "snare.wav", "hat.wav"],
+  stopTriggers: {},
+  voice: 1,
+  voiceName: "Kick",
 };
 
 const controlledProps = {
   ...baseProps,
-  selectedIdx: 0,
+  isActive: true,
   onSampleKeyNav: vi.fn(),
   onSampleSelect: vi.fn(),
-  isActive: true,
+  selectedIdx: 0,
 };
 
 beforeEach(() => {
@@ -71,19 +71,19 @@ beforeEach(() => {
 
   // Mock electronAPI methods using centralized mocks
   vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue({
-    success: true,
     data: {
-      isValid: true,
       issues: [],
+      isValid: true,
       metadata: { channels: 2, sampleRate: 44100 },
     },
+    success: true,
   });
   vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-    success: true,
     data: [
-      { voice_number: 1, source_path: "/test/kick.wav" },
-      { voice_number: 1, source_path: "/test/snare.wav" },
+      { source_path: "/test/kick.wav", voice_number: 1 },
+      { source_path: "/test/snare.wav", voice_number: 1 },
     ],
+    success: true,
   });
 
   // Mock electronFileAPI
@@ -107,7 +107,7 @@ function SingleVoiceTestWrapper({
   const [selectedIdx, setSelectedIdx] = useState(initialSelectedIdx);
   React.useEffect(() => {
     function handleGlobalKeyDown(e) {
-      if (["ArrowUp", "ArrowDown", " ", "Enter"].includes(e.key)) {
+      if ([" ", "ArrowDown", "ArrowUp", "Enter"].includes(e.key)) {
         e.preventDefault();
         if (e.key === "ArrowDown")
           setSelectedIdx((idx) => Math.min(idx + 1, samples.length - 1));
@@ -125,12 +125,12 @@ function SingleVoiceTestWrapper({
       <MockMessageDisplayProvider>
         <KitVoicePanel
           {...baseProps}
-          samples={samples}
-          selectedIdx={selectedIdx}
+          isActive={true}
+          onPlay={onPlay}
           onSampleKeyNav={vi.fn()}
           onSampleSelect={(_, idx) => setSelectedIdx(idx)}
-          onPlay={onPlay}
-          isActive={true}
+          samples={samples}
+          selectedIdx={selectedIdx}
           {...props}
         />
       </MockMessageDisplayProvider>
@@ -356,8 +356,8 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
-              onSaveVoiceName={onSaveVoiceName}
               isEditable={true}
+              onSaveVoiceName={onSaveVoiceName}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
@@ -382,8 +382,8 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
-              onSaveVoiceName={onSaveVoiceName}
               isEditable={true}
+              onSaveVoiceName={onSaveVoiceName}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
@@ -409,8 +409,8 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
-              onSaveVoiceName={onSaveVoiceName}
               isEditable={true}
+              onSaveVoiceName={onSaveVoiceName}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
@@ -433,8 +433,8 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
-              onSaveVoiceName={onSaveVoiceName}
               isEditable={true}
+              onSaveVoiceName={onSaveVoiceName}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
@@ -491,8 +491,8 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
-              samplePlaying={samplePlaying}
               onStop={onStop}
+              samplePlaying={samplePlaying}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
@@ -527,8 +527,8 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
-              onSampleDelete={onSampleDelete}
               isEditable={true}
+              onSampleDelete={onSampleDelete}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
@@ -553,8 +553,8 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
-              onSampleDelete={onSampleDelete}
               isEditable={true}
+              onSampleDelete={onSampleDelete}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
@@ -607,9 +607,9 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
+              isEditable={true}
               isStereoDragTarget={true}
               stereoDragSlotIndex={3}
-              isEditable={true}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
@@ -637,8 +637,8 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
-              onPlay={onPlay}
               isActive={true}
+              onPlay={onPlay}
               selectedIdx={0}
             />
           </MockMessageDisplayProvider>
@@ -662,8 +662,8 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
-              onPlay={onPlay}
               isActive={false}
+              onPlay={onPlay}
               selectedIdx={0}
             />
           </MockMessageDisplayProvider>
@@ -683,9 +683,9 @@ describe("KitVoicePanel", () => {
           <MockMessageDisplayProvider>
             <KitVoicePanel
               {...baseProps}
-              samples={[]}
-              onPlay={onPlay}
               isActive={true}
+              onPlay={onPlay}
+              samples={[]}
               selectedIdx={0}
             />
           </MockMessageDisplayProvider>
@@ -708,7 +708,7 @@ describe("KitVoicePanel", () => {
         render(
           <MockSettingsProvider>
             <MockMessageDisplayProvider>
-              <KitVoicePanel {...baseProps} selectedIdx={0} isActive={true} />
+              <KitVoicePanel {...baseProps} isActive={true} selectedIdx={0} />
             </MockMessageDisplayProvider>
           </MockSettingsProvider>,
         );
@@ -728,8 +728,8 @@ describe("KitVoicePanel", () => {
             <MockMessageDisplayProvider>
               <KitVoicePanel
                 {...baseProps}
-                selectedIdx={1} // Select slot 1, not slot 0
                 isActive={true}
+                selectedIdx={1} // Select slot 1, not slot 0
               />
             </MockMessageDisplayProvider>
           </MockSettingsProvider>,
@@ -750,8 +750,8 @@ describe("KitVoicePanel", () => {
             <MockMessageDisplayProvider>
               <KitVoicePanel
                 {...baseProps}
-                selectedIdx={0}
                 isActive={false} // Not active
+                selectedIdx={0}
               />
             </MockMessageDisplayProvider>
           </MockSettingsProvider>,
@@ -811,9 +811,9 @@ describe("KitVoicePanel", () => {
             <MockMessageDisplayProvider>
               <KitVoicePanel
                 {...baseProps}
+                isEditable={true}
                 isStereoDragTarget={true}
                 stereoDragSlotIndex={3}
-                isEditable={true}
               />
             </MockMessageDisplayProvider>
           </MockSettingsProvider>,
@@ -942,8 +942,8 @@ describe("KitVoicePanel", () => {
             <MockMessageDisplayProvider>
               <KitVoicePanel
                 {...baseProps}
-                samples={["kick.wav"]} // Only one sample, so slot 1 will be empty drop target
                 isEditable={true}
+                samples={["kick.wav"]} // Only one sample, so slot 1 will be empty drop target
               />
             </MockMessageDisplayProvider>
           </MockSettingsProvider>,
@@ -963,8 +963,8 @@ describe("KitVoicePanel", () => {
             <MockMessageDisplayProvider>
               <KitVoicePanel
                 {...baseProps}
-                samples={["kick.wav"]} // Only one sample, so slot 1 will be empty drop target
                 isEditable={false}
+                samples={["kick.wav"]} // Only one sample, so slot 1 will be empty drop target
               />
             </MockMessageDisplayProvider>
           </MockSettingsProvider>,

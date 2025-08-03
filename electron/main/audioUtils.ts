@@ -7,174 +7,53 @@ import type { DbResult } from "../../shared/db/schema.js";
  * Squarp Rample format requirements
  */
 export interface RampleFormatRequirements {
-  readonly fileExtensions: readonly string[];
   readonly bitDepths: readonly number[];
-  readonly sampleRates: readonly number[];
+  readonly fileExtensions: readonly string[];
   readonly maxChannels: number;
+  readonly sampleRates: readonly number[];
 }
 
 export const RAMPLE_FORMAT_REQUIREMENTS: RampleFormatRequirements = {
-  fileExtensions: [".wav"],
   bitDepths: [8, 16],
-  sampleRates: [44100],
+  fileExtensions: [".wav"],
   maxChannels: 2, // mono or stereo
+  sampleRates: [44100],
 } as const;
-
-/**
- * Format validation result for a sample file
- */
-export interface FormatValidationResult {
-  isValid: boolean;
-  issues: FormatIssue[];
-  metadata?: AudioMetadata;
-}
-
-/**
- * Specific format issue with type and description
- */
-export interface FormatIssue {
-  type:
-    | "extension"
-    | "bitDepth"
-    | "sampleRate"
-    | "channels"
-    | "fileAccess"
-    | "invalidFormat";
-  message: string;
-  current?: string | number;
-  required?: string | number | readonly (string | number)[];
-}
 
 /**
  * Audio file metadata
  */
 export interface AudioMetadata {
   bitDepth?: number;
-  sampleRate?: number;
   channels?: number;
   duration?: number;
   fileSize?: number;
+  sampleRate?: number;
 }
 
 /**
- * Validates file extension against Rample requirements
+ * Specific format issue with type and description
  */
-export function validateFileExtension(filePath: string): FormatIssue | null {
-  const ext = path.extname(filePath).toLowerCase();
-
-  if (!RAMPLE_FORMAT_REQUIREMENTS.fileExtensions.includes(ext)) {
-    return {
-      type: "extension",
-      message: `File extension '${ext}' is not supported. Rample only supports .wav files.`,
-      current: ext,
-      required: RAMPLE_FORMAT_REQUIREMENTS.fileExtensions,
-    };
-  }
-
-  return null;
+export interface FormatIssue {
+  current?: number | string;
+  message: string;
+  required?: number | readonly (number | string)[] | string;
+  type:
+    | "bitDepth"
+    | "channels"
+    | "extension"
+    | "fileAccess"
+    | "invalidFormat"
+    | "sampleRate";
 }
 
 /**
- * Validates audio metadata against Rample requirements
+ * Format validation result for a sample file
  */
-export function validateAudioFormat(metadata: AudioMetadata): FormatIssue[] {
-  const issues: FormatIssue[] = [];
-
-  // Validate bit depth
-  if (
-    metadata.bitDepth !== undefined &&
-    !RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(metadata.bitDepth)
-  ) {
-    issues.push({
-      type: "bitDepth",
-      message: `Bit depth ${metadata.bitDepth} is not supported. Rample supports ${RAMPLE_FORMAT_REQUIREMENTS.bitDepths.join(", ")} bit only.`,
-      current: metadata.bitDepth,
-      required: RAMPLE_FORMAT_REQUIREMENTS.bitDepths,
-    });
-  }
-
-  // Validate sample rate
-  if (
-    metadata.sampleRate !== undefined &&
-    !RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(metadata.sampleRate)
-  ) {
-    issues.push({
-      type: "sampleRate",
-      message: `Sample rate ${metadata.sampleRate} Hz is not supported. Rample requires ${RAMPLE_FORMAT_REQUIREMENTS.sampleRates[0]} Hz.`,
-      current: metadata.sampleRate,
-      required: RAMPLE_FORMAT_REQUIREMENTS.sampleRates[0],
-    });
-  }
-
-  // Validate channel count
-  if (
-    metadata.channels !== undefined &&
-    metadata.channels > RAMPLE_FORMAT_REQUIREMENTS.maxChannels
-  ) {
-    issues.push({
-      type: "channels",
-      message: `${metadata.channels} channels not supported. Rample supports mono (1) or stereo (2) only.`,
-      current: metadata.channels,
-      required: `1-${RAMPLE_FORMAT_REQUIREMENTS.maxChannels}`,
-    });
-  }
-
-  return issues;
-}
-
-/**
- * Validates a sample file against Rample format requirements
- * This combines file extension validation and audio format validation
- */
-export function validateSampleFormat(
-  filePath: string,
-): DbResult<FormatValidationResult> {
-  const issues: FormatIssue[] = [];
-
-  // Check file extension first
-  const extensionIssue = validateFileExtension(filePath);
-  if (extensionIssue) {
-    issues.push(extensionIssue);
-    // If extension is wrong, don't bother checking audio format
-    return { success: true, data: { isValid: false, issues } };
-  }
-
-  // Get audio metadata and validate format
-  const metadataResult = getAudioMetadata(filePath);
-
-  if (!metadataResult.success || !metadataResult.data) {
-    issues.push({
-      type: "fileAccess",
-      message: `Unable to read audio file: ${metadataResult.error || "Unknown error"}`,
-    });
-    return { success: true, data: { isValid: false, issues } };
-  }
-
-  // Validate audio format requirements
-  const formatIssues = validateAudioFormat(metadataResult.data);
-  issues.push(...formatIssues);
-
-  return {
-    success: true,
-    data: {
-      isValid: issues.length === 0,
-      issues,
-      metadata: metadataResult.data,
-    },
-  };
-}
-
-/**
- * Checks if a format issue is critical (prevents assignment) or warning (allows assignment with conversion)
- */
-export function isFormatIssueCritical(issue: FormatIssue): boolean {
-  // File extension, file access and invalid format errors are critical
-  // Only bit depth, sample rate, and channel count issues can be converted during SD card sync
-  return (
-    issue.type === "extension" ||
-    issue.type === "fileAccess" ||
-    issue.type === "invalidFormat"
-  );
+export interface FormatValidationResult {
+  issues: FormatIssue[];
+  isValid: boolean;
+  metadata?: AudioMetadata;
 }
 
 /**
@@ -185,13 +64,13 @@ export function getAudioMetadata(filePath: string): DbResult<AudioMetadata> {
   try {
     // Check if file exists
     if (!fs.existsSync(filePath)) {
-      return { success: false, error: "File does not exist" };
+      return { error: "File does not exist", success: false };
     }
 
     // Check file extension
     const ext = path.extname(filePath).toLowerCase();
     if (ext !== ".wav") {
-      return { success: false, error: "Only WAV files are supported" };
+      return { error: "Only WAV files are supported", success: false };
     }
 
     // Get file size
@@ -205,42 +84,42 @@ export function getAudioMetadata(filePath: string): DbResult<AudioMetadata> {
     try {
       const bytesRead = fs.readSync(fd, buffer, 0, 44, 0);
       if (bytesRead < 44) {
-        return { success: false, error: "Invalid WAV file: header too short" };
+        return { error: "Invalid WAV file: header too short", success: false };
       }
 
       // Check RIFF header
       const riffHeader = buffer.subarray(0, 4).toString("ascii");
       if (riffHeader !== "RIFF") {
         return {
-          success: false,
           error: "Invalid WAV file: missing RIFF header",
+          success: false,
         };
       }
 
       // Check WAVE format
       const waveFormat = buffer.subarray(8, 12).toString("ascii");
       if (waveFormat !== "WAVE") {
-        return { success: false, error: "Invalid WAV file: not WAVE format" };
+        return { error: "Invalid WAV file: not WAVE format", success: false };
       }
 
       // Check fmt chunk
       const fmtChunk = buffer.subarray(12, 16).toString("ascii");
       if (fmtChunk !== "fmt ") {
-        return { success: false, error: "Invalid WAV file: missing fmt chunk" };
+        return { error: "Invalid WAV file: missing fmt chunk", success: false };
       }
 
       // Read fmt chunk size (should be 16 for PCM)
       const fmtChunkSize = buffer.readUInt32LE(16);
       if (fmtChunkSize !== 16) {
-        return { success: false, error: "Only PCM format is supported" };
+        return { error: "Only PCM format is supported", success: false };
       }
 
       // Read audio format (should be 1 for PCM)
       const audioFormat = buffer.readUInt16LE(20);
       if (audioFormat !== 1) {
         return {
-          success: false,
           error: "Only uncompressed PCM format is supported",
+          success: false,
         };
       }
 
@@ -276,20 +155,141 @@ export function getAudioMetadata(filePath: string): DbResult<AudioMetadata> {
 
       const metadata: AudioMetadata = {
         bitDepth: bitsPerSample,
-        sampleRate,
         channels,
         duration,
         fileSize,
+        sampleRate,
       };
 
-      return { success: true, data: metadata };
+      return { data: metadata, success: true };
     } finally {
       fs.closeSync(fd);
     }
   } catch (error) {
     return {
-      success: false,
       error: `Failed to read audio metadata: ${error instanceof Error ? error.message : String(error)}`,
+      success: false,
     };
   }
+}
+
+/**
+ * Checks if a format issue is critical (prevents assignment) or warning (allows assignment with conversion)
+ */
+export function isFormatIssueCritical(issue: FormatIssue): boolean {
+  // File extension, file access and invalid format errors are critical
+  // Only bit depth, sample rate, and channel count issues can be converted during SD card sync
+  return (
+    issue.type === "extension" ||
+    issue.type === "fileAccess" ||
+    issue.type === "invalidFormat"
+  );
+}
+
+/**
+ * Validates audio metadata against Rample requirements
+ */
+export function validateAudioFormat(metadata: AudioMetadata): FormatIssue[] {
+  const issues: FormatIssue[] = [];
+
+  // Validate bit depth
+  if (
+    metadata.bitDepth !== undefined &&
+    !RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(metadata.bitDepth)
+  ) {
+    issues.push({
+      current: metadata.bitDepth,
+      message: `Bit depth ${metadata.bitDepth} is not supported. Rample supports ${RAMPLE_FORMAT_REQUIREMENTS.bitDepths.join(", ")} bit only.`,
+      required: RAMPLE_FORMAT_REQUIREMENTS.bitDepths,
+      type: "bitDepth",
+    });
+  }
+
+  // Validate sample rate
+  if (
+    metadata.sampleRate !== undefined &&
+    !RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(metadata.sampleRate)
+  ) {
+    issues.push({
+      current: metadata.sampleRate,
+      message: `Sample rate ${metadata.sampleRate} Hz is not supported. Rample requires ${RAMPLE_FORMAT_REQUIREMENTS.sampleRates[0]} Hz.`,
+      required: RAMPLE_FORMAT_REQUIREMENTS.sampleRates[0],
+      type: "sampleRate",
+    });
+  }
+
+  // Validate channel count
+  if (
+    metadata.channels !== undefined &&
+    metadata.channels > RAMPLE_FORMAT_REQUIREMENTS.maxChannels
+  ) {
+    issues.push({
+      current: metadata.channels,
+      message: `${metadata.channels} channels not supported. Rample supports mono (1) or stereo (2) only.`,
+      required: `1-${RAMPLE_FORMAT_REQUIREMENTS.maxChannels}`,
+      type: "channels",
+    });
+  }
+
+  return issues;
+}
+
+/**
+ * Validates file extension against Rample requirements
+ */
+export function validateFileExtension(filePath: string): FormatIssue | null {
+  const ext = path.extname(filePath).toLowerCase();
+
+  if (!RAMPLE_FORMAT_REQUIREMENTS.fileExtensions.includes(ext)) {
+    return {
+      current: ext,
+      message: `File extension '${ext}' is not supported. Rample only supports .wav files.`,
+      required: RAMPLE_FORMAT_REQUIREMENTS.fileExtensions,
+      type: "extension",
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Validates a sample file against Rample format requirements
+ * This combines file extension validation and audio format validation
+ */
+export function validateSampleFormat(
+  filePath: string,
+): DbResult<FormatValidationResult> {
+  const issues: FormatIssue[] = [];
+
+  // Check file extension first
+  const extensionIssue = validateFileExtension(filePath);
+  if (extensionIssue) {
+    issues.push(extensionIssue);
+    // If extension is wrong, don't bother checking audio format
+    return { data: { issues, isValid: false }, success: true };
+  }
+
+  // Get audio metadata and validate format
+  const metadataResult = getAudioMetadata(filePath);
+
+  if (!metadataResult.success || !metadataResult.data) {
+    issues.push({
+      message: `Unable to read audio file: ${metadataResult.error || "Unknown error"}`,
+      type: "fileAccess",
+    });
+    return { data: { issues, isValid: false }, success: true };
+  }
+
+  // Validate audio format requirements
+  const formatIssues = validateAudioFormat(metadataResult.data);
+  issues.push(...formatIssues);
+
+  return {
+    data: {
+      issues,
+      isValid: issues.length === 0,
+      metadata: metadataResult.data,
+    },
+    success: true,
+  };
 }

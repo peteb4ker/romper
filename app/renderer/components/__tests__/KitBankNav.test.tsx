@@ -25,8 +25,8 @@ describe("KitBankNav", () => {
 
   it("disables banks with no kits", () => {
     const mockKits = [
-      createMockKitWithRelations({ name: "A1", bank_letter: "A" }),
-      createMockKitWithRelations({ name: "B2", bank_letter: "B" }),
+      createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
+      createMockKitWithRelations({ bank_letter: "B", name: "B2" }),
     ];
     render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
     // Find all A buttons and check which is enabled/disabled
@@ -44,8 +44,8 @@ describe("KitBankNav", () => {
   it("calls onBankClick when enabled bank is clicked", () => {
     const onBankClick = vi.fn();
     const mockKits = [
-      createMockKitWithRelations({ name: "A1", bank_letter: "A" }),
-      createMockKitWithRelations({ name: "B2", bank_letter: "B" }),
+      createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
+      createMockKitWithRelations({ bank_letter: "B", name: "B2" }),
     ];
     render(<KitBankNav kits={mockKits} onBankClick={onBankClick} />);
 
@@ -63,7 +63,7 @@ describe("KitBankNav", () => {
   it("does not call onBankClick when disabled bank is clicked", () => {
     const onBankClick = vi.fn();
     const mockKits = [
-      createMockKitWithRelations({ name: "A1", bank_letter: "A" }),
+      createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
     ];
     render(<KitBankNav kits={mockKits} onBankClick={onBankClick} />);
     // Use getAllByRole to match the correct button by accessible name
@@ -76,13 +76,13 @@ describe("KitBankNav", () => {
 
   it("shows bankNames as title if provided", () => {
     const mockKits = [
-      createMockKitWithRelations({ name: "A1", bank_letter: "A" }),
+      createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
     ];
     render(
       <KitBankNav
+        bankNames={{ A: "Alpha" }}
         kits={mockKits}
         onBankClick={() => {}}
-        bankNames={{ A: "Alpha" }}
       />,
     );
     expect(screen.getByTitle("Alpha")).not.toBeNull();
@@ -100,8 +100,8 @@ describe("A-Z hotkey navigation and bank highlighting", () => {
 
   it("highlights the correct bank when selectedBank is set", () => {
     const mockKits = [
-      createMockKitWithRelations({ name: "A1", bank_letter: "A" }),
-      createMockKitWithRelations({ name: "B2", bank_letter: "B" }),
+      createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
+      createMockKitWithRelations({ bank_letter: "B", name: "B2" }),
     ];
     render(
       <KitBankNav kits={mockKits} onBankClick={() => {}} selectedBank="B" />,
@@ -117,7 +117,7 @@ describe("A-Z hotkey navigation and bank highlighting", () => {
 
   it("all bank buttons are focusable and have visible focus ring", () => {
     const mockKits = [
-      createMockKitWithRelations({ name: "A1", bank_letter: "A" }),
+      createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
     ];
     render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
     const aButtons = screen.getAllByRole("button", { name: "Jump to bank A" });
@@ -129,7 +129,7 @@ describe("A-Z hotkey navigation and bank highlighting", () => {
 
   it("disabled banks are not clickable or focusable", () => {
     const mockKits = [
-      createMockKitWithRelations({ name: "A1", bank_letter: "A" }),
+      createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
     ];
     render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
     const bButtons = screen.getAllByRole("button", { name: "Jump to bank B" });
@@ -141,8 +141,8 @@ describe("A-Z hotkey navigation and bank highlighting", () => {
   it("calls onBankClick when enabled bank is clicked", () => {
     const onBankClick = vi.fn();
     const mockKits = [
-      createMockKitWithRelations({ name: "A1", bank_letter: "A" }),
-      createMockKitWithRelations({ name: "B2", bank_letter: "B" }),
+      createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
+      createMockKitWithRelations({ bank_letter: "B", name: "B2" }),
     ];
     render(<KitBankNav kits={mockKits} onBankClick={onBankClick} />);
     const aButtons = screen.getAllByRole("button", { name: "Jump to bank A" });

@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type { LocalStoreValidationDetailedResult } from "../../../shared/db/schema.js";
+
 import {
   validateLocalStoreAgainstDb,
   validateLocalStoreAndDb,
@@ -14,26 +15,57 @@ import {
  */
 export class LocalStoreService {
   /**
+   * Check if a directory exists and create it if needed
+   */
+  ensureDirectory(dirPath: string): { error?: string; success: boolean } {
+    try {
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+      return { success: true };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : String(error),
+        success: false,
+      };
+    }
+  }
+
+  /**
+   * Get the database directory path for a local store
+   */
+  getDbPath(localStorePath: string): string {
+    return this.getLocalStorePath(localStorePath, ".romperdb");
+  }
+
+  /**
+   * Get the absolute path to a subdirectory within the local store
+   */
+  getLocalStorePath(localStorePath: string, ...subPaths: string[]): string {
+    return path.join(localStorePath, ...subPaths);
+  }
+
+  /**
    * Get local store status with comprehensive validation
    */
   getLocalStoreStatus(
-    localStorePath: string | null,
+    localStorePath: null | string,
     envPath?: string,
   ): {
+    error: null | string;
     hasLocalStore: boolean;
-    localStorePath: string | null;
     isValid: boolean;
-    error: string | null;
+    localStorePath: null | string;
   } {
     // Check environment variable first, then fall back to provided path
     const resolvedPath = envPath || localStorePath;
 
     if (!resolvedPath) {
       return {
-        hasLocalStore: false,
-        localStorePath: null,
-        isValid: false,
         error: "No local store configured",
+        hasLocalStore: false,
+        isValid: false,
+        localStorePath: null,
       };
     }
 
@@ -41,79 +73,36 @@ export class LocalStoreService {
     const validationResult = validateLocalStoreAndDb(resolvedPath);
 
     return {
-      hasLocalStore: true,
-      localStorePath: resolvedPath,
-      isValid: validationResult.isValid,
       error: validationResult.error || validationResult.errorSummary || null,
+      hasLocalStore: true,
+      isValid: validationResult.isValid,
+      localStorePath: resolvedPath,
     };
   }
 
   /**
-   * Validate local store path against database
+   * Check if database directory exists within local store
    */
-  validateLocalStore(
-    localStorePath: string,
-  ): LocalStoreValidationDetailedResult {
-    return validateLocalStoreAgainstDb(localStorePath);
+  hasRomperDb(localStorePath: string): boolean {
+    const dbPath = this.getDbPath(localStorePath);
+    try {
+      return fs.existsSync(dbPath) && fs.lstatSync(dbPath).isDirectory();
+    } catch {
+      return false;
+    }
   }
 
   /**
-   * Validate file sync between database and filesystem
-   * Returns detailed validation with file-level errors for warnings/reporting
+   * Check if local store directory exists and is accessible
    */
-  validateFileSyncStatus(
-    localStorePath: string,
-  ): LocalStoreValidationDetailedResult {
-    return validateLocalStoreAgainstDb(localStorePath);
-  }
-
-  /**
-   * Basic validation of local store path (filesystem only)
-   */
-  validateLocalStoreBasic(
-    localStorePath: string,
-  ): LocalStoreValidationDetailedResult {
-    return validateLocalStoreBasic(localStorePath);
-  }
-
-  /**
-   * Validate that a selected path contains a valid Romper database
-   */
-  validateExistingLocalStore(selectedPath: string): {
-    success: boolean;
-    path: string | null;
-    error: string | null;
-  } {
-    console.log(
-      "[LocalStoreService] Validating existing local store:",
-      selectedPath,
-    );
-
-    // Validate that the selected path contains a .romperdb directory and database schema
-    // but don't validate all kits and their files - that's done separately
-    const validation = validateLocalStoreAndDb(selectedPath);
-
-    console.log("[LocalStoreService] Validation result:", {
-      isValid: validation.isValid,
-      error: validation.error,
-      errorSummary: validation.errorSummary,
-      hasErrors: !!validation.errors,
-    });
-
-    if (validation.isValid) {
-      console.log("[LocalStoreService] ✓ Validation passed");
-      return { success: true, path: selectedPath, error: null };
-    } else {
-      const errorMsg =
-        validation.error ||
-        validation.errorSummary ||
-        "Selected directory does not contain a valid Romper database";
-      console.log("[LocalStoreService] ✗ Validation failed:", errorMsg);
-      return {
-        success: false,
-        path: null,
-        error: errorMsg,
-      };
+  isLocalStoreAccessible(localStorePath: string): boolean {
+    try {
+      return (
+        fs.existsSync(localStorePath) &&
+        fs.lstatSync(localStorePath).isDirectory()
+      );
+    } catch {
+      return false;
     }
   }
 
@@ -134,18 +123,18 @@ export class LocalStoreService {
    * Read a file and return its buffer
    */
   readFile(filePath: string): {
-    success: boolean;
     data?: ArrayBuffer;
     error?: string;
+    success: boolean;
   } {
     try {
       const data = fs.readFileSync(filePath);
       return {
-        success: true,
         data: data.buffer.slice(
           data.byteOffset,
           data.byteOffset + data.byteLength,
         ),
+        success: true,
       };
     } catch (error: any) {
       console.error(
@@ -154,67 +143,79 @@ export class LocalStoreService {
         error,
       );
       return {
-        success: false,
         error: error.message ?? "Failed to read file",
-      };
-    }
-  }
-
-  /**
-   * Check if a directory exists and create it if needed
-   */
-  ensureDirectory(dirPath: string): { success: boolean; error?: string } {
-    try {
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-      }
-      return { success: true };
-    } catch (error) {
-      return {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
 
   /**
-   * Get the absolute path to a subdirectory within the local store
+   * Validate that a selected path contains a valid Romper database
    */
-  getLocalStorePath(localStorePath: string, ...subPaths: string[]): string {
-    return path.join(localStorePath, ...subPaths);
-  }
+  validateExistingLocalStore(selectedPath: string): {
+    error: null | string;
+    path: null | string;
+    success: boolean;
+  } {
+    console.log(
+      "[LocalStoreService] Validating existing local store:",
+      selectedPath,
+    );
 
-  /**
-   * Get the database directory path for a local store
-   */
-  getDbPath(localStorePath: string): string {
-    return this.getLocalStorePath(localStorePath, ".romperdb");
-  }
+    // Validate that the selected path contains a .romperdb directory and database schema
+    // but don't validate all kits and their files - that's done separately
+    const validation = validateLocalStoreAndDb(selectedPath);
 
-  /**
-   * Check if local store directory exists and is accessible
-   */
-  isLocalStoreAccessible(localStorePath: string): boolean {
-    try {
-      return (
-        fs.existsSync(localStorePath) &&
-        fs.lstatSync(localStorePath).isDirectory()
-      );
-    } catch {
-      return false;
+    console.log("[LocalStoreService] Validation result:", {
+      error: validation.error,
+      errorSummary: validation.errorSummary,
+      hasErrors: !!validation.errors,
+      isValid: validation.isValid,
+    });
+
+    if (validation.isValid) {
+      console.log("[LocalStoreService] ✓ Validation passed");
+      return { error: null, path: selectedPath, success: true };
+    } else {
+      const errorMsg =
+        validation.error ||
+        validation.errorSummary ||
+        "Selected directory does not contain a valid Romper database";
+      console.log("[LocalStoreService] ✗ Validation failed:", errorMsg);
+      return {
+        error: errorMsg,
+        path: null,
+        success: false,
+      };
     }
   }
 
   /**
-   * Check if database directory exists within local store
+   * Validate file sync between database and filesystem
+   * Returns detailed validation with file-level errors for warnings/reporting
    */
-  hasRomperDb(localStorePath: string): boolean {
-    const dbPath = this.getDbPath(localStorePath);
-    try {
-      return fs.existsSync(dbPath) && fs.lstatSync(dbPath).isDirectory();
-    } catch {
-      return false;
-    }
+  validateFileSyncStatus(
+    localStorePath: string,
+  ): LocalStoreValidationDetailedResult {
+    return validateLocalStoreAgainstDb(localStorePath);
+  }
+
+  /**
+   * Validate local store path against database
+   */
+  validateLocalStore(
+    localStorePath: string,
+  ): LocalStoreValidationDetailedResult {
+    return validateLocalStoreAgainstDb(localStorePath);
+  }
+
+  /**
+   * Basic validation of local store path (filesystem only)
+   */
+  validateLocalStoreBasic(
+    localStorePath: string,
+  ): LocalStoreValidationDetailedResult {
+    return validateLocalStoreBasic(localStorePath);
   }
 }
 

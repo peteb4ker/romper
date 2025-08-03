@@ -1,5 +1,17 @@
 // Scanner system exports
 
+// High-level orchestration functions
+export {
+  executeFullKitScan,
+  executeVoiceInferenceScan,
+  executeWAVAnalysisScan,
+} from "./orchestrationFunctions";
+
+// Core orchestrator
+export { ScannerOrchestrator } from "./orchestrator";
+
+// Individual scanners
+export { scanRTFArtist } from "./rtfArtistScanner";
 // Core types and interfaces
 export type {
   ChainResult,
@@ -17,18 +29,5 @@ export type {
   WAVAnalysisInput,
   WAVAnalysisOutput,
 } from "./types";
-
-// Core orchestrator
-export { ScannerOrchestrator } from "./orchestrator";
-
-// Individual scanners
-export { scanRTFArtist } from "./rtfArtistScanner";
 export { scanVoiceInference } from "./voiceInferenceScanner";
 export { scanWAVAnalysis } from "./wavAnalysisScanner";
-
-// High-level orchestration functions
-export {
-  executeFullKitScan,
-  executeVoiceInferenceScan,
-  executeWAVAnalysisScan,
-} from "./orchestrationFunctions";

@@ -4,18 +4,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs
 vi.mock("fs", () => ({
-  existsSync: vi.fn(),
-  statSync: vi.fn(),
-  openSync: vi.fn(),
-  readSync: vi.fn(),
   closeSync: vi.fn(),
+  existsSync: vi.fn(),
+  openSync: vi.fn(),
   readFileSync: vi.fn(),
+  readSync: vi.fn(),
+  statSync: vi.fn(),
 }));
 
 // Mock path
 vi.mock("path", () => ({
-  join: vi.fn((...args) => args.join("/")),
   basename: vi.fn((p) => p.split("/").pop()),
+  join: vi.fn((...args) => args.join("/")),
 }));
 
 // Mock database operations
@@ -95,11 +95,11 @@ describe("SampleService", () => {
       return 12;
     });
 
-    mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
+    mockAddSample.mockReturnValue({ data: { sampleId: 123 }, success: true });
     mockDeleteSamples.mockReturnValue({ success: true });
     mockDeleteSamplesWithoutCompaction.mockReturnValue({
-      success: true,
       data: { deletedSamples: [] },
+      success: true,
     });
     mockMoveSample.mockReturnValue({ success: true });
     mockMarkKitAsModified.mockReturnValue({ success: true });
@@ -228,7 +228,7 @@ describe("SampleService", () => {
   describe("addSampleToSlot", () => {
     it("successfully adds valid sample", () => {
       // Mock that no existing samples exist for the check
-      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
+      mockGetKitSamples.mockReturnValue({ data: [], success: true });
 
       const result = sampleService.addSampleToSlot(
         mockInMemorySettings,
@@ -243,9 +243,9 @@ describe("SampleService", () => {
         "/test/path/.romperdb",
         expect.objectContaining({
           kit_name: "TestKit",
-          voice_number: 1,
           slot_number: 1, // 0-based index converted to 1-based
           source_path: "/test/sample.wav",
+          voice_number: 1,
         }),
       );
       expect(mockMarkKitAsModified).toHaveBeenCalledWith(
@@ -298,7 +298,7 @@ describe("SampleService", () => {
     });
 
     it("marks kit as modified only when operation succeeds", () => {
-      mockAddSample.mockReturnValue({ success: false, error: "DB error" });
+      mockAddSample.mockReturnValue({ error: "DB error", success: false });
 
       const result = sampleService.addSampleToSlot(
         mockInMemorySettings,
@@ -315,7 +315,7 @@ describe("SampleService", () => {
     // Task 7.1.2 tests: Apply 'default to mono samples' setting
     it("marks stereo file as mono when defaultToMonoSamples is true", () => {
       // Mock that no existing samples exist for the check
-      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
+      mockGetKitSamples.mockReturnValue({ data: [], success: true });
       mockDetermineStereoConfiguration.mockReturnValue(false);
 
       const settingsWithMono = {
@@ -347,7 +347,7 @@ describe("SampleService", () => {
 
     it("marks stereo file as stereo when defaultToMonoSamples is false", () => {
       // Mock that no existing samples exist for the check
-      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
+      mockGetKitSamples.mockReturnValue({ data: [], success: true });
       mockDetermineStereoConfiguration.mockReturnValue(true);
 
       const settingsWithStereo = {
@@ -379,7 +379,7 @@ describe("SampleService", () => {
 
     it("marks mono file as mono regardless of defaultToMonoSamples setting", () => {
       // Mock that no existing samples exist for the check
-      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
+      mockGetKitSamples.mockReturnValue({ data: [], success: true });
       mockDetermineStereoConfiguration.mockReturnValue(false);
 
       const settingsWithStereo = {
@@ -411,7 +411,7 @@ describe("SampleService", () => {
 
     it("defaults to mono when defaultToMonoSamples is undefined", () => {
       // Mock that no existing samples exist for the check
-      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
+      mockGetKitSamples.mockReturnValue({ data: [], success: true });
       mockDetermineStereoConfiguration.mockReturnValue(false);
       const settingsWithoutDefault = {
         ...mockInMemorySettings,
@@ -445,8 +445,8 @@ describe("SampleService", () => {
     it("successfully deletes sample", () => {
       // Mock existing sample at the slot
       mockGetKitSamples.mockReturnValue({
+        data: [{ filename: "existing.wav", slot_number: 6, voice_number: 2 }],
         success: true,
-        data: [{ voice_number: 2, slot_number: 6, filename: "existing.wav" }],
       });
 
       const result = sampleService.deleteSampleFromSlot(
@@ -460,7 +460,7 @@ describe("SampleService", () => {
       expect(mockDeleteSamples).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "TestKit",
-        { voiceNumber: 2, slotNumber: 6 }, // 0-based index converted to 1-based
+        { slotNumber: 6, voiceNumber: 2 }, // 0-based index converted to 1-based
       );
       expect(mockMarkKitAsModified).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -469,7 +469,7 @@ describe("SampleService", () => {
     });
 
     it("marks kit as modified only when operation succeeds", () => {
-      mockDeleteSamples.mockReturnValue({ success: false, error: "DB error" });
+      mockDeleteSamples.mockReturnValue({ error: "DB error", success: false });
 
       const result = sampleService.deleteSampleFromSlot(
         mockInMemorySettings,
@@ -490,7 +490,7 @@ describe("SampleService", () => {
         { filename: "snare.wav", source_path: "/path/to/snare.wav" },
       ];
 
-      mockGetKitSamples.mockReturnValue({ success: true, data: mockSamples });
+      mockGetKitSamples.mockReturnValue({ data: mockSamples, success: true });
 
       const result = sampleService.validateSampleSources(
         mockInMemorySettings,
@@ -509,7 +509,7 @@ describe("SampleService", () => {
         { filename: "missing.wav", source_path: "/path/to/missing.wav" },
       ];
 
-      mockGetKitSamples.mockReturnValue({ success: true, data: mockSamples });
+      mockGetKitSamples.mockReturnValue({ data: mockSamples, success: true });
       mockFs.existsSync.mockImplementation(
         (path: string) => !path.includes("missing.wav"),
       );
@@ -535,7 +535,7 @@ describe("SampleService", () => {
         { filename: "new.wav", source_path: "/path/to/new.wav" },
       ];
 
-      mockGetKitSamples.mockReturnValue({ success: true, data: mockSamples });
+      mockGetKitSamples.mockReturnValue({ data: mockSamples, success: true });
 
       const result = sampleService.validateSampleSources(
         mockInMemorySettings,
@@ -553,11 +553,11 @@ describe("SampleService", () => {
     it("successfully replaces sample", () => {
       // Mock existing sample at the slot
       mockGetKitSamples.mockReturnValue({
+        data: [{ filename: "old.wav", slot_number: 6, voice_number: 2 }],
         success: true,
-        data: [{ voice_number: 2, slot_number: 6, filename: "old.wav" }],
       });
       mockDeleteSamples.mockReturnValue({ success: true });
-      mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
+      mockAddSample.mockReturnValue({ data: { sampleId: 123 }, success: true });
 
       const result = sampleService.replaceSampleInSlot(
         mockInMemorySettings,
@@ -571,15 +571,15 @@ describe("SampleService", () => {
       expect(mockDeleteSamples).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "TestKit",
-        { voiceNumber: 2, slotNumber: 6 },
+        { slotNumber: 6, voiceNumber: 2 },
       );
       expect(mockAddSample).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
           kit_name: "TestKit",
-          voice_number: 2,
           slot_number: 6,
           source_path: "/test/new-sample.wav",
+          voice_number: 2,
         }),
       );
       expect(mockMarkKitAsModified).toHaveBeenCalledWith(
@@ -591,12 +591,12 @@ describe("SampleService", () => {
     it("fails if delete operation fails", () => {
       // Mock existing sample at the slot
       mockGetKitSamples.mockReturnValue({
+        data: [{ filename: "old.wav", slot_number: 1, voice_number: 1 }],
         success: true,
-        data: [{ voice_number: 1, slot_number: 1, filename: "old.wav" }],
       });
       mockDeleteSamples.mockReturnValue({
-        success: false,
         error: "Delete failed",
+        success: false,
       });
 
       const result = sampleService.replaceSampleInSlot(
@@ -617,11 +617,11 @@ describe("SampleService", () => {
     it("applies defaultToMonoSamples setting when replacing stereo sample", () => {
       // Mock existing sample at the slot
       mockGetKitSamples.mockReturnValue({
+        data: [{ filename: "old.wav", slot_number: 1, voice_number: 1 }],
         success: true,
-        data: [{ voice_number: 1, slot_number: 1, filename: "old.wav" }],
       });
       mockDeleteSamples.mockReturnValue({ success: true });
-      mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
+      mockAddSample.mockReturnValue({ data: { sampleId: 123 }, success: true });
       mockDetermineStereoConfiguration.mockReturnValue(false);
 
       const settingsWithMono = {
@@ -654,11 +654,11 @@ describe("SampleService", () => {
     it("preserves stereo when defaultToMonoSamples is false for replacement", () => {
       // Mock existing sample at the slot
       mockGetKitSamples.mockReturnValue({
+        data: [{ filename: "old.wav", slot_number: 1, voice_number: 1 }],
         success: true,
-        data: [{ voice_number: 1, slot_number: 1, filename: "old.wav" }],
       });
       mockDeleteSamples.mockReturnValue({ success: true });
-      mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
+      mockAddSample.mockReturnValue({ data: { sampleId: 123 }, success: true });
       mockDetermineStereoConfiguration.mockReturnValue(true);
 
       const settingsWithStereo = {
@@ -692,15 +692,15 @@ describe("SampleService", () => {
   describe("getSampleAudioBuffer", () => {
     it("successfully returns audio buffer for existing sample", () => {
       const mockSample = {
-        voice_number: 2,
-        slot_number: 3,
         filename: "test.wav",
+        slot_number: 3,
         source_path: "/path/to/test.wav",
+        voice_number: 2,
       };
 
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [mockSample],
+        success: true,
       });
 
       const mockFileData = Buffer.from("mock audio data");
@@ -725,8 +725,8 @@ describe("SampleService", () => {
 
     it("returns null for non-existent sample (empty slot)", () => {
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [], // No samples
+        success: true,
       });
 
       const result = sampleService.getSampleAudioBuffer(
@@ -742,8 +742,8 @@ describe("SampleService", () => {
 
     it("returns error when getKitSamples fails", () => {
       mockGetKitSamples.mockReturnValue({
-        success: false,
         error: "Database error",
+        success: false,
       });
 
       const result = sampleService.getSampleAudioBuffer(
@@ -759,15 +759,15 @@ describe("SampleService", () => {
 
     it("returns error when file read fails", () => {
       const mockSample = {
-        voice_number: 2,
-        slot_number: 3,
         filename: "test.wav",
+        slot_number: 3,
         source_path: "/path/to/test.wav",
+        voice_number: 2,
       };
 
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [mockSample],
+        success: true,
       });
 
       mockFs.readFileSync.mockImplementation(() => {
@@ -796,8 +796,8 @@ describe("SampleService", () => {
   describe("deleteSampleFromSlotWithoutCompaction", () => {
     it("successfully deletes sample without compaction", () => {
       mockDeleteSamplesWithoutCompaction.mockReturnValue({
-        success: true,
         data: { deletedSamples: [{ filename: "test.wav" }] },
+        success: true,
       });
 
       const result = sampleService.deleteSampleFromSlotWithoutCompaction(
@@ -811,7 +811,7 @@ describe("SampleService", () => {
       expect(mockDeleteSamplesWithoutCompaction).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "TestKit",
-        { voiceNumber: 2, slotNumber: 6 }, // 0-based index converted to 1-based
+        { slotNumber: 6, voiceNumber: 2 }, // 0-based index converted to 1-based
       );
       expect(mockMarkKitAsModified).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -861,8 +861,8 @@ describe("SampleService", () => {
 
     it("handles database operation errors", () => {
       mockDeleteSamplesWithoutCompaction.mockReturnValue({
-        success: false,
         error: "Database error",
+        success: false,
       });
 
       const result = sampleService.deleteSampleFromSlotWithoutCompaction(
@@ -895,24 +895,24 @@ describe("SampleService", () => {
 
   describe("moveSampleInKit", () => {
     const mockSample = {
-      id: 1,
-      voice_number: 1,
-      slot_number: 1,
       filename: "test.wav",
+      id: 1,
       is_stereo: false,
+      slot_number: 1,
+      voice_number: 1,
     };
 
     it("successfully moves sample within kit", () => {
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [mockSample],
+        success: true,
       });
       mockMoveSample.mockReturnValue({
-        success: true,
         data: {
-          movedSample: mockSample,
           affectedSamples: [],
+          movedSample: mockSample,
         },
+        success: true,
       });
 
       const result = sampleService.moveSampleInKit(
@@ -993,8 +993,8 @@ describe("SampleService", () => {
 
     it("rejects moving non-existent sample", () => {
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [], // No samples
+        success: true,
       });
 
       const result = sampleService.moveSampleInKit(
@@ -1014,8 +1014,8 @@ describe("SampleService", () => {
     it("rejects moving stereo sample to voice 4", () => {
       const stereoSample = { ...mockSample, is_stereo: true };
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [stereoSample],
+        success: true,
       });
 
       const result = sampleService.moveSampleInKit(
@@ -1037,16 +1037,16 @@ describe("SampleService", () => {
     it("rejects stereo sample move with adjacent voice conflict", () => {
       const stereoSample = { ...mockSample, is_stereo: true };
       const conflictSample = {
-        id: 2,
-        voice_number: 3,
-        slot_number: 4,
         filename: "conflict.wav",
+        id: 2,
         is_stereo: false,
+        slot_number: 4,
+        voice_number: 3,
       };
 
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [stereoSample, conflictSample],
+        success: true,
       });
 
       const result = sampleService.moveSampleInKit(
@@ -1082,12 +1082,12 @@ describe("SampleService", () => {
 
     it("handles database operation errors", () => {
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [mockSample],
+        success: true,
       });
       mockMoveSample.mockReturnValue({
-        success: false,
         error: "Database error",
+        success: false,
       });
 
       const result = sampleService.moveSampleInKit(
@@ -1107,12 +1107,12 @@ describe("SampleService", () => {
 
   describe("moveSampleBetweenKits", () => {
     const mockSample = {
-      id: 1,
-      voice_number: 1,
-      slot_number: 1,
       filename: "test.wav",
-      source_path: "/path/to/test.wav",
+      id: 1,
       is_stereo: false,
+      slot_number: 1,
+      source_path: "/path/to/test.wav",
+      voice_number: 1,
     };
 
     beforeEach(() => {
@@ -1120,11 +1120,11 @@ describe("SampleService", () => {
       vi.clearAllMocks();
 
       // Set up successful defaults
-      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
-      mockAddSample.mockReturnValue({ success: true, data: { sampleId: 123 } });
+      mockGetKitSamples.mockReturnValue({ data: [], success: true });
+      mockAddSample.mockReturnValue({ data: { sampleId: 123 }, success: true });
       mockDeleteSamples.mockReturnValue({
+        data: { affectedSamples: [], deletedSamples: [] },
         success: true,
-        data: { deletedSamples: [], affectedSamples: [] },
       });
       mockMarkKitAsModified.mockReturnValue({ success: true });
 
@@ -1149,30 +1149,30 @@ describe("SampleService", () => {
       // Source kit has the sample to move
       mockGetKitSamples
         .mockReturnValueOnce({
-          success: true,
           data: [mockSample], // Source kit call
+          success: true,
         })
         .mockReturnValueOnce({
-          success: true,
           data: [], // Destination kit call
+          success: true,
         })
         .mockReturnValueOnce({
-          success: true,
           data: [], // addSampleToSlot call
+          success: true,
         })
         .mockReturnValueOnce({
-          success: true,
           data: [mockSample], // deleteSampleFromSlot call
+          success: true,
         });
 
       const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
         fromKit: "SourceKit",
-        fromVoice: 1,
         fromSlot: 0,
-        toKit: "DestKit",
-        toVoice: 2,
-        toSlot: 3,
+        fromVoice: 1,
         mode: "insert",
+        toKit: "DestKit",
+        toSlot: 3,
+        toVoice: 2,
       });
 
       expect(result.success).toBe(true);
@@ -1181,18 +1181,18 @@ describe("SampleService", () => {
 
     it("rejects moving non-existent sample", () => {
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [], // No samples in source kit
+        success: true,
       });
 
       const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
         fromKit: "SourceKit",
-        fromVoice: 1,
         fromSlot: 0,
-        toKit: "DestKit",
-        toVoice: 2,
-        toSlot: 3,
+        fromVoice: 1,
         mode: "insert",
+        toKit: "DestKit",
+        toSlot: 3,
+        toVoice: 2,
       });
 
       expect(result.success).toBe(false);
@@ -1202,18 +1202,18 @@ describe("SampleService", () => {
     it("rejects moving stereo sample to voice 4", () => {
       const stereoSample = { ...mockSample, is_stereo: true };
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [stereoSample],
+        success: true,
       });
 
       const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
         fromKit: "SourceKit",
-        fromVoice: 1,
         fromSlot: 0,
-        toKit: "DestKit",
-        toVoice: 4,
-        toSlot: 3,
+        fromVoice: 1,
         mode: "insert",
+        toKit: "DestKit",
+        toSlot: 3,
+        toVoice: 4,
       });
 
       expect(result.success).toBe(false);
@@ -1225,31 +1225,31 @@ describe("SampleService", () => {
     it("rejects stereo sample move with adjacent voice conflict in destination", () => {
       const stereoSample = { ...mockSample, is_stereo: true };
       const conflictSample = {
-        id: 2,
-        voice_number: 3,
-        slot_number: 4,
         filename: "conflict.wav",
+        id: 2,
         is_stereo: false,
+        slot_number: 4,
+        voice_number: 3,
       };
 
       mockGetKitSamples
         .mockReturnValueOnce({
-          success: true,
           data: [stereoSample], // Source kit
+          success: true,
         })
         .mockReturnValueOnce({
-          success: true,
           data: [conflictSample], // Destination kit
+          success: true,
         });
 
       const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
         fromKit: "SourceKit",
-        fromVoice: 1,
         fromSlot: 0,
-        toKit: "DestKit",
-        toVoice: 2,
-        toSlot: 3,
+        fromVoice: 1,
         mode: "insert",
+        toKit: "DestKit",
+        toSlot: 3,
+        toVoice: 2,
       });
 
       expect(result.success).toBe(false);
@@ -1262,36 +1262,36 @@ describe("SampleService", () => {
       // Source kit has the sample to move
       mockGetKitSamples
         .mockReturnValueOnce({
-          success: true,
           data: [mockSample], // Source kit call
+          success: true,
         })
         .mockReturnValueOnce({
-          success: true,
           data: [], // Destination kit call
+          success: true,
         })
         .mockReturnValueOnce({
-          success: true,
           data: [], // addSampleToSlot call - no existing samples
+          success: true,
         })
         .mockReturnValueOnce({
-          success: true,
           data: [mockSample], // deleteSampleFromSlot call - sample exists
+          success: true,
         });
 
       // Make delete fail after successful add
       mockDeleteSamples.mockReturnValue({
-        success: false,
         error: "Delete failed",
+        success: false,
       });
 
       const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
         fromKit: "SourceKit",
-        fromVoice: 1,
         fromSlot: 0,
-        toKit: "DestKit",
-        toVoice: 2,
-        toSlot: 3,
+        fromVoice: 1,
         mode: "insert",
+        toKit: "DestKit",
+        toSlot: 3,
+        toVoice: 2,
       });
 
       expect(result.success).toBe(false);
@@ -1302,18 +1302,18 @@ describe("SampleService", () => {
 
     it("returns error when source kit samples cannot be retrieved", () => {
       mockGetKitSamples.mockReturnValue({
-        success: false,
         error: "Database error",
+        success: false,
       });
 
       const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
         fromKit: "SourceKit",
-        fromVoice: 1,
         fromSlot: 0,
-        toKit: "DestKit",
-        toVoice: 2,
-        toSlot: 3,
+        fromVoice: 1,
         mode: "insert",
+        toKit: "DestKit",
+        toSlot: 3,
+        toVoice: 2,
       });
 
       expect(result.success).toBe(false);
@@ -1327,12 +1327,12 @@ describe("SampleService", () => {
 
       const result = sampleService.moveSampleBetweenKits(mockInMemorySettings, {
         fromKit: "SourceKit",
-        fromVoice: 1,
         fromSlot: 0,
-        toKit: "DestKit",
-        toVoice: 2,
-        toSlot: 3,
+        fromVoice: 1,
         mode: "insert",
+        toKit: "DestKit",
+        toSlot: 3,
+        toVoice: 2,
       });
 
       expect(result.success).toBe(false);
@@ -1344,7 +1344,7 @@ describe("SampleService", () => {
 
   describe("addSampleToSlot - forceMono/forceStereo options", () => {
     beforeEach(() => {
-      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
+      mockGetKitSamples.mockReturnValue({ data: [], success: true });
     });
 
     it("forceMono option overrides defaultToMonoSamples setting", () => {
@@ -1435,7 +1435,7 @@ describe("SampleService", () => {
 
   describe("error handling and edge cases", () => {
     it("handles determineStereoConfiguration gracefully in addSampleToSlot", () => {
-      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
+      mockGetKitSamples.mockReturnValue({ data: [], success: true });
       mockDetermineStereoConfiguration.mockReturnValue(false);
 
       const settingsWithStereoDetection = {
@@ -1466,10 +1466,10 @@ describe("SampleService", () => {
     });
 
     it("handles addSample database error in addSampleToSlot", () => {
-      mockGetKitSamples.mockReturnValue({ success: true, data: [] });
+      mockGetKitSamples.mockReturnValue({ data: [], success: true });
       mockAddSample.mockReturnValue({
-        success: false,
         error: "Database constraint violation",
+        success: false,
       });
 
       const result = sampleService.addSampleToSlot(
@@ -1506,8 +1506,8 @@ describe("SampleService", () => {
 
     it("handles deleteSampleFromSlot when sample does not exist", () => {
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [], // No samples exist
+        success: true,
       });
 
       const result = sampleService.deleteSampleFromSlot(
@@ -1524,8 +1524,8 @@ describe("SampleService", () => {
 
     it("handles getKitSamples failure in deleteSampleFromSlot", () => {
       mockGetKitSamples.mockReturnValue({
-        success: false,
         error: "Database connection error",
+        success: false,
       });
 
       const result = sampleService.deleteSampleFromSlot(
@@ -1541,8 +1541,8 @@ describe("SampleService", () => {
 
     it("handles validateSampleSources with getKitSamples failure", () => {
       mockGetKitSamples.mockReturnValue({
-        success: false,
         error: "Database error",
+        success: false,
       });
 
       const result = sampleService.validateSampleSources(
@@ -1556,8 +1556,8 @@ describe("SampleService", () => {
 
     it("handles validateSampleSources with null sample data", () => {
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: null,
+        success: true,
       });
 
       const result = sampleService.validateSampleSources(
@@ -1589,11 +1589,11 @@ describe("SampleService", () => {
 
     it("handles replaceSampleInSlot when no existing sample found", () => {
       mockGetKitSamples.mockReturnValue({
-        success: true,
         data: [], // No existing sample
+        success: true,
       });
       // This should call addSampleToSlot instead
-      mockAddSample.mockReturnValue({ success: true, data: { sampleId: 456 } });
+      mockAddSample.mockReturnValue({ data: { sampleId: 456 }, success: true });
 
       const result = sampleService.replaceSampleInSlot(
         mockInMemorySettings,
@@ -1614,17 +1614,17 @@ describe("SampleService", () => {
     describe("validateAndGetSampleToMove", () => {
       it("successfully validates and returns sample to move", () => {
         const mockSample = {
-          id: 1,
-          voice_number: 2,
-          slot_number: 3,
           filename: "test.wav",
-          source_path: "/path/to/test.wav",
+          id: 1,
           is_stereo: false,
+          slot_number: 3,
+          source_path: "/path/to/test.wav",
+          voice_number: 2,
         };
 
         mockGetKitSamples.mockReturnValue({
-          success: true,
           data: [mockSample],
+          success: true,
         });
 
         // Access the private method through instance
@@ -1645,8 +1645,8 @@ describe("SampleService", () => {
 
       it("returns error when getKitSamples fails", () => {
         mockGetKitSamples.mockReturnValue({
-          success: false,
           error: "Database connection error",
+          success: false,
         });
 
         const result = (sampleService as any).validateAndGetSampleToMove(
@@ -1662,8 +1662,8 @@ describe("SampleService", () => {
 
       it("returns error when getKitSamples returns null data", () => {
         mockGetKitSamples.mockReturnValue({
-          success: true,
           data: null,
+          success: true,
         });
 
         const result = (sampleService as any).validateAndGetSampleToMove(
@@ -1679,17 +1679,17 @@ describe("SampleService", () => {
 
       it("returns error when sample not found at specified location", () => {
         mockGetKitSamples.mockReturnValue({
-          success: true,
           data: [
             {
-              id: 1,
-              voice_number: 1,
-              slot_number: 1,
               filename: "other.wav",
-              source_path: "/path/to/other.wav",
+              id: 1,
               is_stereo: false,
+              slot_number: 1,
+              source_path: "/path/to/other.wav",
+              voice_number: 1,
             },
           ],
+          success: true,
         });
 
         const result = (sampleService as any).validateAndGetSampleToMove(
@@ -1707,35 +1707,35 @@ describe("SampleService", () => {
 
       it("finds correct sample among multiple samples", () => {
         const targetSample = {
-          id: 2,
-          voice_number: 3,
-          slot_number: 5,
           filename: "target.wav",
-          source_path: "/path/to/target.wav",
+          id: 2,
           is_stereo: true,
+          slot_number: 5,
+          source_path: "/path/to/target.wav",
+          voice_number: 3,
         };
 
         mockGetKitSamples.mockReturnValue({
-          success: true,
           data: [
             {
-              id: 1,
-              voice_number: 1,
-              slot_number: 1,
               filename: "first.wav",
-              source_path: "/path/to/first.wav",
+              id: 1,
               is_stereo: false,
+              slot_number: 1,
+              source_path: "/path/to/first.wav",
+              voice_number: 1,
             },
             targetSample,
             {
-              id: 3,
-              voice_number: 4,
-              slot_number: 2,
               filename: "third.wav",
-              source_path: "/path/to/third.wav",
+              id: 3,
               is_stereo: false,
+              slot_number: 2,
+              source_path: "/path/to/third.wav",
+              voice_number: 4,
             },
           ],
+          success: true,
         });
 
         const result = (sampleService as any).validateAndGetSampleToMove(
@@ -1752,12 +1752,12 @@ describe("SampleService", () => {
 
     describe("checkStereoConflicts", () => {
       const mockSample = {
-        id: 1,
-        voice_number: 1,
-        slot_number: 1,
         filename: "test.wav",
-        source_path: "/path/to/test.wav",
+        id: 1,
         is_stereo: false,
+        slot_number: 1,
+        source_path: "/path/to/test.wav",
+        voice_number: 1,
       };
 
       it("allows mono sample to any voice", () => {
@@ -1811,12 +1811,12 @@ describe("SampleService", () => {
       it("rejects stereo sample in insert mode when adjacent voice has conflict", () => {
         const stereoSample = { ...mockSample, is_stereo: true };
         const conflictingSample = {
-          id: 2,
-          voice_number: 3,
-          slot_number: 4,
           filename: "conflict.wav",
-          source_path: "/path/to/conflict.wav",
+          id: 2,
           is_stereo: false,
+          slot_number: 4,
+          source_path: "/path/to/conflict.wav",
+          voice_number: 3,
         };
 
         const result = (sampleService as any).checkStereoConflicts(
@@ -1837,12 +1837,12 @@ describe("SampleService", () => {
       it("allows stereo sample in insert mode when no adjacent voice conflict", () => {
         const stereoSample = { ...mockSample, is_stereo: true };
         const nonConflictingSample = {
-          id: 2,
-          voice_number: 3,
-          slot_number: 5, // Different slot
           filename: "noconflict.wav",
-          source_path: "/path/to/noconflict.wav",
+          id: 2,
           is_stereo: false,
+          slot_number: 5, // Different slot
+          source_path: "/path/to/noconflict.wav",
+          voice_number: 3,
         };
 
         const result = (sampleService as any).checkStereoConflicts(
@@ -1861,12 +1861,12 @@ describe("SampleService", () => {
       it("allows stereo sample in insert mode when adjacent voice is different", () => {
         const stereoSample = { ...mockSample, is_stereo: true };
         const nonConflictingSample = {
-          id: 2,
-          voice_number: 4,
-          slot_number: 4, // Same slot but voice 4 instead of 3
           filename: "noconflict.wav",
-          source_path: "/path/to/noconflict.wav",
+          id: 2,
           is_stereo: false,
+          slot_number: 4, // Same slot but voice 4 instead of 3
+          source_path: "/path/to/noconflict.wav",
+          voice_number: 4,
         };
 
         const result = (sampleService as any).checkStereoConflicts(
@@ -1887,26 +1887,26 @@ describe("SampleService", () => {
       it("successfully retrieves destination samples and no replacement in insert mode", () => {
         const mockDestSamples = [
           {
-            id: 1,
-            voice_number: 1,
-            slot_number: 1,
             filename: "dest1.wav",
-            source_path: "/path/to/dest1.wav",
+            id: 1,
             is_stereo: false,
+            slot_number: 1,
+            source_path: "/path/to/dest1.wav",
+            voice_number: 1,
           },
           {
-            id: 2,
-            voice_number: 2,
-            slot_number: 3,
             filename: "dest2.wav",
-            source_path: "/path/to/dest2.wav",
+            id: 2,
             is_stereo: true,
+            slot_number: 3,
+            source_path: "/path/to/dest2.wav",
+            voice_number: 2,
           },
         ];
 
         mockGetKitSamples.mockReturnValue({
-          success: true,
           data: mockDestSamples,
+          success: true,
         });
 
         const result = (
@@ -1929,29 +1929,29 @@ describe("SampleService", () => {
 
       it("identifies replaced sample in overwrite mode", () => {
         const replacedSample = {
-          id: 2,
-          voice_number: 2,
-          slot_number: 5,
           filename: "replaced.wav",
-          source_path: "/path/to/replaced.wav",
+          id: 2,
           is_stereo: false,
+          slot_number: 5,
+          source_path: "/path/to/replaced.wav",
+          voice_number: 2,
         };
 
         const mockDestSamples = [
           {
-            id: 1,
-            voice_number: 1,
-            slot_number: 1,
             filename: "dest1.wav",
-            source_path: "/path/to/dest1.wav",
+            id: 1,
             is_stereo: false,
+            slot_number: 1,
+            source_path: "/path/to/dest1.wav",
+            voice_number: 1,
           },
           replacedSample,
         ];
 
         mockGetKitSamples.mockReturnValue({
-          success: true,
           data: mockDestSamples,
+          success: true,
         });
 
         const result = (
@@ -1971,26 +1971,26 @@ describe("SampleService", () => {
       it("handles no replacement when target slot is empty in overwrite mode", () => {
         const mockDestSamples = [
           {
-            id: 1,
-            voice_number: 1,
-            slot_number: 1,
             filename: "dest1.wav",
-            source_path: "/path/to/dest1.wav",
+            id: 1,
             is_stereo: false,
+            slot_number: 1,
+            source_path: "/path/to/dest1.wav",
+            voice_number: 1,
           },
           {
-            id: 2,
-            voice_number: 3,
-            slot_number: 2,
             filename: "dest2.wav",
-            source_path: "/path/to/dest2.wav",
+            id: 2,
             is_stereo: false,
+            slot_number: 2,
+            source_path: "/path/to/dest2.wav",
+            voice_number: 3,
           },
         ];
 
         mockGetKitSamples.mockReturnValue({
-          success: true,
           data: mockDestSamples,
+          success: true,
         });
 
         const result = (
@@ -2009,8 +2009,8 @@ describe("SampleService", () => {
 
       it("handles getKitSamples failure gracefully", () => {
         mockGetKitSamples.mockReturnValue({
-          success: false,
           error: "Database error",
+          success: false,
         });
 
         const result = (
@@ -2029,8 +2029,8 @@ describe("SampleService", () => {
 
       it("handles null data from getKitSamples", () => {
         mockGetKitSamples.mockReturnValue({
-          success: true,
           data: null,
+          success: true,
         });
 
         const result = (
@@ -2049,37 +2049,37 @@ describe("SampleService", () => {
 
       it("correctly identifies replacement with multiple samples at different voices/slots", () => {
         const targetSample = {
-          id: 3,
-          voice_number: 3,
-          slot_number: 7,
           filename: "target.wav",
-          source_path: "/path/to/target.wav",
+          id: 3,
           is_stereo: true,
+          slot_number: 7,
+          source_path: "/path/to/target.wav",
+          voice_number: 3,
         };
 
         const mockDestSamples = [
           {
-            id: 1,
-            voice_number: 2,
-            slot_number: 7,
             filename: "different-voice.wav",
-            source_path: "/path/to/different-voice.wav",
+            id: 1,
             is_stereo: false,
+            slot_number: 7,
+            source_path: "/path/to/different-voice.wav",
+            voice_number: 2,
           },
           {
-            id: 2,
-            voice_number: 3,
-            slot_number: 6,
             filename: "different-slot.wav",
-            source_path: "/path/to/different-slot.wav",
+            id: 2,
             is_stereo: false,
+            slot_number: 6,
+            source_path: "/path/to/different-slot.wav",
+            voice_number: 3,
           },
           targetSample,
         ];
 
         mockGetKitSamples.mockReturnValue({
-          success: true,
           data: mockDestSamples,
+          success: true,
         });
 
         const result = (

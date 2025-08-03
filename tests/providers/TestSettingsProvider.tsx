@@ -34,26 +34,26 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const contextValue = useMemo(
     () => ({
+      confirmDestructiveActions,
+      defaultToMonoSamples,
+      isDarkMode: themeMode === "dark",
+      // State
+      isInitialized: true,
       // Current settings
       localStorePath,
-      themeMode,
-      isDarkMode: themeMode === "dark",
-      defaultToMonoSamples,
-      confirmDestructiveActions,
       localStoreStatus: {
-        isValid: true,
         hasLocalStore: true,
+        isValid: true,
         localStorePath: "/mock/local/store",
       },
 
-      // State
-      isInitialized: true,
+      setConfirmDestructiveActions: setConfirmDestructiveActionsFunc,
 
+      setDefaultToMonoSamples: setDefaultToMonoSamplesFunc,
       // Actions
       setLocalStorePath: setLocalStorePathAsync,
       setThemeMode: setThemeModeFunc,
-      setDefaultToMonoSamples: setDefaultToMonoSamplesFunc,
-      setConfirmDestructiveActions: setConfirmDestructiveActionsFunc,
+      themeMode,
     }),
     [
       localStorePath,

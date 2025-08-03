@@ -13,7 +13,7 @@ afterEach(() => {
 describe("MessageDisplay (Sonner Toaster)", () => {
   it("displays a message when toast is called", async () => {
     render(<MessageDisplay />);
-    toast("Test message", { type: "info", duration: 1000 });
+    toast("Test message", { duration: 1000, type: "info" });
     // Wait for the toast to appear
     const el = await screen.findByText("Test message");
     expect(el).toBeTruthy();

@@ -12,8 +12,8 @@ describe("useBankScanning", () => {
 
   it("should call scanBanks and show success message", async () => {
     vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
-      success: true,
       data: { updatedBanks: 3 },
+      success: true,
     });
 
     const { result } = renderHook(() =>
@@ -35,8 +35,8 @@ describe("useBankScanning", () => {
 
   it("should handle bank scanning failure", async () => {
     vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
-      success: false,
       error: "Database connection failed",
+      success: false,
     });
 
     const { result } = renderHook(() =>
@@ -78,8 +78,8 @@ describe("useBankScanning", () => {
 
   it("should work without onMessage callback", async () => {
     vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
-      success: true,
       data: { updatedBanks: 1 },
+      success: true,
     });
 
     const { result } = renderHook(() =>

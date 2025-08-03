@@ -2,6 +2,7 @@ import React from "react";
 import { toast } from "sonner";
 
 import type { KitDetailsProps } from "../kitTypes";
+
 import { useKit } from "./useKit";
 import { useKitPlayback } from "./useKitPlayback";
 import { useKitVoicePanels } from "./useKitVoicePanels";
@@ -11,8 +12,8 @@ import { useVoiceAlias } from "./useVoiceAlias";
 
 interface UseKitDetailsLogicParams extends KitDetailsProps {
   onCreateKit?: () => void;
-  onMessage?: (msg: { type: string; text: string }) => void;
-  onRequestSamplesReload?: () => Promise<void>;
+  onMessage?: (msg: { text: string; type: string }) => void;
+  onRequestSamplesReload?: () => void | Promise<void>;
 }
 
 /**
@@ -21,16 +22,16 @@ interface UseKitDetailsLogicParams extends KitDetailsProps {
  */
 export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Destructure props for useEffect dependencies
-  const { onPrevKit, onNextKit } = props;
+  const { onNextKit, onPrevKit } = props;
 
   // Core kit data
   const {
+    error: kitError,
     kit,
     loading: kitLoading,
-    error: kitError,
     reloadKit,
-    updateKitAlias,
     toggleEditableMode,
+    updateKitAlias,
   } = useKit({
     kitName: props.kitName,
   });
@@ -46,6 +47,8 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Sample management for drag-and-drop operations (Task 5.2.2 & 5.2.3)
   const sampleManagement = useSampleManagement({
     kitName: props.kitName,
+    onAddUndoAction: props.onAddUndoAction,
+    onMessage: props.onMessage,
     onSamplesChanged: async () => {
       // Reload both kit data and samples when samples change
       await reloadKit();
@@ -53,14 +56,12 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
         await props.onRequestSamplesReload();
       }
     },
-    onMessage: props.onMessage,
-    onAddUndoAction: props.onAddUndoAction,
   });
 
   // Step pattern management
-  const { stepPattern, setStepPattern } = useStepPattern({
-    kitName: props.kitName,
+  const { setStepPattern, stepPattern } = useStepPattern({
     initialPattern: kit?.step_pattern,
+    kitName: props.kitName,
   });
 
   // Playback logic
@@ -98,7 +99,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
       if (result.success) {
         toast.success(
           `Kit rescanned successfully! Found ${result.data?.scannedSamples || 0} samples.`,
-          { id: toastId, duration: 5000 },
+          { duration: 5000, id: toastId },
         );
 
         // Trigger sample reload in parent component
@@ -113,14 +114,14 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
         // No need to call handleRescanAllVoiceNames separately
       } else {
         toast.error(`Kit rescan failed: ${result.error}`, {
-          id: toastId,
           duration: 8000,
+          id: toastId,
         });
       }
     } catch (error) {
       toast.error(
         `Kit scan error: ${error instanceof Error ? error.message : String(error)}`,
-        { id: toastId, duration: 8000 },
+        { duration: 8000, id: toastId },
       );
     }
   }, [kitName, onRequestSamplesReload, reloadKit]);
@@ -135,29 +136,29 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
 
   // Use KitVoicePanels hook for navigation logic
   const kitVoicePanels = useKitVoicePanels({
-    samples,
     kit,
-    selectedVoice,
-    selectedSampleIdx,
-    setSelectedVoice,
-    setSelectedSampleIdx,
-    onSaveVoiceName: (voice: number, alias: string | null) => {
-      updateVoiceAlias(voice, alias ?? "").catch(console.error);
-    },
+    kitName: props.kitName,
+    onPlay: playback.handlePlay,
     onRescanVoiceName: () => {
       // Legacy voice rescanning is no longer needed as kit scanning handles voice inference
     },
-    samplePlaying: playback.samplePlaying,
-    playTriggers: playback.playTriggers,
-    stopTriggers: playback.stopTriggers,
-    onPlay: playback.handlePlay,
-    onStop: playback.handleStop,
-    onWaveformPlayingChange: playback.handleWaveformPlayingChange,
-    kitName: props.kitName,
     onSampleSelect: (voice: number, idx: number) => {
       setSelectedVoice(voice);
       setSelectedSampleIdx(idx);
     },
+    onSaveVoiceName: (voice: number, alias: null | string) => {
+      updateVoiceAlias(voice, alias ?? "").catch(console.error);
+    },
+    onStop: playback.handleStop,
+    onWaveformPlayingChange: playback.handleWaveformPlayingChange,
+    playTriggers: playback.playTriggers,
+    samplePlaying: playback.samplePlaying,
+    samples,
+    selectedSampleIdx,
+    selectedVoice,
+    setSelectedSampleIdx,
+    setSelectedVoice,
+    stopTriggers: playback.stopTriggers,
   });
 
   // Error reporting effects
@@ -166,13 +167,13 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
 
   React.useEffect(() => {
     if (playback.playbackError && onMessage) {
-      onMessage({ type: "error", text: playback.playbackError });
+      onMessage({ text: playback.playbackError, type: "error" });
     }
   }, [playback.playbackError, onMessage]);
 
   React.useEffect(() => {
     if (kitError && onMessage) {
-      onMessage({ type: "error", text: kitError });
+      onMessage({ text: kitError, type: "error" });
     }
   }, [kitError, onMessage]);
 
@@ -180,7 +181,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   React.useEffect(() => {
     if (!onMessage) return;
     const handler = (e: CustomEvent) => {
-      onMessage({ type: "error", text: e.detail });
+      onMessage({ text: e.detail, type: "error" });
     };
     window.addEventListener("SampleWaveformError", handler as EventListener);
     return () => {
@@ -242,7 +243,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
       // Only handle navigation keys for sample nav if sequencer is closed
       if (
         !sequencerOpen &&
-        ["ArrowUp", "ArrowDown", " ", "Enter"].includes(e.key)
+        [" ", "ArrowDown", "ArrowUp", "Enter"].includes(e.key)
       ) {
         e.preventDefault();
         if (e.key === "ArrowDown") {
@@ -275,37 +276,37 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   ]);
 
   return {
-    // State
-    samples,
-    selectedVoice,
-    selectedSampleIdx,
-    sequencerOpen,
-    sequencerGridRef,
-
-    // State setters
-    setSelectedVoice,
-    setSelectedSampleIdx,
-    setSequencerOpen,
-
     // Handlers
     handleScanKit,
-
     // Kit data
     kit,
-    stepPattern,
-    setStepPattern,
-    updateKitAlias,
-    updateVoiceAlias,
-    toggleEditableMode,
-    kitLoading,
     kitError,
-    reloadKit,
+    kitLoading,
+    kitVoicePanels,
 
     // Sub-hooks
     playback,
-    kitVoicePanels,
-
+    reloadKit,
     // Sample management for drag-and-drop (Task 5.2.2 & 5.2.3)
     sampleManagement,
+
+    // State
+    samples,
+
+    selectedSampleIdx,
+    selectedVoice,
+    sequencerGridRef,
+    sequencerOpen,
+    setSelectedSampleIdx,
+    // State setters
+    setSelectedVoice,
+    setSequencerOpen,
+    setStepPattern,
+    stepPattern,
+
+    toggleEditableMode,
+    updateKitAlias,
+
+    updateVoiceAlias,
   };
 }

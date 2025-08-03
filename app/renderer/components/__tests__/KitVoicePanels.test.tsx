@@ -14,19 +14,19 @@ import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 import { MockSettingsProvider } from "./MockSettingsProvider";
 
 const baseProps = {
-  voices: [
-    { voice: 1, samples: ["kick.wav", "snare.wav"], voiceName: "Kick" },
-    { voice: 2, samples: ["hat.wav", "clap.wav"], voiceName: "Hat" },
-  ],
-  onSaveVoiceName: vi.fn(),
-  onRescanVoiceName: vi.fn(),
-  samplePlaying: {},
-  playTriggers: {},
-  stopTriggers: {},
+  kitName: "Kit1",
   onPlay: vi.fn(),
+  onRescanVoiceName: vi.fn(),
+  onSaveVoiceName: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  kitName: "Kit1",
+  playTriggers: {},
+  samplePlaying: {},
+  stopTriggers: {},
+  voices: [
+    { samples: ["kick.wav", "snare.wav"], voice: 1, voiceName: "Kick" },
+    { samples: ["hat.wav", "clap.wav"], voice: 2, voiceName: "Hat" },
+  ],
 };
 
 afterEach(() => {
@@ -34,32 +34,9 @@ afterEach(() => {
   cleanup();
 });
 
-// Utility to convert voices array to samples and kit
-function voicesToProps(voices) {
-  const samples = {};
-  const kitVoices = [];
-  voices.forEach(({ voice, samples: s, voiceName }) => {
-    samples[voice] = s;
-    kitVoices.push({
-      id: voice,
-      kit_name: "Kit1",
-      voice_number: voice,
-      voice_alias: voiceName,
-    });
-  });
-  return {
-    samples,
-    kit: {
-      name: "Kit1",
-      alias: "Kit1",
-      voices: kitVoices,
-    },
-  };
-}
-
 function MultiVoicePanelsTestWrapper({
-  initialSelectedVoice = 1,
   initialSelectedSampleIdx = 0,
+  initialSelectedVoice = 1,
   onPlay = vi.fn(),
   voices = baseProps.voices,
   ...props
@@ -68,10 +45,10 @@ function MultiVoicePanelsTestWrapper({
   const [selectedSampleIdx, setSelectedSampleIdx] = useState(
     initialSelectedSampleIdx,
   );
-  const { samples, kit } = voicesToProps(voices);
+  const { kit, samples } = voicesToProps(voices);
   React.useEffect(() => {
     function handleGlobalKeyDown(e) {
-      if (["ArrowUp", "ArrowDown", " ", "Enter"].includes(e.key)) {
+      if ([" ", "ArrowDown", "ArrowUp", "Enter"].includes(e.key)) {
         e.preventDefault();
         if (e.key === "ArrowDown") {
           if (
@@ -103,26 +80,49 @@ function MultiVoicePanelsTestWrapper({
     <MockSettingsProvider>
       <MockMessageDisplayProvider>
         <KitVoicePanels
-          samples={samples}
           kit={kit}
-          selectedVoice={selectedVoice}
-          selectedSampleIdx={selectedSampleIdx}
-          onSaveVoiceName={baseProps.onSaveVoiceName}
-          onRescanVoiceName={baseProps.onRescanVoiceName}
-          samplePlaying={{}}
-          playTriggers={{}}
-          stopTriggers={{}}
-          onPlay={onPlay}
-          onStop={baseProps.onStop}
-          onWaveformPlayingChange={baseProps.onWaveformPlayingChange}
           kitName={baseProps.kitName}
+          onPlay={onPlay}
+          onRescanVoiceName={baseProps.onRescanVoiceName}
           onSampleKeyNav={() => {}}
           onSampleSelect={() => {}}
+          onSaveVoiceName={baseProps.onSaveVoiceName}
+          onStop={baseProps.onStop}
+          onWaveformPlayingChange={baseProps.onWaveformPlayingChange}
+          playTriggers={{}}
+          samplePlaying={{}}
+          samples={samples}
+          selectedSampleIdx={selectedSampleIdx}
+          selectedVoice={selectedVoice}
+          stopTriggers={{}}
           {...props}
         />
       </MockMessageDisplayProvider>
     </MockSettingsProvider>
   );
+}
+
+// Utility to convert voices array to samples and kit
+function voicesToProps(voices) {
+  const samples = {};
+  const kitVoices = [];
+  voices.forEach(({ samples: s, voice, voiceName }) => {
+    samples[voice] = s;
+    kitVoices.push({
+      id: voice,
+      kit_name: "Kit1",
+      voice_alias: voiceName,
+      voice_number: voice,
+    });
+  });
+  return {
+    kit: {
+      alias: "Kit1",
+      name: "Kit1",
+      voices: kitVoices,
+    },
+    samples,
+  };
 }
 
 describe("KitVoicePanels", () => {

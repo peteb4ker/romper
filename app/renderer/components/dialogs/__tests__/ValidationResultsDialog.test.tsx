@@ -14,56 +14,56 @@ describe("ValidationResultsDialog", () => {
   const mockLocalStorePath = "/mock/path";
 
   const mockValidResults = {
-    isOpen: true,
+    closeValidationDialog: vi.fn(),
+    groupedErrors: null,
     isLoading: false,
+    isOpen: true,
     isRescanning: false,
+    openValidationDialog: vi.fn(),
+    rescanSelectedKits: vi.fn(),
+    selectAllKits: vi.fn(),
+    selectedKits: [],
+    toggleKitSelection: vi.fn(),
+    validateLocalStore: vi.fn(),
     validationResult: {
-      isValid: true,
       errors: undefined,
       errorSummary: undefined,
+      isValid: true,
     },
-    groupedErrors: null,
-    selectedKits: [],
-    openValidationDialog: vi.fn(),
-    closeValidationDialog: vi.fn(),
-    toggleKitSelection: vi.fn(),
-    selectAllKits: vi.fn(),
-    rescanSelectedKits: vi.fn(),
-    validateLocalStore: vi.fn(),
   };
 
   const mockInvalidResults = {
-    isOpen: true,
+    closeValidationDialog: vi.fn(),
+    groupedErrors: {
+      both: [],
+      extra: [{ extraFiles: ["snare.wav"], kitName: "B2", missingFiles: [] }],
+      missing: [{ extraFiles: [], kitName: "A1", missingFiles: ["kick.wav"] }],
+    },
     isLoading: false,
+    isOpen: true,
     isRescanning: false,
+    openValidationDialog: vi.fn(),
+    rescanSelectedKits: vi.fn(),
+    selectAllKits: vi.fn(),
+    selectedKits: [],
+    toggleKitSelection: vi.fn(),
+    validateLocalStore: vi.fn(),
     validationResult: {
-      isValid: false,
       errors: [
         {
+          extraFiles: [],
           kitName: "A1",
           missingFiles: ["kick.wav"],
-          extraFiles: [],
         },
         {
+          extraFiles: ["snare.wav"],
           kitName: "B2",
           missingFiles: [],
-          extraFiles: ["snare.wav"],
         },
       ],
       errorSummary: "Found 2 kit(s) with validation errors",
+      isValid: false,
     },
-    groupedErrors: {
-      missing: [{ kitName: "A1", missingFiles: ["kick.wav"], extraFiles: [] }],
-      extra: [{ kitName: "B2", missingFiles: [], extraFiles: ["snare.wav"] }],
-      both: [],
-    },
-    selectedKits: [],
-    openValidationDialog: vi.fn(),
-    closeValidationDialog: vi.fn(),
-    toggleKitSelection: vi.fn(),
-    selectAllKits: vi.fn(),
-    rescanSelectedKits: vi.fn(),
-    validateLocalStore: vi.fn(),
   };
 
   beforeEach(() => {
@@ -226,8 +226,8 @@ describe("ValidationResultsDialog", () => {
 
     (useValidationResults as jest.Mock).mockReturnValue({
       ...mockInvalidResults,
-      selectedKits: ["A1", "B2"],
       rescanSelectedKits: rescanSelectedKitsMock,
+      selectedKits: ["A1", "B2"],
     });
 
     render(
@@ -320,8 +320,8 @@ describe("ValidationResultsDialog", () => {
   test("should show rescanning state", () => {
     (useValidationResults as jest.Mock).mockReturnValue({
       ...mockInvalidResults,
-      selectedKits: ["A1"],
       isRescanning: true,
+      selectedKits: ["A1"],
     });
 
     const { container } = render(

@@ -17,13 +17,13 @@ const KitItem = React.memo(
   React.forwardRef<HTMLDivElement, KitItemProps & KitItemRenderProps>(
     (
       {
-        kit,
-        isValid,
-        onSelect,
-        onDuplicate,
-        sampleCounts,
-        kitData,
         isSelected,
+        isValid,
+        kit,
+        kitData,
+        onDuplicate,
+        onSelect,
+        sampleCounts,
         ...rest
       },
       ref,
@@ -31,7 +31,7 @@ const KitItem = React.memo(
       // Extract voice names using shared utility
       const voiceNames = extractVoiceNames(kitData);
 
-      const { iconType, iconLabel } = useKitItem(voiceNames);
+      const { iconLabel, iconType } = useKitItem(voiceNames);
 
       // Use shared icon renderer
       const icon = <KitIconRenderer iconType={iconType} size="lg" />;
@@ -42,18 +42,20 @@ const KitItem = React.memo(
       // Add data-testid to root element for unambiguous test selection
       return (
         <div
-          ref={ref}
+          aria-label={`Kit ${kit} - ${!isValid ? 'Invalid kit' : `${sampleCounts[0] + sampleCounts[1] + sampleCounts[2] + sampleCounts[3]} samples`}`}
+          aria-selected={isSelected ? "true" : "false"}
           className={`flex flex-col p-2 rounded border text-sm ${
             isValid
               ? "border-gray-300 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-800"
               : "border-red-500 bg-red-100 dark:bg-red-900"
           } cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-300 ${selectedHighlight}`}
-          onClick={onSelect}
           data-kit={kit}
           data-testid={`kit-item-${kit}`}
-          tabIndex={isSelected ? 0 : -1}
-          aria-selected={isSelected ? "true" : "false"}
+          onClick={onSelect}
+          ref={ref}
+          role="option"
           style={{ margin: 0 }}
+          tabIndex={isSelected ? 0 : -1}
           {...rest}
         >
           {/* 2-column layout: icon | right content */}
@@ -108,8 +110,8 @@ const KitItem = React.memo(
                       }
                       return (
                         <span
-                          key={`voice-${idx + 1}`}
                           className={`px-1 rounded text-xs font-mono ${color} ${fontWeight}`}
+                          key={`voice-${idx + 1}`}
                           title={`Voice ${idx + 1} samples`}
                         >
                           {count}
@@ -121,11 +123,11 @@ const KitItem = React.memo(
                 {isValid && (
                   <button
                     className="ml-2 p-1 text-xs text-gray-500 hover:text-green-600"
-                    title="Duplicate kit"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDuplicate();
                     }}
+                    title="Duplicate kit"
                   >
                     <FiCopy />
                   </button>
@@ -138,8 +140,8 @@ const KitItem = React.memo(
                     new Set(Object.values(voiceNames).filter(Boolean)),
                   ).map((label, i) => (
                     <span
-                      key={`voice-label-${label}-${i}`}
                       className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-1 py-0.5 rounded-sm text-[10px] font-mono"
+                      key={`voice-label-${label}-${i}`}
                     >
                       {typeof label === "string" ? toCapitalCase(label) : label}
                     </span>

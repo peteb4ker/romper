@@ -16,7 +16,7 @@ describe("audioUtils", () => {
   beforeEach(() => {
     // Clean up any existing test directory
     if (fs.existsSync(testDir)) {
-      fs.rmSync(testDir, { recursive: true, force: true });
+      fs.rmSync(testDir, { force: true, recursive: true });
     }
     fs.mkdirSync(testDir, { recursive: true });
   });
@@ -24,7 +24,7 @@ describe("audioUtils", () => {
   afterEach(() => {
     // Clean up test directory
     if (fs.existsSync(testDir)) {
-      fs.rmSync(testDir, { recursive: true, force: true });
+      fs.rmSync(testDir, { force: true, recursive: true });
     }
   });
 
@@ -99,9 +99,9 @@ describe("audioUtils", () => {
       const filePath = path.join(testDir, "invalid.wav");
       const buffer = createValidWavHeader({
         audioFormat: 2, // Non-PCM format
+        bitsPerSample: 16,
         channels: 1,
         sampleRate: 44100,
-        bitsPerSample: 16,
       });
       fs.writeFileSync(filePath, buffer);
 
@@ -117,9 +117,9 @@ describe("audioUtils", () => {
       const filePath = path.join(testDir, "valid.wav");
       const buffer = createValidWavHeader({
         audioFormat: 1,
+        bitsPerSample: 16,
         channels: 1,
         sampleRate: 44100,
-        bitsPerSample: 16,
       });
       fs.writeFileSync(filePath, buffer);
 
@@ -137,9 +137,9 @@ describe("audioUtils", () => {
       const filePath = path.join(testDir, "valid.wav");
       const buffer = createValidWavHeader({
         audioFormat: 1,
+        bitsPerSample: 8,
         channels: 2,
         sampleRate: 44100,
-        bitsPerSample: 8,
       });
       fs.writeFileSync(filePath, buffer);
 
@@ -157,10 +157,10 @@ describe("audioUtils", () => {
       const dataSize = 44100 * 2 * 2; // 1 second of stereo 16-bit audio
       const buffer = createValidWavHeaderWithData({
         audioFormat: 1,
-        channels: 2,
-        sampleRate: 44100,
         bitsPerSample: 16,
+        channels: 2,
         dataSize,
+        sampleRate: 44100,
       });
       fs.writeFileSync(filePath, buffer);
 
@@ -174,9 +174,9 @@ describe("audioUtils", () => {
       const filePath = path.join(testDir, "no-data.wav");
       const buffer = createValidWavHeader({
         audioFormat: 1,
+        bitsPerSample: 16,
         channels: 1,
         sampleRate: 44100,
-        bitsPerSample: 16,
       });
       fs.writeFileSync(filePath, buffer);
 
@@ -211,10 +211,10 @@ describe("audioUtils", () => {
     it("should accept valid 16-bit 44100Hz mono metadata", () => {
       const metadata = {
         bitDepth: 16,
-        sampleRate: 44100,
         channels: 1,
         duration: 5.0,
         fileSize: 441000,
+        sampleRate: 44100,
       };
 
       const issues = validateAudioFormat(metadata);
@@ -224,8 +224,8 @@ describe("audioUtils", () => {
     it("should reject invalid bit depth", () => {
       const metadata = {
         bitDepth: 24,
-        sampleRate: 44100,
         channels: 1,
+        sampleRate: 44100,
       };
 
       const issues = validateAudioFormat(metadata);
@@ -237,8 +237,8 @@ describe("audioUtils", () => {
     it("should reject invalid sample rate", () => {
       const metadata = {
         bitDepth: 16,
-        sampleRate: 48000,
         channels: 1,
+        sampleRate: 48000,
       };
 
       const issues = validateAudioFormat(metadata);
@@ -264,9 +264,9 @@ describe("audioUtils", () => {
       const filePath = path.join(testDir, "valid.wav");
       const buffer = createValidWavHeader({
         audioFormat: 1,
+        bitsPerSample: 16,
         channels: 1,
         sampleRate: 44100,
-        bitsPerSample: 16,
       });
       fs.writeFileSync(filePath, buffer);
 
@@ -283,8 +283,8 @@ describe("audioUtils", () => {
     it("should mark extension issues as critical", () => {
       expect(
         isFormatIssueCritical({
-          type: "extension",
           message: "Wrong file type",
+          type: "extension",
         }),
       ).toBe(true);
     });
@@ -292,8 +292,8 @@ describe("audioUtils", () => {
     it("should mark fileAccess issues as critical", () => {
       expect(
         isFormatIssueCritical({
-          type: "fileAccess",
           message: "File not found",
+          type: "fileAccess",
         }),
       ).toBe(true);
     });
@@ -301,8 +301,8 @@ describe("audioUtils", () => {
     it("should mark invalidFormat issues as critical", () => {
       expect(
         isFormatIssueCritical({
-          type: "invalidFormat",
           message: "Corrupt file",
+          type: "invalidFormat",
         }),
       ).toBe(true);
     });
@@ -310,22 +310,22 @@ describe("audioUtils", () => {
     it("should mark audio format issues as non-critical (convertible)", () => {
       expect(
         isFormatIssueCritical({
-          type: "bitDepth",
           message: "Wrong bit depth",
+          type: "bitDepth",
         }),
       ).toBe(false);
 
       expect(
         isFormatIssueCritical({
-          type: "sampleRate",
           message: "Wrong sample rate",
+          type: "sampleRate",
         }),
       ).toBe(false);
 
       expect(
         isFormatIssueCritical({
-          type: "channels",
           message: "Too many channels",
+          type: "channels",
         }),
       ).toBe(false);
     });
@@ -337,9 +337,9 @@ describe("audioUtils", () => {
  */
 function createValidWavHeader(config: {
   audioFormat: number;
+  bitsPerSample: number;
   channels: number;
   sampleRate: number;
-  bitsPerSample: number;
 }): Buffer {
   const buffer = Buffer.alloc(44);
 
@@ -376,10 +376,10 @@ function createValidWavHeader(config: {
  */
 function createValidWavHeaderWithData(config: {
   audioFormat: number;
-  channels: number;
-  sampleRate: number;
   bitsPerSample: number;
+  channels: number;
   dataSize: number;
+  sampleRate: number;
 }): Buffer {
   const headerSize = 44;
   const buffer = Buffer.alloc(headerSize + config.dataSize);

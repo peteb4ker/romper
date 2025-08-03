@@ -2,6 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type { DbResult } from "../../../shared/db/schema.js";
+import type { SyncFileOperation } from "./syncPlannerService.js";
+
 import { getErrorMessage } from "../../../shared/errorUtils.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 import {
@@ -12,13 +14,31 @@ import {
   ensureDirectoryExists,
   getFileSize,
 } from "../utils/fileSystemUtils.js";
-import type { SyncFileOperation } from "./syncPlannerService.js";
 
 /**
  * Service for executing sync operations (copy/convert files)
  * Extracted from syncService.ts for better testability
  */
 export class SyncExecutorService {
+  /**
+   * Calculate total size for a list of file operations
+   */
+  calculateTotalSize(fileOperations: SyncFileOperation[]): number {
+    let totalBytes = 0;
+    for (const fileOp of fileOperations) {
+      totalBytes += this.getFileSize(fileOp.sourcePath);
+    }
+    return totalBytes;
+  }
+
+  /**
+   * Categorize sync errors for better error reporting
+   */
+  categorizeError(error: any, filePath?: string): SyncErrorInfo {
+    const errorMessage = getErrorMessage(error);
+    return categorizeErrorByRules(errorMessage, filePath);
+  }
+
   /**
    * Execute a single file operation (copy or convert)
    */
@@ -57,12 +77,12 @@ export class SyncExecutorService {
         bytesTransferred = getFileSize(fileOp.destinationPath);
       }
 
-      return { success: true, data: { bytesTransferred } };
+      return { data: { bytesTransferred }, success: true };
     } catch (error) {
       const errorInfo = this.categorizeError(error, fileOp.sourcePath);
       return {
-        success: false,
         error: `${fileOp.filename}: ${errorInfo.userMessage}`,
+        success: false,
       };
     }
   }
@@ -72,25 +92,6 @@ export class SyncExecutorService {
    */
   getFileSize(filePath: string): number {
     return getFileSize(filePath);
-  }
-
-  /**
-   * Calculate total size for a list of file operations
-   */
-  calculateTotalSize(fileOperations: SyncFileOperation[]): number {
-    let totalBytes = 0;
-    for (const fileOp of fileOperations) {
-      totalBytes += this.getFileSize(fileOp.sourcePath);
-    }
-    return totalBytes;
-  }
-
-  /**
-   * Categorize sync errors for better error reporting
-   */
-  categorizeError(error: any, filePath?: string): SyncErrorInfo {
-    const errorMessage = getErrorMessage(error);
-    return categorizeErrorByRules(errorMessage, filePath);
   }
 }
 

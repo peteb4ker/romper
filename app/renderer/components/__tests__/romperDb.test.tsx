@@ -8,8 +8,8 @@ describe("romperDb", () => {
     // Set up default mock behavior
     vi.mocked(window.electronAPI.createRomperDb).mockImplementation(
       async (dbDir: string) => ({
-        success: true,
         dbPath: dbDir + "/romper.sqlite",
+        success: true,
       }),
     );
   });
@@ -22,8 +22,8 @@ describe("romperDb", () => {
 
   it("should throw if electronAPI.createRomperDb fails", async () => {
     vi.mocked(window.electronAPI.createRomperDb).mockResolvedValueOnce({
-      success: false,
       error: "fail",
+      success: false,
     });
     await expect(createRomperDb("/fail/path")).rejects.toThrow("fail");
   });

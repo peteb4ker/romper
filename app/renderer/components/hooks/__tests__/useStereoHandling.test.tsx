@@ -10,17 +10,17 @@ const createWrapper = (defaultToMonoSamples: boolean) => {
   return ({ children }: { children: React.ReactNode }) => (
     <SettingsContext.Provider
       value={{
-        defaultToMonoSamples,
-        setDefaultToMonoSamples: vi.fn(),
-        themeMode: "light",
-        setThemeMode: vi.fn(),
-        isDarkMode: false,
         confirmDestructiveActions: true,
-        setConfirmDestructiveActions: vi.fn(),
-        localStorePath: "/test/path",
-        setLocalStorePath: vi.fn(),
-        localStoreStatus: { isValid: true },
+        defaultToMonoSamples,
+        isDarkMode: false,
         isInitialized: true,
+        localStorePath: "/test/path",
+        localStoreStatus: { isValid: true },
+        setConfirmDestructiveActions: vi.fn(),
+        setDefaultToMonoSamples: vi.fn(),
+        setLocalStorePath: vi.fn(),
+        setThemeMode: vi.fn(),
+        themeMode: "light",
       }}
     >
       {children}
@@ -115,7 +115,7 @@ describe("useStereoHandling", () => {
       const { result } = renderHook(() => useStereoHandling(), { wrapper });
 
       const existingSamples = [
-        { voice_number: 2, filename: "existing.wav" }, // Voice 2 has existing sample
+        { filename: "existing.wav", voice_number: 2 }, // Voice 2 has existing sample
       ];
 
       const stereoResult = result.current.analyzeStereoAssignment(

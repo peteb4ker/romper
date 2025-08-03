@@ -1,17 +1,18 @@
 import React from "react";
 
+import type { KitDetailsProps } from "./kitTypes";
+
 import { useKitDetailsLogic } from "./hooks/useKitDetailsLogic";
 import KitForm from "./KitForm";
 import KitHeader from "./KitHeader";
 import KitStepSequencer from "./KitStepSequencer";
-import type { KitDetailsProps } from "./kitTypes";
 import KitVoicePanels from "./KitVoicePanels";
 import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitDetailsAllProps extends KitDetailsProps {
-  onCreateKit?: () => void;
-  onMessage?: (msg: { type: string; text: string }) => void;
-  onRequestSamplesReload?: () => Promise<void>;
+  onCreateKit?: () => void; // Used by useKitDetailsLogic hook
+  onMessage?: (msg: { text: string; type: string }) => void; // Used by useKitDetailsLogic hook
+  onRequestSamplesReload?: () => void | Promise<void>;
 }
 
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
@@ -31,79 +32,79 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   return (
     <div className="flex flex-col flex-1 min-h-0 h-full p-2 pb-0 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-sm shadow">
       <KitHeader
-        kitName={props.kitName}
-        kit={logic.kit}
         editingKitAlias={false}
-        setEditingKitAlias={() => {}}
-        kitAliasInput={logic.kit?.alias || logic.kit?.name || ""}
-        setKitAliasInput={() => {}}
         handleSaveKitAlias={logic.updateKitAlias}
+        isEditable={logic.kit?.editable ?? false}
+        kit={logic.kit}
+        kitAliasInput={logic.kit?.alias || logic.kit?.name || ""}
         kitAliasInputRef={
           React.createRef<HTMLInputElement>() as React.RefObject<HTMLInputElement>
         }
+        kitIndex={props.kitIndex}
+        kitName={props.kitName}
+        kits={props.kits}
         onBack={props.onBack}
         onNextKit={props.onNextKit}
         onPrevKit={props.onPrevKit}
-        kits={props.kits}
-        kitIndex={props.kitIndex}
         onScanKit={logic.handleScanKit}
         onToggleEditableMode={logic.toggleEditableMode}
-        isEditable={logic.kit?.editable ?? false}
+        setEditingKitAlias={() => {}}
+        setKitAliasInput={() => {}}
       />
 
       {needsScanning && (
         <UnscannedKitPrompt
           kitName={props.kitName}
-          onScan={() => logic.handleScanKit()}
           onDismiss={() => setDismissedUnscannedPrompt(true)}
+          onScan={() => logic.handleScanKit()}
         />
       )}
 
       <KitForm
+        error={null} // error now handled by centralized message display
         kit={logic.kit}
         loading={logic.kitLoading}
-        error={null} // error now handled by centralized message display
         onSave={logic.updateKitAlias}
         tagsEditable={false} // Remove tag editing
       />
       <div className="flex-1 min-h-0 overflow-y-auto">
         <KitVoicePanels
-          samples={logic.samples}
+          isEditable={logic.kit?.editable ?? false}
           kit={logic.kit}
-          selectedVoice={logic.selectedVoice}
-          selectedSampleIdx={logic.selectedSampleIdx}
-          setSelectedVoice={logic.setSelectedVoice}
-          setSelectedSampleIdx={logic.setSelectedSampleIdx}
-          onSaveVoiceName={logic.updateVoiceAlias}
+          kitName={props.kitName}
+          onPlay={logic.playback.handlePlay}
+          onRescanVoiceName={() => {}}
+          onSampleAdd={logic.sampleManagement.handleSampleAdd}
+          onSampleDelete={logic.sampleManagement.handleSampleDelete}
+          onSampleKeyNav={logic.kitVoicePanels.onSampleKeyNav}
+          onSampleMove={logic.sampleManagement.handleSampleMove}
+          onSampleReplace={logic.sampleManagement.handleSampleReplace}
           onSampleSelect={(voice, idx) => {
             logic.setSelectedVoice(voice);
             logic.setSelectedSampleIdx(idx);
           }}
-          onRescanVoiceName={() => {}}
-          sequencerOpen={logic.sequencerOpen}
-          samplePlaying={logic.playback.samplePlaying}
-          playTriggers={logic.playback.playTriggers}
-          stopTriggers={logic.playback.stopTriggers}
-          onPlay={logic.playback.handlePlay}
+          onSaveVoiceName={logic.updateVoiceAlias}
           onStop={logic.playback.handleStop}
           onWaveformPlayingChange={logic.playback.handleWaveformPlayingChange}
-          kitName={props.kitName}
-          onSampleKeyNav={logic.kitVoicePanels.onSampleKeyNav}
-          isEditable={logic.kit?.editable ?? false}
-          onSampleAdd={logic.sampleManagement.handleSampleAdd}
-          onSampleReplace={logic.sampleManagement.handleSampleReplace}
-          onSampleDelete={logic.sampleManagement.handleSampleDelete}
-          onSampleMove={logic.sampleManagement.handleSampleMove}
+          playTriggers={logic.playback.playTriggers}
+          samplePlaying={logic.playback.samplePlaying}
+          samples={logic.samples}
+          selectedSampleIdx={logic.selectedSampleIdx}
+          selectedVoice={logic.selectedVoice}
+          sequencerOpen={logic.sequencerOpen}
+          setSelectedSampleIdx={logic.setSelectedSampleIdx}
+          setSelectedVoice={logic.setSelectedVoice}
+          stopTriggers={logic.playback.stopTriggers}
         />
       </div>
       <KitStepSequencer
-        samples={logic.samples}
+        gridRef={logic.sequencerGridRef as React.RefObject<HTMLDivElement>}
         onPlaySample={logic.playback.handlePlay}
-        stepPattern={logic.stepPattern}
-        setStepPattern={logic.setStepPattern}
+        samples={logic.samples}
         sequencerOpen={logic.sequencerOpen}
         setSequencerOpen={logic.setSequencerOpen}
-        gridRef={logic.sequencerGridRef as React.RefObject<HTMLDivElement>}
+        setStepPattern={logic.setStepPattern}
+        stepPattern={logic.stepPattern}
       />
     </div>
   );

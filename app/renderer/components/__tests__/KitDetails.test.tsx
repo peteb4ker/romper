@@ -28,11 +28,73 @@ const mockUseKitDetailsLogic = useKitDetailsLogic as ReturnType<typeof vi.fn>;
 // Add Mock type for TypeScript
 type Mock = ReturnType<typeof vi.fn>;
 
+// Helper to create default mock logic
+function createMockLogic(overrides = {}) {
+  return {
+    handleScanKit: vi.fn(),
+    // Kit data from useKitDetailsLogic
+    kit: {
+      alias: null,
+      artist: null,
+      bank_letter: "T",
+      editable: false,
+      locked: false,
+      name: "TestKit",
+      step_pattern: null,
+      voices: [
+        { id: 1, kit_name: "TestKit", voice_alias: null, voice_number: 1 },
+        { id: 2, kit_name: "TestKit", voice_alias: null, voice_number: 2 },
+        { id: 3, kit_name: "TestKit", voice_alias: null, voice_number: 3 },
+        { id: 4, kit_name: "TestKit", voice_alias: null, voice_number: 4 },
+      ],
+    },
+    kitError: null,
+    kitLoading: false,
+    playback: {
+      handlePlay: vi.fn(),
+      handleStop: vi.fn(),
+      handleWaveformPlayingChange: vi.fn(),
+      playbackError: null,
+      playTriggers: {},
+      samplePlaying: null,
+      stopTriggers: {},
+    },
+    reloadKit: vi.fn(),
+    samples: { 1: [], 2: [], 3: [], 4: [] },
+    selectedSampleIdx: 0,
+    selectedVoice: 1,
+    sequencerGridRef: { current: null },
+    sequencerOpen: false,
+    setSelectedSampleIdx: vi.fn(),
+    setSelectedVoice: vi.fn(),
+    setSequencerOpen: vi.fn(),
+    setStepPattern: vi.fn(),
+    stepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
+    toggleEditableMode: vi.fn(),
+    updateKitAlias: vi.fn(),
+    updateVoiceAlias: vi.fn(),
+    ...overrides,
+    kitVoicePanels: {
+      onSampleKeyNav: vi.fn(),
+    },
+    sampleManagement: {
+      handleSampleAdd: vi.fn(),
+      handleSampleDelete: vi.fn(),
+      handleSampleReplace: vi.fn(),
+    },
+  };
+}
+
+// Helper to render components with TestSettingsProvider
+function renderWithSettings(component: React.ReactElement) {
+  return render(<TestSettingsProvider>{component}</TestSettingsProvider>);
+}
+
 // Helper to set up specific mock behaviors for this test
 function setupElectronAPIMocks() {
   vi.mocked(window.electronAPI.getKit).mockResolvedValue({
-    success: true,
     data: null,
+    success: true,
   });
   vi.mocked(window.electronAPI.updateKit).mockResolvedValue({ success: true });
   vi.mocked(window.electronAPI.updateVoiceAlias).mockResolvedValue({
@@ -41,68 +103,6 @@ function setupElectronAPIMocks() {
   vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
     success: true,
   });
-}
-
-// Helper to render components with TestSettingsProvider
-function renderWithSettings(component: React.ReactElement) {
-  return render(<TestSettingsProvider>{component}</TestSettingsProvider>);
-}
-
-// Helper to create default mock logic
-function createMockLogic(overrides = {}) {
-  return {
-    samples: { 1: [], 2: [], 3: [], 4: [] },
-    selectedVoice: 1,
-    selectedSampleIdx: 0,
-    sequencerOpen: false,
-    sequencerGridRef: { current: null },
-    setSelectedVoice: vi.fn(),
-    setSelectedSampleIdx: vi.fn(),
-    setSequencerOpen: vi.fn(),
-    handleScanKit: vi.fn(),
-    playback: {
-      playbackError: null,
-      playTriggers: {},
-      stopTriggers: {},
-      samplePlaying: null,
-      handlePlay: vi.fn(),
-      handleStop: vi.fn(),
-      handleWaveformPlayingChange: vi.fn(),
-    },
-    // Kit data from useKitDetailsLogic
-    kit: {
-      name: "TestKit",
-      bank_letter: "T",
-      alias: null,
-      artist: null,
-      editable: false,
-      locked: false,
-      step_pattern: null,
-      voices: [
-        { id: 1, kit_name: "TestKit", voice_number: 1, voice_alias: null },
-        { id: 2, kit_name: "TestKit", voice_number: 2, voice_alias: null },
-        { id: 3, kit_name: "TestKit", voice_number: 3, voice_alias: null },
-        { id: 4, kit_name: "TestKit", voice_number: 4, voice_alias: null },
-      ],
-    },
-    stepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
-    setStepPattern: vi.fn(),
-    updateKitAlias: vi.fn(),
-    updateVoiceAlias: vi.fn(),
-    toggleEditableMode: vi.fn(),
-    kitLoading: false,
-    kitError: null,
-    reloadKit: vi.fn(),
-    ...overrides,
-    kitVoicePanels: {
-      onSampleKeyNav: vi.fn(),
-    },
-    sampleManagement: {
-      handleSampleAdd: vi.fn(),
-      handleSampleReplace: vi.fn(),
-      handleSampleDelete: vi.fn(),
-    },
-  };
 }
 
 describe("KitDetails", () => {
@@ -130,9 +130,9 @@ describe("KitDetails", () => {
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
         />,
       );
       const noNameIndicators = await screen.findAllByText("No voice name set");
@@ -153,9 +153,9 @@ describe("KitDetails", () => {
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
         />,
       );
 
@@ -172,28 +172,28 @@ describe("KitDetails", () => {
       const mockLogic = {
         ...createMockLogic(),
         kit: {
-          name: "TestKit",
-          bank_letter: "T",
           alias: null,
           artist: null,
+          bank_letter: "T",
           editable: false,
           locked: false,
+          name: "TestKit",
           step_pattern: null,
           voices: [
             {
               id: 1,
               kit_name: "TestKit",
-              voice_number: 1,
               voice_alias: "Kick",
+              voice_number: 1,
             },
             {
               id: 2,
               kit_name: "TestKit",
-              voice_number: 2,
               voice_alias: "Snare",
+              voice_number: 2,
             },
-            { id: 3, kit_name: "TestKit", voice_number: 3, voice_alias: "Hat" },
-            { id: 4, kit_name: "TestKit", voice_number: 4, voice_alias: "Tom" },
+            { id: 3, kit_name: "TestKit", voice_alias: "Hat", voice_number: 3 },
+            { id: 4, kit_name: "TestKit", voice_alias: "Tom", voice_number: 4 },
           ],
         },
       };
@@ -207,9 +207,9 @@ describe("KitDetails", () => {
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
         />,
       );
 
@@ -230,9 +230,9 @@ describe("KitDetails", () => {
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
         />,
       );
       expect(await screen.findByTestId("voice-name-1")).toBeInTheDocument();
@@ -247,17 +247,17 @@ describe("KitDetails", () => {
       const mockToggleEditableMode = vi.fn();
       const mockLogic = {
         ...createMockLogic(),
-        toggleEditableMode: mockToggleEditableMode,
         kit: { ...createMockLogic().kit, editable: true },
+        toggleEditableMode: mockToggleEditableMode,
       };
       (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
         />,
       );
 
@@ -283,9 +283,9 @@ describe("KitDetails", () => {
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
         />,
       );
 
@@ -308,9 +308,9 @@ describe("KitDetails", () => {
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
         />,
       );
 
@@ -331,9 +331,9 @@ describe("KitDetails", () => {
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
         />,
       );
 
@@ -355,9 +355,9 @@ describe("KitDetails", () => {
       renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
         />,
       );
 
@@ -377,9 +377,9 @@ describe("KitDetails", () => {
       const { rerender } = renderWithSettings(
         <KitDetails
           kitName="TestKit"
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
           onBack={() => {}}
           onMessage={vi.fn()}
+          samples={{ 1: [], 2: [], 3: [], 4: [] }}
         />,
       );
 
@@ -397,9 +397,9 @@ describe("KitDetails", () => {
         <TestSettingsProvider>
           <KitDetails
             kitName="TestKit"
-            samples={{ 1: [], 2: [], 3: [], 4: [] }}
             onBack={() => {}}
             onMessage={vi.fn()}
+            samples={{ 1: [], 2: [], 3: [], 4: [] }}
           />
         </TestSettingsProvider>,
       );

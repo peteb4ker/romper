@@ -65,8 +65,8 @@ describe("useStepPattern", () => {
 
       const { result } = renderHook(() =>
         useStepPattern({
-          kitName: "A0",
           initialPattern,
+          kitName: "A0",
         }),
       );
 
@@ -84,9 +84,9 @@ describe("useStepPattern", () => {
         [0, 0, 1, 1],
       ];
 
-      const { result, rerender } = renderHook(
+      const { rerender, result } = renderHook(
         ({ initialPattern }) =>
-          useStepPattern({ kitName: "A0", initialPattern }),
+          useStepPattern({ initialPattern, kitName: "A0" }),
         {
           initialProps: { initialPattern: initialPattern1 },
         },
@@ -195,14 +195,14 @@ describe("useStepPattern", () => {
       ];
 
       vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
-        success: false,
         error: "Database error",
+        success: false,
       });
 
       const { result } = renderHook(() =>
         useStepPattern({
-          kitName: "A0",
           initialPattern,
+          kitName: "A0",
         }),
       );
 
@@ -241,8 +241,8 @@ describe("useStepPattern", () => {
 
       const { result } = renderHook(() =>
         useStepPattern({
-          kitName: "A0",
           initialPattern,
+          kitName: "A0",
         }),
       );
 
@@ -270,8 +270,8 @@ describe("useStepPattern", () => {
 
     it("reverts to default pattern when no initial pattern and API fails", async () => {
       vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
-        success: false,
         error: "Database error",
+        success: false,
       });
 
       const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
@@ -297,7 +297,7 @@ describe("useStepPattern", () => {
 
   describe("dependency updates", () => {
     it("updates callback when kitName changes", async () => {
-      const { result, rerender } = renderHook(
+      const { rerender, result } = renderHook(
         ({ kitName }) => useStepPattern({ kitName }),
         {
           initialProps: { kitName: "A0" },
@@ -346,13 +346,13 @@ describe("useStepPattern", () => {
       ];
 
       vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
-        success: false,
         error: "Test error",
+        success: false,
       });
 
-      const { result, rerender } = renderHook(
+      const { rerender, result } = renderHook(
         ({ initialPattern }) =>
-          useStepPattern({ kitName: "A0", initialPattern }),
+          useStepPattern({ initialPattern, kitName: "A0" }),
         {
           initialProps: { initialPattern: initialPattern1 },
         },
@@ -392,7 +392,7 @@ describe("useStepPattern", () => {
     });
 
     it("maintains stable function reference", () => {
-      const { result, rerender } = renderHook(() =>
+      const { rerender, result } = renderHook(() =>
         useStepPattern({ kitName: "A0" }),
       );
 

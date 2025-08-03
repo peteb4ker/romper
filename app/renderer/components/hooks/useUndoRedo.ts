@@ -4,32 +4,33 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type { AnyUndoAction } from "../../../../shared/undoTypes";
+
 import { getActionDescription } from "../../../../shared/undoTypes";
 
 interface UndoRedoState {
-  undoStack: AnyUndoAction[];
-  redoStack: AnyUndoAction[];
-  isUndoing: boolean;
+  error: null | string;
   isRedoing: boolean;
-  error: string | null;
+  isUndoing: boolean;
+  redoStack: AnyUndoAction[];
+  undoStack: AnyUndoAction[];
 }
 
 export function useUndoRedo(kitName: string) {
   const [state, setState] = useState<UndoRedoState>({
-    undoStack: [],
-    redoStack: [],
-    isUndoing: false,
-    isRedoing: false,
     error: null,
+    isRedoing: false,
+    isUndoing: false,
+    redoStack: [],
+    undoStack: [],
   });
 
   // Add action to undo stack (called immediately after successful operations)
   const addAction = useCallback((action: AnyUndoAction) => {
     setState((prev) => ({
       ...prev,
-      undoStack: [action, ...prev.undoStack],
-      redoStack: [], // Clear redo stack when new action is added
       error: null,
+      redoStack: [], // Clear redo stack when new action is added
+      undoStack: [action, ...prev.undoStack],
     }));
   }, []);
 
@@ -107,7 +108,7 @@ export function useUndoRedo(kitName: string) {
   };
 
   const restoreFromSnapshot = async (stateSnapshot: any[]) => {
-    for (const { voice, slot, sample } of stateSnapshot) {
+    for (const { sample, slot, voice } of stateSnapshot) {
       await (window as any).electronAPI?.addSampleToSlot?.(
         kitName,
         voice,
@@ -133,26 +134,26 @@ export function useUndoRedo(kitName: string) {
 
     // Restore moved sample to original position
     samples.push({
-      voice: action.data.fromVoice,
-      slot: action.data.fromSlot,
       sample: action.data.movedSample,
+      slot: action.data.fromSlot,
+      voice: action.data.fromVoice,
     });
 
     // Restore affected samples
     for (const affected of action.data.affectedSamples) {
       samples.push({
-        voice: affected.voice,
-        slot: affected.oldSlot,
         sample: affected.sample,
+        slot: affected.oldSlot,
+        voice: affected.voice,
       });
     }
 
     // Restore replaced sample if any
     if (action.data.replacedSample) {
       samples.push({
-        voice: action.data.toVoice,
-        slot: action.data.toSlot,
         sample: action.data.replacedSample,
+        slot: action.data.toSlot,
+        voice: action.data.toVoice,
       });
     }
 
@@ -186,7 +187,7 @@ export function useUndoRedo(kitName: string) {
   const restoreSamples = async (samplesToRestore: any[]) => {
     const sortedSamples = [...samplesToRestore].sort((a, b) => a.slot - b.slot);
 
-    for (const { voice, slot, sample } of sortedSamples) {
+    for (const { sample, slot, voice } of sortedSamples) {
       await (window as any).electronAPI?.addSampleToSlot?.(
         kitName,
         voice,
@@ -207,8 +208,8 @@ export function useUndoRedo(kitName: string) {
       }
     } catch (error) {
       return {
-        success: false,
         error: error instanceof Error ? error.message : String(error),
+        success: false,
       };
     }
   };
@@ -239,8 +240,8 @@ export function useUndoRedo(kitName: string) {
       return result;
     } catch (error) {
       return {
-        success: false,
         error: error instanceof Error ? error.message : String(error),
+        success: false,
       };
     }
   };
@@ -258,8 +259,8 @@ export function useUndoRedo(kitName: string) {
       return { success: true };
     } catch (error) {
       return {
-        success: false,
         error: error instanceof Error ? error.message : String(error),
+        success: false,
       };
     }
   };
@@ -310,18 +311,18 @@ export function useUndoRedo(kitName: string) {
 
   const executeUndoAction = async (action: any) => {
     switch (action.type) {
-      case "DELETE_SAMPLE":
-        return await undoDeleteSample(action);
       case "ADD_SAMPLE":
         return await undoAddSample(action);
-      case "REPLACE_SAMPLE":
-        return await undoReplaceSample(action);
+      case "COMPACT_SLOTS":
+        return await undoCompactSlots(action);
+      case "DELETE_SAMPLE":
+        return await undoDeleteSample(action);
       case "MOVE_SAMPLE":
         return await undoMoveSample(action);
       case "MOVE_SAMPLE_BETWEEN_KITS":
         return await undoMoveSampleBetweenKits(action);
-      case "COMPACT_SLOTS":
-        return await undoCompactSlots(action);
+      case "REPLACE_SAMPLE":
+        return await undoReplaceSample(action);
       default:
         throw new Error(`Unknown action type: ${action.type}`);
     }
@@ -334,9 +335,9 @@ export function useUndoRedo(kitName: string) {
       console.log("[UNDO] Undo operation successful, updating state");
       setState((prev) => ({
         ...prev,
-        undoStack: prev.undoStack.slice(1),
-        redoStack: [actionToUndo, ...prev.redoStack],
         error: null,
+        redoStack: [actionToUndo, ...prev.redoStack],
+        undoStack: prev.undoStack.slice(1),
       }));
 
       console.log("[UNDO] Emitting refresh event");
@@ -364,7 +365,7 @@ export function useUndoRedo(kitName: string) {
     }
 
     const actionToUndo = state.undoStack[0];
-    setState((prev) => ({ ...prev, isUndoing: true, error: null }));
+    setState((prev) => ({ ...prev, error: null, isUndoing: true }));
 
     try {
       console.log(
@@ -396,12 +397,6 @@ export function useUndoRedo(kitName: string) {
   // Helper functions to reduce cognitive complexity in redo
   const executeRedoAction = async (action: any) => {
     const redoOperations = {
-      DELETE_SAMPLE: () =>
-        (window as any).electronAPI?.deleteSampleFromSlot?.(
-          kitName,
-          action.data.voice,
-          action.data.slot,
-        ),
       ADD_SAMPLE: () =>
         (window as any).electronAPI?.addSampleToSlot?.(
           kitName,
@@ -410,13 +405,17 @@ export function useUndoRedo(kitName: string) {
           action.data.addedSample.source_path,
           { forceMono: !action.data.addedSample.is_stereo },
         ),
-      REPLACE_SAMPLE: () =>
-        (window as any).electronAPI?.replaceSampleInSlot?.(
+      COMPACT_SLOTS: () =>
+        (window as any).electronAPI?.deleteSampleFromSlot?.(
+          kitName,
+          action.data.voice,
+          action.data.deletedSlot,
+        ),
+      DELETE_SAMPLE: () =>
+        (window as any).electronAPI?.deleteSampleFromSlot?.(
           kitName,
           action.data.voice,
           action.data.slot,
-          action.data.newSample.source_path,
-          { forceMono: !action.data.newSample.is_stereo },
         ),
       MOVE_SAMPLE: () =>
         (window as any).electronAPI?.moveSampleInKit?.(
@@ -437,11 +436,13 @@ export function useUndoRedo(kitName: string) {
           action.data.toSlot,
           action.data.mode,
         ),
-      COMPACT_SLOTS: () =>
-        (window as any).electronAPI?.deleteSampleFromSlot?.(
+      REPLACE_SAMPLE: () =>
+        (window as any).electronAPI?.replaceSampleInSlot?.(
           kitName,
           action.data.voice,
-          action.data.deletedSlot,
+          action.data.slot,
+          action.data.newSample.source_path,
+          { forceMono: !action.data.newSample.is_stereo },
         ),
     };
 
@@ -457,9 +458,9 @@ export function useUndoRedo(kitName: string) {
   const handleRedoSuccess = (actionToRedo: any) => {
     setState((prev) => ({
       ...prev,
+      error: null,
       redoStack: prev.redoStack.slice(1),
       undoStack: [actionToRedo, ...prev.undoStack],
-      error: null,
     }));
 
     document.dispatchEvent(
@@ -483,7 +484,7 @@ export function useUndoRedo(kitName: string) {
     }
 
     const actionToRedo = state.redoStack[0];
-    setState((prev) => ({ ...prev, isRedoing: true, error: null }));
+    setState((prev) => ({ ...prev, error: null, isRedoing: true }));
 
     try {
       const result = await executeRedoAction(actionToRedo);
@@ -513,36 +514,36 @@ export function useUndoRedo(kitName: string) {
   useEffect(() => {
     setState((prev) => ({
       ...prev,
-      undoStack: [],
-      redoStack: [],
       error: null,
+      redoStack: [],
+      undoStack: [],
     }));
   }, [kitName]);
 
   return {
+    addAction, // New: add actions immediately to stack
+    canRedo: state.redoStack.length > 0 && !state.isRedoing,
     // State
     canUndo: state.undoStack.length > 0 && !state.isUndoing,
-    canRedo: state.redoStack.length > 0 && !state.isRedoing,
-    isUndoing: state.isUndoing,
-    isRedoing: state.isRedoing,
+    clearError,
     error: state.error,
-    undoCount: state.undoStack.length,
-    redoCount: state.redoStack.length,
+    isRedoing: state.isRedoing,
+    isUndoing: state.isUndoing,
 
+    redo,
+    redoCount: state.redoStack.length,
+    redoDescription:
+      state.redoStack.length > 0
+        ? getActionDescription(state.redoStack[0])
+        : null,
     // Actions
     undo,
-    redo,
-    addAction, // New: add actions immediately to stack
-    clearError,
 
+    undoCount: state.undoStack.length,
     // Descriptions
     undoDescription:
       state.undoStack.length > 0
         ? getActionDescription(state.undoStack[0])
-        : null,
-    redoDescription:
-      state.redoStack.length > 0
-        ? getActionDescription(state.redoStack[0])
         : null,
   };
 }

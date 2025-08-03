@@ -19,21 +19,21 @@ describe("PreferencesDialog", () => {
   const mockOnClose = vi.fn();
 
   const defaultSettingsContext = {
-    localStorePath: "/test/path",
-    themeMode: "system" as const,
-    isDarkMode: false,
-    defaultToMonoSamples: true,
+    clearError: vi.fn(),
     confirmDestructiveActions: true,
-    localStoreStatus: null,
-    isLoading: false,
-    isInitialized: true,
+    defaultToMonoSamples: true,
     error: null,
+    isDarkMode: false,
+    isInitialized: true,
+    isLoading: false,
+    localStorePath: "/test/path",
+    localStoreStatus: null,
+    refreshLocalStoreStatus: vi.fn(),
+    setConfirmDestructiveActions: mockSetConfirmDestructiveActions,
+    setDefaultToMonoSamples: mockSetDefaultToMonoSamples,
     setLocalStorePath: vi.fn(),
     setThemeMode: mockSetThemeMode,
-    setDefaultToMonoSamples: mockSetDefaultToMonoSamples,
-    setConfirmDestructiveActions: mockSetConfirmDestructiveActions,
-    refreshLocalStoreStatus: vi.fn(),
-    clearError: vi.fn(),
+    themeMode: "system" as const,
   };
 
   beforeEach(() => {

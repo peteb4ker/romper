@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 export function useKitPlayback(_samples: any) {
-  const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const [playbackError, setPlaybackError] = useState<null | string>(null);
   const [playTriggers, setPlayTriggers] = useState<{ [key: string]: number }>(
     {},
   );
@@ -57,12 +57,12 @@ export function useKitPlayback(_samples: any) {
   }, []);
 
   return {
-    playbackError,
-    playTriggers,
-    stopTriggers,
-    samplePlaying,
     handlePlay,
     handleStop,
     handleWaveformPlayingChange,
+    playbackError,
+    playTriggers,
+    samplePlaying,
+    stopTriggers,
   };
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { KitWithRelations } from "../../../shared/db/schema";
+
 import KitDialogs from "./dialogs/KitDialogs";
 import SyncUpdateDialog from "./dialogs/SyncUpdateDialog";
 import ValidationResultsDialog from "./dialogs/ValidationResultsDialog";
@@ -13,18 +14,18 @@ import KitBrowserHeader from "./KitBrowserHeader";
 import KitGrid, { KitGridHandle } from "./KitGrid";
 import LocalStoreWizardUI from "./LocalStoreWizardUI";
 
-interface KitBrowserProps {
-  onSelectKit: (kitName: string) => void;
-  localStorePath: string | null;
-  kits?: KitWithRelations[];
-  sampleCounts?: Record<string, [number, number, number, number]>;
-  onRefreshKits?: () => void;
-  onMessage?: (msg: { text: string; type?: string; duration?: number }) => void;
-  setLocalStorePath?: (path: string) => void;
-}
-
 export interface KitBrowserHandle {
   handleScanAllKits: () => void;
+}
+
+interface KitBrowserProps {
+  kits?: KitWithRelations[];
+  localStorePath: null | string;
+  onMessage?: (msg: { duration?: number; text: string; type?: string }) => void;
+  onRefreshKits?: () => void;
+  onSelectKit: (kitName: string) => void;
+  sampleCounts?: Record<string, [number, number, number, number]>;
+  setLocalStorePath?: (path: string) => void;
 }
 
 const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
@@ -57,63 +58,63 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     }, [props.kits, showFavoritesOnly, showModifiedOnly]);
 
     const logic = useKitBrowser({
-      kits: filteredKits,
       kitListRef: kitGridRef,
-      onRefreshKits: props.onRefreshKits,
+      kits: filteredKits,
       onMessage: props.onMessage,
+      onRefreshKits: props.onRefreshKits,
     });
     const {
-      kits,
-      showNewKit,
-      setShowNewKit,
-      newKitSlot,
-      setNewKitSlot,
-      newKitError,
-      nextKitSlot,
-      duplicateKitSource,
-      setDuplicateKitSource,
-      duplicateKitDest,
-      setDuplicateKitDest,
-      duplicateKitError,
       bankNames,
-      scrollContainerRef,
+      duplicateKitDest,
+      duplicateKitError,
+      duplicateKitSource,
+      focusedKit,
+      globalBankHotkeyHandler,
       handleCreateKit,
       handleCreateNextKit,
       handleDuplicateKit,
-      selectedBank,
-      focusedKit,
-      setFocusedKit,
-      globalBankHotkeyHandler,
       handleVisibleBankChange,
+      kits,
+      newKitError,
+      newKitSlot,
+      nextKitSlot,
+      scrollContainerRef,
+      selectedBank,
+      setDuplicateKitDest,
+      setDuplicateKitSource,
+      setFocusedKit,
+      setNewKitSlot,
+      setShowNewKit,
+      showNewKit,
     } = logic;
 
     const [showLocalStoreWizard, setShowLocalStoreWizard] =
       React.useState(false);
     const [showSyncDialog, setShowSyncDialog] = useState(false);
-    const [currentSyncKit, setCurrentSyncKit] = useState<string | null>(null);
+    const [currentSyncKit, setCurrentSyncKit] = useState<null | string>(null);
     const [currentChangeSummary, setCurrentChangeSummary] = useState<any>(null);
 
     // Sync functionality
     const {
-      generateChangeSummary,
-      startSync,
-      isLoading: isSyncLoading,
-      error: syncError,
       clearError: clearSyncError,
+      error: syncError,
+      generateChangeSummary,
+      isLoading: isSyncLoading,
+      startSync,
     } = useSyncUpdate();
 
     React.useEffect(() => {
       if (logic.sdCardWarning && onMessage) {
         onMessage({
+          duration: 5000,
           text: logic.sdCardWarning,
           type: "warning",
-          duration: 5000,
         });
       }
     }, [logic.sdCardWarning, onMessage]);
     React.useEffect(() => {
       if (logic.error && onMessage) {
-        onMessage({ text: logic.error, type: "error", duration: 7000 });
+        onMessage({ duration: 7000, text: logic.error, type: "error" });
       }
     }, [logic.error, onMessage]);
 
@@ -125,9 +126,9 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           if (result?.success) {
             const isFavorite = result.data?.is_favorite;
             onMessage?.({
+              duration: 2000,
               text: `Kit ${kitName} ${isFavorite ? "added to" : "removed from"} favorites`,
               type: "success",
-              duration: 2000,
             });
             // Refresh kits to update the UI
             props.onRefreshKits?.();
@@ -235,9 +236,9 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         setCurrentChangeSummary(null);
         if (onMessage) {
           onMessage({
+            duration: 3000,
             text: `All kits synced successfully!`,
             type: "success",
-            duration: 3000,
           });
         }
       } else if (onMessage && syncError) {
@@ -292,73 +293,73 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
 
     return (
       <div
-        ref={scrollContainerRef}
         className="h-full min-h-0 flex-1 flex flex-col bg-gray-50 dark:bg-slate-800 rounded"
+        ref={scrollContainerRef}
       >
         <KitBrowserHeader
-          onScanAllKits={handleScanAllKits}
-          onShowNewKit={() => setShowNewKit(true)}
-          onCreateNextKit={handleCreateNextKit}
-          nextKitSlot={nextKitSlot}
-          onShowLocalStoreWizard={() => setShowLocalStoreWizard(true)}
-          onValidateLocalStore={() => setShowValidationDialog(true)}
-          onSyncToSdCard={handleSyncToSdCard}
-          showFavoritesOnly={showFavoritesOnly}
-          onToggleFavoritesFilter={handleToggleFavoritesFilter}
-          favoritesCount={favoritesCount}
-          showModifiedOnly={showModifiedOnly}
-          onToggleModifiedFilter={handleToggleModifiedFilter}
-          modifiedCount={modifiedCount}
           bankNav={
             <KitBankNav
+              bankNames={bankNames}
               kits={kits}
               onBankClick={onBankClickWithScroll}
-              bankNames={bankNames}
               selectedBank={selectedBank}
             />
           }
+          favoritesCount={favoritesCount}
+          modifiedCount={modifiedCount}
+          nextKitSlot={nextKitSlot}
+          onCreateNextKit={handleCreateNextKit}
+          onScanAllKits={handleScanAllKits}
+          onShowLocalStoreWizard={() => setShowLocalStoreWizard(true)}
+          onShowNewKit={() => setShowNewKit(true)}
+          onSyncToSdCard={handleSyncToSdCard}
+          onToggleFavoritesFilter={handleToggleFavoritesFilter}
+          onToggleModifiedFilter={handleToggleModifiedFilter}
+          onValidateLocalStore={() => setShowValidationDialog(true)}
+          showFavoritesOnly={showFavoritesOnly}
+          showModifiedOnly={showModifiedOnly}
         />
         <KitDialogs
-          showNewKit={showNewKit}
-          newKitSlot={newKitSlot}
+          duplicateKitDest={duplicateKitDest}
+          duplicateKitError={duplicateKitError}
+          duplicateKitSource={duplicateKitSource}
           newKitError={newKitError}
-          onNewKitSlotChange={setNewKitSlot}
-          onCreateKit={handleCreateKit}
+          newKitSlot={newKitSlot}
+          onCancelDuplicateKit={() => {
+            setDuplicateKitSource(null);
+            setDuplicateKitDest("");
+            logic.setDuplicateKitError(null);
+          }}
           onCancelNewKit={() => {
             setShowNewKit(false);
             setNewKitSlot("");
             // Fix: setNewKitError and setDuplicateKitError should be called from logic, not as standalone names
             logic.setNewKitError(null);
           }}
-          showDuplicateKit={!!duplicateKitSource}
-          duplicateKitSource={duplicateKitSource}
-          duplicateKitDest={duplicateKitDest}
-          duplicateKitError={duplicateKitError}
-          onDuplicateKitDestChange={setDuplicateKitDest}
+          onCreateKit={handleCreateKit}
           onDuplicateKit={handleDuplicateKit}
-          onCancelDuplicateKit={() => {
-            setDuplicateKitSource(null);
-            setDuplicateKitDest("");
-            logic.setDuplicateKitError(null);
-          }}
+          onDuplicateKitDestChange={setDuplicateKitDest}
+          onNewKitSlotChange={setNewKitSlot}
+          showDuplicateKit={!!duplicateKitSource}
+          showNewKit={showNewKit}
         />
         <div className="flex-1 min-h-0 overflow-hidden">
           <KitGrid
-            ref={kitGridRef}
-            kits={kits}
-            onSelectKit={props.onSelectKit}
             bankNames={bankNames}
+            focusedKit={focusedKit}
+            kitData={kits}
+            kits={kits}
+            onBankFocus={handleBankFocus}
             onDuplicate={(kit) => {
               setDuplicateKitSource(kit);
               setDuplicateKitDest("");
               logic.setDuplicateKitError(null);
             }}
-            kitData={kits}
-            sampleCounts={props.sampleCounts}
-            focusedKit={focusedKit}
-            onBankFocus={handleBankFocus}
             onFocusKit={setFocusedKit} // NEW: keep parent in sync
+            onSelectKit={props.onSelectKit}
             onVisibleBankChange={handleVisibleBankChange} // NEW: update selected bank on scroll
+            ref={kitGridRef}
+            sampleCounts={props.sampleCounts}
             // onToggleFavorite={handleToggleFavorite} // Task 20.1.2: Favorites toggle - temporarily disabled
           />
         </div>
@@ -396,12 +397,12 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         {/* SyncUpdateDialog */}
         {showSyncDialog && currentSyncKit && currentChangeSummary && (
           <SyncUpdateDialog
-            isOpen={showSyncDialog}
-            onClose={handleCloseSyncDialog}
-            onConfirm={handleConfirmSync}
-            kitName={currentSyncKit}
             changeSummary={currentChangeSummary}
             isLoading={isSyncLoading}
+            isOpen={showSyncDialog}
+            kitName={currentSyncKit}
+            onClose={handleCloseSyncDialog}
+            onConfirm={handleConfirmSync}
           />
         )}
       </div>

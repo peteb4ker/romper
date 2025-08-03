@@ -4,10 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs
 vi.mock("fs", () => ({
-  existsSync: vi.fn(),
-  statSync: vi.fn(),
-  mkdirSync: vi.fn(),
   copyFileSync: vi.fn(),
+  existsSync: vi.fn(),
+  mkdirSync: vi.fn(),
+  statSync: vi.fn(),
 }));
 
 // Mock path
@@ -41,21 +41,21 @@ describe("SyncExecutorService", () => {
 
   describe("executeFileOperation", () => {
     const mockCopyOperation: SyncFileOperation = {
-      filename: "test.wav",
-      sourcePath: "/source/test.wav",
       destinationPath: "/dest/kit/1/test.wav",
-      operation: "copy",
+      filename: "test.wav",
       kitName: "TestKit",
+      operation: "copy",
+      sourcePath: "/source/test.wav",
     };
 
     const mockConvertOperation: SyncFileOperation = {
-      filename: "test.wav",
-      sourcePath: "/source/test.wav",
       destinationPath: "/dest/kit/1/test.wav",
-      operation: "convert",
+      filename: "test.wav",
       kitName: "TestKit",
-      reason: "Format conversion required",
+      operation: "convert",
       originalFormat: "24bit/48000Hz",
+      reason: "Format conversion required",
+      sourcePath: "/source/test.wav",
       targetFormat: "16bit/44100Hz WAV",
     };
 
@@ -97,8 +97,8 @@ describe("SyncExecutorService", () => {
       mockFs.statSync.mockReturnValue({ size: 2048 } as any);
 
       mockConvertToRampleDefault.mockResolvedValue({
-        success: true,
         data: { outputPath: "/dest/kit/1/test.wav" },
+        success: true,
       });
 
       const result = await service.executeFileOperation(
@@ -121,8 +121,8 @@ describe("SyncExecutorService", () => {
       mockFs.statSync.mockReturnValue({ size: 2048 } as any);
 
       mockConvertToRampleDefault.mockResolvedValue({
-        success: true,
         data: { outputPath: "/dest/kit/1/test.wav" },
+        success: true,
       });
 
       await service.executeFileOperation(mockConvertOperation, true);
@@ -139,8 +139,8 @@ describe("SyncExecutorService", () => {
       mockFs.existsSync.mockReturnValue(true);
 
       mockConvertToRampleDefault.mockResolvedValue({
-        success: false,
         error: "Invalid audio format",
+        success: false,
       });
 
       const result = await service.executeFileOperation(mockConvertOperation);
@@ -209,18 +209,18 @@ describe("SyncExecutorService", () => {
     it("should calculate total size for multiple files", () => {
       const fileOperations: SyncFileOperation[] = [
         {
-          filename: "file1.wav",
-          sourcePath: "/source/file1.wav",
           destinationPath: "/dest/file1.wav",
-          operation: "copy",
+          filename: "file1.wav",
           kitName: "Kit1",
+          operation: "copy",
+          sourcePath: "/source/file1.wav",
         },
         {
-          filename: "file2.wav",
-          sourcePath: "/source/file2.wav",
           destinationPath: "/dest/file2.wav",
-          operation: "convert",
+          filename: "file2.wav",
           kitName: "Kit2",
+          operation: "convert",
+          sourcePath: "/source/file2.wav",
         },
       ];
 
@@ -237,18 +237,18 @@ describe("SyncExecutorService", () => {
     it("should handle missing files in calculation", () => {
       const fileOperations: SyncFileOperation[] = [
         {
-          filename: "existing.wav",
-          sourcePath: "/source/existing.wav",
           destinationPath: "/dest/existing.wav",
-          operation: "copy",
+          filename: "existing.wav",
           kitName: "Kit1",
+          operation: "copy",
+          sourcePath: "/source/existing.wav",
         },
         {
-          filename: "missing.wav",
-          sourcePath: "/source/missing.wav",
           destinationPath: "/dest/missing.wav",
-          operation: "copy",
+          filename: "missing.wav",
           kitName: "Kit1",
+          operation: "copy",
+          sourcePath: "/source/missing.wav",
         },
       ];
 

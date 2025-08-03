@@ -2,32 +2,32 @@ import { BrowserWindow } from "electron";
 
 import type { SyncFileOperation } from "./syncPlannerService.js";
 
-export interface SyncProgress {
-  currentFile: string;
-  filesCompleted: number;
-  totalFiles: number;
+export interface SyncJob {
   bytesTransferred: number;
+  cancelled: boolean;
+  completedFiles: number;
+  fileOperations: SyncFileOperation[];
+  kitName: string;
+  startTime: number;
   totalBytes: number;
-  elapsedTime: number;
-  status: "preparing" | "copying" | "converting" | "complete" | "error";
-  currentFileProgress?: number; // 0-100 percentage for current file
-  errorDetails?: {
-    fileName: string;
-    operation: "copy" | "convert";
-    error: string;
-    canRetry: boolean;
-  };
+  totalFiles: number;
 }
 
-export interface SyncJob {
-  kitName: string;
-  totalFiles: number;
-  completedFiles: number;
-  startTime: number;
-  cancelled: boolean;
-  totalBytes: number;
+export interface SyncProgress {
   bytesTransferred: number;
-  fileOperations: SyncFileOperation[];
+  currentFile: string;
+  currentFileProgress?: number; // 0-100 percentage for current file
+  elapsedTime: number;
+  errorDetails?: {
+    canRetry: boolean;
+    error: string;
+    fileName: string;
+    operation: "convert" | "copy";
+  };
+  filesCompleted: number;
+  status: "complete" | "converting" | "copying" | "error" | "preparing";
+  totalBytes: number;
+  totalFiles: number;
 }
 
 /**
@@ -35,7 +35,46 @@ export interface SyncJob {
  * Extracted from syncService.ts for better testability
  */
 export class SyncProgressService {
-  private currentSyncJob: SyncJob | null = null;
+  private currentSyncJob: null | SyncJob = null;
+
+  /**
+   * Mark sync job as cancelled
+   */
+  cancelSync(): boolean {
+    if (this.currentSyncJob) {
+      this.currentSyncJob.cancelled = true;
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Complete the sync job
+   */
+  completeSync(): void {
+    if (!this.currentSyncJob) return;
+
+    const progress: SyncProgress = {
+      bytesTransferred: this.currentSyncJob.bytesTransferred,
+      currentFile: "",
+      currentFileProgress: 100,
+      elapsedTime: Date.now() - this.currentSyncJob.startTime,
+      filesCompleted: this.currentSyncJob.completedFiles,
+      status: this.currentSyncJob.cancelled ? "error" : "complete",
+      totalBytes: this.currentSyncJob.totalBytes,
+      totalFiles: this.currentSyncJob.totalFiles,
+    };
+
+    this.emitProgress(progress);
+    this.currentSyncJob = null;
+  }
+
+  /**
+   * Get current sync job info
+   */
+  getCurrentSyncJob(): null | SyncJob {
+    return this.currentSyncJob;
+  }
 
   /**
    * Initialize a new sync job
@@ -46,15 +85,22 @@ export class SyncProgressService {
     totalBytes: number,
   ): void {
     this.currentSyncJob = {
-      kitName,
-      totalFiles: fileOperations.length,
-      completedFiles: 0,
-      startTime: Date.now(),
-      cancelled: false,
-      totalBytes,
       bytesTransferred: 0,
+      cancelled: false,
+      completedFiles: 0,
       fileOperations,
+      kitName,
+      startTime: Date.now(),
+      totalBytes,
+      totalFiles: fileOperations.length,
     };
+  }
+
+  /**
+   * Check if current sync job is cancelled
+   */
+  isCancelled(): boolean {
+    return this.currentSyncJob?.cancelled || false;
   }
 
   /**
@@ -79,64 +125,18 @@ export class SyncProgressService {
 
     // Create progress update
     const progress: SyncProgress = {
+      bytesTransferred: this.currentSyncJob.bytesTransferred,
       currentFile,
-      filesCompleted: this.currentSyncJob.completedFiles,
-      totalFiles: this.currentSyncJob.totalFiles,
-      bytesTransferred: this.currentSyncJob.bytesTransferred,
-      totalBytes: this.currentSyncJob.totalBytes,
-      elapsedTime: Date.now() - this.currentSyncJob.startTime,
-      status,
       currentFileProgress,
-      errorDetails,
-    };
-
-    this.emitProgress(progress);
-  }
-
-  /**
-   * Mark sync job as cancelled
-   */
-  cancelSync(): boolean {
-    if (this.currentSyncJob) {
-      this.currentSyncJob.cancelled = true;
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Check if current sync job is cancelled
-   */
-  isCancelled(): boolean {
-    return this.currentSyncJob?.cancelled || false;
-  }
-
-  /**
-   * Complete the sync job
-   */
-  completeSync(): void {
-    if (!this.currentSyncJob) return;
-
-    const progress: SyncProgress = {
-      currentFile: "",
-      filesCompleted: this.currentSyncJob.completedFiles,
-      totalFiles: this.currentSyncJob.totalFiles,
-      bytesTransferred: this.currentSyncJob.bytesTransferred,
-      totalBytes: this.currentSyncJob.totalBytes,
       elapsedTime: Date.now() - this.currentSyncJob.startTime,
-      status: this.currentSyncJob.cancelled ? "error" : "complete",
-      currentFileProgress: 100,
+      errorDetails,
+      filesCompleted: this.currentSyncJob.completedFiles,
+      status,
+      totalBytes: this.currentSyncJob.totalBytes,
+      totalFiles: this.currentSyncJob.totalFiles,
     };
 
     this.emitProgress(progress);
-    this.currentSyncJob = null;
-  }
-
-  /**
-   * Get current sync job info
-   */
-  getCurrentSyncJob(): SyncJob | null {
-    return this.currentSyncJob;
   }
 
   /**

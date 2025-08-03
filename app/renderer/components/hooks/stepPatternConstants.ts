@@ -4,8 +4,8 @@ export const NUM_STEPS = 16;
 
 // Shared interface for step focus
 export interface FocusedStep {
-  voice: number;
   step: number;
+  voice: number;
 }
 
 // UI styling constants for sequencer
@@ -31,6 +31,18 @@ export function createDefaultStepPattern(): number[][] {
 }
 
 /**
+ * Ensures a step pattern is valid, returning default if invalid
+ */
+export function ensureValidStepPattern(
+  pattern: null | number[][] | undefined,
+): number[][] {
+  if (!pattern || !isValidStepPattern(pattern)) {
+    return createDefaultStepPattern();
+  }
+  return pattern;
+}
+
+/**
  * Validates if a step pattern has the correct structure
  */
 export function isValidStepPattern(pattern: any): pattern is number[][] {
@@ -39,16 +51,4 @@ export function isValidStepPattern(pattern: any): pattern is number[][] {
     pattern.length === NUM_VOICES &&
     pattern.every((row) => Array.isArray(row) && row.length === NUM_STEPS)
   );
-}
-
-/**
- * Ensures a step pattern is valid, returning default if invalid
- */
-export function ensureValidStepPattern(
-  pattern: number[][] | null | undefined,
-): number[][] {
-  if (!pattern || !isValidStepPattern(pattern)) {
-    return createDefaultStepPattern();
-  }
-  return pattern;
 }

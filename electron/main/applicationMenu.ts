@@ -14,7 +14,6 @@ export function createApplicationMenu() {
               { role: "about" as const },
               { type: "separator" as const },
               {
-                label: "Preferences...",
                 accelerator: "Cmd+,",
                 click: () => {
                   const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -22,6 +21,7 @@ export function createApplicationMenu() {
                     focusedWindow.webContents.send("menu-preferences");
                   }
                 },
+                label: "Preferences...",
               },
               { type: "separator" as const },
               { role: "services" as const },
@@ -49,7 +49,6 @@ export function createApplicationMenu() {
       label: "Edit",
       submenu: [
         {
-          label: "Undo",
           accelerator: "CmdOrCtrl+Z",
           click: () => {
             const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -57,9 +56,9 @@ export function createApplicationMenu() {
               focusedWindow.webContents.send("menu-undo");
             }
           },
+          label: "Undo",
         },
         {
-          label: "Redo",
           accelerator: "CmdOrCtrl+Shift+Z",
           click: () => {
             const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -67,6 +66,7 @@ export function createApplicationMenu() {
               focusedWindow.webContents.send("menu-redo");
             }
           },
+          label: "Redo",
         },
         { type: "separator" as const },
         { role: "cut" as const },
@@ -77,7 +77,6 @@ export function createApplicationMenu() {
           ? [
               { type: "separator" as const },
               {
-                label: "Preferences...",
                 accelerator: "Ctrl+,",
                 click: () => {
                   const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -85,6 +84,7 @@ export function createApplicationMenu() {
                     focusedWindow.webContents.send("menu-preferences");
                   }
                 },
+                label: "Preferences...",
               },
             ]
           : []),
@@ -96,7 +96,6 @@ export function createApplicationMenu() {
       label: "Tools",
       submenu: [
         {
-          label: "Scan All Kits",
           accelerator: "CmdOrCtrl+Shift+S",
           click: () => {
             // Send IPC message to renderer to trigger scan all kits
@@ -105,9 +104,9 @@ export function createApplicationMenu() {
               focusedWindow.webContents.send("menu-scan-all-kits");
             }
           },
+          label: "Scan All Kits",
         },
         {
-          label: "Scan Banks",
           accelerator: "CmdOrCtrl+Shift+B",
           click: () => {
             // Send IPC message to renderer to trigger bank scanning
@@ -116,9 +115,9 @@ export function createApplicationMenu() {
               focusedWindow.webContents.send("menu-scan-banks");
             }
           },
+          label: "Scan Banks",
         },
         {
-          label: "Validate Database",
           accelerator: "CmdOrCtrl+Shift+V",
           click: () => {
             // Send IPC message to renderer to trigger validation
@@ -127,10 +126,10 @@ export function createApplicationMenu() {
               focusedWindow.webContents.send("menu-validate-database");
             }
           },
+          label: "Validate Database",
         },
         { type: "separator" },
         {
-          label: "Setup Local Store...",
           click: () => {
             // Send IPC message to renderer to open local store wizard
             const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -138,9 +137,9 @@ export function createApplicationMenu() {
               focusedWindow.webContents.send("menu-setup-local-store");
             }
           },
+          label: "Setup Local Store...",
         },
         {
-          label: "Change Local Store Directory...",
           click: () => {
             // Send IPC message to renderer to open change directory dialog
             const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -150,6 +149,7 @@ export function createApplicationMenu() {
               );
             }
           },
+          label: "Change Local Store Directory...",
         },
       ],
     },
@@ -192,13 +192,13 @@ export function createApplicationMenu() {
       label: "Help",
       submenu: [
         {
-          label: "About Romper",
           click: () => {
             const focusedWindow = BrowserWindow.getFocusedWindow();
             if (focusedWindow) {
               focusedWindow.webContents.send("menu-about");
             }
           },
+          label: "About Romper",
         },
       ],
     },

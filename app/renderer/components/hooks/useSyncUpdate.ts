@@ -3,33 +3,33 @@ import { useCallback, useState } from "react";
 import type { SyncChangeSummary } from "../dialogs/SyncUpdateDialog";
 
 interface SyncProgress {
-  currentFile: string;
-  filesCompleted: number;
-  totalFiles: number;
   bytesCompleted: number;
-  totalBytes: number;
-  status:
-    | "preparing"
-    | "copying"
-    | "converting"
-    | "finalizing"
-    | "completed"
-    | "error";
+  currentFile: string;
   error?: string;
-}
-
-interface UseSyncUpdateResult {
-  syncProgress: SyncProgress | null;
-  isLoading: boolean;
-  error: string | null;
-  generateChangeSummary: () => Promise<SyncChangeSummary | null>;
-  startSync: (changeSummary: SyncChangeSummary) => Promise<boolean>;
-  cancelSync: () => void;
-  clearError: () => void;
+  filesCompleted: number;
+  status:
+    | "completed"
+    | "converting"
+    | "copying"
+    | "error"
+    | "finalizing"
+    | "preparing";
+  totalBytes: number;
+  totalFiles: number;
 }
 
 interface SyncUpdateDependencies {
   electronAPI?: typeof window.electronAPI;
+}
+
+interface UseSyncUpdateResult {
+  cancelSync: () => void;
+  clearError: () => void;
+  error: null | string;
+  generateChangeSummary: () => Promise<null | SyncChangeSummary>;
+  isLoading: boolean;
+  startSync: (changeSummary: SyncChangeSummary) => Promise<boolean>;
+  syncProgress: null | SyncProgress;
 }
 
 export function useSyncUpdate(
@@ -37,16 +37,16 @@ export function useSyncUpdate(
 ): UseSyncUpdateResult {
   const electronAPI = deps.electronAPI || window.electronAPI;
 
-  const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
+  const [syncProgress, setSyncProgress] = useState<null | SyncProgress>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<null | string>(null);
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
   const generateChangeSummary =
-    useCallback(async (): Promise<SyncChangeSummary | null> => {
+    useCallback(async (): Promise<null | SyncChangeSummary> => {
       if (!electronAPI?.generateSyncChangeSummary) {
         setError("Sync functionality not available");
         return null;
@@ -84,14 +84,14 @@ export function useSyncUpdate(
       setIsLoading(true);
       setError(null);
       setSyncProgress({
+        bytesCompleted: 0,
         currentFile: "",
         filesCompleted: 0,
+        status: "preparing",
+        totalBytes: changeSummary.estimatedSize,
         totalFiles:
           changeSummary.filesToCopy.length +
           changeSummary.filesToConvert.length,
-        bytesCompleted: 0,
-        totalBytes: changeSummary.estimatedSize,
-        status: "preparing",
       });
 
       try {
@@ -103,14 +103,14 @@ export function useSyncUpdate(
         }
 
         const result = await electronAPI.startKitSync({
-          filesToCopy: changeSummary.filesToCopy,
           filesToConvert: changeSummary.filesToConvert,
+          filesToCopy: changeSummary.filesToCopy,
         });
 
         if (!result.success) {
           setError(result.error || "Sync operation failed");
           setSyncProgress((prev) =>
-            prev ? { ...prev, status: "error", error: result.error } : null,
+            prev ? { ...prev, error: result.error, status: "error" } : null,
           );
           return false;
         }
@@ -124,7 +124,7 @@ export function useSyncUpdate(
           err instanceof Error ? err.message : "Unknown error occurred";
         setError(`Sync failed: ${errorMessage}`);
         setSyncProgress((prev) =>
-          prev ? { ...prev, status: "error", error: errorMessage } : null,
+          prev ? { ...prev, error: errorMessage, status: "error" } : null,
         );
         return false;
       } finally {
@@ -145,12 +145,12 @@ export function useSyncUpdate(
   }, [electronAPI]);
 
   return {
-    syncProgress,
-    isLoading,
-    error,
-    generateChangeSummary,
-    startSync,
     cancelSync,
     clearError,
+    error,
+    generateChangeSummary,
+    isLoading,
+    startSync,
+    syncProgress,
   };
 }

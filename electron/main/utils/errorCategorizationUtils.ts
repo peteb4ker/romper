@@ -3,29 +3,29 @@
  */
 
 export interface ErrorCategoryRule {
+  canRetry: boolean;
   keywords: string[];
+  messageTemplate:
+    | ((filePath?: string, errorMessage?: string) => string)
+    | string;
   type:
+    | "disk_space"
     | "file_access"
     | "format_error"
-    | "disk_space"
-    | "permission"
     | "network"
+    | "permission"
     | "unknown";
-  canRetry: boolean;
-  messageTemplate:
-    | string
-    | ((filePath?: string, errorMessage?: string) => string);
 }
 
 export interface SyncErrorInfo {
+  canRetry: boolean;
   type:
+    | "disk_space"
     | "file_access"
     | "format_error"
-    | "disk_space"
-    | "permission"
     | "network"
+    | "permission"
     | "unknown";
-  canRetry: boolean;
   userMessage: string;
 }
 
@@ -34,35 +34,35 @@ export interface SyncErrorInfo {
  */
 export const ERROR_CATEGORIZATION_RULES: ErrorCategoryRule[] = [
   {
-    keywords: ["enoent", "file not found"],
-    type: "file_access",
     canRetry: false,
+    keywords: ["enoent", "file not found"],
     messageTemplate: (filePath) =>
       `Source file not found: ${filePath || "unknown file"}`,
+    type: "file_access",
   },
   {
+    canRetry: true,
     keywords: ["eacces", "permission denied"],
-    type: "permission",
-    canRetry: true,
     messageTemplate: "Permission denied. Check file/folder permissions.",
+    type: "permission",
   },
   {
+    canRetry: false,
     keywords: ["enospc", "no space"],
-    type: "disk_space",
-    canRetry: false,
     messageTemplate: "Not enough disk space on destination drive.",
+    type: "disk_space",
   },
   {
-    keywords: ["format", "wav", "audio"],
-    type: "format_error",
     canRetry: false,
+    keywords: ["format", "wav", "audio"],
     messageTemplate: (_, errorMessage) => `Audio format error: ${errorMessage}`,
+    type: "format_error",
   },
   {
-    keywords: ["network", "connection"],
-    type: "network",
     canRetry: true,
+    keywords: ["network", "connection"],
     messageTemplate: "Network error. Check connection and try again.",
+    type: "network",
   },
 ];
 
@@ -89,8 +89,8 @@ export function categorizeErrorByRules(
           : rule.messageTemplate;
 
       return {
-        type: rule.type,
         canRetry: rule.canRetry,
+        type: rule.type,
         userMessage,
       };
     }
@@ -98,8 +98,8 @@ export function categorizeErrorByRules(
 
   // Default fallback for unknown errors
   return {
-    type: "unknown",
     canRetry: true,
+    type: "unknown",
     userMessage: `Unexpected error: ${errorMessage}`,
   };
 }

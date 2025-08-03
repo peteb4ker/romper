@@ -2,6 +2,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { KitWithRelations } from "../../../../../shared/db/schema";
+
 import { useKit } from "../useKit";
 
 // Mock window.electronAPI
@@ -21,26 +22,26 @@ afterEach(() => {
 
 describe("useKit", () => {
   const mockKit: KitWithRelations = {
-    name: "TestKit",
-    bank_letter: "T",
     alias: "Test Alias",
     artist: "Test Artist",
+    bank_letter: "T",
     editable: true,
     locked: false,
+    name: "TestKit",
     step_pattern: null,
     voices: [
-      { id: 1, kit_name: "TestKit", voice_number: 1, voice_alias: "Kick" },
-      { id: 2, kit_name: "TestKit", voice_number: 2, voice_alias: "Snare" },
-      { id: 3, kit_name: "TestKit", voice_number: 3, voice_alias: "Hat" },
-      { id: 4, kit_name: "TestKit", voice_number: 4, voice_alias: "Tom" },
+      { id: 1, kit_name: "TestKit", voice_alias: "Kick", voice_number: 1 },
+      { id: 2, kit_name: "TestKit", voice_alias: "Snare", voice_number: 2 },
+      { id: 3, kit_name: "TestKit", voice_alias: "Hat", voice_number: 3 },
+      { id: 4, kit_name: "TestKit", voice_alias: "Tom", voice_number: 4 },
     ],
   };
 
   describe("loadKit", () => {
     it("loads kit data successfully", async () => {
       mockElectronAPI.getKit.mockResolvedValue({
-        success: true,
         data: mockKit,
+        success: true,
       });
 
       const { result } = renderHook(() => useKit({ kitName: "TestKit" }));
@@ -79,8 +80,8 @@ describe("useKit", () => {
   describe("updateKitAlias", () => {
     it("updates kit alias successfully", async () => {
       mockElectronAPI.getKit.mockResolvedValue({
-        success: true,
         data: mockKit,
+        success: true,
       });
       mockElectronAPI.updateKit.mockResolvedValue({ success: true });
 
@@ -103,12 +104,12 @@ describe("useKit", () => {
 
     it("handles update errors", async () => {
       mockElectronAPI.getKit.mockResolvedValue({
-        success: true,
         data: mockKit,
+        success: true,
       });
       mockElectronAPI.updateKit.mockResolvedValue({
-        success: false,
         error: "Update failed",
+        success: false,
       });
 
       const { result } = renderHook(() => useKit({ kitName: "TestKit" }));
@@ -129,8 +130,8 @@ describe("useKit", () => {
     it("toggles editable mode from false to true", async () => {
       const editableKit = { ...mockKit, editable: false };
       mockElectronAPI.getKit.mockResolvedValue({
-        success: true,
         data: editableKit,
+        success: true,
       });
       mockElectronAPI.updateKit.mockResolvedValue({ success: true });
 
@@ -152,8 +153,8 @@ describe("useKit", () => {
     it("toggles editable mode from true to false", async () => {
       const editableKit = { ...mockKit, editable: true };
       mockElectronAPI.getKit.mockResolvedValue({
-        success: true,
         data: editableKit,
+        success: true,
       });
       mockElectronAPI.updateKit.mockResolvedValue({ success: true });
 
@@ -172,12 +173,12 @@ describe("useKit", () => {
 
     it("handles toggle errors", async () => {
       mockElectronAPI.getKit.mockResolvedValue({
-        success: true,
         data: mockKit,
+        success: true,
       });
       mockElectronAPI.updateKit.mockResolvedValue({
-        success: false,
         error: "Toggle failed",
+        success: false,
       });
 
       const { result } = renderHook(() => useKit({ kitName: "TestKit" }));
@@ -206,8 +207,8 @@ describe("useKit", () => {
 
     it("does nothing when kitName is empty", async () => {
       mockElectronAPI.getKit.mockResolvedValue({
-        success: true,
         data: mockKit,
+        success: true,
       });
 
       const { result } = renderHook(() => useKit({ kitName: "" }));
@@ -219,8 +220,8 @@ describe("useKit", () => {
 
     it("does nothing when kit is null", async () => {
       mockElectronAPI.getKit.mockResolvedValue({
-        success: true,
         data: null,
+        success: true,
       });
 
       const { result } = renderHook(() => useKit({ kitName: "TestKit" }));
@@ -238,8 +239,8 @@ describe("useKit", () => {
   describe("reloadKit", () => {
     it("provides reloadKit function that reloads kit data", async () => {
       mockElectronAPI.getKit.mockResolvedValue({
-        success: true,
         data: mockKit,
+        success: true,
       });
 
       const { result } = renderHook(() => useKit({ kitName: "TestKit" }));

@@ -36,10 +36,10 @@ export function useKitStepSequencer(initialPattern?: boolean[][]) {
   }, []);
 
   return {
-    pattern,
-    toggleStep,
-    setSequencerPattern,
-    NUM_VOICES,
     NUM_STEPS,
+    NUM_VOICES,
+    pattern,
+    setSequencerPattern,
+    toggleStep,
   };
 }

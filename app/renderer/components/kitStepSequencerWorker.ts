@@ -4,7 +4,7 @@
 let isPlaying = false;
 let currentStep = 0;
 let numSteps = 16;
-let interval: ReturnType<typeof setInterval> | null = null; // Fix setInterval type assignment
+let interval: null | ReturnType<typeof setInterval> = null; // Fix setInterval type assignment
 let stepDuration = 125; // ms
 
 self.onmessage = function (e) {
@@ -13,7 +13,7 @@ self.onmessage = function (e) {
     return;
   }
 
-  const { type, payload = {} } = e.data;
+  const { payload = {}, type } = e.data;
 
   if (type === "START") {
     isPlaying = true;
@@ -23,14 +23,14 @@ self.onmessage = function (e) {
     interval = setInterval(() => {
       if (!isPlaying) return;
       currentStep = (currentStep + 1) % numSteps;
-      self.postMessage({ type: "STEP", payload: { currentStep } });
+      self.postMessage({ payload: { currentStep }, type: "STEP" });
     }, stepDuration);
   } else if (type === "STOP") {
     isPlaying = false;
     if (interval) clearInterval(interval);
     interval = null;
     currentStep = 0;
-    self.postMessage({ type: "STEP", payload: { currentStep } });
+    self.postMessage({ payload: { currentStep }, type: "STEP" });
   } else if (type === "SET_STEP") {
     currentStep = payload.currentStep ?? 0;
   }

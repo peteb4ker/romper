@@ -17,11 +17,11 @@ import { registerIpcHandlers } from "./ipcHandlers.js";
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
 
 type Settings = {
+  [key: string]: unknown;
+  darkMode?: boolean;
   localStorePath?: string;
   sdCardPath?: string;
-  darkMode?: boolean;
   theme?: string;
-  [key: string]: unknown;
 };
 
 let inMemorySettings: Settings = {}; // Store settings in memory
@@ -53,14 +53,14 @@ function createWindow() {
   }
 
   const win: BrowserWindow = new BrowserWindow({
-    width: 1200,
     height: 800,
     icon: path.resolve(__dirname, "../resources/app-icon.icns"), // Set app icon for built app
     webPreferences: {
-      preload: path.resolve(__dirname, "../preload/index.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
+      preload: path.resolve(__dirname, "../preload/index.cjs"),
     },
+    width: 1200,
   });
 
   if (isDev) {
@@ -136,6 +136,11 @@ function loadSettings(): Settings {
   return settings;
 }
 
+function registerAllIpcHandlers(settings: Settings) {
+  registerIpcHandlers(settings);
+  registerDbIpcHandlers(settings);
+}
+
 function validateAndFixLocalStore(settings: Settings): Settings {
   const userDataPath = app.getPath("userData");
   const settingsPath = path.join(userDataPath, "romper-settings.json");
@@ -153,9 +158,9 @@ function validateAndFixLocalStore(settings: Settings): Settings {
     );
     const validation = validateLocalStoreAndDb(settings.localStorePath);
     console.log("[Validation] Validation result:", {
-      isValid: validation.isValid,
       error: validation.error,
       errorSummary: validation.errorSummary,
+      isValid: validation.isValid,
     });
 
     if (!validation.isValid) {
@@ -185,11 +190,6 @@ function validateAndFixLocalStore(settings: Settings): Settings {
   }
 
   return settings;
-}
-
-function registerAllIpcHandlers(settings: Settings) {
-  registerIpcHandlers(settings);
-  registerDbIpcHandlers(settings);
 }
 
 app.whenReady().then(async () => {

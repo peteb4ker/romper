@@ -65,31 +65,31 @@ describe("SyncService", () => {
 
     mockFs.existsSync.mockReturnValue(true);
     mockFs.statSync.mockReturnValue({
-      size: 1024 * 1024, // 1MB
-      isFile: () => true,
       isDirectory: () => false,
+      isFile: () => true,
+      size: 1024 * 1024, // 1MB
     } as any);
     mockFs.mkdirSync.mockImplementation(() => undefined);
     mockFs.copyFileSync.mockImplementation(() => undefined);
 
     mockGetAudioMetadata.mockResolvedValue({
-      success: true,
       data: {
-        format: "WAV",
-        sampleRate: 44100,
         bitDepth: 16,
         channels: 2,
         duration: 1.5,
+        format: "WAV",
+        sampleRate: 44100,
       },
+      success: true,
     });
 
     mockValidateSampleFormat.mockResolvedValue({
-      isValid: true,
-      needsConversion: false,
-      format: "WAV",
-      sampleRate: 44100,
       bitDepth: 16,
       channels: 2,
+      format: "WAV",
+      isValid: true,
+      needsConversion: false,
+      sampleRate: 44100,
     });
 
     // Mock getKits for generateChangeSummary
@@ -98,11 +98,11 @@ describe("SyncService", () => {
       return {
         ...actual,
         getKits: vi.fn().mockResolvedValue({
-          success: true,
           data: [
-            { name: "A01", bank_letter: "A" },
-            { name: "B02", bank_letter: "B" },
+            { bank_letter: "A", name: "A01" },
+            { bank_letter: "B", name: "B02" },
           ],
+          success: true,
         }),
         getKitSamples: mockGetKitSamples,
         markKitsAsSynced: mockMarkKitsAsSynced,
@@ -110,25 +110,25 @@ describe("SyncService", () => {
     });
 
     mockGetKitSamples.mockResolvedValue({
-      success: true,
       data: [
         {
+          created_at: new Date(),
+          end_point: 0,
+          filename: "kick.wav",
           id: 1,
           kit_id: 1,
-          filename: "kick.wav",
-          source_path: "/source/kick.wav",
-          voice: 1,
-          slot: 0,
           pitch: 0,
-          start_point: 0,
-          end_point: 0,
           playback_mode: "OneShot",
-          reverse: false,
           plock: null,
-          created_at: new Date(),
+          reverse: false,
+          slot: 0,
+          source_path: "/source/kick.wav",
+          start_point: 0,
           updated_at: new Date(),
+          voice: 1,
         },
       ],
+      success: true,
     });
   });
 
@@ -162,12 +162,12 @@ describe("SyncService", () => {
 
     it("handles files needing conversion", async () => {
       mockValidateSampleFormat.mockResolvedValueOnce({
-        isValid: false,
-        needsConversion: true,
-        format: "MP3",
-        sampleRate: 44100,
         bitDepth: 16,
         channels: 2,
+        format: "MP3",
+        isValid: false,
+        needsConversion: true,
+        sampleRate: 44100,
       });
 
       const result = await syncService.generateChangeSummary({
@@ -181,11 +181,11 @@ describe("SyncService", () => {
   describe("startKitSync", () => {
     const mockOperations = [
       {
-        filename: "kick.wav",
-        sourcePath: "/source/kick.wav",
         destinationPath: "/dest/A01/SP_A01_1_kick.wav",
-        operation: "copy" as const,
+        filename: "kick.wav",
         kitName: "A01",
+        operation: "copy" as const,
+        sourcePath: "/source/kick.wav",
       },
     ];
 
@@ -209,12 +209,12 @@ describe("SyncService", () => {
     it("handles conversion operations", async () => {
       const convertOperations = [
         {
-          filename: "snare.wav",
-          sourcePath: "/source/snare.wav",
           destinationPath: "/dest/A01/SP_A01_2_snare.wav",
-          operation: "convert" as const,
+          filename: "snare.wav",
           kitName: "A01",
+          operation: "convert" as const,
           originalFormat: "MP3",
+          sourcePath: "/source/snare.wav",
           targetFormat: "WAV",
         },
       ];
@@ -238,8 +238,8 @@ describe("SyncService", () => {
     it("calculates destination paths correctly", () => {
       const sample = {
         filename: "kick.wav",
-        voice: 1,
         slot: 0,
+        voice: 1,
       };
 
       // Access private method through bracket notation for testing
@@ -290,11 +290,11 @@ describe("SyncService", () => {
     it("calculates time remaining", () => {
       // Set up a mock sync job
       (syncService as any).currentSyncJob = {
-        startTime: Date.now() - 10000, // Started 10 seconds ago
-        completedFiles: 5,
-        totalFiles: 10,
         bytesTransferred: 1024 * 1024, // 1MB
+        completedFiles: 5,
+        startTime: Date.now() - 10000, // Started 10 seconds ago
         totalBytes: 2 * 1024 * 1024, // 2MB
+        totalFiles: 10,
       };
 
       const timeRemaining = (syncService as any).calculateTimeRemaining();
@@ -305,14 +305,14 @@ describe("SyncService", () => {
 
     it("emits progress correctly", () => {
       const progress = {
-        currentFile: "test.wav",
-        filesCompleted: 1,
-        totalFiles: 2,
         bytesTransferred: 1024,
-        totalBytes: 2048,
+        currentFile: "test.wav",
         elapsedTime: 1000,
         estimatedTimeRemaining: 1000,
+        filesCompleted: 1,
         status: "copying" as const,
+        totalBytes: 2048,
+        totalFiles: 2,
       };
 
       (syncService as any).emitProgress(progress);

@@ -11,11 +11,11 @@ describe("WizardTargetStep", () => {
   it("renders target path input and buttons", () => {
     render(
       <WizardTargetStep
-        stateTargetPath="/mock/target"
-        defaultPath="/mock/default"
-        setTargetPath={() => {}}
-        safeSelectLocalStorePath={() => {}}
         configSdCardPath={"/mock/sdcard"}
+        defaultPath="/mock/default"
+        safeSelectLocalStorePath={() => {}}
+        setTargetPath={() => {}}
+        stateTargetPath="/mock/target"
       />,
     );
     expect(screen.getByLabelText(/local store path/i)).toBeInTheDocument();

@@ -20,19 +20,19 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
 
     // Setup default mock implementation
     vi.mocked(useUndoRedo).mockReturnValue({
-      canUndo: true,
-      canRedo: true,
-      isUndoing: false,
-      isRedoing: false,
-      undo: mockUndo,
-      redo: mockRedo,
       addAction: mockAddAction,
-      undoDescription: "Undo last action",
-      redoDescription: "Redo last action",
-      undoCount: 1,
-      redoCount: 0,
-      error: null,
+      canRedo: true,
+      canUndo: true,
       clearError: vi.fn(),
+      error: null,
+      isRedoing: false,
+      isUndoing: false,
+      redo: mockRedo,
+      redoCount: 0,
+      redoDescription: "Redo last action",
+      undo: mockUndo,
+      undoCount: 1,
+      undoDescription: "Undo last action",
     });
   });
 

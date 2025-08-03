@@ -83,7 +83,7 @@ describe("KitIconRenderer", () => {
   describe("Custom Classes", () => {
     it("should apply custom className", () => {
       const { container } = render(
-        <KitIconRenderer iconType="mic" className="custom-class" />,
+        <KitIconRenderer className="custom-class" iconType="mic" />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toHaveClass("custom-class");
@@ -91,7 +91,7 @@ describe("KitIconRenderer", () => {
 
     it("should apply both size and custom classes", () => {
       const { container } = render(
-        <KitIconRenderer iconType="piano" size="lg" className="custom-class" />,
+        <KitIconRenderer className="custom-class" iconType="piano" size="lg" />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toHaveClass("text-3xl", "custom-class");
@@ -99,7 +99,7 @@ describe("KitIconRenderer", () => {
 
     it("should handle empty className gracefully", () => {
       const { container } = render(
-        <KitIconRenderer iconType="drumkit" className="" />,
+        <KitIconRenderer className="" iconType="drumkit" />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument();

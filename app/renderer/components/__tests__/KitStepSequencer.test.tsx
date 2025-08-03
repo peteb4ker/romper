@@ -36,29 +36,29 @@ describe("KitStepSequencer", () => {
   // Helper to create default mock logic
   function createMockLogic(overrides = {}) {
     return {
-      safeStepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
-      focusedStep: { voice: 0, step: 0 },
-      isSeqPlaying: false,
       currentSeqStep: 0,
-      ROW_COLORS: [
-        "bg-red-400",
-        "bg-yellow-400",
-        "bg-green-400",
-        "bg-blue-400",
-      ],
+      focusedStep: { step: 0, voice: 0 },
+      gridRefInternal: { current: null },
+      handleStepGridKeyDown: vi.fn(),
+      isSeqPlaying: false,
       LED_GLOWS: [
         "shadow-glow-red",
         "shadow-glow-yellow",
         "shadow-glow-green",
         "shadow-glow-blue",
       ],
-      NUM_VOICES: 4,
       NUM_STEPS: 16,
+      NUM_VOICES: 4,
+      ROW_COLORS: [
+        "bg-red-400",
+        "bg-yellow-400",
+        "bg-green-400",
+        "bg-blue-400",
+      ],
+      safeStepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
       setFocusedStep: vi.fn(),
-      toggleStep: vi.fn(),
-      handleStepGridKeyDown: vi.fn(),
-      gridRefInternal: { current: null },
       setIsSeqPlaying: vi.fn(),
+      toggleStep: vi.fn(),
       ...overrides,
     };
   }
@@ -84,12 +84,12 @@ describe("KitStepSequencer", () => {
   it("renders all subcomponents correctly", () => {
     render(
       <KitStepSequencer
-        samples={defaultSamples}
         onPlaySample={onPlaySample}
-        stepPattern={stepPattern}
-        setStepPattern={setStepPattern}
+        samples={defaultSamples}
         sequencerOpen={sequencerOpen}
         setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
       />,
     );
 
@@ -105,12 +105,12 @@ describe("KitStepSequencer", () => {
 
     // Verify props are passed correctly to the hook - removing gridRef from assertion as it's handled internally
     expect(mockUseKitStepSequencerLogic).toHaveBeenCalledWith({
-      samples: defaultSamples,
       onPlaySample,
-      stepPattern,
-      setStepPattern,
+      samples: defaultSamples,
       sequencerOpen,
       setSequencerOpen,
+      setStepPattern,
+      stepPattern,
     });
   });
 
@@ -123,12 +123,12 @@ describe("KitStepSequencer", () => {
 
     render(
       <KitStepSequencer
-        samples={defaultSamples}
         onPlaySample={onPlaySample}
-        stepPattern={stepPattern}
-        setStepPattern={setStepPattern}
+        samples={defaultSamples}
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
       />,
     );
 
@@ -141,12 +141,12 @@ describe("KitStepSequencer", () => {
     // Test with sequencer open
     render(
       <KitStepSequencer
-        samples={defaultSamples}
         onPlaySample={onPlaySample}
-        stepPattern={stepPattern}
-        setStepPattern={setStepPattern}
+        samples={defaultSamples}
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
       />,
     );
 
@@ -163,14 +163,14 @@ describe("KitStepSequencer", () => {
   it("passes all required props to StepSequencerGrid", () => {
     // Custom grid props with proper 4x16 pattern
     const customGridProps = {
+      currentSeqStep: 5,
+      focusedStep: { step: 1, voice: 1 },
       safeStepPattern: [
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       ],
-      focusedStep: { voice: 1, step: 1 },
-      currentSeqStep: 5,
     };
 
     mockUseKitStepSequencerLogic.mockReturnValue({
@@ -180,12 +180,12 @@ describe("KitStepSequencer", () => {
 
     render(
       <KitStepSequencer
-        samples={defaultSamples}
         onPlaySample={onPlaySample}
-        stepPattern={stepPattern}
-        setStepPattern={setStepPattern}
+        samples={defaultSamples}
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
       />,
     );
 
@@ -203,12 +203,12 @@ describe("KitStepSequencer", () => {
 
     render(
       <KitStepSequencer
-        samples={defaultSamples}
         onPlaySample={onPlaySample}
-        stepPattern={stepPattern}
-        setStepPattern={setStepPattern}
+        samples={defaultSamples}
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
       />,
     );
 
@@ -225,13 +225,13 @@ describe("KitStepSequencer", () => {
 
     render(
       <KitStepSequencer
-        samples={defaultSamples}
+        gridRef={customGridRef}
         onPlaySample={onPlaySample}
-        stepPattern={stepPattern}
-        setStepPattern={setStepPattern}
+        samples={defaultSamples}
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
-        gridRef={customGridRef}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
       />,
     );
 
@@ -247,12 +247,12 @@ describe("KitStepSequencer", () => {
     // Test with different sequencer states
     render(
       <KitStepSequencer
-        samples={defaultSamples}
         onPlaySample={onPlaySample}
-        stepPattern={stepPattern}
-        setStepPattern={setStepPattern}
+        samples={defaultSamples}
         sequencerOpen={false}
         setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
       />,
     );
 
@@ -270,12 +270,12 @@ describe("KitStepSequencer", () => {
 
     render(
       <KitStepSequencer
-        samples={defaultSamples}
         onPlaySample={onPlaySample}
-        stepPattern={stepPattern}
-        setStepPattern={setStepPattern}
+        samples={defaultSamples}
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
       />,
     );
 

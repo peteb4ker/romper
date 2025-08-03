@@ -7,9 +7,14 @@ import * as path from "path";
  * Extracted from ipcHandlers.ts to separate business logic from IPC routing
  */
 export class SettingsService {
-  private getSettingsPath(): string {
-    const userDataPath = app.getPath("userData");
-    return path.join(userDataPath, "romper-settings.json");
+  /**
+   * Get the local store path with environment variable override support
+   */
+  getLocalStorePath(
+    inMemorySettings: Record<string, any>,
+    envOverride?: string,
+  ): null | string {
+    return envOverride || inMemorySettings.localStorePath || null;
   }
 
   /**
@@ -17,6 +22,25 @@ export class SettingsService {
    */
   readSettings(inMemorySettings: Record<string, any>): Record<string, any> {
     return inMemorySettings;
+  }
+
+  /**
+   * Validate that a local store path is configured
+   */
+  validateLocalStorePath(
+    inMemorySettings: Record<string, any>,
+    envOverride?: string,
+  ): { error: string; success: false } | { path: string; success: true } {
+    const localStorePath = this.getLocalStorePath(
+      inMemorySettings,
+      envOverride,
+    );
+
+    if (!localStorePath) {
+      return { error: "No local store configured", success: false };
+    }
+
+    return { path: localStorePath, success: true };
   }
 
   /**
@@ -53,33 +77,9 @@ export class SettingsService {
     console.log("[SettingsService] Settings written to file");
   }
 
-  /**
-   * Get the local store path with environment variable override support
-   */
-  getLocalStorePath(
-    inMemorySettings: Record<string, any>,
-    envOverride?: string,
-  ): string | null {
-    return envOverride || inMemorySettings.localStorePath || null;
-  }
-
-  /**
-   * Validate that a local store path is configured
-   */
-  validateLocalStorePath(
-    inMemorySettings: Record<string, any>,
-    envOverride?: string,
-  ): { success: true; path: string } | { success: false; error: string } {
-    const localStorePath = this.getLocalStorePath(
-      inMemorySettings,
-      envOverride,
-    );
-
-    if (!localStorePath) {
-      return { success: false, error: "No local store configured" };
-    }
-
-    return { success: true, path: localStorePath };
+  private getSettingsPath(): string {
+    const userDataPath = app.getPath("userData");
+    return path.join(userDataPath, "romper-settings.json");
   }
 }
 

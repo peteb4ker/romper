@@ -3,17 +3,17 @@ import React from "react";
 import type { Kit } from "../../../shared/db/schema";
 
 export interface KitFormProps {
+  error?: null | string;
   kit: Kit | null;
   loading?: boolean;
-  error?: string | null;
   onSave: (alias: string, description: string, tags: string[]) => void;
   tagsEditable?: boolean;
 }
 
 const KitForm: React.FC<KitFormProps> = ({
+  error,
   kit,
   loading,
-  error,
   onSave,
   tagsEditable,
 }) => {
@@ -38,8 +38,8 @@ const KitForm: React.FC<KitFormProps> = ({
             <>
               {tags.map((tag, idx) => (
                 <span
-                  key={tag}
                   className="bg-blue-200 dark:bg-blue-700 text-blue-900 dark:text-blue-100 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"
+                  key={tag}
                 >
                   {tag}
                   <button
@@ -53,8 +53,8 @@ const KitForm: React.FC<KitFormProps> = ({
                 </span>
               ))}
               <input
+                autoFocus
                 className="border-b border-blue-500 bg-transparent text-xs text-blue-900 dark:text-blue-100 focus:outline-none px-1 w-20"
-                value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && tagInput.trim()) {
@@ -66,7 +66,7 @@ const KitForm: React.FC<KitFormProps> = ({
                   }
                 }}
                 placeholder="Add tag"
-                autoFocus
+                value={tagInput}
               />
               <button
                 className="ml-2 px-2 py-0.5 bg-blue-600 text-white rounded text-xs"
@@ -95,8 +95,8 @@ const KitForm: React.FC<KitFormProps> = ({
               {tags.length > 0 ? (
                 tags.map((tag) => (
                   <span
-                    key={tag}
                     className="bg-blue-200 dark:bg-blue-700 text-blue-900 dark:text-blue-100 px-2 py-0.5 rounded-full text-xs"
+                    key={tag}
                   >
                     {tag}
                   </span>

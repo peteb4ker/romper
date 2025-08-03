@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Kit, Sample, Voice } from "../schema";
+
 import {
   DbResult,
   KitValidationError,
@@ -14,11 +15,11 @@ describe("dbTypesShared", () => {
     // by checking that they can be imported and used to create objects
 
     const sampleRecord: Sample = {
-      kit_name: "test-kit",
       filename: "test.wav",
-      voice_number: 1,
-      slot_number: 1,
       is_stereo: false,
+      kit_name: "test-kit",
+      slot_number: 1,
+      voice_number: 1,
       wav_bitrate: 16,
       wav_sample_rate: 44100,
     };
@@ -33,35 +34,35 @@ describe("dbTypesShared", () => {
 
     const voiceRecord: Voice = {
       kit_name: "test-kit",
-      voice_number: 1,
       voice_alias: "Kicks",
+      voice_number: 1,
     };
     expect(voiceRecord).toBeDefined();
 
     const kitValidationError: KitValidationError = {
+      extraFiles: ["extra.wav"],
       kitName: "test-kit",
       missingFiles: ["missing.wav"],
-      extraFiles: ["extra.wav"],
     };
     expect(kitValidationError).toBeDefined();
 
     const validationDetailedResult: LocalStoreValidationDetailedResult = {
-      isValid: false,
       errors: [kitValidationError],
       errorSummary: "Test error",
+      isValid: false,
     };
     expect(validationDetailedResult).toBeDefined();
 
     const validationResult: LocalStoreValidationResult = {
-      isValid: false,
       error: "Test error",
+      isValid: false,
       romperDbPath: "/test/path",
     };
     expect(validationResult).toBeDefined();
 
     const dbResult: DbResult<Sample[]> = {
-      success: true,
       data: [sampleRecord],
+      success: true,
     };
     expect(dbResult).toBeDefined();
   });

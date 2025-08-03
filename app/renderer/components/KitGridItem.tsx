@@ -17,13 +17,13 @@ const KitGridItem = React.memo(
   React.forwardRef<HTMLDivElement, KitGridItemProps & KitItemRenderProps>(
     (
       {
-        kit,
-        isValid,
-        onSelect,
-        onDuplicate,
-        sampleCounts,
-        kitData,
         isSelected,
+        isValid,
+        kit,
+        kitData,
+        onDuplicate,
+        onSelect,
+        sampleCounts,
         ...rest
       },
       ref,
@@ -31,7 +31,7 @@ const KitGridItem = React.memo(
       // Extract voice names using shared utility
       const voiceNames = extractVoiceNames(kitData);
 
-      const { iconType, iconLabel } = useKitItem(voiceNames);
+      const { iconLabel, iconType } = useKitItem(voiceNames);
 
       // Use shared icon renderer with medium size for compact grid view
       const icon = <KitIconRenderer iconType={iconType} size="md" />;
@@ -40,31 +40,31 @@ const KitGridItem = React.memo(
       const getKitTypeStyles = () => {
         if (!isValid) {
           return {
-            border: "border-l-4 border-l-red-500",
             background: "bg-red-50 dark:bg-red-950",
+            border: "border-l-4 border-l-red-500",
           };
         }
 
         // Check if kit has unsaved changes (modified since sync)
         if (kitData?.modified_since_sync) {
           return {
-            border: "border-l-4 border-l-amber-500",
             background: "bg-amber-50 dark:bg-amber-950",
+            border: "border-l-4 border-l-amber-500",
           };
         }
 
         // Check if kit is editable (user-created)
         if (kitData?.editable) {
           return {
-            border: "border-l-4 border-l-green-500",
             background: "bg-green-50 dark:bg-green-950",
+            border: "border-l-4 border-l-green-500",
           };
         }
 
         // Factory kits (read-only baseline)
         return {
-          border: "border-l-4 border-l-gray-400",
           background: "bg-gray-50 dark:bg-gray-900",
+          border: "border-l-4 border-l-gray-400",
         };
       };
 
@@ -93,17 +93,19 @@ const KitGridItem = React.memo(
       // Compact vertical card layout with optimized spacing
       return (
         <div
-          ref={ref}
+          aria-label={`Kit ${kit} - ${!isValid ? 'Invalid kit' : `${sampleCounts[0] + sampleCounts[1] + sampleCounts[2] + sampleCounts[3]} samples`}`}
+          aria-selected={isSelected ? "true" : "false"}
           className={`relative flex flex-col justify-between p-2 rounded border text-sm h-full w-full ${kitTypeStyles.border} ${kitTypeStyles.background} ${
             isValid
               ? "border-gray-300 dark:border-slate-700 hover:brightness-95 dark:hover:brightness-110"
               : "border-red-500"
           } cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-300 ${selectedHighlight}`}
-          onClick={onSelect}
           data-kit={kit}
           data-testid={`kit-item-${kit}`}
+          onClick={onSelect}
+          ref={ref}
+          role="option"
           tabIndex={isSelected ? 0 : -1}
-          aria-selected={isSelected ? "true" : "false"}
           {...rest}
         >
           {/* Task 20.2.1: High priority indicator */}
@@ -144,11 +146,11 @@ const KitGridItem = React.memo(
               {isValid && (
                 <button
                   className="p-1 text-xs text-gray-500 hover:text-green-600 ml-1"
-                  title="Duplicate kit"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDuplicate();
                   }}
+                  title="Duplicate kit"
                 >
                   <FiCopy />
                 </button>
@@ -189,8 +191,8 @@ const KitGridItem = React.memo(
 
                 return (
                   <div
-                    key={`voice-${voiceNumber}`}
                     className="w-1/4 flex justify-center"
+                    key={`voice-${voiceNumber}`}
                     title={
                       `Voice ${voiceNumber}: ${count} samples` +
                       (voiceName ? ` (${voiceName})` : "")

@@ -9,51 +9,29 @@ import {
 } from "react-icons/fi";
 import { toast } from "sonner";
 
+import type { SampleData } from "./kitTypes";
+
 import { toCapitalCase } from "../../../shared/kitUtilsShared";
 import { useSettings } from "../utils/SettingsContext";
 import { useStereoHandling } from "./hooks/useStereoHandling";
-import type { SampleData } from "./kitTypes";
 import SampleWaveform from "./SampleWaveform";
 
 interface KitVoicePanelProps {
-  voice: number;
-  samples: string[];
-  sampleMetadata?: { [filename: string]: SampleData }; // Optional metadata lookup
-  voiceName: string | null;
-  onSaveVoiceName: (voice: number, newName: string) => void;
-  onRescanVoiceName: (voice: number) => void;
-  samplePlaying: { [key: string]: boolean };
-  playTriggers: { [key: string]: number };
-  stopTriggers: { [key: string]: number };
-  onPlay: (voice: number, sample: string) => void;
-  onStop: (voice: number, sample: string) => void;
-  onWaveformPlayingChange: (
-    voice: number,
-    sample: string,
-    playing: boolean,
-  ) => void;
-  kitName: string;
-
-  // New props for cross-voice navigation
-  selectedIdx?: number; // index of selected sample in this voice, or -1 if not active
-  onSampleKeyNav?: (direction: "up" | "down") => void;
-  onSampleSelect?: (voice: number, idx: number) => void;
   isActive?: boolean;
   isEditable?: boolean;
-
+  // Task 7.1.3: Props for coordinated stereo drop highlighting
+  isStereoDragTarget?: boolean;
+  kitName: string;
+  onPlay: (voice: number, sample: string) => void;
+  onRescanVoiceName: (voice: number) => void;
   // New props for drag-and-drop sample assignment (Task 5.2.2)
   onSampleAdd?: (
     voice: number,
     slotIndex: number,
     filePath: string,
   ) => Promise<void>;
-  onSampleReplace?: (
-    voice: number,
-    slotIndex: number,
-    filePath: string,
-  ) => Promise<void>;
   onSampleDelete?: (voice: number, slotIndex: number) => Promise<void>;
-
+  onSampleKeyNav?: (direction: "down" | "up") => void;
   // Task 22.2: Sample move operations with contiguity
   onSampleMove?: (
     fromVoice: number,
@@ -62,70 +40,93 @@ interface KitVoicePanelProps {
     toSlot: number,
     mode: "insert" | "overwrite",
   ) => Promise<void>;
+  onSampleReplace?: (
+    voice: number,
+    slotIndex: number,
+    filePath: string,
+  ) => Promise<void>;
+  onSampleSelect?: (voice: number, idx: number) => void;
+  onSaveVoiceName: (voice: number, newName: string) => void;
 
-  // Task 7.1.3: Props for coordinated stereo drop highlighting
-  isStereoDragTarget?: boolean;
-  stereoDragSlotIndex?: number;
+  onStereoDragLeave?: () => void;
   onStereoDragOver?: (
     voice: number,
     slotIndex: number,
     isStereo: boolean,
   ) => void;
-  onStereoDragLeave?: () => void;
+  onStop: (voice: number, sample: string) => void;
+  onWaveformPlayingChange: (
+    voice: number,
+    sample: string,
+    playing: boolean,
+  ) => void;
+  playTriggers: { [key: string]: number };
+
+  sampleMetadata?: { [filename: string]: SampleData }; // Optional metadata lookup
+  samplePlaying: { [key: string]: boolean };
+  samples: string[];
+
+  // New props for cross-voice navigation
+  selectedIdx?: number; // index of selected sample in this voice, or -1 if not active
+
+  stereoDragSlotIndex?: number;
+  stopTriggers: { [key: string]: number };
+  voice: number;
+  voiceName: null | string;
 }
 
 const KitVoicePanel: React.FC<
-  KitVoicePanelProps & { dataTestIdVoiceName?: string }
+  { dataTestIdVoiceName?: string } & KitVoicePanelProps
 > = ({
-  voice,
-  samples,
-  sampleMetadata,
-  voiceName,
-  onSaveVoiceName,
-  // onRescanVoiceName, // Legacy - voice rescanning now handled by kit-level scanning
-  samplePlaying,
-  playTriggers,
-  stopTriggers,
-  onPlay,
-  onStop,
-  onWaveformPlayingChange,
-  kitName,
   dataTestIdVoiceName,
-  selectedIdx = -1,
-  // onSampleKeyNav, // Note: Keyboard navigation now handled by parent component
-  onSampleSelect,
   isActive = false,
   isEditable = true,
+  isStereoDragTarget = false,
+  kitName,
+  onPlay,
   onSampleAdd,
-  onSampleReplace,
   onSampleDelete,
   onSampleMove,
-  isStereoDragTarget = false,
-  stereoDragSlotIndex,
-  onStereoDragOver,
+  onSampleReplace,
+  // onSampleKeyNav, // Note: Keyboard navigation now handled by parent component
+  onSampleSelect,
+  onSaveVoiceName,
   onStereoDragLeave,
+  onStereoDragOver,
+  onStop,
+  onWaveformPlayingChange,
+  playTriggers,
+  sampleMetadata,
+  // onRescanVoiceName, // Legacy - voice rescanning now handled by kit-level scanning
+  samplePlaying,
+  samples,
+  selectedIdx = -1,
+  stereoDragSlotIndex,
+  stopTriggers,
+  voice,
+  voiceName,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(voiceName || "");
-  const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<null | number>(null);
 
   // Task 22.2: Internal sample drag state
-  const [_draggedSample, setDraggedSample] = useState<{
-    voice: number;
-    slot: number;
+  const [draggedSample, setDraggedSample] = useState<{
     sampleName: string;
+    slot: number;
+    voice: number;
   } | null>(null);
   const [dropZone, setDropZone] = useState<{
-    slot: number;
     mode: "insert" | "overwrite";
+    slot: number;
   } | null>(null);
 
   // Task 7.1.2: Get defaultToMonoSamples setting and stereo handling logic
   const { defaultToMonoSamples } = useSettings();
   const {
     analyzeStereoAssignment,
-    handleStereoConflict,
     applyStereoAssignment,
+    handleStereoConflict,
   } = useStereoHandling();
 
   // Helper functions to reduce cognitive complexity
@@ -231,7 +232,7 @@ const KitVoicePanel: React.FC<
     filePath: string,
     formatValidation: any,
     allSamples: any[],
-    modifierKeys: { forceStereoDrop: boolean; forceMonoDrop: boolean },
+    modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
     droppedSlotIndex: number,
   ): Promise<boolean> => {
     const channels = formatValidation.metadata?.channels || 1;
@@ -260,9 +261,9 @@ const KitVoicePanel: React.FC<
     );
 
     let assignmentOptions = {
+      cancel: false,
       forceMono: stereoResult.assignAsMono,
       replaceExisting: false,
-      cancel: false,
     };
 
     if (stereoResult.requiresConfirmation && stereoResult.conflictInfo) {
@@ -337,13 +338,13 @@ const KitVoicePanel: React.FC<
   };
 
   const calculateDragStyling = (params: {
+    defaultToMonoSamples: boolean;
+    dropMode?: string;
     isDragOver: boolean;
     isDropZone: boolean;
     isStereoHighlight: boolean;
-    dropMode?: string;
     sample?: string;
     voice: number;
-    defaultToMonoSamples: boolean;
   }) => {
     let dragOverClass = "";
     let dropHintTitle = "Drop to assign sample";
@@ -480,8 +481,8 @@ const KitVoicePanel: React.FC<
 
     const file = files[0];
     const modifierKeys = {
-      forceStereoDrop: e.altKey || e.metaKey,
       forceMonoDrop: e.shiftKey,
+      forceStereoDrop: e.altKey || e.metaKey,
     };
 
     try {
@@ -529,16 +530,16 @@ const KitVoicePanel: React.FC<
     if (!isEditable) return;
 
     // Set the dragged sample data
-    setDraggedSample({ voice, slot: slotIndex, sampleName });
+    setDraggedSample({ sampleName, slot: slotIndex, voice });
 
     // Set drag effect to move
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData(
       "application/x-romper-sample",
       JSON.stringify({
-        voice,
-        slot: slotIndex,
         sampleName,
+        slot: slotIndex,
+        voice,
       }),
     );
 
@@ -578,7 +579,7 @@ const KitVoicePanel: React.FC<
       e.preventDefault();
       e.stopPropagation();
 
-      setDropZone({ slot: slotIndex, mode: dropMode });
+      setDropZone({ mode: dropMode, slot: slotIndex });
       return;
     }
 
@@ -666,22 +667,22 @@ const KitVoicePanel: React.FC<
       isStereoDragTarget && stereoDragSlotIndex === slotIndex;
 
     const dragStyling = calculateDragStyling({
+      defaultToMonoSamples,
+      dropMode: dropZone?.mode,
       isDragOver,
       isDropZone,
       isStereoHighlight,
-      dropMode: dropZone?.mode,
       sample,
       voice,
-      defaultToMonoSamples,
     });
 
     return {
-      slotBaseClass,
       dragOverClass: dragStyling.dragOverClass,
       dropHintTitle: dragStyling.dropHintTitle,
       isDragOver,
       isDropZone,
       isStereoHighlight,
+      slotBaseClass,
     };
   };
 
@@ -733,19 +734,19 @@ const KitVoicePanel: React.FC<
   const getSampleDragHandlers = (slotIndex: number, sampleName: string) => {
     if (!isEditable) {
       return {
-        onDragStart: undefined,
         onDragEnd: undefined,
-        onDragOver: undefined,
         onDragLeave: undefined,
+        onDragOver: undefined,
+        onDragStart: undefined,
         onDrop: undefined,
       };
     }
     return {
+      onDragEnd: handleSampleDragEnd,
+      onDragLeave: handleSampleDragLeave,
+      onDragOver: (e: React.DragEvent) => handleSampleDragOver(e, slotIndex),
       onDragStart: (e: React.DragEvent) =>
         handleSampleDragStart(e, slotIndex, sampleName),
-      onDragEnd: handleSampleDragEnd,
-      onDragOver: (e: React.DragEvent) => handleSampleDragOver(e, slotIndex),
-      onDragLeave: handleSampleDragLeave,
       onDrop: (e: React.DragEvent) => handleSampleDrop(e, slotIndex),
     };
   };
@@ -753,12 +754,12 @@ const KitVoicePanel: React.FC<
   // Helper function to render a filled sample slot
   const renderSampleSlot = (slotIndex: number, sample: string) => {
     const {
-      slotBaseClass,
       dragOverClass,
       dropHintTitle,
       isDragOver,
       isDropZone,
       isStereoHighlight,
+      slotBaseClass,
     } = getSlotStyling(slotIndex, sample);
     const sampleName = sample;
     const sampleKey = voice + ":" + sampleName;
@@ -784,22 +785,23 @@ const KitVoicePanel: React.FC<
 
     return (
       <li
-        key={`${voice}-${slotIndex}-${sampleName}`}
-        className={className}
-        role="option"
-        tabIndex={0}
+        aria-label={`Sample ${sampleName} in slot ${slotIndex}`}
         aria-selected={isSelected}
+        className={className}
         data-testid={isSelected ? `sample-selected-voice-${voice}` : undefined}
-        title={title}
+        draggable={isEditable}
+        key={`${voice}-${slotIndex}-${sampleName}`}
         onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
+        onContextMenu={(e) => handleSampleContextMenu(e, sampleData)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             onSampleSelect && onSampleSelect(voice, slotIndex);
           }
         }}
-        onContextMenu={(e) => handleSampleContextMenu(e, sampleData)}
-        draggable={isEditable}
+        role="option"
+        tabIndex={0}
+        title={title}
         {...dragHandlers}
       >
         {renderPlayButton(isPlaying, sampleName)}
@@ -817,13 +819,6 @@ const KitVoicePanel: React.FC<
         <SampleWaveform
           key={`${kitName}-${voice}-${slotIndex}-${sampleName}`}
           kitName={kitName}
-          voiceNumber={voice}
-          slotNumber={slotNumber}
-          playTrigger={playTriggers[sampleKey] || 0}
-          stopTrigger={stopTriggers[sampleKey] || 0}
-          onPlayingChange={(playing) =>
-            onWaveformPlayingChange(voice, sample, playing)
-          }
           onError={(err) => {
             if (typeof window !== "undefined" && window.dispatchEvent) {
               window.dispatchEvent(
@@ -831,6 +826,13 @@ const KitVoicePanel: React.FC<
               );
             }
           }}
+          onPlayingChange={(playing) =>
+            onWaveformPlayingChange(voice, sample, playing)
+          }
+          playTrigger={playTriggers[sampleKey] || 0}
+          slotNumber={slotNumber}
+          stopTrigger={stopTriggers[sampleKey] || 0}
+          voiceNumber={voice}
         />
       </li>
     );
@@ -839,19 +841,19 @@ const KitVoicePanel: React.FC<
   // Helper function to render play/stop button
   const renderPlayButton = (isPlaying: boolean, sampleName: string) => {
     const buttonStyle = {
-      minWidth: 24,
-      minHeight: 24,
-      display: "flex",
       alignItems: "center",
+      display: "flex",
       justifyContent: "center",
+      minHeight: 24,
+      minWidth: 24,
     };
 
     if (isPlaying) {
       return (
         <button
+          aria-label="Stop"
           className="p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs text-red-600 dark:text-red-400"
           onClick={() => onStop(voice, sampleName)}
-          aria-label="Stop"
           style={buttonStyle}
         >
           <FiSquare />
@@ -861,9 +863,9 @@ const KitVoicePanel: React.FC<
 
     return (
       <button
+        aria-label="Play"
         className="p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs"
         onClick={() => onPlay(voice, sampleName)}
-        aria-label="Play"
         style={buttonStyle}
       >
         <FiPlay />
@@ -874,20 +876,20 @@ const KitVoicePanel: React.FC<
   // Helper function to render delete button
   const renderDeleteButton = (slotIndex: number) => (
     <button
+      aria-label="Delete sample"
       className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-800 text-xs text-red-600 dark:text-red-400 ml-2"
       onClick={(e) => {
         e.stopPropagation();
         handleDeleteSample(slotIndex);
       }}
-      aria-label="Delete sample"
-      title="Delete sample"
       style={{
-        minWidth: 24,
-        minHeight: 24,
-        display: "flex",
         alignItems: "center",
+        display: "flex",
         justifyContent: "center",
+        minHeight: 24,
+        minWidth: 24,
       }}
+      title="Delete sample"
     >
       <FiTrash2 />
     </button>
@@ -896,49 +898,50 @@ const KitVoicePanel: React.FC<
   // Helper function to render an empty slot
   const renderEmptySlot = (slotIndex: number, isDropTarget: boolean) => {
     const {
-      slotBaseClass,
       dragOverClass,
       dropHintTitle,
       isDragOver,
       isDropZone,
       isStereoHighlight,
+      slotBaseClass,
     } = getSlotStyling(slotIndex, undefined);
 
     return (
       <li
-        key={`${voice}-empty-${slotIndex}`}
+        aria-label={`Empty slot ${slotIndex}`}
+        aria-selected={false}
         className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass}${
           isEditable
             ? " border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500"
             : ""
         }`}
-        role="option"
-        tabIndex={0}
-        aria-selected={false}
         data-testid={`empty-slot-${voice}-${slotIndex}`}
-        title={
-          isDragOver || isStereoHighlight || isDropZone
-            ? dropHintTitle
+        key={`${voice}-empty-${slotIndex}`}
+        onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
+        onDragLeave={
+          isEditable && isDropTarget ? handleSampleDragLeave : undefined
+        }
+        onDragOver={
+          isEditable && isDropTarget
+            ? (e) => handleSampleDragOver(e, slotIndex)
             : undefined
         }
-        onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
+        onDrop={
+          isEditable && isDropTarget
+            ? (e) => handleSampleDrop(e, slotIndex)
+            : undefined
+        }
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             onSampleSelect && onSampleSelect(voice, slotIndex);
           }
         }}
-        onDragOver={
-          isEditable && isDropTarget
-            ? (e) => handleSampleDragOver(e, slotIndex)
-            : undefined
-        }
-        onDragLeave={
-          isEditable && isDropTarget ? handleSampleDragLeave : undefined
-        }
-        onDrop={
-          isEditable && isDropTarget
-            ? (e) => handleSampleDrop(e, slotIndex)
+        role="option"
+        tabIndex={0}
+        title={
+          isDragOver || isStereoHighlight || isDropZone
+            ? dropHintTitle
             : undefined
         }
       >
@@ -975,20 +978,23 @@ const KitVoicePanel: React.FC<
   };
 
   return (
-    <div className="flex flex-col" role="region">
+    <div
+      aria-label={`Voice ${voice} panel`}
+      className="flex flex-col"
+    >
       <div className="font-semibold mb-1 text-gray-800 dark:text-gray-100 pl-1 flex items-center gap-2">
         <span>{voice}:</span>
         {editing ? (
           <>
             <input
-              className="ml-1 px-2 py-0.5 rounded border border-blue-400 text-sm font-semibold bg-white dark:bg-slate-900 text-blue-800 dark:text-blue-100 w-32"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
               autoFocus
+              className="ml-1 px-2 py-0.5 rounded border border-blue-400 text-sm font-semibold bg-white dark:bg-slate-900 text-blue-800 dark:text-blue-100 w-32"
+              onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSave();
                 if (e.key === "Escape") handleCancel();
               }}
+              value={editValue}
             />
             <button
               className="ml-1 text-green-600 dark:text-green-400"
@@ -1041,14 +1047,14 @@ const KitVoicePanel: React.FC<
 
             return [...Array(slotsToRender)].map((_, i) => (
               <div
-                key={`voice-${voice}-slot-${i}`}
                 className="min-h-[28px] flex items-center justify-end"
+                key={`voice-${voice}-slot-${i}`}
                 style={{ marginBottom: 4 }}
               >
                 <span
                   className="text-xs font-mono text-gray-500 dark:text-gray-400 select-none bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
                   data-testid={`slot-number-${voice}-${i}`}
-                  style={{ width: "32px", display: "inline-block" }}
+                  style={{ display: "inline-block", width: "32px" }}
                 >
                   {i + 1}.
                 </span>
@@ -1060,13 +1066,13 @@ const KitVoicePanel: React.FC<
         {/* Voice panel content */}
         <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
           <ul
+            aria-label={`Sample slots for voice ${voice}`}
             className="list-none ml-0 text-sm flex flex-col"
+            data-testid={`sample-list-voice-${voice}`}
+            onKeyDown={handleKeyDown}
             ref={listRef}
             role="listbox"
-            aria-label="Sample slots"
-            data-testid={`sample-list-voice-${voice}`}
             tabIndex={isActive ? 0 : -1}
-            onKeyDown={handleKeyDown}
           >
             {renderSampleSlots()}
           </ul>

@@ -4,26 +4,26 @@ import { toast } from "sonner";
 import { useSettings } from "../../utils/SettingsContext";
 
 export interface StereoAssignmentOptions {
+  cancel: boolean;
   forceMono: boolean;
   replaceExisting: boolean;
-  cancel: boolean;
 }
 
 export interface StereoConflictInfo {
-  targetVoice: number;
-  nextVoice: number;
   existingSamples: {
-    voice: number;
     samples: string[];
+    voice: number;
   }[];
+  nextVoice: number;
+  targetVoice: number;
 }
 
 export interface StereoHandlingResult {
-  canAssign: boolean;
-  targetVoice: number;
   assignAsMono: boolean;
+  canAssign: boolean;
   conflictInfo?: StereoConflictInfo;
   requiresConfirmation: boolean;
+  targetVoice: number;
 }
 
 /**
@@ -42,7 +42,7 @@ export function useStereoHandling() {
     (
       targetVoice: number,
       channels: number,
-      allSamples: Array<{ voice_number: number; filename: string }>,
+      allSamples: Array<{ filename: string; voice_number: number }>,
       overrideSetting?: { forceMono?: boolean; forceStereo?: boolean },
     ): StereoHandlingResult => {
       // Task 7.1.3: Check for per-sample override first
@@ -58,10 +58,10 @@ export function useStereoHandling() {
       // If mono sample or effective setting is ON, always assign as mono
       if (channels === 1 || effectiveDefaultToMono) {
         return {
-          canAssign: true,
-          targetVoice,
           assignAsMono: true,
+          canAssign: true,
           requiresConfirmation: false,
+          targetVoice,
         };
       }
 
@@ -71,15 +71,15 @@ export function useStereoHandling() {
       // Task 7.2.4: Handle edge case: stereo to voice 4 (no voice 5 available)
       if (targetVoice === 4) {
         return {
-          canAssign: false,
-          targetVoice,
           assignAsMono: false,
-          requiresConfirmation: true,
+          canAssign: false,
           conflictInfo: {
-            targetVoice,
-            nextVoice: 5, // Doesn't exist
             existingSamples: [],
+            nextVoice: 5, // Doesn't exist
+            targetVoice,
           },
+          requiresConfirmation: true,
+          targetVoice,
         };
       }
 
@@ -98,35 +98,35 @@ export function useStereoHandling() {
 
       if (hasConflicts) {
         const conflictInfo: StereoConflictInfo = {
-          targetVoice,
-          nextVoice,
           existingSamples: [
             {
-              voice: targetVoice,
               samples: targetVoiceSamples.map((s) => s.filename),
+              voice: targetVoice,
             },
             {
-              voice: nextVoice,
               samples: nextVoiceSamples.map((s) => s.filename),
+              voice: nextVoice,
             },
           ].filter((v) => v.samples.length > 0),
+          nextVoice,
+          targetVoice,
         };
 
         return {
-          canAssign: false,
-          targetVoice,
           assignAsMono: false,
-          requiresConfirmation: true,
+          canAssign: false,
           conflictInfo,
+          requiresConfirmation: true,
+          targetVoice,
         };
       }
 
       // No conflicts - can assign stereo across both voices
       return {
-        canAssign: true,
-        targetVoice,
         assignAsMono: false,
+        canAssign: true,
         requiresConfirmation: false,
+        targetVoice,
       };
     },
     [defaultToMonoSamples],
@@ -149,7 +149,7 @@ export function useStereoHandling() {
               "Voice 5 doesn't exist. Sample will be assigned as mono to voice 4.",
             duration: 5000,
           });
-          resolve({ forceMono: true, replaceExisting: false, cancel: false });
+          resolve({ cancel: false, forceMono: true, replaceExisting: false });
           return;
         }
 
@@ -164,7 +164,7 @@ export function useStereoHandling() {
         });
 
         // For now, default to mono assignment
-        resolve({ forceMono: true, replaceExisting: false, cancel: false });
+        resolve({ cancel: false, forceMono: true, replaceExisting: false });
       });
     },
     [],
@@ -229,9 +229,9 @@ export function useStereoHandling() {
   );
 
   return {
-    defaultToMonoSamples,
     analyzeStereoAssignment,
-    handleStereoConflict,
     applyStereoAssignment,
+    defaultToMonoSamples,
+    handleStereoConflict,
   };
 }

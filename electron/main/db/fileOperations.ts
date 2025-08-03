@@ -3,11 +3,43 @@ import * as fs from "fs";
 
 // Logging utilities
 const log = {
-  info: (message: string, ...args: any[]) =>
-    console.log(`[Romper Electron] ${message}`, ...args),
   error: (message: string, ...args: any[]) =>
     console.error(`[Romper Electron] ${message}`, ...args),
+  info: (message: string, ...args: any[]) =>
+    console.log(`[Romper Electron] ${message}`, ...args),
 };
+
+export async function deleteDbFileWithRetry(
+  dbPath: string,
+  maxRetries = 15,
+): Promise<void> {
+  let lastError: Error | null = null;
+  const isWindows = process.platform === "win32";
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const success = await handleDeleteAttempt(
+        dbPath,
+        i,
+        isWindows,
+        i === maxRetries - 1,
+      );
+      if (success) {
+        return;
+      }
+    } catch (error) {
+      lastError = error as Error;
+    }
+  }
+
+  // Final Windows fallback attempt
+  if (isWindows) {
+    finalWindowsRename(dbPath);
+    return; // Always return on Windows after final attempt
+  }
+
+  throw lastError || new Error("Could not delete or rename database file");
+}
 
 // Calculate retry delay based on platform and failure type
 function calculateRetryDelay(
@@ -28,65 +60,6 @@ function calculateRetryDelay(
 
   // Standard Windows retry delay
   return attempt > 0 ? 200 * attempt : 0;
-}
-
-// Helper to wait between retry attempts
-async function waitForRetry(
-  attempt: number,
-  isWindows: boolean,
-  isRenameFailure: boolean = false,
-): Promise<void> {
-  const delay = calculateRetryDelay(attempt, isWindows, isRenameFailure);
-  if (delay > 0) {
-    await new Promise((resolve) => setTimeout(resolve, delay));
-  }
-}
-
-// Helper to attempt deletion and verify
-async function tryDelete(dbPath: string, attempt: number): Promise<boolean> {
-  fs.unlinkSync(dbPath);
-  log.info(`Successfully deleted DB file on attempt ${attempt + 1}`);
-
-  if (!fs.existsSync(dbPath)) {
-    log.info(`Verified DB file is deleted`);
-    return true;
-  }
-
-  log.info(`File still exists after deletion, retrying...`);
-  throw new Error("File still exists after deletion");
-}
-
-// Helper to attempt rename and verify
-async function tryRename(
-  dbPath: string,
-  attempt: number,
-  suffix: string = "corrupted",
-): Promise<boolean> {
-  const backupPath = `${dbPath}.${suffix}.${Date.now()}.${attempt}`;
-  fs.renameSync(dbPath, backupPath);
-  log.info(`Successfully renamed DB file to backup on attempt ${attempt + 1}`);
-
-  if (!fs.existsSync(dbPath)) {
-    log.info(`Verified original DB file is gone after rename`);
-    return true;
-  }
-
-  log.info(`Original file still exists after rename, retrying...`);
-  throw new Error("Original file still exists after rename");
-}
-
-// Helper for Windows rename fallback
-async function tryWindowsRenameFallback(
-  dbPath: string,
-  attempt: number,
-): Promise<boolean> {
-  try {
-    return await tryRename(dbPath, attempt);
-  } catch {
-    log.info(`Rename attempt ${attempt + 1} failed, waiting...`);
-    await waitForRetry(attempt, true, true);
-    return false;
-  }
 }
 
 // Helper for final Windows rename attempt
@@ -140,34 +113,61 @@ async function handleDeleteAttempt(
   }
 }
 
-export async function deleteDbFileWithRetry(
+// Helper to attempt deletion and verify
+async function tryDelete(dbPath: string, attempt: number): Promise<boolean> {
+  fs.unlinkSync(dbPath);
+  log.info(`Successfully deleted DB file on attempt ${attempt + 1}`);
+
+  if (!fs.existsSync(dbPath)) {
+    log.info(`Verified DB file is deleted`);
+    return true;
+  }
+
+  log.info(`File still exists after deletion, retrying...`);
+  throw new Error("File still exists after deletion");
+}
+
+// Helper to attempt rename and verify
+async function tryRename(
   dbPath: string,
-  maxRetries = 15,
+  attempt: number,
+  suffix: string = "corrupted",
+): Promise<boolean> {
+  const backupPath = `${dbPath}.${suffix}.${Date.now()}.${attempt}`;
+  fs.renameSync(dbPath, backupPath);
+  log.info(`Successfully renamed DB file to backup on attempt ${attempt + 1}`);
+
+  if (!fs.existsSync(dbPath)) {
+    log.info(`Verified original DB file is gone after rename`);
+    return true;
+  }
+
+  log.info(`Original file still exists after rename, retrying...`);
+  throw new Error("Original file still exists after rename");
+}
+
+// Helper for Windows rename fallback
+async function tryWindowsRenameFallback(
+  dbPath: string,
+  attempt: number,
+): Promise<boolean> {
+  try {
+    return await tryRename(dbPath, attempt);
+  } catch {
+    log.info(`Rename attempt ${attempt + 1} failed, waiting...`);
+    await waitForRetry(attempt, true, true);
+    return false;
+  }
+}
+
+// Helper to wait between retry attempts
+async function waitForRetry(
+  attempt: number,
+  isWindows: boolean,
+  isRenameFailure: boolean = false,
 ): Promise<void> {
-  let lastError: Error | null = null;
-  const isWindows = process.platform === "win32";
-
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const success = await handleDeleteAttempt(
-        dbPath,
-        i,
-        isWindows,
-        i === maxRetries - 1,
-      );
-      if (success) {
-        return;
-      }
-    } catch (error) {
-      lastError = error as Error;
-    }
+  const delay = calculateRetryDelay(attempt, isWindows, isRenameFailure);
+  if (delay > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
-
-  // Final Windows fallback attempt
-  if (isWindows) {
-    finalWindowsRename(dbPath);
-    return; // Always return on Windows after final attempt
-  }
-
-  throw lastError || new Error("Could not delete or rename database file");
 }

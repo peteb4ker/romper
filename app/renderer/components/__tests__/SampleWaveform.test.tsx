@@ -9,19 +9,19 @@ import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 
 // Mock canvas for testing
 const mockCanvasContext = {
-  clearRect: vi.fn(),
   beginPath: vi.fn(),
-  moveTo: vi.fn(),
+  clearRect: vi.fn(),
   lineTo: vi.fn(),
+  lineWidth: 1,
+  moveTo: vi.fn(),
   stroke: vi.fn(),
   strokeStyle: "",
-  lineWidth: 1,
 };
 
 const _mockCanvas = {
   getContext: vi.fn(() => mockCanvasContext),
-  width: 80,
   height: 18,
+  width: 80,
 };
 
 beforeEach(() => {
@@ -31,28 +31,28 @@ beforeEach(() => {
   // Mock canvas methods
   HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCanvasContext);
   Object.defineProperty(HTMLCanvasElement.prototype, "width", {
-    get: () => 80,
     configurable: true,
+    get: () => 80,
   });
   Object.defineProperty(HTMLCanvasElement.prototype, "height", {
-    get: () => 18,
     configurable: true,
+    get: () => 18,
   });
 
   // Mock AudioContext and related APIs
   global.AudioContext = vi.fn(() => ({
-    currentTime: 0,
-    destination: {},
+    close: vi.fn().mockResolvedValue(undefined),
     createBufferSource: vi.fn(() => ({
       buffer: null,
       connect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
       disconnect: vi.fn(),
       onended: null,
+      start: vi.fn(),
+      stop: vi.fn(),
     })),
+    currentTime: 0,
     decodeAudioData: vi.fn(),
-    close: vi.fn().mockResolvedValue(undefined),
+    destination: {},
     state: "running",
   }));
 
@@ -71,9 +71,9 @@ describe("SampleWaveform", () => {
         <MockMessageDisplayProvider>
           <SampleWaveform
             kitName="A1"
-            voiceNumber={1}
-            slotNumber={1}
             playTrigger={0}
+            slotNumber={1}
+            voiceNumber={1}
           />
         </MockMessageDisplayProvider>,
       );
@@ -94,9 +94,9 @@ describe("SampleWaveform", () => {
       render(
         <SampleWaveform
           kitName="A1"
-          voiceNumber={2}
-          slotNumber={1}
           playTrigger={0}
+          slotNumber={1}
+          voiceNumber={2}
         />,
       );
     });
@@ -112,9 +112,9 @@ describe("SampleWaveform", () => {
     const { rerender } = render(
       <SampleWaveform
         kitName="A1"
-        voiceNumber={1}
-        slotNumber={1}
         playTrigger={0}
+        slotNumber={1}
+        voiceNumber={1}
       />,
     );
 
@@ -124,9 +124,9 @@ describe("SampleWaveform", () => {
       rerender(
         <SampleWaveform
           kitName="A2"
-          voiceNumber={3}
-          slotNumber={2}
           playTrigger={0}
+          slotNumber={2}
+          voiceNumber={3}
         />,
       );
     });
@@ -146,10 +146,10 @@ describe("SampleWaveform", () => {
       render(
         <SampleWaveform
           kitName="A1"
-          voiceNumber={1}
-          slotNumber={1}
-          playTrigger={0}
           onError={onError}
+          playTrigger={0}
+          slotNumber={1}
+          voiceNumber={1}
         />,
       );
     });
@@ -169,10 +169,10 @@ describe("SampleWaveform", () => {
       render(
         <SampleWaveform
           kitName="A1"
-          voiceNumber={1}
-          slotNumber={1}
-          playTrigger={1}
           onPlayingChange={onPlayingChange}
+          playTrigger={1}
+          slotNumber={1}
+          voiceNumber={1}
         />,
       );
     });
@@ -191,10 +191,10 @@ describe("SampleWaveform", () => {
         <MockMessageDisplayProvider>
           <SampleWaveform
             kitName="A1"
-            voiceNumber={1}
-            slotNumber={1}
-            playTrigger={0}
             onError={onError}
+            playTrigger={0}
+            slotNumber={1}
+            voiceNumber={1}
           />
         </MockMessageDisplayProvider>,
       );
@@ -219,10 +219,10 @@ describe("SampleWaveform", () => {
       render(
         <SampleWaveform
           kitName="A1"
-          voiceNumber={1}
-          slotNumber={1}
-          playTrigger={0}
           onError={onError}
+          playTrigger={0}
+          slotNumber={1}
+          voiceNumber={1}
         />,
       );
     });
@@ -244,9 +244,9 @@ describe("SampleWaveform", () => {
     const { unmount } = render(
       <SampleWaveform
         kitName="A1"
-        voiceNumber={1}
-        slotNumber={1}
         playTrigger={0}
+        slotNumber={1}
+        voiceNumber={1}
       />,
     );
 
@@ -262,10 +262,10 @@ describe("SampleWaveform", () => {
     const { rerender } = render(
       <SampleWaveform
         kitName="A1"
-        voiceNumber={1}
-        slotNumber={1}
         playTrigger={0}
+        slotNumber={1}
         stopTrigger={0}
+        voiceNumber={1}
       />,
     );
 
@@ -274,10 +274,10 @@ describe("SampleWaveform", () => {
       rerender(
         <SampleWaveform
           kitName="B2"
-          voiceNumber={4}
-          slotNumber={12}
           playTrigger={1}
+          slotNumber={12}
           stopTrigger={1}
+          voiceNumber={4}
         />,
       );
     });
@@ -301,18 +301,18 @@ describe("SampleWaveform", () => {
   it("handles AudioContext close errors gracefully", async () => {
     // Mock AudioContext.close to throw an error
     const mockAudioContext = {
-      currentTime: 0,
-      destination: {},
+      close: vi.fn().mockRejectedValue(new Error("Close failed")),
       createBufferSource: vi.fn(() => ({
         buffer: null,
         connect: vi.fn(),
-        start: vi.fn(),
-        stop: vi.fn(),
         disconnect: vi.fn(),
         onended: null,
+        start: vi.fn(),
+        stop: vi.fn(),
       })),
+      currentTime: 0,
       decodeAudioData: vi.fn(),
-      close: vi.fn().mockRejectedValue(new Error("Close failed")),
+      destination: {},
       state: "running",
     };
 
@@ -325,9 +325,9 @@ describe("SampleWaveform", () => {
     const { rerender } = render(
       <SampleWaveform
         kitName="A1"
-        voiceNumber={1}
-        slotNumber={1}
         playTrigger={0}
+        slotNumber={1}
+        voiceNumber={1}
       />,
     );
 
@@ -341,9 +341,9 @@ describe("SampleWaveform", () => {
       rerender(
         <SampleWaveform
           kitName="A2"
-          voiceNumber={1}
-          slotNumber={1}
           playTrigger={0}
+          slotNumber={1}
+          voiceNumber={1}
         />,
       );
     });
@@ -355,20 +355,20 @@ describe("SampleWaveform", () => {
   it("handles synchronous AudioContext close errors gracefully", async () => {
     // Mock AudioContext.close to throw synchronously
     const mockAudioContext = {
-      currentTime: 0,
-      destination: {},
-      createBufferSource: vi.fn(() => ({
-        buffer: null,
-        connect: vi.fn(),
-        start: vi.fn(),
-        stop: vi.fn(),
-        disconnect: vi.fn(),
-        onended: null,
-      })),
-      decodeAudioData: vi.fn(),
       close: vi.fn(() => {
         throw new Error("Synchronous close failed");
       }),
+      createBufferSource: vi.fn(() => ({
+        buffer: null,
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+        onended: null,
+        start: vi.fn(),
+        stop: vi.fn(),
+      })),
+      currentTime: 0,
+      decodeAudioData: vi.fn(),
+      destination: {},
       state: "running",
     };
 
@@ -381,9 +381,9 @@ describe("SampleWaveform", () => {
     const { rerender } = render(
       <SampleWaveform
         kitName="A1"
-        voiceNumber={1}
-        slotNumber={1}
         playTrigger={0}
+        slotNumber={1}
+        voiceNumber={1}
       />,
     );
 
@@ -392,9 +392,9 @@ describe("SampleWaveform", () => {
       rerender(
         <SampleWaveform
           kitName="A2"
-          voiceNumber={1}
-          slotNumber={1}
           playTrigger={0}
+          slotNumber={1}
+          voiceNumber={1}
         />,
       );
     });

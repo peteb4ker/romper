@@ -4,11 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs
 vi.mock("fs", () => ({
-  readdirSync: vi.fn(),
-  readFileSync: vi.fn(),
   existsSync: vi.fn(),
   lstatSync: vi.fn(),
   mkdirSync: vi.fn(),
+  readdirSync: vi.fn(),
+  readFileSync: vi.fn(),
 }));
 
 // Mock path
@@ -54,9 +54,9 @@ describe("LocalStoreService", () => {
   describe("getLocalStoreStatus", () => {
     beforeEach(() => {
       mockValidateAndDb.mockReturnValue({
-        isValid: true,
+        details: { dbVersion: "1.0", hasDb: true },
         error: null,
-        details: { hasDb: true, dbVersion: "1.0" },
+        isValid: true,
       });
     });
 
@@ -64,10 +64,10 @@ describe("LocalStoreService", () => {
       const result = localStoreService.getLocalStoreStatus(null, "/env/path");
 
       expect(result).toEqual({
-        hasLocalStore: true,
-        localStorePath: "/env/path",
-        isValid: true,
         error: null,
+        hasLocalStore: true,
+        isValid: true,
+        localStorePath: "/env/path",
       });
       expect(mockValidateAndDb).toHaveBeenCalledWith("/env/path");
     });
@@ -76,10 +76,10 @@ describe("LocalStoreService", () => {
       const result = localStoreService.getLocalStoreStatus("/local/path");
 
       expect(result).toEqual({
-        hasLocalStore: true,
-        localStorePath: "/local/path",
-        isValid: true,
         error: null,
+        hasLocalStore: true,
+        isValid: true,
+        localStorePath: "/local/path",
       });
       expect(mockValidateAndDb).toHaveBeenCalledWith("/local/path");
     });
@@ -98,28 +98,28 @@ describe("LocalStoreService", () => {
       const result = localStoreService.getLocalStoreStatus(null);
 
       expect(result).toEqual({
-        hasLocalStore: false,
-        localStorePath: null,
-        isValid: false,
         error: "No local store configured",
+        hasLocalStore: false,
+        isValid: false,
+        localStorePath: null,
       });
       expect(mockValidateAndDb).not.toHaveBeenCalled();
     });
 
     it("returns invalid status when validation fails", () => {
       mockValidateAndDb.mockReturnValue({
-        isValid: false,
-        error: "Database not found",
         details: { hasDb: false },
+        error: "Database not found",
+        isValid: false,
       });
 
       const result = localStoreService.getLocalStoreStatus("/invalid/path");
 
       expect(result).toEqual({
-        hasLocalStore: true,
-        localStorePath: "/invalid/path",
-        isValid: false,
         error: "Database not found",
+        hasLocalStore: true,
+        isValid: false,
+        localStorePath: "/invalid/path",
       });
     });
   });
@@ -127,9 +127,9 @@ describe("LocalStoreService", () => {
   describe("validateLocalStore", () => {
     it("delegates to validateLocalStoreAgainstDb", () => {
       const mockResult = {
-        isValid: true,
-        error: null,
         details: { hasDb: true },
+        error: null,
+        isValid: true,
       };
       mockValidateAgainstDb.mockReturnValue(mockResult);
 
@@ -143,9 +143,9 @@ describe("LocalStoreService", () => {
   describe("validateLocalStoreBasic", () => {
     it("delegates to validateLocalStoreBasic", () => {
       const mockResult = {
-        isValid: true,
-        error: null,
         details: { hasPath: true },
+        error: null,
+        isValid: true,
       };
       mockValidateBasic.mockReturnValue(mockResult);
 
@@ -159,52 +159,52 @@ describe("LocalStoreService", () => {
   describe("validateExistingLocalStore", () => {
     it("returns success for valid local store", () => {
       mockValidateAndDb.mockReturnValue({
-        isValid: true,
-        error: null,
         details: { hasDb: true },
+        error: null,
+        isValid: true,
       });
 
       const result =
         localStoreService.validateExistingLocalStore("/valid/path");
 
       expect(result).toEqual({
-        success: true,
-        path: "/valid/path",
         error: null,
+        path: "/valid/path",
+        success: true,
       });
     });
 
     it("returns failure for invalid local store", () => {
       mockValidateAndDb.mockReturnValue({
-        isValid: false,
-        error: "No database found",
         details: { hasDb: false },
+        error: "No database found",
+        isValid: false,
       });
 
       const result =
         localStoreService.validateExistingLocalStore("/invalid/path");
 
       expect(result).toEqual({
-        success: false,
-        path: null,
         error: "No database found",
+        path: null,
+        success: false,
       });
     });
 
     it("provides default error message when validation error is missing", () => {
       mockValidateAndDb.mockReturnValue({
-        isValid: false,
-        error: null,
         details: { hasDb: false },
+        error: null,
+        isValid: false,
       });
 
       const result =
         localStoreService.validateExistingLocalStore("/invalid/path");
 
       expect(result).toEqual({
-        success: false,
-        path: null,
         error: "Selected directory does not contain a valid Romper database",
+        path: null,
+        success: false,
       });
     });
   });
@@ -275,8 +275,8 @@ describe("LocalStoreService", () => {
       const result = localStoreService.readFile("/missing/file.txt");
 
       expect(result).toEqual({
-        success: false,
         error: "File not found",
+        success: false,
       });
     });
 
@@ -289,8 +289,8 @@ describe("LocalStoreService", () => {
       const result = localStoreService.readFile("/bad/file.txt");
 
       expect(result).toEqual({
-        success: false,
         error: "Failed to read file",
+        success: false,
       });
     });
 
@@ -340,8 +340,8 @@ describe("LocalStoreService", () => {
       const result = localStoreService.ensureDirectory("/forbidden/dir");
 
       expect(result).toEqual({
-        success: false,
         error: "Permission denied",
+        success: false,
       });
     });
 
@@ -354,8 +354,8 @@ describe("LocalStoreService", () => {
       const result = localStoreService.ensureDirectory("/error/dir");
 
       expect(result).toEqual({
-        success: false,
         error: "String error",
+        success: false,
       });
     });
   });

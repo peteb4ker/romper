@@ -4,33 +4,33 @@
 import type { KitWithRelations } from "../../../shared/db/schema";
 import type { AnyUndoAction } from "../../../shared/undoTypes";
 
+export interface KitDetailsProps {
+  kitIndex?: number;
+  kitName: string;
+  kits?: KitWithRelations[];
+  onAddUndoAction?: (action: AnyUndoAction) => void;
+  onBack: (scrollToKit?: string) => void;
+  onNextKit?: () => void;
+  onPrevKit?: () => void;
+  onRequestSamplesReload?: () => void;
+  samples?: null | VoiceSamples;
+}
+
 export interface KitSamplePlanSlot {
+  meta?: Record<string, any>;
   source: string;
   target: string;
   voice: number; // 1-4
   voiceType?: string;
-  meta?: Record<string, any>;
 }
 
 export interface SampleData {
-  filename: string;
-  source_path: string;
-  is_stereo?: boolean;
   [key: string]: any;
+  filename: string;
+  is_stereo?: boolean;
+  source_path: string;
 }
 
 export interface VoiceSamples {
   [voice: number]: string[];
-}
-
-export interface KitDetailsProps {
-  kitName: string;
-  onBack: (scrollToKit?: string) => void;
-  kits?: KitWithRelations[];
-  kitIndex?: number;
-  onNextKit?: () => void;
-  onPrevKit?: () => void;
-  samples?: VoiceSamples | null;
-  onRequestSamplesReload?: () => void;
-  onAddUndoAction?: (action: AnyUndoAction) => void;
 }

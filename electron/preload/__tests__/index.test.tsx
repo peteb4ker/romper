@@ -11,12 +11,12 @@ const mockIpcRenderer = {
 const mockWebUtils = { getPathForFile: vi.fn() };
 
 const mockElectron = {
+  contextBridge: mockContextBridge,
   default: {
     contextBridge: mockContextBridge,
     ipcRenderer: mockIpcRenderer,
     webUtils: mockWebUtils,
   },
-  contextBridge: mockContextBridge,
   ipcRenderer: mockIpcRenderer,
   webUtils: mockWebUtils,
 };
@@ -57,8 +57,8 @@ describe("preload/index.tsx", () => {
     expect(mockElectron.contextBridge.exposeInMainWorld).toHaveBeenCalledWith(
       "romperEnv",
       {
-        ROMPER_SDCARD_PATH: process.env.ROMPER_SDCARD_PATH,
         ROMPER_LOCAL_PATH: process.env.ROMPER_LOCAL_PATH,
+        ROMPER_SDCARD_PATH: process.env.ROMPER_SDCARD_PATH,
         ROMPER_SQUARP_ARCHIVE_URL: process.env.ROMPER_SQUARP_ARCHIVE_URL,
       },
     );
@@ -69,47 +69,47 @@ describe("preload/index.tsx", () => {
     expect(mockElectron.contextBridge.exposeInMainWorld).toHaveBeenCalledWith(
       "electronAPI",
       expect.objectContaining({
-        selectSdCard: expect.any(Function),
-        getSetting: expect.any(Function),
-        setSetting: expect.any(Function),
-        readSettings: expect.any(Function),
-        getLocalStoreStatus: expect.any(Function),
-        createKit: expect.any(Function),
-        copyKit: expect.any(Function),
-        listFilesInRoot: expect.any(Function),
+        addSampleToSlot: expect.any(Function),
         closeApp: expect.any(Function),
-        playSample: expect.any(Function),
-        stopSample: expect.any(Function),
-        onSamplePlaybackEnded: expect.any(Function),
-        onSamplePlaybackError: expect.any(Function),
-        getSampleAudioBuffer: expect.any(Function),
-        readFile: expect.any(Function),
-        getKit: expect.any(Function),
-        updateKit: expect.any(Function),
-        getKits: expect.any(Function),
-        updateVoiceAlias: expect.any(Function),
-        updateStepPattern: expect.any(Function),
-        getUserHomeDir: expect.any(Function),
-        selectLocalStorePath: expect.any(Function),
+        copyDir: expect.any(Function),
+        copyKit: expect.any(Function),
+        createKit: expect.any(Function),
+        createRomperDb: expect.any(Function),
+        deleteSampleFromSlot: expect.any(Function),
         downloadAndExtractArchive: expect.any(Function),
         ensureDir: expect.any(Function),
-        copyDir: expect.any(Function),
-        createRomperDb: expect.any(Function),
-        insertKit: expect.any(Function),
-        insertSample: expect.any(Function),
-        validateLocalStore: expect.any(Function),
-        validateLocalStoreBasic: expect.any(Function),
+        getAllBanks: expect.any(Function),
         getAllSamples: expect.any(Function),
         getAllSamplesForKit: expect.any(Function),
+        getKit: expect.any(Function),
+        getKits: expect.any(Function),
+        getLocalStoreStatus: expect.any(Function),
+        getSampleAudioBuffer: expect.any(Function),
+        getSetting: expect.any(Function),
+        getUserHomeDir: expect.any(Function),
+        insertKit: expect.any(Function),
+        insertSample: expect.any(Function),
+        listFilesInRoot: expect.any(Function),
+        onSamplePlaybackEnded: expect.any(Function),
+        onSamplePlaybackError: expect.any(Function),
+        playSample: expect.any(Function),
+        readFile: expect.any(Function),
+        readSettings: expect.any(Function),
+        replaceSampleInSlot: expect.any(Function),
         rescanKit: expect.any(Function),
-        getAllBanks: expect.any(Function),
         scanBanks: expect.any(Function),
         selectExistingLocalStore: expect.any(Function),
-        addSampleToSlot: expect.any(Function),
-        replaceSampleInSlot: expect.any(Function),
-        deleteSampleFromSlot: expect.any(Function),
-        validateSampleSources: expect.any(Function),
+        selectLocalStorePath: expect.any(Function),
+        selectSdCard: expect.any(Function),
+        setSetting: expect.any(Function),
+        stopSample: expect.any(Function),
+        updateKit: expect.any(Function),
+        updateStepPattern: expect.any(Function),
+        updateVoiceAlias: expect.any(Function),
+        validateLocalStore: expect.any(Function),
+        validateLocalStoreBasic: expect.any(Function),
         validateSampleFormat: expect.any(Function),
+        validateSampleSources: expect.any(Function),
       }),
     );
   });
@@ -533,150 +533,150 @@ describe("preload/index.tsx", () => {
     // Parameterized test for simple IPC methods that just forward calls
     const simpleIpcMethods = [
       // Basic operations
-      { method: "selectSdCard", ipcChannel: "select-sd-card", args: [] },
+      { args: [], ipcChannel: "select-sd-card", method: "selectSdCard" },
       {
-        method: "getLocalStoreStatus",
+        args: [],
         ipcChannel: "get-local-store-status",
-        args: [],
+        method: "getLocalStoreStatus",
       },
-      { method: "closeApp", ipcChannel: "close-app", args: [] },
-      { method: "getUserHomeDir", ipcChannel: "get-user-home-dir", args: [] },
+      { args: [], ipcChannel: "close-app", method: "closeApp" },
+      { args: [], ipcChannel: "get-user-home-dir", method: "getUserHomeDir" },
       {
-        method: "selectLocalStorePath",
+        args: [],
         ipcChannel: "select-local-store-path",
-        args: [],
+        method: "selectLocalStorePath",
       },
       {
-        method: "selectExistingLocalStore",
+        args: [],
         ipcChannel: "select-existing-local-store",
-        args: [],
+        method: "selectExistingLocalStore",
       },
       {
-        method: "generateSyncChangeSummary",
+        args: [],
         ipcChannel: "generateSyncChangeSummary",
-        args: [],
+        method: "generateSyncChangeSummary",
       },
-      { method: "cancelKitSync", ipcChannel: "cancelKitSync", args: [] },
-      { method: "getAllBanks", ipcChannel: "get-all-banks", args: [] },
-      { method: "scanBanks", ipcChannel: "scan-banks", args: [] },
-      { method: "getKits", ipcChannel: "get-all-kits", args: [] },
-      { method: "getFavoriteKits", ipcChannel: "get-favorite-kits", args: [] },
+      { args: [], ipcChannel: "cancelKitSync", method: "cancelKitSync" },
+      { args: [], ipcChannel: "get-all-banks", method: "getAllBanks" },
+      { args: [], ipcChannel: "scan-banks", method: "scanBanks" },
+      { args: [], ipcChannel: "get-all-kits", method: "getKits" },
+      { args: [], ipcChannel: "get-favorite-kits", method: "getFavoriteKits" },
       {
-        method: "getFavoriteKitsCount",
-        ipcChannel: "get-favorite-kits-count",
         args: [],
+        ipcChannel: "get-favorite-kits-count",
+        method: "getFavoriteKitsCount",
       },
-      { method: "stopSample", ipcChannel: "stop-sample", args: [] },
+      { args: [], ipcChannel: "stop-sample", method: "stopSample" },
 
       // Methods with single string parameter
-      { method: "createKit", ipcChannel: "create-kit", args: ["A01"] },
+      { args: ["A01"], ipcChannel: "create-kit", method: "createKit" },
       {
-        method: "showItemInFolder",
-        ipcChannel: "show-item-in-folder",
         args: ["/path/to/item"],
+        ipcChannel: "show-item-in-folder",
+        method: "showItemInFolder",
       },
       {
-        method: "listFilesInRoot",
+        args: ["/local/store"],
         ipcChannel: "list-files-in-root",
-        args: ["/local/store"],
+        method: "listFilesInRoot",
       },
       {
-        method: "readFile",
-        ipcChannel: "read-file",
         args: ["/path/to/file.txt"],
+        ipcChannel: "read-file",
+        method: "readFile",
       },
-      { method: "getKit", ipcChannel: "get-kit", args: ["TestKit"] },
+      { args: ["TestKit"], ipcChannel: "get-kit", method: "getKit" },
       {
-        method: "getAllSamplesForKit",
+        args: ["TestKit"],
         ipcChannel: "get-all-samples-for-kit",
-        args: ["TestKit"],
+        method: "getAllSamplesForKit",
       },
-      { method: "rescanKit", ipcChannel: "rescan-kit", args: ["TestKit"] },
+      { args: ["TestKit"], ipcChannel: "rescan-kit", method: "rescanKit" },
       {
-        method: "validateSampleSources",
+        args: ["TestKit"],
         ipcChannel: "validate-sample-sources",
-        args: ["TestKit"],
+        method: "validateSampleSources",
       },
       {
-        method: "getAudioMetadata",
+        args: ["/path/to/audio.wav"],
         ipcChannel: "get-audio-metadata",
-        args: ["/path/to/audio.wav"],
+        method: "getAudioMetadata",
       },
       {
-        method: "validateSampleFormat",
+        args: ["/path/to/audio.wav"],
         ipcChannel: "validate-sample-format",
-        args: ["/path/to/audio.wav"],
+        method: "validateSampleFormat",
       },
-      { method: "ensureDir", ipcChannel: "ensure-dir", args: ["/path/to/dir"] },
+      { args: ["/path/to/dir"], ipcChannel: "ensure-dir", method: "ensureDir" },
       {
-        method: "createRomperDb",
+        args: ["/path/to/db"],
         ipcChannel: "create-romper-db",
-        args: ["/path/to/db"],
+        method: "createRomperDb",
       },
       {
-        method: "getAllSamples",
+        args: ["/path/to/db"],
         ipcChannel: "get-all-samples",
-        args: ["/path/to/db"],
+        method: "getAllSamples",
       },
       {
-        method: "validateLocalStore",
+        args: ["/local/store"],
         ipcChannel: "validate-local-store",
-        args: ["/local/store"],
+        method: "validateLocalStore",
       },
       {
-        method: "validateLocalStoreBasic",
+        args: ["/local/store"],
         ipcChannel: "validate-local-store-basic",
-        args: ["/local/store"],
+        method: "validateLocalStoreBasic",
       },
       {
-        method: "toggleKitFavorite",
-        ipcChannel: "toggle-kit-favorite",
         args: ["TestKit"],
+        ipcChannel: "toggle-kit-favorite",
+        method: "toggleKitFavorite",
       },
 
       // Methods with two parameters
       {
-        method: "copyKit",
-        ipcChannel: "copy-kit",
         args: ["SourceKit", "DestKit"],
+        ipcChannel: "copy-kit",
+        method: "copyKit",
       },
       {
-        method: "copyDir",
-        ipcChannel: "copy-dir",
         args: ["/src/path", "/dest/path"],
+        ipcChannel: "copy-dir",
+        method: "copyDir",
       },
       {
-        method: "setKitFavorite",
-        ipcChannel: "set-kit-favorite",
         args: ["TestKit", true],
+        ipcChannel: "set-kit-favorite",
+        method: "setKitFavorite",
       },
 
       // Methods with three parameters
       {
-        method: "getSampleAudioBuffer",
+        args: ["TestKit", 1, 0],
         ipcChannel: "get-sample-audio-buffer",
-        args: ["TestKit", 1, 0],
+        method: "getSampleAudioBuffer",
       },
       {
-        method: "updateVoiceAlias",
-        ipcChannel: "update-voice-alias",
         args: ["TestKit", 1, "Voice Alias"],
+        ipcChannel: "update-voice-alias",
+        method: "updateVoiceAlias",
       },
       {
-        method: "deleteSampleFromSlot",
+        args: ["TestKit", 1, 0],
         ipcChannel: "delete-sample-from-slot",
-        args: ["TestKit", 1, 0],
+        method: "deleteSampleFromSlot",
       },
       {
-        method: "deleteSampleFromSlotWithoutCompaction",
-        ipcChannel: "delete-sample-from-slot-without-compaction",
         args: ["TestKit", 1, 0],
+        ipcChannel: "delete-sample-from-slot-without-compaction",
+        method: "deleteSampleFromSlotWithoutCompaction",
       },
     ];
 
     it.each(simpleIpcMethods)(
       "should forward $method to $ipcChannel with correct arguments",
-      async ({ method, ipcChannel, args }) => {
+      async ({ args, ipcChannel, method }) => {
         await import("../index");
 
         const electronAPICall =
@@ -698,35 +698,35 @@ describe("preload/index.tsx", () => {
     // Parameterized test for methods with object parameters
     const objectParameterMethods = [
       {
-        method: "insertKit",
+        args: ["/db/path", { bank_letter: "A", name: "TestKit" }],
         ipcChannel: "insert-kit",
-        args: ["/db/path", { name: "TestKit", bank_letter: "A" }],
+        method: "insertKit",
       },
       {
-        method: "insertSample",
-        ipcChannel: "insert-sample",
         args: ["/db/path", { filename: "test.wav", kit_name: "TestKit" }],
+        ipcChannel: "insert-sample",
+        method: "insertSample",
       },
       {
-        method: "updateKit",
-        ipcChannel: "update-kit-metadata",
         args: ["TestKit", { alias: "Updated Kit", artist: "Test Artist" }],
+        ipcChannel: "update-kit-metadata",
+        method: "updateKit",
       },
       {
-        method: "updateStepPattern",
-        ipcChannel: "update-step-pattern",
         args: ["TestKit", [[127, 0, 127, 0]]],
+        ipcChannel: "update-step-pattern",
+        method: "updateStepPattern",
       },
       {
-        method: "startKitSync",
+        args: [{ filesToConvert: [], filesToCopy: [] }],
         ipcChannel: "startKitSync",
-        args: [{ filesToCopy: [], filesToConvert: [] }],
+        method: "startKitSync",
       },
     ];
 
     it.each(objectParameterMethods)(
       "should forward $method to $ipcChannel with object parameters",
-      async ({ method, ipcChannel, args }) => {
+      async ({ args, ipcChannel, method }) => {
         await import("../index");
 
         const electronAPICall =
@@ -748,25 +748,25 @@ describe("preload/index.tsx", () => {
     // Test methods with options parameters
     const optionsParameterMethods = [
       {
-        method: "playSample",
-        ipcChannel: "play-sample",
         args: ["/path/to/sample.wav", { channel: "mono" }],
+        ipcChannel: "play-sample",
+        method: "playSample",
       },
       {
-        method: "addSampleToSlot",
-        ipcChannel: "add-sample-to-slot",
         args: ["TestKit", 1, 0, "/path/to/sample.wav", { forceMono: true }],
+        ipcChannel: "add-sample-to-slot",
+        method: "addSampleToSlot",
       },
       {
-        method: "replaceSampleInSlot",
-        ipcChannel: "replace-sample-in-slot",
         args: ["TestKit", 1, 0, "/path/to/sample.wav", { forceStereo: true }],
+        ipcChannel: "replace-sample-in-slot",
+        method: "replaceSampleInSlot",
       },
     ];
 
     it.each(optionsParameterMethods)(
       "should forward $method to $ipcChannel with options",
-      async ({ method, ipcChannel, args }) => {
+      async ({ args, ipcChannel, method }) => {
         await import("../index");
 
         const electronAPICall =
@@ -826,12 +826,12 @@ describe("preload/index.tsx", () => {
         "move-sample-between-kits",
         {
           fromKit: "Kit1",
-          fromVoice: 1,
           fromSlot: 0,
-          toKit: "Kit2",
-          toVoice: 2,
-          toSlot: 1,
+          fromVoice: 1,
           mode: "overwrite",
+          toKit: "Kit2",
+          toSlot: 1,
+          toVoice: 2,
         },
       );
     });
@@ -923,7 +923,7 @@ describe("preload/index.tsx", () => {
         "generateSyncChangeSummary",
       );
 
-      const syncData = { filesToCopy: [], filesToConvert: [] };
+      const syncData = { filesToConvert: [], filesToCopy: [] };
       await api.startKitSync(syncData);
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "startKitSync",
@@ -975,68 +975,68 @@ describe("preload/index.tsx", () => {
     // Parameterized test for methods that should log their invocation
     const loggingMethods = [
       {
-        method: "selectSdCard",
         args: [],
         expectedLog: "[IPC] selectSdCard invoked",
+        method: "selectSdCard",
       },
       {
-        method: "showItemInFolder",
         args: ["/path"],
         expectedLog: "[IPC] showItemInFolder invoked",
+        method: "showItemInFolder",
       },
       {
-        method: "readSettings",
         args: [],
         expectedLog: "[IPC] readSettings invoked",
+        method: "readSettings",
       },
       {
-        method: "getLocalStoreStatus",
         args: [],
         expectedLog: "[IPC] getLocalStoreStatus invoked",
+        method: "getLocalStoreStatus",
       },
       {
-        method: "createKit",
         args: ["A01"],
         expectedLog: "[IPC] createKit invoked",
+        method: "createKit",
       },
       {
-        method: "copyKit",
         args: ["K1", "K2"],
         expectedLog: "[IPC] copyKit invoked",
+        method: "copyKit",
       },
-      { method: "closeApp", args: [], expectedLog: "[IPC] closeApp invoked" },
+      { args: [], expectedLog: "[IPC] closeApp invoked", method: "closeApp" },
       {
-        method: "playSample",
         args: ["/path.wav", undefined],
         expectedLog: "[IPC] playSample invoked",
+        method: "playSample",
       },
       {
-        method: "stopSample",
         args: [],
         expectedLog: "[IPC] stopSample invoked",
+        method: "stopSample",
       },
       {
-        method: "getSampleAudioBuffer",
         args: ["Kit", 1, 0],
         expectedLog: "[IPC] getSampleAudioBuffer invoked",
+        method: "getSampleAudioBuffer",
       },
       {
-        method: "getKit",
         args: ["TestKit"],
         expectedLog: "[IPC] getKit invoked",
+        method: "getKit",
       },
-      { method: "getKits", args: [], expectedLog: "[IPC] getKits invoked" },
+      { args: [], expectedLog: "[IPC] getKits invoked", method: "getKits" },
       {
-        method: "getAllBanks",
         args: [],
         expectedLog: "[IPC] getAllBanks invoked",
+        method: "getAllBanks",
       },
-      { method: "scanBanks", args: [], expectedLog: "[IPC] scanBanks invoked" },
+      { args: [], expectedLog: "[IPC] scanBanks invoked", method: "scanBanks" },
     ];
 
     it.each(loggingMethods)(
       "should log invocation for $method",
-      async ({ method, args, expectedLog }) => {
+      async ({ args, expectedLog, method }) => {
         await import("../index");
 
         const electronAPICall =

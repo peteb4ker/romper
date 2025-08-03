@@ -4,45 +4,45 @@ import type { KitWithRelations } from "../../../../shared/db/schema";
 import type { VoiceSamples } from "../kitTypes";
 
 export function useKitVoicePanels({
-  samples,
   kit,
-  selectedVoice,
-  selectedSampleIdx,
-  setSelectedVoice,
-  setSelectedSampleIdx,
-  onSaveVoiceName,
-  onRescanVoiceName,
-  samplePlaying,
-  playTriggers,
-  stopTriggers,
+  kitName,
   onPlay,
+  onRescanVoiceName,
+  onSampleSelect,
+  onSaveVoiceName,
   onStop,
   onWaveformPlayingChange,
-  kitName,
-  onSampleSelect,
+  playTriggers,
+  samplePlaying,
+  samples,
+  selectedSampleIdx,
+  selectedVoice,
   sequencerOpen = false,
+  setSelectedSampleIdx,
+  setSelectedVoice,
+  stopTriggers,
 }: {
-  samples: VoiceSamples;
   kit: KitWithRelations | null;
-  selectedVoice: number;
-  selectedSampleIdx: number;
-  setSelectedVoice: (v: number) => void;
-  setSelectedSampleIdx: (i: number) => void;
-  onSaveVoiceName: (voice: number, newName: string) => void;
-  onRescanVoiceName: (voice: number, samples: VoiceSamples) => void;
-  samplePlaying: { [key: string]: boolean };
-  playTriggers: { [key: string]: number };
-  stopTriggers: { [key: string]: number };
+  kitName: string;
   onPlay: (voice: number, sample: string) => void;
+  onRescanVoiceName: (voice: number, samples: VoiceSamples) => void;
+  onSampleSelect: (voice: number, idx: number) => void;
+  onSaveVoiceName: (voice: number, newName: string) => void;
   onStop: (voice: number, sample: string) => void;
   onWaveformPlayingChange: (
     voice: number,
     sample: string,
     playing: boolean,
   ) => void;
-  kitName: string;
-  onSampleSelect: (voice: number, idx: number) => void;
+  playTriggers: { [key: string]: number };
+  samplePlaying: { [key: string]: boolean };
+  samples: VoiceSamples;
+  selectedSampleIdx: number;
+  selectedVoice: number;
   sequencerOpen?: boolean;
+  setSelectedSampleIdx: (i: number) => void;
+  setSelectedVoice: (v: number) => void;
+  stopTriggers: { [key: string]: number };
 }) {
   // Helper to get number of samples for a voice
   const getNumSamples = useCallback(
@@ -79,7 +79,7 @@ export function useKitVoicePanels({
 
   // Handler for sample navigation (up/down, cross-voice)
   const handleSampleNavigation = useCallback(
-    (direction: "up" | "down") => {
+    (direction: "down" | "up") => {
       if (sequencerOpen) return; // Disable sample navigation if sequencer is open
 
       if (direction === "down") {
@@ -100,20 +100,20 @@ export function useKitVoicePanels({
   // This hook is a pass-through for now, but can be extended for memoization or logic
   // Return all props for KitVoicePanels
   return {
-    samples,
     kit,
-    selectedVoice,
-    selectedSampleIdx,
-    onSaveVoiceName,
-    onRescanVoiceName,
-    samplePlaying,
-    playTriggers,
-    stopTriggers,
-    onPlay,
-    onStop,
-    onWaveformPlayingChange,
     kitName,
+    onPlay,
+    onRescanVoiceName,
     onSampleKeyNav: handleSampleNavigation,
     onSampleSelect,
+    onSaveVoiceName,
+    onStop,
+    onWaveformPlayingChange,
+    playTriggers,
+    samplePlaying,
+    samples,
+    selectedSampleIdx,
+    selectedVoice,
+    stopTriggers,
   };
 }

@@ -65,10 +65,10 @@ export function useGlobalKeyboardShortcuts({
   }, [currentKitName, isEditMode, undoRedo]);
 
   return {
-    canUndo: undoRedo.canUndo,
-    canRedo: undoRedo.canRedo,
-    undoDescription: undoRedo.undoDescription,
-    redoDescription: undoRedo.redoDescription,
     addUndoAction: undoRedo.addAction, // Expose this so it can be passed to components
+    canRedo: undoRedo.canRedo,
+    canUndo: undoRedo.canUndo,
+    redoDescription: undoRedo.redoDescription,
+    undoDescription: undoRedo.undoDescription,
   };
 }

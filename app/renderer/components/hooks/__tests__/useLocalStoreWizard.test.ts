@@ -31,25 +31,25 @@ describe("useLocalStoreWizard", () => {
 
     // Set up scanner mock with default successful response
     mockExecuteFullKitScan.mockResolvedValue({
-      success: true,
+      completedOperations: 3,
+      errors: [],
       results: {
-        voiceInference: {
-          voiceNames: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
-        },
         rtfArtist: {
           bankArtists: { A0: "Test Artist", B12: "Another Artist" },
         },
+        voiceInference: {
+          voiceNames: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
+        },
       },
-      errors: [],
-      completedOperations: 3,
+      success: true,
       totalOperations: 3,
     });
 
     // DRY: Always mock all required electronAPI methods for all tests
     vi.mocked(window.electronAPI.createRomperDb).mockImplementation(
       async (dbDir: string) => ({
-        success: true,
         dbPath: dbDir + "/romper.sqlite",
+        success: true,
       }),
     );
     vi.mocked(window.electronAPI.ensureDir).mockResolvedValue(true);
@@ -89,8 +89,8 @@ describe("useLocalStoreWizard", () => {
     );
     vi.mocked(window.electronAPI.readFile).mockImplementation(
       async (_filePath) => ({
-        success: true,
         data: new ArrayBuffer(1024),
+        success: true,
       }),
     );
   });
@@ -98,11 +98,11 @@ describe("useLocalStoreWizard", () => {
   it("initializes with default state and loads defaultPath async", async () => {
     const { result } = renderHook(() => useLocalStoreWizard());
     expect(result.current.state).toMatchObject({
-      targetPath: "",
-      source: null,
-      sdCardMounted: false,
-      isInitializing: false,
       error: null,
+      isInitializing: false,
+      sdCardMounted: false,
+      source: null,
+      targetPath: "",
     });
     await waitForAsync(() => result.current.defaultPath !== "");
     expect(result.current.defaultPath).toContain("romper");
@@ -193,8 +193,8 @@ describe("useLocalStoreWizard", () => {
   it("handles download/extract error", async () => {
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async () => ({
-        success: false,
         error: "fail",
+        success: false,
       }),
     );
     const { result } = renderHook(() => useLocalStoreWizard());
@@ -216,8 +216,8 @@ describe("useLocalStoreWizard", () => {
       async (url, destDir, onProgress) => {
         progressCb = onProgress;
         // Simulate progress events
-        if (progressCb) progressCb({ phase: "Downloading", percent: 10 });
-        if (progressCb) progressCb({ phase: "Extracting", percent: 80 });
+        if (progressCb) progressCb({ percent: 10, phase: "Downloading" });
+        if (progressCb) progressCb({ percent: 80, phase: "Extracting" });
         return { success: true };
       },
     );
@@ -239,7 +239,7 @@ describe("useLocalStoreWizard", () => {
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async (url, destDir, onProgress, onError) => {
         if (onError) onError({ message: "premature close" });
-        return { success: false, error: "premature close" };
+        return { error: "premature close", success: false };
       },
     );
     const { result } = renderHook(() => useLocalStoreWizard());
@@ -473,12 +473,12 @@ describe("useLocalStoreWizard", () => {
     // Verify the scanning input for the first kit (A0)
     expect(mockExecuteFullKitScan).toHaveBeenCalledWith(
       expect.objectContaining({
+        fileReader: expect.any(Function),
         samples: { 1: ["1kick.wav"], 2: ["2snare.wav"], 3: [], 4: [] },
         wavFiles: [
           "/mock/home/Documents/romper/A0/1kick.wav",
           "/mock/home/Documents/romper/A0/2snare.wav",
         ],
-        fileReader: expect.any(Function),
       }),
       undefined,
       "continue",
@@ -516,19 +516,19 @@ describe("useLocalStoreWizard", () => {
     // Set up mock to fail for one kit but succeed for another
     mockExecuteFullKitScan
       .mockResolvedValueOnce({
-        success: false,
-        results: {},
-        errors: [{ operation: "voiceInference", error: "Mock error" }],
         completedOperations: 0,
+        errors: [{ error: "Mock error", operation: "voiceInference" }],
+        results: {},
+        success: false,
         totalOperations: 3,
       })
       .mockResolvedValueOnce({
-        success: true,
+        completedOperations: 3,
+        errors: [],
         results: {
           rtfArtist: { bankArtists: { B12: "Another Artist" } },
         },
-        errors: [],
-        completedOperations: 3,
+        success: true,
         totalOperations: 3,
       });
 

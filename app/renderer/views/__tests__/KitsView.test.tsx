@@ -11,12 +11,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Set up IntersectionObserver mock before any component imports
 // This prevents race conditions with centralized mocks
 class MockIntersectionObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
   disconnect = vi.fn();
+  observe = vi.fn();
   root = null;
   rootMargin = "0px";
   thresholds = [0];
+  unobserve = vi.fn();
 
   constructor(
     callback: IntersectionObserverCallback,
@@ -101,29 +101,29 @@ describe("KitsView", () => {
 
     // Mock electronAPI methods using centralized mocks
     vi.mocked(window.electronAPI.getKits).mockResolvedValue({
-      success: true,
       data: [
-        { name: "A0", alias: null, bank_letter: "A", editable: false },
-        { name: "A1", alias: null, bank_letter: "A", editable: false },
-        { name: "B0", alias: null, bank_letter: "B", editable: false },
+        { alias: null, bank_letter: "A", editable: false, name: "A0" },
+        { alias: null, bank_letter: "A", editable: false, name: "A1" },
+        { alias: null, bank_letter: "B", editable: false, name: "B0" },
       ],
+      success: true,
     });
     vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-      success: true,
       data: [
         {
           filename: "kick.wav",
-          voice_number: 1,
-          slot_number: 1,
           is_stereo: false,
+          slot_number: 1,
+          voice_number: 1,
         },
         {
           filename: "snare.wav",
-          voice_number: 2,
-          slot_number: 1,
           is_stereo: false,
+          slot_number: 1,
+          voice_number: 2,
         },
       ],
+      success: true,
     });
     vi.mocked(window.electronAPI.closeApp).mockImplementation(() => {});
   });
@@ -384,8 +384,8 @@ describe("KitsView", () => {
 
     it("handles database errors gracefully", async () => {
       vi.mocked(window.electronAPI.getKits).mockResolvedValue({
-        success: false,
         error: "Database connection failed",
+        success: false,
       });
 
       render(
@@ -401,8 +401,8 @@ describe("KitsView", () => {
 
     it("handles sample loading errors gracefully", async () => {
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        success: false,
         error: "Sample loading failed",
+        success: false,
       });
 
       render(
@@ -420,33 +420,33 @@ describe("KitsView", () => {
   describe("Sample data processing", () => {
     it("correctly groups samples by voice", async () => {
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        success: true,
         data: [
           {
             filename: "kick.wav",
-            voice_number: 1,
-            slot_number: 1,
             is_stereo: false,
+            slot_number: 1,
+            voice_number: 1,
           },
           {
             filename: "snare.wav",
-            voice_number: 2,
-            slot_number: 1,
             is_stereo: false,
+            slot_number: 1,
+            voice_number: 2,
           },
           {
             filename: "hat.wav",
-            voice_number: 1,
-            slot_number: 2,
             is_stereo: false,
+            slot_number: 2,
+            voice_number: 1,
           },
           {
             filename: "stereo.wav",
-            voice_number: 3,
-            slot_number: 1,
             is_stereo: true,
+            slot_number: 1,
+            voice_number: 3,
           },
         ],
+        success: true,
       });
 
       render(
@@ -523,21 +523,21 @@ describe("KitsView", () => {
         children: React.ReactNode;
       }> = ({ children }) => {
         const contextValue = {
-          localStorePath: null,
-          themeMode: "light" as const,
-          isDarkMode: false,
-          defaultToMonoSamples: true,
           confirmDestructiveActions: true,
+          defaultToMonoSamples: true,
+          isDarkMode: false,
+          isInitialized: true,
+          localStorePath: null,
           localStoreStatus: {
-            isValid: false,
             hasLocalStore: false,
+            isValid: false,
             localStorePath: null,
           },
-          isInitialized: true,
+          setConfirmDestructiveActions: vi.fn(),
+          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
-          setConfirmDestructiveActions: vi.fn(),
+          themeMode: "light" as const,
         };
 
         return (
@@ -570,21 +570,21 @@ describe("KitsView", () => {
         children: React.ReactNode;
       }> = ({ children }) => {
         const _ = {
-          localStorePath: null,
-          themeMode: "light" as const,
-          isDarkMode: false,
-          defaultToMonoSamples: true,
           confirmDestructiveActions: true,
+          defaultToMonoSamples: true,
+          isDarkMode: false,
+          isInitialized: true,
+          localStorePath: null,
           localStoreStatus: {
-            isValid: false,
             hasLocalStore: false,
+            isValid: false,
             localStorePath: null,
           },
-          isInitialized: true,
+          setConfirmDestructiveActions: vi.fn(),
+          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
-          setConfirmDestructiveActions: vi.fn(),
+          themeMode: "light" as const,
         };
 
         return <TestSettingsProvider>{children}</TestSettingsProvider>;
@@ -662,15 +662,15 @@ describe("KitsView", () => {
 
       // Mock the sample reload call
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        success: true,
         data: [
           {
             filename: "new-kick.wav",
-            voice_number: 1,
-            slot_number: 1,
             is_stereo: false,
+            slot_number: 1,
+            voice_number: 1,
           },
         ],
+        success: true,
       });
 
       // Trigger sample reload (this would normally be triggered by KitDetails)
@@ -785,21 +785,21 @@ describe("KitsView", () => {
 
       // Mock new sample data
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        success: true,
         data: [
           {
             filename: "new-kick.wav",
-            voice_number: 1,
-            slot_number: 1,
             is_stereo: false,
+            slot_number: 1,
+            voice_number: 1,
           },
           {
             filename: "new-snare.wav",
-            voice_number: 2,
-            slot_number: 1,
             is_stereo: false,
+            slot_number: 1,
+            voice_number: 2,
           },
         ],
+        success: true,
       });
 
       // This would normally be triggered by the KitDetails component
@@ -827,8 +827,8 @@ describe("KitsView", () => {
 
       // Mock sample reload failure
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        success: false,
         error: "Sample reload failed",
+        success: false,
       });
 
       // The component should handle reload errors gracefully
@@ -857,16 +857,16 @@ describe("KitsView", () => {
 
       // Mock successful refresh data
       vi.mocked(window.electronAPI.getKits).mockResolvedValue({
-        success: true,
         data: [
           {
-            name: "A0",
             alias: "Updated Kit",
             bank_letter: "A",
             editable: true,
+            name: "A0",
           },
-          { name: "A1", alias: null, bank_letter: "A", editable: false },
+          { alias: null, bank_letter: "A", editable: false, name: "A1" },
         ],
+        success: true,
       });
 
       // This would normally be triggered by KitDetails with refresh parameter
@@ -915,22 +915,22 @@ describe("KitsView", () => {
         children: React.ReactNode;
       }> = ({ children }) => {
         const contextValue = {
-          localStorePath: null,
-          themeMode: "light" as const,
-          isDarkMode: false,
-          defaultToMonoSamples: true,
           confirmDestructiveActions: true,
+          defaultToMonoSamples: true,
+          isDarkMode: false,
+          isInitialized: true,
+          localStorePath: null,
           localStoreStatus: {
-            isValid: false,
             hasLocalStore: false,
+            isValid: false,
             localStorePath: null,
           },
-          isInitialized: true,
+          refreshLocalStoreStatus: mockRefreshLocalStoreStatus,
+          setConfirmDestructiveActions: vi.fn(),
+          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
-          setConfirmDestructiveActions: vi.fn(),
-          refreshLocalStoreStatus: mockRefreshLocalStoreStatus,
+          themeMode: "light" as const,
         };
 
         return (
@@ -967,42 +967,42 @@ describe("KitsView", () => {
       // Mock detailed sample data
       vi.mocked(window.electronAPI.getAllSamplesForKit)
         .mockResolvedValueOnce({
-          success: true,
           data: [
             {
               filename: "kick.wav",
-              voice_number: 1,
-              slot_number: 1,
               is_stereo: false,
+              slot_number: 1,
+              voice_number: 1,
             },
             {
               filename: "snare.wav",
-              voice_number: 1,
-              slot_number: 2,
               is_stereo: false,
+              slot_number: 2,
+              voice_number: 1,
             },
             {
               filename: "hat.wav",
-              voice_number: 2,
-              slot_number: 1,
               is_stereo: false,
+              slot_number: 1,
+              voice_number: 2,
             },
           ],
+          success: true,
         })
         .mockResolvedValueOnce({
-          success: true,
           data: [
             {
               filename: "bass.wav",
-              voice_number: 1,
-              slot_number: 1,
               is_stereo: false,
+              slot_number: 1,
+              voice_number: 1,
             },
           ],
+          success: true,
         })
         .mockResolvedValueOnce({
-          success: true,
           data: [],
+          success: true,
         });
 
       render(
@@ -1024,21 +1024,21 @@ describe("KitsView", () => {
   describe("Stereo sample handling", () => {
     it("correctly handles stereo samples spanning two voices", async () => {
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        success: true,
         data: [
           {
             filename: "stereo-kick.wav",
-            voice_number: 1,
-            slot_number: 1,
             is_stereo: true,
+            slot_number: 1,
+            voice_number: 1,
           },
           {
             filename: "mono-snare.wav",
-            voice_number: 3,
-            slot_number: 1,
             is_stereo: false,
+            slot_number: 1,
+            voice_number: 3,
           },
         ],
+        success: true,
       });
 
       render(
@@ -1057,15 +1057,15 @@ describe("KitsView", () => {
 
     it("handles stereo sample at voice 4 boundary", async () => {
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        success: true,
         data: [
           {
             filename: "stereo-at-end.wav",
-            voice_number: 4,
-            slot_number: 1,
             is_stereo: true,
+            slot_number: 1,
+            voice_number: 4,
           },
         ],
+        success: true,
       });
 
       render(
@@ -1104,8 +1104,8 @@ describe("KitsView", () => {
 
       // Mock kit refresh failure
       vi.mocked(window.electronAPI.getKits).mockResolvedValue({
-        success: false,
         error: "Database connection lost",
+        success: false,
       });
 
       // Back navigation with refresh should handle errors gracefully
@@ -1125,21 +1125,21 @@ describe("KitsView", () => {
         children: React.ReactNode;
       }> = ({ children }) => {
         const contextValue = {
-          localStorePath: "/mock/path",
-          themeMode: "light" as const,
-          isDarkMode: false,
-          defaultToMonoSamples: true,
           confirmDestructiveActions: true,
+          defaultToMonoSamples: true,
+          isDarkMode: false,
+          isInitialized: false, // Not initialized
+          localStorePath: "/mock/path",
           localStoreStatus: {
-            isValid: true,
             hasLocalStore: true,
+            isValid: true,
             localStorePath: "/mock/path",
           },
-          isInitialized: false, // Not initialized
+          setConfirmDestructiveActions: vi.fn(),
+          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
-          setConfirmDestructiveActions: vi.fn(),
+          themeMode: "light" as const,
         };
 
         return (
@@ -1164,21 +1164,21 @@ describe("KitsView", () => {
         children: React.ReactNode;
       }> = ({ children }) => {
         const contextValue = {
-          localStorePath: null, // No path
-          themeMode: "light" as const,
-          isDarkMode: false,
-          defaultToMonoSamples: true,
           confirmDestructiveActions: true,
+          defaultToMonoSamples: true,
+          isDarkMode: false,
+          isInitialized: true,
+          localStorePath: null, // No path
           localStoreStatus: {
-            isValid: false,
             hasLocalStore: false,
+            isValid: false,
             localStorePath: null,
           },
-          isInitialized: true,
+          setConfirmDestructiveActions: vi.fn(),
+          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
-          setConfirmDestructiveActions: vi.fn(),
+          themeMode: "light" as const,
         };
 
         return (

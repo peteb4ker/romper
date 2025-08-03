@@ -3,21 +3,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // DRY: Common mock for useLocalStoreWizard
 const getMockUseLocalStoreWizard = (overrides = {}) => ({
-  state: { error: null, isInitializing: false, ...overrides.state },
-  setTargetPath: vi.fn(),
-  setSource: vi.fn(),
-  setSdCardMounted: vi.fn(),
+  canInitialize: false,
+  defaultPath: "/mock/path/romper",
+  errorMessage: null,
+  handleSourceSelect: vi.fn(),
+  initialize: vi.fn(),
+  isSdCardSource: false,
+  progress: undefined,
   setError: vi.fn(),
   setIsInitializing: vi.fn(),
+  setSdCardMounted: vi.fn(),
   setSdCardPath: vi.fn(),
+  setSource: vi.fn(),
+  setTargetPath: vi.fn(),
+  state: { error: null, isInitializing: false, ...overrides.state },
   validateSdCardFolder: vi.fn(),
-  initialize: vi.fn(),
-  defaultPath: "/mock/path/romper",
-  progress: undefined,
-  handleSourceSelect: vi.fn(),
-  errorMessage: null,
-  canInitialize: false,
-  isSdCardSource: false,
   ...overrides,
 });
 
@@ -61,9 +61,9 @@ describe("LocalStoreWizardUI", () => {
     vi.doMock("../hooks/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () =>
         getMockUseLocalStoreWizard({
-          state: { error: "fail", isInitializing: false },
-          errorMessage: "fail",
           canInitialize: true,
+          errorMessage: "fail",
+          state: { error: "fail", isInitializing: false },
         }),
     }));
     const { default: LocalStoreWizardUI } = await import(
@@ -78,8 +78,8 @@ describe("LocalStoreWizardUI", () => {
     vi.doMock("../hooks/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () =>
         getMockUseLocalStoreWizard({
+          progress: { file: "foo.zip", percent: 42, phase: "Downloading" },
           state: { error: null, isInitializing: true },
-          progress: { phase: "Downloading", percent: 42, file: "foo.zip" },
         }),
     }));
     const { default: LocalStoreWizardUI } = await import(
@@ -101,9 +101,9 @@ describe("LocalStoreWizardUI", () => {
           state: {
             error: null,
             isInitializing: false,
+            sdCardMounted: false,
             source: null,
             targetPath: "",
-            sdCardMounted: false,
           },
         }),
     }));
@@ -120,14 +120,14 @@ describe("LocalStoreWizardUI", () => {
     vi.doMock("../hooks/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () =>
         getMockUseLocalStoreWizard({
+          canInitialize: true,
           state: {
             error: null,
             isInitializing: false,
+            sdCardMounted: false,
             source: "squarp",
             targetPath: "",
-            sdCardMounted: false,
           },
-          canInitialize: true,
         }),
     }));
     const { default: LocalStoreWizardUI } = await import(
@@ -143,17 +143,17 @@ describe("LocalStoreWizardUI", () => {
     vi.doMock("../hooks/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () =>
         getMockUseLocalStoreWizard({
+          setSdCardPath: vi.fn(),
+          setSourceConfirmed: vi.fn(),
           state: {
+            error: null,
+            isInitializing: false,
+            localStorePath: "/mock/sdcard",
+            sdCardMounted: true,
             source: "sdcard",
             sourceConfirmed: false, // must be false so Source step is rendered
-            localStorePath: "/mock/sdcard",
             targetPath: "",
-            isInitializing: false,
-            error: null,
-            sdCardMounted: true,
           },
-          setSourceConfirmed: vi.fn(),
-          setSdCardPath: vi.fn(),
         }),
     }));
     const { default: LocalStoreWizardUI } = await import(

@@ -10,15 +10,15 @@ afterEach(() => {
 
 describe("WizardSourceStep", () => {
   const sourceOptions = [
-    { value: "sdcard", label: "SD Card", icon: <span>SD</span> },
-    { value: "squarp", label: "Squarp", icon: <span>SQ</span> },
+    { icon: <span>SD</span>, label: "SD Card", value: "sdcard" },
+    { icon: <span>SQ</span>, label: "Squarp", value: "squarp" },
   ];
   it("renders all source options and highlights selected", () => {
     render(
       <WizardSourceStep
+        handleSourceSelect={() => {}}
         sourceOptions={sourceOptions}
         stateSource={"sdcard"}
-        handleSourceSelect={() => {}}
       />,
     );
     expect(screen.getByTestId("wizard-source-sdcard")).toBeInTheDocument();
@@ -33,9 +33,9 @@ describe("WizardSourceStep", () => {
     const handleSourceSelect = vi.fn();
     render(
       <WizardSourceStep
+        handleSourceSelect={handleSourceSelect}
         sourceOptions={sourceOptions}
         stateSource={null}
-        handleSourceSelect={handleSourceSelect}
       />,
     );
     const squarpButton = screen.getByTestId("wizard-source-squarp");
@@ -51,11 +51,11 @@ describe("WizardSourceStep", () => {
     );
     render(
       <WizardSourceStep
-        sourceOptions={sourceOptions}
-        stateSource={"sdcard"}
         handleSourceSelect={() => {}}
         setSdCardPath={setSdCardPath}
         setSourceConfirmed={setSourceConfirmed}
+        sourceOptions={sourceOptions}
+        stateSource={"sdcard"}
       />,
     );
     const sdCardBtn = screen.getByTestId("wizard-source-sdcard");
@@ -67,10 +67,10 @@ describe("WizardSourceStep", () => {
   it("shows SD card path display when localStorePath is set and no env var", () => {
     render(
       <WizardSourceStep
-        sourceOptions={sourceOptions}
-        stateSource="sdcard"
         handleSourceSelect={() => {}}
         localStorePath="/mock/sdcard"
+        sourceOptions={sourceOptions}
+        stateSource="sdcard"
       />,
     );
     // Path should NOT be shown during source step

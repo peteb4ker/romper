@@ -3,48 +3,50 @@ import React from "react";
 import type { FocusedStep } from "./hooks/stepPatternConstants";
 
 interface StepSequencerGridProps {
-  safeStepPattern: number[][];
-  focusedStep: FocusedStep;
-  isSeqPlaying: boolean;
   currentSeqStep: number;
-  ROW_COLORS: string[];
+  focusedStep: FocusedStep;
+  gridRef: React.RefObject<HTMLDivElement | null>;
+  handleStepGridKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+  isSeqPlaying: boolean;
   LED_GLOWS: string[];
-  NUM_VOICES: number;
   NUM_STEPS: number;
+  NUM_VOICES: number;
+  ROW_COLORS: string[];
+  safeStepPattern: number[][];
   setFocusedStep: (step: FocusedStep) => void;
   toggleStep: (voiceIdx: number, stepIdx: number) => void;
-  handleStepGridKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
-  gridRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
-  safeStepPattern,
-  focusedStep,
-  isSeqPlaying,
   currentSeqStep,
-  ROW_COLORS,
+  focusedStep,
+  gridRef,
+  handleStepGridKeyDown,
+  isSeqPlaying,
   LED_GLOWS,
-  NUM_VOICES,
   NUM_STEPS,
+  NUM_VOICES,
+  ROW_COLORS,
+  safeStepPattern,
   setFocusedStep,
   toggleStep,
-  handleStepGridKeyDown,
-  gridRef,
 }) => {
   return (
     <div
+      aria-label="Step sequencer grid"
       className="grid grid-rows-4 gap-2 w-[600px] min-w-[600px] max-w-[600px]"
       data-testid="kit-step-sequencer-grid"
-      tabIndex={0}
-      ref={gridRef}
       onKeyDown={handleStepGridKeyDown}
-      aria-label="Step sequencer grid"
-      style={{ outline: "none", minWidth: 0 }}
+      ref={gridRef}
+      role="grid"
+      style={{ minWidth: 0, outline: "none" }}
+      tabIndex={0}
     >
       {Array.from({ length: NUM_VOICES }).map((_, voiceIdx) => (
         <div
-          key={`seq-row-${voiceIdx}`}
           className="flex flex-row items-center gap-1"
+          key={`seq-row-${voiceIdx}`}
+          role="row"
           style={{ minWidth: 0 }}
         >
           <span
@@ -69,22 +71,24 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
 
             return (
               <button
-                key={`seq-step-${voiceIdx}-${stepIdx}`}
-                type="button"
-                className={`relative w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 rounded-md border-2 mx-0.5 focus:outline-none transition-colors ${onColor} ${ledGlow}`}
                 aria-label={`Toggle step ${stepIdx + 1} for voice ${voiceIdx + 1}`}
+                aria-pressed={isOn}
+                className={`relative w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 rounded-md border-2 mx-0.5 focus:outline-none transition-colors ${onColor} ${ledGlow}`}
                 data-testid={`seq-step-${voiceIdx}-${stepIdx}`}
+                key={`seq-step-${voiceIdx}-${stepIdx}`}
                 onClick={() => {
-                  setFocusedStep({ voice: voiceIdx, step: stepIdx });
+                  setFocusedStep({ step: stepIdx, voice: voiceIdx });
                   toggleStep(voiceIdx, stepIdx);
                 }}
+                role="gridcell"
+                type="button"
               >
                 {/* Highlight span for playhead/focus/selection */}
                 {(isPlayhead || isFocused) && (
                   <span
                     className={`absolute inset-0 rounded-md pointer-events-none`}
+                    data-testid={isFocused ? "seq-step-focus-ring" : undefined}
                     style={{
-                      zIndex: 2,
                       boxShadow:
                         isPlayhead && isFocused
                           ? "0 0 0 2px #fff, 0 0 0 2.5px #3b82f6"
@@ -93,8 +97,8 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                             : isFocused
                               ? "0 0 0 2.5px #60a5fa"
                               : undefined,
+                      zIndex: 2,
                     }}
-                    data-testid={isFocused ? "seq-step-focus-ring" : undefined}
                   />
                 )}
               </button>

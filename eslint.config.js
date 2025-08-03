@@ -1,9 +1,9 @@
 import js from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import prettierConfig from "eslint-config-prettier";
+import perfectionist from "eslint-plugin-perfectionist";
 import prettier from "eslint-plugin-prettier";
 import reactHooks from "eslint-plugin-react-hooks";
-import simpleImportSort from "eslint-plugin-simple-import-sort";
 import globals from "globals";
 // Patch: trim whitespace from all global keys
 function trimGlobals(obj) {
@@ -26,7 +26,6 @@ export default defineConfig([
     },
     plugins: {
       js,
-      "simple-import-sort": simpleImportSort,
       prettier,
     },
     rules: {
@@ -40,8 +39,6 @@ export default defineConfig([
         },
       ],
       "no-undef": "warn",
-      "simple-import-sort/imports": "error",
-      "simple-import-sort/exports": "error",
       "prettier/prettier": "error",
     },
   },
@@ -55,16 +52,15 @@ export default defineConfig([
     },
     plugins: {
       "@typescript-eslint": tseslint.plugin,
+      perfectionist,
       "react-hooks": reactHooks,
-      "simple-import-sort": simpleImportSort,
       prettier,
     },
     rules: {
       ...tseslint.configs.recommendedTypeChecked.rules,
       ...prettierConfig.rules,
       ...reactHooks.configs.recommended.rules,
-      "simple-import-sort/imports": "error",
-      "simple-import-sort/exports": "error",
+      ...perfectionist.configs["recommended-alphabetical"].rules,
       "prettier/prettier": "error",
       // Catch unused imports and variables
       "@typescript-eslint/no-unused-vars": [

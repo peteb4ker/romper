@@ -9,28 +9,28 @@ describe("StepSequencerGrid", () => {
 
   beforeEach(() => {
     defaultProps = {
-      safeStepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
-      focusedStep: { voice: 0, step: 0 },
-      isSeqPlaying: false,
       currentSeqStep: 0,
-      ROW_COLORS: [
-        "bg-red-400",
-        "bg-yellow-400",
-        "bg-green-400",
-        "bg-blue-400",
-      ],
+      focusedStep: { step: 0, voice: 0 },
+      gridRef: { current: null },
+      handleStepGridKeyDown: vi.fn(),
+      isSeqPlaying: false,
       LED_GLOWS: [
         "shadow-glow-red",
         "shadow-glow-yellow",
         "shadow-glow-green",
         "shadow-glow-blue",
       ],
-      NUM_VOICES: 4,
       NUM_STEPS: 16,
+      NUM_VOICES: 4,
+      ROW_COLORS: [
+        "bg-red-400",
+        "bg-yellow-400",
+        "bg-green-400",
+        "bg-blue-400",
+      ],
+      safeStepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
       setFocusedStep: vi.fn(),
       toggleStep: vi.fn(),
-      handleStepGridKeyDown: vi.fn(),
-      gridRef: { current: null },
     };
   });
 
@@ -55,7 +55,7 @@ describe("StepSequencerGrid", () => {
   });
 
   it("highlights the focused step", () => {
-    const customFocusedStep = { voice: 2, step: 5 };
+    const customFocusedStep = { step: 5, voice: 2 };
 
     render(
       <StepSequencerGrid {...defaultProps} focusedStep={customFocusedStep} />,
@@ -74,8 +74,8 @@ describe("StepSequencerGrid", () => {
     render(
       <StepSequencerGrid
         {...defaultProps}
-        isSeqPlaying={true}
         currentSeqStep={3}
+        isSeqPlaying={true}
       />,
     );
 
@@ -99,8 +99,8 @@ describe("StepSequencerGrid", () => {
 
     // It should also update the focused step
     expect(defaultProps.setFocusedStep).toHaveBeenCalledWith({
-      voice: 1,
       step: 4,
+      voice: 1,
     });
   });
 

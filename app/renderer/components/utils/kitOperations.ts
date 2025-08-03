@@ -1,13 +1,6 @@
 // Kit operations utilities
 
 /**
- * Validates kit slot format (A0-Z99)
- */
-export function validateKitSlot(slot: string): boolean {
-  return /^\p{Lu}\d{1,2}$/u.test(slot);
-}
-
-/**
  * Creates a kit at the specified slot
  */
 export async function createKit(kitSlot: string): Promise<void> {
@@ -50,6 +43,14 @@ export async function duplicateKit(
 }
 
 /**
+ * Format general kit error messages
+ */
+export function formatKitError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return `Failed to create kit: ${message}`;
+}
+
+/**
  * Format error messages for kit operations
  */
 export function formatKitOperationError(
@@ -61,9 +62,8 @@ export function formatKitOperationError(
 }
 
 /**
- * Format general kit error messages
+ * Validates kit slot format (A0-Z99)
  */
-export function formatKitError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  return `Failed to create kit: ${message}`;
+export function validateKitSlot(slot: string): boolean {
+  return /^\p{Lu}\d{1,2}$/u.test(slot);
 }

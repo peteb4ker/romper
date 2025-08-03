@@ -10,30 +10,30 @@ describe("SyncUpdateDialog", () => {
   const mockOnConfirm = vi.fn();
 
   const mockChangeSummary: SyncChangeSummary = {
-    filesToCopy: [
-      {
-        filename: "kick.wav",
-        sourcePath: "/path/to/kick.wav",
-        destinationPath: "/sd/A0/kick.wav",
-        operation: "copy",
-      },
-    ],
+    estimatedSize: 2048000, // 2MB
+    estimatedTime: 30,
     filesToConvert: [
       {
-        filename: "snare.wav",
-        sourcePath: "/path/to/snare.wav",
         destinationPath: "/sd/A0/snare.wav",
+        filename: "snare.wav",
         operation: "convert",
         originalFormat: "24-bit 48kHz",
-        targetFormat: "16-bit 44.1kHz",
         reason: "Bit depth and sample rate conversion required",
+        sourcePath: "/path/to/snare.wav",
+        targetFormat: "16-bit 44.1kHz",
       },
     ],
-    estimatedTime: 30,
-    estimatedSize: 2048000, // 2MB
+    filesToCopy: [
+      {
+        destinationPath: "/sd/A0/kick.wav",
+        filename: "kick.wav",
+        operation: "copy",
+        sourcePath: "/path/to/kick.wav",
+      },
+    ],
     hasFormatWarnings: true,
-    warnings: ["snare.wav needs bit depth conversion"],
     validationErrors: [],
+    warnings: ["snare.wav needs bit depth conversion"],
   };
 
   beforeEach(() => {
@@ -48,11 +48,11 @@ describe("SyncUpdateDialog", () => {
     it("should not render when isOpen is false", () => {
       render(
         <SyncUpdateDialog
+          changeSummary={mockChangeSummary}
           isOpen={false}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={mockChangeSummary}
         />,
       );
 
@@ -66,11 +66,11 @@ describe("SyncUpdateDialog", () => {
     it("should render dialog with kit name and summary stats", () => {
       render(
         <SyncUpdateDialog
+          changeSummary={mockChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={mockChangeSummary}
         />,
       );
 
@@ -84,11 +84,11 @@ describe("SyncUpdateDialog", () => {
     it("should display format warnings when present", () => {
       render(
         <SyncUpdateDialog
+          changeSummary={mockChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={mockChangeSummary}
         />,
       );
 
@@ -103,11 +103,11 @@ describe("SyncUpdateDialog", () => {
     it("should show operation summary", () => {
       render(
         <SyncUpdateDialog
+          changeSummary={mockChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={mockChangeSummary}
         />,
       );
 
@@ -124,11 +124,11 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
+          changeSummary={mockChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={mockChangeSummary}
         />,
       );
 
@@ -149,11 +149,11 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
+          changeSummary={mockChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={mockChangeSummary}
         />,
       );
 
@@ -166,11 +166,11 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
+          changeSummary={mockChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={mockChangeSummary}
         />,
       );
 
@@ -181,12 +181,12 @@ describe("SyncUpdateDialog", () => {
     it("should disable buttons when loading", () => {
       render(
         <SyncUpdateDialog
-          isOpen={true}
-          onClose={mockOnClose}
-          onConfirm={mockOnConfirm}
-          kitName="A0"
           changeSummary={mockChangeSummary}
           isLoading={true}
+          isOpen={true}
+          kitName="A0"
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
         />,
       );
 
@@ -199,22 +199,22 @@ describe("SyncUpdateDialog", () => {
 
     it("should disable Start Sync when no files to sync", () => {
       const emptyChangeSummary: SyncChangeSummary = {
-        filesToCopy: [],
-        filesToConvert: [],
-        estimatedTime: 0,
         estimatedSize: 0,
+        estimatedTime: 0,
+        filesToConvert: [],
+        filesToCopy: [],
         hasFormatWarnings: false,
-        warnings: [],
         validationErrors: [],
+        warnings: [],
       };
 
       render(
         <SyncUpdateDialog
+          changeSummary={emptyChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={emptyChangeSummary}
         />,
       );
 
@@ -224,42 +224,42 @@ describe("SyncUpdateDialog", () => {
 
     it("should display validation errors and disable sync", () => {
       const errorChangeSummary: SyncChangeSummary = {
+        estimatedSize: 1024000,
+        estimatedTime: 10,
+        filesToConvert: [],
         filesToCopy: [
           {
-            filename: "kick.wav",
-            sourcePath: "/path/to/kick.wav",
             destinationPath: "/sd/A0/kick.wav",
+            filename: "kick.wav",
             operation: "copy",
+            sourcePath: "/path/to/kick.wav",
           },
         ],
-        filesToConvert: [],
-        estimatedTime: 10,
-        estimatedSize: 1024000,
         hasFormatWarnings: false,
-        warnings: [],
         validationErrors: [
           {
+            error: "File not found",
             filename: "missing.wav",
             sourcePath: "/path/to/missing.wav",
-            error: "File not found",
             type: "missing_file",
           },
           {
+            error: "Access denied",
             filename: "locked.wav",
             sourcePath: "/path/to/locked.wav",
-            error: "Access denied",
             type: "access_denied",
           },
         ],
+        warnings: [],
       };
 
       render(
         <SyncUpdateDialog
+          changeSummary={errorChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={errorChangeSummary}
         />,
       );
 
@@ -281,29 +281,29 @@ describe("SyncUpdateDialog", () => {
 
     it("should handle single validation error", () => {
       const singleErrorChangeSummary: SyncChangeSummary = {
-        filesToCopy: [],
-        filesToConvert: [],
-        estimatedTime: 0,
         estimatedSize: 0,
+        estimatedTime: 0,
+        filesToConvert: [],
+        filesToCopy: [],
         hasFormatWarnings: false,
-        warnings: [],
         validationErrors: [
           {
+            error: "File not found",
             filename: "missing.wav",
             sourcePath: "/path/to/missing.wav",
-            error: "File not found",
             type: "missing_file",
           },
         ],
+        warnings: [],
       };
 
       render(
         <SyncUpdateDialog
+          changeSummary={singleErrorChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={singleErrorChangeSummary}
         />,
       );
 
@@ -321,11 +321,11 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
+          changeSummary={largeSizeChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={largeSizeChangeSummary}
         />,
       );
 
@@ -341,11 +341,11 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
+          changeSummary={longTimeChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={longTimeChangeSummary}
         />,
       );
 
@@ -355,22 +355,22 @@ describe("SyncUpdateDialog", () => {
     it("should reset details view when dialog opens", () => {
       const { rerender } = render(
         <SyncUpdateDialog
+          changeSummary={mockChangeSummary}
           isOpen={false}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={mockChangeSummary}
         />,
       );
 
       // Open dialog and show details
       rerender(
         <SyncUpdateDialog
+          changeSummary={mockChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={mockChangeSummary}
         />,
       );
 
@@ -384,11 +384,11 @@ describe("SyncUpdateDialog", () => {
     it("should have proper aria labels", () => {
       render(
         <SyncUpdateDialog
+          changeSummary={mockChangeSummary}
           isOpen={true}
+          kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-          kitName="A0"
-          changeSummary={mockChangeSummary}
         />,
       );
 

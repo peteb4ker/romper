@@ -12,11 +12,11 @@ afterEach(() => {
 
 describe("KitBrowserHeader", () => {
   const defaultProps = {
-    onScanAllKits: vi.fn(),
-    onShowNewKit: vi.fn(),
-    onCreateNextKit: vi.fn(),
     nextKitSlot: null,
+    onCreateNextKit: vi.fn(),
+    onScanAllKits: vi.fn(),
     onShowLocalStoreWizard: vi.fn(),
+    onShowNewKit: vi.fn(),
     onValidateLocalStore: vi.fn(),
   };
 
@@ -59,8 +59,8 @@ describe("KitBrowserHeader", () => {
     render(
       <KitBrowserHeader
         {...defaultProps}
-        onCreateNextKit={onCreateNextKit}
         nextKitSlot={"A1"}
+        onCreateNextKit={onCreateNextKit}
       />,
     );
     fireEvent.click(screen.getByText("+ Next Kit"));

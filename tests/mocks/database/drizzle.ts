@@ -7,119 +7,107 @@ import type { DbResult } from "../../../shared/db/schema";
  * Reduces duplication across tests that mock database operations
  */
 export const createDatabaseMock = (overrides: Record<string, any> = {}) => ({
-  // Kit operations
-  getAllKits: vi.fn().mockResolvedValue({
-    success: true,
-    data: [
-      {
-        id: 1,
-        name: "A0",
-        bank_letter: "A",
-        alias: null,
-        artist: null,
-        editable: false,
-        locked: false,
-        step_pattern: null,
-        modified_since_sync: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        scanned_at: new Date().toISOString(),
-      },
-    ],
-  } as DbResult<any[]>),
-
-  getKit: vi.fn().mockResolvedValue({
-    success: true,
-    data: {
-      id: 1,
-      name: "A0",
-      bank_letter: "A",
-      alias: null,
-      artist: null,
-      editable: false,
-      locked: false,
-      step_pattern: null,
-      modified_since_sync: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      scanned_at: new Date().toISOString(),
-    },
-  }),
-
-  insertKit: vi.fn().mockResolvedValue({
-    success: true,
-    data: { id: 1, name: "A0" },
-  }),
-
-  updateKit: vi.fn().mockResolvedValue({
-    success: true,
-    data: { id: 1, name: "A0" },
-  }),
+  // Database connection
+  close: vi.fn().mockResolvedValue(undefined),
 
   deleteKit: vi.fn().mockResolvedValue({
-    success: true,
     data: undefined,
-  }),
-
-  // Sample operations
-  getAllSamplesForKit: vi.fn().mockResolvedValue({
     success: true,
-    data: [
-      {
-        id: 1,
-        kit_name: "A0",
-        filename: "1 Kick.wav",
-        voice_number: 1,
-        slot_number: 0,
-        file_path: "/mock/local/store/A0/1 Kick.wav",
-        file_size: 44100,
-        duration_seconds: 1.0,
-        sample_rate: 44100,
-        bit_depth: 16,
-        channels: 1,
-        format: "wav",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ],
-  }),
-
-  insertSample: vi.fn().mockResolvedValue({
-    success: true,
-    data: { id: 1, filename: "1 Kick.wav" },
-  }),
-
-  updateSample: vi.fn().mockResolvedValue({
-    success: true,
-    data: { id: 1, filename: "1 Kick.wav" },
   }),
 
   deleteSample: vi.fn().mockResolvedValue({
-    success: true,
     data: undefined,
+    success: true,
   }),
 
   // Bank operations
   getAllBanks: vi.fn().mockResolvedValue({
-    success: true,
     data: [
       {
-        letter: "A",
         artist: "Test Artist A",
+        letter: "A",
         rtf_filename: null,
         scanned_at: new Date().toISOString(),
       },
     ],
+    success: true,
+  }),
+
+  // Kit operations
+  getAllKits: vi.fn().mockResolvedValue({
+    data: [
+      {
+        alias: null,
+        artist: null,
+        bank_letter: "A",
+        created_at: new Date().toISOString(),
+        editable: false,
+        id: 1,
+        locked: false,
+        modified_since_sync: false,
+        name: "A0",
+        scanned_at: new Date().toISOString(),
+        step_pattern: null,
+        updated_at: new Date().toISOString(),
+      },
+    ],
+    success: true,
+  } as DbResult<any[]>),
+
+  // Sample operations
+  getAllSamplesForKit: vi.fn().mockResolvedValue({
+    data: [
+      {
+        bit_depth: 16,
+        channels: 1,
+        created_at: new Date().toISOString(),
+        duration_seconds: 1.0,
+        file_path: "/mock/local/store/A0/1 Kick.wav",
+        file_size: 44100,
+        filename: "1 Kick.wav",
+        format: "wav",
+        id: 1,
+        kit_name: "A0",
+        sample_rate: 44100,
+        slot_number: 0,
+        updated_at: new Date().toISOString(),
+        voice_number: 1,
+      },
+    ],
+    success: true,
+  }),
+
+  getKit: vi.fn().mockResolvedValue({
+    data: {
+      alias: null,
+      artist: null,
+      bank_letter: "A",
+      created_at: new Date().toISOString(),
+      editable: false,
+      id: 1,
+      locked: false,
+      modified_since_sync: false,
+      name: "A0",
+      scanned_at: new Date().toISOString(),
+      step_pattern: null,
+      updated_at: new Date().toISOString(),
+    },
+    success: true,
   }),
 
   insertBank: vi.fn().mockResolvedValue({
+    data: { artist: "Test Artist A", letter: "A" },
     success: true,
-    data: { letter: "A", artist: "Test Artist A" },
   }),
 
-  updateBank: vi.fn().mockResolvedValue({
+  insertKit: vi.fn().mockResolvedValue({
+    data: { id: 1, name: "A0" },
     success: true,
-    data: { letter: "A", artist: "Test Artist A" },
+  }),
+
+  insertSample: vi.fn().mockResolvedValue({
+    data: { filename: "1 Kick.wav", id: 1 },
+    success: true,
   }),
 
   // Transaction helpers
@@ -127,8 +115,20 @@ export const createDatabaseMock = (overrides: Record<string, any> = {}) => ({
     return Promise.resolve(callback({}));
   }),
 
-  // Database connection
-  close: vi.fn().mockResolvedValue(undefined),
+  updateBank: vi.fn().mockResolvedValue({
+    data: { artist: "Test Artist A", letter: "A" },
+    success: true,
+  }),
+
+  updateKit: vi.fn().mockResolvedValue({
+    data: { id: 1, name: "A0" },
+    success: true,
+  }),
+
+  updateSample: vi.fn().mockResolvedValue({
+    data: { filename: "1 Kick.wav", id: 1 },
+    success: true,
+  }),
 
   ...overrides,
 });
@@ -141,16 +141,16 @@ export const createDatabaseErrorMock = (
 ) => ({
   ...createDatabaseMock(),
   getAllKits: vi.fn().mockResolvedValue({
-    success: false,
     error: errorMessage,
+    success: false,
   }),
   getKit: vi.fn().mockResolvedValue({
-    success: false,
     error: errorMessage,
+    success: false,
   }),
   insertKit: vi.fn().mockResolvedValue({
-    success: false,
     error: errorMessage,
+    success: false,
   }),
 });
 

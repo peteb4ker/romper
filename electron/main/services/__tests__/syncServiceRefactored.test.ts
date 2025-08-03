@@ -11,13 +11,14 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
   markKitsAsSynced: vi.fn(),
 }));
 
-import { markKitsAsSynced } from "../../db/romperDbCoreORM.js";
 import type { SyncExecutorService } from "../syncExecutorService.js";
 import type {
   SyncChangeSummary,
   SyncPlannerService,
 } from "../syncPlannerService.js";
 import type { SyncProgressService } from "../syncProgressService.js";
+
+import { markKitsAsSynced } from "../../db/romperDbCoreORM.js";
 import { SyncService } from "../syncServiceRefactored.js";
 
 const _mockPath = vi.mocked(path);
@@ -39,17 +40,17 @@ describe("SyncService", () => {
 
     mockExecutorService = {
       calculateTotalSize: vi.fn(),
-      executeFileOperation: vi.fn(),
       categorizeError: vi.fn(),
+      executeFileOperation: vi.fn(),
     } as any;
 
     mockProgressService = {
-      initializeSyncJob: vi.fn(),
-      updateProgress: vi.fn(),
-      isCancelled: vi.fn(),
+      cancelSync: vi.fn(),
       completeSync: vi.fn(),
       getCurrentSyncJob: vi.fn(),
-      cancelSync: vi.fn(),
+      initializeSyncJob: vi.fn(),
+      isCancelled: vi.fn(),
+      updateProgress: vi.fn(),
     } as any;
 
     service = new SyncService(
@@ -62,17 +63,17 @@ describe("SyncService", () => {
   describe("generateChangeSummary", () => {
     it("should delegate to planner service", async () => {
       const mockSummary: SyncChangeSummary = {
-        filesToCopy: [],
         filesToConvert: [],
-        totalSize: 1024,
+        filesToCopy: [],
         hasFormatWarnings: false,
-        warnings: [],
+        totalSize: 1024,
         validationErrors: [],
+        warnings: [],
       };
 
       mockPlannerService.generateChangeSummary = vi.fn().mockResolvedValue({
-        success: true,
         data: mockSummary,
+        success: true,
       });
 
       const settings = { localStorePath: "/test/path" };
@@ -87,8 +88,8 @@ describe("SyncService", () => {
 
     it("should return error from planner service", async () => {
       mockPlannerService.generateChangeSummary = vi.fn().mockResolvedValue({
-        success: false,
         error: "Planner error",
+        success: false,
       });
 
       const result = await service.generateChangeSummary({});
@@ -100,22 +101,22 @@ describe("SyncService", () => {
 
   describe("startKitSync", () => {
     const mockSyncData = {
-      filesToCopy: [
-        {
-          filename: "copy.wav",
-          sourcePath: "/source/copy.wav",
-          destinationPath: "/dest/copy.wav",
-          operation: "copy" as const,
-          kitName: "Kit1",
-        },
-      ],
       filesToConvert: [
         {
-          filename: "convert.wav",
-          sourcePath: "/source/convert.wav",
           destinationPath: "/dest/convert.wav",
-          operation: "convert" as const,
+          filename: "convert.wav",
           kitName: "Kit2",
+          operation: "convert" as const,
+          sourcePath: "/source/convert.wav",
+        },
+      ],
+      filesToCopy: [
+        {
+          destinationPath: "/dest/copy.wav",
+          filename: "copy.wav",
+          kitName: "Kit1",
+          operation: "copy" as const,
+          sourcePath: "/source/copy.wav",
         },
       ],
     };
@@ -130,19 +131,19 @@ describe("SyncService", () => {
       mockExecutorService.executeFileOperation = vi
         .fn()
         .mockResolvedValueOnce({
-          success: true,
           data: { bytesTransferred: 1024 },
+          success: true,
         })
         .mockResolvedValueOnce({
-          success: true,
           data: { bytesTransferred: 1024 },
+          success: true,
         });
 
       mockMarkKitsAsSynced.mockReturnValue({ success: true });
 
       const settings = {
-        localStorePath: "/test/path",
         defaultToMonoSamples: true,
+        localStorePath: "/test/path",
       };
 
       const result = await service.startKitSync(settings, mockSyncData);
@@ -183,13 +184,13 @@ describe("SyncService", () => {
 
     it("should handle file operation failure", async () => {
       mockExecutorService.executeFileOperation = vi.fn().mockResolvedValueOnce({
-        success: false,
         error: "File operation failed",
+        success: false,
       });
 
       mockExecutorService.categorizeError = vi.fn().mockReturnValue({
-        type: "file_access",
         canRetry: false,
+        type: "file_access",
         userMessage: "File not found",
       });
 
@@ -199,7 +200,7 @@ describe("SyncService", () => {
 
       const result = await service.startKitSync(
         { localStorePath: "/test/path" },
-        { filesToCopy: mockSyncData.filesToCopy, filesToConvert: [] },
+        { filesToConvert: [], filesToCopy: mockSyncData.filesToCopy },
       );
 
       expect(result.success).toBe(false);
@@ -228,20 +229,20 @@ describe("SyncService", () => {
 
     it("should handle mono conversion setting", async () => {
       mockExecutorService.executeFileOperation = vi.fn().mockResolvedValue({
-        success: true,
         data: { bytesTransferred: 1024 },
+        success: true,
       });
 
       mockMarkKitsAsSynced.mockReturnValue({ success: true });
 
       const settings = {
-        localStorePath: "/test/path",
         defaultToMonoSamples: false,
+        localStorePath: "/test/path",
       };
 
       await service.startKitSync(settings, {
-        filesToCopy: mockSyncData.filesToCopy,
         filesToConvert: [],
+        filesToCopy: mockSyncData.filesToCopy,
       });
 
       expect(mockExecutorService.executeFileOperation).toHaveBeenCalledWith(
@@ -252,20 +253,20 @@ describe("SyncService", () => {
 
     it("should warn but not fail when marking kits as synced fails", async () => {
       mockExecutorService.executeFileOperation = vi.fn().mockResolvedValue({
-        success: true,
         data: { bytesTransferred: 1024 },
+        success: true,
       });
 
       mockMarkKitsAsSynced.mockReturnValue({
-        success: false,
         error: "Database error",
+        success: false,
       });
 
       const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       const result = await service.startKitSync(
         { localStorePath: "/test/path" },
-        { filesToCopy: mockSyncData.filesToCopy, filesToConvert: [] },
+        { filesToConvert: [], filesToCopy: mockSyncData.filesToCopy },
       );
 
       expect(result.success).toBe(true); // Should still succeed
@@ -283,8 +284,8 @@ describe("SyncService", () => {
       await service.startKitSync(
         { localStorePath: "/test/path" },
         {
-          filesToCopy: [],
           filesToConvert: [],
+          filesToCopy: [],
         },
       );
 
@@ -297,14 +298,14 @@ describe("SyncService", () => {
         .mockRejectedValue(new Error("Unexpected error"));
 
       mockProgressService.getCurrentSyncJob = vi.fn().mockReturnValue({
-        kitName: "TestKit",
-        totalFiles: 1,
-        completedFiles: 0,
-        startTime: Date.now(),
-        cancelled: false,
-        totalBytes: 1024,
         bytesTransferred: 0,
+        cancelled: false,
+        completedFiles: 0,
         fileOperations: [],
+        kitName: "TestKit",
+        startTime: Date.now(),
+        totalBytes: 1024,
+        totalFiles: 1,
       });
 
       const consoleSpy = vi
@@ -313,7 +314,7 @@ describe("SyncService", () => {
 
       const result = await service.startKitSync(
         { localStorePath: "/test/path" },
-        { filesToCopy: mockSyncData.filesToCopy, filesToConvert: [] },
+        { filesToConvert: [], filesToCopy: mockSyncData.filesToCopy },
       );
 
       expect(result.success).toBe(false);

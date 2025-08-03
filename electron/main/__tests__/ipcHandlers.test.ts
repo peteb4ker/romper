@@ -3,11 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Mocks for Electron and Node APIs
 const ipcMainHandlers: { [key: string]: any } = {};
 vi.mock("electron", () => ({
-  ipcMain: {
-    handle: vi.fn((name, fn) => {
-      ipcMainHandlers[name] = fn;
-    }),
-  },
   app: {
     getPath: vi.fn(() => "/mock/userData"),
     quit: vi.fn(),
@@ -17,30 +12,35 @@ vi.mock("electron", () => ({
       Promise.resolve({ canceled: false, filePaths: ["/mock/sd"] }),
     ),
   },
+  ipcMain: {
+    handle: vi.fn((name, fn) => {
+      ipcMainHandlers[name] = fn;
+    }),
+  },
 }));
 vi.mock("fs", () => {
   const mock = {
-    mkdirSync: vi.fn(),
-    readdirSync: vi.fn(() => ["A1", "B2", "notakit"]),
-    lstatSync: vi.fn(() => ({ isDirectory: () => false })),
     copyFileSync: vi.fn(),
     existsSync: vi.fn(() => true),
-    writeFileSync: vi.fn(),
-    readFileSync: vi.fn(() => Buffer.from("test")),
+    lstatSync: vi.fn(() => ({ isDirectory: () => false })),
+    mkdirSync: vi.fn(),
     promises: {
-      readFile: vi.fn(() => Promise.resolve(Buffer.from("test"))),
-      writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
+      readFile: vi.fn(() => Promise.resolve(Buffer.from("test"))),
       stat: vi.fn(() => Promise.resolve({ isDirectory: () => false })),
+      writeFile: vi.fn(() => Promise.resolve()),
     },
+    readdirSync: vi.fn(() => ["A1", "B2", "notakit"]),
+    readFileSync: vi.fn(() => Buffer.from("test")),
+    writeFileSync: vi.fn(),
   };
   return { ...mock, default: mock };
 });
 vi.mock("path", () => {
   const mock = {
+    dirname: vi.fn(() => "/mock/dirname"),
     join: vi.fn((...args) => args.join("/")),
     resolve: vi.fn((...args) => args.join("/")),
-    dirname: vi.fn(() => "/mock/dirname"),
   };
   return { ...mock, default: mock };
 });
@@ -57,35 +57,35 @@ vi.mock("../services/localStoreService.js", () => ({
   localStoreService: {
     getLocalStoreStatus: vi.fn(() => ({ isValid: true })),
     listFilesInRoot: vi.fn(() => ["A0", "A1", "B0"]),
-    readFile: vi.fn(() => ({ success: true, data: Buffer.from("test") })),
+    readFile: vi.fn(() => ({ data: Buffer.from("test"), success: true })),
     validateExistingLocalStore: vi.fn(() => ({
-      success: true,
       path: "/mock/store",
+      success: true,
     })),
   },
 }));
 
 vi.mock("../services/kitService.js", () => ({
   kitService: {
-    createKit: vi.fn(() => ({ success: true })),
     copyKit: vi.fn(() => ({ success: true })),
+    createKit: vi.fn(() => ({ success: true })),
   },
 }));
 
 vi.mock("../services/sampleService.js", () => ({
   sampleService: {
     getSampleAudioBuffer: vi.fn(() => ({
-      success: true,
       data: new ArrayBuffer(1024),
+      success: true,
     })),
   },
 }));
 
 vi.mock("../services/archiveService.js", () => ({
   archiveService: {
+    copyDirectory: vi.fn(() => ({ success: true })),
     downloadAndExtractArchive: vi.fn(() => Promise.resolve({ success: true })),
     ensureDirectory: vi.fn(() => ({ success: true })),
-    copyDirectory: vi.fn(() => ({ success: true })),
   },
 }));
 
@@ -130,8 +130,8 @@ describe("registerIpcHandlers", () => {
   it("ensure-dir returns error on failure", async () => {
     const { archiveService } = await import("../services/archiveService.js");
     vi.mocked(archiveService.ensureDirectory).mockReturnValue({
-      success: false,
       error: "fail",
+      success: false,
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
@@ -158,7 +158,7 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers({});
     const origHandler = ipcMainHandlers["copy-dir"];
     ipcMainHandlers["copy-dir"] = async () => {
-      return { success: false, error: "fail" };
+      return { error: "fail", success: false };
     };
     const result = await ipcMainHandlers["copy-dir"](
       {},
@@ -222,8 +222,8 @@ describe("registerIpcHandlers", () => {
   it("create-kit throws error on failure", async () => {
     const { kitService } = await import("../services/kitService.js");
     vi.mocked(kitService.createKit).mockReturnValue({
-      success: false,
       error: "Create failed",
+      success: false,
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
@@ -246,8 +246,8 @@ describe("registerIpcHandlers", () => {
   it("copy-kit throws error on failure", async () => {
     const { kitService } = await import("../services/kitService.js");
     vi.mocked(kitService.copyKit).mockReturnValue({
-      success: false,
       error: "Copy failed",
+      success: false,
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
@@ -285,8 +285,8 @@ describe("registerIpcHandlers", () => {
   it("get-sample-audio-buffer throws error on failure", async () => {
     const { sampleService } = await import("../services/sampleService.js");
     vi.mocked(sampleService.getSampleAudioBuffer).mockReturnValue({
-      success: false,
       error: "Buffer failed",
+      success: false,
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
@@ -410,8 +410,8 @@ describe("registerIpcHandlers", () => {
 
     const { archiveService } = await import("../services/archiveService.js");
     vi.mocked(archiveService.downloadAndExtractArchive).mockResolvedValue({
-      success: false,
       error: "Download failed",
+      success: false,
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");

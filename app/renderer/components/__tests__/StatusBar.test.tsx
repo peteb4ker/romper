@@ -14,8 +14,8 @@ afterEach(() => {
 // Mock useSettings to provide stable test values
 vi.mock("../../utils/SettingsContext", () => ({
   useSettings: () => ({
-    localStorePath: "/mock/sd",
     darkMode: false,
+    localStorePath: "/mock/sd",
     setDarkMode: vi.fn(),
   }),
 }));
@@ -40,7 +40,7 @@ describe("StatusBar", () => {
   });
 
   it("renders a progress bar when progress is provided", () => {
-    render(<StatusBar status="Syncing..." progress={42} />);
+    render(<StatusBar progress={42} status="Syncing..." />);
     const progressBar = screen.getByTestId("progress-bar");
     expect(progressBar).toBeTruthy();
     // The inner div should have width 42%

@@ -11,7 +11,7 @@ describe("WizardProgressBar", () => {
   it("renders progress bar with correct phase and percent", () => {
     render(
       <WizardProgressBar
-        progress={{ phase: "Copying", percent: 42, file: "foo.wav" }}
+        progress={{ file: "foo.wav", percent: 42, phase: "Copying" }}
       />,
     );
     expect(screen.getByText(/copying/i)).toBeInTheDocument();

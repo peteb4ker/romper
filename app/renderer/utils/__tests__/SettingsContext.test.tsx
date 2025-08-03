@@ -7,16 +7,16 @@ import { SettingsProvider, useSettings } from "../SettingsContext";
 
 // Mock electronAPI
 const mockElectronAPI = {
+  getLocalStoreStatus: vi.fn(),
   readSettings: vi.fn(),
   setSetting: vi.fn(),
-  getLocalStoreStatus: vi.fn(),
 };
 
 // Mock matchMedia
 const mockMatchMedia = vi.fn((query: string) => ({
+  addEventListener: vi.fn(),
   matches: query === "(prefers-color-scheme: dark)",
   media: query,
-  addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
 }));
 
@@ -39,17 +39,17 @@ describe("SettingsContext", () => {
 
     // Default mock implementations
     mockElectronAPI.readSettings.mockResolvedValue({
+      confirmDestructiveActions: true,
+      defaultToMonoSamples: true,
       localStorePath: "/test/path",
       themeMode: "light",
-      defaultToMonoSamples: true,
-      confirmDestructiveActions: true,
     });
 
     mockElectronAPI.setSetting.mockResolvedValue(undefined);
 
     mockElectronAPI.getLocalStoreStatus.mockResolvedValue({
-      isValid: true,
       hasLocalStore: true,
+      isValid: true,
       localStorePath: "/test/path",
     });
   });
@@ -164,9 +164,9 @@ describe("SettingsContext", () => {
 
     it("handles system theme preference", async () => {
       mockMatchMedia.mockReturnValue({
+        addEventListener: vi.fn(),
         matches: true, // System prefers dark
         media: "(prefers-color-scheme: dark)",
-        addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
       });
 

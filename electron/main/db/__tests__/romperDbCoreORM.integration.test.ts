@@ -4,6 +4,7 @@ import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { Kit, Sample } from "../../../../shared/db/schema.js";
+
 import {
   addKit,
   addSample,
@@ -33,17 +34,17 @@ import {
 const TEST_DB_DIR = path.join(__dirname, "test-data");
 const TEST_DB_PATH = path.join(TEST_DB_DIR, "romper.sqlite");
 
-function ensureTestDirClean() {
-  if (fs.existsSync(TEST_DB_DIR)) {
-    fs.rmSync(TEST_DB_DIR, { recursive: true, force: true });
-  }
-  fs.mkdirSync(TEST_DB_DIR, { recursive: true });
-}
-
 function cleanupTestDb() {
   if (fs.existsSync(TEST_DB_PATH)) {
     fs.unlinkSync(TEST_DB_PATH);
   }
+}
+
+function ensureTestDirClean() {
+  if (fs.existsSync(TEST_DB_DIR)) {
+    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
+  }
+  fs.mkdirSync(TEST_DB_DIR, { recursive: true });
 }
 
 describe("Drizzle ORM Database Operations", () => {
@@ -86,11 +87,11 @@ describe("Drizzle ORM Database Operations", () => {
 
     it("should insert kit record with editable mode mapping", async () => {
       const testKit: Kit = {
-        name: "A0",
         alias: "Test Kit",
         artist: "Test Artist",
         editable: true, // This should map to editable=true in new architecture
         locked: false,
+        name: "A0",
         // step_pattern can be omitted or set to null - JSON mode handles this automatically
       };
 
@@ -103,8 +104,8 @@ describe("Drizzle ORM Database Operations", () => {
 
     it("should create 4 voice records when inserting kit", async () => {
       const testKit: Kit = {
-        name: "A1",
         editable: true, // Use the correct schema field name
+        name: "A1",
       };
 
       const insertResult = addKit(TEST_DB_DIR, testKit);
@@ -129,8 +130,8 @@ describe("Drizzle ORM Database Operations", () => {
       ];
 
       const testKit: Kit = {
-        name: "A2",
         editable: true,
+        name: "A2",
         step_pattern: stepPattern,
       };
 
@@ -152,20 +153,20 @@ describe("Drizzle ORM Database Operations", () => {
 
       // Insert a test kit first
       const testKit: Kit = {
-        name: "A0",
         editable: true,
+        name: "A0",
       };
       await addKit(TEST_DB_DIR, testKit);
     });
 
     it("should insert sample record with source_path support", async () => {
       const testSample: Sample = {
-        kit_name: "A0",
         filename: "kick.wav",
-        voice_number: 1,
+        is_stereo: false,
+        kit_name: "A0",
         slot_number: 1,
         source_path: "/test/path/kick.wav", // Required field
-        is_stereo: false,
+        voice_number: 1,
         wav_bitrate: 16,
         wav_sample_rate: 44100,
       };
@@ -178,20 +179,20 @@ describe("Drizzle ORM Database Operations", () => {
     it("should fetch samples for kit using ORM", async () => {
       const testSamples: Sample[] = [
         {
-          kit_name: "A0",
           filename: "kick.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "A0",
           slot_number: 1,
           source_path: "/test/path/kick.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          kit_name: "A0",
           filename: "snare.wav",
-          voice_number: 2,
+          is_stereo: false,
+          kit_name: "A0",
           slot_number: 1,
           source_path: "/test/path/snare.wav",
-          is_stereo: false,
+          voice_number: 2,
         },
       ];
 
@@ -215,28 +216,28 @@ describe("Drizzle ORM Database Operations", () => {
       // Insert test samples
       const testSamples: Sample[] = [
         {
-          kit_name: "A0",
           filename: "kick.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "A0",
           slot_number: 1,
           source_path: "/test/path/kick.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          kit_name: "A0",
           filename: "snare.wav",
-          voice_number: 2,
+          is_stereo: false,
+          kit_name: "A0",
           slot_number: 1,
           source_path: "/test/path/snare.wav",
-          is_stereo: false,
+          voice_number: 2,
         },
         {
-          kit_name: "A0",
           filename: "hihat.wav",
-          voice_number: 3,
+          is_stereo: false,
+          kit_name: "A0",
           slot_number: 1,
           source_path: "/test/path/hihat.wav",
-          is_stereo: false,
+          voice_number: 3,
         },
       ];
 
@@ -262,7 +263,7 @@ describe("Drizzle ORM Database Operations", () => {
     beforeEach(async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
-      const testKit: Kit = { name: "A0", editable: true };
+      const testKit: Kit = { editable: true, name: "A0" };
       await addKit(TEST_DB_DIR, testKit);
     });
 
@@ -282,14 +283,14 @@ describe("Drizzle ORM Database Operations", () => {
 
     it("should handle multiple voice aliases", async () => {
       const voiceAliases = [
-        { voice: 1, alias: "Kick" },
-        { voice: 2, alias: "Snare" },
-        { voice: 3, alias: "Hi-Hat" },
-        { voice: 4, alias: "Percussion" },
+        { alias: "Kick", voice: 1 },
+        { alias: "Snare", voice: 2 },
+        { alias: "Hi-Hat", voice: 3 },
+        { alias: "Percussion", voice: 4 },
       ];
 
       // Set all voice aliases
-      for (const { voice, alias } of voiceAliases) {
+      for (const { alias, voice } of voiceAliases) {
         const result = updateVoiceAlias(TEST_DB_DIR, "A0", voice, alias);
         expect(result.success).toBe(true);
       }
@@ -315,7 +316,7 @@ describe("Drizzle ORM Database Operations", () => {
     beforeEach(async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
-      const testKit: Kit = { name: "A0", editable: true };
+      const testKit: Kit = { editable: true, name: "A0" };
       await addKit(TEST_DB_DIR, testKit);
     });
 
@@ -375,8 +376,8 @@ describe("Drizzle ORM Database Operations", () => {
       const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");
 
       const result = addKit(nonExistentDir, {
-        name: "A0",
         editable: true,
+        name: "A0",
       });
 
       expect(result.success).toBe(false);
@@ -386,7 +387,7 @@ describe("Drizzle ORM Database Operations", () => {
     it("should handle constraint violations gracefully", async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
-      const testKit: Kit = { name: "A0", editable: true };
+      const testKit: Kit = { editable: true, name: "A0" };
 
       // Insert kit once
       const result1 = await addKit(TEST_DB_DIR, testKit);
@@ -407,10 +408,10 @@ describe("Drizzle ORM Database Operations", () => {
     it("should maintain compatibility with existing Kit interface", async () => {
       // Test the simplified Kit interface using editable directly
       const kitRecord: Kit = {
-        name: "A0",
         alias: "Old Style",
         editable: true,
         locked: false,
+        name: "A0",
       };
 
       const result = addKit(TEST_DB_DIR, kitRecord);
@@ -427,17 +428,17 @@ describe("Drizzle ORM Database Operations", () => {
 
     it("should support legacy sample record format", async () => {
       // Insert a kit first
-      const testKit: Kit = { name: "A0", editable: true };
+      const testKit: Kit = { editable: true, name: "A0" };
       await addKit(TEST_DB_DIR, testKit);
 
       // Insert sample using legacy interface
       const legacySample: Sample = {
-        kit_name: "A0",
         filename: "legacy_sample.wav",
-        voice_number: 1,
+        is_stereo: false,
+        kit_name: "A0",
         slot_number: 1,
         source_path: "/test/path/legacy_sample.wav",
-        is_stereo: false,
+        voice_number: 1,
       };
 
       const result = addSample(TEST_DB_DIR, legacySample);
@@ -455,57 +456,57 @@ describe("Drizzle ORM Database Operations", () => {
     beforeEach(() => {
       // Create database and kit
       createRomperDbFile(TEST_DB_DIR);
-      addKit(TEST_DB_DIR, { name: "TestKit", editable: true, locked: false });
+      addKit(TEST_DB_DIR, { editable: true, locked: false, name: "TestKit" });
 
       // Add test samples to voice 1
       const samples = [
         {
-          kit_name: "TestKit",
           filename: "sample1.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "TestKit",
           slot_number: 1,
           source_path: "/test/sample1.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          kit_name: "TestKit",
           filename: "sample2.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "TestKit",
           slot_number: 2,
           source_path: "/test/sample2.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          kit_name: "TestKit",
           filename: "sample3.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "TestKit",
           slot_number: 3,
           source_path: "/test/sample3.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          kit_name: "TestKit",
           filename: "sample4.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "TestKit",
           slot_number: 4,
           source_path: "/test/sample4.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          kit_name: "TestKit",
           filename: "sample5.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "TestKit",
           slot_number: 5,
           source_path: "/test/sample5.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          kit_name: "TestKit",
           filename: "sample6.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "TestKit",
           slot_number: 6,
           source_path: "/test/sample6.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
       ];
 
@@ -570,12 +571,12 @@ describe("Drizzle ORM Database Operations", () => {
     it("should move sample across voices with source compaction", () => {
       // Add samples to voice 2
       addSample(TEST_DB_DIR, {
-        kit_name: "TestKit",
         filename: "voice2_sample1.wav",
-        voice_number: 2,
+        is_stereo: false,
+        kit_name: "TestKit",
         slot_number: 1,
         source_path: "/test/v2s1.wav",
-        is_stereo: false,
+        voice_number: 2,
       });
 
       // Move sample4 from voice 1 slot 4 to voice 2 slot 1 (insert mode)
@@ -680,25 +681,25 @@ describe("Drizzle ORM Database Operations", () => {
   describe("Sample Operations - Additional Functions", () => {
     beforeEach(() => {
       createRomperDbFile(TEST_DB_DIR);
-      addKit(TEST_DB_DIR, { name: "TestKit", editable: true, locked: false });
+      addKit(TEST_DB_DIR, { editable: true, locked: false, name: "TestKit" });
 
       // Add test samples
       const samples = [
         {
-          kit_name: "TestKit",
           filename: "sample1.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "TestKit",
           slot_number: 1,
           source_path: "/test/sample1.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
         {
-          kit_name: "TestKit",
           filename: "sample2.wav",
-          voice_number: 1,
+          is_stereo: false,
+          kit_name: "TestKit",
           slot_number: 2,
           source_path: "/test/sample2.wav",
-          is_stereo: false,
+          voice_number: 1,
         },
       ];
 
@@ -733,18 +734,18 @@ describe("Drizzle ORM Database Operations", () => {
     it("should delete samples without compaction", () => {
       // Add a third sample to make compaction behavior visible
       addSample(TEST_DB_DIR, {
-        kit_name: "TestKit",
         filename: "sample3.wav",
-        voice_number: 1,
+        is_stereo: false,
+        kit_name: "TestKit",
         slot_number: 3,
         source_path: "/test/sample3.wav",
-        is_stereo: false,
+        voice_number: 1,
       });
 
       // Delete the middle sample (slot 2)
       const result = deleteSamplesWithoutCompaction(TEST_DB_DIR, "TestKit", {
-        voiceNumber: 1,
         slotNumber: 2,
+        voiceNumber: 1,
       });
 
       expect(result.success).toBe(true);
@@ -765,26 +766,26 @@ describe("Drizzle ORM Database Operations", () => {
     it("should compact slots after delete", () => {
       // Add more samples to test compaction
       addSample(TEST_DB_DIR, {
-        kit_name: "TestKit",
         filename: "sample3.wav",
-        voice_number: 1,
+        is_stereo: false,
+        kit_name: "TestKit",
         slot_number: 3,
         source_path: "/test/sample3.wav",
-        is_stereo: false,
+        voice_number: 1,
       });
       addSample(TEST_DB_DIR, {
-        kit_name: "TestKit",
         filename: "sample4.wav",
-        voice_number: 1,
+        is_stereo: false,
+        kit_name: "TestKit",
         slot_number: 4,
         source_path: "/test/sample4.wav",
-        is_stereo: false,
+        voice_number: 1,
       });
 
       // First delete sample at slot 2 without compaction to create a gap
       deleteSamplesWithoutCompaction(TEST_DB_DIR, "TestKit", {
-        voiceNumber: 1,
         slotNumber: 2,
+        voiceNumber: 1,
       });
 
       // Now compact slots after the deleted slot 2
@@ -810,10 +811,10 @@ describe("Drizzle ORM Database Operations", () => {
     beforeEach(() => {
       createRomperDbFile(TEST_DB_DIR);
       addKit(TEST_DB_DIR, {
-        name: "TrackingKit",
         editable: true,
         locked: false,
         modified_since_sync: false,
+        name: "TrackingKit",
       });
     });
 
@@ -844,10 +845,10 @@ describe("Drizzle ORM Database Operations", () => {
     it("should mark multiple kits as synced", () => {
       // Add another kit
       addKit(TEST_DB_DIR, {
-        name: "TrackingKit2",
         editable: true,
         locked: false,
         modified_since_sync: false,
+        name: "TrackingKit2",
       });
 
       // Mark both as modified
@@ -937,7 +938,7 @@ describe("Drizzle ORM Database Operations", () => {
 
     it("should handle compactSlotsAfterDelete with no samples to shift", () => {
       createRomperDbFile(TEST_DB_DIR);
-      addKit(TEST_DB_DIR, { name: "EmptyKit", editable: true, locked: false });
+      addKit(TEST_DB_DIR, { editable: true, locked: false, name: "EmptyKit" });
 
       // Try to compact when there are no samples to shift
       const result = compactSlotsAfterDelete(TEST_DB_DIR, "EmptyKit", 1, 5);

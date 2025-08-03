@@ -39,8 +39,8 @@ const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-cyan-900 via-slate-900 to-gray-900 text-gray-100 px-4 py-8 overflow-hidden">
       <div className="relative z-10 w-full max-w-xl bg-white/10 dark:bg-slate-900/80 rounded-2xl shadow-2xl border border-cyan-800/30 backdrop-blur-md p-8 flex flex-col items-center">
         <button
-          onClick={navigateBack}
           className="absolute left-4 top-4 px-3 py-1 bg-cyan-700/80 text-white rounded-full text-xs font-semibold shadow hover:bg-cyan-600/90 transition z-20"
+          onClick={navigateBack}
         >
           ← Back
         </button>
@@ -62,24 +62,24 @@ const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
           <p className="mb-2">
             Licensed under the{" "}
             <a
-              href="https://opensource.org/licenses/MIT"
               className="underline text-blue-200 hover:text-amber-300 transition"
-              target="_blank"
+              href="https://opensource.org/licenses/MIT"
               rel="noopener noreferrer"
+              target="_blank"
             >
               MIT license
             </a>
             .
           </p>
           <button
-            onClick={() => openExternal("https://github.com/peteb4ker/romper/")}
             className="inline-flex items-center gap-2 px-4 py-2 mt-2 bg-gradient-to-r from-cyan-600 to-amber-400 text-gray-900 font-bold rounded-full shadow-lg hover:scale-105 hover:from-cyan-400 hover:to-amber-200 transition-transform focus:outline-none focus:ring-2 focus:ring-cyan-400"
+            onClick={() => openExternal("https://github.com/peteb4ker/romper/")}
           >
             <svg
-              width="20"
-              height="20"
-              fill="currentColor"
               className="inline-block"
+              fill="currentColor"
+              height="20"
+              width="20"
             >
               <path d="M10 .3a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.15-1.1-1.46-1.1-1.46-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.95 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0 1 10 5.8c.85.004 1.7.12 2.5.35 1.9-1.29 2.74-1.02 2.74-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.85-2.34 4.7-4.57 4.95.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 10 .3" />
             </svg>

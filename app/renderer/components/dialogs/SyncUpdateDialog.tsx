@@ -9,49 +9,49 @@ import {
   FiX,
 } from "react-icons/fi";
 
-interface SyncUpdateDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  kitName: string;
-  changeSummary: SyncChangeSummary;
-  isLoading?: boolean;
-}
-
 export interface SyncChangeSummary {
-  filesToCopy: SyncFileOperation[];
-  filesToConvert: SyncFileOperation[];
-  estimatedTime: number; // in seconds
   estimatedSize: number; // in bytes
+  estimatedTime: number; // in seconds
+  filesToConvert: SyncFileOperation[];
+  filesToCopy: SyncFileOperation[];
   hasFormatWarnings: boolean;
-  warnings: string[];
   validationErrors: SyncValidationError[];
-}
-
-export interface SyncValidationError {
-  filename: string;
-  sourcePath: string;
-  error: string;
-  type: "missing_file" | "access_denied" | "invalid_format" | "other";
+  warnings: string[];
 }
 
 export interface SyncFileOperation {
-  filename: string;
-  sourcePath: string;
   destinationPath: string;
-  operation: "copy" | "convert";
-  reason?: string;
+  filename: string;
+  operation: "convert" | "copy";
   originalFormat?: string;
+  reason?: string;
+  sourcePath: string;
   targetFormat?: string;
 }
 
+export interface SyncValidationError {
+  error: string;
+  filename: string;
+  sourcePath: string;
+  type: "access_denied" | "invalid_format" | "missing_file" | "other";
+}
+
+interface SyncUpdateDialogProps {
+  changeSummary: SyncChangeSummary;
+  isLoading?: boolean;
+  isOpen: boolean;
+  kitName: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
 const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  kitName,
   changeSummary,
   isLoading = false,
+  isOpen,
+  kitName,
+  onClose,
+  onConfirm,
 }) => {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -120,10 +120,10 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             </h2>
           </div>
           <button
-            onClick={onClose}
-            disabled={isLoading}
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 disabled:opacity-50"
             aria-label="Close sync dialog"
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 disabled:opacity-50"
+            disabled={isLoading}
+            onClick={onClose}
           >
             <FiX />
           </button>
@@ -188,8 +188,8 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                     <ul className="text-sm text-red-700 dark:text-red-300 mt-2 space-y-1">
                       {changeSummary.validationErrors.map((error) => (
                         <li
-                          key={error.sourcePath}
                           className="flex items-start gap-1"
+                          key={error.sourcePath}
                         >
                           <span className="text-red-600 dark:text-red-400 mt-0.5">
                             •
@@ -221,7 +221,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                   </div>
                   <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-2 space-y-1">
                     {changeSummary.warnings.map((warning) => (
-                      <li key={warning} className="flex items-start gap-1">
+                      <li className="flex items-start gap-1" key={warning}>
                         <span className="text-yellow-600 dark:text-yellow-400 mt-0.5">
                           •
                         </span>
@@ -259,8 +259,8 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           {/* Details Toggle */}
           <div>
             <button
-              onClick={() => setShowDetails(!showDetails)}
               className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
+              onClick={() => setShowDetails(!showDetails)}
             >
               {showDetails ? "Hide Details" : "Show Details"}
             </button>
@@ -277,8 +277,8 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                   <div className="space-y-2 max-h-32 overflow-y-auto">
                     {changeSummary.filesToCopy.map((file) => (
                       <div
-                        key={file.sourcePath}
                         className="text-sm p-2 bg-gray-50 dark:bg-slate-700 rounded"
+                        key={file.sourcePath}
                       >
                         <div className="font-mono text-gray-900 dark:text-gray-100">
                           {file.filename}
@@ -300,8 +300,8 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                   <div className="space-y-2 max-h-32 overflow-y-auto">
                     {changeSummary.filesToConvert.map((file) => (
                       <div
-                        key={file.sourcePath}
                         className="text-sm p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded"
+                        key={file.sourcePath}
                       >
                         <div className="font-mono text-gray-900 dark:text-gray-100">
                           {file.filename}
@@ -328,16 +328,16 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           </div>
           <div className="flex gap-2">
             <button
-              onClick={onClose}
-              disabled={isLoading}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+              disabled={isLoading}
+              onClick={onClose}
             >
               Cancel
             </button>
             <button
-              onClick={onConfirm}
-              disabled={isLoading || totalFiles === 0 || hasValidationErrors}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              disabled={isLoading || totalFiles === 0 || hasValidationErrors}
+              onClick={onConfirm}
             >
               {isLoading ? (
                 <>

@@ -16,10 +16,10 @@ export function useMessageDisplay() {
   const clearMessages = () => {};
 
   return {
-    showMessage,
-    dismissMessage,
     clearMessages,
+    dismissMessage,
     // Sonner does not expose a messages array; UI is handled by <Toaster />
     messages: [],
+    showMessage,
   };
 }

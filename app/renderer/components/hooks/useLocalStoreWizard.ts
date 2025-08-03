@@ -1,29 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { groupSamplesByVoice } from "../../../../shared/kitUtilsShared";
-import { config } from "../../config";
 import type { ElectronAPI } from "../../electron.d";
-import { createRomperDb, insertKit, insertSample } from "../utils/romperDb";
-import { executeFullKitScan } from "../utils/scanners/orchestrationFunctions";
 import type { FullKitScanInput } from "../utils/scanners/types";
 
-export type LocalStoreSource = "sdcard" | "squarp" | "blank";
+import { groupSamplesByVoice } from "../../../../shared/kitUtilsShared";
+import { config } from "../../config";
+import { createRomperDb, insertKit, insertSample } from "../utils/romperDb";
+import { executeFullKitScan } from "../utils/scanners/orchestrationFunctions";
+
+export type LocalStoreSource = "blank" | "sdcard" | "squarp";
 
 export interface LocalStoreWizardState {
-  targetPath: string;
-  source: LocalStoreSource | null;
-  sdCardMounted: boolean;
+  error: null | string;
   isInitializing: boolean;
-  error: string | null;
+  kitFolderValidationError?: null | string;
+  sdCardMounted: boolean;
   sdCardSourcePath?: string; // Renamed from localStorePath for clarity
-  kitFolderValidationError?: string | null;
+  source: LocalStoreSource | null;
   sourceConfirmed?: boolean;
+  targetPath: string;
 }
 
 export interface ProgressEvent {
-  phase: string;
-  percent?: number;
   file?: string;
+  percent?: number;
+  phase: string;
 }
 
 // --- Electron API wrappers ---
@@ -36,33 +37,6 @@ declare global {
   }
 }
 
-function getElectronAPI(): ElectronAPI {
-  // Use type assertion to avoid type conflict with window.electronAPI
-  return typeof window !== "undefined" && window.electronAPI
-    ? window.electronAPI
-    : ({} as ElectronAPI);
-}
-
-function useElectronAPI(): ElectronAPI {
-  return getElectronAPI();
-}
-
-// --- Helpers ---
-function getKitFolders(files: string[]): string[] {
-  const kitRegex = /^\p{Lu}.*?(?:[1-9]?\d)$/u;
-  return files.filter((f) => kitRegex.test(f));
-}
-
-async function getDefaultRomperPathAsync(api: any): Promise<string> {
-  if (api.getUserHomeDir) {
-    const homeDir = await api.getUserHomeDir();
-    if (typeof homeDir === "string" && homeDir.length > 0) {
-      return homeDir + "/Documents/romper";
-    }
-  }
-  return "";
-}
-
 // --- Main Hook ---
 export function useLocalStoreWizard(
   onProgress?: (p: ProgressEvent) => void,
@@ -70,15 +44,15 @@ export function useLocalStoreWizard(
 ) {
   const api = useElectronAPI();
   const [state, setState] = useState<LocalStoreWizardState>({
-    targetPath: "",
-    source: null,
-    sdCardMounted: false,
-    isInitializing: false,
     error: null,
+    isInitializing: false,
+    sdCardMounted: false,
+    source: null,
     sourceConfirmed: false,
+    targetPath: "",
   });
   const [defaultPath, setDefaultPath] = useState("");
-  const [progress, setProgress] = useState<ProgressEvent | null>(null);
+  const [progress, setProgress] = useState<null | ProgressEvent>(null);
   const progressCb = useRef(onProgress);
   progressCb.current = onProgress;
 
@@ -102,7 +76,7 @@ export function useLocalStoreWizard(
     [],
   );
   const setError = useCallback(
-    (error: string | null) => setState((s) => ({ ...s, error })),
+    (error: null | string) => setState((s) => ({ ...s, error })),
     [],
   );
   const setIsInitializing = useCallback(
@@ -113,8 +87,8 @@ export function useLocalStoreWizard(
     (sdCardSourcePath: string) =>
       setState((s) => ({
         ...s,
-        sdCardSourcePath,
         kitFolderValidationError: undefined,
+        sdCardSourcePath,
       })),
     [],
   );
@@ -144,25 +118,25 @@ export function useLocalStoreWizard(
   const reportStepProgress = useCallback(
     ({
       items,
-      phase,
       onStep,
+      phase,
     }: {
       items: string[];
-      phase: string;
       onStep: (item: string, idx: number) => Promise<void>;
+      phase: string;
     }) => {
       // Sequentially process items for correct progress updates
       return (async () => {
         for (let idx = 0; idx < items.length; idx++) {
           const item = items[idx];
           reportProgress({
-            phase,
-            percent: Math.round(((idx + 1) / items.length) * 100),
             file: item,
+            percent: Math.round(((idx + 1) / items.length) * 100),
+            phase,
           });
           await onStep(item, idx);
         }
-        if (items.length > 0) reportProgress({ phase, percent: 100 });
+        if (items.length > 0) reportProgress({ percent: 100, phase });
       })();
     },
     [reportProgress],
@@ -179,13 +153,13 @@ export function useLocalStoreWizard(
     // Clear targetPath and source on wizard mount (start)
     setState((s) => ({
       ...s,
-      targetPath: "",
-      source: null,
-      sdCardSourcePath: undefined,
-      kitFolderValidationError: undefined,
       error: null,
       isInitializing: false,
+      kitFolderValidationError: undefined,
       sdCardMounted: false,
+      sdCardSourcePath: undefined,
+      source: null,
+      targetPath: "",
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -225,7 +199,6 @@ export function useLocalStoreWizard(
       const kitFolders = getKitFolders(files);
       await reportStepProgress({
         items: kitFolders,
-        phase: "Copying kits...",
         onStep: async (kit) => {
           if (!api.copyDir) throw new Error("Missing Electron API");
           await api.copyDir(
@@ -233,6 +206,7 @@ export function useLocalStoreWizard(
             `${targetPath}/${kit}`,
           );
         },
+        phase: "Copying kits...",
       });
     },
     [api, validateSdCardFolder, reportStepProgress, setWizardState],
@@ -265,7 +239,6 @@ export function useLocalStoreWizard(
       if (validKits.length > 0) {
         await reportStepProgress({
           items: validKits,
-          phase: "Writing to database",
           onStep: async (kitName) => {
             const kitPath = `${targetPath}/${kitName}`;
             if (!api.listFilesInRoot)
@@ -275,9 +248,9 @@ export function useLocalStoreWizard(
             // Extract bank letter from kit name (e.g., "A0" -> "A", "B12" -> "B")
             const bankLetter = kitName.charAt(0);
             const insertedKitName = await insertKit(dbDir, {
-              name: kitName,
               bank_letter: bankLetter,
               editable: false,
+              name: kitName,
             });
             const voices = groupSamplesByVoice(wavFiles);
             for (const voiceNum of Object.keys(voices)) {
@@ -290,12 +263,12 @@ export function useLocalStoreWizard(
                   // Set source_path to the absolute path for reference-only architecture
                   const sourcePath = `${kitPath}/${filename}`;
                   await insertSample(dbDir, {
-                    kit_name: insertedKitName,
                     filename,
-                    voice_number: Number(voiceNum),
+                    is_stereo: false,
+                    kit_name: insertedKitName,
                     slot_number: idx + 1,
                     source_path: sourcePath,
-                    is_stereo: false,
+                    voice_number: Number(voiceNum),
                   });
                 }
                 // Log if samples were skipped
@@ -307,6 +280,7 @@ export function useLocalStoreWizard(
               }
             }
           },
+          phase: "Writing to database",
         });
       }
       return { dbDir, validKits };
@@ -360,9 +334,9 @@ export function useLocalStoreWizard(
 
           // Prepare scan input
           const scanInput: FullKitScanInput = {
+            fileReader: createFileReader(),
             samples,
             wavFiles,
-            fileReader: createFileReader(),
           };
 
           // Execute the full scan chain with error handling
@@ -444,8 +418,8 @@ export function useLocalStoreWizard(
 
       await reportStepProgress({
         items: kitNames,
-        phase: "Scanning kits for metadata...",
         onStep: processSingleKit,
+        phase: "Scanning kits for metadata...",
       });
 
       console.log("[Hook] Scanning operations completed");
@@ -515,7 +489,7 @@ export function useLocalStoreWizard(
       if (state.source === "sdcard") {
         setWizardState({ source: null });
       }
-      return { success: false, error: e.message || "Unknown error" };
+      return { error: e.message || "Unknown error", success: false };
     } finally {
       setIsInitializing(false);
       setProgress(null);
@@ -548,9 +522,9 @@ export function useLocalStoreWizard(
         if (folder) {
           setState((s) => ({
             ...s,
-            source: "sdcard",
-            sdCardSourcePath: folder,
             kitFolderValidationError: undefined,
+            sdCardSourcePath: folder,
+            source: "sdcard",
             targetPath: "",
           }));
         }
@@ -560,10 +534,10 @@ export function useLocalStoreWizard(
       // For squarp/blank, set source and clear targetPath, but do not advance to step 2 until user picks target
       setState((s) => ({
         ...s,
-        source: value as LocalStoreSource,
         kitFolderValidationError: undefined,
-        targetPath: "",
         sdCardSourcePath: undefined,
+        source: value as LocalStoreSource,
+        targetPath: "",
       }));
     },
     [api],
@@ -581,21 +555,48 @@ export function useLocalStoreWizard(
   );
 
   return {
-    state,
+    canInitialize,
     defaultPath,
+    errorMessage,
+    handleSourceSelect,
+    initialize,
+    isSdCardSource,
     progress,
-    setTargetPath,
-    setSource,
-    setSdCardMounted,
     setError,
     setIsInitializing,
+    setSdCardMounted,
     setSdCardPath,
+    setSource,
     setSourceConfirmed,
-    initialize,
+    setTargetPath,
+    state,
     validateSdCardFolder,
-    handleSourceSelect,
-    errorMessage,
-    canInitialize,
-    isSdCardSource,
   };
+}
+
+async function getDefaultRomperPathAsync(api: any): Promise<string> {
+  if (api.getUserHomeDir) {
+    const homeDir = await api.getUserHomeDir();
+    if (typeof homeDir === "string" && homeDir.length > 0) {
+      return homeDir + "/Documents/romper";
+    }
+  }
+  return "";
+}
+
+function getElectronAPI(): ElectronAPI {
+  // Use type assertion to avoid type conflict with window.electronAPI
+  return typeof window !== "undefined" && window.electronAPI
+    ? window.electronAPI
+    : ({} as ElectronAPI);
+}
+
+// --- Helpers ---
+function getKitFolders(files: string[]): string[] {
+  const kitRegex = /^\p{Lu}.*?(?:[1-9]?\d)$/u;
+  return files.filter((f) => kitRegex.test(f));
+}
+
+function useElectronAPI(): ElectronAPI {
+  return getElectronAPI();
 }

@@ -77,6 +77,12 @@ Working on **Task 5.0: Kit Editing and Slot Management** - implementing editable
 ## Git Commit Standards
 **CRITICAL**: When creating git commits, DO NOT add Claude attribution or Co-Authored-By lines. Commit messages should contain only the actual commit content without any AI attribution.
 
+## Code Metrics and Analysis Standards
+**CRITICAL**: DO NOT make educated guesses about code metrics (complexity scores, coverage percentages, performance metrics, etc.) and present them as facts. When discussing metrics:
+- Only report metrics that have been measured by actual tools
+- If asked about metrics without having tool output, explain that you need to run appropriate analysis tools
+- Never estimate or approximate metric values based on code inspection alone
+
 ---
 
 *For detailed architectural concepts, development patterns, and comprehensive guides, see the `docs/` directory. This file provides project context - refer to specific documentation for implementation details.*

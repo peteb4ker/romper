@@ -4,12 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Mock better-sqlite3 to avoid native module errors - must be hoisted
 vi.mock("better-sqlite3", () => ({
   default: vi.fn(() => ({
-    exec: vi.fn(),
     close: vi.fn(),
+    exec: vi.fn(),
     prepare: vi.fn(() => ({
       all: vi.fn(),
-      run: vi.fn(),
       get: vi.fn(),
+      run: vi.fn(),
     })),
   })),
 }));
@@ -17,11 +17,11 @@ vi.mock("better-sqlite3", () => ({
 // Mock drizzle-orm better-sqlite3 modules
 vi.mock("drizzle-orm/better-sqlite3", () => ({
   drizzle: vi.fn(() => ({
+    delete: vi.fn(),
+    insert: vi.fn(),
     query: vi.fn(),
     select: vi.fn(),
-    insert: vi.fn(),
     update: vi.fn(),
-    delete: vi.fn(),
   })),
 }));
 
@@ -32,37 +32,37 @@ vi.mock("drizzle-orm/better-sqlite3/migrator", () => ({
 // Mocks for Electron and Node APIs
 vi.mock("electron", () => {
   const app = {
-    getPath: vi.fn(() => "/mock/userData"),
-    whenReady: vi.fn(() => Promise.resolve()),
     getName: vi.fn(() => "Romper"),
+    getPath: vi.fn(() => "/mock/userData"),
     quit: vi.fn(),
+    whenReady: vi.fn(() => Promise.resolve()),
   };
   const BrowserWindow = vi.fn().mockImplementation(() => ({
-    loadURL: vi.fn(() => Promise.resolve()),
+    getAllWindows: vi.fn().mockReturnValue([]),
+    getFocusedWindow: vi.fn(),
     loadFile: vi.fn(() => Promise.resolve()),
+    loadURL: vi.fn(() => Promise.resolve()),
     webContents: {
       on: vi.fn(),
       send: vi.fn(),
     },
-    getAllWindows: vi.fn().mockReturnValue([]),
-    getFocusedWindow: vi.fn(),
   }));
   const Menu = {
-    setApplicationMenu: vi.fn(),
     buildFromTemplate: vi.fn().mockReturnValue({}),
+    setApplicationMenu: vi.fn(),
   };
   const ipcMain = {
+    emit: vi.fn(),
     handle: vi.fn(),
     on: vi.fn(),
-    emit: vi.fn(),
   };
-  return { app, BrowserWindow, Menu, ipcMain };
+  return { app, BrowserWindow, ipcMain, Menu };
 });
 vi.mock("path", () => {
   const mock = {
-    resolve: vi.fn((...args) => args.join("/")),
-    join: vi.fn((...args) => args.join("/")),
     dirname: vi.fn(() => "/mock/dirname"),
+    join: vi.fn((...args) => args.join("/")),
+    resolve: vi.fn((...args) => args.join("/")),
   };
   return { ...mock, default: mock };
 });
@@ -230,9 +230,9 @@ describe.sequential("main/index.ts", () => {
       "../localStoreValidator.js"
     );
     vi.mocked(validateLocalStoreAndDb).mockReturnValue({
-      isValid: false,
       error: "Path does not exist",
       errorSummary: "Invalid path",
+      isValid: false,
     });
 
     const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -260,8 +260,8 @@ describe.sequential("main/index.ts", () => {
       "../localStoreValidator.js"
     );
     vi.mocked(validateLocalStoreAndDb).mockReturnValue({
-      isValid: false,
       error: "Path does not exist",
+      isValid: false,
     });
 
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -344,8 +344,8 @@ describe.sequential("main/index.ts", () => {
 
     const { BrowserWindow } = await import("electron");
     const mockWindow = {
-      loadURL: vi.fn().mockRejectedValue(new Error("Load URL failed")),
       loadFile: vi.fn().mockResolvedValue(undefined),
+      loadURL: vi.fn().mockRejectedValue(new Error("Load URL failed")),
     };
     vi.mocked(BrowserWindow).mockReturnValue(mockWindow as any);
 
@@ -367,8 +367,8 @@ describe.sequential("main/index.ts", () => {
 
     const { BrowserWindow } = await import("electron");
     const mockWindow = {
-      loadURL: vi.fn().mockResolvedValue(undefined),
       loadFile: vi.fn().mockRejectedValue(new Error("Load file failed")),
+      loadURL: vi.fn().mockResolvedValue(undefined),
     };
     vi.mocked(BrowserWindow).mockReturnValue(mockWindow as any);
 

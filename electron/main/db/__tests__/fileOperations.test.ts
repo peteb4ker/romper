@@ -14,8 +14,8 @@ describe("fileOperations unit tests", () => {
     vi.clearAllMocks();
     vi.resetAllMocks();
     vi.stubGlobal("console", {
-      log: vi.fn(),
       error: vi.fn(),
+      log: vi.fn(),
     });
   });
 

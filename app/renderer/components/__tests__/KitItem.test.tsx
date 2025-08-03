@@ -12,21 +12,21 @@ afterEach(() => {
 
 describe("KitItem", () => {
   const baseProps = {
-    kit: "A1",
     colorClass: "",
     isValid: true,
-    onSelect: vi.fn(),
-    onDuplicate: vi.fn(),
-    sampleCounts: [12, 12, 12, 12],
+    kit: "A1",
     kitData: {
       name: "A1",
       voices: [
-        { voice_number: 1, voice_alias: "Loop" },
-        { voice_number: 2, voice_alias: "Loop" },
-        { voice_number: 3, voice_alias: "Kick" },
-        { voice_number: 4, voice_alias: "Loop" },
+        { voice_alias: "Loop", voice_number: 1 },
+        { voice_alias: "Loop", voice_number: 2 },
+        { voice_alias: "Kick", voice_number: 3 },
+        { voice_alias: "Loop", voice_number: 4 },
       ],
     },
+    onDuplicate: vi.fn(),
+    onSelect: vi.fn(),
+    sampleCounts: [12, 12, 12, 12],
   };
 
   it("renders kit name and unique voice labels", () => {
@@ -79,21 +79,21 @@ describe("KitItem voice label deduplication", () => {
     const kitData = {
       name: "Test Kit",
       voices: [
-        { voice_number: 1, voice_alias: "vox" },
-        { voice_number: 2, voice_alias: "vox" },
-        { voice_number: 3, voice_alias: "synth" },
-        { voice_number: 4, voice_alias: "fx" },
+        { voice_alias: "vox", voice_number: 1 },
+        { voice_alias: "vox", voice_number: 2 },
+        { voice_alias: "synth", voice_number: 3 },
+        { voice_alias: "fx", voice_number: 4 },
       ],
     };
     render(
       <KitItem
-        kit="Test Kit"
         colorClass=""
         isValid={true}
-        onSelect={() => {}}
-        onDuplicate={() => {}}
-        sampleCounts={[12, 12, 12, 12]}
+        kit="Test Kit"
         kitData={kitData}
+        onDuplicate={() => {}}
+        onSelect={() => {}}
+        sampleCounts={[12, 12, 12, 12]}
       />,
     );
     // Always select the correct KitItem root to avoid confusion if multiple are rendered

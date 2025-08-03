@@ -21,7 +21,7 @@ describe("fileOperations integration tests", () => {
   afterEach(async () => {
     // Clean up test directory
     try {
-      await fs.promises.rm(testDir, { recursive: true, force: true });
+      await fs.promises.rm(testDir, { force: true, recursive: true });
     } catch (error) {
       // Ignore cleanup errors
       console.warn("Cleanup failed:", error);
@@ -253,7 +253,7 @@ describe("fileOperations integration tests", () => {
 
       // Document which platform we tested on
       console.log(`✓ Tested on platform: ${platform}`);
-      expect(["win32", "darwin", "linux"].includes(platform)).toBe(true);
+      expect(["darwin", "linux", "win32"].includes(platform)).toBe(true);
     });
 
     it("should handle platform-specific path separators", async () => {

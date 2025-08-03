@@ -5,9 +5,9 @@ import { useKitStepSequencerLogic } from "../useKitStepSequencerLogic";
 
 // Mock the worker
 const mockWorker = {
+  onmessage: null as ((e: MessageEvent) => void) | null,
   postMessage: vi.fn(),
   terminate: vi.fn(),
-  onmessage: null as ((e: MessageEvent) => void) | null,
 };
 
 global.Worker = vi.fn().mockImplementation(() => mockWorker);
@@ -43,12 +43,12 @@ describe("useKitStepSequencerLogic", () => {
   });
 
   const getDefaultParams = () => ({
-    samples: defaultSamples,
     onPlaySample: mockOnPlaySample,
-    stepPattern: defaultStepPattern,
-    setStepPattern: mockSetStepPattern,
+    samples: defaultSamples,
     sequencerOpen: false,
     setSequencerOpen: mockSetSequencerOpen,
+    setStepPattern: mockSetStepPattern,
+    stepPattern: defaultStepPattern,
   });
 
   describe("Initialization", () => {
@@ -59,7 +59,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(result.current.isSeqPlaying).toBe(false);
       expect(result.current.currentSeqStep).toBe(0);
-      expect(result.current.focusedStep).toEqual({ voice: 0, step: 0 });
+      expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 });
       expect(result.current.safeStepPattern).toEqual(defaultStepPattern);
     });
 
@@ -103,7 +103,7 @@ describe("useKitStepSequencerLogic", () => {
       // Simulate worker sending step message
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "STEP", payload: { currentStep: 5 } },
+          data: { payload: { currentStep: 5 }, type: "STEP" },
         } as MessageEvent);
       });
 
@@ -117,7 +117,7 @@ describe("useKitStepSequencerLogic", () => {
 
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "OTHER", payload: { currentStep: 10 } },
+          data: { payload: { currentStep: 10 }, type: "OTHER" },
         } as MessageEvent);
       });
 
@@ -146,8 +146,8 @@ describe("useKitStepSequencerLogic", () => {
       });
 
       expect(mockWorker.postMessage).toHaveBeenCalledWith({
-        type: "START",
         payload: { numSteps: 16, stepDuration: 125 },
+        type: "START",
       });
     });
 
@@ -186,7 +186,7 @@ describe("useKitStepSequencerLogic", () => {
       // Advance to step 0 (should trigger voice 1)
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "STEP", payload: { currentStep: 0 } },
+          data: { payload: { currentStep: 0 }, type: "STEP" },
         } as MessageEvent);
       });
 
@@ -201,7 +201,7 @@ describe("useKitStepSequencerLogic", () => {
       // Try to advance step
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "STEP", payload: { currentStep: 0 } },
+          data: { payload: { currentStep: 0 }, type: "STEP" },
         } as MessageEvent);
       });
 
@@ -220,13 +220,13 @@ describe("useKitStepSequencerLogic", () => {
       // Trigger step 0 twice
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "STEP", payload: { currentStep: 0 } },
+          data: { payload: { currentStep: 0 }, type: "STEP" },
         } as MessageEvent);
       });
 
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "STEP", payload: { currentStep: 0 } },
+          data: { payload: { currentStep: 0 }, type: "STEP" },
         } as MessageEvent);
       });
 
@@ -255,7 +255,7 @@ describe("useKitStepSequencerLogic", () => {
       // Advance to step 1 (should try to trigger voice 2 but has no samples)
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "STEP", payload: { currentStep: 1 } },
+          data: { payload: { currentStep: 1 }, type: "STEP" },
         } as MessageEvent);
       });
 
@@ -285,7 +285,7 @@ describe("useKitStepSequencerLogic", () => {
 
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "STEP", payload: { currentStep: 0 } },
+          data: { payload: { currentStep: 0 }, type: "STEP" },
         } as MessageEvent);
       });
 
@@ -379,7 +379,7 @@ describe("useKitStepSequencerLogic", () => {
 
       // Set initial focus to voice 2
       act(() => {
-        result.current.setFocusedStep({ voice: 2, step: 0 });
+        result.current.setFocusedStep({ step: 0, voice: 2 });
       });
 
       act(() => {
@@ -389,7 +389,7 @@ describe("useKitStepSequencerLogic", () => {
         } as any);
       });
 
-      expect(result.current.focusedStep).toEqual({ voice: 1, step: 0 });
+      expect(result.current.focusedStep).toEqual({ step: 0, voice: 1 });
     });
 
     it("should move focus down", () => {
@@ -407,7 +407,7 @@ describe("useKitStepSequencerLogic", () => {
         } as any);
       });
 
-      expect(result.current.focusedStep).toEqual({ voice: 1, step: 0 });
+      expect(result.current.focusedStep).toEqual({ step: 0, voice: 1 });
     });
 
     it("should move focus left", () => {
@@ -420,7 +420,7 @@ describe("useKitStepSequencerLogic", () => {
 
       // Set initial focus to step 5
       act(() => {
-        result.current.setFocusedStep({ voice: 0, step: 5 });
+        result.current.setFocusedStep({ step: 5, voice: 0 });
       });
 
       act(() => {
@@ -430,7 +430,7 @@ describe("useKitStepSequencerLogic", () => {
         } as any);
       });
 
-      expect(result.current.focusedStep).toEqual({ voice: 0, step: 4 });
+      expect(result.current.focusedStep).toEqual({ step: 4, voice: 0 });
     });
 
     it("should move focus right", () => {
@@ -448,7 +448,7 @@ describe("useKitStepSequencerLogic", () => {
         } as any);
       });
 
-      expect(result.current.focusedStep).toEqual({ voice: 0, step: 1 });
+      expect(result.current.focusedStep).toEqual({ step: 1, voice: 0 });
     });
 
     it("should not move focus beyond boundaries", () => {
@@ -467,7 +467,7 @@ describe("useKitStepSequencerLogic", () => {
         } as any);
       });
 
-      expect(result.current.focusedStep).toEqual({ voice: 0, step: 0 });
+      expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 });
 
       // Test left boundary
       act(() => {
@@ -477,11 +477,11 @@ describe("useKitStepSequencerLogic", () => {
         } as any);
       });
 
-      expect(result.current.focusedStep).toEqual({ voice: 0, step: 0 });
+      expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 });
 
       // Test bottom boundary
       act(() => {
-        result.current.setFocusedStep({ voice: 3, step: 0 });
+        result.current.setFocusedStep({ step: 0, voice: 3 });
       });
 
       act(() => {
@@ -491,11 +491,11 @@ describe("useKitStepSequencerLogic", () => {
         } as any);
       });
 
-      expect(result.current.focusedStep).toEqual({ voice: 3, step: 0 });
+      expect(result.current.focusedStep).toEqual({ step: 0, voice: 3 });
 
       // Test right boundary
       act(() => {
-        result.current.setFocusedStep({ voice: 0, step: 15 });
+        result.current.setFocusedStep({ step: 15, voice: 0 });
       });
 
       act(() => {
@@ -505,7 +505,7 @@ describe("useKitStepSequencerLogic", () => {
         } as any);
       });
 
-      expect(result.current.focusedStep).toEqual({ voice: 0, step: 15 });
+      expect(result.current.focusedStep).toEqual({ step: 15, voice: 0 });
     });
   });
 
@@ -570,7 +570,7 @@ describe("useKitStepSequencerLogic", () => {
       });
 
       expect(mockPreventDefault).not.toHaveBeenCalled();
-      expect(result.current.focusedStep).toEqual({ voice: 0, step: 0 }); // Unchanged
+      expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 }); // Unchanged
     });
 
     it("should ignore unhandled keys", () => {
@@ -604,8 +604,8 @@ describe("useKitStepSequencerLogic", () => {
 
       const params = {
         ...getDefaultParams(),
-        sequencerOpen: true,
         gridRef: mockGridRef,
+        sequencerOpen: true,
       };
 
       renderHook(() => useKitStepSequencerLogic(params));
@@ -641,8 +641,8 @@ describe("useKitStepSequencerLogic", () => {
 
       const params = {
         ...getDefaultParams(),
-        sequencerOpen: false,
         gridRef: mockGridRef,
+        sequencerOpen: false,
       };
 
       renderHook(() => useKitStepSequencerLogic(params));
@@ -703,7 +703,7 @@ describe("useKitStepSequencerLogic", () => {
       for (let i = 0; i < 16; i++) {
         act(() => {
           mockWorker.onmessage?.({
-            data: { type: "STEP", payload: { currentStep: i } },
+            data: { payload: { currentStep: i }, type: "STEP" },
           } as MessageEvent);
         });
       }
@@ -725,7 +725,7 @@ describe("useKitStepSequencerLogic", () => {
 
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "STEP", payload: { currentStep: 0 } },
+          data: { payload: { currentStep: 0 }, type: "STEP" },
         } as MessageEvent);
       });
 
@@ -755,7 +755,7 @@ describe("useKitStepSequencerLogic", () => {
       // Test step 0 (velocity 64)
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "STEP", payload: { currentStep: 0 } },
+          data: { payload: { currentStep: 0 }, type: "STEP" },
         } as MessageEvent);
       });
 
@@ -764,7 +764,7 @@ describe("useKitStepSequencerLogic", () => {
       // Test step 3 (velocity 1)
       act(() => {
         mockWorker.onmessage?.({
-          data: { type: "STEP", payload: { currentStep: 3 } },
+          data: { payload: { currentStep: 3 }, type: "STEP" },
         } as MessageEvent);
       });
 

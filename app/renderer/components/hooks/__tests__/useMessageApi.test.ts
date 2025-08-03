@@ -8,9 +8,9 @@ import { useMessageApi } from "../useMessageApi";
 describe("useMessageApi", () => {
   it("returns context value when used within MessageDisplayContext", () => {
     const mockContextValue = {
-      success: vi.fn(),
       error: vi.fn(),
       info: vi.fn(),
+      success: vi.fn(),
       warning: vi.fn(),
     };
 

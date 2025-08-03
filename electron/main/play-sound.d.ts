@@ -1,8 +1,8 @@
 declare module "play-sound" {
   interface PlaySoundOptions {
+    [key: string]: any;
     player?: string;
     players?: string[];
-    [key: string]: any;
   }
   interface PlaySoundPlayer {
     play(

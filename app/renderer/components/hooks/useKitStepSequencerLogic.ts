@@ -10,14 +10,14 @@ import {
 } from "./stepPatternConstants";
 
 interface UseKitStepSequencerLogicParams {
-  samples: { [voice: number]: string[] };
-  onPlaySample: (voice: number, sample: string) => void;
+  gridRef?: React.RefObject<HTMLDivElement>;
   kitName?: string; // Add kit name for secure playback
-  stepPattern: number[][] | null;
-  setStepPattern: (pattern: number[][]) => void;
+  onPlaySample: (voice: number, sample: string) => void;
+  samples: { [voice: number]: string[] };
   sequencerOpen: boolean;
   setSequencerOpen: (open: boolean) => void;
-  gridRef?: React.RefObject<HTMLDivElement>;
+  setStepPattern: (pattern: number[][]) => void;
+  stepPattern: null | number[][];
 }
 
 /**
@@ -28,16 +28,16 @@ export function useKitStepSequencerLogic(
   params: UseKitStepSequencerLogicParams,
 ) {
   const {
-    samples,
-    onPlaySample,
-    stepPattern,
-    setStepPattern,
-    sequencerOpen,
     gridRef,
+    onPlaySample,
+    samples,
+    sequencerOpen,
+    setStepPattern,
+    stepPattern,
   } = params;
 
   // Worker management
-  const workerRef = React.useRef<Worker | null>(null);
+  const workerRef = React.useRef<null | Worker>(null);
   const workerUrl = React.useMemo(
     () => new URL("../kitStepSequencerWorker.ts", import.meta.url),
     [],
@@ -49,8 +49,8 @@ export function useKitStepSequencerLogic(
 
   // Focus management for keyboard navigation
   const [focusedStep, setFocusedStep] = React.useState<FocusedStep>({
-    voice: 0,
     step: 0,
+    voice: 0,
   });
 
   // Worker initialization and cleanup
@@ -81,8 +81,8 @@ export function useKitStepSequencerLogic(
 
     if (isSeqPlaying) {
       worker.postMessage({
-        type: "START",
         payload: { numSteps: NUM_STEPS, stepDuration: 125 },
+        type: "START",
       });
     } else {
       worker.postMessage({ type: "STOP" });
@@ -90,7 +90,7 @@ export function useKitStepSequencerLogic(
   }, [isSeqPlaying]);
 
   // Sample triggering on step advance
-  const lastStepRef = React.useRef<number | null>(null);
+  const lastStepRef = React.useRef<null | number>(null);
 
   React.useEffect(() => {
     if (!isSeqPlaying || !stepPattern) return;
@@ -155,15 +155,12 @@ export function useKitStepSequencerLogic(
 
   // Focus navigation
   const moveFocus = React.useCallback(
-    (direction: "up" | "down" | "left" | "right") => {
+    (direction: "down" | "left" | "right" | "up") => {
       setFocusedStep((prev) => {
         let newVoice = prev.voice;
         let newStep = prev.step;
 
         switch (direction) {
-          case "up":
-            newVoice = Math.max(0, prev.voice - 1);
-            break;
           case "down":
             newVoice = Math.min(NUM_VOICES - 1, prev.voice + 1);
             break;
@@ -173,9 +170,12 @@ export function useKitStepSequencerLogic(
           case "right":
             newStep = Math.min(NUM_STEPS - 1, prev.step + 1);
             break;
+          case "up":
+            newVoice = Math.max(0, prev.voice - 1);
+            break;
         }
 
-        return { voice: newVoice, step: newStep };
+        return { step: newStep, voice: newVoice };
       });
     },
     [],
@@ -186,7 +186,7 @@ export function useKitStepSequencerLogic(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (!sequencerOpen) return;
 
-      const { voice, step } = focusedStep;
+      const { step, voice } = focusedStep;
 
       if (e.key === "ArrowRight") moveFocus("right");
       else if (e.key === "ArrowLeft") moveFocus("left");
@@ -210,9 +210,9 @@ export function useKitStepSequencerLogic(
   React.useEffect(() => {
     if (sequencerOpen) {
       const ref = gridRef || gridRefInternal;
-      if (ref && ref.current) {
+      if (ref?.current) {
         requestAnimationFrame(() => {
-          ref.current && ref.current.focus();
+          ref.current?.focus();
         });
       }
     }
@@ -221,23 +221,23 @@ export function useKitStepSequencerLogic(
   // UI styling constants are now imported from shared constants
 
   return {
-    // State
-    isSeqPlaying,
     currentSeqStep,
     focusedStep,
-    safeStepPattern,
     gridRefInternal,
-
-    // Actions
-    setIsSeqPlaying,
-    setFocusedStep,
-    toggleStep,
     handleStepGridKeyDown,
+    // State
+    isSeqPlaying,
 
+    LED_GLOWS,
+    NUM_STEPS,
+    NUM_VOICES,
     // Constants
     ROW_COLORS,
-    LED_GLOWS,
-    NUM_VOICES,
-    NUM_STEPS,
+
+    safeStepPattern,
+    setFocusedStep,
+    // Actions
+    setIsSeqPlaying,
+    toggleStep,
   };
 }

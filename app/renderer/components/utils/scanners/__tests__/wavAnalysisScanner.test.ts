@@ -17,12 +17,12 @@ describe("scanWAVAnalysis", () => {
 
     expect(result.success).toBe(true);
     expect(result.data).toEqual({
-      sampleRate: 44100,
       bitDepth: 16,
-      channels: 1,
       bitrate: 705600,
+      channels: 1,
       isStereo: false,
       isValid: true,
+      sampleRate: 44100,
     });
 
     // File reader should not be called since analysis is disabled
@@ -40,12 +40,12 @@ describe("scanWAVAnalysis", () => {
 
     expect(result.success).toBe(true);
     expect(result.data).toEqual({
-      sampleRate: 44100,
       bitDepth: 16,
-      channels: 1,
       bitrate: 705600,
+      channels: 1,
       isStereo: false,
       isValid: true,
+      sampleRate: 44100,
     });
   });
 
@@ -77,12 +77,12 @@ describe("scanWAVAnalysis", () => {
     // Should succeed with default values since analysis is disabled
     expect(result.success).toBe(true);
     expect(result.data).toEqual({
-      sampleRate: 44100,
       bitDepth: 16,
-      channels: 1,
       bitrate: 705600,
+      channels: 1,
       isStereo: false,
       isValid: true,
+      sampleRate: 44100,
     });
   });
 

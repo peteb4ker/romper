@@ -12,7 +12,7 @@ import UnscannedKitPrompt from "./UnscannedKitPrompt";
 interface KitDetailsAllProps extends KitDetailsProps {
   onCreateKit?: () => void; // Used by useKitDetailsLogic hook
   onMessage?: (msg: { text: string; type: string }) => void; // Used by useKitDetailsLogic hook
-  onRequestSamplesReload?: () => void | Promise<void>;
+  onRequestSamplesReload?: () => Promise<void> | void;
 }
 
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {

@@ -26,15 +26,15 @@ export async function scanWAVAnalysis(
   }
 
   return {
-    success: true,
     data: {
-      sampleRate: 44100,
       bitDepth: 16,
-      channels: 1,
       bitrate: 705600,
+      channels: 1,
       isStereo: false,
       isValid: true,
+      sampleRate: 44100,
     },
+    success: true,
   };
 }
 
@@ -48,12 +48,12 @@ export async function scanWAVAnalysis(
 function _parseWAVFile(_buffer: any): WAVAnalysisOutput {
   // Disabled - needs main process implementation
   return {
-    sampleRate: 44100,
     bitDepth: 16,
-    channels: 1,
     bitrate: 705600,
+    channels: 1,
     isStereo: false,
     isValid: true,
+    sampleRate: 44100,
   };
 
   /* NOTE: This code is preserved for future main process implementation.
@@ -61,36 +61,36 @@ function _parseWAVFile(_buffer: any): WAVAnalysisOutput {
    * 1. Move this function to electron/main/services/wavAnalysisService.ts
    * 2. Add node-wav dependency for proper WAV parsing
    * 3. Expose via IPC handler for renderer process communication
+   *
+   * // Decode WAV file using node-wav
+   * const result = wav.decode(buffer);
+   *
+   * if (!result || !result.channelData || result.channelData.length === 0) {
+   *   return {
+   *     sampleRate: 0,
+   *     bitDepth: 0,
+   *     channels: 0,
+   *     bitrate: 0,
+   *     isStereo: false,
+   *     isValid: false,
+   *   };
+   * }
+   *
+   * const sampleRate = result.sampleRate;
+   * const channels = result.channelData.length;
+   * // node-wav doesn't directly provide bit depth, so we estimate based on common values
+   * // Most WAV files are either 16-bit or 24-bit
+   * const bitDepth = 16; // Default assumption, could be improved with better detection
+   * const bitrate = sampleRate * channels * bitDepth;
+   * const isStereo = channels === 2;
+   *
+   * return {
+   *   sampleRate,
+   *   bitDepth,
+   *   channels,
+   *   bitrate,
+   *   isStereo,
+   *   isValid: true,
+   * };
    */
-  // Decode WAV file using node-wav
-  const result = wav.decode(buffer);
-
-  if (!result || !result.channelData || result.channelData.length === 0) {
-    return {
-      sampleRate: 0,
-      bitDepth: 0,
-      channels: 0,
-      bitrate: 0,
-      isStereo: false,
-      isValid: false,
-    };
-  }
-
-  const sampleRate = result.sampleRate;
-  const channels = result.channelData.length;
-  // node-wav doesn't directly provide bit depth, so we estimate based on common values
-  // Most WAV files are either 16-bit or 24-bit
-  const bitDepth = 16; // Default assumption, could be improved with better detection
-  const bitrate = sampleRate * channels * bitDepth;
-  const isStereo = channels === 2;
-
-  return {
-    sampleRate,
-    bitDepth,
-    channels,
-    bitrate,
-    isStereo,
-    isValid: true,
-  };
-  */
 }

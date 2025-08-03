@@ -95,7 +95,10 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <FiSettings className="text-lg" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100" id="preferences-title">
+            <h2
+              className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+              id="preferences-title"
+            >
               Preferences
             </h2>
           </div>
@@ -158,7 +161,10 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
                   <div className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <label className="text-sm font-medium text-gray-900 dark:text-gray-100" htmlFor="default-mono-checkbox">
+                        <label
+                          className="text-sm font-medium text-gray-900 dark:text-gray-100"
+                          htmlFor="default-mono-checkbox"
+                        >
                           Default to mono samples
                         </label>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -191,7 +197,10 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
 
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <label className="text-sm font-medium text-gray-900 dark:text-gray-100" htmlFor="confirm-destructive-checkbox">
+                        <label
+                          className="text-sm font-medium text-gray-900 dark:text-gray-100"
+                          htmlFor="confirm-destructive-checkbox"
+                        >
                           Confirm destructive actions
                         </label>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -311,11 +320,17 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2" htmlFor="local-store-path">
+                      <label
+                        className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                        htmlFor="local-store-path"
+                      >
                         Local Store Path
                       </label>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 font-mono text-sm text-gray-700 dark:text-gray-300" id="local-store-path">
+                        <div
+                          className="flex-1 p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 font-mono text-sm text-gray-700 dark:text-gray-300"
+                          id="local-store-path"
+                        >
                           {localStorePath || "No local store configured"}
                         </div>
                         <button
@@ -332,10 +347,16 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2" htmlFor="local-store-status">
+                      <label
+                        className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                        htmlFor="local-store-status"
+                      >
                         Status
                       </label>
-                      <div className="p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 text-sm" id="local-store-status">
+                      <div
+                        className="p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 text-sm"
+                        id="local-store-status"
+                      >
                         {localStoreStatus?.isValid ? (
                           <span className="text-green-600 dark:text-green-400">
                             ✓ Valid local store

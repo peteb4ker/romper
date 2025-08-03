@@ -14,7 +14,7 @@ export function useStepPattern({
   initialPattern,
   kitName,
 }: UseStepPatternParams) {
-  const [stepPattern, setStepPatternState] = useState<number[][] | null>(null);
+  const [stepPattern, setStepPatternState] = useState<null | number[][]>(null);
 
   useEffect(() => {
     setStepPatternState(ensureValidStepPattern(initialPattern));

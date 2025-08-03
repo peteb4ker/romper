@@ -20,9 +20,7 @@ const WizardStepNav: React.FC<WizardStepNavProps> = ({
         return (
           <li className="relative flex-1 flex items-center pl-4" key={label}>
             {isComplete ? (
-              <div
-                className="group flex items-center w-full"
-              >
+              <div className="group flex items-center w-full">
                 <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 group-hover:bg-blue-800 p-2 text-sm">
                   <svg
                     className="w-5 h-5 text-white"
@@ -41,10 +39,7 @@ const WizardStepNav: React.FC<WizardStepNavProps> = ({
                 </span>
               </div>
             ) : isCurrent ? (
-              <div
-                aria-current="step"
-                className="flex items-center w-full"
-              >
+              <div aria-current="step" className="flex items-center w-full">
                 <span className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-blue-600 p-2 text-sm">
                   <span className="text-blue-600">
                     {String(idx + 1).padStart(2, "0")}

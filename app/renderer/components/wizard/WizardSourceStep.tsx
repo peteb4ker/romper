@@ -49,7 +49,9 @@ const WizardSourceStep: React.FC<WizardSourceStepProps> = ({
 
   return (
     <div className="mb-4">
-      <label className="block font-semibold mb-1" htmlFor="source-options">Choose source</label>
+      <label className="block font-semibold mb-1" htmlFor="source-options">
+        Choose source
+      </label>
       <div className="flex gap-4" id="source-options" role="radiogroup">
         {sourceOptions.map((opt) => {
           const isSdCard = opt.value === "sdcard";

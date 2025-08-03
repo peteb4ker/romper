@@ -111,7 +111,7 @@ const KitVoicePanel: React.FC<
   const [dragOverSlot, setDragOverSlot] = useState<null | number>(null);
 
   // Task 22.2: Internal sample drag state
-  const [draggedSample, setDraggedSample] = useState<{
+  const [_draggedSample, setDraggedSample] = useState<{
     sampleName: string;
     slot: number;
     voice: number;
@@ -978,10 +978,7 @@ const KitVoicePanel: React.FC<
   };
 
   return (
-    <div
-      aria-label={`Voice ${voice} panel`}
-      className="flex flex-col"
-    >
+    <div aria-label={`Voice ${voice} panel`} className="flex flex-col">
       <div className="font-semibold mb-1 text-gray-800 dark:text-gray-100 pl-1 flex items-center gap-2">
         <span>{voice}:</span>
         {editing ? (

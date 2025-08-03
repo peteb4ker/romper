@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useReducer,
 } from "react";
 
@@ -301,43 +302,46 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [state.settings.themeMode, applyTheme]);
 
-  const contextValue: SettingsContextProps = useMemo(() => ({
-    clearError,
-    confirmDestructiveActions: state.settings.confirmDestructiveActions,
-    defaultToMonoSamples: state.settings.defaultToMonoSamples,
-    error: state.error,
-    isDarkMode: shouldUseDarkMode(state.settings.themeMode), // Computed property
-    isInitialized: state.isInitialized,
+  const contextValue: SettingsContextProps = useMemo(
+    () => ({
+      clearError,
+      confirmDestructiveActions: state.settings.confirmDestructiveActions,
+      defaultToMonoSamples: state.settings.defaultToMonoSamples,
+      error: state.error,
+      isDarkMode: shouldUseDarkMode(state.settings.themeMode), // Computed property
+      isInitialized: state.isInitialized,
 
-    // State
-    isLoading: state.isLoading,
-    // Current settings
-    localStorePath: state.settings.localStorePath,
-    localStoreStatus: state.localStoreStatus,
+      // State
+      isLoading: state.isLoading,
+      // Current settings
+      localStorePath: state.settings.localStorePath,
+      localStoreStatus: state.localStoreStatus,
 
-    refreshLocalStoreStatus,
-    setConfirmDestructiveActions,
-    setDefaultToMonoSamples,
-    // Actions
-    setLocalStorePath,
-    setThemeMode,
-    themeMode: state.settings.themeMode,
-  }), [
-    clearError,
-    state.settings.confirmDestructiveActions,
-    state.settings.defaultToMonoSamples,
-    state.error,
-    state.settings.themeMode,
-    state.isInitialized,
-    state.isLoading,
-    state.settings.localStorePath,
-    state.localStoreStatus,
-    refreshLocalStoreStatus,
-    setConfirmDestructiveActions,
-    setDefaultToMonoSamples,
-    setLocalStorePath,
-    setThemeMode,
-  ]);
+      refreshLocalStoreStatus,
+      setConfirmDestructiveActions,
+      setDefaultToMonoSamples,
+      // Actions
+      setLocalStorePath,
+      setThemeMode,
+      themeMode: state.settings.themeMode,
+    }),
+    [
+      clearError,
+      state.settings.confirmDestructiveActions,
+      state.settings.defaultToMonoSamples,
+      state.error,
+      state.settings.themeMode,
+      state.isInitialized,
+      state.isLoading,
+      state.settings.localStorePath,
+      state.localStoreStatus,
+      refreshLocalStoreStatus,
+      setConfirmDestructiveActions,
+      setDefaultToMonoSamples,
+      setLocalStorePath,
+      setThemeMode,
+    ],
+  );
 
   return (
     <SettingsContext.Provider value={contextValue}>

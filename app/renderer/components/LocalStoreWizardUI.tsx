@@ -184,7 +184,10 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
 
       {showExistingStoreSelector && (
         <div className="mb-4">
-          <label className="block font-semibold mb-1" htmlFor="existing-store-selector">
+          <label
+            className="block font-semibold mb-1"
+            htmlFor="existing-store-selector"
+          >
             Choose Existing Local Store
           </label>
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
@@ -203,7 +206,6 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
               className="bg-blue-600 text-white px-4 py-2 rounded"
               data-testid="browse-existing-store-btn"
               icon={<FaSearch size={14} />}
-              id="existing-store-selector"
               isSelecting={isSelectingExisting}
               onClick={handleChooseExistingStore}
             >

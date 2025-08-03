@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 
+import type { KnownKitIconType } from "../shared/KitIconRenderer";
+
 export function useKitItem(voiceNames?: Record<number | string, string>) {
   const arr = useMemo(
     () =>
@@ -18,7 +20,7 @@ export function useKitItem(voiceNames?: Record<number | string, string>) {
   );
   const unique = useMemo(() => Array.from(new Set(arr)), [arr]);
 
-  const iconType = useMemo(() => {
+  const iconType = useMemo((): KnownKitIconType => {
     if (!arr.length) return "folder";
     if (unique.length === 1) {
       if (unique[0] === "vox") return "mic";

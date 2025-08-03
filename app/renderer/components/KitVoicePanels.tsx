@@ -114,7 +114,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   ) => {
     const canHandleStereo = isStereo && voice < 4;
     const shouldSetDragInfo = canHandleStereo;
-    
+
     if (shouldSetDragInfo) {
       setStereoDragInfo({
         nextVoice: voice + 1,

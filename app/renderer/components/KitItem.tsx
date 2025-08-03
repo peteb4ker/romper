@@ -42,7 +42,7 @@ const KitItem = React.memo(
       // Add data-testid to root element for unambiguous test selection
       return (
         <div
-          aria-label={`Kit ${kit} - ${!isValid ? 'Invalid kit' : `${sampleCounts[0] + sampleCounts[1] + sampleCounts[2] + sampleCounts[3]} samples`}`}
+          aria-label={`Kit ${kit} - ${!isValid ? "Invalid kit" : `${(sampleCounts?.[0] || 0) + (sampleCounts?.[1] || 0) + (sampleCounts?.[2] || 0) + (sampleCounts?.[3] || 0)} samples`}`}
           aria-selected={isSelected ? "true" : "false"}
           className={`flex flex-col p-2 rounded border text-sm ${
             isValid

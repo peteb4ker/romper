@@ -13,7 +13,7 @@ import { useVoiceAlias } from "./useVoiceAlias";
 interface UseKitDetailsLogicParams extends KitDetailsProps {
   onCreateKit?: () => void;
   onMessage?: (msg: { text: string; type: string }) => void;
-  onRequestSamplesReload?: () => void | Promise<void>;
+  onRequestSamplesReload?: () => Promise<void> | void;
 }
 
 /**

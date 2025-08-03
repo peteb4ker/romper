@@ -23,7 +23,9 @@ export function groupSamplesByVoice(files: string[]): {
       if (voices[voice]) voices[voice].push(f);
     }
   });
-  Object.keys(voices).forEach((v) => voices[+v].sort());
+  Object.keys(voices).forEach((v) =>
+    voices[+v].sort((a, b) => a.localeCompare(b)),
+  );
   return voices;
 }
 
@@ -75,9 +77,8 @@ const VOICE_TYPE_PRECEDENCE = [
   "conga",
 ];
 
-export function inferVoiceTypeFromFilename(filename: string): string | null {
-  const name = filename.replace(/\.[^.]+$/, "").toLowerCase();
-  // Defensive: Only iterate if VOICE_TYPE_KEYWORDS[type] is an array
+// Helper function to check multi-word keyword matches
+function checkMultiWordKeywords(name: string): string | null {
   for (const type of VOICE_TYPE_PRECEDENCE) {
     const keywords = VOICE_TYPE_KEYWORDS[type];
     if (!Array.isArray(keywords)) continue;
@@ -90,6 +91,11 @@ export function inferVoiceTypeFromFilename(filename: string): string | null {
       }
     }
   }
+  return null;
+}
+
+// Helper function to check word boundary keyword matches
+function checkWordBoundaryKeywords(name: string): string | null {
   for (const type of VOICE_TYPE_PRECEDENCE) {
     const keywords = VOICE_TYPE_KEYWORDS[type];
     if (!Array.isArray(keywords)) continue;
@@ -101,6 +107,11 @@ export function inferVoiceTypeFromFilename(filename: string): string | null {
       }
     }
   }
+  return null;
+}
+
+// Helper function to check flexible keyword matches
+function checkFlexibleKeywords(name: string): string | null {
   for (const type of VOICE_TYPE_PRECEDENCE) {
     const keywords = VOICE_TYPE_KEYWORDS[type];
     if (!Array.isArray(keywords)) continue;
@@ -117,6 +128,17 @@ export function inferVoiceTypeFromFilename(filename: string): string | null {
     }
   }
   return null;
+}
+
+export function inferVoiceTypeFromFilename(filename: string): string | null {
+  const name = filename.replace(/\.[^.]+$/, "").toLowerCase();
+
+  // Try different matching strategies in order of specificity
+  return (
+    checkMultiWordKeywords(name) ||
+    checkWordBoundaryKeywords(name) ||
+    checkFlexibleKeywords(name)
+  );
 }
 
 // Compare kit slots by bank and number (e.g. 'A0', 'B10')

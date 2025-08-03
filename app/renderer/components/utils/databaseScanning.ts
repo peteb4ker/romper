@@ -60,6 +60,68 @@ export interface KitScanData {
  * @param progressCallback Optional progress tracking callback
  * @returns Database scan result
  */
+// Helper function to process voice inference results
+async function processVoiceInferenceResults(
+  dbDir: string,
+  kitName: string,
+  voiceNames: Record<number, string>,
+  result: DatabaseScanResult,
+): Promise<void> {
+  for (const voiceNumStr in voiceNames) {
+    const voiceNumber = parseInt(voiceNumStr, 10);
+    const voiceAlias = voiceNames[voiceNumber];
+
+    if (voiceAlias) {
+      if (!dbOps) {
+        result.errors.push({
+          operation: `voice-${voiceNumber}`,
+          error: "Database operations not initialized",
+        });
+        result.success = false;
+        continue;
+      }
+
+      const updateResult = await dbOps.updateVoiceAlias(
+        dbDir,
+        kitName,
+        voiceNumber,
+        voiceAlias,
+      );
+
+      if (updateResult.success) {
+        result.scannedVoices++;
+      } else {
+        result.errors.push({
+          operation: `voice-${voiceNumber}`,
+          error: updateResult.error || "Failed to update voice alias",
+        });
+        result.success = false;
+      }
+    }
+  }
+}
+
+// Helper function to process WAV analysis results
+function processWAVAnalysisResults(
+  wavAnalyses: any[],
+  wavFiles: string[],
+  result: DatabaseScanResult,
+): void {
+  for (let i = 0; i < wavAnalyses.length; i++) {
+    const analysis = wavAnalyses[i];
+    const filePath = wavFiles[i];
+
+    if (analysis.isValid) {
+      result.scannedWavFiles++;
+    } else {
+      result.errors.push({
+        operation: `wav-${filePath}`,
+        error: "Invalid WAV format",
+      });
+    }
+  }
+}
+
 export async function scanKitToDatabase(
   dbDir: string,
   kitScanData: KitScanData,
@@ -75,85 +137,38 @@ export async function scanKitToDatabase(
   };
 
   try {
-    // Execute the full scanning chain
     const scanResult = await executeFullKitScan(
       {
         samples: kitScanData.samples,
         wavFiles: kitScanData.wavFiles,
       },
       progressCallback,
-      "continue", // Continue on errors to get partial results
+      "continue",
     );
 
-    // Store voice inference results in database
     if (scanResult.results.voiceInference) {
-      const voiceNames = scanResult.results.voiceInference.voiceNames;
-
-      for (const voiceNumStr in voiceNames) {
-        const voiceNumber = parseInt(voiceNumStr, 10);
-        const voiceAlias = voiceNames[voiceNumber];
-
-        if (voiceAlias) {
-          if (!dbOps) {
-            result.errors.push({
-              operation: `voice-${voiceNumber}`,
-              error: "Database operations not initialized",
-            });
-            result.success = false;
-            continue;
-          }
-
-          const updateResult = await dbOps.updateVoiceAlias(
-            dbDir,
-            kitScanData.kitName,
-            voiceNumber,
-            voiceAlias,
-          );
-
-          if (updateResult.success) {
-            result.scannedVoices++;
-          } else {
-            result.errors.push({
-              operation: `voice-${voiceNumber}`,
-              error: updateResult.error || "Failed to update voice alias",
-            });
-            result.success = false;
-          }
-        }
-      }
+      await processVoiceInferenceResults(
+        dbDir,
+        kitScanData.kitName,
+        scanResult.results.voiceInference.voiceNames,
+        result,
+      );
     }
 
-    // Store WAV analysis results in database
     if (scanResult.results.wavAnalysis) {
-      const wavAnalyses = scanResult.results.wavAnalysis;
-
-      for (let i = 0; i < wavAnalyses.length; i++) {
-        const analysis = wavAnalyses[i];
-        const filePath = kitScanData.wavFiles[i];
-
-        if (analysis.isValid) {
-          // WAV metadata is stored when samples are inserted
-          // For now, we just count successful analyses
-          result.scannedWavFiles++;
-        } else {
-          result.errors.push({
-            operation: `wav-${filePath}`,
-            error: "Invalid WAV format",
-          });
-        }
-      }
+      processWAVAnalysisResults(
+        scanResult.results.wavAnalysis,
+        kitScanData.wavFiles,
+        result,
+      );
     }
 
-    // RTF artist results are now handled by bank scanning system
-
-    // Include any orchestration errors with their original operation names
     result.errors.push(...scanResult.errors);
 
     if (scanResult.errors.length > 0) {
       result.success = false;
     }
 
-    // Count as scanned only if we successfully processed it without errors
     if (scanResult.errors.length === 0) {
       result.scannedKits = 1;
     }
@@ -163,7 +178,6 @@ export async function scanKitToDatabase(
       operation: "kit-scan",
       error: error instanceof Error ? error.message : String(error),
     });
-    // Don't count as scanned if we hit an exception
   }
 
   return result;
@@ -247,47 +261,16 @@ export async function scanVoiceNamesToDatabase(
     const scanResult = await executeVoiceInferenceScan(samples);
 
     if (scanResult.success && scanResult.results.voiceInference) {
-      const voiceNames = scanResult.results.voiceInference.voiceNames;
-
-      for (const voiceNumStr in voiceNames) {
-        const voiceNumber = parseInt(voiceNumStr, 10);
-        const voiceAlias = voiceNames[voiceNumber];
-
-        if (voiceAlias) {
-          if (!dbOps) {
-            result.errors.push({
-              operation: `voice-${voiceNumber}`,
-              error: "Database operations not initialized",
-            });
-            result.success = false;
-            continue;
-          }
-
-          const updateResult = await dbOps.updateVoiceAlias(
-            dbDir,
-            kitName,
-            voiceNumber,
-            voiceAlias,
-          );
-
-          if (updateResult.success) {
-            result.scannedVoices++;
-          } else {
-            result.errors.push({
-              operation: `voice-${voiceNumber}`,
-              error: updateResult.error || "Failed to update voice alias",
-            });
-            result.success = false;
-          }
-        }
-      }
-
-      // Count as scanned kit since we attempted voice scanning
+      await processVoiceInferenceResults(
+        dbDir,
+        kitName,
+        scanResult.results.voiceInference.voiceNames,
+        result,
+      );
       result.scannedKits = 1;
     } else {
       result.success = false;
       result.errors.push(...scanResult.errors);
-      // Still count as attempted scan
       result.scannedKits = 1;
     }
   } catch (error) {
@@ -296,7 +279,6 @@ export async function scanVoiceNamesToDatabase(
       operation: "voice-scan",
       error: error instanceof Error ? error.message : String(error),
     });
-    // Don't count as scanned if we hit an exception
   }
 
   return result;

@@ -12,6 +12,67 @@ import type {
 } from "./types";
 
 /**
+ * Creates a WAV analysis scanner function
+ * @param wavFiles Array of WAV file paths
+ * @param fileReader File reader function
+ * @returns Scanner function for WAV analysis
+ */
+function createWAVAnalysisScanner(
+  wavFiles: string[],
+  fileReader?: (filePath: string) => Promise<ArrayBuffer>,
+) {
+  return async () => {
+    const results: WAVAnalysisOutput[] = [];
+    const errors: string[] = [];
+
+    for (const filePath of wavFiles) {
+      try {
+        if (!fileReader) {
+          throw new Error("No file reader provided");
+        }
+
+        const wavData = await fileReader(filePath);
+        const analysis = await scanWAVAnalysis({
+          wavData,
+          filePath,
+          fileReader,
+        });
+
+        if (analysis.success && analysis.data) {
+          results.push(analysis.data);
+        } else {
+          errors.push(
+            `Failed to analyze ${filePath}: ${
+              analysis.error || "Unknown error"
+            }`,
+          );
+        }
+      } catch (error) {
+        errors.push(
+          `Error processing ${filePath}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+
+    if (errors.length > 0 && errors.length === wavFiles.length) {
+      return {
+        success: false,
+        error: `All WAV files failed analysis: ${errors.slice(0, 3).join("; ")}${
+          errors.length > 3 ? "..." : ""
+        }`,
+      };
+    }
+
+    return {
+      success: true,
+      data: results,
+    };
+  };
+}
+
+/**
  * Executes a full kit scan including voice inference and WAV analysis
  * @param kitData Kit data containing samples and WAV files
  * @param progressCallback Optional progress callback
@@ -33,60 +94,8 @@ export async function executeFullKitScan(
     },
     {
       name: "wavAnalysis",
-      scanner: async (input: {
-        wavFiles: string[];
-        fileReader?: (filePath: string) => Promise<ArrayBuffer>;
-      }) => {
-        const { wavFiles, fileReader } = input;
-        const results: WAVAnalysisOutput[] = [];
-        const errors: string[] = [];
-
-        for (const filePath of wavFiles) {
-          try {
-            if (!fileReader) {
-              throw new Error("No file reader provided");
-            }
-
-            const wavData = await fileReader(filePath);
-            const analysis = await scanWAVAnalysis({
-              wavData,
-              filePath,
-              fileReader,
-            });
-
-            if (analysis.success && analysis.data) {
-              results.push(analysis.data);
-            } else {
-              errors.push(
-                `Failed to analyze ${filePath}: ${
-                  analysis.error || "Unknown error"
-                }`,
-              );
-            }
-          } catch (error) {
-            errors.push(
-              `Error processing ${filePath}: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            );
-          }
-        }
-
-        if (errors.length > 0 && errors.length === wavFiles.length) {
-          return {
-            success: false,
-            error: `All WAV files failed analysis: ${errors.slice(0, 3).join("; ")}${
-              errors.length > 3 ? "..." : ""
-            }`,
-          };
-        }
-
-        return {
-          success: true,
-          data: results,
-        };
-      },
-      input: { wavFiles: kitData.wavFiles, fileReader: kitData.fileReader },
+      scanner: createWAVAnalysisScanner(kitData.wavFiles, kitData.fileReader),
+      input: {},
     },
   ];
 
@@ -137,60 +146,8 @@ export async function executeWAVAnalysisScan(
   const operations = [
     {
       name: "wavAnalysis",
-      scanner: async (input: {
-        wavFiles: string[];
-        fileReader?: (filePath: string) => Promise<ArrayBuffer>;
-      }) => {
-        const { wavFiles, fileReader } = input;
-        const results: WAVAnalysisOutput[] = [];
-        const errors: string[] = [];
-
-        for (const filePath of wavFiles) {
-          try {
-            if (!fileReader) {
-              throw new Error("No file reader provided");
-            }
-
-            const wavData = await fileReader(filePath);
-            const analysis = await scanWAVAnalysis({
-              wavData,
-              filePath,
-              fileReader,
-            });
-
-            if (analysis.success && analysis.data) {
-              results.push(analysis.data);
-            } else {
-              errors.push(
-                `Failed to analyze ${filePath}: ${
-                  analysis.error || "Unknown error"
-                }`,
-              );
-            }
-          } catch (error) {
-            errors.push(
-              `Error processing ${filePath}: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            );
-          }
-        }
-
-        if (errors.length > 0 && errors.length === wavFiles.length) {
-          return {
-            success: false,
-            error: `All WAV files failed analysis: ${errors.slice(0, 3).join("; ")}${
-              errors.length > 3 ? "..." : ""
-            }`,
-          };
-        }
-
-        return {
-          success: true,
-          data: results,
-        };
-      },
-      input: { wavFiles, fileReader },
+      scanner: createWAVAnalysisScanner(wavFiles, fileReader),
+      input: {},
     },
   ];
 

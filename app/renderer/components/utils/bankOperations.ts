@@ -51,7 +51,7 @@ export function getAvailableBanks(kits: KitWithRelations[]): string[] {
       banks.add(kit.name[0].toUpperCase());
     }
   }
-  return Array.from(banks).sort();
+  return Array.from(banks).sort((a, b) => a.localeCompare(b));
 }
 
 /**

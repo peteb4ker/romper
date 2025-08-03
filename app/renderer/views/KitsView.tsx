@@ -391,9 +391,11 @@ const KitsView = () => {
     };
   }, [selectedKit, reloadCurrentKitSamples]);
 
-  const handleBack = async (scrollToKit?: string) => {
+  // Helper function to parse scroll parameters
+  const parseScrollParameters = (scrollToKit?: string) => {
     let scrollToKitName = null;
     let refresh = false;
+
     if (
       typeof scrollToKit === "object" &&
       scrollToKit !== null &&
@@ -407,71 +409,84 @@ const KitsView = () => {
     } else {
       scrollToKitName = scrollToKit;
     }
-    if (refresh) {
-      // Re-load all kits and samples from database
-      try {
-        // Load kits from database
-        const kitsResult = await window.electronAPI?.getKits?.();
-        if (kitsResult?.success && kitsResult.data) {
-          const kitsWithBanks =
-            kitsResult.data as unknown as KitWithRelations[];
-          setKits(kitsWithBanks);
-          const kitNames = kitsWithBanks.map(
-            (kit: KitWithRelations) => kit.name,
-          );
 
-          // Load samples from database for each kit
-          const samples: { [kit: string]: VoiceSamples } = {};
-          for (const kit of kitNames) {
-            try {
-              const samplesResult =
-                await window.electronAPI?.getAllSamplesForKit?.(kit);
-              if (samplesResult?.success && samplesResult.data) {
-                samples[kit] = groupDbSamplesByVoice(samplesResult.data);
-              } else {
-                samples[kit] = { 1: [], 2: [], 3: [], 4: [] };
-              }
-            } catch (error) {
-              console.warn(`Error loading samples for kit ${kit}:`, error);
-              samples[kit] = { 1: [], 2: [], 3: [], 4: [] };
-            }
-          }
-          setAllKitSamples(samples);
-        } else {
-          console.warn("Failed to load kits from database:", kitsResult?.error);
-          setKits([]);
-          setAllKitSamples({});
+    return { scrollToKitName, refresh };
+  };
+
+  // Helper function to load all kits and samples from database
+  const refreshAllKitsAndSamples = async () => {
+    try {
+      const kitsResult = await window.electronAPI?.getKits?.();
+      if (kitsResult?.success && kitsResult.data) {
+        const kitsWithBanks = kitsResult.data as unknown as KitWithRelations[];
+        setKits(kitsWithBanks);
+        const kitNames = kitsWithBanks.map((kit: KitWithRelations) => kit.name);
+
+        const samples: { [kit: string]: VoiceSamples } = {};
+        for (const kit of kitNames) {
+          samples[kit] = await loadKitSamples(kit);
         }
-      } catch (error) {
-        console.warn("Error loading data from database:", error);
+        setAllKitSamples(samples);
+      } else {
+        console.warn("Failed to load kits from database:", kitsResult?.error);
         setKits([]);
         setAllKitSamples({});
       }
+    } catch (error) {
+      console.warn("Error loading data from database:", error);
+      setKits([]);
+      setAllKitSamples({});
     }
+  };
+
+  // Helper function to load samples for a single kit
+  const loadKitSamples = async (kit: string): Promise<VoiceSamples> => {
+    try {
+      const samplesResult =
+        await window.electronAPI?.getAllSamplesForKit?.(kit);
+      if (samplesResult?.success && samplesResult.data) {
+        return groupDbSamplesByVoice(samplesResult.data);
+      }
+    } catch (error) {
+      console.warn(`Error loading samples for kit ${kit}:`, error);
+    }
+    return { 1: [], 2: [], 3: [], 4: [] };
+  };
+
+  // Helper function to scroll to a specific kit
+  const scrollToKitElement = (scrollToKitName: string) => {
+    setTimeout(() => {
+      const kitEl = document.querySelector(`[data-kit='${scrollToKitName}']`);
+      const container = kitEl && kitEl.closest(".overflow-y-auto");
+
+      if (kitEl && container) {
+        const containerRect = container.getBoundingClientRect();
+        const kitRect = kitEl.getBoundingClientRect();
+        const offset =
+          kitRect.top -
+          containerRect.top +
+          container.scrollTop -
+          containerRect.height / 2 +
+          kitRect.height / 2;
+        container.scrollTo({ top: offset, behavior: "smooth" });
+      } else if (kitEl) {
+        kitEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 100);
+  };
+
+  const handleBack = async (scrollToKit?: string) => {
+    const { scrollToKitName, refresh } = parseScrollParameters(scrollToKit);
+
+    if (refresh) {
+      await refreshAllKitsAndSamples();
+    }
+
     setSelectedKit(null);
     setSelectedKitSamples(null);
+
     if (scrollToKitName) {
-      setTimeout(() => {
-        // Prefer scrolling the KitBrowser's scroll container, not the window
-        const kitEl = document.querySelector(`[data-kit='${scrollToKitName}']`);
-        // Find the KitBrowser scroll container by class or ref
-        const container = kitEl && kitEl.closest(".overflow-y-auto");
-        if (kitEl && container) {
-          // Scroll the container so the kit is centered
-          const containerRect = container.getBoundingClientRect();
-          const kitRect = kitEl.getBoundingClientRect();
-          const offset =
-            kitRect.top -
-            containerRect.top +
-            container.scrollTop -
-            containerRect.height / 2 +
-            kitRect.height / 2;
-          container.scrollTo({ top: offset, behavior: "smooth" });
-        } else if (kitEl) {
-          // Fallback: scroll the kit element into view
-          kitEl.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }, 100);
+      scrollToKitElement(scrollToKitName);
     }
   };
 

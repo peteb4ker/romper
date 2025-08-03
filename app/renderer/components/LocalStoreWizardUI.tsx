@@ -74,18 +74,55 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
     },
   ];
 
-  const currentStep: WizardStep = !state.source
-    ? WizardStep.Source
-    : state.source === "sdcard" && !state.sourceConfirmed
-      ? WizardStep.Source
-      : !state.targetPath || state.targetPath === ""
-        ? WizardStep.Target
-        : WizardStep.Initialize;
+  // Helper function to determine current wizard step
+  const getCurrentStep = (): WizardStep => {
+    if (!state.source) {
+      return WizardStep.Source;
+    }
+    if (state.source === "sdcard" && !state.sourceConfirmed) {
+      return WizardStep.Source;
+    }
+    if (!state.targetPath || state.targetPath === "") {
+      return WizardStep.Target;
+    }
+    return WizardStep.Initialize;
+  };
+
+  const currentStep = getCurrentStep();
   const stepLabels = ["Source", "Target", "Initialize"];
 
   const handleInitialize = async () => {
     const result = await initialize();
     if (result.success && onSuccess) {
+      onSuccess();
+    }
+  };
+
+  // Helper function to validate electronAPI availability
+  const validateElectronAPI = () => {
+    if (!window.electronAPI?.selectExistingLocalStore) {
+      const errorMsg = !window.electronAPI
+        ? "electronAPI not available (app may need restart)"
+        : "selectExistingLocalStore method not found (preload issue)";
+
+      console.error("Debug info:", {
+        electronAPI: !!window.electronAPI,
+        selectExistingLocalStore:
+          !!window.electronAPI?.selectExistingLocalStore,
+        availableMethods: window.electronAPI
+          ? Object.keys(window.electronAPI)
+          : "none",
+      });
+
+      return { isValid: false, error: errorMsg };
+    }
+    return { isValid: true, error: null };
+  };
+
+  // Helper function to handle successful store selection
+  const handleStoreSelectionSuccess = (path: string) => {
+    setLocalStorePath(path);
+    if (onSuccess) {
       onSuccess();
     }
   };
@@ -97,19 +134,9 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
       !!window.electronAPI?.selectExistingLocalStore,
     );
 
-    if (!window.electronAPI?.selectExistingLocalStore) {
-      const errorMsg = !window.electronAPI
-        ? "electronAPI not available (app may need restart)"
-        : "selectExistingLocalStore method not found (preload issue)";
-      setExistingStoreError(errorMsg);
-      console.error("Debug info:", {
-        electronAPI: !!window.electronAPI,
-        selectExistingLocalStore:
-          !!window.electronAPI?.selectExistingLocalStore,
-        availableMethods: window.electronAPI
-          ? Object.keys(window.electronAPI)
-          : "none",
-      });
+    const validation = validateElectronAPI();
+    if (!validation.isValid) {
+      setExistingStoreError(validation.error);
       return;
     }
 
@@ -118,16 +145,12 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = ({
 
     try {
       console.log("Calling selectExistingLocalStore...");
-      const result = await window.electronAPI.selectExistingLocalStore();
+      const result = await window.electronAPI.selectExistingLocalStore?.();
       console.log("selectExistingLocalStore result:", result);
 
-      if (result.success && result.path) {
-        // Save the selected path to settings and close wizard
-        setLocalStorePath(result.path);
-        if (onSuccess) {
-          onSuccess();
-        }
-      } else if (result.error && result.error !== "Selection cancelled") {
+      if (result?.success && result.path) {
+        handleStoreSelectionSuccess(result.path);
+      } else if (result?.error && result.error !== "Selection cancelled") {
         setExistingStoreError(result.error);
       }
     } catch (error) {

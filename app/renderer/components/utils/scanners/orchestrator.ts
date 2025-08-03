@@ -38,34 +38,18 @@ export class ScannerOrchestrator {
       // Report progress before starting operation
       this.progressCallback?.(i, operations.length, operation.name);
 
-      try {
-        const result = await operation.scanner(operation.input);
+      const shouldContinue = await this.executeOperation(
+        operation,
+        results,
+        errors,
+      );
 
-        if (result.success && result.data !== undefined) {
-          results[operation.name] = result.data;
-          completedOperations++;
-        } else {
-          // Operation failed
-          const errorMessage = result.error || "Unknown error";
-          errors.push({ operation: operation.name, error: errorMessage });
+      if (results[operation.name]) {
+        completedOperations++;
+      }
 
-          if (this.errorStrategy === "stop") {
-            // Stop execution on first error
-            break;
-          }
-          // Continue with next operation if strategy is "continue"
-        }
-      } catch (error) {
-        // Unexpected exception
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        errors.push({ operation: operation.name, error: errorMessage });
-
-        if (this.errorStrategy === "stop") {
-          // Stop execution on first error
-          break;
-        }
-        // Continue with next operation if strategy is "continue"
+      if (!shouldContinue) {
+        break;
       }
     }
 
@@ -79,5 +63,52 @@ export class ScannerOrchestrator {
       completedOperations,
       totalOperations: operations.length,
     };
+  }
+
+  /**
+   * Executes a single operation and handles errors
+   * @param operation The operation to execute
+   * @param results Results accumulator
+   * @param errors Errors accumulator
+   * @returns true if should continue, false if should stop
+   */
+  private async executeOperation(
+    operation: ScanOperation,
+    results: Record<string, any>,
+    errors: Array<{ operation: string; error: string }>,
+  ): Promise<boolean> {
+    try {
+      const result = await operation.scanner(operation.input);
+
+      if (result.success && result.data !== undefined) {
+        results[operation.name] = result.data;
+      } else {
+        return this.handleOperationError(operation, result.error, errors);
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      return this.handleOperationError(operation, errorMessage, errors);
+    }
+
+    return true;
+  }
+
+  /**
+   * Handles operation errors and determines if execution should continue
+   * @param operation The failed operation
+   * @param errorMessage The error message
+   * @param errors Errors accumulator
+   * @returns true if should continue, false if should stop
+   */
+  private handleOperationError(
+    operation: ScanOperation,
+    errorMessage: string | undefined,
+    errors: Array<{ operation: string; error: string }>,
+  ): boolean {
+    const message = errorMessage || "Unknown error";
+    errors.push({ operation: operation.name, error: message });
+
+    return this.errorStrategy !== "stop";
   }
 }

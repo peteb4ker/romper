@@ -50,42 +50,50 @@ export function useKitVoicePanels({
     [samples],
   );
 
+  // Helper function to handle downward navigation
+  const handleDownNavigation = useCallback(
+    (currentVoice: number, currentIndex: number) => {
+      const numSamples = getNumSamples(currentVoice);
+      if (currentIndex < numSamples - 1) {
+        setSelectedSampleIdx(currentIndex + 1);
+      } else if (currentVoice < 4 && getNumSamples(currentVoice + 1) > 0) {
+        setSelectedVoice(currentVoice + 1);
+        setSelectedSampleIdx(0);
+      }
+    },
+    [getNumSamples, setSelectedVoice, setSelectedSampleIdx],
+  );
+
+  // Helper function to handle upward navigation
+  const handleUpNavigation = useCallback(
+    (currentVoice: number, currentIndex: number) => {
+      if (currentIndex > 0) {
+        setSelectedSampleIdx(currentIndex - 1);
+      } else if (currentVoice > 1 && getNumSamples(currentVoice - 1) > 0) {
+        setSelectedVoice(currentVoice - 1);
+        setSelectedSampleIdx(getNumSamples(currentVoice - 1) - 1);
+      }
+    },
+    [getNumSamples, setSelectedVoice, setSelectedSampleIdx],
+  );
+
   // Handler for sample navigation (up/down, cross-voice)
   const handleSampleNavigation = useCallback(
     (direction: "up" | "down") => {
       if (sequencerOpen) return; // Disable sample navigation if sequencer is open
-      let v = selectedVoice;
-      let idx = selectedSampleIdx;
-      const numSamples = getNumSamples(v);
+
       if (direction === "down") {
-        if (idx < numSamples - 1) {
-          setSelectedSampleIdx(idx + 1);
-        } else {
-          // Move to first sample of next voice if possible
-          if (v < 4 && getNumSamples(v + 1) > 0) {
-            setSelectedVoice(v + 1);
-            setSelectedSampleIdx(0);
-          }
-        }
+        handleDownNavigation(selectedVoice, selectedSampleIdx);
       } else if (direction === "up") {
-        if (idx > 0) {
-          setSelectedSampleIdx(idx - 1);
-        } else {
-          // Move to last sample of previous voice if possible
-          if (v > 1 && getNumSamples(v - 1) > 0) {
-            setSelectedVoice(v - 1);
-            setSelectedSampleIdx(getNumSamples(v - 1) - 1);
-          }
-        }
+        handleUpNavigation(selectedVoice, selectedSampleIdx);
       }
     },
     [
       selectedVoice,
       selectedSampleIdx,
-      setSelectedVoice,
-      setSelectedSampleIdx,
-      getNumSamples,
       sequencerOpen,
+      handleDownNavigation,
+      handleUpNavigation,
     ],
   );
 

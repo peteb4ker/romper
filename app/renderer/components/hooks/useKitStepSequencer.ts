@@ -11,14 +11,24 @@ export function useKitStepSequencer(initialPattern?: boolean[][]) {
       Array.from({ length: NUM_VOICES }, () => Array(NUM_STEPS).fill(false)),
   );
 
+  // Helper function to toggle a specific step in a voice row
+  const toggleStepInRow = useCallback(
+    (row: boolean[], stepIdx: number) =>
+      row.map((on, s) => (s === stepIdx ? !on : on)),
+    [],
+  );
+
   // Toggle a step on/off
-  const toggleStep = useCallback((voiceIdx: number, stepIdx: number) => {
-    setPattern((prev) =>
-      prev.map((row, v) =>
-        v === voiceIdx ? row.map((on, s) => (s === stepIdx ? !on : on)) : row,
-      ),
-    );
-  }, []);
+  const toggleStep = useCallback(
+    (voiceIdx: number, stepIdx: number) => {
+      setPattern((prev) =>
+        prev.map((row, v) =>
+          v === voiceIdx ? toggleStepInRow(row, stepIdx) : row,
+        ),
+      );
+    },
+    [toggleStepInRow],
+  );
 
   // Set the entire pattern (for loading/saving)
   const setSequencerPattern = useCallback((newPattern: boolean[][]) => {

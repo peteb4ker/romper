@@ -1,7 +1,7 @@
 // Integration tests for fileOperations - cross-platform behavior testing
 import * as fs from "fs";
-import * as path from "path";
 import * as os from "os";
+import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { deleteDbFileWithRetry } from "../fileOperations";
@@ -43,7 +43,7 @@ describe("fileOperations integration tests", () => {
 
     it("should handle non-existent files gracefully", async () => {
       const nonExistentPath = path.join(testDir, "nonexistent.sqlite");
-      
+
       // Should throw when file doesn't exist (expected behavior)
       await expect(deleteDbFileWithRetry(nonExistentPath, 2)).rejects.toThrow();
     });
@@ -64,16 +64,19 @@ describe("fileOperations integration tests", () => {
       }
 
       // The function should still succeed (either delete or rename)
-      await expect(deleteDbFileWithRetry(testDbPath, 3)).resolves.toBeUndefined();
+      await expect(
+        deleteDbFileWithRetry(testDbPath, 3),
+      ).resolves.toBeUndefined();
 
       // File should be gone or renamed
       const fileExists = fs.existsSync(testDbPath);
       if (fileExists) {
         // If original still exists, there should be a renamed backup
         const files = await fs.promises.readdir(testDir);
-        const backupFiles = files.filter(f => 
-          f.startsWith("test.sqlite.") && 
-          (f.includes("corrupted") || f.includes("locked"))
+        const backupFiles = files.filter(
+          (f) =>
+            f.startsWith("test.sqlite.") &&
+            (f.includes("corrupted") || f.includes("locked")),
         );
         expect(backupFiles.length).toBeGreaterThan(0);
       }
@@ -85,8 +88,11 @@ describe("fileOperations integration tests", () => {
     });
 
     it("should work with files containing special characters", async () => {
-      const specialPath = path.join(testDir, "test with spaces & symbols!.sqlite");
-      
+      const specialPath = path.join(
+        testDir,
+        "test with spaces & symbols!.sqlite",
+      );
+
       // Create a test file with special characters
       await fs.promises.writeFile(specialPath, "test content");
       expect(fs.existsSync(specialPath)).toBe(true);
@@ -101,7 +107,7 @@ describe("fileOperations integration tests", () => {
     it("should handle deeply nested paths", async () => {
       const deepDir = path.join(testDir, "very", "deep", "nested", "directory");
       await fs.promises.mkdir(deepDir, { recursive: true });
-      
+
       const deepPath = path.join(deepDir, "test.sqlite");
       await fs.promises.writeFile(deepPath, "test content");
       expect(fs.existsSync(deepPath)).toBe(true);
@@ -123,15 +129,17 @@ describe("fileOperations integration tests", () => {
       // Try to make the parent directory unwritable (platform dependent)
       try {
         await fs.promises.chmod(restrictedDir, 0o555); // read + execute only
-        
+
         // Should fail within reasonable time due to retry limit
         const startTime = Date.now();
-        await expect(deleteDbFileWithRetry(restrictedPath, 2)).rejects.toThrow();
+        await expect(
+          deleteDbFileWithRetry(restrictedPath, 2),
+        ).rejects.toThrow();
         const endTime = Date.now();
-        
+
         // Should not take too long (retry limits should be respected)
         expect(endTime - startTime).toBeLessThan(10000); // 10 seconds max
-        
+
         // Restore permissions for cleanup
         await fs.promises.chmod(restrictedDir, 0o755);
       } catch (error) {
@@ -145,7 +153,7 @@ describe("fileOperations integration tests", () => {
       const files = [
         path.join(testDir, "test1.sqlite"),
         path.join(testDir, "test2.sqlite"),
-        path.join(testDir, "test3.sqlite")
+        path.join(testDir, "test3.sqlite"),
       ];
 
       for (const filePath of files) {
@@ -161,7 +169,7 @@ describe("fileOperations integration tests", () => {
 
     it("should work with large files", async () => {
       // Create a larger test file (1MB)
-      const largeContent = Buffer.alloc(1024 * 1024, 'x');
+      const largeContent = Buffer.alloc(1024 * 1024, "x");
       await fs.promises.writeFile(testDbPath, largeContent);
       expect(fs.existsSync(testDbPath)).toBe(true);
 
@@ -177,15 +185,15 @@ describe("fileOperations integration tests", () => {
 
     it("should handle concurrent access patterns", async () => {
       // Create multiple files and try to delete them concurrently
-      const files = Array.from({ length: 5 }, (_, i) => 
-        path.join(testDir, `concurrent-${i}.sqlite`)
+      const files = Array.from({ length: 5 }, (_, i) =>
+        path.join(testDir, `concurrent-${i}.sqlite`),
       );
 
       // Create all files
       await Promise.all(
-        files.map(filePath => 
-          fs.promises.writeFile(filePath, `content ${filePath}`)
-        )
+        files.map((filePath) =>
+          fs.promises.writeFile(filePath, `content ${filePath}`),
+        ),
       );
 
       // Verify all created
@@ -195,7 +203,7 @@ describe("fileOperations integration tests", () => {
 
       // Delete all concurrently
       await Promise.all(
-        files.map(filePath => deleteDbFileWithRetry(filePath))
+        files.map((filePath) => deleteDbFileWithRetry(filePath)),
       );
 
       // Verify all deleted
@@ -209,13 +217,13 @@ describe("fileOperations integration tests", () => {
     it("should demonstrate platform differences in error handling", async () => {
       // This test documents platform-specific behavior
       const platform = process.platform;
-      
+
       await fs.promises.writeFile(testDbPath, "test content");
-      
+
       // All platforms should be able to delete a normal file
       await expect(deleteDbFileWithRetry(testDbPath)).resolves.toBeUndefined();
       expect(fs.existsSync(testDbPath)).toBe(false);
-      
+
       // Document which platform we tested on
       console.log(`✓ Tested on platform: ${platform}`);
       expect(["win32", "darwin", "linux"].includes(platform)).toBe(true);
@@ -224,13 +232,15 @@ describe("fileOperations integration tests", () => {
     it("should handle platform-specific path separators", async () => {
       // Test that Node.js path normalization works correctly
       const pathWithMixedSeparators = testDbPath.replace(/\//g, path.sep);
-      
+
       // Create file using normalized path
       await fs.promises.writeFile(testDbPath, "test content");
       expect(fs.existsSync(testDbPath)).toBe(true);
-      
+
       // Delete using platform-appropriate separators
-      await expect(deleteDbFileWithRetry(pathWithMixedSeparators)).resolves.toBeUndefined();
+      await expect(
+        deleteDbFileWithRetry(pathWithMixedSeparators),
+      ).resolves.toBeUndefined();
       expect(fs.existsSync(testDbPath)).toBe(false);
     });
   });

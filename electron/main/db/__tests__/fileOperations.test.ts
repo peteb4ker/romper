@@ -85,29 +85,37 @@ describe("fileOperations unit tests", () => {
       });
 
       // Windows implementation should not throw
-      await expect(deleteDbFileWithRetry(testDbPath, 1)).resolves.toBeUndefined();
+      await expect(
+        deleteDbFileWithRetry(testDbPath, 1),
+      ).resolves.toBeUndefined();
 
       Object.defineProperty(process, "platform", { value: originalPlatform });
     });
 
     it("should use different retry patterns based on platform", async () => {
       vi.useFakeTimers();
-      
+
       mockFs.unlinkSync.mockImplementation(() => {
         throw new Error("File in use");
       });
 
       // Test will timeout if delays aren't working
       const promise = deleteDbFileWithRetry(testDbPath, 1);
-      
+
       // Should not resolve immediately due to delays
       let resolved = false;
-      promise.then(() => { resolved = true; }).catch(() => { resolved = true; });
-      
+      promise
+        .then(() => {
+          resolved = true;
+        })
+        .catch(() => {
+          resolved = true;
+        });
+
       expect(resolved).toBe(false);
-      
+
       vi.useRealTimers();
-      
+
       // Let it complete (will throw, but that's expected)
       await expect(promise).rejects.toThrow();
     });

@@ -34,7 +34,92 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # System dependencies for Electron
+      # Run unit tests (in Node.js, no Electron deps needed)
+      - name: Run unit tests with coverage
+        run: npm run test:unit
+        env:
+          CI: true
+
+  # Cross-platform integration tests
+  integration-tests:
+    needs: test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    steps:
+      # Code checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Node.js setup
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # System dependencies for Electron (integration tests only)
+      - name: Install Electron dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3-dev \
+            libatk-bridge2.0-dev \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libgbm1 \
+            libxss1 \
+            libasound2-dev \
+            libgtk-3-0 \
+            xvfb
+
+      # Virtual display setup (Linux only)
+      - name: Setup virtual display
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          sleep 3
+
+      # Run only integration tests
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          CI: true
+          DISPLAY: ${{ matrix.os == 'ubuntu-latest' && ':99' || '' }}
+
+  # Analysis and reporting (runs after both unit and integration tests)
+  analysis:
+    needs: [test, integration-tests]
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Code checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
+
+      # Node.js setup
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # System dependencies for Electron (needed for integration tests in full test run)
       - name: Install Electron dependencies
         run: |
           sudo apt-get update
@@ -58,8 +143,8 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           sleep 3
 
-      # Run tests
-      - name: Run tests with coverage
+      # Run full test suite with merged coverage for analysis
+      - name: Generate merged coverage for analysis
         run: npm run test
         env:
           CI: true

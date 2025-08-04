@@ -13,7 +13,7 @@ import FilePickerButton from "../utils/FilePickerButton";
 interface ChangeLocalStoreDirectoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onMessage?: (msg: { duration?: number; text: string; type?: string }) => void;
+  onMessage?: (text: string, type?: string, duration?: number) => void;
 }
 
 const ChangeLocalStoreDirectoryDialog: React.FC<
@@ -44,10 +44,10 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
         await handleValidateDirectory(path);
       }
     } catch (error) {
-      onMessage?.({
-        text: `Failed to select directory: ${error instanceof Error ? error.message : String(error)}`,
-        type: "error",
-      });
+      onMessage?.(
+        `Failed to select directory: ${error instanceof Error ? error.message : String(error)}`,
+        "error",
+      );
     } finally {
       setIsSelecting(false);
     }
@@ -96,21 +96,21 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
       // Use the settings context which will automatically refresh the app state
       await setLocalStorePath(selectedPath);
 
-      onMessage?.({
-        duration: 5000,
-        text: "Local store directory updated successfully! The application has been refreshed with the new directory.",
-        type: "success",
-      });
+      onMessage?.(
+        "Local store directory updated successfully! The application has been refreshed with the new directory.",
+        "success",
+        5000,
+      );
 
       // Reset dialog state
       setSelectedPath(null);
       setValidationResult(null);
       onClose();
     } catch (error) {
-      onMessage?.({
-        text: `Failed to update directory: ${error instanceof Error ? error.message : String(error)}`,
-        type: "error",
-      });
+      onMessage?.(
+        `Failed to update directory: ${error instanceof Error ? error.message : String(error)}`,
+        "error",
+      );
     } finally {
       setIsUpdating(false);
     }

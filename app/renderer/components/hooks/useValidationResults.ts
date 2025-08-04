@@ -7,7 +7,7 @@ import {
 
 interface UseValidationResultsProps {
   localStorePath?: string;
-  onMessage?: (msg: { duration?: number; text: string; type?: string }) => void;
+  onMessage?: (text: string, type?: string, duration?: number) => void;
 }
 
 export function useValidationResults({
@@ -50,18 +50,18 @@ export function useValidationResults({
       setValidationResult(result);
 
       if (!result.isValid && onMessage) {
-        onMessage({
-          duration: 5000,
-          text: result.errorSummary || "Validation errors found in local store",
-          type: "error",
-        });
+        onMessage(
+          result.errorSummary || "Validation errors found in local store",
+          "error",
+          5000,
+        );
       }
     } catch (error) {
       if (onMessage) {
-        onMessage({
-          text: `Validation error: ${error instanceof Error ? error.message : String(error)}`,
-          type: "error",
-        });
+        onMessage(
+          `Validation error: ${error instanceof Error ? error.message : String(error)}`,
+          "error",
+        );
       }
     } finally {
       setIsLoading(false);
@@ -181,7 +181,7 @@ export function useValidationResults({
           totalScannedSamples,
           totalUpdatedVoices,
         );
-        onMessage(message);
+        onMessage(message.text, message.type, message.duration);
       }
 
       // Re-validate to show updated results
@@ -195,10 +195,10 @@ export function useValidationResults({
       }
     } catch (error) {
       if (onMessage) {
-        onMessage({
-          text: `Rescan error: ${error instanceof Error ? error.message : String(error)}`,
-          type: "error",
-        });
+        onMessage(
+          `Rescan error: ${error instanceof Error ? error.message : String(error)}`,
+          "error",
+        );
       }
     } finally {
       setIsRescanning(false);

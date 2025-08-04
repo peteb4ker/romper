@@ -99,11 +99,11 @@ describe("useValidationResults", () => {
     expect(window.electronAPI.rescanKit).toHaveBeenCalledWith("B2");
 
     // Should show success message
-    expect(mockOnMessage).toHaveBeenCalledWith({
-      duration: 5000,
-      text: "Successfully rescanned 2 kit(s). Found 10 samples, updated 4 voices.",
-      type: "success",
-    });
+    expect(mockOnMessage).toHaveBeenCalledWith(
+      "Successfully rescanned 2 kit(s). Found 10 samples, updated 4 voices.",
+      "success",
+      5000,
+    );
 
     // Should re-validate and close dialog
     expect(window.electronAPI.validateLocalStore).toHaveBeenCalledTimes(3); // Initial + openDialog + after rescan
@@ -142,11 +142,11 @@ describe("useValidationResults", () => {
       mockLocalStorePath,
     );
     expect(result.current.validationResult).toEqual(mockValidationResult);
-    expect(mockOnMessage).toHaveBeenCalledWith({
-      duration: 5000,
-      text: "Found 3 kit(s) with validation errors",
-      type: "error",
-    });
+    expect(mockOnMessage).toHaveBeenCalledWith(
+      "Found 3 kit(s) with validation errors",
+      "error",
+      5000,
+    );
 
     // Check grouped errors
     expect(result.current.groupedErrors).toEqual({
@@ -299,11 +299,11 @@ describe("useValidationResults", () => {
     });
 
     // Should show partial success message
-    expect(mockOnMessage).toHaveBeenCalledWith({
-      duration: 7000,
-      text: "Partially completed rescan. 1 kit(s) succeeded, 1 failed. Found 3 samples.",
-      type: "warning",
-    });
+    expect(mockOnMessage).toHaveBeenCalledWith(
+      "Partially completed rescan. 1 kit(s) succeeded, 1 failed. Found 3 samples.",
+      "warning",
+      7000,
+    );
 
     // Should not close dialog on partial failure
     expect(result.current.isOpen).toBe(true);

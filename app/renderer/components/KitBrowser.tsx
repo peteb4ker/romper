@@ -21,7 +21,7 @@ export interface KitBrowserHandle {
 interface KitBrowserProps {
   kits?: KitWithRelations[];
   localStorePath: null | string;
-  onMessage?: (msg: { duration?: number; text: string; type?: string }) => void;
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: () => void;
   onSelectKit: (kitName: string) => void;
   sampleCounts?: Record<string, [number, number, number, number]>;
@@ -105,16 +105,12 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
 
     React.useEffect(() => {
       if (logic.sdCardWarning && onMessage) {
-        onMessage({
-          duration: 5000,
-          text: logic.sdCardWarning,
-          type: "warning",
-        });
+        onMessage(logic.sdCardWarning, "warning", 5000);
       }
     }, [logic.sdCardWarning, onMessage]);
     React.useEffect(() => {
       if (logic.error && onMessage) {
-        onMessage({ duration: 7000, text: logic.error, type: "error" });
+        onMessage(logic.error, "error", 7000);
       }
     }, [logic.error, onMessage]);
 
@@ -125,11 +121,11 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           const result = await window.electronAPI.toggleKitFavorite?.(kitName);
           if (result?.success) {
             const isFavorite = result.data?.is_favorite;
-            onMessage?.({
-              duration: 2000,
-              text: `Kit ${kitName} ${isFavorite ? "added to" : "removed from"} favorites`,
-              type: "success",
-            });
+            onMessage?.(
+              `Kit ${kitName} ${isFavorite ? "added to" : "removed from"} favorites`,
+              "success",
+              2000,
+            );
             // Refresh kits to update the UI
             props.onRefreshKits?.();
 
@@ -140,16 +136,16 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
               setFavoritesCount(countResult.data);
             }
           } else {
-            onMessage?.({
-              text: `Failed to toggle favorite: ${result?.error || "Unknown error"}`,
-              type: "error",
-            });
+            onMessage?.(
+              `Failed to toggle favorite: ${result?.error || "Unknown error"}`,
+              "error",
+            );
           }
         } catch (error) {
-          onMessage?.({
-            text: `Failed to toggle favorite: ${error instanceof Error ? error.message : String(error)}`,
-            type: "error",
-          });
+          onMessage?.(
+            `Failed to toggle favorite: ${error instanceof Error ? error.message : String(error)}`,
+            "error",
+          );
         }
       },
       [onMessage, props],
@@ -214,10 +210,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       const changeSummary = await generateChangeSummary();
       if (!changeSummary) {
         if (onMessage && syncError) {
-          onMessage({
-            text: `Failed to analyze kits: ${syncError}`,
-            type: "error",
-          });
+          onMessage(`Failed to analyze kits: ${syncError}`, "error");
         }
         return;
       }
@@ -235,14 +228,10 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         setCurrentSyncKit(null);
         setCurrentChangeSummary(null);
         if (onMessage) {
-          onMessage({
-            duration: 3000,
-            text: `All kits synced successfully!`,
-            type: "success",
-          });
+          onMessage(`All kits synced successfully!`, "success", 3000);
         }
       } else if (onMessage && syncError) {
-        onMessage({ text: `Sync failed: ${syncError}`, type: "error" });
+        onMessage(`Sync failed: ${syncError}`, "error");
       }
     };
 

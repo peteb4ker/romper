@@ -15,7 +15,7 @@ import { createActionId } from "../../../../shared/undoTypes";
 export interface UseSampleManagementParams {
   kitName: string;
   onAddUndoAction?: (action: AnyUndoAction) => void; // Callback to add undo actions
-  onMessage?: (msg: { text: string; type: string }) => void;
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   onSamplesChanged?: () => Promise<void>; // Callback to reload samples/kit data
   skipUndoRecording?: boolean; // Skip recording actions (used during undo operations)
 }
@@ -39,10 +39,7 @@ export function useSampleManagement({
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => {
       if (!(window as any).electronAPI?.addSampleToSlot) {
-        onMessage?.({
-          text: "Sample management not available",
-          type: "error",
-        });
+        onMessage?.("Sample management not available", "error");
         return;
       }
 
@@ -56,10 +53,10 @@ export function useSampleManagement({
         );
 
         if (result.success) {
-          onMessage?.({
-            text: `Sample added to voice ${voice}, slot ${slotIndex + 1}`,
-            type: "success",
-          });
+          onMessage?.(
+            `Sample added to voice ${voice}, slot ${slotIndex + 1}`,
+            "success",
+          );
 
           // Record undo action unless explicitly skipped
           if (!skipUndoRecording && onAddUndoAction && result.data) {
@@ -96,16 +93,13 @@ export function useSampleManagement({
             await onSamplesChanged();
           }
         } else {
-          onMessage?.({
-            text: result.error || "Failed to add sample",
-            type: "error",
-          });
+          onMessage?.(result.error || "Failed to add sample", "error");
         }
       } catch (error) {
-        onMessage?.({
-          text: `Failed to add sample: ${error instanceof Error ? error.message : String(error)}`,
-          type: "error",
-        });
+        onMessage?.(
+          `Failed to add sample: ${error instanceof Error ? error.message : String(error)}`,
+          "error",
+        );
       }
     },
     [kitName, onSamplesChanged, onMessage, skipUndoRecording, onAddUndoAction],
@@ -172,10 +166,7 @@ export function useSampleManagement({
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => {
       if (!(window as any).electronAPI?.replaceSampleInSlot) {
-        onMessage?.({
-          text: "Sample management not available",
-          type: "error",
-        });
+        onMessage?.("Sample management not available", "error");
         return;
       }
 
@@ -191,10 +182,10 @@ export function useSampleManagement({
         );
 
         if (result.success) {
-          onMessage?.({
-            text: `Sample replaced in voice ${voice}, slot ${slotIndex + 1}`,
-            type: "success",
-          });
+          onMessage?.(
+            `Sample replaced in voice ${voice}, slot ${slotIndex + 1}`,
+            "success",
+          );
 
           // Record undo action unless explicitly skipped
           if (oldSample && result.data && onAddUndoAction) {
@@ -214,16 +205,13 @@ export function useSampleManagement({
             await onSamplesChanged();
           }
         } else {
-          onMessage?.({
-            text: result.error || "Failed to replace sample",
-            type: "error",
-          });
+          onMessage?.(result.error || "Failed to replace sample", "error");
         }
       } catch (error) {
-        onMessage?.({
-          text: `Failed to replace sample: ${getErrorMessage(error)}`,
-          type: "error",
-        });
+        onMessage?.(
+          `Failed to replace sample: ${getErrorMessage(error)}`,
+          "error",
+        );
       }
     },
     [
@@ -299,10 +287,7 @@ export function useSampleManagement({
   const handleSampleDelete = useCallback(
     async (voice: number, slotIndex: number) => {
       if (!(window as any).electronAPI?.deleteSampleFromSlot) {
-        onMessage?.({
-          text: "Sample management not available",
-          type: "error",
-        });
+        onMessage?.("Sample management not available", "error");
         return;
       }
 
@@ -316,10 +301,10 @@ export function useSampleManagement({
         );
 
         if (result.success) {
-          onMessage?.({
-            text: `Sample deleted from voice ${voice}, slot ${slotIndex + 1}`,
-            type: "success",
-          });
+          onMessage?.(
+            `Sample deleted from voice ${voice}, slot ${slotIndex + 1}`,
+            "success",
+          );
 
           // Record COMPACT_SLOTS action since deletion now triggers automatic compaction
           if (sampleToDelete && onAddUndoAction && result.data) {
@@ -337,16 +322,13 @@ export function useSampleManagement({
             await onSamplesChanged();
           }
         } else {
-          onMessage?.({
-            text: result.error || "Failed to delete sample",
-            type: "error",
-          });
+          onMessage?.(result.error || "Failed to delete sample", "error");
         }
       } catch (error) {
-        onMessage?.({
-          text: `Failed to delete sample: ${getErrorMessage(error)}`,
-          type: "error",
-        });
+        onMessage?.(
+          `Failed to delete sample: ${getErrorMessage(error)}`,
+          "error",
+        );
       }
     },
     [
@@ -363,17 +345,11 @@ export function useSampleManagement({
   const validateMoveAPI = (isCrossKit: boolean) => {
     if (isCrossKit) {
       if (!(window as any).electronAPI?.moveSampleBetweenKits) {
-        onMessage?.({
-          text: "Cross-kit sample move not available",
-          type: "error",
-        });
+        onMessage?.("Cross-kit sample move not available", "error");
         return false;
       }
     } else if (!(window as any).electronAPI?.moveSampleInKit) {
-      onMessage?.({
-        text: "Sample move not available",
-        type: "error",
-      });
+      onMessage?.("Sample move not available", "error");
       return false;
     }
     return true;
@@ -509,10 +485,7 @@ export function useSampleManagement({
       ? `Sample moved from ${kitName} voice ${fromVoice}, slot ${fromSlot + 1} to ${targetKit} voice ${toVoice}, slot ${toSlot + 1}`
       : `Sample moved from voice ${fromVoice}, slot ${fromSlot + 1} to voice ${toVoice}, slot ${toSlot + 1}`;
 
-    onMessage?.({
-      text: moveDescription,
-      type: "success",
-    });
+    onMessage?.(moveDescription, "success");
 
     if (onSamplesChanged) {
       await onSamplesChanged();
@@ -606,16 +579,13 @@ export function useSampleManagement({
             toSlot,
           );
         } else {
-          onMessage?.({
-            text: result.error || "Failed to move sample",
-            type: "error",
-          });
+          onMessage?.(result.error || "Failed to move sample", "error");
         }
       } catch (error) {
-        onMessage?.({
-          text: `Failed to move sample: ${error instanceof Error ? error.message : String(error)}`,
-          type: "error",
-        });
+        onMessage?.(
+          `Failed to move sample: ${error instanceof Error ? error.message : String(error)}`,
+          "error",
+        );
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

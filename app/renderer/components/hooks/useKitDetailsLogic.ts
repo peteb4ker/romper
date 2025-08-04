@@ -12,7 +12,7 @@ import { useVoiceAlias } from "./useVoiceAlias";
 
 interface UseKitDetailsLogicParams extends KitDetailsProps {
   onCreateKit?: () => void;
-  onMessage?: (msg: { text: string; type: string }) => void;
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   onRequestSamplesReload?: () => Promise<void>;
 }
 
@@ -167,13 +167,13 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
 
   React.useEffect(() => {
     if (playback.playbackError && onMessage) {
-      onMessage({ text: playback.playbackError, type: "error" });
+      onMessage(playback.playbackError, "error");
     }
   }, [playback.playbackError, onMessage]);
 
   React.useEffect(() => {
     if (kitError && onMessage) {
-      onMessage({ text: kitError, type: "error" });
+      onMessage(kitError, "error");
     }
   }, [kitError, onMessage]);
 
@@ -181,7 +181,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   React.useEffect(() => {
     if (!onMessage) return;
     const handler = (e: CustomEvent) => {
-      onMessage({ text: e.detail, type: "error" });
+      onMessage(e.detail, "error");
     };
     window.addEventListener("SampleWaveformError", handler as EventListener);
     return () => {

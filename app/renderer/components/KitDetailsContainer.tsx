@@ -1,0 +1,74 @@
+import React from "react";
+
+import type { KitWithRelations } from "../../../shared/db/schema";
+import type { VoiceSamples } from "./kitTypes";
+
+import KitDetails from "./KitDetails";
+
+interface KitDetailsContainerProps {
+  kitIndex: number;
+  kitName: string;
+  kits: KitWithRelations[];
+  onAddUndoAction: (action: any) => void;
+  onBack: (scrollToKit?: any) => Promise<void>;
+  onMessage: (text: string, type?: string, duration?: number) => void;
+  onNextKit: () => void;
+  onPrevKit: () => void;
+  onRequestSamplesReload: () => Promise<void>;
+  samples: VoiceSamples;
+}
+
+/**
+ * Container component for KitDetails
+ * Provides memoization and prop optimization
+ */
+const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
+  const {
+    kitIndex,
+    kitName,
+    kits,
+    onAddUndoAction,
+    onBack,
+    onMessage,
+    onNextKit,
+    onPrevKit,
+    onRequestSamplesReload,
+    samples,
+  } = props;
+
+  // Memoize callbacks to prevent unnecessary re-renders
+  const handleBack = React.useCallback(
+    (scrollToKit?: any) => {
+      return onBack(scrollToKit);
+    },
+    [onBack],
+  );
+
+  const handleMessage = React.useCallback(
+    (text: string, type?: string, duration?: number) => {
+      onMessage(text, type, duration);
+    },
+    [onMessage],
+  );
+
+  const handleRequestSamplesReload = React.useCallback(() => {
+    return onRequestSamplesReload();
+  }, [onRequestSamplesReload]);
+
+  return (
+    <KitDetails
+      kitIndex={kitIndex}
+      kitName={kitName}
+      kits={kits}
+      onAddUndoAction={onAddUndoAction}
+      onBack={handleBack}
+      onMessage={handleMessage}
+      onNextKit={onNextKit}
+      onPrevKit={onPrevKit}
+      onRequestSamplesReload={handleRequestSamplesReload}
+      samples={samples}
+    />
+  );
+};
+
+export default React.memo(KitDetailsContainer);

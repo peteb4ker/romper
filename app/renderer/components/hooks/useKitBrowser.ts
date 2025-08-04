@@ -18,7 +18,7 @@ import {
 interface UseKitBrowserProps {
   kitListRef: RefObject<any>;
   kits: KitWithRelations[];
-  onMessage?: (msg: { duration?: number; text: string; type?: string }) => void;
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: (scrollToKit?: string) => void;
 }
 
@@ -78,11 +78,7 @@ export function useKitBrowser({
       setNewKitSlot("");
       if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
       if (onMessage)
-        onMessage({
-          duration: 4000,
-          text: `Kit ${newKitSlot} created successfully!`,
-          type: "info",
-        });
+        onMessage(`Kit ${newKitSlot} created successfully!`, "info", 4000);
     } catch (err) {
       setNewKitError(formatKitError(err));
     }

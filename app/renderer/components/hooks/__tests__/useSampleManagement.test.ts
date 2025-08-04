@@ -48,10 +48,10 @@ describe("useSampleManagement", () => {
         undefined,
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Sample added to voice 1, slot 1",
-        type: "success",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Sample added to voice 1, slot 1",
+        "success",
+      );
     });
 
     it("handles add sample failure", async () => {
@@ -65,10 +65,10 @@ describe("useSampleManagement", () => {
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
       expect(defaultProps.onSamplesChanged).not.toHaveBeenCalled();
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "File not found",
-        type: "error",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "File not found",
+        "error",
+      );
     });
 
     it("handles API not available", async () => {
@@ -79,10 +79,10 @@ describe("useSampleManagement", () => {
 
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Sample management not available",
-        type: "error",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Sample management not available",
+        "error",
+      );
 
       // Restore for other tests
       (window as any).electronAPI.addSampleToSlot = originalMethod;
@@ -97,10 +97,10 @@ describe("useSampleManagement", () => {
 
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Failed to add sample: Network error",
-        type: "error",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Failed to add sample: Network error",
+        "error",
+      );
     });
   });
 
@@ -123,10 +123,10 @@ describe("useSampleManagement", () => {
         undefined,
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Sample replaced in voice 2, slot 4",
-        type: "success",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Sample replaced in voice 2, slot 4",
+        "success",
+      );
     });
 
     it("handles replace sample failure", async () => {
@@ -140,10 +140,10 @@ describe("useSampleManagement", () => {
       await result.current.handleSampleReplace(2, 3, "/path/to/new.wav");
 
       expect(defaultProps.onSamplesChanged).not.toHaveBeenCalled();
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Invalid format",
-        type: "error",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Invalid format",
+        "error",
+      );
     });
   });
 
@@ -163,10 +163,10 @@ describe("useSampleManagement", () => {
         5,
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Sample deleted from voice 3, slot 6",
-        type: "success",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Sample deleted from voice 3, slot 6",
+        "success",
+      );
     });
 
     it("handles delete sample failure", async () => {
@@ -180,10 +180,10 @@ describe("useSampleManagement", () => {
       await result.current.handleSampleDelete(3, 5);
 
       expect(defaultProps.onSamplesChanged).not.toHaveBeenCalled();
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Sample not found",
-        type: "error",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Sample not found",
+        "error",
+      );
     });
   });
 
@@ -204,10 +204,10 @@ describe("useSampleManagement", () => {
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
       expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalled();
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Sample added to voice 1, slot 1",
-        type: "success",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Sample added to voice 1, slot 1",
+        "success",
+      );
     });
 
     it("works without onMessage callback", async () => {
@@ -257,10 +257,10 @@ describe("useSampleManagement", () => {
         "insert",
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Sample moved from voice 1, slot 6 to voice 1, slot 4",
-        type: "success",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Sample moved from voice 1, slot 6 to voice 1, slot 4",
+        "success",
+      );
     });
 
     it("should move sample within same voice (forward move)", async () => {
@@ -298,10 +298,10 @@ describe("useSampleManagement", () => {
 
       await result.current.handleSampleMove(1, 5, 1, 3, "insert");
 
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Sample not found at specified location",
-        type: "error",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Sample not found at specified location",
+        "error",
+      );
     });
   });
 
@@ -952,10 +952,10 @@ describe("useSampleManagement", () => {
         "insert", // mode
       );
 
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Sample moved from TestKit voice 1, slot 5 to TargetKit voice 2, slot 1",
-        type: "success",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Sample moved from TestKit voice 1, slot 5 to TargetKit voice 2, slot 1",
+        "success",
+      );
 
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
     });
@@ -1051,10 +1051,10 @@ describe("useSampleManagement", () => {
 
       await result.current.handleSampleMove(1, 0, 2, 0, "insert", "TargetKit");
 
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Cross-kit sample move not available",
-        type: "error",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Cross-kit sample move not available",
+        "error",
+      );
     });
 
     it("should handle cross-kit move failure", async () => {
@@ -1074,10 +1074,10 @@ describe("useSampleManagement", () => {
         "NonExistentKit",
       );
 
-      expect(defaultProps.onMessage).toHaveBeenCalledWith({
-        text: "Target kit not found",
-        type: "error",
-      });
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Target kit not found",
+        "error",
+      );
 
       expect(defaultProps.onSamplesChanged).not.toHaveBeenCalled();
     });

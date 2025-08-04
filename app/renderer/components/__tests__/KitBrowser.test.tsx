@@ -553,11 +553,11 @@ describe("KitBrowser", () => {
         </MockMessageDisplayProvider>,
       );
 
-      expect(mockOnMessage).toHaveBeenCalledWith({
-        duration: 7000,
-        text: "Test error message",
-        type: "error",
-      });
+      expect(mockOnMessage).toHaveBeenCalledWith(
+        "Test error message",
+        "error",
+        7000,
+      );
     });
 
     it("displays SD card warnings", () => {
@@ -597,11 +597,11 @@ describe("KitBrowser", () => {
         </MockMessageDisplayProvider>,
       );
 
-      expect(mockOnMessage).toHaveBeenCalledWith({
-        duration: 5000,
-        text: "SD card warning message",
-        type: "warning",
-      });
+      expect(mockOnMessage).toHaveBeenCalledWith(
+        "SD card warning message",
+        "warning",
+        5000,
+      );
     });
   });
 

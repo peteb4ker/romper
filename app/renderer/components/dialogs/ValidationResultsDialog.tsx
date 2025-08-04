@@ -13,7 +13,7 @@ interface ValidationResultsDialogProps {
   isOpen: boolean;
   localStorePath?: string;
   onClose: () => void;
-  onMessage?: (msg: { duration?: number; text: string; type?: string }) => void;
+  onMessage?: (text: string, type?: string, duration?: number) => void;
 }
 
 const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({

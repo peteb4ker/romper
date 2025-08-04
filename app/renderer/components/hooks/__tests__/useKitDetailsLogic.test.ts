@@ -243,10 +243,10 @@ describe("useKitDetailsLogic", () => {
 
     renderHook(() => useKitDetailsLogic(mockProps));
 
-    expect(mockProps.onMessage).toHaveBeenCalledWith({
-      text: "Playback failed",
-      type: "error",
-    });
+    expect(mockProps.onMessage).toHaveBeenCalledWith(
+      "Playback failed",
+      "error",
+    );
   });
 
   it("triggers error reporting useEffect when kit errors occur", () => {
@@ -261,10 +261,10 @@ describe("useKitDetailsLogic", () => {
 
     renderHook(() => useKitDetailsLogic(mockProps));
 
-    expect(mockProps.onMessage).toHaveBeenCalledWith({
-      text: "Kit loading failed",
-      type: "error",
-    });
+    expect(mockProps.onMessage).toHaveBeenCalledWith(
+      "Kit loading failed",
+      "error",
+    );
   });
 
   it("sets up and removes SampleWaveformError event listener", () => {
@@ -295,10 +295,10 @@ describe("useKitDetailsLogic", () => {
     });
     window.dispatchEvent(errorEvent);
 
-    expect(mockProps.onMessage).toHaveBeenCalledWith({
-      text: "Waveform rendering failed",
-      type: "error",
-    });
+    expect(mockProps.onMessage).toHaveBeenCalledWith(
+      "Waveform rendering failed",
+      "error",
+    );
   });
 
   it("manages sequencer focus when sequencer opens", async () => {

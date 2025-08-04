@@ -241,7 +241,7 @@ describe("KitsView", () => {
 
       // Should log the scan action (since handleScanAllKits is mocked)
       expect(console.log).toHaveBeenCalledWith(
-        "[KitsView] Menu scan all kits triggered",
+        "[useKitViewMenuHandlers] Menu scan all kits triggered",
       );
     });
 
@@ -260,7 +260,7 @@ describe("KitsView", () => {
       (globalThis as any).menuEventCallbacks.onScanBanks();
 
       expect(console.log).toHaveBeenCalledWith(
-        "[KitsView] Menu scan banks triggered",
+        "[useKitViewMenuHandlers] Menu scan banks triggered",
       );
     });
 
@@ -279,7 +279,7 @@ describe("KitsView", () => {
       (globalThis as any).menuEventCallbacks.onValidateDatabase();
 
       expect(console.log).toHaveBeenCalledWith(
-        "[KitsView] Menu validate database triggered",
+        "[useKitViewMenuHandlers] Menu validate database triggered",
       );
     });
 
@@ -298,7 +298,7 @@ describe("KitsView", () => {
       (globalThis as any).menuEventCallbacks.onSetupLocalStore();
 
       expect(console.log).toHaveBeenCalledWith(
-        "[KitsView] Menu setup local store triggered",
+        "[useKitViewMenuHandlers] Menu setup local store triggered",
       );
     });
 
@@ -317,7 +317,7 @@ describe("KitsView", () => {
       (globalThis as any).menuEventCallbacks.onChangeLocalStoreDirectory();
 
       expect(console.log).toHaveBeenCalledWith(
-        "[KitsView] Menu change local store directory triggered",
+        "[useKitViewMenuHandlers] Menu change local store directory triggered",
       );
     });
 
@@ -336,7 +336,7 @@ describe("KitsView", () => {
       (globalThis as any).menuEventCallbacks.onPreferences();
 
       expect(console.log).toHaveBeenCalledWith(
-        "[KitsView] Menu preferences triggered",
+        "[useKitViewMenuHandlers] Menu preferences triggered",
       );
     });
 
@@ -355,7 +355,7 @@ describe("KitsView", () => {
       (globalThis as any).menuEventCallbacks.onAbout();
 
       expect(console.log).toHaveBeenCalledWith(
-        "[KitsView] Menu about triggered",
+        "[useKitViewMenuHandlers] Menu about triggered",
       );
     });
   });

@@ -3,9 +3,9 @@ import React from "react";
 import LocalStoreWizardUI from "./LocalStoreWizardUI";
 
 interface LocalStoreWizardModalProps {
-  isAutoTriggered?: boolean;
   isOpen: boolean;
   onClose: () => void;
+  onCloseApp?: () => void;
   onSuccess: () => void;
   setLocalStorePath: (path: string) => void;
 }
@@ -15,22 +15,16 @@ interface LocalStoreWizardModalProps {
  * Handles the modal presentation logic separately from the wizard content
  */
 const LocalStoreWizardModal: React.FC<LocalStoreWizardModalProps> = ({
-  isAutoTriggered = false,
   isOpen,
   onClose,
+  onCloseApp,
   onSuccess,
   setLocalStorePath,
 }) => {
   if (!isOpen) return null;
 
-  const handleClose = () => {
-    if (isAutoTriggered) {
-      // Close the app if user cancels the auto-triggered wizard
-      window.electronAPI?.closeApp?.();
-    } else {
-      onClose();
-    }
-  };
+  // Use onCloseApp if provided, otherwise use onClose
+  const handleClose = onCloseApp || onClose;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

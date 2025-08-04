@@ -38,13 +38,25 @@ export function useKitViewMenuHandlers({
   const kitBrowserRef = useRef<KitBrowserHandle | null>(null);
 
   // Validation results hook for database validation
-  const { openValidationDialog } = useValidationResults({
-    localStorePath: localStorePath ?? "",
-    onMessage: (text, type) => {
-      console.log("[useKitViewMenuHandlers] Validation message:", text);
-      onMessage(text, type);
-    },
-  });
+  const { openValidationDialog: openValidationDialogAsync } =
+    useValidationResults({
+      localStorePath: localStorePath ?? "",
+      onMessage: (text, type) => {
+        console.log("[useKitViewMenuHandlers] Validation message:", text);
+        onMessage(text, type);
+      },
+    });
+
+  // Wrapper to handle async validation dialog opening
+  const openValidationDialog = useCallback(() => {
+    openValidationDialogAsync().catch((error) => {
+      console.error(
+        "[useKitViewMenuHandlers] Error opening validation dialog:",
+        error,
+      );
+      onMessage("Failed to open validation dialog", "error");
+    });
+  }, [openValidationDialogAsync, onMessage]);
 
   // Bank scanning hook
   const { scanBanks } = useBankScanning({
@@ -107,7 +119,7 @@ export function useKitViewMenuHandlers({
     },
     onValidateDatabase: () => {
       console.log("[useKitViewMenuHandlers] Menu validate database triggered");
-      openValidationDialog();
+      void openValidationDialog();
     },
   });
 

@@ -182,9 +182,13 @@ const KitsView: React.FC = () => {
 
       {/* Local Store Wizard Modal */}
       <LocalStoreWizardModal
-        isAutoTriggered={needsLocalStoreSetup}
         isOpen={dialogState.showWizard}
         onClose={dialogState.closeWizard}
+        onCloseApp={
+          needsLocalStoreSetup
+            ? () => window.electronAPI?.closeApp?.()
+            : undefined
+        }
         onSuccess={handleWizardSuccess}
         setLocalStorePath={setLocalStorePath}
       />

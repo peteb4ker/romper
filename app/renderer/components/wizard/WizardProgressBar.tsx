@@ -5,7 +5,7 @@ interface WizardProgressBarProps {
 }
 
 const WizardProgressBar: React.FC<WizardProgressBarProps> = ({ progress }) => {
-  if (!progress || progress?.percent == null) return null;
+  if (progress?.percent == null) return null;
   return (
     <div className="mb-4">
       <label className="block font-semibold mb-1">

@@ -89,6 +89,65 @@ const KIT_ROW_HEIGHT = 72; // px
 const BANK_ROW_HEIGHT = 100; // px, adjust as needed for anchor+kit
 const HEADER_HEIGHT = 5; // px, set to your fixed header height
 
+// Row component moved outside to prevent recreation on each render
+interface RowProps extends ListChildComponentProps {
+  bankNames: Record<string, string>;
+  handleSelectKit: (kitName: string, idx: number) => void;
+  isValidKit: (kit: KitWithRelations) => boolean;
+  kitData: KitWithRelations[] | undefined;
+  kitsToDisplay: KitWithRelations[];
+  onDuplicate: (kit: string) => void;
+  onVisibleBankChange?: (bank: string) => void;
+  rowHasAnchor: boolean[];
+  sampleCounts?: Record<string, [number, number, number, number]>;
+  selectedIdx: null | number;
+}
+
+const Row: React.FC<RowProps> = ({
+  bankNames,
+  handleSelectKit,
+  index,
+  isValidKit,
+  kitData,
+  kitsToDisplay,
+  onDuplicate,
+  onVisibleBankChange,
+  rowHasAnchor,
+  sampleCounts,
+  selectedIdx,
+  style,
+}) => {
+  const kit = kitsToDisplay[index];
+  const kitName = kit.name;
+  const isValid = isValidKit(kit);
+  const showAnchor = rowHasAnchor[index];
+  const isSelected = selectedIdx === index;
+  // Get kit data from kitData array
+  const kitDataItem = kitData?.find((k) => k.name === kitName) ?? null;
+  return (
+    <div style={style}>
+      {showAnchor && (
+        <BankHeader
+          bank={kitName[0]}
+          bankName={bankNames[kitName[0]]}
+          onBankVisible={onVisibleBankChange}
+        />
+      )}
+      <KitItem
+        data-kit={kitName}
+        data-testid={`kit-item-${kitName}`}
+        isSelected={isSelected}
+        isValid={isValid}
+        kit={kitName}
+        kitData={kitDataItem}
+        onDuplicate={() => isValid && onDuplicate(kitName)}
+        onSelect={() => handleSelectKit(kitName, index)}
+        sampleCounts={sampleCounts ? sampleCounts[kitName] : undefined}
+      />
+    </div>
+  );
+};
+
 const KitList = forwardRef<KitListHandle, KitListProps>(
   (
     {
@@ -219,37 +278,18 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       }
     };
 
-    // Virtualized row renderer
-    const Row = ({ index, style }: ListChildComponentProps) => {
-      const kit = kitsToDisplay[index];
-      const kitName = kit.name;
-      const isValid = isValidKit(kit);
-      const showAnchor = rowHasAnchor[index];
-      const isSelected = selectedIdx === index;
-      // Get kit data from kitData array
-      const kitDataItem = kitData?.find((k) => k.name === kitName) ?? null;
-      return (
-        <div style={style}>
-          {showAnchor && (
-            <BankHeader
-              bank={kitName[0]}
-              bankName={bankNames[kitName[0]]}
-              onBankVisible={onVisibleBankChange}
-            />
-          )}
-          <KitItem
-            data-kit={kitName}
-            data-testid={`kit-item-${kitName}`}
-            isSelected={isSelected}
-            isValid={isValid}
-            kit={kitName}
-            kitData={kitDataItem}
-            onDuplicate={() => isValid && onDuplicate(kitName)}
-            onSelect={() => handleSelectKit(kitName, index)}
-            sampleCounts={sampleCounts ? sampleCounts[kitName] : undefined}
-          />
-        </div>
-      );
+    // Row renderer props for external component
+    const rowProps = {
+      bankNames,
+      handleSelectKit,
+      isValidKit,
+      kitData,
+      kitsToDisplay,
+      onDuplicate,
+      onVisibleBankChange,
+      rowHasAnchor,
+      sampleCounts,
+      selectedIdx,
     };
 
     return (
@@ -268,7 +308,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
           ref={listRef}
           width="100%"
         >
-          {Row}
+          {(props) => <Row {...props} {...rowProps} />}
         </VariableSizeList>
       </div>
     );

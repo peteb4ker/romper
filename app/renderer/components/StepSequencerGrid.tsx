@@ -45,7 +45,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
       {Array.from({ length: NUM_VOICES }).map((_, voiceIdx) => (
         <div
           className="flex flex-row items-center gap-1"
-          key={`seq-row-${voiceIdx}`}
+          key={`seq-row-voice-${voiceIdx}`}
           role="row"
           style={{ minWidth: 0 }}
         >
@@ -69,13 +69,27 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
             // LED glow for 'on' steps
             const ledGlow = isOn ? LED_GLOWS[voiceIdx] : "";
 
+            // Extract box shadow logic
+            const getBoxShadow = () => {
+              if (isPlayhead && isFocused) {
+                return "0 0 0 2px #fff, 0 0 0 2.5px #3b82f6";
+              }
+              if (isPlayhead) {
+                return "0 0 0 2px #fff";
+              }
+              if (isFocused) {
+                return "0 0 0 2.5px #60a5fa";
+              }
+              return undefined;
+            };
+
             return (
               <button
                 aria-label={`Toggle step ${stepIdx + 1} for voice ${voiceIdx + 1}`}
                 aria-pressed={isOn}
                 className={`relative w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 rounded-md border-2 mx-0.5 focus:outline-none transition-colors ${onColor} ${ledGlow}`}
                 data-testid={`seq-step-${voiceIdx}-${stepIdx}`}
-                key={`seq-step-${voiceIdx}-${stepIdx}`}
+                key={`seq-step-voice-${voiceIdx}-step-${stepIdx}`}
                 onClick={() => {
                   setFocusedStep({ step: stepIdx, voice: voiceIdx });
                   toggleStep(voiceIdx, stepIdx);
@@ -89,14 +103,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                     className={`absolute inset-0 rounded-md pointer-events-none`}
                     data-testid={isFocused ? "seq-step-focus-ring" : undefined}
                     style={{
-                      boxShadow:
-                        isPlayhead && isFocused
-                          ? "0 0 0 2px #fff, 0 0 0 2.5px #3b82f6"
-                          : isPlayhead
-                            ? "0 0 0 2px #fff"
-                            : isFocused
-                              ? "0 0 0 2.5px #60a5fa"
-                              : undefined,
+                      boxShadow: getBoxShadow(),
                       zIndex: 2,
                     }}
                   />

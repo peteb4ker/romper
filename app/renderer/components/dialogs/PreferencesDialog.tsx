@@ -182,7 +182,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
                           voices.
                         </p>
                       </div>
-                      <label className="flex items-center ml-4">
+                      <div className="flex items-center ml-4">
                         <input
                           checked={defaultToMonoSamples}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
@@ -192,7 +192,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
                           }
                           type="checkbox"
                         />
-                      </label>
+                      </div>
                     </div>
 
                     <div className="flex items-start justify-between">
@@ -208,7 +208,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
                           samples
                         </p>
                       </div>
-                      <label className="flex items-center ml-4">
+                      <div className="flex items-center ml-4">
                         <input
                           checked={confirmDestructiveActions}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
@@ -218,7 +218,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
                           }
                           type="checkbox"
                         />
-                      </label>
+                      </div>
                     </div>
                   </div>
                 </div>

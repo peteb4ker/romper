@@ -171,24 +171,21 @@ describe("LocalStoreWizardModal", () => {
     });
 
     describe("Auto-triggered mode", () => {
-      it("calls window.electronAPI.closeApp when auto-triggered and close is called", () => {
+      it("calls onCloseApp when onCloseApp prop is provided and close is called", () => {
         const mockOnClose = vi.fn();
-        const mockCloseAppLocal = vi.fn();
-        vi.mocked(window.electronAPI.closeApp).mockImplementation(
-          mockCloseAppLocal,
-        );
+        const mockOnCloseApp = vi.fn();
 
         render(
           <LocalStoreWizardModal
             {...defaultProps}
-            isAutoTriggered={true}
             onClose={mockOnClose}
+            onCloseApp={mockOnCloseApp}
           />,
         );
 
         screen.getByTestId("wizard-close").click();
 
-        expect(mockCloseAppLocal).toHaveBeenCalledTimes(1);
+        expect(mockOnCloseApp).toHaveBeenCalledTimes(1);
         expect(mockOnClose).not.toHaveBeenCalled();
       });
 

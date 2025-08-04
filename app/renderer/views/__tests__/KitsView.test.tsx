@@ -60,7 +60,7 @@ vi.mock("../../components/hooks/useStartupActions", () => ({
 
 vi.mock("../../components/hooks/useValidationResults", () => ({
   useValidationResults: vi.fn(() => ({
-    openValidationDialog: vi.fn(),
+    openValidationDialog: vi.fn().mockResolvedValue(undefined),
   })),
 }));
 

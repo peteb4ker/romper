@@ -28,6 +28,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
+    "check-test-coverage": "node scripts/check-test-coverage.js",
     "pre-commit": "npm run typecheck && npm run lint:check && npm run test:husky && npm run build",
     "test:husky": "npm run test:unit:husky && npm run test:integration:husky",
     "test:unit:husky": "NO_COLOR=true npm run test:unit",

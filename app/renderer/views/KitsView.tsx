@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { useDialogState } from "../components/hooks/useDialogState";
 import { useGlobalKeyboardShortcuts } from "../components/hooks/useGlobalKeyboardShortcuts";
@@ -37,6 +37,9 @@ const KitsView: React.FC = () => {
 
   // Dialog state management
   const dialogState = useDialogState();
+
+  // Track if we just completed the wizard to prevent re-opening
+  const [wizardJustCompleted, setWizardJustCompleted] = useState(false);
 
   // Kit data management
   const {
@@ -87,10 +90,17 @@ const KitsView: React.FC = () => {
 
   // Auto-trigger wizard on startup if local store is not configured
   useEffect(() => {
-    if (needsLocalStoreSetup) {
+    if (needsLocalStoreSetup && !wizardJustCompleted) {
       dialogState.setShowWizard(true);
     }
-  }, [needsLocalStoreSetup, dialogState]);
+  }, [needsLocalStoreSetup, dialogState, wizardJustCompleted]);
+
+  // Reset wizardJustCompleted when needsLocalStoreSetup becomes false
+  useEffect(() => {
+    if (!needsLocalStoreSetup && wizardJustCompleted) {
+      setWizardJustCompleted(false);
+    }
+  }, [needsLocalStoreSetup, wizardJustCompleted]);
 
   // Store latest values in refs to avoid recreating event listener
   const selectedKitRef = useRef(navigation.selectedKit);
@@ -137,11 +147,9 @@ const KitsView: React.FC = () => {
 
   // Wizard success handler
   const handleWizardSuccess = useCallback(async () => {
-    console.log("[KitsView] Wizard success callback called");
+    setWizardJustCompleted(true);
     dialogState.closeWizard();
-    console.log("[KitsView] Calling refreshLocalStoreStatus");
     await refreshLocalStoreStatus();
-    console.log("[KitsView] refreshLocalStoreStatus completed");
   }, [dialogState, refreshLocalStoreStatus]);
 
   return (

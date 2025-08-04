@@ -5,7 +5,6 @@ import { GiDrumKit } from "react-icons/gi";
 import { MdAutoAwesome, MdMic } from "react-icons/md";
 import { TiArrowLoop } from "react-icons/ti";
 
-export type KitIconType = KnownKitIconType;
 export type KnownKitIconType =
   | "drumkit"
   | "folder"
@@ -16,7 +15,7 @@ export type KnownKitIconType =
 
 interface KitIconRendererProps {
   className?: string;
-  iconType: KitIconType;
+  iconType: KnownKitIconType;
   size?: "lg" | "md" | "sm";
 }
 

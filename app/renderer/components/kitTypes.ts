@@ -12,7 +12,7 @@ export interface KitDetailsProps {
   onBack: (scrollToKit?: string) => void;
   onNextKit?: () => void;
   onPrevKit?: () => void;
-  onRequestSamplesReload?: () => void;
+  onRequestSamplesReload?: () => Promise<void>;
   samples?: null | VoiceSamples;
 }
 

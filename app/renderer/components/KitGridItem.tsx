@@ -90,10 +90,16 @@ const KitGridItem = React.memo(
         ? "ring-2 ring-blue-400 dark:ring-blue-300 border-blue-400 dark:border-blue-300 bg-blue-50 dark:bg-blue-900"
         : "";
 
+      // Calculate sample count for aria-label
+      const totalSamples = (sampleCounts?.[0] || 0) + (sampleCounts?.[1] || 0) + 
+                          (sampleCounts?.[2] || 0) + (sampleCounts?.[3] || 0);
+      const statusText = !isValid ? "Invalid kit" : `${totalSamples} samples`;
+      const ariaLabel = `Kit ${kit} - ${statusText}`;
+
       // Compact vertical card layout with optimized spacing
       return (
         <div
-          aria-label={`Kit ${kit} - ${!isValid ? "Invalid kit" : `${(sampleCounts?.[0] || 0) + (sampleCounts?.[1] || 0) + (sampleCounts?.[2] || 0) + (sampleCounts?.[3] || 0)} samples`}`}
+          aria-label={ariaLabel}
           aria-selected={isSelected ? "true" : "false"}
           className={`relative flex flex-col justify-between p-2 rounded border text-sm h-full w-full ${kitTypeStyles.border} ${kitTypeStyles.background} ${
             isValid
@@ -103,6 +109,12 @@ const KitGridItem = React.memo(
           data-kit={kit}
           data-testid={`kit-item-${kit}`}
           onClick={onSelect}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSelect();
+            }
+          }}
           ref={ref}
           role="option"
           tabIndex={isSelected ? 0 : -1}

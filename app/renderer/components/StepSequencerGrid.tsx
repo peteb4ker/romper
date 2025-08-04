@@ -31,6 +31,14 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   setFocusedStep,
   toggleStep,
 }) => {
+  // Voice background colors mapping
+  const VOICE_BG_COLORS = {
+    0: "bg-blue-900/60",
+    1: "bg-green-900/60",
+    2: "bg-yellow-900/60",
+    3: "bg-pink-900/60",
+  } as const;
+
   return (
     <div
       aria-label="Step sequencer grid"
@@ -50,7 +58,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
           style={{ minWidth: 0 }}
         >
           <span
-            className={`flex items-center justify-center w-8 text-center font-bold rounded w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 ${["bg-blue-900/60", "bg-green-900/60", "bg-yellow-900/60", "bg-pink-900/60"][voiceIdx]} text-gray-200 border border-gray-900 dark:border-slate-900`}
+            className={`flex items-center justify-center w-8 text-center font-bold rounded w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 ${VOICE_BG_COLORS[voiceIdx as keyof typeof VOICE_BG_COLORS] || "bg-gray-900/60"} text-gray-200 border border-gray-900 dark:border-slate-900`}
             data-testid={`seq-voice-label-${voiceIdx}`}
           >
             {voiceIdx + 1}

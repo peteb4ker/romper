@@ -57,7 +57,6 @@ const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
             <span className="font-semibold">
               not affiliated with Squarp SAS
             </span>
-            .
           </p>
           <p className="mb-2">
             Licensed under the{" "}
@@ -69,7 +68,6 @@ const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
             >
               MIT license
             </a>
-            .
           </p>
           <button
             className="inline-flex items-center gap-2 px-4 py-2 mt-2 bg-gradient-to-r from-cyan-600 to-amber-400 text-gray-900 font-bold rounded-full shadow-lg hover:scale-105 hover:from-cyan-400 hover:to-amber-200 transition-transform focus:outline-none focus:ring-2 focus:ring-cyan-400"

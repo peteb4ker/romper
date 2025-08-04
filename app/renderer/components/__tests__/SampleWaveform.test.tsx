@@ -353,11 +353,9 @@ describe("SampleWaveform", () => {
   });
 
   it("handles synchronous AudioContext close errors gracefully", async () => {
-    // Mock AudioContext.close to throw synchronously
+    // Mock AudioContext.close to return a rejected Promise
     const mockAudioContext = {
-      close: vi.fn(() => {
-        throw new Error("Synchronous close failed");
-      }),
+      close: vi.fn(() => Promise.reject(new Error("Synchronous close failed"))),
       createBufferSource: vi.fn(() => ({
         buffer: null,
         connect: vi.fn(),

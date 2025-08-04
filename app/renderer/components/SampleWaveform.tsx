@@ -83,15 +83,10 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     return () => {
       cancelled = true;
       if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-        try {
-          const closeResult = audioCtxRef.current.close();
-          // Handle promise properly without boolean check
-          Promise.resolve(closeResult).catch(() => {
-            // Ignore close errors
-          });
-        } catch {
-          // Ignore synchronous close errors
-        }
+        const result = audioCtxRef.current.close();
+        result?.catch(() => {
+          // Ignore close errors
+        });
       }
     };
   }, [kitName, voiceNumber, slotNumber]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
@@ -215,15 +210,10 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     return () => {
       stopPlayback();
       if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-        try {
-          const closeResult = audioCtxRef.current.close();
-          // Handle promise properly without boolean check
-          Promise.resolve(closeResult).catch(() => {
-            // Ignore close errors
-          });
-        } catch {
-          // Ignore synchronous close errors
-        }
+        const result = audioCtxRef.current.close();
+        result?.catch(() => {
+          // Ignore close errors
+        });
       }
     };
   }, []);

@@ -88,7 +88,13 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
       aria-labelledby="preferences-title"
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          handleBackdropClick(e as any);
+        }
+      }}
       role="dialog"
+      tabIndex={-1}
     >
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
         {/* Header */}

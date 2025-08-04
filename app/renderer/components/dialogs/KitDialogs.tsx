@@ -35,7 +35,7 @@ const KitDialogs: React.FC<KitDialogsProps> = ({
     {showNewKit && (
       <div className="mb-2 flex flex-col gap-2 bg-slate-200 dark:bg-slate-800 p-2 rounded">
         <label className="text-xs font-semibold">
-          Kit Slot (A0-Z99):
+          Kit Slot (A0-Z99):{" "}
           <input
             autoFocus
             className="ml-2 px-2 py-1 rounded border border-gray-300 dark:border-slate-700 text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100"

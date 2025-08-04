@@ -264,7 +264,6 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
         } else {
           e.preventDefault();
         }
-        return;
       }
     };
 

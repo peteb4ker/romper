@@ -91,8 +91,11 @@ const KitGridItem = React.memo(
         : "";
 
       // Calculate sample count for aria-label
-      const totalSamples = (sampleCounts?.[0] || 0) + (sampleCounts?.[1] || 0) + 
-                          (sampleCounts?.[2] || 0) + (sampleCounts?.[3] || 0);
+      const totalSamples =
+        (sampleCounts?.[0] || 0) +
+        (sampleCounts?.[1] || 0) +
+        (sampleCounts?.[2] || 0) +
+        (sampleCounts?.[3] || 0);
       const statusText = !isValid ? "Invalid kit" : `${totalSamples} samples`;
       const ariaLabel = `Kit ${kit} - ${statusText}`;
 

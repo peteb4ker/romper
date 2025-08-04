@@ -40,8 +40,11 @@ const KitItem = React.memo(
         ? "ring-2 ring-blue-400 dark:ring-blue-300 border-blue-400 dark:border-blue-300 bg-blue-50 dark:bg-blue-900"
         : "";
       // Calculate sample count for aria-label
-      const totalSamples = (sampleCounts?.[0] || 0) + (sampleCounts?.[1] || 0) + 
-                          (sampleCounts?.[2] || 0) + (sampleCounts?.[3] || 0);
+      const totalSamples =
+        (sampleCounts?.[0] || 0) +
+        (sampleCounts?.[1] || 0) +
+        (sampleCounts?.[2] || 0) +
+        (sampleCounts?.[3] || 0);
       const statusText = !isValid ? "Invalid kit" : `${totalSamples} samples`;
       const ariaLabel = `Kit ${kit} - ${statusText}`;
 

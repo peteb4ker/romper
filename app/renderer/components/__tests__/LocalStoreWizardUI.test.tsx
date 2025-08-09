@@ -46,7 +46,7 @@ afterEach(() => {
 describe("LocalStoreWizardUI", () => {
   it("does not show progress bar if not initializing", async () => {
     vi.resetModules();
-    vi.doMock("../hooks/useLocalStoreWizard", () => ({
+    vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () => getMockUseLocalStoreWizard(),
     }));
     const { default: LocalStoreWizardUI } = await import(
@@ -58,13 +58,13 @@ describe("LocalStoreWizardUI", () => {
 
   it("shows error message when error is present", async () => {
     vi.resetModules();
-    vi.doMock("../hooks/useLocalStoreWizard", () => ({
-      useLocalStoreWizard: () =>
-        getMockUseLocalStoreWizard({
-          canInitialize: true,
-          errorMessage: "fail",
-          state: { error: "fail", isInitializing: false },
-        }),
+    const mockHook = getMockUseLocalStoreWizard({
+      canInitialize: true,
+      errorMessage: "fail",
+      state: { error: "fail", isInitializing: false },
+    });
+    vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
+      useLocalStoreWizard: () => mockHook,
     }));
     const { default: LocalStoreWizardUI } = await import(
       "../LocalStoreWizardUI"
@@ -75,7 +75,7 @@ describe("LocalStoreWizardUI", () => {
 
   it("shows progress bar when initializing", async () => {
     vi.resetModules();
-    vi.doMock("../hooks/useLocalStoreWizard", () => ({
+    vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () =>
         getMockUseLocalStoreWizard({
           progress: { file: "foo.zip", percent: 42, phase: "Downloading" },
@@ -95,7 +95,7 @@ describe("LocalStoreWizardUI", () => {
 
   it("shows source selection first, hides target path input until source is selected", async () => {
     vi.resetModules();
-    vi.doMock("../hooks/useLocalStoreWizard", () => ({
+    vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () =>
         getMockUseLocalStoreWizard({
           state: {
@@ -117,7 +117,7 @@ describe("LocalStoreWizardUI", () => {
 
   it("shows target path input after source is selected", async () => {
     vi.resetModules();
-    vi.doMock("../hooks/useLocalStoreWizard", () => ({
+    vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () =>
         getMockUseLocalStoreWizard({
           canInitialize: true,
@@ -140,7 +140,7 @@ describe("LocalStoreWizardUI", () => {
 
   it("should auto-fill SD card path and not show picker when config.localStorePath is set", async () => {
     configMock.localStorePath = "/mock/sdcard";
-    vi.doMock("../hooks/useLocalStoreWizard", () => ({
+    vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () =>
         getMockUseLocalStoreWizard({
           setSdCardPath: vi.fn(),

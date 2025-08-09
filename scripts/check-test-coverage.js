@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-/* global process */
-
 /**
  * Check Test Coverage Script
  *
@@ -72,10 +70,32 @@ function getExpectedTestPaths(sourceFile) {
  */
 function getTestStatus(sourceFile) {
   const testPaths = getExpectedTestPaths(sourceFile);
+  const dir = dirname(sourceFile);
+  const name = basename(sourceFile, extname(sourceFile));
+
+  // Check for both .ts and .tsx test files for better compatibility
+  const unitPathTs = join(dir, "__tests__", `${name}.test.ts`);
+  const unitPathTsx = join(dir, "__tests__", `${name}.test.tsx`);
+  const integrationPathTs = join(
+    dir,
+    "__tests__",
+    `${name}.integration.test.ts`,
+  );
+  const integrationPathTsx = join(
+    dir,
+    "__tests__",
+    `${name}.integration.test.tsx`,
+  );
 
   return {
-    hasUnit: existsSync(join(ROOT_DIR, testPaths.unit)),
-    hasIntegration: existsSync(join(ROOT_DIR, testPaths.integration)),
+    hasUnit:
+      existsSync(join(ROOT_DIR, testPaths.unit)) ||
+      existsSync(join(ROOT_DIR, unitPathTs)) ||
+      existsSync(join(ROOT_DIR, unitPathTsx)),
+    hasIntegration:
+      existsSync(join(ROOT_DIR, testPaths.integration)) ||
+      existsSync(join(ROOT_DIR, integrationPathTs)) ||
+      existsSync(join(ROOT_DIR, integrationPathTsx)),
     unitPath: testPaths.unit,
     integrationPath: testPaths.integration,
   };

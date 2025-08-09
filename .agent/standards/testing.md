@@ -1,5 +1,154 @@
 # Testing Standards (Vitest)
 
+## Core Principle: Test the Right Thing at the Right Level
+
+**CRITICAL**: Unit tests should test pure business logic, not integrations. Functions that are just wrappers around external systems (database, filesystem, network) need integration tests, not unit tests.
+
+## Test Categories and Scope
+
+### 1. Unit Tests (`*.test.ts`)
+**Purpose**: Test pure business logic and functions in isolation
+
+**What to test:**
+- Pure functions (no side effects)
+- Business logic calculations
+- Data transformations
+- Utility functions
+- Error handling logic
+- Algorithm correctness
+
+**What NOT to test:**
+- Database operations (use integration tests)
+- File system operations (use integration tests)
+- Network calls (use integration tests)
+- External service integrations
+- React component rendering (use component tests)
+- Functions that are just `withDb()` wrappers
+
+**Example - CORRECT Unit Test:**
+```typescript
+// ✅ GOOD: Testing pure function logic
+describe("buildDeleteConditions", () => {
+  it("should build conditions with kit name only", () => {
+    const mockCondition = { kit_name: "Test Kit" };
+    vi.mocked(eq).mockReturnValue(mockCondition);
+    
+    const result = buildDeleteConditions("Test Kit");
+    
+    expect(eq).toHaveBeenCalledWith(samples.kit_name, "Test Kit");
+    expect(result).toBe(mockCondition);
+  });
+});
+
+// ❌ BAD: Testing database integration in unit test
+describe("addKit", () => {
+  it("should insert kit into database", () => {
+    // This is testing withDb integration, not business logic
+    const result = addKit("/db/path", kitData);
+    expect(result.success).toBe(true); // This will fail - needs real DB
+  });
+});
+```
+
+### 2. Integration Tests (`*.integration.test.ts`)
+**Purpose**: Test integration between components and external systems
+
+**What to test:**
+- Database CRUD operations
+- Functions using `withDb()`
+- File system operations
+- API endpoints
+- IPC handlers (actual functionality)
+- Data persistence
+- Transaction handling
+
+**Example - Integration Test for Database Operations:**
+```typescript
+describe("Kit Database Operations (Integration)", () => {
+  let testDb: string;
+  
+  beforeEach(async () => {
+    testDb = await createTestDatabase();
+  });
+  
+  afterEach(async () => {
+    await cleanupTestDatabase(testDb);
+  });
+  
+  it("should create kit with voices in database", async () => {
+    // Test the actual database operation
+    const result = await addKit(testDb, testKit);
+    
+    expect(result.success).toBe(true);
+    
+    // Verify actual database state
+    const kit = await getKit(testDb, testKit.name);
+    expect(kit.data).toMatchObject(testKit);
+    
+    // Verify voices were created
+    const voices = await getVoices(testDb, testKit.name);
+    expect(voices.data).toHaveLength(4);
+  });
+});
+```
+
+### 3. Component Tests (`*.test.tsx`)
+**Purpose**: Test React component behavior and user interactions
+
+**What to test:**
+- Component rendering with different props
+- User interactions (clicks, input)
+- Conditional rendering
+- Error states
+- Loading states
+- Accessibility
+
+**What NOT to test:**
+- Hook implementation details
+- Internal state management specifics
+- Business logic (test in unit tests)
+
+### 4. IPC Handler Tests
+
+**IMPORTANT**: IPC handler tests should be split into two types:
+
+#### Registration Tests (Unit)
+Test that handlers are registered with correct names:
+```typescript
+describe("registerSampleIpcHandlers", () => {
+  it("should register all required handlers", () => {
+    const mockIpcMain = { handle: vi.fn() };
+    
+    registerSampleIpcHandlers(mockSettings);
+    
+    expect(mockIpcMain.handle).toHaveBeenCalledWith(
+      "move-sample-in-kit",
+      expect.any(Function)
+    );
+    // Don't test what the handler does, just that it's registered
+  });
+});
+```
+
+#### Handler Logic Tests (Integration)
+Test the actual handler functionality with real services:
+```typescript
+describe("Sample IPC Handlers (Integration)", () => {
+  it("should move sample within kit", async () => {
+    const handler = createSampleMoveHandler(testDb);
+    
+    const result = await handler(event, {
+      fromSlot: 1,
+      toSlot: 2,
+      kitName: "TestKit"
+    });
+    
+    expect(result.success).toBe(true);
+    // Verify actual database state changed
+  });
+});
+```
+
 ## Test Organization
 
 ### File Structure and Naming

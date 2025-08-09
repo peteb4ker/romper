@@ -10,7 +10,7 @@ import {
 } from "react-router-dom";
 import { toast } from "sonner";
 
-import { useMessageDisplay } from "./components/hooks/useMessageDisplay";
+import { useMessageDisplay } from "./components/hooks/shared/useMessageDisplay";
 import MessageDisplay from "./components/MessageDisplay";
 import { MessageDisplayContext } from "./components/MessageDisplayContext";
 import StatusBar from "./components/StatusBar";

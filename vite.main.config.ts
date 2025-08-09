@@ -79,6 +79,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "."),
+      "@romper/shared": resolve(__dirname, "shared"),
       "node:buffer": "buffer",
       "node:child_process": "child_process",
       "node:crypto": "crypto",

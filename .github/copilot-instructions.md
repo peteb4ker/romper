@@ -9,7 +9,7 @@
 - Always use `import` statements for importing modules and never use `require`. Refactor any usage of `require` to use ES module `import` syntax, even in test files.
 - When requirements are not being met, first try to isolate why by adding or updating tests.
 - Do not assert that a piece of functionality is working at the end of your messages.
-- if a tsx file grows to more than 350 lines, it should be refactored into multiple logical components.
+- if a tsx file grows to more than 400 lines, it should be refactored into multiple logical components.
 
 ## Build Validation
 - After making any code changes, always run `npx tsc --noEmit` to check for TypeScript compilation errors before marking a task complete.

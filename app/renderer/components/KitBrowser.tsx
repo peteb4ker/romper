@@ -1,14 +1,16 @@
-import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
-import { toast } from "sonner";
+import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import type { KitWithRelations } from "../../../shared/db/schema";
+import React, { useEffect, useImperativeHandle, useRef } from "react";
 
 import KitDialogs from "./dialogs/KitDialogs";
 import SyncUpdateDialog from "./dialogs/SyncUpdateDialog";
 import ValidationResultsDialog from "./dialogs/ValidationResultsDialog";
-import { useKitBrowser } from "./hooks/useKitBrowser";
-import { useKitScan } from "./hooks/useKitScan";
-import { useSyncUpdate } from "./hooks/useSyncUpdate";
+import { useKitBrowser } from "./hooks/kit-management/useKitBrowser";
+import { useKitDialogs } from "./hooks/kit-management/useKitDialogs";
+import { useKitFilters } from "./hooks/kit-management/useKitFilters";
+import { useKitKeyboardNav } from "./hooks/kit-management/useKitKeyboardNav";
+import { useKitScan } from "./hooks/kit-management/useKitScan";
+import { useKitSync } from "./hooks/kit-management/useKitSync";
 import KitBankNav from "./KitBankNav";
 import KitBrowserHeader from "./KitBrowserHeader";
 import KitGrid, { KitGridHandle } from "./KitGrid";
@@ -32,30 +34,23 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
   (props, ref) => {
     const { onMessage, setLocalStorePath } = props;
     const kitGridRef = useRef<KitGridHandle>(null);
-    const [showValidationDialog, setShowValidationDialog] = useState(false);
 
-    // Task 20.1.4: Favorites filter state
-    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-    const [favoritesCount, setFavoritesCount] = useState(0);
-
-    // Task 20.2.2: Modified filter state
-    const [showModifiedOnly, setShowModifiedOnly] = useState(false);
-    const [modifiedCount, setModifiedCount] = useState(0);
-
-    // Task 20.1.4 & 20.2.2: Filter kits based on active filters
-    const filteredKits = React.useMemo(() => {
-      let kits = props.kits ?? [];
-
-      if (showFavoritesOnly) {
-        kits = kits.filter((kit) => kit.is_favorite);
-      }
-
-      if (showModifiedOnly) {
-        kits = kits.filter((kit) => kit.modified_since_sync);
-      }
-
-      return kits;
-    }, [props.kits, showFavoritesOnly, showModifiedOnly]);
+    // Filter management hook
+    const filters = useKitFilters({
+      kits: props.kits,
+      onMessage,
+      onRefreshKits: props.onRefreshKits,
+    });
+    const {
+      favoritesCount,
+      filteredKits,
+      handleToggleFavorite,
+      handleToggleFavoritesFilter,
+      handleToggleModifiedFilter,
+      modifiedCount,
+      showFavoritesOnly,
+      showModifiedOnly,
+    } = filters;
 
     const logic = useKitBrowser({
       kitListRef: kitGridRef,
@@ -88,97 +83,48 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       showNewKit,
     } = logic;
 
-    const [showLocalStoreWizard, setShowLocalStoreWizard] =
-      React.useState(false);
-    const [showSyncDialog, setShowSyncDialog] = useState(false);
-    const [currentSyncKit, setCurrentSyncKit] = useState<null | string>(null);
-    const [currentChangeSummary, setCurrentChangeSummary] = useState<any>(null);
-
-    // Sync functionality
+    // Dialog management hook
+    const dialogs = useKitDialogs({ onMessage, setLocalStorePath });
     const {
-      clearError: clearSyncError,
-      error: syncError,
-      generateChangeSummary,
-      isLoading: isSyncLoading,
-      startSync,
-    } = useSyncUpdate();
+      handleCloseValidationDialog,
+      handleShowLocalStoreWizard,
+      handleShowValidationDialog,
+      localStoreWizardProps,
+      showLocalStoreWizard,
+      showValidationDialog,
+    } = dialogs;
 
-    React.useEffect(() => {
+    // Sync functionality hook
+    const sync = useKitSync({ onMessage });
+    const {
+      currentChangeSummary,
+      currentSyncKit,
+      handleCloseSyncDialog,
+      handleConfirmSync,
+      handleSyncToSdCard,
+      isSyncLoading,
+      showSyncDialog,
+    } = sync;
+
+    // Keyboard navigation hook
+    useKitKeyboardNav({
+      focusedKit,
+      globalBankHotkeyHandler,
+      onToggleFavorite: handleToggleFavorite,
+    });
+
+    // Effect handlers for messages
+    useEffect(() => {
       if (logic.sdCardWarning && onMessage) {
         onMessage(logic.sdCardWarning, "warning", 5000);
       }
     }, [logic.sdCardWarning, onMessage]);
-    React.useEffect(() => {
+
+    useEffect(() => {
       if (logic.error && onMessage) {
         onMessage(logic.error, "error", 7000);
       }
     }, [logic.error, onMessage]);
-
-    // Task 20.1.2: Handler for favorites toggle
-    const handleToggleFavorite = React.useCallback(
-      async (kitName: string) => {
-        try {
-          const result = await window.electronAPI.toggleKitFavorite?.(kitName);
-          if (result?.success) {
-            const isFavorite = result.data?.is_favorite;
-            onMessage?.(
-              `Kit ${kitName} ${isFavorite ? "added to" : "removed from"} favorites`,
-              "success",
-              2000,
-            );
-            // Refresh kits to update the UI
-            props.onRefreshKits?.();
-
-            // Update favorites count
-            const countResult =
-              await window.electronAPI.getFavoriteKitsCount?.();
-            if (countResult?.success && typeof countResult.data === "number") {
-              setFavoritesCount(countResult.data);
-            }
-          } else {
-            onMessage?.(
-              `Failed to toggle favorite: ${result?.error || "Unknown error"}`,
-              "error",
-            );
-          }
-        } catch (error) {
-          onMessage?.(
-            `Failed to toggle favorite: ${error instanceof Error ? error.message : String(error)}`,
-            "error",
-          );
-        }
-      },
-      [onMessage, props],
-    );
-
-    // Task 20.1.3: Favorite toggle keyboard shortcut handler
-    const favoritesKeyboardHandler = React.useCallback(
-      (e: KeyboardEvent) => {
-        // Don't handle hotkeys when typing in inputs
-        const target = e.target as Element;
-        if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") {
-          return;
-        }
-
-        // F key to toggle favorite on focused kit
-        if (e.key.toLowerCase() === "f" && focusedKit) {
-          e.preventDefault();
-          e.stopPropagation();
-          handleToggleFavorite(focusedKit);
-        }
-      },
-      [focusedKit, handleToggleFavorite],
-    );
-
-    // Register global A-Z navigation for bank selection and kit focus
-    React.useEffect(() => {
-      window.addEventListener("keydown", globalBankHotkeyHandler);
-      window.addEventListener("keydown", favoritesKeyboardHandler);
-      return () => {
-        window.removeEventListener("keydown", globalBankHotkeyHandler);
-        window.removeEventListener("keydown", favoritesKeyboardHandler);
-      };
-    }, [globalBankHotkeyHandler, favoritesKeyboardHandler]);
 
     // Handler for KitBankNav and KitGrid keyboard navigation
     const focusBankInKitGrid = (bank: string) => {
@@ -200,80 +146,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       kits,
       onRefreshKits: props.onRefreshKits,
     });
-
-    // Sync handlers
-    const handleSyncToSdCard = async () => {
-      // Sync all kits to SD card
-      setCurrentSyncKit("All Kits");
-
-      // Generate change summary before showing dialog
-      const changeSummary = await generateChangeSummary();
-      if (!changeSummary) {
-        if (onMessage && syncError) {
-          onMessage(`Failed to analyze kits: ${syncError}`, "error");
-        }
-        return;
-      }
-
-      setCurrentChangeSummary(changeSummary);
-      setShowSyncDialog(true);
-    };
-
-    const handleConfirmSync = async () => {
-      if (!currentChangeSummary) return;
-
-      const success = await startSync(currentChangeSummary);
-      if (success) {
-        setShowSyncDialog(false);
-        setCurrentSyncKit(null);
-        setCurrentChangeSummary(null);
-        if (onMessage) {
-          onMessage(`All kits synced successfully!`, "success", 3000);
-        }
-      } else if (onMessage && syncError) {
-        onMessage(`Sync failed: ${syncError}`, "error");
-      }
-    };
-
-    // Task 20.1.4: Fetch favorites count when kits change
-    useEffect(() => {
-      const fetchFavoritesCount = async () => {
-        try {
-          const result = await window.electronAPI.getFavoriteKitsCount?.();
-          if (result?.success && typeof result.data === "number") {
-            setFavoritesCount(result.data);
-          }
-        } catch (error) {
-          console.error("Failed to fetch favorites count:", error);
-        }
-      };
-
-      fetchFavoritesCount();
-    }, [props.kits]); // Re-fetch when kits change
-
-    // Task 20.2.2: Calculate modified count when kits change
-    useEffect(() => {
-      const modifiedKits =
-        props.kits?.filter((kit) => kit.modified_since_sync) ?? [];
-      setModifiedCount(modifiedKits.length);
-    }, [props.kits]);
-
-    // Task 20.1.4: Toggle favorites filter
-    const handleToggleFavoritesFilter = () => {
-      setShowFavoritesOnly(!showFavoritesOnly);
-    };
-
-    // Task 20.2.2: Toggle modified filter
-    const handleToggleModifiedFilter = () => {
-      setShowModifiedOnly(!showModifiedOnly);
-    };
-
-    const handleCloseSyncDialog = () => {
-      setShowSyncDialog(false);
-      setCurrentSyncKit(null);
-      setCurrentChangeSummary(null);
-      clearSyncError();
-    };
 
     // Expose handleScanAllKits through ref for parent components
     useImperativeHandle(ref, () => ({
@@ -299,12 +171,12 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           nextKitSlot={nextKitSlot}
           onCreateNextKit={handleCreateNextKit}
           onScanAllKits={handleScanAllKits}
-          onShowLocalStoreWizard={() => setShowLocalStoreWizard(true)}
+          onShowLocalStoreWizard={handleShowLocalStoreWizard}
           onShowNewKit={() => setShowNewKit(true)}
           onSyncToSdCard={handleSyncToSdCard}
           onToggleFavoritesFilter={handleToggleFavoritesFilter}
           onToggleModifiedFilter={handleToggleModifiedFilter}
-          onValidateLocalStore={() => setShowValidationDialog(true)}
+          onValidateLocalStore={handleShowValidationDialog}
           showFavoritesOnly={showFavoritesOnly}
           showModifiedOnly={showModifiedOnly}
         />
@@ -359,16 +231,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
               <h2 className="text-xl font-bold mb-4">
                 Romper Local Store Setup
               </h2>
-              <LocalStoreWizardUI
-                onClose={() => setShowLocalStoreWizard(false)}
-                onSuccess={() => {
-                  setShowLocalStoreWizard(false);
-                  toast.success("Local store initialized successfully!", {
-                    duration: 5000,
-                  });
-                }}
-                setLocalStorePath={setLocalStorePath || (() => {})}
-              />
+              <LocalStoreWizardUI {...localStoreWizardProps} />
             </div>
           </div>
         )}
@@ -378,7 +241,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           <ValidationResultsDialog
             isOpen={showValidationDialog}
             localStorePath={props.localStorePath || undefined}
-            onClose={() => setShowValidationDialog(false)}
+            onClose={handleCloseValidationDialog}
             onMessage={props.onMessage}
           />
         )}

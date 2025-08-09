@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import { useDialogState } from "../components/hooks/useDialogState";
-import { useGlobalKeyboardShortcuts } from "../components/hooks/useGlobalKeyboardShortcuts";
-import { useKit } from "../components/hooks/useKit";
-import { useKitDataManager } from "../components/hooks/useKitDataManager";
-import { useKitNavigation } from "../components/hooks/useKitNavigation";
-import { useKitViewMenuHandlers } from "../components/hooks/useKitViewMenuHandlers";
-import { useMessageDisplay } from "../components/hooks/useMessageDisplay";
-import { useStartupActions } from "../components/hooks/useStartupActions";
+import { useKit } from "../components/hooks/kit-management/useKit";
+import { useKitDataManager } from "../components/hooks/kit-management/useKitDataManager";
+import { useKitNavigation } from "../components/hooks/kit-management/useKitNavigation";
+import { useKitViewMenuHandlers } from "../components/hooks/kit-management/useKitViewMenuHandlers";
+import { useDialogState } from "../components/hooks/shared/useDialogState";
+import { useGlobalKeyboardShortcuts } from "../components/hooks/shared/useGlobalKeyboardShortcuts";
+import { useMessageDisplay } from "../components/hooks/shared/useMessageDisplay";
+import { useStartupActions } from "../components/hooks/shared/useStartupActions";
 import KitBrowserContainer from "../components/KitBrowserContainer";
 import KitDetailsContainer from "../components/KitDetailsContainer";
 import KitViewDialogs from "../components/KitViewDialogs";
@@ -153,7 +153,7 @@ const KitsView: React.FC = () => {
   }, [dialogState, refreshLocalStoreStatus]);
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0" data-testid="kits-view">
       {navigation.selectedKit && navigation.selectedKitSamples ? (
         <KitDetailsContainer
           kitIndex={navigation.currentKitIndex}

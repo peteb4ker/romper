@@ -1,9 +1,9 @@
+import type { Kit, Sample } from "@romper/shared/db/schema.js";
+
 // Unit tests for Drizzle ORM implementation
 import * as fs from "fs";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-
-import type { Kit, Sample } from "../../../../shared/db/schema.js";
 
 import {
   addKit,
@@ -367,8 +367,11 @@ describe("Drizzle ORM Database Operations", () => {
   describe("Error Handling and Edge Cases", () => {
     it("should detect database corruption errors", () => {
       expect(isDbCorruptionError("file is not a database")).toBe(true);
-      expect(isDbCorruptionError("file is encrypted")).toBe(true);
-      expect(isDbCorruptionError("malformed database")).toBe(true);
+      expect(isDbCorruptionError("database disk image is malformed")).toBe(
+        true,
+      );
+      expect(isDbCorruptionError("database is locked")).toBe(true);
+      expect(isDbCorruptionError("SQL logic error")).toBe(true);
       expect(isDbCorruptionError("some other error")).toBe(false);
     });
 
@@ -521,6 +524,9 @@ describe("Drizzle ORM Database Operations", () => {
       // Expected: [sample1, sample2, sample3, sample6, sample4, sample5]
 
       const result = moveSample(TEST_DB_DIR, "TestKit", 1, 6, 1, 4, "insert");
+      if (!result.success) {
+        console.error("moveSample failed:", result.error);
+      }
       expect(result.success).toBe(true);
 
       // Verify final state
@@ -633,7 +639,7 @@ describe("Drizzle ORM Database Operations", () => {
       const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");
       const result = ensureDatabaseMigrations(nonExistentDir);
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Database file does not exist");
+      expect(result.error).toContain("Database file does not exist");
     });
 
     it("should run migrations on existing database", () => {

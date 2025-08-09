@@ -15,14 +15,14 @@ import { render } from "../../../../tests/utils/renderWithProviders";
 import KitDetails from "../KitDetails";
 
 // Mock modules before importing them
-vi.mock("../hooks/useKitDetailsLogic", () => ({
+vi.mock("../hooks/kit-management/useKitDetailsLogic", () => ({
   useKitDetailsLogic: vi.fn(),
 }));
 
 // UnscannedKitPrompt feature was removed during database migration
 
 // Import after mocking and access the mocked function
-import { useKitDetailsLogic } from "../hooks/useKitDetailsLogic";
+import { useKitDetailsLogic } from "../hooks/kit-management/useKitDetailsLogic";
 const mockUseKitDetailsLogic = useKitDetailsLogic as ReturnType<typeof vi.fn>;
 
 // Add Mock type for TypeScript

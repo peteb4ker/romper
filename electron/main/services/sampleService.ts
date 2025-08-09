@@ -1,9 +1,9 @@
+import type { DbResult, NewSample, Sample } from "@romper/shared/db/schema.js";
+
+import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as fs from "fs";
 import * as path from "path";
 
-import type { DbResult, NewSample, Sample } from "../../../shared/db/schema.js";
-
-import { getErrorMessage } from "../../../shared/errorUtils.js";
 import {
   addSample,
   deleteSamples,
@@ -488,9 +488,31 @@ export class SampleService {
       // Mark kit as modified if operation succeeded
       if (moveResult.success) {
         markKitAsModified(dbPath, kitName);
+
+        // Transform the result to match the expected return type
+        // Convert null to undefined for replacedSample
+        const result: DbResult<{
+          affectedSamples: ({ original_slot_number: number } & Sample)[];
+          movedSample: Sample;
+          replacedSample?: Sample;
+        }> = {
+          data: {
+            affectedSamples: moveResult.data!.affectedSamples,
+            movedSample: moveResult.data!.movedSample,
+            ...(moveResult.data!.replacedSample && {
+              replacedSample: moveResult.data!.replacedSample,
+            }),
+          },
+          success: true,
+        };
+        return result;
       }
 
-      return moveResult;
+      // Handle case where moveResult failed
+      return {
+        error: moveResult.error || "Move operation failed",
+        success: false,
+      };
     } catch (error) {
       return {
         error: `Failed to move sample: ${getErrorMessage(error)}`,

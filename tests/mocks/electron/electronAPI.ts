@@ -116,16 +116,19 @@ export const createElectronAPIMock = (
       "4 tom.wav",
     ]);
   }),
+  moveSampleBetweenKits: vi.fn().mockResolvedValue({ success: true }),
+  // Move operations
+  moveSampleInKit: vi.fn().mockResolvedValue({ success: true }),
   onSamplePlaybackEnded: vi.fn(),
   onSamplePlaybackError: vi.fn(),
   onSyncProgress: vi.fn(),
   openExternal: vi.fn().mockResolvedValue(undefined),
+
   playSample: vi.fn().mockResolvedValue(undefined),
   readFile: vi.fn().mockResolvedValue({
     data: new ArrayBuffer(1024),
     success: true,
   }),
-
   readSettings: vi
     .fn()
     .mockResolvedValue({ localStorePath: "/mock/local/store" }),

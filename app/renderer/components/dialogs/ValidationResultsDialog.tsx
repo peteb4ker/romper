@@ -1,3 +1,4 @@
+import { KitValidationError } from "@romper/shared/db/schema.js";
 import React from "react";
 import {
   FiAlertTriangle,
@@ -6,8 +7,7 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { KitValidationError } from "../../../../shared/db/schema.js";
-import { useValidationResults } from "../hooks/useValidationResults";
+import { useValidationResults } from "../hooks/shared/useValidationResults";
 
 interface ValidationResultsDialogProps {
   isOpen: boolean;

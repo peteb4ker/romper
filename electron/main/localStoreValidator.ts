@@ -1,10 +1,10 @@
-import fs from "fs";
-import path from "path";
-
 import type {
   KitValidationError,
   LocalStoreValidationDetailedResult,
-} from "../../shared/db/schema.js";
+} from "@romper/shared/db/schema.js";
+
+import fs from "fs";
+import path from "path";
 
 import {
   getKits,

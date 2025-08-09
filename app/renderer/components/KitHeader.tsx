@@ -1,3 +1,5 @@
+import type { Kit, KitWithRelations } from "@romper/shared/db/schema";
+
 import React from "react";
 import {
   FiArrowLeft,
@@ -9,8 +11,6 @@ import {
   FiLock,
   FiRefreshCw,
 } from "react-icons/fi";
-
-import type { Kit, KitWithRelations } from "../../../shared/db/schema";
 
 interface KitHeaderProps {
   editingKitAlias: boolean;

@@ -3,11 +3,11 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the hook before importing the component
-vi.mock("../hooks/useKitStepSequencerLogic", () => ({
+vi.mock("../hooks/kit-management/useKitStepSequencerLogic", () => ({
   useKitStepSequencerLogic: vi.fn(),
 }));
 
-import { useKitStepSequencerLogic } from "../hooks/useKitStepSequencerLogic";
+import { useKitStepSequencerLogic } from "../hooks/kit-management/useKitStepSequencerLogic";
 import KitStepSequencer from "../KitStepSequencer";
 
 const mockUseKitStepSequencerLogic = useKitStepSequencerLogic as ReturnType<

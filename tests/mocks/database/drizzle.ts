@@ -1,6 +1,6 @@
-import { vi } from "vitest";
+import type { DbResult } from "@romper/shared/db/schema";
 
-import type { DbResult } from "../../../shared/db/schema";
+import { vi } from "vitest";
 
 /**
  * Centralized database mock factory for Drizzle ORM operations

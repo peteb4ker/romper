@@ -1,84 +1,134 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import React from "react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import Spinner from "../Spinner";
 
 describe("Spinner", () => {
-  it("should render with default props", () => {
-    const { container } = render(<Spinner />);
-    const spinner = container.querySelector("svg");
-    expect(spinner).toBeInTheDocument();
-    expect(spinner).toHaveAttribute("width", "20");
-    expect(spinner).toHaveAttribute("height", "20");
+  afterEach(() => {
+    cleanup();
   });
 
-  it("should render with custom size", () => {
-    const { container } = render(<Spinner size={40} />);
-    const spinner = container.querySelector("svg");
-    expect(spinner).toHaveAttribute("width", "40");
-    expect(spinner).toHaveAttribute("height", "40");
-  });
+  describe("rendering", () => {
+    it("should render without crashing", () => {
+      const { container } = render(<Spinner />);
+      const svg = container.querySelector("svg");
+      expect(svg).toBeInTheDocument();
+    });
 
-  it("should apply custom className", () => {
-    const { container } = render(<Spinner className="custom-class" />);
-    const spinner = container.querySelector("svg");
-    expect(spinner).toHaveClass("custom-class");
-    expect(spinner).toHaveClass("animate-spin");
-    expect(spinner).toHaveClass("text-white");
-  });
+    it("should render SVG with default size", () => {
+      const { container } = render(<Spinner />);
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveAttribute("width", "20");
+      expect(svg).toHaveAttribute("height", "20");
+    });
 
-  it("should render with data-testid", () => {
-    render(<Spinner data-testid="loading-spinner" />);
-    const spinner = screen.getByTestId("loading-spinner");
-    expect(spinner).toBeInTheDocument();
-  });
+    it("should render with custom size", () => {
+      const { container } = render(<Spinner size={32} />);
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveAttribute("width", "32");
+      expect(svg).toHaveAttribute("height", "32");
+    });
 
-  it("should have correct SVG structure", () => {
-    const { container } = render(<Spinner />);
-    const spinner = container.querySelector("svg");
+    it("should apply custom className", () => {
+      const { container } = render(<Spinner className="custom-class" />);
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveClass("custom-class");
+    });
 
-    // Check SVG attributes
-    expect(spinner).toHaveAttribute("viewBox", "0 0 24 24");
-    expect(spinner).toHaveAttribute("fill", "none");
-    expect(spinner).toHaveAttribute("xmlns", "http://www.w3.org/2000/svg");
-
-    // Check inline styles
-    expect(spinner).toHaveStyle({
-      display: "inline-block",
-      verticalAlign: "middle",
+    it("should apply data-testid when provided", () => {
+      render(<Spinner data-testid="loading-spinner" />);
+      expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
     });
   });
 
-  it("should contain circle and path elements", () => {
-    const { container } = render(<Spinner />);
-    const circle = container.querySelector("circle");
-    const path = container.querySelector("path");
+  describe("SVG structure", () => {
+    it("should have correct viewBox", () => {
+      const { container } = render(<Spinner />);
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveAttribute("viewBox", "0 0 24 24");
+    });
 
-    expect(circle).toBeInTheDocument();
-    expect(path).toBeInTheDocument();
+    it("should have circle element with correct attributes", () => {
+      const { container } = render(<Spinner />);
+      const circle = container.querySelector("circle");
+      expect(circle).toBeInTheDocument();
+      expect(circle).toHaveAttribute("cx", "12");
+      expect(circle).toHaveAttribute("cy", "12");
+      expect(circle).toHaveAttribute("r", "10");
+      expect(circle).toHaveAttribute("stroke", "currentColor");
+      expect(circle).toHaveAttribute("stroke-width", "4");
+      expect(circle).toHaveClass("opacity-25");
+    });
 
-    // Check circle attributes
-    expect(circle).toHaveAttribute("cx", "12");
-    expect(circle).toHaveAttribute("cy", "12");
-    expect(circle).toHaveAttribute("r", "10");
-    expect(circle).toHaveAttribute("stroke", "currentColor");
-    expect(circle).toHaveAttribute("stroke-width", "4");
-    expect(circle).toHaveClass("opacity-25");
-
-    // Check path attributes
-    expect(path).toHaveAttribute("fill", "currentColor");
-    expect(path).toHaveAttribute("d", "M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z");
-    expect(path).toHaveClass("opacity-75");
+    it("should have path element with correct attributes", () => {
+      const { container } = render(<Spinner />);
+      const path = container.querySelector("path");
+      expect(path).toBeInTheDocument();
+      expect(path).toHaveAttribute("d", "M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z");
+      expect(path).toHaveAttribute("fill", "currentColor");
+      expect(path).toHaveClass("opacity-75");
+    });
   });
 
-  it("should combine default and custom classes correctly", () => {
-    const { container } = render(
-      <Spinner className="my-custom-class another-class" />,
-    );
-    const spinner = container.querySelector("svg");
-    expect(spinner).toHaveClass("animate-spin");
-    expect(spinner).toHaveClass("text-white");
-    expect(spinner).toHaveClass("my-custom-class");
-    expect(spinner).toHaveClass("another-class");
+  describe("CSS classes", () => {
+    it("should have default classes", () => {
+      const { container } = render(<Spinner />);
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveClass("animate-spin");
+      expect(svg).toHaveClass("text-white");
+    });
+
+    it("should combine default and custom classes", () => {
+      const { container } = render(<Spinner className="text-blue-500 ml-2" />);
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveClass("animate-spin");
+      expect(svg).toHaveClass("text-white");
+      expect(svg).toHaveClass("text-blue-500");
+      expect(svg).toHaveClass("ml-2");
+    });
+  });
+
+  describe("inline styles", () => {
+    it("should have correct inline styles", () => {
+      const { container } = render(<Spinner />);
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveStyle({
+        display: "inline-block",
+        verticalAlign: "middle",
+      });
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle size of 0", () => {
+      const { container } = render(<Spinner size={0} />);
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveAttribute("width", "0");
+      expect(svg).toHaveAttribute("height", "0");
+    });
+
+    it("should handle very large sizes", () => {
+      const { container } = render(<Spinner size={1000} />);
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveAttribute("width", "1000");
+      expect(svg).toHaveAttribute("height", "1000");
+    });
+
+    it("should handle empty className", () => {
+      const { container } = render(<Spinner className="" />);
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveClass("animate-spin");
+      expect(svg).toHaveClass("text-white");
+    });
+
+    it("should handle undefined props gracefully", () => {
+      const { container } = render(
+        <Spinner className={undefined} size={undefined} />,
+      );
+      const svg = container.querySelector("svg");
+      expect(svg).toHaveAttribute("width", "20");
+      expect(svg).toHaveAttribute("height", "20");
+    });
   });
 });

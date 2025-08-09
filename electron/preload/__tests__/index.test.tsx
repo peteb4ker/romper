@@ -25,7 +25,7 @@ const mockElectron = {
 vi.mock("electron", () => mockElectron);
 vi.doMock("electron", () => mockElectron);
 
-vi.mock("../../shared/db/types.js", () => ({
+vi.mock("@romper/shared/db/types.js", () => ({
   Kit: {},
   NewKit: {},
   NewSample: {},

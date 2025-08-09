@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "../../../../tests/utils/renderWithProviders";
 
 // Mock problematic imports that can cause hanging
-vi.mock("../hooks/useLocalStoreWizard", () => ({
+vi.mock("../hooks/wizard/useLocalStoreWizard", () => ({
   useLocalStoreWizard: () => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     progress: null,
@@ -26,7 +26,7 @@ vi.mock("../hooks/useLocalStoreWizard", () => ({
   }),
 }));
 
-vi.mock("../hooks/useKitScan", () => ({
+vi.mock("../hooks/kit-management/useKitScan", () => ({
   useKitScan: () => ({
     handleScanAllKits: vi.fn(),
     rescanAllVoiceNames: vi.fn(),
@@ -34,13 +34,13 @@ vi.mock("../hooks/useKitScan", () => ({
   }),
 }));
 
-vi.mock("../hooks/useKitBrowser", () => ({
+vi.mock("../hooks/kit-management/useKitBrowser", () => ({
   useKitBrowser: vi.fn(),
 }));
 
 import React from "react";
 
-import { useKitBrowser } from "../hooks/useKitBrowser";
+import { useKitBrowser } from "../hooks/kit-management/useKitBrowser";
 import KitBrowser from "../KitBrowser";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 

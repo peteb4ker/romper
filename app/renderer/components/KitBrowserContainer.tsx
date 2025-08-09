@@ -1,6 +1,7 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import React from "react";
 
-import type { KitWithRelations } from "../../../shared/db/schema";
 import type { KitBrowserHandle } from "./KitBrowser";
 
 import KitBrowser from "./KitBrowser";

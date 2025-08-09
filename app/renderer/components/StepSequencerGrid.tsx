@@ -1,6 +1,6 @@
 import React from "react";
 
-import type { FocusedStep } from "./hooks/stepPatternConstants";
+import type { FocusedStep } from "./hooks/shared/stepPatternConstants";
 
 interface StepSequencerGridProps {
   currentSeqStep: number;

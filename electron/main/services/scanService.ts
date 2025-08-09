@@ -1,12 +1,12 @@
-import * as fs from "fs";
-import * as path from "path";
-
-import type { DbResult, NewSample } from "../../../shared/db/schema.js";
+import type { DbResult, NewSample } from "@romper/shared/db/schema.js";
 
 import {
   groupSamplesByVoice,
   inferVoiceTypeFromFilename,
-} from "../../../shared/kitUtilsShared.js";
+} from "@romper/shared/kitUtilsShared.js";
+import * as fs from "fs";
+import * as path from "path";
+
 import {
   addSample,
   deleteSamples,

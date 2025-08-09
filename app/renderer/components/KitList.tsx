@@ -1,3 +1,5 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import React, {
   forwardRef,
   useCallback,
@@ -7,10 +9,8 @@ import React, {
 } from "react";
 import { ListChildComponentProps, VariableSizeList } from "react-window";
 
-import type { KitWithRelations } from "../../../shared/db/schema";
-
-import { useKitListLogic } from "./hooks/useKitListLogic";
-import { useKitListNavigation } from "./hooks/useKitListNavigation";
+import { useKitListLogic } from "./hooks/kit-management/useKitListLogic";
+import { useKitListNavigation } from "./hooks/kit-management/useKitListNavigation";
 import KitItem from "./KitItem";
 
 // Bank header component with intersection observer

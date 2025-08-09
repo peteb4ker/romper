@@ -1,10 +1,10 @@
+import type { Kit } from "@romper/shared/db/schema";
+
 // Test suite for KitHeader component
 import { fireEvent, render, screen } from "@testing-library/react";
 import { cleanup } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import type { Kit } from "../../../../shared/db/schema";
 
 import KitHeader from "../KitHeader";
 

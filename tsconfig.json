@@ -17,6 +17,9 @@
             ],
             "@romper/electron/*": [
                 "electron/*"
+            ],
+            "@romper/shared/*": [
+                "shared/*"
             ]
         },
         "jsx": "react-jsx",

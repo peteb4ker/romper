@@ -1,6 +1,6 @@
-import React from "react";
+import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import type { KitWithRelations } from "../../../shared/db/schema";
+import React from "react";
 
 interface KitBankNavProps {
   bankNames?: Record<string, string>;

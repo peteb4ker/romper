@@ -19,10 +19,11 @@ This document describes the development workflow, task execution patterns, and q
 ### Automated Quality Gates (Pre-commit Hooks)
 **All quality checks are automated via pre-commit hooks** that run on every `git commit`:
 
-✅ **TypeScript type checking** - catches compilation errors  
-✅ **ESLint linting with auto-fix** - enforces code style  
-✅ **Full test suite execution** - ensures functionality  
+✅ **TypeScript type checking** - catches compilation errors
+✅ **ESLint linting with auto-fix** - enforces code style
+✅ **Full test suite execution** - ensures functionality
 ✅ **Production build validation** - confirms deployability
+✅ **SonarCloud code analysis** - quality and security scanning (when SONAR_TOKEN is available)
 
 ```bash
 # Manual pre-commit validation (optional - runs automatically on commit)
@@ -30,9 +31,10 @@ npm run pre-commit
 
 # Individual validation commands (now automated)
 npm run typecheck    # TypeScript validation
-npm run lint         # ESLint with auto-fix  
+npm run lint         # ESLint with auto-fix
 npm run test         # Full test suite (verbose for development)
 npm run build        # Production build
+npm run sonar:scan   # Local preview scan (requires SONAR_TOKEN)
 ```
 
 #### Token-Efficient Test Output
@@ -71,7 +73,7 @@ npm run test         # Full details for interactive development
 - **Hook-based logic**: All business logic in `hooks/use<ComponentName>.ts`
 - **Presentation-only components**: UI components contain only rendering logic
 - **Empty file cleanup**: Delete unused hook files immediately
-- **Component size limit**: Refactor components over 350 lines
+- **Component size limit**: Refactor components over 400 lines
 
 ### Database Operations (Drizzle ORM)
 - **Synchronous operations**: Use better-sqlite3 synchronous driver
@@ -194,13 +196,76 @@ Pre-commit hooks automatically run all validation steps. Manual commands availab
 npm run pre-commit
 
 # Individual validation steps (if needed)
-npm run typecheck    # TypeScript validation  
+npm run typecheck    # TypeScript validation
 npm run lint         # ESLint with auto-fix
 npm run test         # Full test suite
 npm run build        # Production build validation
+npm run sonar:scan   # Local preview scan (requires SONAR_TOKEN)
 ```
 
 **Husky Configuration**: Pre-commit hooks are configured in `.husky/pre-commit` and use lint-staged for efficient file processing.
+
+### SonarCloud Integration
+
+**SonarCloud** provides automated code quality and security analysis as part of the pre-commit hooks.
+
+#### Setup SONAR_TOKEN (Required for SonarCloud Analysis)
+
+**For CLI Development (Recommended):**
+Add to your shell profile file:
+
+```bash
+# For bash (~/.bashrc or ~/.bash_profile)
+export SONAR_TOKEN="your_sonarcloud_token_here"
+
+# For zsh (~/.zshrc)
+export SONAR_TOKEN="your_sonarcloud_token_here"
+```
+
+After adding, reload your shell:
+```bash
+source ~/.zshrc  # or ~/.bashrc
+```
+
+**Alternative Methods:**
+```bash
+# Temporary session (current terminal only)
+export SONAR_TOKEN="your_token_here"
+npm run sonar:scan
+
+# Using .env file (local development)
+echo "SONAR_TOKEN=your_token_here" >> .env
+source .env && npm run sonar:scan
+```
+
+#### SonarCloud Analysis Workflows
+
+**Two-tier SonarQube analysis strategy:**
+
+1. **Local Preview Scan (Pre-commit)**:
+   - Runs during `git commit` if `SONAR_TOKEN` is available
+   - **Preview mode** - analyzes locally without uploading to SonarCloud
+   - **Catches ALL SonarCloud rules early** in development workflow  
+   - Prevents failures in main branch CI/CD pipeline
+   - Uses `sonar-project-local.properties` configuration
+
+2. **Full SonarCloud Analysis (GitHub Action)**:
+   - Runs on `push` to `main` branch and `pull_request`
+   - **Full analysis mode** - uploads results to SonarCloud dashboard
+   - Runs after tests with coverage reports
+   - Uses main `sonar-project.properties` configuration
+
+**Local Behavior:**
+- **With SONAR_TOKEN**: Runs preview scan during pre-commit (recommended)
+- **Without SONAR_TOKEN**: Gracefully skips with warning message
+- **Configuration**: Uses `https://sonarcloud.io` (no SONAR_HOST_URL needed)
+
+**Result**: Catch SonarCloud issues locally before they cause CI failures!
+
+#### Security Best Practices
+- **Never commit tokens to git** - ensure `.env` is in `.gitignore`
+- **Use SonarCloud User Token** (not Organization token)
+- **Keep tokens private** and rotate them periodically
 
 ### Development Commands
 ```bash
@@ -223,6 +288,9 @@ npm run lint            # ESLint with auto-fix
 
 # Quality Checks (Automated)
 npm run pre-commit      # All quality checks (automated on commit)
+
+# SonarCloud Analysis
+npm run sonar:scan      # Local preview scan (catches issues early, requires SONAR_TOKEN)
 ```
 
 ## Documentation Maintenance

@@ -5,11 +5,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { scanVoiceInference } from "../voiceInferenceScanner";
 
 // Mock the shared utilities
-vi.mock("../../../../../../shared/kitUtilsShared", () => ({
+vi.mock("@romper/shared/kitUtilsShared", () => ({
   inferVoiceTypeFromFilename: vi.fn(),
 }));
 
-import { inferVoiceTypeFromFilename } from "../../../../../../shared/kitUtilsShared";
+import { inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared";
 
 beforeEach(() => {
   vi.clearAllMocks();

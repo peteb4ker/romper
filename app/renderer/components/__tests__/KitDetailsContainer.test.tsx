@@ -1,8 +1,9 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import { cleanup, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { KitWithRelations } from "../../../../shared/db/schema";
 import type { VoiceSamples } from "../kitTypes";
 
 import KitDetailsContainer from "../KitDetailsContainer";
@@ -15,7 +16,7 @@ vi.mock("../KitDetails", () => ({
       <button onClick={() => onMessage("Test message", "info", 5000)}>
         Message
       </button>
-      <button onClick={onRequestSamplesReload}>Reload Samples</button>
+      <button onClick={onRequestSamplesReload}>Reload</button>
     </div>
   )),
 }));
@@ -71,7 +72,7 @@ describe("KitDetailsContainer", () => {
       expect(screen.getByTestId("kit-details")).toBeInTheDocument();
       expect(screen.getByText("Back")).toBeInTheDocument();
       expect(screen.getByText("Message")).toBeInTheDocument();
-      expect(screen.getByText("Reload Samples")).toBeInTheDocument();
+      expect(screen.getByText("Reload")).toBeInTheDocument();
     });
   });
 
@@ -101,7 +102,7 @@ describe("KitDetailsContainer", () => {
     it("should handle onRequestSamplesReload callback", () => {
       render(<KitDetailsContainer {...defaultProps} />);
 
-      const reloadButton = screen.getByText("Reload Samples");
+      const reloadButton = screen.getByText("Reload");
       reloadButton.click();
 
       expect(defaultProps.onRequestSamplesReload).toHaveBeenCalled();

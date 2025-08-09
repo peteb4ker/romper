@@ -1,10 +1,11 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import React, { useState } from "react";
 import { FiLink } from "react-icons/fi";
 
-import type { KitWithRelations } from "../../../shared/db/schema";
 import type { SampleData, VoiceSamples } from "./kitTypes";
 
-import { useKitVoicePanels } from "./hooks/useKitVoicePanels";
+import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
 import KitVoicePanel from "./KitVoicePanel";
 
 interface KitVoicePanelsProps {

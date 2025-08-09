@@ -30,14 +30,14 @@ Use `React.memo`, `useMemo`, and `useCallback` for expensive operations.
 ```typescript
 // ✅ GOOD: Proper memoization
 const KitCard = React.memo(({ kit, onSelect }: Props) => {
-  const displayName = useMemo(() => 
+  const displayName = useMemo(() =>
     kit.alias || kit.name, [kit.alias, kit.name]
   );
-  
+
   const handleClick = useCallback(() => {
     onSelect(kit.name);
   }, [kit.name, onSelect]);
-  
+
   return <div onClick={handleClick}>{displayName}</div>;
 });
 
@@ -49,7 +49,7 @@ function KitCard({ kit, onSelect }: Props) {
 ```
 
 ## Component Size Limits
-- **Maximum 350 lines per component file**
+- **Maximum 400 lines per component file**
 - **Maximum 5 props per component** (use objects for more)
 - **Single responsibility**: Each component should have one clear purpose
 
@@ -82,7 +82,7 @@ function BadComponent() {
 
 ## Quick Validation Checklist
 - [ ] Business logic extracted to custom hooks
-- [ ] Component under 350 lines
+- [ ] Component under 400 lines
 - [ ] Maximum 5 props (use objects if more needed)
 - [ ] Expensive operations memoized with `useMemo`/`useCallback`
 - [ ] Component wrapped with `React.memo` if props change frequently

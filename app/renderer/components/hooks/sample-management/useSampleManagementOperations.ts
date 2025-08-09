@@ -1,0 +1,225 @@
+import type { AnyUndoAction } from "@romper/shared/undoTypes";
+
+import { getErrorMessage } from "@romper/shared/errorUtils";
+import { useCallback } from "react";
+
+import { useSampleManagementUndoActions } from "./useSampleManagementUndoActions";
+
+export interface UseSampleManagementOperationsOptions {
+  kitName: string;
+  onAddUndoAction?: (action: AnyUndoAction) => void;
+  onMessage?: (text: string, type?: string, duration?: number) => void;
+  onSamplesChanged?: () => Promise<void>;
+  skipUndoRecording: boolean;
+}
+
+/**
+ * Hook for basic sample operations (add, replace, delete)
+ * Extracted from useSampleManagement to reduce complexity
+ */
+export function useSampleManagementOperations({
+  kitName,
+  onAddUndoAction,
+  onMessage,
+  onSamplesChanged,
+  skipUndoRecording,
+}: UseSampleManagementOperationsOptions) {
+  // Get undo action creators
+  const undoActions = useSampleManagementUndoActions({
+    kitName,
+    skipUndoRecording,
+  });
+
+  const handleSampleAdd = useCallback(
+    async (
+      voice: number,
+      slotIndex: number,
+      filePath: string,
+      options?: { forceMono?: boolean; forceStereo?: boolean },
+    ) => {
+      if (!(window as any).electronAPI?.addSampleToSlot) {
+        onMessage?.("Sample management not available", "error");
+        return;
+      }
+
+      try {
+        const result = await (window as any).electronAPI.addSampleToSlot(
+          kitName,
+          voice,
+          slotIndex,
+          filePath,
+          options,
+        );
+
+        if (result.success) {
+          onMessage?.(
+            `Sample added to voice ${voice}, slot ${slotIndex + 1}`,
+            "success",
+          );
+
+          // Record undo action unless explicitly skipped
+          if (!skipUndoRecording && onAddUndoAction && result.data) {
+            console.log("[SAMPLE_MGT] Recording ADD_SAMPLE undo action");
+            const addAction = undoActions.createAddSampleAction(
+              voice,
+              slotIndex,
+              filePath,
+              options,
+            );
+            onAddUndoAction(addAction);
+          } else {
+            console.log(
+              "[SAMPLE_MGT] NOT recording ADD_SAMPLE undo action - skipUndoRecording:",
+              skipUndoRecording,
+              "onAddUndoAction:",
+              !!onAddUndoAction,
+              "result.data:",
+              !!result.data,
+            );
+          }
+
+          // Reload samples to reflect changes
+          if (onSamplesChanged) {
+            await onSamplesChanged();
+          }
+        } else {
+          onMessage?.(result.error || "Failed to add sample", "error");
+        }
+      } catch (error) {
+        onMessage?.(
+          `Failed to add sample: ${error instanceof Error ? error.message : String(error)}`,
+          "error",
+        );
+      }
+    },
+    [
+      kitName,
+      onSamplesChanged,
+      onMessage,
+      skipUndoRecording,
+      onAddUndoAction,
+      undoActions,
+    ],
+  );
+
+  const handleSampleReplace = useCallback(
+    async (
+      voice: number,
+      slotIndex: number,
+      filePath: string,
+      options?: { forceMono?: boolean; forceStereo?: boolean },
+    ) => {
+      if (!(window as any).electronAPI?.replaceSampleInSlot) {
+        onMessage?.("Sample management not available", "error");
+        return;
+      }
+
+      try {
+        const oldSample = await undoActions.getOldSampleForUndo(
+          voice,
+          slotIndex,
+        );
+
+        const result = await (window as any).electronAPI.replaceSampleInSlot(
+          kitName,
+          voice,
+          slotIndex,
+          filePath,
+          options,
+        );
+
+        if (result.success) {
+          onMessage?.(
+            `Sample replaced in voice ${voice}, slot ${slotIndex + 1}`,
+            "success",
+          );
+
+          // Record undo action unless explicitly skipped
+          if (oldSample && result.data && onAddUndoAction) {
+            console.log("[SAMPLE_MGT] Recording REPLACE_SAMPLE undo action");
+            const replaceAction = undoActions.createReplaceSampleAction(
+              voice,
+              slotIndex,
+              oldSample,
+              filePath,
+              options,
+            );
+            onAddUndoAction(replaceAction);
+          }
+
+          // Reload samples to reflect changes
+          if (onSamplesChanged) {
+            await onSamplesChanged();
+          }
+        } else {
+          onMessage?.(result.error || "Failed to replace sample", "error");
+        }
+      } catch (error) {
+        onMessage?.(
+          `Failed to replace sample: ${getErrorMessage(error)}`,
+          "error",
+        );
+      }
+    },
+    [kitName, onSamplesChanged, onMessage, undoActions, onAddUndoAction],
+  );
+
+  const handleSampleDelete = useCallback(
+    async (voice: number, slotIndex: number) => {
+      if (!(window as any).electronAPI?.deleteSampleFromSlot) {
+        onMessage?.("Sample management not available", "error");
+        return;
+      }
+
+      try {
+        const sampleToDelete = await undoActions.getSampleToDeleteForUndo(
+          voice,
+          slotIndex,
+        );
+
+        const result = await (window as any).electronAPI.deleteSampleFromSlot(
+          kitName,
+          voice,
+          slotIndex,
+        );
+
+        if (result.success) {
+          onMessage?.(
+            `Sample deleted from voice ${voice}, slot ${slotIndex + 1}`,
+            "success",
+          );
+
+          // Record COMPACT_SLOTS action since deletion now triggers automatic compaction
+          if (sampleToDelete && onAddUndoAction && result.data) {
+            const compactAction = undoActions.createCompactSlotsAction(
+              voice,
+              slotIndex,
+              sampleToDelete,
+              result,
+            );
+            onAddUndoAction(compactAction);
+          }
+
+          // Reload samples to reflect changes
+          if (onSamplesChanged) {
+            await onSamplesChanged();
+          }
+        } else {
+          onMessage?.(result.error || "Failed to delete sample", "error");
+        }
+      } catch (error) {
+        onMessage?.(
+          `Failed to delete sample: ${getErrorMessage(error)}`,
+          "error",
+        );
+      }
+    },
+    [kitName, onSamplesChanged, onMessage, undoActions, onAddUndoAction],
+  );
+
+  return {
+    handleSampleAdd,
+    handleSampleDelete,
+    handleSampleReplace,
+  };
+}

@@ -1,0 +1,156 @@
+import type { SyncChangeSummary } from "@romper/app/renderer/components/dialogs/SyncUpdateDialog";
+
+import { useCallback, useState } from "react";
+
+interface SyncProgress {
+  bytesCompleted: number;
+  currentFile: string;
+  error?: string;
+  filesCompleted: number;
+  status:
+    | "completed"
+    | "converting"
+    | "copying"
+    | "error"
+    | "finalizing"
+    | "preparing";
+  totalBytes: number;
+  totalFiles: number;
+}
+
+interface SyncUpdateDependencies {
+  electronAPI?: typeof window.electronAPI;
+}
+
+interface UseSyncUpdateResult {
+  cancelSync: () => void;
+  clearError: () => void;
+  error: null | string;
+  generateChangeSummary: () => Promise<null | SyncChangeSummary>;
+  isLoading: boolean;
+  startSync: (changeSummary: SyncChangeSummary) => Promise<boolean>;
+  syncProgress: null | SyncProgress;
+}
+
+export function useSyncUpdate(
+  deps: SyncUpdateDependencies = {},
+): UseSyncUpdateResult {
+  const electronAPI = deps.electronAPI || window.electronAPI;
+
+  const [syncProgress, setSyncProgress] = useState<null | SyncProgress>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<null | string>(null);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  const generateChangeSummary =
+    useCallback(async (): Promise<null | SyncChangeSummary> => {
+      if (!electronAPI?.generateSyncChangeSummary) {
+        setError("Sync functionality not available");
+        return null;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await electronAPI.generateSyncChangeSummary();
+
+        if (!result.success) {
+          setError(result.error || "Failed to generate sync summary");
+          return null;
+        }
+
+        return result.data || null;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error occurred";
+        setError(`Failed to generate sync summary: ${errorMessage}`);
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    }, [electronAPI]);
+
+  const startSync = useCallback(
+    async (changeSummary: SyncChangeSummary): Promise<boolean> => {
+      if (!electronAPI?.startKitSync) {
+        setError("Sync functionality not available");
+        return false;
+      }
+
+      setIsLoading(true);
+      setError(null);
+      setSyncProgress({
+        bytesCompleted: 0,
+        currentFile: "",
+        filesCompleted: 0,
+        status: "preparing",
+        totalBytes: changeSummary.estimatedSize,
+        totalFiles:
+          changeSummary.filesToCopy.length +
+          changeSummary.filesToConvert.length,
+      });
+
+      try {
+        // Set up progress listener if available
+        if (electronAPI.onSyncProgress) {
+          electronAPI.onSyncProgress((progress: SyncProgress) => {
+            setSyncProgress(progress);
+          });
+        }
+
+        const result = await electronAPI.startKitSync({
+          filesToConvert: changeSummary.filesToConvert,
+          filesToCopy: changeSummary.filesToCopy,
+        });
+
+        if (!result.success) {
+          setError(result.error || "Sync operation failed");
+          setSyncProgress((prev) =>
+            prev ? { ...prev, error: result.error, status: "error" } : null,
+          );
+          return false;
+        }
+
+        setSyncProgress((prev) =>
+          prev ? { ...prev, status: "completed" } : null,
+        );
+        return true;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error occurred";
+        setError(`Sync failed: ${errorMessage}`);
+        setSyncProgress((prev) =>
+          prev ? { ...prev, error: errorMessage, status: "error" } : null,
+        );
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [electronAPI],
+  );
+
+  const cancelSync = useCallback(() => {
+    if (electronAPI?.cancelKitSync) {
+      electronAPI.cancelKitSync();
+    }
+
+    setSyncProgress(null);
+    setIsLoading(false);
+    setError(null);
+  }, [electronAPI]);
+
+  return {
+    cancelSync,
+    clearError,
+    error,
+    generateChangeSummary,
+    isLoading,
+    startSync,
+    syncProgress,
+  };
+}

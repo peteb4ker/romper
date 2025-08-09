@@ -1,10 +1,11 @@
+import type { NewKit, NewSample } from "@romper/shared/db/schema.js";
+
 // IMPORTANT: Drizzle ORM with better-sqlite3 is SYNCHRONOUS - do not use await with database operations
 import { ipcMain } from "electron";
-import * as path from "path";
-
-import type { DbResult, NewKit, NewSample } from "../../shared/db/schema.js";
 
 import { getAudioMetadata, validateSampleFormat } from "./audioUtils.js";
+import { registerFavoritesIpcHandlers } from "./db/favoritesIpcHandlers.js";
+import { createDbHandler } from "./db/ipcHandlerUtils.js";
 import {
   addKit,
   addSample,
@@ -12,24 +13,24 @@ import {
   deleteSamples,
   getAllBanks,
   getAllSamples,
-  getFavoriteKits,
-  getFavoriteKitsCount,
   getKit,
   getKits,
   getKitSamples,
-  setKitFavorite,
-  toggleKitFavorite,
   updateKit,
   updateVoiceAlias,
 } from "./db/romperDbCoreORM.js";
+import { registerSampleIpcHandlers } from "./db/sampleIpcHandlers.js";
+import { registerSyncIpcHandlers } from "./db/syncIpcHandlers.js";
 import { localStoreService } from "./services/localStoreService.js";
-import { sampleService } from "./services/sampleService.js";
 import { scanService } from "./services/scanService.js";
-import { syncService } from "./services/syncService.js";
-
-// Common validation and helper functions
 
 export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
+  // Register all handler groups
+  registerSampleIpcHandlers(inMemorySettings);
+  registerSyncIpcHandlers(inMemorySettings);
+  registerFavoritesIpcHandlers(inMemorySettings);
+
+  // Basic database operations
   ipcMain.handle("create-romper-db", async (_event, dbDir: string) => {
     return createRomperDbFile(dbDir);
   });
@@ -159,101 +160,6 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     return scanService.scanBanks(inMemorySettings);
   });
 
-  ipcMain.handle(
-    "add-sample-to-slot",
-    createSampleOperationHandler(inMemorySettings, "add"),
-  );
-
-  ipcMain.handle(
-    "replace-sample-in-slot",
-    createSampleOperationHandler(inMemorySettings, "replace"),
-  );
-
-  ipcMain.handle(
-    "delete-sample-from-slot",
-    createSampleOperationHandler(inMemorySettings, "delete"),
-  );
-
-  ipcMain.handle(
-    "delete-sample-from-slot-without-compaction",
-    async (_event, kitName: string, voiceNumber: number, slotIndex: number) => {
-      return sampleService.deleteSampleFromSlotWithoutCompaction(
-        inMemorySettings,
-        kitName,
-        voiceNumber,
-        slotIndex,
-      );
-    },
-  );
-
-  ipcMain.handle(
-    "move-sample-in-kit",
-    async (
-      _event,
-      kitName: string,
-      fromVoice: number,
-      fromSlot: number,
-      toVoice: number,
-      toSlot: number,
-      mode: "insert" | "overwrite",
-    ) => {
-      try {
-        const result = sampleService.moveSampleInKit(
-          inMemorySettings,
-          kitName,
-          fromVoice,
-          fromSlot,
-          toVoice,
-          toSlot,
-          mode,
-        );
-        return result;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        return {
-          error: `Failed to move sample: ${errorMessage}`,
-          success: false,
-        };
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "move-sample-between-kits",
-    async (
-      _event,
-      params: {
-        fromKit: string;
-        fromSlot: number;
-        fromVoice: number;
-        mode: "insert" | "overwrite";
-        toKit: string;
-        toSlot: number;
-        toVoice: number;
-      },
-    ) => {
-      try {
-        const result = sampleService.moveSampleBetweenKits(
-          inMemorySettings,
-          params,
-        );
-        return result;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        return {
-          error: `Failed to move sample between kits: ${errorMessage}`,
-          success: false,
-        };
-      }
-    },
-  );
-
-  ipcMain.handle("validate-sample-sources", async (_event, kitName: string) => {
-    return sampleService.validateSampleSources(inMemorySettings, kitName);
-  });
-
   // Audio format validation
   ipcMain.handle("get-audio-metadata", async (_event, filePath: string) => {
     return getAudioMetadata(filePath);
@@ -263,170 +169,6 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     return validateSampleFormat(filePath);
   });
 
-  // SD Card sync operations
-  ipcMain.handle("generateSyncChangeSummary", async () => {
-    return syncService.generateChangeSummary(inMemorySettings);
-  });
-
-  ipcMain.handle(
-    "startKitSync",
-    async (
-      _event,
-      syncData: {
-        filesToConvert: Array<{
-          destinationPath: string;
-          filename: string;
-          kitName: string;
-          operation: "convert" | "copy";
-          sourcePath: string;
-        }>;
-        filesToCopy: Array<{
-          destinationPath: string;
-          filename: string;
-          kitName: string;
-          operation: "convert" | "copy";
-          sourcePath: string;
-        }>;
-      },
-    ) => {
-      return syncService.startKitSync(inMemorySettings, syncData);
-    },
-  );
-
-  ipcMain.handle("cancelKitSync", async () => {
-    syncService.cancelSync();
-  });
-
-  // Task 20.1: Favorites system IPC handlers
-  ipcMain.handle(
-    "toggle-kit-favorite",
-    createDbHandler(inMemorySettings, toggleKitFavorite),
-  );
-
-  ipcMain.handle(
-    "set-kit-favorite",
-    createDbHandler(inMemorySettings, setKitFavorite),
-  );
-
-  ipcMain.handle(
-    "get-favorite-kits",
-    createDbHandler(inMemorySettings, getFavoriteKits),
-  );
-
-  ipcMain.handle(
-    "get-favorite-kits-count",
-    createDbHandler(inMemorySettings, getFavoriteKitsCount),
-  );
-
   // Progress events are handled via webContents.send in syncService
   // No IPC handler needed for onSyncProgress as it's a renderer-side event listener
-}
-
-/**
- * Creates a wrapper for IPC handlers that require database directory validation
- */
-function createDbHandler<T extends any[], R>(
-  inMemorySettings: Record<string, any>,
-  handler: (dbDir: string, ...args: T) => Promise<R> | R,
-): (_event: any, ...args: T) => Promise<R> {
-  return async (_event: any, ...args: T): Promise<R> => {
-    const dbDirResult = validateAndGetDbDir(inMemorySettings);
-    if (!dbDirResult.success) {
-      return { error: dbDirResult.error, success: false } as R;
-    }
-    return handler(dbDirResult.dbDir!, ...args);
-  };
-}
-
-/**
- * Creates a sample operation handler using the sample service
- */
-function createSampleOperationHandler(
-  inMemorySettings: Record<string, any>,
-  operationType: "add" | "delete" | "replace",
-) {
-  return async (
-    _event: any,
-    kitName: string,
-    voiceNumber: number,
-    slotIndex: number,
-    filePath?: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
-  ) => {
-    try {
-      let result: DbResult<any>;
-
-      switch (operationType) {
-        case "add":
-          if (!filePath) {
-            return {
-              error: "File path required for add operation",
-              success: false,
-            };
-          }
-          result = sampleService.addSampleToSlot(
-            inMemorySettings,
-            kitName,
-            voiceNumber,
-            slotIndex,
-            filePath,
-            options,
-          );
-          break;
-
-        case "delete":
-          result = sampleService.deleteSampleFromSlot(
-            inMemorySettings,
-            kitName,
-            voiceNumber,
-            slotIndex,
-          );
-          break;
-
-        case "replace":
-          if (!filePath) {
-            return {
-              error: "File path required for replace operation",
-              success: false,
-            };
-          }
-          result = sampleService.replaceSampleInSlot(
-            inMemorySettings,
-            kitName,
-            voiceNumber,
-            slotIndex,
-            filePath,
-            options,
-          );
-          break;
-
-        default:
-          return { error: "Unknown operation type", success: false };
-      }
-
-      return result;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return {
-        error: `Failed to perform sample operation: ${errorMessage}`,
-        success: false,
-      };
-    }
-  };
-}
-
-/**
- * Validates local store path and returns database directory
- */
-function validateAndGetDbDir(inMemorySettings: Record<string, any>): {
-  dbDir?: string;
-  error?: string;
-  success: boolean;
-} {
-  const localStorePath = inMemorySettings.localStorePath;
-  if (!localStorePath) {
-    return { error: "No local store path configured", success: false };
-  }
-  return { dbDir: path.join(localStorePath, ".romperdb"), success: true };
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { FaStar } from "react-icons/fa";
 import { FiDatabase, FiDownload, FiEdit3, FiRefreshCw } from "react-icons/fi";
 
-import { useKitBrowserHeader } from "./hooks/useKitBrowserHeader";
+import { useKitBrowserHeader } from "./hooks/kit-management/useKitBrowserHeader";
 
 interface KitBrowserHeaderProps {
   bankNav?: React.ReactNode;

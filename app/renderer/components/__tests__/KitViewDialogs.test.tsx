@@ -9,9 +9,9 @@ vi.mock("../dialogs/ChangeLocalStoreDirectoryDialog", () => ({
   default: vi.fn(({ isOpen, onClose, onMessage }) =>
     isOpen ? (
       <div data-testid="change-directory-dialog">
-        <button onClick={onClose}>Close Directory</button>
+        <button onClick={onClose}>Close</button>
         <button onClick={() => onMessage("Test message", "info", 5000)}>
-          Test Message
+          Message
         </button>
       </div>
     ) : null,
@@ -22,7 +22,7 @@ vi.mock("../dialogs/PreferencesDialog", () => ({
   default: vi.fn(({ isOpen, onClose }) =>
     isOpen ? (
       <div data-testid="preferences-dialog">
-        <button onClick={onClose}>Close Preferences</button>
+        <button onClick={onClose}>Close</button>
       </div>
     ) : null,
   ),
@@ -48,7 +48,9 @@ describe("KitViewDialogs", () => {
   describe("rendering", () => {
     it("should render without crashing", () => {
       render(<KitViewDialogs {...defaultProps} />);
-      // Should not throw
+      expect(
+        screen.queryByTestId("change-directory-dialog"),
+      ).not.toBeInTheDocument();
     });
 
     it("should not show dialogs when both are closed", () => {
@@ -124,7 +126,7 @@ describe("KitViewDialogs", () => {
         />,
       );
 
-      const closeButton = screen.getByText("Close Preferences");
+      const closeButton = screen.getByText("Close");
       closeButton.click();
 
       expect(onClosePreferences).toHaveBeenCalledTimes(1);

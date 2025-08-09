@@ -1,0 +1,114 @@
+import type { DbResult } from "@romper/shared/db/schema.js";
+
+import * as path from "path";
+
+import { sampleService } from "../services/sampleService.js";
+
+/**
+ * Creates a wrapper for IPC handlers that require database directory validation
+ */
+export function createDbHandler<T extends any[], R>(
+  inMemorySettings: Record<string, any>,
+  handler: (dbDir: string, ...args: T) => Promise<R> | R,
+): (_event: any, ...args: T) => Promise<R> {
+  return async (_event: any, ...args: T): Promise<R> => {
+    const dbDirResult = validateAndGetDbDir(inMemorySettings);
+    if (!dbDirResult.success) {
+      return { error: dbDirResult.error, success: false } as R;
+    }
+    return handler(dbDirResult.dbDir!, ...args);
+  };
+}
+
+/**
+ * Creates a sample operation handler using the sample service
+ */
+export function createSampleOperationHandler(
+  inMemorySettings: Record<string, any>,
+  operationType: "add" | "delete" | "replace",
+) {
+  return async (
+    _event: any,
+    kitName: string,
+    voiceNumber: number,
+    slotIndex: number,
+    filePath?: string,
+    options?: { forceMono?: boolean; forceStereo?: boolean },
+  ) => {
+    try {
+      let result: DbResult<any>;
+
+      switch (operationType) {
+        case "add":
+          if (!filePath) {
+            return {
+              error: "File path required for add operation",
+              success: false,
+            };
+          }
+          result = sampleService.addSampleToSlot(
+            inMemorySettings,
+            kitName,
+            voiceNumber,
+            slotIndex,
+            filePath,
+            options,
+          );
+          break;
+
+        case "delete":
+          result = sampleService.deleteSampleFromSlot(
+            inMemorySettings,
+            kitName,
+            voiceNumber,
+            slotIndex,
+          );
+          break;
+
+        case "replace":
+          if (!filePath) {
+            return {
+              error: "File path required for replace operation",
+              success: false,
+            };
+          }
+          result = sampleService.replaceSampleInSlot(
+            inMemorySettings,
+            kitName,
+            voiceNumber,
+            slotIndex,
+            filePath,
+            options,
+          );
+          break;
+
+        default:
+          return { error: "Unknown operation type", success: false };
+      }
+
+      return result;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return {
+        error: `Failed to perform sample operation: ${errorMessage}`,
+        success: false,
+      };
+    }
+  };
+}
+
+/**
+ * Validates local store path and returns database directory
+ */
+export function validateAndGetDbDir(inMemorySettings: Record<string, any>): {
+  dbDir?: string;
+  error?: string;
+  success: boolean;
+} {
+  const localStorePath = inMemorySettings.localStorePath;
+  if (!localStorePath) {
+    return { error: "No local store path configured", success: false };
+  }
+  return { dbDir: path.join(localStorePath, ".romperdb"), success: true };
+}

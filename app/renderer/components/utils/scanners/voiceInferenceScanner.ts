@@ -1,12 +1,12 @@
 // Voice inference scanner - analyzes sample filenames to determine voice types
 
+import { inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared";
+
 import type {
   ScanResult,
   VoiceInferenceInput,
   VoiceInferenceOutput,
 } from "./types";
-
-import { inferVoiceTypeFromFilename } from "../../../../../shared/kitUtilsShared";
 
 /**
  * Scans sample files and infers voice types from filenames

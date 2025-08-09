@@ -1,6 +1,6 @@
-import React from "react";
+import type { Kit } from "@romper/shared/db/schema";
 
-import type { Kit } from "../../../shared/db/schema";
+import React from "react";
 
 export interface KitFormProps {
   error?: null | string;

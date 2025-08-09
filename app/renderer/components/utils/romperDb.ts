@@ -1,7 +1,7 @@
 // Handles Romper DB (SQLite) operations for plans, kits, and samples.
 // This is a stub for initial DB creation logic for 2.2
 
-import type { NewKit } from "../../../../shared/db/schema.js";
+import type { NewKit } from "@romper/shared/db/schema.js";
 
 export async function createRomperDb(dbDir: string) {
   if (!window.electronAPI?.createRomperDb) {

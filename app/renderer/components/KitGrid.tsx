@@ -1,3 +1,5 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import React, {
   forwardRef,
   useCallback,
@@ -7,10 +9,8 @@ import React, {
   useState,
 } from "react";
 
-import type { KitWithRelations } from "../../../shared/db/schema";
-
-import { useKitListLogic } from "./hooks/useKitListLogic";
-import { useKitListNavigation } from "./hooks/useKitListNavigation";
+import { useKitListLogic } from "./hooks/kit-management/useKitListLogic";
+import { useKitListNavigation } from "./hooks/kit-management/useKitListNavigation";
 import KitGridItem from "./KitGridItem";
 
 // Bank header component for grid layout

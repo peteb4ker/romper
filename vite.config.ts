@@ -1,6 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
+import path from "path";
 import { defineConfig } from "vite";
 
 // Centralized Vite config for all packages (renderer, shared, etc)
@@ -16,6 +17,13 @@ export default defineConfig({
     },
   },
   plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      "@romper/app": path.resolve(__dirname, "app"),
+      "@romper/electron": path.resolve(__dirname, "electron"),
+      "@romper/shared": path.resolve(__dirname, "shared"),
+    },
+  },
   root: ".",
   server: {
     watch: {

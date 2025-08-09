@@ -1,7 +1,7 @@
+import type { LocalStoreValidationDetailedResult } from "@romper/shared/db/schema.js";
+
 import * as fs from "fs";
 import * as path from "path";
-
-import type { LocalStoreValidationDetailedResult } from "../../../shared/db/schema.js";
 
 import {
   validateLocalStoreAgainstDb,

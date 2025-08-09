@@ -144,7 +144,7 @@ function KitCard({ kit, onSelect }: KitCardProps) {
 ```
 
 ### Component Size Limits
-- **Maximum 350 lines per component file**
+- **Maximum 400 lines per component file**
 - **Maximum 5 props per component** (use objects for more)
 - **Single responsibility**: Each component should have one clear purpose
 

@@ -2,11 +2,11 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import { useValidationResults } from "../../hooks/useValidationResults";
+import { useValidationResults } from "../../hooks/shared/useValidationResults";
 import ValidationResultsDialog from "../ValidationResultsDialog";
 
 // Mock the useValidationResults hook
-vi.mock("../../hooks/useValidationResults");
+vi.mock("../../hooks/shared/useValidationResults");
 
 describe("ValidationResultsDialog", () => {
   const mockOnClose = vi.fn();

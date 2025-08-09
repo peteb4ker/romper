@@ -14,7 +14,7 @@ vi.mock("path", () => ({
 }));
 
 // Mock shared utilities
-vi.mock("../../../../shared/kitUtilsShared.js", () => ({
+vi.mock("@romper/shared/kitUtilsShared.js", () => ({
   groupSamplesByVoice: vi.fn(),
   inferVoiceTypeFromFilename: vi.fn(),
 }));
@@ -30,7 +30,8 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
 import {
   groupSamplesByVoice,
   inferVoiceTypeFromFilename,
-} from "../../../../shared/kitUtilsShared.js";
+} from "@romper/shared/kitUtilsShared.js";
+
 import {
   addSample,
   deleteSamples,

@@ -1,10 +1,11 @@
+import type { DbResult } from "@romper/shared/db/schema.js";
+
+import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as fs from "fs";
 import * as path from "path";
 
-import type { DbResult } from "../../../shared/db/schema.js";
 import type { SyncFileOperation } from "./syncPlannerService.js";
 
-import { getErrorMessage } from "../../../shared/errorUtils.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 import {
   categorizeErrorByRules,

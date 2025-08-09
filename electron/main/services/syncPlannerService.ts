@@ -1,9 +1,9 @@
+import type { DbResult, Sample } from "@romper/shared/db/schema.js";
+
+import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as fs from "fs";
 import * as path from "path";
 
-import type { DbResult, Sample } from "../../../shared/db/schema.js";
-
-import { getErrorMessage } from "../../../shared/errorUtils.js";
 import { getAudioMetadata, validateSampleFormat } from "../audioUtils.js";
 import { getKitSamples } from "../db/romperDbCoreORM.js";
 

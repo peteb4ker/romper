@@ -2,7 +2,7 @@ import React from "react";
 
 import type { KitDetailsProps } from "./kitTypes";
 
-import { useKitDetailsLogic } from "./hooks/useKitDetailsLogic";
+import { useKitDetailsLogic } from "./hooks/kit-management/useKitDetailsLogic";
 import KitForm from "./KitForm";
 import KitHeader from "./KitHeader";
 import KitStepSequencer from "./KitStepSequencer";

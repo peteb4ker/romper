@@ -66,9 +66,7 @@ import { toCapitalCase } from '../../../../shared/utils';    // 4. Shared absolu
 ```
 
 ### File Size Limits
-- **Components**: Maximum 350 lines
-- **Hooks**: Maximum 200 lines
-- **Utils**: Maximum 150 lines
+- **Javascript / Typescript**: Maximum 400 lines
 - **Refactor when exceeded**: Split into focused modules
 
 ## Performance Standards

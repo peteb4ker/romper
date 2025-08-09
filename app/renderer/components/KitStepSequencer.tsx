@@ -1,6 +1,6 @@
 import React from "react";
 
-import { useKitStepSequencerLogic } from "./hooks/useKitStepSequencerLogic";
+import { useKitStepSequencerLogic } from "./hooks/kit-management/useKitStepSequencerLogic";
 import StepSequencerControls from "./StepSequencerControls";
 import StepSequencerDrawer from "./StepSequencerDrawer";
 import StepSequencerGrid from "./StepSequencerGrid";

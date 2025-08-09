@@ -8,7 +8,7 @@ vi.mock("../LocalStoreWizardUI", () => ({
   default: vi.fn(({ onClose, onSuccess, setLocalStorePath }) => (
     <div data-testid="local-store-wizard-ui">
       <button data-testid="wizard-close" onClick={onClose}>
-        Close Wizard
+        Close
       </button>
       <button data-testid="wizard-success" onClick={onSuccess}>
         Success

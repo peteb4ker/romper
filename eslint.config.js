@@ -4,6 +4,7 @@ import prettierConfig from "eslint-config-prettier";
 import perfectionist from "eslint-plugin-perfectionist";
 import prettier from "eslint-plugin-prettier";
 import reactHooks from "eslint-plugin-react-hooks";
+import sonarjs from "eslint-plugin-sonarjs";
 import globals from "globals";
 // Patch: trim whitespace from all global keys
 function trimGlobals(obj) {
@@ -54,6 +55,7 @@ export default defineConfig([
       "@typescript-eslint": tseslint.plugin,
       perfectionist,
       "react-hooks": reactHooks,
+      sonarjs,
       prettier,
     },
     rules: {
@@ -61,6 +63,16 @@ export default defineConfig([
       ...prettierConfig.rules,
       ...reactHooks.configs.recommended.rules,
       ...perfectionist.configs["recommended-alphabetical"].rules,
+      // SonarJS rules - focused on critical issues only
+      "sonarjs/cognitive-complexity": ["error", 25], // More reasonable threshold
+      "sonarjs/no-nested-functions": "error", // Keep for code quality
+      "sonarjs/assertions-in-tests": "error", // Keep - important for test quality
+      "sonarjs/no-redundant-boolean": "error", // Keep - simple to fix
+      "sonarjs/pseudo-random": "off", // Ignore - acceptable for testing/development
+      "sonarjs/slow-regex": "off", // Ignore - acceptable for this codebase
+      "sonarjs/no-unused-vars": "error", // Keep - code cleanliness
+      "sonarjs/no-dead-store": "error", // Keep - code cleanliness
+      "sonarjs/publicly-writable-directories": "off", // Ignore - acceptable for testing
       "prettier/prettier": "error",
       // Catch unused imports and variables
       "@typescript-eslint/no-unused-vars": [
@@ -85,6 +97,8 @@ export default defineConfig([
       }),
     },
     rules: {
+      // Disable nested functions rule for test files
+      "sonarjs/no-nested-functions": "off",
       // Prevent manual window.electronAPI assignments
       "no-restricted-syntax": [
         "error",
@@ -109,6 +123,14 @@ export default defineConfig([
   // Config files (Node environment)
   {
     files: ["*.config.js", "*.config.ts"],
+    languageOptions: {
+      globals: trimGlobals(globals.node),
+    },
+  },
+
+  // Node.js scripts
+  {
+    files: ["scripts/**/*.js"],
     languageOptions: {
       globals: trimGlobals(globals.node),
     },

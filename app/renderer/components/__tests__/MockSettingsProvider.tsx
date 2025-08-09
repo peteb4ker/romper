@@ -17,7 +17,7 @@ export const MockSettingsProvider: React.FC<{
     value={{
       confirmDestructiveActions,
       defaultToMonoSamples,
-      isDarkMode: themeMode === "dark" || (themeMode === "system" && false),
+      isDarkMode: themeMode === "dark",
       localStorePath: "/mock/local/store",
       localStoreStatus: { isValid: true },
       setConfirmDestructiveActions: () => {},

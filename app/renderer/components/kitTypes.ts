@@ -1,8 +1,8 @@
 // kitTypes.ts
 // Central location for all UI TypeScript interfaces/types for kits
 
-import type { KitWithRelations } from "../../../shared/db/schema";
-import type { AnyUndoAction } from "../../../shared/undoTypes";
+import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 export interface KitDetailsProps {
   kitIndex?: number;

@@ -1,8 +1,3 @@
-// Import shared types from the schema file
-import type {
-  AudioMetadata,
-  FormatValidationResult,
-} from "../../electron/main/audioUtils.js";
 import type {
   Bank,
   DbResult,
@@ -12,7 +7,13 @@ import type {
   NewKit,
   NewSample,
   Sample,
-} from "../../shared/db/schema.js";
+} from "@romper/shared/db/schema.js";
+
+// Import shared types from the schema file
+import type {
+  AudioMetadata,
+  FormatValidationResult,
+} from "../../electron/main/audioUtils.js";
 
 export {
   Bank,

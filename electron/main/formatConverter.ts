@@ -1,8 +1,8 @@
+import type { DbResult } from "@romper/shared/db/schema.js";
+
 import * as fs from "fs";
 import * as wav from "node-wav";
 import * as path from "path";
-
-import type { DbResult } from "../../shared/db/schema.js";
 
 import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "./audioUtils.js";
 
@@ -311,7 +311,7 @@ function resampleAudio(
   const outputSamples = Math.floor(channelData[0].length * ratio);
 
   const resampledChannelData: Float32Array[] = [];
-  for (const [_ch, inputChannel] of channelData.entries()) {
+  for (const inputChannel of channelData) {
     const outputChannel = new Float32Array(outputSamples);
 
     for (let i = 0; i < outputSamples; i++) {

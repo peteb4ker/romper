@@ -1,8 +1,8 @@
+import type { DbResult, Sample } from "@romper/shared/db/schema.js";
+
 import { BrowserWindow } from "electron";
 import * as fs from "fs";
 import * as path from "path";
-
-import type { DbResult, Sample } from "../../../shared/db/schema.js";
 
 import { getAudioMetadata, validateSampleFormat } from "../audioUtils.js";
 import { getKitSamples, markKitsAsSynced } from "../db/romperDbCoreORM.js";

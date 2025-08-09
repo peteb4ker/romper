@@ -1,4 +1,4 @@
-import type { Kit, KitWithRelations, NewKit } from "../../shared/db/schema";
+import type { Kit, KitWithRelations, NewKit } from "@romper/shared/db/schema";
 
 /**
  * Factory for creating mock Kit objects

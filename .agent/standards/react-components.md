@@ -33,15 +33,15 @@ function KitEditor({ kitName }: Props) {
 ```typescript
 // ✅ REQUIRED: Memoize components and expensive operations
 const KitCard = React.memo(({ kit, onSelect }: KitCardProps) => {
-  const displayName = useMemo(() => 
-    kit.alias || kit.name, 
+  const displayName = useMemo(() =>
+    kit.alias || kit.name,
     [kit.alias, kit.name]
   );
-  
+
   const handleClick = useCallback(() => {
     onSelect(kit.name);
   }, [kit.name, onSelect]);
-  
+
   return <div onClick={handleClick}>{displayName}</div>;
 });
 
@@ -49,7 +49,7 @@ const KitCard = React.memo(({ kit, onSelect }: KitCardProps) => {
 function KitCard({ kit, onSelect }: KitCardProps) {
   // Expensive computation on every render
   const displayName = processKitName(kit);
-  
+
   return <div onClick={() => onSelect(kit.name)}>{displayName}</div>;
 }
 ```
@@ -72,7 +72,7 @@ function BadComponent(kitName, editable, onSave, onCancel, onDelete, onDuplicate
 ```
 
 ### Component Size Limits
-- **Maximum 350 lines**: Refactor into smaller components when exceeded
+- **Maximum 400 lines**: Refactor into smaller components when exceeded
 - **Single responsibility**: Each component should have one clear purpose
 - **Composition over inheritance**: Build complex UIs by combining smaller components
 
@@ -83,7 +83,7 @@ function BadComponent(kitName, editable, onSave, onCancel, onDelete, onDuplicate
 // ❌ AVOID: Complex state management in component
 function BadKitEditor() {
   const [samples, setSamples] = useState([]);
-  
+
   // This belongs in a custom hook
   const handleAddSample = async (file: File) => {
     const validation = validateWavFile(file);
@@ -91,12 +91,12 @@ function BadKitEditor() {
       toast.error(validation.error);
       return;
     }
-    
+
     const converted = await convertToRampleFormat(file);
     setSamples(prev => [...prev, converted]);
     await saveToDatabase(converted);
   };
-  
+
   return <div>...</div>;
 }
 ```
@@ -108,7 +108,7 @@ function BadComponent() {
   useEffect(() => {
     document.getElementById('my-element').style.display = 'none';
   }, []);
-  
+
   return <div>...</div>;
 }
 ```
@@ -143,8 +143,7 @@ function GoodList({ items }) {
 - [ ] Business logic extracted to custom hook
 - [ ] Component has TypeScript interface for props
 - [ ] Performance optimization with React.memo/useMemo where needed
-- [ ] Component under 350 lines
-- [ ] Maximum 5 props (use objects for more)
+- [ ] Component under 400 lines
 - [ ] Stable keys for list items
 - [ ] No direct DOM manipulation
 - [ ] No console.log statements

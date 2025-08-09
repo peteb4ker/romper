@@ -3,9 +3,9 @@ export interface BankNames {
 }
 // Bank operations utilities
 
-import type { KitWithRelations } from "../../../../shared/db/schema";
+import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { toCapitalCase } from "../../../../shared/kitUtilsShared";
+import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 
 /**
  * Checks if a bank has any kits

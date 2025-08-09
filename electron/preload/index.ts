@@ -1,6 +1,9 @@
+import type { NewKit, NewSample } from "@romper/shared/db/types.js";
+
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
-import type { NewKit, NewSample } from "../../shared/db/types.js";
+// Determine if we're in development mode
+const isDev = process.env.NODE_ENV === "development";
 
 // ===== SETTINGS MANAGER =====
 interface SettingsData {
@@ -15,7 +18,7 @@ type SettingsKey = keyof SettingsData;
 
 class SettingsManager {
   async getSetting(key: SettingsKey): Promise<any> {
-    console.log("[IPC] getSetting invoked", key);
+    isDev && console.debug("[IPC] getSetting invoked", key);
 
     // For localStorePath, check environment variable first
     if (key === "localStorePath" && process.env.ROMPER_LOCAL_PATH) {
@@ -50,7 +53,8 @@ class SettingsManager {
   }
 
   async setSetting(key: SettingsKey, value: any): Promise<void> {
-    console.log(`[IPC] setSetting called with key: ${key}, value:`, value);
+    isDev &&
+      console.debug(`[IPC] setSetting called with key: ${key}, value:`, value);
     await this.writeSettings(key, value);
   }
 
@@ -124,14 +128,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
     filePath: string,
     options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
-    console.log(
-      "[IPC] addSampleToSlot invoked",
-      kitName,
-      voiceNumber,
-      slotIndex,
-      filePath,
-      options,
-    );
+    isDev &&
+      console.debug(
+        "[IPC] addSampleToSlot invoked",
+        kitName,
+        voiceNumber,
+        slotIndex,
+        filePath,
+        options,
+      );
     return ipcRenderer.invoke(
       "add-sample-to-slot",
       kitName,
@@ -142,27 +147,27 @@ contextBridge.exposeInMainWorld("electronAPI", {
     );
   },
   cancelKitSync: () => {
-    console.log("[IPC] cancelKitSync invoked");
+    isDev && console.debug("[IPC] cancelKitSync invoked");
     return ipcRenderer.invoke("cancelKitSync");
   },
   closeApp: (): Promise<void> => {
-    console.log("[IPC] closeApp invoked");
+    isDev && console.debug("[IPC] closeApp invoked");
     return ipcRenderer.invoke("close-app");
   },
   copyDir: (src: string, dest: string) => {
-    console.log("[IPC] copyDir invoked", src, dest);
+    isDev && console.debug("[IPC] copyDir invoked", src, dest);
     return ipcRenderer.invoke("copy-dir", src, dest);
   },
   copyKit: (sourceKit: string, destKit: string): Promise<void> => {
-    console.log("[IPC] copyKit invoked", sourceKit, destKit);
+    isDev && console.debug("[IPC] copyKit invoked", sourceKit, destKit);
     return ipcRenderer.invoke("copy-kit", sourceKit, destKit);
   },
   createKit: (kitSlot: string): Promise<void> => {
-    console.log("[IPC] createKit invoked", kitSlot);
+    isDev && console.debug("[IPC] createKit invoked", kitSlot);
     return ipcRenderer.invoke("create-kit", kitSlot);
   },
   createRomperDb: (dbDir: string) => {
-    console.log("[IPC] createRomperDb invoked", dbDir);
+    isDev && console.debug("[IPC] createRomperDb invoked", dbDir);
     return ipcRenderer.invoke("create-romper-db", dbDir);
   },
   deleteSampleFromSlot: (
@@ -170,12 +175,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     slotIndex: number,
   ) => {
-    console.log(
-      "[IPC] deleteSampleFromSlot invoked",
-      kitName,
-      voiceNumber,
-      slotIndex,
-    );
+    isDev &&
+      console.debug(
+        "[IPC] deleteSampleFromSlot invoked",
+        kitName,
+        voiceNumber,
+        slotIndex,
+      );
     return ipcRenderer.invoke(
       "delete-sample-from-slot",
       kitName,
@@ -188,12 +194,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     slotIndex: number,
   ) => {
-    console.log(
-      "[IPC] deleteSampleFromSlotWithoutCompaction invoked",
-      kitName,
-      voiceNumber,
-      slotIndex,
-    );
+    isDev &&
+      console.debug(
+        "[IPC] deleteSampleFromSlotWithoutCompaction invoked",
+        kitName,
+        voiceNumber,
+        slotIndex,
+      );
     return ipcRenderer.invoke(
       "delete-sample-from-slot-without-compaction",
       kitName,
@@ -207,7 +214,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     onProgress?: (p: any) => void,
     onError?: (e: any) => void,
   ) => {
-    console.log("[IPC] downloadAndExtractArchive invoked", url, destDir);
+    isDev &&
+      console.debug("[IPC] downloadAndExtractArchive invoked", url, destDir);
     if (onProgress) {
       ipcRenderer.removeAllListeners("archive-progress");
       ipcRenderer.on("archive-progress", (_event: any, progress: any) =>
@@ -223,51 +231,51 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("download-and-extract-archive", url, destDir);
   },
   ensureDir: (dir: string) => {
-    console.log("[IPC] ensureDir invoked", dir);
+    isDev && console.debug("[IPC] ensureDir invoked", dir);
     return ipcRenderer.invoke("ensure-dir", dir);
   },
   // Task 8.2.1: SD Card sync operations
   generateSyncChangeSummary: () => {
-    console.log("[IPC] generateSyncChangeSummary invoked");
+    isDev && console.debug("[IPC] generateSyncChangeSummary invoked");
     return ipcRenderer.invoke("generateSyncChangeSummary");
   },
   // Bank operations
   getAllBanks: () => {
-    console.log("[IPC] getAllBanks invoked");
+    isDev && console.debug("[IPC] getAllBanks invoked");
     return ipcRenderer.invoke("get-all-banks");
   },
   getAllSamples: (dbDir: string) => {
-    console.log("[IPC] getAllSamples invoked", dbDir);
+    isDev && console.debug("[IPC] getAllSamples invoked", dbDir);
     return ipcRenderer.invoke("get-all-samples", dbDir);
   },
   getAllSamplesForKit: (kitName: string) => {
-    console.log("[IPC] getAllSamplesForKit invoked", kitName);
+    isDev && console.debug("[IPC] getAllSamplesForKit invoked", kitName);
     return ipcRenderer.invoke("get-all-samples-for-kit", kitName);
   },
   // Task 6.1: Format validation for WAV files
   getAudioMetadata: (filePath: string) => {
-    console.log("[IPC] getAudioMetadata invoked", filePath);
+    isDev && console.debug("[IPC] getAudioMetadata invoked", filePath);
     return ipcRenderer.invoke("get-audio-metadata", filePath);
   },
   getFavoriteKits: () => {
-    console.log("[IPC] getFavoriteKits invoked");
+    isDev && console.debug("[IPC] getFavoriteKits invoked");
     return ipcRenderer.invoke("get-favorite-kits");
   },
   getFavoriteKitsCount: () => {
-    console.log("[IPC] getFavoriteKitsCount invoked");
+    isDev && console.debug("[IPC] getFavoriteKitsCount invoked");
     return ipcRenderer.invoke("get-favorite-kits-count");
   },
   // Database methods for kit metadata (replacing JSON file dependency)
   getKit: (kitName: string) => {
-    console.log("[IPC] getKit invoked", kitName);
+    isDev && console.debug("[IPC] getKit invoked", kitName);
     return ipcRenderer.invoke("get-kit", kitName);
   },
   getKits: () => {
-    console.log("[IPC] getKits invoked");
+    isDev && console.debug("[IPC] getKits invoked");
     return ipcRenderer.invoke("get-all-kits");
   },
   getLocalStoreStatus: async () => {
-    console.log("[IPC] getLocalStoreStatus invoked");
+    isDev && console.debug("[IPC] getLocalStoreStatus invoked");
     return await ipcRenderer.invoke("get-local-store-status");
   },
   getSampleAudioBuffer: (
@@ -275,12 +283,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     slotNumber: number,
   ) => {
-    console.log(
-      "[IPC] getSampleAudioBuffer invoked",
-      kitName,
-      voiceNumber,
-      slotNumber,
-    );
+    isDev &&
+      console.debug(
+        "[IPC] getSampleAudioBuffer invoked",
+        kitName,
+        voiceNumber,
+        slotNumber,
+      );
     return ipcRenderer.invoke(
       "get-sample-audio-buffer",
       kitName,
@@ -292,19 +301,19 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return await settingsManager.getSetting(key as SettingsKey);
   },
   getUserHomeDir: () => {
-    console.log("[IPC] getUserHomeDir invoked");
+    isDev && console.debug("[IPC] getUserHomeDir invoked");
     return ipcRenderer.invoke("get-user-home-dir");
   },
   insertKit: (dbDir: string, kit: NewKit) => {
-    console.log("[IPC] insertKit invoked", dbDir, kit);
+    isDev && console.debug("[IPC] insertKit invoked", dbDir, kit);
     return ipcRenderer.invoke("insert-kit", dbDir, kit);
   },
   insertSample: (dbDir: string, sample: NewSample) => {
-    console.log("[IPC] insertSample invoked", dbDir, sample);
+    isDev && console.debug("[IPC] insertSample invoked", dbDir, sample);
     return ipcRenderer.invoke("insert-sample", dbDir, sample);
   },
   listFilesInRoot: (localStorePath: string): Promise<string[]> => {
-    console.log("[IPC] listFilesInRoot invoked", localStorePath);
+    isDev && console.debug("[IPC] listFilesInRoot invoked", localStorePath);
     return ipcRenderer.invoke("list-files-in-root", localStorePath);
   },
   // Cross-kit sample movement with source compaction
@@ -317,11 +326,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     toSlot: number,
     mode: "insert" | "overwrite",
   ) => {
-    console.log(
-      "[IPC] moveSampleBetweenKits invoked",
-      `${fromKit}:${fromVoice}:${fromSlot} -> ${toKit}:${toVoice}:${toSlot}`,
-      mode,
-    );
+    isDev &&
+      console.debug(
+        "[IPC] moveSampleBetweenKits invoked",
+        `${fromKit}:${fromVoice}:${fromSlot} -> ${toKit}:${toVoice}:${toSlot}`,
+        mode,
+      );
     return ipcRenderer.invoke("move-sample-between-kits", {
       fromKit,
       fromSlot,
@@ -341,12 +351,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     toSlot: number,
     mode: "insert" | "overwrite",
   ) => {
-    console.log(
-      "[IPC] moveSampleInKit invoked",
-      kitName,
-      `${fromVoice}:${fromSlot} -> ${toVoice}:${toSlot}`,
-      mode,
-    );
+    isDev &&
+      console.debug(
+        "[IPC] moveSampleInKit invoked",
+        kitName,
+        `${fromVoice}:${fromSlot} -> ${toVoice}:${toSlot}`,
+        mode,
+      );
     return ipcRenderer.invoke(
       "move-sample-in-kit",
       kitName,
@@ -358,12 +369,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     );
   },
   onSamplePlaybackEnded: (cb: () => void) => {
-    console.log("[IPC] onSamplePlaybackEnded registered");
+    isDev && console.debug("[IPC] onSamplePlaybackEnded registered");
     ipcRenderer.removeAllListeners("sample-playback-ended");
     ipcRenderer.on("sample-playback-ended", cb);
   },
   onSamplePlaybackError: (cb: (errMsg: string) => void) => {
-    console.log("[IPC] onSamplePlaybackError registered");
+    isDev && console.debug("[IPC] onSamplePlaybackError registered");
     ipcRenderer.removeAllListeners("sample-playback-error");
     ipcRenderer.on("sample-playback-error", (_event: any, errMsg: string) =>
       cb(errMsg),
@@ -381,7 +392,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       totalFiles: number;
     }) => void,
   ) => {
-    console.log("[IPC] onSyncProgress listener registered");
+    isDev && console.debug("[IPC] onSyncProgress listener registered");
     ipcRenderer.removeAllListeners("sync-progress");
     ipcRenderer.on("sync-progress", (_event: any, progress: any) =>
       callback(progress),
@@ -391,15 +402,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
     filePath: string,
     options?: { channel?: "left" | "mono" | "right" | "stereo" },
   ) => {
-    console.log("[IPC] playSample invoked", filePath, options);
+    isDev && console.debug("[IPC] playSample invoked", filePath, options);
     return ipcRenderer.invoke("play-sample", filePath, options);
   },
   readFile: (filePath: string) => {
-    console.log("[IPC] readFile invoked", filePath);
+    isDev && console.debug("[IPC] readFile invoked", filePath);
     return ipcRenderer.invoke("read-file", filePath);
   },
   readSettings: async () => {
-    console.log("[IPC] readSettings invoked");
+    isDev && console.debug("[IPC] readSettings invoked");
     return await settingsManager.readSettings();
   },
   replaceSampleInSlot: (
@@ -409,14 +420,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
     filePath: string,
     options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
-    console.log(
-      "[IPC] replaceSampleInSlot invoked",
-      kitName,
-      voiceNumber,
-      slotIndex,
-      filePath,
-      options,
-    );
+    isDev &&
+      console.debug(
+        "[IPC] replaceSampleInSlot invoked",
+        kitName,
+        voiceNumber,
+        slotIndex,
+        filePath,
+        options,
+      );
     return ipcRenderer.invoke(
       "replace-sample-in-slot",
       kitName,
@@ -427,34 +439,34 @@ contextBridge.exposeInMainWorld("electronAPI", {
     );
   },
   rescanKit: (kitName: string) => {
-    console.log("[IPC] rescanKit invoked", kitName);
+    isDev && console.debug("[IPC] rescanKit invoked", kitName);
     return ipcRenderer.invoke("rescan-kit", kitName);
   },
   scanBanks: () => {
-    console.log("[IPC] scanBanks invoked");
+    isDev && console.debug("[IPC] scanBanks invoked");
     return ipcRenderer.invoke("scan-banks");
   },
   selectExistingLocalStore: () => {
-    console.log("[IPC] selectExistingLocalStore invoked");
+    isDev && console.debug("[IPC] selectExistingLocalStore invoked");
     return ipcRenderer.invoke("select-existing-local-store");
   },
   selectLocalStorePath: () => {
-    console.log("[IPC] selectLocalStorePath invoked");
+    isDev && console.debug("[IPC] selectLocalStorePath invoked");
     return ipcRenderer.invoke("select-local-store-path");
   },
   selectSdCard: (): Promise<null | string> => {
-    console.log("[IPC] selectSdCard invoked");
+    isDev && console.debug("[IPC] selectSdCard invoked");
     return ipcRenderer.invoke("select-sd-card");
   },
   setKitFavorite: (kitName: string, isFavorite: boolean) => {
-    console.log("[IPC] setKitFavorite invoked", kitName, isFavorite);
+    isDev && console.debug("[IPC] setKitFavorite invoked", kitName, isFavorite);
     return ipcRenderer.invoke("set-kit-favorite", kitName, isFavorite);
   },
   setSetting: async (key: string, value: any): Promise<void> => {
     return await settingsManager.setSetting(key as SettingsKey, value);
   },
   showItemInFolder: (path: string): Promise<void> => {
-    console.log("[IPC] showItemInFolder invoked", path);
+    isDev && console.debug("[IPC] showItemInFolder invoked", path);
     return ipcRenderer.invoke("show-item-in-folder", path);
   },
 
@@ -472,18 +484,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
       sourcePath: string;
     }>;
   }) => {
-    console.log("[IPC] startKitSync invoked", syncData);
+    isDev && console.debug("[IPC] startKitSync invoked", syncData);
     return ipcRenderer.invoke("startKitSync", syncData);
   },
 
   stopSample: () => {
-    console.log("[IPC] stopSample invoked");
+    isDev && console.debug("[IPC] stopSample invoked");
     return ipcRenderer.invoke("stop-sample");
   },
 
   // Task 20.1: Favorites system
   toggleKitFavorite: (kitName: string) => {
-    console.log("[IPC] toggleKitFavorite invoked", kitName);
+    isDev && console.debug("[IPC] toggleKitFavorite invoked", kitName);
     return ipcRenderer.invoke("toggle-kit-favorite", kitName);
   },
 
@@ -496,12 +508,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
       tags?: string[];
     },
   ) => {
-    console.log("[IPC] updateKit invoked", kitName, updates);
+    isDev && console.debug("[IPC] updateKit invoked", kitName, updates);
     return ipcRenderer.invoke("update-kit-metadata", kitName, updates);
   },
 
   updateStepPattern: (kitName: string, stepPattern: number[][]) => {
-    console.log("[IPC] updateStepPattern invoked", kitName, stepPattern);
+    isDev &&
+      console.debug("[IPC] updateStepPattern invoked", kitName, stepPattern);
     return ipcRenderer.invoke("update-step-pattern", kitName, stepPattern);
   },
 
@@ -510,12 +523,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     voiceAlias: string,
   ) => {
-    console.log(
-      "[IPC] updateVoiceAlias invoked",
-      kitName,
-      voiceNumber,
-      voiceAlias,
-    );
+    isDev &&
+      console.debug(
+        "[IPC] updateVoiceAlias invoked",
+        kitName,
+        voiceNumber,
+        voiceAlias,
+      );
     return ipcRenderer.invoke(
       "update-voice-alias",
       kitName,
@@ -525,23 +539,24 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 
   validateLocalStore: (localStorePath?: string) => {
-    console.log("[IPC] validateLocalStore invoked", localStorePath);
+    isDev && console.debug("[IPC] validateLocalStore invoked", localStorePath);
     return ipcRenderer.invoke("validate-local-store", localStorePath);
   },
 
   validateLocalStoreBasic: (localStorePath?: string) => {
-    console.log("[IPC] validateLocalStoreBasic invoked", localStorePath);
+    isDev &&
+      console.debug("[IPC] validateLocalStoreBasic invoked", localStorePath);
     return ipcRenderer.invoke("validate-local-store-basic", localStorePath);
   },
 
   validateSampleFormat: (filePath: string) => {
-    console.log("[IPC] validateSampleFormat invoked", filePath);
+    isDev && console.debug("[IPC] validateSampleFormat invoked", filePath);
     return ipcRenderer.invoke("validate-sample-format", filePath);
   },
 
   // Task 5.2.5: Validate source_path files for existing samples
   validateSampleSources: (kitName: string) => {
-    console.log("[IPC] validateSampleSources invoked", kitName);
+    isDev && console.debug("[IPC] validateSampleSources invoked", kitName);
     return ipcRenderer.invoke("validate-sample-sources", kitName);
   },
 });
@@ -564,4 +579,4 @@ contextBridge.exposeInMainWorld("electronFileAPI", {
   },
 });
 
-console.log("Preload script updated and loaded");
+console.info("Preload script updated and loaded");

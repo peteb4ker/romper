@@ -1,28 +1,25 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import { cleanup, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import type { KitWithRelations } from "../../../../shared/db/schema";
 
 import KitBrowserContainer from "../KitBrowserContainer";
 
 // Mock KitBrowser component
 vi.mock("../KitBrowser", () => ({
-  default: React.forwardRef(
-    (
-      { onMessage, onRefreshKits, onSelectKit, setLocalStorePath }: any,
-      ref: any,
-    ) => (
-      <div data-testid="kit-browser" ref={ref}>
-        <button onClick={() => onMessage("Test message", "info", 5000)}>
-          Message
-        </button>
-        <button onClick={onRefreshKits}>Refresh</button>
-        <button onClick={() => onSelectKit("test-kit")}>Select Kit</button>
-        <button onClick={() => setLocalStorePath("/new/path")}>Set Path</button>
-      </div>
-    ),
-  ),
+  default: React.forwardRef((props: any, ref: any) => (
+    <div data-testid="kit-browser" ref={ref}>
+      <button onClick={() => props.onMessage("Test message", "info", 5000)}>
+        Message
+      </button>
+      <button onClick={props.onRefreshKits}>Refresh</button>
+      <button onClick={() => props.onSelectKit("test-kit")}>Select</button>
+      <button onClick={() => props.setLocalStorePath("/new/path")}>
+        Set Path
+      </button>
+    </div>
+  )),
 }));
 
 describe("KitBrowserContainer", () => {
@@ -69,7 +66,7 @@ describe("KitBrowserContainer", () => {
       expect(screen.getByTestId("kit-browser")).toBeInTheDocument();
       expect(screen.getByText("Message")).toBeInTheDocument();
       expect(screen.getByText("Refresh")).toBeInTheDocument();
-      expect(screen.getByText("Select Kit")).toBeInTheDocument();
+      expect(screen.getByText("Select")).toBeInTheDocument();
       expect(screen.getByText("Set Path")).toBeInTheDocument();
     });
 
@@ -105,7 +102,7 @@ describe("KitBrowserContainer", () => {
     it("should handle onSelectKit callback", () => {
       render(<KitBrowserContainer {...defaultProps} />);
 
-      const selectButton = screen.getByText("Select Kit");
+      const selectButton = screen.getByText("Select");
       selectButton.click();
 
       expect(defaultProps.onSelectKit).toHaveBeenCalledWith("test-kit");

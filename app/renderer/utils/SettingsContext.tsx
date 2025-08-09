@@ -1,3 +1,4 @@
+import { LocalStoreValidationDetailedResult } from "@romper/shared/db/schema.js";
 import React, {
   createContext,
   useCallback,
@@ -6,8 +7,6 @@ import React, {
   useMemo,
   useReducer,
 } from "react";
-
-import { LocalStoreValidationDetailedResult } from "../../../shared/db/schema.js";
 
 interface Settings {
   confirmDestructiveActions: boolean;
@@ -360,5 +359,5 @@ export const useSettings = (): SettingsContextProps => {
 
 // Export types for external use
 export type { Settings, SettingsContextProps, ThemeMode };
-export type { LocalStoreValidationDetailedResult } from "../../../shared/db/schema.js";
+export type { LocalStoreValidationDetailedResult } from "@romper/shared/db/schema.js";
 export { SettingsContext };

@@ -1,8 +1,8 @@
+import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
 import { FiCircle, FiCopy } from "react-icons/fi";
 
-import { toCapitalCase } from "../../../shared/kitUtilsShared";
-import { useKitItem } from "./hooks/useKitItem";
+import { useKitItem } from "./hooks/kit-management/useKitItem";
 import { KitIconRenderer } from "./shared/KitIconRenderer";
 import {
   BaseKitItemProps,

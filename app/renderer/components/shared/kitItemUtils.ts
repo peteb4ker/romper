@@ -1,4 +1,4 @@
-import type { KitWithRelations } from "../../../../shared/db/schema";
+import type { KitWithRelations } from "@romper/shared/db/schema";
 
 /**
  * Common interface for kit item props

@@ -1,4 +1,4 @@
-import type { NewSample, Sample } from "../../shared/db/schema";
+import type { NewSample, Sample } from "@romper/shared/db/schema";
 
 /**
  * Factory for creating mock Sample objects

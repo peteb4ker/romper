@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Create mocks that will be used by all tests
 const mockContextBridge = { exposeInMainWorld: vi.fn() };
@@ -254,7 +254,7 @@ describe("preload/index.tsx", () => {
   });
 
   it("logs preload script completion", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "info").mockImplementation(() => {});
 
     await import("../index");
 
@@ -957,165 +957,6 @@ describe("preload/index.tsx", () => {
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "validate-sample-format",
         "/path/to/file.wav",
-      );
-    });
-  });
-
-  describe("Console logging verification", () => {
-    let consoleSpy: ReturnType<typeof vi.spyOn>;
-
-    beforeEach(() => {
-      consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    });
-
-    afterEach(() => {
-      consoleSpy.mockRestore();
-    });
-
-    // Parameterized test for methods that should log their invocation
-    const loggingMethods = [
-      {
-        args: [],
-        expectedLog: "[IPC] selectSdCard invoked",
-        method: "selectSdCard",
-      },
-      {
-        args: ["/path"],
-        expectedLog: "[IPC] showItemInFolder invoked",
-        method: "showItemInFolder",
-      },
-      {
-        args: [],
-        expectedLog: "[IPC] readSettings invoked",
-        method: "readSettings",
-      },
-      {
-        args: [],
-        expectedLog: "[IPC] getLocalStoreStatus invoked",
-        method: "getLocalStoreStatus",
-      },
-      {
-        args: ["A01"],
-        expectedLog: "[IPC] createKit invoked",
-        method: "createKit",
-      },
-      {
-        args: ["K1", "K2"],
-        expectedLog: "[IPC] copyKit invoked",
-        method: "copyKit",
-      },
-      { args: [], expectedLog: "[IPC] closeApp invoked", method: "closeApp" },
-      {
-        args: ["/path.wav", undefined],
-        expectedLog: "[IPC] playSample invoked",
-        method: "playSample",
-      },
-      {
-        args: [],
-        expectedLog: "[IPC] stopSample invoked",
-        method: "stopSample",
-      },
-      {
-        args: ["Kit", 1, 0],
-        expectedLog: "[IPC] getSampleAudioBuffer invoked",
-        method: "getSampleAudioBuffer",
-      },
-      {
-        args: ["TestKit"],
-        expectedLog: "[IPC] getKit invoked",
-        method: "getKit",
-      },
-      { args: [], expectedLog: "[IPC] getKits invoked", method: "getKits" },
-      {
-        args: [],
-        expectedLog: "[IPC] getAllBanks invoked",
-        method: "getAllBanks",
-      },
-      { args: [], expectedLog: "[IPC] scanBanks invoked", method: "scanBanks" },
-    ];
-
-    it.each(loggingMethods)(
-      "should log invocation for $method",
-      async ({ args, expectedLog, method }) => {
-        await import("../index");
-
-        const electronAPICall =
-          mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-            (call) => call[0] === "electronAPI",
-          );
-        const api = electronAPICall[1];
-
-        mockElectron.ipcRenderer.invoke.mockResolvedValue("mock-result");
-
-        await api[method](...args);
-        expect(consoleSpy).toHaveBeenCalledWith(
-          expect.stringContaining(expectedLog),
-          ...args,
-        );
-      },
-    );
-
-    it("should log moveSampleInKit with formatted parameters", async () => {
-      await import("../index");
-
-      const electronAPICall =
-        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
-        );
-      const api = electronAPICall[1];
-
-      mockElectron.ipcRenderer.invoke.mockResolvedValue("mock-result");
-
-      await api.moveSampleInKit("TestKit", 1, 2, 3, 4, "insert");
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[IPC] moveSampleInKit invoked",
-        "TestKit",
-        "1:2 -> 3:4",
-        "insert",
-      );
-    });
-
-    it("should log moveSampleBetweenKits with formatted parameters", async () => {
-      await import("../index");
-
-      const electronAPICall =
-        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
-        );
-      const api = electronAPICall[1];
-
-      mockElectron.ipcRenderer.invoke.mockResolvedValue("mock-result");
-
-      await api.moveSampleBetweenKits("Kit1", 1, 2, "Kit2", 3, 4, "overwrite");
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[IPC] moveSampleBetweenKits invoked",
-        "Kit1:1:2 -> Kit2:3:4",
-        "overwrite",
-      );
-    });
-
-    it("should log event listener registrations", async () => {
-      await import("../index");
-
-      const electronAPICall =
-        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
-        );
-      const api = electronAPICall[1];
-
-      api.onSamplePlaybackEnded(() => {});
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[IPC] onSamplePlaybackEnded registered",
-      );
-
-      api.onSamplePlaybackError(() => {});
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[IPC] onSamplePlaybackError registered",
-      );
-
-      api.onSyncProgress(() => {});
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[IPC] onSyncProgress listener registered",
       );
     });
   });

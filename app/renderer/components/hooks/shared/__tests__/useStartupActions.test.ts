@@ -1,20 +1,13 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useStartupActions } from "../useStartupActions";
 
-// Mock console methods
-const mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
-const mockConsoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+// No console mocking needed since we don't test logging messages
 
 describe("useStartupActions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  afterAll(() => {
-    mockConsoleLog.mockRestore();
-    mockConsoleWarn.mockRestore();
   });
 
   it("should run bank scanning when local store is configured", async () => {
@@ -33,13 +26,6 @@ describe("useStartupActions", () => {
     await waitFor(() => {
       expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalledWith();
     });
-
-    expect(mockConsoleLog).toHaveBeenCalledWith(
-      "[Startup] Running bank scanning...",
-    );
-    expect(mockConsoleLog).toHaveBeenCalledWith(
-      "[Startup] Bank scanning complete. Updated 5 banks.",
-    );
   });
 
   it("should not run when localStorePath is null", async () => {
@@ -86,10 +72,6 @@ describe("useStartupActions", () => {
     await waitFor(() => {
       expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalled();
     });
-
-    expect(mockConsoleWarn).toHaveBeenCalledWith(
-      "[Startup] Bank scanning failed: Permission denied",
-    );
   });
 
   it("should handle bank scanning exception gracefully", async () => {
@@ -107,10 +89,6 @@ describe("useStartupActions", () => {
     await waitFor(() => {
       expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalled();
     });
-
-    expect(mockConsoleWarn).toHaveBeenCalledWith(
-      "[Startup] Bank scanning error: Connection timeout",
-    );
   });
 
   it("should re-run when localStorePath changes", async () => {

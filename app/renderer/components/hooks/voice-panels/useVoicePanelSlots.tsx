@@ -10,6 +10,8 @@ export interface UseVoicePanelSlotsOptions {
     handleDragLeave: () => void;
     handleDragOver: (e: React.DragEvent, slotIndex: number) => void;
     handleDrop: (e: React.DragEvent, slotIndex: number) => void;
+    handleInternalDragOver: (e: React.DragEvent, slotIndex: number) => void;
+    handleInternalDrop: (e: React.DragEvent, slotIndex: number) => void;
   };
   isActive: boolean;
   isEditable: boolean;
@@ -93,6 +95,37 @@ export function useVoicePanelSlots({
   stopTriggers,
   voice,
 }: UseVoicePanelSlotsOptions) {
+  // Combined drag handler for both external and internal drags
+  const handleCombinedDragOver = React.useCallback(
+    (e: React.DragEvent, slotIndex: number) => {
+      if (!isEditable) return;
+
+      // Handle both external and internal drags
+      dragAndDropHook.handleDragOver(e, slotIndex);
+      dragAndDropHook.handleInternalDragOver(e, slotIndex);
+    },
+    [isEditable, dragAndDropHook],
+  );
+
+  const handleCombinedDragLeave = React.useCallback(() => {
+    if (!isEditable) return;
+
+    // Handle both external and internal drag leave
+    dragAndDropHook.handleDragLeave();
+    // Internal drag leave is handled by the internal handler's own logic
+  }, [isEditable, dragAndDropHook]);
+
+  const handleCombinedDrop = React.useCallback(
+    (e: React.DragEvent, slotIndex: number) => {
+      if (!isEditable) return;
+
+      // Handle both external and internal drops
+      dragAndDropHook.handleDrop(e, slotIndex);
+      dragAndDropHook.handleInternalDrop(e, slotIndex);
+    },
+    [isEditable, dragAndDropHook],
+  );
+
   // Helper function to render a filled sample slot
   const renderSampleSlot = React.useCallback(
     (slotIndex: number, sample: string) => {
@@ -129,6 +162,29 @@ export function useVoicePanelSlots({
         sampleName,
       );
 
+      // Combine internal drag handlers for drop targets
+      const combinedDragHandlers = isEditable
+        ? {
+            ...dragHandlers,
+            onDragOver: (e: React.DragEvent) => {
+              // Call the original drag over handler first
+              if (dragHandlers.onDragOver) {
+                dragHandlers.onDragOver(e);
+              }
+              // Also handle external drags for potential replacement
+              handleCombinedDragOver(e, slotIndex);
+            },
+            onDrop: (e: React.DragEvent) => {
+              // Call the original drop handler first
+              if (dragHandlers.onDrop) {
+                dragHandlers.onDrop(e);
+              }
+              // Also handle external drops for potential replacement
+              handleCombinedDrop(e, slotIndex);
+            },
+          }
+        : dragHandlers;
+
       return (
         <li
           aria-label={`Sample ${sampleName} in slot ${slotIndex}`}
@@ -152,7 +208,7 @@ export function useVoicePanelSlots({
           role="option"
           tabIndex={0}
           title={title}
-          {...dragHandlers}
+          {...combinedDragHandlers}
         >
           {renderPlayButton(isPlaying, sampleName)}
           <span
@@ -204,6 +260,8 @@ export function useVoicePanelSlots({
       onWaveformPlayingChange,
       playTriggers,
       stopTriggers,
+      handleCombinedDragOver,
+      handleCombinedDrop,
     ],
   );
 
@@ -229,21 +287,20 @@ export function useVoicePanelSlots({
               : ""
           }`}
           data-testid={`empty-slot-${voice}-${slotIndex}`}
+          draggable={false}
           key={`${voice}-empty-${slotIndex}`}
           onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
           onDragLeave={
-            isEditable && isDropTarget
-              ? dragAndDropHook.handleDragLeave
-              : undefined
+            isEditable && isDropTarget ? handleCombinedDragLeave : undefined
           }
           onDragOver={
             isEditable && isDropTarget
-              ? (e) => dragAndDropHook.handleDragOver(e, slotIndex)
+              ? (e) => handleCombinedDragOver(e, slotIndex)
               : undefined
           }
           onDrop={
             isEditable && isDropTarget
-              ? (e) => dragAndDropHook.handleDrop(e, slotIndex)
+              ? (e) => handleCombinedDrop(e, slotIndex)
               : undefined
           }
           onKeyDown={(e) => {
@@ -272,22 +329,32 @@ export function useVoicePanelSlots({
         </li>
       );
     },
-    [slotRenderingHook, isEditable, voice, onSampleSelect, dragAndDropHook],
+    [
+      slotRenderingHook,
+      isEditable,
+      voice,
+      onSampleSelect,
+      handleCombinedDragOver,
+      handleCombinedDragLeave,
+      handleCombinedDrop,
+    ],
   );
 
   // Main render function for all sample slots
   const renderSampleSlots = React.useCallback(() => {
-    const { nextAvailableSlot, slotsToRender } =
-      slotRenderingHook.calculateRenderSlots();
+    const { slotsToRender } = slotRenderingHook.calculateRenderSlots();
     const renderedSlots = [];
 
     for (let i = 0; i < slotsToRender; i++) {
       const sample = samples[i];
-      const isDropTarget = i === nextAvailableSlot;
+      // For external files, all empty slots should be drop targets
+      // For internal moves, we can be more restrictive if needed
+      const isDropTarget = !sample; // All empty slots are valid drop targets
 
       if (sample) {
         renderedSlots.push(renderSampleSlot(i, sample));
-      } else if (isDropTarget) {
+      } else {
+        // Render all empty slots, with the next available slot as the drop target
         renderedSlots.push(renderEmptySlot(i, isDropTarget));
       }
     }

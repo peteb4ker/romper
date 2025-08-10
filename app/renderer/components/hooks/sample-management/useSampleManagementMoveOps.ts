@@ -73,25 +73,21 @@ export function useSampleManagementMoveOps({
 
   const handleMoveSuccess = useCallback(
     async (
-      result: any,
-      isCrossKit: boolean,
-      targetKit: string,
-      fromVoice: number,
-      fromSlot: number,
-      toVoice: number,
-      toSlot: number,
+      _result: any,
+      _isCrossKit: boolean,
+      _targetKit: string,
+      _fromVoice: number,
+      _fromSlot: number,
+      _toVoice: number,
+      _toSlot: number,
     ) => {
-      const moveDescription = isCrossKit
-        ? `Sample moved from ${kitName} voice ${fromVoice}, slot ${fromSlot + 1} to ${targetKit} voice ${toVoice}, slot ${toSlot + 1}`
-        : `Sample moved from voice ${fromVoice}, slot ${fromSlot + 1} to voice ${toVoice}, slot ${toSlot + 1}`;
-
-      onMessage?.(moveDescription, "success");
+      // Toast notifications removed per user request
 
       if (onSamplesChanged) {
         await onSamplesChanged();
       }
     },
-    [kitName, onMessage, onSamplesChanged],
+    [onSamplesChanged],
   );
 
   const handleSampleMove = useCallback(
@@ -100,7 +96,6 @@ export function useSampleManagementMoveOps({
       fromSlot: number,
       toVoice: number,
       toSlot: number,
-      mode: "insert" | "overwrite",
       toKit?: string,
     ) => {
       const targetKit = toKit || kitName;
@@ -112,15 +107,15 @@ export function useSampleManagementMoveOps({
         let result;
 
         if (isCrossKit) {
-          result = await (window as any).electronAPI.moveSampleBetweenKits(
-            kitName,
-            fromVoice,
+          result = await (window as any).electronAPI.moveSampleBetweenKits({
+            fromKit: kitName,
             fromSlot,
-            targetKit,
-            toVoice,
+            fromVoice,
+            mode: "insert",
+            toKit: targetKit,
             toSlot,
-            mode,
-          );
+            toVoice,
+          });
         } else {
           const stateSnapshot = await captureStateSnapshot(fromVoice, toVoice);
           result = await (window as any).electronAPI.moveSampleInKit(
@@ -129,7 +124,6 @@ export function useSampleManagementMoveOps({
             fromSlot,
             toVoice,
             toSlot,
-            mode,
           );
 
           if (
@@ -141,7 +135,6 @@ export function useSampleManagementMoveOps({
             const moveAction = undoActions.createSameKitMoveAction({
               fromSlot,
               fromVoice,
-              mode,
               result,
               stateSnapshot,
               toSlot,
@@ -161,7 +154,6 @@ export function useSampleManagementMoveOps({
           const crossKitMoveAction = undoActions.createCrossKitMoveAction({
             fromSlot,
             fromVoice,
-            mode,
             result,
             targetKit,
             toSlot,

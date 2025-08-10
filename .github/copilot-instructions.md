@@ -3,6 +3,7 @@
 > **Quick Reference**: For comprehensive project context, see [CLAUDE.md](../CLAUDE.md), [docs/developer/architecture.md](../docs/developer/architecture.md), and [.agent/context.md](../.agent/context.md) for context-aware standards.
 
 ## General
+
 - All business logic for UI components must live in a hook file named `hooks/use<ComponentName>`, and UI components must only contain rendering logic and hook calls.
 - Empty or unused hook files should be deleted.
 - UI logic lives in hook files. Hook files are only needed if the UI component has business logic. Remove empty hook files.
@@ -12,12 +13,14 @@
 - if a tsx file grows to more than 400 lines, it should be refactored into multiple logical components.
 
 ## Build Validation
+
 - After making any code changes, always run `npx tsc --noEmit` to check for TypeScript compilation errors before marking a task complete.
 - Use `npx tsc --noEmit` rather than a full build as it's faster and sufficient for type checking.
 - Fix all TypeScript errors before proceeding to the next task.
 - Use the `get_errors` tool to check for errors in specific files during development.
 
 ## Testing
+
 - `vitest` is used for testing. Not `jest`.
 - centralized mocks, setup, teardown and dependencies in `vitest.setup.ts` should always be referenced when testing.
 - Each code file has exactly 1 corresponding unit test file in a relative `__tests__` subdirectory.
@@ -29,6 +32,7 @@
 - Clear the dom between tests
 
 ## Mocking
+
 - Mocks from vitest.setup.ts are used or extended as needed for unit tests.
 - Mocks and setup is always DRY. Wheverer possible use a common mock.
 - Mock imported modules or functions in unit tests to avoid testing their internal implementation. Only test the integration and behavior of the code under test, not the logic of its dependencies.
@@ -69,6 +73,7 @@ Tests: <passing>/<total> passing
 ```
 
 **Guidelines:**
+
 - Use conventional commit types: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
 - Keep the first line under 50 characters when possible
 - Use bullet points for detailed changes
@@ -77,6 +82,7 @@ Tests: <passing>/<total> passing
 - Mention any backward compatibility considerations
 
 **Example:**
+
 ```
 feat: transition from SD card to local store as primary data source
 
@@ -90,4 +96,3 @@ feat: transition from SD card to local store as primary data source
 Closes #2.9 - SD card to local store transition
 Tests: 400/400 passing
 ```
-

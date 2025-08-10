@@ -27,12 +27,14 @@ This process is slow, error-prone, and becomes unwieldy when managing dozens of 
 While all users are "Rample owners," they fall into different experience levels:
 
 ### Primary User: The Creative Experimenter
+
 - **Profile**: Owns a Rample, wants to make music efficiently
 - **Pain Points**: Current workflow kills creative flow, too much time on file management
 - **Goals**: Quick iteration, easy experimentation, reliable sync to hardware
 - **Technical Level**: Comfortable with basic file operations, can convert audio formats
 
 ### Secondary User: The Workflow Optimizer
+
 - **Profile**: Experienced Rample user, manages many kits, values efficiency
 - **Pain Points**: Scaling current workflow to hundreds of kits is impossible
 - **Goals**: Batch operations, organizational tools, fast navigation
@@ -43,6 +45,7 @@ While all users are "Rample owners," they fall into different experience levels:
 The three main user journeys are:
 
 ### Setup Journey
+
 - **Goal**: Get Romper configured and ready to use
 - **Current Pain Points**:
   - None: the app is in its default state prior to this step.
@@ -51,6 +54,7 @@ The three main user journeys are:
 - **Success Criteria**: User can immediately start creating/editing kits
 
 #### Setup Edge Cases & Recovery
+
 - **Corrupted SD card**: Auto-detect corruption, offer factory samples as fallback
 - **Network failure during download**: Resume download, offer retry with exponential backoff
 - **Settings file collision**: Use romper-specific settings filename to avoid conflicts with other Electron apps
@@ -62,6 +66,7 @@ The three main user journeys are:
 - **Invalid SD card structure**: Show expected vs actual structure, offer to initialize anyway
 
 ### Kit Creation and Management Journey
+
 - **Goal**: Create, edit, and organize sample kits efficiently
 - **Current Pain Points**:
   - No local preview on the users computer. Users can only see contents of kits when removing the SD card from the device and mounting on their computer.
@@ -72,24 +77,28 @@ The three main user journeys are:
 - **Success Criteria**: User can create a kit in <2 minutes vs 10+ minutes manually
 
 #### Typical Kit Creation Workflows
+
 1. **From scratch**: Create new kit → Add samples one by one → Preview → Assign to bank/slot
 2. **From existing kit**: Duplicate kit → Replace some samples → Preview changes → Save
 3. **Bulk creation**: Drop multiple samples → Auto-assign to voices → Batch preview → Organize
 
 #### Common Mistakes & Solutions
+
 - **Wrong file format**: Clear format requirements, auto-conversion offers
 - **Overfilling voices**: Clear slot limits, visual indicators for full voices
 - **Forgetting to save**: Auto-save with clear state indicators
 - **Losing editable state**: Clear visual indicators, easy toggle controls
-- **Accidental overwrites**: Confirmation dialogs, easy undo options
+- **Accidental changes**: Clear visual indicators, easy undo options
 
 #### Iteration Patterns
+
 - **Rapid prototyping**: Quick sample swapping with immediate preview
 - **A/B testing**: Duplicate kit, modify, compare side-by-side
 - **Progressive refinement**: Start with rough samples, gradually replace with better ones
 - **Batch operations**: Select multiple kits, apply changes to all
 
 ### Sync to Hardware Journey
+
 - **Goal**: Get finalized kits onto SD card for use with Rample
 - **Current Pain Points**:
   - SD card unexpectedly removed during sync
@@ -101,24 +110,28 @@ The three main user journeys are:
 - **Success Criteria**: User can sync multiple kits reliably without data loss
 
 #### Sync Scenarios (NOTE: only Full Sync is initially implemented)
+
 1. **Single kit sync**: Select kit → Check for issues → Sync → Verify
 2. **Batch sync**: Select multiple kits → Resolve conflicts → Sync all → Progress tracking
 3. **Incremental sync**: Sync only changed kits → Skip unchanged → Fast completion
 4. **Full sync**: Clear SD card → Sync all kits → Complete rebuild
 
 #### Conflict Resolution
+
 - **Slot conflicts**: Show conflicting kits, allow user to reassign slots
 - **Missing samples**: Show missing files, offer to locate or skip
 - **Format issues**: Show conversion details, confirm before proceeding
 - **Space constraints**: Show space needed vs available, help prioritize kits
 
 #### Batch Operations
+
 - **Select all**: Quick selection of all kits for sync
 - **Filter selection**: Sync only tagged, favorited, or recently modified kits
 - **Smart selection**: Auto-select kits that have changed since last sync
 - **Progress tracking**: Real-time progress with ability to pause/resume
 
 #### Verification & Recovery
+
 - **Sync verification**: Check that files were written correctly
 - **Rollback capability**: Restore previous SD card state if sync fails
 - **Partial sync recovery**: Resume interrupted sync from last successful kit
@@ -127,6 +140,7 @@ The three main user journeys are:
 ### Common Workflow Patterns
 
 #### First-Time User Flow
+
 1. **Setup**: Install Romper → Run setup wizard → Choose factory samples source → Initialize
 2. **Exploration**: Browse existing kits → Preview samples → Understand 4-voice structure
 3. **First Kit**: Create new kit → Add samples → Use XOX sequencer → Preview → Sync to test
@@ -134,12 +148,14 @@ The three main user journeys are:
 5. **Refer**: Browse Romper → (On Rample) Change kits → (On Rample) Play kits
 
 #### Power User Flow
+
 1. **Kit Creation**: Rapid prototyping with keyboard shortcuts → Batch preview → Organize
 2. **Tag and organize**: Copy kits → Tag kits → Easily find kits
 
 ## 2. Goals
 
 ### Application Goals
+
 - Allow users to seamlessly navigate hundreds of kits.
 - Enable users to find kits and samples within a few seconds.
 - Support syncing hundreds of kits to an SD card in (ideally) under a minute.
@@ -147,11 +163,13 @@ The three main user journeys are:
 - Support cross-platform usage on macOS, Linux and Windows.
 
 ### Kit Goals
+
 - Enable users to add, replace, or remove samples in kit slots before updating the SD card.
 - Ensure all changes are previewable and reversible before updating the SD card.
 - Provide a safe, non-destructive workflow for kit experimentation and iteration.
 
 ### Preview and Audition Goals
+
 - Enable users to preview individual samples and complete kits before syncing.
 - Provide visual feedback through waveforms and audio playback.
 - Allow users to audition kits in musical context using the XOX sequencer.
@@ -160,6 +178,7 @@ The three main user journeys are:
 - Persist test patterns per kit in the Romper DB for later use.
 
 ### Setup and Configuration Goals
+
 - Provide a simple, guided setup process for new users.
 - Support multiple initialization sources (SD card, factory samples, blank).
 - Allow users to configure their preferred local store location.
@@ -170,19 +189,19 @@ The three main user journeys are:
 ### Kit Management User Stories
 
 - **As a Rample owner, I want to drag-and-drop sample files into kit voices/slots so I can quickly build new kits.**
-  - *Acceptance Criteria*: Can drag WAV files from OS file explorer into specific voice slots, see visual feedback during drag, get immediate confirmation when dropped, receive clear error for invalid files
+  - _Acceptance Criteria_: Can drag WAV files from OS file explorer into specific voice slots, see visual feedback during drag, get immediate confirmation when dropped, receive clear error for invalid files
 
 - **As a Rample owner, I want to create and edit reusable kits locally so I can experiment and iterate.**
-  - *Acceptance Criteria*: Can create new empty kit, duplicate existing kit, modify samples without affecting original, save changes with clear state indicators
+  - _Acceptance Criteria_: Can create new empty kit, duplicate existing kit, modify samples without affecting original, save changes with clear state indicators
 
 - **As a Rample owner, I want to add, replace, or remove samples in a kit and see the changes before saving, so I can experiment without risk.**
-  - *Acceptance Criteria*: All changes show in preview mode, can undo/redo any action, clear visual distinction between original and modified state, can abandon changes without saving
+  - _Acceptance Criteria_: All changes show in preview mode, can undo/redo any action, clear visual distinction between original and modified state, can abandon changes without saving
 
 - **As a Rample owner, I want to move samples within a kit to reorganize them efficiently, so I can perfect my sample arrangement.**
-  - *Acceptance Criteria*: Can drag samples between slots and voices within a kit, samples maintain contiguity (no gaps), clear visual feedback for insert vs overwrite operations, supports undo for complex multi-sample moves
+  - _Acceptance Criteria_: Can drag samples between slots and voices within a kit, samples maintain contiguity (no gaps), clear visual feedback for insert vs append operations, supports undo for complex multi-sample moves, 12-sample limit per voice enforced
 
 - **As a Rample owner, I want sample slots to remain contiguous after deletions, so I don't have gaps in my sample arrangement.**
-  - *Acceptance Criteria*: When sample is deleted from slot N, all samples from N+1 automatically move up to fill gaps, contiguity is maintained from slot 1 upwards, undo can restore original positions
+  - _Acceptance Criteria_: When sample is deleted from slot N, all samples from N+1 automatically move up to fill gaps, contiguity is maintained from slot 1 upwards, undo can restore original positions
 
 - As a Rample owner, I want to drag and drop multiple samples into a kit and have them automatically assigned to available slots, so I can quickly build kits.
 - As a Rample owner, I want to undo or redo changes to my kit, so I can easily correct mistakes.
@@ -191,13 +210,13 @@ The three main user journeys are:
 ### Preview and Audition User Stories
 
 - **As a Rample owner, I want to preview individual samples and entire kits so I can audition sounds before syncing.**
-  - *Acceptance Criteria*: Can click any sample to hear it immediately, can play entire kit using sequencer, audio matches what will play on hardware, global volume control works
+  - _Acceptance Criteria_: Can click any sample to hear it immediately, can play entire kit using sequencer, audio matches what will play on hardware, global volume control works
 
 - **As a Rample owner, I want to program a step sequence for a kit so I can preview how the kit sounds in a musical context.**
-  - *Acceptance Criteria*: Can toggle steps on/off with mouse and keyboard, pattern plays back accurately, can start/stop playback, pattern saves automatically with kit
+  - _Acceptance Criteria_: Can toggle steps on/off with mouse and keyboard, pattern plays back accurately, can start/stop playback, pattern saves automatically with kit
 
 - **As a Rample owner, I want to see waveforms for my samples so I can visually understand their characteristics.**
-  - *Acceptance Criteria*: Waveform displays immediately when sample is loaded, shows accurate representation of audio content, updates when sample is replaced
+  - _Acceptance Criteria_: Waveform displays immediately when sample is loaded, shows accurate representation of audio content, updates when sample is replaced
 
 - As a Rample owner, I want to preview how my kit will sound before updating the SD card, so I can be sure how the kit will sound before I move the kit to the SD card and play on hardware.
 - As a Rample owner, I want to control the application volume so I can audition samples at comfortable levels.
@@ -205,29 +224,33 @@ The three main user journeys are:
 - As a Rample owner, I want my test pattern to be saved with the kit so I can return to it later.
 
 ### Organization and Metadata User Stories
+
 - As a Rample owner, I want to tag and favorite samples and kits so I can organize and find them easily.
 - As a Rample owner, I want persistent metadata storage so I can quickly understand all of my kits using a rich UI, instead of depending on the limited UI on the romper or mounting the SD card to use a file browser.
 - As a Rample owner, I want persistent metadata storage so my kit plans and tags are always saved.
 
 ### SD Card and Sync User Stories
+
 - As a Rample owner, I want to build and manage kits without needing the SD card present so I can plan ahead.
 - As a Rample owner, I want to sync kits to a mounted SD card so I can use them on my Rample.
 - As a Rample owner, I want to track and resolve missing source files so my kits are always complete.
 - As a Rample owner, I want to see warnings if my samples are in the wrong format, so I know what will be changed when updating the SD card.
 
 ### Audio Format and Processing User Stories
+
 - As a Rample owner, I want to control whether stereo samples are treated as mono by default so I can manage my preferred workflow.
 - As a Rample owner, I want to be warned when samples need format conversion so I understand what changes will be made.
 - As a Rample owner, I want stereo samples to be properly handled according to my settings so they work correctly with the Rample hardware.
 
 ### Application UI and Navigation User Stories
+
 - As a Rample owner, I want to navigate through kits efficiently using keyboard shortcuts so I can browse quickly.
 - As a Rample owner, I want to see useful metadata about each kit in the browser so I can identify kits at a glance.
 - As a Rample owner, I want to toggle between light and dark mode so I can use the app comfortably in different lighting conditions.
 - As a Rample owner, I want clear visual feedback and progress indicators so I understand what the application is doing.
 
-
 ### Setup and Configuration User Stories
+
 - As a Rample owner, I want to easily set up the application for first use so I can start working with my kits quickly.
 - As a Rample owner, I want to choose my local store location so I can organize my files where I prefer.
 - As a Rample owner, I want to initialize from different sources (SD card, factory samples, blank) so I can start with the content I prefer as my immutable baseline.
@@ -236,6 +259,7 @@ The three main user journeys are:
 ### 4.5 User Interface and Navigation Capabilities
 
 #### Administrative: Change Local Store Directory
+
 - As an admin user, I want to see the current local store directory so I know where my kits and samples are managed
 - As an admin user, I want to change the local store directory to a new valid location so I can manage a different set of kits
 - As an admin user, I want to be warned if the selected directory is not a valid Romper local store (missing .romperdb folder)
@@ -248,6 +272,7 @@ The three main user journeys are:
 ### 4.1 Kit Management Capabilities
 
 **Core Kit Operations**
+
 - Create, duplicate, and delete kits locally without SD card present
 - Add, replace, and remove samples in kit slots via drag-and-drop from OS file explorer
 - Move samples within kit using drag-and-drop with automatic contiguity maintenance
@@ -256,12 +281,24 @@ The three main user journeys are:
 - Provide undo/redo functionality for all kit editing actions, including complex multi-sample moves
 
 **Sample Contiguity System**
-- Automatic slot compaction after sample deletion to maintain contiguity from slot 1 upwards
-- Drag-and-drop sample moves with visual distinction between insert and overwrite operations
+
+- Automatic slot reindexing after sample deletion to maintain contiguity from slot 1 upwards
+- Drag-and-drop sample moves with visual distinction between insert and append operations
 - Cross-voice sample movement within same kit with stereo conflict detection
 - Full state restoration for undo operations affecting multiple samples
 
+**Insert-Only Drag & Drop System**
+
+- All sample operations use insert-only behavior - samples are never overwritten or replaced during drag/drop
+- Dropping sample A onto sample B inserts A before B, shifting B and subsequent samples down
+- Only one empty slot is shown at the end of each voice for new sample drops
+- External file drops are blocked when voice has 12 samples (visual feedback shows "blocked" state)
+- Internal sample moves are allowed within full voices (12 samples), enabling rearrangement
+- Visual feedback distinguishes between insert mode (green), append mode (blue), and blocked mode (red)
+- Samples maintain contiguity with no gaps - empty slots only appear at the end of the voice
+
 **File Handling & Validation**
+
 - Accept only valid WAV files (8 or 16 bit, 44100 Hz, mono or stereo)
 - Validate file extensions and audio formats on drop
 - Handle multiple file drops with incremental slot assignment until 12-slot limit reached
@@ -270,6 +307,7 @@ The three main user journeys are:
 - Store source file paths for preview without copying files locally
 
 **Kit Organization & Metadata**
+
 - Support user-defined voice names with automatic inference from sample names
 - Classify kits by type (Drum, Loop, Vocal, FX, Synth/Bass) based on voice content
 - Enable tagging and favoriting of kits and samples
@@ -278,12 +316,14 @@ The three main user journeys are:
 ### 4.2 Preview and Audition Capabilities
 
 **Audio Preview System**
+
 - Preview individual samples and complete kits before syncing
 - Display waveform visualizations for all samples
 - Handle stereo-to-mono conversion to match Rample hardware behavior
 - Provide global volume control for comfortable audition levels
 
 **XOX Step Sequencer**
+
 - 4x16 step grid interface (4 voices × 16 steps) for kit audition
 - Color-coded rows matching voice panel indicators
 - Mouse and keyboard navigation (arrows to move, spacebar to toggle)
@@ -294,6 +334,7 @@ The three main user journeys are:
 ### 4.3 SD Card Sync and Storage Capabilities
 
 **Sync Operations**
+
 - Copy and convert samples to SD card with user confirmation
 - Handle format conversion (16 bit 44100 Hz, mono/stereo as needed)
 - Detect and warn about missing source files before sync
@@ -301,15 +342,16 @@ The three main user journeys are:
 - Update kit state to 'synced' after successful SD card write
 
 **Format & File Management**
+
 - Enforce SD card naming conventions (?X format: A0, B1, Z99, etc.)
 - Convert stereo samples to mono using averaging when configured
 - Preserve original files while storing converted versions on SD card
 - Validate minimum kit requirements (voice 1 sample) for sync eligibility
 
-
 ### 4.4 Setup and Configuration Capabilities
 
 **Initial Setup & Immutable Baseline Creation**
+
 - Setup wizard for first-time configuration
 - Support multiple initialization sources (SD card, factory samples archive, blank)
 - Local store location selection and validation
@@ -317,12 +359,14 @@ The three main user journeys are:
 - **Immutable Baseline Preservation**: Once initialized, the local store baseline is never modified, preserving the exact state chosen during setup
 
 **Reference-Only Sample Management**
+
 - All user-added samples are referenced by absolute path (`source_path`) without copying to local store
 - External sample resolution during preview and sync operations
 - Missing file detection and user notification before sync
 - Zero-bloat architecture that prevents local store pollution
 
 **Audio Format Preferences**
+
 - Global "default to mono samples" setting (enabled by default) with persistent storage
 - Per-sample stereo/mono toggle overrides when global setting is disabled
 - Format conversion warnings and user prompts for conflicting stereo sample placement
@@ -331,6 +375,7 @@ The three main user journeys are:
 - Auto-convert stereo samples to mono with warning when added to voice 4 (no next voice available)
 
 **Administrative: Change Local Store Directory**
+
 1. Add a "Change Local Store Directory" item to the Tools menu
 2. When selected, show a dialog displaying the current local store directory and an option to change it
 3. Allow the user to select a new directory using a system file picker
@@ -340,12 +385,14 @@ The three main user journeys are:
 7. After a successful update, inform the user that the app must be restarted for the change to take effect
 
 **Kit Browser Interface**
+
 - Display kit metadata cards with ID, name, type icon, and sample counts
 - Color-coded sample count indicators (red=0, light green=1-11, bold green=12)
 - Show deduplicated voice name labels for quick kit identification
 - Previous/next navigation with appropriate button state management
 
 **Keyboard Navigation & Accessibility**
+
 - A-Z hotkeys for bank navigation with focus management
 - Arrow key navigation within kit browser and detail views
 - Spacebar sample preview and Enter kit selection
@@ -353,6 +400,7 @@ The three main user journeys are:
 - Visible focus indicators and accessible UI elements
 
 **Messaging & Progress System**
+
 - Centralized message display at top of application
 - Support for multiple simultaneous messages (info, warning, error)
 - Individual message dismissal and auto-timeout for non-critical messages
@@ -362,6 +410,7 @@ The three main user journeys are:
 ### 4.6 Performance and Technical Capabilities
 
 **Performance Requirements**
+
 - Handle 0-2600 kits efficiently
 - Sub-50ms UI interaction response time
 - Optimized rendering with memoized kit metadata
@@ -370,6 +419,7 @@ The three main user journeys are:
 ## 5. Non-Goals (Out of Scope)
 
 ### General Application Non-Goals
+
 - No browsing external sample folders (only drag-and-drop)
 - No cloud sync or account system
 - No need to track sample versions or support collaboration features
@@ -377,6 +427,7 @@ The three main user journeys are:
 - No customization options are provided
 
 ### Kit Non-Goals
+
 - Cloud sync and multi-user editing are not supported.
 - SD card sync operations are out of scope for this PRD (handled elsewhere).
 - The Romper DB is not copied to the SD card.
@@ -384,18 +435,20 @@ The three main user journeys are:
 - No support for non-WAV audio formats, ever.
 
 ### Preview and Audition Non-Goals
+
 - Exporting patterns to external formats.
 - Multiple patterns per kit.
 - Accent/velocity per step (TODO: later)
 - Advanced sequencing features
- - swing (later)
- - probability (never)
+- swing (later)
+- probability (never)
 - Adjustable tempo (later).
 - Choke groups
 
 ## 5.1 Error Handling Strategy
 
 ### Philosophy
+
 - **Graceful degradation**: App remains functional when non-critical errors occur
 - **Clear user communication**: Error messages explain what happened and what to do next
 - **Automatic recovery**: Where possible, automatically retry or fix issues
@@ -404,22 +457,26 @@ The three main user journeys are:
 ### Error Categories
 
 #### File System Errors
+
 - **Missing files**: Show clear path, offer to locate/replace
 - **Permission issues**: Guide user to fix permissions or choose different location
 - **Corrupted files**: Warn user, offer to skip or replace
 - **Disk space**: (Later) Show space needed, help user free space or choose different location
 
 #### Format Errors
+
 - **Invalid WAV files**: Show format details, offer automatic conversion
 - **Wrong sample rates**: Auto-convert with user confirmation
 - **Unsupported formats**: Clear message about supported formats only
 
 #### Hardware Errors
+
 - **SD card removed**: Pause operations, wait for reconnection
 - **Insufficient space**: Calculate space needed, guide user to free space
 - **Read/write failures**: Retry with exponential backoff, offer alternative actions
 
 #### Data Integrity Errors
+
 - **DB corruption**: Automatic backup restore, manual recovery options
 - **Sync mismatches**: Show differences, allow user to choose resolution
 - **Missing references**: Offer to locate files or remove broken references
@@ -427,6 +484,7 @@ The three main user journeys are:
 ## 6. Design Considerations
 
 ### Design Philosophy
+
 - **Immediate feedback**: Every action shows immediate visual/audio feedback
 - **Forgiving workflow**: Easy undo/redo, non-destructive by default
 - **Efficient for power users**: Keyboard shortcuts, batch operations
@@ -437,77 +495,93 @@ The three main user journeys are:
 ## 6.1 Kit List and Navigation Design (Post-UX Improvements)
 
 ### Kit Visual Identification System
+
 The kit browser uses a comprehensive visual system for instant kit recognition:
 
 **Kit Type Borders:** Colored left borders provide immediate visual identification
+
 - **Amber border**: Modified user kits (work-in-progress with unsaved changes)
 - **Green border**: Editable user kits (saved user-created content)
 - **Gray border**: Factory kits (read-only baseline content)
 
 **Enhanced Status System:** Multi-layered status indicators replace simple "Modified" badges
+
 - **Unsaved badge**: Work-in-progress changes requiring save action
 - **Sync pending badge**: Saved changes awaiting SD card sync
 - **Editable badge**: User-created kits available for modification
 - **Priority markers**: Visual indicators for high-priority kits in user workflow
 
 ### Journey-Based Interface Modes
+
 The application separates distinct user workflows through contextual modes:
 
 **Browse Mode:** Optimized for kit discovery and preview
+
 - Emphasizes preview controls and kit metadata
 - Hides editing tools to reduce cognitive load
 - Prominently displays favorites and filtering options
 
 **Edit Mode:** Focused on kit creation and modification
+
 - Surfaces drag-and-drop targets and sample management tools
 - Shows undo/redo controls and editable state indicators
 - Provides clear save and abandon change actions
 
 **Sync Mode:** Dedicated to SD card operations
+
 - Displays sync status and batch operation controls
 - Shows conflict resolution and missing file warnings
 - Groups all sync-related actions in logical workflow sequence
 
 ### Smart Sample Location System
+
 Sample location complexity is managed through progressive disclosure:
 
 **Contextual Location Labels:** Replace overwhelming file paths with user-friendly indicators
+
 - "Splice Pack" (cloud icon) for Splice sample libraries
 - "Local Store" (drive icon) for immutable baseline samples
 - "Ableton Library" (music icon) for DAW sample collections
 - "Custom" (folder icon) for user-organized sample directories
 
 **Progressive Path Disclosure:** Full file paths available on-demand
+
 - Hover reveals complete path information for technical users
 - Right-click context menu provides "Show in Finder/Explorer" option
 - Status tooltips explain reference-first architecture benefits
 
 ### Favorites and Priority Management
+
 User-driven organization system for efficient kit navigation:
 
 **Favorites System:** Star-based marking for frequently accessed kits
+
 - Visual star indicators in kit cards
 - "Favorites" filter shows starred kits with count badge
 - Keyboard shortcut for rapid favorite toggling
 
 **Priority Access:** Quick navigation to important kits among dozens
+
 - Filter buttons with live counts (Modified: 3, Recent: 8, Favorites: 12)
 - "Quick Access" panel for live performance scenarios (~6 kit workflow)
 - Location-based filtering (by sample source) for organized browsing
 
 ### Information Hierarchy and Density
+
 Optimized layout addresses whitespace and scanning efficiency:
 
 **Three-Layer Information Display:**
+
 - **Always visible**: Kit name, type border, primary status badge
 - **On hover/focus**: Voice tags, location labels, action buttons
 - **On-demand/expanded**: Full metadata, edit history, detailed sample info
 
 **Efficient Space Usage:** Responsive grid layout maximizes kit visibility
+
 - **Grid Layout**: Dynamic 2-6 columns based on window size (replaces full-width cards)
 - **Card Dimensions**: 280-320px width × 120-140px height (optimal information density)
 - **3-5x More Kits Visible**: Dramatically improved collection browsing efficiency
-- **Compact Information Hierarchy**: Vertical layout with smaller icons and organized sections
+- **Information Hierarchy**: Vertical layout with smaller icons and organized sections
 - Smart truncation of kit names with full names on hover
 - Sample count indicators use color coding (red: 0, light green: 1-11, bold green: 12)
 
@@ -516,6 +590,7 @@ Optimized layout addresses whitespace and scanning efficiency:
 > **Note**: The following describes current implementation limitations that will be addressed through the UX improvement tasks. These findings are temporary and will be removed once the design system above is implemented.
 
 **Current Kit List Issues (To Be Resolved):**
+
 - **Full-width cards waste horizontal space** - only 3-4 kits visible at once
 - Kit cards contain excessive whitespace reducing information density
 - Single "Modified" indicator insufficient for complex kit states
@@ -523,18 +598,21 @@ Optimized layout addresses whitespace and scanning efficiency:
 - Full file paths displayed causing information overload
 
 **Current Navigation Issues (To Be Resolved):**
+
 - Top menu mixes different user journey actions (sync next to add kit)
 - No mode separation between browse/edit/sync workflows
 - No favorites or priority system for kit organization
 - A-Z bank navigation only method for large kit collections
 
 **Current Sample Location Issues (To Be Resolved):**
+
 - Reference-first architecture benefits not clear to users
-- Full file paths overwhelming in compact kit cards
+- Full file paths overwhelming in kit cards
 - No contextual labeling for different sample source types
 - Location awareness vs interface simplicity not balanced
 
 ### General Application Design
+
 - The app consists of a main kit browser and a kit detail page.
 - Action buttons are located at the top of the page.
 - A status bar at the bottom displays pertinent information.
@@ -555,6 +633,7 @@ Optimized layout addresses whitespace and scanning efficiency:
 - The progress of any long running action is indicated using the application notification system.
 
 ### Kit Design Considerations
+
 - UI clearly indicates editable mode status (on/off) for each kit.
 - Drag-and-drop targets provide clear feedback ('Add sample', 'Replace sample').
 - Warnings for format conversion are visible but non-blocking.
@@ -563,6 +642,7 @@ Optimized layout addresses whitespace and scanning efficiency:
 - Undo/redo controls are easily accessible.
 
 ### Preview and Audition Design Considerations
+
 - Individual sample and kit preview capabilities are easily accessible.
 - Waveform visualization provides clear visual feedback for all samples.
 - Audio playback accurately represents how samples will sound on the Rample hardware.
@@ -579,20 +659,24 @@ Optimized layout addresses whitespace and scanning efficiency:
 ## 7.1 Contribution Guidelines and Community Management
 
 ### Project Home
+
 - **Repository**: https://github.com/peteb4ker/romper
 - **License**: MIT
 - **Community**: Built by and for Rample owners and electronic music producers
 
 ### Contributing to Romper
+
 Pull requests are welcome! We encourage contributions from the Rample community to help improve the tool for everyone.
 
 #### Getting Started
+
 - Fork the repository on GitHub
 - Read the development documentation in `/docs/development.md`
 - Check existing issues and discussions before starting new work
 - Follow the coding standards outlined in `.github/copilot-instructions.md`
 
 #### Types of Contributions Welcome
+
 - **Bug fixes**: Help identify and resolve issues affecting users
 - **Feature enhancements**: Improvements to existing functionality based on user feedback
 - **Performance optimizations**: Especially around kit loading and UI responsiveness
@@ -601,6 +685,7 @@ Pull requests are welcome! We encourage contributions from the Rample community 
 - **UI/UX improvements**: Accessibility enhancements and user experience refinements
 
 #### Contribution Process
+
 1. **Discuss first**: For significant changes, open an issue to discuss the approach
 2. **Follow coding standards**: Use TypeScript, follow existing patterns, maintain test coverage
 3. **Test thoroughly**: Run `npm test` and `npm run test:e2e` before submitting
@@ -608,12 +693,14 @@ Pull requests are welcome! We encourage contributions from the Rample community 
 5. **Submit PR**: Provide clear description of changes and motivation
 
 #### Community Guidelines
+
 - **Respectful collaboration**: Maintain a welcoming environment for all skill levels
 - **User-focused**: Prioritize changes that improve the experience for Rample owners
 - **Quality standards**: Maintain code quality, test coverage, and documentation standards
 - **Hardware context**: Remember that all features should align with Rample hardware capabilities
 
 ### Feedback and Support
+
 - **Issues**: Report bugs and request features via GitHub Issues
 - **Discussions**: Use GitHub Discussions for questions and community interaction
 - **Documentation**: Refer to `/docs/` for user guides and technical documentation
@@ -621,6 +708,7 @@ Pull requests are welcome! We encourage contributions from the Rample community 
 ## 8. Success Metrics
 
 ### Overall Success Metrics
+
 - **Time savings**: Users can create/modify kits in <2 minutes vs 10+ minutes manually
 - **Usability**: New users can complete first kit creation within 5 minutes of setup
 - **Reliability**: <1% data loss or corruption incidents
@@ -628,39 +716,43 @@ Pull requests are welcome! We encourage contributions from the Rample community 
 - **Local storage**: Minimize duplication of sample WAV files
 
 ### Kit Success Metrics
+
 - Users can create, edit, and update kits to SD card without manual file management
 - All actions (add, replace, delete, undo/redo) work as described and are persisted
 - Users receive clear warnings for format issues and can preview all changes
 - The local store and DB remain in sync, with errors surfaced to the user if not
 
 ### Preview and Audition Success Metrics
+
 - Users can preview individual samples and complete kits before syncing to SD card
 - Waveform visualization provides useful visual feedback for all samples
 - Audio playback accurately represents how samples will sound on the Rample hardware
 - Users can program and play a 4x16 pattern for any kit, using both mouse and keyboard, and the pattern is saved and loaded per kit
 
 ### Setup and Configuration Success Metrics
+
 - New users can complete the setup wizard successfully on first launch
 - Users can initialize from any supported source (SD card, factory samples, blank) without errors
 - Local store configuration is persistent and reliable across app sessions
 
 ## 9. Open Questions
 
-
 ### General Application Open Questions
+
 -- None at this time.
 
 ### Kit Open Questions
+
 - Should there be a way to export/import kits for sharing between users?
- - No
+- No
 - What is the expected behavior if the local store or DB becomes corrupted or unsynced?
- - In the future there will be a mechanism to resolve issues.
+- In the future there will be a mechanism to resolve issues.
 - Should there be a way to batch update multiple kits to SD card at once?
- - Yes
+- Yes
 - Are there additional user prompts or confirmations needed for destructive actions (e.g., deleting a sample, overwriting a slot)?
- - Yes - destructive actions require a prompt.
+- Yes - destructive actions require a prompt.
 - Should the SD card update process be cancellable or undoable after starting?
- - No
+- No
 
 ---
 
@@ -673,6 +765,7 @@ Pull requests are welcome! We encourage contributions from the Rample community 
 The Romper DB is a SQLite database with the following schema:
 
 ### kits
+
 - `id` INTEGER PRIMARY KEY AUTOINCREMENT
 - `name` TEXT NOT NULL (e.g. A0, B2, Z99) - serves as natural key for kit identification
 - `alias` TEXT (optional, human-readable name)
@@ -681,6 +774,7 @@ The Romper DB is a SQLite database with the following schema:
 - `step_pattern` TEXT (optional, JSON string storing 4x16 step pattern for XOX sequencer)
 
 ### samples
+
 - `id` INTEGER PRIMARY KEY AUTOINCREMENT
 - `kit_name` TEXT NOT NULL (FK to kits.name) - references kit by name, not ID
 - `voice_number` INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4) - explicit voice assignment (1-4)
@@ -690,12 +784,14 @@ The Romper DB is a SQLite database with the following schema:
 - `is_stereo` BOOLEAN NOT NULL DEFAULT 0
 
 ### voices
+
 - `id` INTEGER PRIMARY KEY AUTOINCREMENT
 - `kit_name` TEXT NOT NULL (FK to kits.name) - references kit by name
 - `voice_number` INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4) - voice position (1-4)
 - `alias` TEXT (optional, user-defined voice name, e.g., "Kick", "Snare")
 
 ### Architecture Notes
+
 - There is no separate plan table. Each kit may have editable true/false.
 - There is always 0..1 editable state per kit, tracked by the editable flag.
 - All imported/factory kits have editable = false.
@@ -709,6 +805,7 @@ The Romper DB is a SQLite database with the following schema:
 ## 11. Technical Implementation Details
 
 ### General Application Technical Details
+
 - Built with Electron, React, Vite, and Tailwind CSS.
 - Cross-platform: macOS, Linux and Windows support.
 - Uses `better-sqlite3` for local storage.
@@ -724,12 +821,13 @@ The Romper DB is a SQLite database with the following schema:
 - At least one integration test checks that the application loads successfully.
 - Tests for A-Z hotkey navigation.
 - Tests for info/error/warning message display.
-- Tests for kit locking/prevent overwrite.
+- Tests for kit locking/prevent unauthorized changes.
 - Tests for tagging/favoriting.
 - Tests for missing sample detection/warning.
 - Precompute and memoize kit sample counts and voice label sets in the kit browser. These values are calculated only once per kit list load/change, not on every render, to maximize performance and minimize UI update latency.
 
 ### Database Layer Requirements
+
 - **ORM Integration**: Migrate from raw SQL to Drizzle ORM for improved type safety, modularity, and maintainability.
 - **Type-Safe Queries**: All database operations must be compile-time type-checked with full TypeScript integration.
 - **Clean API Design**: Replace complex wrapper patterns with direct, simple function signatures that leverage TypeScript's native error handling.
@@ -741,16 +839,18 @@ The Romper DB is a SQLite database with the following schema:
 - **Better-SQLite3 Compatibility**: Ensure seamless integration with existing `better-sqlite3` driver without requiring database engine changes.
 
 ### Hardware Constraints
+
 - There are always 4 voices per kit and no more than 12 samples per voice - this is a fundamental technical specification of the Rample hardware.
 - Only `.wav` files are supported as samples.
 - The Rample bank/kit/voice/sample structure is: 26 banks (A-Z), each with 100 kit folders (0-99).
 
 ### Kit Technical Considerations
+
 - The Romper DB is a SQLite database stored in the `.romperdb` folder within the local store.
 - Only one local store and associated DB are active at a time, as set in application settings.
 - **Immutable Baseline Architecture**: The local store can be initialized from SD card, Squarp.net archive (https://data.squarp.net/RampleSamplesV1-2.zip), or a blank folder. Once initialized, this becomes an immutable baseline that is never modified - it preserves the exact initial state chosen during setup.
 - **Local Store Initialization Sources**:
-  - **SD Card Source**: Any folder can be chosen. It is valid if it contains at least one subfolder matching ^[A-Z].*?(?:[1-9]?\d)$; otherwise, a warning is shown and the user chooses another folder.
+  - **SD Card Source**: Any folder can be chosen. It is valid if it contains at least one subfolder matching ^[A-Z].\*?(?:[1-9]?\d)$; otherwise, a warning is shown and the user chooses another folder.
   - **Factory Samples**: Downloads and extracts official Squarp factory samples as the baseline.
   - **Empty Folder**: Creates minimal structure for users starting from scratch.
 - **Reference-Only Sample Management**: User-added samples are referenced by `source_path` in the database but never copied to the local store. This prevents bloat and maintains the immutable baseline concept.
@@ -759,6 +859,7 @@ The Romper DB is a SQLite database with the following schema:
 - Sample format conversion (to 16 bit 44100 Hz, mono/stereo as needed) is handled when updating the SD card.
 
 ### Stereo Sample Handling Logic
+
 - **Default to mono samples** global setting is enabled by default and persisted to local settings
 - When a stereo sample is added to a kit:
   - If the sample is mono, it is linked to the voice and slot it was added to
@@ -772,13 +873,16 @@ The Romper DB is a SQLite database with the following schema:
 - **Conversion timing**: Sample format conversion only occurs on commit/sync to SD card, not during preview
 
 ### Multi-Sample Drop Handling
+
 - Users can add multiple samples in one action, with samples incrementally added to the voice until the 12-slot limit is reached
 - If bulk drop will exceed voice limits, prompt user before proceeding with the operation
 - Slot limit enforcement prevents adding more than 12 samples per voice
 - User receives clear feedback when slot limits are reached during bulk operations
 
 ### Voice Name Inference Logic
+
 There is an extensible voice name scanning function that, for voices with no names, will look at the samples in that voice and infer the name of that voice. The specification for that is as follows:
+
 - kick: ["kick", "kk", "bd"]
 - snare: ["snare", "sn", "sd"]
 - clap: ["clap"]
@@ -798,13 +902,17 @@ There is an extensible voice name scanning function that, for voices with no nam
 - conga: ["conga"]
 
 ### Kit Type Classification Logic
+
 There is a kit type inference function that will look at the names of the voices in a kit and, based on predetermined rules, mark the kit as a Drum Kit, Loop Kit, Vocal Kit, FX Kit, or Synth Kit. The logic for this is as follows:
+
 - If all voices are the same and that voice is 'vox', 'loop', or 'fx', use the corresponding kit type.
 - If all voices are 'synth' or 'bass', use 'Synth/Bass Kit'.
 - Otherwise, use 'Drum Kit'.
 
 ### Kit Browser Card Specifications
+
 In the kit browser, kit item cards show useful kit metadata including:
+
 - The kit ID (e.g., A0)
 - The kit name (e.g., House Kit)
 - The icon for the kit type
@@ -812,6 +920,7 @@ In the kit browser, kit item cards show useful kit metadata including:
 - De-duped labels of the voice names (e.g., "Kick, Snare, Open HH, Closed HH", or "FX" if 4x FX voices)
 
 ### Preview and Audition Technical Considerations
+
 - **Reference-Based Preview**: Sample preview uses `source_path` references for playback without copying files to local store.
 - **Hardware-Accurate Playback**: Audio playback handles stereo-to-mono conversion to match Rample hardware behavior using channel averaging method.
 - **Real-Time Format Handling**: When previewing a stereo sample configured to be treated as mono, the two channels are merged on playback.
@@ -838,11 +947,13 @@ The setup wizard consists of four discrete actions, which are performed in order
 ### Progress Bar Usage
 
 The progress bar in the wizard is used for:
+
 - Downloading the Squarp.net archive zip (if selected as source)
 - Unzipping or moving files into place
 - Writing to the database (Romper DB initialization and record insertion)
 
 ### UI/UX Requirements
+
 - The wizard must enforce the step order and only enable the next step when the current step is valid.
 - The user must be able to go back to previous steps to change their choices before initialization.
 - The cancel action must be available at all times and immediately stop any in-progress operation.
@@ -867,4 +978,5 @@ The progress bar in the wizard is used for:
 - The application must be fully usable in both light and dark mode, with accessibility maintained in both themes.
 
 ---
+
 _Last updated: 2025-07-18_

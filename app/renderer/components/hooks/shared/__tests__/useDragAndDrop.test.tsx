@@ -78,21 +78,24 @@ describe("useDragAndDrop", () => {
       renderHookWithSettings(() => useDragAndDrop(defaultProps));
 
       // Verify useExternalDragHandlers was called with correct props
-      expect(useExternalDragHandlers).toHaveBeenCalledWith({
-        fileValidation: expect.objectContaining({
-          getFilePathFromDrop: expect.any(Function),
-          validateDroppedFile: expect.any(Function),
+      expect(useExternalDragHandlers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fileValidation: expect.objectContaining({
+            getFilePathFromDrop: expect.any(Function),
+            validateDroppedFile: expect.any(Function),
+          }),
+          isEditable: true,
+          onStereoDragLeave: mockOnStereoDragLeave,
+          onStereoDragOver: mockOnStereoDragOver,
+          sampleProcessing: expect.objectContaining({
+            getCurrentKitSamples: expect.any(Function),
+            isDuplicateSample: expect.any(Function),
+            processAssignment: expect.any(Function),
+          }),
+          samples: expect.any(Array),
+          voice: 2,
         }),
-        isEditable: true,
-        onStereoDragLeave: mockOnStereoDragLeave,
-        onStereoDragOver: mockOnStereoDragOver,
-        sampleProcessing: expect.objectContaining({
-          getCurrentKitSamples: expect.any(Function),
-          isDuplicateSample: expect.any(Function),
-          processAssignment: expect.any(Function),
-        }),
-        voice: 2,
-      });
+      );
 
       // Verify useInternalDragHandlers was called with correct props
       expect(useInternalDragHandlers).toHaveBeenCalledWith({
@@ -401,6 +404,8 @@ describe("useDragAndDrop", () => {
         "handleDragLeave",
         "handleDragOver",
         "handleDrop",
+        "handleInternalDragOver",
+        "handleInternalDrop",
       ];
 
       expect(Object.keys(result.current).sort()).toEqual(expectedKeys.sort());

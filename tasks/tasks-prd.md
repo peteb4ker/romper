@@ -1,4 +1,3 @@
-
 ---
 _Last updated: 2025-07-26_
 ## Relevant Files
@@ -260,7 +259,7 @@ _Last updated: 2025-07-26_
 
 - [x] 22.0 Sample Contiguity and Drag-Drop Move System (Complete)
   - [x] 22.1 Implement automatic contiguity maintenance:
-    - [x] 22.1.1 Auto-compact slots after sample deletion (hard requirement)
+    - [x] 22.1.1 Auto-reindex slots after sample deletion (hard requirement)
     - [x] 22.1.2 Shift samples up to fill gaps automatically
     - [x] 22.1.3 Maintain contiguous numbering from slot 1 upwards
   - [x] 22.2 Implement drag-drop move operations:
@@ -274,10 +273,10 @@ _Last updated: 2025-07-26_
   - [x] 22.4 Implement complex undo support for moves:
     - [x] 22.4.1 Full state restoration for multi-sample move operations
     - [x] 22.4.2 MOVE_SAMPLE action type with complete before/after state
-    - [x] 22.4.3 COMPACT_SLOTS action type for deletion-triggered compaction
+    - [x] 22.4.3 REINDEX_SAMPLES action type for deletion-triggered reindexing
     - [x] 22.4.4 Restore all affected samples to previous positions on undo
   - [x] 22.5 Database operations for contiguity:
-    - [x] 22.5.1 Batch slot updates for compaction operations
+    - [x] 22.5.1 Batch slot updates for reindexing operations
     - [x] 22.5.2 Transaction-based multi-sample moves
     - [x] 22.5.3 Efficient slot reordering with proper constraints
   - [x] 22.6 UI implementation:
@@ -401,7 +400,7 @@ _Last updated: 2025-07-26_
 
 - [x] 17.4 Redesign Kit Card Layout and Information Density:
   - [x] 17.4.1 Set optimal card dimensions (300px width × 90px height)
-  - [x] 17.4.2 Implement compact vertical information hierarchy:
+  - [x] 17.4.2 Implement vertical information hierarchy:
     - [x] Top row: smaller icon, kit name, status badges
     - [x] Bottom row: unified voice indicators with name + sample count
   - [x] 17.4.3 Reduce icon size from text-5xl to text-2xl
@@ -525,4 +524,5 @@ _Last updated: 2025-07-26_
 
 
 ---
+
 _Last updated: 2025-07-30_

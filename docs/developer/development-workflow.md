@@ -10,6 +10,7 @@ This document describes the development workflow, task execution patterns, and q
 ## Task Execution Process
 
 ### Step-by-Step Workflow
+
 1. **Read current task** from [tasks/tasks-PRD.md](../tasks/tasks-PRD.md)
 2. **Implement one sub-task at a time** - never skip ahead or work on multiple tasks
 3. **Update task file** - mark sub-task as complete `[x]`
@@ -17,6 +18,7 @@ This document describes the development workflow, task execution patterns, and q
 5. **Ask for permission** before proceeding to next sub-task
 
 ### Automated Quality Gates (Pre-commit Hooks)
+
 **All quality checks are automated via pre-commit hooks** that run on every `git commit`:
 
 ✅ **TypeScript type checking** - catches compilation errors
@@ -38,6 +40,7 @@ npm run sonar:scan   # Local preview scan (requires SONAR_TOKEN)
 ```
 
 #### Token-Efficient Test Output
+
 **Pre-commit hooks use optimized test configuration** to minimize CI/automated output:
 
 - **`NO_COLOR=true`** - removes ANSI color codes for cleaner logs
@@ -56,6 +59,7 @@ npm run test         # Full details for interactive development
 **Result**: Focus on implementation - quality gates handle validation automatically with minimal noise!
 
 ### Task File Management
+
 - Keep "Relevant Files" section up to date with created/modified files
 - Add new tasks if discovered during implementation
 - Only mark `[x]` if corresponding code is implemented and validated
@@ -64,18 +68,21 @@ npm run test         # Full details for interactive development
 ## Code Quality Standards
 
 ### TypeScript Requirements
+
 - **Zero compilation errors**: `npx tsc --noEmit` must pass
 - **Strict type checking**: No `any` types except in legacy code
 - **Import statements only**: Never use `require()` - always use ES modules
 - **Type-safe database operations**: Use Drizzle ORM types throughout
 
 ### Component Architecture
+
 - **Hook-based logic**: All business logic in `hooks/use<ComponentName>.ts`
 - **Presentation-only components**: UI components contain only rendering logic
 - **Empty file cleanup**: Delete unused hook files immediately
 - **Component size limit**: Refactor components over 400 lines
 
 ### Database Operations (Drizzle ORM)
+
 - **Synchronous operations**: Use better-sqlite3 synchronous driver
 - **Terminal methods required**: Always call `.all()`, `.get()`, `.run()`, or `.values()`
 - **No await**: Do not use `await` with synchronous better-sqlite3 operations
@@ -84,18 +91,21 @@ npm run test         # Full details for interactive development
 ## Testing Standards
 
 ### Test Structure
+
 - **Co-location**: Unit tests in `__tests__/` subdirectories next to source code
 - **One test file per source file**: Each code file has exactly one corresponding test file
 - **Test isolation**: Each test must be independent with proper cleanup
 - **80% coverage minimum**: Maintain high test coverage across codebase
 
 ### Testing Tools
+
 - **Vitest (not Jest)**: Use `npx vitest` for all test operations
 - **Centralized mocks**: Reference `vitest.setup.ts` for common mocks
 - **Mock strategy**: Mock dependencies, test only the code under test
 - **Clear DOM**: Clear DOM between tests to prevent state leakage
 
 ### Test Commands
+
 ```bash
 # Interactive test runner
 npx vitest
@@ -113,12 +123,14 @@ npm run test:integration
 ## Performance Standards
 
 ### UI Responsiveness
+
 - **Sub-50ms interactions**: All user actions must respond within 50ms
 - **Memoization**: Use React.memo, useMemo for expensive computations
 - **List virtualization**: Use react-window for large lists (>100 items)
 - **Debounced input**: Debounce search/filter inputs appropriately
 
 ### Database Performance
+
 - **Prepared statements**: Drizzle automatically uses prepared statements
 - **Batch operations**: Group related database operations
 - **Reference-only architecture**: Avoid unnecessary file copying during editing
@@ -127,6 +139,7 @@ npm run test:integration
 ## File Organization Patterns
 
 ### Directory Structure
+
 ```
 app/renderer/components/
 ├── ComponentName.tsx          # UI component
@@ -143,6 +156,7 @@ app/renderer/components/
 ```
 
 ### Import Conventions
+
 - **Absolute paths**: Use absolute imports for shared modules
 - **Relative paths**: Use relative imports for local files
 - **Barrel exports**: Use index.ts files for clean imports
@@ -151,12 +165,14 @@ app/renderer/components/
 ## Error Handling Patterns
 
 ### Error Boundaries
+
 - **Component-level**: Wrap components that might fail
 - **User-friendly messages**: Provide actionable error messages
 - **Graceful degradation**: App remains functional when non-critical components fail
 - **Error reporting**: Log errors for debugging but don't expose internal details
 
 ### File System Operations
+
 - **Path validation**: Sanitize and validate all file paths
 - **Permission checking**: Verify access rights before operations
 - **Missing file handling**: Detect and handle missing `source_path` references
@@ -165,7 +181,9 @@ app/renderer/components/
 ## Git Workflow
 
 ### Commit Message Format
+
 Use conventional commit format:
+
 ```
 <type>: <description>
 
@@ -179,6 +197,7 @@ Tests: <passing>/<total> passing
 ```
 
 ### Commit Types
+
 - `feat:` - New features
 - `fix:` - Bug fixes
 - `refactor:` - Code refactoring
@@ -189,6 +208,7 @@ Tests: <passing>/<total> passing
 ## Build and Release
 
 ### Build Validation (Automated)
+
 Pre-commit hooks automatically run all validation steps. Manual commands available:
 
 ```bash
@@ -223,11 +243,13 @@ export SONAR_TOKEN="your_sonarcloud_token_here"
 ```
 
 After adding, reload your shell:
+
 ```bash
 source ~/.zshrc  # or ~/.bashrc
 ```
 
 **Alternative Methods:**
+
 ```bash
 # Temporary session (current terminal only)
 export SONAR_TOKEN="your_token_here"
@@ -245,7 +267,7 @@ source .env && npm run sonar:scan
 1. **Local Preview Scan (Pre-commit)**:
    - Runs during `git commit` if `SONAR_TOKEN` is available
    - **Preview mode** - analyzes locally without uploading to SonarCloud
-   - **Catches ALL SonarCloud rules early** in development workflow  
+   - **Catches ALL SonarCloud rules early** in development workflow
    - Prevents failures in main branch CI/CD pipeline
    - Uses `sonar-project-local.properties` configuration
 
@@ -256,6 +278,7 @@ source .env && npm run sonar:scan
    - Uses main `sonar-project.properties` configuration
 
 **Local Behavior:**
+
 - **With SONAR_TOKEN**: Runs preview scan during pre-commit (recommended)
 - **Without SONAR_TOKEN**: Gracefully skips with warning message
 - **Configuration**: Uses `https://sonarcloud.io` (no SONAR_HOST_URL needed)
@@ -263,11 +286,13 @@ source .env && npm run sonar:scan
 **Result**: Catch SonarCloud issues locally before they cause CI failures!
 
 #### Security Best Practices
+
 - **Never commit tokens to git** - ensure `.env` is in `.gitignore`
 - **Use SonarCloud User Token** (not Organization token)
 - **Keep tokens private** and rotate them periodically
 
 ### Development Commands
+
 ```bash
 # Development
 npm run dev              # Start Vite dev server
@@ -296,12 +321,14 @@ npm run sonar:scan      # Local preview scan (catches issues early, requires SON
 ## Documentation Maintenance
 
 ### Documentation Updates
+
 - **Architecture changes**: Update [docs/architecture.md](./architecture.md)
 - **Schema changes**: Update [docs/romper-db.md](./romper-db.md)
 - **API changes**: Update relevant documentation
 - **Breaking changes**: Document migration guides
 
 ### Documentation Review
+
 - **Accuracy**: Ensure docs match current implementation
 - **Completeness**: Cover all user-facing features
 - **Clarity**: Write for junior developers
@@ -309,4 +336,4 @@ npm run sonar:scan      # Local preview scan (catches issues early, requires SON
 
 ---
 
-*Following this workflow ensures consistent, high-quality development while maintaining the project's architectural integrity and user experience standards.*
+_Following this workflow ensures consistent, high-quality development while maintaining the project's architectural integrity and user experience standards._

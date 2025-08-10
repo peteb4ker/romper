@@ -7,7 +7,6 @@ export interface UseInternalDragHandlersOptions {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-    mode: "insert" | "overwrite",
   ) => Promise<void>;
   samples: string[];
   voice: number;
@@ -27,6 +26,15 @@ export function useInternalDragHandlers({
     sampleName: string;
     slot: number;
     voice: number;
+  } | null>(null);
+
+  // State for visual feedback during internal drags
+  const [internalDragOverSlot, setInternalDragOverSlot] = useState<
+    null | number
+  >(null);
+  const [internalDropZone, setInternalDropZone] = useState<{
+    mode: "append" | "insert";
+    slot: number;
   } | null>(null);
 
   // Internal sample drag handlers
@@ -51,6 +59,9 @@ export function useInternalDragHandlers({
   const handleSampleDragEnd = useCallback((_e: React.DragEvent) => {
     console.log("Sample drag ended");
     setDraggedSample(null);
+    // Clear visual feedback state
+    setInternalDragOverSlot(null);
+    setInternalDropZone(null);
   }, []);
 
   const handleSampleDragOver = useCallback(
@@ -70,16 +81,32 @@ export function useInternalDragHandlers({
       // Prevent dropping on same slot
       if (draggedSample.slot === slotIndex && draggedSample.voice === voice) {
         e.dataTransfer.dropEffect = "none";
+        // Clear visual feedback for invalid drop
+        setInternalDragOverSlot(null);
+        setInternalDropZone(null);
         return;
       }
 
       e.dataTransfer.dropEffect = "move";
+
+      // Set visual feedback state
+      setInternalDragOverSlot(slotIndex);
+
+      // Determine drop mode for visual feedback
+      // All moves are insert-only, but we need to distinguish insert vs append
+      const currentSampleCount = samples.filter((s) => s).length;
+      const isAppend = slotIndex === currentSampleCount;
+      const mode = isAppend ? "append" : "insert";
+
+      setInternalDropZone({ mode, slot: slotIndex });
     },
-    [isEditable, draggedSample, voice],
+    [isEditable, draggedSample, voice, samples],
   );
 
   const handleSampleDragLeave = useCallback(() => {
-    // Drag leave handler - no specific action needed for internal drags
+    // Clear visual feedback on drag leave
+    setInternalDragOverSlot(null);
+    setInternalDropZone(null);
   }, []);
 
   const handleSampleDrop = useCallback(
@@ -105,24 +132,24 @@ export function useInternalDragHandlers({
       );
 
       try {
-        // Determine if we're inserting or overwriting
-        const targetHasSample = Boolean(samples[slotIndex]);
-        const mode = targetHasSample ? "overwrite" : "insert";
-
+        // All moves use insert-only behavior
+        // The backend will handle the insertion logic properly
         await onSampleMove(
           draggedSample.voice,
           draggedSample.slot,
           voice,
           slotIndex,
-          mode,
         );
       } catch (error) {
         console.error("Failed to move sample:", error);
       } finally {
         setDraggedSample(null);
+        // Clear visual feedback state
+        setInternalDragOverSlot(null);
+        setInternalDropZone(null);
       }
     },
-    [isEditable, draggedSample, voice, samples, onSampleMove],
+    [isEditable, draggedSample, voice, onSampleMove],
   );
 
   const getSampleDragHandlers = useCallback(
@@ -158,5 +185,8 @@ export function useInternalDragHandlers({
     handleSampleDragOver,
     handleSampleDragStart,
     handleSampleDrop,
+    // Visual feedback state for internal drags
+    internalDragOverSlot,
+    internalDropZone,
   };
 }

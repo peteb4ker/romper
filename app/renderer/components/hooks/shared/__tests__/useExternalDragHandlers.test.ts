@@ -37,6 +37,7 @@ describe("useExternalDragHandlers", () => {
     onStereoDragLeave: mockOnStereoDragLeave,
     onStereoDragOver: mockOnStereoDragOver,
     sampleProcessing: mockSampleProcessing,
+    samples: [],
     voice: 2,
   };
 
@@ -126,7 +127,7 @@ describe("useExternalDragHandlers", () => {
       expect(mockEvent.preventDefault).toHaveBeenCalled();
       expect(mockEvent.stopPropagation).toHaveBeenCalled();
       expect(result.current.dragOverSlot).toBe(3);
-      expect(result.current.dropZone).toEqual({ mode: "overwrite", slot: 3 });
+      expect(result.current.dropZone).toEqual({ mode: "insert", slot: 3 });
     });
 
     it("calls onStereoDragOver for single file", () => {
@@ -602,7 +603,7 @@ describe("useExternalDragHandlers", () => {
       result.current.handleDragOver(dragEvent, 1);
       rerender(); // Force rerender to see state updates
       expect(result.current.dragOverSlot).toBe(1);
-      expect(result.current.dropZone).toEqual({ mode: "overwrite", slot: 1 });
+      expect(result.current.dropZone).toEqual({ mode: "insert", slot: 1 });
       expect(mockOnStereoDragOver).toHaveBeenCalledWith(2, 1, true);
 
       // Leave
@@ -674,6 +675,141 @@ describe("useExternalDragHandlers", () => {
 
       result16.current.handleDragOver(mockEvent, 1);
       expect(mockOnStereoDragOver).toHaveBeenCalledWith(16, 1, false);
+    });
+  });
+
+  describe("12-sample limit handling", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockFileValidation.getFilePathFromDrop.mockResolvedValue("test.wav");
+      mockFileValidation.validateDroppedFile.mockResolvedValue({
+        name: "test.wav",
+      });
+      mockSampleProcessing.getCurrentKitSamples.mockResolvedValue([
+        "sample1.wav",
+      ]);
+      mockSampleProcessing.isDuplicateSample.mockResolvedValue(false);
+      mockSampleProcessing.processAssignment.mockResolvedValue(true);
+    });
+
+    it("blocks external drops when voice has 12 samples", async () => {
+      const fullSamples = Array(12).fill("sample.wav");
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({ ...defaultProps, samples: fullSamples }),
+      );
+
+      const mockEvent = createMockEvent([createMockFile("new.wav")]);
+      await result.current.handleDrop(mockEvent, 1);
+
+      expect(mockSampleProcessing.getCurrentKitSamples).not.toHaveBeenCalled();
+      expect(mockSampleProcessing.processAssignment).not.toHaveBeenCalled();
+    });
+
+    it("allows external drops when voice has less than 12 samples", async () => {
+      const partialSamples = Array(11).fill("sample.wav");
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
+      );
+
+      const mockEvent = createMockEvent([createMockFile("new.wav")]);
+      await result.current.handleDrop(mockEvent, 1);
+
+      expect(mockSampleProcessing.getCurrentKitSamples).toHaveBeenCalled();
+      expect(mockSampleProcessing.processAssignment).toHaveBeenCalled();
+    });
+
+    it("allows external drops when voice is empty", async () => {
+      const emptySamples: string[] = [];
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({ ...defaultProps, samples: emptySamples }),
+      );
+
+      const mockEvent = createMockEvent([createMockFile("new.wav")]);
+      await result.current.handleDrop(mockEvent, 1);
+
+      expect(mockSampleProcessing.getCurrentKitSamples).toHaveBeenCalled();
+      expect(mockSampleProcessing.processAssignment).toHaveBeenCalled();
+    });
+
+    it("shows blocked state during drag over full voice", () => {
+      const fullSamples = Array(12).fill("sample.wav");
+      const { rerender, result } = renderHook(() =>
+        useExternalDragHandlers({ ...defaultProps, samples: fullSamples }),
+      );
+
+      const mockEvent = {
+        dataTransfer: {
+          items: [{ kind: "file" }],
+        },
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      } as any;
+
+      result.current.handleDragOver(mockEvent, 1);
+      rerender();
+
+      expect(result.current.dragOverSlot).toBe(1);
+      expect(result.current.dropZone).toEqual({ mode: "blocked", slot: 1 });
+    });
+
+    it("shows insert mode during drag over non-full voice", () => {
+      const partialSamples = Array(5).fill("sample.wav");
+      const { rerender, result } = renderHook(() =>
+        useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
+      );
+
+      const mockEvent = {
+        dataTransfer: {
+          items: [{ kind: "file" }],
+        },
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      } as any;
+
+      result.current.handleDragOver(mockEvent, 3);
+      rerender();
+
+      expect(result.current.dragOverSlot).toBe(3);
+      expect(result.current.dropZone).toEqual({ mode: "insert", slot: 3 });
+    });
+
+    it("shows append mode when dropping at end of voice", () => {
+      const partialSamples = Array(5).fill("sample.wav");
+      const { rerender, result } = renderHook(() =>
+        useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
+      );
+
+      const mockEvent = {
+        dataTransfer: {
+          items: [{ kind: "file" }],
+        },
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      } as any;
+
+      result.current.handleDragOver(mockEvent, 5);
+      rerender();
+
+      expect(result.current.dragOverSlot).toBe(5);
+      expect(result.current.dropZone).toEqual({ mode: "append", slot: 5 });
+    });
+
+    it("handles multiple file drops respecting 12-sample limit", async () => {
+      const partialSamples = Array(10).fill("sample.wav");
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
+      );
+
+      const mockFiles = [
+        createMockFile("file1.wav"),
+        createMockFile("file2.wav"),
+        createMockFile("file3.wav"),
+      ];
+      const mockEvent = createMockEvent(mockFiles);
+
+      await result.current.handleDrop(mockEvent, 1);
+
+      expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(3);
     });
   });
 });

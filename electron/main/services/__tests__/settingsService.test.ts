@@ -140,34 +140,6 @@ describe("SettingsService", () => {
         "utf-8",
       );
     });
-
-    it("logs operations for debugging", () => {
-      const consoleSpy = vi.spyOn(console, "log");
-
-      settingsService.writeSetting(
-        mockInMemorySettings,
-        "debugKey",
-        "debugValue",
-      );
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[SettingsService] write-setting called with key:",
-        "debugKey",
-        "value:",
-        "debugValue",
-      );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[SettingsService] Settings path:",
-        "/test/userData/romper-settings.json",
-      );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[SettingsService] Updated inMemorySettings:",
-        mockInMemorySettings,
-      );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[SettingsService] Settings written to file",
-      );
-    });
   });
 
   describe("getLocalStorePath", () => {

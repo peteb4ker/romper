@@ -5,23 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useKitDataManager } from "../useKitDataManager";
 
-// Mock the utility function
-vi.mock("../../../utils/sampleGroupingUtils", () => ({
-  groupDbSamplesByVoice: vi.fn((samples) => ({
-    1: samples
-      .filter((s: any) => s.voice_number === 1)
-      .map((s: any) => s.filename),
-    2: samples
-      .filter((s: any) => s.voice_number === 2)
-      .map((s: any) => s.filename),
-    3: samples
-      .filter((s: any) => s.voice_number === 3)
-      .map((s: any) => s.filename),
-    4: samples
-      .filter((s: any) => s.voice_number === 4)
-      .map((s: any) => s.filename),
-  })),
-}));
+// Using real groupDbSamplesByVoice implementation to handle spaced slots correctly
 
 describe("useKitDataManager", () => {
   const mockKits: KitWithRelations[] = [
@@ -40,11 +24,16 @@ describe("useKitDataManager", () => {
   ];
 
   const mockSamples = [
-    { filename: "kick.wav", is_stereo: false, slot_number: 1, voice_number: 1 },
+    {
+      filename: "kick.wav",
+      is_stereo: false,
+      slot_number: 100,
+      voice_number: 1,
+    },
     {
       filename: "snare.wav",
       is_stereo: false,
-      slot_number: 1,
+      slot_number: 100,
       voice_number: 2,
     },
   ];
@@ -174,7 +163,7 @@ describe("useKitDataManager", () => {
       {
         filename: "new-kick.wav",
         is_stereo: false,
-        slot_number: 1,
+        slot_number: 100,
         voice_number: 1,
       },
     ];

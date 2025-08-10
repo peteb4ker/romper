@@ -3,12 +3,15 @@
 ## Core Principles
 
 ### One Task at a Time (CRITICAL)
+
 - Execute exactly ONE sub-task per cycle
 - Mark complete only when fully implemented and validated
 - Request user approval before proceeding to next task
 
 ### Automated Validation Approach
+
 Quality validation is **automated via pre-commit hooks**:
+
 - ✅ TypeScript checking, ESLint, tests, and build run automatically on commit
 - ✅ Focus on implementation - quality gates handle validation
 - ✅ Manual validation: `npm run pre-commit` (optional)
@@ -18,12 +21,15 @@ Quality validation is **automated via pre-commit hooks**:
 ## Pre-Task Analysis
 
 ### Dependency Check
+
 Before starting any task:
+
 1. **Verify prerequisites**: Ensure parent/dependent tasks are truly complete
 2. **Check technical debt**: Address any pending sub-tasks in "complete" sections
 3. **Confirm infrastructure**: Validate required systems (ORM, types, context) are ready
 
 ### Context Loading
+
 1. **Load relevant standards**: Context-aware instructions from `.agent/` based on file type
 2. **Reference architecture**: Apply patterns from `docs/developer/architecture.md`
 3. **Check IPC patterns**: Use `.agent/patterns/ipc-error-handling.md` when applicable
@@ -31,6 +37,7 @@ Before starting any task:
 ## Task Execution Process
 
 ### Phase 1: Planning
+
 ```markdown
 1. Read task description and acceptance criteria
 2. Identify files to be created/modified
@@ -40,6 +47,7 @@ Before starting any task:
 ```
 
 ### Phase 2: Implementation
+
 ```markdown
 1. Implement the specific task requirement
 2. Follow context-aware coding standards
@@ -49,6 +57,7 @@ Before starting any task:
 ```
 
 ### Phase 3: Validation (Automated)
+
 ```markdown
 1. Verify task meets acceptance criteria from PRD
 2. Check code follows .agent/ standards
@@ -58,6 +67,7 @@ Before starting any task:
 ```
 
 ### Phase 4: Documentation
+
 ```markdown
 1. Update task list with [x] completion
 2. Update "Relevant Files" section with changes
@@ -66,6 +76,7 @@ Before starting any task:
 ```
 
 ### Phase 5: User Approval
+
 ```markdown
 1. Provide concise summary of what was completed
 2. Mention any issues or decisions made
@@ -76,6 +87,7 @@ Before starting any task:
 ## Git Commit Guidelines
 
 ### Pre-commit Hook Policy
+
 - **NEVER use `git commit --no-verify` without explicit user permission**
 - **NEVER commit with failing tests - all tests must pass before committing**
 - Pre-commit hooks exist for quality assurance and should be respected
@@ -87,6 +99,7 @@ Before starting any task:
 - **Test failures are blocking** - commits must not proceed with any failing tests
 
 ### Commit Message Standards
+
 - Use conventional commit format: `type: description`
 - Common types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
 - Provide clear, concise descriptions of changes
@@ -95,6 +108,7 @@ Before starting any task:
 ## Quality Gates
 
 ### Code Quality Requirements
+
 - **TypeScript**: Zero compilation errors
 - **Testing**: 80% coverage maintained, relevant tests pass
 - **Standards**: Follows context-aware .agent/ patterns
@@ -102,11 +116,13 @@ Before starting any task:
 - **IPC**: Direct calls without unnecessary availability checks
 
 ### Documentation Requirements
+
 - **Task hygiene**: Relevant Files section updated
 - **Schema changes**: docs/developer/romper-db.md updated if needed
 - **New patterns**: .agent/ standards updated if new patterns emerge
 
 ### Architecture Compliance
+
 - **Hook-based**: React business logic in custom hooks
 - **DbResult pattern**: Database operations return consistent DbResult<T>
 - **Reference-only**: Samples stored as paths, not copied until sync
@@ -115,12 +131,14 @@ Before starting any task:
 ## Error Handling
 
 ### When Tasks Cannot Be Completed
+
 1. **Identify blocking issue**: Missing dependencies, technical problems, unclear requirements
 2. **Document the blocker**: Add to task list as sub-task or note
 3. **Propose alternatives**: Suggest different approach or prerequisite work
 4. **Seek clarification**: Ask user for guidance on resolution
 
 ### When Tasks Are Already Complete
+
 1. **Verify implementation**: Check if existing code meets requirements
 2. **Validate against standards**: Ensure code follows current .agent/ patterns
 3. **Update if needed**: Refactor to meet current standards if outdated
@@ -129,12 +147,14 @@ Before starting any task:
 ## Anti-Patterns to Avoid
 
 ### Task Execution
+
 - ❌ **Multi-task execution**: Never work on multiple tasks simultaneously
 - ❌ **Skipping validation**: Commit changes to trigger automatic validation
 - ❌ **Marking incomplete work**: Only mark [x] when fully implemented
 - ❌ **Ignoring dependencies**: Check prerequisites before starting
 
 ### Code Implementation
+
 - ❌ **Bypassing standards**: Always follow context-aware .agent/ patterns
 - ❌ **Over-defensive IPC**: Don't check availability of guaranteed methods
 - ❌ **CommonJS usage**: Use ESM except in preload script
@@ -143,6 +163,7 @@ Before starting any task:
 ## Success Criteria
 
 ### Task Completion Checklist
+
 - [ ] Task requirement fully implemented
 - [ ] Code follows .agent/ standards for file type
 - [ ] Documentation updated (task list, relevant files, schema if needed)
@@ -152,4 +173,4 @@ Before starting any task:
 
 ---
 
-*This framework ensures systematic, high-quality task execution while maintaining project standards and architecture integrity.*
+_This framework ensures systematic, high-quality task execution while maintaining project standards and architecture integrity._

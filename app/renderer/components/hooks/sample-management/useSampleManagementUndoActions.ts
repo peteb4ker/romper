@@ -1,11 +1,12 @@
 import type {
   AddSampleAction,
-  CompactSlotsAction,
   MoveSampleAction,
   MoveSampleBetweenKitsAction,
+  ReindexSamplesAction,
   ReplaceSampleAction,
 } from "@romper/shared/undoTypes";
 
+import { displaySlotToDbSlot } from "@romper/shared/slotUtils";
 import { createActionId } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
 
@@ -34,7 +35,8 @@ export function useSampleManagementUndoActions({
         return (
           samplesResult.data.find(
             (s: any) =>
-              s.voice_number === voice && s.slot_number === slotIndex + 1,
+              s.voice_number === voice &&
+              s.slot_number === displaySlotToDbSlot(slotIndex + 1),
           ) || null
         );
       }
@@ -57,7 +59,7 @@ export function useSampleManagementUndoActions({
             samplesResult.data.find(
               (sample: any) =>
                 sample.voice_number === voice &&
-                sample.slot_number === slotIndex + 1,
+                sample.slot_number === displaySlotToDbSlot(slotIndex + 1),
             ) || null
           );
         }
@@ -128,18 +130,18 @@ export function useSampleManagementUndoActions({
     [],
   );
 
-  // Helper function to create compact slots undo action
-  const createCompactSlotsAction = useCallback(
+  // Helper function to create reindex samples undo action
+  const createReindexSamplesAction = useCallback(
     (
       voice: number,
       slotIndex: number,
       sampleToDelete: any,
       result: any,
-    ): CompactSlotsAction => ({
+    ): ReindexSamplesAction => ({
       data: {
         affectedSamples: result.data.affectedSamples.map((sample: any) => ({
-          newSlot: sample.slot_number - 1, // Original position before compaction
-          oldSlot: sample.slot_number, // New position after compaction
+          newSlot: sample.slot_number - 1, // Original position before reindexing
+          oldSlot: sample.slot_number, // New position after reindexing
           sample: {
             filename: sample.filename,
             is_stereo: sample.is_stereo,
@@ -155,10 +157,10 @@ export function useSampleManagementUndoActions({
         deletedSlot: slotIndex,
         voice,
       },
-      description: `Delete sample from voice ${voice}, slot ${slotIndex + 1} (with compaction)`,
+      description: `Delete sample from voice ${voice}, slot ${slotIndex + 1} (with reindexing)`,
       id: createActionId(),
       timestamp: new Date(),
-      type: "COMPACT_SLOTS",
+      type: "REINDEX_SAMPLES",
     }),
     [],
   );
@@ -167,7 +169,6 @@ export function useSampleManagementUndoActions({
     (params: {
       fromSlot: number;
       fromVoice: number;
-      mode: "insert" | "overwrite";
       result: any;
       stateSnapshot: any[];
       toSlot: number;
@@ -188,7 +189,6 @@ export function useSampleManagementUndoActions({
         ),
         fromSlot: params.fromSlot,
         fromVoice: params.fromVoice,
-        mode: params.mode,
         movedSample: {
           filename: params.result.data.movedSample.filename,
           is_stereo: params.result.data.movedSample.is_stereo,
@@ -217,7 +217,6 @@ export function useSampleManagementUndoActions({
     (params: {
       fromSlot: number;
       fromVoice: number;
-      mode: "insert" | "overwrite";
       result: any;
       targetKit: string;
       toSlot: number;
@@ -239,7 +238,7 @@ export function useSampleManagementUndoActions({
         fromKit: kitName,
         fromSlot: params.fromSlot,
         fromVoice: params.fromVoice,
-        mode: params.mode,
+        mode: "insert",
         movedSample: {
           filename: params.result.data.movedSample.filename,
           is_stereo: params.result.data.movedSample.is_stereo,
@@ -266,8 +265,8 @@ export function useSampleManagementUndoActions({
 
   return {
     createAddSampleAction,
-    createCompactSlotsAction,
     createCrossKitMoveAction,
+    createReindexSamplesAction,
     createReplaceSampleAction,
     createSameKitMoveAction,
     getOldSampleForUndo,

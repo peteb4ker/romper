@@ -189,20 +189,20 @@ contextBridge.exposeInMainWorld("electronAPI", {
       slotIndex,
     );
   },
-  deleteSampleFromSlotWithoutCompaction: (
+  deleteSampleFromSlotWithoutReindexing: (
     kitName: string,
     voiceNumber: number,
     slotIndex: number,
   ) => {
     isDev &&
       console.debug(
-        "[IPC] deleteSampleFromSlotWithoutCompaction invoked",
+        "[IPC] deleteSampleFromSlotWithoutReindexing invoked",
         kitName,
         voiceNumber,
         slotIndex,
       );
     return ipcRenderer.invoke(
-      "delete-sample-from-slot-without-compaction",
+      "delete-sample-from-slot-without-reindexing",
       kitName,
       voiceNumber,
       slotIndex,
@@ -316,7 +316,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] listFilesInRoot invoked", localStorePath);
     return ipcRenderer.invoke("list-files-in-root", localStorePath);
   },
-  // Cross-kit sample movement with source compaction
+  // Cross-kit sample movement with source reindexing
   moveSampleBetweenKits: (
     fromKit: string,
     fromVoice: number,

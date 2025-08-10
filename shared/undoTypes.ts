@@ -17,35 +17,11 @@ export interface AddSampleAction extends UndoAction {
 
 export type AnyUndoAction =
   | AddSampleAction
-  | CompactSlotsAction
   | DeleteSampleAction
   | MoveSampleAction
   | MoveSampleBetweenKitsAction
+  | ReindexSamplesAction
   | ReplaceSampleAction;
-
-// COMPACT_SLOTS action data - for automatic compaction after deletion
-export interface CompactSlotsAction extends UndoAction {
-  data: {
-    affectedSamples: Array<{
-      newSlot: number;
-      oldSlot: number;
-      sample: {
-        filename: string;
-        is_stereo: boolean;
-        source_path: string;
-      };
-      voice: number;
-    }>;
-    deletedSample: {
-      filename: string;
-      is_stereo: boolean;
-      source_path: string;
-    };
-    deletedSlot: number;
-    voice: number;
-  };
-  type: "COMPACT_SLOTS";
-}
 
 export interface DeleteSampleAction extends UndoAction {
   data: {
@@ -76,7 +52,7 @@ export interface MoveSampleAction extends UndoAction {
     }>;
     fromSlot: number;
     fromVoice: number;
-    mode: "insert" | "overwrite";
+    mode?: "insert" | "overwrite";
     movedSample: {
       filename: string;
       is_stereo: boolean;
@@ -137,6 +113,30 @@ export interface MoveSampleBetweenKitsAction extends UndoAction {
   type: "MOVE_SAMPLE_BETWEEN_KITS";
 }
 
+// REINDEX_SAMPLES action data - for automatic reindexing after deletion
+export interface ReindexSamplesAction extends UndoAction {
+  data: {
+    affectedSamples: Array<{
+      newSlot: number;
+      oldSlot: number;
+      sample: {
+        filename: string;
+        is_stereo: boolean;
+        source_path: string;
+      };
+      voice: number;
+    }>;
+    deletedSample: {
+      filename: string;
+      is_stereo: boolean;
+      source_path: string;
+    };
+    deletedSlot: number;
+    voice: number;
+  };
+  type: "REINDEX_SAMPLES";
+}
+
 export interface ReplaceSampleAction extends UndoAction {
   data: {
     newSample: {
@@ -162,10 +162,10 @@ export interface UndoAction {
   timestamp: Date;
   type:
     | "ADD_SAMPLE"
-    | "COMPACT_SLOTS"
     | "DELETE_SAMPLE"
     | "MOVE_SAMPLE_BETWEEN_KITS"
     | "MOVE_SAMPLE"
+    | "REINDEX_SAMPLES"
     | "REPLACE_SAMPLE";
 }
 
@@ -179,14 +179,14 @@ export function getActionDescription(action: AnyUndoAction): string {
   switch (action.type) {
     case "ADD_SAMPLE":
       return `Undo add sample to voice ${action.data.voice}, slot ${action.data.slot + 1}`;
-    case "COMPACT_SLOTS":
-      return `Undo compact slots in voice ${action.data.voice} after deleting slot ${action.data.deletedSlot + 1}`;
     case "DELETE_SAMPLE":
       return `Undo delete sample from voice ${action.data.voice}, slot ${action.data.slot + 1}`;
     case "MOVE_SAMPLE":
       return `Undo move sample from voice ${action.data.fromVoice}, slot ${action.data.fromSlot + 1} to voice ${action.data.toVoice}, slot ${action.data.toSlot + 1}`;
     case "MOVE_SAMPLE_BETWEEN_KITS":
       return `Undo move sample from ${action.data.fromKit} voice ${action.data.fromVoice}, slot ${action.data.fromSlot + 1} to ${action.data.toKit} voice ${action.data.toVoice}, slot ${action.data.toSlot + 1}`;
+    case "REINDEX_SAMPLES":
+      return `Undo reindex samples in voice ${action.data.voice} after deleting slot ${action.data.deletedSlot + 1}`;
     case "REPLACE_SAMPLE":
       return `Undo replace sample in voice ${action.data.voice}, slot ${action.data.slot + 1}`;
     default:

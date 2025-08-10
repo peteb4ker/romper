@@ -32,12 +32,14 @@ romper/
 ## 📚 Documentation
 
 ### For Users
+
 - **[Getting Started Guide](docs/user/getting-started.md)** - Installation and first-time setup
 - **[User Documentation](docs/index.md)** - Complete user guide and feature overview
 - **[Keyboard Shortcuts](docs/user/keyboard-shortcuts.md)** - Speed up your workflow
 - **[Settings Guide](docs/user/settings.md)** - Configure Romper preferences
 
 ### For Developers
+
 - **[Architecture Overview](docs/developer/architecture.md)** - Core design patterns and decisions
 - **[Contributing Guide](docs/developer/contributing.md)** - How to contribute to the project
 - **[Development Setup](docs/developer/development.md)** - Set up your development environment
@@ -46,11 +48,13 @@ romper/
 - **[Database Schema](docs/developer/romper-db.md)** - Complete database documentation
 
 ### For AI Development Tools
+
 - **[CLAUDE.md](CLAUDE.md)** - Claude Code project instructions with context-aware loading
 - **[Agent Instructions](.agent/)** - Machine-readable coding standards and patterns
 - **[GitHub Copilot Instructions](.github/copilot-instructions.md)** - Copilot development standards
 
 ### Project Management
+
 - **[Product Requirements](tasks/PRD.md)** - Complete project vision and requirements
 - **[Current Tasks](tasks/tasks-PRD.md)** - Development progress and task tracking
 
@@ -99,6 +103,7 @@ Romper supports the following environment variables for configuration:
 - **`ROMPER_SQUARP_ARCHIVE_URL`** - URL to the Squarp factory samples archive (defaults to official Squarp URL)
 
 Example usage:
+
 ```sh
 # Point to your SD card
 export ROMPER_SDCARD_PATH="/Volumes/RAMPLE/KITS"
@@ -117,12 +122,15 @@ npm run dev
 Romper can work with your SD card in several ways:
 
 ### 📱 **From your existing Rample SD card**
+
 If you already have a Rample with sample kits, just point Romper to your SD card directory and start managing your existing kits.
 
 ### 🏭 **From Squarp factory samples**
+
 Automatically download the official factory sample packs from [squarp.net](https://squarp.net) and use Romper to organize them into your preferred kit structure.
 
 ### 📁 **From an empty folder**
+
 Start fresh! Create a new folder and let Romper help you build your sample library from scratch. Perfect for organizing your own samples into Rample-compatible kits.
 
 ---
@@ -149,83 +157,72 @@ This desktop application is designed to manage sample kits on the SD card used b
 
 ### 🧭 Core Functionality
 
-* **SD Card Access**
+- **SD Card Access**
+  - Detect and browse the contents of an inserted SD card.
+  - Recognize the standard Rample folder structure (`KITS`, `SAMPLES`, `.rample_labels.json`).
 
-  * Detect and browse the contents of an inserted SD card.
-  * Recognize the standard Rample folder structure (`KITS`, `SAMPLES`, `.rample_labels.json`).
+- **Kit Management**
+  - View a grid of kits labeled by bank and slot (e.g., `A0`, `B7`).
+  - Select a kit and view its 4 voice assignments.
+  - Assign or change samples for each voice.
+  - Rename kits and slots using a metadata file (`.rample_labels.json`).
+  - Kits automatically refreshed if updated on disk
 
-* **Kit Management**
+- **Sample Browser**
+  - Browse all samples on the SD card by folder.
+  - Filter/search samples by name.
+  - Audition/play samples before assigning them.
+  - Display sample metadata: name, length, bitrate, etc.
 
-  * View a grid of kits labeled by bank and slot (e.g., `A0`, `B7`).
-  * Select a kit and view its 4 voice assignments.
-  * Assign or change samples for each voice.
-  * Rename kits and slots using a metadata file (`.rample_labels.json`).
-  * Kits automatically refreshed if updated on disk
+- **Drag and Drop**
+  - Support dragging samples into voice slots.
+  - Optionally support drag-and-drop between kits.
 
-* **Sample Browser**
-
-  * Browse all samples on the SD card by folder.
-  * Filter/search samples by name.
-  * Audition/play samples before assigning them.
-  * Display sample metadata: name, length, bitrate, etc.
-
-* **Drag and Drop**
-
-  * Support dragging samples into voice slots.
-  * Optionally support drag-and-drop between kits.
-
-* **File Safety**
-
-  * Never modify or overwrite original `.wav` files.
-  * All changes must only affect the `.KIT` binary files and the optional metadata file.
+- **File Safety**
+  - Never modify or overwrite original `.wav` files.
+  - All changes must only affect the `.KIT` binary files and the optional metadata file.
 
 ---
 
 ### 🎛️ Advanced Features
 
-* **Kit Labeling**
+- **Kit Labeling**
+  - Support custom human-readable labels via `.rample_labels.json` sidecar file.
 
-  * Support custom human-readable labels via `.rample_labels.json` sidecar file.
+- **Conflict Detection**
+  - Warn if sample assignments conflict with other kits (e.g., duplicate use or missing files).
 
-* **Conflict Detection**
+- **Export & Backup**
+  - Allow exporting a backup of current kits and metadata.
+  - Optionally allow cloning a kit to another slot.
 
-  * Warn if sample assignments conflict with other kits (e.g., duplicate use or missing files).
-
-* **Export & Backup**
-
-  * Allow exporting a backup of current kits and metadata.
-  * Optionally allow cloning a kit to another slot.
-
-* **Dark Mode**
-
-  * Default to a dark UI theme, suitable for studio environments.
-  * Optional light mode toggle.
+- **Dark Mode**
+  - Default to a dark UI theme, suitable for studio environments.
+  - Optional light mode toggle.
 
 ---
 
 ### 🖥️ Platform Requirements
 
-* **Cross-Platform Support**
+- **Cross-Platform Support**
+  - Runs on macOS, Windows, and Linux using Electron.
+  - All filesystem operations should be handled using Node’s `fs` module and Electron’s main process API.
 
-  * Runs on macOS, Windows, and Linux using Electron.
-  * All filesystem operations should be handled using Node’s `fs` module and Electron’s main process API.
-
-* **Local-Only**
-
-  * No cloud sync or online login — this is an offline, local utility.
-  * All operations are performed on the local filesystem with no internet dependency.
+- **Local-Only**
+  - No cloud sync or online login — this is an offline, local utility.
+  - All operations are performed on the local filesystem with no internet dependency.
 
 ---
 
 ## 🧱 Tech Stack
 
-| Layer         | Tools                         |
-|---------------|-------------------------------|
-| UI            | React + Vite + Tailwind CSS   |
-| Platform      | Electron (Chromium + Node.js) |
-| File System   | Node `fs` + `path` modules     |
-| Audio Engine  | Web Audio API                 |
-| Audio Format  | `music-metadata`, `ffmpeg` (optional) |
+| Layer        | Tools                                 |
+| ------------ | ------------------------------------- |
+| UI           | React + Vite + Tailwind CSS           |
+| Platform     | Electron (Chromium + Node.js)         |
+| File System  | Node `fs` + `path` modules            |
+| Audio Engine | Web Audio API                         |
+| Audio Format | `music-metadata`, `ffmpeg` (optional) |
 
 ---
 

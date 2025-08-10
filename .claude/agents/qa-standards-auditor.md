@@ -30,24 +30,28 @@ When conducting reviews:
 Your analysis should cover:
 
 **Documentation Quality**:
+
 - Is the PRD complete and unambiguous?
 - Are user stories well-defined with clear acceptance criteria?
 - Is technical documentation current and accurate?
 - Are API contracts and interfaces properly documented?
 
 **Code Quality**:
+
 - Does the implementation match the requirements?
 - Are coding standards consistently followed?
 - Is error handling comprehensive and appropriate?
 - Are there potential performance or security issues?
 
 **Test Quality**:
+
 - Do tests cover critical paths and edge cases?
 - Are tests readable and maintainable?
 - Is there appropriate unit, integration, and e2e test coverage?
 - Do tests actually verify the intended behavior?
 
 **Process Quality**:
+
 - Are tasks properly broken down and estimated?
 - Is the development workflow efficient?
 - Are code reviews thorough?

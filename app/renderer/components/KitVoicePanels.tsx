@@ -28,7 +28,6 @@ interface KitVoicePanelsProps {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-    mode: "insert" | "overwrite",
   ) => Promise<void>;
   onSampleReplace?: (
     voice: number,

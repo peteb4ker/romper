@@ -8,10 +8,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   addKit,
   addSample,
-  compactSlotsAfterDelete,
   createRomperDbFile,
   deleteSamples,
-  deleteSamplesWithoutCompaction,
+  deleteSamplesWithoutReindexing,
   ensureDatabaseMigrations,
   getAllBanks,
   getAllSamples,
@@ -164,7 +163,7 @@ describe("Drizzle ORM Database Operations", () => {
         filename: "kick.wav",
         is_stereo: false,
         kit_name: "A0",
-        slot_number: 1,
+        slot_number: 100,
         source_path: "/test/path/kick.wav", // Required field
         voice_number: 1,
         wav_bitrate: 16,
@@ -182,7 +181,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "kick.wav",
           is_stereo: false,
           kit_name: "A0",
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/test/path/kick.wav",
           voice_number: 1,
         },
@@ -190,7 +189,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "snare.wav",
           is_stereo: false,
           kit_name: "A0",
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/test/path/snare.wav",
           voice_number: 2,
         },
@@ -219,7 +218,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "kick.wav",
           is_stereo: false,
           kit_name: "A0",
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/test/path/kick.wav",
           voice_number: 1,
         },
@@ -227,7 +226,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "snare.wav",
           is_stereo: false,
           kit_name: "A0",
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/test/path/snare.wav",
           voice_number: 2,
         },
@@ -235,7 +234,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "hihat.wav",
           is_stereo: false,
           kit_name: "A0",
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/test/path/hihat.wav",
           voice_number: 3,
         },
@@ -439,7 +438,7 @@ describe("Drizzle ORM Database Operations", () => {
         filename: "legacy_sample.wav",
         is_stereo: false,
         kit_name: "A0",
-        slot_number: 1,
+        slot_number: 100,
         source_path: "/test/path/legacy_sample.wav",
         voice_number: 1,
       };
@@ -467,7 +466,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample1.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/test/sample1.wav",
           voice_number: 1,
         },
@@ -475,7 +474,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample2.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 2,
+          slot_number: 200,
           source_path: "/test/sample2.wav",
           voice_number: 1,
         },
@@ -483,7 +482,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample3.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 3,
+          slot_number: 300,
           source_path: "/test/sample3.wav",
           voice_number: 1,
         },
@@ -491,7 +490,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample4.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 4,
+          slot_number: 400,
           source_path: "/test/sample4.wav",
           voice_number: 1,
         },
@@ -499,7 +498,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample5.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 5,
+          slot_number: 500,
           source_path: "/test/sample5.wav",
           voice_number: 1,
         },
@@ -507,7 +506,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample6.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 6,
+          slot_number: 600,
           source_path: "/test/sample6.wav",
           voice_number: 1,
         },
@@ -523,7 +522,15 @@ describe("Drizzle ORM Database Operations", () => {
       // Move sample6 from slot 6 to slot 4
       // Expected: [sample1, sample2, sample3, sample6, sample4, sample5]
 
-      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 6, 1, 4, "insert");
+      const result = moveSample(
+        TEST_DB_DIR,
+        "TestKit",
+        1,
+        600,
+        1,
+        400,
+        "insert",
+      );
       if (!result.success) {
         console.error("moveSample failed:", result.error);
       }
@@ -549,9 +556,17 @@ describe("Drizzle ORM Database Operations", () => {
     it("should move sample within same voice (forward move 2→5)", () => {
       // Initial state: [sample1, sample2, sample3, sample4, sample5, sample6]
       // Move sample2 from slot 2 to slot 5
-      // After compaction: [sample1, sample3, sample4, sample2, sample5, sample6]
+      // After reindexing: [sample1, sample3, sample4, sample2, sample5, sample6]
 
-      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 2, 1, 5, "insert");
+      const result = moveSample(
+        TEST_DB_DIR,
+        "TestKit",
+        1,
+        200,
+        1,
+        500,
+        "insert",
+      );
       expect(result.success).toBe(true);
       if (!result.success) {
         throw new Error(`Forward move failed: ${result.error}`);
@@ -567,29 +582,37 @@ describe("Drizzle ORM Database Operations", () => {
 
       expect(samples).toHaveLength(6);
       expect(samples[0].filename).toBe("sample1.wav"); // slot 1
-      expect(samples[1].filename).toBe("sample3.wav"); // slot 2 (compacted from 3)
-      expect(samples[2].filename).toBe("sample4.wav"); // slot 3 (compacted from 4)
-      expect(samples[3].filename).toBe("sample2.wav"); // slot 4 (moved here after compaction)
-      expect(samples[4].filename).toBe("sample5.wav"); // slot 5 (compacted from 6)
-      expect(samples[5].filename).toBe("sample6.wav"); // slot 6 (compacted from 7)
+      expect(samples[1].filename).toBe("sample3.wav"); // slot 2 (reindexed from 3)
+      expect(samples[2].filename).toBe("sample4.wav"); // slot 3 (reindexed from 4)
+      expect(samples[3].filename).toBe("sample2.wav"); // slot 4 (moved here after reindexing)
+      expect(samples[4].filename).toBe("sample5.wav"); // slot 5 (reindexed from 6)
+      expect(samples[5].filename).toBe("sample6.wav"); // slot 6 (reindexed from 7)
     });
 
-    it("should move sample across voices with source compaction", () => {
+    it("should move sample across voices with source reindexing", () => {
       // Add samples to voice 2
       addSample(TEST_DB_DIR, {
         filename: "voice2_sample1.wav",
         is_stereo: false,
         kit_name: "TestKit",
-        slot_number: 1,
+        slot_number: 100,
         source_path: "/test/v2s1.wav",
         voice_number: 2,
       });
 
       // Move sample4 from voice 1 slot 4 to voice 2 slot 1 (insert mode)
-      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 4, 2, 1, "insert");
+      const result = moveSample(
+        TEST_DB_DIR,
+        "TestKit",
+        1,
+        400,
+        2,
+        100,
+        "insert",
+      );
       expect(result.success).toBe(true);
 
-      // Verify voice 1 was compacted (sample4 removed, others shifted up)
+      // Verify voice 1 was reindexed (sample4 removed, others shifted up)
       const voice1Result = getKitSamples(TEST_DB_DIR, "TestKit");
       expect(voice1Result.success).toBe(true);
 
@@ -601,8 +624,8 @@ describe("Drizzle ORM Database Operations", () => {
       expect(voice1Samples[0].filename).toBe("sample1.wav"); // slot 1
       expect(voice1Samples[1].filename).toBe("sample2.wav"); // slot 2
       expect(voice1Samples[2].filename).toBe("sample3.wav"); // slot 3
-      expect(voice1Samples[3].filename).toBe("sample5.wav"); // slot 4 (compacted from 5)
-      expect(voice1Samples[4].filename).toBe("sample6.wav"); // slot 5 (compacted from 6)
+      expect(voice1Samples[3].filename).toBe("sample5.wav"); // slot 4 (reindexed from 5)
+      expect(voice1Samples[4].filename).toBe("sample6.wav"); // slot 5 (reindexed from 6)
 
       // Verify voice 2 received the sample with proper insertion
       const voice2Samples = voice1Result
@@ -695,7 +718,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample1.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/test/sample1.wav",
           voice_number: 1,
         },
@@ -703,7 +726,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample2.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 2,
+          slot_number: 200,
           source_path: "/test/sample2.wav",
           voice_number: 1,
         },
@@ -737,19 +760,19 @@ describe("Drizzle ORM Database Operations", () => {
       expect(result.data).toBeNull();
     });
 
-    it("should delete samples without compaction", () => {
-      // Add a third sample to make compaction behavior visible
+    it("should delete samples without reindexing", () => {
+      // Add a third sample to make reindexing behavior visible
       addSample(TEST_DB_DIR, {
         filename: "sample3.wav",
         is_stereo: false,
         kit_name: "TestKit",
-        slot_number: 3,
+        slot_number: 300,
         source_path: "/test/sample3.wav",
         voice_number: 1,
       });
 
       // Delete the middle sample (slot 2)
-      const result = deleteSamplesWithoutCompaction(TEST_DB_DIR, "TestKit", {
+      const result = deleteSamplesWithoutReindexing(TEST_DB_DIR, "TestKit", {
         slotNumber: 2,
         voiceNumber: 1,
       });
@@ -758,24 +781,24 @@ describe("Drizzle ORM Database Operations", () => {
       expect(result.data!.deletedSamples).toHaveLength(1);
       expect(result.data!.deletedSamples[0].filename).toBe("sample2.wav");
 
-      // Verify remaining samples still have their original slot numbers (no compaction)
+      // Verify remaining samples still have their original slot numbers (no reindexing)
       const remainingSamples = getKitSamples(TEST_DB_DIR, "TestKit");
       expect(remainingSamples.success).toBe(true);
       const samples = remainingSamples.data!.sort(
         (a, b) => a.slot_number - b.slot_number,
       );
       expect(samples).toHaveLength(2);
-      expect(samples[0].slot_number).toBe(1); // sample1 unchanged
-      expect(samples[1].slot_number).toBe(3); // sample3 unchanged (gap at slot 2)
+      expect(samples[0].slot_number).toBe(100); // sample1 unchanged
+      expect(samples[1].slot_number).toBe(300); // sample3 unchanged (gap at slot 2)
     });
 
-    it("should compact slots after delete", () => {
-      // Add more samples to test compaction
+    it("should automatically reindex slots after delete using reindexing", () => {
+      // Add more samples to test reindexing
       addSample(TEST_DB_DIR, {
         filename: "sample3.wav",
         is_stereo: false,
         kit_name: "TestKit",
-        slot_number: 3,
+        slot_number: 300,
         source_path: "/test/sample3.wav",
         voice_number: 1,
       });
@@ -783,33 +806,33 @@ describe("Drizzle ORM Database Operations", () => {
         filename: "sample4.wav",
         is_stereo: false,
         kit_name: "TestKit",
-        slot_number: 4,
+        slot_number: 400,
         source_path: "/test/sample4.wav",
         voice_number: 1,
       });
 
-      // First delete sample at slot 2 without compaction to create a gap
-      deleteSamplesWithoutCompaction(TEST_DB_DIR, "TestKit", {
+      // Delete sample at slot 2 - reindexing now happens automatically using reindexing
+      const result = deleteSamples(TEST_DB_DIR, "TestKit", {
         slotNumber: 2,
         voiceNumber: 1,
       });
-
-      // Now compact slots after the deleted slot 2
-      const result = compactSlotsAfterDelete(TEST_DB_DIR, "TestKit", 1, 2);
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2); // 2 samples were shifted
 
-      // Verify compaction occurred
+      // Verify automatic reindexing reindexing occurred
       const samples = getKitSamples(TEST_DB_DIR, "TestKit");
       expect(samples.success).toBe(true);
-      const sortedSamples = samples.data!.sort(
-        (a, b) => a.slot_number - b.slot_number,
-      );
-      expect(sortedSamples).toHaveLength(3); // Original 4 - 1 deleted = 3 total
-      expect(sortedSamples[1].filename).toBe("sample3.wav");
-      expect(sortedSamples[1].slot_number).toBe(2); // Compacted from 3 to 2
-      expect(sortedSamples[2].filename).toBe("sample4.wav");
-      expect(sortedSamples[2].slot_number).toBe(3); // Compacted from 4 to 3
+      const voiceOneSamples = samples
+        .data!.filter((s) => s.voice_number === 1)
+        .sort((a, b) => a.slot_number - b.slot_number);
+
+      expect(voiceOneSamples).toHaveLength(3); // Original 4 - 1 deleted = 3 total
+      // After reindexing, samples should be at slots 100, 200, 300
+      expect(voiceOneSamples[0].filename).toBe("sample1.wav");
+      expect(voiceOneSamples[0].slot_number).toBe(100);
+      expect(voiceOneSamples[1].filename).toBe("sample3.wav");
+      expect(voiceOneSamples[1].slot_number).toBe(200); // Reindexed to proper spacing
+      expect(voiceOneSamples[2].filename).toBe("sample4.wav");
+      expect(voiceOneSamples[2].slot_number).toBe(300); // Reindexed to proper spacing
     });
   });
 
@@ -942,14 +965,6 @@ describe("Drizzle ORM Database Operations", () => {
       expect(result.data).toHaveLength(0);
     });
 
-    it("should handle compactSlotsAfterDelete with no samples to shift", () => {
-      createRomperDbFile(TEST_DB_DIR);
-      addKit(TEST_DB_DIR, { editable: true, locked: false, name: "EmptyKit" });
-
-      // Try to compact when there are no samples to shift
-      const result = compactSlotsAfterDelete(TEST_DB_DIR, "EmptyKit", 1, 5);
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(0);
-    });
+    // This function was replaced with automatic reindexing in deleteSamples
   });
 });

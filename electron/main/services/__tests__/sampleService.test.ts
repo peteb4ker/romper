@@ -22,7 +22,7 @@ vi.mock("path", () => ({
 vi.mock("../../db/romperDbCoreORM.js", () => ({
   addSample: vi.fn(),
   deleteSamples: vi.fn(),
-  deleteSamplesWithoutCompaction: vi.fn(),
+  deleteSamplesWithoutReindexing: vi.fn(),
   getKitSamples: vi.fn(),
   markKitAsModified: vi.fn(),
   moveSample: vi.fn(),
@@ -42,7 +42,7 @@ import { getAudioMetadata } from "../../audioUtils.js";
 import {
   addSample,
   deleteSamples,
-  deleteSamplesWithoutCompaction,
+  deleteSamplesWithoutReindexing,
   getKitSamples,
   markKitAsModified,
   moveSample,
@@ -54,8 +54,8 @@ const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
 const mockAddSample = vi.mocked(addSample);
 const mockDeleteSamples = vi.mocked(deleteSamples);
-const mockDeleteSamplesWithoutCompaction = vi.mocked(
-  deleteSamplesWithoutCompaction,
+const mockDeleteSamplesWithoutReindexing = vi.mocked(
+  deleteSamplesWithoutReindexing,
 );
 const mockGetKitSamples = vi.mocked(getKitSamples);
 const mockMarkKitAsModified = vi.mocked(markKitAsModified);
@@ -97,7 +97,7 @@ describe("SampleService", () => {
 
     mockAddSample.mockReturnValue({ data: { sampleId: 123 }, success: true });
     mockDeleteSamples.mockReturnValue({ success: true });
-    mockDeleteSamplesWithoutCompaction.mockReturnValue({
+    mockDeleteSamplesWithoutReindexing.mockReturnValue({
       data: { deletedSamples: [] },
       success: true,
     });
@@ -243,7 +243,7 @@ describe("SampleService", () => {
         "/test/path/.romperdb",
         expect.objectContaining({
           kit_name: "TestKit",
-          slot_number: 1, // 0-based index converted to 1-based
+          slot_number: 100, // 0-based index converted to spaced slot
           source_path: "/test/sample.wav",
           voice_number: 1,
         }),
@@ -445,7 +445,7 @@ describe("SampleService", () => {
     it("successfully deletes sample", () => {
       // Mock existing sample at the slot
       mockGetKitSamples.mockReturnValue({
-        data: [{ filename: "existing.wav", slot_number: 6, voice_number: 2 }],
+        data: [{ filename: "existing.wav", slot_number: 600, voice_number: 2 }],
         success: true,
       });
 
@@ -460,7 +460,7 @@ describe("SampleService", () => {
       expect(mockDeleteSamples).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "TestKit",
-        { slotNumber: 6, voiceNumber: 2 }, // 0-based index converted to 1-based
+        { slotNumber: 600, voiceNumber: 2 }, // 0-based index converted to 1-based
       );
       expect(mockMarkKitAsModified).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -553,7 +553,7 @@ describe("SampleService", () => {
     it("successfully replaces sample", () => {
       // Mock existing sample at the slot
       mockGetKitSamples.mockReturnValue({
-        data: [{ filename: "old.wav", slot_number: 6, voice_number: 2 }],
+        data: [{ filename: "old.wav", slot_number: 600, voice_number: 2 }],
         success: true,
       });
       mockDeleteSamples.mockReturnValue({ success: true });
@@ -571,13 +571,13 @@ describe("SampleService", () => {
       expect(mockDeleteSamples).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "TestKit",
-        { slotNumber: 6, voiceNumber: 2 },
+        { slotNumber: 600, voiceNumber: 2 },
       );
       expect(mockAddSample).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
           kit_name: "TestKit",
-          slot_number: 6,
+          slot_number: 600,
           source_path: "/test/new-sample.wav",
           voice_number: 2,
         }),
@@ -591,7 +591,7 @@ describe("SampleService", () => {
     it("fails if delete operation fails", () => {
       // Mock existing sample at the slot
       mockGetKitSamples.mockReturnValue({
-        data: [{ filename: "old.wav", slot_number: 1, voice_number: 1 }],
+        data: [{ filename: "old.wav", slot_number: 100, voice_number: 1 }],
         success: true,
       });
       mockDeleteSamples.mockReturnValue({
@@ -617,7 +617,7 @@ describe("SampleService", () => {
     it("applies defaultToMonoSamples setting when replacing stereo sample", () => {
       // Mock existing sample at the slot
       mockGetKitSamples.mockReturnValue({
-        data: [{ filename: "old.wav", slot_number: 1, voice_number: 1 }],
+        data: [{ filename: "old.wav", slot_number: 100, voice_number: 1 }],
         success: true,
       });
       mockDeleteSamples.mockReturnValue({ success: true });
@@ -654,7 +654,7 @@ describe("SampleService", () => {
     it("preserves stereo when defaultToMonoSamples is false for replacement", () => {
       // Mock existing sample at the slot
       mockGetKitSamples.mockReturnValue({
-        data: [{ filename: "old.wav", slot_number: 1, voice_number: 1 }],
+        data: [{ filename: "old.wav", slot_number: 100, voice_number: 1 }],
         success: true,
       });
       mockDeleteSamples.mockReturnValue({ success: true });
@@ -693,7 +693,7 @@ describe("SampleService", () => {
     it("successfully returns audio buffer for existing sample", () => {
       const mockSample = {
         filename: "test.wav",
-        slot_number: 3,
+        slot_number: 300,
         source_path: "/path/to/test.wav",
         voice_number: 2,
       };
@@ -760,7 +760,7 @@ describe("SampleService", () => {
     it("returns error when file read fails", () => {
       const mockSample = {
         filename: "test.wav",
-        slot_number: 3,
+        slot_number: 300,
         source_path: "/path/to/test.wav",
         voice_number: 2,
       };
@@ -793,14 +793,14 @@ describe("SampleService", () => {
     });
   });
 
-  describe("deleteSampleFromSlotWithoutCompaction", () => {
-    it("successfully deletes sample without compaction", () => {
-      mockDeleteSamplesWithoutCompaction.mockReturnValue({
+  describe("deleteSampleFromSlotWithoutReindexing", () => {
+    it("successfully deletes sample without reindexing", () => {
+      mockDeleteSamplesWithoutReindexing.mockReturnValue({
         data: { deletedSamples: [{ filename: "test.wav" }] },
         success: true,
       });
 
-      const result = sampleService.deleteSampleFromSlotWithoutCompaction(
+      const result = sampleService.deleteSampleFromSlotWithoutReindexing(
         mockInMemorySettings,
         "TestKit",
         2,
@@ -808,10 +808,10 @@ describe("SampleService", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(mockDeleteSamplesWithoutCompaction).toHaveBeenCalledWith(
+      expect(mockDeleteSamplesWithoutReindexing).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "TestKit",
-        { slotNumber: 6, voiceNumber: 2 }, // 0-based index converted to 1-based
+        { slotNumber: 600, voiceNumber: 2 }, // 0-based index converted to 1-based
       );
       expect(mockMarkKitAsModified).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -820,7 +820,7 @@ describe("SampleService", () => {
     });
 
     it("rejects invalid voice number", () => {
-      const result = sampleService.deleteSampleFromSlotWithoutCompaction(
+      const result = sampleService.deleteSampleFromSlotWithoutReindexing(
         mockInMemorySettings,
         "TestKit",
         0,
@@ -829,11 +829,11 @@ describe("SampleService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Voice number must be between 1 and 4");
-      expect(mockDeleteSamplesWithoutCompaction).not.toHaveBeenCalled();
+      expect(mockDeleteSamplesWithoutReindexing).not.toHaveBeenCalled();
     });
 
     it("rejects invalid slot index", () => {
-      const result = sampleService.deleteSampleFromSlotWithoutCompaction(
+      const result = sampleService.deleteSampleFromSlotWithoutReindexing(
         mockInMemorySettings,
         "TestKit",
         2,
@@ -844,11 +844,11 @@ describe("SampleService", () => {
       expect(result.error).toBe(
         "Slot index must be between 0 and 11 (12 slots per voice)",
       );
-      expect(mockDeleteSamplesWithoutCompaction).not.toHaveBeenCalled();
+      expect(mockDeleteSamplesWithoutReindexing).not.toHaveBeenCalled();
     });
 
     it("returns error when no local store path configured", () => {
-      const result = sampleService.deleteSampleFromSlotWithoutCompaction(
+      const result = sampleService.deleteSampleFromSlotWithoutReindexing(
         {},
         "TestKit",
         2,
@@ -860,12 +860,12 @@ describe("SampleService", () => {
     });
 
     it("handles database operation errors", () => {
-      mockDeleteSamplesWithoutCompaction.mockReturnValue({
+      mockDeleteSamplesWithoutReindexing.mockReturnValue({
         error: "Database error",
         success: false,
       });
 
-      const result = sampleService.deleteSampleFromSlotWithoutCompaction(
+      const result = sampleService.deleteSampleFromSlotWithoutReindexing(
         mockInMemorySettings,
         "TestKit",
         2,
@@ -877,11 +877,11 @@ describe("SampleService", () => {
     });
 
     it("handles thrown exceptions", () => {
-      mockDeleteSamplesWithoutCompaction.mockImplementation(() => {
+      mockDeleteSamplesWithoutReindexing.mockImplementation(() => {
         throw new Error("Unexpected error");
       });
 
-      const result = sampleService.deleteSampleFromSlotWithoutCompaction(
+      const result = sampleService.deleteSampleFromSlotWithoutReindexing(
         mockInMemorySettings,
         "TestKit",
         2,
@@ -898,7 +898,7 @@ describe("SampleService", () => {
       filename: "test.wav",
       id: 1,
       is_stereo: false,
-      slot_number: 1,
+      slot_number: 100,
       voice_number: 1,
     };
 
@@ -930,9 +930,9 @@ describe("SampleService", () => {
         "/test/path/.romperdb",
         "TestKit",
         1,
-        1, // 0-based converted to 1-based
+        100, // 0-based converted to spaced slot
         2,
-        4, // 0-based converted to 1-based
+        400, // 0-based converted to spaced slot
         "insert",
       );
       expect(mockMarkKitAsModified).toHaveBeenCalledWith(
@@ -949,7 +949,6 @@ describe("SampleService", () => {
         0,
         2,
         3,
-        "insert",
       );
 
       expect(result.success).toBe(false);
@@ -965,7 +964,6 @@ describe("SampleService", () => {
         0,
         5,
         3,
-        "insert",
       );
 
       expect(result.success).toBe(false);
@@ -983,7 +981,6 @@ describe("SampleService", () => {
         0,
         1,
         0,
-        "insert",
       );
 
       expect(result.success).toBe(false);
@@ -1025,7 +1022,6 @@ describe("SampleService", () => {
         0,
         4,
         3,
-        "insert",
       );
 
       expect(result.success).toBe(false);
@@ -1040,7 +1036,7 @@ describe("SampleService", () => {
         filename: "conflict.wav",
         id: 2,
         is_stereo: false,
-        slot_number: 4,
+        slot_number: 400,
         voice_number: 3,
       };
 
@@ -1066,15 +1062,7 @@ describe("SampleService", () => {
     });
 
     it("returns error when no local store path configured", () => {
-      const result = sampleService.moveSampleInKit(
-        {},
-        "TestKit",
-        1,
-        0,
-        2,
-        3,
-        "insert",
-      );
+      const result = sampleService.moveSampleInKit({}, "TestKit", 1, 0, 2, 3);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
@@ -1110,7 +1098,7 @@ describe("SampleService", () => {
       filename: "test.wav",
       id: 1,
       is_stereo: false,
-      slot_number: 1,
+      slot_number: 100,
       source_path: "/path/to/test.wav",
       voice_number: 1,
     };
@@ -1169,7 +1157,6 @@ describe("SampleService", () => {
         fromKit: "SourceKit",
         fromSlot: 0,
         fromVoice: 1,
-        mode: "insert",
         toKit: "DestKit",
         toSlot: 3,
         toVoice: 2,
@@ -1189,7 +1176,6 @@ describe("SampleService", () => {
         fromKit: "SourceKit",
         fromSlot: 0,
         fromVoice: 1,
-        mode: "insert",
         toKit: "DestKit",
         toSlot: 3,
         toVoice: 2,
@@ -1210,7 +1196,6 @@ describe("SampleService", () => {
         fromKit: "SourceKit",
         fromSlot: 0,
         fromVoice: 1,
-        mode: "insert",
         toKit: "DestKit",
         toSlot: 3,
         toVoice: 4,
@@ -1228,7 +1213,7 @@ describe("SampleService", () => {
         filename: "conflict.wav",
         id: 2,
         is_stereo: false,
-        slot_number: 4,
+        slot_number: 400,
         voice_number: 3,
       };
 
@@ -1246,7 +1231,6 @@ describe("SampleService", () => {
         fromKit: "SourceKit",
         fromSlot: 0,
         fromVoice: 1,
-        mode: "insert",
         toKit: "DestKit",
         toSlot: 3,
         toVoice: 2,
@@ -1288,7 +1272,6 @@ describe("SampleService", () => {
         fromKit: "SourceKit",
         fromSlot: 0,
         fromVoice: 1,
-        mode: "insert",
         toKit: "DestKit",
         toSlot: 3,
         toVoice: 2,
@@ -1310,7 +1293,6 @@ describe("SampleService", () => {
         fromKit: "SourceKit",
         fromSlot: 0,
         fromVoice: 1,
-        mode: "insert",
         toKit: "DestKit",
         toSlot: 3,
         toVoice: 2,
@@ -1329,7 +1311,6 @@ describe("SampleService", () => {
         fromKit: "SourceKit",
         fromSlot: 0,
         fromVoice: 1,
-        mode: "insert",
         toKit: "DestKit",
         toSlot: 3,
         toVoice: 2,
@@ -1617,7 +1598,7 @@ describe("SampleService", () => {
           filename: "test.wav",
           id: 1,
           is_stereo: false,
-          slot_number: 3,
+          slot_number: 300,
           source_path: "/path/to/test.wav",
           voice_number: 2,
         };
@@ -1684,7 +1665,7 @@ describe("SampleService", () => {
               filename: "other.wav",
               id: 1,
               is_stereo: false,
-              slot_number: 1,
+              slot_number: 100,
               source_path: "/path/to/other.wav",
               voice_number: 1,
             },
@@ -1710,7 +1691,7 @@ describe("SampleService", () => {
           filename: "target.wav",
           id: 2,
           is_stereo: true,
-          slot_number: 5,
+          slot_number: 500,
           source_path: "/path/to/target.wav",
           voice_number: 3,
         };
@@ -1721,7 +1702,7 @@ describe("SampleService", () => {
               filename: "first.wav",
               id: 1,
               is_stereo: false,
-              slot_number: 1,
+              slot_number: 100,
               source_path: "/path/to/first.wav",
               voice_number: 1,
             },
@@ -1730,7 +1711,7 @@ describe("SampleService", () => {
               filename: "third.wav",
               id: 3,
               is_stereo: false,
-              slot_number: 2,
+              slot_number: 200,
               source_path: "/path/to/third.wav",
               voice_number: 4,
             },
@@ -1755,7 +1736,7 @@ describe("SampleService", () => {
         filename: "test.wav",
         id: 1,
         is_stereo: false,
-        slot_number: 1,
+        slot_number: 100,
         source_path: "/path/to/test.wav",
         voice_number: 1,
       };
@@ -1766,7 +1747,6 @@ describe("SampleService", () => {
           4,
           3,
           [],
-          "insert",
           "DestKit",
         );
 
@@ -1782,7 +1762,6 @@ describe("SampleService", () => {
           4,
           3,
           [],
-          "insert",
           "DestKit",
         );
 
@@ -1792,7 +1771,7 @@ describe("SampleService", () => {
         );
       });
 
-      it("allows stereo sample to voice 1-3 in overwrite mode", () => {
+      it("allows stereo sample to voice 1-3 in insert mode", () => {
         const stereoSample = { ...mockSample, is_stereo: true };
 
         const result = (sampleService as any).checkStereoConflicts(
@@ -1800,7 +1779,6 @@ describe("SampleService", () => {
           3,
           2,
           [],
-          "overwrite",
           "DestKit",
         );
 
@@ -1814,7 +1792,7 @@ describe("SampleService", () => {
           filename: "conflict.wav",
           id: 2,
           is_stereo: false,
-          slot_number: 4,
+          slot_number: 400,
           source_path: "/path/to/conflict.wav",
           voice_number: 3,
         };
@@ -1840,7 +1818,7 @@ describe("SampleService", () => {
           filename: "noconflict.wav",
           id: 2,
           is_stereo: false,
-          slot_number: 5, // Different slot
+          slot_number: 500, // Different slot
           source_path: "/path/to/noconflict.wav",
           voice_number: 3,
         };
@@ -1850,7 +1828,6 @@ describe("SampleService", () => {
           2,
           3, // Destination slot 4 (3+1)
           [nonConflictingSample],
-          "insert",
           "DestKit",
         );
 
@@ -1864,7 +1841,7 @@ describe("SampleService", () => {
           filename: "noconflict.wav",
           id: 2,
           is_stereo: false,
-          slot_number: 4, // Same slot but voice 4 instead of 3
+          slot_number: 400, // Same slot but voice 4 instead of 3
           source_path: "/path/to/noconflict.wav",
           voice_number: 4,
         };
@@ -1874,7 +1851,6 @@ describe("SampleService", () => {
           2,
           3, // Destination slot 4 (3+1), should check voice 3
           [nonConflictingSample],
-          "insert",
           "DestKit",
         );
 
@@ -1890,7 +1866,7 @@ describe("SampleService", () => {
             filename: "dest1.wav",
             id: 1,
             is_stereo: false,
-            slot_number: 1,
+            slot_number: 100,
             source_path: "/path/to/dest1.wav",
             voice_number: 1,
           },
@@ -1898,7 +1874,7 @@ describe("SampleService", () => {
             filename: "dest2.wav",
             id: 2,
             is_stereo: true,
-            slot_number: 3,
+            slot_number: 300,
             source_path: "/path/to/dest2.wav",
             voice_number: 2,
           },
@@ -1927,12 +1903,12 @@ describe("SampleService", () => {
         );
       });
 
-      it("identifies replaced sample in overwrite mode", () => {
+      it("returns no replaced sample in insert-only mode", () => {
         const replacedSample = {
           filename: "replaced.wav",
           id: 2,
           is_stereo: false,
-          slot_number: 5,
+          slot_number: 500,
           source_path: "/path/to/replaced.wav",
           voice_number: 2,
         };
@@ -1942,7 +1918,7 @@ describe("SampleService", () => {
             filename: "dest1.wav",
             id: 1,
             is_stereo: false,
-            slot_number: 1,
+            slot_number: 100,
             source_path: "/path/to/dest1.wav",
             voice_number: 1,
           },
@@ -1961,20 +1937,20 @@ describe("SampleService", () => {
           "DestKit",
           2,
           4, // 0-based slot index for slot 5
-          "overwrite",
+          "insert",
         );
 
         expect(result.destSamples).toEqual(mockDestSamples);
-        expect(result.replacedSample).toEqual(replacedSample);
+        expect(result.replacedSample).toBeUndefined(); // Insert-only mode never replaces
       });
 
-      it("handles no replacement when target slot is empty in overwrite mode", () => {
+      it("handles no replacement when target slot is empty in insert-only mode", () => {
         const mockDestSamples = [
           {
             filename: "dest1.wav",
             id: 1,
             is_stereo: false,
-            slot_number: 1,
+            slot_number: 100,
             source_path: "/path/to/dest1.wav",
             voice_number: 1,
           },
@@ -1982,7 +1958,7 @@ describe("SampleService", () => {
             filename: "dest2.wav",
             id: 2,
             is_stereo: false,
-            slot_number: 2,
+            slot_number: 200,
             source_path: "/path/to/dest2.wav",
             voice_number: 3,
           },
@@ -2000,7 +1976,7 @@ describe("SampleService", () => {
           "DestKit",
           2,
           4, // 0-based slot index for slot 5 - no sample at voice 2, slot 5
-          "overwrite",
+          "insert",
         );
 
         expect(result.destSamples).toEqual(mockDestSamples);
@@ -2020,7 +1996,7 @@ describe("SampleService", () => {
           "DestKit",
           2,
           4,
-          "overwrite",
+          "insert",
         );
 
         expect(result.destSamples).toEqual([]);
@@ -2052,7 +2028,7 @@ describe("SampleService", () => {
           filename: "target.wav",
           id: 3,
           is_stereo: true,
-          slot_number: 7,
+          slot_number: 700,
           source_path: "/path/to/target.wav",
           voice_number: 3,
         };
@@ -2062,7 +2038,7 @@ describe("SampleService", () => {
             filename: "different-voice.wav",
             id: 1,
             is_stereo: false,
-            slot_number: 7,
+            slot_number: 700,
             source_path: "/path/to/different-voice.wav",
             voice_number: 2,
           },
@@ -2070,7 +2046,7 @@ describe("SampleService", () => {
             filename: "different-slot.wav",
             id: 2,
             is_stereo: false,
-            slot_number: 6,
+            slot_number: 600,
             source_path: "/path/to/different-slot.wav",
             voice_number: 3,
           },
@@ -2089,11 +2065,11 @@ describe("SampleService", () => {
           "DestKit",
           3,
           6, // 0-based slot index for slot 7
-          "overwrite",
+          "insert",
         );
 
         expect(result.destSamples).toEqual(mockDestSamples);
-        expect(result.replacedSample).toEqual(targetSample);
+        expect(result.replacedSample).toBeUndefined(); // Insert-only mode never replaces
       });
     });
   });

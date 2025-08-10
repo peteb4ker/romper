@@ -34,7 +34,7 @@ Each kit contains four voices, and each voice can hold up to 12 sample slots. Th
 ### Keyboard Navigation
 
 - **`,` (comma)**: Navigate to previous kit
-- **`.` (period)**: Navigate to next kit  
+- **`.` (period)**: Navigate to next kit
 - **`/` (slash)**: Scan/rescan current kit (analyzes samples and infers voice names)
 - **Up/Down arrows**: Navigate between sample slots
 - **Space/Enter**: Play selected sample
@@ -49,6 +49,7 @@ A four‑row, 16‑step grid appears below the kit details:
 - Patterns are saved to the database per kit.
 
 **Step Sequencer Controls:**
+
 - **Arrow keys**: Navigate between steps
 - **Space**: Toggle current step on/off
 - **`S`**: Show/hide sequencer

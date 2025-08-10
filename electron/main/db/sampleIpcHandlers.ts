@@ -25,9 +25,9 @@ export function registerSampleIpcHandlers(
   );
 
   ipcMain.handle(
-    "delete-sample-from-slot-without-compaction",
+    "delete-sample-from-slot-without-reindexing",
     async (_event, kitName: string, voiceNumber: number, slotIndex: number) => {
-      return sampleService.deleteSampleFromSlotWithoutCompaction(
+      return sampleService.deleteSampleFromSlotWithoutReindexing(
         inMemorySettings,
         kitName,
         voiceNumber,
@@ -45,7 +45,6 @@ export function registerSampleIpcHandlers(
       fromSlot: number,
       toVoice: number,
       toSlot: number,
-      mode: "insert" | "overwrite",
     ) => {
       try {
         const result = sampleService.moveSampleInKit(
@@ -55,7 +54,7 @@ export function registerSampleIpcHandlers(
           fromSlot,
           toVoice,
           toSlot,
-          mode,
+          "insert",
         );
         return result;
       } catch (error) {
@@ -77,7 +76,7 @@ export function registerSampleIpcHandlers(
         fromKit: string;
         fromSlot: number;
         fromVoice: number;
-        mode: "insert" | "overwrite";
+        mode: "insert";
         toKit: string;
         toSlot: number;
         toVoice: number;

@@ -7,7 +7,7 @@ import { useSampleManagement } from "../useSampleManagement";
 const mockElectronAPI = {
   addSampleToSlot: vi.fn(),
   deleteSampleFromSlot: vi.fn(),
-  deleteSampleFromSlotWithoutCompaction: vi.fn(),
+  deleteSampleFromSlotWithoutReindexing: vi.fn(),
   getAllSamplesForKit: vi.fn(),
   moveSampleInKit: vi.fn(),
   replaceSampleInSlot: vi.fn(),
@@ -246,7 +246,7 @@ describe("useSampleManagement", () => {
       const { result } = renderHook(() => useSampleManagement(defaultProps));
 
       // Move slot 6 to slot 4 within voice 1 (this is currently broken)
-      await result.current.handleSampleMove(1, 5, 1, 3, "insert"); // 0-based: move slot 6 to slot 4
+      await result.current.handleSampleMove(1, 5, 1, 3); // 0-based: move slot 6 to slot 4
 
       expect(mockElectronAPI.moveSampleInKit).toHaveBeenCalledWith(
         "TestKit",
@@ -254,11 +254,11 @@ describe("useSampleManagement", () => {
         5, // fromSlot (0-based: slot 6)
         1, // toVoice
         3, // toSlot (0-based: slot 4)
-        "insert",
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
-      expect(defaultProps.onMessage).toHaveBeenCalledWith(
-        "Sample moved from voice 1, slot 6 to voice 1, slot 4",
+      // Toast notification was removed per user request
+      expect(defaultProps.onMessage).not.toHaveBeenCalledWith(
+        expect.stringContaining("Sample moved"),
         "success",
       );
     });
@@ -275,7 +275,7 @@ describe("useSampleManagement", () => {
       const { result } = renderHook(() => useSampleManagement(defaultProps));
 
       // Move slot 2 to slot 6 within voice 1
-      await result.current.handleSampleMove(1, 1, 1, 5, "insert"); // 0-based: move slot 2 to slot 6
+      await result.current.handleSampleMove(1, 1, 1, 5); // 0-based: move slot 2 to slot 6
 
       expect(mockElectronAPI.moveSampleInKit).toHaveBeenCalledWith(
         "TestKit",
@@ -283,7 +283,6 @@ describe("useSampleManagement", () => {
         1, // fromSlot (0-based: slot 2)
         1, // toVoice
         5, // toSlot (0-based: slot 6)
-        "insert",
       );
       expect(defaultProps.onSamplesChanged).toHaveBeenCalled();
     });
@@ -296,7 +295,7 @@ describe("useSampleManagement", () => {
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
 
-      await result.current.handleSampleMove(1, 5, 1, 3, "insert");
+      await result.current.handleSampleMove(1, 5, 1, 3);
 
       expect(defaultProps.onMessage).toHaveBeenCalledWith(
         "Sample not found at specified location",
@@ -378,14 +377,14 @@ describe("useSampleManagement", () => {
     });
 
     describe("Undo Delete Sample", () => {
-      it("should record compact slots action for delete with automatic compaction", async () => {
+      it("should record reindex samples action for delete with automatic reindexing", async () => {
         // Mock getAllSamplesForKit to get sample before deletion
         mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
           data: [
             {
               filename: "deleted.wav",
               is_stereo: false,
-              slot_number: 1,
+              slot_number: 100,
               source_path: "/path/to/deleted.wav",
               voice_number: 1,
             },
@@ -399,7 +398,7 @@ describe("useSampleManagement", () => {
               {
                 filename: "sample2.wav",
                 is_stereo: true,
-                slot_number: 2,
+                slot_number: 200,
                 source_path: "/path/2.wav",
                 voice_number: 1,
               },
@@ -421,8 +420,8 @@ describe("useSampleManagement", () => {
           data: {
             affectedSamples: [
               {
-                newSlot: 1, // Original position before compaction
-                oldSlot: 2, // New position after compaction
+                newSlot: 199, // Original position before reindexing
+                oldSlot: 200, // New position after reindexing
                 sample: {
                   filename: "sample2.wav",
                   is_stereo: true,
@@ -439,10 +438,10 @@ describe("useSampleManagement", () => {
             deletedSlot: 0,
             voice: 1,
           },
-          description: "Delete sample from voice 1, slot 1 (with compaction)",
+          description: "Delete sample from voice 1, slot 1 (with reindexing)",
           id: expect.any(String),
           timestamp: expect.any(Date),
-          type: "COMPACT_SLOTS",
+          type: "REINDEX_SAMPLES",
         });
       });
     });
@@ -455,7 +454,7 @@ describe("useSampleManagement", () => {
             {
               filename: "old.wav",
               is_stereo: true,
-              slot_number: 1,
+              slot_number: 100,
               source_path: "/path/to/old.wav",
               voice_number: 1,
             },
@@ -514,21 +513,21 @@ describe("useSampleManagement", () => {
             {
               filename: "sample1.wav",
               is_stereo: false,
-              slot_number: 1,
+              slot_number: 100,
               source_path: "/path/1.wav",
               voice_number: 1,
             },
             {
               filename: "sample2.wav",
               is_stereo: true,
-              slot_number: 2,
+              slot_number: 200,
               source_path: "/path/2.wav",
               voice_number: 1,
             },
             {
               filename: "sample3.wav",
               is_stereo: false,
-              slot_number: 1,
+              slot_number: 100,
               source_path: "/path/3.wav",
               voice_number: 2,
             },
@@ -542,8 +541,8 @@ describe("useSampleManagement", () => {
               {
                 filename: "sample3.wav",
                 is_stereo: false,
-                original_slot_number: 1,
-                slot_number: 2,
+                original_slot_number: 100,
+                slot_number: 200,
                 source_path: "/path/3.wav",
                 voice_number: 2,
               },
@@ -564,7 +563,7 @@ describe("useSampleManagement", () => {
           }),
         );
 
-        await result.current.handleSampleMove(1, 1, 2, 0, "insert"); // Move from 1.2 to 2.1
+        await result.current.handleSampleMove(1, 1, 2, 0); // Move from 1.2 to 2.1
 
         expect(mockElectronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
           "TestKit",
@@ -573,8 +572,8 @@ describe("useSampleManagement", () => {
           data: {
             affectedSamples: [
               {
-                newSlot: 2,
-                oldSlot: 1,
+                newSlot: 200,
+                oldSlot: 100,
                 sample: {
                   filename: "sample3.wav",
                   is_stereo: false,
@@ -585,7 +584,6 @@ describe("useSampleManagement", () => {
             ],
             fromSlot: 1,
             fromVoice: 1,
-            mode: "insert",
             movedSample: {
               filename: "sample2.wav",
               is_stereo: true,
@@ -598,7 +596,7 @@ describe("useSampleManagement", () => {
                   is_stereo: false,
                   source_path: "/path/1.wav",
                 },
-                slot: 1,
+                slot: 100,
                 voice: 1,
               },
               {
@@ -607,7 +605,7 @@ describe("useSampleManagement", () => {
                   is_stereo: true,
                   source_path: "/path/2.wav",
                 },
-                slot: 2,
+                slot: 200,
                 voice: 1,
               },
               {
@@ -616,7 +614,7 @@ describe("useSampleManagement", () => {
                   is_stereo: false,
                   source_path: "/path/3.wav",
                 },
-                slot: 1,
+                slot: 100,
                 voice: 2,
               },
             ],
@@ -655,7 +653,7 @@ describe("useSampleManagement", () => {
           }),
         );
 
-        await result.current.handleSampleMove(1, 1, 2, 0, "insert");
+        await result.current.handleSampleMove(1, 1, 2, 0);
 
         // Should still record the action but without state snapshot
         expect(mockUndoHook.addAction).toHaveBeenCalledWith({
@@ -663,7 +661,6 @@ describe("useSampleManagement", () => {
             affectedSamples: [],
             fromSlot: 1,
             fromVoice: 1,
-            mode: "insert",
             movedSample: {
               filename: "sample2.wav",
               is_stereo: true,
@@ -732,7 +729,7 @@ describe("useSampleManagement", () => {
           }),
         );
 
-        await result.current.handleSampleMove(1, 1, 2, 0, "insert");
+        await result.current.handleSampleMove(1, 1, 2, 0);
 
         expect(mockUndoHook.addAction).not.toHaveBeenCalled();
       });
@@ -786,7 +783,7 @@ describe("useSampleManagement", () => {
       expect(true).toBe(true);
     });
 
-    it("ERROR CASE 3: Move 3.7 to 4.7 - leaves gap instead of compacting", () => {
+    it("ERROR CASE 3: Move 3.7 to 4.7 - leaves gap instead of reindexing", () => {
       console.log("\n=== ERROR CASE 3 ===");
       console.log("Action: Move voice 3, slot 7 to voice 4, slot 7");
       console.log(
@@ -798,13 +795,13 @@ describe("useSampleManagement", () => {
       console.log("ANALYSIS:");
       console.log("- Cross-voice move works partially");
       console.log("- Sample reaches destination correctly");
-      console.log("- But source voice doesn't get compacted");
+      console.log("- But source voice doesn't get reindexed");
       console.log("- This violates contiguity maintenance requirement");
       console.log();
 
       console.log("LIKELY CAUSE:");
-      console.log("- compactSlotsAfterDelete not being called");
-      console.log("- OR compaction logic has bugs");
+      console.log("- reindexAfterDelete not being called");
+      console.log("- OR reindexing logic has bugs");
       console.log("- OR only destination voice is being processed");
 
       // Validate that this is a documentation test
@@ -852,7 +849,7 @@ describe("useSampleManagement", () => {
       console.log(
         "3. affectedSamples array missing samples from destination voice",
       );
-      console.log("4. Non-compacting delete not working properly");
+      console.log("4. Non-reindexing delete not working properly");
 
       // Validate that this is a documentation test
       expect(true).toBe(true);
@@ -868,7 +865,7 @@ describe("useSampleManagement", () => {
       console.log("- Multiple voices affected");
       console.log();
 
-      console.log("BUG CATEGORY B: Compaction not working");
+      console.log("BUG CATEGORY B: Reindexing not working");
       console.log("- Case 3: Cross-voice move leaves gap in source voice");
       console.log("- Contiguity maintenance failing");
       console.log("- Only affects source voice, destination works");
@@ -922,8 +919,8 @@ describe("useSampleManagement", () => {
             {
               filename: "shifted.wav",
               is_stereo: false,
-              original_slot_number: 1,
-              slot_number: 2,
+              original_slot_number: 100,
+              slot_number: 200,
               source_path: "/path/to/shifted.wav",
               voice_number: 2,
             },
@@ -940,20 +937,21 @@ describe("useSampleManagement", () => {
       const { result } = renderHook(() => useSampleManagement(defaultProps));
 
       // Move from TestKit voice 1 slot 5 to TargetKit voice 2 slot 0
-      await result.current.handleSampleMove(1, 4, 2, 0, "insert", "TargetKit");
+      await result.current.handleSampleMove(1, 4, 2, 0, "TargetKit");
 
-      expect(mockElectronAPI.moveSampleBetweenKits).toHaveBeenCalledWith(
-        "TestKit", // fromKit
-        1, // fromVoice
-        4, // fromSlot
-        "TargetKit", // toKit
-        2, // toVoice
-        0, // toSlot
-        "insert", // mode
-      );
+      expect(mockElectronAPI.moveSampleBetweenKits).toHaveBeenCalledWith({
+        fromKit: "TestKit",
+        fromSlot: 4,
+        fromVoice: 1,
+        mode: "insert",
+        toKit: "TargetKit",
+        toSlot: 0,
+        toVoice: 2,
+      });
 
-      expect(defaultProps.onMessage).toHaveBeenCalledWith(
-        "Sample moved from TestKit voice 1, slot 5 to TargetKit voice 2, slot 1",
+      // Toast notification was removed per user request
+      expect(defaultProps.onMessage).not.toHaveBeenCalledWith(
+        expect.stringContaining("Sample moved"),
         "success",
       );
 
@@ -967,8 +965,8 @@ describe("useSampleManagement", () => {
             {
               filename: "affected.wav",
               is_stereo: false,
-              original_slot_number: 1,
-              slot_number: 2,
+              original_slot_number: 100,
+              slot_number: 200,
               source_path: "/path/to/affected.wav",
               voice_number: 1,
             },
@@ -994,21 +992,14 @@ describe("useSampleManagement", () => {
         }),
       );
 
-      await result.current.handleSampleMove(
-        1,
-        0,
-        2,
-        1,
-        "overwrite",
-        "TargetKit",
-      );
+      await result.current.handleSampleMove(1, 0, 2, 1, "TargetKit");
 
       expect(mockUndoHook.addAction).toHaveBeenCalledWith({
         data: {
           affectedSamples: [
             {
-              newSlot: 2,
-              oldSlot: 1,
+              newSlot: 200,
+              oldSlot: 100,
               sample: {
                 filename: "affected.wav",
                 is_stereo: false,
@@ -1020,7 +1011,7 @@ describe("useSampleManagement", () => {
           fromKit: "TestKit",
           fromSlot: 0,
           fromVoice: 1,
-          mode: "overwrite",
+          mode: "insert",
           movedSample: {
             filename: "sample.wav",
             is_stereo: false,
@@ -1049,7 +1040,7 @@ describe("useSampleManagement", () => {
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
 
-      await result.current.handleSampleMove(1, 0, 2, 0, "insert", "TargetKit");
+      await result.current.handleSampleMove(1, 0, 2, 0, "TargetKit");
 
       expect(defaultProps.onMessage).toHaveBeenCalledWith(
         "Cross-kit sample move not available",
@@ -1065,14 +1056,7 @@ describe("useSampleManagement", () => {
 
       const { result } = renderHook(() => useSampleManagement(defaultProps));
 
-      await result.current.handleSampleMove(
-        1,
-        0,
-        2,
-        0,
-        "insert",
-        "NonExistentKit",
-      );
+      await result.current.handleSampleMove(1, 0, 2, 0, "NonExistentKit");
 
       expect(defaultProps.onMessage).toHaveBeenCalledWith(
         "Target kit not found",
@@ -1128,7 +1112,7 @@ describe("useSampleManagement", () => {
       );
 
       // This should not fail and should properly record undo actions
-      await result.current.handleSampleMove(1, 3, 1, 1, "insert"); // Move sample4 to slot 2
+      await result.current.handleSampleMove(1, 3, 1, 1); // Move sample4 to slot 2
 
       expect(mockElectronAPI.moveSampleInKit).toHaveBeenCalledWith(
         "TestKit",
@@ -1136,7 +1120,6 @@ describe("useSampleManagement", () => {
         3,
         1,
         1,
-        "insert",
       );
       expect(mockUndoHook.addAction).toHaveBeenCalled();
     });
@@ -1182,10 +1165,10 @@ describe("useSampleManagement", () => {
       );
 
       // First move: F(6) → 5
-      await result.current.handleSampleMove(1, 5, 1, 4, "insert");
+      await result.current.handleSampleMove(1, 5, 1, 4);
 
       // Second move: E(now at 6) → 4
-      await result.current.handleSampleMove(1, 5, 1, 3, "insert");
+      await result.current.handleSampleMove(1, 5, 1, 3);
 
       expect(mockElectronAPI.moveSampleInKit).toHaveBeenCalledTimes(2);
       expect(mockUndoHook.addAction).toHaveBeenCalledTimes(2);
@@ -1254,7 +1237,7 @@ describe("useSampleManagement", () => {
         }),
       );
 
-      await result.current.handleSampleMove(1, 2, 1, 0, "insert"); // Move 3→1
+      await result.current.handleSampleMove(1, 2, 1, 0); // Move 3→1
 
       // Verify the state snapshot was captured
       expect(mockElectronAPI.getAllSamplesForKit).toHaveBeenCalledWith(

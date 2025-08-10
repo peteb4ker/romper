@@ -3,12 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import {
   type AddSampleAction,
   type AnyUndoAction,
-  type CompactSlotsAction,
   createActionId,
   type DeleteSampleAction,
   getActionDescription,
   type MoveSampleAction,
   type MoveSampleBetweenKitsAction,
+  type ReindexSamplesAction,
   type ReplaceSampleAction,
 } from "../undoTypes";
 
@@ -246,9 +246,9 @@ describe("undoTypes", () => {
       });
     });
 
-    describe("COMPACT_SLOTS action", () => {
-      it("returns correct description for compact slots action", () => {
-        const action: CompactSlotsAction = {
+    describe("REINDEX_SAMPLES action", () => {
+      it("returns correct description for reindex samples action", () => {
+        const action: ReindexSamplesAction = {
           data: {
             affectedSamples: [],
             deletedSample: mockSample,
@@ -258,18 +258,18 @@ describe("undoTypes", () => {
           description: "Test action",
           id: "test-id",
           timestamp: new Date(),
-          type: "COMPACT_SLOTS",
+          type: "REINDEX_SAMPLES",
         };
 
         const description = getActionDescription(action);
 
         expect(description).toBe(
-          "Undo compact slots in voice 2 after deleting slot 2",
+          "Undo reindex samples in voice 2 after deleting slot 2",
         );
       });
 
       it("handles different voice and slot numbers", () => {
-        const action: CompactSlotsAction = {
+        const action: ReindexSamplesAction = {
           data: {
             affectedSamples: [],
             deletedSample: mockSample,
@@ -279,13 +279,13 @@ describe("undoTypes", () => {
           description: "Test action",
           id: "test-id",
           timestamp: new Date(),
-          type: "COMPACT_SLOTS",
+          type: "REINDEX_SAMPLES",
         };
 
         const description = getActionDescription(action);
 
         expect(description).toBe(
-          "Undo compact slots in voice 4 after deleting slot 10",
+          "Undo reindex samples in voice 4 after deleting slot 10",
         );
       });
     });
@@ -420,14 +420,14 @@ describe("undoTypes", () => {
           description: "test",
           id: "3",
           timestamp: new Date(),
-          type: "COMPACT_SLOTS",
-        } as CompactSlotsAction,
+          type: "REINDEX_SAMPLES",
+        } as ReindexSamplesAction,
       ];
 
       expect(actions).toHaveLength(3);
       expect(actions[0].type).toBe("ADD_SAMPLE");
       expect(actions[1].type).toBe("DELETE_SAMPLE");
-      expect(actions[2].type).toBe("COMPACT_SLOTS");
+      expect(actions[2].type).toBe("REINDEX_SAMPLES");
     });
   });
 

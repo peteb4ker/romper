@@ -348,24 +348,6 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockSetStepPattern).not.toHaveBeenCalled();
     });
-
-    it("should log toggle operations", () => {
-      const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
-      );
-
-      act(() => {
-        result.current.toggleStep(1, 5);
-      });
-
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining("Toggling step voice 2, step 5: 127 -> 0"),
-      );
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining("New pattern for voice 2:"),
-        expect.any(Array),
-      );
-    });
   });
 
   describe("Focus Navigation", () => {

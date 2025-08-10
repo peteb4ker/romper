@@ -1,6 +1,7 @@
 # IPC Error Handling Standards
 
 ## Core Principle
+
 IPC methods from preload script are guaranteed available. Don't check if they exist.
 
 ## Standard Pattern
@@ -10,11 +11,14 @@ IPC methods from preload script are guaranteed available. Don't check if they ex
 async function loadKit(kitName: string): Promise<DbResult<Kit>> {
   try {
     const result = await window.electronAPI.getKit(kitName);
-    return result.success 
-      ? { success: true, data: result.data } 
+    return result.success
+      ? { success: true, data: result.data }
       : { success: false, error: result.error };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'IPC failed' };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "IPC failed",
+    };
   }
 }
 
@@ -26,15 +30,16 @@ async function badLoadKit(kitName: string) {
 ```
 
 ### Result Validation Pattern
+
 ```typescript
 // ✅ CORRECT: Always validate IPC result objects
 async function updateKit(kitName: string, metadata: Kit) {
   const result = await window.electronAPI.updateKit(kitName, metadata);
-  
+
   if (!result.success) {
     throw new Error(`Failed to update kit: ${result.error}`);
   }
-  
+
   return result.data;
 }
 
@@ -46,6 +51,7 @@ async function badUpdateKit(kitName: string, metadata: Kit) {
 ```
 
 ### Hook Integration Pattern
+
 ```typescript
 // ✅ CORRECT: Clean hook with direct IPC calls
 function useKitEditor(kitName: string) {
@@ -55,7 +61,7 @@ function useKitEditor(kitName: string) {
   const loadKit = useCallback(async () => {
     try {
       const result = await window.electronAPI.getKit(kitName);
-      
+
       if (result.success) {
         setKit(result.data);
         setError(null);
@@ -63,7 +69,7 @@ function useKitEditor(kitName: string) {
         setError(result.error);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load kit');
+      setError(err instanceof Error ? err.message : "Failed to load kit");
     }
   }, [kitName]);
 
@@ -74,7 +80,7 @@ function useKitEditor(kitName: string) {
 function badUseKitEditor(kitName: string) {
   const loadKit = useCallback(async () => {
     if (!window.electronAPI?.getKit || !kitName) return; // Unnecessary checks
-    
+
     const result = await window.electronAPI.getKit?.(kitName); // Optional chaining hides errors
     // ... rest of logic
   }, [kitName]);
@@ -84,6 +90,7 @@ function badUseKitEditor(kitName: string) {
 ## Anti-Patterns to Eliminate
 
 ### Optional Chaining on Guaranteed Methods
+
 ```typescript
 // ❌ ELIMINATE: Optional chaining on guaranteed methods
 const files = await window.electronAPI?.listFilesInRoot?.(path);
@@ -97,6 +104,7 @@ const result = await window.electronAPI.updateKit(kitName, data);
 ```
 
 ### Redundant Availability Checks
+
 ```typescript
 // ❌ ELIMINATE: Checking availability of guaranteed methods
 if (!window.electronAPI?.getKit) return;
@@ -114,6 +122,7 @@ try {
 ```
 
 ### TypeScript Ignores for Typed APIs
+
 ```typescript
 // ❌ ELIMINATE: @ts-ignore for properly typed APIs
 // @ts-ignore
@@ -126,9 +135,10 @@ window.electronAPI.onSamplePlaybackEnded(handler);
 ## When Availability Checks ARE Appropriate
 
 ### Feature Detection for Optional APIs
+
 ```typescript
 // ✅ CORRECT: Check for truly optional features
-if ('webkitAudioContext' in window) {
+if ("webkitAudioContext" in window) {
   // Use webkit audio context as fallback
 }
 
@@ -139,9 +149,10 @@ if (window.electronAPI.experimental?.featureX) {
 ```
 
 ### Development vs Production Environments
+
 ```typescript
 // ✅ CORRECT: Environment-specific availability
-if (window.electronAPI && process.env.NODE_ENV === 'development') {
+if (window.electronAPI && process.env.NODE_ENV === "development") {
   window.electronAPI.enableDevTools();
 }
 ```
@@ -149,13 +160,14 @@ if (window.electronAPI && process.env.NODE_ENV === 'development') {
 ## Error Message Standards
 
 ### Meaningful Error Messages
+
 ```typescript
 // ✅ CORRECT: Specific, actionable error messages
 if (!result.success) {
   switch (result.error) {
-    case 'KIT_NOT_FOUND':
+    case "KIT_NOT_FOUND":
       throw new Error(`Kit "${kitName}" not found in database`);
-    case 'INVALID_PATH':
+    case "INVALID_PATH":
       throw new Error(`Invalid file path: ${filePath}`);
     default:
       throw new Error(`Operation failed: ${result.error}`);
@@ -164,7 +176,7 @@ if (!result.success) {
 
 // ❌ WRONG: Generic, unhelpful errors
 if (!result.success) {
-  throw new Error('Something went wrong'); // Not helpful
+  throw new Error("Something went wrong"); // Not helpful
 }
 ```
 
@@ -183,14 +195,16 @@ For existing code with over-defensive IPC handling:
 ## Files Requiring Immediate Attention
 
 **High Priority (Over-defensive patterns):**
+
 - `app/renderer/components/hooks/useKit.ts`
 - `app/renderer/components/utils/bankOperations.ts`
 - `app/renderer/components/hooks/useKitDetailsLogic.ts`
 
 **Good Examples to Follow:**
+
 - `app/renderer/utils/SettingsContext.tsx`
 - `app/renderer/components/hooks/useValidationResults.ts`
 
 ---
 
-*These standards eliminate unnecessary defensive programming while maintaining proper error handling for actual failure conditions. IPC methods are guaranteed through the preload script - treat them as such.*
+_These standards eliminate unnecessary defensive programming while maintaining proper error handling for actual failure conditions. IPC methods are guaranteed through the preload script - treat them as such._

@@ -30,6 +30,7 @@ function KitEditor({ kitName }: Props) {
 ## Performance Optimization
 
 ### Memoization Requirements
+
 ```typescript
 // ✅ REQUIRED: Memoize components and expensive operations
 const KitCard = React.memo(({ kit, onSelect }: KitCardProps) => {
@@ -57,6 +58,7 @@ function KitCard({ kit, onSelect }: KitCardProps) {
 ## Component Structure Requirements
 
 ### Props and Interfaces
+
 ```typescript
 // ✅ CORRECT: Clear TypeScript interface, max 5 props
 interface KitEditorProps {
@@ -66,12 +68,22 @@ interface KitEditorProps {
 }
 
 // ❌ WRONG: Too many props, no interface
-function BadComponent(kitName, editable, onSave, onCancel, onDelete, onDuplicate, theme, user) {
+function BadComponent(
+  kitName,
+  editable,
+  onSave,
+  onCancel,
+  onDelete,
+  onDuplicate,
+  theme,
+  user,
+) {
   // Too many props - use objects instead
 }
 ```
 
 ### Component Size Limits
+
 - **Maximum 400 lines**: Refactor into smaller components when exceeded
 - **Single responsibility**: Each component should have one clear purpose
 - **Composition over inheritance**: Build complex UIs by combining smaller components
@@ -79,6 +91,7 @@ function BadComponent(kitName, editable, onSave, onCancel, onDelete, onDuplicate
 ## Anti-Patterns to Avoid
 
 ### Business Logic in Components
+
 ```typescript
 // ❌ AVOID: Complex state management in component
 function BadKitEditor() {
@@ -102,6 +115,7 @@ function BadKitEditor() {
 ```
 
 ### Direct DOM Manipulation
+
 ```typescript
 // ❌ AVOID: Direct DOM access
 function BadComponent() {
@@ -114,6 +128,7 @@ function BadComponent() {
 ```
 
 ### Missing Keys in Lists
+
 ```typescript
 // ❌ AVOID: Missing or unstable keys
 function BadList({ items }) {
@@ -151,4 +166,4 @@ function GoodList({ items }) {
 
 ---
 
-*These standards apply specifically to React .tsx component files. For custom hooks, see `.agent/standards/custom-hooks.md`.*
+_These standards apply specifically to React .tsx component files. For custom hooks, see `.agent/standards/custom-hooks.md`._

@@ -47,7 +47,7 @@ export interface ElectronAPI {
   ) => Promise<
     DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }>
   >;
-  deleteSampleFromSlotWithoutCompaction?: (
+  deleteSampleFromSlotWithoutReindexing?: (
     kitName: string,
     voiceNumber: number,
     slotIndex: number,
@@ -139,7 +139,7 @@ export interface ElectronAPI {
     sample: NewSample,
   ) => Promise<InsertSampleResult>;
   listFilesInRoot?: (localStorePath: string) => Promise<string[]>;
-  // Cross-kit sample movement with source compaction
+  // Cross-kit sample movement with source reindexing
   moveSampleBetweenKits?: (
     fromKit: string,
     fromVoice: number,
@@ -162,7 +162,6 @@ export interface ElectronAPI {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-    mode: "insert" | "overwrite",
   ) => Promise<
     DbResult<{
       affectedSamples: Sample[];

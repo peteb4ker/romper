@@ -189,15 +189,15 @@ export function useSampleManagementOperations({
             "success",
           );
 
-          // Record COMPACT_SLOTS action since deletion now triggers automatic compaction
+          // Record REINDEX_SAMPLES action since deletion now triggers automatic reindexing
           if (sampleToDelete && onAddUndoAction && result.data) {
-            const compactAction = undoActions.createCompactSlotsAction(
+            const reindexAction = undoActions.createReindexSamplesAction(
               voice,
               slotIndex,
               sampleToDelete,
               result,
             );
-            onAddUndoAction(compactAction);
+            onAddUndoAction(reindexAction);
           }
 
           // Reload samples to reflect changes

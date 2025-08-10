@@ -3,11 +3,13 @@
 > **Auto-Loading Context**: Additional file-specific instructions are automatically loaded based on the current working file. See `.agent/context.md` for pattern matching rules.
 
 ## Project Overview
+
 Cross-platform desktop app for managing sample kits for the **Squarp Rample** Eurorack sampler. Built with Electron, React, TypeScript, and Drizzle ORM using reference-only sample management.
 
 **Current Development Phase:** Implementing kit editing system with Drizzle ORM transition.
 
 ## Tech Stack & Versions
+
 - **Electron** + **React** + **Vite** + **TypeScript**
 - **Tailwind CSS** for styling
 - **Drizzle ORM** with **better-sqlite3** (synchronous driver)
@@ -15,9 +17,11 @@ Cross-platform desktop app for managing sample kits for the **Squarp Rample** Eu
 - **Node.js** native filesystem APIs
 
 ## Essential Commands
+
 See [Development Workflow](./docs/developer/development-workflow.md) for complete command reference.
 
 ## Project Structure
+
 ```
 romper/
 ├── app/renderer/           # React UI components
@@ -34,7 +38,9 @@ romper/
 ## Code Standards & Architecture
 
 ### Context-Aware Instructions
+
 File-specific standards automatically load based on current working file:
+
 - **React Components** (`*.tsx`) → `.agent/standards/react-components.md`
 - **Custom Hooks** (`hooks/use*.ts`) → `.agent/standards/custom-hooks.md`
 - **Database** (`db/*.ts`) → `.agent/standards/database.md`
@@ -43,23 +49,29 @@ File-specific standards automatically load based on current working file:
 See `.agent/context.md` for pattern matching rules and `.agent/standards/` for detailed coding standards.
 
 ## Architecture Overview
+
 See [Architecture Documentation](./docs/developer/architecture.md) for comprehensive architectural concepts including:
+
 - Immutable baseline architecture
 - Reference-only sample management
 - Kit editing system
 - Database schema patterns
 
 ## Development Workflow
+
 - See [Development Workflow](./docs/developer/development-workflow.md) and [Task Execution](./.agent/task-execution.md) for complete workflow guidance.
 - ALWAYS update the task file status upon completing a subtask and/or task.
 
 ### Documentation Organization Rule
+
 **CRITICAL**: Documentation belongs in specific locations:
+
 - **Human-readable docs** → `docs/` directory
 - **Agent instructions** → `.agent/` directory
 - **NEVER put documentation in CLAUDE.md** - this file is for project context only
 
 ## Key Documentation Links
+
 - [Product Requirements Document](./tasks/PRD.md) - Complete project vision
 - [Current Task List](./tasks/tasks-PRD.md) - Development progress
 - [Architecture Overview](./docs/developer/architecture.md) - Core design patterns and decisions
@@ -69,20 +81,25 @@ See [Architecture Documentation](./docs/developer/architecture.md) for comprehen
 - [Database Schema](./docs/developer/romper-db.md) - Current schema reference
 
 ## Current Development Focus
+
 Working on **Task 5.0: Kit Editing and Slot Management** - implementing editable mode system with reference-only sample management using the new Drizzle ORM architecture.
 
 ## Testing Standards
+
 **CRITICAL**: NEVER skip tests with `.skip()` or similar methods. Always fix failing tests properly by addressing the root cause. If a test is failing, investigate and resolve the underlying issue rather than bypassing it.
 
 ## Git Commit Standards
+
 **CRITICAL**: When creating git commits, DO NOT add Claude attribution or Co-Authored-By lines. Commit messages should contain only the actual commit content without any AI attribution.
 
 ## Code Metrics and Analysis Standards
+
 **CRITICAL**: DO NOT make educated guesses about code metrics (complexity scores, coverage percentages, performance metrics, etc.) and present them as facts. When discussing metrics:
+
 - Only report metrics that have been measured by actual tools
 - If asked about metrics without having tool output, explain that you need to run appropriate analysis tools
 - Never estimate or approximate metric values based on code inspection alone
 
 ---
 
-*For detailed architectural concepts, development patterns, and comprehensive guides, see the `docs/` directory. This file provides project context - refer to specific documentation for implementation details.*
+_For detailed architectural concepts, development patterns, and comprehensive guides, see the `docs/` directory. This file provides project context - refer to specific documentation for implementation details._

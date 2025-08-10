@@ -1,6 +1,15 @@
 // Kit operations utilities
 
 /**
+ * Checks if a voice can accept external drops (not at 12-sample limit)
+ * @param samples Array of sample names for the voice
+ * @returns true if voice can accept external drops
+ */
+export function canAcceptExternalDrops(samples: string[]): boolean {
+  return !isVoiceAtSampleLimit(samples);
+}
+
+/**
  * Creates a kit at the specified slot
  */
 export async function createKit(kitSlot: string): Promise<void> {
@@ -59,6 +68,28 @@ export function formatKitOperationError(
 ): string {
   const message = error instanceof Error ? error.message : String(error);
   return `Failed to ${operation} kit: ${message}`;
+}
+
+/**
+ * Gets the count of filled samples in a voice
+ * @param samples Array of sample names for the voice
+ * @returns Number of non-empty samples
+ */
+export function getFilledSampleCount(samples: string[]): number {
+  return samples.filter((s) => s && s.trim()).length;
+}
+
+/**
+ * Checks if a voice has reached the 12-sample limit
+ * @param samples Array of sample names for the voice
+ * @returns true if voice has 12 or more samples
+ */
+export function isVoiceAtSampleLimit(samples: string[]): boolean {
+  if (!samples || !Array.isArray(samples)) {
+    return false;
+  }
+  const filledSampleCount = samples.filter((s) => s && s.trim()).length;
+  return filledSampleCount >= 12;
 }
 
 /**

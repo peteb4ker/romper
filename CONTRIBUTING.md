@@ -8,7 +8,7 @@ All contributors (human and AI agents) should follow these commit message conven
 
 - **feat:** new features or capabilities
 - **fix:** bug fixes
-- **refactor:** code restructuring without changing functionality  
+- **refactor:** code restructuring without changing functionality
 - **docs:** documentation changes
 - **test:** adding or updating tests
 - **chore:** maintenance tasks, dependencies, build changes

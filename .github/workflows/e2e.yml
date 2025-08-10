@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -126,7 +126,7 @@ jobs:
         env:
           ROMPER_SDCARD_PATH: /tmp/e2e-sdcard
           CI: true
-          DISPLAY: ':99'
+          DISPLAY: ":99"
 
       - name: Run end-to-end tests (Windows)
         if: matrix.os == 'windows-latest'

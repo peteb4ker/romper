@@ -85,7 +85,7 @@ interface KitGridProps {
 
 // Grid layout constants
 const CARD_WIDTH = 300; // Optimal card width from UX analysis
-const CARD_HEIGHT = 90; // Compact height with optimized vertical spacing
+const CARD_HEIGHT = 90; // optimized vertical spacing
 const GAP = 12; // Gap between cards
 const MIN_COLUMNS = 2;
 const MAX_COLUMNS = 6;

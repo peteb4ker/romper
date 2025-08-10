@@ -293,21 +293,6 @@ describe("LocalStoreService", () => {
         success: false,
       });
     });
-
-    it("logs errors for debugging", () => {
-      const consoleSpy = vi.spyOn(console, "error");
-      mockFs.readFileSync.mockImplementation(() => {
-        throw new Error("Read failed");
-      });
-
-      localStoreService.readFile("/error/file.txt");
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[LocalStoreService] Failed to read file:",
-        "/error/file.txt",
-        expect.any(Error),
-      );
-    });
   });
 
   describe("ensureDirectory", () => {

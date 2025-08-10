@@ -678,7 +678,7 @@ describe("useVoicePanelSlots", () => {
     it("handles all empty slots", () => {
       mockSlotRenderingHook.calculateRenderSlots.mockReturnValue({
         nextAvailableSlot: 0,
-        slotsToRender: 3,
+        slotsToRender: 12,
       });
 
       const { result } = renderHook(() =>
@@ -687,8 +687,8 @@ describe("useVoicePanelSlots", () => {
 
       const slots = result.current.renderSampleSlots();
 
-      // Should only render the drop target (slot 0)
-      expect(slots).toHaveLength(1);
+      // Should render all 12 empty slots
+      expect(slots).toHaveLength(12);
 
       const { container } = render(<div>{slots}</div>);
       expect(container.textContent).toContain("Drop WAV file here");

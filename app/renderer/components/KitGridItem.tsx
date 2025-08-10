@@ -33,7 +33,7 @@ const KitGridItem = React.memo(
 
       const { iconLabel, iconType } = useKitItem(voiceNames);
 
-      // Use shared icon renderer with medium size for compact grid view
+      // Use shared icon renderer with medium size for grid view
       const icon = <KitIconRenderer iconType={iconType} size="md" />;
 
       // Kit type visual identification borders and backgrounds
@@ -99,7 +99,7 @@ const KitGridItem = React.memo(
       const statusText = !isValid ? "Invalid kit" : `${totalSamples} samples`;
       const ariaLabel = `Kit ${kit} - ${statusText}`;
 
-      // Compact vertical card layout with optimized spacing
+      // vertical card layout with optimized spacing
       return (
         <div
           aria-label={ariaLabel}

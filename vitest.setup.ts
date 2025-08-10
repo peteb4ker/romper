@@ -21,18 +21,16 @@ setupDOMMocks();
 
 // Setup window-specific mocks in beforeAll for proper lifecycle
 beforeAll(() => {
-  // Ensure window object exists
-  if (typeof window !== "undefined") {
-    globalThis.window = globalThis.window || {};
+  // Always ensure window object exists for tests
+  globalThis.window = globalThis.window || {};
 
-    // Setup Electron APIs
-    window.electronAPI = defaultElectronAPIMock;
-    window.electronFileAPI = defaultElectronFileAPIMock;
+  // Setup Electron APIs
+  window.electronAPI = defaultElectronAPIMock;
+  window.electronFileAPI = defaultElectronFileAPIMock;
 
-    // Setup window-specific DOM mocks
-    setupWindowDOMMocks();
+  // Setup window-specific DOM mocks
+  setupWindowDOMMocks();
 
-    // Setup audio mocks
-    setupAudioMocks();
-  }
+  // Setup audio mocks
+  setupAudioMocks();
 });

@@ -18,7 +18,7 @@ export {
   addSample,
   buildDeleteConditions,
   deleteSamples,
-  deleteSamplesWithoutCompaction,
+  deleteSamplesWithoutReindexing,
   getAllBanks,
   getAllSamples,
   getFavoriteKits,
@@ -37,10 +37,7 @@ export {
   updateVoiceAlias,
 } from "./operations/crudOperations.js";
 // Import and re-export sample management operations
-export {
-  compactSlotsAfterDelete,
-  moveSample,
-} from "./operations/sampleManagementOps.js";
+export { moveSample } from "./operations/sampleManagementOps.js";
 
 // Import and re-export database utilities
 export { DB_FILENAME } from "./utils/dbUtilities.js";

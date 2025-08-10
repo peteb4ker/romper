@@ -5,18 +5,21 @@ This folder contains machine-readable coding standards and patterns for AI devel
 ## How It Works
 
 ### Context-Aware Loading
+
 - **[context.md](./context.md)** - Always loaded, contains file pattern matching rules
 - Based on current working file, additional specific instructions are automatically loaded
 - Efficient context usage - only relevant standards loaded (~300 words vs 2,400+ comprehensive)
 
 ### File Pattern Matching
-- `*.tsx` → React component standards (hook-based architecture)  
+
+- `*.tsx` → React component standards (hook-based architecture)
 - `hooks/use*.ts` → Custom hook standards (single responsibility, dependency injection)
 - `db/*.ts` → Database standards (Drizzle ORM, DbResult pattern)
 - `__tests__/*.test.ts` → Testing standards (Vitest, mocking patterns)
 - Files with `window.electronAPI` → IPC error handling patterns
 
 ### Standards Hierarchy
+
 1. **General** (always loaded) - Core principles, TypeScript, ESM requirements
 2. **File-type specific** - Targeted patterns for current file type
 3. **Pattern-specific** - Additional patterns like performance, security, anti-patterns
@@ -46,16 +49,19 @@ This folder contains machine-readable coding standards and patterns for AI devel
 ## Usage by Different Tools
 
 ### Claude Code
+
 - Automatically loads relevant instructions based on working file
 - Efficient context window usage
 - Consistent guidance across development sessions
 
-### GitHub Copilot  
+### GitHub Copilot
+
 - Reference these patterns for code completion suggestions
 - Use anti-patterns to avoid common mistakes
 - Follow established architectural decisions
 
 ### Human Developers
+
 - Quick reference for code review standards
 - Onboarding guide for project patterns
 - See [docs/developer/coding-guide.md](../docs/developer/coding-guide.md) for human-readable version
@@ -63,19 +69,22 @@ This folder contains machine-readable coding standards and patterns for AI devel
 ## Key Standards
 
 ### ESM Modules (Critical)
+
 - Use ES modules everywhere except `electron/preload/index.ts`
 - Never use `require()` or `module.exports` outside preload script
 
 ### IPC Error Handling
+
 - IPC methods from preload script are guaranteed available
 - Remove unnecessary availability checks (`window.electronAPI?.method`)
 - Use direct calls with proper try/catch error handling
 
 ### Architecture Patterns
+
 - React: Hook-based architecture, business logic in hooks
 - Database: Drizzle ORM with DbResult pattern, synchronous operations
 - Testing: Vitest with 80% coverage, mock dependencies properly
 
 ---
 
-*This system ensures consistent, contextually-relevant coding guidance while maintaining efficient context window usage for AI development tools.*
+_This system ensures consistent, contextually-relevant coding guidance while maintaining efficient context window usage for AI development tools._

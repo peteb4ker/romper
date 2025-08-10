@@ -1,6 +1,7 @@
 # React Component Standards
 
 ## Component Architecture
+
 **Hook-based separation**: Business logic in custom hooks, UI components for rendering only.
 
 ```typescript
@@ -25,6 +26,7 @@ function KitEditor({ kitName }: Props) {
 ```
 
 ## Performance Optimization
+
 Use `React.memo`, `useMemo`, and `useCallback` for expensive operations.
 
 ```typescript
@@ -49,6 +51,7 @@ function KitCard({ kit, onSelect }: Props) {
 ```
 
 ## Component Size Limits
+
 - **Maximum 400 lines per component file**
 - **Maximum 5 props per component** (use objects for more)
 - **Single responsibility**: Each component should have one clear purpose
@@ -58,15 +61,19 @@ function KitCard({ kit, onSelect }: Props) {
 ```typescript
 // ❌ AVOID: Too many props
 interface BadProps {
-  prop1: string; prop2: number; prop3: boolean;
-  prop4: string[]; prop5: (val: string) => void; prop6: Date;
+  prop1: string;
+  prop2: number;
+  prop3: boolean;
+  prop4: string[];
+  prop5: (val: string) => void;
+  prop6: Date;
   // Use objects instead: config: { prop1: string; prop2: number; ... }
 }
 
 // ❌ AVOID: Direct DOM manipulation
 function BadComponent() {
   useEffect(() => {
-    document.getElementById('my-element').style.display = 'none';
+    document.getElementById("my-element").style.display = "none";
   }, []);
 }
 
@@ -81,6 +88,7 @@ function BadComponent() {
 ```
 
 ## Quick Validation Checklist
+
 - [ ] Business logic extracted to custom hooks
 - [ ] Component under 400 lines
 - [ ] Maximum 5 props (use objects if more needed)

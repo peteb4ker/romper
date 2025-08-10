@@ -62,14 +62,14 @@ describe("useSampleManagementMoveOps", () => {
         {
           filename: "sample1.wav",
           is_stereo: false,
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/path/sample1.wav",
           voice_number: 1,
         },
         {
           filename: "sample2.wav",
           is_stereo: true,
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/path/sample2.wav",
           voice_number: 2,
         },
@@ -90,7 +90,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockElectronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
         "Test Kit",
@@ -101,12 +101,10 @@ describe("useSampleManagementMoveOps", () => {
         0,
         2,
         1,
-        "insert",
       );
       expect(mockUndoActions.createSameKitMoveAction).toHaveBeenCalledWith({
         fromSlot: 0,
         fromVoice: 1,
-        mode: "insert",
         result: mockMoveResult,
         stateSnapshot: expect.arrayContaining([
           expect.objectContaining({
@@ -115,7 +113,7 @@ describe("useSampleManagementMoveOps", () => {
               is_stereo: false,
               source_path: "/path/sample1.wav",
             }),
-            slot: 1,
+            slot: 100,
             voice: 1,
           }),
           expect.objectContaining({
@@ -124,7 +122,7 @@ describe("useSampleManagementMoveOps", () => {
               is_stereo: true,
               source_path: "/path/sample2.wav",
             }),
-            slot: 1,
+            slot: 100,
             voice: 2,
           }),
         ]),
@@ -132,8 +130,9 @@ describe("useSampleManagementMoveOps", () => {
         toVoice: 2,
       });
       expect(mockOptions.onAddUndoAction).toHaveBeenCalled();
-      expect(mockOptions.onMessage).toHaveBeenCalledWith(
-        "Sample moved from voice 1, slot 1 to voice 2, slot 2",
+      // Toast notification was removed per user request
+      expect(mockOptions.onMessage).not.toHaveBeenCalledWith(
+        expect.stringContaining("Sample moved"),
         "success",
       );
       expect(mockOptions.onSamplesChanged).toHaveBeenCalled();
@@ -152,7 +151,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(optionsWithSkip),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "overwrite");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockElectronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
       expect(mockElectronAPI.moveSampleInKit).toHaveBeenCalledWith(
@@ -161,11 +160,11 @@ describe("useSampleManagementMoveOps", () => {
         0,
         2,
         1,
-        "overwrite",
       );
       expect(mockOptions.onAddUndoAction).not.toHaveBeenCalled();
-      expect(mockOptions.onMessage).toHaveBeenCalledWith(
-        "Sample moved from voice 1, slot 1 to voice 2, slot 2",
+      // Toast notification was removed per user request
+      expect(mockOptions.onMessage).not.toHaveBeenCalledWith(
+        expect.stringContaining("Sample moved"),
         "success",
       );
     });
@@ -181,7 +180,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Move operation failed",
@@ -199,7 +198,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample move not available",
@@ -219,7 +218,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Failed to move sample: Network error",
@@ -240,36 +239,29 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(
-        1,
-        0,
-        2,
-        1,
-        "overwrite",
-        "Target Kit",
-      );
+      await result.current.handleSampleMove(1, 0, 2, 1, "Target Kit");
 
-      expect(mockElectronAPI.moveSampleBetweenKits).toHaveBeenCalledWith(
-        "Test Kit",
-        1,
-        0,
-        "Target Kit",
-        2,
-        1,
-        "overwrite",
-      );
+      expect(mockElectronAPI.moveSampleBetweenKits).toHaveBeenCalledWith({
+        fromKit: "Test Kit",
+        fromSlot: 0,
+        fromVoice: 1,
+        mode: "insert",
+        toKit: "Target Kit",
+        toSlot: 1,
+        toVoice: 2,
+      });
       expect(mockUndoActions.createCrossKitMoveAction).toHaveBeenCalledWith({
         fromSlot: 0,
         fromVoice: 1,
-        mode: "overwrite",
         result: mockMoveResult,
         targetKit: "Target Kit",
         toSlot: 1,
         toVoice: 2,
       });
       expect(mockOptions.onAddUndoAction).toHaveBeenCalled();
-      expect(mockOptions.onMessage).toHaveBeenCalledWith(
-        "Sample moved from Test Kit voice 1, slot 1 to Target Kit voice 2, slot 2",
+      // Toast notification was removed per user request
+      expect(mockOptions.onMessage).not.toHaveBeenCalledWith(
+        expect.stringContaining("Sample moved"),
         "success",
       );
       expect(mockOptions.onSamplesChanged).toHaveBeenCalled();
@@ -288,20 +280,21 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(optionsWithSkip),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert", "Target Kit");
+      await result.current.handleSampleMove(1, 0, 2, 1, "Target Kit");
 
-      expect(mockElectronAPI.moveSampleBetweenKits).toHaveBeenCalledWith(
-        "Test Kit",
-        1,
-        0,
-        "Target Kit",
-        2,
-        1,
-        "insert",
-      );
+      expect(mockElectronAPI.moveSampleBetweenKits).toHaveBeenCalledWith({
+        fromKit: "Test Kit",
+        fromSlot: 0,
+        fromVoice: 1,
+        mode: "insert",
+        toKit: "Target Kit",
+        toSlot: 1,
+        toVoice: 2,
+      });
       expect(mockOptions.onAddUndoAction).not.toHaveBeenCalled();
-      expect(mockOptions.onMessage).toHaveBeenCalledWith(
-        "Sample moved from Test Kit voice 1, slot 1 to Target Kit voice 2, slot 2",
+      // Toast notification was removed per user request
+      expect(mockOptions.onMessage).not.toHaveBeenCalledWith(
+        expect.stringContaining("Sample moved"),
         "success",
       );
     });
@@ -317,7 +310,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert", "Target Kit");
+      await result.current.handleSampleMove(1, 0, 2, 1, "Target Kit");
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Cross-kit move failed",
@@ -335,7 +328,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert", "Target Kit");
+      await result.current.handleSampleMove(1, 0, 2, 1, "Target Kit");
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Cross-kit sample move not available",
@@ -353,7 +346,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert", "Target Kit");
+      await result.current.handleSampleMove(1, 0, 2, 1, "Target Kit");
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Failed to move sample: String error",
@@ -368,21 +361,21 @@ describe("useSampleManagementMoveOps", () => {
         {
           filename: "sample1.wav",
           is_stereo: false,
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/path/sample1.wav",
           voice_number: 1,
         },
         {
           filename: "sample2.wav",
           is_stereo: true,
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/path/sample2.wav",
           voice_number: 2,
         },
         {
           filename: "sample3.wav",
           is_stereo: false,
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/path/sample3.wav",
           voice_number: 3, // Should not be included
         },
@@ -401,7 +394,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockUndoActions.createSameKitMoveAction).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -433,7 +426,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockUndoActions.createSameKitMoveAction).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -456,7 +449,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockUndoActions.createSameKitMoveAction).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -477,7 +470,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockOptions.onAddUndoAction).not.toHaveBeenCalled();
     });
@@ -498,7 +491,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(optionsWithoutUndo),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockElectronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
     });
@@ -512,7 +505,7 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(mockOptions),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Failed to move sample",
@@ -535,10 +528,11 @@ describe("useSampleManagementMoveOps", () => {
         useSampleManagementMoveOps(optionsWithoutCallback),
       );
 
-      await result.current.handleSampleMove(1, 0, 2, 1, "insert");
+      await result.current.handleSampleMove(1, 0, 2, 1);
 
-      expect(mockOptions.onMessage).toHaveBeenCalledWith(
-        "Sample moved from voice 1, slot 1 to voice 2, slot 2",
+      // Toast notification was removed per user request
+      expect(mockOptions.onMessage).not.toHaveBeenCalledWith(
+        expect.stringContaining("Sample moved"),
         "success",
       );
       // Should not throw or cause issues

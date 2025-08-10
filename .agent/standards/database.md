@@ -8,8 +8,14 @@ ALWAYS use terminal methods (.get(), .all(), .run(), .values()). NO await:
 // ✅ CORRECT: Terminal method, no await
 function getKit(kitName: string): DbResult<Kit> {
   return withDb((db) => {
-    const kit = db.select().from(kitsTable).where(eq(kitsTable.name, kitName)).get();
-    return kit ? { success: true, data: kit } : { success: false, error: 'Kit not found' };
+    const kit = db
+      .select()
+      .from(kitsTable)
+      .where(eq(kitsTable.name, kitName))
+      .get();
+    return kit
+      ? { success: true, data: kit }
+      : { success: false, error: "Kit not found" };
   });
 }
 
@@ -21,17 +27,18 @@ const kit2 = await db.select().from(kitsTable).get(); // Don't use await
 ## DbResult Pattern (REQUIRED)
 
 ### Consistent Error Handling
+
 ```typescript
 // ✅ ALWAYS use DbResult<T> wrapper
-type DbResult<T> = 
+type DbResult<T> =
   | { success: true; data: T }
   | { success: false; error: string };
 
 async function addSample(
-  kitName: string, 
-  sourcePath: string, 
-  voiceNumber: number, 
-  slotNumber: number
+  kitName: string,
+  sourcePath: string,
+  voiceNumber: number,
+  slotNumber: number,
 ): Promise<DbResult<Sample>> {
   return withDb((db) => {
     try {
@@ -46,11 +53,11 @@ async function addSample(
 
       const result = db.insert(samplesTable).values(sample).returning().get();
       return { success: true, data: result };
-      
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Database operation failed' 
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Database operation failed",
       };
     }
   });
@@ -65,6 +72,7 @@ function badAddSample(sample: Sample) {
 ## Connection Management
 
 ### WithDb Pattern (REQUIRED)
+
 ```typescript
 // ✅ CORRECT: Use connection wrapper for all operations
 function withDb<T>(operation: (db: BetterSQLite3Database) => T): T {
@@ -72,7 +80,7 @@ function withDb<T>(operation: (db: BetterSQLite3Database) => T): T {
   try {
     return operation(db);
   } catch (error) {
-    logger.error('Database operation failed:', error);
+    logger.error("Database operation failed:", error);
     throw error;
   }
   // SQLite connections are automatically managed
@@ -90,26 +98,33 @@ function getAllKits(): DbResult<Kit[]> {
 ## Schema Definition Patterns
 
 ### Type-Safe Schema
+
 ```typescript
 // ✅ CORRECT: Proper Drizzle schema with constraints
-export const kitsTable = sqliteTable('kits', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull().unique(), // Natural key (A0, B1, etc.)
-  alias: text('alias'),
-  artist: text('artist'),
-  editable: integer('editable', { mode: 'boolean' }).notNull().default(false),
-  stepPattern: text('step_pattern'), // JSON format for XOX sequencer
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+export const kitsTable = sqliteTable("kits", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull().unique(), // Natural key (A0, B1, etc.)
+  alias: text("alias"),
+  artist: text("artist"),
+  editable: integer("editable", { mode: "boolean" }).notNull().default(false),
+  stepPattern: text("step_pattern"), // JSON format for XOX sequencer
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const samplesTable = sqliteTable('samples', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  kitName: text('kit_name').notNull().references(() => kitsTable.name), // Natural key reference
-  voiceNumber: integer('voice_number').notNull().$type<1 | 2 | 3 | 4>(), // Constrained type
-  slotNumber: integer('slot_number').notNull().$type<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>(),
-  sourcePath: text('source_path').notNull(), // Reference-only architecture
-  filename: text('filename').notNull(),
-  isStereo: integer('is_stereo', { mode: 'boolean' }).notNull().default(false),
+export const samplesTable = sqliteTable("samples", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kitName: text("kit_name")
+    .notNull()
+    .references(() => kitsTable.name), // Natural key reference
+  voiceNumber: integer("voice_number").notNull().$type<1 | 2 | 3 | 4>(), // Constrained type
+  slotNumber: integer("slot_number")
+    .notNull()
+    .$type<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>(),
+  sourcePath: text("source_path").notNull(), // Reference-only architecture
+  filename: text("filename").notNull(),
+  isStereo: integer("is_stereo", { mode: "boolean" }).notNull().default(false),
 });
 
 // Type inference from schema
@@ -122,31 +137,35 @@ export type NewSample = InferInsertModel<typeof samplesTable>;
 ## Transaction Patterns
 
 ### Batch Operations
+
 ```typescript
 // ✅ CORRECT: Use transactions for batch operations
 function addMultipleSamples(
-  kitName: string, 
-  samples: Array<{ path: string; voice: number; slot: number }>
+  kitName: string,
+  samples: Array<{ path: string; voice: number; slot: number }>,
 ): DbResult<void> {
   return withDb((db) => {
     try {
       db.transaction(() => {
         for (const sample of samples) {
-          db.insert(samplesTable).values({
-            kitName,
-            sourcePath: sample.path,
-            filename: path.basename(sample.path),
-            voiceNumber: sample.voice,
-            slotNumber: sample.slot,
-          }).run();
+          db.insert(samplesTable)
+            .values({
+              kitName,
+              sourcePath: sample.path,
+              filename: path.basename(sample.path),
+              voiceNumber: sample.voice,
+              slotNumber: sample.slot,
+            })
+            .run();
         }
       })();
-      
+
       return { success: true, data: undefined };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Batch operation failed' 
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Batch operation failed",
       };
     }
   });
@@ -163,16 +182,19 @@ function badAddSamples(samples: Sample[]) {
 ## Query Optimization
 
 ### Efficient Queries
+
 ```typescript
 // ✅ CORRECT: Efficient join queries
-function getKitWithSamples(kitName: string): DbResult<Kit & { samples: Sample[] }> {
+function getKitWithSamples(
+  kitName: string,
+): DbResult<Kit & { samples: Sample[] }> {
   return withDb((db) => {
     const kit = db
       .select()
       .from(kitsTable)
       .where(eq(kitsTable.name, kitName))
       .get();
-    
+
     if (!kit) {
       return { success: false, error: `Kit not found: ${kitName}` };
     }
@@ -191,13 +213,16 @@ function getKitWithSamples(kitName: string): DbResult<Kit & { samples: Sample[] 
 // ❌ WRONG: N+1 query pattern
 function badGetKitsWithSamples() {
   const kits = db.select().from(kitsTable).all();
-  
+
   for (const kit of kits) {
     // N+1 query problem - separate query for each kit
-    kit.samples = db.select().from(samplesTable)
-      .where(eq(samplesTable.kitName, kit.name)).all();
+    kit.samples = db
+      .select()
+      .from(samplesTable)
+      .where(eq(samplesTable.kitName, kit.name))
+      .all();
   }
-  
+
   return kits;
 }
 ```
@@ -205,6 +230,7 @@ function badGetKitsWithSamples() {
 ## Anti-Patterns to Avoid
 
 ### SQL Injection Vulnerabilities
+
 ```typescript
 // ❌ AVOID: String concatenation (SQL injection risk)
 function badGetKit(kitName: string) {
@@ -219,6 +245,7 @@ function goodGetKit(kitName: string) {
 ```
 
 ### Missing Error Handling
+
 ```typescript
 // ❌ AVOID: Operations without error handling
 function badDbOperation() {
@@ -248,4 +275,4 @@ function goodDbOperation(): DbResult<Kit[]> {
 
 ---
 
-*These standards apply to database operations in `**/db/*.ts` files using Drizzle ORM with better-sqlite3.*
+_These standards apply to database operations in `\*\*/db/_.ts` files using Drizzle ORM with better-sqlite3.\*

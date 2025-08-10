@@ -29,13 +29,13 @@ describe("useSampleManagementUndoActions", () => {
       const mockSamples = [
         {
           filename: "test.wav",
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/path/to/test.wav",
           voice_number: 1,
         },
         {
           filename: "other.wav",
-          slot_number: 2,
+          slot_number: 200,
           source_path: "/path/to/other.wav",
           voice_number: 1,
         },
@@ -106,7 +106,7 @@ describe("useSampleManagementUndoActions", () => {
       const mockSamples = [
         {
           filename: "delete-me.wav",
-          slot_number: 2,
+          slot_number: 200,
           source_path: "/path/to/delete-me.wav",
           voice_number: 2,
         },
@@ -249,8 +249,8 @@ describe("useSampleManagementUndoActions", () => {
     });
   });
 
-  describe("createCompactSlotsAction", () => {
-    it("should create COMPACT_SLOTS action with correct data", () => {
+  describe("createReindexSamplesAction", () => {
+    it("should create REINDEX_SAMPLES action with correct data", () => {
       const mockDeletedSample = {
         filename: "deleted.wav",
         is_stereo: undefined,
@@ -263,7 +263,7 @@ describe("useSampleManagementUndoActions", () => {
             {
               filename: "affected.wav",
               is_stereo: false,
-              slot_number: 2,
+              slot_number: 200,
               source_path: "/path/to/affected.wav",
               voice_number: 1,
             },
@@ -276,19 +276,19 @@ describe("useSampleManagementUndoActions", () => {
         useSampleManagementUndoActions(mockOptions),
       );
 
-      const action = result.current.createCompactSlotsAction(
+      const action = result.current.createReindexSamplesAction(
         1,
         0,
         mockDeletedSample,
         mockResult,
       );
 
-      expect(action.type).toBe("COMPACT_SLOTS");
+      expect(action.type).toBe("REINDEX_SAMPLES");
       expect(action.data).toEqual({
         affectedSamples: [
           {
-            newSlot: 1, // slot_number - 1
-            oldSlot: 2, // original slot_number
+            newSlot: 199, // slot_number - 1
+            oldSlot: 200, // original slot_number
             sample: {
               filename: "affected.wav",
               is_stereo: false,

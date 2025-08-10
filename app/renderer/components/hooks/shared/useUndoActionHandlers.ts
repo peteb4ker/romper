@@ -1,5 +1,7 @@
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
+import { dbSlotToDisplaySlot } from "@romper/shared/slotUtils";
+
 export interface UseUndoActionHandlersOptions {
   kitName: string;
 }
@@ -26,10 +28,10 @@ export function useUndoActionHandlers({
       for (const sample of currentSamples) {
         await (
           window as any
-        ).electronAPI?.deleteSampleFromSlotWithoutCompaction?.(
+        ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
           kitName,
           sample.voice_number,
-          sample.slot_number - 1,
+          dbSlotToDisplaySlot(sample.slot_number) - 1,
         );
       }
     }
@@ -37,10 +39,12 @@ export function useUndoActionHandlers({
 
   const restoreFromSnapshot = async (stateSnapshot: any[]) => {
     for (const { sample, slot, voice } of stateSnapshot) {
+      // Convert database slot to 0-based display slot for API call
+      const displaySlotIndex = dbSlotToDisplaySlot(slot) - 1;
       await (window as any).electronAPI?.addSampleToSlot?.(
         kitName,
         voice,
-        slot - 1,
+        displaySlotIndex,
         sample.source_path,
         { forceMono: !sample.is_stereo },
       );
@@ -60,10 +64,10 @@ export function useUndoActionHandlers({
       for (const sample of currentSamples) {
         await (
           window as any
-        ).electronAPI?.deleteSampleFromSlotWithoutCompaction?.(
+        ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
           kitName,
           sample.voice_number,
-          sample.slot_number - 1,
+          dbSlotToDisplaySlot(sample.slot_number) - 1,
         );
       }
     }
@@ -74,7 +78,7 @@ export function useUndoActionHandlers({
       const [voice, slot] = slotKey.split("-").map(Number);
       await (
         window as any
-      ).electronAPI?.deleteSampleFromSlotWithoutCompaction?.(
+      ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
         kitName,
         voice,
         slot,
@@ -268,9 +272,9 @@ export function useUndoActionHandlers({
     }
   };
 
-  const undoCompactSlots = async (action: any) => {
+  const undoReindexSamples = async (action: any) => {
     console.log(
-      "[UNDO] Undoing COMPACT_SLOTS - restoring pre-compaction state",
+      "[UNDO] Undoing REINDEX_SAMPLES - restoring pre-reindexing state",
     );
 
     try {
@@ -292,14 +296,14 @@ export function useUndoActionHandlers({
     switch (action.type) {
       case "ADD_SAMPLE":
         return await undoAddSample(action);
-      case "COMPACT_SLOTS":
-        return await undoCompactSlots(action);
       case "DELETE_SAMPLE":
         return await undoDeleteSample(action);
       case "MOVE_SAMPLE":
         return await undoMoveSample(action);
       case "MOVE_SAMPLE_BETWEEN_KITS":
         return await undoMoveSampleBetweenKits(action);
+      case "REINDEX_SAMPLES":
+        return await undoReindexSamples(action);
       case "REPLACE_SAMPLE":
         return await undoReplaceSample(action);
       default: {

@@ -10,20 +10,25 @@ This guide provides friendly, practical advice for writing quality code in the R
 ## 🎯 Core Philosophy
 
 ### The Romper Way
+
 Romper follows a **hook-based architecture** where React components focus purely on rendering while custom hooks handle all business logic. This keeps our code organized, testable, and maintainable.
 
 Think of it like this:
+
 - **Components** = The user interface (what users see and interact with)
 - **Hooks** = The business logic (how things work behind the scenes)
 - **Utils** = Pure functions that transform data
 
 ### Reference-Only Architecture
+
 One unique aspect of Romper is our **reference-only sample management**. Instead of copying files around, we store absolute paths to samples and only copy them when syncing to the SD card. This keeps the local store clean and prevents storage bloat.
 
 ## 🛠️ Getting Started
 
 ### Before You Code
+
 Always run these commands before starting work:
+
 ```bash
 # Check that TypeScript is happy
 npx tsc --noEmit
@@ -36,18 +41,20 @@ npm run dev
 ```
 
 ### The Golden Rule
+
 **Never commit code that doesn't pass `npx tsc --noEmit`**. TypeScript errors must be fixed before any task is considered complete.
 
 ## 📝 Writing Components
 
 ### Keep It Simple
+
 Components should be focused on rendering. If you find yourself writing complex logic inside a component, it probably belongs in a custom hook.
 
 ```typescript
 // ✅ Good: Clean component with hook
 function KitEditor({ kitName }: Props) {
   const { editable, samples, toggleEditMode, addSample } = useKitEditor(kitName);
-  
+
   return (
     <div className="kit-editor">
       <button onClick={toggleEditMode}>
@@ -63,7 +70,7 @@ function KitEditor({ kitName }: Props) {
 // ❌ Not so good: Business logic mixed in
 function KitEditor({ kitName }: Props) {
   const [editable, setEditable] = useState(false);
-  
+
   const handleToggle = async () => {
     // Lots of complex logic here
     const result = await window.electron.db.updateKit(kitName, { editable: !editable });
@@ -74,26 +81,27 @@ function KitEditor({ kitName }: Props) {
       toast.error(result.error);
     }
   };
-  
+
   return <div>...</div>;
 }
 ```
 
 ### Performance Matters
+
 Use `React.memo`, `useMemo`, and `useCallback` to keep the UI snappy. Romper aims for sub-50ms response times for all user interactions.
 
 ```typescript
 // ✅ Good: Memoized component
 const KitCard = React.memo(({ kit, onSelect }: Props) => {
-  const displayName = useMemo(() => 
-    kit.alias || kit.name, 
+  const displayName = useMemo(() =>
+    kit.alias || kit.name,
     [kit.alias, kit.name]
   );
-  
+
   const handleClick = useCallback(() => {
     onSelect(kit.name);
   }, [kit.name, onSelect]);
-  
+
   return <div onClick={handleClick}>{displayName}</div>;
 });
 ```
@@ -101,6 +109,7 @@ const KitCard = React.memo(({ kit, onSelect }: Props) => {
 ## 🎣 Writing Hooks
 
 ### Single Responsibility
+
 Each hook should have one clear job. If your hook is doing too many things, split it up.
 
 ```typescript
@@ -108,14 +117,14 @@ Each hook should have one clear job. If your hook is doing too many things, spli
 function useKitBrowser() {
   const [kits, setKits] = useState<Kit[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   const refreshKits = useCallback(async () => {
     setLoading(true);
     const result = await window.electron.db.getAllKits();
     // Handle result...
     setLoading(false);
   }, []);
-  
+
   return { kits, loading, refreshKits };
 }
 
@@ -127,12 +136,13 @@ function useKitManager() {
   const [editMode, setEditMode] = useState(false);
   // Also handles audio playback
   const [playing, setPlaying] = useState(false);
-  
+
   // This hook has too many responsibilities
 }
 ```
 
 ### Make Hooks Testable
+
 Use dependency injection to make your hooks easy to test:
 
 ```typescript
@@ -144,7 +154,7 @@ interface Dependencies {
 function useKitScan(deps: Dependencies = {}) {
   const fileReader = deps.fileReader || window.electron.fileReader;
   const toastImpl = deps.toast || toast;
-  
+
   // Backend handles localStorePath from settings automatically
   // Now this hook can be easily tested with mocked dependencies
 }
@@ -153,23 +163,25 @@ function useKitScan(deps: Dependencies = {}) {
 ## 🗄️ Working with the Database
 
 ### The Result Pattern
+
 All database operations return a consistent `DbResult<T>` type that makes error handling predictable:
 
 ```typescript
-type DbResult<T> = 
+type DbResult<T> =
   | { success: true; data: T }
   | { success: false; error: string };
 
 // Using the pattern
-const result = await window.electron.db.getKit('A0');
+const result = await window.electron.db.getKit("A0");
 if (result.success) {
-  console.log('Kit loaded:', result.data);
+  console.log("Kit loaded:", result.data);
 } else {
   toast.error(result.error);
 }
 ```
 
 ### Drizzle ORM Guidelines
+
 We use Drizzle ORM with the synchronous better-sqlite3 driver. Key points:
 
 - **Always call terminal methods**: `.all()`, `.get()`, `.run()`, `.values()`
@@ -178,20 +190,20 @@ We use Drizzle ORM with the synchronous better-sqlite3 driver. Key points:
 
 ```typescript
 // ✅ Good: Proper Drizzle usage
-const kits = db.select()
+const kits = db
+  .select()
   .from(kitsTable)
   .where(eq(kitsTable.editable, true))
   .all(); // Terminal method required
 
 // ❌ Bad: Missing terminal method
-const kits = db.select()
-  .from(kitsTable)
-  .where(eq(kitsTable.editable, true)); // This won't work
+const kits = db.select().from(kitsTable).where(eq(kitsTable.editable, true)); // This won't work
 ```
 
 ## 🧪 Writing Tests
 
 ### Test Organization
+
 Each code file should have exactly one corresponding test file in a `__tests__` directory:
 
 ```
@@ -206,30 +218,37 @@ app/renderer/components/
 ```
 
 ### Make Tests Clear
+
 Write tests that read like documentation:
 
 ```typescript
-describe('useKitEditor', () => {
-  describe('when kit is editable', () => {
-    it('should allow adding samples to voice slots', async () => {
+describe("useKitEditor", () => {
+  describe("when kit is editable", () => {
+    it("should allow adding samples to voice slots", async () => {
       // Arrange
-      const mockKit = { name: 'A0', editable: true };
+      const mockKit = { name: "A0", editable: true };
       mockGetKit.mockResolvedValue({ success: true, data: mockKit });
-      
+
       // Act
-      const { result } = renderHook(() => useKitEditor('A0'));
+      const { result } = renderHook(() => useKitEditor("A0"));
       await act(async () => {
-        await result.current.addSample('/path/to/kick.wav', 1, 1);
+        await result.current.addSample("/path/to/kick.wav", 1, 1);
       });
-      
+
       // Assert
-      expect(mockAddSample).toHaveBeenCalledWith('A0', '/path/to/kick.wav', 1, 1);
+      expect(mockAddSample).toHaveBeenCalledWith(
+        "A0",
+        "/path/to/kick.wav",
+        1,
+        1,
+      );
     });
   });
 });
 ```
 
 ### Mock Smart, Not Hard
+
 Use the centralized mocks in `vitest.setup.ts` and extend them as needed:
 
 ```typescript
@@ -238,7 +257,7 @@ beforeEach(() => {
   // Extend the global mock for this test
   vi.mocked(window.electron.db.getKit).mockResolvedValue({
     success: true,
-    data: { name: 'A0', editable: true }
+    data: { name: "A0", editable: true },
   });
 });
 ```
@@ -246,6 +265,7 @@ beforeEach(() => {
 ## 🎨 Code Style
 
 ### TypeScript Tips
+
 - **Use type inference**: Let TypeScript figure out types when it can
 - **Define clear interfaces**: Especially for component props and API responses
 - **Avoid `any`**: There's almost always a better type to use
@@ -266,40 +286,45 @@ const handleData = (data: any) => { ... };
 ```
 
 ### Import Organization
+
 Keep imports organized for readability:
 
 ```typescript
 // 1. React first
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState } from "react";
 
 // 2. Third-party libraries
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 // 3. Local imports (relative paths)
-import { useKitBrowser } from './hooks/useKitBrowser';
+import { useKitBrowser } from "./hooks/useKitBrowser";
 
 // 4. Shared utilities (absolute paths from shared/)
-import { toCapitalCase } from '../../../../shared/kitUtilsShared';
+import { toCapitalCase } from "../../../../shared/kitUtilsShared";
 ```
 
 ## 🚫 Common Pitfalls to Avoid
 
 ### React Pitfalls
+
 - **Don't put business logic in components** - Use custom hooks instead
 - **Don't forget to memoize expensive operations** - Use `useMemo` for computations
 - **Don't create new objects in render** - Use `useCallback` and `useMemo`
 
 ### TypeScript Pitfalls
+
 - **Don't use `any`** - There's usually a better type
 - **Don't ignore TypeScript errors** - Fix them before committing
 - **Don't use type assertions unless necessary** - Prefer proper typing
 
 ### Database Pitfalls
+
 - **Don't forget terminal methods** - `.all()`, `.get()`, `.run()`, `.values()`
 - **Don't use `await` with synchronous driver** - Drizzle with better-sqlite3 is sync
 - **Don't create N+1 queries** - Use joins or batch operations
 
-### Testing Pitfalls  
+### Testing Pitfalls
+
 - **Don't test implementation details** - Test behavior, not internals
 - **Don't forget to clean up mocks** - Use `beforeEach`/`afterEach`
 - **Don't make tests too complex** - One behavior per test
@@ -307,31 +332,33 @@ import { toCapitalCase } from '../../../../shared/kitUtilsShared';
 ## 🔒 Security & Safety
 
 ### File Path Validation
+
 Always validate file paths to prevent directory traversal attacks:
 
 ```typescript
 function validateSamplePath(sourcePath: string): boolean {
   const resolvedPath = path.resolve(sourcePath);
-  
+
   // Check if it's a WAV file
-  const isWav = path.extname(resolvedPath).toLowerCase() === '.wav';
-  
+  const isWav = path.extname(resolvedPath).toLowerCase() === ".wav";
+
   // Check for suspicious characters
   const isSafe = !/[<>:"|?*]/.test(resolvedPath);
-  
+
   return isWav && isSafe;
 }
 ```
 
 ### Error Messages
+
 Show user-friendly error messages, not technical details:
 
 ```typescript
 // ✅ Good: User-friendly message
-if (error.includes('ENOENT')) {
-  toast.error('Sample file not found. Please check if the file still exists.');
+if (error.includes("ENOENT")) {
+  toast.error("Sample file not found. Please check if the file still exists.");
 } else {
-  toast.error('Unable to load sample. Please try again.');
+  toast.error("Unable to load sample. Please try again.");
 }
 
 // ❌ Not so good: Technical error exposed
@@ -341,11 +368,13 @@ toast.error(error.message); // May show technical details
 ## 📚 Learning Resources
 
 ### Understanding the Codebase
+
 - **Start with the hooks** - Look at `useKitBrowser` and `useKitEditor`
 - **Check the database layer** - See how `romperDbCore` works
 - **Read the tests** - They show how things are supposed to work
 
 ### Getting Help
+
 - **Check existing patterns** - Look for similar code in the codebase
 - **Read the PRD** - Understanding the requirements helps with implementation
 - **Ask questions** - Use GitHub Discussions for clarification
@@ -369,4 +398,4 @@ Remember: Quality code is code that's easy to understand, maintain, and extend. 
 
 ---
 
-*This guide reflects the patterns and practices that make Romper maintainable and enjoyable to work on. When you see code that doesn't follow these patterns, consider it an opportunity for improvement!*
+_This guide reflects the patterns and practices that make Romper maintainable and enjoyable to work on. When you see code that doesn't follow these patterns, consider it an opportunity for improvement!_

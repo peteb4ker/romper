@@ -7,12 +7,13 @@ import type {
 } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
+import { displaySlotToDbSlot } from "@romper/shared/slotUtils.js";
 // Basic CRUD operations for database entities
 import { and, eq } from "drizzle-orm";
 import { count } from "drizzle-orm";
 
 import { withDb } from "../utils/dbUtilities.js";
-import { performVoiceCompaction } from "./sampleManagementOps.js";
+import { performVoiceReindexing } from "./sampleManagementOps.js";
 
 const { banks, kits, samples, voices } = schema;
 
@@ -71,14 +72,16 @@ export function buildDeleteConditions(
   }
 
   if (filter?.slotNumber !== undefined) {
-    conditions.push(eq(samples.slot_number, filter.slotNumber));
+    // Convert display slot to database slot (1->100, 2->200, etc.)
+    const dbSlot = displaySlotToDbSlot(filter.slotNumber);
+    conditions.push(eq(samples.slot_number, dbSlot));
   }
 
   return and(...conditions);
 }
 
 /**
- * Delete samples with automatic voice compaction
+ * Delete samples with automatic voice reindexing
  */
 export function deleteSamples(
   dbDir: string,
@@ -92,7 +95,7 @@ export function deleteSamples(
     // Delete the samples
     db.delete(samples).where(whereCondition).run();
 
-    const affectedSamples = performVoiceCompaction(
+    const affectedSamples = performVoiceReindexing(
       dbDir,
       kitName,
       samplesToDelete,
@@ -106,9 +109,9 @@ export function deleteSamples(
 }
 
 /**
- * Delete samples without automatic compaction (for manual control)
+ * Delete samples without automatic reindexing (for manual control)
  */
-export function deleteSamplesWithoutCompaction(
+export function deleteSamplesWithoutReindexing(
   dbDir: string,
   kitName: string,
   filter?: { slotNumber?: number; voiceNumber?: number },
@@ -117,7 +120,7 @@ export function deleteSamplesWithoutCompaction(
     const whereCondition = buildDeleteConditions(kitName, filter);
     const samplesToDelete = getSamplesToDelete(db, whereCondition);
 
-    // Delete the samples without compaction
+    // Delete the samples without reindexing
     db.delete(samples).where(whereCondition).run();
 
     return {

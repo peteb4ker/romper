@@ -10,12 +10,14 @@ This document defines explicit coding standards and best practices for Romper de
 ## General Principles
 
 ### Architecture Philosophy
+
 - **Hook-based architecture**: All business logic in custom hooks, UI components for rendering only
 - **Reference-only storage**: Samples referenced by path, not copied locally until sync
 - **Type-safe operations**: Use TypeScript strict mode, zero compilation errors
 - **Graceful degradation**: App remains functional when non-critical components fail
 
 ### Code Quality Requirements
+
 - **TypeScript validation**: `npx tsc --noEmit` must pass before task completion
 - **Test coverage**: Maintain 80% minimum coverage across codebase
 - **Import statements**: Use ES modules only, never `require()`
@@ -24,6 +26,7 @@ This document defines explicit coding standards and best practices for Romper de
 ## TypeScript Standards
 
 ### Type Definitions
+
 ```typescript
 // ✅ GOOD: Use type inference with Drizzle
 export type Kit = InferSelectModel<typeof kitsTable>;
@@ -44,21 +47,23 @@ function processKitData(kit) { ... }
 ```
 
 ### Enum Patterns
+
 ```typescript
 // ✅ GOOD: TypeScript enum with Drizzle integration
 export enum UserRole {
-  ADMIN = 'admin',
-  USER = 'user',
-  MODERATOR = 'moderator',
+  ADMIN = "admin",
+  USER = "user",
+  MODERATOR = "moderator",
 }
 
-export const userRoleEnum = pgEnum('user_role', enumToPgEnum(UserRole));
+export const userRoleEnum = pgEnum("user_role", enumToPgEnum(UserRole));
 
 // ❌ BAD: String literals without type safety
-const role = 'admin'; // No type checking
+const role = "admin"; // No type checking
 ```
 
 ### Generic Components
+
 ```typescript
 // ✅ GOOD: Generic component with proper constraints
 interface SelectProps<T> {
@@ -80,6 +85,7 @@ function Select({ items }: { items: any[] }) {
 ## React Component Standards
 
 ### Component Architecture
+
 ```typescript
 // ✅ GOOD: Hook-based architecture
 function useKitEditor(kitName: string) {
@@ -120,6 +126,7 @@ function KitEditor({ kitName }: KitEditorProps) {
 ```
 
 ### Performance Optimization
+
 ```typescript
 // ✅ GOOD: Proper memoization
 const KitCard = React.memo(({ kit, onSelect }: KitCardProps) => {
@@ -144,6 +151,7 @@ function KitCard({ kit, onSelect }: KitCardProps) {
 ```
 
 ### Component Size Limits
+
 - **Maximum 400 lines per component file**
 - **Maximum 5 props per component** (use objects for more)
 - **Single responsibility**: Each component should have one clear purpose
@@ -151,6 +159,7 @@ function KitCard({ kit, onSelect }: KitCardProps) {
 ## Custom Hooks Standards
 
 ### Hook Architecture
+
 ```typescript
 // ✅ GOOD: Focused hook with clear responsibility
 function useKitBrowser() {
@@ -168,7 +177,7 @@ function useKitBrowser() {
         setError(result.error);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -191,11 +200,12 @@ function useKitManager() {
   const [playing, setPlaying] = useState(false);
 
   // Too many responsibilities in one hook
-  return { kits, editMode, playing, /* ... */ };
+  return { kits, editMode, playing /* ... */ };
 }
 ```
 
 ### Dependency Injection for Testing
+
 ```typescript
 // ✅ GOOD: Dependency injection for testability
 interface KitScanDependencies {
@@ -210,10 +220,10 @@ function useKitScan(deps: KitScanDependencies = {}) {
   const scanKits = useCallback(async () => {
     try {
       const result = await fileReader.scanDirectory();
-      toastImpl.success('Scan completed');
+      toastImpl.success("Scan completed");
       return result;
     } catch (error) {
-      toastImpl.error('Scan failed');
+      toastImpl.error("Scan failed");
       throw error;
     }
   }, [fileReader, toastImpl]);
@@ -225,40 +235,50 @@ function useKitScan(deps: KitScanDependencies = {}) {
 ## Drizzle ORM Standards
 
 ### Schema Definition
+
 ```typescript
 // ✅ GOOD: Modern schema with proper types
-export const kitsTable = sqliteTable('kits', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull().unique(), // Natural key (A0, B1, etc.)
-  alias: text('alias'),
-  artist: text('artist'),
-  editable: integer('editable', { mode: 'boolean' }).notNull().default(false),
-  stepPattern: text('step_pattern'), // JSON format
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+export const kitsTable = sqliteTable("kits", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull().unique(), // Natural key (A0, B1, etc.)
+  alias: text("alias"),
+  artist: text("artist"),
+  editable: integer("editable", { mode: "boolean" }).notNull().default(false),
+  stepPattern: text("step_pattern"), // JSON format
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const samplesTable = sqliteTable('samples', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  kitName: text('kit_name').notNull().references(() => kitsTable.name),
-  voiceNumber: integer('voice_number').notNull().$type<1 | 2 | 3 | 4>(),
-  slotNumber: integer('slot_number').notNull().$type<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>(),
-  sourcePath: text('source_path').notNull(), // Reference-only architecture
-  filename: text('filename').notNull(),
-  isStereo: integer('is_stereo', { mode: 'boolean' }).notNull().default(false),
+export const samplesTable = sqliteTable("samples", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kitName: text("kit_name")
+    .notNull()
+    .references(() => kitsTable.name),
+  voiceNumber: integer("voice_number").notNull().$type<1 | 2 | 3 | 4>(),
+  slotNumber: integer("slot_number")
+    .notNull()
+    .$type<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>(),
+  sourcePath: text("source_path").notNull(), // Reference-only architecture
+  filename: text("filename").notNull(),
+  isStereo: integer("is_stereo", { mode: "boolean" }).notNull().default(false),
 });
 
 // ❌ BAD: Missing constraints and proper types
-export const badTable = sqliteTable('bad_table', {
-  id: integer('id'),
-  data: text('data'), // No constraints
+export const badTable = sqliteTable("bad_table", {
+  id: integer("id"),
+  data: text("data"), // No constraints
   // Missing timestamps, references, etc.
 });
 ```
 
 ### Query Patterns
+
 ```typescript
 // ✅ GOOD: Type-safe queries with error handling
-async function getKitWithSamples(kitName: string): Promise<DbResult<Kit & { samples: Sample[] }>> {
+async function getKitWithSamples(
+  kitName: string,
+): Promise<DbResult<Kit & { samples: Sample[] }>> {
   return withDb((db) => {
     const kit = db
       .select()
@@ -289,6 +309,7 @@ async function badGetKit(kitName: string) {
 ```
 
 ### Connection Management
+
 ```typescript
 // ✅ GOOD: Connection wrapper with proper cleanup
 function withDb<T>(operation: (db: BetterSQLite3Database) => T): T {
@@ -296,7 +317,7 @@ function withDb<T>(operation: (db: BetterSQLite3Database) => T): T {
   try {
     return operation(db);
   } catch (error) {
-    logger.error('Database operation failed:', error);
+    logger.error("Database operation failed:", error);
     throw error;
   }
   // SQLite connections are automatically managed
@@ -312,9 +333,10 @@ function badOperation() {
 ## Testing Standards
 
 ### Test Organization
+
 ```typescript
 // ✅ GOOD: Well-organized test with setup/teardown
-describe('useKitEditor', () => {
+describe("useKitEditor", () => {
   let mockDb: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -327,37 +349,44 @@ describe('useKitEditor', () => {
     cleanup();
   });
 
-  describe('when kit is editable', () => {
-    it('should allow adding samples', async () => {
-      const mockKit = { name: 'A0', editable: true };
-      mockDb.getKit = vi.fn().mockResolvedValue({ success: true, data: mockKit });
+  describe("when kit is editable", () => {
+    it("should allow adding samples", async () => {
+      const mockKit = { name: "A0", editable: true };
+      mockDb.getKit = vi
+        .fn()
+        .mockResolvedValue({ success: true, data: mockKit });
 
-      const { result } = renderHook(() => useKitEditor('A0'));
+      const { result } = renderHook(() => useKitEditor("A0"));
 
       await act(async () => {
-        await result.current.addSample('/path/to/sample.wav', 1, 1);
+        await result.current.addSample("/path/to/sample.wav", 1, 1);
       });
 
-      expect(mockDb.addSample).toHaveBeenCalledWith('A0', '/path/to/sample.wav', 1, 1);
+      expect(mockDb.addSample).toHaveBeenCalledWith(
+        "A0",
+        "/path/to/sample.wav",
+        1,
+        1,
+      );
     });
   });
 
-  describe('error handling', () => {
-    it('should handle database errors gracefully', async () => {
+  describe("error handling", () => {
+    it("should handle database errors gracefully", async () => {
       mockDb.getKit = vi.fn().mockResolvedValue({
         success: false,
-        error: 'Database error'
+        error: "Database error",
       });
 
-      const { result } = renderHook(() => useKitEditor('A0'));
+      const { result } = renderHook(() => useKitEditor("A0"));
 
-      expect(result.current.error).toBe('Database error');
+      expect(result.current.error).toBe("Database error");
     });
   });
 });
 
 // ❌ BAD: Poor test organization
-test('kit editor works', () => {
+test("kit editor works", () => {
   // Test does too many things
   // No proper setup/teardown
   // Unclear expectations
@@ -365,26 +394,27 @@ test('kit editor works', () => {
 ```
 
 ### Mock Patterns
+
 ```typescript
 // ✅ GOOD: Centralized mock setup (vitest.setup.ts)
-vi.mock('../electron/main/db/romperDbCore', () => ({
+vi.mock("../electron/main/db/romperDbCore", () => ({
   getKit: vi.fn(),
   addSample: vi.fn(),
   updateKit: vi.fn(),
 }));
 
 // ✅ GOOD: Test-specific mock overrides
-it('should handle missing kit', () => {
+it("should handle missing kit", () => {
   vi.mocked(getKit).mockResolvedValue({
     success: false,
-    error: 'Kit not found'
+    error: "Kit not found",
   });
 
   // Test implementation
 });
 
 // ❌ BAD: Inline mocks without proper typing
-test('bad mock', () => {
+test("bad mock", () => {
   (global as any).electron = { db: { getKit: () => null } };
 });
 ```
@@ -392,6 +422,7 @@ test('bad mock', () => {
 ## File Organization Standards
 
 ### Directory Structure
+
 ```
 app/renderer/components/
 ├── ComponentName.tsx              # UI component (rendering only)
@@ -408,31 +439,33 @@ app/renderer/components/
 ```
 
 ### Import Organization
+
 ```typescript
 // ✅ GOOD: Consistent import order
 // 1. React imports first
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from "react";
 
 // 2. Third-party libraries
-import { toast } from 'sonner';
-import { clsx } from 'clsx';
+import { toast } from "sonner";
+import { clsx } from "clsx";
 
 // 3. Internal utilities and hooks (relative paths)
-import { useKitBrowser } from './hooks/useKitBrowser';
-import { validateKitSlot } from '../utils/kitOperations';
+import { useKitBrowser } from "./hooks/useKitBrowser";
+import { validateKitSlot } from "../utils/kitOperations";
 
 // 4. Shared utilities (absolute paths from shared/)
-import { toCapitalCase } from '../../../../shared/kitUtilsShared';
-import type { Kit, Sample } from '../../../../shared/types';
+import { toCapitalCase } from "../../../../shared/kitUtilsShared";
+import type { Kit, Sample } from "../../../../shared/types";
 
 // ❌ BAD: Mixed import order
-import { useKitBrowser } from './hooks/useKitBrowser';
-import React from 'react';
-import type { Kit } from '../../../../shared/types';
-import { toast } from 'sonner';
+import { useKitBrowser } from "./hooks/useKitBrowser";
+import React from "react";
+import type { Kit } from "../../../../shared/types";
+import { toast } from "sonner";
 ```
 
 ### Naming Conventions
+
 - **Components**: PascalCase (`KitEditor`, `SampleBrowser`)
 - **Hooks**: camelCase with `use` prefix (`useKitEditor`, `useAudioPlayer`)
 - **Utilities**: camelCase (`validateKitSlot`, `formatDuration`)
@@ -442,6 +475,7 @@ import { toast } from 'sonner';
 ## Error Handling Standards
 
 ### Result Pattern
+
 ```typescript
 // ✅ GOOD: Consistent result wrapper
 type DbResult<T> =
@@ -450,7 +484,9 @@ type DbResult<T> =
 
 async function getKit(kitName: string): Promise<DbResult<Kit>> {
   try {
-    const kit = await db.select().from(kitsTable)
+    const kit = await db
+      .select()
+      .from(kitsTable)
       .where(eq(kitsTable.name, kitName))
       .get();
 
@@ -462,7 +498,7 @@ async function getKit(kitName: string): Promise<DbResult<Kit>> {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -475,14 +511,15 @@ async function badGetKit(kitName: string) {
 ```
 
 ### User-Facing Error Messages
+
 ```typescript
 // ✅ GOOD: User-friendly error messages
 function handleKitLoadError(error: string) {
-  const userMessage = error.includes('ENOENT')
-    ? 'Kit file not found. Please check if the SD card is properly connected.'
-    : error.includes('EACCES')
-    ? 'Permission denied. Please check file permissions and try again.'
-    : 'Unable to load kit. Please try again or contact support.';
+  const userMessage = error.includes("ENOENT")
+    ? "Kit file not found. Please check if the SD card is properly connected."
+    : error.includes("EACCES")
+      ? "Permission denied. Please check file permissions and try again."
+      : "Unable to load kit. Please try again or contact support.";
 
   toast.error(userMessage);
 }
@@ -496,6 +533,7 @@ function badErrorHandler(error: string) {
 ## Performance Standards
 
 ### React Performance
+
 ```typescript
 // ✅ GOOD: Proper memoization
 const KitList = React.memo(({ kits, onSelect }: KitListProps) => {
@@ -531,22 +569,25 @@ function BadKitList({ kits, onSelect }: KitListProps) {
 ```
 
 ### Database Performance
+
 ```typescript
 // ✅ GOOD: Efficient batch operations
 async function addMultipleSamples(
   kitName: string,
-  samples: Array<{ path: string; voice: number; slot: number }>
+  samples: Array<{ path: string; voice: number; slot: number }>,
 ): Promise<DbResult<void>> {
   return withDb((db) => {
     return db.transaction(() => {
       for (const sample of samples) {
-        db.insert(samplesTable).values({
-          kitName,
-          sourcePath: sample.path,
-          filename: path.basename(sample.path),
-          voiceNumber: sample.voice,
-          slotNumber: sample.slot,
-        }).run();
+        db.insert(samplesTable)
+          .values({
+            kitName,
+            sourcePath: sample.path,
+            filename: path.basename(sample.path),
+            voiceNumber: sample.voice,
+            slotNumber: sample.slot,
+          })
+          .run();
       }
     });
   });
@@ -563,20 +604,24 @@ async function badAddSamples(samples: Sample[]) {
 ## Security Standards
 
 ### Path Validation
+
 ```typescript
 // ✅ GOOD: Path validation to prevent directory traversal
-import path from 'path';
+import path from "path";
 
-function validateSamplePath(sourcePath: string, allowedBasePaths: string[]): boolean {
+function validateSamplePath(
+  sourcePath: string,
+  allowedBasePaths: string[],
+): boolean {
   const resolvedPath = path.resolve(sourcePath);
 
   // Check if path is within allowed directories
-  const isAllowed = allowedBasePaths.some(basePath =>
-    resolvedPath.startsWith(path.resolve(basePath))
+  const isAllowed = allowedBasePaths.some((basePath) =>
+    resolvedPath.startsWith(path.resolve(basePath)),
   );
 
   // Additional validation
-  const isWavFile = path.extname(resolvedPath).toLowerCase() === '.wav';
+  const isWavFile = path.extname(resolvedPath).toLowerCase() === ".wav";
   const hasValidChars = !/[<>:"|?*]/.test(resolvedPath);
 
   return isAllowed && isWavFile && hasValidChars;
@@ -584,17 +629,18 @@ function validateSamplePath(sourcePath: string, allowedBasePaths: string[]): boo
 
 // ❌ BAD: No path validation
 function badValidation(sourcePath: string): boolean {
-  return sourcePath.endsWith('.wav'); // Insufficient validation
+  return sourcePath.endsWith(".wav"); // Insufficient validation
 }
 ```
 
 ### Input Sanitization
+
 ```typescript
 // ✅ GOOD: Proper input sanitization
 function sanitizeKitName(input: string): string {
   return input
     .trim()
-    .replace(/[^A-Z0-9]/gi, '') // Remove non-alphanumeric
+    .replace(/[^A-Z0-9]/gi, "") // Remove non-alphanumeric
     .toUpperCase()
     .slice(0, 3); // Limit length for kit names like A0, B12
 }
@@ -608,6 +654,7 @@ function badSanitize(input: string): string {
 ## Anti-Patterns to Avoid
 
 ### React Anti-Patterns
+
 ```typescript
 // ❌ AVOID: Business logic in components
 function BadKitEditor() {
@@ -649,6 +696,7 @@ function BadComponent() {
 ```
 
 ### TypeScript Anti-Patterns
+
 ```typescript
 // ❌ AVOID: Any types
 function badFunction(data: any): any {
@@ -667,6 +715,7 @@ function badAssertion2(data: unknown) {
 ```
 
 ### Database Anti-Patterns
+
 ```typescript
 // ❌ AVOID: SQL injection vulnerabilities
 function badQuery(kitName: string) {
@@ -685,8 +734,11 @@ async function badGetKitsWithSamples() {
 
   for (const kit of kits) {
     // N+1 query problem
-    kit.samples = await db.select().from(samplesTable)
-      .where(eq(samplesTable.kitName, kit.name)).all();
+    kit.samples = await db
+      .select()
+      .from(samplesTable)
+      .where(eq(samplesTable.kitName, kit.name))
+      .all();
   }
 
   return kits;
@@ -696,6 +748,7 @@ async function badGetKitsWithSamples() {
 ## Tool Integration
 
 ### ESLint Configuration
+
 ```json
 {
   "extends": [
@@ -713,6 +766,7 @@ async function badGetKitsWithSamples() {
 ```
 
 ### Pre-commit Hooks
+
 ```bash
 #!/bin/sh
 # Pre-commit hook to enforce standards
@@ -741,4 +795,4 @@ fi
 
 ---
 
-*These standards ensure consistent, maintainable, and high-quality code across the Romper codebase. All patterns are based on analysis of existing code, industry best practices, and specific requirements of the Romper architecture.*
+_These standards ensure consistent, maintainable, and high-quality code across the Romper codebase. All patterns are based on analysis of existing code, industry best practices, and specific requirements of the Romper architecture._

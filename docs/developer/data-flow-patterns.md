@@ -38,14 +38,14 @@ function VoicePanel({ kit }) {
 // Database/IPC Layer - DON'T transform for legacy components
 function getKit(kitName: string) {
   const rawKit = database.getKit(kitName);
-  
+
   // ❌ Avoid this transformation at boundary
   return {
     ...rawKit,
     voices: rawKit.voices.reduce((acc, v) => {
       acc[v.voice_number] = v.voice_alias;
       return acc;
-    }, {})
+    }, {}),
   };
 }
 ```
@@ -53,21 +53,25 @@ function getKit(kitName: string) {
 ## Benefits
 
 ### 🎯 **Accuracy**
+
 - Raw data preserves full database relationships
 - No information loss through premature transformation
 - Database structure changes propagate naturally
 
-### 🔧 **Maintainability** 
+### 🔧 **Maintainability**
+
 - Single source of truth at database level
 - Component logic is explicit and traceable
 - Easier to reason about data transformations
 
 ### 🚀 **Flexibility**
+
 - Components can access full relational data
 - Different components can transform data differently
 - New database fields automatically available
 
 ### 📊 **Type Safety**
+
 - TypeScript types match actual database schema
 - Compilation catches schema mismatches early
 - IntelliSense shows real database structure
@@ -75,21 +79,25 @@ function getKit(kitName: string) {
 ## Implementation Guidelines
 
 ### 1. Database Layer
+
 - Use Drizzle relational queries with `with: { relations: true }`
 - Return raw database objects with full relations
 - Preserve all fields and nested structures
 
 ### 2. IPC/API Layer
+
 - Pass through database results without transformation
 - Only add error handling and validation
 - Keep data format identical to database output
 
 ### 3. Hook Layer
+
 - Accept raw database structures
 - Provide helper methods for common transformations
 - Cache transformed data with useMemo when expensive
 
 ### 4. Component Layer
+
 - Transform data at render time or in event handlers
 - Use clear, readable transformation logic
 - Document any complex transformations
@@ -99,7 +107,7 @@ function getKit(kitName: string) {
 When refactoring legacy components:
 
 1. **Identify transformation points** - Find where data is reshaped
-2. **Move transformations down** - Push to consuming components  
+2. **Move transformations down** - Push to consuming components
 3. **Update types** - Match TypeScript types to raw database schema
 4. **Test thoroughly** - Ensure UI behavior is preserved
 5. **Remove boundary transforms** - Clean up IPC/API transformations
@@ -107,6 +115,7 @@ When refactoring legacy components:
 ## Examples
 
 ### Voice Aliases
+
 ```typescript
 // ✅ Component handles raw voice array
 function VoiceDisplay({ kit, voiceNumber }) {
@@ -127,11 +136,12 @@ function useVoiceMap(kit) {
 ```
 
 ### Sample References
+
 ```typescript
 // ✅ Component works with full sample objects
 function SampleList({ kit }) {
   return kit.samples?.map(sample => (
-    <SampleItem 
+    <SampleItem
       key={sample.id}
       filename={sample.filename}
       voiceNumber={sample.voice_number}
@@ -151,7 +161,7 @@ Mark legacy patterns for eventual migration:
 const legacyVoiceNames = useMemo(() => {
   // Transform raw voices to legacy format temporarily
   const map = {};
-  kit.voices?.forEach(v => {
+  kit.voices?.forEach((v) => {
     if (v.voice_alias) map[v.voice_number] = v.voice_alias;
   });
   return map;

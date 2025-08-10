@@ -61,14 +61,14 @@ describe("romperDb", () => {
       filename: "kick.wav",
       is_stereo: false,
       kit_id: 1,
-      slot_number: 1,
+      slot_number: 100,
     };
     const sampleId = await insertSample("/mock/path", sample);
     expect(window.electronAPI.insertSample).toHaveBeenCalledWith("/mock/path", {
       filename: "kick.wav",
       is_stereo: false,
       kit_id: 1,
-      slot_number: 1,
+      slot_number: 100,
       source_path: "",
       wav_bitrate: null,
       wav_sample_rate: null,
@@ -86,7 +86,7 @@ describe("romperDb", () => {
         filename: "fail.wav",
         is_stereo: false,
         kit_id: 1,
-        slot_number: 1,
+        slot_number: 100,
       }),
     ).rejects.toThrow("sample fail");
   });

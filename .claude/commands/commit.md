@@ -21,12 +21,14 @@ Now I'll analyze what has been modified:
 !git diff --cached --name-only | head -10
 
 Based on the changes, I'll create a commit message following these patterns:
+
 - Use conventional commit format: `type: description`
 - Common types: feat, fix, test, refactor, docs, chore
 - Be specific about what was changed
 - Keep the summary under 72 characters
 
 Now I'll attempt the commit. If pre-commit hooks fail, I will:
+
 1. **Analyze the failures** (lint, test, type errors, etc.)
 2. **Fix each issue** by editing the relevant files
 3. **Add the fixes** to the staging area

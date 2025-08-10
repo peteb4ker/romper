@@ -22,12 +22,6 @@ export function useRedoActionHandlers({
           action.data.addedSample.source_path,
           { forceMono: !action.data.addedSample.is_stereo },
         );
-      case "COMPACT_SLOTS":
-        return (window as any).electronAPI?.deleteSampleFromSlot?.(
-          kitName,
-          action.data.voice,
-          action.data.deletedSlot,
-        );
       case "DELETE_SAMPLE":
         return (window as any).electronAPI?.deleteSampleFromSlot?.(
           kitName,
@@ -52,6 +46,12 @@ export function useRedoActionHandlers({
           action.data.toVoice,
           action.data.toSlot,
           action.data.mode,
+        );
+      case "REINDEX_SAMPLES":
+        return (window as any).electronAPI?.deleteSampleFromSlot?.(
+          kitName,
+          action.data.voice,
+          action.data.deletedSlot,
         );
       case "REPLACE_SAMPLE":
         return (window as any).electronAPI?.replaceSampleInSlot?.(

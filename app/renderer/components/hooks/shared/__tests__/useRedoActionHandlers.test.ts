@@ -107,24 +107,24 @@ describe("useRedoActionHandlers", () => {
       expect(redoResult).toEqual({ success: true });
     });
 
-    it("should handle COMPACT_SLOTS redo action", async () => {
+    it("should handle REINDEX_SAMPLES redo action", async () => {
       const { result } = renderHook(() =>
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const compactAction = {
+      const reindexAction = {
         data: {
           deletedSlot: 2,
           voice: 1,
         },
-        type: "COMPACT_SLOTS" as const,
+        type: "REINDEX_SAMPLES" as const,
       };
 
       vi.mocked(window.electronAPI.deleteSampleFromSlot).mockResolvedValue({
         success: true,
       });
 
-      const redoResult = await result.current.executeRedoAction(compactAction);
+      const redoResult = await result.current.executeRedoAction(reindexAction);
 
       expect(window.electronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
         testKitName,

@@ -7,9 +7,9 @@ import { useSampleManagementOperations } from "../useSampleManagementOperations"
 vi.mock("../useSampleManagementUndoActions", () => ({
   useSampleManagementUndoActions: vi.fn(() => ({
     createAddSampleAction: vi.fn(() => ({ data: {}, type: "ADD_SAMPLE" })),
-    createCompactSlotsAction: vi.fn(() => ({
+    createReindexSamplesAction: vi.fn(() => ({
       data: {},
-      type: "COMPACT_SLOTS",
+      type: "REINDEX_SAMPLES",
     })),
     createReplaceSampleAction: vi.fn(() => ({
       data: {},
@@ -249,9 +249,9 @@ describe("useSampleManagementOperations", () => {
       };
 
       const mockUndoActions = {
-        createCompactSlotsAction: vi.fn(() => ({
+        createReindexSamplesAction: vi.fn(() => ({
           data: {},
-          type: "COMPACT_SLOTS",
+          type: "REINDEX_SAMPLES",
         })),
         getSampleToDeleteForUndo: vi.fn().mockResolvedValue(mockSampleToDelete),
       };
@@ -285,7 +285,7 @@ describe("useSampleManagementOperations", () => {
         "success",
       );
       expect(mockOptions.onSamplesChanged).toHaveBeenCalled();
-      expect(mockUndoActions.createCompactSlotsAction).toHaveBeenCalledWith(
+      expect(mockUndoActions.createReindexSamplesAction).toHaveBeenCalledWith(
         1,
         0,
         mockSampleToDelete,

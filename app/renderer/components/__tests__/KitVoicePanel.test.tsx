@@ -299,7 +299,7 @@ describe("KitVoicePanel", () => {
         </MockMessageDisplayProvider>
       </MockSettingsProvider>,
     );
-    // Should render 2 filled slots + 1 drop target = 3 total
+    // Should render only contiguous slots: 2 filled + 1 empty
     const slots = screen.getAllByRole("option");
     expect(slots).toHaveLength(3);
 
@@ -310,9 +310,10 @@ describe("KitVoicePanel", () => {
     // The third slot should be the drop target (empty slot at index 2)
     expect(screen.getByTestId("empty-slot-1-2")).toBeInTheDocument();
 
-    // Should NOT render empty slots beyond the drop target
+    // Should NOT render additional empty slots beyond the next available
     expect(screen.queryByTestId("empty-slot-1-3")).not.toBeInTheDocument();
     expect(screen.queryByTestId("empty-slot-1-4")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("empty-slot-1-11")).not.toBeInTheDocument();
   });
 
   it("empty slots have the same min-height as filled slots (1.16.1)", () => {

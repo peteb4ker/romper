@@ -1,3 +1,5 @@
+import { dbSlotToDisplaySlot } from "@romper/shared/slotUtils";
+
 import type { VoiceSamples } from "../components/kitTypes";
 
 /**
@@ -23,8 +25,14 @@ export function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
       if (!Array.isArray(voices[voiceNumber])) {
         voices[voiceNumber] = [];
       }
-      // Use slot_number - 1 as index (slot_number is 1-based, array is 0-based)
-      const slotIndex = sample.slot_number - 1;
+      // Convert database slot number to display slot, then to 0-based index
+      let slotIndex: number;
+      try {
+        slotIndex = dbSlotToDisplaySlot(sample.slot_number) - 1;
+      } catch {
+        // Skip samples with invalid slot numbers
+        return;
+      }
       if (slotIndex >= 0 && slotIndex < 12) {
         voices[voiceNumber][slotIndex] = sample.filename;
 
@@ -50,7 +58,7 @@ export function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
         voice[i] = "";
       }
     }
-    // Remove trailing empty slots to keep arrays compact
+    // Remove trailing empty slots
     while (voice.length > 0 && voice[voice.length - 1] === "") {
       voice.pop();
     }

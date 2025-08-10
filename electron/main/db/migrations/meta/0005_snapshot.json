@@ -111,12 +111,8 @@
           "name": "kits_bank_letter_banks_letter_fk",
           "tableFrom": "kits",
           "tableTo": "banks",
-          "columnsFrom": [
-            "bank_letter"
-          ],
-          "columnsTo": [
-            "letter"
-          ],
+          "columnsFrom": ["bank_letter"],
+          "columnsTo": ["letter"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -196,20 +192,12 @@
       "indexes": {
         "samples_kit_name_voice_number_slot_number_unique": {
           "name": "samples_kit_name_voice_number_slot_number_unique",
-          "columns": [
-            "kit_name",
-            "voice_number",
-            "slot_number"
-          ],
+          "columns": ["kit_name", "voice_number", "slot_number"],
           "isUnique": true
         },
         "samples_kit_name_voice_number_source_path_unique": {
           "name": "samples_kit_name_voice_number_source_path_unique",
-          "columns": [
-            "kit_name",
-            "voice_number",
-            "source_path"
-          ],
+          "columns": ["kit_name", "voice_number", "source_path"],
           "isUnique": true
         }
       },
@@ -218,12 +206,8 @@
           "name": "samples_kit_name_kits_name_fk",
           "tableFrom": "samples",
           "tableTo": "kits",
-          "columnsFrom": [
-            "kit_name"
-          ],
-          "columnsTo": [
-            "name"
-          ],
+          "columnsFrom": ["kit_name"],
+          "columnsTo": ["name"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -270,12 +254,8 @@
           "name": "voices_kit_name_kits_name_fk",
           "tableFrom": "voices",
           "tableTo": "kits",
-          "columnsFrom": [
-            "kit_name"
-          ],
-          "columnsTo": [
-            "name"
-          ],
+          "columnsFrom": ["kit_name"],
+          "columnsTo": ["name"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

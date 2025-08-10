@@ -9,7 +9,7 @@ vi.mock("electron", () => ({
 
 vi.mock("../../services/sampleService.js", () => ({
   sampleService: {
-    deleteSampleFromSlotWithoutCompaction: vi.fn(),
+    deleteSampleFromSlotWithoutReindexing: vi.fn(),
     moveSampleBetweenKits: vi.fn(),
     moveSampleInKit: vi.fn(),
   },
@@ -56,7 +56,7 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
         "add-sample-to-slot",
         "replace-sample-in-slot",
         "delete-sample-from-slot",
-        "delete-sample-from-slot-without-compaction",
+        "delete-sample-from-slot-without-reindexing",
         "move-sample-in-kit",
         "move-sample-between-kits",
         "validate-sample-sources",

@@ -1,3 +1,4 @@
+import { dbSlotToDisplaySlot } from "@romper/shared/slotUtils";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -7,7 +8,7 @@ import { useUndoRedo } from "../useUndoRedo";
 const mockElectronAPI = {
   addSampleToSlot: vi.fn(),
   deleteSampleFromSlot: vi.fn(),
-  deleteSampleFromSlotWithoutCompaction: vi.fn(),
+  deleteSampleFromSlotWithoutReindexing: vi.fn(),
   getAllSamplesForKit: vi.fn(),
   moveSampleBetweenKits: vi.fn(),
   moveSampleInKit: vi.fn(),
@@ -137,7 +138,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/1.wav",
           },
-          slot: 1,
+          slot: 100,
           voice: 1,
         },
         {
@@ -146,7 +147,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/2.wav",
           },
-          slot: 2,
+          slot: 200,
           voice: 1,
         },
         {
@@ -155,7 +156,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/3.wav",
           },
-          slot: 3,
+          slot: 300,
           voice: 1,
         },
         {
@@ -164,7 +165,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/4.wav",
           },
-          slot: 4,
+          slot: 400,
           voice: 1,
         },
         {
@@ -173,7 +174,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/5.wav",
           },
-          slot: 5,
+          slot: 500,
           voice: 1,
         },
         {
@@ -182,7 +183,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/6.wav",
           },
-          slot: 6,
+          slot: 600,
           voice: 1,
         },
         {
@@ -191,7 +192,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/7.wav",
           },
-          slot: 7,
+          slot: 700,
           voice: 1,
         },
         {
@@ -200,7 +201,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/8.wav",
           },
-          slot: 8,
+          slot: 800,
           voice: 1,
         },
         {
@@ -209,7 +210,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/9.wav",
           },
-          slot: 9,
+          slot: 900,
           voice: 1,
         },
         {
@@ -218,7 +219,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/10.wav",
           },
-          slot: 10,
+          slot: 1000,
           voice: 1,
         },
         {
@@ -227,7 +228,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/11.wav",
           },
-          slot: 11,
+          slot: 1100,
           voice: 1,
         },
         {
@@ -236,7 +237,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/12.wav",
           },
-          slot: 12,
+          slot: 1200,
           voice: 1,
         },
       ];
@@ -247,84 +248,84 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           filename: "sample1.wav",
           is_stereo: false,
-          slot_number: 1,
+          slot_number: 100,
           source_path: "/path/1.wav",
           voice_number: 1,
         },
         {
           filename: "sample2.wav",
           is_stereo: false,
-          slot_number: 2,
+          slot_number: 200,
           source_path: "/path/2.wav",
           voice_number: 1,
         },
         {
           filename: "sample3.wav",
           is_stereo: false,
-          slot_number: 3,
+          slot_number: 300,
           source_path: "/path/3.wav",
           voice_number: 1,
         },
         {
           filename: "sample4.wav",
           is_stereo: false,
-          slot_number: 4,
+          slot_number: 400,
           source_path: "/path/4.wav",
           voice_number: 1,
         },
         {
           filename: "sample5.wav",
           is_stereo: false,
-          slot_number: 5,
+          slot_number: 500,
           source_path: "/path/5.wav",
           voice_number: 1,
         },
         {
           filename: "sample6.wav",
           is_stereo: false,
-          slot_number: 6,
+          slot_number: 600,
           source_path: "/path/6.wav",
           voice_number: 1,
         },
         {
           filename: "sample7.wav",
           is_stereo: false,
-          slot_number: 7,
+          slot_number: 700,
           source_path: "/path/7.wav",
           voice_number: 1,
         },
         {
           filename: "sample8.wav",
           is_stereo: false,
-          slot_number: 8,
+          slot_number: 800,
           source_path: "/path/8.wav",
           voice_number: 1,
         },
         {
           filename: "sample12.wav",
           is_stereo: false,
-          slot_number: 9,
+          slot_number: 900,
           source_path: "/path/12.wav",
           voice_number: 1,
         }, // moved here
         {
           filename: "sample9.wav",
           is_stereo: false,
-          slot_number: 10,
+          slot_number: 1000,
           source_path: "/path/9.wav",
           voice_number: 1,
         }, // shifted
         {
           filename: "sample10.wav",
           is_stereo: false,
-          slot_number: 11,
+          slot_number: 1100,
           source_path: "/path/10.wav",
           voice_number: 1,
         }, // shifted
         {
           filename: "sample11.wav",
           is_stereo: false,
-          slot_number: 12,
+          slot_number: 1200,
           source_path: "/path/11.wav",
           voice_number: 1,
         }, // shifted
@@ -337,7 +338,7 @@ describe("useUndoRedo - Basic Tests", () => {
       });
 
       // Mock successful delete and add operations
-      mockElectronAPI.deleteSampleFromSlotWithoutCompaction.mockResolvedValue({
+      mockElectronAPI.deleteSampleFromSlotWithoutReindexing.mockResolvedValue({
         data: { deletedSamples: [] },
         success: true,
       });
@@ -417,7 +418,7 @@ describe("useUndoRedo - Basic Tests", () => {
 
       // Verify the fix: should delete ALL current samples from voice 1, then restore from snapshot
       const deleteCalls =
-        mockElectronAPI.deleteSampleFromSlotWithoutCompaction.mock.calls;
+        mockElectronAPI.deleteSampleFromSlotWithoutReindexing.mock.calls;
       const addCalls = mockElectronAPI.addSampleToSlot.mock.calls;
 
       // Should delete all 12 current samples
@@ -438,7 +439,7 @@ describe("useUndoRedo - Basic Tests", () => {
         const correspondingAddCall = addCalls.find(
           (call) =>
             call[1] === snapshotSample.voice && // voice matches
-            call[2] === snapshotSample.slot - 1 && // slot matches (convert to 0-based)
+            call[2] === dbSlotToDisplaySlot(snapshotSample.slot) - 1 && // slot matches (convert db slot to 0-based display slot)
             call[3] === snapshotSample.sample.source_path, // source_path matches
         );
 

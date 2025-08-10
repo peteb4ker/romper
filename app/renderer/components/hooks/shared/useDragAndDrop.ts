@@ -16,7 +16,6 @@ export interface UseDragAndDropOptions {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-    mode: "insert" | "overwrite",
   ) => Promise<void>;
   onSampleReplace?: (
     voice: number,
@@ -68,6 +67,7 @@ export function useDragAndDrop({
     onStereoDragLeave,
     onStereoDragOver,
     sampleProcessing,
+    samples,
     voice,
   });
 
@@ -79,13 +79,23 @@ export function useDragAndDrop({
     voice,
   });
 
+  // Combine visual states from both external and internal drags
+  const combinedDragOverSlot =
+    externalDragHandlers.dragOverSlot ??
+    internalDragHandlers.internalDragOverSlot;
+  const combinedDropZone =
+    externalDragHandlers.dropZone ?? internalDragHandlers.internalDropZone;
+
   return {
     draggedSample: internalDragHandlers.draggedSample,
-    dragOverSlot: externalDragHandlers.dragOverSlot,
-    dropZone: externalDragHandlers.dropZone,
+    dragOverSlot: combinedDragOverSlot,
+    dropZone: combinedDropZone,
     getSampleDragHandlers: internalDragHandlers.getSampleDragHandlers,
     handleDragLeave: externalDragHandlers.handleDragLeave,
     handleDragOver: externalDragHandlers.handleDragOver,
     handleDrop: externalDragHandlers.handleDrop,
+    // Expose internal handlers for drop targets
+    handleInternalDragOver: internalDragHandlers.handleSampleDragOver,
+    handleInternalDrop: internalDragHandlers.handleSampleDrop,
   };
 }

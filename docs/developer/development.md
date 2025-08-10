@@ -9,6 +9,7 @@ These instructions are for developers who want to work on Romper itself.
 ## Dual node_modules Setup for Electron ABI Compatibility
 
 Romper uses native modules (like `better-sqlite3`) that must match the ABI of the runtime. To avoid rebuild headaches, we use:
+
 - `node_modules/` for Node.js (dev/test)
 - `electron_node_modules/` for Electron (runtime)
 
@@ -109,4 +110,3 @@ Electron will launch and connect to the Vite dev server for hot reloading.
 - Unit tests live in `__tests__` folders next to the code they test.
 - Integration tests live in `__tests__/integration/` subfolders.
 - This separation makes it easy to run fast, isolated unit tests or slower, more comprehensive integration tests as needed.
-

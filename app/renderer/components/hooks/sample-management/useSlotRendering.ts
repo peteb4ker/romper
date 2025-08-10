@@ -2,10 +2,12 @@ import type { SampleData } from "@romper/app/renderer/components/kitTypes";
 
 import { useCallback } from "react";
 
+import { getFilledSampleCount } from "../../utils/kitOperations";
+
 export interface UseSlotRenderingOptions {
   defaultToMonoSamples: boolean;
   dragOverSlot: null | number;
-  dropZone: { mode: "insert" | "overwrite"; slot: number } | null;
+  dropZone: { mode: "append" | "blocked" | "insert"; slot: number } | null;
   isActive: boolean;
   isStereoDragTarget: boolean;
   samples: string[];
@@ -35,7 +37,12 @@ export function useSlotRendering({
       .map((sample, index) => (sample !== "" ? index : -1))
       .reduce((max, current) => Math.max(max, current), -1);
     const nextAvailableSlot = lastSampleIndex + 1;
-    const slotsToRender = Math.min(nextAvailableSlot + 1, 12); // Show samples + 1 drop target, max 12
+
+    // Only render slots for existing samples plus one empty slot (if not at limit)
+    // This ensures contiguity and shows only the next available slot
+    const sampleCount = getFilledSampleCount(samples);
+    const slotsToRender = sampleCount < 12 ? sampleCount + 1 : sampleCount;
+
     return { nextAvailableSlot, slotsToRender };
   }, [samples]);
 
@@ -65,12 +72,19 @@ export function useSlotRendering({
           dragOverClass =
             " bg-green-100 dark:bg-green-800 ring-2 ring-green-400 dark:ring-green-300 border-t-4 border-green-500";
           dropHintTitle = "Insert sample here (other samples will shift down)";
-        } else {
+        } else if (params.dropMode === "append") {
           dragOverClass =
-            " bg-yellow-100 dark:bg-yellow-800 ring-2 ring-yellow-400 dark:ring-yellow-300";
-          dropHintTitle = params.sample
-            ? "Replace this sample"
-            : "Move sample here";
+            " bg-blue-100 dark:bg-blue-800 ring-2 ring-blue-400 dark:ring-blue-300";
+          dropHintTitle = "Add sample to end of voice";
+        } else if (params.dropMode === "blocked") {
+          dragOverClass =
+            " bg-red-100 dark:bg-red-800 ring-2 ring-red-400 dark:ring-red-300";
+          dropHintTitle = "Voice is full (12 samples maximum)";
+        } else {
+          // Fallback for unknown modes
+          dragOverClass =
+            " bg-gray-100 dark:bg-gray-800 ring-2 ring-gray-400 dark:ring-gray-300";
+          dropHintTitle = "Drop to assign sample";
         }
       } else if (params.isStereoHighlight) {
         dragOverClass =

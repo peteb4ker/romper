@@ -40,7 +40,7 @@ export const createDbMocks = () => ({
   addKit: vi.fn(),
   addSample: vi.fn(),
   deleteSamples: vi.fn(),
-  deleteSamplesWithoutCompaction: vi.fn(),
+  deleteSamplesWithoutReindexing: vi.fn(),
   getKit: vi.fn(),
   getKits: vi.fn(),
   getKitSamples: vi.fn(),

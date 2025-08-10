@@ -669,8 +669,8 @@ describe("preload/index.tsx", () => {
       },
       {
         args: ["TestKit", 1, 0],
-        ipcChannel: "delete-sample-from-slot-without-compaction",
-        method: "deleteSampleFromSlotWithoutCompaction",
+        ipcChannel: "delete-sample-from-slot-without-reindexing",
+        method: "deleteSampleFromSlotWithoutReindexing",
       },
     ];
 

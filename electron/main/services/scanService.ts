@@ -4,6 +4,7 @@ import {
   groupSamplesByVoice,
   inferVoiceTypeFromFilename,
 } from "@romper/shared/kitUtilsShared.js";
+import { displaySlotToDbSlot } from "@romper/shared/slotUtils.js";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -214,7 +215,7 @@ export class ScanService {
         filename: wavFile,
         is_stereo: isStereo,
         kit_name: kitName,
-        slot_number: slotIndex + 1,
+        slot_number: displaySlotToDbSlot(slotIndex + 1),
         source_path: samplePath,
         voice_number: voice,
       };

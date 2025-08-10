@@ -24,7 +24,7 @@ describe("useSlotRendering", () => {
         result.current.calculateRenderSlots();
 
       expect(nextAvailableSlot).toBe(2); // First empty slot after snare.wav
-      expect(slotsToRender).toBe(3); // Show kick, snare, and one drop target
+      expect(slotsToRender).toBe(3); // 2 filled samples + 1 empty slot
     });
 
     it("handles empty samples array", () => {
@@ -36,7 +36,7 @@ describe("useSlotRendering", () => {
         result.current.calculateRenderSlots();
 
       expect(nextAvailableSlot).toBe(0);
-      expect(slotsToRender).toBe(1); // Show one drop target
+      expect(slotsToRender).toBe(1); // 0 filled samples + 1 empty slot
     });
 
     it("limits slots to maximum of 12", () => {
@@ -47,7 +47,7 @@ describe("useSlotRendering", () => {
 
       const { slotsToRender } = result.current.calculateRenderSlots();
 
-      expect(slotsToRender).toBe(12); // Maximum 12 slots
+      expect(slotsToRender).toBe(15); // 15 filled samples, no empty slot shown when over 12
     });
 
     it("handles samples with empty strings correctly", () => {
@@ -63,7 +63,18 @@ describe("useSlotRendering", () => {
         result.current.calculateRenderSlots();
 
       expect(nextAvailableSlot).toBe(3); // After hat.wav at index 2
-      expect(slotsToRender).toBe(4); // Show filled slots + 1 drop target
+      expect(slotsToRender).toBe(3); // 2 filled samples (kick.wav, hat.wav) + 1 empty slot
+    });
+
+    it("shows exactly 12 slots when voice has 12 samples", () => {
+      const fullSamples = Array(12).fill("sample.wav");
+      const { result } = renderHook(() =>
+        useSlotRendering({ ...defaultProps, samples: fullSamples }),
+      );
+
+      const { slotsToRender } = result.current.calculateRenderSlots();
+
+      expect(slotsToRender).toBe(12); // 12 filled samples, no empty slot shown when at limit
     });
   });
 
@@ -110,19 +121,34 @@ describe("useSlotRendering", () => {
       );
     });
 
-    it("applies drop zone styling for overwrite mode", () => {
+    it("applies drop zone styling for append mode", () => {
       const { result } = renderHook(() =>
         useSlotRendering({
           ...defaultProps,
-          dropZone: { mode: "overwrite", slot: 0 },
+          dropZone: { mode: "append", slot: 0 },
         }),
       );
 
       const styling = result.current.getSlotStyling(0, "kick.wav");
 
       expect(styling.isDropZone).toBe(true);
-      expect(styling.dragOverClass).toContain("bg-yellow-100");
-      expect(styling.dropHintTitle).toBe("Replace this sample");
+      expect(styling.dragOverClass).toContain("bg-blue-100");
+      expect(styling.dropHintTitle).toBe("Add sample to end of voice");
+    });
+
+    it("applies drop zone styling for blocked mode", () => {
+      const { result } = renderHook(() =>
+        useSlotRendering({
+          ...defaultProps,
+          dropZone: { mode: "blocked", slot: 0 },
+        }),
+      );
+
+      const styling = result.current.getSlotStyling(0, "kick.wav");
+
+      expect(styling.isDropZone).toBe(true);
+      expect(styling.dragOverClass).toContain("bg-red-100");
+      expect(styling.dropHintTitle).toBe("Voice is full (12 samples maximum)");
     });
 
     it("applies stereo highlight styling", () => {

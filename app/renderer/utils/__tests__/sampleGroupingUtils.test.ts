@@ -11,10 +11,10 @@ describe("sampleGroupingUtils", () => {
 
     it("should group samples by voice number", () => {
       const dbSamples = [
-        { filename: "sample1.wav", slot_number: 1, voice_number: 1 },
-        { filename: "sample2.wav", slot_number: 1, voice_number: 2 },
-        { filename: "sample3.wav", slot_number: 1, voice_number: 3 },
-        { filename: "sample4.wav", slot_number: 1, voice_number: 4 },
+        { filename: "sample1.wav", slot_number: 100, voice_number: 1 },
+        { filename: "sample2.wav", slot_number: 100, voice_number: 2 },
+        { filename: "sample3.wav", slot_number: 100, voice_number: 3 },
+        { filename: "sample4.wav", slot_number: 100, voice_number: 4 },
       ];
 
       const result = groupDbSamplesByVoice(dbSamples);
@@ -26,9 +26,9 @@ describe("sampleGroupingUtils", () => {
 
     it("should maintain slot order within voices", () => {
       const dbSamples = [
-        { filename: "slot3.wav", slot_number: 3, voice_number: 1 },
-        { filename: "slot1.wav", slot_number: 1, voice_number: 1 },
-        { filename: "slot2.wav", slot_number: 2, voice_number: 1 },
+        { filename: "slot3.wav", slot_number: 300, voice_number: 1 },
+        { filename: "slot1.wav", slot_number: 100, voice_number: 1 },
+        { filename: "slot2.wav", slot_number: 200, voice_number: 1 },
       ];
 
       const result = groupDbSamplesByVoice(dbSamples);
@@ -42,7 +42,7 @@ describe("sampleGroupingUtils", () => {
         {
           filename: "stereo.wav",
           is_stereo: true,
-          slot_number: 1,
+          slot_number: 100,
           voice_number: 1,
         },
       ];
@@ -57,7 +57,7 @@ describe("sampleGroupingUtils", () => {
         {
           filename: "stereo.wav",
           is_stereo: true,
-          slot_number: 1,
+          slot_number: 100,
           voice_number: 4,
         },
       ];
@@ -69,9 +69,9 @@ describe("sampleGroupingUtils", () => {
 
     it("should ignore samples with invalid voice numbers", () => {
       const dbSamples = [
-        { filename: "invalid0.wav", slot_number: 1, voice_number: 0 },
-        { filename: "invalid5.wav", slot_number: 1, voice_number: 5 },
-        { filename: "valid.wav", slot_number: 1, voice_number: 1 },
+        { filename: "invalid0.wav", slot_number: 100, voice_number: 0 },
+        { filename: "invalid5.wav", slot_number: 100, voice_number: 5 },
+        { filename: "valid.wav", slot_number: 100, voice_number: 1 },
       ];
 
       const result = groupDbSamplesByVoice(dbSamples);
@@ -83,8 +83,8 @@ describe("sampleGroupingUtils", () => {
     it("should ignore samples with invalid slot numbers", () => {
       const dbSamples = [
         { filename: "invalid-slot0.wav", slot_number: 0, voice_number: 1 },
-        { filename: "invalid-slot13.wav", slot_number: 13, voice_number: 1 },
-        { filename: "valid-slot.wav", slot_number: 1, voice_number: 1 },
+        { filename: "invalid-slot13.wav", slot_number: 1300, voice_number: 1 },
+        { filename: "valid-slot.wav", slot_number: 100, voice_number: 1 },
       ];
 
       const result = groupDbSamplesByVoice(dbSamples);
@@ -95,8 +95,8 @@ describe("sampleGroupingUtils", () => {
 
     it("should fill empty slots with empty strings", () => {
       const dbSamples = [
-        { filename: "first.wav", slot_number: 1, voice_number: 1 },
-        { filename: "third.wav", slot_number: 3, voice_number: 1 },
+        { filename: "first.wav", slot_number: 100, voice_number: 1 },
+        { filename: "third.wav", slot_number: 300, voice_number: 1 },
       ];
 
       const result = groupDbSamplesByVoice(dbSamples);
@@ -107,7 +107,7 @@ describe("sampleGroupingUtils", () => {
 
     it("should remove trailing empty slots", () => {
       const dbSamples = [
-        { filename: "second.wav", slot_number: 2, voice_number: 1 },
+        { filename: "second.wav", slot_number: 200, voice_number: 1 },
       ];
 
       const result = groupDbSamplesByVoice(dbSamples);
@@ -118,10 +118,10 @@ describe("sampleGroupingUtils", () => {
 
     it("should sort samples by voice and slot number", () => {
       const dbSamples = [
-        { filename: "v2s2.wav", slot_number: 2, voice_number: 2 },
-        { filename: "v1s2.wav", slot_number: 2, voice_number: 1 },
-        { filename: "v2s1.wav", slot_number: 1, voice_number: 2 },
-        { filename: "v1s1.wav", slot_number: 1, voice_number: 1 },
+        { filename: "v2s2.wav", slot_number: 200, voice_number: 2 },
+        { filename: "v1s2.wav", slot_number: 200, voice_number: 1 },
+        { filename: "v2s1.wav", slot_number: 100, voice_number: 2 },
+        { filename: "v1s1.wav", slot_number: 100, voice_number: 1 },
       ];
 
       const result = groupDbSamplesByVoice(dbSamples);
@@ -136,19 +136,19 @@ describe("sampleGroupingUtils", () => {
         {
           filename: "mono.wav",
           is_stereo: false,
-          slot_number: 1,
+          slot_number: 100,
           voice_number: 1,
         },
         {
           filename: "stereo.wav",
           is_stereo: true,
-          slot_number: 1,
+          slot_number: 100,
           voice_number: 2,
         },
         {
           filename: "another.wav",
           is_stereo: false,
-          slot_number: 1,
+          slot_number: 100,
           voice_number: 4,
         },
       ];

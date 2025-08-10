@@ -32,6 +32,7 @@ function useKitManager() {
 ## Dependency Injection for Testing
 
 ### Testable Hook Design
+
 ```typescript
 // ✅ CORRECT: Dependency injection for testability
 interface KitScanDependencies {
@@ -46,10 +47,10 @@ function useKitScan(deps: KitScanDependencies = {}) {
   const scanKits = useCallback(async () => {
     try {
       const result = await fileReader.scanDirectory();
-      toastImpl.success('Scan completed');
+      toastImpl.success("Scan completed");
       return result;
     } catch (error) {
-      toastImpl.error('Scan failed');
+      toastImpl.error("Scan failed");
       throw error;
     }
   }, [fileReader, toastImpl]);
@@ -62,7 +63,7 @@ function badUseKitScan() {
   const scanKits = useCallback(async () => {
     // Hard to test - directly uses global dependencies
     const result = await window.electron.fileReader.scanDirectory();
-    toast.success('Scan completed'); // Can't mock this
+    toast.success("Scan completed"); // Can't mock this
     return result;
   }, []);
 
@@ -73,6 +74,7 @@ function badUseKitScan() {
 ## Error Handling Pattern
 
 ### Consistent Result Handling
+
 ```typescript
 // ✅ CORRECT: Consistent DbResult pattern handling
 function useKitEditor(kitName: string) {
@@ -94,17 +96,25 @@ function useKitEditor(kitName: string) {
     setLoading(false);
   }, [kitName]);
 
-  const addSample = useCallback(async (path: string, voice: number, slot: number) => {
-    const result = await window.electron.db.addSample(kitName, path, voice, slot);
-    if (result.success) {
-      // Update local state
-      await loadKit(); // Refresh kit data
-      return { success: true };
-    } else {
-      setError(result.error);
-      return { success: false, error: result.error };
-    }
-  }, [kitName, loadKit]);
+  const addSample = useCallback(
+    async (path: string, voice: number, slot: number) => {
+      const result = await window.electron.db.addSample(
+        kitName,
+        path,
+        voice,
+        slot,
+      );
+      if (result.success) {
+        // Update local state
+        await loadKit(); // Refresh kit data
+        return { success: true };
+      } else {
+        setError(result.error);
+        return { success: false, error: result.error };
+      }
+    },
+    [kitName, loadKit],
+  );
 
   return { kit, loading, error, loadKit, addSample };
 }
@@ -113,11 +123,13 @@ function useKitEditor(kitName: string) {
 ## Hook Size and Complexity
 
 ### Size Limits
+
 - **Maximum 200 lines**: Refactor when exceeded
 - **Maximum 10 return values**: Use objects to group related values
 - **Single purpose**: If hook name needs "and", it's doing too much
 
 ### Return Object Organization
+
 ```typescript
 // ✅ CORRECT: Organized return object
 function useKitEditor(kitName: string) {
@@ -143,7 +155,14 @@ function useKitEditor(kitName: string) {
 // ❌ WRONG: Disorganized return
 function badUseKitEditor(kitName: string) {
   return {
-    kit, addSample, loading, removeSample, error, isEditable, loadKit, sampleCount
+    kit,
+    addSample,
+    loading,
+    removeSample,
+    error,
+    isEditable,
+    loadKit,
+    sampleCount,
     // Hard to understand what's related
   };
 }
@@ -152,9 +171,13 @@ function badUseKitEditor(kitName: string) {
 ## Performance Considerations
 
 ### Proper Dependency Arrays
+
 ```typescript
 // ✅ CORRECT: Proper dependencies
-function useKitProcessor(kitName: string, processingOptions: ProcessingOptions) {
+function useKitProcessor(
+  kitName: string,
+  processingOptions: ProcessingOptions,
+) {
   const processKit = useCallback(async () => {
     // Processing logic
   }, [kitName, processingOptions.format, processingOptions.quality]); // Specific dependencies
@@ -167,7 +190,10 @@ function useKitProcessor(kitName: string, processingOptions: ProcessingOptions) 
 }
 
 // ❌ WRONG: Missing or incorrect dependencies
-function badUseKitProcessor(kitName: string, processingOptions: ProcessingOptions) {
+function badUseKitProcessor(
+  kitName: string,
+  processingOptions: ProcessingOptions,
+) {
   const processKit = useCallback(async () => {
     // Uses processingOptions but doesn't include in deps
   }, [kitName]); // Missing dependencies
@@ -179,6 +205,7 @@ function badUseKitProcessor(kitName: string, processingOptions: ProcessingOption
 ## Anti-Patterns to Avoid
 
 ### Overly Complex Hooks
+
 ```typescript
 // ❌ AVOID: Hook doing too many things
 function useEverything() {
@@ -196,6 +223,7 @@ function useEverything() {
 ```
 
 ### State Management Complexity
+
 ```typescript
 // ❌ AVOID: Complex state logic in hook
 function badUseComplexState() {
@@ -203,7 +231,7 @@ function badUseComplexState() {
     // Complex nested state
     ui: { modal: false, loading: false },
     data: { kits: [], samples: [] },
-    audio: { playing: false, volume: 0.5 }
+    audio: { playing: false, volume: 0.5 },
   });
 
   // Better to use multiple focused hooks or a reducer
@@ -224,4 +252,4 @@ function badUseComplexState() {
 
 ---
 
-*These standards apply to custom hooks in `**/hooks/use*.ts` files. For React components, see `.agent/standards/react-components.md`.*
+_These standards apply to custom hooks in `\*\*/hooks/use_.ts`files. For React components, see`.agent/standards/react-components.md`.\*

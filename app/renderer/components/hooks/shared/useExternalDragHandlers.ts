@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
 
+import { isVoiceAtSampleLimit } from "../../utils/kitOperations";
+
 export interface UseExternalDragHandlersOptions {
   // Processing hooks
   fileValidation: {
@@ -27,6 +29,7 @@ export interface UseExternalDragHandlersOptions {
       droppedSlotIndex: number,
     ) => Promise<boolean>;
   };
+  samples: string[];
   voice: number;
 }
 
@@ -40,11 +43,12 @@ export function useExternalDragHandlers({
   onStereoDragLeave,
   onStereoDragOver,
   sampleProcessing,
+  samples,
   voice,
 }: UseExternalDragHandlersOptions) {
   const [dragOverSlot, setDragOverSlot] = useState<null | number>(null);
   const [dropZone, setDropZone] = useState<{
-    mode: "insert" | "overwrite";
+    mode: "append" | "blocked" | "insert";
     slot: number;
   } | null>(null);
 
@@ -61,16 +65,29 @@ export function useExternalDragHandlers({
         e.preventDefault();
         e.stopPropagation();
 
+        // Check if target voice can accept external drops (12-sample limit)
+        if (isVoiceAtSampleLimit(samples)) {
+          // Show "voice full" feedback
+          setDragOverSlot(slotIndex);
+          setDropZone({ mode: "blocked", slot: slotIndex });
+          return;
+        }
+
+        // Determine if this is insert-before or append
+        const currentSampleCount = samples.filter((s) => s).length;
+        const isAppend = slotIndex === currentSampleCount;
+        const mode = isAppend ? "append" : "insert";
+
         const isStereo = fileItems.length === 2;
         setDragOverSlot(slotIndex);
-        setDropZone({ mode: "overwrite", slot: slotIndex });
+        setDropZone({ mode, slot: slotIndex });
 
         if (onStereoDragOver) {
           onStereoDragOver(voice, slotIndex, isStereo);
         }
       }
     },
-    [isEditable, voice, onStereoDragOver],
+    [isEditable, voice, onStereoDragOver, samples],
   );
 
   const handleDragLeave = useCallback(() => {
@@ -88,6 +105,17 @@ export function useExternalDragHandlers({
       e.stopPropagation();
 
       if (!isEditable) return;
+
+      // Check if drop is blocked due to 12-sample limit
+      if (isVoiceAtSampleLimit(samples)) {
+        console.log("Drop blocked: voice already has 12 samples");
+        setDragOverSlot(null);
+        setDropZone(null);
+        if (onStereoDragLeave) {
+          onStereoDragLeave();
+        }
+        return;
+      }
 
       setDragOverSlot(null);
       setDropZone(null);
@@ -134,7 +162,7 @@ export function useExternalDragHandlers({
         console.error("Error handling drop:", error);
       }
     },
-    [isEditable, onStereoDragLeave, fileValidation, sampleProcessing],
+    [isEditable, onStereoDragLeave, fileValidation, sampleProcessing, samples],
   );
 
   return {

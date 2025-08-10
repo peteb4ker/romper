@@ -7,7 +7,7 @@ import { useUndoActionHandlers } from "../useUndoActionHandlers";
 const mockElectronAPI = {
   addSampleToSlot: vi.fn(),
   deleteSampleFromSlot: vi.fn(),
-  deleteSampleFromSlotWithoutCompaction: vi.fn(),
+  deleteSampleFromSlotWithoutReindexing: vi.fn(),
   getAllSamplesForKit: vi.fn(),
   moveSampleBetweenKits: vi.fn(),
   replaceSampleInSlot: vi.fn(),
@@ -126,12 +126,12 @@ describe("useUndoActionHandlers", () => {
           stateSnapshot: [
             {
               sample: { is_stereo: false, source_path: "/path/sample1.wav" },
-              slot: 1,
+              slot: 100,
               voice: 1,
             },
             {
               sample: { is_stereo: true, source_path: "/path/sample2.wav" },
-              slot: 2,
+              slot: 200,
               voice: 2,
             },
           ],
@@ -142,12 +142,12 @@ describe("useUndoActionHandlers", () => {
 
       mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
         data: [
-          { slot_number: 1, voice_number: 1 },
-          { slot_number: 1, voice_number: 2 },
+          { slot_number: 100, voice_number: 1 },
+          { slot_number: 100, voice_number: 2 },
         ],
         success: true,
       });
-      mockElectronAPI.deleteSampleFromSlotWithoutCompaction.mockResolvedValue({
+      mockElectronAPI.deleteSampleFromSlotWithoutReindexing.mockResolvedValue({
         success: true,
       });
       mockElectronAPI.addSampleToSlot.mockResolvedValue({ success: true });
@@ -158,7 +158,7 @@ describe("useUndoActionHandlers", () => {
         testKitName,
       );
       expect(
-        mockElectronAPI.deleteSampleFromSlotWithoutCompaction,
+        mockElectronAPI.deleteSampleFromSlotWithoutReindexing,
       ).toHaveBeenCalledTimes(2);
       expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledTimes(2);
       expect(undoResult).toEqual({ success: true });
@@ -193,7 +193,7 @@ describe("useUndoActionHandlers", () => {
         type: "MOVE_SAMPLE" as const,
       };
 
-      mockElectronAPI.deleteSampleFromSlotWithoutCompaction.mockResolvedValue({
+      mockElectronAPI.deleteSampleFromSlotWithoutReindexing.mockResolvedValue({
         success: true,
       });
       mockElectronAPI.addSampleToSlot.mockResolvedValue({ success: true });
@@ -201,10 +201,10 @@ describe("useUndoActionHandlers", () => {
       const undoResult = await result.current.executeUndoAction(moveAction);
 
       expect(
-        mockElectronAPI.deleteSampleFromSlotWithoutCompaction,
+        mockElectronAPI.deleteSampleFromSlotWithoutReindexing,
       ).toHaveBeenCalledWith(testKitName, 2, 1);
       expect(
-        mockElectronAPI.deleteSampleFromSlotWithoutCompaction,
+        mockElectronAPI.deleteSampleFromSlotWithoutReindexing,
       ).toHaveBeenCalledWith(testKitName, 1, 2);
       expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledWith(
         testKitName,
@@ -271,12 +271,12 @@ describe("useUndoActionHandlers", () => {
       expect(undoResult).toEqual({ success: true });
     });
 
-    it("should handle COMPACT_SLOTS undo action", async () => {
+    it("should handle REINDEX_SAMPLES undo action", async () => {
       const { result } = renderHook(() =>
         useUndoActionHandlers({ kitName: testKitName }),
       );
 
-      const compactAction = {
+      const reindexAction = {
         data: {
           affectedSamples: [
             {
@@ -292,25 +292,25 @@ describe("useUndoActionHandlers", () => {
           deletedSlot: 0,
           voice: 1,
         },
-        type: "COMPACT_SLOTS" as const,
+        type: "REINDEX_SAMPLES" as const,
       };
 
       mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-        data: [{ slot_number: 2, voice_number: 1 }],
+        data: [{ slot_number: 200, voice_number: 1 }],
         success: true,
       });
-      mockElectronAPI.deleteSampleFromSlotWithoutCompaction.mockResolvedValue({
+      mockElectronAPI.deleteSampleFromSlotWithoutReindexing.mockResolvedValue({
         success: true,
       });
       mockElectronAPI.addSampleToSlot.mockResolvedValue({ success: true });
 
-      const undoResult = await result.current.executeUndoAction(compactAction);
+      const undoResult = await result.current.executeUndoAction(reindexAction);
 
       expect(mockElectronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
         testKitName,
       );
       expect(
-        mockElectronAPI.deleteSampleFromSlotWithoutCompaction,
+        mockElectronAPI.deleteSampleFromSlotWithoutReindexing,
       ).toHaveBeenCalledWith(testKitName, 1, 1);
       expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledWith(
         testKitName,
@@ -359,7 +359,7 @@ describe("useUndoActionHandlers", () => {
         type: "MOVE_SAMPLE" as const,
       };
 
-      mockElectronAPI.deleteSampleFromSlotWithoutCompaction.mockRejectedValue(
+      mockElectronAPI.deleteSampleFromSlotWithoutReindexing.mockRejectedValue(
         new Error("Delete failed"),
       );
 
@@ -401,12 +401,12 @@ describe("useUndoActionHandlers", () => {
       });
     });
 
-    it("should handle errors in COMPACT_SLOTS action", async () => {
+    it("should handle errors in REINDEX_SAMPLES action", async () => {
       const { result } = renderHook(() =>
         useUndoActionHandlers({ kitName: testKitName }),
       );
 
-      const compactAction = {
+      const reindexAction = {
         data: {
           affectedSamples: [],
           deletedSample: {
@@ -416,14 +416,14 @@ describe("useUndoActionHandlers", () => {
           deletedSlot: 0,
           voice: 1,
         },
-        type: "COMPACT_SLOTS" as const,
+        type: "REINDEX_SAMPLES" as const,
       };
 
       mockElectronAPI.getAllSamplesForKit.mockRejectedValue(
         new Error("Get samples failed"),
       );
 
-      const undoResult = await result.current.executeUndoAction(compactAction);
+      const undoResult = await result.current.executeUndoAction(reindexAction);
 
       expect(undoResult).toEqual({
         error: "Get samples failed",

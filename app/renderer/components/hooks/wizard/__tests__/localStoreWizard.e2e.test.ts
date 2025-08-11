@@ -153,7 +153,7 @@ test.describe("Local Store Wizard E2E", () => {
   test("can initialize from SD card fixture via UI", async () => {
     const sdcardPath = path.resolve(
       __dirname,
-      "../../../../../tests/fixtures/sdcard",
+      "../../../../../../tests/fixtures/sdcard",
     );
     await runWizardTest({ fixturePath: sdcardPath, source: "sdcard" });
   });
@@ -162,7 +162,7 @@ test.describe("Local Store Wizard E2E", () => {
     // Use a local fixture zip for the Squarp archive in E2E
     const fixtureSquarpZip = path.resolve(
       __dirname,
-      "../../../../../tests/fixtures/squarp.zip",
+      "../../../../../../tests/fixtures/squarp.zip",
     );
     const squarpArchiveUrl = `file://${fixtureSquarpZip}`;
     await runWizardTest({

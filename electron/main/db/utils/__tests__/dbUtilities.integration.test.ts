@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { deleteDbFileWithRetry } from "../../fileOperations.js";
 import {
   checkMigrationState,
   createRomperDbFile,
@@ -17,26 +18,46 @@ import {
 const TEST_DB_DIR = path.join(__dirname, "test-data");
 const TEST_DB_PATH = path.join(TEST_DB_DIR, DB_FILENAME);
 
-function cleanupTestDb() {
+async function cleanupTestDb() {
   if (fs.existsSync(TEST_DB_PATH)) {
-    fs.unlinkSync(TEST_DB_PATH);
+    await deleteDbFileWithRetry(TEST_DB_PATH);
   }
 }
 
-function ensureTestDirClean() {
+async function ensureTestDirClean() {
   if (fs.existsSync(TEST_DB_DIR)) {
+    // Clean up any SQLite files in subdirectories first
+    await cleanupSqliteFiles(TEST_DB_DIR);
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   }
   fs.mkdirSync(TEST_DB_DIR, { recursive: true });
 }
 
+async function cleanupSqliteFiles(dir: string) {
+  if (!fs.existsSync(dir)) return;
+  
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await cleanupSqliteFiles(fullPath);
+    } else if (entry.name.endsWith('.sqlite')) {
+      try {
+        await deleteDbFileWithRetry(fullPath);
+      } catch (error) {
+        console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
+      }
+    }
+  }
+}
+
 describe("Database Utilities Integration Tests", () => {
-  beforeEach(() => {
-    ensureTestDirClean();
+  beforeEach(async () => {
+    await ensureTestDirClean();
   });
 
-  afterEach(() => {
-    cleanupTestDb();
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
   describe("Database Creation", () => {

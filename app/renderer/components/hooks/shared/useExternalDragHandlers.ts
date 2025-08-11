@@ -12,7 +12,7 @@ export interface UseExternalDragHandlersOptions {
   onStereoDragLeave?: () => void;
   onStereoDragOver?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     isStereo: boolean,
   ) => void;
   sampleProcessing: {
@@ -26,7 +26,7 @@ export interface UseExternalDragHandlersOptions {
       formatValidation: any,
       allSamples: any[],
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
-      droppedSlotIndex: number,
+      droppedSlotNumber: number,
     ) => Promise<boolean>;
   };
   samples: string[];
@@ -54,7 +54,7 @@ export function useExternalDragHandlers({
 
   // External file drag handlers
   const handleDragOver = useCallback(
-    (e: React.DragEvent, slotIndex: number) => {
+    (e: React.DragEvent, slotNumber: number) => {
       if (!isEditable) return;
 
       const items = Array.from(e.dataTransfer.items);
@@ -68,22 +68,22 @@ export function useExternalDragHandlers({
         // Check if target voice can accept external drops (12-sample limit)
         if (isVoiceAtSampleLimit(samples)) {
           // Show "voice full" feedback
-          setDragOverSlot(slotIndex);
-          setDropZone({ mode: "blocked", slot: slotIndex });
+          setDragOverSlot(slotNumber);
+          setDropZone({ mode: "blocked", slot: slotNumber });
           return;
         }
 
         // Determine if this is insert-before or append
         const currentSampleCount = samples.filter((s) => s).length;
-        const isAppend = slotIndex === currentSampleCount;
+        const isAppend = slotNumber === currentSampleCount;
         const mode = isAppend ? "append" : "insert";
 
         const isStereo = fileItems.length === 2;
-        setDragOverSlot(slotIndex);
-        setDropZone({ mode, slot: slotIndex });
+        setDragOverSlot(slotNumber);
+        setDropZone({ mode, slot: slotNumber });
 
         if (onStereoDragOver) {
-          onStereoDragOver(voice, slotIndex, isStereo);
+          onStereoDragOver(voice, slotNumber, isStereo);
         }
       }
     },
@@ -100,7 +100,7 @@ export function useExternalDragHandlers({
   }, [onStereoDragLeave]);
 
   const handleDrop = useCallback(
-    async (e: React.DragEvent, slotIndex: number) => {
+    async (e: React.DragEvent, slotNumber: number) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -155,7 +155,7 @@ export function useExternalDragHandlers({
             formatValidation,
             allSamples,
             modifierKeys,
-            slotIndex,
+            slotNumber,
           );
         }
       } catch (error) {

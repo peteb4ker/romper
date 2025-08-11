@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useKitPlayback } from "../useKitPlayback";
 
 describe("useKitPlayback", () => {
+  const mockSamples = { 1: [], 2: [], 3: [], 4: [] };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -13,7 +15,7 @@ describe("useKitPlayback", () => {
   });
 
   it("initializes state correctly", () => {
-    const { result } = renderHook(() => useKitPlayback({}));
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
     expect(result.current.playbackError).toBeNull();
     expect(result.current.playTriggers).toEqual({});
     expect(result.current.stopTriggers).toEqual({});
@@ -21,7 +23,7 @@ describe("useKitPlayback", () => {
   });
 
   it("handlePlay triggers play and clears error", () => {
-    const { result } = renderHook(() => useKitPlayback({}));
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
     act(() => {
       result.current.handlePlay(1, "kick.wav");
     });
@@ -34,7 +36,7 @@ describe("useKitPlayback", () => {
   });
 
   it("handleStop triggers stop and sets samplePlaying false", () => {
-    const { result } = renderHook(() => useKitPlayback({}));
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
     act(() => {
       result.current.handleStop(2, "snare.wav");
     });
@@ -43,7 +45,7 @@ describe("useKitPlayback", () => {
   });
 
   it("handleWaveformPlayingChange sets samplePlaying", () => {
-    const { result } = renderHook(() => useKitPlayback({}));
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
     act(() => {
       result.current.handleWaveformPlayingChange(3, "hat.wav", true);
     });
@@ -61,7 +63,7 @@ describe("useKitPlayback", () => {
         errorHandler = cb;
       },
     );
-    const { result } = renderHook(() => useKitPlayback({}));
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
     act(() => {
       errorHandler("fail!");
     });

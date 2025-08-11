@@ -21,10 +21,10 @@ interface KitVoicePanelProps {
   // New props for drag-and-drop sample assignment (Task 5.2.2)
   onSampleAdd?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
   ) => Promise<void>;
-  onSampleDelete?: (voice: number, slotIndex: number) => Promise<void>;
+  onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
   onSampleKeyNav?: (direction: "down" | "up") => void;
   // Task 22.2: Sample move operations with contiguity
   onSampleMove?: (
@@ -35,7 +35,7 @@ interface KitVoicePanelProps {
   ) => Promise<void>;
   onSampleReplace?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
   ) => Promise<void>;
   onSampleSelect?: (voice: number, idx: number) => void;
@@ -44,7 +44,7 @@ interface KitVoicePanelProps {
   onStereoDragLeave?: () => void;
   onStereoDragOver?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     isStereo: boolean,
   ) => void;
   onStop: (voice: number, sample: string) => void;
@@ -54,15 +54,28 @@ interface KitVoicePanelProps {
     playing: boolean,
   ) => void;
   playTriggers: { [key: string]: number };
-
   sampleMetadata?: { [filename: string]: SampleData }; // Optional metadata lookup
   samplePlaying: { [key: string]: boolean };
-  samples: string[];
 
+  samples: string[];
   // New props for cross-voice navigation
   selectedIdx?: number; // index of selected sample in this voice, or -1 if not active
+  setSharedDraggedSample?: (
+    sample: {
+      sampleName: string;
+      slot: number;
+      voice: number;
+    } | null,
+  ) => void;
 
-  stereoDragSlotIndex?: number;
+  // Shared drag state for cross-voice operations
+  sharedDraggedSample?: {
+    sampleName: string;
+    slot: number;
+    voice: number;
+  } | null;
+
+  stereoDragSlotNumber?: number;
   stopTriggers: { [key: string]: number };
   voice: number;
   voiceName: null | string;
@@ -94,7 +107,9 @@ const KitVoicePanel: React.FC<
   samplePlaying,
   samples,
   selectedIdx = -1,
-  stereoDragSlotIndex,
+  setSharedDraggedSample,
+  sharedDraggedSample,
+  stereoDragSlotNumber,
   stopTriggers,
   voice,
   voiceName,
@@ -126,6 +141,8 @@ const KitVoicePanel: React.FC<
     onStereoDragLeave,
     onStereoDragOver,
     samples,
+    setSharedDraggedSample,
+    sharedDraggedSample,
     voice,
   });
 
@@ -147,7 +164,7 @@ const KitVoicePanel: React.FC<
     isStereoDragTarget,
     samples,
     selectedIdx,
-    stereoDragSlotIndex,
+    stereoDragSlotNumber,
     voice,
   });
 

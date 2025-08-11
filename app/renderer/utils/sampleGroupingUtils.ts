@@ -1,4 +1,4 @@
-import { dbSlotToDisplaySlot } from "@romper/shared/slotUtils";
+// No slot conversion utilities needed - using 1-12 directly
 
 import type { VoiceSamples } from "../components/kitTypes";
 
@@ -25,16 +25,10 @@ export function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
       if (!Array.isArray(voices[voiceNumber])) {
         voices[voiceNumber] = [];
       }
-      // Convert database slot number to display slot, then to 0-based index
-      let slotIndex: number;
-      try {
-        slotIndex = dbSlotToDisplaySlot(sample.slot_number) - 1;
-      } catch {
-        // Skip samples with invalid slot numbers
-        return;
-      }
-      if (slotIndex >= 0 && slotIndex < 12) {
-        voices[voiceNumber][slotIndex] = sample.filename;
+      // Database stores 0-11 slot indices directly
+      const slotNumber = sample.slot_number;
+      if (slotNumber >= 0 && slotNumber < 12) {
+        voices[voiceNumber][slotNumber] = sample.filename;
 
         // Task 7: If this is a stereo sample, also show it in the next voice
         // This indicates that the next voice slot is consumed by the stereo pair
@@ -44,7 +38,7 @@ export function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
             voices[nextVoice] = [];
           }
           // Show the same filename in the next voice to indicate it's consumed
-          voices[nextVoice][slotIndex] = sample.filename;
+          voices[nextVoice][slotNumber] = sample.filename;
         }
       }
     }

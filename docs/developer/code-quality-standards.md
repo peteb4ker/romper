@@ -304,14 +304,14 @@ import type { Sample } from '@/types';        // Type imports
  * 
  * @param kitName - The kit identifier (e.g., "A0", "B5")
  * @param voiceNumber - Voice number (1-4)
- * @param slotIndex - Slot index within voice (0-11)
+ * @param slotNumber - Slot index within voice (0-11)
  * @param filePath - Absolute path to sample file
  * @returns Promise resolving to operation result
  */
 export async function addSampleToSlot(
   kitName: string,
   voiceNumber: number,
-  slotIndex: number,
+  slotNumber: number,
   filePath: string
 ): Promise<Result<Sample>>
 ```

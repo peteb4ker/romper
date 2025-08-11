@@ -17,6 +17,7 @@ vi.mock("drizzle-orm", () => ({
   desc: vi.fn(),
   eq: vi.fn(),
   gt: vi.fn(),
+  ne: vi.fn(), // Not equal operator
 }));
 
 vi.mock("@romper/shared/db/schema.js", () => ({
@@ -56,6 +57,7 @@ describe("sampleManagementOps unit tests", () => {
       from: vi.fn().mockReturnThis(),
       get: vi.fn(),
       insert: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
       run: vi.fn().mockReturnValue({ changes: 1 }),
       select: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
@@ -168,11 +170,11 @@ describe("sampleManagementOps unit tests", () => {
   describe("groupSamplesByVoice", () => {
     it("should group samples by voice number", () => {
       const samplesToDelete: Sample[] = [
-        { id: 1, slot_number: 100, voice_number: 1 } as Sample,
-        { id: 2, slot_number: 200, voice_number: 1 } as Sample,
-        { id: 3, slot_number: 100, voice_number: 2 } as Sample,
-        { id: 4, slot_number: 100, voice_number: 3 } as Sample,
-        { id: 5, slot_number: 30000, voice_number: 2 } as Sample,
+        { id: 1, slot_number: 0, voice_number: 1 } as Sample,
+        { id: 2, slot_number: 1, voice_number: 1 } as Sample,
+        { id: 3, slot_number: 0, voice_number: 2 } as Sample,
+        { id: 4, slot_number: 0, voice_number: 3 } as Sample,
+        { id: 5, slot_number: 2, voice_number: 2 } as Sample,
       ];
 
       const result = groupSamplesByVoice(samplesToDelete);
@@ -194,9 +196,9 @@ describe("sampleManagementOps unit tests", () => {
 
   describe("moveSample", () => {
     const testFromVoice = 1;
-    const testFromSlot = 200;
+    const testFromSlot = 2; // 0-based slot indexing (0-11) - slot 3 in UI
     const testToVoice = 2;
-    const testToSlot = 300;
+    const testToSlot = 3; // 0-based slot indexing (0-11) - slot 4 in UI
 
     it("should successfully move sample", () => {
       const mockSample = {
@@ -205,8 +207,29 @@ describe("sampleManagementOps unit tests", () => {
         voice_number: testFromVoice,
       } as Sample;
 
-      mockDb.get.mockReturnValue(mockSample);
+      const expectedMovedSample = {
+        id: 1,
+        slot_number: testToSlot,
+        voice_number: testToVoice,
+      } as Sample;
+
+      // Mock the database calls to simulate the move operation
+      mockDb.get.mockReturnValue(mockSample); // Initial sample lookup
       mockDb.all.mockReturnValue([]); // No samples to shift/reindex
+
+      // Mock the update operation to return the updated sample
+      mockDb.update.mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            run: vi.fn().mockReturnValue({ changes: 1 }),
+          }),
+        }),
+      });
+
+      // Mock the final sample lookup to return the updated sample
+      mockDb.get
+        .mockReturnValueOnce(mockSample) // First call for finding sample
+        .mockReturnValueOnce(expectedMovedSample); // Second call for returning moved sample
 
       const result = moveSample(
         testDbDir,
@@ -215,15 +238,13 @@ describe("sampleManagementOps unit tests", () => {
         testFromSlot,
         testToVoice,
         testToSlot,
-        "insert",
       );
 
+      if (!result.success) {
+        console.error("Move failed with error:", result.error);
+      }
       expect(result.success).toBe(true);
-      expect(result.data?.movedSample).toEqual({
-        ...mockSample,
-        slot_number: testToSlot,
-        voice_number: testToVoice,
-      });
+      expect(result.data?.movedSample).toEqual(expectedMovedSample);
     });
 
     it("should handle sample not found", () => {
@@ -248,9 +269,9 @@ describe("sampleManagementOps unit tests", () => {
   describe("performVoiceReindexing", () => {
     it("should reindex multiple voices after deletion", () => {
       const samplesToDelete: Sample[] = [
-        { id: 1, slot_number: 200, voice_number: 1 } as Sample,
-        { id: 2, slot_number: 400, voice_number: 1 } as Sample,
-        { id: 3, slot_number: 100, voice_number: 2 } as Sample,
+        { id: 1, slot_number: 1, voice_number: 1 } as Sample,
+        { id: 2, slot_number: 3, voice_number: 1 } as Sample,
+        { id: 3, slot_number: 0, voice_number: 2 } as Sample,
       ];
 
       // Mock the database calls for reindexing
@@ -289,7 +310,7 @@ describe("sampleManagementOps unit tests", () => {
 
     it("should handle reindexing failures gracefully", () => {
       const samplesToDelete: Sample[] = [
-        { id: 1, slot_number: 200, voice_number: 1 } as Sample,
+        { id: 1, slot_number: 1, voice_number: 1 } as Sample,
       ];
 
       vi.mocked(withDb).mockReturnValue({

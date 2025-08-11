@@ -31,7 +31,7 @@ export function createSampleOperationHandler(
     _event: any,
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath?: string,
     options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
@@ -50,7 +50,7 @@ export function createSampleOperationHandler(
             inMemorySettings,
             kitName,
             voiceNumber,
-            slotIndex,
+            slotNumber,
             filePath,
             options,
           );
@@ -61,7 +61,7 @@ export function createSampleOperationHandler(
             inMemorySettings,
             kitName,
             voiceNumber,
-            slotIndex,
+            slotNumber,
           );
           break;
 
@@ -76,7 +76,7 @@ export function createSampleOperationHandler(
             inMemorySettings,
             kitName,
             voiceNumber,
-            slotIndex,
+            slotNumber,
             filePath,
             options,
           );

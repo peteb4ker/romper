@@ -7,7 +7,6 @@ import type {
 } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
-import { displaySlotToDbSlot } from "@romper/shared/slotUtils.js";
 // Basic CRUD operations for database entities
 import { and, eq } from "drizzle-orm";
 import { count } from "drizzle-orm";
@@ -72,9 +71,8 @@ export function buildDeleteConditions(
   }
 
   if (filter?.slotNumber !== undefined) {
-    // Convert display slot to database slot (1->100, 2->200, etc.)
-    const dbSlot = displaySlotToDbSlot(filter.slotNumber);
-    conditions.push(eq(samples.slot_number, dbSlot));
+    // Database stores 0-11 slot indices directly
+    conditions.push(eq(samples.slot_number, filter.slotNumber));
   }
 
   return and(...conditions);
@@ -269,12 +267,14 @@ export function getKits(dbDir: string): DbResult<KitWithRelations[]> {
  */
 export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
   return withDb(dbDir, (db) => {
-    return db
+    const result = db
       .select()
       .from(samples)
       .where(eq(samples.kit_name, kitName))
       .orderBy(samples.voice_number, samples.slot_number)
       .all();
+
+    return result;
   });
 }
 

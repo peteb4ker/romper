@@ -8,7 +8,7 @@ export interface UseDragAndDropOptions {
   kitName: string;
   onSampleAdd?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
   ) => Promise<void>;
   onSampleMove?: (
@@ -19,16 +19,29 @@ export interface UseDragAndDropOptions {
   ) => Promise<void>;
   onSampleReplace?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
   ) => Promise<void>;
   onStereoDragLeave?: () => void;
   onStereoDragOver?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     isStereo: boolean,
   ) => void;
   samples: string[];
+  setSharedDraggedSample?: (
+    sample: {
+      sampleName: string;
+      slot: number;
+      voice: number;
+    } | null,
+  ) => void;
+  // Shared drag state for cross-voice operations
+  sharedDraggedSample?: {
+    sampleName: string;
+    slot: number;
+    voice: number;
+  } | null;
   voice: number;
 }
 
@@ -46,6 +59,8 @@ export function useDragAndDrop({
   onStereoDragLeave,
   onStereoDragOver,
   samples,
+  setSharedDraggedSample,
+  sharedDraggedSample,
   voice,
 }: UseDragAndDropOptions) {
   // File validation hook
@@ -76,6 +91,8 @@ export function useDragAndDrop({
     isEditable,
     onSampleMove,
     samples,
+    setSharedDraggedSample,
+    sharedDraggedSample,
     voice,
   });
 

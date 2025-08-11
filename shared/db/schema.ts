@@ -52,7 +52,7 @@ export const samples = sqliteTable(
     kit_name: text("kit_name")
       .notNull()
       .references(() => kits.name), // FK to kits.name
-    slot_number: integer("slot_number").notNull(), // 1-12, slot within voice
+    slot_number: integer("slot_number").notNull(), // 0-11 ZERO-BASED, slot within voice (slot 1 = slot_number 0)
     source_path: text("source_path").notNull(), // NEW: Absolute path to original sample file for reference-only management
     voice_number: integer("voice_number").notNull(), // 1-4, explicit voice assignment
     wav_bitrate: integer("wav_bitrate"), // Optional WAV metadata

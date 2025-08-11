@@ -180,7 +180,7 @@ export function useStereoHandling() {
       options: StereoAssignmentOptions,
       onSampleAdd?: (
         voice: number,
-        slotIndex: number,
+        slotNumber: number,
         filePath: string,
         options?: { forceMono?: boolean; forceStereo?: boolean },
       ) => Promise<void>,

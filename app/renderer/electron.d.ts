@@ -29,7 +29,7 @@ export interface ElectronAPI {
   addSampleToSlot?: (
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
     options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => Promise<DbResult<{ sampleId: number }>>;
@@ -43,14 +43,14 @@ export interface ElectronAPI {
   deleteSampleFromSlot?: (
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
   ) => Promise<
     DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }>
   >;
   deleteSampleFromSlotWithoutReindexing?: (
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
   ) => Promise<DbResult<{ deletedSamples: Sample[] }>>;
   downloadAndExtractArchive?: (
     url: string,
@@ -205,7 +205,7 @@ export interface ElectronAPI {
   replaceSampleInSlot?: (
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
     options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => Promise<DbResult<{ sampleId: number }>>;

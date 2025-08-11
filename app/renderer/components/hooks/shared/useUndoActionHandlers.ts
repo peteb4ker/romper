@@ -1,6 +1,6 @@
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
-import { dbSlotToDisplaySlot } from "@romper/shared/slotUtils";
+import { dbSlotToUiSlot } from "@romper/shared/slotUtils";
 
 export interface UseUndoActionHandlersOptions {
   kitName: string;
@@ -31,7 +31,7 @@ export function useUndoActionHandlers({
         ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
           kitName,
           sample.voice_number,
-          dbSlotToDisplaySlot(sample.slot_number) - 1,
+          dbSlotToUiSlot(sample.slot_number) - 1,
         );
       }
     }
@@ -39,12 +39,12 @@ export function useUndoActionHandlers({
 
   const restoreFromSnapshot = async (stateSnapshot: any[]) => {
     for (const { sample, slot, voice } of stateSnapshot) {
-      // Convert database slot to 0-based display slot for API call
-      const displaySlotIndex = dbSlotToDisplaySlot(slot) - 1;
+      // Convert database slot to 0-based slot number for API call
+      const apiSlotNumber = dbSlotToUiSlot(slot) - 1;
       await (window as any).electronAPI?.addSampleToSlot?.(
         kitName,
         voice,
-        displaySlotIndex,
+        apiSlotNumber,
         sample.source_path,
         { forceMono: !sample.is_stereo },
       );
@@ -67,7 +67,7 @@ export function useUndoActionHandlers({
         ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
           kitName,
           sample.voice_number,
-          dbSlotToDisplaySlot(sample.slot_number) - 1,
+          dbSlotToUiSlot(sample.slot_number) - 1,
         );
       }
     }

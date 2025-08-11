@@ -2,8 +2,6 @@ import type { SampleData } from "@romper/app/renderer/components/kitTypes";
 
 import { useCallback } from "react";
 
-import { getFilledSampleCount } from "../../utils/kitOperations";
-
 export interface UseSlotRenderingOptions {
   defaultToMonoSamples: boolean;
   dragOverSlot: null | number;
@@ -12,7 +10,7 @@ export interface UseSlotRenderingOptions {
   isStereoDragTarget: boolean;
   samples: string[];
   selectedIdx: number;
-  stereoDragSlotIndex?: number;
+  stereoDragSlotNumber?: number;
   voice: number;
 }
 
@@ -28,7 +26,7 @@ export function useSlotRendering({
   isStereoDragTarget,
   samples,
   selectedIdx,
-  stereoDragSlotIndex,
+  stereoDragSlotNumber,
   voice,
 }: UseSlotRenderingOptions) {
   // Helper function to calculate render slots
@@ -38,10 +36,9 @@ export function useSlotRendering({
       .reduce((max, current) => Math.max(max, current), -1);
     const nextAvailableSlot = lastSampleIndex + 1;
 
-    // Only render slots for existing samples plus one empty slot (if not at limit)
-    // This ensures contiguity and shows only the next available slot
-    const sampleCount = getFilledSampleCount(samples);
-    const slotsToRender = sampleCount < 12 ? sampleCount + 1 : sampleCount;
+    // Always render all 12 slots for consistent UI layout (PRD requirement)
+    // Voice panels should have fixed height with 1-12 slots numbered always
+    const slotsToRender = 12; // Fixed 12 slots always, no exceptions
 
     return { nextAvailableSlot, slotsToRender };
   }, [samples]);
@@ -106,13 +103,13 @@ export function useSlotRendering({
 
   // Helper function to calculate slot styling and drag feedback
   const getSlotStyling = useCallback(
-    (slotIndex: number, sample: string | undefined) => {
+    (slotNumber: number, sample: string | undefined) => {
       const slotBaseClass =
         "truncate flex items-center gap-2 mb-1 min-h-[28px]";
-      const isDragOver = dragOverSlot === slotIndex;
-      const isDropZone = dropZone?.slot === slotIndex;
+      const isDragOver = dragOverSlot === slotNumber;
+      const isDropZone = dropZone?.slot === slotNumber;
       const isStereoHighlight =
-        isStereoDragTarget && stereoDragSlotIndex === slotIndex;
+        isStereoDragTarget && stereoDragSlotNumber === slotNumber;
 
       const dragStyling = calculateDragStyling({
         defaultToMonoSamples,
@@ -137,7 +134,7 @@ export function useSlotRendering({
       dragOverSlot,
       dropZone,
       isStereoDragTarget,
-      stereoDragSlotIndex,
+      stereoDragSlotNumber,
       calculateDragStyling,
       defaultToMonoSamples,
       voice,
@@ -146,8 +143,8 @@ export function useSlotRendering({
 
   // Helper function to get sample slot CSS classes
   const getSampleSlotClassName = useCallback(
-    (slotIndex: number, slotBaseClass: string, dragOverClass: string) => {
-      const isSelected = selectedIdx === slotIndex && isActive;
+    (slotNumber: number, slotBaseClass: string, dragOverClass: string) => {
+      const isSelected = selectedIdx === slotNumber && isActive;
       const selectedClass = isSelected
         ? " bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 font-bold ring-2 ring-blue-400 dark:ring-blue-300"
         : "";

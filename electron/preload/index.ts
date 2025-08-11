@@ -124,7 +124,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   addSampleToSlot: (
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
     options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
@@ -133,7 +133,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
         "[IPC] addSampleToSlot invoked",
         kitName,
         voiceNumber,
-        slotIndex,
+        slotNumber,
         filePath,
         options,
       );
@@ -141,7 +141,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       "add-sample-to-slot",
       kitName,
       voiceNumber,
-      slotIndex,
+      slotNumber,
       filePath,
       options,
     );
@@ -173,39 +173,39 @@ contextBridge.exposeInMainWorld("electronAPI", {
   deleteSampleFromSlot: (
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
   ) => {
     isDev &&
       console.debug(
         "[IPC] deleteSampleFromSlot invoked",
         kitName,
         voiceNumber,
-        slotIndex,
+        slotNumber,
       );
     return ipcRenderer.invoke(
       "delete-sample-from-slot",
       kitName,
       voiceNumber,
-      slotIndex,
+      slotNumber,
     );
   },
   deleteSampleFromSlotWithoutReindexing: (
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
   ) => {
     isDev &&
       console.debug(
         "[IPC] deleteSampleFromSlotWithoutReindexing invoked",
         kitName,
         voiceNumber,
-        slotIndex,
+        slotNumber,
       );
     return ipcRenderer.invoke(
       "delete-sample-from-slot-without-reindexing",
       kitName,
       voiceNumber,
-      slotIndex,
+      slotNumber,
     );
   },
   downloadAndExtractArchive: (
@@ -416,7 +416,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   replaceSampleInSlot: (
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
     options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
@@ -425,7 +425,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
         "[IPC] replaceSampleInSlot invoked",
         kitName,
         voiceNumber,
-        slotIndex,
+        slotNumber,
         filePath,
         options,
       );
@@ -433,7 +433,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       "replace-sample-in-slot",
       kitName,
       voiceNumber,
-      slotIndex,
+      slotNumber,
       filePath,
       options,
     );

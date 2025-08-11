@@ -4,7 +4,7 @@ import { useCallback } from "react";
 
 export interface UseSampleActionsOptions {
   isEditable: boolean;
-  onSampleDelete?: (voice: number, slotIndex: number) => Promise<void>;
+  onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
   voice: number;
 }
 
@@ -18,11 +18,11 @@ export function useSampleActions({
   voice,
 }: UseSampleActionsOptions) {
   const handleDeleteSample = useCallback(
-    async (slotIndex: number) => {
+    async (slotNumber: number) => {
       if (!isEditable || !onSampleDelete) return;
 
       try {
-        await onSampleDelete(voice, slotIndex);
+        await onSampleDelete(voice, slotNumber);
       } catch (error) {
         console.error("Failed to delete sample:", error);
         // Could show error message here

@@ -76,7 +76,7 @@ describe("crudOperations pure functions", () => {
       const result = buildDeleteConditions(testKitName, { slotNumber: 2 });
 
       expect(eq).toHaveBeenCalledWith(schema.samples.kit_name, testKitName);
-      expect(eq).toHaveBeenCalledWith(schema.samples.slot_number, 200); // 2 * 100 (display slot to db slot conversion)
+      expect(eq).toHaveBeenCalledWith(schema.samples.slot_number, 2); // Direct 0-11 slot indexing
       expect(and).toHaveBeenCalledWith(mockKitCondition, mockSlotCondition);
       expect(result).toBe("combined_condition");
     });

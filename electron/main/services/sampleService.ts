@@ -1,10 +1,6 @@
 import type { DbResult, NewSample, Sample } from "@romper/shared/db/schema.js";
 
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
-import {
-  dbSlotToDisplaySlot,
-  displaySlotToDbSlot,
-} from "@romper/shared/slotUtils.js";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -34,7 +30,7 @@ export class SampleService {
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
     options?: StereoOptions,
   ): DbResult<{ sampleId: number }> {
@@ -48,7 +44,7 @@ export class SampleService {
     // Validate voice and slot
     const voiceSlotValidation = this.validateVoiceAndSlot(
       voiceNumber,
-      slotIndex,
+      slotNumber,
     );
     if (!voiceSlotValidation.isValid) {
       return { error: voiceSlotValidation.error, success: false };
@@ -75,7 +71,7 @@ export class SampleService {
         filename,
         is_stereo: isStereo,
         kit_name: kitName,
-        slot_number: displaySlotToDbSlot(slotIndex + 1), // Convert 0-based UI index to spaced db slot
+        slot_number: slotNumber, // ZERO-BASED: 0-11 (UI shows 1-12, DB stores 0-11)
         source_path: filePath,
         voice_number: voiceNumber,
       };
@@ -86,9 +82,7 @@ export class SampleService {
 
       if (existingSamplesResult.success && existingSamplesResult.data) {
         _previousSample = existingSamplesResult.data.find(
-          (s) =>
-            s.voice_number === voiceNumber &&
-            s.slot_number === displaySlotToDbSlot(slotIndex + 1),
+          (s) => s.voice_number === voiceNumber && s.slot_number === slotNumber,
         );
       }
 
@@ -115,7 +109,7 @@ export class SampleService {
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
   ): DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -127,7 +121,7 @@ export class SampleService {
     // Validate voice and slot
     const voiceSlotValidation = this.validateVoiceAndSlot(
       voiceNumber,
-      slotIndex,
+      slotNumber,
     );
     if (!voiceSlotValidation.isValid) {
       return { error: voiceSlotValidation.error, success: false };
@@ -140,22 +134,20 @@ export class SampleService {
 
       if (existingSamplesResult.success && existingSamplesResult.data) {
         sampleExists = existingSamplesResult.data.some(
-          (s) =>
-            s.voice_number === voiceNumber &&
-            s.slot_number === displaySlotToDbSlot(slotIndex + 1),
+          (s) => s.voice_number === voiceNumber && s.slot_number === slotNumber,
         );
       }
 
       if (!sampleExists) {
         return {
-          error: `No sample found in voice ${voiceNumber}, slot ${slotIndex + 1} to delete`,
+          error: `No sample found in voice ${voiceNumber}, slot ${slotNumber + 1} to delete`,
           success: false,
         };
       }
 
       // Delete with automatic contiguity maintenance
       const deleteResult = deleteSamples(dbPath, kitName, {
-        slotNumber: displaySlotToDbSlot(slotIndex + 1), // Convert 0-based UI index to spaced db slot
+        slotNumber: slotNumber, // Database stores 0-11 directly
         voiceNumber,
       });
 
@@ -181,7 +173,7 @@ export class SampleService {
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
   ): DbResult<{ deletedSamples: Sample[] }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -193,7 +185,7 @@ export class SampleService {
     // Validate voice and slot
     const voiceSlotValidation = this.validateVoiceAndSlot(
       voiceNumber,
-      slotIndex,
+      slotNumber,
     );
     if (!voiceSlotValidation.isValid) {
       return { error: voiceSlotValidation.error, success: false };
@@ -202,7 +194,7 @@ export class SampleService {
     try {
       // Delete WITHOUT automatic reindexing
       const deleteResult = deleteSamplesWithoutReindexing(dbPath, kitName, {
-        slotNumber: displaySlotToDbSlot(slotIndex + 1), // Convert 0-based UI index to spaced db slot
+        slotNumber: slotNumber, // Database stores 0-11 directly
         voiceNumber,
       });
 
@@ -247,12 +239,11 @@ export class SampleService {
         };
       }
 
-      // Find the specific sample - convert display slot to database slot
-      // slotNumber comes in as display slot (1, 2, 3...) but database stores (100, 200, 300...)
-      const dbSlot = slotNumber * 100;
+      // Find the specific sample - slotNumber is 0-based index
+      // Database uses 0-11 slot indexing
       const sample = samplesResult.data.find(
         (s: Sample) =>
-          s.voice_number === voiceNumber && s.slot_number === dbSlot,
+          s.voice_number === voiceNumber && s.slot_number === slotNumber,
       );
 
       if (!sample) {
@@ -460,9 +451,7 @@ export class SampleService {
       }
 
       const sampleToMove = existingSamplesResult.data.find(
-        (s) =>
-          s.voice_number === fromVoice &&
-          s.slot_number === displaySlotToDbSlot(fromSlot + 1),
+        (s) => s.voice_number === fromVoice && s.slot_number === fromSlot, // Database stores 0-11 directly
       );
 
       if (!sampleToMove) {
@@ -484,15 +473,24 @@ export class SampleService {
         return { error: stereoValidation.error, success: false };
       }
 
+      // Validate that the move doesn't go beyond the next available slot
+      const slotValidation = this.validateSlotBoundary(
+        toVoice,
+        toSlot,
+        existingSamplesResult.data,
+      );
+      if (!slotValidation.success) {
+        return { error: slotValidation.error, success: false };
+      }
+
       // Perform the move with database-level contiguity maintenance
       const moveResult = moveSample(
         dbPath,
         kitName,
         fromVoice,
-        displaySlotToDbSlot(fromSlot + 1), // Convert 0-based UI index to spaced db slot
+        fromSlot, // Database stores 0-11 directly
         toVoice,
-        displaySlotToDbSlot(toSlot + 1), // Convert 0-based UI index to spaced db slot
-        mode,
+        toSlot, // Database stores 0-11 directly
       );
 
       // Mark kit as modified if operation succeeded
@@ -538,7 +536,7 @@ export class SampleService {
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
     options?: StereoOptions,
   ): DbResult<{ sampleId: number }> {
@@ -552,7 +550,7 @@ export class SampleService {
     // Validate voice and slot
     const voiceSlotValidation = this.validateVoiceAndSlot(
       voiceNumber,
-      slotIndex,
+      slotNumber,
     );
     if (!voiceSlotValidation.isValid) {
       return { error: voiceSlotValidation.error, success: false };
@@ -571,9 +569,7 @@ export class SampleService {
 
       if (existingSamplesResult.success && existingSamplesResult.data) {
         oldSample = existingSamplesResult.data.find(
-          (s) =>
-            s.voice_number === voiceNumber &&
-            s.slot_number === displaySlotToDbSlot(slotIndex + 1),
+          (s) => s.voice_number === voiceNumber && s.slot_number === slotNumber,
         );
       }
 
@@ -584,7 +580,7 @@ export class SampleService {
           inMemorySettings,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
           filePath,
           options,
         );
@@ -592,7 +588,7 @@ export class SampleService {
 
       // First delete existing sample at this slot
       const deleteResult = deleteSamples(dbPath, kitName, {
-        slotNumber: displaySlotToDbSlot(slotIndex + 1),
+        slotNumber: slotNumber,
         voiceNumber,
       });
       if (!deleteResult.success) {
@@ -613,7 +609,7 @@ export class SampleService {
         filename,
         is_stereo: isStereo,
         kit_name: kitName,
-        slot_number: displaySlotToDbSlot(slotIndex + 1),
+        slot_number: slotNumber,
         source_path: filePath,
         voice_number: voiceNumber,
       };
@@ -763,15 +759,15 @@ export class SampleService {
    */
   validateVoiceAndSlot(
     voiceNumber: number,
-    slotIndex: number,
+    slotNumber: number,
   ): { error?: string; isValid: boolean } {
     // Validate voice number (1-4)
     if (voiceNumber < 1 || voiceNumber > 4) {
       return { error: "Voice number must be between 1 and 4", isValid: false };
     }
 
-    // Validate slot index (0-11 for 12 slots total, converted to 1-12 for storage)
-    if (slotIndex < 0 || slotIndex > 11) {
+    // Validate slot index (0-11 for 12 slots total)
+    if (slotNumber < 0 || slotNumber >= 12) {
       return {
         error: "Slot index must be between 0 and 11 (12 slots per voice)",
         isValid: false,
@@ -804,13 +800,11 @@ export class SampleService {
     // For stereo samples, check conflict with adjacent voice
     if (sampleToMove.is_stereo) {
       const conflictSample = destSamples.find(
-        (s) =>
-          s.voice_number === toVoice + 1 &&
-          s.slot_number === displaySlotToDbSlot(toSlot + 1),
+        (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot,
       );
       if (conflictSample) {
         return {
-          error: `Stereo sample move would conflict with sample in ${toKit} voice ${toVoice + 1}, slot ${dbSlotToDisplaySlot(displaySlotToDbSlot(toSlot + 1))}`,
+          error: `Stereo sample move would conflict with sample in ${toKit} voice ${toVoice + 1}, slot ${toSlot + 1}`,
           hasConflict: true,
         };
       }
@@ -867,14 +861,12 @@ export class SampleService {
     }
 
     const sampleToMove = sourceSamplesResult.data.find(
-      (s) =>
-        s.voice_number === fromVoice &&
-        s.slot_number === displaySlotToDbSlot(fromSlot + 1),
+      (s) => s.voice_number === fromVoice && s.slot_number === fromSlot,
     );
 
     if (!sampleToMove) {
       return {
-        error: `No sample found at ${fromKit} voice ${fromVoice}, slot ${dbSlotToDisplaySlot(displaySlotToDbSlot(fromSlot + 1))}`,
+        error: `No sample found at ${fromKit} voice ${fromVoice}, slot ${fromSlot + 1}`,
         success: false,
       };
     }
@@ -912,6 +904,42 @@ export class SampleService {
   }
 
   /**
+   * Validate that a move target doesn't exceed the next available slot boundary
+   * Prevents creating gaps in the sample sequence
+   */
+  private validateSlotBoundary(
+    toVoice: number,
+    toSlot: number, // ZERO-BASED slot number (0-11)
+    existingSamples: Sample[],
+  ): DbResult<void> {
+    // Get samples for the target voice
+    const voiceSamples = existingSamples
+      .filter((s) => s.voice_number === toVoice)
+      .sort((a, b) => a.slot_number - b.slot_number);
+
+    // Find the next available slot (first gap or after last sample)
+    let nextAvailableSlot = 0; // 0-based slot indexing
+    for (let i = 0; i < voiceSamples.length; i++) {
+      if (voiceSamples[i].slot_number === nextAvailableSlot) {
+        nextAvailableSlot++;
+      } else {
+        // Found a gap, this is the next available slot
+        break;
+      }
+    }
+
+    // Allow moves to any slot up to and including the next available slot
+    if (toSlot > nextAvailableSlot) {
+      return {
+        error: `Cannot move to slot ${toSlot + 1}. Next available slot is ${nextAvailableSlot + 1}`,
+        success: false,
+      };
+    }
+
+    return { success: true };
+  }
+
+  /**
    * Validate stereo sample move constraints
    */
   private validateStereoSampleMove(
@@ -937,13 +965,11 @@ export class SampleService {
     // Check for destination conflicts (always insert mode)
     {
       const conflictSample = existingSamples.find(
-        (s) =>
-          s.voice_number === toVoice + 1 &&
-          s.slot_number === displaySlotToDbSlot(toSlot + 1),
+        (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot,
       );
       if (conflictSample) {
         return {
-          error: `Stereo sample move would conflict with sample in voice ${toVoice + 1}, slot ${dbSlotToDisplaySlot(displaySlotToDbSlot(toSlot + 1))}`,
+          error: `Stereo sample move would conflict with sample in voice ${toVoice + 1}, slot ${toSlot + 1}`,
           success: false,
         };
       }

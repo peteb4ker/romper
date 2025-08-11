@@ -521,13 +521,13 @@ describe("useInternalDragHandlers", () => {
       rerender();
 
       expect(console.error).toHaveBeenCalledWith(
-        "Failed to move sample:",
+        "[INTERNAL DROP] Failed to move sample:",
         expect.any(Error),
       );
       expect(result.current.draggedSample).toBeNull();
     });
 
-    it("logs move operation", async () => {
+    it("calls onSampleMove correctly", async () => {
       const { rerender, result } = renderHook(() =>
         useInternalDragHandlers(defaultProps),
       );
@@ -554,9 +554,8 @@ describe("useInternalDragHandlers", () => {
 
       await result.current.handleSampleDrop(mockEvent, 1);
 
-      expect(console.log).toHaveBeenCalledWith(
-        "Moving sample from voice 1 slot 0 to voice 1 slot 1",
-      );
+      // Verify the move function was called with correct arguments
+      expect(mockOnSampleMove).toHaveBeenCalledWith(1, 0, 1, 1);
     });
   });
 

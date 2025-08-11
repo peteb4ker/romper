@@ -5,7 +5,7 @@ export interface UseVoicePanelButtonsOptions {
   onPlay: (voice: number, sample: string) => void;
   onStop: (voice: number, sample: string) => void;
   sampleActionsHook: {
-    handleDeleteSample: (slotIndex: number) => Promise<void>;
+    handleDeleteSample: (slotNumber: number) => Promise<void>;
   };
   voice: number;
 }
@@ -60,13 +60,13 @@ export function useVoicePanelButtons({
 
   // Helper function to render delete button
   const renderDeleteButton = React.useCallback(
-    (slotIndex: number) => (
+    (slotNumber: number) => (
       <button
         aria-label="Delete sample"
         className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-800 text-xs text-red-600 dark:text-red-400 ml-2"
         onClick={(e) => {
           e.stopPropagation();
-          sampleActionsHook.handleDeleteSample(slotIndex);
+          sampleActionsHook.handleDeleteSample(slotNumber);
         }}
         style={{
           alignItems: "center",

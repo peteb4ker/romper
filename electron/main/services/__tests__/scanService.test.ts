@@ -116,7 +116,7 @@ describe("ScanService", () => {
           filename: "1_kick.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 100,
+          slot_number: 0,
           source_path: "/test/path/TestKit/1_kick.wav",
           voice_number: 1,
         }),

@@ -41,12 +41,15 @@ export function useKitDataManager({
       try {
         const samplesResult =
           await window.electronAPI?.getAllSamplesForKit?.(kit);
+
         if (samplesResult?.success && samplesResult.data) {
-          return groupDbSamplesByVoice(samplesResult.data);
+          const grouped = groupDbSamplesByVoice(samplesResult.data);
+          return grouped;
         }
       } catch (error) {
         console.error(`Error loading samples for kit ${kit}:`, error);
       }
+
       return { 1: [], 2: [], 3: [], 4: [] };
     },
     [],
@@ -55,7 +58,9 @@ export function useKitDataManager({
   // Main function to load all kits and their data
   const loadKitsData = useCallback(
     async (scrollToKit?: string) => {
-      if (!isInitialized || !localStorePath || needsLocalStoreSetup) return;
+      if (!isInitialized || !localStorePath || needsLocalStoreSetup) {
+        return;
+      }
       console.info("[useKitDataManager] Loading kits from", localStorePath);
 
       // 1. Load kits from database (includes bank relationships)
@@ -177,13 +182,15 @@ export function useKitDataManager({
     for (const kit of kits) {
       const kitName = kit.name;
       const voices = allKitSamples[kitName] ?? { 1: [], 2: [], 3: [], 4: [] };
-      counts[kitName] = [1, 2, 3, 4].map((v) => voices[v]?.length ?? 0) as [
+      const kitCounts = [1, 2, 3, 4].map((v) => voices[v]?.length ?? 0) as [
         number,
         number,
         number,
         number,
       ];
+      counts[kitName] = kitCounts;
     }
+
     return counts;
   }, [kits, allKitSamples]);
 

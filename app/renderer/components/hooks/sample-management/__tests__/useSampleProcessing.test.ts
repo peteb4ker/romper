@@ -197,7 +197,7 @@ describe("useSampleProcessing", () => {
   });
 
   describe("calculateTargetSlot", () => {
-    it("should use slotIndex when provided and >= 0", () => {
+    it("should use slotNumber when provided and >= 0", () => {
       const { result } = renderHook(() => useSampleProcessing(mockOptions));
 
       const targetSlot = result.current.calculateTargetSlot(
@@ -209,7 +209,7 @@ describe("useSampleProcessing", () => {
       expect(targetSlot).toBe(2);
     });
 
-    it("should use droppedSlotIndex when slotIndex < 0", () => {
+    it("should use droppedSlotNumber when slotNumber < 0", () => {
       const { result } = renderHook(() => useSampleProcessing(mockOptions));
 
       const targetSlot = result.current.calculateTargetSlot(
@@ -221,13 +221,13 @@ describe("useSampleProcessing", () => {
       expect(targetSlot).toBe(3);
     });
 
-    it("should find first available slot for external files when slotIndex < 0", () => {
+    it("should find first available slot for external files when slotNumber < 0", () => {
       const { result } = renderHook(() => useSampleProcessing(mockOptions));
 
       const targetSlot = result.current.calculateTargetSlot(
         "/external/path/sample.wav", // Not from local store
         -1,
-        0, // droppedSlotIndex, but sample[0] is occupied
+        0, // droppedSlotNumber, but sample[0] is occupied
       );
 
       expect(targetSlot).toBe(1); // First available slot
@@ -259,7 +259,7 @@ describe("useSampleProcessing", () => {
         5,
       );
 
-      expect(targetSlot).toBe(5); // Use droppedSlotIndex for local store
+      expect(targetSlot).toBe(5); // Use droppedSlotNumber for local store
     });
   });
 

@@ -1,18 +1,13 @@
 import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 
-import {
-  getInsertionDbSlotWithReindexing,
-  reindexSamples,
-} from "@romper/shared/slotUtils.js";
-// Complex sample management operations: moving, reindexing, and shifting
+import * as schema from "@romper/shared/db/schema.js";
 import { and, eq } from "drizzle-orm";
+
+import { withDb } from "../utils/dbUtilities.js";
+import { moveSampleInsertOnly } from "./sampleMovement.js";
 
 // Type for samples that track their original position during moves
 type SampleWithOriginalSlot = { original_slot_number: number } & Sample;
-
-import * as schema from "@romper/shared/db/schema.js";
-
-import { withDb, withDbTransaction } from "../utils/dbUtilities.js";
 
 const { samples } = schema;
 
@@ -65,8 +60,13 @@ export function groupSamplesByVoice(
 }
 
 /**
- * Task 22.2: Move sample with spaced slot system - SIMPLIFIED VERSION
- * Uses spaced slot numbering (100, 200, 300) to avoid unique constraint violations
+ * Move sample with simple 1-12 slot system
+ * Uses insert-only behavior with automatic reindexing for contiguity
+ */
+/**
+ * Move sample using insert-only drag and drop behavior
+ * Simplified API: frontend passes drag source and drop target, backend handles all complexity
+ * Uses 0-based slot indexing throughout (0-11 for 12 slots per voice)
  */
 export function moveSample(
   dbDir: string,
@@ -75,101 +75,43 @@ export function moveSample(
   fromSlot: number,
   toVoice: number,
   toSlot: number,
-  _mode: "insert" | "overwrite" = "overwrite",
 ): DbResult<{
   affectedSamples: SampleWithOriginalSlot[];
   movedSample: Sample;
   replacedSample: null | Sample;
 }> {
-  return withDbTransaction(dbDir, (db, _sqlite) => {
-    const sampleToMove = getSampleToMove(db, kitName, fromVoice, fromSlot);
-    if (!sampleToMove) {
-      throw new Error(
-        `No sample found at voice ${fromVoice}, slot ${fromSlot}`,
-      );
-    }
+  const result = moveSampleInsertOnly(
+    dbDir,
+    kitName,
+    fromVoice,
+    fromSlot,
+    toVoice,
+    toSlot,
+  );
 
-    let affectedSamples: SampleWithOriginalSlot[] = [];
-    let replacedSample: null | Sample = null;
+  if (!result.success) {
+    return result as any;
+  }
 
-    // Get existing samples in the destination voice for insertion logic
-    const existingSamples = db
-      .select()
-      .from(samples)
-      .where(
-        and(eq(samples.kit_name, kitName), eq(samples.voice_number, toVoice)),
-      )
-      .all();
-
-    // Insert mode: find appropriate insertion slot using spaced numbering with auto-reindexing
-    const displaySlot = toSlot / 100; // Convert database slot to display slot
-    const insertionResult = getInsertionDbSlotWithReindexing(
-      existingSamples,
-      displaySlot,
-    );
-
-    const finalToSlot = insertionResult.insertionSlot;
-
-    // If reindexing occurred, update all existing samples in the database
-    if (insertionResult.wasReindexed && insertionResult.reindexedSamples) {
-      console.log(
-        `[moveSample] Reindexing ${insertionResult.reindexedSamples.length} samples in voice ${toVoice}`,
-      );
-
-      // Create a map from original slot to new slot for efficient lookup
-      const slotMappings = new Map<number, number>();
-      insertionResult.reindexedSamples.forEach((reindexed, index) => {
-        const originalSample = existingSamples[index];
-        if (originalSample) {
-          slotMappings.set(originalSample.slot_number, reindexed.slot_number);
-        }
-      });
-
-      // Update all samples to their new reindexed positions
-      existingSamples.forEach((sample: Sample) => {
-        const newSlot = slotMappings.get(sample.slot_number);
-        if (newSlot !== undefined) {
-          db.update(samples)
-            .set({ slot_number: newSlot })
-            .where(eq(samples.id, sample.id))
-            .run();
-
-          // Add to affected samples list for undo tracking
-          affectedSamples.push({
-            ...sample,
-            original_slot_number: sample.slot_number,
-            slot_number: newSlot,
-          });
-        }
-      });
-    }
-
-    // Update the sample to its new position
-    db.update(samples)
-      .set({
-        slot_number: finalToSlot,
-        voice_number: toVoice,
-      })
-      .where(eq(samples.id, sampleToMove.id))
-      .run();
-
-    return {
-      affectedSamples,
-      movedSample: {
-        ...sampleToMove,
-        slot_number: finalToSlot,
-        voice_number: toVoice,
-      },
-      replacedSample,
-    };
-  });
+  // Convert to expected return format for backward compatibility
+  return {
+    data: {
+      affectedSamples: result.data!.affectedSamples.map((s) => ({
+        ...s,
+        original_slot_number: s.original_slot_number, // Keep same field name
+      })) as SampleWithOriginalSlot[],
+      movedSample: result.data!.movedSample,
+      replacedSample: null, // Insert-only behavior never replaces samples
+    },
+    success: true,
+  };
 }
 
 // Atomic helper functions removed - functionality integrated into main moveSample function
 
 /**
  * Perform voice reindexing after sample deletion
- * This uses the proven reindexing algorithm to redistribute samples evenly
+ * This redistributes samples to contiguous slots in 0-11 system
  */
 export function performVoiceReindexing(
   dbDir: string,
@@ -194,7 +136,7 @@ export function performVoiceReindexing(
 
 /**
  * Reindex a single voice after deletion by redistributing all remaining samples
- * This uses the unified reindexing algorithm to maintain even spacing
+ * In 0-11 system, this simply assigns contiguous slots starting from 0
  */
 function reindexVoiceAfterDeletion(
   dbDir: string,
@@ -218,8 +160,14 @@ function reindexVoiceAfterDeletion(
       return []; // No samples to reindex
     }
 
-    // Use the proven reindexing algorithm to redistribute samples
-    const reindexedSamples = reindexSamples(remainingSamples);
+    // Sort samples by slot number and reassign to contiguous 0-based slots
+    const sortedSamples = [...remainingSamples].sort(
+      (a, b) => a.slot_number - b.slot_number,
+    );
+    const reindexedSamples = sortedSamples.map((sample, index) => ({
+      ...sample,
+      slot_number: index,
+    }));
 
     // Update all samples with their new positions in a single transaction
     for (const reindexedSample of reindexedSamples) {

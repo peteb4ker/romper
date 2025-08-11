@@ -11,12 +11,12 @@ export interface UseVoicePanelRenderingOptions {
   dragAndDropHook: {
     dragOverSlot: null | number;
     dropZone: { mode: "append" | "blocked" | "insert"; slot: number } | null;
-    getSampleDragHandlers: (slotIndex: number, sampleName: string) => any;
+    getSampleDragHandlers: (slotNumber: number, sampleName: string) => any;
     handleDragLeave: () => void;
-    handleDragOver: (e: React.DragEvent, slotIndex: number) => void;
-    handleDrop: (e: React.DragEvent, slotIndex: number) => void;
-    handleInternalDragOver: (e: React.DragEvent, slotIndex: number) => void;
-    handleInternalDrop: (e: React.DragEvent, slotIndex: number) => void;
+    handleDragOver: (e: React.DragEvent, slotNumber: number) => void;
+    handleDrop: (e: React.DragEvent, slotNumber: number) => void;
+    handleInternalDragOver: (e: React.DragEvent, slotNumber: number) => void;
+    handleInternalDrop: (e: React.DragEvent, slotNumber: number) => void;
   };
   isActive: boolean;
   isEditable: boolean;
@@ -31,7 +31,7 @@ export interface UseVoicePanelRenderingOptions {
   ) => void;
   playTriggers: { [key: string]: number };
   sampleActionsHook: {
-    handleDeleteSample: (slotIndex: number) => Promise<void>;
+    handleDeleteSample: (slotNumber: number) => Promise<void>;
     handleSampleContextMenu: (
       e: React.MouseEvent,
       sampleData: SampleData | undefined,
@@ -47,7 +47,7 @@ export interface UseVoicePanelRenderingOptions {
       slotsToRender: number;
     };
     getSampleSlotClassName: (
-      slotIndex: number,
+      slotNumber: number,
       baseClass: string,
       dragOverClass: string,
     ) => string;
@@ -60,7 +60,7 @@ export interface UseVoicePanelRenderingOptions {
       dropHintTitle: string,
     ) => string;
     getSlotStyling: (
-      slotIndex: number,
+      slotNumber: number,
       sample: string | undefined,
     ) => {
       dragOverClass: string;
@@ -150,7 +150,6 @@ export function useVoicePanelRendering({
   });
 
   return {
-    renderEmptySlot: slots.renderEmptySlot,
     renderPlayButton: buttons.renderPlayButton,
     renderSampleSlot: slots.renderSampleSlot,
     renderSampleSlots: slots.renderSampleSlots,

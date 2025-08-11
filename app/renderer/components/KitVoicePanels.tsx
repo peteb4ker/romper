@@ -17,10 +17,10 @@ interface KitVoicePanelsProps {
   // New props for drag-and-drop sample management (Task 5.2.2 & 5.2.3)
   onSampleAdd?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
   ) => Promise<void>;
-  onSampleDelete?: (voice: number, slotIndex: number) => Promise<void>;
+  onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
   onSampleKeyNav: (direction: "down" | "up") => void; // Used directly in KitVoicePanel
   // Task 22.2: Sample move operations with contiguity
   onSampleMove?: (
@@ -31,7 +31,7 @@ interface KitVoicePanelsProps {
   ) => Promise<void>;
   onSampleReplace?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
   ) => Promise<void>;
   onSampleSelect: (voice: number, idx: number) => void; // Used by useKitVoicePanels hook
@@ -71,8 +71,15 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // Task 7.1.3: State to track stereo drop targets
   const [stereoDragInfo, setStereoDragInfo] = useState<{
     nextVoice: number;
-    slotIndex: number;
+    slotNumber: number;
     targetVoice: number;
+  } | null>(null);
+
+  // State to track internal drag operations across all voices
+  const [internalDraggedSample, setInternalDraggedSample] = useState<{
+    sampleName: string;
+    slot: number;
+    voice: number;
   } | null>(null);
 
   // Load sample metadata when kit changes
@@ -109,7 +116,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // Callback for voice panels to notify about stereo drops
   const handleStereoDragOver = (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     isStereo: boolean,
   ) => {
     const canHandleStereo = isStereo && voice < 4;
@@ -118,7 +125,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     if (shouldSetDragInfo) {
       setStereoDragInfo({
         nextVoice: voice + 1,
-        slotIndex,
+        slotNumber,
         targetVoice: voice,
       });
     } else {
@@ -171,10 +178,12 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   ? hookProps.selectedSampleIdx
                   : -1
               }
-              stereoDragSlotIndex={
+              setSharedDraggedSample={setInternalDraggedSample}
+              sharedDraggedSample={internalDraggedSample}
+              stereoDragSlotNumber={
                 stereoDragInfo?.targetVoice === voice ||
                 stereoDragInfo?.nextVoice === voice
-                  ? stereoDragInfo.slotIndex
+                  ? stereoDragInfo.slotNumber
                   : undefined
               }
               stopTriggers={hookProps.stopTriggers}
@@ -192,7 +201,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                           animate-pulse"
                 style={{
                   // Position at the specific slot
-                  top: `calc(50px + ${stereoDragInfo.slotIndex * 32}px)`,
+                  top: `calc(50px + ${stereoDragInfo.slotNumber * 32}px)`,
                 }}
                 title="Stereo link"
               >

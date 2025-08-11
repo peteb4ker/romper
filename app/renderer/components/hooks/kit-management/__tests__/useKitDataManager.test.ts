@@ -27,13 +27,13 @@ describe("useKitDataManager", () => {
     {
       filename: "kick.wav",
       is_stereo: false,
-      slot_number: 100,
+      slot_number: 0,
       voice_number: 1,
     },
     {
       filename: "snare.wav",
       is_stereo: false,
-      slot_number: 100,
+      slot_number: 0,
       voice_number: 2,
     },
   ];

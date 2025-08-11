@@ -140,7 +140,7 @@ describe("ipcHandlerUtils", () => {
   describe("createSampleOperationHandler", () => {
     const kitName = "TestKit";
     const voiceNumber = 1;
-    const slotIndex = 0;
+    const slotNumber = 0;
     const filePath = "/test/sample.wav";
     const options = { forceMono: true };
 
@@ -157,7 +157,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
           filePath,
           options,
         );
@@ -167,7 +167,7 @@ describe("ipcHandlerUtils", () => {
           mockInMemorySettings,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
           filePath,
           options,
         );
@@ -182,7 +182,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
         );
 
         expect(result).toEqual({
@@ -205,7 +205,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
           filePath,
         );
 
@@ -231,7 +231,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
         );
 
         expect(result).toEqual(mockResult);
@@ -239,7 +239,7 @@ describe("ipcHandlerUtils", () => {
           mockInMemorySettings,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
         );
       });
 
@@ -256,7 +256,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
         );
 
         expect(result).toEqual({
@@ -281,7 +281,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
           filePath,
           options,
         );
@@ -291,7 +291,7 @@ describe("ipcHandlerUtils", () => {
           mockInMemorySettings,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
           filePath,
           options,
         );
@@ -306,7 +306,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
         );
 
         expect(result).toEqual({
@@ -329,7 +329,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
           filePath,
         );
 
@@ -350,7 +350,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
           filePath,
         );
 
@@ -375,7 +375,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
           filePath,
         );
 
@@ -398,7 +398,7 @@ describe("ipcHandlerUtils", () => {
           mockEvent,
           kitName,
           voiceNumber,
-          slotIndex,
+          slotNumber,
           filePath,
         );
 

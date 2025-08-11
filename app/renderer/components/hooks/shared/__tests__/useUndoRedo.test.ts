@@ -1,4 +1,4 @@
-import { dbSlotToDisplaySlot } from "@romper/shared/slotUtils";
+import { dbSlotToUiSlot } from "@romper/shared/slotUtils";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -138,7 +138,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/1.wav",
           },
-          slot: 100,
+          slot: 0,
           voice: 1,
         },
         {
@@ -147,7 +147,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/2.wav",
           },
-          slot: 200,
+          slot: 1,
           voice: 1,
         },
         {
@@ -156,7 +156,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/3.wav",
           },
-          slot: 300,
+          slot: 2,
           voice: 1,
         },
         {
@@ -165,7 +165,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/4.wav",
           },
-          slot: 400,
+          slot: 3,
           voice: 1,
         },
         {
@@ -174,7 +174,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/5.wav",
           },
-          slot: 500,
+          slot: 4,
           voice: 1,
         },
         {
@@ -183,7 +183,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/6.wav",
           },
-          slot: 600,
+          slot: 5,
           voice: 1,
         },
         {
@@ -192,7 +192,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/7.wav",
           },
-          slot: 700,
+          slot: 6,
           voice: 1,
         },
         {
@@ -201,7 +201,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/8.wav",
           },
-          slot: 800,
+          slot: 7,
           voice: 1,
         },
         {
@@ -210,7 +210,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/9.wav",
           },
-          slot: 900,
+          slot: 8,
           voice: 1,
         },
         {
@@ -219,7 +219,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/10.wav",
           },
-          slot: 1000,
+          slot: 9,
           voice: 1,
         },
         {
@@ -228,7 +228,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/11.wav",
           },
-          slot: 1100,
+          slot: 10,
           voice: 1,
         },
         {
@@ -237,7 +237,7 @@ describe("useUndoRedo - Basic Tests", () => {
             is_stereo: false,
             source_path: "/path/12.wav",
           },
-          slot: 1200,
+          slot: 11,
           voice: 1,
         },
       ];
@@ -248,84 +248,84 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           filename: "sample1.wav",
           is_stereo: false,
-          slot_number: 100,
+          slot_number: 0,
           source_path: "/path/1.wav",
           voice_number: 1,
         },
         {
           filename: "sample2.wav",
           is_stereo: false,
-          slot_number: 200,
+          slot_number: 1,
           source_path: "/path/2.wav",
           voice_number: 1,
         },
         {
           filename: "sample3.wav",
           is_stereo: false,
-          slot_number: 300,
+          slot_number: 2,
           source_path: "/path/3.wav",
           voice_number: 1,
         },
         {
           filename: "sample4.wav",
           is_stereo: false,
-          slot_number: 400,
+          slot_number: 3,
           source_path: "/path/4.wav",
           voice_number: 1,
         },
         {
           filename: "sample5.wav",
           is_stereo: false,
-          slot_number: 500,
+          slot_number: 4,
           source_path: "/path/5.wav",
           voice_number: 1,
         },
         {
           filename: "sample6.wav",
           is_stereo: false,
-          slot_number: 600,
+          slot_number: 5,
           source_path: "/path/6.wav",
           voice_number: 1,
         },
         {
           filename: "sample7.wav",
           is_stereo: false,
-          slot_number: 700,
+          slot_number: 6,
           source_path: "/path/7.wav",
           voice_number: 1,
         },
         {
           filename: "sample8.wav",
           is_stereo: false,
-          slot_number: 800,
+          slot_number: 7,
           source_path: "/path/8.wav",
           voice_number: 1,
         },
         {
           filename: "sample12.wav",
           is_stereo: false,
-          slot_number: 900,
+          slot_number: 8,
           source_path: "/path/12.wav",
           voice_number: 1,
         }, // moved here
         {
           filename: "sample9.wav",
           is_stereo: false,
-          slot_number: 1000,
+          slot_number: 9,
           source_path: "/path/9.wav",
           voice_number: 1,
         }, // shifted
         {
           filename: "sample10.wav",
           is_stereo: false,
-          slot_number: 1100,
+          slot_number: 10,
           source_path: "/path/10.wav",
           voice_number: 1,
         }, // shifted
         {
           filename: "sample11.wav",
           is_stereo: false,
-          slot_number: 1200,
+          slot_number: 11,
           source_path: "/path/11.wav",
           voice_number: 1,
         }, // shifted
@@ -439,7 +439,7 @@ describe("useUndoRedo - Basic Tests", () => {
         const correspondingAddCall = addCalls.find(
           (call) =>
             call[1] === snapshotSample.voice && // voice matches
-            call[2] === dbSlotToDisplaySlot(snapshotSample.slot) - 1 && // slot matches (convert db slot to 0-based display slot)
+            call[2] === dbSlotToUiSlot(snapshotSample.slot) - 1 && // slot matches (convert db slot to 0-based display slot)
             call[3] === snapshotSample.sample.source_path, // source_path matches
         );
 

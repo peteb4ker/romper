@@ -6,7 +6,6 @@ import type {
   ReplaceSampleAction,
 } from "@romper/shared/undoTypes";
 
-import { displaySlotToDbSlot } from "@romper/shared/slotUtils";
 import { createActionId } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
 
@@ -25,7 +24,7 @@ export function useSampleManagementUndoActions({
 }: UseSampleManagementUndoActionsOptions) {
   // Helper function to get old sample for undo recording
   const getOldSampleForUndo = useCallback(
-    async (voice: number, slotIndex: number) => {
+    async (voice: number, slotNumber: number) => {
       if (skipUndoRecording) return null;
 
       const samplesResult = await (
@@ -35,8 +34,7 @@ export function useSampleManagementUndoActions({
         return (
           samplesResult.data.find(
             (s: any) =>
-              s.voice_number === voice &&
-              s.slot_number === displaySlotToDbSlot(slotIndex + 1),
+              s.voice_number === voice && s.slot_number === slotNumber,
           ) || null
         );
       }
@@ -47,7 +45,7 @@ export function useSampleManagementUndoActions({
 
   // Helper function to get sample to delete for undo recording
   const getSampleToDeleteForUndo = useCallback(
-    async (voice: number, slotIndex: number) => {
+    async (voice: number, slotNumber: number) => {
       if (skipUndoRecording) return null;
 
       try {
@@ -59,7 +57,7 @@ export function useSampleManagementUndoActions({
             samplesResult.data.find(
               (sample: any) =>
                 sample.voice_number === voice &&
-                sample.slot_number === displaySlotToDbSlot(slotIndex + 1),
+                sample.slot_number === slotNumber,
             ) || null
           );
         }
@@ -78,7 +76,7 @@ export function useSampleManagementUndoActions({
   const createAddSampleAction = useCallback(
     (
       voice: number,
-      slotIndex: number,
+      slotNumber: number,
       filePath: string,
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ): AddSampleAction => ({
@@ -88,10 +86,10 @@ export function useSampleManagementUndoActions({
           is_stereo: options?.forceStereo || false,
           source_path: filePath,
         },
-        slot: slotIndex,
+        slot: slotNumber,
         voice,
       },
-      description: `Add sample to voice ${voice}, slot ${slotIndex + 1}`,
+      description: `Add sample to voice ${voice}, slot ${slotNumber + 1}`,
       id: createActionId(),
       timestamp: new Date(),
       type: "ADD_SAMPLE",
@@ -103,7 +101,7 @@ export function useSampleManagementUndoActions({
   const createReplaceSampleAction = useCallback(
     (
       voice: number,
-      slotIndex: number,
+      slotNumber: number,
       oldSample: any,
       filePath: string,
       options?: { forceMono?: boolean; forceStereo?: boolean },
@@ -119,10 +117,10 @@ export function useSampleManagementUndoActions({
           is_stereo: oldSample.is_stereo,
           source_path: oldSample.source_path,
         },
-        slot: slotIndex,
+        slot: slotNumber,
         voice,
       },
-      description: `Replace sample in voice ${voice}, slot ${slotIndex + 1}`,
+      description: `Replace sample in voice ${voice}, slot ${slotNumber + 1}`,
       id: createActionId(),
       timestamp: new Date(),
       type: "REPLACE_SAMPLE",
@@ -134,7 +132,7 @@ export function useSampleManagementUndoActions({
   const createReindexSamplesAction = useCallback(
     (
       voice: number,
-      slotIndex: number,
+      slotNumber: number,
       sampleToDelete: any,
       result: any,
     ): ReindexSamplesAction => ({
@@ -154,10 +152,10 @@ export function useSampleManagementUndoActions({
           is_stereo: sampleToDelete.is_stereo,
           source_path: sampleToDelete.source_path,
         },
-        deletedSlot: slotIndex,
+        deletedSlot: slotNumber,
         voice,
       },
-      description: `Delete sample from voice ${voice}, slot ${slotIndex + 1} (with reindexing)`,
+      description: `Delete sample from voice ${voice}, slot ${slotNumber + 1} (with reindexing)`,
       id: createActionId(),
       timestamp: new Date(),
       type: "REINDEX_SAMPLES",

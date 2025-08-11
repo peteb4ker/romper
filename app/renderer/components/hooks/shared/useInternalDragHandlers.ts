@@ -9,6 +9,19 @@ export interface UseInternalDragHandlersOptions {
     toSlot: number,
   ) => Promise<void>;
   samples: string[];
+  setSharedDraggedSample?: (
+    sample: {
+      sampleName: string;
+      slot: number;
+      voice: number;
+    } | null,
+  ) => void;
+  // Shared drag state for cross-voice operations
+  sharedDraggedSample?: {
+    sampleName: string;
+    slot: number;
+    voice: number;
+  } | null;
   voice: number;
 }
 
@@ -20,13 +33,19 @@ export function useInternalDragHandlers({
   isEditable,
   onSampleMove,
   samples,
+  setSharedDraggedSample,
+  sharedDraggedSample,
   voice,
 }: UseInternalDragHandlersOptions) {
-  const [draggedSample, setDraggedSample] = useState<{
+  const [localDraggedSample, setLocalDraggedSample] = useState<{
     sampleName: string;
     slot: number;
     voice: number;
   } | null>(null);
+
+  // Use shared state if available, otherwise fall back to local state
+  const draggedSample = sharedDraggedSample ?? localDraggedSample;
+  const setDraggedSample = setSharedDraggedSample ?? setLocalDraggedSample;
 
   // State for visual feedback during internal drags
   const [internalDragOverSlot, setInternalDragOverSlot] = useState<
@@ -39,13 +58,12 @@ export function useInternalDragHandlers({
 
   // Internal sample drag handlers
   const handleSampleDragStart = useCallback(
-    (e: React.DragEvent, slotIndex: number, sampleName: string) => {
+    (e: React.DragEvent, slotNumber: number, sampleName: string) => {
       if (!isEditable) return;
 
-      console.log(`Dragging sample ${sampleName} from slot ${slotIndex}`);
       setDraggedSample({
         sampleName,
-        slot: slotIndex,
+        slot: slotNumber,
         voice,
       });
 
@@ -53,19 +71,21 @@ export function useInternalDragHandlers({
       e.dataTransfer.setData("application/x-romper-sample", "true");
       e.dataTransfer.effectAllowed = "move";
     },
-    [isEditable, voice],
+    [isEditable, voice, setDraggedSample],
   );
 
-  const handleSampleDragEnd = useCallback((_e: React.DragEvent) => {
-    console.log("Sample drag ended");
-    setDraggedSample(null);
-    // Clear visual feedback state
-    setInternalDragOverSlot(null);
-    setInternalDropZone(null);
-  }, []);
+  const handleSampleDragEnd = useCallback(
+    (_e: React.DragEvent) => {
+      setDraggedSample(null);
+      // Clear visual feedback state
+      setInternalDragOverSlot(null);
+      setInternalDropZone(null);
+    },
+    [setDraggedSample],
+  );
 
   const handleSampleDragOver = useCallback(
-    (e: React.DragEvent, slotIndex: number) => {
+    (e: React.DragEvent, slotNumber: number) => {
       if (!isEditable) return;
       if (!draggedSample) return;
 
@@ -79,7 +99,7 @@ export function useInternalDragHandlers({
       if (!isInternalDrag) return;
 
       // Prevent dropping on same slot
-      if (draggedSample.slot === slotIndex && draggedSample.voice === voice) {
+      if (draggedSample.slot === slotNumber && draggedSample.voice === voice) {
         e.dataTransfer.dropEffect = "none";
         // Clear visual feedback for invalid drop
         setInternalDragOverSlot(null);
@@ -90,15 +110,15 @@ export function useInternalDragHandlers({
       e.dataTransfer.dropEffect = "move";
 
       // Set visual feedback state
-      setInternalDragOverSlot(slotIndex);
+      setInternalDragOverSlot(slotNumber);
 
       // Determine drop mode for visual feedback
       // All moves are insert-only, but we need to distinguish insert vs append
       const currentSampleCount = samples.filter((s) => s).length;
-      const isAppend = slotIndex === currentSampleCount;
+      const isAppend = slotNumber === currentSampleCount;
       const mode = isAppend ? "append" : "insert";
 
-      setInternalDropZone({ mode, slot: slotIndex });
+      setInternalDropZone({ mode, slot: slotNumber });
     },
     [isEditable, draggedSample, voice, samples],
   );
@@ -110,7 +130,7 @@ export function useInternalDragHandlers({
   }, []);
 
   const handleSampleDrop = useCallback(
-    async (e: React.DragEvent, slotIndex: number) => {
+    async (e: React.DragEvent, slotNumber: number) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -123,13 +143,9 @@ export function useInternalDragHandlers({
       if (!isInternalDrag) return;
 
       // Prevent dropping on same slot
-      if (draggedSample.slot === slotIndex && draggedSample.voice === voice) {
+      if (draggedSample.slot === slotNumber && draggedSample.voice === voice) {
         return;
       }
-
-      console.log(
-        `Moving sample from voice ${draggedSample.voice} slot ${draggedSample.slot} to voice ${voice} slot ${slotIndex}`,
-      );
 
       try {
         // All moves use insert-only behavior
@@ -138,10 +154,10 @@ export function useInternalDragHandlers({
           draggedSample.voice,
           draggedSample.slot,
           voice,
-          slotIndex,
+          slotNumber,
         );
       } catch (error) {
-        console.error("Failed to move sample:", error);
+        console.error("[INTERNAL DROP] Failed to move sample:", error);
       } finally {
         setDraggedSample(null);
         // Clear visual feedback state
@@ -149,11 +165,11 @@ export function useInternalDragHandlers({
         setInternalDropZone(null);
       }
     },
-    [isEditable, draggedSample, voice, onSampleMove],
+    [isEditable, draggedSample, voice, onSampleMove, setDraggedSample],
   );
 
   const getSampleDragHandlers = useCallback(
-    (slotIndex: number, sampleName: string) => {
+    (slotNumber: number, sampleName: string) => {
       if (!isEditable) {
         return {};
       }
@@ -161,10 +177,10 @@ export function useInternalDragHandlers({
       return {
         onDragEnd: handleSampleDragEnd,
         onDragLeave: handleSampleDragLeave,
-        onDragOver: (e: React.DragEvent) => handleSampleDragOver(e, slotIndex),
+        onDragOver: (e: React.DragEvent) => handleSampleDragOver(e, slotNumber),
         onDragStart: (e: React.DragEvent) =>
-          handleSampleDragStart(e, slotIndex, sampleName),
-        onDrop: (e: React.DragEvent) => handleSampleDrop(e, slotIndex),
+          handleSampleDragStart(e, slotNumber, sampleName),
+        onDrop: (e: React.DragEvent) => handleSampleDrop(e, slotNumber),
       };
     },
     [

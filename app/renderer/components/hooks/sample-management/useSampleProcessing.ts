@@ -8,12 +8,12 @@ export interface UseSampleProcessingOptions {
   kitName: string;
   onSampleAdd?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
   ) => Promise<void>;
   onSampleReplace?: (
     voice: number,
-    slotIndex: number,
+    slotNumber: number,
     filePath: string,
   ) => Promise<void>;
   samples: string[];
@@ -75,11 +75,11 @@ export function useSampleProcessing({
   );
 
   const calculateTargetSlot = useCallback(
-    (path: string, slotIndex: number, droppedSlotIndex: number): number => {
+    (path: string, slotNumber: number, droppedSlotNumber: number): number => {
       const isFromLocalStore = path.includes(kitName);
-      let targetSlot = slotIndex >= 0 ? slotIndex : droppedSlotIndex;
+      let targetSlot = slotNumber >= 0 ? slotNumber : droppedSlotNumber;
 
-      if (!isFromLocalStore && slotIndex < 0) {
+      if (!isFromLocalStore && slotNumber < 0) {
         for (let i = 0; i < 12; i++) {
           if (!samples[i]) {
             return i;
@@ -97,11 +97,11 @@ export function useSampleProcessing({
     async (
       filePath: string,
       allSamples: any[],
-      droppedSlotIndex: number,
+      droppedSlotNumber: number,
       options: { forceMono: boolean; replaceExisting: boolean },
     ) => {
-      const existingSample = samples[droppedSlotIndex];
-      const targetSlot = calculateTargetSlot(filePath, -1, droppedSlotIndex);
+      const existingSample = samples[droppedSlotNumber];
+      const targetSlot = calculateTargetSlot(filePath, -1, droppedSlotNumber);
 
       if (targetSlot < 0) {
         toast.error("No available slots", {
@@ -134,7 +134,7 @@ export function useSampleProcessing({
       formatValidation: any,
       allSamples: any[],
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
-      droppedSlotIndex: number,
+      droppedSlotNumber: number,
     ): Promise<boolean> => {
       const channels = formatValidation.metadata?.channels || 1;
 
@@ -179,7 +179,7 @@ export function useSampleProcessing({
       await executeAssignment(
         filePath,
         allSamples,
-        droppedSlotIndex,
+        droppedSlotNumber,
         assignmentOptions,
       );
 

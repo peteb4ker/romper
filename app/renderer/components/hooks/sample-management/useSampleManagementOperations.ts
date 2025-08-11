@@ -33,7 +33,7 @@ export function useSampleManagementOperations({
   const handleSampleAdd = useCallback(
     async (
       voice: number,
-      slotIndex: number,
+      slotNumber: number,
       filePath: string,
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => {
@@ -46,14 +46,14 @@ export function useSampleManagementOperations({
         const result = await (window as any).electronAPI.addSampleToSlot(
           kitName,
           voice,
-          slotIndex,
+          slotNumber,
           filePath,
           options,
         );
 
         if (result.success) {
           onMessage?.(
-            `Sample added to voice ${voice}, slot ${slotIndex + 1}`,
+            `Sample added to voice ${voice}, slot ${slotNumber + 1}`,
             "success",
           );
 
@@ -62,7 +62,7 @@ export function useSampleManagementOperations({
             console.log("[SAMPLE_MGT] Recording ADD_SAMPLE undo action");
             const addAction = undoActions.createAddSampleAction(
               voice,
-              slotIndex,
+              slotNumber,
               filePath,
               options,
             );
@@ -105,7 +105,7 @@ export function useSampleManagementOperations({
   const handleSampleReplace = useCallback(
     async (
       voice: number,
-      slotIndex: number,
+      slotNumber: number,
       filePath: string,
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => {
@@ -117,20 +117,20 @@ export function useSampleManagementOperations({
       try {
         const oldSample = await undoActions.getOldSampleForUndo(
           voice,
-          slotIndex,
+          slotNumber,
         );
 
         const result = await (window as any).electronAPI.replaceSampleInSlot(
           kitName,
           voice,
-          slotIndex,
+          slotNumber,
           filePath,
           options,
         );
 
         if (result.success) {
           onMessage?.(
-            `Sample replaced in voice ${voice}, slot ${slotIndex + 1}`,
+            `Sample replaced in voice ${voice}, slot ${slotNumber + 1}`,
             "success",
           );
 
@@ -139,7 +139,7 @@ export function useSampleManagementOperations({
             console.log("[SAMPLE_MGT] Recording REPLACE_SAMPLE undo action");
             const replaceAction = undoActions.createReplaceSampleAction(
               voice,
-              slotIndex,
+              slotNumber,
               oldSample,
               filePath,
               options,
@@ -165,7 +165,7 @@ export function useSampleManagementOperations({
   );
 
   const handleSampleDelete = useCallback(
-    async (voice: number, slotIndex: number) => {
+    async (voice: number, slotNumber: number) => {
       if (!(window as any).electronAPI?.deleteSampleFromSlot) {
         onMessage?.("Sample management not available", "error");
         return;
@@ -174,18 +174,18 @@ export function useSampleManagementOperations({
       try {
         const sampleToDelete = await undoActions.getSampleToDeleteForUndo(
           voice,
-          slotIndex,
+          slotNumber,
         );
 
         const result = await (window as any).electronAPI.deleteSampleFromSlot(
           kitName,
           voice,
-          slotIndex,
+          slotNumber,
         );
 
         if (result.success) {
           onMessage?.(
-            `Sample deleted from voice ${voice}, slot ${slotIndex + 1}`,
+            `Sample deleted from voice ${voice}, slot ${slotNumber + 1}`,
             "success",
           );
 
@@ -193,7 +193,7 @@ export function useSampleManagementOperations({
           if (sampleToDelete && onAddUndoAction && result.data) {
             const reindexAction = undoActions.createReindexSamplesAction(
               voice,
-              slotIndex,
+              slotNumber,
               sampleToDelete,
               result,
             );

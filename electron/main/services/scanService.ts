@@ -4,7 +4,7 @@ import {
   groupSamplesByVoice,
   inferVoiceTypeFromFilename,
 } from "@romper/shared/kitUtilsShared.js";
-import { displaySlotToDbSlot } from "@romper/shared/slotUtils.js";
+// No spaced slot utilities needed - using 0-11 indexing directly
 import * as fs from "fs";
 import * as path from "path";
 
@@ -206,8 +206,8 @@ export class ScanService {
   ): DbResult<number> {
     let samplesProcessed = 0;
 
-    for (let slotIndex = 0; slotIndex < voiceFiles.length; slotIndex++) {
-      const wavFile = voiceFiles[slotIndex];
+    for (let slotNumber = 0; slotNumber < voiceFiles.length; slotNumber++) {
+      const wavFile = voiceFiles[slotNumber]; // Array is 0-based, slot is 0-based
       const isStereo = /stereo|st|_s\.|_S\./i.test(wavFile);
       const samplePath = path.join(kitPath, wavFile);
 
@@ -215,7 +215,7 @@ export class ScanService {
         filename: wavFile,
         is_stereo: isStereo,
         kit_name: kitName,
-        slot_number: displaySlotToDbSlot(slotIndex + 1),
+        slot_number: slotNumber, // ZERO-BASED: 0-11 (UI shows 1-12, DB stores 0-11)
         source_path: samplePath,
         voice_number: voice,
       };

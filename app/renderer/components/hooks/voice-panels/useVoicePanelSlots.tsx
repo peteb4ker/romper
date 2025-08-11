@@ -6,12 +6,12 @@ import SampleWaveform from "../../SampleWaveform";
 
 export interface UseVoicePanelSlotsOptions {
   dragAndDropHook: {
-    getSampleDragHandlers: (slotIndex: number, sampleName: string) => any;
+    getSampleDragHandlers: (slotNumber: number, sampleName: string) => any;
     handleDragLeave: () => void;
-    handleDragOver: (e: React.DragEvent, slotIndex: number) => void;
-    handleDrop: (e: React.DragEvent, slotIndex: number) => void;
-    handleInternalDragOver: (e: React.DragEvent, slotIndex: number) => void;
-    handleInternalDrop: (e: React.DragEvent, slotIndex: number) => void;
+    handleDragOver: (e: React.DragEvent, slotNumber: number) => void;
+    handleDrop: (e: React.DragEvent, slotNumber: number) => void;
+    handleInternalDragOver: (e: React.DragEvent, slotNumber: number) => void;
+    handleInternalDrop: (e: React.DragEvent, slotNumber: number) => void;
   };
   isActive: boolean;
   isEditable: boolean;
@@ -23,7 +23,7 @@ export interface UseVoicePanelSlotsOptions {
     playing: boolean,
   ) => void;
   playTriggers: { [key: string]: number };
-  renderDeleteButton: (slotIndex: number) => React.ReactElement;
+  renderDeleteButton: (slotNumber: number) => React.ReactElement;
   renderPlayButton: (
     isPlaying: boolean,
     sampleName: string,
@@ -44,7 +44,7 @@ export interface UseVoicePanelSlotsOptions {
       slotsToRender: number;
     };
     getSampleSlotClassName: (
-      slotIndex: number,
+      slotNumber: number,
       baseClass: string,
       dragOverClass: string,
     ) => string;
@@ -57,7 +57,7 @@ export interface UseVoicePanelSlotsOptions {
       dropHintTitle: string,
     ) => string;
     getSlotStyling: (
-      slotIndex: number,
+      slotNumber: number,
       sample: string | undefined,
     ) => {
       dragOverClass: string;
@@ -97,12 +97,21 @@ export function useVoicePanelSlots({
 }: UseVoicePanelSlotsOptions) {
   // Combined drag handler for both external and internal drags
   const handleCombinedDragOver = React.useCallback(
-    (e: React.DragEvent, slotIndex: number) => {
+    (e: React.DragEvent, slotNumber: number) => {
       if (!isEditable) return;
 
-      // Handle both external and internal drags
-      dragAndDropHook.handleDragOver(e, slotIndex);
-      dragAndDropHook.handleInternalDragOver(e, slotIndex);
+      // Check if this is an internal sample drag
+      const isInternalDrag = e.dataTransfer.types.includes(
+        "application/x-romper-sample",
+      );
+
+      if (isInternalDrag) {
+        // Internal drag: only call internal handler
+        dragAndDropHook.handleInternalDragOver(e, slotNumber);
+      } else {
+        // External drag: only call external handler
+        dragAndDropHook.handleDragOver(e, slotNumber);
+      }
     },
     [isEditable, dragAndDropHook],
   );
@@ -116,19 +125,28 @@ export function useVoicePanelSlots({
   }, [isEditable, dragAndDropHook]);
 
   const handleCombinedDrop = React.useCallback(
-    (e: React.DragEvent, slotIndex: number) => {
+    (e: React.DragEvent, slotNumber: number) => {
       if (!isEditable) return;
 
-      // Handle both external and internal drops
-      dragAndDropHook.handleDrop(e, slotIndex);
-      dragAndDropHook.handleInternalDrop(e, slotIndex);
+      // Check if this is an internal sample drag
+      const isInternalDrag = e.dataTransfer.types.includes(
+        "application/x-romper-sample",
+      );
+
+      if (isInternalDrag) {
+        // Internal drag: only call internal handler
+        dragAndDropHook.handleInternalDrop(e, slotNumber);
+      } else {
+        // External drag: only call external handler
+        dragAndDropHook.handleDrop(e, slotNumber);
+      }
     },
     [isEditable, dragAndDropHook],
   );
 
   // Helper function to render a filled sample slot
   const renderSampleSlot = React.useCallback(
-    (slotIndex: number, sample: string) => {
+    (slotNumber: number, sample: string) => {
       const {
         dragOverClass,
         dropHintTitle,
@@ -136,16 +154,16 @@ export function useVoicePanelSlots({
         isDropZone,
         isStereoHighlight,
         slotBaseClass,
-      } = slotRenderingHook.getSlotStyling(slotIndex, sample);
+      } = slotRenderingHook.getSlotStyling(slotNumber, sample);
       const sampleName = sample;
       const sampleKey = voice + ":" + sampleName;
       const isPlaying = samplePlaying[sampleKey];
-      const slotNumber = slotIndex + 1;
+      const uiSlotNumber = slotNumber + 1;
       const sampleData = sampleMetadata?.[sampleName];
-      const isSelected = selectedIdx === slotIndex && isActive;
+      const isSelected = selectedIdx === uiSlotNumber && isActive;
 
       const className = slotRenderingHook.getSampleSlotClassName(
-        slotIndex,
+        slotNumber,
         slotBaseClass,
         dragOverClass,
       );
@@ -158,51 +176,63 @@ export function useVoicePanelSlots({
         dropHintTitle,
       );
       const dragHandlers = dragAndDropHook.getSampleDragHandlers(
-        slotIndex,
+        slotNumber,
         sampleName,
       );
 
-      // Combine internal drag handlers for drop targets
+      // Combine internal drag handlers for drop targets - support both internal and external drops
       const combinedDragHandlers = isEditable
         ? {
             ...dragHandlers,
             onDragOver: (e: React.DragEvent) => {
-              // Call the original drag over handler first
-              if (dragHandlers.onDragOver) {
+              // Check if this is an internal sample drag
+              const isInternalDrag = e.dataTransfer.types.includes(
+                "application/x-romper-sample",
+              );
+
+              if (isInternalDrag && dragHandlers.onDragOver) {
+                // Internal drag: only call the original internal handler
                 dragHandlers.onDragOver(e);
+              } else {
+                // External drag: call the combined handler for external drags
+                handleCombinedDragOver(e, slotNumber);
               }
-              // Also handle external drags for potential replacement
-              handleCombinedDragOver(e, slotIndex);
             },
             onDrop: (e: React.DragEvent) => {
-              // Call the original drop handler first
-              if (dragHandlers.onDrop) {
+              // Check if this is an internal sample drag
+              const isInternalDrag = e.dataTransfer.types.includes(
+                "application/x-romper-sample",
+              );
+
+              if (isInternalDrag && dragHandlers.onDrop) {
+                // Internal drag: only call the original internal handler
                 dragHandlers.onDrop(e);
+              } else {
+                // External drag: call the combined handler for external drops
+                handleCombinedDrop(e, slotNumber);
               }
-              // Also handle external drops for potential replacement
-              handleCombinedDrop(e, slotIndex);
             },
           }
         : dragHandlers;
 
       return (
         <li
-          aria-label={`Sample ${sampleName} in slot ${slotIndex}`}
+          aria-label={`Sample ${sampleName} in slot ${uiSlotNumber}`}
           aria-selected={isSelected}
           className={className}
           data-testid={
             isSelected ? `sample-selected-voice-${voice}` : undefined
           }
           draggable={isEditable}
-          key={`${voice}-${slotIndex}-${sampleName}`}
-          onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
+          key={`${voice}-${slotNumber}-${sampleName}`}
+          onClick={() => onSampleSelect && onSampleSelect(voice, uiSlotNumber)}
           onContextMenu={(e) =>
             sampleActionsHook.handleSampleContextMenu(e, sampleData)
           }
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              onSampleSelect && onSampleSelect(voice, slotIndex);
+              onSampleSelect && onSampleSelect(voice, uiSlotNumber);
             }
           }}
           role="option"
@@ -221,9 +251,9 @@ export function useVoicePanelSlots({
           >
             {sampleName}
           </span>
-          {isEditable && renderDeleteButton(slotIndex)}
+          {isEditable && renderDeleteButton(slotNumber)}
           <SampleWaveform
-            key={`${kitName}-${voice}-${slotIndex}-${sampleName}`}
+            key={`${kitName}-${voice}-${uiSlotNumber}-${sampleName}`}
             kitName={kitName}
             onError={(err) => {
               if (typeof window !== "undefined" && window.dispatchEvent) {
@@ -236,7 +266,7 @@ export function useVoicePanelSlots({
               onWaveformPlayingChange(voice, sample, playing)
             }
             playTrigger={playTriggers[sampleKey] || 0}
-            slotNumber={slotNumber}
+            slotNumber={uiSlotNumber}
             stopTrigger={stopTriggers[sampleKey] || 0}
             voiceNumber={voice}
           />
@@ -265,105 +295,87 @@ export function useVoicePanelSlots({
     ],
   );
 
-  // Helper function to render an empty slot
-  const renderEmptySlot = React.useCallback(
-    (slotIndex: number, isDropTarget: boolean) => {
-      const {
-        dragOverClass,
-        dropHintTitle,
-        isDragOver,
-        isDropZone,
-        isStereoHighlight,
-        slotBaseClass,
-      } = slotRenderingHook.getSlotStyling(slotIndex, undefined);
+  // Helper function to render single drop zone per voice (append-only)
+  const renderSingleDropZone = React.useCallback(() => {
+    const { nextAvailableSlot } = slotRenderingHook.calculateRenderSlots();
+    const sampleCount = samples.filter((s) => s).length;
 
-      return (
-        <li
-          aria-label={`Empty slot ${slotIndex}`}
-          aria-selected={false}
-          className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass}${
-            isEditable
-              ? " border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500"
-              : ""
-          }`}
-          data-testid={`empty-slot-${voice}-${slotIndex}`}
-          draggable={false}
-          key={`${voice}-empty-${slotIndex}`}
-          onClick={() => onSampleSelect && onSampleSelect(voice, slotIndex)}
-          onDragLeave={
-            isEditable && isDropTarget ? handleCombinedDragLeave : undefined
-          }
-          onDragOver={
-            isEditable && isDropTarget
-              ? (e) => handleCombinedDragOver(e, slotIndex)
-              : undefined
-          }
-          onDrop={
-            isEditable && isDropTarget
-              ? (e) => handleCombinedDrop(e, slotIndex)
-              : undefined
-          }
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onSampleSelect && onSampleSelect(voice, slotIndex);
-            }
-          }}
-          role="option"
-          tabIndex={0}
-          title={
-            isDragOver || isStereoHighlight || isDropZone
-              ? dropHintTitle
-              : undefined
-          }
-        >
-          <div className="flex-1 flex items-center justify-center">
-            {isEditable ? (
-              <span className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                Drop WAV file here
-              </span>
-            ) : (
-              <div className="w-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-sm"></div>
-            )}
-          </div>
-        </li>
-      );
-    },
-    [
-      slotRenderingHook,
-      isEditable,
-      voice,
-      onSampleSelect,
-      handleCombinedDragOver,
-      handleCombinedDragLeave,
-      handleCombinedDrop,
-    ],
-  );
+    // Only show drop zone if editable and voice isn't full (less than 12 samples)
+    if (!isEditable || sampleCount >= 12) {
+      return null;
+    }
 
-  // Main render function for all sample slots
+    const {
+      dragOverClass,
+      dropHintTitle,
+      isDragOver,
+      isDropZone,
+      isStereoHighlight,
+      slotBaseClass,
+    } = slotRenderingHook.getSlotStyling(nextAvailableSlot, undefined);
+
+    return (
+      <li
+        aria-label={`Drop zone for voice ${voice}`}
+        className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass} border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500 min-h-[40px]`}
+        data-testid={`drop-zone-voice-${voice}`}
+        key={`${voice}-drop-zone`}
+        onDragLeave={isEditable ? handleCombinedDragLeave : undefined}
+        onDragOver={
+          isEditable
+            ? (e) => handleCombinedDragOver(e, nextAvailableSlot)
+            : undefined
+        }
+        onDrop={
+          isEditable
+            ? (e) => handleCombinedDrop(e, nextAvailableSlot)
+            : undefined
+        }
+        title={
+          isDragOver || isStereoHighlight || isDropZone
+            ? dropHintTitle
+            : `Drop WAV files here to add to voice ${voice}`
+        }
+      >
+        <div className="flex-1 flex items-center justify-center">
+          <span className="text-sm text-gray-400 dark:text-gray-500 text-center">
+            Drop WAV files here
+          </span>
+        </div>
+      </li>
+    );
+  }, [
+    slotRenderingHook,
+    samples,
+    voice,
+    isEditable,
+    handleCombinedDragOver,
+    handleCombinedDragLeave,
+    handleCombinedDrop,
+  ]);
+
+  // Main render function for all sample slots + single drop zone
   const renderSampleSlots = React.useCallback(() => {
-    const { slotsToRender } = slotRenderingHook.calculateRenderSlots();
     const renderedSlots = [];
 
-    for (let i = 0; i < slotsToRender; i++) {
+    // Render all existing samples
+    for (let i = 0; i < samples.length; i++) {
       const sample = samples[i];
-      // For external files, all empty slots should be drop targets
-      // For internal moves, we can be more restrictive if needed
-      const isDropTarget = !sample; // All empty slots are valid drop targets
-
       if (sample) {
         renderedSlots.push(renderSampleSlot(i, sample));
-      } else {
-        // Render all empty slots, with the next available slot as the drop target
-        renderedSlots.push(renderEmptySlot(i, isDropTarget));
       }
     }
 
+    // Add single drop zone at the end
+    const dropZone = renderSingleDropZone();
+    if (dropZone) {
+      renderedSlots.push(dropZone);
+    }
+
     return renderedSlots;
-  }, [slotRenderingHook, samples, renderSampleSlot, renderEmptySlot]);
+  }, [samples, renderSampleSlot, renderSingleDropZone]);
 
   return {
-    renderEmptySlot,
     renderSampleSlot,
     renderSampleSlots,
   };

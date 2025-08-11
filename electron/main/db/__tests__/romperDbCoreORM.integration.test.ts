@@ -163,7 +163,7 @@ describe("Drizzle ORM Database Operations", () => {
         filename: "kick.wav",
         is_stereo: false,
         kit_name: "A0",
-        slot_number: 100,
+        slot_number: 0,
         source_path: "/test/path/kick.wav", // Required field
         voice_number: 1,
         wav_bitrate: 16,
@@ -181,7 +181,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "kick.wav",
           is_stereo: false,
           kit_name: "A0",
-          slot_number: 100,
+          slot_number: 0,
           source_path: "/test/path/kick.wav",
           voice_number: 1,
         },
@@ -189,7 +189,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "snare.wav",
           is_stereo: false,
           kit_name: "A0",
-          slot_number: 100,
+          slot_number: 0,
           source_path: "/test/path/snare.wav",
           voice_number: 2,
         },
@@ -218,7 +218,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "kick.wav",
           is_stereo: false,
           kit_name: "A0",
-          slot_number: 100,
+          slot_number: 0,
           source_path: "/test/path/kick.wav",
           voice_number: 1,
         },
@@ -226,7 +226,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "snare.wav",
           is_stereo: false,
           kit_name: "A0",
-          slot_number: 100,
+          slot_number: 0,
           source_path: "/test/path/snare.wav",
           voice_number: 2,
         },
@@ -234,7 +234,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "hihat.wav",
           is_stereo: false,
           kit_name: "A0",
-          slot_number: 100,
+          slot_number: 0,
           source_path: "/test/path/hihat.wav",
           voice_number: 3,
         },
@@ -438,7 +438,7 @@ describe("Drizzle ORM Database Operations", () => {
         filename: "legacy_sample.wav",
         is_stereo: false,
         kit_name: "A0",
-        slot_number: 100,
+        slot_number: 0,
         source_path: "/test/path/legacy_sample.wav",
         voice_number: 1,
       };
@@ -466,7 +466,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample1.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 100,
+          slot_number: 0,
           source_path: "/test/sample1.wav",
           voice_number: 1,
         },
@@ -474,7 +474,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample2.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 200,
+          slot_number: 1,
           source_path: "/test/sample2.wav",
           voice_number: 1,
         },
@@ -482,7 +482,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample3.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 300,
+          slot_number: 2,
           source_path: "/test/sample3.wav",
           voice_number: 1,
         },
@@ -490,7 +490,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample4.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 400,
+          slot_number: 3,
           source_path: "/test/sample4.wav",
           voice_number: 1,
         },
@@ -498,7 +498,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample5.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 500,
+          slot_number: 4,
           source_path: "/test/sample5.wav",
           voice_number: 1,
         },
@@ -506,7 +506,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample6.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 600,
+          slot_number: 5,
           source_path: "/test/sample6.wav",
           voice_number: 1,
         },
@@ -519,18 +519,10 @@ describe("Drizzle ORM Database Operations", () => {
 
     it("should move sample within same voice (backward move 6→4)", () => {
       // Initial state: [sample1, sample2, sample3, sample4, sample5, sample6]
-      // Move sample6 from slot 6 to slot 4
+      // Move sample6 from slot 5 to slot 3 (0-based indexing)
       // Expected: [sample1, sample2, sample3, sample6, sample4, sample5]
 
-      const result = moveSample(
-        TEST_DB_DIR,
-        "TestKit",
-        1,
-        600,
-        1,
-        400,
-        "insert",
-      );
+      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 5, 1, 3);
       if (!result.success) {
         console.error("moveSample failed:", result.error);
       }
@@ -545,12 +537,12 @@ describe("Drizzle ORM Database Operations", () => {
         .sort((a, b) => a.slot_number - b.slot_number);
 
       expect(samples).toHaveLength(6);
-      expect(samples[0].filename).toBe("sample1.wav"); // slot 1
-      expect(samples[1].filename).toBe("sample2.wav"); // slot 2
-      expect(samples[2].filename).toBe("sample3.wav"); // slot 3
-      expect(samples[3].filename).toBe("sample6.wav"); // slot 4 (moved here)
-      expect(samples[4].filename).toBe("sample4.wav"); // slot 5 (shifted from 4)
-      expect(samples[5].filename).toBe("sample5.wav"); // slot 6 (shifted from 5)
+      expect(samples[0].filename).toBe("sample1.wav"); // slot 0
+      expect(samples[1].filename).toBe("sample2.wav"); // slot 1
+      expect(samples[2].filename).toBe("sample3.wav"); // slot 2
+      expect(samples[3].filename).toBe("sample6.wav"); // slot 3 (moved here)
+      expect(samples[4].filename).toBe("sample4.wav"); // slot 4 (shifted from 3)
+      expect(samples[5].filename).toBe("sample5.wav"); // slot 5 (shifted from 4)
     });
 
     it("should move sample within same voice (forward move 2→5)", () => {
@@ -558,15 +550,7 @@ describe("Drizzle ORM Database Operations", () => {
       // Move sample2 from slot 2 to slot 5
       // After reindexing: [sample1, sample3, sample4, sample2, sample5, sample6]
 
-      const result = moveSample(
-        TEST_DB_DIR,
-        "TestKit",
-        1,
-        200,
-        1,
-        500,
-        "insert",
-      );
+      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 1, 1, 4);
       expect(result.success).toBe(true);
       if (!result.success) {
         throw new Error(`Forward move failed: ${result.error}`);
@@ -581,12 +565,12 @@ describe("Drizzle ORM Database Operations", () => {
         .sort((a, b) => a.slot_number - b.slot_number);
 
       expect(samples).toHaveLength(6);
-      expect(samples[0].filename).toBe("sample1.wav"); // slot 1
-      expect(samples[1].filename).toBe("sample3.wav"); // slot 2 (reindexed from 3)
-      expect(samples[2].filename).toBe("sample4.wav"); // slot 3 (reindexed from 4)
-      expect(samples[3].filename).toBe("sample2.wav"); // slot 4 (moved here after reindexing)
-      expect(samples[4].filename).toBe("sample5.wav"); // slot 5 (reindexed from 6)
-      expect(samples[5].filename).toBe("sample6.wav"); // slot 6 (reindexed from 7)
+      expect(samples[0].filename).toBe("sample1.wav"); // slot 0
+      expect(samples[1].filename).toBe("sample3.wav"); // slot 1 (compacted from 2)
+      expect(samples[2].filename).toBe("sample4.wav"); // slot 2 (compacted from 3)
+      expect(samples[3].filename).toBe("sample5.wav"); // slot 3 (compacted from 4)
+      expect(samples[4].filename).toBe("sample2.wav"); // slot 4 (moved here)
+      expect(samples[5].filename).toBe("sample6.wav"); // slot 5 (compacted from 5)
     });
 
     it("should move sample across voices with source reindexing", () => {
@@ -595,21 +579,13 @@ describe("Drizzle ORM Database Operations", () => {
         filename: "voice2_sample1.wav",
         is_stereo: false,
         kit_name: "TestKit",
-        slot_number: 100,
+        slot_number: 0,
         source_path: "/test/v2s1.wav",
         voice_number: 2,
       });
 
-      // Move sample4 from voice 1 slot 4 to voice 2 slot 1 (insert mode)
-      const result = moveSample(
-        TEST_DB_DIR,
-        "TestKit",
-        1,
-        400,
-        2,
-        100,
-        "insert",
-      );
+      // Move sample4 from voice 1 slot 3 to voice 2 slot 0 (0-based indexing)
+      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 3, 2, 0);
       expect(result.success).toBe(true);
 
       // Verify voice 1 was reindexed (sample4 removed, others shifted up)
@@ -621,9 +597,9 @@ describe("Drizzle ORM Database Operations", () => {
         .sort((a, b) => a.slot_number - b.slot_number);
 
       expect(voice1Samples).toHaveLength(5); // One less sample
-      expect(voice1Samples[0].filename).toBe("sample1.wav"); // slot 1
-      expect(voice1Samples[1].filename).toBe("sample2.wav"); // slot 2
-      expect(voice1Samples[2].filename).toBe("sample3.wav"); // slot 3
+      expect(voice1Samples[0].filename).toBe("sample1.wav"); // slot 0
+      expect(voice1Samples[1].filename).toBe("sample2.wav"); // slot 1
+      expect(voice1Samples[2].filename).toBe("sample3.wav"); // slot 2
       expect(voice1Samples[3].filename).toBe("sample5.wav"); // slot 4 (reindexed from 5)
       expect(voice1Samples[4].filename).toBe("sample6.wav"); // slot 5 (reindexed from 6)
 
@@ -718,7 +694,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample1.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 100,
+          slot_number: 0,
           source_path: "/test/sample1.wav",
           voice_number: 1,
         },
@@ -726,7 +702,7 @@ describe("Drizzle ORM Database Operations", () => {
           filename: "sample2.wav",
           is_stereo: false,
           kit_name: "TestKit",
-          slot_number: 200,
+          slot_number: 1,
           source_path: "/test/sample2.wav",
           voice_number: 1,
         },
@@ -766,14 +742,14 @@ describe("Drizzle ORM Database Operations", () => {
         filename: "sample3.wav",
         is_stereo: false,
         kit_name: "TestKit",
-        slot_number: 300,
+        slot_number: 2,
         source_path: "/test/sample3.wav",
         voice_number: 1,
       });
 
-      // Delete the middle sample (slot 2)
+      // Delete the middle sample (slot 1, which contains sample2.wav in 0-based indexing)
       const result = deleteSamplesWithoutReindexing(TEST_DB_DIR, "TestKit", {
-        slotNumber: 2,
+        slotNumber: 1,
         voiceNumber: 1,
       });
 
@@ -788,8 +764,8 @@ describe("Drizzle ORM Database Operations", () => {
         (a, b) => a.slot_number - b.slot_number,
       );
       expect(samples).toHaveLength(2);
-      expect(samples[0].slot_number).toBe(100); // sample1 unchanged
-      expect(samples[1].slot_number).toBe(300); // sample3 unchanged (gap at slot 2)
+      expect(samples[0].slot_number).toBe(0); // sample1 unchanged
+      expect(samples[1].slot_number).toBe(2); // sample3 unchanged (gap at slot 1)
     });
 
     it("should automatically reindex slots after delete using reindexing", () => {
@@ -798,7 +774,7 @@ describe("Drizzle ORM Database Operations", () => {
         filename: "sample3.wav",
         is_stereo: false,
         kit_name: "TestKit",
-        slot_number: 300,
+        slot_number: 2,
         source_path: "/test/sample3.wav",
         voice_number: 1,
       });
@@ -806,14 +782,14 @@ describe("Drizzle ORM Database Operations", () => {
         filename: "sample4.wav",
         is_stereo: false,
         kit_name: "TestKit",
-        slot_number: 400,
+        slot_number: 3,
         source_path: "/test/sample4.wav",
         voice_number: 1,
       });
 
-      // Delete sample at slot 2 - reindexing now happens automatically using reindexing
+      // Delete sample at slot 1 (sample2.wav) - reindexing now happens automatically
       const result = deleteSamples(TEST_DB_DIR, "TestKit", {
-        slotNumber: 2,
+        slotNumber: 1,
         voiceNumber: 1,
       });
       expect(result.success).toBe(true);
@@ -826,13 +802,13 @@ describe("Drizzle ORM Database Operations", () => {
         .sort((a, b) => a.slot_number - b.slot_number);
 
       expect(voiceOneSamples).toHaveLength(3); // Original 4 - 1 deleted = 3 total
-      // After reindexing, samples should be at slots 100, 200, 300
+      // After reindexing, samples should be at contiguous slots 0, 1, 2
       expect(voiceOneSamples[0].filename).toBe("sample1.wav");
-      expect(voiceOneSamples[0].slot_number).toBe(100);
+      expect(voiceOneSamples[0].slot_number).toBe(0);
       expect(voiceOneSamples[1].filename).toBe("sample3.wav");
-      expect(voiceOneSamples[1].slot_number).toBe(200); // Reindexed to proper spacing
+      expect(voiceOneSamples[1].slot_number).toBe(1); // Reindexed to contiguous slot
       expect(voiceOneSamples[2].filename).toBe("sample4.wav");
-      expect(voiceOneSamples[2].slot_number).toBe(300); // Reindexed to proper spacing
+      expect(voiceOneSamples[2].slot_number).toBe(2); // Reindexed to contiguous slot
     });
   });
 

@@ -12,7 +12,7 @@ describe("useSlotRendering", () => {
     isStereoDragTarget: false,
     samples: ["kick.wav", "snare.wav", "", ""],
     selectedIdx: 0,
-    stereoDragSlotIndex: undefined,
+    stereoDragSlotNumber: undefined,
     voice: 1,
   };
 
@@ -24,7 +24,7 @@ describe("useSlotRendering", () => {
         result.current.calculateRenderSlots();
 
       expect(nextAvailableSlot).toBe(2); // First empty slot after snare.wav
-      expect(slotsToRender).toBe(3); // 2 filled samples + 1 empty slot
+      expect(slotsToRender).toBe(12); // Always 12 slots for fixed height UI
     });
 
     it("handles empty samples array", () => {
@@ -36,7 +36,7 @@ describe("useSlotRendering", () => {
         result.current.calculateRenderSlots();
 
       expect(nextAvailableSlot).toBe(0);
-      expect(slotsToRender).toBe(1); // 0 filled samples + 1 empty slot
+      expect(slotsToRender).toBe(12); // Always 12 slots for fixed height UI
     });
 
     it("limits slots to maximum of 12", () => {
@@ -47,7 +47,7 @@ describe("useSlotRendering", () => {
 
       const { slotsToRender } = result.current.calculateRenderSlots();
 
-      expect(slotsToRender).toBe(15); // 15 filled samples, no empty slot shown when over 12
+      expect(slotsToRender).toBe(12); // Always 12 slots maximum, excess samples not shown
     });
 
     it("handles samples with empty strings correctly", () => {
@@ -63,7 +63,7 @@ describe("useSlotRendering", () => {
         result.current.calculateRenderSlots();
 
       expect(nextAvailableSlot).toBe(3); // After hat.wav at index 2
-      expect(slotsToRender).toBe(3); // 2 filled samples (kick.wav, hat.wav) + 1 empty slot
+      expect(slotsToRender).toBe(12); // Always 12 slots for fixed height UI
     });
 
     it("shows exactly 12 slots when voice has 12 samples", () => {
@@ -156,7 +156,7 @@ describe("useSlotRendering", () => {
         useSlotRendering({
           ...defaultProps,
           isStereoDragTarget: true,
-          stereoDragSlotIndex: 0,
+          stereoDragSlotNumber: 0,
         }),
       );
 
@@ -172,7 +172,7 @@ describe("useSlotRendering", () => {
         useSlotRendering({
           ...defaultProps,
           isStereoDragTarget: true,
-          stereoDragSlotIndex: 0,
+          stereoDragSlotNumber: 0,
           voice: 2,
         }),
       );

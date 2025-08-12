@@ -1,17 +1,20 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as hmrStateManager from "../hmrStateManager";
 import {
+  clearExplicitNavigation,
   clearHmrState,
   clearSavedSelectedKit,
   getSavedSelectedKit,
   isHmrAvailable,
   kitExists,
+  markExplicitNavigation,
   restoreRouteState,
   restoreSelectedKitIfExists,
   saveRouteState,
   saveSelectedKitState,
   setupRouteHmrHandlers,
+  wasRecentExplicitNavigation,
 } from "../hmrStateManager";
 
 describe("hmrStateManager", () => {
@@ -98,6 +101,65 @@ describe("hmrStateManager", () => {
     });
   });
 
+  describe("explicit navigation tracking", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    describe("markExplicitNavigation", () => {
+      it("should mark explicit navigation with current timestamp", () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
+
+        markExplicitNavigation();
+
+        expect(sessionStorage.getItem("hmr_explicit_navigation")).toBe(
+          now.toString(),
+        );
+      });
+    });
+
+    describe("wasRecentExplicitNavigation", () => {
+      it("should return false when no explicit navigation recorded", () => {
+        expect(wasRecentExplicitNavigation()).toBe(false);
+      });
+
+      it("should return true when explicit navigation was recent", () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
+        markExplicitNavigation();
+
+        // Move forward 500ms (within 1000ms window)
+        vi.setSystemTime(now + 500);
+        expect(wasRecentExplicitNavigation()).toBe(true);
+      });
+
+      it("should return false when explicit navigation was too long ago", () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
+        markExplicitNavigation();
+
+        // Move forward 1500ms (outside 1000ms window)
+        vi.setSystemTime(now + 1500);
+        expect(wasRecentExplicitNavigation()).toBe(false);
+      });
+    });
+
+    describe("clearExplicitNavigation", () => {
+      it("should remove explicit navigation marker", () => {
+        markExplicitNavigation();
+        expect(sessionStorage.getItem("hmr_explicit_navigation")).toBeTruthy();
+
+        clearExplicitNavigation();
+        expect(sessionStorage.getItem("hmr_explicit_navigation")).toBeNull();
+      });
+    });
+  });
+
   describe("getSavedSelectedKit", () => {
     it("should return saved kit name", () => {
       sessionStorage.setItem("hmr_selected_kit", "SavedKit");
@@ -118,12 +180,14 @@ describe("hmrStateManager", () => {
     it("should remove all HMR keys from session storage", () => {
       sessionStorage.setItem("hmr_route", "#/kits");
       sessionStorage.setItem("hmr_selected_kit", "MyKit");
+      sessionStorage.setItem("hmr_explicit_navigation", "123456");
       sessionStorage.setItem("other_key", "value");
 
       clearHmrState();
 
       expect(sessionStorage.getItem("hmr_route")).toBeNull();
       expect(sessionStorage.getItem("hmr_selected_kit")).toBeNull();
+      expect(sessionStorage.getItem("hmr_explicit_navigation")).toBeNull();
       expect(sessionStorage.getItem("other_key")).toBe("value");
     });
   });
@@ -248,6 +312,58 @@ describe("hmrStateManager", () => {
 
       // Should not throw
       expect(true).toBe(true);
+      vi.restoreAllMocks();
+    });
+
+    it("should not restore kit when recent explicit navigation occurred", () => {
+      vi.useFakeTimers();
+      vi.spyOn(hmrStateManager, "isHmrAvailable").mockReturnValue(true);
+
+      const now = Date.now();
+      vi.setSystemTime(now);
+
+      // Mark explicit navigation
+      markExplicitNavigation();
+
+      // Move forward slightly but within the window
+      vi.setSystemTime(now + 500);
+
+      sessionStorage.setItem("hmr_selected_kit", "Kit1");
+      const kits = [{ name: "Kit1" }];
+      const setSelectedKit = vi.fn();
+
+      restoreSelectedKitIfExists(kits, null, setSelectedKit);
+
+      // Should not restore because of recent explicit navigation
+      expect(setSelectedKit).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    it("should restore kit when explicit navigation was long ago", () => {
+      vi.useFakeTimers();
+      vi.spyOn(hmrStateManager, "isHmrAvailable").mockReturnValue(true);
+
+      const now = Date.now();
+      vi.setSystemTime(now);
+
+      // Mark explicit navigation
+      markExplicitNavigation();
+
+      // Move forward beyond the window
+      vi.setSystemTime(now + 1500);
+
+      sessionStorage.setItem("hmr_selected_kit", "Kit1");
+      const kits = [{ name: "Kit1" }];
+      const setSelectedKit = vi.fn();
+
+      restoreSelectedKitIfExists(kits, null, setSelectedKit);
+
+      // Should restore because explicit navigation was long ago
+      expect(setSelectedKit).toHaveBeenCalledWith("Kit1");
+
+      vi.useRealTimers();
       vi.restoreAllMocks();
     });
   });

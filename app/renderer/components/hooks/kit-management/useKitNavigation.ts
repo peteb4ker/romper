@@ -4,6 +4,8 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
 import React, { useCallback, useState } from "react";
 
+import { markExplicitNavigation } from "../../../utils/hmrStateManager";
+
 interface UseKitNavigationProps {
   allKitSamples: { [kit: string]: VoiceSamples };
   kits: KitWithRelations[];
@@ -121,6 +123,9 @@ export function useKitNavigation({
   const handleBack = useCallback(
     async (scrollToKit?: any) => {
       const { refresh, scrollToKitName } = parseScrollParameters(scrollToKit);
+
+      // Mark this as an explicit navigation action to prevent HMR restoration
+      markExplicitNavigation();
 
       if (refresh) {
         await refreshAllKitsAndSamples();

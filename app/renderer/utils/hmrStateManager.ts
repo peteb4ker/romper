@@ -5,6 +5,14 @@
 
 const HMR_ROUTE_KEY = "hmr_route";
 const HMR_SELECTED_KIT_KEY = "hmr_selected_kit";
+const HMR_EXPLICIT_NAVIGATION_KEY = "hmr_explicit_navigation";
+
+/**
+ * Clear the explicit navigation marker
+ */
+export function clearExplicitNavigation(): void {
+  sessionStorage.removeItem(HMR_EXPLICIT_NAVIGATION_KEY);
+}
 
 /**
  * Clear all HMR state from session storage
@@ -12,6 +20,7 @@ const HMR_SELECTED_KIT_KEY = "hmr_selected_kit";
 export function clearHmrState(): void {
   sessionStorage.removeItem(HMR_ROUTE_KEY);
   sessionStorage.removeItem(HMR_SELECTED_KIT_KEY);
+  sessionStorage.removeItem(HMR_EXPLICIT_NAVIGATION_KEY);
 }
 
 /**
@@ -49,6 +58,13 @@ export function kitExists(
 }
 
 /**
+ * Mark that an explicit navigation action occurred (like back navigation)
+ */
+export function markExplicitNavigation(): void {
+  sessionStorage.setItem(HMR_EXPLICIT_NAVIGATION_KEY, Date.now().toString());
+}
+
+/**
  * Restore the saved route if it exists and differs from current
  */
 export function restoreRouteState(): void {
@@ -67,6 +83,11 @@ export function restoreSelectedKitIfExists(
   setSelectedKit: ((kit: string) => void) | undefined,
 ): void {
   if (!isHmrAvailable() || !setSelectedKit) return;
+
+  // Don't restore if user just performed explicit navigation (like back button)
+  if (wasRecentExplicitNavigation()) {
+    return;
+  }
 
   const savedKit = getSavedSelectedKit();
   if (savedKit && kits.length > 0 && !currentSelectedKit) {
@@ -104,4 +125,16 @@ export function setupRouteHmrHandlers(): void {
   (import.meta as any).hot.accept(() => {
     restoreRouteState();
   });
+}
+
+/**
+ * Check if an explicit navigation action occurred recently (within last 1000ms)
+ */
+export function wasRecentExplicitNavigation(): boolean {
+  const timestamp = sessionStorage.getItem(HMR_EXPLICIT_NAVIGATION_KEY);
+  if (!timestamp) return false;
+
+  const navigationTime = parseInt(timestamp, 10);
+  const now = Date.now();
+  return now - navigationTime < 1000; // Within last 1 second
 }

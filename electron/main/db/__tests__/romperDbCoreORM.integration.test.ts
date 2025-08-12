@@ -384,8 +384,6 @@ describe("Drizzle ORM Database Operations", () => {
   });
 
   describe("Error Handling and Edge Cases", () => {
-    // Corruption detection heuristic removed as unreliable; error handling covered elsewhere
-
     it("should handle operations on non-existent database gracefully", async () => {
       const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");
 
@@ -938,11 +936,7 @@ describe("Drizzle ORM Database Operations", () => {
 
       // Immediate cleanup - clean up the corrupted file right away to prevent Windows locking
       try {
-        console.log(
-          `[TEST] Immediate cleanup of corrupted test file: ${corruptedDbPath}`,
-        );
         await deleteDbFileWithRetry(corruptedDbPath);
-        console.log(`[TEST] Successfully cleaned up corrupted test file`);
       } catch (error) {
         console.warn(`[TEST] Failed to clean up corrupted test file:`, error);
       }

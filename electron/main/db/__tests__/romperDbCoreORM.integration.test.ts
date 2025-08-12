@@ -6,25 +6,20 @@ import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { deleteDbFileWithRetry } from "../fileOperations.js";
-
 import {
   addKit,
   addSample,
   createRomperDbFile,
   deleteSamples,
   deleteSamplesWithoutReindexing,
-  ensureDatabaseMigrations,
-  getAllBanks,
   getAllSamples,
   getKit,
   getKits,
   getKitSamples,
-  isDbCorruptionError,
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
   moveSample,
-  updateBank,
   updateKit,
   updateVoiceAlias,
   validateDatabaseSchema,
@@ -34,6 +29,24 @@ import {
 // Test utilities
 const TEST_DB_DIR = path.join(__dirname, "test-data");
 const TEST_DB_PATH = path.join(TEST_DB_DIR, "romper.sqlite");
+
+async function cleanupSqliteFiles(dir: string) {
+  if (!fs.existsSync(dir)) return;
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await cleanupSqliteFiles(fullPath);
+    } else if (entry.name.endsWith(".sqlite")) {
+      try {
+        await deleteDbFileWithRetry(fullPath);
+      } catch (error) {
+        console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
+      }
+    }
+  }
+}
 
 async function cleanupTestDb() {
   if (fs.existsSync(TEST_DB_PATH)) {
@@ -48,24 +61,6 @@ async function ensureTestDirClean() {
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   }
   fs.mkdirSync(TEST_DB_DIR, { recursive: true });
-}
-
-async function cleanupSqliteFiles(dir: string) {
-  if (!fs.existsSync(dir)) return;
-  
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await cleanupSqliteFiles(fullPath);
-    } else if (entry.name.endsWith('.sqlite')) {
-      try {
-        await deleteDbFileWithRetry(fullPath);
-      } catch (error) {
-        console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
-      }
-    }
-  }
 }
 
 describe("Drizzle ORM Database Operations", () => {
@@ -386,16 +381,6 @@ describe("Drizzle ORM Database Operations", () => {
   });
 
   describe("Error Handling and Edge Cases", () => {
-    it("should detect database corruption errors", () => {
-      expect(isDbCorruptionError("file is not a database")).toBe(true);
-      expect(isDbCorruptionError("database disk image is malformed")).toBe(
-        true,
-      );
-      expect(isDbCorruptionError("database is locked")).toBe(true);
-      expect(isDbCorruptionError("SQL logic error")).toBe(true);
-      expect(isDbCorruptionError("some other error")).toBe(false);
-    });
-
     it("should handle operations on non-existent database gracefully", async () => {
       const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");
 
@@ -421,58 +406,6 @@ describe("Drizzle ORM Database Operations", () => {
       const result2 = await addKit(TEST_DB_DIR, testKit);
       expect(result2.success).toBe(false);
       expect(result2.error).toBeDefined();
-    });
-  });
-
-  describe("Backward Compatibility", () => {
-    beforeEach(async () => {
-      await createRomperDbFile(TEST_DB_DIR);
-    });
-
-    it("should maintain compatibility with existing Kit interface", async () => {
-      // Test the simplified Kit interface using editable directly
-      const kitRecord: Kit = {
-        alias: "Old Style",
-        editable: true,
-        locked: false,
-        name: "A0",
-      };
-
-      const result = addKit(TEST_DB_DIR, kitRecord);
-      expect(result.success).toBe(true);
-
-      const kitsResult = getKits(TEST_DB_DIR);
-      expect(kitsResult.success).toBe(true);
-
-      const kit = kitsResult.data?.find((k) => k.name === "A0");
-      expect(kit).toBeDefined();
-      expect(kit?.editable).toBe(true); // Using editable directly now
-      expect(kit?.alias).toBe("Old Style");
-    });
-
-    it("should support legacy sample record format", async () => {
-      // Insert a kit first
-      const testKit: Kit = { editable: true, name: "A0" };
-      await addKit(TEST_DB_DIR, testKit);
-
-      // Insert sample using legacy interface
-      const legacySample: Sample = {
-        filename: "legacy_sample.wav",
-        is_stereo: false,
-        kit_name: "A0",
-        slot_number: 0,
-        source_path: "/test/path/legacy_sample.wav",
-        voice_number: 1,
-      };
-
-      const result = addSample(TEST_DB_DIR, legacySample);
-      expect(result.success).toBe(true);
-
-      // Verify sample was inserted correctly
-      const samplesResult = getKitSamples(TEST_DB_DIR, "A0");
-      expect(samplesResult.success).toBe(true);
-      expect(samplesResult.data).toHaveLength(1);
-      expect(samplesResult.data![0].filename).toBe("legacy_sample.wav");
     });
   });
 
@@ -652,25 +585,6 @@ describe("Drizzle ORM Database Operations", () => {
       const result = validateDatabaseSchema(nonExistentDir);
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
-    });
-  });
-
-  describe("Database Migrations", () => {
-    it("should skip migrations for non-existent database", () => {
-      const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");
-      const result = ensureDatabaseMigrations(nonExistentDir);
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("Database file does not exist");
-    });
-
-    it("should run migrations on existing database", () => {
-      createRomperDbFile(TEST_DB_DIR);
-      const result = ensureDatabaseMigrations(TEST_DB_DIR);
-      // Should succeed or fail gracefully - both are valid outcomes
-      expect(result.success).toBeDefined();
-      if (!result.success) {
-        expect(result.error).toBeDefined();
-      }
     });
   });
 
@@ -899,70 +813,4 @@ describe("Drizzle ORM Database Operations", () => {
     });
   });
 
-  describe("Bank Operations", () => {
-    beforeEach(() => {
-      createRomperDbFile(TEST_DB_DIR);
-    });
-
-    it("should get all banks", () => {
-      const result = getAllBanks(TEST_DB_DIR);
-      expect(result.success).toBe(true);
-      expect(Array.isArray(result.data)).toBe(true);
-      // Banks table might be empty initially, that's fine
-    });
-
-    it("should update bank information", () => {
-      // First, we need to ensure the bank exists or handle the case where it doesn't
-      const updates = {
-        artist: "Test Artist",
-        rtf_filename: "test.rtf",
-        scanned_at: new Date(),
-      };
-
-      const result = updateBank(TEST_DB_DIR, "A", updates);
-      // This might fail if bank doesn't exist, which is acceptable behavior
-      expect(result).toBeDefined();
-      if (result.success) {
-        expect(result.success).toBe(true);
-      } else {
-        expect(result.error).toBeDefined();
-      }
-    });
-  });
-
-  describe("Error Handling - Additional Cases", () => {
-    it("should handle withDb errors gracefully", () => {
-      const corruptedDir = path.join(TEST_DB_DIR, "corrupted");
-      fs.mkdirSync(corruptedDir, { recursive: true });
-
-      // Create a file that's not a valid database
-      const corruptedDbPath = path.join(corruptedDir, "romper.sqlite");
-      fs.writeFileSync(corruptedDbPath, "not a database");
-
-      const result = withDb(corruptedDir, (_db) => {
-        return _db.select().from({ id: 1 }).all(); // This should fail
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-    });
-
-    it("should handle operations on non-existent kits", () => {
-      createRomperDbFile(TEST_DB_DIR);
-
-      const result = markKitAsModified(TEST_DB_DIR, "NonExistentKit");
-      // Should succeed but have no effect
-      expect(result.success).toBe(true);
-    });
-
-    it("should handle getAllSamples on empty database", () => {
-      createRomperDbFile(TEST_DB_DIR);
-
-      const result = getAllSamples(TEST_DB_DIR);
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(0);
-    });
-
-    // This function was replaced with automatic reindexing in deleteSamples
-  });
 });

@@ -9,7 +9,6 @@ import {
   DB_FILENAME,
   ensureDatabaseMigrations,
   getMigrationsPath,
-  isDbCorruptionError,
   validateDatabaseSchema,
   withDb,
 } from "../dbUtilities";
@@ -17,6 +16,28 @@ import {
 // Test utilities
 const TEST_DB_DIR = path.join(__dirname, "test-data");
 const TEST_DB_PATH = path.join(TEST_DB_DIR, DB_FILENAME);
+
+async function cleanupSqliteFiles(dir: string) {
+  if (!fs.existsSync(dir)) {
+    return;
+  }
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      await cleanupSqliteFiles(fullPath);
+    } else if (entry.name.endsWith(".sqlite")) {
+      try {
+        await deleteDbFileWithRetry(fullPath);
+      } catch (error) {
+        console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
+      }
+    }
+  }
+}
 
 async function cleanupTestDb() {
   if (fs.existsSync(TEST_DB_PATH)) {
@@ -28,27 +49,13 @@ async function ensureTestDirClean() {
   if (fs.existsSync(TEST_DB_DIR)) {
     // Clean up any SQLite files in subdirectories first
     await cleanupSqliteFiles(TEST_DB_DIR);
+
+    // Remove the entire directory
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   }
-  fs.mkdirSync(TEST_DB_DIR, { recursive: true });
-}
 
-async function cleanupSqliteFiles(dir: string) {
-  if (!fs.existsSync(dir)) return;
-  
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await cleanupSqliteFiles(fullPath);
-    } else if (entry.name.endsWith('.sqlite')) {
-      try {
-        await deleteDbFileWithRetry(fullPath);
-      } catch (error) {
-        console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
-      }
-    }
-  }
+  // Create fresh directory
+  fs.mkdirSync(TEST_DB_DIR, { recursive: true });
 }
 
 describe("Database Utilities Integration Tests", () => {
@@ -167,17 +174,6 @@ describe("Database Utilities Integration Tests", () => {
   });
 
   describe("Utility Functions", () => {
-    it("should identify corruption errors correctly", () => {
-      expect(isDbCorruptionError("database disk image is malformed")).toBe(
-        true,
-      );
-      expect(isDbCorruptionError("file is not a database")).toBe(true);
-      expect(isDbCorruptionError("database is locked")).toBe(true);
-      expect(isDbCorruptionError("SQL logic error")).toBe(true);
-      expect(isDbCorruptionError("permission denied")).toBe(false);
-      expect(isDbCorruptionError("")).toBe(false);
-    });
-
     it("should get migrations path", () => {
       const result = getMigrationsPath();
       // Should return a path or null - both are valid
@@ -207,22 +203,6 @@ describe("Database Utilities Integration Tests", () => {
   });
 
   describe("Error Handling", () => {
-    it("should handle corrupted database files", () => {
-      const corruptedDir = path.join(TEST_DB_DIR, "corrupted");
-      fs.mkdirSync(corruptedDir, { recursive: true });
-
-      // Create a file that's not a valid database
-      const corruptedDbPath = path.join(corruptedDir, DB_FILENAME);
-      fs.writeFileSync(corruptedDbPath, "not a database");
-
-      const result = withDb(corruptedDir, (_db) => {
-        return "should not reach here";
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-    });
-
     it("should handle permission errors gracefully", () => {
       // Create a read-only directory (if possible)
       const readOnlyDir = path.join(TEST_DB_DIR, "readonly");

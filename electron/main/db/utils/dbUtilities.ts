@@ -91,14 +91,6 @@ export function createRomperDbFile(dbDir: string): {
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     console.error("[Main] Database creation error:", error);
-    if (isDbCorruptionError(error)) {
-      try {
-        fs.unlinkSync(dbPath);
-        return createRomperDbFile(dbDir);
-      } catch {
-        return { error, success: false };
-      }
-    }
     return { error, success: false };
   }
 }
@@ -198,19 +190,6 @@ export function getMigrationsPath(): null | string {
   console.error("[Main] No migrations folder found in any expected location:");
   possiblePaths.forEach((p) => console.error(`  - ${p}`));
   return null;
-}
-
-/**
- * Check if an error indicates database corruption
- */
-export function isDbCorruptionError(error: string): boolean {
-  const corruptionKeywords = [
-    "database disk image is malformed",
-    "file is not a database",
-    "database is locked",
-    "SQL logic error",
-  ];
-  return corruptionKeywords.some((keyword) => error.includes(keyword));
 }
 
 /**

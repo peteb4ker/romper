@@ -11,7 +11,7 @@
     "build:renderer": "vite build --config vite.config.ts",
     "test": "bash -c 'npm run test:unit; u=$?; npm run test:integration; i=$?; npm run coverage:merge; npm run coverage:total; exit $(( u || i ))'",
     "test:unit": "npx vitest --config vite.config.ts --run --silent --reporter=dot",
-    "test:integration": "node electron/run-vitest-in-electron.cjs --run --silent --reporter=dot",
+    "test:integration": "node electron/run-vitest-in-electron.cjs --run --reporter=verbose",
     "test:e2e": "npm run build && npm run test:play",
     "test:play": "playwright test",
     "coverage:merge": "npm run coverage:merge:json && npm run coverage:merge:lcov",

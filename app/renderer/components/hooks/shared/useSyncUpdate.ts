@@ -26,9 +26,14 @@ interface UseSyncUpdateResult {
   cancelSync: () => void;
   clearError: () => void;
   error: null | string;
-  generateChangeSummary: () => Promise<null | SyncChangeSummary>;
+  generateChangeSummary: (
+    sdCardPath?: string,
+  ) => Promise<null | SyncChangeSummary>;
   isLoading: boolean;
-  startSync: (changeSummary: SyncChangeSummary) => Promise<boolean>;
+  startSync: (options: {
+    sdCardPath: string;
+    wipeSdCard?: boolean;
+  }) => Promise<boolean>;
   syncProgress: null | SyncProgress;
 }
 
@@ -45,8 +50,8 @@ export function useSyncUpdate(
     setError(null);
   }, []);
 
-  const generateChangeSummary =
-    useCallback(async (): Promise<null | SyncChangeSummary> => {
+  const generateChangeSummary = useCallback(
+    async (sdCardPath?: string): Promise<null | SyncChangeSummary> => {
       if (!electronAPI?.generateSyncChangeSummary) {
         setError("Sync functionality not available");
         return null;
@@ -56,7 +61,7 @@ export function useSyncUpdate(
       setError(null);
 
       try {
-        const result = await electronAPI.generateSyncChangeSummary();
+        const result = await electronAPI.generateSyncChangeSummary(sdCardPath);
 
         if (!result.success) {
           setError(result.error || "Failed to generate sync summary");
@@ -72,10 +77,15 @@ export function useSyncUpdate(
       } finally {
         setIsLoading(false);
       }
-    }, [electronAPI]);
+    },
+    [electronAPI],
+  );
 
   const startSync = useCallback(
-    async (changeSummary: SyncChangeSummary): Promise<boolean> => {
+    async (options: {
+      sdCardPath: string;
+      wipeSdCard?: boolean;
+    }): Promise<boolean> => {
       if (!electronAPI?.startKitSync) {
         setError("Sync functionality not available");
         return false;
@@ -88,10 +98,8 @@ export function useSyncUpdate(
         currentFile: "",
         filesCompleted: 0,
         status: "preparing",
-        totalBytes: changeSummary.estimatedSize,
-        totalFiles:
-          changeSummary.filesToCopy.length +
-          changeSummary.filesToConvert.length,
+        totalBytes: 0, // Will be updated by progress events
+        totalFiles: 0, // Will be updated by progress events
       });
 
       try {
@@ -103,8 +111,8 @@ export function useSyncUpdate(
         }
 
         const result = await electronAPI.startKitSync({
-          filesToConvert: changeSummary.filesToConvert,
-          filesToCopy: changeSummary.filesToCopy,
+          sdCardPath: options.sdCardPath,
+          wipeSdCard: options.wipeSdCard,
         });
 
         if (!result.success) {

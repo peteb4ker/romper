@@ -103,6 +103,8 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       handleConfirmSync,
       handleSyncToSdCard,
       isSyncLoading,
+      onSdCardPathChange,
+      sdCardPath,
       showSyncDialog,
     } = sync;
 
@@ -255,6 +257,8 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             kitName={currentSyncKit}
             onClose={handleCloseSyncDialog}
             onConfirm={handleConfirmSync}
+            onSdCardPathChange={onSdCardPathChange}
+            sdCardPath={sdCardPath}
           />
         )}
       </div>

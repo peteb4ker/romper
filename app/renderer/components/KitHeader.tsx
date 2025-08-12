@@ -7,7 +7,6 @@ import {
   FiChevronRight,
   FiCircle,
   FiEdit3,
-  FiFolder,
   FiLock,
   FiRefreshCw,
 } from "react-icons/fi";
@@ -63,18 +62,23 @@ const KitHeader: React.FC<KitHeaderProps> = ({
       )}
       {onPrevKit && kits && kitIndex !== undefined && (
         <button
-          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
+          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded w-16"
           disabled={kitIndex === 0}
           onClick={onPrevKit}
           style={kitIndex === 0 ? { cursor: "not-allowed", opacity: 0.5 } : {}}
-          title="Previous Kit"
+          title={
+            kitIndex > 0
+              ? `Previous Kit: ${kits[kitIndex - 1]?.name || ""}`
+              : "No previous kit"
+          }
         >
-          <FiChevronLeft className="inline-block mr-1" /> Previous
+          <FiChevronLeft className="inline-block mr-1" />
+          {kitIndex > 0 ? kits[kitIndex - 1]?.name || "" : ""}
         </button>
       )}
       {onNextKit && kits && kitIndex !== undefined && (
         <button
-          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
+          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded w-16"
           disabled={kitIndex === kits.length - 1}
           onClick={onNextKit}
           style={
@@ -82,9 +86,14 @@ const KitHeader: React.FC<KitHeaderProps> = ({
               ? { cursor: "not-allowed", opacity: 0.5 }
               : {}
           }
-          title="Next Kit"
+          title={
+            kitIndex < kits.length - 1
+              ? `Next Kit: ${kits[kitIndex + 1]?.name || ""}`
+              : "No next kit"
+          }
         >
-          Next <FiChevronRight className="inline-block ml-1" />
+          {kitIndex < kits.length - 1 ? kits[kitIndex + 1]?.name || "" : ""}
+          <FiChevronRight className="inline-block ml-1" />
         </button>
       )}
     </div>
@@ -92,55 +101,53 @@ const KitHeader: React.FC<KitHeaderProps> = ({
     {/* Center spacer */}
     <div className="flex-1" />
 
-    {/* Center: Kit icon and name */}
-    <div className="flex items-center gap-2">
-      <FiFolder
-        aria-label="Kit folder"
-        className="inline-block align-text-bottom text-gray-500 dark:text-gray-400"
-      />
+    {/* Center: Kit name */}
+    <div className="flex items-center justify-center gap-2 min-w-0 flex-1">
       <span className="font-sans text-lg font-bold text-gray-900 dark:text-gray-50">
         {kitName}
       </span>
       <span className="text-lg font-bold text-gray-900 dark:text-gray-50">
         :
       </span>
-      {editingKitAlias ? (
-        <input
-          autoFocus
-          className="border-b border-blue-500 bg-transparent text-base font-semibold text-gray-800 dark:text-gray-100 focus:outline-none px-1 w-48"
-          onBlur={() => {
-            setEditingKitAlias(false);
-            handleSaveKitAlias(kitAliasInput.trim());
-          }}
-          onChange={(e) => setKitAliasInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
+      <div className="min-w-[8rem] flex justify-center">
+        {editingKitAlias ? (
+          <input
+            autoFocus
+            className="border-b border-blue-500 bg-transparent text-base font-semibold text-gray-800 dark:text-gray-100 focus:outline-none px-1 w-48 text-center"
+            onBlur={() => {
               setEditingKitAlias(false);
               handleSaveKitAlias(kitAliasInput.trim());
-            } else if (e.key === "Escape") {
-              setEditingKitAlias(false);
-              setKitAliasInput(kit?.alias || "");
-            }
-          }}
-          ref={kitAliasInputRef}
-          value={kitAliasInput}
-        />
-      ) : (
-        <button
-          className="font-semibold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline min-w-[2rem] bg-transparent border-none p-0"
-          onClick={() => setEditingKitAlias(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              setEditingKitAlias(true);
-            }
-          }}
-          title="Edit kit name"
-        >
-          {kit?.alias || (
-            <span className="italic text-gray-400">(no name)</span>
-          )}
-        </button>
-      )}
+            }}
+            onChange={(e) => setKitAliasInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setEditingKitAlias(false);
+                handleSaveKitAlias(kitAliasInput.trim());
+              } else if (e.key === "Escape") {
+                setEditingKitAlias(false);
+                setKitAliasInput(kit?.alias || "");
+              }
+            }}
+            ref={kitAliasInputRef}
+            value={kitAliasInput}
+          />
+        ) : (
+          <button
+            className="font-semibold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline bg-transparent border-none p-0 text-center"
+            onClick={() => setEditingKitAlias(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setEditingKitAlias(true);
+              }
+            }}
+            title="Edit kit name"
+          >
+            {kit?.alias || (
+              <span className="italic text-gray-400">(no name)</span>
+            )}
+          </button>
+        )}
+      </div>
     </div>
 
     {/* Right side spacer */}

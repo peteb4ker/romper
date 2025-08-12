@@ -80,6 +80,7 @@ class SyncService {
    */
   async generateChangeSummary(
     inMemorySettings: Record<string, any>,
+    sdCardPath?: string,
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
@@ -111,7 +112,7 @@ class SyncService {
 
       // Process each sample
       for (const sample of samples) {
-        this.processSampleForSync(sample, localStorePath, results);
+        this.processSampleForSync(sample, localStorePath, results, sdCardPath);
       }
 
       // Calculate estimates
@@ -149,20 +150,43 @@ class SyncService {
    */
   async startKitSync(
     inMemorySettings: Record<string, any>,
-    syncData: {
-      filesToConvert: SyncFileOperation[];
-      filesToCopy: SyncFileOperation[];
+    options: {
+      sdCardPath: string;
+      wipeSdCard?: boolean;
     },
   ): Promise<DbResult<{ syncedFiles: number }>> {
     try {
-      const allFiles = [...syncData.filesToCopy, ...syncData.filesToConvert];
+      // Generate the sync plan internally
+      const changeSummaryResult = await this.generateChangeSummary(
+        inMemorySettings,
+        options.sdCardPath,
+      );
+
+      if (!changeSummaryResult.success || !changeSummaryResult.data) {
+        return {
+          error: changeSummaryResult.error || "Failed to generate sync plan",
+          success: false,
+        };
+      }
+
+      const changeSummary = changeSummaryResult.data;
+      const allFiles = [
+        ...changeSummary.filesToCopy,
+        ...changeSummary.filesToConvert,
+      ];
       const totalBytes = this.calculateTotalBytes(allFiles);
+
+      // Handle SD card wiping if requested
+      if (options.wipeSdCard && options.sdCardPath) {
+        await this.wipeSdCard(options.sdCardPath);
+      }
 
       this.initializeSyncJob(allFiles, totalBytes);
 
       const syncedFiles = await this.processAllFiles(
         allFiles,
         inMemorySettings,
+        options.sdCardPath,
       );
 
       this.emitCompletionProgress(syncedFiles, allFiles.length);
@@ -580,10 +604,11 @@ class SyncService {
     localStorePath: string,
     kitName: string,
     sample: Sample,
+    sdCardPath?: string,
   ): string {
-    // NOTE: Future enhancement - use actual SD card path when SD card detection is implemented
-    // For now, create a sync output directory in the local store
-    const syncDir = path.join(localStorePath, "sync_output", kitName);
+    // Use SD card path if provided, otherwise fall back to sync_output directory
+    const baseDir = sdCardPath || path.join(localStorePath, "sync_output");
+    const syncDir = path.join(baseDir, kitName);
     const voiceDir = `${sample.voice_number}`;
     return path.join(syncDir, voiceDir, sample.filename);
   }
@@ -744,6 +769,7 @@ class SyncService {
   private async processAllFiles(
     allFiles: SyncFileOperation[],
     inMemorySettings: Record<string, any>,
+    _sdCardPath?: string,
   ): Promise<number> {
     let syncedFiles = 0;
 
@@ -790,6 +816,7 @@ class SyncService {
       validationErrors: SyncValidationError[];
       warnings: string[];
     },
+    sdCardPath?: string,
   ): void {
     if (!sample.source_path) {
       return; // Skip samples without source path
@@ -815,6 +842,7 @@ class SyncService {
       localStorePath,
       kitName,
       sample,
+      sdCardPath,
     );
     this.categorizeSyncFileOperation(
       sample,
@@ -893,6 +921,39 @@ class SyncService {
 
     const stats = fs.statSync(sourcePath);
     return { fileSize: stats.size, isValid: true };
+  }
+
+  /**
+   * Wipe SD card contents before sync
+   */
+  private async wipeSdCard(sdCardPath: string): Promise<void> {
+    if (!fs.existsSync(sdCardPath)) {
+      throw new Error(`SD card path does not exist: ${sdCardPath}`);
+    }
+
+    try {
+      // List all items in the SD card directory
+      const items = fs.readdirSync(sdCardPath);
+
+      for (const item of items) {
+        const itemPath = path.join(sdCardPath, item);
+        const stats = fs.statSync(itemPath);
+
+        if (stats.isDirectory()) {
+          // Remove directory recursively
+          fs.rmSync(itemPath, { force: true, recursive: true });
+        } else {
+          // Remove file
+          fs.unlinkSync(itemPath);
+        }
+      }
+
+      console.log(`Successfully wiped SD card at: ${sdCardPath}`);
+    } catch (error) {
+      throw new Error(
+        `Failed to wipe SD card: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 }
 

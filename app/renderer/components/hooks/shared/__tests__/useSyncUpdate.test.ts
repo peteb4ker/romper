@@ -65,7 +65,7 @@ describe("useSyncUpdate", () => {
         summary = await result.current.generateChangeSummary();
       });
 
-      expect(mockElectronAPI.generateSyncChangeSummary).toHaveBeenCalledWith();
+      expect(mockElectronAPI.generateSyncChangeSummary).toHaveBeenCalledWith(undefined);
       expect(summary).toEqual(mockChangeSummary);
       expect(result.current.isLoading).toBe(false);
       expect(result.current.error).toBeNull();
@@ -168,12 +168,15 @@ describe("useSyncUpdate", () => {
 
       let success = false;
       await act(async () => {
-        success = await result.current.startSync(mockChangeSummary);
+        success = await result.current.startSync({
+          sdCardPath: "/path/to/sd",
+          wipeSdCard: false,
+        });
       });
 
       expect(mockElectronAPI.startKitSync).toHaveBeenCalledWith({
-        filesToConvert: mockChangeSummary.filesToConvert,
-        filesToCopy: mockChangeSummary.filesToCopy,
+        sdCardPath: "/path/to/sd",
+        wipeSdCard: false,
       });
       expect(success).toBe(true);
       expect(result.current.syncProgress?.status).toBe("completed");
@@ -211,7 +214,10 @@ describe("useSyncUpdate", () => {
       );
 
       await act(async () => {
-        await result.current.startSync(mockChangeSummary);
+        await result.current.startSync({
+          sdCardPath: "/path/to/sd",
+          wipeSdCard: false,
+        });
       });
 
       expect(result.current.syncProgress).toMatchObject({
@@ -219,8 +225,8 @@ describe("useSyncUpdate", () => {
         currentFile: "",
         filesCompleted: 0,
         status: "completed",
-        totalBytes: 1024000,
-        totalFiles: 1,
+        totalBytes: 0,
+        totalFiles: 0,
       });
     });
 
@@ -330,7 +336,7 @@ describe("useSyncUpdate", () => {
 
       expect(
         window.electronAPI.generateSyncChangeSummary,
-      ).toHaveBeenCalledWith();
+      ).toHaveBeenCalledWith(undefined);
     });
   });
 });

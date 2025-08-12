@@ -7,32 +7,23 @@ import { syncService } from "../services/syncService.js";
  */
 export function registerSyncIpcHandlers(inMemorySettings: Record<string, any>) {
   // SD Card sync operations
-  ipcMain.handle("generateSyncChangeSummary", async () => {
-    return syncService.generateChangeSummary(inMemorySettings);
-  });
+  ipcMain.handle(
+    "generateSyncChangeSummary",
+    async (_event, sdCardPath?: string) => {
+      return syncService.generateChangeSummary(inMemorySettings, sdCardPath);
+    },
+  );
 
   ipcMain.handle(
     "startKitSync",
     async (
       _event,
-      syncData: {
-        filesToConvert: Array<{
-          destinationPath: string;
-          filename: string;
-          kitName: string;
-          operation: "convert" | "copy";
-          sourcePath: string;
-        }>;
-        filesToCopy: Array<{
-          destinationPath: string;
-          filename: string;
-          kitName: string;
-          operation: "convert" | "copy";
-          sourcePath: string;
-        }>;
+      options: {
+        sdCardPath: string;
+        wipeSdCard?: boolean;
       },
     ) => {
-      return syncService.startKitSync(inMemorySettings, syncData);
+      return syncService.startKitSync(inMemorySettings, options);
     },
   );
 

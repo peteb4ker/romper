@@ -60,7 +60,7 @@ export interface ElectronAPI {
   ) => Promise<DbResult>;
   ensureDir?: (dir: string) => Promise<void>;
   // Task 8.1: SD Card Sync Operations
-  generateSyncChangeSummary?: () => Promise<
+  generateSyncChangeSummary?: (sdCardPath?: string) => Promise<
     DbResult<{
       estimatedSize: number;
       estimatedTime: number;
@@ -242,19 +242,9 @@ export interface ElectronAPI {
 
   showItemInFolder: (path: string) => Promise<void>;
 
-  startKitSync?: (syncData: {
-    filesToConvert: Array<{
-      destinationPath: string;
-      filename: string;
-      operation: "convert" | "copy";
-      sourcePath: string;
-    }>;
-    filesToCopy: Array<{
-      destinationPath: string;
-      filename: string;
-      operation: "convert" | "copy";
-      sourcePath: string;
-    }>;
+  startKitSync?: (options: {
+    sdCardPath: string;
+    wipeSdCard?: boolean;
   }) => Promise<DbResult<{ syncedFiles: number }>>;
 
   stopSample?: () => Promise<any>;

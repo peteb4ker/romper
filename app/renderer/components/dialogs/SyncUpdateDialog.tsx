@@ -5,6 +5,7 @@ import {
   FiDatabase,
   FiDownload,
   FiFile,
+  FiFolder,
   FiHardDrive,
   FiX,
 } from "react-icons/fi";
@@ -42,7 +43,12 @@ interface SyncUpdateDialogProps {
   isOpen: boolean;
   kitName: string;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (options: {
+    sdCardPath: null | string;
+    wipeSdCard: boolean;
+  }) => void;
+  onSdCardPathChange?: (path: null | string) => void;
+  sdCardPath?: null | string;
 }
 
 const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
@@ -52,15 +58,37 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   kitName,
   onClose,
   onConfirm,
+  onSdCardPathChange,
+  sdCardPath,
 }) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [wipeSdCard, setWipeSdCard] = useState(false);
+  const [localSdCardPath, setLocalSdCardPath] = useState<null | string>(
+    sdCardPath || null,
+  );
 
   useEffect(() => {
     // Reset details view when dialog opens
     if (isOpen) {
       setShowDetails(false);
+      setWipeSdCard(false);
+      setLocalSdCardPath(sdCardPath || null);
     }
-  }, [isOpen]);
+  }, [isOpen, sdCardPath]);
+
+  const handleSdCardSelect = async () => {
+    if (window.electronAPI?.selectSdCard) {
+      const selectedPath = await window.electronAPI.selectSdCard();
+      setLocalSdCardPath(selectedPath);
+      if (onSdCardPathChange) {
+        onSdCardPathChange(selectedPath);
+      }
+    }
+  };
+
+  const handleConfirm = () => {
+    onConfirm({ sdCardPath: localSdCardPath, wipeSdCard });
+  };
 
   if (!isOpen) return null;
 
@@ -87,6 +115,14 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
     changeSummary.validationErrors && changeSummary.validationErrors.length > 0;
 
   const getStatusMessage = () => {
+    if (!localSdCardPath) {
+      return (
+        <span className="text-red-600 dark:text-red-400">
+          Please select an SD card location to continue
+        </span>
+      );
+    }
+
     if (hasValidationErrors) {
       return (
         <span className="text-red-600 dark:text-red-400">
@@ -142,6 +178,58 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 Ready to sync to SD card
               </div>
             </div>
+          </div>
+
+          {/* SD Card Selection */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+              <FiHardDrive className="text-gray-600 dark:text-gray-400" />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                  SD Card Location
+                </div>
+                {localSdCardPath ? (
+                  <div className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+                    {localSdCardPath}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500 dark:text-gray-500 italic">
+                    No SD card selected
+                  </div>
+                )}
+              </div>
+              <button
+                className="px-3 py-1 text-sm bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-2"
+                disabled={isLoading}
+                onClick={handleSdCardSelect}
+              >
+                <FiFolder className="w-4 h-4" />
+                {localSdCardPath ? "Change" : "Select"}
+              </button>
+            </div>
+
+            {/* Wipe Option */}
+            {localSdCardPath && (
+              <div className="flex items-center gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <input
+                  checked={wipeSdCard}
+                  className="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 rounded focus:ring-yellow-500 dark:focus:ring-yellow-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  disabled={isLoading}
+                  id="wipeSdCard"
+                  onChange={(e) => setWipeSdCard(e.target.checked)}
+                  type="checkbox"
+                />
+                <label className="flex-1" htmlFor="wipeSdCard">
+                  <div className="font-medium text-yellow-800 dark:text-yellow-200">
+                    Clear SD card before sync
+                  </div>
+                  <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                    This will delete all existing files on the SD card before
+                    copying new ones
+                  </div>
+                </label>
+              </div>
+            )}
           </div>
 
           {/* Summary Stats */}
@@ -336,8 +424,13 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             </button>
             <button
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-              disabled={isLoading || totalFiles === 0 || hasValidationErrors}
-              onClick={onConfirm}
+              disabled={
+                isLoading ||
+                totalFiles === 0 ||
+                hasValidationErrors ||
+                !localSdCardPath
+              }
+              onClick={handleConfirm}
             >
               {isLoading ? (
                 <>

@@ -171,6 +171,7 @@ describe("SyncUpdateDialog", () => {
           kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
+          sdCardPath="/path/to/sd"
         />,
       );
 
@@ -215,6 +216,7 @@ describe("SyncUpdateDialog", () => {
           kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
+          sdCardPath="/path/to/sd"
         />,
       );
 
@@ -260,6 +262,7 @@ describe("SyncUpdateDialog", () => {
           kitName="A0"
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
+          sdCardPath="/path/to/sd"
         />,
       );
 
@@ -308,7 +311,7 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(
-        screen.getByText("Cannot sync - 1 file missing"),
+        screen.getByText("Please select an SD card location to continue"),
       ).toBeInTheDocument();
     });
 

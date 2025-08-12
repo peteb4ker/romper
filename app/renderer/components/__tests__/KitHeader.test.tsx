@@ -94,7 +94,7 @@ describe("KitHeader", () => {
   it("calls onPrevKit and disables at first kit", () => {
     const onPrevKit = vi.fn();
     render(<KitHeader {...baseProps} kitIndex={0} onPrevKit={onPrevKit} />);
-    const prevBtn = screen.getByTitle("Previous Kit");
+    const prevBtn = screen.getByTitle("No previous kit");
     expect(prevBtn).toBeDisabled();
     fireEvent.click(prevBtn);
     expect(onPrevKit).not.toHaveBeenCalled();
@@ -103,7 +103,7 @@ describe("KitHeader", () => {
   it("calls onNextKit and disables at last kit", () => {
     const onNextKit = vi.fn();
     render(<KitHeader {...baseProps} kitIndex={2} onNextKit={onNextKit} />);
-    const nextBtn = screen.getByTitle("Next Kit");
+    const nextBtn = screen.getByTitle("No next kit");
     expect(nextBtn).toBeDisabled();
     fireEvent.click(nextBtn);
     expect(onNextKit).not.toHaveBeenCalled();

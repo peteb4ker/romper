@@ -14,6 +14,7 @@ export function useKitSync({ onMessage }: UseKitSyncOptions) {
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [currentSyncKit, setCurrentSyncKit] = useState<null | string>(null);
   const [currentChangeSummary, setCurrentChangeSummary] = useState<any>(null);
+  const [sdCardPath, setSdCardPath] = useState<null | string>(null);
 
   // Sync functionality from useSyncUpdate hook
   const {
@@ -43,21 +44,31 @@ export function useKitSync({ onMessage }: UseKitSyncOptions) {
   }, [generateChangeSummary, onMessage, syncError]);
 
   // Handler to confirm sync operation
-  const handleConfirmSync = useCallback(async () => {
-    if (!currentChangeSummary) return;
+  const handleConfirmSync = useCallback(
+    async (options: { sdCardPath: null | string; wipeSdCard: boolean }) => {
+      if (!options.sdCardPath) return;
 
-    const success = await startSync(currentChangeSummary);
-    if (success) {
-      setShowSyncDialog(false);
-      setCurrentSyncKit(null);
-      setCurrentChangeSummary(null);
-      if (onMessage) {
-        onMessage(`All kits synced successfully!`, "success", 3000);
+      const success = await startSync({
+        sdCardPath: options.sdCardPath,
+        wipeSdCard: options.wipeSdCard,
+      });
+      if (success) {
+        setShowSyncDialog(false);
+        setCurrentSyncKit(null);
+        setCurrentChangeSummary(null);
+        if (onMessage) {
+          onMessage(
+            `All kits synced successfully to ${options.sdCardPath}!`,
+            "success",
+            3000,
+          );
+        }
+      } else if (onMessage && syncError) {
+        onMessage(`Sync failed: ${syncError}`, "error");
       }
-    } else if (onMessage && syncError) {
-      onMessage(`Sync failed: ${syncError}`, "error");
-    }
-  }, [currentChangeSummary, startSync, onMessage, syncError]);
+    },
+    [startSync, onMessage, syncError],
+  );
 
   // Handler to close sync dialog
   const handleCloseSyncDialog = useCallback(() => {
@@ -76,6 +87,8 @@ export function useKitSync({ onMessage }: UseKitSyncOptions) {
     handleSyncToSdCard,
 
     isSyncLoading,
+    onSdCardPathChange: setSdCardPath,
+    sdCardPath,
     // State
     showSyncDialog,
     syncError,

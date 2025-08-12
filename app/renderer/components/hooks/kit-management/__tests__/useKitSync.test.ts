@@ -86,15 +86,21 @@ describe("useKitSync", () => {
       });
 
       await act(async () => {
-        await result.current.handleConfirmSync();
+        await result.current.handleConfirmSync({
+          sdCardPath: "/path/to/sd",
+          wipeSdCard: false,
+        });
       });
 
-      expect(mockStartSync).toHaveBeenCalledWith(mockChangeSummary);
+      expect(mockStartSync).toHaveBeenCalledWith({
+        sdCardPath: "/path/to/sd",
+        wipeSdCard: false,
+      });
       expect(result.current.showSyncDialog).toBe(false);
       expect(result.current.currentSyncKit).toBe(null);
       expect(result.current.currentChangeSummary).toBe(null);
       expect(mockOnMessage).toHaveBeenCalledWith(
-        "All kits synced successfully!",
+        "All kits synced successfully to /path/to/sd!",
         "success",
         3000,
       );
@@ -113,17 +119,26 @@ describe("useKitSync", () => {
       });
 
       await act(async () => {
-        await result.current.handleConfirmSync();
+        await result.current.handleConfirmSync({
+          sdCardPath: "/path/to/sd",
+          wipeSdCard: false,
+        });
       });
 
-      expect(mockStartSync).toHaveBeenCalledWith(mockChangeSummary);
+      expect(mockStartSync).toHaveBeenCalledWith({
+        sdCardPath: "/path/to/sd",
+        wipeSdCard: false,
+      });
     });
 
-    it("does nothing when no change summary is available", async () => {
+    it("does nothing when no SD card path is provided", async () => {
       const { result } = renderHook(() => useKitSync(defaultProps));
 
       await act(async () => {
-        await result.current.handleConfirmSync();
+        await result.current.handleConfirmSync({
+          sdCardPath: null,
+          wipeSdCard: false,
+        });
       });
 
       expect(mockStartSync).not.toHaveBeenCalled();

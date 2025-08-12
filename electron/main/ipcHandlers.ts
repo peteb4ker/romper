@@ -34,7 +34,9 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   });
 
   ipcMain.handle("select-sd-card", async () => {
+    const os = await import("os");
     const result = await dialog.showOpenDialog({
+      defaultPath: os.homedir(),
       properties: ["openDirectory"],
       title: "Select SD Card Path",
     });

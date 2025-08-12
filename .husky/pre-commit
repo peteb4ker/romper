@@ -1,9 +1,30 @@
 echo "🚀 Running pre-commit checks..."
 echo "🔍 TypeScript → 🧹 Linting → 🧪 Testing → 🏗️ Building → 📊 SonarQube"
 
+# Check for unstaged changes before running any checks
+if ! git diff --quiet; then
+  echo "❌ You have unstaged changes. Please stage all changes before committing:"
+  echo ""
+  git diff --name-only
+  echo ""
+  echo "Run: git add -A"
+  exit 1
+fi
+
+# Run the pre-commit checks
 npm run pre-commit
 
 if [ $? -eq 0 ]; then
+  # After all checks pass, verify no new changes were introduced
+  if ! git diff --quiet; then
+    echo "❌ Linting or other tools modified files during pre-commit checks."
+    echo "Files that were modified:"
+    git diff --name-only
+    echo ""
+    echo "Please stage these changes and commit again:"
+    echo "git add -A && git commit --amend --no-edit"
+    exit 1
+  fi
   echo "✅ All pre-commit checks passed!"
 else
   echo "❌ Pre-commit checks failed. Commit aborted."

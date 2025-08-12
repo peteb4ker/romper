@@ -50,134 +50,149 @@ const KitHeader: React.FC<KitHeaderProps> = ({
   setKitAliasInput,
 }) => (
   <div className="flex items-center mb-2 gap-2">
-    <FiFolder
-      aria-label="Kit folder"
-      className="inline-block mr-2 align-text-bottom text-gray-500 dark:text-gray-400"
-    />
-    <span className="font-sans text-lg font-bold text-gray-900 dark:text-gray-50 mr-1">
-      {kitName}
-    </span>
-    <span className="text-lg font-bold text-gray-900 dark:text-gray-50 mr-1">
-      :
-    </span>
-    {editingKitAlias ? (
-      <input
-        autoFocus
-        className="border-b border-blue-500 bg-transparent text-base font-semibold text-gray-800 dark:text-gray-100 focus:outline-none px-1 w-48"
-        onBlur={() => {
-          setEditingKitAlias(false);
-          handleSaveKitAlias(kitAliasInput.trim());
-        }}
-        onChange={(e) => setKitAliasInput(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
+    {/* Left side spacer */}
+    <div className="flex-1" />
+
+    {/* Center: Kit icon and name */}
+    <div className="flex items-center gap-2">
+      <FiFolder
+        aria-label="Kit folder"
+        className="inline-block align-text-bottom text-gray-500 dark:text-gray-400"
+      />
+      <span className="font-sans text-lg font-bold text-gray-900 dark:text-gray-50">
+        {kitName}
+      </span>
+      <span className="text-lg font-bold text-gray-900 dark:text-gray-50">
+        :
+      </span>
+      {editingKitAlias ? (
+        <input
+          autoFocus
+          className="border-b border-blue-500 bg-transparent text-base font-semibold text-gray-800 dark:text-gray-100 focus:outline-none px-1 w-48"
+          onBlur={() => {
             setEditingKitAlias(false);
             handleSaveKitAlias(kitAliasInput.trim());
-          } else if (e.key === "Escape") {
-            setEditingKitAlias(false);
-            setKitAliasInput(kit?.alias || "");
-          }
-        }}
-        ref={kitAliasInputRef}
-        value={kitAliasInput}
-      />
-    ) : (
-      <button
-        className="font-semibold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline min-w-[2rem] bg-transparent border-none p-0"
-        onClick={() => setEditingKitAlias(true)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            setEditingKitAlias(true);
-          }
-        }}
-        title="Edit kit name"
-      >
-        {kit?.alias || <span className="italic text-gray-400">(no name)</span>}
-      </button>
-    )}
-    <div className="flex-1" /> {/* Spacer */}
-    {onBack && (
-      <button
-        className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded hover:bg-gray-400 dark:hover:bg-slate-600"
-        onClick={() => onBack()}
-        title="Back"
-      >
-        <FiArrowLeft className="inline-block mr-1" /> Back
-      </button>
-    )}
-    {onPrevKit && kits && kitIndex !== undefined && (
-      <button
-        className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
-        disabled={kitIndex === 0}
-        onClick={onPrevKit}
-        style={kitIndex === 0 ? { cursor: "not-allowed", opacity: 0.5 } : {}}
-        title="Previous Kit"
-      >
-        <FiChevronLeft className="inline-block mr-1" /> Previous
-      </button>
-    )}
-    {onNextKit && kits && kitIndex !== undefined && (
-      <button
-        className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
-        disabled={kitIndex === kits.length - 1}
-        onClick={onNextKit}
-        style={
-          kitIndex === kits.length - 1
-            ? { cursor: "not-allowed", opacity: 0.5 }
-            : {}
-        }
-        title="Next Kit"
-      >
-        Next <FiChevronRight className="inline-block ml-1" />
-      </button>
-    )}
-    <div className="flex-1" /> {/* Spacer */}
-    {onToggleEditableMode && (
-      <div className="ml-2 flex items-center gap-2">
-        {kit?.modified_since_sync && (
-          <div className="flex items-center gap-1 mr-2">
-            <FiCircle className="w-3 h-3 text-yellow-500 fill-current" />
-            <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
-              Modified
-            </span>
-          </div>
-        )}
-        <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-12">
-          {isEditable ? "Editable" : "Locked"}
-        </span>
+          }}
+          onChange={(e) => setKitAliasInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              setEditingKitAlias(false);
+              handleSaveKitAlias(kitAliasInput.trim());
+            } else if (e.key === "Escape") {
+              setEditingKitAlias(false);
+              setKitAliasInput(kit?.alias || "");
+            }
+          }}
+          ref={kitAliasInputRef}
+          value={kitAliasInput}
+        />
+      ) : (
         <button
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
-            isEditable ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"
-          }`}
-          onClick={onToggleEditableMode}
-          title={`${isEditable ? "Disable" : "Enable"} editable mode`}
+          className="font-semibold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline min-w-[2rem] bg-transparent border-none p-0"
+          onClick={() => setEditingKitAlias(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              setEditingKitAlias(true);
+            }
+          }}
+          title="Edit kit name"
         >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-              isEditable ? "translate-x-6" : "translate-x-1"
-            }`}
-          />
-          <span className="sr-only">
-            {isEditable ? "Disable" : "Enable"} editable mode
-          </span>
+          {kit?.alias || (
+            <span className="italic text-gray-400">(no name)</span>
+          )}
         </button>
-        {isEditable ? (
-          <FiEdit3 className="w-4 h-4 text-orange-500" />
-        ) : (
-          <FiLock className="w-4 h-4 text-gray-500" />
-        )}
-      </div>
-    )}
-    {onScanKit && (
-      <button
-        className="ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded shadow hover:bg-green-700 font-semibold flex items-center"
-        onClick={onScanKit}
-        title="Perform comprehensive kit scan (voice names, WAV analysis, artist metadata)"
-      >
-        <FiRefreshCw className="inline-block mr-1" />
-        Scan Kit
-      </button>
-    )}
+      )}
+    </div>
+
+    {/* Right side spacer */}
+    <div className="flex-1" />
+
+    {/* Right side: Navigation buttons and controls */}
+    <div className="flex items-center gap-2">
+      {onBack && (
+        <button
+          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded hover:bg-gray-400 dark:hover:bg-slate-600"
+          onClick={() => onBack()}
+          title="Back"
+        >
+          <FiArrowLeft className="inline-block mr-1" /> Back
+        </button>
+      )}
+      {onPrevKit && kits && kitIndex !== undefined && (
+        <button
+          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
+          disabled={kitIndex === 0}
+          onClick={onPrevKit}
+          style={kitIndex === 0 ? { cursor: "not-allowed", opacity: 0.5 } : {}}
+          title="Previous Kit"
+        >
+          <FiChevronLeft className="inline-block mr-1" /> Previous
+        </button>
+      )}
+      {onNextKit && kits && kitIndex !== undefined && (
+        <button
+          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
+          disabled={kitIndex === kits.length - 1}
+          onClick={onNextKit}
+          style={
+            kitIndex === kits.length - 1
+              ? { cursor: "not-allowed", opacity: 0.5 }
+              : {}
+          }
+          title="Next Kit"
+        >
+          Next <FiChevronRight className="inline-block ml-1" />
+        </button>
+      )}
+
+      {onToggleEditableMode && (
+        <div className="ml-2 flex items-center gap-2">
+          {kit?.modified_since_sync && (
+            <div className="flex items-center gap-1 mr-2">
+              <FiCircle className="w-3 h-3 text-yellow-500 fill-current" />
+              <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                Modified
+              </span>
+            </div>
+          )}
+          <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-12">
+            {isEditable ? "Editable" : "Locked"}
+          </span>
+          <button
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
+              isEditable ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"
+            }`}
+            onClick={onToggleEditableMode}
+            title={`${isEditable ? "Disable" : "Enable"} editable mode`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                isEditable ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+            <span className="sr-only">
+              {isEditable ? "Disable" : "Enable"} editable mode
+            </span>
+          </button>
+          {isEditable ? (
+            <FiEdit3 className="w-4 h-4 text-orange-500" />
+          ) : (
+            <FiLock className="w-4 h-4 text-gray-500" />
+          )}
+        </div>
+      )}
+
+      {onScanKit && (
+        <button
+          className="ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded shadow hover:bg-green-700 font-semibold flex items-center"
+          onClick={onScanKit}
+          title="Perform comprehensive kit scan (voice names, WAV analysis, artist metadata)"
+        >
+          <FiRefreshCw className="inline-block mr-1" />
+          Scan Kit
+        </button>
+      )}
+    </div>
   </div>
 );
 

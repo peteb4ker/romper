@@ -7,6 +7,11 @@ import type { VoiceSamples } from "../../kitTypes";
 
 import { useKitNavigation } from "../useKitNavigation";
 
+// Mock the HMR state manager
+vi.mock("../../../../utils/hmrStateManager", () => ({
+  markExplicitNavigation: vi.fn(),
+}));
+
 describe("useKitNavigation", () => {
   const mockKits: KitWithRelations[] = [
     {
@@ -322,5 +327,142 @@ describe("useKitNavigation", () => {
     ];
     rerender({ kits: newKits });
     expect(result.current.sortedKits).not.toBe(firstSortedKits);
+  });
+
+  describe("handleBack", () => {
+    it("should reset selected kit and samples to null", async () => {
+      const { result } = renderHook(() =>
+        useKitNavigation({
+          allKitSamples: mockAllKitSamples,
+          kits: mockKits,
+          refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
+        }),
+      );
+
+      // First select a kit
+      act(() => {
+        result.current.handleSelectKit("A0");
+      });
+
+      expect(result.current.selectedKit).toBe("A0");
+      expect(result.current.selectedKitSamples).toEqual({
+        1: ["kick.wav"],
+        2: [],
+        3: [],
+        4: [],
+      });
+
+      // Then go back
+      await act(async () => {
+        await result.current.handleBack();
+      });
+
+      expect(result.current.selectedKit).toBeNull();
+      expect(result.current.selectedKitSamples).toBeNull();
+    });
+
+    it("should mark explicit navigation when going back", async () => {
+      const { markExplicitNavigation } = await import(
+        "../../../../utils/hmrStateManager"
+      );
+
+      const { result } = renderHook(() =>
+        useKitNavigation({
+          allKitSamples: mockAllKitSamples,
+          kits: mockKits,
+          refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.handleBack();
+      });
+
+      expect(markExplicitNavigation).toHaveBeenCalled();
+    });
+
+    it("should call refresh when refresh parameter is true", async () => {
+      const { result } = renderHook(() =>
+        useKitNavigation({
+          allKitSamples: mockAllKitSamples,
+          kits: mockKits,
+          refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.handleBack({ refresh: true, scrollToKit: null });
+      });
+
+      expect(mockRefreshAllKitsAndSamples).toHaveBeenCalled();
+    });
+
+    it("should not call refresh when refresh parameter is false", async () => {
+      const { result } = renderHook(() =>
+        useKitNavigation({
+          allKitSamples: mockAllKitSamples,
+          kits: mockKits,
+          refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.handleBack({ refresh: false, scrollToKit: null });
+      });
+
+      expect(mockRefreshAllKitsAndSamples).not.toHaveBeenCalled();
+    });
+
+    it("should handle back navigation with scroll to kit parameter", async () => {
+      const { result } = renderHook(() =>
+        useKitNavigation({
+          allKitSamples: mockAllKitSamples,
+          kits: mockKits,
+          refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.handleBack({ refresh: false, scrollToKit: "A1" });
+      });
+
+      expect(result.current.selectedKit).toBeNull();
+      expect(result.current.selectedKitSamples).toBeNull();
+    });
+
+    it("should handle back navigation with string parameter", async () => {
+      const { result } = renderHook(() =>
+        useKitNavigation({
+          allKitSamples: mockAllKitSamples,
+          kits: mockKits,
+          refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.handleBack("A0");
+      });
+
+      expect(result.current.selectedKit).toBeNull();
+      expect(result.current.selectedKitSamples).toBeNull();
+    });
+
+    it("should handle back navigation with no parameters", async () => {
+      const { result } = renderHook(() =>
+        useKitNavigation({
+          allKitSamples: mockAllKitSamples,
+          kits: mockKits,
+          refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.handleBack();
+      });
+
+      expect(result.current.selectedKit).toBeNull();
+      expect(result.current.selectedKitSamples).toBeNull();
+      expect(mockRefreshAllKitsAndSamples).not.toHaveBeenCalled();
+    });
   });
 });

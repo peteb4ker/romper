@@ -193,11 +193,6 @@ export function getMigrationsPath(): null | string {
 }
 
 /**
- * Check if an error indicates database corruption
- */
-// Note: previous heuristic-based corruption detection was removed as unreliable.
-
-/**
  * Log migration errors with context
  */
 export function logMigrationError(

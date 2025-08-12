@@ -6,7 +6,6 @@ import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { deleteDbFileWithRetry } from "../fileOperations.js";
-
 import {
   addKit,
   addSample,
@@ -34,6 +33,24 @@ import {
 const TEST_DB_DIR = path.join(__dirname, "test-data");
 const TEST_DB_PATH = path.join(TEST_DB_DIR, "romper.sqlite");
 
+async function cleanupSqliteFiles(dir: string) {
+  if (!fs.existsSync(dir)) return;
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await cleanupSqliteFiles(fullPath);
+    } else if (entry.name.endsWith(".sqlite")) {
+      try {
+        await deleteDbFileWithRetry(fullPath);
+      } catch (error) {
+        console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
+      }
+    }
+  }
+}
+
 async function cleanupTestDb() {
   if (fs.existsSync(TEST_DB_PATH)) {
     await deleteDbFileWithRetry(TEST_DB_PATH);
@@ -47,24 +64,6 @@ async function ensureTestDirClean() {
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   }
   fs.mkdirSync(TEST_DB_DIR, { recursive: true });
-}
-
-async function cleanupSqliteFiles(dir: string) {
-  if (!fs.existsSync(dir)) return;
-  
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await cleanupSqliteFiles(fullPath);
-    } else if (entry.name.endsWith('.sqlite')) {
-      try {
-        await deleteDbFileWithRetry(fullPath);
-      } catch (error) {
-        console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
-      }
-    }
-  }
 }
 
 describe("Drizzle ORM Database Operations", () => {
@@ -385,7 +384,7 @@ describe("Drizzle ORM Database Operations", () => {
   });
 
   describe("Error Handling and Edge Cases", () => {
-  // Corruption detection heuristic removed as unreliable; error handling covered elsewhere
+    // Corruption detection heuristic removed as unreliable; error handling covered elsewhere
 
     it("should handle operations on non-existent database gracefully", async () => {
       const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");

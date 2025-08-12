@@ -174,8 +174,6 @@ describe("Database Utilities Integration Tests", () => {
   });
 
   describe("Utility Functions", () => {
-    // Corruption detection heuristic removed as unreliable.
-
     it("should get migrations path", () => {
       const result = getMigrationsPath();
       // Should return a path or null - both are valid

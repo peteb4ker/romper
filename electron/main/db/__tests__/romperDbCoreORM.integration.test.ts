@@ -920,26 +920,18 @@ describe("Drizzle ORM Database Operations", () => {
 
   describe("Error Handling - Additional Cases", () => {
     it("should handle withDb errors gracefully", async () => {
-      const corruptedDir = path.join(TEST_DB_DIR, "corrupted");
-      fs.mkdirSync(corruptedDir, { recursive: true });
+      // Test error handling by using a nonexistent directory
+      // This avoids creating actual corrupted files that cause Windows file locking issues
+      const nonexistentDir = path.join(TEST_DB_DIR, "nonexistent");
 
-      // Create a file that's not a valid database
-      const corruptedDbPath = path.join(corruptedDir, "romper.sqlite");
-      fs.writeFileSync(corruptedDbPath, "not a database");
-
-      const result = withDb(corruptedDir, (_db) => {
+      const result = withDb(nonexistentDir, (_db) => {
         return _db.select().from({ id: 1 }).all(); // This should fail
       });
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
 
-      // Immediate cleanup - clean up the corrupted file right away to prevent Windows locking
-      try {
-        await deleteDbFileWithRetry(corruptedDbPath);
-      } catch (error) {
-        console.warn(`[TEST] Failed to clean up corrupted test file:`, error);
-      }
+      // No cleanup needed since no files were created
     });
 
     it("should handle operations on non-existent kits", () => {

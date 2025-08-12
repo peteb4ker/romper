@@ -921,7 +921,7 @@ describe("Drizzle ORM Database Operations", () => {
   });
 
   describe("Error Handling - Additional Cases", () => {
-    it("should handle withDb errors gracefully", () => {
+    it("should handle withDb errors gracefully", async () => {
       const corruptedDir = path.join(TEST_DB_DIR, "corrupted");
       fs.mkdirSync(corruptedDir, { recursive: true });
 
@@ -935,6 +935,15 @@ describe("Drizzle ORM Database Operations", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
+
+      // Immediate cleanup - clean up the corrupted file right away to prevent Windows locking
+      try {
+        console.log(`[TEST] Immediate cleanup of corrupted test file: ${corruptedDbPath}`);
+        await deleteDbFileWithRetry(corruptedDbPath);
+        console.log(`[TEST] Successfully cleaned up corrupted test file`);
+      } catch (error) {
+        console.warn(`[TEST] Failed to clean up corrupted test file:`, error);
+      }
     });
 
     it("should handle operations on non-existent kits", () => {

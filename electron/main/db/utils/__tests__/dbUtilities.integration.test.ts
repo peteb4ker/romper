@@ -263,7 +263,7 @@ describe("Database Utilities Integration Tests", () => {
   });
 
   describe("Error Handling", () => {
-    it("should handle corrupted database files", () => {
+    it("should handle corrupted database files", async () => {
       const corruptedDir = path.join(TEST_DB_DIR, "corrupted");
       fs.mkdirSync(corruptedDir, { recursive: true });
 
@@ -277,6 +277,15 @@ describe("Database Utilities Integration Tests", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
+
+      // Immediate cleanup - clean up the corrupted file right away to prevent Windows locking
+      try {
+        console.log(`[TEST] Immediate cleanup of corrupted test file: ${corruptedDbPath}`);
+        await deleteDbFileWithRetry(corruptedDbPath);
+        console.log(`[TEST] Successfully cleaned up corrupted test file`);
+      } catch (error) {
+        console.warn(`[TEST] Failed to clean up corrupted test file:`, error);
+      }
     });
 
     it("should handle permission errors gracefully", () => {

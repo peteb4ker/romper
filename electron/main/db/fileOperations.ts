@@ -24,7 +24,6 @@ export async function deleteDbFileWithRetry(
         isWindows,
         i === maxRetries - 1,
       );
-
       if (success) {
         return;
       }
@@ -35,12 +34,8 @@ export async function deleteDbFileWithRetry(
 
   // Final Windows fallback attempt
   if (isWindows) {
-    try {
-      finalWindowsRename(dbPath);
-      return; // Always return on Windows after final attempt
-    } catch (error) {
-      log.error(`Final Windows rename fallback failed:`, error);
-    }
+    finalWindowsRename(dbPath);
+    return; // Always return on Windows after final attempt
   }
 
   throw lastError || new Error("Could not delete or rename database file");
@@ -73,8 +68,15 @@ function finalWindowsRename(dbPath: string): void {
     const timestamp = Date.now();
     const backupPath = `${dbPath}.locked.${timestamp}`;
     fs.renameSync(dbPath, backupPath);
+    log.info("Final rename attempt succeeded");
+
+    if (!fs.existsSync(dbPath)) {
+      log.info(`Verified original DB file is gone after final rename`);
+      return;
+    }
   } catch {
-    // Final rename failed, but we'll continue anyway
+    log.error("All deletion/rename attempts failed, proceeding anyway");
+    return;
   }
 }
 
@@ -92,16 +94,14 @@ async function handleDeleteAttempt(
     }
 
     // Try to delete the file
-    const deleteResult = await tryDelete(dbPath, attempt);
-    return deleteResult;
+    return await tryDelete(dbPath, attempt);
   } catch (error) {
     const err = error as Error;
     log.info(`Delete attempt ${attempt + 1} failed:`, err.message);
 
     // Handle Windows fallback
     if (isWindows && !isLastAttempt) {
-      const fallbackResult = await tryWindowsRenameFallback(dbPath, attempt);
-      return fallbackResult;
+      return await tryWindowsRenameFallback(dbPath, attempt);
     }
 
     // Wait before next attempt on non-Windows

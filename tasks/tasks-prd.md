@@ -314,21 +314,61 @@ _Last updated: 2025-07-26_
     - [x] 13.4.2 Remove old initialization code
     - [x] 13.4.3 Update setup wizard for ORM-based database
 
-- [ ] 14.0 Integration Testing and Performance
-  - [ ] 14.1 Comprehensive integration tests:
+- [ ] 14.0 Integration Testing and Performance (HIGH PRIORITY - Required for 1.0.0)
+  - [ ] 14.1 Comprehensive integration tests (RELEASE CRITICAL):
     - [ ] 14.1.1 Complete kit creation workflow with reference-only architecture
     - [ ] 14.1.2 Kit modification workflow with editable mode
     - [ ] 14.1.3 Undo/redo across multiple actions with ORM
     - [ ] 14.1.4 Stereo handling with voice_number tracking
-  - [ ] 14.2 Error recovery testing:
+  - [ ] 14.2 Error recovery testing (RELEASE CRITICAL):
     - [ ] 14.2.1 Database corruption recovery with ORM
     - [ ] 14.2.2 Missing source_path file handling
     - [ ] 14.2.3 Failed SD card operation recovery
-  - [ ] 14.3 Performance testing:
+  - [ ] 14.3 Performance testing (MEDIUM PRIORITY):
     - [ ] 14.3.1 Large kit collections (2600+ kits) with Drizzle
     - [ ] 14.3.2 Database query performance with edit history
     - [ ] 14.3.3 UI responsiveness with reference file handling
-  - [ ] 14.4 Accessibility testing for all new features
+  - [ ] 14.4 Accessibility testing for all new features (MEDIUM PRIORITY)
+
+## 23.0 RELEASE CRITICAL: Back Navigation Fix (1.0.0 Blocker)
+
+- [ ] 23.1 Debug and fix back navigation issue:
+  - [ ] 23.1.1 Investigate HMR state manager interference with navigation
+  - [ ] 23.1.2 Test navigation state management in KitsView component
+  - [ ] 23.1.3 Verify handleBack function behavior in useKitNavigation
+  - [ ] 23.1.4 Fix any identified issues preventing back navigation
+- [ ] 23.2 Comprehensive testing for navigation:
+  - [ ] 23.2.1 Unit tests: Test useKitNavigation.handleBack() function behavior
+  - [ ] 23.2.2 Integration tests: Navigation state management across transitions
+  - [ ] 23.2.3 E2E tests: Complete user journey (browse → select kit → back to list)
+
+## 24.0 RELEASE CRITICAL: SD Card Sync Fix (1.0.0 Blocker)
+
+- [ ] 24.1 Debug and fix SD card sync functionality:
+  - [ ] 24.1.1 Test sync workflow end-to-end to identify failure points
+  - [ ] 24.1.2 Debug syncService.ts methods and error handling
+  - [ ] 24.1.3 Test IPC communication for sync operations
+  - [ ] 24.1.4 Verify file operations and conversion during sync
+  - [ ] 24.1.5 Fix any identified issues preventing successful sync
+- [ ] 24.2 Comprehensive testing for SD card sync:
+  - [ ] 24.2.1 Unit tests: Test syncService individual methods (validation, copying, conversion)
+  - [ ] 24.2.2 Integration tests: Test IPC handlers for sync operations and progress tracking
+  - [ ] 24.2.3 E2E tests: Complete sync workflow from UI selection to SD card verification
+
+## 25.0 RELEASE CRITICAL: 1.0.0 Release Preparation
+
+- [ ] 25.1 Pre-Release Testing & QA:
+  - [ ] 25.1.1 End-to-End Testing: Complete user journey testing (setup → kit creation → sync)
+  - [ ] 25.1.2 Regression Testing: Ensure all existing functionality still works
+  - [ ] 25.1.3 Performance Testing: Test with realistic data sets (100+ kits)
+  - [ ] 25.1.4 Cross-Platform Testing: Verify functionality on Windows, macOS, Linux
+  - [ ] 25.1.5 Error Handling: Test edge cases, corrupted files, network issues
+- [ ] 25.2 Release Preparation:
+  - [ ] 25.2.1 Documentation: Update README, user guides, changelog
+  - [ ] 25.2.2 Version Bumping: Update package.json, electron-builder config
+  - [ ] 25.2.3 Build Testing: Test production builds on all platforms
+  - [ ] 25.2.4 Distribution: Prepare release artifacts, code signing
+  - [ ] 25.2.5 Release Notes: Document features, bug fixes, known issues
 
 ## 15.0 Administrative: Change Local Store Directory
 
@@ -363,7 +403,7 @@ _Last updated: 2025-07-26_
   - [x] 16.2.5 Add "Back to Setup" button to return to normal wizard flow if needed
   - [x] 16.2.6 Only show this option when no valid local store is configured (not in menu-driven change flow)
 
-- [ ] 16.3 Enhanced error recovery for lost settings
+- [ ] 16.3 Enhanced error recovery for lost settings (MEDIUM PRIORITY - Post 1.0.0)
   - [ ] 16.3.1 Detect when settings file exists but is empty or corrupt
   - [ ] 16.3.2 Provide clear user guidance when settings need to be reconfigured
   - [ ] 16.3.3 Preserve any valid settings during recovery operations
@@ -478,45 +518,45 @@ _Last updated: 2025-07-26_
   - [x] 20.1.3 Implement keyboard shortcut for rapid favorite toggling
   - [x] 20.1.4 Add "Favorites" filter with count badge in kit browser
 
-- [ ] 20.2 Implement Priority Access System: (Partially Complete - Core features done)
+- [ ] 20.2 Implement Priority Access System: (Partially Complete - LOW PRIORITY)
   - [x] 20.2.1 Create priority markers for high-priority kits in user workflow
   - [x] 20.2.2 Implement filter buttons with live counts (Modified: 3, Favorites: 12)
-  - [ ] 20.2.3 Add "Quick Access" panel for live performance scenarios (~6 kit workflow)
-  - [ ] 20.2.4 Create location-based filtering by sample source for organized browsing
+  - [ ] 20.2.3 Add "Quick Access" panel for live performance scenarios (~6 kit workflow) (LOW PRIORITY - Post 1.0.0)
+  - [ ] 20.2.4 Create location-based filtering by sample source for organized browsing (LOW PRIORITY - Post 1.0.0)
 
-- [ ] 20.3 Implement Efficient Kit Navigation:
+- [ ] 20.3 Implement Efficient Kit Navigation (MEDIUM PRIORITY - Post 1.0.0):
   - [ ] 20.3.1 Optimize A-Z bank navigation for large collections
   - [ ] 20.3.2 Add recent kits tracking and quick access
   - [ ] 20.3.3 Implement search/filter functionality for kit discovery
   - [ ] 20.3.4 Create navigation patterns that support preview → copy/amend → sync workflow
 
-- [ ] 20.4 Implement Kit Organization Features:
+- [ ] 20.4 Implement Kit Organization Features (LOW PRIORITY - Post 1.0.0):
   - [ ] 20.4.1 Add tagging system for kit categorization
   - [ ] 20.4.2 Implement sorting options (by modification date, favorites, type)
   - [ ] 20.4.3 Create collection views for different use cases (live performance, studio work)
   - [ ] 20.4.4 Add batch operations for managing multiple kits
 
-## 21.0 UX Improvements: Testing and Integration
+## 21.0 UX Improvements: Testing and Integration (LOW PRIORITY - Post 1.0.0)
 
-- [ ] 21.1 Create UX Component Tests:
+- [ ] 21.1 Create UX Component Tests (LOW PRIORITY):
   - [ ] 21.1.1 Test kit type visual identification system
   - [ ] 21.1.2 Test enhanced status badge system responsiveness
   - [ ] 21.1.3 Test progressive information disclosure functionality
   - [ ] 21.1.4 Test mode switching and contextual interface changes
 
-- [ ] 21.2 Create UX Integration Tests:
+- [ ] 21.2 Create UX Integration Tests (LOW PRIORITY):
   - [ ] 21.2.1 Test complete browse → edit → sync workflow separation
   - [ ] 21.2.2 Test favorites and quick access system performance
   - [ ] 21.2.3 Test smart location labeling with various sample library patterns
   - [ ] 21.2.4 Test information density improvements with large kit collections
 
-- [ ] 21.3 User Experience Validation:
+- [ ] 21.3 User Experience Validation (LOW PRIORITY):
   - [ ] 21.3.1 Validate quick kit state assessment capability
   - [ ] 21.3.2 Test workflow efficiency improvements for new users
   - [ ] 21.3.3 Validate location awareness without path overwhelm
   - [ ] 21.3.4 Test scalability with dozens to hundreds of kits
 
-- [ ] 21.4 Accessibility and Performance:
+- [ ] 21.4 Accessibility and Performance (MEDIUM PRIORITY):
   - [ ] 21.4.1 Ensure all UX improvements work in light/dark modes
   - [ ] 21.4.2 Test keyboard navigation for new UI elements
   - [ ] 21.4.3 Validate performance with progressive disclosure system

@@ -9,7 +9,6 @@ import {
   DB_FILENAME,
   ensureDatabaseMigrations,
   getMigrationsPath,
-  isDbCorruptionError,
   validateDatabaseSchema,
   withDb,
 } from "../dbUtilities";
@@ -167,16 +166,7 @@ describe("Database Utilities Integration Tests", () => {
   });
 
   describe("Utility Functions", () => {
-    it("should identify corruption errors correctly", () => {
-      expect(isDbCorruptionError("database disk image is malformed")).toBe(
-        true,
-      );
-      expect(isDbCorruptionError("file is not a database")).toBe(true);
-      expect(isDbCorruptionError("database is locked")).toBe(true);
-      expect(isDbCorruptionError("SQL logic error")).toBe(true);
-      expect(isDbCorruptionError("permission denied")).toBe(false);
-      expect(isDbCorruptionError("")).toBe(false);
-    });
+  // Corruption detection heuristic removed as unreliable.
 
     it("should get migrations path", () => {
       const result = getMigrationsPath();

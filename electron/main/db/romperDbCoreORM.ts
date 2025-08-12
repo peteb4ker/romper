@@ -45,7 +45,6 @@ export { DB_FILENAME } from "./utils/dbUtilities.js";
 export {
   createRomperDbFile,
   ensureDatabaseMigrations,
-  isDbCorruptionError,
   validateDatabaseSchema,
   withDb,
 } from "./utils/dbUtilities.js";

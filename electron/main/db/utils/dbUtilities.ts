@@ -91,14 +91,6 @@ export function createRomperDbFile(dbDir: string): {
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     console.error("[Main] Database creation error:", error);
-    if (isDbCorruptionError(error)) {
-      try {
-        fs.unlinkSync(dbPath);
-        return createRomperDbFile(dbDir);
-      } catch {
-        return { error, success: false };
-      }
-    }
     return { error, success: false };
   }
 }
@@ -203,15 +195,7 @@ export function getMigrationsPath(): null | string {
 /**
  * Check if an error indicates database corruption
  */
-export function isDbCorruptionError(error: string): boolean {
-  const corruptionKeywords = [
-    "database disk image is malformed",
-    "file is not a database",
-    "database is locked",
-    "SQL logic error",
-  ];
-  return corruptionKeywords.some((keyword) => error.includes(keyword));
-}
+// Note: previous heuristic-based corruption detection was removed as unreliable.
 
 /**
  * Log migration errors with context

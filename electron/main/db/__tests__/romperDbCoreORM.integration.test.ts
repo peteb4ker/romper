@@ -19,7 +19,6 @@ import {
   getKit,
   getKits,
   getKitSamples,
-  isDbCorruptionError,
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
@@ -386,15 +385,7 @@ describe("Drizzle ORM Database Operations", () => {
   });
 
   describe("Error Handling and Edge Cases", () => {
-    it("should detect database corruption errors", () => {
-      expect(isDbCorruptionError("file is not a database")).toBe(true);
-      expect(isDbCorruptionError("database disk image is malformed")).toBe(
-        true,
-      );
-      expect(isDbCorruptionError("database is locked")).toBe(true);
-      expect(isDbCorruptionError("SQL logic error")).toBe(true);
-      expect(isDbCorruptionError("some other error")).toBe(false);
-    });
+  // Corruption detection heuristic removed as unreliable; error handling covered elsewhere
 
     it("should handle operations on non-existent database gracefully", async () => {
       const nonExistentDir = path.join(TEST_DB_DIR, "nonexistent");

@@ -65,7 +65,9 @@ describe("useSyncUpdate", () => {
         summary = await result.current.generateChangeSummary();
       });
 
-      expect(mockElectronAPI.generateSyncChangeSummary).toHaveBeenCalledWith(undefined);
+      expect(mockElectronAPI.generateSyncChangeSummary).toHaveBeenCalledWith(
+        undefined,
+      );
       expect(summary).toEqual(mockChangeSummary);
       expect(result.current.isLoading).toBe(false);
       expect(result.current.error).toBeNull();
@@ -334,9 +336,9 @@ describe("useSyncUpdate", () => {
         result.current.generateChangeSummary();
       });
 
-      expect(
-        window.electronAPI.generateSyncChangeSummary,
-      ).toHaveBeenCalledWith(undefined);
+      expect(window.electronAPI.generateSyncChangeSummary).toHaveBeenCalledWith(
+        undefined,
+      );
     });
   });
 });

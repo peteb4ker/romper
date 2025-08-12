@@ -1,28 +1,37 @@
 # Technical Debt Todo List
 
-_Last updated: 2025-07-25_
+_Last updated: 2025-01-12_
 
 ## Code Quality
 
-- [ ] **Remove trailing whitespace from codebase**
+- [x] **Remove trailing whitespace from codebase** ✅ COMPLETED
   - Priority: High | Effort: Small | Risk: None
-  - Run whitespace cleanup on all files
-  - Add ESLint rule to catch trailing whitespace in future
-  - Update editor settings documentation
+  - COMPLETED STATE: Cleaned trailing whitespace from 3 affected files
+  - CHANGES MADE: Added ESLint `no-trailing-spaces` rule to prevent future issues
+  - RESULTS: Codebase now clean, automated prevention in place
 
-- [ ] **Refactor duplicated error handling patterns**
+- [x] **Refactor duplicated error handling patterns** ✅ COMPLETED
   - Priority: Medium | Effort: Medium | Risk: Low
-  - Standardize error handling across renderer hooks
-  - Create shared error utility functions
-  - Review file path validation duplication
+  - COMPLETED STATE: Created lightweight error handling utilities and patterns
+  - CHANGES MADE:
+    - Added `ErrorPatterns` to `app/renderer/utils/errorHandling.ts` with standard patterns for sample, kit, and API operations
+    - Created `createRendererErrorHandler()` function for components requiring custom error handling
+    - Extended `shared/errorUtils.ts` with `SampleError`, `KitError`, `ValidationError` classes
+    - Centralized error handling mock in `tests/mocks/errorHandling.ts`
+  - FILES UPDATED: `useSampleProcessing.ts`, `useStereoHandling.ts`, `useSampleActions.ts`, `useInternalDragHandlers.ts`, `useKitDetailsLogic.ts`
+  - RESULTS: Reduced code duplication, standardized console.error + toast.error patterns across renderer hooks
+  - APPROACH: Lightweight solution without heavyweight frameworks, maintains existing test structure
 
-- [ ] **Decompose SampleService class (630-line test indicates over-complexity)**
-  - Priority: Medium | Effort: Large | Risk: Medium
-  - Split into: SampleValidator, SampleCrudService, SampleMetadataService
-  - Current single class handles file validation, CRUD operations, audio metadata, slot management
-  - Large test file is symptom of Single Responsibility Principle violation
-  - Will naturally result in smaller, focused test files
-  - NOTE: Test file has clear sections: validateVoiceAndSlot, validateSampleFile, addSampleToSlot, deleteSampleFromSlot, validateSampleSources, replaceSampleInSlot - ideal for splitting
+- [x] **Decompose SampleService class (983-line service now refactored)** ✅ COMPLETED
+  - Priority: Medium | Effort: Large | Risk: Medium  
+  - COMPLETED STATE: Successfully decomposed into focused services:
+    - `SampleValidator` - validation logic (voice/slot, file format, stereo constraints)
+    - `SampleCrudService` - CRUD operations (add, delete, move samples)  
+    - `SampleMetadataService` - audio metadata and buffer operations
+    - `SampleSlotService` - slot management and boundary validation
+  - RESULTS: 983-line monolithic service → 4 focused services with comprehensive tests
+  - APPROACH: Created orchestrating SampleService that delegates to specialized services
+  - BENEFITS: Better separation of concerns, improved testability, clearer responsibility boundaries
 
 - [ ] **Decompose KitBrowser component (513-line test indicates over-complexity)**
   - Priority: Medium | Effort: Large | Risk: Medium
@@ -32,12 +41,6 @@ _Last updated: 2025-07-25_
   - Large test file indicates component has too many responsibilities
 
 ## Database Layer
-
-- [ ] **Add structured error types to ORM layer**
-  - Priority: Low | Effort: Medium | Risk: Low
-  - Current: Simple string errors work fine
-  - Enhancement: Error codes, structured details, better debugging
-  - Only tackle if debugging becomes difficult
 
 - [ ] **Add server-side input validation**
   - Priority: Low | Effort: Small | Risk: Low
@@ -113,12 +116,13 @@ _Last updated: 2025-07-25_
 
 ## Development Experience
 
-- [ ] **Preserve route state during HMR reloads**
+- [x] **Preserve route state during HMR reloads** ✅ COMPLETED
   - Priority: Medium | Effort: Small | Risk: Low
-  - Current: HMR changes kick users back to main page instead of preserving current route
-  - Solution: Add HMR state preservation to maintain current route (kit details page) during development
-  - Implementation: Use `import.meta.hot` API with sessionStorage to save/restore route and selected kit state
-  - Files: `app/renderer/main.tsx`, `app/renderer/views/KitsView.tsx`, `vite.config.ts`
+  - COMPLETED STATE: Implemented HMR state preservation with testable functions
+  - CHANGES MADE: Created `hmrStateManager.ts` with route and kit selection preservation
+  - FILES UPDATED: `app/renderer/main.tsx`, `app/renderer/views/KitsView.tsx`
+  - TESTS: 19 comprehensive test cases covering all HMR state management scenarios
+  - RESULTS: Route and selected kit state now preserved during development hot reloads
 
 ## Performance
 

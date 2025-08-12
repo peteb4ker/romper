@@ -1,4 +1,71 @@
 /**
+ * Lightweight error handling for renderer hooks
+ * Combines console logging and toast notifications
+ */
+export interface ErrorHandler {
+  /**
+   * Show user-facing error notification
+   * Returns formatted description for toast.error()
+   */
+  formatErrorForUser(error: unknown): string;
+
+  /**
+   * Log error to console with context
+   */
+  logError(error: unknown, operation: string): void;
+}
+
+export class KitError extends Error {
+  constructor(
+    message: string,
+    public readonly context?: string,
+  ) {
+    super(message);
+    this.name = "KitError";
+  }
+}
+
+/**
+ * Standard error types for consistent error handling across the app
+ */
+export class SampleError extends Error {
+  constructor(
+    message: string,
+    public readonly context?: string,
+  ) {
+    super(message);
+    this.name = "SampleError";
+  }
+}
+
+export class ValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly field?: string,
+  ) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
+
+/**
+ * Creates a lightweight error handler for renderer hooks
+ * Standardizes the pattern: console.error + toast notification
+ */
+export function createErrorHandler(_context: string): ErrorHandler {
+  return {
+    formatErrorForUser(error: unknown): string {
+      return error instanceof Error ? error.message : String(error);
+    },
+
+    logError(error: unknown, operation: string): void {
+      const message = getErrorMessage(error);
+      console.error(`Failed to ${operation}:`, message);
+    },
+  };
+}
+
+/**
  * Creates a standardized error result object
  *
  * @param error - Unknown error object

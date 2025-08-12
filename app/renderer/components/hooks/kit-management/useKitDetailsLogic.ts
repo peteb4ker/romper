@@ -3,6 +3,7 @@ import type { KitDetailsProps } from "@romper/app/renderer/components/kitTypes";
 import React from "react";
 import { toast } from "sonner";
 
+import { ErrorPatterns } from "../../../utils/errorHandling";
 import { useSampleManagement } from "../sample-management/useSampleManagement";
 import { useStepPattern } from "../shared/useStepPattern";
 import { useVoiceAlias } from "../voice-panels/useVoiceAlias";
@@ -119,6 +120,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
         });
       }
     } catch (error) {
+      ErrorPatterns.kitOperation(error, "rescan");
       toast.error(
         `Kit scan error: ${error instanceof Error ? error.message : String(error)}`,
         { duration: 8000, id: toastId },

@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
 
+import { ErrorPatterns } from "../../../utils/errorHandling";
+
 export interface UseInternalDragHandlersOptions {
   isEditable: boolean;
   onSampleMove?: (
@@ -157,7 +159,7 @@ export function useInternalDragHandlers({
           slotNumber,
         );
       } catch (error) {
-        console.error("[INTERNAL DROP] Failed to move sample:", error);
+        ErrorPatterns.sampleOperation(error, "move sample");
       } finally {
         setDraggedSample(null);
         // Clear visual feedback state

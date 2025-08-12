@@ -2,6 +2,8 @@ import type { SampleData } from "@romper/app/renderer/components/kitTypes";
 
 import { useCallback } from "react";
 
+import { ErrorPatterns } from "../../../utils/errorHandling";
+
 export interface UseSampleActionsOptions {
   isEditable: boolean;
   onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
@@ -24,8 +26,7 @@ export function useSampleActions({
       try {
         await onSampleDelete(voice, slotNumber);
       } catch (error) {
-        console.error("Failed to delete sample:", error);
-        // Could show error message here
+        ErrorPatterns.sampleOperation(error, "delete sample");
       }
     },
     [isEditable, onSampleDelete, voice],

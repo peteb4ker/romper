@@ -25,7 +25,7 @@ function inspectSampleGaps() {
       .prepare(
         `
       SELECT kit_name, voice_number, slot_number, filename
-      FROM samples 
+      FROM samples
       ORDER BY kit_name, voice_number, slot_number
     `,
       )

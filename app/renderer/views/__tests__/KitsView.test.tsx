@@ -1209,6 +1209,9 @@ describe("KitsView", () => {
         success: false,
       });
 
+      // Clear HMR state to prevent it from restoring the selected kit after back navigation
+      sessionStorage.removeItem("hmr_selected_kit");
+
       // Back navigation with refresh should handle errors gracefully
       fireEvent.click(screen.getByText("Back"));
 

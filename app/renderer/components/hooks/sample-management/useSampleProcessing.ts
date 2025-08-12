@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 
+import { ErrorPatterns } from "../../../utils/errorHandling";
 import { useSettings } from "../../../utils/SettingsContext";
 import { useStereoHandling } from "./useStereoHandling";
 
@@ -46,7 +47,7 @@ export function useSampleProcessing({
 
     const result = await window.electronAPI.getAllSamplesForKit(kitName);
     if (!result.success) {
-      console.error("Failed to get samples:", result.error);
+      ErrorPatterns.apiOperation(result.error, "get samples");
       return null;
     }
 
@@ -118,7 +119,7 @@ export function useSampleProcessing({
           await onSampleAdd(voice, targetSlot, filePath);
         }
       } catch (error) {
-        console.error("Failed to assign sample:", error);
+        ErrorPatterns.sampleOperation(error, "assign sample");
         toast.error("Failed to assign sample", {
           description: error instanceof Error ? error.message : String(error),
           duration: 5000,

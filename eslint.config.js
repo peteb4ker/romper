@@ -41,6 +41,7 @@ export default defineConfig([
       ],
       "no-undef": "warn",
       "prettier/prettier": "error",
+      "no-trailing-spaces": "error",
     },
   },
 
@@ -74,6 +75,7 @@ export default defineConfig([
       "sonarjs/no-dead-store": "error", // Keep - code cleanliness
       "sonarjs/publicly-writable-directories": "off", // Ignore - acceptable for testing
       "prettier/prettier": "error",
+      "no-trailing-spaces": "error",
       // Catch unused imports and variables
       "@typescript-eslint/no-unused-vars": [
         "warn",

@@ -7,6 +7,8 @@ import { setupDOMMocks, setupWindowDOMMocks } from "./tests/mocks/browser/dom";
 // Import centralized test infrastructure
 import { defaultElectronAPIMock } from "./tests/mocks/electron/electronAPI";
 import { defaultElectronFileAPIMock } from "./tests/mocks/electron/electronFileAPI";
+// Import error handling mocks
+import "./tests/mocks/errorHandling";
 
 // Extend expect with testing-library matchers
 expect.extend(matchers);

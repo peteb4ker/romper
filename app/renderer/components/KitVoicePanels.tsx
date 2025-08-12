@@ -196,7 +196,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
             {/* Task 7.1.3: Show link icon between voices for stereo drops */}
             {stereoDragInfo?.targetVoice === voice && (
               <div
-                className="absolute -right-6 top-1/2 transform -translate-y-1/2 z-10 
+                className="absolute -right-6 top-1/2 transform -translate-y-1/2 z-10
                           bg-purple-500 text-white rounded-full p-2 shadow-lg
                           animate-pulse"
                 style={{

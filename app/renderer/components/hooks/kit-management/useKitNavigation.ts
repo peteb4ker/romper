@@ -18,6 +18,7 @@ interface UseKitNavigationReturn {
   handleSelectKit: (kitName: string) => void;
   selectedKit: null | string;
   selectedKitSamples: null | VoiceSamples;
+  setSelectedKit: (kitName: string) => void;
   sortedKits: KitWithRelations[];
 }
 
@@ -143,6 +144,7 @@ export function useKitNavigation({
     handleSelectKit,
     selectedKit,
     selectedKitSamples,
+    setSelectedKit,
     sortedKits,
   };
 }

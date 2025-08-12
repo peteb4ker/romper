@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 
+import { ErrorPatterns } from "../../../utils/errorHandling";
 import { useSettings } from "../../../utils/SettingsContext";
 
 export interface StereoAssignmentOptions {
@@ -217,7 +218,7 @@ export function useStereoHandling() {
 
         return true;
       } catch (error) {
-        console.error("Failed to apply stereo assignment:", error);
+        ErrorPatterns.sampleOperation(error, "apply stereo assignment");
         toast.error("Assignment failed", {
           description: "Failed to assign sample. Please try again.",
           duration: 5000,

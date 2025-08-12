@@ -521,8 +521,8 @@ describe("useInternalDragHandlers", () => {
       rerender();
 
       expect(console.error).toHaveBeenCalledWith(
-        "[INTERNAL DROP] Failed to move sample:",
-        expect.any(Error),
+        "Failed to move sample:",
+        "Move failed",
       );
       expect(result.current.draggedSample).toBeNull();
     });

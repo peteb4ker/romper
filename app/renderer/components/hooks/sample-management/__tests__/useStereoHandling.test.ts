@@ -553,7 +553,7 @@ describe("useStereoHandling", () => {
       expect(success).toBe(false);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to apply stereo assignment:",
-        testError,
+        "Sample add failed",
       );
       expect(mockToast.error).toHaveBeenCalledWith("Assignment failed", {
         description: "Failed to assign sample. Please try again.",

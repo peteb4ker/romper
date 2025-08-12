@@ -68,7 +68,7 @@ describe("useSampleActions", () => {
 
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to delete sample:",
-        expect.any(Error),
+        "Delete failed",
       );
       consoleSpy.mockRestore();
     });

@@ -48,7 +48,7 @@ ws.on("open", () => {
             path.join(__dirname, "..", "..", "..", "..", "migrations"),
             path.join(process.cwd(), "electron", "main", "db", "migrations"),
           ];
-          
+
           let result = { __dirname, cwd: process.cwd(), paths: {} };
           for (const p of possiblePaths) {
             result.paths[p] = fs.existsSync(p);
@@ -74,7 +74,7 @@ ws.on("open", () => {
             require('electron').app.getPath('userData'),
             'romper-settings.json'
           );
-          const settings = require('fs').existsSync(settingsPath) 
+          const settings = require('fs').existsSync(settingsPath)
             ? JSON.parse(require('fs').readFileSync(settingsPath, 'utf8'))
             : null;
           { settingsPath, settings };

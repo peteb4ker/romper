@@ -60,6 +60,11 @@ root.render(
   </SettingsProvider>,
 );
 
+import { setupRouteHmrHandlers } from "./utils/hmrStateManager";
+
 window.toast = toast;
+
+// HMR route state preservation
+setupRouteHmrHandlers();
 
 export { App };

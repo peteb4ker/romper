@@ -339,7 +339,7 @@ describe("useSampleProcessing", () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to assign sample:",
-        mockError,
+        "Assignment failed",
       );
       expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
         "Failed to assign sample",

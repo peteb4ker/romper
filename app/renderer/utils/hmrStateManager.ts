@@ -1,0 +1,107 @@
+/**
+ * HMR (Hot Module Replacement) state management utilities
+ * Preserves application state during development hot reloads
+ */
+
+const HMR_ROUTE_KEY = "hmr_route";
+const HMR_SELECTED_KIT_KEY = "hmr_selected_kit";
+
+/**
+ * Clear all HMR state from session storage
+ */
+export function clearHmrState(): void {
+  sessionStorage.removeItem(HMR_ROUTE_KEY);
+  sessionStorage.removeItem(HMR_SELECTED_KIT_KEY);
+}
+
+/**
+ * Clear the saved selected kit from session storage
+ */
+export function clearSavedSelectedKit(): void {
+  sessionStorage.removeItem(HMR_SELECTED_KIT_KEY);
+}
+
+/**
+ * Get the saved selected kit name from session storage
+ */
+export function getSavedSelectedKit(): null | string {
+  return sessionStorage.getItem(HMR_SELECTED_KIT_KEY);
+}
+
+/**
+ * Check if HMR is available (exported for testing)
+ */
+export function isHmrAvailable(): boolean {
+  return (
+    typeof (import.meta as any).hot !== "undefined" &&
+    (import.meta as any).hot !== null
+  );
+}
+
+/**
+ * Check if a kit exists in the kit list
+ */
+export function kitExists(
+  kitName: string,
+  kits: Array<{ name: string }>,
+): boolean {
+  return kits.some((k) => k.name === kitName);
+}
+
+/**
+ * Restore the saved route if it exists and differs from current
+ */
+export function restoreRouteState(): void {
+  const savedRoute = sessionStorage.getItem(HMR_ROUTE_KEY);
+  if (savedRoute && savedRoute !== window.location.hash) {
+    window.location.hash = savedRoute;
+  }
+}
+
+/**
+ * Restore selected kit if it exists in the kit list
+ */
+export function restoreSelectedKitIfExists(
+  kits: Array<{ name: string }>,
+  currentSelectedKit: null | string,
+  setSelectedKit: ((kit: string) => void) | undefined,
+): void {
+  if (!isHmrAvailable() || !setSelectedKit) return;
+
+  const savedKit = getSavedSelectedKit();
+  if (savedKit && kits.length > 0 && !currentSelectedKit) {
+    if (kitExists(savedKit, kits)) {
+      setSelectedKit(savedKit);
+    }
+  }
+}
+
+/**
+ * Save the current route to session storage
+ */
+export function saveRouteState(): void {
+  const currentPath = window.location.hash;
+  sessionStorage.setItem(HMR_ROUTE_KEY, currentPath);
+}
+
+/**
+ * Save the selected kit name to session storage
+ */
+export function saveSelectedKitState(kitName: string): void {
+  sessionStorage.setItem(HMR_SELECTED_KIT_KEY, kitName);
+}
+
+/**
+ * Setup HMR handlers for route preservation
+ */
+export function setupRouteHmrHandlers(): void {
+  if (!(import.meta as any).hot) return;
+
+  (import.meta as any).hot.dispose(() => {
+    saveRouteState();
+  });
+
+  (import.meta as any).hot.accept(() => {
+    restoreRouteState();
+  });
+}

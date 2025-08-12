@@ -812,5 +812,4 @@ describe("Drizzle ORM Database Operations", () => {
       expect(kit2.data!.modified_since_sync).toBe(false);
     });
   });
-
 });

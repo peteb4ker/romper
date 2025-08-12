@@ -266,7 +266,7 @@ export function useVoicePanelSlots({
               onWaveformPlayingChange(voice, sample, playing)
             }
             playTrigger={playTriggers[sampleKey] || 0}
-            slotNumber={uiSlotNumber}
+            slotNumber={slotNumber}
             stopTrigger={stopTriggers[sampleKey] || 0}
             voiceNumber={voice}
           />

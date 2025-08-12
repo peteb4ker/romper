@@ -12,6 +12,10 @@ import KitBrowserContainer from "../components/KitBrowserContainer";
 import KitDetailsContainer from "../components/KitDetailsContainer";
 import KitViewDialogs from "../components/KitViewDialogs";
 import LocalStoreWizardModal from "../components/LocalStoreWizardModal";
+import {
+  restoreSelectedKitIfExists,
+  saveSelectedKitState,
+} from "../utils/hmrStateManager";
 import { useSettings } from "../utils/SettingsContext";
 
 /**
@@ -94,6 +98,22 @@ const KitsView: React.FC = () => {
       dialogState.setShowWizard(true);
     }
   }, [needsLocalStoreSetup, dialogState, wizardJustCompleted]);
+
+  // HMR: Restore selected kit state after hot reload
+  useEffect(() => {
+    restoreSelectedKitIfExists(
+      kits,
+      navigation.selectedKit,
+      navigation.setSelectedKit,
+    );
+  }, [kits, navigation.selectedKit, navigation.setSelectedKit]);
+
+  // HMR: Save selected kit state before hot reload
+  useEffect(() => {
+    if ((import.meta as any).hot && navigation.selectedKit) {
+      saveSelectedKitState(navigation.selectedKit);
+    }
+  }, [navigation.selectedKit]);
 
   // Reset wizardJustCompleted when needsLocalStoreSetup becomes false
   useEffect(() => {

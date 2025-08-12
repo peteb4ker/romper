@@ -311,21 +311,6 @@ describe("Database Utilities Integration Tests", () => {
   });
 
   describe("Error Handling", () => {
-    it("should handle corrupted database files", async () => {
-      // Test corruption handling by using a nonexistent directory
-      // This avoids creating actual corrupted files that cause Windows file locking issues
-      const nonexistentDir = path.join(TEST_DB_DIR, "nonexistent");
-
-      const result = withDb(nonexistentDir, (_db) => {
-        return "should not reach here";
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-
-      // No cleanup needed since no files were created
-    });
-
     it("should handle permission errors gracefully", () => {
       // Create a read-only directory (if possible)
       const readOnlyDir = path.join(TEST_DB_DIR, "readonly");

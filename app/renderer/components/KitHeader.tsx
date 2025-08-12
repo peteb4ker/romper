@@ -50,7 +50,46 @@ const KitHeader: React.FC<KitHeaderProps> = ({
   setKitAliasInput,
 }) => (
   <div className="flex items-center mb-2 gap-2">
-    {/* Left side spacer */}
+    {/* Left side: Navigation buttons */}
+    <div className="flex items-center gap-2">
+      {onBack && (
+        <button
+          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded hover:bg-gray-400 dark:hover:bg-slate-600"
+          onClick={() => onBack()}
+          title="Back"
+        >
+          <FiArrowLeft className="inline-block mr-1" /> Back
+        </button>
+      )}
+      {onPrevKit && kits && kitIndex !== undefined && (
+        <button
+          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
+          disabled={kitIndex === 0}
+          onClick={onPrevKit}
+          style={kitIndex === 0 ? { cursor: "not-allowed", opacity: 0.5 } : {}}
+          title="Previous Kit"
+        >
+          <FiChevronLeft className="inline-block mr-1" /> Previous
+        </button>
+      )}
+      {onNextKit && kits && kitIndex !== undefined && (
+        <button
+          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
+          disabled={kitIndex === kits.length - 1}
+          onClick={onNextKit}
+          style={
+            kitIndex === kits.length - 1
+              ? { cursor: "not-allowed", opacity: 0.5 }
+              : {}
+          }
+          title="Next Kit"
+        >
+          Next <FiChevronRight className="inline-block ml-1" />
+        </button>
+      )}
+    </div>
+
+    {/* Center spacer */}
     <div className="flex-1" />
 
     {/* Center: Kit icon and name */}
@@ -107,46 +146,10 @@ const KitHeader: React.FC<KitHeaderProps> = ({
     {/* Right side spacer */}
     <div className="flex-1" />
 
-    {/* Right side: Navigation buttons and controls */}
+    {/* Right side: Action buttons */}
     <div className="flex items-center gap-2">
-      {onBack && (
-        <button
-          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded hover:bg-gray-400 dark:hover:bg-slate-600"
-          onClick={() => onBack()}
-          title="Back"
-        >
-          <FiArrowLeft className="inline-block mr-1" /> Back
-        </button>
-      )}
-      {onPrevKit && kits && kitIndex !== undefined && (
-        <button
-          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
-          disabled={kitIndex === 0}
-          onClick={onPrevKit}
-          style={kitIndex === 0 ? { cursor: "not-allowed", opacity: 0.5 } : {}}
-          title="Previous Kit"
-        >
-          <FiChevronLeft className="inline-block mr-1" /> Previous
-        </button>
-      )}
-      {onNextKit && kits && kitIndex !== undefined && (
-        <button
-          className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded"
-          disabled={kitIndex === kits.length - 1}
-          onClick={onNextKit}
-          style={
-            kitIndex === kits.length - 1
-              ? { cursor: "not-allowed", opacity: 0.5 }
-              : {}
-          }
-          title="Next Kit"
-        >
-          Next <FiChevronRight className="inline-block ml-1" />
-        </button>
-      )}
-
       {onToggleEditableMode && (
-        <div className="ml-2 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {kit?.modified_since_sync && (
             <div className="flex items-center gap-1 mr-2">
               <FiCircle className="w-3 h-3 text-yellow-500 fill-current" />

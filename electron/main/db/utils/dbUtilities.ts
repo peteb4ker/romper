@@ -232,7 +232,9 @@ export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
       )
       .all() as { name: string }[];
 
-    const actualTableNames = actualTables.map((t) => t.name).sort();
+    const actualTableNames = actualTables
+      .map((t) => t.name)
+      .sort((a, b) => a.localeCompare(b));
     const missingTables = expectedTables.filter(
       (table) => !actualTableNames.includes(table),
     );

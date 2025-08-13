@@ -112,7 +112,9 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     useKitKeyboardNav({
       focusedKit,
       globalBankHotkeyHandler,
-      onToggleFavorite: handleToggleFavorite,
+      onToggleFavorite: (kitName: string) => {
+        void handleToggleFavorite(kitName);
+      },
     });
 
     // Effect handlers for messages

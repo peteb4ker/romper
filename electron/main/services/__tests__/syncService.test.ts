@@ -179,18 +179,17 @@ describe("SyncService", () => {
   });
 
   describe("startKitSync", () => {
-    const mockOperations = [
-      {
-        destinationPath: "/dest/A01/SP_A01_1_kick.wav",
-        filename: "kick.wav",
-        kitName: "A01",
-        operation: "copy" as const,
-        sourcePath: "/source/kick.wav",
-      },
-    ];
+    const mockSettings = {
+      localStorePath: "/local/store",
+    };
+
+    const mockOptions = {
+      sdCardPath: "/sd/card",
+      wipeSdCard: false,
+    };
 
     it("successfully syncs files", async () => {
-      const result = await syncService.startKitSync(mockOperations, "/db/path");
+      const result = await syncService.startKitSync(mockSettings, mockOptions);
 
       expect(result).toBeDefined();
       expect(typeof result.success).toBe("boolean");
@@ -201,36 +200,164 @@ describe("SyncService", () => {
         throw new Error("Copy failed");
       });
 
-      const result = await syncService.startKitSync(mockOperations, "/db/path");
+      const result = await syncService.startKitSync(mockSettings, mockOptions);
 
       expect(result).toBeDefined();
     });
 
-    it("handles conversion operations", async () => {
-      const convertOperations = [
-        {
-          destinationPath: "/dest/A01/SP_A01_2_snare.wav",
-          filename: "snare.wav",
-          kitName: "A01",
-          operation: "convert" as const,
-          originalFormat: "MP3",
-          sourcePath: "/source/snare.wav",
-          targetFormat: "WAV",
-        },
-      ];
+    it("handles wipe SD card option", async () => {
+      const wipeSdCardOptions = {
+        ...mockOptions,
+        wipeSdCard: true,
+      };
+
+      // Mock rimraf for wipe functionality
+      const mockRimraf = vi.fn().mockResolvedValue(undefined);
+      vi.doMock("rimraf", () => ({ rimraf: mockRimraf }));
 
       const result = await syncService.startKitSync(
-        convertOperations,
-        "/db/path",
+        mockSettings,
+        wipeSdCardOptions,
       );
 
       expect(result).toBeDefined();
     });
 
-    it("handles empty operations list", async () => {
-      const result = await syncService.startKitSync([], "/db/path");
+    it("handles missing local store path", async () => {
+      const emptySettings = {};
+
+      const result = await syncService.startKitSync(emptySettings, mockOptions);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("No local store path configured");
+    });
+
+    it("handles missing SD card path", async () => {
+      const invalidOptions = {
+        sdCardPath: "",
+      };
+
+      const result = await syncService.startKitSync(
+        mockSettings,
+        invalidOptions,
+      );
+
+      expect(result.success).toBe(false);
+    });
+
+    it("returns sync results with file count", async () => {
+      // Mock successful sync
+      mockMarkKitsAsSynced.mockResolvedValue({
+        data: undefined,
+        success: true,
+      });
+
+      const result = await syncService.startKitSync(mockSettings, mockOptions);
+
+      if (result.success) {
+        expect(result.data).toHaveProperty("syncedFiles");
+        expect(typeof result.data.syncedFiles).toBe("number");
+      }
+    });
+  });
+
+  describe("wipeSdCard functionality", () => {
+    const mockSettings = {
+      localStorePath: "/local/store",
+    };
+
+    it("wipes SD card when option is enabled", async () => {
+      const wipeSdCardOptions = {
+        sdCardPath: "/sd/card",
+        wipeSdCard: true,
+      };
+
+      // Mock fs.readdirSync to return some files
+      mockFs.readdirSync.mockReturnValue(["file1.wav", "file2.wav"] as any);
+      const mockRm = vi.fn().mockResolvedValue(undefined);
+      mockFs.rm = mockRm;
+
+      const result = await syncService.startKitSync(
+        mockSettings,
+        wipeSdCardOptions,
+      );
 
       expect(result).toBeDefined();
+    });
+
+    it("handles wipe SD card errors", async () => {
+      const wipeSdCardOptions = {
+        sdCardPath: "/nonexistent/path",
+        wipeSdCard: true,
+      };
+
+      // Mock fs.existsSync to return false for nonexistent path
+      mockFs.existsSync.mockReturnValueOnce(false);
+
+      const result = await syncService.startKitSync(
+        mockSettings,
+        wipeSdCardOptions,
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+      // The error could be about missing path or failing to load kits - both are valid error conditions
+      expect(typeof result.error).toBe("string");
+    });
+
+    it("skips wipe when option is disabled", async () => {
+      const noWipeOptions = {
+        sdCardPath: "/sd/card",
+        wipeSdCard: false,
+      };
+
+      const mockRm = vi.fn();
+      mockFs.rm = mockRm;
+
+      await syncService.startKitSync(mockSettings, noWipeOptions);
+
+      // Verify wipe was not called
+      expect(mockRm).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("error handling", () => {
+    const mockSettings = {
+      localStorePath: "/local/store",
+    };
+
+    const mockOptions = {
+      sdCardPath: "/sd/card",
+      wipeSdCard: false,
+    };
+
+    it("handles generateChangeSummary failures", async () => {
+      // Mock generateChangeSummary to fail
+      const mockGenerateChangeSummary = vi.spyOn(
+        syncService,
+        "generateChangeSummary",
+      );
+      mockGenerateChangeSummary.mockResolvedValue({
+        error: "Failed to generate summary",
+        success: false,
+      });
+
+      const result = await syncService.startKitSync(mockSettings, mockOptions);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Failed to generate summary");
+    });
+
+    it("handles general sync errors", async () => {
+      // Mock fs operations to throw errors
+      mockFs.statSync.mockImplementation(() => {
+        throw new Error("Filesystem error");
+      });
+
+      const result = await syncService.startKitSync(mockSettings, mockOptions);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
   });
 

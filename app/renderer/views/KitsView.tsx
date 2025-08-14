@@ -33,11 +33,16 @@ const KitsView: React.FC = () => {
 
   const { showMessage } = useMessageDisplay();
 
-  // Check if local store needs to be set up
+  // Check if local store needs to be set up (no local store configured at all)
   const needsLocalStoreSetup =
+    isInitialized && localStoreStatus !== null && !localStorePath;
+
+  // Check if local store is configured but invalid (should show error + change directory)
+  const hasInvalidLocalStore =
     isInitialized &&
     localStoreStatus !== null &&
-    (!localStoreStatus?.isValid || !localStorePath);
+    localStorePath &&
+    !localStoreStatus?.isValid;
 
   // Dialog state management
   const dialogState = useDialogState();
@@ -56,7 +61,7 @@ const KitsView: React.FC = () => {
   } = useKitDataManager({
     isInitialized,
     localStorePath,
-    needsLocalStoreSetup,
+    needsLocalStoreSetup: Boolean(needsLocalStoreSetup || hasInvalidLocalStore),
   });
 
   // Kit navigation
@@ -94,7 +99,7 @@ const KitsView: React.FC = () => {
   // Startup actions
   useStartupActions({
     localStorePath,
-    needsLocalStoreSetup,
+    needsLocalStoreSetup: Boolean(needsLocalStoreSetup || hasInvalidLocalStore),
   });
 
   // Auto-trigger wizard on startup if local store is not configured
@@ -103,6 +108,19 @@ const KitsView: React.FC = () => {
       dialogState.setShowWizard(true);
     }
   }, [needsLocalStoreSetup, dialogState, wizardJustCompleted]);
+
+  // Handle invalid local store - show error message and offer to change directory
+  useEffect(() => {
+    if (hasInvalidLocalStore && localStoreStatus?.error) {
+      showMessage(
+        `${localStoreStatus.error} Please select a new local store directory.`,
+        "error",
+        8000, // Show for 8 seconds
+      );
+      // Automatically open the change directory dialog
+      dialogState.setShowChangeDirectoryDialog(true);
+    }
+  }, [hasInvalidLocalStore, localStoreStatus?.error, showMessage, dialogState]);
 
   // HMR: Restore selected kit state after hot reload
   useEffect(() => {

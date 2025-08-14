@@ -67,7 +67,7 @@ export class LocalStoreService {
     // Validate database structure only - file sync issues are warnings, not blocking
     const validationResult = validateLocalStoreAndDb(resolvedPath);
 
-    // Enhance error message if directory doesn't exist to guide user toward reconfiguration
+    // Enhance error message to guide user toward reconfiguration
     let enhancedError = validationResult.error;
     if (validationResult.error?.includes("Local store path does not exist")) {
       const isTempDir =
@@ -77,6 +77,10 @@ export class LocalStoreService {
       } else {
         enhancedError = `The configured local store directory "${resolvedPath}" no longer exists or cannot be accessed. Please select a new local store location.`;
       }
+    } else if (
+      validationResult.error === "Local store directory is not writable"
+    ) {
+      enhancedError = `The configured local store directory "${resolvedPath}" is not writable. Please select a different local store location or check the directory permissions.`;
     }
 
     return {

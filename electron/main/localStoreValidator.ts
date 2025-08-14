@@ -156,6 +156,13 @@ export function validateLocalStoreBasic(
       return { error: "Local store path is not a directory", isValid: false };
     }
 
+    // Check if directory is writable
+    try {
+      fs.accessSync(localStorePath, fs.constants.W_OK);
+    } catch {
+      return { error: "Local store directory is not writable", isValid: false };
+    }
+
     // Check for .romperdb folder
     const romperDbDir = path.join(localStorePath, ".romperdb");
     if (!fs.existsSync(romperDbDir)) {

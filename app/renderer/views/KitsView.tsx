@@ -33,15 +33,19 @@ const KitsView: React.FC = () => {
 
   const { showMessage } = useMessageDisplay();
 
+  // Get the effective local store path (from status, which includes env overrides)
+  const effectiveLocalStorePath =
+    localStoreStatus?.localStorePath || localStorePath;
+
   // Check if local store needs to be set up (no local store configured at all)
   const needsLocalStoreSetup =
-    isInitialized && localStoreStatus !== null && !localStorePath;
+    isInitialized && localStoreStatus !== null && !effectiveLocalStorePath;
 
   // Check if local store is configured but invalid (should show error + change directory)
   const hasInvalidLocalStore =
     isInitialized &&
     localStoreStatus !== null &&
-    localStorePath &&
+    effectiveLocalStorePath &&
     !localStoreStatus?.isValid;
 
   // Dialog state management

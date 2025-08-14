@@ -3,6 +3,7 @@ import React from "react";
 import LocalStoreWizardUI from "./LocalStoreWizardUI";
 
 interface LocalStoreWizardModalProps {
+  initialError?: string;
   isOpen: boolean;
   onClose: () => void;
   onCloseApp?: () => void;
@@ -15,6 +16,7 @@ interface LocalStoreWizardModalProps {
  * Handles the modal presentation logic separately from the wizard content
  */
 const LocalStoreWizardModal: React.FC<LocalStoreWizardModalProps> = ({
+  initialError,
   isOpen,
   onClose,
   onCloseApp,
@@ -34,8 +36,8 @@ const LocalStoreWizardModal: React.FC<LocalStoreWizardModalProps> = ({
             Local Store Setup Required
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mt-2">
-            The local store must be set up before the app can be used. Please
-            complete the setup wizard to continue.
+            {initialError ||
+              "The local store must be set up before the app can be used. Please complete the setup wizard to continue."}
           </p>
         </div>
         <LocalStoreWizardUI

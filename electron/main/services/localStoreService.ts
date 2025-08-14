@@ -51,12 +51,7 @@ export class LocalStoreService {
   getLocalStoreStatus(
     localStorePath: null | string,
     envPath?: string,
-  ): {
-    error: null | string;
-    hasLocalStore: boolean;
-    isValid: boolean;
-    localStorePath: null | string;
-  } {
+  ): LocalStoreValidationDetailedResult {
     // Check environment variable first, then fall back to provided path
     const resolvedPath = envPath || localStorePath;
 
@@ -72,8 +67,21 @@ export class LocalStoreService {
     // Validate database structure only - file sync issues are warnings, not blocking
     const validationResult = validateLocalStoreAndDb(resolvedPath);
 
+    // Enhance error message if directory doesn't exist to guide user toward reconfiguration
+    let enhancedError = validationResult.error;
+    if (validationResult.error?.includes("Local store path does not exist")) {
+      const isTempDir =
+        resolvedPath.includes("/tmp/") || resolvedPath.includes("temp");
+      if (isTempDir) {
+        enhancedError = `The configured local store directory "${resolvedPath}" was a temporary location that has been cleaned up. Please select a permanent local store location.`;
+      } else {
+        enhancedError = `The configured local store directory "${resolvedPath}" no longer exists or cannot be accessed. Please select a new local store location.`;
+      }
+    }
+
     return {
-      error: validationResult.error || validationResult.errorSummary || null,
+      ...validationResult,
+      error: enhancedError || validationResult.errorSummary,
       hasLocalStore: true,
       isValid: validationResult.isValid,
       localStorePath: resolvedPath,

@@ -55,7 +55,7 @@ describe("LocalStoreService", () => {
     beforeEach(() => {
       mockValidateAndDb.mockReturnValue({
         details: { dbVersion: "1.0", hasDb: true },
-        error: null,
+        error: undefined,
         isValid: true,
       });
     });
@@ -64,7 +64,8 @@ describe("LocalStoreService", () => {
       const result = localStoreService.getLocalStoreStatus(null, "/env/path");
 
       expect(result).toEqual({
-        error: null,
+        details: { dbVersion: "1.0", hasDb: true },
+        error: undefined,
         hasLocalStore: true,
         isValid: true,
         localStorePath: "/env/path",
@@ -76,7 +77,8 @@ describe("LocalStoreService", () => {
       const result = localStoreService.getLocalStoreStatus("/local/path");
 
       expect(result).toEqual({
-        error: null,
+        details: { dbVersion: "1.0", hasDb: true },
+        error: undefined,
         hasLocalStore: true,
         isValid: true,
         localStorePath: "/local/path",
@@ -116,6 +118,7 @@ describe("LocalStoreService", () => {
       const result = localStoreService.getLocalStoreStatus("/invalid/path");
 
       expect(result).toEqual({
+        details: { hasDb: false },
         error: "Database not found",
         hasLocalStore: true,
         isValid: false,

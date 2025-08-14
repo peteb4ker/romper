@@ -142,7 +142,13 @@ export function validateLocalStoreBasic(
   try {
     // Check if local store directory exists
     if (!fs.existsSync(localStorePath)) {
-      return { error: "Local store path does not exist", isValid: false };
+      // Provide more helpful error message for temp directories that may have been cleaned up
+      const isTempDir =
+        localStorePath.includes("/tmp/") || localStorePath.includes("temp");
+      const errorMsg = isTempDir
+        ? "Local store path does not exist (temporary directory may have been cleaned up)"
+        : "Local store path does not exist";
+      return { error: errorMsg, isValid: false };
     }
 
     // Check if it's a directory

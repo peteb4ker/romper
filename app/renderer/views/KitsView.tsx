@@ -207,6 +207,7 @@ const KitsView: React.FC = () => {
 
       {/* Local Store Wizard Modal */}
       <LocalStoreWizardModal
+        initialError={localStoreStatus?.error}
         isOpen={dialogState.showWizard}
         onClose={dialogState.closeWizard}
         onCloseApp={

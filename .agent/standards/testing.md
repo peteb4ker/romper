@@ -526,8 +526,90 @@ it("should add sample when valid path provided", () => {
 });
 ```
 
+## Error Handling Requirements
+
+### Unhandled Rejections and Errors
+
+**CRITICAL RULE: NO UNHANDLED REJECTIONS OR ERRORS ARE ACCEPTABLE IN TESTS**
+
+Any test run that shows:
+```
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+Vitest caught X unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+```
+
+**MUST be fixed immediately.** This is not negotiable and these cannot be ignored or dismissed.
+
+#### Why Unhandled Rejections Are Critical Issues:
+
+1. **Test Reliability**: They can cause false positive tests, meaning tests might pass when they should fail
+2. **Production Bugs**: Unhandled rejections in tests often indicate real bugs that will manifest in production
+3. **Test Environment Instability**: They can interfere with other tests and cause intermittent failures
+4. **Code Quality**: They indicate missing error handling, try/catch blocks, or improper async handling
+
+#### How to Fix Unhandled Rejections:
+
+```typescript
+// ❌ BAD: Async call without error handling
+useEffect(() => {
+  const loadData = async () => {
+    const settings = await window.electronAPI.readSettings();
+    if (settings.sdCardPath) {
+      setSdCardPath(settings.sdCardPath);
+    }
+  };
+  loadData(); // If readSettings() returns undefined, accessing .sdCardPath will throw
+}, []);
+
+// ✅ CORRECT: Proper error handling and null checks
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      const settings = await window.electronAPI.readSettings();
+      if (settings && settings.sdCardPath) {
+        setSdCardPath(settings.sdCardPath);
+      }
+    } catch (error) {
+      console.error("Failed to load settings:", error);
+      // Handle error appropriately - don't let it become unhandled
+    }
+  };
+  loadData();
+}, []);
+```
+
+#### Common Sources of Unhandled Rejections:
+
+1. **Missing try/catch blocks** around async operations
+2. **Null/undefined checks missing** when accessing nested properties
+3. **Promise chains** without `.catch()` handlers
+4. **Event handlers** that throw without error boundaries
+5. **useEffect cleanup** functions that don't handle async cancellation
+
+#### Test Standards for Error Handling:
+
+```typescript
+// ✅ CORRECT: Test error handling explicitly
+it("should handle settings loading errors gracefully", async () => {
+  vi.mocked(window.electronAPI.readSettings).mockRejectedValue(new Error("Settings failed"));
+  
+  const { result } = renderHook(() => useKitSync({}));
+  
+  await act(async () => {
+    await new Promise(resolve => setTimeout(resolve, 10));
+  });
+  
+  // Verify error was handled and didn't become unhandled rejection
+  expect(result.current.error).toBe(null); // Component should handle gracefully
+});
+```
+
 ## Quick Validation Checklist
 
+- [ ] **NO unhandled rejections or errors in test output** 
+- [ ] All async operations have proper error handling with try/catch
+- [ ] All nested property access has null/undefined checks
 - [ ] Tests in `__tests__/` directories with `.test.ts/.test.tsx` naming
 - [ ] Proper beforeEach/afterEach cleanup
 - [ ] Tests isolated and independent

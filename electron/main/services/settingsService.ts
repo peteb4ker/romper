@@ -18,10 +18,22 @@ export class SettingsService {
   }
 
   /**
-   * Read current in-memory settings
+   * Read current in-memory settings with environment overrides
    */
   readSettings(inMemorySettings: Record<string, any>): Record<string, any> {
-    return inMemorySettings;
+    // Include environment overrides when available
+    const settings = { ...inMemorySettings };
+
+    // Override with environment variables if available
+    if (process.env.ROMPER_LOCAL_PATH) {
+      settings.localStorePath = process.env.ROMPER_LOCAL_PATH;
+    }
+
+    if (process.env.ROMPER_SDCARD_PATH) {
+      settings.sdCardPath = process.env.ROMPER_SDCARD_PATH;
+    }
+
+    return settings;
   }
 
   /**

@@ -64,6 +64,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           {props.onSyncToSdCard && (
             <button
               className="px-2 py-1 text-xs bg-orange-600 text-white rounded shadow hover:bg-orange-700 transition font-semibold flex items-center"
+              data-testid="sync-to-sd-card"
               onClick={props.onSyncToSdCard}
               title="Sync modified kits to SD card"
             >

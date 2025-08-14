@@ -45,9 +45,6 @@ describe("useKitSync", () => {
 
   describe("handleSyncToSdCard", () => {
     it("successfully initiates sync process", async () => {
-      const mockChangeSummary = { totalChanges: 5 };
-      mockGenerateChangeSummary.mockResolvedValue(mockChangeSummary);
-
       const { result } = renderHook(() => useKitSync(defaultProps));
 
       await act(async () => {
@@ -55,20 +52,22 @@ describe("useKitSync", () => {
       });
 
       expect(result.current.currentSyncKit).toBe("All Kits");
-      expect(result.current.currentChangeSummary).toEqual(mockChangeSummary);
+      // Change summary is not generated immediately anymore - it's generated when SD card is selected
+      expect(result.current.currentChangeSummary).toBe(null);
       expect(result.current.showSyncDialog).toBe(true);
     });
 
-    it("handles change summary generation failure", async () => {
-      mockGenerateChangeSummary.mockResolvedValueOnce(null);
-
+    it("initiates sync dialog regardless of change summary", async () => {
       const { result } = renderHook(() => useKitSync(defaultProps));
 
       await act(async () => {
         await result.current.handleSyncToSdCard();
       });
 
-      expect(result.current.showSyncDialog).toBe(false);
+      // Dialog should open even without a change summary (summary generated later)
+      expect(result.current.showSyncDialog).toBe(true);
+      expect(result.current.currentSyncKit).toBe("All Kits");
+      expect(result.current.currentChangeSummary).toBe(null);
     });
   });
 

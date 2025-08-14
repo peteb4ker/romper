@@ -129,9 +129,12 @@ export const createElectronAPIMock = (
     data: new ArrayBuffer(1024),
     success: true,
   }),
-  readSettings: vi
-    .fn()
-    .mockResolvedValue({ localStorePath: "/mock/local/store" }),
+  readSettings: vi.fn().mockResolvedValue({
+    darkMode: false,
+    localStorePath: "/mock/local/store",
+    sdCardPath: "/mock/sd/card",
+    themeMode: "light",
+  }),
   replaceSampleInSlot: vi.fn().mockResolvedValue(undefined),
   rescanKit: vi.fn().mockResolvedValue({
     data: { scannedSamples: 4, updatedVoices: 4 },

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useSyncUpdate } from "../shared/useSyncUpdate";
 
@@ -16,6 +16,28 @@ export function useKitSync({ onMessage }: UseKitSyncOptions) {
   const [currentChangeSummary, setCurrentChangeSummary] = useState<any>(null);
   const [sdCardPath, setSdCardPath] = useState<null | string>(null);
 
+  // Get SD card path from settings (includes environment overrides)
+  useEffect(() => {
+    const getSettings = async () => {
+      if (window.electronAPI?.readSettings) {
+        try {
+          const settings = await window.electronAPI.readSettings();
+          console.log("Settings loaded:", settings);
+          if (settings && settings.sdCardPath) {
+            console.log(
+              "Setting SD card path from settings:",
+              settings.sdCardPath,
+            );
+            setSdCardPath(settings.sdCardPath);
+          }
+        } catch (error) {
+          console.error("Failed to read settings:", error);
+        }
+      }
+    };
+    getSettings();
+  }, []);
+
   // Sync functionality from useSyncUpdate hook
   const {
     clearError: clearSyncError,
@@ -27,21 +49,23 @@ export function useKitSync({ onMessage }: UseKitSyncOptions) {
 
   // Handler to initiate sync to SD card
   const handleSyncToSdCard = useCallback(async () => {
-    // Sync all kits to SD card
-    setCurrentSyncKit("All Kits");
+    try {
+      // Sync all kits to SD card
+      setCurrentSyncKit("All Kits");
 
-    // Generate change summary before showing dialog
-    const changeSummary = await generateChangeSummary();
-    if (!changeSummary) {
-      if (onMessage && syncError) {
-        onMessage(`Failed to analyze kits: ${syncError}`, "error");
+      // Don't generate change summary here - it will be generated when SD card is selected
+      setCurrentChangeSummary(null);
+      setShowSyncDialog(true);
+    } catch (error) {
+      console.error("Error initiating sync:", error);
+      if (onMessage) {
+        onMessage(
+          `Failed to initiate sync: ${error instanceof Error ? error.message : "Unknown error"}`,
+          "error",
+        );
       }
-      return;
     }
-
-    setCurrentChangeSummary(changeSummary);
-    setShowSyncDialog(true);
-  }, [generateChangeSummary, onMessage, syncError]);
+  }, [onMessage]);
 
   // Handler to confirm sync operation
   const handleConfirmSync = useCallback(
@@ -81,6 +105,7 @@ export function useKitSync({ onMessage }: UseKitSyncOptions) {
   return {
     currentChangeSummary,
     currentSyncKit,
+    generateChangeSummary,
     handleCloseSyncDialog,
     handleConfirmSync,
     // Handlers

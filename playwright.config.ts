@@ -46,4 +46,6 @@ export default defineConfig({
     },
   ],
   testDir: ".",
+  timeout: 5000,
+  workers: 1, // Run E2E tests sequentially to avoid resource conflicts
 });

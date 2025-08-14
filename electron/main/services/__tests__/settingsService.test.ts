@@ -47,22 +47,24 @@ describe("SettingsService", () => {
   });
 
   describe("readSettings", () => {
-    it("returns the current in-memory settings", () => {
+    it("returns the current in-memory settings with environment overrides", () => {
       const result = settingsService.readSettings(mockInMemorySettings);
 
-      expect(result).toBe(mockInMemorySettings);
-      expect(result).toEqual({
+      // Should return a new object (not the same reference due to spread syntax)
+      expect(result).not.toBe(mockInMemorySettings);
+      expect(result).toStrictEqual({
         localStorePath: "/test/local/store",
         theme: "dark",
       });
     });
 
-    it("returns empty object for empty settings", () => {
+    it("returns new object for empty settings", () => {
       const emptySettings = {};
       const result = settingsService.readSettings(emptySettings);
 
-      expect(result).toBe(emptySettings);
-      expect(result).toEqual({});
+      // Should return a new object (not the same reference due to spread syntax)
+      expect(result).not.toBe(emptySettings);
+      expect(result).toStrictEqual({});
     });
   });
 

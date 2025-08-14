@@ -99,6 +99,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     const {
       currentChangeSummary,
       currentSyncKit,
+      generateChangeSummary,
       handleCloseSyncDialog,
       handleConfirmSync,
       handleSyncToSdCard,
@@ -251,14 +252,15 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         )}
 
         {/* SyncUpdateDialog */}
-        {showSyncDialog && currentSyncKit && currentChangeSummary && (
+        {showSyncDialog && currentSyncKit && (
           <SyncUpdateDialog
-            changeSummary={currentChangeSummary}
             isLoading={isSyncLoading}
             isOpen={showSyncDialog}
             kitName={currentSyncKit}
+            localChangeSummary={currentChangeSummary}
             onClose={handleCloseSyncDialog}
             onConfirm={handleConfirmSync}
+            onGenerateChangeSummary={generateChangeSummary}
             onSdCardPathChange={onSdCardPathChange}
             sdCardPath={sdCardPath}
           />

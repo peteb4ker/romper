@@ -38,10 +38,51 @@ export function useKitStepSequencerLogic(
 
   // Worker management
   const workerRef = React.useRef<null | Worker>(null);
-  const workerUrl = React.useMemo(
-    () => new URL("../../kitStepSequencerWorker.ts", import.meta.url),
-    [],
-  );
+
+  // Create worker from inline source to avoid MIME type issues
+  const workerBlob = React.useMemo(() => {
+    const workerScript = `
+      let isPlaying = false;
+      let currentStep = 0;
+      let numSteps = 16;
+      let interval = null;
+      let stepDuration = 125;
+
+      self.onmessage = function (e) {
+        if (!e.data || typeof e.data !== "object") {
+          return;
+        }
+
+        const { payload = {}, type } = e.data;
+
+        if (type === "START") {
+          isPlaying = true;
+          numSteps = payload.numSteps ?? 16;
+          stepDuration = payload.stepDuration ?? 125;
+          if (interval) clearInterval(interval);
+          interval = setInterval(() => {
+            if (!isPlaying) return;
+            currentStep = (currentStep + 1) % numSteps;
+            self.postMessage({ payload: { currentStep }, type: "STEP" });
+          }, stepDuration);
+        } else if (type === "STOP") {
+          isPlaying = false;
+          if (interval) clearInterval(interval);
+          interval = null;
+          currentStep = 0;
+          self.postMessage({ payload: { currentStep }, type: "STEP" });
+        } else if (type === "SET_STEP") {
+          currentStep = payload.currentStep ?? 0;
+        }
+      };
+    `;
+
+    return new Blob([workerScript], { type: "application/javascript" });
+  }, []);
+
+  const workerUrl = React.useMemo(() => {
+    return URL.createObjectURL(workerBlob);
+  }, [workerBlob]);
 
   // Playback state
   const [isSeqPlaying, setIsSeqPlaying] = React.useState(false);
@@ -55,7 +96,9 @@ export function useKitStepSequencerLogic(
 
   // Worker initialization and cleanup
   const worker = React.useMemo(() => {
-    workerRef.current ??= new Worker(workerUrl, { type: "module" });
+    if (!workerRef.current) {
+      workerRef.current = new Worker(workerUrl);
+    }
     return workerRef.current;
   }, [workerUrl]);
 
@@ -71,8 +114,9 @@ export function useKitStepSequencerLogic(
     return () => {
       worker.terminate();
       workerRef.current = null;
+      URL.revokeObjectURL(workerUrl);
     };
-  }, [worker]);
+  }, [worker, workerUrl]);
 
   // Worker playback control
   React.useEffect(() => {

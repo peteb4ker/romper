@@ -38,26 +38,30 @@ export interface SyncValidationError {
 }
 
 interface SyncUpdateDialogProps {
-  changeSummary: SyncChangeSummary;
   isLoading?: boolean;
   isOpen: boolean;
   kitName: string;
+  localChangeSummary: null | SyncChangeSummary;
   onClose: () => void;
   onConfirm: (options: {
     sdCardPath: null | string;
     wipeSdCard: boolean;
   }) => void;
+  onGenerateChangeSummary?: (
+    sdCardPath: string,
+  ) => Promise<null | SyncChangeSummary>;
   onSdCardPathChange?: (path: null | string) => void;
   sdCardPath?: null | string;
 }
 
 const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
-  changeSummary,
   isLoading = false,
   isOpen,
   kitName,
+  localChangeSummary,
   onClose,
   onConfirm,
+  onGenerateChangeSummary,
   onSdCardPathChange,
   sdCardPath,
 }) => {
@@ -66,6 +70,10 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const [localSdCardPath, setLocalSdCardPath] = useState<null | string>(
     sdCardPath || null,
   );
+  const [changeSummary, setChangeSummary] = useState<null | SyncChangeSummary>(
+    localChangeSummary,
+  );
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
   useEffect(() => {
     // Reset details view when dialog opens
@@ -73,15 +81,63 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
       setShowDetails(false);
       setWipeSdCard(false);
       setLocalSdCardPath(sdCardPath || null);
+      setChangeSummary(localChangeSummary);
+
+      // If we have an SD card path from environment (test mode), generate summary automatically
+      if (
+        sdCardPath &&
+        !changeSummary &&
+        onGenerateChangeSummary &&
+        !isGeneratingSummary
+      ) {
+        console.log("Auto-generating change summary for path:", sdCardPath);
+        setIsGeneratingSummary(true);
+        onGenerateChangeSummary(sdCardPath)
+          .then((summary) => {
+            console.log("Change summary generated:", summary);
+            if (summary) {
+              setChangeSummary(summary);
+            }
+            setIsGeneratingSummary(false);
+          })
+          .catch((error) => {
+            console.error("Failed to generate change summary:", error);
+            setIsGeneratingSummary(false);
+          });
+      }
     }
-  }, [isOpen, sdCardPath]);
+  }, [
+    isOpen,
+    sdCardPath,
+    changeSummary,
+    onGenerateChangeSummary,
+    isGeneratingSummary,
+    localChangeSummary,
+  ]);
 
   const handleSdCardSelect = async () => {
     if (window.electronAPI?.selectSdCard) {
       const selectedPath = await window.electronAPI.selectSdCard();
-      setLocalSdCardPath(selectedPath);
-      if (onSdCardPathChange) {
-        onSdCardPathChange(selectedPath);
+      if (selectedPath) {
+        setLocalSdCardPath(selectedPath);
+        if (onSdCardPathChange) {
+          onSdCardPathChange(selectedPath);
+        }
+
+        // Generate change summary after selecting SD card
+        if (onGenerateChangeSummary) {
+          setIsGeneratingSummary(true);
+          try {
+            const summary = await onGenerateChangeSummary(selectedPath);
+            if (summary) {
+              setChangeSummary(summary);
+            }
+          } catch (error) {
+            console.error("Failed to generate change summary:", error);
+          } finally {
+            setIsGeneratingSummary(false);
+          }
+        }
       }
     }
   };
@@ -109,10 +165,13 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
       : `${minutes}m`;
   };
 
-  const totalFiles =
-    changeSummary.filesToCopy.length + changeSummary.filesToConvert.length;
+  const totalFiles = changeSummary
+    ? (changeSummary?.filesToCopy?.length || 0) +
+      (changeSummary?.filesToConvert?.length || 0)
+    : 0;
   const hasValidationErrors =
-    changeSummary.validationErrors && changeSummary.validationErrors.length > 0;
+    changeSummary?.validationErrors &&
+    changeSummary.validationErrors.length > 0;
 
   const getStatusMessage = () => {
     if (!localSdCardPath) {
@@ -126,8 +185,9 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
     if (hasValidationErrors) {
       return (
         <span className="text-red-600 dark:text-red-400">
-          Cannot sync - {changeSummary.validationErrors.length} file
-          {changeSummary.validationErrors.length !== 1 ? "s" : ""} missing
+          Cannot sync - {changeSummary?.validationErrors?.length || 0} file
+          {(changeSummary?.validationErrors?.length || 0) !== 1 ? "s" : ""}{" "}
+          missing
         </span>
       );
     }
@@ -146,7 +206,10 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
+      <div
+        className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden"
+        data-testid="sync-dialog"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
@@ -190,7 +253,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 </div>
                 {localSdCardPath ? (
                   <div className="text-sm text-gray-600 dark:text-gray-400 font-mono">
-                    {localSdCardPath}
+                    <span data-testid="sd-card-path">{localSdCardPath}</span>
                   </div>
                 ) : (
                   <div className="text-sm text-gray-500 dark:text-gray-500 italic">
@@ -200,6 +263,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               </div>
               <button
                 className="px-3 py-1 text-sm bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-2"
+                data-testid="select-sd-card"
                 disabled={isLoading}
                 onClick={handleSdCardSelect}
               >
@@ -214,6 +278,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 <input
                   checked={wipeSdCard}
                   className="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 rounded focus:ring-yellow-500 dark:focus:ring-yellow-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  data-testid="wipe-sd-card-checkbox"
                   disabled={isLoading}
                   id="wipeSdCard"
                   onChange={(e) => setWipeSdCard(e.target.checked)}
@@ -244,7 +309,9 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
               <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {formatFileSize(changeSummary.estimatedSize)}
+                {changeSummary
+                  ? formatFileSize(changeSummary.estimatedSize)
+                  : "-"}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 Total Size
@@ -252,7 +319,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
               <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {formatTime(changeSummary.estimatedTime)}
+                {changeSummary ? formatTime(changeSummary.estimatedTime) : "-"}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 Est. Time
@@ -261,7 +328,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           </div>
 
           {/* Validation Errors */}
-          {changeSummary.validationErrors &&
+          {changeSummary?.validationErrors &&
             changeSummary.validationErrors.length > 0 && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <div className="flex items-start gap-2">
@@ -274,7 +341,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                       The following files cannot be accessed:
                     </div>
                     <ul className="text-sm text-red-700 dark:text-red-300 mt-2 space-y-1">
-                      {changeSummary.validationErrors.map((error) => (
+                      {changeSummary?.validationErrors?.map((error) => (
                         <li
                           className="flex items-start gap-1"
                           key={error.sourcePath}
@@ -296,7 +363,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             )}
 
           {/* Warnings */}
-          {changeSummary.hasFormatWarnings && (
+          {changeSummary?.hasFormatWarnings && (
             <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
               <div className="flex items-start gap-2">
                 <FiAlertTriangle className="text-yellow-600 dark:text-yellow-400 mt-0.5" />
@@ -308,7 +375,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                     Some samples need format conversion during sync:
                   </div>
                   <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-2 space-y-1">
-                    {changeSummary.warnings.map((warning) => (
+                    {changeSummary?.warnings?.map((warning) => (
                       <li className="flex items-start gap-1" key={warning}>
                         <span className="text-yellow-600 dark:text-yellow-400 mt-0.5">
                           •
@@ -323,21 +390,21 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           )}
 
           {/* Operation Summary */}
-          <div className="space-y-3">
-            {changeSummary.filesToCopy.length > 0 && (
+          <div className="space-y-3" data-testid="sync-summary-stats">
+            {(changeSummary?.filesToCopy?.length || 0) > 0 && (
               <div className="flex items-center gap-2 text-sm">
                 <FiFile className="text-green-600 dark:text-green-400" />
                 <span className="text-gray-700 dark:text-gray-300">
-                  {changeSummary.filesToCopy.length} file(s) will be copied
-                  directly
+                  {changeSummary?.filesToCopy?.length || 0} file(s) will be
+                  copied directly
                 </span>
               </div>
             )}
-            {changeSummary.filesToConvert.length > 0 && (
+            {(changeSummary?.filesToConvert?.length || 0) > 0 && (
               <div className="flex items-center gap-2 text-sm">
                 <FiHardDrive className="text-blue-600 dark:text-blue-400" />
                 <span className="text-gray-700 dark:text-gray-300">
-                  {changeSummary.filesToConvert.length} file(s) will be
+                  {changeSummary?.filesToConvert?.length || 0} file(s) will be
                   converted during copy
                 </span>
               </div>
@@ -357,13 +424,13 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           {/* File Details */}
           {showDetails && (
             <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              {changeSummary.filesToCopy.length > 0 && (
+              {(changeSummary?.filesToCopy?.length || 0) > 0 && (
                 <div>
                   <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
                     Files to Copy
                   </h4>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {changeSummary.filesToCopy.map((file) => (
+                    {changeSummary?.filesToCopy?.map((file) => (
                       <div
                         className="text-sm p-2 bg-gray-50 dark:bg-slate-700 rounded"
                         key={file.sourcePath}
@@ -380,13 +447,13 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 </div>
               )}
 
-              {changeSummary.filesToConvert.length > 0 && (
+              {(changeSummary?.filesToConvert?.length || 0) > 0 && (
                 <div>
                   <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
                     Files to Convert
                   </h4>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {changeSummary.filesToConvert.map((file) => (
+                    {changeSummary?.filesToConvert?.map((file) => (
                       <div
                         className="text-sm p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded"
                         key={file.sourcePath}
@@ -417,6 +484,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           <div className="flex gap-2">
             <button
               className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+              data-testid="cancel-sync"
               disabled={isLoading}
               onClick={onClose}
             >
@@ -424,8 +492,11 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             </button>
             <button
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              data-testid="confirm-sync"
               disabled={
                 isLoading ||
+                isGeneratingSummary ||
+                !changeSummary ||
                 totalFiles === 0 ||
                 hasValidationErrors ||
                 !localSdCardPath

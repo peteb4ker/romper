@@ -34,6 +34,14 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   });
 
   ipcMain.handle("select-sd-card", async () => {
+    // In test mode with ROMPER_SDCARD_PATH set, use that instead of opening dialog
+    if (
+      process.env.ROMPER_TEST_MODE === "true" &&
+      process.env.ROMPER_SDCARD_PATH
+    ) {
+      return process.env.ROMPER_SDCARD_PATH;
+    }
+
     const os = await import("os");
     const result = await dialog.showOpenDialog({
       defaultPath: os.homedir(),

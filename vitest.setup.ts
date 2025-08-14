@@ -1,6 +1,6 @@
 import * as matchers from "@testing-library/jest-dom/matchers";
 import { TextEncoder } from "util";
-import { beforeAll, expect } from "vitest";
+import { beforeAll, expect, vi } from "vitest";
 
 import { setupAudioMocks } from "./tests/mocks/browser/audio";
 import { setupDOMMocks, setupWindowDOMMocks } from "./tests/mocks/browser/dom";
@@ -29,6 +29,21 @@ beforeAll(() => {
   // Setup Electron APIs
   window.electronAPI = defaultElectronAPIMock;
   window.electronFileAPI = defaultElectronFileAPIMock;
+
+  // Mock URL.createObjectURL for Web Worker blob creation
+  if (typeof globalThis.URL === "undefined") {
+    globalThis.URL = {
+      createObjectURL: vi.fn(() => "blob:mock-url"),
+      revokeObjectURL: vi.fn(),
+    } as any;
+  } else {
+    if (!globalThis.URL.createObjectURL) {
+      globalThis.URL.createObjectURL = vi.fn(() => "blob:mock-url");
+    }
+    if (!globalThis.URL.revokeObjectURL) {
+      globalThis.URL.revokeObjectURL = vi.fn();
+    }
+  }
 
   // Setup window-specific DOM mocks
   setupWindowDOMMocks();

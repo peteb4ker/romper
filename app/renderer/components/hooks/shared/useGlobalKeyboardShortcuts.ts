@@ -8,11 +8,13 @@ import { useUndoRedo } from "./useUndoRedo";
 interface UseGlobalKeyboardShortcutsProps {
   currentKitName?: string;
   isEditMode?: boolean;
+  onBackNavigation?: () => void;
 }
 
 export function useGlobalKeyboardShortcuts({
   currentKitName,
   isEditMode,
+  onBackNavigation,
 }: UseGlobalKeyboardShortcutsProps) {
   const undoRedo = useUndoRedo(currentKitName || "");
 
@@ -21,7 +23,26 @@ export function useGlobalKeyboardShortcuts({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Only handle shortcuts when in edit mode and we have a kit
+      // Handle Escape key for back navigation (global, not just in edit mode)
+      if (event.key === "Escape" && onBackNavigation && currentKitName) {
+        // Don't handle Escape if we're in an input field or dialog
+        const target = event.target as HTMLElement;
+        const isInInput =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
+        const isInDialog =
+          target.closest('[role="dialog"]') || target.closest(".fixed");
+
+        if (!isInInput && !isInDialog) {
+          event.preventDefault();
+          event.stopPropagation();
+          onBackNavigation();
+          return;
+        }
+      }
+
+      // Only handle undo/redo shortcuts when in edit mode and we have a kit
       if (!isEditMode || !currentKitName) {
         return;
       }
@@ -62,7 +83,7 @@ export function useGlobalKeyboardShortcuts({
     return () => {
       document.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, [currentKitName, isEditMode, undoRedo]);
+  }, [currentKitName, isEditMode, undoRedo, onBackNavigation]);
 
   return {
     addUndoAction: undoRedo.addAction, // Expose this so it can be passed to components

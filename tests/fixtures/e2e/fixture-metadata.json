@@ -1,0 +1,10 @@
+{
+  "generated": "2025-08-13T22:07:16.551Z",
+  "source": "Wizard E2E test automation",
+  "archivePath": "local-store-fixture.tar.gz",
+  "kits": [
+    "A0",
+    "B1"
+  ],
+  "usage": "Extract this archive to create a pre-initialized local store for E2E tests"
+}

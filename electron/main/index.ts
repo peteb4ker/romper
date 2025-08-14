@@ -146,6 +146,30 @@ function validateAndFixLocalStore(settings: Settings): Settings {
   const settingsPath = path.join(userDataPath, "romper-settings.json");
 
   console.log("[Validation] Starting local store validation");
+
+  // Check if we have an environment override first
+  const envOverridePath = process.env.ROMPER_LOCAL_PATH;
+  if (envOverridePath) {
+    console.log("[Validation] Environment override detected:", envOverridePath);
+    const envValidation = validateLocalStoreAndDb(envOverridePath);
+    console.log("[Validation] Environment override validation result:", {
+      error: envValidation.error,
+      errorSummary: envValidation.errorSummary,
+      isValid: envValidation.isValid,
+    });
+
+    if (envValidation.isValid) {
+      console.log("[Validation] ✓ Environment override path is valid");
+      // Don't modify settings - environment override is temporary
+      return settings;
+    } else {
+      console.warn("[Validation] ✗ Environment override path is invalid");
+      console.warn("  - Path:", envOverridePath);
+      console.warn("  - Error:", envValidation.error);
+      // Continue to check settings path as fallback
+    }
+  }
+
   console.log(
     "[Validation] Settings have localStorePath:",
     !!settings.localStorePath,

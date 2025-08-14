@@ -48,9 +48,9 @@ describe("SyncUpdateDialog", () => {
     it("should not render when isOpen is false", () => {
       render(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isOpen={false}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -66,9 +66,9 @@ describe("SyncUpdateDialog", () => {
     it("should render dialog with kit name and summary stats", () => {
       render(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -84,9 +84,9 @@ describe("SyncUpdateDialog", () => {
     it("should display format warnings when present", () => {
       render(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -103,9 +103,9 @@ describe("SyncUpdateDialog", () => {
     it("should show operation summary", () => {
       render(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -124,9 +124,9 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -149,9 +149,9 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -166,9 +166,9 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
@@ -182,10 +182,10 @@ describe("SyncUpdateDialog", () => {
     it("should disable buttons when loading", () => {
       render(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isLoading={true}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -211,9 +211,9 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
-          changeSummary={emptyChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={emptyChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
@@ -257,9 +257,9 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
-          changeSummary={errorChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={errorChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
@@ -302,9 +302,9 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
-          changeSummary={singleErrorChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={singleErrorChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -324,9 +324,9 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
-          changeSummary={largeSizeChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={largeSizeChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -344,9 +344,9 @@ describe("SyncUpdateDialog", () => {
 
       render(
         <SyncUpdateDialog
-          changeSummary={longTimeChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={longTimeChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -358,9 +358,9 @@ describe("SyncUpdateDialog", () => {
     it("should reset details view when dialog opens", () => {
       const { rerender } = render(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isOpen={false}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -369,9 +369,9 @@ describe("SyncUpdateDialog", () => {
       // Open dialog and show details
       rerender(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,
@@ -387,9 +387,9 @@ describe("SyncUpdateDialog", () => {
     it("should have proper aria labels", () => {
       render(
         <SyncUpdateDialog
-          changeSummary={mockChangeSummary}
           isOpen={true}
           kitName="A0"
+          localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
         />,

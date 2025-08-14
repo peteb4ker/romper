@@ -100,13 +100,16 @@ export function createSampleOperationHandler(
 
 /**
  * Validates local store path and returns database directory
+ * Checks environment variable override first, then settings
  */
 export function validateAndGetDbDir(inMemorySettings: Record<string, any>): {
   dbDir?: string;
   error?: string;
   success: boolean;
 } {
-  const localStorePath = inMemorySettings.localStorePath;
+  // Check environment override first, then settings
+  const localStorePath =
+    process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath;
   if (!localStorePath) {
     return { error: "No local store path configured", success: false };
   }

@@ -192,11 +192,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const loadedSettings = await window.electronAPI.readSettings();
 
+      // Import config to check for environment override
+      const { config } = await import("../config");
+
       const settings: Settings = {
         confirmDestructiveActions:
           loadedSettings.confirmDestructiveActions ?? true, // Task 12.1.2: Default to true
         defaultToMonoSamples: loadedSettings.defaultToMonoSamples ?? true, // Task 7.1.1: Default to true
-        localStorePath: loadedSettings.localStorePath || null,
+        // Use environment override if available, otherwise use settings
+        localStorePath:
+          config.localStorePath || loadedSettings.localStorePath || null,
         themeMode: loadedSettings.themeMode ?? "system", // Default to system preference
       };
 

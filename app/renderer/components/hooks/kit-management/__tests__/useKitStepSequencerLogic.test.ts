@@ -66,9 +66,8 @@ describe("useKitStepSequencerLogic", () => {
     it("should initialize worker correctly", () => {
       renderHook(() => useKitStepSequencerLogic(getDefaultParams()));
 
-      expect(global.Worker).toHaveBeenCalledWith(expect.any(URL), {
-        type: "module",
-      });
+      // The worker should be created with our mocked URL string
+      expect(global.Worker).toHaveBeenCalledWith("mock-worker-url");
     });
 
     it("should handle null stepPattern by providing safe default", () => {

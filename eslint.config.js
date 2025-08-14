@@ -122,6 +122,54 @@ export default defineConfig([
     },
   },
 
+  // E2E test files and test utilities
+  {
+    files: ["tests/**/*.ts", "tests/**/*.js"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+        ecmaFeatures: {
+          jsx: false,
+        },
+      },
+      globals: trimGlobals({
+        ...globals.browser,
+        ...globals.node,
+        ...globals.vitest,
+        vitest: true,
+      }),
+    },
+    plugins: {
+      "@typescript-eslint": tseslint.plugin,
+      perfectionist,
+      sonarjs,
+      prettier,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules, // Use recommended instead of recommendedTypeChecked
+      ...prettierConfig.rules,
+      ...perfectionist.configs["recommended-alphabetical"].rules,
+      "sonarjs/no-nested-functions": "off",
+      "sonarjs/cognitive-complexity": ["error", 30], // Higher threshold for test files
+      "sonarjs/no-unused-vars": "error",
+      "sonarjs/no-dead-store": "error",
+      "prettier/prettier": "error",
+      "no-trailing-spaces": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+      "no-unused-vars": "off",
+    },
+  },
+
   // Config files (Node environment)
   {
     files: ["*.config.js", "*.config.ts"],

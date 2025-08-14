@@ -40,8 +40,10 @@ describe("SettingsContext", () => {
     // Default mock implementations
     mockElectronAPI.readSettings.mockResolvedValue({
       confirmDestructiveActions: true,
+      darkMode: false,
       defaultToMonoSamples: true,
       localStorePath: "/test/path",
+      sdCardPath: "/test/sd/card",
       themeMode: "light",
     });
 
@@ -66,11 +68,13 @@ describe("SettingsContext", () => {
 
       const { result } = renderHook(() => useSettings(), { wrapper });
 
-      // Wait for initialization
+      // Wait for the full initialization cycle to complete
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        // Wait for multiple frames to ensure all async operations complete
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
+      expect(result.current).not.toBe(null);
       expect(result.current.isInitialized).toBe(true);
       expect(result.current.localStorePath).toBe("/test/path");
       expect(result.current.themeMode).toBe("light");
@@ -89,9 +93,10 @@ describe("SettingsContext", () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
+      expect(result.current).not.toBe(null);
       expect(result.current.isInitialized).toBe(true);
       expect(result.current.error).toBe("Read failed");
     });
@@ -106,9 +111,10 @@ describe("SettingsContext", () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
+      expect(result.current).not.toBe(null);
       expect(result.current.localStorePath).toBe(null);
       expect(result.current.themeMode).toBe("system");
       expect(result.current.defaultToMonoSamples).toBe(true);
@@ -125,7 +131,7 @@ describe("SettingsContext", () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
       await act(async () => {
@@ -147,7 +153,7 @@ describe("SettingsContext", () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
       await act(async () => {
@@ -181,9 +187,10 @@ describe("SettingsContext", () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
+      expect(result.current).not.toBe(null);
       expect(result.current.themeMode).toBe("system");
       expect(result.current.isDarkMode).toBe(true);
     });
@@ -200,13 +207,14 @@ describe("SettingsContext", () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
       await act(async () => {
         await result.current.setDefaultToMonoSamples(false);
       });
 
+      expect(result.current).not.toBe(null);
       expect(console.error).toHaveBeenCalledWith(
         "Failed to update defaultToMonoSamples setting:",
         expect.any(Error),
@@ -223,15 +231,17 @@ describe("SettingsContext", () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
+      expect(result.current).not.toBe(null);
       expect(result.current.error).toBe("Init failed");
 
       act(() => {
         result.current.clearError();
       });
 
+      expect(result.current).not.toBe(null);
       expect(result.current.error).toBe(null);
     });
   });

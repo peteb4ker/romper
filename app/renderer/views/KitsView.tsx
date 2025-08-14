@@ -73,6 +73,9 @@ const KitsView: React.FC = () => {
   const keyboardShortcuts = useGlobalKeyboardShortcuts({
     currentKitName: navigation.selectedKit ?? undefined,
     isEditMode: currentKit?.editable ?? false,
+    onBackNavigation: navigation.selectedKit
+      ? navigation.handleBack
+      : undefined,
   });
 
   // Menu handlers

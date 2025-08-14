@@ -199,6 +199,7 @@ export interface ElectronAPI {
     confirmDestructiveActions?: boolean;
     defaultToMonoSamples?: boolean;
     localStorePath?: string;
+    sdCardPath?: string;
     theme?: string;
     themeMode?: "dark" | "light" | "system";
   }>;

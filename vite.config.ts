@@ -77,4 +77,7 @@ export default defineConfig({
       setupFiles: ["./vitest.setup.ts"],
     };
   })(),
+  worker: {
+    format: "es",
+  },
 });

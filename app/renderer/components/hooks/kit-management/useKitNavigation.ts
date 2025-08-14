@@ -109,6 +109,9 @@ export function useKitNavigation({
       // Remove from tracking set when timeout executes
       activeTimeoutsRef.current.delete(timeoutId);
 
+      // Double-check that document is still available (test environment safety)
+      if (typeof document === "undefined") return;
+
       const kitEl = document.querySelector(`[data-kit='${scrollToKitName}']`);
       const container = kitEl?.closest(".overflow-y-auto");
 

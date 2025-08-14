@@ -1,6 +1,9 @@
 import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
+  expect: {
+    timeout: process.env.CI ? 3000 : 2000, // Faster expect timeout in CI
+  },
   projects: [
     {
       name: "electron",
@@ -21,6 +24,9 @@ export default defineConfig({
                   "--disable-renderer-backgrounding",
                   "--disable-features=TranslateUI",
                   "--disable-ipc-flooding-protection",
+                  "--disable-dev-shm-usage", // Prevents shared memory issues in CI
+                  "--disable-extensions",
+                  "--disable-background-networking",
                 ]
               : []),
           ],
@@ -39,7 +45,14 @@ export default defineConfig({
       },
     },
   ],
+  // Optimize for CI performance
+  reporter: process.env.CI ? [["dot"], ["html", { open: "never" }]] : "list",
   testDir: ".",
-  timeout: 5000,
+  timeout: process.env.CI ? 8000 : 5000, // Slightly longer timeout in CI
+  use: {
+    // Faster action and navigation timeouts in CI
+    actionTimeout: process.env.CI ? 5000 : 10000,
+    navigationTimeout: process.env.CI ? 10000 : 15000,
+  },
   workers: 1, // Run E2E tests sequentially to avoid resource conflicts
 });

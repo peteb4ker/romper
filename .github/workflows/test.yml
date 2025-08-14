@@ -13,36 +13,46 @@ env:
   JAVA_VERSION: "17"
 
 jobs:
-  test:
+  # Unit tests - runs independently and uploads coverage
+  unit-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
-      # Code checkout
+      # Code checkout (shallow for performance)
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Shallow clones should be disabled for better SonarCloud analysis
+          fetch-depth: 1
 
-      # Node.js setup
+      # Node.js setup with enhanced caching
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
+          cache-dependency-path: "package-lock.json"
 
+      # Install dependencies
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit
 
-      # Run unit tests (in Node.js, no Electron deps needed)
+      # Run unit tests with coverage
       - name: Run unit tests with coverage
         run: npm run test:unit
         env:
           CI: true
 
-  # Cross-platform integration tests
+      # Upload unit test coverage artifacts
+      - name: Upload unit coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-coverage
+          path: coverage/unit/
+          retention-days: 1
+
+  # Cross-platform integration tests - runs in parallel with unit tests
   integration-tests:
-    needs: test
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -50,26 +60,30 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      # Code checkout
+      # Code checkout (shallow for performance)
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-      # Node.js setup
+      # Node.js setup with enhanced caching
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
+          cache-dependency-path: "package-lock.json"
 
+      # Install dependencies
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit
 
-      # System dependencies for Electron (integration tests only)
+      # System dependencies for Electron (Ubuntu only, optimized)
       - name: Install Electron dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
             libnss3-dev \
             libatk-bridge2.0-dev \
             libxkbcommon0 \
@@ -82,73 +96,80 @@ jobs:
             libgtk-3-0 \
             xvfb
 
-      # Virtual display setup (Linux only)
+      # Virtual display setup (Linux only, optimized)
       - name: Setup virtual display
         if: matrix.os == 'ubuntu-latest'
         run: |
           export DISPLAY=:99
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          sleep 3
+          sleep 2
 
-      # Run only integration tests
+      # Run integration tests with coverage
       - name: Run integration tests
         run: npm run test:integration
         env:
           CI: true
           DISPLAY: ${{ matrix.os == 'ubuntu-latest' && ':99' || '' }}
 
-  # Analysis and reporting (runs after both unit and integration tests)
+      # Upload integration coverage artifacts (Ubuntu only to avoid duplicates)
+      - name: Upload integration coverage artifacts
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-coverage
+          path: coverage/integration/
+          retention-days: 1
+
+  # Analysis and reporting - downloads coverage artifacts and runs analysis
   analysis:
-    needs: [test, integration-tests]
+    needs: [unit-tests, integration-tests]
     runs-on: ubuntu-latest
+    timeout-minutes: 8
 
     steps:
-      # Code checkout
+      # Code checkout (full history for SonarCloud)
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Shallow clones should be disabled for better SonarCloud analysis
+          fetch-depth: 0
 
-      # Node.js setup
+      # Node.js setup with enhanced caching
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
+          cache-dependency-path: "package-lock.json"
 
+      # Install dependencies (minimal, no rebuild needed)
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --ignore-scripts
 
-      # System dependencies for Electron (needed for integration tests in full test run)
-      - name: Install Electron dependencies
+      # Download coverage artifacts from previous jobs
+      - name: Download unit coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-coverage
+          path: coverage/unit/
+
+      - name: Download integration coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-coverage
+          path: coverage/integration/
+
+      # Merge coverage reports without re-running tests
+      - name: Merge coverage reports
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libnss3-dev \
-            libatk-bridge2.0-dev \
-            libxkbcommon0 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxrandr2 \
-            libgbm1 \
-            libxss1 \
-            libasound2-dev \
-            libgtk-3-0 \
-            xvfb
+          npm run coverage:merge
+          npm run coverage:total
 
-      # Virtual display setup
-      - name: Setup virtual display
-        run: |
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          sleep 3
-
-      # Run full test suite with merged coverage for analysis
-      - name: Generate merged coverage for analysis
-        run: npm run test
-        env:
-          CI: true
-          DISPLAY: ":99"
+      # Setup Java for SonarCloud (parallel with coverage)
+      - name: Setup Java for SonarCloud
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: "temurin"
 
       # Code coverage upload (only on main branch)
       - name: Upload coverage to Codecov
@@ -161,18 +182,12 @@ jobs:
           disable_search: true
 
       # SonarCloud analysis
-      - name: Setup Java for SonarCloud
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: "temurin"
-
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: .
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed for PR information
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_ORGANIZATION: peteb4ker
           SONAR_HOST_URL: https://sonarcloud.io

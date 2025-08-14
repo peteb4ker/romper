@@ -2,7 +2,7 @@ import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { markExplicitNavigation } from "../../../utils/hmrStateManager";
 
@@ -36,6 +36,9 @@ export function useKitNavigation({
   const [selectedKit, setSelectedKit] = useState<null | string>(null);
   const [selectedKitSamples, setSelectedKitSamples] =
     useState<null | VoiceSamples>(null);
+
+  // Track active timeouts for cleanup
+  const activeTimeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
 
   // Sort kits for consistent navigation order
   const sortedKits = React.useMemo(() => {
@@ -99,7 +102,13 @@ export function useKitNavigation({
 
   // Helper function to scroll to a specific kit
   const scrollToKitElement = (scrollToKitName: string) => {
-    setTimeout(() => {
+    // Only attempt scrolling in browser environment
+    if (typeof document === "undefined") return;
+
+    const timeoutId = setTimeout(() => {
+      // Remove from tracking set when timeout executes
+      activeTimeoutsRef.current.delete(timeoutId);
+
       const kitEl = document.querySelector(`[data-kit='${scrollToKitName}']`);
       const container = kitEl?.closest(".overflow-y-auto");
 
@@ -117,6 +126,9 @@ export function useKitNavigation({
         kitEl.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }, 100);
+
+    // Track timeout for cleanup
+    activeTimeoutsRef.current.add(timeoutId);
   };
 
   // Back navigation handler with refresh and scroll support
@@ -140,6 +152,18 @@ export function useKitNavigation({
     },
     [refreshAllKitsAndSamples],
   );
+
+  // Cleanup effect to clear all active timeouts on unmount
+  useEffect(() => {
+    const activeTimeouts = activeTimeoutsRef.current;
+    return () => {
+      // Clear all active timeouts when component unmounts
+      activeTimeouts.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      activeTimeouts.clear();
+    };
+  }, []);
 
   return {
     currentKitIndex,

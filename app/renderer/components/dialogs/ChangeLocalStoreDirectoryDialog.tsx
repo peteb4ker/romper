@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FiAlertTriangle,
   FiCheckCircle,
@@ -29,6 +29,16 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
   } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Track component mount status to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const handleSelectDirectory = async () => {
     setIsSelecting(true);
     try {
@@ -37,7 +47,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
       }
 
       const path = await window.electronAPI.selectLocalStorePath();
-      if (path) {
+      if (path && isMountedRef.current) {
         setSelectedPath(path);
         setValidationResult(null);
         // Auto-validate the selected directory
@@ -49,7 +59,9 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
         "error",
       );
     } finally {
-      setIsSelecting(false);
+      if (isMountedRef.current) {
+        setIsSelecting(false);
+      }
     }
   };
 
@@ -74,17 +86,23 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
 
       const result =
         await window.electronAPI.validateLocalStoreBasic(pathToUse);
-      setValidationResult({
-        error: result.error,
-        isValid: result.isValid,
-      });
+      if (isMountedRef.current) {
+        setValidationResult({
+          error: result.error,
+          isValid: result.isValid,
+        });
+      }
     } catch (error) {
-      setValidationResult({
-        error: error instanceof Error ? error.message : String(error),
-        isValid: false,
-      });
+      if (isMountedRef.current) {
+        setValidationResult({
+          error: error instanceof Error ? error.message : String(error),
+          isValid: false,
+        });
+      }
     } finally {
-      setIsValidating(false);
+      if (isMountedRef.current) {
+        setIsValidating(false);
+      }
     }
   };
 
@@ -112,7 +130,9 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
         "error",
       );
     } finally {
-      setIsUpdating(false);
+      if (isMountedRef.current) {
+        setIsUpdating(false);
+      }
     }
   };
 

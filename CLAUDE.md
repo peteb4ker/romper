@@ -18,6 +18,14 @@ Cross-platform desktop app for managing sample kits for the **Squarp Rample** Eu
 
 ## Essential Commands
 
+**Worktree Workflow (Required for Development):**
+- `npm run worktree:create <task-name>` - Create new feature branch and worktree
+- `npm run worktree:list` - List all active worktrees  
+- `npm run worktree:current` - Show current worktree status
+- `npm run worktree:remove <task-name>` - Remove completed worktree
+- `npm run commit "message"` - Enhanced commit with branch protection, quality checks, push, and PR creation
+
+**Legacy Commands:**
 See [Development Workflow](./docs/developer/development-workflow.md) for complete command reference.
 
 ## Project Structure
@@ -94,22 +102,18 @@ Working on **Task 5.0: Kit Editing and Slot Management** - implementing editable
 
 ## Git Workflow Requirements
 
-**CRITICAL**: When working on a branch and a commit is made, ALWAYS follow this exact sequence:
+**CRITICAL**: Use the mandatory worktree workflow for all development:
 
-1. **Push the commit** to the remote repository:
-   - For the **first push of a new branch**, use: `git push -u origin <branch-name>`
-   - For **subsequent pushes on the same branch**, use: `git push`
-2. **Create a pull request** using `gh pr create` with proper title and body format
-3. Use the standard PR body template:
-   ```
-   ## Summary
-   [1-3 bullet points describing the changes]
-   
-   ## Test plan
-   [Checklist of TODOs for testing the pull request]
-   ```
+1. **Create isolated worktree**: `npm run worktree:create <task-name>`
+2. **Work in isolation**: `cd worktrees/<task-name>` and make changes
+3. **Enhanced commit**: `npm run commit "message"` - automatically handles:
+   - Branch protection (blocks main branch commits)
+   - Pre-commit quality checks (TypeScript, linting, tests, build)
+   - Push to remote with proper upstream tracking
+   - Pull request creation with standard template
+4. **Clean up**: `npm run worktree:remove <task-name>` when done
 
-This workflow ensures all commits are backed up remotely and creates proper tracking via pull requests for code review and integration.
+This workflow ensures complete isolation, automated quality gates, and proper code review via pull requests.
 
 ## Code Metrics and Analysis Standards
 

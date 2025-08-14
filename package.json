@@ -41,7 +41,12 @@
     "mcp:server": "node scripts/start-mcp-server.js",
     "mcp:server:headless": "node scripts/start-mcp-server.js --headless",
     "mcp:test": "node scripts/test-mcp-connection.js",
-    "mcp:setup": "npm run mcp:test"
+    "mcp:setup": "npm run mcp:test",
+    "worktree:create": "node scripts/worktree-create.js",
+    "worktree:list": "git worktree list",
+    "worktree:remove": "node scripts/worktree-remove.js",
+    "worktree:current": "node scripts/worktree-current.js",
+    "commit": "node scripts/enhanced-commit.js"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.3",

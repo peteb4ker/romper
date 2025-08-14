@@ -1,6 +1,19 @@
 echo "🚀 Running pre-commit checks..."
 echo "🔍 TypeScript → 🧹 Linting → 🧪 Testing → 🏗️ Building → 📊 SonarQube"
 
+# Check current branch and warn about main branch commits (local protection)
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" = "main" ]; then
+  echo "⚠️  WARNING: Committing directly to main branch!"
+  echo "🔄 Consider using the worktree workflow:"
+  echo "   npm run worktree:create <task-name>"
+  echo "   cd worktrees/<task-name>"
+  echo "   npm run commit \"your message\""
+  echo ""
+  echo "⏸️  Proceeding anyway in 3 seconds... (Ctrl+C to cancel)"
+  sleep 3
+fi
+
 # Check for unstaged changes before running any checks
 if ! git diff --quiet; then
   echo "❌ You have unstaged changes. Please stage all changes before committing:"

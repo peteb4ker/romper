@@ -116,16 +116,13 @@ test.describe("Sync Workflow E2E Tests", () => {
       // Wait for change summary generation to complete
       await window.waitForTimeout(3000);
 
-      // Verify that summary stats section exists (even if hidden when no files to sync)
-      const summaryStats = await window.locator(
-        '[data-testid="sync-summary-stats"]',
-      );
-      const summaryStatsExists = (await summaryStats.count()) > 0;
-      expect(summaryStatsExists).toBe(true);
+      // Verify the sync dialog shows summary with kit/file counts
+      const summarySection = await window.locator("text=kits with");
+      await expect(summarySection).toBeVisible();
 
-      // Test fixtures have no sample files, so expect "No changes to sync"
-      const noChangesText = await window.locator("text=No changes to sync");
-      await expect(noChangesText).toBeVisible();
+      // Test fixtures have no sample files, so expect 0 files
+      const readyToSyncText = await window.locator("text=Ready to sync");
+      await expect(readyToSyncText).toBeVisible();
 
       // For now, just verify the workflow gets this far
       // The button might be disabled if there are no files to sync (which is fine for test fixtures)
@@ -236,16 +233,13 @@ test.describe("Sync Workflow E2E Tests", () => {
       // Wait for auto-summary generation (should happen automatically)
       await window.waitForTimeout(3000);
 
-      // Verify that summary stats section exists (even if hidden when no files to sync)
-      const summaryStats = await window.locator(
-        '[data-testid="sync-summary-stats"]',
-      );
-      const summaryStatsExists = (await summaryStats.count()) > 0;
-      expect(summaryStatsExists).toBe(true);
+      // Verify the sync dialog shows summary with kit/file counts
+      const summarySection = await window.locator("text=kits with");
+      await expect(summarySection).toBeVisible();
 
-      // Test fixtures have no sample files, so expect "No changes to sync"
-      const noChangesText = await window.locator("text=No changes to sync");
-      await expect(noChangesText).toBeVisible();
+      // Test fixtures have no sample files, so expect 0 files
+      const readyToSyncText = await window.locator("text=Ready to sync");
+      await expect(readyToSyncText).toBeVisible();
 
       // Test cancellation instead of actual sync (since test fixtures may have no files)
       const cancelButton = await window.locator('[data-testid="cancel-sync"]');

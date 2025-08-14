@@ -62,13 +62,15 @@ export function useSyncUpdate(
 
       try {
         const result = await electronAPI.generateSyncChangeSummary(sdCardPath);
+        console.log("[Frontend] generateSyncChangeSummary result:", result);
 
         if (!result.success) {
           setError(result.error || "Failed to generate sync summary");
           return null;
         }
 
-        return result.data || null;
+        console.log("[Frontend] Returning summary data:", result.data);
+        return (result.data as unknown as SyncChangeSummary) || null;
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Unknown error occurred";

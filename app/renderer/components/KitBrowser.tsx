@@ -107,6 +107,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       onSdCardPathChange,
       sdCardPath,
       showSyncDialog,
+      syncProgress,
     } = sync;
 
     // Keyboard navigation hook
@@ -263,6 +264,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             onGenerateChangeSummary={generateChangeSummary}
             onSdCardPathChange={onSdCardPathChange}
             sdCardPath={sdCardPath}
+            syncProgress={syncProgress}
           />
         )}
       </div>

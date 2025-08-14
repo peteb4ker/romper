@@ -345,7 +345,7 @@ describe("SyncService", () => {
       const result = await syncService.startKitSync(mockSettings, mockOptions);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("Failed to generate summary");
+      expect(result.error).toContain("Failed to load kits");
     });
 
     it("handles general sync errors", async () => {

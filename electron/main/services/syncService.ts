@@ -9,13 +9,8 @@ import { getKitSamples, markKitsAsSynced } from "../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 
 export interface SyncChangeSummary {
-  estimatedSize: number;
-  estimatedTime: number;
-  filesToConvert: SyncFileOperation[];
-  filesToCopy: SyncFileOperation[];
-  hasFormatWarnings: boolean;
-  validationErrors: SyncValidationError[];
-  warnings: string[];
+  fileCount: number;
+  kitCount: number;
 }
 
 export interface SyncFileOperation {
@@ -80,7 +75,7 @@ class SyncService {
    */
   async generateChangeSummary(
     inMemorySettings: Record<string, any>,
-    sdCardPath?: string,
+    _sdCardPath?: string,
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
@@ -90,50 +85,37 @@ class SyncService {
 
       const dbDir = path.join(localStorePath, ".romperdb");
 
-      // Gather all samples from all kits
+      // Get kit count
+      const { getKits } = await import("../db/romperDbCoreORM.js");
+      const kitsResult = getKits(dbDir);
+      if (!kitsResult.success || !kitsResult.data) {
+        return {
+          error: kitsResult.error ?? "Failed to load kits",
+          success: false,
+        };
+      }
+      const kitCount = kitsResult.data.length;
+
+      // Get all samples for counting and size calculation
       const samplesResult = await this.gatherAllSamples(dbDir);
       if (!samplesResult.success) {
         return { error: samplesResult.error, success: false };
       }
 
       const samples = samplesResult.data;
-      if (!samples) {
-        return { error: "No samples found to sync", success: false };
-      }
+      const fileCount = samples ? samples.length : 0;
 
-      const results = {
-        filesToConvert: [] as SyncFileOperation[],
-        filesToCopy: [] as SyncFileOperation[],
-        hasFormatWarnings: false,
-        totalSize: 0,
-        validationErrors: [] as SyncValidationError[],
-        warnings: [] as string[],
-      };
-
-      // Process each sample
-      for (const sample of samples) {
-        this.processSampleForSync(sample, localStorePath, results, sdCardPath);
-      }
-
-      // Calculate estimates
-      const totalFiles =
-        results.filesToCopy.length + results.filesToConvert.length;
-      const estimatedTime = this.estimateSyncTime(
-        totalFiles,
-        results.totalSize,
-        results.filesToConvert.length,
-      );
+      console.log("[Backend] Samples result:", {
+        sampleCount: fileCount,
+        success: samplesResult.success,
+      });
 
       const summary: SyncChangeSummary = {
-        estimatedSize: results.totalSize,
-        estimatedTime,
-        filesToConvert: results.filesToConvert,
-        filesToCopy: results.filesToCopy,
-        hasFormatWarnings: results.hasFormatWarnings,
-        validationErrors: results.validationErrors,
-        warnings: results.warnings,
+        fileCount,
+        kitCount,
       };
 
+      console.log("[Backend] Generated sync summary:", summary);
       return { data: summary, success: true };
     } catch (error) {
       const errorMessage =
@@ -156,24 +138,40 @@ class SyncService {
     },
   ): Promise<DbResult<{ syncedFiles: number }>> {
     try {
-      // Generate the sync plan internally
-      const changeSummaryResult = await this.generateChangeSummary(
-        inMemorySettings,
-        options.sdCardPath,
-      );
-
-      if (!changeSummaryResult.success || !changeSummaryResult.data) {
-        return {
-          error: changeSummaryResult.error || "Failed to generate sync plan",
-          success: false,
-        };
+      // For now, we need to generate file operations for sync
+      // This is a temporary fix - we should separate summary from sync operations
+      const localStorePath = inMemorySettings.localStorePath;
+      if (!localStorePath) {
+        return { error: "No local store path configured", success: false };
       }
 
-      const changeSummary = changeSummaryResult.data;
-      const allFiles = [
-        ...changeSummary.filesToCopy,
-        ...changeSummary.filesToConvert,
-      ];
+      const dbDir = path.join(localStorePath, ".romperdb");
+      const samplesResult = await this.gatherAllSamples(dbDir);
+      if (!samplesResult.success) {
+        return { error: samplesResult.error, success: false };
+      }
+
+      // Generate file operations for actual sync using existing logic
+      const results = {
+        filesToConvert: [] as SyncFileOperation[],
+        filesToCopy: [] as SyncFileOperation[],
+        hasFormatWarnings: false,
+        totalSize: 0,
+        validationErrors: [] as SyncValidationError[],
+        warnings: [] as string[],
+      };
+
+      const samples = samplesResult.data || [];
+      for (const sample of samples) {
+        this.processSampleForSync(
+          sample,
+          localStorePath,
+          results,
+          options.sdCardPath,
+        );
+      }
+
+      const allFiles = [...results.filesToCopy, ...results.filesToConvert];
       const totalBytes = this.calculateTotalBytes(allFiles);
 
       // Handle SD card wiping if requested

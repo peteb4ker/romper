@@ -36,7 +36,10 @@ test.describe("Sync Workflow E2E Tests", () => {
 
     // Launch the Electron app
     electronApp = await electron.launch({
-      args: ["dist/electron/main/index.js"],
+      args: [
+        "dist/electron/main/index.js",
+        ...(process.env.CI ? ["--no-sandbox", "--disable-setuid-sandbox"] : []),
+      ],
       env,
       timeout: 30000,
     });

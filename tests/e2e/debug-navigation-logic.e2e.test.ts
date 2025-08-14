@@ -16,7 +16,10 @@ test.describe("Debug Navigation Logic", () => {
     testEnv = await extractE2EFixture();
 
     electronApp = await electron.launch({
-      args: ["dist/electron/main/index.js"],
+      args: [
+        "dist/electron/main/index.js",
+        ...(process.env.CI ? ["--no-sandbox", "--disable-setuid-sandbox"] : []),
+      ],
       env: {
         ...process.env,
         ...testEnv.environment,

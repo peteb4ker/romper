@@ -18,7 +18,10 @@ test.describe("Back Navigation E2E Tests", () => {
 
     // Launch the Electron app with fixture environment
     electronApp = await electron.launch({
-      args: ["dist/electron/main/index.js"],
+      args: [
+        "dist/electron/main/index.js",
+        ...(process.env.CI ? ["--no-sandbox", "--disable-setuid-sandbox"] : []),
+      ],
       env: {
         ...process.env,
         ...testEnv.environment,

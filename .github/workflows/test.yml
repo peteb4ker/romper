@@ -143,6 +143,26 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           sleep 3
 
+      - name: Configure Electron sandbox
+        run: |
+          # Find the chrome-sandbox binary in the Electron installation
+          SANDBOX_BINARY="./node_modules/electron/dist/chrome-sandbox"
+          if [ -f "$SANDBOX_BINARY" ]; then
+            echo "Found chrome-sandbox at: $SANDBOX_BINARY"
+            echo "Current permissions: $(ls -la "$SANDBOX_BINARY")"
+            
+            # Set proper ownership and permissions for SUID sandbox
+            sudo chown root:root "$SANDBOX_BINARY"
+            sudo chmod 4755 "$SANDBOX_BINARY"
+            
+            echo "Updated permissions: $(ls -la "$SANDBOX_BINARY")"
+            echo "Sandbox binary configured successfully"
+          else
+            echo "Warning: chrome-sandbox binary not found at expected location"
+            echo "Listing Electron dist directory:"
+            ls -la ./node_modules/electron/dist/ || echo "Electron dist directory not found"
+          fi
+
       # Run full test suite with merged coverage for analysis
       - name: Generate merged coverage for analysis
         run: npm run test

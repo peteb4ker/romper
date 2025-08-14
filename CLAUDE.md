@@ -96,7 +96,9 @@ Working on **Task 5.0: Kit Editing and Slot Management** - implementing editable
 
 **CRITICAL**: When working on a branch and a commit is made, ALWAYS follow this exact sequence:
 
-1. **Push the commit** to remote repository using `git push -u origin <branch-name>`
+1. **Push the commit** to the remote repository:
+   - For the **first push of a new branch**, use: `git push -u origin <branch-name>`
+   - For **subsequent pushes on the same branch**, use: `git push`
 2. **Create a pull request** using `gh pr create` with proper title and body format
 3. Use the standard PR body template:
    ```

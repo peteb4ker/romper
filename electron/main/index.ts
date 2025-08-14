@@ -142,9 +142,6 @@ function registerAllIpcHandlers(settings: Settings) {
 }
 
 function validateAndFixLocalStore(settings: Settings): Settings {
-  const userDataPath = app.getPath("userData");
-  const settingsPath = path.join(userDataPath, "romper-settings.json");
-
   console.log("[Validation] Starting local store validation");
 
   // Check if we have an environment override first
@@ -191,21 +188,10 @@ function validateAndFixLocalStore(settings: Settings): Settings {
       console.warn("[Startup] ✗ Saved local store path is invalid");
       console.warn("  - Path:", settings.localStorePath);
       console.warn("  - Error:", validation.error);
-      console.warn("[Startup] Removing invalid path from settings...");
+      console.warn("[Startup] UI will handle invalid path with error dialog");
 
-      delete settings.localStorePath;
-      try {
-        fs.writeFileSync(
-          settingsPath,
-          JSON.stringify(settings, null, 2),
-          "utf-8",
-        );
-        console.log(
-          "[Startup] Invalid local store path removed from settings file",
-        );
-      } catch (writeError) {
-        console.error("[Startup] Failed to update settings file:", writeError);
-      }
+      // Don't automatically remove invalid paths - let the UI handle them properly
+      // This allows showing error messages and change directory dialog instead of setup wizard
     } else {
       console.log("[Validation] ✓ Local store path is valid");
     }

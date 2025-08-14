@@ -219,7 +219,7 @@ describe.sequential("main/index.ts", () => {
     readFileSyncSpy.mockRestore();
   });
 
-  it("removes invalid local store path from settings", async () => {
+  it("preserves invalid local store path for UI handling", async () => {
     const readFileSyncSpy = vi
       .spyOn(fs, "readFileSync")
       .mockReturnValue('{"localStorePath": "/invalid/path"}');
@@ -241,21 +241,17 @@ describe.sequential("main/index.ts", () => {
     expect(spy).toHaveBeenCalledWith(
       "[Startup] ✗ Saved local store path is invalid",
     );
-    expect(writeFileSyncSpy).toHaveBeenCalled();
+    // Should NOT write to settings file - paths are preserved for UI handling
+    expect(writeFileSyncSpy).not.toHaveBeenCalled();
     spy.mockRestore();
     readFileSyncSpy.mockRestore();
     writeFileSyncSpy.mockRestore();
   });
 
-  it("handles write error when removing invalid local store path", async () => {
+  it("logs warning message for invalid local store path preservation", async () => {
     const readFileSyncSpy = vi
       .spyOn(fs, "readFileSync")
       .mockReturnValue('{"localStorePath": "/invalid/path"}');
-    const writeFileSyncSpy = vi
-      .spyOn(fs, "writeFileSync")
-      .mockImplementation(() => {
-        throw new Error("Write failed");
-      });
     const { validateLocalStoreAndDb } = await import(
       "../localStoreValidator.js"
     );
@@ -264,16 +260,14 @@ describe.sequential("main/index.ts", () => {
       isValid: false,
     });
 
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
     await import("../index");
 
     expect(spy).toHaveBeenCalledWith(
-      "[Startup] Failed to update settings file:",
-      expect.any(Error),
+      "[Startup] UI will handle invalid path with error dialog",
     );
     spy.mockRestore();
     readFileSyncSpy.mockRestore();
-    writeFileSyncSpy.mockRestore();
   });
 
   it("logs environment variables on window creation", async () => {

@@ -57,6 +57,45 @@ jobs:
             libgtk-3-0 \
             x11-utils
 
+      - name: Configure SUID sandbox helper binary (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          # Configure the Electron chrome-sandbox binary for proper SUID operation
+          CHROME_SANDBOX_PATH="$PWD/node_modules/electron/dist/chrome-sandbox"
+          
+          echo "Configuring chrome-sandbox binary at: $CHROME_SANDBOX_PATH"
+          
+          # Verify the binary exists
+          if [ ! -f "$CHROME_SANDBOX_PATH" ]; then
+            echo "ERROR: chrome-sandbox binary not found at $CHROME_SANDBOX_PATH"
+            exit 1
+          fi
+          
+          # Show current permissions
+          echo "Current permissions:"
+          ls -la "$CHROME_SANDBOX_PATH"
+          
+          # Set proper ownership and permissions for SUID sandbox
+          sudo chown root:root "$CHROME_SANDBOX_PATH"
+          sudo chmod 4755 "$CHROME_SANDBOX_PATH"
+          
+          # Verify the configuration
+          echo "Updated permissions:"
+          ls -la "$CHROME_SANDBOX_PATH"
+          
+          # Verify SUID bit is set and ownership is correct
+          if [ "$(stat -c '%U:%G' "$CHROME_SANDBOX_PATH")" != "root:root" ]; then
+            echo "ERROR: chrome-sandbox ownership is not root:root"
+            exit 1
+          fi
+          
+          if [ "$(stat -c '%a' "$CHROME_SANDBOX_PATH")" != "4755" ]; then
+            echo "ERROR: chrome-sandbox permissions are not 4755"
+            exit 1
+          fi
+          
+          echo "✅ SUID sandbox helper binary configured successfully"
+
       - name: Setup test environment
         run: |
           mkdir -p /tmp/e2e-sdcard

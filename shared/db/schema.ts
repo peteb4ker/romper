@@ -108,6 +108,8 @@ export interface LocalStoreValidationDetailedResult {
   errors?: KitValidationError[];
   errorSummary?: string;
   hasLocalStore?: boolean;
+  isCriticalEnvironmentError?: boolean;
+  isEnvironmentOverride?: boolean;
   isValid: boolean;
   localStorePath?: null | string;
   romperDbPath?: string;

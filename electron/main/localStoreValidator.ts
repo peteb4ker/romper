@@ -142,12 +142,34 @@ export function validateLocalStoreBasic(
   try {
     // Check if local store directory exists
     if (!fs.existsSync(localStorePath)) {
-      return { error: "Local store path does not exist", isValid: false };
+      // C1: Path doesn't exist at all (never existed)
+      // C2: Path existed before but was deleted/moved
+      // C3: Path is temp directory that was cleaned up
+      const isTempDir =
+        localStorePath.includes("/tmp/") || localStorePath.includes("temp");
+      const errorMsg = isTempDir
+        ? `Local store path does not exist (temporary directory "${localStorePath}" was cleaned up)`
+        : "Local store path does not exist";
+      return { error: errorMsg, isValid: false };
     }
 
     // Check if it's a directory
     if (!fs.statSync(localStorePath).isDirectory()) {
       return { error: "Local store path is not a directory", isValid: false };
+    }
+
+    // C5: Check if directory is readable
+    try {
+      fs.accessSync(localStorePath, fs.constants.R_OK);
+    } catch {
+      return { error: "Local store directory is not readable", isValid: false };
+    }
+
+    // C6: Check if directory is writable
+    try {
+      fs.accessSync(localStorePath, fs.constants.W_OK);
+    } catch {
+      return { error: "Local store directory is not writable", isValid: false };
     }
 
     // Check for .romperdb folder

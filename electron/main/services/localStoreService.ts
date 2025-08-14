@@ -54,9 +54,13 @@ export class LocalStoreService {
   ): {
     error: null | string;
     hasLocalStore: boolean;
+    isCriticalEnvironmentError: boolean;
+    isEnvironmentOverride: boolean;
     isValid: boolean;
     localStorePath: null | string;
   } {
+    const isEnvironmentOverride = Boolean(envPath);
+
     // Check environment variable first, then fall back to provided path
     const resolvedPath = envPath || localStorePath;
 
@@ -64,6 +68,8 @@ export class LocalStoreService {
       return {
         error: "No local store configured",
         hasLocalStore: false,
+        isCriticalEnvironmentError: false,
+        isEnvironmentOverride,
         isValid: false,
         localStorePath: null,
       };
@@ -72,9 +78,17 @@ export class LocalStoreService {
     // Validate database structure only - file sync issues are warnings, not blocking
     const validationResult = validateLocalStoreAndDb(resolvedPath);
 
+    // If environment variable is set but invalid, this is a critical error
+    // Exception: In test environment, treat as regular invalid local store instead of critical error
+    const isTestEnvironment = process.env.NODE_ENV === "test";
+    const isCriticalEnvironmentError =
+      isEnvironmentOverride && !validationResult.isValid && !isTestEnvironment;
+
     return {
       error: validationResult.error || validationResult.errorSummary || null,
       hasLocalStore: true,
+      isCriticalEnvironmentError,
+      isEnvironmentOverride,
       isValid: validationResult.isValid,
       localStorePath: resolvedPath,
     };

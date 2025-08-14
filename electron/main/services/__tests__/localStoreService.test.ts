@@ -66,6 +66,8 @@ describe("LocalStoreService", () => {
       expect(result).toEqual({
         error: null,
         hasLocalStore: true,
+        isCriticalEnvironmentError: false,
+        isEnvironmentOverride: true,
         isValid: true,
         localStorePath: "/env/path",
       });
@@ -78,6 +80,8 @@ describe("LocalStoreService", () => {
       expect(result).toEqual({
         error: null,
         hasLocalStore: true,
+        isCriticalEnvironmentError: false,
+        isEnvironmentOverride: false,
         isValid: true,
         localStorePath: "/local/path",
       });
@@ -100,6 +104,8 @@ describe("LocalStoreService", () => {
       expect(result).toEqual({
         error: "No local store configured",
         hasLocalStore: false,
+        isCriticalEnvironmentError: false,
+        isEnvironmentOverride: false,
         isValid: false,
         localStorePath: null,
       });
@@ -118,9 +124,67 @@ describe("LocalStoreService", () => {
       expect(result).toEqual({
         error: "Database not found",
         hasLocalStore: true,
+        isCriticalEnvironmentError: false,
+        isEnvironmentOverride: false,
         isValid: false,
         localStorePath: "/invalid/path",
       });
+    });
+
+    it("returns critical environment error when environment path is invalid (non-test env)", () => {
+      // Store original NODE_ENV
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "production";
+
+      mockValidateAndDb.mockReturnValue({
+        error: "Path does not exist",
+        isValid: false,
+      });
+
+      const result = localStoreService.getLocalStoreStatus(
+        null,
+        "/invalid/env/path",
+      );
+
+      expect(result).toEqual({
+        error: "Path does not exist",
+        hasLocalStore: true,
+        isCriticalEnvironmentError: true,
+        isEnvironmentOverride: true,
+        isValid: false,
+        localStorePath: "/invalid/env/path",
+      });
+
+      // Restore original NODE_ENV
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+
+    it("does not return critical environment error in test environment", () => {
+      // Store original NODE_ENV
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "test";
+
+      mockValidateAndDb.mockReturnValue({
+        error: "Path does not exist",
+        isValid: false,
+      });
+
+      const result = localStoreService.getLocalStoreStatus(
+        null,
+        "/invalid/env/path",
+      );
+
+      expect(result).toEqual({
+        error: "Path does not exist",
+        hasLocalStore: true,
+        isCriticalEnvironmentError: false,
+        isEnvironmentOverride: true,
+        isValid: false,
+        localStorePath: "/invalid/env/path",
+      });
+
+      // Restore original NODE_ENV
+      process.env.NODE_ENV = originalNodeEnv;
     });
   });
 

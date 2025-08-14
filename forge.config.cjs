@@ -1,4 +1,4 @@
-module.exports = {
+const config = {
   packagerConfig: {
     name: "Romper Sample Manager",
     executableName: "romper",
@@ -42,6 +42,7 @@ module.exports = {
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
+      platforms: ["win32"],
       config: {
         name: "RomperSampleManager",
         authors: "Romper Development Team",
@@ -54,6 +55,7 @@ module.exports = {
     },
     {
       name: "@electron-forge/maker-deb",
+      platforms: ["linux"],
       config: {
         options: {
           maintainer: "Romper Development Team",
@@ -66,6 +68,7 @@ module.exports = {
     },
     {
       name: "@electron-forge/maker-rpm",
+      platforms: ["linux"],
       config: {
         options: {
           maintainer: "Romper Development Team",
@@ -77,14 +80,16 @@ module.exports = {
     },
     {
       name: "@electron-forge/maker-dmg",
+      platforms: ["darwin"],
       config: {
         name: "Romper Sample Manager",
         title: "Romper Sample Manager ${version}",
         format: "ULFO",
-        background: "./electron/resources/dmg-background.png", // Optional, can be added later
         icon: "./electron/resources/app-icon.icns",
       },
     },
   ],
   plugins: [],
 };
+
+module.exports = config;

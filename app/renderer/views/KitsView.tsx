@@ -74,7 +74,9 @@ const KitsView: React.FC = () => {
     currentKitName: navigation.selectedKit ?? undefined,
     isEditMode: currentKit?.editable ?? false,
     onBackNavigation: navigation.selectedKit
-      ? navigation.handleBack
+      ? () => {
+          navigation.handleBack();
+        }
       : undefined,
   });
 

@@ -51,7 +51,7 @@ export default defineConfig({
   timeout: process.env.CI ? 8000 : 5000, // Slightly longer timeout in CI
   use: {
     // Faster action and navigation timeouts in CI
-    actionTimeout: process.env.CI ? 5000 : 10000,
+    actionTimeout: process.env.CI ? 10000 : 5000,
     navigationTimeout: process.env.CI ? 10000 : 15000,
   },
   workers: 1, // Run E2E tests sequentially to avoid resource conflicts

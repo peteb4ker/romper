@@ -1,43 +1,37 @@
 # Release Process
 
-This document outlines the complete release process for Romper Sample Manager, including automated workflows, manual procedures, and post-release tasks.
+This document outlines the complete release process for Romper Sample Manager using manual tag-based releases.
 
 ## Overview
 
-Romper uses an automated release pipeline with the following components:
+Romper uses a manual tag-based release system with the following components:
 
-- **Semantic Versioning**: Automated version bumping based on conventional commits
-- **Cross-Platform Builds**: Automated builds for Windows, macOS, and Linux
+- **Manual Version Control**: Developers create tags when ready to release
+- **Cross-Platform Builds**: Automated builds for Windows, macOS, and Linux triggered by tags
 - **GitHub Releases**: Automated release creation with proper artifacts
-- **Changelog Generation**: Automatic changelog updates
+- **Full Release Control**: Complete control over when releases are created
 
-## Release Types
+## Release Strategy
 
-### Automatic Releases (Recommended)
+Romper uses **manual tag-based releases** because:
+- Desktop applications need careful testing before release
+- Full control over release timing
+- No automation conflicts with development workflow
+- Standard practice for desktop applications in 2025
 
-The automated release process triggers on every push to `main` with conventional commits:
+## Release Workflow
 
-- **Patch Release** (`v1.0.1`): Bug fixes with `fix:` commits
-- **Minor Release** (`v1.1.0`): New features with `feat:` commits  
-- **Major Release** (`v2.0.0`): Breaking changes with `feat!:` or `fix!:` commits
+### Manual Tag Creation
 
-### Manual Releases
+Releases are triggered by manually creating and pushing version tags:
 
-For emergency releases or special cases, you can trigger releases manually.
+```bash
+# Create and push a new version tag
+git tag v1.2.3
+git push origin v1.2.3
+```
 
-## Automated Release Workflow
-
-### 1. Version Management (`.github/workflows/version.yml`)
-
-Triggered on every push to `main`:
-
-1. **Analyzes Commits**: Uses conventional commit format to determine version bump
-2. **Updates Version**: Increments version in `package.json`
-3. **Generates Changelog**: Updates `CHANGELOG.md` with new changes
-4. **Creates Git Tag**: Creates and pushes version tag (e.g., `v1.2.3`)
-5. **Triggers Release**: Automatically starts the release build process
-
-### 2. Release Build (`.github/workflows/release.yml`)
+### Automated Build Process (`.github/workflows/release.yml`)
 
 Triggered by version tags (`v*`):
 
@@ -55,30 +49,22 @@ Triggered by version tags (`v*`):
    - Creates GitHub release with auto-generated notes
    - Attaches all distribution packages
 
-## Conventional Commit Format
+## Version Numbering
 
-Use these commit message formats to trigger automatic releases:
+Follow semantic versioning (semver) when creating tags:
+
+- **Patch releases** (`v1.0.1`): Bug fixes and small improvements
+- **Minor releases** (`v1.1.0`): New features that don't break existing functionality
+- **Major releases** (`v2.0.0`): Breaking changes or major rewrites
 
 ```bash
-# Patch release (bug fixes)
-fix: resolve kit loading issue on Windows
-fix(ui): correct sample slot display alignment
-
-# Minor release (new features)
-feat: add dark mode support
-feat(editor): implement drag-and-drop sample ordering
-
-# Major release (breaking changes)
-feat!: redesign kit format structure
-fix!: remove deprecated sync API
-
-# No release (docs, chores, etc.)
-docs: update installation guide
-chore: update dependencies
-test: add integration tests for kit service
+# Examples
+git tag v1.0.1  # Bug fixes
+git tag v1.1.0  # New features
+git tag v2.0.0  # Breaking changes
 ```
 
-## Manual Release Process
+## Release Process
 
 ### Prerequisites
 
@@ -94,27 +80,28 @@ test: add integration tests for kit service
    npm run make
    ```
 
-### Option 1: Conventional Commit Release
-
-1. **Create Conventional Commit**:
+3. Ensure all changes are committed and pushed to main:
    ```bash
-   git add .
-   git commit -m "feat: add new sample management features"
+   git status  # Should be clean
    git push origin main
    ```
 
-2. **Wait for Automation**: The version and release workflows will run automatically.
+### Creating a Release
 
-### Option 2: Manual Version Creation
+1. **Determine Version Number**:
+   - Check current version: `git tag --list | sort -V | tail -1`
+   - Decide on next version based on changes (patch/minor/major)
 
-1. **Create Version Tag**:
+2. **Create and Push Tag**:
    ```bash
-   # Determine next version manually
+   # Create the version tag
    git tag v1.2.3
+   
+   # Push the tag to trigger the release workflow
    git push origin v1.2.3
    ```
 
-2. **Monitor Release**: Watch the release workflow in GitHub Actions.
+3. **Monitor Release**: Watch the release workflow in GitHub Actions.
 
 ## Release Artifact Structure
 
@@ -165,10 +152,10 @@ npm run make
 - Check forge.config.js maker configurations
 - Ensure all platforms completed successfully
 
-#### Version Management Issues
-- Verify conventional commit format
-- Check if commit was marked `[skip ci]`
-- Ensure main branch protection allows the release bot
+#### Tag Creation Issues
+- Verify tag format matches `v*` pattern (e.g., `v1.2.3`)
+- Ensure tag was pushed to remote: `git push origin v1.2.3`
+- Check that main branch is up to date before tagging
 
 ### Emergency Fixes
 
@@ -202,10 +189,9 @@ npm run make
 
 ### Key Files for Release Process
 
-- **`.releaserc.json`**: Semantic release configuration
 - **`forge.config.js`**: Electron packaging configuration
-- **`.github/workflows/version.yml`**: Version management workflow
-- **`.github/workflows/release.yml`**: Release build workflow
+- **`.github/workflows/release.yml`**: Release build workflow (triggered by tags)
+- **`package.json`**: Version information and build scripts
 
 ### Package.json Scripts
 

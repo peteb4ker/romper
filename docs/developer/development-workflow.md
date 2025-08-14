@@ -180,6 +180,135 @@ app/renderer/components/
 
 ## Git Workflow
 
+### Git Worktree for Agent Development
+
+**Git worktree** is the **required workflow** for all agent-based development work. It enables parallel development by maintaining multiple isolated working directories that share the same Git repository.
+
+#### Core Benefits
+
+- **Agent Isolation**: Each agent works in its own directory without interfering with others
+- **Parallel Development**: Multiple tasks can be worked on simultaneously
+- **Context Preservation**: No need to stash changes when switching between tasks
+- **Zero Setup Overhead**: New worktrees created instantly without full repository cloning
+
+#### Required Worktree Setup
+
+**Directory Structure** (recommended):
+```
+romper/
+├── .git/                    # Main repository (bare-like)
+├── main/                    # Primary worktree (main branch)
+├── worktrees/              # Agent worktrees directory
+│   ├── task-5.2-kit-editor/    # Feature worktree
+│   ├── fix-sample-loading/     # Bug fix worktree
+│   └── docs-worktree-guide/    # Documentation worktree
+```
+
+#### Essential Commands
+
+**Create a worktree for new feature:**
+```bash
+# Create new branch and worktree
+git worktree add worktrees/task-5.2-kit-editor -b feature/task-5.2-kit-editor
+
+# Create worktree from existing branch
+git worktree add worktrees/bug-fix-sample main
+```
+
+**List all worktrees:**
+```bash
+git worktree list
+```
+
+**Remove completed worktree:**
+```bash
+# Remove worktree (after merging branch)
+git worktree remove worktrees/task-5.2-kit-editor
+
+# Force remove if needed
+git worktree remove worktrees/task-5.2-kit-editor --force
+```
+
+**Maintenance commands:**
+```bash
+# Clean up deleted worktree references
+git worktree prune
+
+# Repair worktree connections if needed
+git worktree repair
+```
+
+#### Agent Worktree Workflow
+
+**For Each New Task:**
+
+1. **Create task-specific worktree**:
+   ```bash
+   git worktree add worktrees/$(date +%Y%m%d)-task-name -b feature/task-name
+   cd worktrees/$(date +%Y%m%d)-task-name
+   ```
+
+2. **Work in isolation**: All development happens in the worktree directory
+
+3. **Validate with quality gates**: Pre-commit hooks run in worktree context
+   ```bash
+   npm run pre-commit  # All quality checks pass in isolation
+   ```
+
+4. **Complete and clean up**:
+   ```bash
+   git push origin feature/task-name  # Push completed work
+   cd ../../main                      # Return to main worktree
+   git worktree remove worktrees/$(date +%Y%m%d)-task-name
+   ```
+
+#### Worktree Best Practices
+
+**Naming Conventions:**
+- Use task IDs: `worktrees/task-5.2-kit-editor`
+- Include dates for clarity: `worktrees/20240814-fix-sample-loading` 
+- Describe purpose: `worktrees/docs-worktree-setup`
+
+**Development Flow:**
+- **One task per worktree**: Maintain clear task isolation
+- **Quality gates apply**: All pre-commit hooks work normally in worktrees
+- **Database considerations**: SQLite database is shared - coordinate access carefully
+- **Clean up regularly**: Remove merged worktrees to prevent clutter
+
+**Integration with CI/CD:**
+- Pre-commit hooks run normally in worktree context
+- SonarCloud analysis works across all worktrees
+- Build validation maintains full compatibility
+- Release pipeline triggers from main branch as usual
+
+#### Troubleshooting Worktrees
+
+**Common Issues:**
+
+```bash
+# If worktree becomes corrupted
+git worktree repair
+
+# If cleanup fails
+git worktree remove --force <worktree-path>
+
+# If branch cannot be deleted
+git branch -D feature/branch-name
+
+# List all worktrees for debugging
+git worktree list --porcelain
+```
+
+**Database Conflicts:**
+- Only one worktree should run database migrations
+- Coordinate schema changes across active worktrees
+- Test database operations in isolation before committing
+
+**Performance Notes:**
+- Worktrees share `.git` directory - no space overhead
+- Node modules need installation in each worktree: `npm install`
+- Build artifacts are worktree-specific
+
 ### Commit Message Format
 
 Use conventional commit format:

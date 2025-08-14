@@ -145,6 +145,12 @@ test.describe("Sync Workflow E2E Tests", () => {
       const cancelButton = await window.locator('[data-testid="cancel-sync"]');
       await cancelButton.click();
 
+      // Wait for dialog to be removed from DOM
+      await window.waitForSelector('[data-testid="sync-dialog"]', {
+        state: "detached",
+        timeout: 2000,
+      });
+
       // Verify dialog closes
       const dialogStillVisible = await window.isVisible(
         '[data-testid="sync-dialog"]',
@@ -174,6 +180,12 @@ test.describe("Sync Workflow E2E Tests", () => {
       // Click cancel button
       const cancelButton = await window.locator('[data-testid="cancel-sync"]');
       await cancelButton.click();
+
+      // Wait for dialog to be removed from DOM
+      await window.waitForSelector('[data-testid="sync-dialog"]', {
+        state: "detached",
+        timeout: 2000,
+      });
 
       // Verify dialog is closed
       const dialogVisible = await window.isVisible(
@@ -239,17 +251,21 @@ test.describe("Sync Workflow E2E Tests", () => {
       const cancelButton = await window.locator('[data-testid="cancel-sync"]');
       await cancelButton.click();
 
-      await window.waitForTimeout(500);
+      // Wait for dialog to be removed from DOM
+      await window.waitForSelector('[data-testid="sync-dialog"]', {
+        state: "detached",
+        timeout: 2000,
+      });
 
-      // Verify we're back on kit list
-      const kitListVisible = await window.isVisible('[data-testid="kit-grid"]');
-      expect(kitListVisible).toBe(true);
-
-      // Verify dialog is closed
+      // Verify dialog is closed first
       const dialogVisible = await window.isVisible(
         '[data-testid="sync-dialog"]',
       );
       expect(dialogVisible).toBe(false);
+
+      // Verify we're back on kit list
+      const kitListVisible = await window.isVisible('[data-testid="kit-grid"]');
+      expect(kitListVisible).toBe(true);
     });
   });
 });

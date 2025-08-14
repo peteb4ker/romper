@@ -179,17 +179,58 @@ test("should load kit when provided valid name", () => {
 
 ### 2. Development Process
 
-- **Create feature branch** - Use descriptive branch names
-- **Follow task workflow** - Implement one sub-task at a time
+**Git Worktree Setup (Required):**
+
+All development work must use git worktrees for proper isolation and parallel development:
+
+```bash
+# Create a worktree for your contribution
+git worktree add worktrees/$(date +%Y%m%d)-your-feature -b feature/your-feature-name
+cd worktrees/$(date +%Y%m%d)-your-feature
+
+# Install dependencies in the worktree
+npm install
+```
+
+**Development Workflow:**
+- **Use git worktrees** - Required for all contributions, enables parallel development
+- **One feature per worktree** - Maintain clear isolation between different features
+- **Follow task workflow** - Implement one sub-task at a time within your worktree
 - **Write tests first** - TDD approach when possible
-- **Validate frequently** - Run `npx tsc --noEmit` and tests often
+- **Validate frequently** - Run `npx tsc --noEmit` and tests often in worktree context
+
+**Worktree Benefits for Contributors:**
+- **Parallel work**: Contribute to multiple features simultaneously
+- **Clean environment**: Each contribution gets a fresh, isolated workspace
+- **No context switching**: Work on different issues without stashing changes
+- **Quality isolation**: Pre-commit hooks run independently per worktree
 
 ### 3. Submission Process
 
-- **Test thoroughly** - Ensure all tests pass
-- **Update documentation** - Include relevant docs changes
+**From Your Worktree:**
+
+```bash
+# Validate all changes in worktree
+npm run pre-commit
+
+# Commit with conventional format
+git add .
+git commit -m "feat: add your feature description"
+
+# Push your branch
+git push origin feature/your-feature-name
+
+# Clean up worktree after PR is merged
+cd ../../main
+git worktree remove worktrees/$(date +%Y%m%d)-your-feature
+```
+
+**Submission Checklist:**
+- **Test thoroughly** - Ensure all tests pass in worktree isolation
+- **Update documentation** - Include relevant docs changes  
 - **Follow commit conventions** - Use conventional commit messages
 - **Submit pull request** - Provide clear description and context
+- **Clean up worktree** - Remove worktree after successful merge
 
 ### 4. Code Review
 

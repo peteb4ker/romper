@@ -84,6 +84,125 @@ Before starting any task:
 4. Wait for user confirmation before continuing
 ```
 
+## Git Worktree Execution Model
+
+### Required Worktree Usage
+
+**CRITICAL**: All agent work MUST use git worktrees for task isolation. This is a mandatory workflow requirement.
+
+#### Worktree Creation Pattern
+
+**For each new task, create a dedicated worktree:**
+
+```bash
+# Standard naming: worktrees/YYYYMMDD-task-description
+git worktree add worktrees/$(date +%Y%m%d)-task-5.2-kit-editor -b feature/task-5.2-kit-editor
+cd worktrees/$(date +%Y%m%d)-task-5.2-kit-editor
+
+# Install dependencies in new worktree
+npm install
+```
+
+#### Task Isolation Requirements
+
+- **One task per worktree**: Each worktree handles exactly one task from tasks-PRD.md
+- **Branch naming**: Use conventional `feature/`, `fix/`, `docs/` prefixes
+- **Directory isolation**: All work happens within the worktree directory
+- **Clean environment**: Fresh worktree ensures no cross-task contamination
+
+#### Worktree Lifecycle Management
+
+**Phase 1: Setup**
+```bash
+# Create worktree from main
+git worktree add worktrees/$(date +%Y%m%d)-task-name -b feature/task-name
+cd worktrees/$(date +%Y%m%d)-task-name
+npm install  # Required for each worktree
+```
+
+**Phase 2: Development**
+- All implementation work in worktree context
+- Pre-commit hooks run normally within worktree
+- Quality gates apply with full isolation
+- Database access coordinated with other worktrees
+
+**Phase 3: Completion**
+```bash
+# Validate all changes
+npm run pre-commit
+
+# Commit and push
+git add .
+git commit -m "feat: implement task 5.2 kit editor functionality"
+git push origin feature/task-name
+
+# Clean up
+cd ../../main
+git worktree remove worktrees/$(date +%Y%m%d)-task-name
+```
+
+#### Database Coordination
+
+**SQLite Shared Database Considerations:**
+- Database file shared across all worktrees
+- **Coordinate schema changes**: Only one worktree should modify schema
+- **Test migrations**: Run database changes in isolation first
+- **Backup before changes**: Always backup before schema modifications
+
+#### Quality Gates in Worktrees
+
+**Pre-commit Hooks Work Normally:**
+- TypeScript validation runs in worktree context
+- ESLint and test suites execute within worktree
+- SonarCloud analysis processes worktree changes
+- Build validation uses worktree-specific artifacts
+
+**Isolation Benefits:**
+- No interference between parallel agent tasks
+- Clean testing environment per task
+- Dependency conflicts avoided
+- Build artifacts separated
+
+#### Error Recovery
+
+**Worktree Corruption:**
+```bash
+# Repair connections
+git worktree repair
+
+# Force remove if needed
+git worktree remove --force worktrees/problem-worktree
+
+# Re-create if necessary
+git worktree add worktrees/recovered-task -b feature/recovered-task
+```
+
+**Database Conflicts:**
+```bash
+# Check for database locks
+lsof romper.db
+
+# Kill conflicting processes if needed
+# Restart development in clean worktree
+```
+
+#### Integration with Task Execution
+
+**Modified Task Workflow:**
+1. Read task from tasks-PRD.md
+2. **Create dedicated worktree** (NEW STEP)
+3. Implement task in worktree isolation
+4. Validate with quality gates
+5. Commit changes from worktree
+6. **Clean up worktree** (NEW STEP)
+7. Update task documentation
+
+**Parallel Development Enablement:**
+- Multiple agents can work simultaneously
+- Each agent operates in isolated worktree
+- No context switching or stashing required
+- Clean task boundaries maintained
+
 ## Git Commit Guidelines
 
 ### Pre-commit Hook Policy

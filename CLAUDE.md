@@ -92,6 +92,23 @@ Working on **Task 5.0: Kit Editing and Slot Management** - implementing editable
 
 **CRITICAL**: When creating git commits, DO NOT add Claude attribution or Co-Authored-By lines. Commit messages should contain only the actual commit content without any AI attribution.
 
+## Git Workflow Requirements
+
+**CRITICAL**: When working on a branch and a commit is made, ALWAYS follow this exact sequence:
+
+1. **Push the commit** to remote repository using `git push -u origin <branch-name>`
+2. **Create a pull request** using `gh pr create` with proper title and body format
+3. Use the standard PR body template:
+   ```
+   ## Summary
+   [1-3 bullet points describing the changes]
+   
+   ## Test plan
+   [Checklist of TODOs for testing the pull request]
+   ```
+
+This workflow ensures all commits are backed up remotely and creates proper tracking via pull requests for code review and integration.
+
 ## Code Metrics and Analysis Standards
 
 **CRITICAL**: DO NOT make educated guesses about code metrics (complexity scores, coverage percentages, performance metrics, etc.) and present them as facts. When discussing metrics:

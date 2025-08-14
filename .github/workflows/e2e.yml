@@ -57,6 +57,21 @@ jobs:
             libgtk-3-0 \
             x11-utils
 
+      - name: Configure Electron sandbox (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          # Configure chrome-sandbox for proper sandboxing in CI
+          CHROME_SANDBOX_PATH="node_modules/electron/dist/chrome-sandbox"
+          if [ -f "$CHROME_SANDBOX_PATH" ]; then
+            sudo chown root "$CHROME_SANDBOX_PATH"
+            sudo chmod 4755 "$CHROME_SANDBOX_PATH"
+            echo "Configured chrome-sandbox with proper permissions"
+            ls -la "$CHROME_SANDBOX_PATH"
+          else
+            echo "chrome-sandbox not found at expected path"
+            find node_modules/electron -name "chrome-sandbox" -type f || echo "chrome-sandbox not found anywhere"
+          fi
+
       - name: Setup test environment
         run: |
           mkdir -p /tmp/e2e-sdcard

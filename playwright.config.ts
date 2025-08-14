@@ -10,7 +10,18 @@ export default defineConfig({
           args: [
             ".", // Launch from project root so Electron finds vite dev server
             ...(process.env.CI
-              ? ["--no-sandbox", "--disable-setuid-sandbox"]
+              ? [
+                  "--no-sandbox",
+                  "--disable-setuid-sandbox",
+                  "--disable-gpu",
+                  "--disable-gpu-sandbox",
+                  "--disable-software-rasterizer",
+                  "--disable-background-timer-throttling",
+                  "--disable-backgrounding-occluded-windows",
+                  "--disable-renderer-backgrounding",
+                  "--disable-features=TranslateUI",
+                  "--disable-ipc-flooding-protection",
+                ]
               : []),
           ],
           env: {
@@ -22,25 +33,8 @@ export default defineConfig({
               ? { DISPLAY: ":99" }
               : {}),
           },
-          // Add headless configuration for CI
-          ...(process.env.CI
-            ? {
-                args: [
-                  ".",
-                  "--no-sandbox",
-                  "--disable-setuid-sandbox",
-                  "--disable-gpu",
-                  "--disable-gpu-sandbox",
-                  "--disable-software-rasterizer",
-                  "--disable-background-timer-throttling",
-                  "--disable-backgrounding-occluded-windows",
-                  "--disable-renderer-backgrounding",
-                  "--disable-features=TranslateUI",
-                  "--disable-ipc-flooding-protection",
-                ],
-                headless: false, // Electron doesn't support true headless, but we can disable GPU
-              }
-            : {}),
+          // Electron doesn't support true headless, but we can disable GPU
+          headless: false,
         },
       },
     },

@@ -1,0 +1,1 @@
+Ò (2tsX°hrAapp/renderer/components/shared/__tests__/KitIconRenderer.test.tsx

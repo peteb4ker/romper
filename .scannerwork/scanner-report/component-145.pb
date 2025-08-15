@@ -1,0 +1,1 @@
+‘ 2tsXºhr$electron/main/localStoreValidator.ts

@@ -1,0 +1,1 @@
+Å (2tsXËhrCapp/renderer/components/utils/__tests__/scannerOrchestrator.test.ts

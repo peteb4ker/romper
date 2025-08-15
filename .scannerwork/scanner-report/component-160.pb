@@ -1,0 +1,1 @@
+  2tsX&hr(electron/main/db/favoritesIpcHandlers.ts

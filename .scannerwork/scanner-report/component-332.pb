@@ -1,0 +1,1 @@
+Ì (2tsX÷hr3electron/main/__tests__/localStoreValidator.test.ts

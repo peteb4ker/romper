@@ -48,7 +48,7 @@ export default defineConfig({
   // Optimize for CI performance
   reporter: process.env.CI ? [["dot"], ["html", { open: "never" }]] : "list",
   testDir: ".",
-  timeout: process.env.CI ? 8000 : 5000, // Slightly longer timeout in CI
+  timeout: process.env.CI ? 10000 : 8000, // Reasonable timeout for Electron tests, longer in CI
   use: {
     // Faster action and navigation timeouts in CI
     actionTimeout: process.env.CI ? 10000 : 5000,

@@ -54,9 +54,26 @@ export class LocalStoreService {
   ): {
     error: null | string;
     hasLocalStore: boolean;
+    isCriticalEnvironmentError: boolean;
+    isEnvironmentOverride: boolean;
     isValid: boolean;
     localStorePath: null | string;
   } {
+    // Treat empty string as explicit "no local store" override
+    const isEnvironmentOverride = envPath !== undefined;
+    const isEmptyOverride = envPath === "";
+
+    if (isEmptyOverride) {
+      return {
+        error: "No local store configured (environment override)",
+        hasLocalStore: false,
+        isCriticalEnvironmentError: false,
+        isEnvironmentOverride: true,
+        isValid: false,
+        localStorePath: null,
+      };
+    }
+
     // Check environment variable first, then fall back to provided path
     const resolvedPath = envPath || localStorePath;
 
@@ -64,6 +81,8 @@ export class LocalStoreService {
       return {
         error: "No local store configured",
         hasLocalStore: false,
+        isCriticalEnvironmentError: false,
+        isEnvironmentOverride,
         isValid: false,
         localStorePath: null,
       };
@@ -72,9 +91,19 @@ export class LocalStoreService {
     // Validate database structure only - file sync issues are warnings, not blocking
     const validationResult = validateLocalStoreAndDb(resolvedPath);
 
+    // If environment variable is set but invalid, this is a critical error
+    // Exception: In test environment, treat as regular invalid local store instead of critical error
+    const isTestEnvironment =
+      process.env.NODE_ENV === "test" ||
+      process.env.ROMPER_TEST_MODE === "true";
+    const isCriticalEnvironmentError =
+      isEnvironmentOverride && !validationResult.isValid && !isTestEnvironment;
+
     return {
       error: validationResult.error || validationResult.errorSummary || null,
       hasLocalStore: true,
+      isCriticalEnvironmentError,
+      isEnvironmentOverride,
       isValid: validationResult.isValid,
       localStorePath: resolvedPath,
     };

@@ -1,0 +1,1 @@
+ 2tsXahr<app/renderer/components/utils/scanners/wavAnalysisScanner.ts

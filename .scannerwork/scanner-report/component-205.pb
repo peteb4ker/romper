@@ -1,0 +1,1 @@
+Í (2tsXhr>app/renderer/components/utils/scanners/__tests__/types.test.ts

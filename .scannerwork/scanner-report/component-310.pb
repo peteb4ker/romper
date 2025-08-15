@@ -1,0 +1,1 @@
+¶ (2tsX°hrRapp/renderer/components/dialogs/__tests__/ChangeLocalStoreDirectoryDialog.test.tsx

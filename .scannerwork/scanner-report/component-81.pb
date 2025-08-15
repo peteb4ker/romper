@@ -1,0 +1,1 @@
+Q 2tsXhr3app/renderer/components/hooks/useKitDetailsLogic.ts

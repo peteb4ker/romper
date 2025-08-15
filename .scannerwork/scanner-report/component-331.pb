@@ -1,0 +1,1 @@
+Ë (2tsXÝhr;electron/main/__tests__/applicationMenu.integration.test.ts

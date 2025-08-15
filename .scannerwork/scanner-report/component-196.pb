@@ -1,0 +1,1 @@
+Ä (2tsX•hr=app/renderer/components/utils/__tests__/kitOperations.test.ts

@@ -1,0 +1,1 @@
+¬ 2tsXdhr-electron/main/services/syncExecutorService.ts

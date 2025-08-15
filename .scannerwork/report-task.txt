@@ -1,0 +1,7 @@
+organization=peteb4ker
+projectKey=peteb4ker_romper
+serverUrl=https://sonarcloud.io
+serverVersion=8.0.0.66242
+dashboardUrl=https://sonarcloud.io/dashboard?id=peteb4ker_romper&pullRequest=18
+ceTaskId=AZir2jqgwjeZ3hP7WCdw
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZir2jqgwjeZ3hP7WCdw

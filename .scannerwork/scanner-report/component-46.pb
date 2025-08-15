@@ -1,0 +1,1 @@
+. 2tsXêhr'app/renderer/components/KitGridItem.tsx

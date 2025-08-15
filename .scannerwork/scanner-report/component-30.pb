@@ -1,0 +1,1 @@
+ 2tsXDhr:app/renderer/components/utils/scanners/rtfArtistScanner.ts

@@ -1,0 +1,1 @@
+Æ (2tsXhrBapp/renderer/components/utils/__tests__/scanningOperations.test.ts

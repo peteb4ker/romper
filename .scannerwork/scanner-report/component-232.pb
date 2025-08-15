@@ -1,0 +1,1 @@
+è (2tsXhr5app/renderer/components/__tests__/KitDetails.test.tsx

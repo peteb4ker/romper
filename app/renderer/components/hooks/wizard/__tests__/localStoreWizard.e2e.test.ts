@@ -27,10 +27,7 @@ async function runWizardTest(
       ...(source === "squarp" && squarpArchiveUrl
         ? { ROMPER_SQUARP_ARCHIVE_URL: squarpArchiveUrl }
         : {}),
-      ROMPER_LOCAL_PATH: path.join(
-        "/tmp",
-        `romper-e2e-${source}-${Date.now()}`,
-      ),
+      ROMPER_LOCAL_PATH: "", // Empty string triggers wizard (no local store override)
     }).filter(([_, v]) => typeof v === "string"),
   ) as { [key: string]: string };
 
@@ -102,8 +99,8 @@ async function runWizardTest(
     }
   }
 
-  // 2. target
-  const targetPath = env.ROMPER_LOCAL_PATH;
+  // 2. target - generate dynamic path since ROMPER_LOCAL_PATH is empty
+  const targetPath = path.join("/tmp", `romper-e2e-${source}-${Date.now()}`);
   await window.waitForSelector("#local-store-path-input", { state: "visible" });
   await window.fill("#local-store-path-input", targetPath);
 

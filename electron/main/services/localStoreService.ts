@@ -59,7 +59,20 @@ export class LocalStoreService {
     isValid: boolean;
     localStorePath: null | string;
   } {
-    const isEnvironmentOverride = Boolean(envPath);
+    // Treat empty string as explicit "no local store" override
+    const isEnvironmentOverride = envPath !== undefined;
+    const isEmptyOverride = envPath === "";
+
+    if (isEmptyOverride) {
+      return {
+        error: "No local store configured (environment override)",
+        hasLocalStore: false,
+        isCriticalEnvironmentError: false,
+        isEnvironmentOverride: true,
+        isValid: false,
+        localStorePath: null,
+      };
+    }
 
     // Check environment variable first, then fall back to provided path
     const resolvedPath = envPath || localStorePath;

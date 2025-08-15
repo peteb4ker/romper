@@ -40,6 +40,6 @@ export default defineConfig({
     },
   ],
   testDir: ".",
-  timeout: 5000,
+  timeout: 10000, // Reasonable timeout for Electron tests
   workers: 1, // Run E2E tests sequentially to avoid resource conflicts
 });

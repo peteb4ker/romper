@@ -37,19 +37,23 @@ const KitsView: React.FC = () => {
 
   // Determine local store configuration state according to requirements
   // A1-A3: No local store configured - show setup wizard
+  // Also includes test environment overrides with invalid paths (for wizard tests)
+  const isTestEnvironment =
+    process.env.NODE_ENV === "test" || process.env.ROMPER_TEST_MODE === "true";
+  const isEnvironmentOverride =
+    localStoreStatus?.isEnvironmentOverride || false;
   const needsLocalStoreSetup =
     isInitialized &&
     localStoreStatus !== null &&
-    !localStoreStatus.hasLocalStore;
+    (!localStoreStatus.hasLocalStore ||
+      (isTestEnvironment &&
+        isEnvironmentOverride &&
+        !localStoreStatus.isValid));
 
   // D: Environment variable override - show test mode banner
-  const isEnvironmentOverride =
-    localStoreStatus?.isEnvironmentOverride || false;
 
   // C1-C6: Local store configured but invalid - show modal blocking error dialog
   // Exception: In test environment with env override, don't block - let tests proceed
-  const isTestEnvironment =
-    process.env.NODE_ENV === "test" || process.env.ROMPER_TEST_MODE === "true";
   const hasInvalidLocalStore =
     isInitialized &&
     localStoreStatus !== null &&

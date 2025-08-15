@@ -25,8 +25,11 @@ export function useGlobalKeyboardShortcuts({
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
         target.isContentEditable;
+
+      // Safely check for dialog elements (handle test environments where closest may not exist)
       const isInDialog = Boolean(
-        target.closest('[role="dialog"]') || target.closest(".fixed"),
+        target.closest &&
+          (target.closest('[role="dialog"]') || target.closest(".fixed")),
       );
 
       return isInInput || isInDialog;

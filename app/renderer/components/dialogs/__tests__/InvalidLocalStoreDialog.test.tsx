@@ -50,6 +50,7 @@ describe("InvalidLocalStoreDialog", () => {
   };
 
   const mockSetLocalStorePath = vi.fn();
+  const mockRefreshLocalStoreStatus = vi.fn();
   const mockElectronAPI = {
     closeApp: vi.fn(),
     selectLocalStorePath: vi.fn(),
@@ -59,6 +60,7 @@ describe("InvalidLocalStoreDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (useSettings as any).mockReturnValue({
+      refreshLocalStoreStatus: mockRefreshLocalStoreStatus,
       setLocalStorePath: mockSetLocalStorePath,
     });
     Object.assign(window, { electronAPI: mockElectronAPI });
@@ -159,7 +161,7 @@ describe("InvalidLocalStoreDialog", () => {
 
     expect(mockSetLocalStorePath).toHaveBeenCalledWith("/valid/path");
     expect(defaultProps.onMessage).toHaveBeenCalledWith(
-      "Local store directory updated successfully. Reloading...",
+      "Local store directory updated successfully. Refreshing...",
       "success",
     );
   });

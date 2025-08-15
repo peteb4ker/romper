@@ -12,6 +12,39 @@ interface InvalidLocalStoreDialogProps {
 }
 
 /**
+ * Reusable path display component to reduce duplication
+ */
+interface PathDisplayProps {
+  label: string;
+  path: string;
+  variant: "current" | "selected";
+}
+
+const PathDisplay: React.FC<PathDisplayProps> = ({ label, path, variant }) => {
+  const styles = {
+    current: {
+      container: "rounded bg-gray-50 p-2",
+      label: "text-xs text-gray-600 mb-1",
+      path: "text-sm font-mono text-gray-800 break-all",
+    },
+    selected: {
+      container: "rounded bg-blue-50 p-3",
+      label: "text-xs text-blue-600 mb-1",
+      path: "text-sm font-mono text-blue-800 break-all",
+    },
+  };
+
+  const style = styles[variant];
+
+  return (
+    <div className={style.container}>
+      <p className={style.label}>{label}:</p>
+      <p className={style.path}>{path}</p>
+    </div>
+  );
+};
+
+/**
  * Modal blocking dialog for invalid local store scenarios (C1-C6)
  * User cannot cancel - must choose new directory or exit app
  * According to requirements: modal, blocking, cannot cancel
@@ -22,7 +55,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   localStorePath,
   onMessage,
 }) => {
-  const { setLocalStorePath } = useSettings();
+  const { refreshLocalStoreStatus, setLocalStorePath } = useSettings();
   const [isValidating, setIsValidating] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedPath, setSelectedPath] = useState<null | string>(null);
@@ -101,15 +134,14 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
     try {
       setLocalStorePath(selectedPath);
       onMessage?.(
-        "Local store directory updated successfully. Reloading...",
+        "Local store directory updated successfully. Refreshing...",
         "success",
       );
 
-      // Give user a moment to see the success message before reload
-      // Note: We use window.location.reload() here as it's the most reliable way
-      // to restart the entire React app when the local store path changes
-      setTimeout(() => {
-        window.location.reload();
+      // Give user a moment to see the success message before refresh
+      // Use React-friendly settings refresh instead of window.location.reload()
+      setTimeout(async () => {
+        await refreshLocalStoreStatus();
       }, 1000);
     } catch (error) {
       onMessage?.(
@@ -177,11 +209,12 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
           <p className="text-sm text-gray-700 mb-3">{errorMessage}</p>
 
           {localStorePath && (
-            <div className="mb-3 rounded bg-gray-50 p-2">
-              <p className="text-xs text-gray-600 mb-1">Current path:</p>
-              <p className="text-sm font-mono text-gray-800 break-all">
-                {localStorePath}
-              </p>
+            <div className="mb-3">
+              <PathDisplay
+                label="Current path"
+                path={localStorePath}
+                variant="current"
+              />
             </div>
           )}
 
@@ -206,12 +239,11 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
         {/* Selected Path Display */}
         {selectedPath && (
           <div className="mb-4">
-            <div className="rounded bg-blue-50 p-3">
-              <p className="text-xs text-blue-600 mb-1">Selected path:</p>
-              <p className="text-sm font-mono text-blue-800 break-all">
-                {selectedPath}
-              </p>
-            </div>
+            <PathDisplay
+              label="Selected path"
+              path={selectedPath}
+              variant="selected"
+            />
           </div>
         )}
 

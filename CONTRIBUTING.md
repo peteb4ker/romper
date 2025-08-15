@@ -7,104 +7,9 @@ tags: ["contributing", "development", "documentation"]
 
 # Contributing to Romper Sample Manager
 
-Thank you for your interest in contributing to Romper Sample Manager! This guide applies equally to both human contributors and AI agents.
-
-## Documentation Standards (ENFORCED)
-
-All contributors MUST follow our documentation compliance standards. These rules are enforced by automated tools and CI/CD pipelines.
-
-### Required Document Structure
-
-Every Markdown file MUST include:
-
-```yaml
----
-title: "Human readable title"
-owners: ["team-or-agent"]
-last_reviewed: "YYYY-MM-DD"
-tags: ["category"]
----
-```
-
-1. **Exactly one H1 heading** that matches the frontmatter title
-2. **A 2-5 sentence summary** after the title
-3. **For procedures**: Prerequisites, numbered steps, and verification methods
-
-### Link Requirements
-
-- **No broken internal links**: All links must resolve to existing files
-- **No backticked path references**: Use proper Markdown links `[Title](path.md)`
-- **Canonical references only**: Link to primary documentation, not duplicates
-
-### Token Efficiency Requirements (ENFORCED)
-
-#### Atomic Instructions
-- **One requirement per line**: No complex conjunctions with "and/or/but"
-- **Compliance check**: flag instructions longer than one sentence
-
-#### Brevity Limits (Agent Documentation Only)
-**Token limits apply ONLY to `.agent/` directory files:**
-- **Checklist items**: ≤ 20 tokens maximum
-- **Procedural steps**: ≤ 50 tokens maximum  
-- **Summaries**: ≤ 75 tokens maximum
-- **Compliance check**: measure token counts; error if exceeded
-
-#### Brevity Scope
-**Human documentation stays verbose** - no token limits:
-- **README files**: Front page of repo, comprehensive for humans
-- **All `docs/` files**: Human-readable documentation 
-- **Task lists**: `tasks/*.md` files preserve detailed tracking
-- **PRD documents**: Product requirements maintain full detail
-- **CONTRIBUTING.md**: Contribution guidelines stay detailed
-
-**Only `.agent/` files enforce brevity** for machine parsing efficiency
-
-**Compliance check**: skip brevity validation except for `.agent/` directory
-
-#### Canonicalization
-- **No duplicate instructions**: Each rule appears once only
-- **Cross-reference instead**: Link to canonical source
-- **Compliance check**: detect duplicate rules at ≥85% similarity
-
-#### Structured Markers
-- **Mark verifiable requirements**: Use `**Compliance check**: condition`
-- **Enable agent parsing**: Explicit compliance points
-- **Compliance check**: flag requirements without markers
-
-#### Summaries First
-- **Purpose statement first**: Begin sections with ≤2 sentences
-- **Details follow**: Use structured lists after summary
-- **Compliance check**: fail if section begins with body text
-
-### Compliance Enforcement
-
-#### For All Contributors
-
-Before any PR can be merged:
-
-1. **Documentation audit MUST pass**: `npm run docs:check`
-2. **Compliance score MUST be ≥75%**
-3. **Token efficiency score MUST be 100%**
-4. **All broken links MUST be fixed**
-5. **All documents MUST have valid frontmatter**
-6. **Zero duplicates**: ≥85% content similarity forbidden
-
-**Compliance check**: exit with nonzero if any requirement fails
-
-#### For AI Agents
-
-AI agents MUST:
-
-1. **Start every development session** by running `npm run docs:check`
-2. **Produce structured compliance reports** in JSON format
-3. **Self-verify compliance** before making any documentation changes
-4. **Never bypass or skip compliance checks**
-
-**Compliance check**: validate JSON reports contain all required fields
+Thank you for your interest in contributing to Romper Sample Manager! This guide covers development standards for both human contributors and AI agents.
 
 ## Development Workflow (MANDATORY)
-
-### Worktree Usage
 
 ALL development work MUST use the worktree workflow:
 
@@ -124,6 +29,8 @@ npm run worktree:remove <task-name>
 
 **Compliance check**: verify commits originate from worktree branches only
 
+## Code Quality Standards
+
 ### Pre-commit Requirements
 
 Every commit MUST pass:
@@ -131,10 +38,18 @@ Every commit MUST pass:
 - **TypeScript compilation**: `npm run typecheck`
 - **Linting**: `npm run lint:check`
 - **Tests**: `npm run test:fast`
-- **Documentation compliance**: `npm run docs:check`
 - **Build verification**: `npm run build`
+- **Documentation compliance**: `npm run docs:check`
 
 **Compliance check**: exit nonzero if any pre-commit check fails
+
+### Code Standards
+
+- Follow existing code conventions in the codebase
+- Run `npx tsc --noEmit` before committing
+- Maintain test coverage
+- Use ESLint and Prettier configurations
+- Follow architectural patterns established in the project
 
 ## Commit Message Standards
 
@@ -167,40 +82,78 @@ type: brief description in imperative mood
 - ❌ **No authorship, co-author tags, or AI attribution**
 - ❌ No generic messages like "Update files" or "Fix issues"
 
-## Quality Standards
-
-### CI/CD Requirements
+## CI/CD Requirements
 
 Our CI/CD pipeline enforces:
 
 ```bash
-# Documentation compliance
-npm run docs:check || exit 1
-
-# Code quality
+# Code quality (primary focus)
 npm run lint:check || exit 1
 npm run typecheck || exit 1
 npm run test || exit 1
 npm run build || exit 1
+
+# Documentation compliance (agent alignment)
+npm run docs:check || exit 1
 ```
 
-### Compliance Scores
+### Quality Standards
 
-- **Documentation compliance**: Must be 100%
 - **Test coverage**: Must maintain current levels
 - **Linting**: Zero errors or warnings
 - **TypeScript**: Zero compilation errors
+- **Documentation compliance**: Must be ≥75% (for agent alignment)
+
+## Documentation Standards (Agent Alignment)
+
+These standards help keep AI agents aligned when reading and writing documentation.
+
+### For Human Contributors
+
+Write **comprehensive, verbose documentation**:
+- **README files**: Detailed front page for users
+- **Technical docs**: Full explanations in `docs/` directory
+- **Task tracking**: Detailed progress in `tasks/` files
+- **No token limits** apply to human documentation
+
+### For AI Agents
+
+**Token efficiency rules apply ONLY to `.agent/` directory:**
+- Checklist items: ≤ 20 tokens
+- Procedural steps: ≤ 50 tokens  
+- Summaries: ≤ 75 tokens
+- One requirement per line
+- Use `**Compliance check**:` markers for verifiable requirements
+
+**Purpose**: Ensure agents can parse instructions clearly without affecting human documentation quality.
+
+### Universal Requirements
+
+All Markdown files need basic structure:
+
+```yaml
+---
+title: "Human readable title"
+owners: ["team-or-agent"]
+last_reviewed: "YYYY-MM-DD"
+tags: ["category"]
+---
+```
+
+- Exactly one H1 heading matching title
+- No broken internal links
+- Proper Markdown links instead of backticked paths
 
 ## Getting Help
 
-- **Documentation issues**: Run `npm run docs:check` for detailed reports
-- **Development setup**: See [Development Workflow](./docs/developer/development-workflow.md)
-- **Architecture questions**: See [Architecture Overview](./docs/developer/architecture.md)
+- **Code setup**: See [Development Workflow](./docs/developer/development-workflow.md)
+- **Architecture**: See [Architecture Overview](./docs/developer/architecture.md)
+- **Documentation issues**: Run `npm run docs:check` for reports
 
 ## Enforcement
 
-- **Non-compliant commits**: Automatically rejected
-- **Non-compliant PRs**: Cannot merge until fixed
-- **Repeated violations**: May result in contributor restrictions
+- **Non-compliant commits**: Automatically rejected by pre-commit hooks
+- **Non-compliant PRs**: Cannot merge until quality checks pass
+- **Focus**: Code quality first, documentation standards for agent alignment
 
-Thank you for helping maintain our quality standards!
+Thank you for contributing to Romper Sample Manager!

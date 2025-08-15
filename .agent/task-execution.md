@@ -225,6 +225,37 @@ lsof romper.db
   4. Wait for explicit user approval before using `--no-verify`
 - **Test failures are blocking** - commits must not proceed with any failing tests
 
+### PR Review Response Protocol (CRITICAL)
+
+When addressing PR review comments, follow this systematic approach to prevent common mistakes:
+
+#### Systematic Review Comment Processing
+
+1. **Read ALL review comments first** - Never implement fixes piecemeal
+2. **Create TodoWrite items** for each specific comment/fix needed  
+3. **Follow exact suggestions when provided** - Don't try to "improve" on reviewer feedback
+4. **Use `npm run commit` for validation** - Let pre-commit hooks catch issues immediately
+5. **Address each todo systematically** - Mark complete only when verified working
+
+#### Critical Mistake Prevention
+
+- **Syntax errors**: `npm run commit` will catch these via pre-commit hooks - no need for separate linting
+- **Incomplete implementation**: Address all comments in comprehensive fix, not one-by-one
+- **Process shortcuts**: Use TodoWrite to track progress systematically  
+- **Quality bypassing**: NEVER use `--no-verify` - fix issues properly instead
+
+#### Implementation Pattern
+
+```bash
+# 1. Plan systematically using TodoWrite for each review comment
+# 2. Fix each issue with immediate validation via npm run commit  
+# 3. Let pre-commit hooks provide quality feedback automatically
+# 4. Fix any hook failures properly (never bypass with --no-verify)
+# 5. Final commit when all issues resolved and hooks pass
+```
+
+This systematic approach prevents rushing through fixes and missing issues that create additional review cycles.
+
 ### Commit Message Standards
 
 - Use conventional commit format: `type: description`

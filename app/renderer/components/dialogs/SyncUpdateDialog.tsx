@@ -30,7 +30,7 @@ export interface SyncValidationError {
   type: "access_denied" | "invalid_format" | "missing_file" | "other";
 }
 
-interface SyncErrorDetails {
+export interface SyncErrorDetails {
   canRetry: boolean;
   error: string;
   fileName: string;

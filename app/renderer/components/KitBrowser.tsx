@@ -66,13 +66,11 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       focusedKit,
       globalBankHotkeyHandler,
       handleCreateKit,
-      handleCreateNextKit,
       handleDuplicateKit,
       handleVisibleBankChange,
       kits,
       newKitError,
       newKitSlot,
-      nextKitSlot,
       scrollContainerRef,
       selectedBank,
       setDuplicateKitDest,
@@ -174,9 +172,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           }
           favoritesCount={favoritesCount}
           modifiedCount={modifiedCount}
-          nextKitSlot={nextKitSlot}
-          onCreateNextKit={handleCreateNextKit}
-          onScanAllKits={handleScanAllKits}
           onShowLocalStoreWizard={handleShowLocalStoreWizard}
           onShowNewKit={() => setShowNewKit(true)}
           onSyncToSdCard={handleSyncToSdCard}

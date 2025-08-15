@@ -14,7 +14,6 @@ describe("KitBrowserHeader", () => {
   const defaultProps = {
     nextKitSlot: null,
     onCreateNextKit: vi.fn(),
-    onScanAllKits: vi.fn(),
     onShowLocalStoreWizard: vi.fn(),
     onShowNewKit: vi.fn(),
     onValidateLocalStore: vi.fn(),
@@ -31,16 +30,9 @@ describe("KitBrowserHeader", () => {
     expect(onShowNewKit).toHaveBeenCalled();
   });
 
-  it("calls onScanAllKits when Scan All Kits button is clicked", () => {
-    const onScanAllKits = vi.fn();
-    render(
-      <KitBrowserHeader {...defaultProps} onScanAllKits={onScanAllKits} />,
-    );
-    fireEvent.click(screen.getByText("Scan All Kits"));
-    expect(onScanAllKits).toHaveBeenCalled();
-  });
+  // Scan All Kits button has been removed from UI (still available in menu)
 
-  it("calls onValidateLocalStore when Validate Local Store button is clicked", () => {
+  it("calls onValidateLocalStore when Validate Store button is clicked", () => {
     const onValidateLocalStore = vi.fn();
     render(
       <KitBrowserHeader
@@ -48,28 +40,24 @@ describe("KitBrowserHeader", () => {
         onValidateLocalStore={onValidateLocalStore}
       />,
     );
-    fireEvent.click(screen.getByText("Validate Local Store"));
+    fireEvent.click(screen.getByText("Validate Store"));
     expect(onValidateLocalStore).toHaveBeenCalled();
   });
 
   // No separate tests for scan options dropdown as it's been removed
 
-  it("calls onCreateNextKit when + Next Kit button is clicked and nextKitSlot is set", () => {
-    const onCreateNextKit = vi.fn();
+  // Next Kit button has been removed from the interface
+
+  it("calls onShowLocalStoreWizard when Settings button is clicked", () => {
+    const onShowLocalStoreWizard = vi.fn();
     render(
       <KitBrowserHeader
         {...defaultProps}
-        nextKitSlot={"A1"}
-        onCreateNextKit={onCreateNextKit}
+        onShowLocalStoreWizard={onShowLocalStoreWizard}
       />,
     );
-    fireEvent.click(screen.getByText("+ Next Kit"));
-    expect(onCreateNextKit).toHaveBeenCalled();
-  });
-
-  it("disables + Next Kit button when nextKitSlot is null", () => {
-    render(<KitBrowserHeader {...defaultProps} nextKitSlot={null} />);
-    expect(screen.getByText("+ Next Kit")).toBeDisabled();
+    fireEvent.click(screen.getByText("Settings"));
+    expect(onShowLocalStoreWizard).toHaveBeenCalled();
   });
 
   it("renders bankNav if provided", () => {

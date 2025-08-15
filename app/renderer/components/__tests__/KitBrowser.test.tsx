@@ -192,8 +192,8 @@ describe("KitBrowser", () => {
       );
       // Should see all buttons available
       expect(screen.getByText("+ New Kit")).toBeTruthy();
-      expect(screen.getByText("Scan All Kits")).toBeTruthy();
-      expect(screen.getByText("Validate Local Store")).toBeTruthy();
+      // Scan All Kits button has been removed from UI
+      expect(screen.getByText("Validate Store")).toBeTruthy();
       expect(screen.getByTestId("kit-item-A0")).toBeTruthy();
       expect(screen.getByTestId("kit-item-A1")).toBeTruthy();
       expect(screen.getByTestId("kit-item-B0")).toBeTruthy();
@@ -613,7 +613,7 @@ describe("KitBrowser", () => {
         </MockMessageDisplayProvider>,
       );
 
-      const setupButton = screen.getByText("Local Store Setup");
+      const setupButton = screen.getByText("Settings");
       fireEvent.click(setupButton);
 
       expect(screen.getByText("Romper Local Store Setup")).toBeInTheDocument();
@@ -627,7 +627,7 @@ describe("KitBrowser", () => {
       );
 
       // Open wizard
-      const setupButton = screen.getByText("Local Store Setup");
+      const setupButton = screen.getByText("Settings");
       fireEvent.click(setupButton);
       expect(screen.getByText("Romper Local Store Setup")).toBeInTheDocument();
 

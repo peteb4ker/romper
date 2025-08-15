@@ -142,6 +142,19 @@ async function main() {
     } else {
       console.log("✅ Pull request created successfully!");
     }
+
+    // Enable auto-merge for the PR
+    console.log("🤖 Enabling auto-merge...");
+    try {
+      runCommand("gh pr merge --auto", { silent: true });
+      console.log(
+        "✅ Auto-merge enabled - PR will merge when all checks pass!",
+      );
+    } catch {
+      console.error("⚠️  Failed to enable auto-merge");
+      console.error("You can enable it manually with:");
+      console.error("  gh pr merge --auto");
+    }
   } catch {
     console.error("❌ Failed to create pull request");
     console.error("You can create it manually with:");
@@ -153,6 +166,7 @@ async function main() {
   console.log("  ✅ Committed with quality checks");
   console.log("  ✅ Pushed to remote repository");
   console.log("  ✅ Pull request created for review");
+  console.log("  🤖 Auto-merge enabled (will merge when checks pass)");
 }
 
 main().catch((error) => {

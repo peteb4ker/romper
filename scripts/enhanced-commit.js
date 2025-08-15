@@ -136,16 +136,13 @@ async function main() {
         const description = commitMessage.slice(type.length).trim();
         const maxDescLength = 60 - type.length;
         
-        // Address Copilot comment: Prevent empty descriptions when type prefix is too long
-        if (maxDescLength < 5 || description.length === 0) {
-          // If type prefix leaves insufficient space or no description, use simple truncation
-          prTitle = commitMessage.slice(0, 60).replace(/\s+\S*$/, "").trim();
+        if (maxDescLength > 0 && description.length > 0) {
+          const truncatedDesc = description.slice(0, maxDescLength);
+          prTitle = type + (/\s+\S*$/.test(truncatedDesc) ? truncatedDesc.replace(/\s+\S*$/, '') : truncatedDesc).trim();
         } else {
-          const truncatedDesc = description
-            .slice(0, maxDescLength)
-            .replace(/\s+\S*$/, "")
-            .trim();
-          prTitle = type + truncatedDesc;
+          // Fallback: just truncate the commit message as in the "no type prefix" branch
+          const truncated = commitMessage.slice(0, 60);
+          prTitle = (/\s+\S*$/.test(truncated) ? truncated.replace(/\s+\S*$/, '') : truncated).trim();
         }
       }
     } else {
@@ -156,7 +153,7 @@ async function main() {
       }
     }
     const prBody = `## Summary
-- ${commitMessage}
+${commitMessage}
 
 ## Test plan
 - [x] All pre-commit checks pass

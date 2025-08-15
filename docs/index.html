@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Romper Sample Manager - Essential desktop app for your Squarp Rample</title>
+    <meta name="description" content="Organize, preview, and sync your sample kits for the Squarp Rample with this cross-platform desktop application.">
+    <meta property="og:title" content="Romper Sample Manager">
+    <meta property="og:description" content="The essential desktop app for your Squarp Rample">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="images/app-icon.png">
+    <link rel="apple-touch-icon" href="images/app-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="nav">
+                <div class="logo">
+                    <span class="logo-text">Romper</span>
+                </div>
+                <nav class="nav-links">
+                    <a href="https://github.com/peteb4ker/romper" class="nav-link">GitHub</a>
+                    <a href="https://github.com/peteb4ker/romper/releases/latest" class="nav-link">Releases</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <span class="title-main">Romper Sample Manager</span>
+                    </h1>
+                    <p class="hero-subtitle">The essential desktop app for your Squarp Rample</p>
+                    <p class="hero-description">
+                        Organize, preview, and sync your sample kits
+                    </p>
+                    
+                    <div class="hero-cta">
+                        <a href="https://github.com/peteb4ker/romper/releases/latest" class="cta-button primary" id="download-btn">
+                            Download for <span id="platform">Your Platform</span>
+                        </a>
+                        <a href="https://github.com/peteb4ker/romper" class="cta-button secondary">
+                            View on GitHub
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="hero-visual">
+                    <div class="terminal-window">
+                        <div class="terminal-header">
+                            <div class="terminal-controls">
+                                <span class="control control-close"></span>
+                                <span class="control control-minimize"></span>
+                                <span class="control control-maximize"></span>
+                            </div>
+                            <div class="terminal-title">Romper Sample Manager</div>
+                        </div>
+                        <div class="terminal-content">
+                            <div class="terminal-line">
+                                <span class="prompt">$</span>
+                                <span class="command">romper --version</span>
+                            </div>
+                            <div class="terminal-line">
+                                <span class="output">Romper Sample Manager v0.9.3</span>
+                            </div>
+                            <div class="terminal-line">
+                                <span class="prompt">$</span>
+                                <span class="command">romper sync --preview</span>
+                            </div>
+                            <div class="terminal-line">
+                                <span class="output">✓ Found 12 kits ready for sync</span>
+                            </div>
+                            <div class="terminal-line">
+                                <span class="output">✓ All samples validated</span>
+                            </div>
+                            <div class="terminal-line cursor">
+                                <span class="prompt">$</span>
+                                <span class="command">_</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="feature">
+                        <div class="feature-icon">🎵</div>
+                        <h3 class="feature-title">Smart Kit Management</h3>
+                        <p class="feature-description">
+                            Browse and organize your Rample kits with visual previews and custom labels for easy organization.
+                        </p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">🔊</div>
+                        <h3 class="feature-title">Built-in Sample Preview</h3>
+                        <p class="feature-description">
+                            Audition samples before committing changes with built-in XOX sequencer for full kit previews.
+                        </p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">💾</div>
+                        <h3 class="feature-title">Safe SD Card Operations</h3>
+                        <p class="feature-description">
+                            Non-destructive editing with automatic backups and validation before syncing changes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="how-it-works">
+            <div class="container">
+                <h2 class="section-title">How It Works</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Bootstrap Your Library</h3>
+                            <p class="step-description">
+                                Bootstrap the app from SD card, factory samples or a blank folder
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Organize and Preview</h3>
+                            <p class="step-description">
+                                Organize and preview your samples using the built-in browser and sequencer
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Sync Safely</h3>
+                            <p class="step-description">
+                                Sync changes safely to your device with automatic validation and backup
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Screenshots Section -->
+        <section class="screenshots">
+            <div class="container">
+                <h2 class="section-title">See It In Action</h2>
+                <div class="screenshot-grid">
+                    <div class="screenshot-item">
+                        <img src="images/kit-details.png" alt="Kit Details View" class="screenshot">
+                        <p class="screenshot-caption">Kit Details and Voice Panel Editing</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Download Section -->
+        <section class="download">
+            <div class="container">
+                <div class="download-content">
+                    <h2 class="section-title">Download Romper</h2>
+                    <p class="download-description">
+                        Cross-platform support for Windows, macOS, and Linux
+                    </p>
+                    
+                    <div class="download-buttons">
+                        <a href="https://github.com/peteb4ker/romper/releases/latest" class="download-btn">
+                            <span class="download-platform">Latest Release</span>
+                            <span class="download-note">All Platforms</span>
+                        </a>
+                    </div>
+                    
+                    <div class="download-links">
+                        <a href="https://github.com/peteb4ker/romper#-getting-started" class="download-link">Getting Started Guide</a>
+                        <span class="separator">•</span>
+                        <a href="https://github.com/peteb4ker/romper" class="download-link">Source Code</a>
+                        <span class="separator">•</span>
+                        <a href="https://squarp.net/rample" class="download-link">About Squarp Rample</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p class="footer-text">
+                    Built for <a href="https://squarp.net/rample" class="footer-link">Squarp Rample</a> users
+                </p>
+                <p class="footer-text">
+                    <a href="https://github.com/peteb4ker/romper" class="footer-link">Open Source</a> • MIT License
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -109,7 +109,7 @@ const KitsView: React.FC = () => {
     onMessage: showMessage,
     onRefreshKits: () => {
       // Fire and forget - don't await the Promise to match void return type
-      loadKitsData().catch((error) => {
+      refreshAllKitsAndSamples().catch((error: unknown) => {
         console.error("Failed to refresh kits:", error);
       });
     },

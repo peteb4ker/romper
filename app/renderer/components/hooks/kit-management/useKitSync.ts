@@ -100,8 +100,6 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
             3000,
           );
         }
-        // Refresh kit browser to show updated modification states
-        onRefreshKits?.();
       } else if (onMessage && syncError) {
         onMessage(`Sync failed: ${syncError}`, "error");
       }

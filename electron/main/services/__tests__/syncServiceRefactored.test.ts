@@ -262,7 +262,9 @@ describe("SyncService", () => {
         success: false,
       });
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
 
       const result = await service.startKitSync(
         { localStorePath: "/test/path" },
@@ -271,7 +273,7 @@ describe("SyncService", () => {
 
       expect(result.success).toBe(true); // Should still succeed
       expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to mark kits as synced:",
+        "[SyncService] Failed to mark kits as synced:",
         "Database error",
       );
 

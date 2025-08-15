@@ -96,7 +96,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   useEffect(() => {
     // Reset details view and generate summary when dialog opens
     if (isOpen) {
-      setWipeSdCard(false);
+      // Don't reset wipeSdCard - preserve user's choice across dialog openings
       setLocalSdCardPath(sdCardPath || null);
 
       if (localChangeSummary) {

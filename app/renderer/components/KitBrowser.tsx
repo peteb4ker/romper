@@ -24,7 +24,7 @@ interface KitBrowserProps {
   kits?: KitWithRelations[];
   localStorePath: null | string;
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onRefreshKits?: () => void;
+  onRefreshKits?: () => Promise<void>;
   onSelectKit: (kitName: string) => void;
   sampleCounts?: Record<string, [number, number, number, number]>;
   setLocalStorePath?: (path: string) => void;
@@ -93,7 +93,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     } = dialogs;
 
     // Sync functionality hook
-    const sync = useKitSync({ onMessage, onRefreshKits });
+    const sync = useKitSync({ onMessage, onRefreshKits: props.onRefreshKits });
     const {
       currentChangeSummary,
       currentSyncKit,

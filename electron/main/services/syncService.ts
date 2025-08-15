@@ -642,6 +642,29 @@ class SyncService {
     );
 
     if (!conversionResult.success) {
+      // Check if this is a WAV format error that we can ignore
+      const isWavFormatError =
+        conversionResult.error?.toLowerCase().includes("missing fmt chunk") ||
+        conversionResult.error?.toLowerCase().includes("invalid wav file");
+
+      if (isWavFormatError) {
+        console.warn(
+          `Skipping problematic WAV file ${fileOp.filename}: ${conversionResult.error}`,
+        );
+        // Copy the original file instead of converting it
+        try {
+          const fs = await import("fs");
+          fs.copyFileSync(fileOp.sourcePath, fileOp.destinationPath);
+          this.updateBytesTransferred(originalFileSize);
+          return; // Successfully handled by copying instead
+        } catch (copyError) {
+          console.error(
+            `Failed to copy problematic file ${fileOp.filename}:`,
+            copyError,
+          );
+        }
+      }
+
       throw new Error(
         `Failed to convert ${fileOp.filename}: ${conversionResult.error}`,
       );

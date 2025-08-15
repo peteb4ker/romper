@@ -25,6 +25,16 @@ Cross-platform desktop app for managing sample kits for the **Squarp Rample** Eu
 - `npm run worktree:remove <task-name>` - Remove completed worktree
 - `npm run commit "message"` - Enhanced commit with branch protection, quality checks, push, and PR creation
 
+**Fast Test Commands (for Local Development):**
+- `npm run test:fast` - Run all tests without coverage (~14s vs ~40s)
+- `npm run test:unit:fast` - Unit tests only without coverage (~10s vs ~34s)
+- `npm run test:integration:fast` - Integration tests only without coverage (~2s)
+
+**Coverage Test Commands (for CI/CD):**
+- `npm run test` - Full test suite with coverage and reporting
+- `npm run test:unit` - Unit tests with coverage
+- `npm run test:integration` - Integration tests with coverage
+
 **Legacy Commands:**
 See [Development Workflow](./docs/developer/development-workflow.md) for complete command reference.
 

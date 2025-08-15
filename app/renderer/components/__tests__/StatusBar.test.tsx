@@ -217,9 +217,9 @@ describe("StatusBar", () => {
       const mockOnAboutClick = vi.fn();
       render(<StatusBar onAboutClick={mockOnAboutClick} />);
       const aboutButton = screen.getByRole("button", { name: "About" });
-      
+
       fireEvent.click(aboutButton);
-      
+
       expect(mockOnAboutClick).toHaveBeenCalledOnce();
     });
   });

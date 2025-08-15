@@ -58,7 +58,10 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white" id="about-title">
+          <h2
+            className="text-xl font-semibold text-gray-900 dark:text-white"
+            id="about-title"
+          >
             About Romper
           </h2>
           <button
@@ -95,7 +98,9 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
                 Licensed under the{" "}
                 <button
                   className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
-                  onClick={() => openExternal("https://opensource.org/licenses/MIT")}
+                  onClick={() =>
+                    openExternal("https://opensource.org/licenses/MIT")
+                  }
                   type="button"
                 >
                   MIT license
@@ -105,7 +110,9 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
 
             <button
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onClick={() => openExternal("https://github.com/peteb4ker/romper/")}
+              onClick={() =>
+                openExternal("https://github.com/peteb4ker/romper/")
+              }
               type="button"
             >
               <svg
@@ -123,8 +130,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
 
             <div className="text-xs text-gray-600 dark:text-gray-400 space-y-2">
               <p>
-                Romper is an{" "}
-                <span className="font-semibold">open-source</span>{" "}
+                Romper is an <span className="font-semibold">open-source</span>{" "}
                 Electron app for managing Squarp Rample SD cards.
               </p>
               <p>Feedback, bug reports, and contributions are welcome!</p>

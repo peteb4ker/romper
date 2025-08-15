@@ -19,6 +19,10 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
   const version =
     (import.meta.env ? import.meta.env.VITE_APP_VERSION : undefined) ?? "dev";
   const currentYear = new Date().getFullYear();
+  
+  // Minimal constants to reduce internal duplication
+  const headingStyles = "text-gray-900 dark:text-white";
+  const borderStyles = "border-gray-200 dark:border-slate-700";
 
   // Handle escape key
   useEffect(() => {
@@ -58,9 +62,9 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
     >
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+        <div className={`flex items-center justify-between p-6 border-b ${borderStyles}`}>
           <h2
-            className="text-xl font-semibold text-gray-900 dark:text-white"
+            className={`text-xl font-semibold ${headingStyles}`}
             id="about-title"
           >
             About Romper
@@ -79,7 +83,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
         <div className="p-6 overflow-y-auto">
           <div className="text-center space-y-4">
             <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className={`text-2xl font-bold ${headingStyles}`}>
                 Romper
               </h3>
               <p className="text-lg text-gray-600 dark:text-gray-300">
@@ -127,7 +131,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
               GitHub Repository
             </button>
 
-            <hr className="border-gray-200 dark:border-slate-700" />
+            <hr className={borderStyles} />
 
             <div className="text-xs text-gray-600 dark:text-gray-400 space-y-2">
               <p>

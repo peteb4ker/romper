@@ -63,7 +63,20 @@ jobs:
       - name: Package application (Electron)
         run: npm run make
 
-      - name: Debug artifact structure
+      - name: Debug artifact structure (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          echo "=== Project root contents ==="
+          Get-ChildItem -Force
+          echo "=== Looking for out directory ==="
+          Get-ChildItem -Recurse -Directory -Name "out" -ErrorAction SilentlyContinue
+          echo "=== Looking for make directory ==="
+          Get-ChildItem -Recurse -Directory -Name "make" -ErrorAction SilentlyContinue
+          echo "=== All files with 'romper' or app name ==="
+          Get-ChildItem -Recurse -Name "*romper*", "*Romper*" -ErrorAction SilentlyContinue | Select-Object -First 20
+
+      - name: Debug artifact structure (Unix)
+        if: matrix.os != 'windows-latest'
         run: |
           echo "=== Project root contents ==="
           ls -la

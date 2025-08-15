@@ -32,7 +32,7 @@ interface KitBrowserProps {
 
 const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
   (props, ref) => {
-    const { onMessage, setLocalStorePath } = props;
+    const { onMessage, onRefreshKits, setLocalStorePath } = props;
     const kitGridRef = useRef<KitGridHandle>(null);
 
     // Filter management hook
@@ -93,7 +93,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     } = dialogs;
 
     // Sync functionality hook
-    const sync = useKitSync({ onMessage });
+    const sync = useKitSync({ onMessage, onRefreshKits });
     const {
       currentChangeSummary,
       currentSyncKit,

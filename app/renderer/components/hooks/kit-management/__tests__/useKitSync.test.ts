@@ -23,9 +23,11 @@ import { useKitSync } from "../useKitSync";
 
 describe("useKitSync", () => {
   const mockOnMessage = vi.fn();
+  const mockOnRefreshKits = vi.fn();
 
   const defaultProps = {
     onMessage: mockOnMessage,
+    onRefreshKits: mockOnRefreshKits,
   };
 
   beforeEach(() => {
@@ -103,6 +105,7 @@ describe("useKitSync", () => {
         "success",
         3000,
       );
+      expect(mockOnRefreshKits).toHaveBeenCalled();
     });
 
     it("handles sync failure", async () => {
@@ -141,6 +144,86 @@ describe("useKitSync", () => {
       });
 
       expect(mockStartSync).not.toHaveBeenCalled();
+    });
+
+    it("calls onRefreshKits after successful sync to update kit browser state", async () => {
+      const mockChangeSummary = { totalChanges: 3 };
+      mockGenerateChangeSummary.mockResolvedValue(mockChangeSummary);
+      mockStartSync.mockResolvedValue(true);
+
+      const { result } = renderHook(() => useKitSync(defaultProps));
+
+      // Set up the state as if sync was initiated
+      await act(async () => {
+        await result.current.handleSyncToSdCard();
+      });
+
+      await act(async () => {
+        await result.current.handleConfirmSync({
+          sdCardPath: "/path/to/sd",
+          wipeSdCard: false,
+        });
+      });
+
+      // Verify refresh is called to update kit modification states
+      expect(mockOnRefreshKits).toHaveBeenCalledTimes(1);
+      expect(mockOnMessage).toHaveBeenCalledWith(
+        "All kits synced successfully to /path/to/sd!",
+        "success",
+        3000,
+      );
+    });
+
+    it("does not call onRefreshKits when sync fails", async () => {
+      const mockChangeSummary = { totalChanges: 3 };
+      mockGenerateChangeSummary.mockResolvedValue(mockChangeSummary);
+      mockStartSync.mockResolvedValue(false);
+
+      const { result } = renderHook(() => useKitSync(defaultProps));
+
+      await act(async () => {
+        await result.current.handleSyncToSdCard();
+      });
+
+      await act(async () => {
+        await result.current.handleConfirmSync({
+          sdCardPath: "/path/to/sd",
+          wipeSdCard: false,
+        });
+      });
+
+      // Verify refresh is NOT called when sync fails
+      expect(mockOnRefreshKits).not.toHaveBeenCalled();
+    });
+
+    it("handles missing onRefreshKits gracefully", async () => {
+      const propsWithoutRefresh = {
+        onMessage: mockOnMessage,
+        // onRefreshKits not provided
+      };
+
+      mockStartSync.mockResolvedValue(true);
+
+      const { result } = renderHook(() => useKitSync(propsWithoutRefresh));
+
+      await act(async () => {
+        await result.current.handleSyncToSdCard();
+      });
+
+      await act(async () => {
+        await result.current.handleConfirmSync({
+          sdCardPath: "/path/to/sd",
+          wipeSdCard: false,
+        });
+      });
+
+      // Should not throw error when onRefreshKits is not provided
+      expect(result.current.showSyncDialog).toBe(false);
+      expect(mockOnMessage).toHaveBeenCalledWith(
+        "All kits synced successfully to /path/to/sd!",
+        "success",
+        3000,
+      );
     });
   });
 

@@ -136,9 +136,18 @@ async function main() {
         const description = commitMessage.slice(type.length).trim();
         const maxDescLength = 60 - type.length;
         
-        if (maxDescLength > 0 && description.length > 0) {
+        if (maxDescLength > 0) {
           const truncatedDesc = description.slice(0, maxDescLength);
-          prTitle = type + (/\s+\S*$/.test(truncatedDesc) ? truncatedDesc.replace(/\s+\S*$/, '') : truncatedDesc).trim();
+          const finalDesc = (/\s+\S*$/.test(truncatedDesc) ? truncatedDesc.replace(/\s+\S*$/, '') : truncatedDesc).trim();
+          
+          // Check if we have a meaningful description after truncation (minimum 3 chars)
+          if (finalDesc.length >= 3) {
+            prTitle = type + finalDesc;
+          } else {
+            // Fallback: just truncate the commit message as in the "no type prefix" branch
+            const truncated = commitMessage.slice(0, 60);
+            prTitle = (/\s+\S*$/.test(truncated) ? truncated.replace(/\s+\S*$/, '') : truncated).trim();
+          }
         } else {
           // Fallback: just truncate the commit message as in the "no type prefix" branch
           const truncated = commitMessage.slice(0, 60);

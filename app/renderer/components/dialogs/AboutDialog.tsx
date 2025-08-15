@@ -14,14 +14,6 @@ interface AboutDialogProps {
   onClose: () => void;
 }
 
-declare global {
-  interface ImportMeta {
-    env: {
-      VITE_APP_VERSION?: string;
-    };
-  }
-}
-
 const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
   const version =
     (import.meta.env ? import.meta.env.VITE_APP_VERSION : undefined) ?? "dev";
@@ -57,7 +49,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
       onClick={handleBackdropClick}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
-          handleBackdropClick(e as any);
+          handleBackdropClick(e as unknown as React.MouseEvent<HTMLDivElement>);
         }
       }}
       role="dialog"

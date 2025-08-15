@@ -317,4 +317,10 @@ declare global {
       getDroppedFilePath: (file: File) => Promise<string>;
     };
   }
+
+  interface ImportMeta {
+    env: {
+      VITE_APP_VERSION?: string;
+    };
+  }
 }

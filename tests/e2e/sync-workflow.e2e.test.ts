@@ -117,7 +117,7 @@ test.describe("Sync Workflow E2E Tests", () => {
       await window.waitForTimeout(3000);
 
       // Verify the sync dialog shows summary with kit/file counts
-      const summarySection = await window.locator("text=kits with");
+      const summarySection = await window.locator("text=kits,");
       await expect(summarySection).toBeVisible();
 
       // Test fixtures have no sample files, so expect 0 files
@@ -234,7 +234,7 @@ test.describe("Sync Workflow E2E Tests", () => {
       await window.waitForTimeout(3000);
 
       // Verify the sync dialog shows summary with kit/file counts
-      const summarySection = await window.locator("text=kits with");
+      const summarySection = await window.locator("text=kits,");
       await expect(summarySection).toBeVisible();
 
       // Test fixtures have no sample files, so expect 0 files

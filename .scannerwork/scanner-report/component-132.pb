@@ -1,0 +1,1 @@
+„ 2tsX0hrapp/renderer/config.ts

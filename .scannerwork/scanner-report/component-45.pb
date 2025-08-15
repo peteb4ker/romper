@@ -1,0 +1,1 @@
+- 2tsX$hr1app/renderer/components/StepSequencerControls.tsx

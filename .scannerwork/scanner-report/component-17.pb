@@ -1,0 +1,1 @@
+ 2tsXLhr/app/renderer/components/KitDetailsContainer.tsx

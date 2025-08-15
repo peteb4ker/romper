@@ -1,0 +1,1 @@
+ 2tsXGhrapp/renderer/main.tsx

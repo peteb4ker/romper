@@ -1,0 +1,1 @@
++ 2tsX2hr*app/renderer/components/KitViewDialogs.tsx

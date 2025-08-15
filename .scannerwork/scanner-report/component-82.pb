@@ -1,0 +1,1 @@
+R 2tsXhr5app/renderer/components/hooks/useValidationResults.ts

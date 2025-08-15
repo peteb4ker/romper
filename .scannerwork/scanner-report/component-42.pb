@@ -1,0 +1,1 @@
+* 2tsXìhr*app/renderer/components/SampleWaveform.tsx

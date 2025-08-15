@@ -1,0 +1,1 @@
+< 2tsX"hr7app/renderer/components/hooks/shared/useBankScanning.ts

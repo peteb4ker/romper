@@ -1,0 +1,1 @@
+Î (2tsXÌhr+electron/main/__tests__/ipcHandlers.test.ts

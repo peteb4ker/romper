@@ -1,0 +1,1 @@
+z 2tsXûhr;app/renderer/components/dialogs/InvalidLocalStoreDialog.tsx

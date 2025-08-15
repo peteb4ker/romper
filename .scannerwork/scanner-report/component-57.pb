@@ -1,0 +1,1 @@
+9 2tsX6hr6app/renderer/components/hooks/shared/useStepPattern.ts

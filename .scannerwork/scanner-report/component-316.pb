@@ -1,0 +1,1 @@
+¼ (2tsX$hr%app/renderer/__tests__/config.test.ts

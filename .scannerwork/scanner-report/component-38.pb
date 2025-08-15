@@ -1,0 +1,1 @@
+& 2tsXhr2app/renderer/components/utils/scannerOperations.ts

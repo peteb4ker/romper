@@ -1,0 +1,1 @@
+· (2tsX†hr4app/renderer/utils/__tests__/settingsManager.test.ts

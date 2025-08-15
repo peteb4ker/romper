@@ -1,0 +1,1 @@
+' 2tsXÎhr1app/renderer/components/utils/databaseScanning.ts

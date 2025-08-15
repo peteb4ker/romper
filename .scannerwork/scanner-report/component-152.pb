@@ -1,0 +1,1 @@
+˜ 2tsX8hr$electron/main/db/stepPatternUtils.ts

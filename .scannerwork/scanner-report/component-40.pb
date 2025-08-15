@@ -1,0 +1,1 @@
+( 2tsXUhr2app/renderer/components/shared/KitIconRenderer.tsx

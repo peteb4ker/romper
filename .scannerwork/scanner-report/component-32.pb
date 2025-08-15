@@ -1,0 +1,1 @@
+  2tsXPhr/app/renderer/components/utils/scanners/types.ts

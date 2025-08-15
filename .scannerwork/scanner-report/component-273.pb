@@ -1,0 +1,1 @@
+‘ (2tsX‡hrTapp/renderer/components/hooks/sample-management/__tests__/useStereoHandling.test.tsx

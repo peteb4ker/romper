@@ -1,0 +1,1 @@
+F 2tsXŒhrBapp/renderer/components/hooks/shared/useGlobalKeyboardShortcuts.ts

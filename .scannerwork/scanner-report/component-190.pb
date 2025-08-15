@@ -1,0 +1,1 @@
+¾ (2tsXhrCapp/renderer/components/wizard/__tests__/WizardProgressBar.test.tsx

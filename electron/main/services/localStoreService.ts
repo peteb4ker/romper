@@ -80,7 +80,9 @@ export class LocalStoreService {
 
     // If environment variable is set but invalid, this is a critical error
     // Exception: In test environment, treat as regular invalid local store instead of critical error
-    const isTestEnvironment = process.env.NODE_ENV === "test";
+    const isTestEnvironment =
+      process.env.NODE_ENV === "test" ||
+      process.env.ROMPER_TEST_MODE === "true";
     const isCriticalEnvironmentError =
       isEnvironmentOverride && !validationResult.isValid && !isTestEnvironment;
 

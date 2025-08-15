@@ -1,0 +1,1 @@
+ 2tsX4hr1app/renderer/components/LocalStoreWizardModal.tsx

@@ -1,0 +1,1 @@
+$ 2tsX@hr/app/renderer/components/utils/bankOperations.ts

@@ -1,0 +1,1 @@
+ˆ (2tsX¸hrKapp/renderer/components/hooks/shared/__tests__/useValidationResults.test.ts

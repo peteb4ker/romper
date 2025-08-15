@@ -48,7 +48,8 @@ const KitsView: React.FC = () => {
 
   // C1-C6: Local store configured but invalid - show modal blocking error dialog
   // Exception: In test environment with env override, don't block - let tests proceed
-  const isTestEnvironment = process.env.NODE_ENV === "test";
+  const isTestEnvironment =
+    process.env.NODE_ENV === "test" || process.env.ROMPER_TEST_MODE === "true";
   const hasInvalidLocalStore =
     isInitialized &&
     localStoreStatus !== null &&

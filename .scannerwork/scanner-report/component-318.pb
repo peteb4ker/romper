@@ -1,0 +1,1 @@
+¾ (2tsX!hr/app/renderer/views/__tests__/AboutView.test.tsx

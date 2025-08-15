@@ -42,11 +42,24 @@ tags: ["category"]
 - **One requirement per line**: No complex conjunctions with "and/or/but"
 - **Compliance check**: flag instructions longer than one sentence
 
-#### Brevity Limits
+#### Brevity Limits (Agent Documentation Only)
+**Token limits apply ONLY to `.agent/` directory files:**
 - **Checklist items**: ≤ 20 tokens maximum
 - **Procedural steps**: ≤ 50 tokens maximum  
 - **Summaries**: ≤ 75 tokens maximum
 - **Compliance check**: measure token counts; error if exceeded
+
+#### Brevity Scope
+**Human documentation stays verbose** - no token limits:
+- **README files**: Front page of repo, comprehensive for humans
+- **All `docs/` files**: Human-readable documentation 
+- **Task lists**: `tasks/*.md` files preserve detailed tracking
+- **PRD documents**: Product requirements maintain full detail
+- **CONTRIBUTING.md**: Contribution guidelines stay detailed
+
+**Only `.agent/` files enforce brevity** for machine parsing efficiency
+
+**Compliance check**: skip brevity validation except for `.agent/` directory
 
 #### Canonicalization
 - **No duplicate instructions**: Each rule appears once only

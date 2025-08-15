@@ -257,6 +257,11 @@ class DocumentationTracer {
   }
 
   async validateBrevityLimits(content, filePath) {
+    // Brevity validation ONLY for .agent/ directory files
+    if (!this.isAgentDocumentation(filePath)) {
+      return;
+    }
+    
     const lines = content.split('\n');
     
     for (let i = 0; i < lines.length; i++) {
@@ -391,6 +396,11 @@ class DocumentationTracer {
     const union = new Set([...words1, ...words2]);
     
     return intersection.size / union.size;
+  }
+
+  isAgentDocumentation(filePath) {
+    // Brevity enforcement ONLY for agent documentation
+    return filePath.startsWith('.agent/');
   }
 
   async generateReports() {

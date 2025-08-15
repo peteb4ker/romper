@@ -43,7 +43,7 @@ function main() {
     console.error("Available worktrees:");
     try {
       runCommand("npm run worktree:list");
-    } catch (error) {
+    } catch (_error) {
       console.error("No worktrees found");
     }
     process.exit(1);
@@ -55,7 +55,7 @@ function main() {
   if (!force) {
     try {
       // Check if branch has unmerged changes
-      const result = runCommand(
+      const _result = runCommand(
         `git branch --no-merged main | grep -q ${branchName}`,
         { silent: true },
       );
@@ -65,7 +65,7 @@ function main() {
       console.log("");
       console.log("Or merge/PR the branch first, then remove the worktree.");
       process.exit(1);
-    } catch (error) {
+    } catch (_error) {
       // Branch is merged or doesn't exist, safe to remove
     }
   }
@@ -78,7 +78,7 @@ function main() {
     try {
       console.log(`🌿 Deleting branch: ${branchName}`);
       runCommand(`git branch -D ${branchName}`, { silent: true });
-    } catch (error) {
+    } catch (_error) {
       // Branch might not exist or might be protected, that's okay
       console.log(
         `ℹ️  Branch ${branchName} not deleted (might not exist or be protected)`,
@@ -88,12 +88,12 @@ function main() {
     // Clean up any orphaned worktree references
     try {
       runCommand("git worktree prune", { silent: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore prune errors
     }
 
     console.log("✅ Worktree removed successfully!");
-  } catch (error) {
+  } catch (_error) {
     console.error("❌ Failed to remove worktree");
     console.error("You may need to force remove with:");
     console.error(`  git worktree remove --force ${worktreePath}`);

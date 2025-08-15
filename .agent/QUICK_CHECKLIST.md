@@ -7,7 +7,7 @@
 ### ✅ Location & Workflow
 - [ ] **Am I in a worktree?** `pwd` must show `/worktrees/` directory
 - [ ] **Is terminal named correctly?** Should be `branch-name` (then `branch-name-pr-123`)
-- [ ] **Latest main pulled?** Required before creating worktrees for parallel agents
+- [ ] **Main branch synchronized with origin?** (Run `git fetch origin main` and ensure your local main matches `origin/main` before creating worktrees for parallel agents)
 - [ ] **Working on ONE task only?** Focus on single task from tasks-PRD.md
 
 ### ✅ Git Workflow Rules
@@ -31,7 +31,7 @@
 ## Quick Commands
 ```bash
 # Verify location
-pwd  # Should be in /worktrees/
+pwd  # Path should contain 'worktrees' (e.g., .../worktrees/branch-name)
 
 # Check branch
 git branch  # Should NOT be main

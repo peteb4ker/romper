@@ -8,7 +8,7 @@ import type {
 
 import * as schema from "@romper/shared/db/schema.js";
 // Basic CRUD operations for database entities
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 
 import { withDb } from "../utils/dbUtilities.js";
 import { performVoiceReindexing } from "./sampleManagementOps.js";
@@ -330,38 +330,27 @@ export function markKitsAsSynced(
       kitNames,
     );
 
-    let updatedCount = 0;
-    for (const kitName of kitNames) {
-      try {
-        const result = db
-          .update(kits)
-          .set({ modified_since_sync: false })
-          .where(eq(kits.name, kitName))
-          .run();
+    try {
+      // Use single SQL UPDATE with WHERE IN for better performance
+      const result = db
+        .update(kits)
+        .set({ modified_since_sync: false })
+        .where(inArray(kits.name, kitNames))
+        .run();
 
-        console.log(
-          `[markKitsAsSynced] Kit ${kitName}: updated ${result.changes} rows`,
-        );
+      console.log(
+        `[markKitsAsSynced] Successfully updated ${result.changes}/${kitNames.length} kits`,
+      );
 
-        if (result.changes > 0) {
-          updatedCount++;
-        } else {
-          console.warn(
-            `[markKitsAsSynced] Kit ${kitName} was not found or not updated`,
-          );
-        }
-      } catch (error) {
-        console.error(
-          `[markKitsAsSynced] Failed to update kit ${kitName}:`,
-          error,
+      if (result.changes !== kitNames.length) {
+        console.warn(
+          `[markKitsAsSynced] Expected to update ${kitNames.length} kits but updated ${result.changes}`,
         );
-        throw error; // Re-throw to fail the entire operation
       }
+    } catch (error) {
+      console.error(`[markKitsAsSynced] Failed to update kits:`, error);
+      throw error; // Re-throw to fail the entire operation
     }
-
-    console.log(
-      `[markKitsAsSynced] Successfully updated ${updatedCount}/${kitNames.length} kits`,
-    );
   });
 }
 

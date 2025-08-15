@@ -9,6 +9,7 @@ import {
 import React, { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { MAX_SLOTS_PER_VOICE } from "../hooks/voice-panels/useVoicePanelSlots";
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 import { MockSettingsProvider } from "./MockSettingsProvider";
@@ -136,12 +137,12 @@ describe("KitVoicePanels", () => {
 
   it("renders global slot numbers on the left side only", () => {
     render(<MultiVoicePanelsTestWrapper />);
-    // Check that global slot numbers 1-12 are rendered
+    // Check that global slot numbers 1-MAX_SLOTS_PER_VOICE are rendered
     expect(screen.getByTestId("global-slot-number-0")).toHaveTextContent("1.");
     expect(screen.getByTestId("global-slot-number-1")).toHaveTextContent("2.");
-    expect(screen.getByTestId("global-slot-number-11")).toHaveTextContent(
-      "12.",
-    );
+    expect(
+      screen.getByTestId(`global-slot-number-${MAX_SLOTS_PER_VOICE - 1}`),
+    ).toHaveTextContent(`${MAX_SLOTS_PER_VOICE}.`);
 
     // Verify individual voice panels do not render their own slot numbers
     expect(screen.queryByTestId("slot-number-1-0")).not.toBeInTheDocument();
@@ -172,7 +173,7 @@ describe("KitVoicePanels", () => {
     expect(screen.queryByTestId("drop-zone-voice-2")).not.toBeInTheDocument();
   });
 
-  it("maintains fixed 12-slot height for all voice panels", () => {
+  it(`maintains fixed ${MAX_SLOTS_PER_VOICE}-slot height for all voice panels`, () => {
     const voices = [
       { samples: ["sample1.wav"], voice: 1, voiceName: "Voice1" }, // 1 sample
       {
@@ -188,27 +189,27 @@ describe("KitVoicePanels", () => {
         voiceName: "Voice3",
       }, // 6 samples
       {
-        samples: Array(12)
+        samples: Array(MAX_SLOTS_PER_VOICE)
           .fill()
           .map((_, i) => `sample${i}.wav`),
         voice: 4,
         voiceName: "Voice4",
-      }, // 12 samples (full)
+      }, // MAX_SLOTS_PER_VOICE samples (full)
     ];
 
     render(<MultiVoicePanelsTestWrapper isEditable={true} voices={voices} />);
 
-    // Each voice panel should have exactly 12 rendered slots (samples + empty slots + drop zone)
+    // Each voice panel should have exactly MAX_SLOTS_PER_VOICE rendered slots (samples + empty slots + drop zone)
     const voice1List = screen.getByTestId("sample-list-voice-1");
     const voice2List = screen.getByTestId("sample-list-voice-2");
     const voice3List = screen.getByTestId("sample-list-voice-3");
     const voice4List = screen.getByTestId("sample-list-voice-4");
 
-    // All should have exactly 12 list items (slots)
-    expect(voice1List.children).toHaveLength(12);
-    expect(voice2List.children).toHaveLength(12);
-    expect(voice3List.children).toHaveLength(12);
-    expect(voice4List.children).toHaveLength(12);
+    // All should have exactly MAX_SLOTS_PER_VOICE list items (slots)
+    expect(voice1List.children).toHaveLength(MAX_SLOTS_PER_VOICE);
+    expect(voice2List.children).toHaveLength(MAX_SLOTS_PER_VOICE);
+    expect(voice3List.children).toHaveLength(MAX_SLOTS_PER_VOICE);
+    expect(voice4List.children).toHaveLength(MAX_SLOTS_PER_VOICE);
 
     // Voice 1-3 should have drop zones (not full)
     expect(screen.getByTestId("drop-zone-voice-1")).toBeInTheDocument();

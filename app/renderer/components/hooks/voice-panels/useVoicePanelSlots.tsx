@@ -4,6 +4,9 @@ import type { SampleData } from "../../kitTypes";
 
 import SampleWaveform from "../../SampleWaveform";
 
+// Maximum number of sample slots per voice (Squarp Rample limit)
+export const MAX_SLOTS_PER_VOICE = 12;
+
 export interface UseVoicePanelSlotsOptions {
   dragAndDropHook: {
     getSampleDragHandlers: (slotNumber: number, sampleName: string) => any;
@@ -300,8 +303,8 @@ export function useVoicePanelSlots({
     const { nextAvailableSlot } = slotRenderingHook.calculateRenderSlots();
     const sampleCount = samples.filter((s) => s).length;
 
-    // Only show drop zone if editable and voice isn't full (less than 12 samples)
-    if (!isEditable || sampleCount >= 12) {
+    // Only show drop zone if editable and voice isn't full
+    if (!isEditable || sampleCount >= MAX_SLOTS_PER_VOICE) {
       return null;
     }
 
@@ -369,18 +372,22 @@ export function useVoicePanelSlots({
     [voice],
   );
 
-  // Main render function for all sample slots (always render exactly 12 for consistent height)
+  // Main render function for all sample slots (always render exactly MAX_SLOTS_PER_VOICE for consistent height)
   const renderSampleSlots = React.useCallback(() => {
     const renderedSlots = [];
     const sampleCount = samples.filter((s) => s).length;
 
-    // Always render exactly 12 slot positions
-    for (let i = 0; i < 12; i++) {
+    // Always render exactly MAX_SLOTS_PER_VOICE slot positions
+    for (let i = 0; i < MAX_SLOTS_PER_VOICE; i++) {
       const sample = samples[i];
       if (sample) {
         // Render filled slot
         renderedSlots.push(renderSampleSlot(i, sample));
-      } else if (i === sampleCount && isEditable && sampleCount < 12) {
+      } else if (
+        i === sampleCount &&
+        isEditable &&
+        sampleCount < MAX_SLOTS_PER_VOICE
+      ) {
         // Render the single drop zone at the first empty position (append-only)
         const dropZone = renderSingleDropZone();
         if (dropZone) {

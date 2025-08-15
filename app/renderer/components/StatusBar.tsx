@@ -5,12 +5,10 @@ import { useSettings } from "../utils/SettingsContext";
 
 interface StatusBarProps {
   progress?: null | number; // 0-100, or null for none
-  status?: string;
 }
 
 const StatusBar: React.FC<StatusBarProps> = ({
   progress = null,
-  status = "Ready",
 }) => {
   const { isDarkMode, localStorePath, setThemeMode, themeMode } = useSettings();
 
@@ -40,9 +38,6 @@ const StatusBar: React.FC<StatusBarProps> = ({
           <span className="font-mono">
             {localStorePath || "Not configured"}
           </span>
-        </span>
-        <span className="ml-4 font-semibold" data-testid="status-text">
-          {status}
         </span>
         {progress !== null && (
           <div

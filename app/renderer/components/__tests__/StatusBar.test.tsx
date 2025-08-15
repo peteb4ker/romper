@@ -40,20 +40,9 @@ describe("StatusBar", () => {
   describe("rendering", () => {
     it("should render without crashing", () => {
       render(<StatusBar />);
-      expect(screen.getByText("Ready")).toBeInTheDocument();
+      expect(screen.getByText("/test/path")).toBeInTheDocument();
     });
 
-    it("should display default status when no status provided", () => {
-      render(<StatusBar />);
-      expect(screen.getByTestId("status-text")).toHaveTextContent("Ready");
-    });
-
-    it("should display custom status", () => {
-      render(<StatusBar status="Processing..." />);
-      expect(screen.getByTestId("status-text")).toHaveTextContent(
-        "Processing...",
-      );
-    });
 
     it("should display local store path", () => {
       render(<StatusBar />);
@@ -249,14 +238,5 @@ describe("StatusBar", () => {
       expect(screen.queryByTestId("progress-bar")).not.toBeInTheDocument();
     });
 
-    it("should handle empty status string", () => {
-      render(<StatusBar status="" />);
-      expect(screen.getByTestId("status-text")).toHaveTextContent("");
-    });
-
-    it("should handle null status", () => {
-      render(<StatusBar status={null as any} />);
-      expect(screen.getByTestId("status-text")).toHaveTextContent("");
-    });
   });
 });

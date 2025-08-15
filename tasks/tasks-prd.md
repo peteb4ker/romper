@@ -358,6 +358,13 @@ _Last updated: 2025-07-26_
   - [ ] 25.2.4 Distribution: Prepare release artifacts, code signing
   - [ ] 25.2.5 Release Notes: Document features, bug fixes, known issues
 
+## 26.0 Bug Fix: Footer About Link
+
+- [x] 26.1 Fix About link functionality:
+  - [x] 26.1.1 Investigate why the 'about' link in the footer does not show the about modal
+  - [x] 26.1.2 Connect the footer about link click handler to properly open the about modal
+  - [x] 26.1.3 Test that clicking the about link in the footer opens the about modal correctly
+
 ## 15.0 Administrative: Change Local Store Directory
 
 - [x] 15.1 Add a "Change Local Store Directory" item to the Tools menu

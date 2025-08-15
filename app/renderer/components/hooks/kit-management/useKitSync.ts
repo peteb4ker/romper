@@ -4,13 +4,14 @@ import { useSyncUpdate } from "../shared/useSyncUpdate";
 
 export interface UseKitSyncOptions {
   onMessage?: (text: string, type?: string, duration?: number) => void;
+  onRefreshKits?: () => void;
 }
 
 /**
  * Hook for managing kit sync functionality including dialog state and operations
  * Extracted from KitBrowser to reduce component complexity
  */
-export function useKitSync({ onMessage }: UseKitSyncOptions) {
+export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [currentSyncKit, setCurrentSyncKit] = useState<null | string>(null);
   const [currentChangeSummary, setCurrentChangeSummary] = useState<any>(null);
@@ -88,11 +89,15 @@ export function useKitSync({ onMessage }: UseKitSyncOptions) {
             3000,
           );
         }
+        // Refresh kit browser to show updated modification states
+        if (onRefreshKits) {
+          onRefreshKits();
+        }
       } else if (onMessage && syncError) {
         onMessage(`Sync failed: ${syncError}`, "error");
       }
     },
-    [startSync, onMessage, syncError],
+    [startSync, onMessage, onRefreshKits, syncError],
   );
 
   // Handler to close sync dialog

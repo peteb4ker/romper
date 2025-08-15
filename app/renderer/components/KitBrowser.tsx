@@ -93,7 +93,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     } = dialogs;
 
     // Sync functionality hook
-    const sync = useKitSync({ onMessage });
+    const sync = useKitSync({ onMessage, onRefreshKits: props.onRefreshKits });
     const {
       currentChangeSummary,
       currentSyncKit,

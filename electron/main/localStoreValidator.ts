@@ -4,6 +4,7 @@ import type {
 } from "@romper/shared/db/schema.js";
 
 import fs from "fs";
+import os from "os";
 import path from "path";
 
 import {
@@ -145,8 +146,11 @@ export function validateLocalStoreBasic(
       // C1: Path doesn't exist at all (never existed)
       // C2: Path existed before but was deleted/moved
       // C3: Path is temp directory that was cleaned up
+      const tempDir = path.resolve(os.tmpdir());
+      const absLocalStorePath = path.resolve(localStorePath);
       const isTempDir =
-        localStorePath.includes("/tmp/") || localStorePath.includes("temp");
+        absLocalStorePath === tempDir ||
+        absLocalStorePath.startsWith(tempDir + path.sep);
       const errorMsg = isTempDir
         ? `Local store path does not exist (temporary directory "${localStorePath}" was cleaned up)`
         : "Local store path does not exist";

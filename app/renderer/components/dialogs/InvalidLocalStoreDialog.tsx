@@ -106,6 +106,8 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
       );
 
       // Give user a moment to see the success message before reload
+      // Note: We use window.location.reload() here as it's the most reliable way
+      // to restart the entire React app when the local store path changes
       setTimeout(() => {
         window.location.reload();
       }, 1000);

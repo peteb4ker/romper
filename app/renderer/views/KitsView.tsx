@@ -87,7 +87,7 @@ const KitsView: React.FC = () => {
   } = useKitDataManager({
     isInitialized,
     localStorePath,
-    needsLocalStoreSetup: Boolean(needsLocalStoreSetup || hasInvalidLocalStore),
+    needsLocalStoreSetup: needsLocalStoreSetup || hasInvalidLocalStore,
   });
 
   // Kit navigation
@@ -125,7 +125,7 @@ const KitsView: React.FC = () => {
   // Startup actions
   useStartupActions({
     localStorePath,
-    needsLocalStoreSetup: Boolean(needsLocalStoreSetup || hasInvalidLocalStore),
+    needsLocalStoreSetup: needsLocalStoreSetup || hasInvalidLocalStore,
   });
 
   // Auto-trigger wizard on startup if local store is not configured

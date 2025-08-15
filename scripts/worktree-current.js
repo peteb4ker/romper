@@ -36,7 +36,7 @@ function main() {
 
     // Check if we're in a worktree
     try {
-      const worktreeInfo = runCommand("git rev-parse --show-toplevel", {
+      const _worktreeInfo = runCommand("git rev-parse --show-toplevel", {
         silent: true,
       }).trim();
       const gitCommonDir = runCommand("git rev-parse --git-common-dir", {
@@ -52,7 +52,7 @@ function main() {
       } else {
         console.log("📦 Status: Main repository");
       }
-    } catch (error) {
+    } catch (_error) {
       console.log("📦 Status: Unknown");
     }
 
@@ -62,7 +62,7 @@ function main() {
     console.log("-----------");
     try {
       runCommand("git status --porcelain", { silent: false });
-    } catch (error) {
+    } catch (_error) {
       console.log("No git status available");
     }
 
@@ -72,10 +72,10 @@ function main() {
     console.log("--------------");
     try {
       runCommand("git worktree list");
-    } catch (error) {
+    } catch (_error) {
       console.log("No worktrees found");
     }
-  } catch (error) {
+  } catch (_error) {
     console.error("❌ Failed to get worktree information");
     process.exit(1);
   }

@@ -122,8 +122,41 @@ async function main() {
   // Create PR
   console.log("🔄 Creating pull request...");
   try {
+    // Extract a short PR title from commit message (max 50-60 chars)
+    // Try to detect type prefix (feat:, fix:, etc.) and preserve it
+    const typeMatch = commitMessage.match(
+      /^(feat|fix|docs|style|refactor|test|chore|perf|build|ci):\s*/i,
+    );
+    let prTitle = commitMessage;
+
+    if (typeMatch) {
+      // Has a type prefix, ensure the whole title is under 60 chars
+      if (commitMessage.length > 60) {
+        const type = typeMatch[0];
+        const description = commitMessage.slice(type.length).trim();
+        const maxDescLength = 60 - type.length;
+
+        if (maxDescLength > 0) {
+          const descTrunc = description.slice(0, maxDescLength).replace(/\s+\S*$/, '').trim();
+          prTitle = type + descTrunc;
+        } else {
+          // Fallback: just truncate the commit message as in the "no type prefix" branch
+          prTitle = commitMessage.slice(0, 60).replace(/\s+\S*$/, '').trim();
+        }
+      }
+    } else {
+      // No type prefix, just truncate to 50 chars
+      if (commitMessage.length > 50) {
+        const truncated = commitMessage.slice(0, 50);
+        prTitle = (
+          /\s+\S*$/.test(truncated)
+            ? truncated.replace(/\s+\S*$/, "")
+            : truncated
+        ).trim();
+      }
+    }
     const prBody = `## Summary
-- Implement ${commitMessage.toLowerCase()}
+${commitMessage}
 
 ## Test plan
 - [x] All pre-commit checks pass
@@ -131,7 +164,7 @@ async function main() {
 - [x] Tests pass
 - [ ] Manual testing completed`;
 
-    const prCommand = `gh pr create --title "${commitMessage}" --body "${prBody}"`;
+    const prCommand = `gh pr create --title "${prTitle}" --body "${prBody}"`;
     const prResult = runCommand(prCommand, { silent: true });
 
     // Extract PR URL from output

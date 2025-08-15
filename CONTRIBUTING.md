@@ -9,9 +9,11 @@ tags: ["contributing", "development", "documentation"]
 
 Thank you for your interest in contributing to Romper Sample Manager! This guide covers development standards for both human contributors and AI agents.
 
-## Development Workflow (MANDATORY)
+## Development Workflow
 
-ALL development work MUST use the worktree workflow:
+### Agent Workflow (MANDATORY)
+
+ALL agent development work MUST use the worktree workflow:
 
 ```bash
 # 1. Create isolated worktree
@@ -27,7 +29,11 @@ npm run commit "description"
 npm run worktree:remove <task-name>
 ```
 
-**Compliance check**: verify commits originate from worktree branches only
+**Compliance check**: verify agent commits originate from worktree branches only
+
+### Human Workflow (RECOMMENDED)
+
+Human contributors are encouraged to use the worktree workflow but may use standard Git workflows if preferred.
 
 ## Code Quality Standards
 

@@ -5,13 +5,6 @@ last_reviewed: "2025-08-15"
 tags: ["developer"]
 ---
 
----
-title: "MCP Analysis Command"
-owners: ["developer-team"]
-last_reviewed: "2025-08-15"
-tags: ["developer"]
----
-
 # MCP Analysis Command
 
 ## Overview

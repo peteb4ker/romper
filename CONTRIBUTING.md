@@ -13,7 +13,7 @@ Thank you for your interest in contributing to Romper Sample Manager! This guide
 
 ### Agent Workflow (MANDATORY)
 
-ALL agent development work MUST use the worktree workflow:
+ALL agent development work MUST use the worktree workflow to enable **concurrent multi-agent development**:
 
 ```bash
 # 1. Create isolated worktree
@@ -28,6 +28,8 @@ npm run commit "description"
 # 4. Clean up when done
 npm run worktree:remove <task-name>
 ```
+
+**Why worktrees**: Worktrees enable multiple agents to work simultaneously on different features without conflicts. Each agent operates in complete isolation while staying synchronized with the latest main branch changes.
 
 **Compliance check**: verify agent commits originate from worktree branches only
 
@@ -124,19 +126,19 @@ Thank you for contributing to Romper Sample Manager!
 
 ---
 
-## Documentation Standards (Agent Alignment)
+## Documentation Standards (Agent Alignment Only)
 
-These standards help keep AI agents aligned when reading and writing documentation.
+**Purpose**: Keep AI agents aligned when reading `.agent/` directory documentation. This is purely for agent coordination and **not a development requirement for humans**.
 
 ### For Human Contributors
 
-Write **comprehensive, verbose documentation**:
+Write **comprehensive, verbose documentation** as normal:
 - **README files**: Detailed front page for users
-- **Technical docs**: Full explanations in `docs/` directory
+- **Technical docs**: Full explanations in `docs/` directory  
 - **Task tracking**: Detailed progress in `tasks/` files
-- **No token limits** apply to human documentation
+- **No documentation compliance requirements** for human work
 
-### For AI Agents
+### For AI Agents Only
 
 **Token efficiency rules apply ONLY to `.agent/` directory:**
 - Checklist items: ≤ 20 tokens
@@ -145,7 +147,7 @@ Write **comprehensive, verbose documentation**:
 - One requirement per line
 - Use `**Compliance check**:` markers for verifiable requirements
 
-**Purpose**: Ensure agents can parse instructions clearly without affecting human documentation quality.
+**Scope**: These rules ensure agents stay aligned with project standards. Human contributors should ignore these restrictions and focus on comprehensive documentation.
 
 ### Universal Requirements
 

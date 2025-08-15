@@ -9,6 +9,7 @@ export interface BaseKitItemProps {
   kitData?: KitWithRelations | null;
   onDuplicate: () => void;
   onSelect: () => void;
+  onToggleFavorite?: (kitName: string) => void;
   sampleCounts?: [number, number, number, number];
 }
 

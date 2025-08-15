@@ -17,6 +17,7 @@ interface KitDetailsContainerProps {
   onNextKit: () => void;
   onPrevKit: () => void;
   onRequestSamplesReload: () => Promise<void>;
+  onToggleFavorite?: (kitName: string) => void;
   samples: VoiceSamples;
 }
 
@@ -36,6 +37,7 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
     onNextKit,
     onPrevKit,
     onRequestSamplesReload,
+    onToggleFavorite,
     samples,
   } = props;
 
@@ -70,6 +72,7 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
       onNextKit={onNextKit}
       onPrevKit={onPrevKit}
       onRequestSamplesReload={handleRequestSamplesReload}
+      onToggleFavorite={onToggleFavorite}
       samples={samples}
     />
   );

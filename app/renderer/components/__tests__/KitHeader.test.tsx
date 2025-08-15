@@ -234,4 +234,62 @@ describe("KitHeader", () => {
       expect(screen.getByTitle("Disable editable mode")).toBeInTheDocument();
     });
   });
+
+  describe("Favorite Toggle - Task 17.2", () => {
+    it("shows favorite star button when onToggleFavorite is provided", () => {
+      const kit = { alias: "My Kit", is_favorite: false } as Kit;
+      render(<KitHeader {...baseProps} kit={kit} onToggleFavorite={vi.fn()} />);
+
+      const favoriteButton = screen.getByTitle("Add to favorites");
+      expect(favoriteButton).toBeInTheDocument();
+      expect(favoriteButton.querySelector("svg")).toBeInTheDocument();
+    });
+
+    it("shows correct visual state when kit is not favorited", () => {
+      const kit = { alias: "My Kit", is_favorite: false } as Kit;
+      render(<KitHeader {...baseProps} kit={kit} onToggleFavorite={vi.fn()} />);
+
+      const favoriteButton = screen.getByTitle("Add to favorites");
+      expect(favoriteButton).toHaveClass("text-gray-400");
+      const star = favoriteButton.querySelector("svg");
+      expect(star).toHaveClass("opacity-40");
+    });
+
+    it("shows correct visual state when kit is favorited", () => {
+      const kit = { alias: "My Kit", is_favorite: true } as Kit;
+      render(<KitHeader {...baseProps} kit={kit} onToggleFavorite={vi.fn()} />);
+
+      const favoriteButton = screen.getByTitle("Remove from favorites");
+      expect(favoriteButton).toHaveClass("text-yellow-500");
+      const star = favoriteButton.querySelector("svg");
+      expect(star).not.toHaveClass("opacity-40");
+    });
+
+    it("calls onToggleFavorite with kit name when clicked", () => {
+      const onToggleFavorite = vi.fn();
+      const kit = { alias: "My Kit", is_favorite: false } as Kit;
+      render(
+        <KitHeader
+          {...baseProps}
+          kit={kit}
+          kitName="A1"
+          onToggleFavorite={onToggleFavorite}
+        />,
+      );
+
+      const favoriteButton = screen.getByTitle("Add to favorites");
+      fireEvent.click(favoriteButton);
+      expect(onToggleFavorite).toHaveBeenCalledWith("A1");
+    });
+
+    it("does not show favorite button when onToggleFavorite is not provided", () => {
+      const kit = { alias: "My Kit", is_favorite: false } as Kit;
+      render(<KitHeader {...baseProps} kit={kit} />);
+
+      expect(screen.queryByTitle("Add to favorites")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTitle("Remove from favorites"),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

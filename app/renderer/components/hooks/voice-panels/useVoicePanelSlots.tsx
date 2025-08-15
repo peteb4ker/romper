@@ -295,76 +295,114 @@ export function useVoicePanelSlots({
     ],
   );
 
-  // Helper function to render an empty slot
+  // Helper function to render single drop zone per voice (append-only)
+  const renderSingleDropZone = React.useCallback(() => {
+    const { nextAvailableSlot } = slotRenderingHook.calculateRenderSlots();
+    const sampleCount = samples.filter((s) => s).length;
+
+    // Only show drop zone if editable and voice isn't full (less than 12 samples)
+    if (!isEditable || sampleCount >= 12) {
+      return null;
+    }
+
+    const {
+      dragOverClass,
+      dropHintTitle,
+      isDragOver,
+      isDropZone,
+      isStereoHighlight,
+      slotBaseClass,
+    } = slotRenderingHook.getSlotStyling(nextAvailableSlot, undefined);
+
+    return (
+      <li
+        aria-label={`Drop zone for voice ${voice}`}
+        className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass} border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500 min-h-[28px] mb-1`}
+        data-testid={`drop-zone-voice-${voice}`}
+        key={`${voice}-drop-zone`}
+        onDragLeave={isEditable ? handleCombinedDragLeave : undefined}
+        onDragOver={
+          isEditable
+            ? (e) => handleCombinedDragOver(e, nextAvailableSlot)
+            : undefined
+        }
+        onDrop={
+          isEditable
+            ? (e) => handleCombinedDrop(e, nextAvailableSlot)
+            : undefined
+        }
+        title={
+          isDragOver || isStereoHighlight || isDropZone
+            ? dropHintTitle
+            : `Drop WAV files here to add to voice ${voice}`
+        }
+      >
+        <div className="flex-1 flex items-center justify-center">
+          <span className="text-sm text-gray-400 dark:text-gray-500 text-center">
+            Drop WAV files here
+          </span>
+        </div>
+      </li>
+    );
+  }, [
+    slotRenderingHook,
+    samples,
+    voice,
+    isEditable,
+    handleCombinedDragOver,
+    handleCombinedDragLeave,
+    handleCombinedDrop,
+  ]);
+
+  // Helper function to render an empty slot placeholder (non-interactive)
   const renderEmptySlot = React.useCallback(
     (slotNumber: number) => {
-      if (!isEditable) {
-        // Read-only empty slot
-        return (
-          <li
-            className="min-h-[28px] mb-1 flex items-center text-gray-400 dark:text-gray-600"
-            key={`${voice}-empty-${slotNumber}`}
-          >
-            {/* Empty slot - maintains height */}
-          </li>
-        );
-      }
-
-      // Editable empty slot - make it a drop zone
-      const {
-        dragOverClass,
-        dropHintTitle,
-        isDragOver,
-        isDropZone,
-        isStereoHighlight,
-        slotBaseClass,
-      } = slotRenderingHook.getSlotStyling(slotNumber, undefined);
-
       return (
         <li
-          className={`${slotBaseClass} text-gray-400 dark:text-gray-600 min-h-[28px] mb-1${dragOverClass} border border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500`}
+          className="min-h-[28px] mb-1 flex items-center text-gray-400 dark:text-gray-600"
           key={`${voice}-empty-${slotNumber}`}
-          onDragLeave={handleCombinedDragLeave}
-          onDragOver={(e) => handleCombinedDragOver(e, slotNumber)}
-          onDrop={(e) => handleCombinedDrop(e, slotNumber)}
-          title={
-            isDragOver || isStereoHighlight || isDropZone
-              ? dropHintTitle
-              : `Drop WAV files in slot ${slotNumber + 1}`
-          }
         >
-          {/* Empty droppable slot */}
+          {/* Empty slot - maintains height */}
         </li>
       );
     },
-    [
-      voice,
-      isEditable,
-      slotRenderingHook,
-      handleCombinedDragLeave,
-      handleCombinedDragOver,
-      handleCombinedDrop,
-    ],
+    [voice],
   );
 
-  // Main render function for all sample slots (always render 12 for consistent height)
+  // Main render function for all sample slots (always render exactly 12 for consistent height)
   const renderSampleSlots = React.useCallback(() => {
     const renderedSlots = [];
+    const sampleCount = samples.filter((s) => s).length;
 
-    // Always render all 12 slots for consistent height
+    // Always render exactly 12 slot positions
     for (let i = 0; i < 12; i++) {
       const sample = samples[i];
       if (sample) {
         // Render filled slot
         renderedSlots.push(renderSampleSlot(i, sample));
+      } else if (i === sampleCount && isEditable && sampleCount < 12) {
+        // Render the single drop zone at the first empty position (append-only)
+        const dropZone = renderSingleDropZone();
+        if (dropZone) {
+          renderedSlots.push(dropZone);
+        } else {
+          // If drop zone can't be rendered, render empty slot
+          renderedSlots.push(renderEmptySlot(i));
+        }
       } else {
-        // Render empty slot (droppable if editable)
+        // Render empty slot placeholder
         renderedSlots.push(renderEmptySlot(i));
       }
     }
 
     return renderedSlots;
-  }, [samples, renderSampleSlot, renderEmptySlot]);
+  }, [
+    samples,
+    renderSampleSlot,
+    renderSingleDropZone,
+    renderEmptySlot,
+    isEditable,
+  ]);
 
   return {
     renderSampleSlot,

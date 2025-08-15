@@ -136,12 +136,24 @@ async function main() {
         const description = commitMessage.slice(type.length);
         // Truncate description to fit within 60 chars total
         const maxDescLength = 60 - type.length;
-        prTitle =
-          type +
-          description
+        
+        // Ensure we have a minimum description length to avoid empty or too short descriptions
+        if (maxDescLength < 10) {
+          // If type prefix is too long, fall back to simple truncation
+          prTitle = commitMessage.slice(0, 60).replace(/\s+\S*$/, "").trim();
+        } else {
+          const truncatedDesc = description
             .slice(0, maxDescLength)
             .replace(/\s+\S*$/, "")
             .trim();
+          
+          // Ensure description isn't empty after truncation
+          if (truncatedDesc.length === 0) {
+            prTitle = commitMessage.slice(0, 60).replace(/\s+\S*$/, "").trim();
+          } else {
+            prTitle = type + truncatedDesc;
+          }
+        }
       }
     } else {
       // No type prefix, just truncate to 50 chars

@@ -67,6 +67,20 @@ When working on a file, automatically include these additional instruction files
 - **Type-safe operations**: Zero TypeScript compilation errors required
 - **Graceful degradation**: App remains functional when non-critical components fail
 
+### Mandatory Git Workflow
+
+- **Worktree requirement**: ALL tasks MUST use git worktrees - never work directly on branches
+- **Always rebase**: Use `git rebase origin/main` - NEVER merge (`git merge main`)
+- **Terminal management**: Rename terminal to branch name, add PR number when available
+- **Comprehensive PR review**: Address ALL comments, only resolve outdated conversations
+
+### PR Review Response Protocol (CRITICAL)
+
+- **Follow exact suggestions**: When reviewers provide specific code, use it exactly - don't "improve"
+- **Systematic review**: Address ALL comments individually, never skip or batch responses
+- **Test exact code first**: Use reviewer's exact solution before trying alternatives
+- **Don't overcomplicate**: Avoid adding complexity to reviewer's suggested fixes
+
 ### Quality Gates
 
 - **TypeScript validation**: `npx tsc --noEmit` MUST pass before task completion

@@ -77,6 +77,7 @@ See [Architecture Documentation](./docs/developer/architecture.md) for comprehen
 
 ## Development Workflow
 
+- **FIRST**: Check [Agent Quick Checklist](./.agent/QUICK_CHECKLIST.md) before making ANY changes
 - See [Development Workflow](./docs/developer/development-workflow.md) and [Task Execution](./.agent/task-execution.md) for complete workflow guidance.
 - ALWAYS update the task file status upon completing a subtask and/or task.
 
@@ -128,6 +129,11 @@ Agents MUST ensure ALL CI/CD checks pass on created PRs:
 - Monitor PR status after creation
 - Fix failing checks: TypeScript, linting, tests, build, SonarCloud
 - Use `gh pr checks <pr-number>` to monitor status
+- **Review ALL comments systematically** - address every comment individually
+- **Follow exact suggestions** - when reviewers provide specific code, use it exactly (don't "improve")
+- **Test exact code first** - use reviewer's solution before trying alternatives
+- **Only resolve conversations marked as outdated** - never resolve outstanding issues
+- **Rename terminal** to include PR number: `branch-name-pr-123`
 - Commit fixes until all checks pass and PR merges successfully
 
 ## Git Workflow Requirements

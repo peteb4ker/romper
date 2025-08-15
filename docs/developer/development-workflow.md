@@ -347,12 +347,62 @@ The `npm run commit` command automatically:
 3. **Sets up proper branch tracking** with upstream remote
 4. **Provides PR URL** for immediate review access
 
+#### PR Title Guidelines
+
+CRITICAL: Keep PR titles concise and scannable. Titles should be **short sentences, not paragraphs**.
+
+**Length Limits:**
+- **Maximum 50-60 characters** for the main title
+- **Use description/body for details** - not the title
+
+**Format:**
+```
+<type>: <concise description>
+```
+
+**Good Examples:**
+- `feat: add dark mode toggle to settings`
+- `fix: resolve sample loading race condition`
+- `refactor: extract authentication middleware`
+- `docs: update PR title guidelines`
+
+**Bad Examples (Too Long):**
+- `feat: add comprehensive dark mode toggle functionality to application settings with proper theme switching and CSS variable management for improved user experience`
+- `fix: resolve critical sample loading race condition that occurs during rapid kit switching and causes UI to become unresponsive with detailed error handling`
+
+**Guidelines:**
+- **Use imperative mood** (`add`, `fix`, `update` not `adding`, `fixed`, `updated`)
+- **Focus on the "what"** in title, save "why" and "how" for description
+- **Include conventional commit prefix** (`feat:`, `fix:`, `docs:`, etc.)
+- **Be specific but concise** (`fix auth bug` → `fix: resolve login timeout issue`)
+
 #### Auto-Merge Requirements
 
 Auto-merge is enabled by default and will merge PRs when:
 - ✅ All required status checks have passed (pre-commit hooks)
 - ✅ All required reviews are met (if configured)
 - ✅ No blocking conversations remain unresolved
+
+#### Agent Responsibility for PR Quality
+
+**CRITICAL**: Agents are responsible for ensuring ALL CI/CD checks pass on created PRs.
+
+**Required Actions:**
+1. **Monitor PR status** after creation via enhanced commit workflow
+2. **Check all required status checks**: build, lint, unit-tests, e2e-tests-check, SonarCloud
+3. **Fix failing checks immediately**:
+   - TypeScript compilation errors: `npm run typecheck`
+   - Linting issues: `npm run lint`
+   - Test failures: `npm run test:fast` or `npm run test`
+   - Build failures: `npm run build`
+   - SonarCloud issues: Review quality gate failures and fix code quality issues
+4. **Commit fixes and push updates** until all checks pass
+5. **Ensure PR merges successfully** through auto-merge process
+
+**Available Commands:**
+- `gh pr checks <pr-number>` - Monitor PR check status
+- `gh pr view <pr-number>` - View PR details and status
+- Standard validation commands: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`
 
 #### Manual Auto-Merge Control
 

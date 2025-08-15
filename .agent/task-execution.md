@@ -224,6 +224,31 @@ lsof romper.db
 - Provide clear, concise descriptions of changes
 - Include context about why changes were made when not obvious
 
+### PR Title Guidelines (CRITICAL)
+
+(CRITICAL): Keep PR titles concise and scannable. Titles should be **short sentences, not paragraphs**.
+
+**Length Requirements:**
+- **Maximum 50-60 characters** for the main title
+- Use body/description for implementation details, not the title
+
+**Format:**
+```
+<type>: <concise description>
+```
+
+**Examples:**
+- ✅ `feat: add dark mode toggle to settings`
+- ✅ `fix: resolve sample loading race condition`
+- ✅ `docs: update PR title guidelines`
+- ❌ `feat: add comprehensive dark mode toggle functionality to application settings with proper theme switching and CSS variable management for improved user experience`
+
+**Guidelines:**
+- Use imperative mood (`add`, `fix`, `update` not `adding`, `fixed`, `updated`)
+- Focus on the "what" in title, save "why" and "how" for description
+- Include conventional commit prefix (`feat:`, `fix:`, `docs:`, etc.)
+- Be specific but concise (`fix auth bug` → `fix: resolve login timeout issue`)
+
 ## Quality Gates
 
 ### Code Quality Requirements

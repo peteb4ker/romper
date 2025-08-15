@@ -134,6 +134,20 @@ describe("KitVoicePanels", () => {
     expect(screen.getByText("clap.wav")).toBeInTheDocument();
   });
 
+  it("renders global slot numbers on the left side only", () => {
+    render(<MultiVoicePanelsTestWrapper />);
+    // Check that global slot numbers 1-12 are rendered
+    expect(screen.getByTestId("global-slot-number-0")).toHaveTextContent("1.");
+    expect(screen.getByTestId("global-slot-number-1")).toHaveTextContent("2.");
+    expect(screen.getByTestId("global-slot-number-11")).toHaveTextContent(
+      "12.",
+    );
+
+    // Verify individual voice panels do not render their own slot numbers
+    expect(screen.queryByTestId("slot-number-1-0")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("slot-number-2-0")).not.toBeInTheDocument();
+  });
+
   it("cross-voice keyboard navigation moves selection between voices", async () => {
     render(<MultiVoicePanelsTestWrapper />);
     // Down to snare.wav

@@ -101,10 +101,10 @@ describe("KitVoicePanel", () => {
     expect(screen.queryByTestId("drop-zone-voice-1")).not.toBeInTheDocument();
   });
 
-  it("renders slot numbers correctly", () => {
+  it("does not render slot numbers (now handled by parent)", () => {
     renderKitVoicePanel();
-    expect(screen.getByTestId("slot-number-1-0")).toHaveTextContent("1.");
-    expect(screen.getByTestId("slot-number-1-1")).toHaveTextContent("2.");
+    expect(screen.queryByTestId("slot-number-1-0")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("slot-number-1-1")).not.toBeInTheDocument();
   });
 
   it("renders samples with interaction elements when editable", () => {

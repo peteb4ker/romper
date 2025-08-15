@@ -153,7 +153,6 @@ export function useVoicePanelRendering({
     renderPlayButton: buttons.renderPlayButton,
     renderSampleSlot: slots.renderSampleSlot,
     renderSampleSlots: slots.renderSampleSlots,
-    renderSlotNumbers: ui.renderSlotNumbers,
     renderVoiceName: ui.renderVoiceName,
   };
 }

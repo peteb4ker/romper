@@ -13,6 +13,7 @@ import { useKitVoicePanels } from "./useKitVoicePanels";
 
 interface UseKitDetailsLogicParams extends KitDetailsProps {
   onCreateKit?: () => void;
+  onKitUpdated?: () => Promise<void>;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRequestSamplesReload?: () => Promise<void>;
 }
@@ -35,6 +36,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     updateKitAlias,
   } = useKit({
     kitName: props.kitName,
+    onKitUpdated: props.onKitUpdated,
   });
 
   // Voice alias management

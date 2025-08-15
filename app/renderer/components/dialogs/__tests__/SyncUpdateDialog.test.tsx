@@ -53,7 +53,7 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(screen.getByText("Sync All Kits to SD Card")).toBeInTheDocument();
-      expect(screen.getByText("2 kits with 15 samples")).toBeInTheDocument();
+      expect(screen.getByText("2 kits, 15 samples")).toBeInTheDocument();
       expect(screen.getByText("Ready to sync")).toBeInTheDocument();
     });
 
@@ -191,7 +191,7 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(screen.getByText("Start Sync")).toBeDisabled();
-      expect(screen.getByText("0 kits with 0 samples")).toBeInTheDocument();
+      expect(screen.getByText("0 kits, 0 samples")).toBeInTheDocument();
     });
 
     it("should show progress during sync", () => {
@@ -342,7 +342,7 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getAllByText("Sync Failed")).toHaveLength(2); // Header and error section
+      expect(screen.getAllByText("Sync Failed")).toHaveLength(1); // Only error section now
       expect(screen.getByText("Permission denied")).toBeInTheDocument();
       expect(screen.getByText("problematic_file.wav")).toBeInTheDocument();
       expect(screen.getByText("Copying file")).toBeInTheDocument();
@@ -403,7 +403,7 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getAllByText("Sync Failed")).toHaveLength(2); // Header and error section
+      expect(screen.getAllByText("Sync Failed")).toHaveLength(1); // Only error section now
       expect(
         screen.getByText("Generic sync error occurred"),
       ).toBeInTheDocument();

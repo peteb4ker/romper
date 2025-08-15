@@ -166,204 +166,201 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6 overflow-y-auto max-h-96">
-          {/* Sync Summary */}
-          {changeSummary && (
-            <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <FiDatabase className="text-blue-600 dark:text-blue-400" />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-gray-100">
-                  {kitCount} kits with {fileCount} samples
+        <div
+          className="overflow-y-auto"
+          style={{ maxHeight: "calc(80vh - 140px)" }}
+        >
+          {/* Error Section - Prioritized at top when present */}
+          {syncProgress && syncProgress.status === "error" && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-700">
+              <div className="mb-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-red-800 dark:text-red-200">
+                    Sync Failed
+                  </div>
+                  <div className="text-xs text-red-600 dark:text-red-400">
+                    Failed: 1 of {syncProgress.totalFiles} files
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Ready to sync
-                </div>
+
+                {/* Use structured error details if available, otherwise fallback to generic error */}
+                {syncProgress.errorDetails ? (
+                  <>
+                    <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                      <strong>Operation:</strong>{" "}
+                      {syncProgress.errorDetails.operation === "copy"
+                        ? "Copying"
+                        : "Converting"}{" "}
+                      file
+                    </div>
+                    <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                      <strong>File:</strong>{" "}
+                      <code className="bg-red-200 dark:bg-red-800 px-1 rounded text-xs">
+                        {syncProgress.errorDetails.fileName}
+                      </code>
+                    </div>
+                    <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                      <strong>Error:</strong> {syncProgress.errorDetails.error}
+                    </div>
+
+                    {/* Actionable guidance */}
+                    <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/50 border border-red-300 dark:border-red-600 rounded">
+                      <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">
+                        💡 What to do:
+                      </div>
+                      <div className="text-xs text-red-700 dark:text-red-300">
+                        {syncProgress.errorDetails.canRetry
+                          ? "This error might be temporary. You can try syncing again, or check if the SD card has enough space and proper permissions."
+                          : "This error requires attention. Check that the source file exists and isn't corrupted, or verify the SD card is properly connected."}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                      {syncProgress.error ||
+                        "An unexpected error occurred during sync."}
+                    </div>
+                    {syncProgress.currentFile && (
+                      <div className="text-xs text-red-600 dark:text-red-400 mb-2">
+                        Failed on file:{" "}
+                        <code className="bg-red-200 dark:bg-red-800 px-1 rounded text-xs">
+                          {syncProgress.currentFile}
+                        </code>
+                      </div>
+                    )}
+                    <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/50 border border-red-300 dark:border-red-600 rounded">
+                      <div className="text-xs text-red-700 dark:text-red-300">
+                        Try checking your SD card connection, available space,
+                        and file permissions before retrying.
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
 
-          {/* SD Card Selection */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
-              <FiHardDrive className="text-gray-600 dark:text-gray-400" />
-              <div className="flex-1">
-                <div className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                  SD Card Location
+          <div className="p-4 space-y-4">
+            {/* Compact Sync Summary */}
+            {changeSummary && (
+              <div className="flex items-center gap-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                <FiDatabase className="text-blue-600 dark:text-blue-400" />
+                <div className="text-sm">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {kitCount} kits, {fileCount} samples
+                  </span>
+                  <span className="text-gray-600 dark:text-gray-400 ml-2">
+                    Ready to sync
+                  </span>
                 </div>
-                {localSdCardPath ? (
-                  <div className="text-sm text-gray-600 dark:text-gray-400 font-mono">
-                    <span data-testid="sd-card-path">{localSdCardPath}</span>
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-500 dark:text-gray-500 italic">
-                    No SD card selected
-                  </div>
-                )}
               </div>
-              <button
-                className="px-3 py-1 text-sm bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-2"
-                data-testid="select-sd-card"
-                disabled={isLoading}
-                onClick={handleSdCardSelect}
-              >
-                <FiFolder className="w-4 h-4" />
-                {localSdCardPath ? "Change" : "Select"}
-              </button>
-            </div>
+            )}
 
-            {/* Wipe Option - Always visible */}
-            <div className="flex items-center gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-              <input
-                checked={wipeSdCard}
-                className="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 rounded focus:ring-yellow-500 dark:focus:ring-yellow-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                data-testid="wipe-sd-card-checkbox"
-                disabled={isLoading}
-                id="wipeSdCard"
-                onChange={(e) => setWipeSdCard(e.target.checked)}
-                type="checkbox"
-              />
-              <label className="flex-1" htmlFor="wipeSdCard">
-                <div className="font-medium text-yellow-800 dark:text-yellow-200">
-                  Clear SD card before sync
+            {/* Compact SD Card Selection */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 p-2 border border-gray-200 dark:border-gray-600 rounded">
+                <FiHardDrive className="text-gray-600 dark:text-gray-400" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    SD Card
+                  </div>
+                  {localSdCardPath ? (
+                    <div className="text-xs text-gray-600 dark:text-gray-400 font-mono truncate">
+                      <span data-testid="sd-card-path">{localSdCardPath}</span>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500 dark:text-gray-500 italic">
+                      No SD card selected
+                    </div>
+                  )}
                 </div>
-                <div className="text-sm text-yellow-700 dark:text-yellow-300">
-                  This will delete all existing files on the SD card before
-                  copying new ones
-                </div>
-              </label>
+                <button
+                  className="px-2 py-1 text-xs bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-1"
+                  data-testid="select-sd-card"
+                  disabled={isLoading}
+                  onClick={handleSdCardSelect}
+                >
+                  <FiFolder className="w-3 h-3" />
+                  {localSdCardPath ? "Change" : "Select"}
+                </button>
+              </div>
+
+              {/* Compact Wipe Option */}
+              <div className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
+                <input
+                  checked={wipeSdCard}
+                  className="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 rounded focus:ring-yellow-500 dark:focus:ring-yellow-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  data-testid="wipe-sd-card-checkbox"
+                  disabled={isLoading}
+                  id="wipeSdCard"
+                  onChange={(e) => setWipeSdCard(e.target.checked)}
+                  type="checkbox"
+                />
+                <label className="flex-1 text-sm" htmlFor="wipeSdCard">
+                  <span className="font-medium text-yellow-800 dark:text-yellow-200">
+                    Clear SD card before sync
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
 
-          {/* Sync Progress - Appears after SD card configuration */}
-          {syncProgress && syncProgress.status !== "completed" && (
-            <div
-              className={`p-4 rounded-lg ${
-                syncProgress.status === "error"
-                  ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
-                  : "bg-gray-50 dark:bg-slate-700"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div
-                  className={`font-medium ${
-                    syncProgress.status === "error"
-                      ? "text-red-800 dark:text-red-200"
-                      : "text-gray-900 dark:text-gray-100"
-                  }`}
-                >
-                  {syncProgress.status === "preparing" && "Preparing sync..."}
-                  {syncProgress.status === "copying" && "Copying files..."}
-                  {syncProgress.status === "converting" &&
-                    "Converting files..."}
-                  {syncProgress.status === "finalizing" && "Finalizing..."}
-                  {syncProgress.status === "error" && "Sync Failed"}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {syncProgress.filesCompleted} / {syncProgress.totalFiles}{" "}
-                  files
-                </div>
-              </div>
-
-              {/* Error message */}
-              {syncProgress.status === "error" && (
-                <div className="mb-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded">
-                  <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">
-                    Sync Failed
+          {/* Sync Progress - Only for non-error states */}
+          {syncProgress &&
+            syncProgress.status !== "completed" &&
+            syncProgress.status !== "error" && (
+              <div className="p-4">
+                <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-medium text-gray-900 dark:text-gray-100">
+                      {syncProgress.status === "preparing" &&
+                        "Preparing sync..."}
+                      {syncProgress.status === "copying" && "Copying files..."}
+                      {syncProgress.status === "converting" &&
+                        "Converting files..."}
+                      {syncProgress.status === "finalizing" && "Finalizing..."}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {syncProgress.filesCompleted} / {syncProgress.totalFiles}{" "}
+                      files
+                    </div>
                   </div>
 
-                  {/* Use structured error details if available, otherwise fallback to generic error */}
-                  {syncProgress.errorDetails ? (
-                    <>
-                      <div className="text-sm text-red-700 dark:text-red-300 mb-2">
-                        <strong>Operation:</strong>{" "}
-                        {syncProgress.errorDetails.operation === "copy"
-                          ? "Copying"
-                          : "Converting"}{" "}
-                        file
-                      </div>
-                      <div className="text-sm text-red-700 dark:text-red-300 mb-2">
-                        <strong>File:</strong>{" "}
-                        <code className="bg-red-200 dark:bg-red-800 px-1 rounded text-xs">
-                          {syncProgress.errorDetails.fileName}
-                        </code>
-                      </div>
-                      <div className="text-sm text-red-700 dark:text-red-300 mb-2">
-                        <strong>Error:</strong>{" "}
-                        {syncProgress.errorDetails.error}
-                      </div>
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full transition-all duration-300 bg-blue-600"
+                      style={{
+                        width: `${syncProgress.totalFiles > 0 ? (syncProgress.filesCompleted / syncProgress.totalFiles) * 100 : 0}%`,
+                      }}
+                    />
+                  </div>
 
-                      {/* Actionable guidance */}
-                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/50 border border-red-300 dark:border-red-600 rounded">
-                        <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">
-                          💡 What to do:
-                        </div>
-                        <div className="text-xs text-red-700 dark:text-red-300">
-                          {syncProgress.errorDetails.canRetry
-                            ? "This error might be temporary. You can try syncing again, or check if the SD card has enough space and proper permissions."
-                            : "This error requires attention. Check that the source file exists and isn't corrupted, or verify the SD card is properly connected."}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-sm text-red-700 dark:text-red-300 mb-2">
-                        {syncProgress.error ||
-                          "An unexpected error occurred during sync."}
-                      </div>
-                      {syncProgress.currentFile && (
-                        <div className="text-xs text-red-600 dark:text-red-400 mb-2">
-                          Failed on file:{" "}
-                          <code className="bg-red-200 dark:bg-red-800 px-1 rounded text-xs">
-                            {syncProgress.currentFile}
-                          </code>
-                        </div>
-                      )}
-                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/50 border border-red-300 dark:border-red-600 rounded">
-                        <div className="text-xs text-red-700 dark:text-red-300">
-                          Try checking your SD card connection, available space,
-                          and file permissions before retrying.
-                        </div>
-                      </div>
-                    </>
+                  {/* Current file */}
+                  {syncProgress.currentFile && (
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {syncProgress.currentFile}
+                    </div>
                   )}
                 </div>
-              )}
-
-              {/* Progress bar */}
-              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    syncProgress.status === "error"
-                      ? "bg-red-500"
-                      : "bg-blue-600"
-                  }`}
-                  style={{
-                    width: `${syncProgress.totalFiles > 0 ? (syncProgress.filesCompleted / syncProgress.totalFiles) * 100 : 0}%`,
-                  }}
-                />
               </div>
-
-              {/* Current file */}
-              {syncProgress.currentFile && syncProgress.status !== "error" && (
-                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {syncProgress.currentFile}
-                </div>
-              )}
-            </div>
-          )}
+            )}
 
           {/* Success notification */}
           {syncProgress && syncProgress.status === "completed" && (
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-              <div className="flex items-center gap-3">
-                <FiCheckCircle className="text-green-600 dark:text-green-400 text-xl" />
-                <div>
-                  <div className="font-medium text-green-800 dark:text-green-200">
-                    Sync Complete!
-                  </div>
-                  <div className="text-sm text-green-700 dark:text-green-300">
-                    Successfully synced {syncProgress.filesCompleted} files to
-                    SD card
+            <div className="p-4">
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
+                <div className="flex items-center gap-3">
+                  <FiCheckCircle className="text-green-600 dark:text-green-400 text-xl" />
+                  <div>
+                    <div className="font-medium text-green-800 dark:text-green-200">
+                      Sync Complete!
+                    </div>
+                    <div className="text-sm text-green-700 dark:text-green-300">
+                      Successfully synced {syncProgress.filesCompleted} files to
+                      SD card
+                    </div>
                   </div>
                 </div>
               </div>

@@ -146,14 +146,14 @@ async function main() {
     // Enable auto-merge for the PR
     console.log("🤖 Enabling auto-merge...");
     try {
-      runCommand("gh pr merge --auto", { silent: true });
+      runCommand("gh pr merge --auto --squash", { silent: true });
       console.log(
         "✅ Auto-merge enabled - PR will merge when all checks pass!",
       );
     } catch {
       console.error("⚠️  Failed to enable auto-merge");
       console.error("You can enable it manually with:");
-      console.error("  gh pr merge --auto");
+      console.error("  gh pr merge --auto --squash");
     }
   } catch {
     console.error("❌ Failed to create pull request");

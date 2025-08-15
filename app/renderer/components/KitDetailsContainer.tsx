@@ -58,10 +58,6 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
     return onRequestSamplesReload();
   }, [onRequestSamplesReload]);
 
-  const handleKitUpdated = React.useCallback(() => {
-    return onKitUpdated();
-  }, [onKitUpdated]);
-
   return (
     <KitDetails
       kitIndex={kitIndex}
@@ -69,7 +65,7 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
       kits={kits}
       onAddUndoAction={onAddUndoAction}
       onBack={handleBack}
-      onKitUpdated={handleKitUpdated}
+      onKitUpdated={onKitUpdated}
       onMessage={handleMessage}
       onNextKit={onNextKit}
       onPrevKit={onPrevKit}

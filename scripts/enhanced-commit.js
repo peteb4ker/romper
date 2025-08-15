@@ -137,33 +137,11 @@ async function main() {
         const maxDescLength = 60 - type.length;
 
         if (maxDescLength > 0) {
-          const truncatedDesc = description.slice(0, maxDescLength);
-          const finalDesc = (
-            /\s+\S*$/.test(truncatedDesc)
-              ? truncatedDesc.replace(/\s+\S*$/, "")
-              : truncatedDesc
-          ).trim();
-
-          // Check if we have a meaningful description after truncation (minimum 3 chars)
-          if (finalDesc.length >= 3) {
-            prTitle = type + finalDesc;
-          } else {
-            // Fallback: just truncate the commit message as in the "no type prefix" branch
-            const truncated = commitMessage.slice(0, 60);
-            prTitle = (
-              /\s+\S*$/.test(truncated)
-                ? truncated.replace(/\s+\S*$/, "")
-                : truncated
-            ).trim();
-          }
+          const descTrunc = description.slice(0, maxDescLength).replace(/\s+\S*$/, '').trim();
+          prTitle = type + descTrunc;
         } else {
           // Fallback: just truncate the commit message as in the "no type prefix" branch
-          const truncated = commitMessage.slice(0, 60);
-          prTitle = (
-            /\s+\S*$/.test(truncated)
-              ? truncated.replace(/\s+\S*$/, "")
-              : truncated
-          ).trim();
+          prTitle = commitMessage.slice(0, 60).replace(/\s+\S*$/, '').trim();
         }
       }
     } else {

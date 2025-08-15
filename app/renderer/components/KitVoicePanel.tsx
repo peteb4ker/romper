@@ -210,26 +210,19 @@ const KitVoicePanel: React.FC<
   return (
     <div aria-label={`Voice ${voice} panel`} className="flex flex-col">
       {rendering.renderVoiceName(dataTestIdVoiceName)}
-      <div className="flex flex-1">
-        {/* Slot numbers column */}
-        <div className="flex flex-col justify-start pt-3 pr-2">
-          {rendering.renderSlotNumbers()}
-        </div>
-
-        {/* Voice panel content */}
-        <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
-          <ul
-            aria-label={`Sample slots for voice ${voice}`}
-            className="list-none ml-0 text-sm flex flex-col"
-            data-testid={`sample-list-voice-${voice}`}
-            onKeyDown={keyboardNav.handleKeyDown}
-            ref={listRef}
-            role="listbox"
-            tabIndex={isActive ? 0 : -1}
-          >
-            {rendering.renderSampleSlots()}
-          </ul>
-        </div>
+      {/* Voice panel content */}
+      <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
+        <ul
+          aria-label={`Sample slots for voice ${voice}`}
+          className="list-none ml-0 text-sm flex flex-col"
+          data-testid={`sample-list-voice-${voice}`}
+          onKeyDown={keyboardNav.handleKeyDown}
+          ref={listRef}
+          role="listbox"
+          tabIndex={isActive ? 0 : -1}
+        >
+          {rendering.renderSampleSlots()}
+        </ul>
       </div>
     </div>
   );

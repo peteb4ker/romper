@@ -314,6 +314,140 @@ describe("SyncUpdateDialog", () => {
     });
   });
 
+  describe("error handling", () => {
+    it("should show detailed error message with error details", () => {
+      const mockSyncProgressWithError = {
+        bytesCompleted: 100,
+        currentFile: "test.wav",
+        errorDetails: {
+          canRetry: true,
+          error: "Permission denied",
+          fileName: "problematic_file.wav",
+          operation: "copy" as const,
+        },
+        filesCompleted: 1,
+        status: "error" as const,
+        totalBytes: 200,
+        totalFiles: 2,
+      };
+
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          syncProgress={mockSyncProgressWithError}
+        />,
+      );
+
+      expect(screen.getAllByText("Sync Failed")).toHaveLength(2); // Header and error section
+      expect(screen.getByText("Permission denied")).toBeInTheDocument();
+      expect(screen.getByText("problematic_file.wav")).toBeInTheDocument();
+      expect(screen.getByText("Copying file")).toBeInTheDocument();
+      expect(screen.getByText("💡 What to do:")).toBeInTheDocument();
+    });
+
+    it("should show retry button for retryable errors", () => {
+      const mockSyncProgressWithRetryableError = {
+        bytesCompleted: 100,
+        currentFile: "test.wav",
+        errorDetails: {
+          canRetry: true,
+          error: "Temporary network error",
+          fileName: "test.wav",
+          operation: "copy" as const,
+        },
+        filesCompleted: 1,
+        status: "error" as const,
+        totalBytes: 200,
+        totalFiles: 2,
+      };
+
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          syncProgress={mockSyncProgressWithRetryableError}
+        />,
+      );
+
+      expect(screen.getByTestId("retry-sync")).toBeInTheDocument();
+      expect(screen.getByText("Retry Sync")).toBeInTheDocument();
+      expect(screen.getByText("Close")).toBeInTheDocument(); // Cancel becomes "Close"
+    });
+
+    it("should show generic error message when no error details", () => {
+      const mockSyncProgressWithGenericError = {
+        bytesCompleted: 100,
+        currentFile: "test.wav",
+        error: "Generic sync error occurred",
+        filesCompleted: 1,
+        status: "error" as const,
+        totalBytes: 200,
+        totalFiles: 2,
+      };
+
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          syncProgress={mockSyncProgressWithGenericError}
+        />,
+      );
+
+      expect(screen.getAllByText("Sync Failed")).toHaveLength(2); // Header and error section
+      expect(
+        screen.getByText("Generic sync error occurred"),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Failed on file:")).toBeInTheDocument();
+      expect(screen.getByText("test.wav")).toBeInTheDocument();
+    });
+
+    it("should disable start sync for non-retryable errors", () => {
+      const mockSyncProgressWithNonRetryableError = {
+        bytesCompleted: 100,
+        currentFile: "test.wav",
+        errorDetails: {
+          canRetry: false,
+          error: "File corrupted",
+          fileName: "corrupt.wav",
+          operation: "convert" as const,
+        },
+        filesCompleted: 1,
+        status: "error" as const,
+        totalBytes: 200,
+        totalFiles: 2,
+      };
+
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          sdCardPath="/test/path"
+          syncProgress={mockSyncProgressWithNonRetryableError}
+        />,
+      );
+
+      expect(screen.queryByTestId("retry-sync")).not.toBeInTheDocument();
+      const startButton = screen.getByTestId("confirm-sync");
+      expect(startButton).toBeDisabled();
+      expect(
+        screen.getByText(/This error requires attention/),
+      ).toBeInTheDocument();
+    });
+  });
+
   describe("accessibility", () => {
     it("should have proper aria labels", () => {
       render(

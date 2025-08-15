@@ -30,10 +30,18 @@ export interface SyncValidationError {
   type: "access_denied" | "invalid_format" | "missing_file" | "other";
 }
 
+interface SyncErrorDetails {
+  canRetry: boolean;
+  error: string;
+  fileName: string;
+  operation: "convert" | "copy";
+}
+
 interface SyncProgress {
   bytesCompleted: number;
   currentFile: string;
   error?: string;
+  errorDetails?: SyncErrorDetails;
   filesCompleted: number;
   status:
     | "completed"
@@ -228,15 +236,27 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 
           {/* Sync Progress - Appears after SD card configuration */}
           {syncProgress && syncProgress.status !== "completed" && (
-            <div className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
+            <div
+              className={`p-4 rounded-lg ${
+                syncProgress.status === "error"
+                  ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+                  : "bg-gray-50 dark:bg-slate-700"
+              }`}
+            >
               <div className="flex items-center justify-between mb-2">
-                <div className="font-medium text-gray-900 dark:text-gray-100">
+                <div
+                  className={`font-medium ${
+                    syncProgress.status === "error"
+                      ? "text-red-800 dark:text-red-200"
+                      : "text-gray-900 dark:text-gray-100"
+                  }`}
+                >
                   {syncProgress.status === "preparing" && "Preparing sync..."}
                   {syncProgress.status === "copying" && "Copying files..."}
                   {syncProgress.status === "converting" &&
                     "Converting files..."}
                   {syncProgress.status === "finalizing" && "Finalizing..."}
-                  {syncProgress.status === "error" && "Error occurred"}
+                  {syncProgress.status === "error" && "Sync Failed"}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   {syncProgress.filesCompleted} / {syncProgress.totalFiles}{" "}
@@ -244,10 +264,79 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 </div>
               </div>
 
+              {/* Error message */}
+              {syncProgress.status === "error" && (
+                <div className="mb-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded">
+                  <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">
+                    Sync Failed
+                  </div>
+
+                  {/* Use structured error details if available, otherwise fallback to generic error */}
+                  {syncProgress.errorDetails ? (
+                    <>
+                      <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                        <strong>Operation:</strong>{" "}
+                        {syncProgress.errorDetails.operation === "copy"
+                          ? "Copying"
+                          : "Converting"}{" "}
+                        file
+                      </div>
+                      <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                        <strong>File:</strong>{" "}
+                        <code className="bg-red-200 dark:bg-red-800 px-1 rounded text-xs">
+                          {syncProgress.errorDetails.fileName}
+                        </code>
+                      </div>
+                      <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                        <strong>Error:</strong>{" "}
+                        {syncProgress.errorDetails.error}
+                      </div>
+
+                      {/* Actionable guidance */}
+                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/50 border border-red-300 dark:border-red-600 rounded">
+                        <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">
+                          💡 What to do:
+                        </div>
+                        <div className="text-xs text-red-700 dark:text-red-300">
+                          {syncProgress.errorDetails.canRetry
+                            ? "This error might be temporary. You can try syncing again, or check if the SD card has enough space and proper permissions."
+                            : "This error requires attention. Check that the source file exists and isn't corrupted, or verify the SD card is properly connected."}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                        {syncProgress.error ||
+                          "An unexpected error occurred during sync."}
+                      </div>
+                      {syncProgress.currentFile && (
+                        <div className="text-xs text-red-600 dark:text-red-400 mb-2">
+                          Failed on file:{" "}
+                          <code className="bg-red-200 dark:bg-red-800 px-1 rounded text-xs">
+                            {syncProgress.currentFile}
+                          </code>
+                        </div>
+                      )}
+                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/50 border border-red-300 dark:border-red-600 rounded">
+                        <div className="text-xs text-red-700 dark:text-red-300">
+                          Try checking your SD card connection, available space,
+                          and file permissions before retrying.
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Progress bar */}
               <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    syncProgress.status === "error"
+                      ? "bg-red-500"
+                      : "bg-blue-600"
+                  }`}
                   style={{
                     width: `${syncProgress.totalFiles > 0 ? (syncProgress.filesCompleted / syncProgress.totalFiles) * 100 : 0}%`,
                   }}
@@ -255,7 +344,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               </div>
 
               {/* Current file */}
-              {syncProgress.currentFile && (
+              {syncProgress.currentFile && syncProgress.status !== "error" && (
                 <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
                   {syncProgress.currentFile}
                 </div>
@@ -291,32 +380,56 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               disabled={isLoading}
               onClick={onClose}
             >
-              Cancel
+              {syncProgress?.status === "error" ? "Close" : "Cancel"}
             </button>
-            <button
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-              data-testid="confirm-sync"
-              disabled={
-                isLoading ||
-                isGeneratingSummary ||
-                !changeSummary ||
-                fileCount === 0 ||
-                !localSdCardPath
-              }
-              onClick={handleConfirm}
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Syncing...
-                </>
-              ) : (
-                <>
+
+            {/* Show retry button for retryable errors */}
+            {syncProgress?.status === "error" &&
+              syncProgress?.errorDetails?.canRetry && (
+                <button
+                  className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  data-testid="retry-sync"
+                  disabled={isLoading}
+                  onClick={handleConfirm}
+                >
                   <FiCheckCircle />
-                  Start Sync
-                </>
+                  Retry Sync
+                </button>
               )}
-            </button>
+
+            {/* Show start sync button when not in error state or for non-retryable errors */}
+            {(!syncProgress ||
+              syncProgress.status !== "error" ||
+              !syncProgress.errorDetails?.canRetry) && (
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                data-testid="confirm-sync"
+                disabled={
+                  isLoading ||
+                  isGeneratingSummary ||
+                  !changeSummary ||
+                  fileCount === 0 ||
+                  !localSdCardPath ||
+                  (syncProgress?.status === "error" &&
+                    !syncProgress?.errorDetails?.canRetry)
+                }
+                onClick={handleConfirm}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <FiCheckCircle />
+                    {syncProgress?.status === "error"
+                      ? "Start New Sync"
+                      : "Start Sync"}
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

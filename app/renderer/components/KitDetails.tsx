@@ -14,6 +14,7 @@ interface KitDetailsAllProps extends KitDetailsProps {
   onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitDetailsLogic hook
   onRequestSamplesReload?: () => Promise<void>;
+  onToggleFavorite?: (kitName: string) => void; // For favorite star button
 }
 
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
@@ -62,6 +63,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         onPrevKit={props.onPrevKit}
         onScanKit={logic.handleScanKit}
         onToggleEditableMode={logic.toggleEditableMode}
+        onToggleFavorite={props.onToggleFavorite}
         setEditingKitAlias={setEditingKitAlias}
         setKitAliasInput={setKitAliasInput}
       />

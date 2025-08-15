@@ -1,5 +1,6 @@
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
+import { FaStar } from "react-icons/fa";
 import { FiCopy } from "react-icons/fi";
 
 import { useKitItem } from "./hooks/kit-management/useKitItem";
@@ -23,6 +24,7 @@ const KitGridItem = React.memo(
         kitData,
         onDuplicate,
         onSelect,
+        onToggleFavorite,
         sampleCounts,
         ...rest
       },
@@ -169,7 +171,29 @@ const KitGridItem = React.memo(
                     Editable
                   </span>
                 )}
-              {/* Task 20.1.2: Star-based favorites UI - temporarily disabled */}
+              {/* Favorite toggle button */}
+              {isValid && onToggleFavorite && (
+                <button
+                  className={`p-1 text-xs ml-1 transition-colors ${
+                    kitData?.is_favorite
+                      ? "text-yellow-500 hover:text-yellow-600"
+                      : "text-gray-400 hover:text-yellow-500"
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleFavorite(kit);
+                  }}
+                  title={
+                    kitData?.is_favorite
+                      ? "Remove from favorites"
+                      : "Add to favorites"
+                  }
+                >
+                  <FaStar
+                    className={`w-4 h-4 ${kitData?.is_favorite ? "" : "opacity-30"}`}
+                  />
+                </button>
+              )}
               {isValid && (
                 <button
                   className="p-1 text-xs text-gray-500 hover:text-green-600 ml-1"

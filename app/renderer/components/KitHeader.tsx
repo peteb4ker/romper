@@ -1,6 +1,7 @@
 import type { Kit, KitWithRelations } from "@romper/shared/db/schema";
 
 import React, { useCallback } from "react";
+import { FaStar } from "react-icons/fa";
 import {
   FiArrowLeft,
   FiChevronLeft,
@@ -26,6 +27,7 @@ interface KitHeaderProps {
   onPrevKit?: () => void;
   onScanKit?: () => void;
   onToggleEditableMode?: () => void;
+  onToggleFavorite?: (kitName: string) => void;
   setEditingKitAlias: (v: boolean) => void;
   setKitAliasInput: (v: string) => void;
 }
@@ -45,6 +47,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
   onPrevKit,
   onScanKit,
   onToggleEditableMode,
+  onToggleFavorite,
   setEditingKitAlias,
   setKitAliasInput,
 }) => {
@@ -157,6 +160,25 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             </button>
           )}
         </div>
+
+        {/* Favorite star button */}
+        {onToggleFavorite && (
+          <button
+            className={`ml-3 p-2 transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 ${
+              kit?.is_favorite
+                ? "text-yellow-500 hover:text-yellow-600"
+                : "text-gray-400 hover:text-yellow-500"
+            }`}
+            onClick={() => onToggleFavorite(kitName)}
+            title={
+              kit?.is_favorite ? "Remove from favorites" : "Add to favorites"
+            }
+          >
+            <FaStar
+              className={`w-6 h-6 ${kit?.is_favorite ? "" : "opacity-40"}`}
+            />
+          </button>
+        )}
       </div>
 
       {/* Right side spacer */}

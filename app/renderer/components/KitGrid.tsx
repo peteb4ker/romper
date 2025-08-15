@@ -78,9 +78,9 @@ interface KitGridProps {
   onDuplicate: (kit: string) => void;
   onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
   onSelectKit: (kit: string) => void;
+  onToggleFavorite?: (kitName: string) => void; // Task 20.1.2: Favorites functionality
   onVisibleBankChange?: (bank: string) => void; // NEW: notify when visible bank changes during scroll
   sampleCounts?: Record<string, [number, number, number, number]>;
-  // onToggleFavorite?: (kitName: string) => void; // Task 20.1.2: Favorites functionality - temporarily disabled
 }
 
 // Grid layout constants
@@ -147,9 +147,9 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       onDuplicate,
       onFocusKit,
       onSelectKit,
+      onToggleFavorite,
       onVisibleBankChange,
       sampleCounts,
-      // onToggleFavorite,
     },
     ref,
   ) => {
@@ -358,7 +358,6 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                 return (
                   <div key={kit.name} style={{ height: CARD_HEIGHT }}>
                     <KitGridItem
-                      // onToggleFavorite={onToggleFavorite}
                       data-kit={kit.name}
                       data-testid={`kit-item-${kit.name}`}
                       isSelected={isSelected}
@@ -367,6 +366,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                       kitData={kitDataItem}
                       onDuplicate={() => isValid && onDuplicate(kit.name)}
                       onSelect={handleSelectKit}
+                      onToggleFavorite={onToggleFavorite}
                       sampleCounts={
                         sampleCounts ? sampleCounts[kit.name] : undefined
                       }

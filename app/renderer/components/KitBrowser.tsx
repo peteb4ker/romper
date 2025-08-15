@@ -219,10 +219,10 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             }}
             onFocusKit={setFocusedKit} // NEW: keep parent in sync
             onSelectKit={props.onSelectKit}
+            onToggleFavorite={handleToggleFavorite} // Task 20.1.2: Favorites toggle functionality
             onVisibleBankChange={handleVisibleBankChange} // NEW: update selected bank on scroll
             ref={kitGridRef}
             sampleCounts={props.sampleCounts}
-            // onToggleFavorite={handleToggleFavorite} // Task 20.1.2: Favorites toggle - temporarily disabled
           />
         </div>
         {/* Local Store Wizard Modal */}

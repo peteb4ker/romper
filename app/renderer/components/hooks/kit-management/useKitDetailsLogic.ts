@@ -246,10 +246,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
       }
       // Only handle navigation keys for sample nav if sequencer is closed
       // Enter key removed to prevent conflicts with kit name editing
-      if (
-        !sequencerOpen &&
-        [" ", "ArrowDown", "ArrowUp"].includes(e.key)
-      ) {
+      if (!sequencerOpen && [" ", "ArrowDown", "ArrowUp"].includes(e.key)) {
         e.preventDefault();
         if (e.key === "ArrowDown") {
           kitVoicePanels.onSampleKeyNav("down");

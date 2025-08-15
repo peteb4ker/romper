@@ -13,6 +13,13 @@ export interface SyncChangeSummary {
   kitCount: number;
 }
 
+export interface SyncErrorDetails {
+  canRetry: boolean;
+  error: string;
+  fileName: string;
+  operation: "convert" | "copy";
+}
+
 export interface SyncFileOperation {
   destinationPath: string;
   filename: string;
@@ -28,13 +35,6 @@ export interface SyncValidationError {
   filename: string;
   sourcePath: string;
   type: "access_denied" | "invalid_format" | "missing_file" | "other";
-}
-
-export interface SyncErrorDetails {
-  canRetry: boolean;
-  error: string;
-  fileName: string;
-  operation: "convert" | "copy";
 }
 
 interface SyncProgress {

@@ -4,6 +4,7 @@ import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
 import InvalidLocalStoreDialog from "../components/dialogs/InvalidLocalStoreDialog";
 import { useKit } from "../components/hooks/kit-management/useKit";
 import { useKitDataManager } from "../components/hooks/kit-management/useKitDataManager";
+import { useKitFilters } from "../components/hooks/kit-management/useKitFilters";
 import { useKitNavigation } from "../components/hooks/kit-management/useKitNavigation";
 import { useKitViewMenuHandlers } from "../components/hooks/kit-management/useKitViewMenuHandlers";
 import { useDialogState } from "../components/hooks/shared/useDialogState";
@@ -101,6 +102,13 @@ const KitsView: React.FC = () => {
     allKitSamples,
     kits,
     refreshAllKitsAndSamples,
+  });
+
+  // Kit filters management for favorites functionality
+  const kitFilters = useKitFilters({
+    kits,
+    onMessage: showMessage,
+    onRefreshKits: loadKitsData,
   });
 
   // Get current kit's editable state for keyboard shortcuts
@@ -263,6 +271,7 @@ const KitsView: React.FC = () => {
           onNextKit={navigation.handleNextKit}
           onPrevKit={navigation.handlePrevKit}
           onRequestSamplesReload={handleRequestSamplesReload}
+          onToggleFavorite={kitFilters.handleToggleFavorite}
           samples={navigation.selectedKitSamples}
         />
       ) : (

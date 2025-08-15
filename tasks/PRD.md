@@ -1,3 +1,17 @@
+---
+title: "Romper Sample Manager - Product Requirements Document (PRD)"
+owners: ["product-team"]
+last_reviewed: "2025-08-15"
+tags: ["project-management"]
+---
+
+---
+title: "Romper Sample Manager - Product Requirements Document (PRD)"
+owners: ["product-team"]
+last_reviewed: "2025-08-15"
+tags: ["project-management"]
+---
+
 # Romper Sample Manager - Product Requirements Document (PRD)
 
 ## 1. Introduction/Overview
@@ -671,7 +685,7 @@ Pull requests are welcome! We encourage contributions from the Rample community 
 #### Getting Started
 
 - Fork the repository on GitHub
-- Read the development documentation in `/docs/development.md`
+- Read the development documentation in [Developer Setup](docs/developer/development.md)
 - Check existing issues and discussions before starting new work
 - Follow the coding standards outlined in `.github/copilot-instructions.md`
 

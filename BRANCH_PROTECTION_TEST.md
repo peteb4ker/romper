@@ -1,3 +1,17 @@
+---
+title: "Branch Protection Test"
+owners: ["maintainer"]
+last_reviewed: "2025-08-15"
+tags: ["documentation"]
+---
+
+---
+title: "Branch Protection Test"
+owners: ["maintainer"]
+last_reviewed: "2025-08-15"
+tags: ["documentation"]
+---
+
 # Branch Protection Test
 
 This is a small change to test the new branch protection rules.

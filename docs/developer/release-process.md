@@ -1,3 +1,17 @@
+---
+title: "Release Process"
+owners: ["developer-team"]
+last_reviewed: "2025-08-15"
+tags: ["developer"]
+---
+
+---
+title: "Release Process"
+owners: ["developer-team"]
+last_reviewed: "2025-08-15"
+tags: ["developer"]
+---
+
 # Release Process
 
 This document outlines the complete release process for Romper Sample Manager using manual tag-based releases.

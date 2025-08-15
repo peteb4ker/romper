@@ -1,3 +1,17 @@
+---
+title: "Performance Guidelines"
+owners: ["developer-team"]
+last_reviewed: "2025-08-15"
+tags: ["developer"]
+---
+
+---
+title: "Performance Guidelines"
+owners: ["developer-team"]
+last_reviewed: "2025-08-15"
+tags: ["developer"]
+---
+
 # Performance Guidelines
 
 **Based on**: Architecture audit findings and observed optimization patterns

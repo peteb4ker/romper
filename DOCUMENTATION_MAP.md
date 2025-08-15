@@ -1,3 +1,17 @@
+---
+title: "Romper Documentation Map"
+owners: ["maintainer"]
+last_reviewed: "2025-08-15"
+tags: ["documentation"]
+---
+
+---
+title: "Romper Documentation Map"
+owners: ["maintainer"]
+last_reviewed: "2025-08-15"
+tags: ["documentation"]
+---
+
 # Romper Documentation Map
 
 ## Overview
@@ -117,7 +131,7 @@ README.md (Overview)
 
 ### Auto-Generation Dependencies
 
-- `.agent/standards/comprehensive.md` → All file-type specific standards
+- [Romper Coding Standards (Machine-Readable)](.agent/standards/comprehensive.md) → All file-type specific standards
 - Changes to comprehensive standards require regenerating targeted files
 - See [.agent/AUTO_GENERATION_RULE.md](./.agent/AUTO_GENERATION_RULE.md) for details
 

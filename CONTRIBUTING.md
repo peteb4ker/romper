@@ -36,6 +36,33 @@ tags: ["category"]
 - **No backticked path references**: Use proper Markdown links `[Title](path.md)`
 - **Canonical references only**: Link to primary documentation, not duplicates
 
+### Token Efficiency Requirements (ENFORCED)
+
+#### Atomic Instructions
+- **One requirement per line**: No complex conjunctions with "and/or/but"
+- **Compliance check**: flag instructions longer than one sentence
+
+#### Brevity Limits
+- **Checklist items**: ≤ 20 tokens maximum
+- **Procedural steps**: ≤ 50 tokens maximum  
+- **Summaries**: ≤ 75 tokens maximum
+- **Compliance check**: measure token counts; error if exceeded
+
+#### Canonicalization
+- **No duplicate instructions**: Each rule appears once only
+- **Cross-reference instead**: Link to canonical source
+- **Compliance check**: detect duplicate rules at ≥85% similarity
+
+#### Structured Markers
+- **Mark verifiable requirements**: Use `**Compliance check**: condition`
+- **Enable agent parsing**: Explicit compliance points
+- **Compliance check**: flag requirements without markers
+
+#### Summaries First
+- **Purpose statement first**: Begin sections with ≤2 sentences
+- **Details follow**: Use structured lists after summary
+- **Compliance check**: fail if section begins with body text
+
 ### Compliance Enforcement
 
 #### For All Contributors
@@ -43,9 +70,13 @@ tags: ["category"]
 Before any PR can be merged:
 
 1. **Documentation audit MUST pass**: `npm run docs:check`
-2. **Compliance score MUST be 100%**
-3. **All broken links MUST be fixed**
-4. **All documents MUST have valid frontmatter**
+2. **Compliance score MUST be ≥75%**
+3. **Token efficiency score MUST be 100%**
+4. **All broken links MUST be fixed**
+5. **All documents MUST have valid frontmatter**
+6. **Zero duplicates**: ≥85% content similarity forbidden
+
+**Compliance check**: exit with nonzero if any requirement fails
 
 #### For AI Agents
 

@@ -135,30 +135,46 @@ async function main() {
         const type = typeMatch[0];
         const description = commitMessage.slice(type.length).trim();
         const maxDescLength = 60 - type.length;
-        
+
         if (maxDescLength > 0) {
           const truncatedDesc = description.slice(0, maxDescLength);
-          const finalDesc = (/\s+\S*$/.test(truncatedDesc) ? truncatedDesc.replace(/\s+\S*$/, '') : truncatedDesc).trim();
-          
+          const finalDesc = (
+            /\s+\S*$/.test(truncatedDesc)
+              ? truncatedDesc.replace(/\s+\S*$/, "")
+              : truncatedDesc
+          ).trim();
+
           // Check if we have a meaningful description after truncation (minimum 3 chars)
           if (finalDesc.length >= 3) {
             prTitle = type + finalDesc;
           } else {
             // Fallback: just truncate the commit message as in the "no type prefix" branch
             const truncated = commitMessage.slice(0, 60);
-            prTitle = (/\s+\S*$/.test(truncated) ? truncated.replace(/\s+\S*$/, '') : truncated).trim();
+            prTitle = (
+              /\s+\S*$/.test(truncated)
+                ? truncated.replace(/\s+\S*$/, "")
+                : truncated
+            ).trim();
           }
         } else {
           // Fallback: just truncate the commit message as in the "no type prefix" branch
           const truncated = commitMessage.slice(0, 60);
-          prTitle = (/\s+\S*$/.test(truncated) ? truncated.replace(/\s+\S*$/, '') : truncated).trim();
+          prTitle = (
+            /\s+\S*$/.test(truncated)
+              ? truncated.replace(/\s+\S*$/, "")
+              : truncated
+          ).trim();
         }
       }
     } else {
       // No type prefix, just truncate to 50 chars
       if (commitMessage.length > 50) {
         const truncated = commitMessage.slice(0, 50);
-        prTitle = (/\s+\S*$/.test(truncated) ? truncated.replace(/\s+\S*$/, '') : truncated).trim();
+        prTitle = (
+          /\s+\S*$/.test(truncated)
+            ? truncated.replace(/\s+\S*$/, "")
+            : truncated
+        ).trim();
       }
     }
     const prBody = `## Summary

@@ -1,7 +1,7 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { VoiceSamples } from "../../kitTypes";
 
@@ -44,6 +44,14 @@ describe("useKitNavigation", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Use fake timers to control timeout behavior
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    // Clean up timers after each test
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
   });
 
   it("should initialize with no selected kit", () => {
@@ -428,6 +436,11 @@ describe("useKitNavigation", () => {
 
       expect(result.current.selectedKit).toBeNull();
       expect(result.current.selectedKitSamples).toBeNull();
+
+      // Fast-forward any pending timers to prevent them from firing after test
+      act(() => {
+        vi.runAllTimers();
+      });
     });
 
     it("should handle back navigation with string parameter", async () => {
@@ -445,6 +458,11 @@ describe("useKitNavigation", () => {
 
       expect(result.current.selectedKit).toBeNull();
       expect(result.current.selectedKitSamples).toBeNull();
+
+      // Fast-forward any pending timers to prevent them from firing after test
+      act(() => {
+        vi.runAllTimers();
+      });
     });
 
     it("should handle back navigation with no parameters", async () => {

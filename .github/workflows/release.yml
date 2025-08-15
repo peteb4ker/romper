@@ -63,11 +63,22 @@ jobs:
       - name: Package application (Electron)
         run: npm run make
 
+      - name: Debug artifact structure
+        run: |
+          echo "=== Project root contents ==="
+          ls -la
+          echo "=== Looking for out directory ==="
+          find . -name "out" -type d
+          echo "=== Looking for make directory ==="
+          find . -name "make" -type d
+          echo "=== All files with 'romper' or app name ==="
+          find . -name "*romper*" -o -name "*Romper*" | head -20
+
       - name: Upload platform artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: electron/out/make/
+          path: out/make/
           retention-days: 7
 
   release:

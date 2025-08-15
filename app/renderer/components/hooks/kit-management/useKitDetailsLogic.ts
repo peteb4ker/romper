@@ -245,17 +245,18 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
         return;
       }
       // Only handle navigation keys for sample nav if sequencer is closed
+      // Enter key removed to prevent conflicts with kit name editing
       if (
         !sequencerOpen &&
-        [" ", "ArrowDown", "ArrowUp", "Enter"].includes(e.key)
+        [" ", "ArrowDown", "ArrowUp"].includes(e.key)
       ) {
         e.preventDefault();
         if (e.key === "ArrowDown") {
           kitVoicePanels.onSampleKeyNav("down");
         } else if (e.key === "ArrowUp") {
           kitVoicePanels.onSampleKeyNav("up");
-        } else if (e.key === " " || e.key === "Enter") {
-          // Preview/play selected sample
+        } else if (e.key === " ") {
+          // Preview/play selected sample with Space key only
           const samplesForVoice = samples[selectedVoice] || [];
           const sample = samplesForVoice[selectedSampleIdx];
           if (sample) {

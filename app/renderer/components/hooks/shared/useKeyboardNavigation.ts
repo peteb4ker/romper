@@ -19,12 +19,13 @@ export function useKeyboardNavigation({
   selectedIdx,
   voice,
 }: UseKeyboardNavigationOptions) {
-  // Only handle Enter/Space for play when focused, not up/down navigation
+  // Only handle Space for play when focused, not up/down navigation
+  // Enter key removed to prevent conflicts with kit name editing
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLUListElement>) => {
       if (!samples.length) return;
       if (!isActive) return;
-      if (e.key === " " || e.key === "Enter") {
+      if (e.key === " ") {
         e.preventDefault();
         const sample = samples[selectedIdx];
         onPlay(voice, sample);

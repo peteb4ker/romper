@@ -241,22 +241,29 @@ git worktree repair
 
 #### Agent Worktree Workflow
 
-**For Each New Task:**
+**For Each New Task (CRITICAL - Parallel Agent Coordination):**
 
-1. **Create task-specific worktree**:
+1. **Pull latest main changes** (Required for parallel agents):
    ```bash
-   git worktree add worktrees/$(date +%Y%m%d)-task-name -b feature/task-name
-   cd worktrees/$(date +%Y%m%d)-task-name
+   cd /path/to/main/worktree  # Navigate to main branch worktree
+   git pull origin main       # Get latest changes from other agents
    ```
 
-2. **Work in isolation**: All development happens in the worktree directory
+2. **Create task-specific worktree from fresh main**:
+   ```bash
+   git worktree add worktrees/$(date +%Y%m%d)-task-name -b feature/task-name main
+   cd worktrees/$(date +%Y%m%d)-task-name
+   npm install  # Required for each worktree
+   ```
 
-3. **Validate with quality gates**: Pre-commit hooks run in worktree context
+3. **Work in isolation**: All development happens in the worktree directory
+
+4. **Validate with quality gates**: Pre-commit hooks run in worktree context
    ```bash
    npm run pre-commit  # All quality checks pass in isolation
    ```
 
-4. **Complete and clean up**:
+5. **Complete and clean up**:
    ```bash
    git push origin feature/task-name  # Push completed work
    cd ../../main                      # Return to main worktree
@@ -272,6 +279,8 @@ git worktree repair
 
 **Development Flow:**
 - **One task per worktree**: Maintain clear task isolation
+- **Always start from main**: Pull latest main before creating worktrees to avoid conflicts
+- **Parallel agent safety**: Multiple agents working simultaneously - fresh main prevents merge conflicts
 - **Quality gates apply**: All pre-commit hooks work normally in worktrees
 - **Database considerations**: SQLite database is shared - coordinate access carefully
 - **Clean up regularly**: Remove merged worktrees to prevent clutter

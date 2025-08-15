@@ -134,16 +134,17 @@ Agents MUST ensure ALL CI/CD checks pass on created PRs:
 
 **CRITICAL**: Use the mandatory worktree workflow for all development:
 
-1. **Create isolated worktree**: `npm run worktree:create <task-name>`
-2. **Work in isolation**: `cd worktrees/<task-name>` and make changes
-3. **Enhanced commit**: `npm run commit "message"` - automatically handles:
+1. **Pull latest main**: `cd /path/to/main && git pull origin main` (REQUIRED for parallel agents)
+2. **Create isolated worktree**: `npm run worktree:create <task-name>` (creates from fresh main)
+3. **Work in isolation**: `cd worktrees/<task-name>` and make changes
+4. **Enhanced commit**: `npm run commit "message"` - automatically handles:
    - Branch protection (blocks main branch commits)
    - Pre-commit quality checks (TypeScript, linting, tests, build)
    - Push to remote with proper upstream tracking
    - Pull request creation with standard template
-4. **Clean up**: `npm run worktree:remove <task-name>` when done
+5. **Clean up**: `npm run worktree:remove <task-name>` when done
 
-This workflow ensures complete isolation, automated quality gates, and proper code review via pull requests.
+**Parallel Agent Coordination**: Multiple agents work simultaneously - ALWAYS pull main before creating worktrees to avoid conflicts from constantly merging PRs.
 
 ## Code Metrics and Analysis Standards
 

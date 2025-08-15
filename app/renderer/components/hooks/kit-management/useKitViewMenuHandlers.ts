@@ -119,7 +119,7 @@ export function useKitViewMenuHandlers({
     },
     onValidateDatabase: () => {
       console.log("[useKitViewMenuHandlers] Menu validate database triggered");
-      void openValidationDialog();
+      openValidationDialog();
     },
   });
 

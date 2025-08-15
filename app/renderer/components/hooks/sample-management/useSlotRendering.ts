@@ -81,7 +81,7 @@ export function useSlotRendering({
           // Fallback for unknown modes
           dragOverClass =
             " bg-gray-100 dark:bg-gray-800 ring-2 ring-gray-400 dark:ring-gray-300";
-          dropHintTitle = "Drop to assign sample";
+          // dropHintTitle keeps its initial value "Drop to assign sample"
         }
       } else if (params.isStereoHighlight) {
         dragOverClass =

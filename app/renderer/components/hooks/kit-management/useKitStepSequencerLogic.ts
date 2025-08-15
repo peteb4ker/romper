@@ -96,9 +96,7 @@ export function useKitStepSequencerLogic(
 
   // Worker initialization and cleanup
   const worker = React.useMemo(() => {
-    if (!workerRef.current) {
-      workerRef.current = new Worker(workerUrl);
-    }
+    workerRef.current ??= new Worker(workerUrl);
     return workerRef.current;
   }, [workerUrl]);
 

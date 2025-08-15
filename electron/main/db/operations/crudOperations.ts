@@ -8,8 +8,7 @@ import type {
 
 import * as schema from "@romper/shared/db/schema.js";
 // Basic CRUD operations for database entities
-import { and, eq } from "drizzle-orm";
-import { count } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 
 import { withDb } from "../utils/dbUtilities.js";
 import { performVoiceReindexing } from "./sampleManagementOps.js";

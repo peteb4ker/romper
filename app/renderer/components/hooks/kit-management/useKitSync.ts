@@ -23,7 +23,7 @@ export function useKitSync({ onMessage }: UseKitSyncOptions) {
         try {
           const settings = await window.electronAPI.readSettings();
           console.log("Settings loaded:", settings);
-          if (settings && settings.sdCardPath) {
+          if (settings?.sdCardPath) {
             console.log(
               "Setting SD card path from settings:",
               settings.sdCardPath,

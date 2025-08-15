@@ -49,9 +49,9 @@ const KitHeader: React.FC<KitHeaderProps> = ({
   setKitAliasInput,
 }) => {
   // Simple back handler without artificial guards
-  const handleBack = useCallback(async () => {
+  const handleBack = useCallback(() => {
     if (!onBack) return;
-    await onBack();
+    onBack();
   }, [onBack]);
 
   return (

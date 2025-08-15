@@ -130,6 +130,35 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
     }
   };
 
+  const renderValidationStatus = () => {
+    if (isValidating) {
+      return (
+        <div className="flex items-center space-x-2 text-blue-600">
+          <FiRefreshCw className="h-4 w-4 animate-spin" />
+          <span className="text-sm">Validating directory...</span>
+        </div>
+      );
+    }
+
+    if (validationResult?.isValid) {
+      return (
+        <div className="rounded bg-green-50 p-2">
+          <p className="text-sm text-green-700">
+            ✓ Valid local store directory
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded bg-red-50 p-2">
+        <p className="text-sm text-red-700">
+          ✗ {validationResult?.error || "Invalid directory"}
+        </p>
+      </div>
+    );
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -186,26 +215,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
 
         {/* Validation Result */}
         {validationResult && (
-          <div className="mb-4">
-            {isValidating ? (
-              <div className="flex items-center space-x-2 text-blue-600">
-                <FiRefreshCw className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Validating directory...</span>
-              </div>
-            ) : validationResult.isValid ? (
-              <div className="rounded bg-green-50 p-2">
-                <p className="text-sm text-green-700">
-                  ✓ Valid local store directory
-                </p>
-              </div>
-            ) : (
-              <div className="rounded bg-red-50 p-2">
-                <p className="text-sm text-red-700">
-                  ✗ {validationResult.error || "Invalid directory"}
-                </p>
-              </div>
-            )}
-          </div>
+          <div className="mb-4">{renderValidationStatus()}</div>
         )}
 
         {/* Action Buttons */}

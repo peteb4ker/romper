@@ -76,7 +76,7 @@ export function formatKitOperationError(
  * @returns Number of non-empty samples
  */
 export function getFilledSampleCount(samples: string[]): number {
-  return samples.filter((s) => s && s.trim()).length;
+  return samples.filter((s) => s?.trim()).length;
 }
 
 /**
@@ -88,7 +88,7 @@ export function isVoiceAtSampleLimit(samples: string[]): boolean {
   if (!samples || !Array.isArray(samples)) {
     return false;
   }
-  const filledSampleCount = samples.filter((s) => s && s.trim()).length;
+  const filledSampleCount = samples.filter((s) => s?.trim()).length;
   return filledSampleCount >= 12;
 }
 

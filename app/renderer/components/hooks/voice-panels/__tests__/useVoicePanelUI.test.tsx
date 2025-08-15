@@ -56,7 +56,6 @@ describe("useVoicePanelUI", () => {
       const { result } = renderHook(() => useVoicePanelUI(defaultProps));
 
       expect(typeof result.current.renderVoiceName).toBe("function");
-      expect(typeof result.current.renderSlotNumbers).toBe("function");
     });
   });
 
@@ -314,160 +313,6 @@ describe("useVoicePanelUI", () => {
     });
   });
 
-  describe("renderSlotNumbers", () => {
-    it("renders correct number of slot numbers", () => {
-      mockSlotRenderingHook.calculateRenderSlots.mockReturnValue({
-        slotsToRender: 4,
-      });
-
-      const { result } = renderHook(() => useVoicePanelUI(defaultProps));
-
-      const slotNumbers = result.current.renderSlotNumbers();
-
-      expect(slotNumbers).toHaveLength(4);
-    });
-
-    it("renders slot numbers starting from 1", () => {
-      mockSlotRenderingHook.calculateRenderSlots.mockReturnValue({
-        slotsToRender: 3,
-      });
-
-      const { result } = renderHook(() => useVoicePanelUI(defaultProps));
-
-      const { container } = render(
-        <div>{result.current.renderSlotNumbers()}</div>,
-      );
-
-      expect(container.textContent).toContain("1.");
-      expect(container.textContent).toContain("2.");
-      expect(container.textContent).toContain("3.");
-    });
-
-    it("renders correct data-testid for each slot", () => {
-      mockSlotRenderingHook.calculateRenderSlots.mockReturnValue({
-        slotsToRender: 2,
-      });
-
-      const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, voice: 3 }),
-      );
-
-      const { getByTestId } = render(
-        <div>{result.current.renderSlotNumbers()}</div>,
-      );
-
-      expect(getByTestId("slot-number-3-0")).toBeInTheDocument();
-      expect(getByTestId("slot-number-3-1")).toBeInTheDocument();
-    });
-
-    it("applies correct CSS classes to slot numbers", () => {
-      mockSlotRenderingHook.calculateRenderSlots.mockReturnValue({
-        slotsToRender: 1,
-      });
-
-      const { result } = renderHook(() => useVoicePanelUI(defaultProps));
-
-      const { getByTestId } = render(
-        <div>{result.current.renderSlotNumbers()}</div>,
-      );
-
-      const slotNumber = getByTestId("slot-number-2-0");
-      expect(slotNumber).toHaveClass(
-        "text-xs",
-        "font-mono",
-        "text-gray-500",
-        "dark:text-gray-400",
-        "select-none",
-        "bg-gray-200",
-        "dark:bg-gray-700",
-        "px-1.5",
-        "py-0.5",
-        "rounded",
-        "text-center",
-        "w-8",
-        "h-5",
-        "flex",
-        "items-center",
-        "justify-center",
-        "inline-block",
-      );
-    });
-
-    it("renders with correct inline styles", () => {
-      mockSlotRenderingHook.calculateRenderSlots.mockReturnValue({
-        slotsToRender: 1,
-      });
-
-      const { result } = renderHook(() => useVoicePanelUI(defaultProps));
-
-      const { getByTestId } = render(
-        <div>{result.current.renderSlotNumbers()}</div>,
-      );
-
-      const slotNumber = getByTestId("slot-number-2-0");
-      expect(slotNumber).toHaveStyle("display: inline-block; width: 32px");
-    });
-
-    it("renders container divs", () => {
-      mockSlotRenderingHook.calculateRenderSlots.mockReturnValue({
-        slotsToRender: 1,
-      });
-
-      const { result } = renderHook(() => useVoicePanelUI(defaultProps));
-
-      const { container } = render(
-        <div>{result.current.renderSlotNumbers()}</div>,
-      );
-
-      const containerDiv = container.querySelector("div div");
-      expect(containerDiv).toBeInTheDocument();
-    });
-
-    it("handles zero slots to render", () => {
-      mockSlotRenderingHook.calculateRenderSlots.mockReturnValue({
-        slotsToRender: 0,
-      });
-
-      const { result } = renderHook(() => useVoicePanelUI(defaultProps));
-
-      const slotNumbers = result.current.renderSlotNumbers();
-
-      expect(slotNumbers).toHaveLength(0);
-    });
-
-    it("handles large number of slots", () => {
-      mockSlotRenderingHook.calculateRenderSlots.mockReturnValue({
-        slotsToRender: 12,
-      });
-
-      const { result } = renderHook(() => useVoicePanelUI(defaultProps));
-
-      const slotNumbers = result.current.renderSlotNumbers();
-
-      expect(slotNumbers).toHaveLength(12);
-
-      const { container } = render(<div>{slotNumbers}</div>);
-      expect(container.textContent).toContain("12.");
-    });
-
-    it("calls calculateRenderSlots on each render", () => {
-      const { rerender, result } = renderHook(() =>
-        useVoicePanelUI(defaultProps),
-      );
-
-      result.current.renderSlotNumbers();
-      expect(mockSlotRenderingHook.calculateRenderSlots).toHaveBeenCalledTimes(
-        1,
-      );
-
-      rerender();
-      result.current.renderSlotNumbers();
-      expect(mockSlotRenderingHook.calculateRenderSlots).toHaveBeenCalledTimes(
-        2,
-      );
-    });
-  });
-
   describe("memoization and performance", () => {
     it("memoizes renderVoiceName based on dependencies", () => {
       const { rerender, result } = renderHook(
@@ -501,23 +346,6 @@ describe("useVoicePanelUI", () => {
 
       // Should be different function reference
       expect(firstRender).not.toBe(secondRender);
-    });
-
-    it("memoizes renderSlotNumbers based on dependencies", () => {
-      const { rerender, result } = renderHook(
-        (props) => useVoicePanelUI(props),
-        { initialProps: defaultProps },
-      );
-
-      const firstRender = result.current.renderSlotNumbers;
-
-      // Rerender with same props
-      rerender(defaultProps);
-
-      const secondRender = result.current.renderSlotNumbers;
-
-      // Should be the same function reference (memoized)
-      expect(firstRender).toBe(secondRender);
     });
   });
 

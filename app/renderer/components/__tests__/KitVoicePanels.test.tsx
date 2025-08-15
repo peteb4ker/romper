@@ -148,6 +148,77 @@ describe("KitVoicePanels", () => {
     expect(screen.queryByTestId("slot-number-2-0")).not.toBeInTheDocument();
   });
 
+  it("renders exactly one drop target per voice when editable", () => {
+    render(<MultiVoicePanelsTestWrapper isEditable={true} />);
+
+    // Check that each voice has exactly one drop zone
+    expect(screen.getByTestId("drop-zone-voice-1")).toBeInTheDocument();
+    expect(screen.getByTestId("drop-zone-voice-2")).toBeInTheDocument();
+
+    // Check that drop zones have proper labels
+    expect(screen.getByTestId("drop-zone-voice-1")).toHaveTextContent(
+      "Drop WAV files here",
+    );
+    expect(screen.getByTestId("drop-zone-voice-2")).toHaveTextContent(
+      "Drop WAV files here",
+    );
+  });
+
+  it("does not render drop targets when not editable", () => {
+    render(<MultiVoicePanelsTestWrapper isEditable={false} />);
+
+    // No drop zones should be present in read-only mode
+    expect(screen.queryByTestId("drop-zone-voice-1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("drop-zone-voice-2")).not.toBeInTheDocument();
+  });
+
+  it("maintains fixed 12-slot height for all voice panels", () => {
+    const voices = [
+      { samples: ["sample1.wav"], voice: 1, voiceName: "Voice1" }, // 1 sample
+      {
+        samples: ["s1.wav", "s2.wav", "s3.wav"],
+        voice: 2,
+        voiceName: "Voice2",
+      }, // 3 samples
+      {
+        samples: Array(6)
+          .fill()
+          .map((_, i) => `sample${i}.wav`),
+        voice: 3,
+        voiceName: "Voice3",
+      }, // 6 samples
+      {
+        samples: Array(12)
+          .fill()
+          .map((_, i) => `sample${i}.wav`),
+        voice: 4,
+        voiceName: "Voice4",
+      }, // 12 samples (full)
+    ];
+
+    render(<MultiVoicePanelsTestWrapper isEditable={true} voices={voices} />);
+
+    // Each voice panel should have exactly 12 rendered slots (samples + empty slots + drop zone)
+    const voice1List = screen.getByTestId("sample-list-voice-1");
+    const voice2List = screen.getByTestId("sample-list-voice-2");
+    const voice3List = screen.getByTestId("sample-list-voice-3");
+    const voice4List = screen.getByTestId("sample-list-voice-4");
+
+    // All should have exactly 12 list items (slots)
+    expect(voice1List.children).toHaveLength(12);
+    expect(voice2List.children).toHaveLength(12);
+    expect(voice3List.children).toHaveLength(12);
+    expect(voice4List.children).toHaveLength(12);
+
+    // Voice 1-3 should have drop zones (not full)
+    expect(screen.getByTestId("drop-zone-voice-1")).toBeInTheDocument();
+    expect(screen.getByTestId("drop-zone-voice-2")).toBeInTheDocument();
+    expect(screen.getByTestId("drop-zone-voice-3")).toBeInTheDocument();
+
+    // Voice 4 should not have drop zone (full)
+    expect(screen.queryByTestId("drop-zone-voice-4")).not.toBeInTheDocument();
+  });
+
   it("cross-voice keyboard navigation moves selection between voices", async () => {
     render(<MultiVoicePanelsTestWrapper />);
     // Down to snare.wav

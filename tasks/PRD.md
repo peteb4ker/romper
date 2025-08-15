@@ -5,13 +5,6 @@ last_reviewed: "2025-08-15"
 tags: ["project-management"]
 ---
 
----
-title: "Romper Sample Manager - Product Requirements Document (PRD)"
-owners: ["product-team"]
-last_reviewed: "2025-08-15"
-tags: ["project-management"]
----
-
 # Romper Sample Manager - Product Requirements Document (PRD)
 
 ## 1. Introduction/Overview

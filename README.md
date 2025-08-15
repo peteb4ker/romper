@@ -5,13 +5,6 @@ last_reviewed: "2025-08-15"
 tags: ["documentation"]
 ---
 
----
-title: "🎛️ Rample Sample Manager"
-owners: ["maintainer"]
-last_reviewed: "2025-08-15"
-tags: ["documentation"]
----
-
 # 🎛️ Rample Sample Manager
 
 [![Tests](https://github.com/peteb4ker/romper/actions/workflows/test.yml/badge.svg)](https://github.com/peteb4ker/romper/actions/workflows/test.yml)

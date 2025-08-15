@@ -5,13 +5,6 @@ last_reviewed: "2025-08-15"
 tags: ["project-management", "architecture"]
 ---
 
----
-title: "Architecture Red Flags and Technical Debt"
-owners: ["product-team"]
-last_reviewed: "2025-08-15"
-tags: ["project-management", "architecture"]
----
-
 # Architecture Red Flags and Technical Debt
 
 **Generated**: 2025-08-09

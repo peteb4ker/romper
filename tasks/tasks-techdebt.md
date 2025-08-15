@@ -5,13 +5,6 @@ last_reviewed: "2025-08-15"
 tags: ["project-management"]
 ---
 
----
-title: "Technical Debt Todo List"
-owners: ["product-team"]
-last_reviewed: "2025-08-15"
-tags: ["project-management"]
----
-
 # Technical Debt Todo List
 
 _Last updated: 2025-01-12_

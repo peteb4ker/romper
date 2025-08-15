@@ -27,7 +27,8 @@ class DocumentationFixer {
     
     // Re-run audit to check compliance
     console.log('🔍 Re-running audit...');
-    const { default: DocumentationTracer } = await import('./check-docs.mjs');
+    const tracerModule = await import('./check-docs.mjs');
+    const DocumentationTracer = tracerModule.default;
     const tracer = new DocumentationTracer();
     await tracer.run();
   }

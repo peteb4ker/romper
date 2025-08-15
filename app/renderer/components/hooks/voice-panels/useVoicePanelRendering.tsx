@@ -143,7 +143,6 @@ export function useVoicePanelRendering({
   // UI element rendering functions hook
   const ui = useVoicePanelUI({
     isEditable,
-    slotRenderingHook,
     voice,
     voiceName,
     voiceNameEditorHook,

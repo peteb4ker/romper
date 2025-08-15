@@ -63,14 +63,14 @@ romper/
 
 ### For AI Development Tools
 
-- **[CLAUDE.md](CLAUDE.md)** - Claude Code project instructions with context-aware loading
-- **[Agent Instructions](.agent/)** - Machine-readable coding standards and patterns
+- **[CLAUDE.md](CLAUDE.md)** - Claude Code project instructions
+- **[Agent Instructions](.agent/)** - Machine-readable coding standards
 - **[GitHub Copilot Instructions](.github/copilot-instructions.md)** - Copilot development standards
 
 ### Project Management
 
-- **[Product Requirements](tasks/PRD.md)** - Complete project vision and requirements
-- **[Current Tasks](tasks/tasks-PRD.md)** - Development progress and task tracking
+- **[Product Requirements](tasks/PRD.md)** - Complete project vision
+- **[Current Tasks](tasks/tasks-PRD.md)** - Development progress tracking
 
 ## 💬 Development Workflows
 
@@ -112,9 +112,9 @@ npm run test:e2e # Run end-to-end tests
 
 Romper supports the following environment variables for configuration:
 
-- **`ROMPER_SDCARD_PATH`** - Path to your Rample SD card directory (for backward compatibility)
-- **`ROMPER_LOCAL_PATH`** - Path to your local sample library directory (takes precedence over ROMPER_SDCARD_PATH)
-- **`ROMPER_SQUARP_ARCHIVE_URL`** - URL to the Squarp factory samples archive (defaults to official Squarp URL)
+- **`ROMPER_SDCARD_PATH`** - SD card directory path
+- **`ROMPER_LOCAL_PATH`** - Local sample library path
+- **`ROMPER_SQUARP_ARCHIVE_URL`** - Factory samples archive URL
 
 Example usage:
 

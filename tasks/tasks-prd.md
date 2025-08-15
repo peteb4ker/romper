@@ -3,19 +3,54 @@ _Last updated: 2025-07-26_
 ## Relevant Files
 
 ### UI Components
-- `app/renderer/components/KitDetails.tsx` - Main UI for kit details, extended to support comprehensive kit editing with editable mode toggle, slot management, and action controls.
-- `app/renderer/components/__tests__/KitDetails.test.tsx` - Unit tests for KitDetails including editable mode, slot actions, and UI interactions.
-- `app/renderer/components/KitVoicePanel.tsx` - UI for voice slot drag-and-drop, add/replace/delete actions, editable mode feedback, and stereo assignment.
-- `app/renderer/components/__tests__/KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel editable mode, slot actions, and drag-and-drop.
-- `app/renderer/components/KitVoicePanels.tsx` - Renders all voice panels, coordinates editable mode state, and handles multi-voice operations.
-- `app/renderer/components/__tests__/KitVoicePanels.test.tsx` - Unit tests for KitVoicePanels editable mode integration and voice coordination.
-- `app/renderer/components/StatusBar.tsx` - Displays progress, notifications, and status for editing actions and operations.
-- `app/renderer/components/__tests__/StatusBar.test.tsx` - Unit tests for StatusBar edit-related notifications and progress display.
-- `app/renderer/components/MessageDisplay.tsx` - Notification system for info, warning, error, and progress messages in editing operations.
-- `app/renderer/components/__tests__/MessageDisplay.test.tsx` - Unit tests for MessageDisplay editing integration.
-- `app/renderer/components/KitBrowser.tsx` - Main kit browser interface with navigation, filtering, and kit management.
-- `app/renderer/components/__tests__/KitBrowser.test.tsx` - Unit tests for kit browser functionality and interaction.
-- `app/renderer/components/KitStepSequencer.tsx` - 4-channel, 16-step XOX-style step sequencer for kit preview.
+- `KitDetails.tsx` - Main kit editing UI
+  - Editable mode toggle
+  - Slot management
+  - Action controls
+- `KitDetails.test.tsx` - Unit tests for KitDetails
+  - Editable mode testing
+  - Slot actions testing
+  - UI interactions testing
+- `KitVoicePanel.tsx` - Voice slot operations
+  - Drag-and-drop functionality
+  - Add/replace/delete actions
+  - Stereo assignment
+- `KitVoicePanel.test.tsx` - Unit tests for KitVoicePanel
+  - Editable mode testing
+  - Slot actions testing
+  - Drag-and-drop testing
+- `KitVoicePanels.tsx` - Multi-voice coordination
+  - Renders all voice panels
+  - Coordinates editable mode state
+  - Handles multi-voice operations
+- `KitVoicePanels.test.tsx` - Unit tests for KitVoicePanels
+  - Editable mode integration
+  - Voice coordination testing
+- `StatusBar.tsx` - Status display component
+  - Progress indicators
+  - Notifications
+  - Editing action status
+- `StatusBar.test.tsx` - Unit tests for StatusBar
+  - Edit-related notifications
+  - Progress display testing
+- `MessageDisplay.tsx` - Notification system
+  - Info messages
+  - Warning messages
+  - Error messages
+  - Progress messages
+- `MessageDisplay.test.tsx` - Unit tests for MessageDisplay
+  - Editing integration testing
+- `KitBrowser.tsx` - Kit browser interface
+  - Navigation
+  - Filtering
+  - Kit management
+- `KitBrowser.test.tsx` - Unit tests for kit browser
+  - Functionality testing
+  - Interaction testing
+- `KitStepSequencer.tsx` - Step sequencer component
+  - 4-channel XOX sequencer
+  - 16-step pattern
+  - Kit preview functionality
 - `app/renderer/components/__tests__/KitStepSequencer.test.tsx` - Unit tests for step sequencer functionality and keyboard navigation.
 - `app/renderer/components/SampleWaveform.tsx` - Waveform display component for sample visualization.
 - `app/renderer/components/__tests__/SampleWaveform.test.tsx` - Unit tests for waveform display and audio analysis.

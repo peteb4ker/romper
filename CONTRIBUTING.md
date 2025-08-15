@@ -87,6 +87,8 @@ AI agents MUST:
 3. **Self-verify compliance** before making any documentation changes
 4. **Never bypass or skip compliance checks**
 
+**Compliance check**: validate JSON reports contain all required fields
+
 ## Development Workflow (MANDATORY)
 
 ### Worktree Usage
@@ -107,6 +109,8 @@ npm run commit "description"
 npm run worktree:remove <task-name>
 ```
 
+**Compliance check**: verify commits originate from worktree branches only
+
 ### Pre-commit Requirements
 
 Every commit MUST pass:
@@ -116,6 +120,8 @@ Every commit MUST pass:
 - **Tests**: `npm run test:fast`
 - **Documentation compliance**: `npm run docs:check`
 - **Build verification**: `npm run build`
+
+**Compliance check**: exit nonzero if any pre-commit check fails
 
 ## Commit Message Standards
 

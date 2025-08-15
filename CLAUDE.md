@@ -110,6 +110,26 @@ Working on **Task 5.0: Kit Editing and Slot Management** - implementing editable
 
 **CRITICAL**: When creating git commits, DO NOT add Claude attribution or Co-Authored-By lines. Commit messages should contain only the actual commit content without any AI attribution.
 
+## Pull Request Standards
+
+**CRITICAL**: PR titles must be concise and scannable - **short sentences, not paragraphs**.
+
+**PR Title Requirements:**
+- **Maximum 50-60 characters** for the main title
+- **Format**: `<type>: <concise description>`
+- **Use imperative mood**: `add`, `fix`, `update` (not `adding`, `fixed`, `updated`)
+- **Examples**: 
+  - ✅ `feat: add dark mode toggle to settings`
+  - ✅ `fix: resolve sample loading race condition`
+  - ❌ `feat: add comprehensive dark mode toggle functionality with proper theme switching...`
+
+**Agent PR Responsibility:**
+Agents MUST ensure ALL CI/CD checks pass on created PRs:
+- Monitor PR status after creation
+- Fix failing checks: TypeScript, linting, tests, build, SonarCloud
+- Use `gh pr checks <pr-number>` to monitor status
+- Commit fixes until all checks pass and PR merges successfully
+
 ## Git Workflow Requirements
 
 **CRITICAL**: Use the mandatory worktree workflow for all development:

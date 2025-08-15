@@ -124,9 +124,11 @@ async function main() {
   try {
     // Extract a short PR title from commit message (max 50-60 chars)
     // Try to detect type prefix (feat:, fix:, etc.) and preserve it
-    const typeMatch = commitMessage.match(/^(feat|fix|docs|style|refactor|test|chore|perf|build|ci):\s*/i);
+    const typeMatch = commitMessage.match(
+      /^(feat|fix|docs|style|refactor|test|chore|perf|build|ci):\s*/i,
+    );
     let prTitle = commitMessage;
-    
+
     if (typeMatch) {
       // Has a type prefix, ensure the whole title is under 60 chars
       if (commitMessage.length > 60) {
@@ -134,13 +136,12 @@ async function main() {
         const description = commitMessage.slice(type.length);
         // Truncate description to fit within 60 chars total
         const maxDescLength = 60 - type.length;
-        prTitle = type + description.slice(0, maxDescLength).replace(/\s+\S*$/, '').trim();
-      }
-    } else {
-      // No type prefix, just truncate to 50 chars
-      if (commitMessage.length > 50) {
-        const truncatedDesc = description.slice(0, maxDescLength);
-        prTitle = type + (/\s+\S*$/.test(truncatedDesc) ? truncatedDesc.replace(/\s+\S*$/, '') : truncatedDesc).trim();
+        prTitle =
+          type +
+          description
+            .slice(0, maxDescLength)
+            .replace(/\s+\S*$/, "")
+            .trim();
       }
     } else {
       // No type prefix, just truncate to 50 chars
@@ -149,7 +150,6 @@ async function main() {
         prTitle = (/\s+\S*$/.test(truncated) ? truncated.replace(/\s+\S*$/, '') : truncated).trim();
       }
     }
-    
     const prBody = `## Summary
 - ${commitMessage}
 

@@ -133,26 +133,19 @@ async function main() {
       // Has a type prefix, ensure the whole title is under 60 chars
       if (commitMessage.length > 60) {
         const type = typeMatch[0];
-        const description = commitMessage.slice(type.length);
-        // Truncate description to fit within 60 chars total
+        const description = commitMessage.slice(type.length).trim();
         const maxDescLength = 60 - type.length;
         
-        // Ensure we have a minimum description length to avoid empty or too short descriptions
-        if (maxDescLength < 10) {
-          // If type prefix is too long, fall back to simple truncation
+        // Address Copilot comment: Prevent empty descriptions when type prefix is too long
+        if (maxDescLength < 5 || description.length === 0) {
+          // If type prefix leaves insufficient space or no description, use simple truncation
           prTitle = commitMessage.slice(0, 60).replace(/\s+\S*$/, "").trim();
         } else {
           const truncatedDesc = description
             .slice(0, maxDescLength)
             .replace(/\s+\S*$/, "")
             .trim();
-          
-          // Ensure description isn't empty after truncation
-          if (truncatedDesc.length === 0) {
-            prTitle = commitMessage.slice(0, 60).replace(/\s+\S*$/, "").trim();
-          } else {
-            prTitle = type + truncatedDesc;
-          }
+          prTitle = type + truncatedDesc;
         }
       }
     } else {

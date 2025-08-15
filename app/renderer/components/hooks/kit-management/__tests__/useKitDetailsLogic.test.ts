@@ -458,13 +458,15 @@ describe("useKitDetailsLogic", () => {
     expect(spacePreventDefaultSpy).toHaveBeenCalled();
     expect(mockHandlePlay).toHaveBeenCalledWith(1, sampleProps.samples[1][0]);
 
-    // Test Enter key playback
+    // Test Enter key - should be ignored (removed to prevent conflicts with kit name editing)
     const enterEvent = new KeyboardEvent("keydown", { key: "Enter" });
     const enterPreventDefaultSpy = vi.spyOn(enterEvent, "preventDefault");
     window.dispatchEvent(enterEvent);
 
-    expect(enterPreventDefaultSpy).toHaveBeenCalled();
-    expect(mockHandlePlay).toHaveBeenCalledWith(1, sampleProps.samples[1][0]);
+    expect(enterPreventDefaultSpy).not.toHaveBeenCalled();
+    // The call count should remain the same as before the Enter key event (only from Space key)
+    expect(mockHandlePlay).toHaveBeenCalledTimes(1); // Only called once from Space key
+    expect(mockHandlePlay).toHaveBeenCalledWith(1, sampleProps.samples[1][0]); // From Space key only
   });
 
   it("ignores keyboard events when sequencer is open", () => {

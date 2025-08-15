@@ -95,8 +95,12 @@ Before starting any task:
 **For each new task, create a dedicated worktree:**
 
 ```bash
-# Standard naming: worktrees/YYYYMMDD-task-description
-git worktree add worktrees/$(date +%Y%m%d)-task-5.2-kit-editor -b feature/task-5.2-kit-editor
+# MANDATORY: Pull latest main first (multiple agents working in parallel)
+cd /path/to/main/worktree
+git pull origin main
+
+# Create worktree from fresh main branch
+git worktree add worktrees/$(date +%Y%m%d)-task-5.2-kit-editor -b feature/task-5.2-kit-editor main
 cd worktrees/$(date +%Y%m%d)-task-5.2-kit-editor
 
 # Install dependencies in new worktree
@@ -112,10 +116,14 @@ npm install
 
 #### Worktree Lifecycle Management
 
-**Phase 1: Setup**
+**Phase 1: Setup (CRITICAL - Parallel Agent Coordination)**
 ```bash
-# Create worktree from main
-git worktree add worktrees/$(date +%Y%m%d)-task-name -b feature/task-name
+# MANDATORY: Pull latest main changes first (parallel agents working!)
+cd /path/to/main/worktree
+git pull origin main
+
+# Create worktree from fresh main branch
+git worktree add worktrees/$(date +%Y%m%d)-task-name -b feature/task-name main
 cd worktrees/$(date +%Y%m%d)-task-name
 npm install  # Required for each worktree
 ```

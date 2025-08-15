@@ -38,7 +38,7 @@ describe("useKeyboardNavigation", () => {
     expect(mockOnPlay).toHaveBeenCalledWith(1, "kick.wav");
   });
 
-  it("handles Enter key to play sample", () => {
+  it("ignores Enter key (removed to prevent conflicts with kit name editing)", () => {
     const { result } = renderHook(() => useKeyboardNavigation(defaultProps));
 
     const mockEvent = {
@@ -48,8 +48,8 @@ describe("useKeyboardNavigation", () => {
 
     result.current.handleKeyDown(mockEvent);
 
-    expect(mockEvent.preventDefault).toHaveBeenCalled();
-    expect(mockOnPlay).toHaveBeenCalledWith(1, "kick.wav");
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+    expect(mockOnPlay).not.toHaveBeenCalled();
   });
 
   it("plays correct sample based on selectedIdx", () => {

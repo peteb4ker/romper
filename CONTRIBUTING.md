@@ -104,6 +104,20 @@ npm run docs:check || exit 1
 - **TypeScript**: Zero compilation errors
 - **Documentation compliance**: Must be ≥75% (for agent alignment)
 
+## Getting Help
+
+- **Code setup**: See [Development Workflow](./docs/developer/development-workflow.md)
+- **Architecture**: See [Architecture Overview](./docs/developer/architecture.md)
+- **Documentation issues**: Run `npm run docs:check` for reports
+
+## Quality Focus
+
+Code quality is the primary concern. Documentation standards exist solely to keep AI agents aligned when reading and writing documentation.
+
+Thank you for contributing to Romper Sample Manager!
+
+---
+
 ## Documentation Standards (Agent Alignment)
 
 These standards help keep AI agents aligned when reading and writing documentation.
@@ -143,17 +157,3 @@ tags: ["category"]
 - Exactly one H1 heading matching title
 - No broken internal links
 - Proper Markdown links instead of backticked paths
-
-## Getting Help
-
-- **Code setup**: See [Development Workflow](./docs/developer/development-workflow.md)
-- **Architecture**: See [Architecture Overview](./docs/developer/architecture.md)
-- **Documentation issues**: Run `npm run docs:check` for reports
-
-## Enforcement
-
-- **Non-compliant commits**: Automatically rejected by pre-commit hooks
-- **Non-compliant PRs**: Cannot merge until quality checks pass
-- **Focus**: Code quality first, documentation standards for agent alignment
-
-Thank you for contributing to Romper Sample Manager!

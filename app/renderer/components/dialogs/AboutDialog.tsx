@@ -9,28 +9,6 @@ const openExternal = (url: string) => {
   }
 };
 
-// Shared styling constants to reduce duplication
-const COLORS = {
-  background: {
-    modal: "bg-white dark:bg-slate-800",
-    overlay: "bg-black bg-opacity-50",
-    primary: "bg-blue-600 hover:bg-blue-700",
-  },
-  border: "border-gray-200 dark:border-slate-700",
-  text: {
-    accent:
-      "text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200",
-    muted: "text-gray-600 dark:text-gray-400",
-    primary: "text-gray-900 dark:text-white",
-    secondary: "text-gray-700 dark:text-gray-300",
-  },
-} as const;
-
-const STYLES = {
-  button: "transition-colors focus:outline-none",
-  linkButton: `underline ${COLORS.text.accent} transition-colors focus:outline-none`,
-  primaryButton: `inline-flex items-center gap-2 px-4 py-2 ${COLORS.background.primary} text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500`,
-} as const;
 
 interface AboutDialogProps {
   isOpen: boolean;
@@ -68,27 +46,28 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
   return (
     <div
       aria-labelledby="about-title"
-      className={`fixed inset-0 ${COLORS.background.overlay} flex items-center justify-center z-50`}
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          handleBackdropClick(e as unknown as React.MouseEvent<HTMLDivElement>);
+        }
+      }}
       role="dialog"
       tabIndex={-1}
     >
-      <div
-        className={`${COLORS.background.modal} rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden`}
-      >
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden">
         {/* Header */}
-        <div
-          className={`flex items-center justify-between p-6 border-b ${COLORS.border}`}
-        >
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <h2
-            className={`text-xl font-semibold ${COLORS.text.primary}`}
+            className="text-xl font-semibold text-gray-900 dark:text-white"
             id="about-title"
           >
             About Romper
           </h2>
           <button
             aria-label="Close dialog"
-            className={`text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 ${STYLES.button}`}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
             onClick={onClose}
             type="button"
           >
@@ -100,15 +79,15 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
         <div className="p-6 overflow-y-auto">
           <div className="text-center space-y-4">
             <div className="space-y-2">
-              <h3 className={`text-2xl font-bold ${COLORS.text.primary}`}>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Romper
               </h3>
-              <p className={`text-lg ${COLORS.text.secondary}`}>
+              <p className="text-lg text-gray-600 dark:text-gray-300">
                 Rample SD Card Manager
               </p>
             </div>
 
-            <div className={`space-y-3 text-sm ${COLORS.text.secondary}`}>
+            <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
               <p>&copy; Pete Baker {currentYear}</p>
               <p>
                 This application is{" "}
@@ -119,7 +98,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
               <p>
                 Licensed under the{" "}
                 <button
-                  className={STYLES.linkButton}
+                  className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
                   onClick={() =>
                     openExternal("https://opensource.org/licenses/MIT")
                   }
@@ -131,7 +110,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
             </div>
 
             <button
-              className={STYLES.primaryButton}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
               onClick={() =>
                 openExternal("https://github.com/peteb4ker/romper/")
               }
@@ -148,9 +127,9 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
               GitHub Repository
             </button>
 
-            <hr className={COLORS.border} />
+            <hr className="border-gray-200 dark:border-slate-700" />
 
-            <div className={`text-xs ${COLORS.text.muted} space-y-2`}>
+            <div className="text-xs text-gray-600 dark:text-gray-400 space-y-2">
               <p>
                 Romper is an <span className="font-semibold">open-source</span>{" "}
                 Electron app for managing Squarp Rample SD cards.

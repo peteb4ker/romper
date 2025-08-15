@@ -20,6 +20,18 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   const [dismissedUnscannedPrompt, setDismissedUnscannedPrompt] =
     React.useState(false);
 
+  // Kit alias editing state
+  const [editingKitAlias, setEditingKitAlias] = React.useState(false);
+  const [kitAliasInput, setKitAliasInput] = React.useState(
+    logic.kit?.alias || "",
+  );
+  const kitAliasInputRef = React.useRef<HTMLInputElement>(null!);
+
+  // Update kitAliasInput when kit changes
+  React.useEffect(() => {
+    setKitAliasInput(logic.kit?.alias || "");
+  }, [logic.kit?.alias]);
+
   // Check if kit needs scanning - this is just a simple heuristic for now
   // A more robust implementation would check the database for scan status
   const needsScanning =
@@ -35,14 +47,12 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
       data-testid="kit-details"
     >
       <KitHeader
-        editingKitAlias={false}
+        editingKitAlias={editingKitAlias}
         handleSaveKitAlias={logic.updateKitAlias}
         isEditable={logic.kit?.editable ?? false}
         kit={logic.kit}
-        kitAliasInput={logic.kit?.alias || logic.kit?.name || ""}
-        kitAliasInputRef={
-          React.createRef<HTMLInputElement>() as React.RefObject<HTMLInputElement>
-        }
+        kitAliasInput={kitAliasInput}
+        kitAliasInputRef={kitAliasInputRef}
         kitIndex={props.kitIndex}
         kitName={props.kitName}
         kits={props.kits}
@@ -51,8 +61,8 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         onPrevKit={props.onPrevKit}
         onScanKit={logic.handleScanKit}
         onToggleEditableMode={logic.toggleEditableMode}
-        setEditingKitAlias={() => {}}
-        setKitAliasInput={() => {}}
+        setEditingKitAlias={setEditingKitAlias}
+        setKitAliasInput={setKitAliasInput}
       />
 
       {needsScanning && (

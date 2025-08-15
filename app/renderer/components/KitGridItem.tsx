@@ -134,13 +134,25 @@ const KitGridItem = React.memo(
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <span title={iconLabel}>{icon}</span>
-              <span
-                className={`font-mono text-sm truncate ${
-                  isValid ? "text-gray-900 dark:text-gray-100" : "text-red-500"
-                }`}
-              >
-                {kit}
-              </span>
+              <div className="flex flex-col flex-1 min-w-0">
+                <span
+                  className={`font-mono text-sm truncate ${
+                    isValid
+                      ? "text-gray-900 dark:text-gray-100"
+                      : "text-red-500"
+                  }`}
+                >
+                  {kit}
+                </span>
+                {kitData?.alias && (
+                  <span
+                    className="text-xs text-gray-600 dark:text-gray-400 truncate italic"
+                    title={`Kit alias: ${kitData.alias}`}
+                  >
+                    {kitData.alias}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Enhanced Status indicators */}

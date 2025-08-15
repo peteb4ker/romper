@@ -4,12 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 
 export interface UseKitParams {
   kitName: string;
+  onKitUpdated?: () => Promise<void>;
 }
 
 /**
  * Hook for loading and managing kit data from database
  */
-export function useKit({ kitName }: UseKitParams) {
+export function useKit({ kitName, onKitUpdated }: UseKitParams) {
   const [kit, setKit] = useState<KitWithRelations | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<null | string>(null);
@@ -46,6 +47,10 @@ export function useKit({ kitName }: UseKitParams) {
       const result = await window.electronAPI.updateKit(kitName, { alias });
       if (result.success) {
         await loadKit();
+        // Refresh the kit browser's data after updating alias
+        if (onKitUpdated) {
+          await onKitUpdated();
+        }
       } else {
         setError(result.error || "Failed to update kit alias");
       }
@@ -65,6 +70,10 @@ export function useKit({ kitName }: UseKitParams) {
       });
       if (result.success) {
         await loadKit();
+        // Refresh the kit browser's data after updating editable state
+        if (onKitUpdated) {
+          await onKitUpdated();
+        }
       } else {
         setError(result.error || "Failed to toggle editable mode");
       }

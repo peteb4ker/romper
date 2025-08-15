@@ -12,6 +12,7 @@ interface KitDetailsContainerProps {
   kits: KitWithRelations[];
   onAddUndoAction: (action: any) => void;
   onBack: (scrollToKit?: any) => Promise<void>;
+  onKitUpdated: () => Promise<void>;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onNextKit: () => void;
   onPrevKit: () => void;
@@ -30,6 +31,7 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
     kits,
     onAddUndoAction,
     onBack,
+    onKitUpdated,
     onMessage,
     onNextKit,
     onPrevKit,
@@ -56,6 +58,10 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
     return onRequestSamplesReload();
   }, [onRequestSamplesReload]);
 
+  const handleKitUpdated = React.useCallback(() => {
+    return onKitUpdated();
+  }, [onKitUpdated]);
+
   return (
     <KitDetails
       kitIndex={kitIndex}
@@ -63,6 +69,7 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
       kits={kits}
       onAddUndoAction={onAddUndoAction}
       onBack={handleBack}
+      onKitUpdated={handleKitUpdated}
       onMessage={handleMessage}
       onNextKit={onNextKit}
       onPrevKit={onPrevKit}

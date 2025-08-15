@@ -258,6 +258,7 @@ const KitsView: React.FC = () => {
           kits={navigation.sortedKits}
           onAddUndoAction={keyboardShortcuts.addUndoAction}
           onBack={navigation.handleBack}
+          onKitUpdated={refreshAllKitsAndSamples}
           onMessage={showMessage}
           onNextKit={navigation.handleNextKit}
           onPrevKit={navigation.handlePrevKit}

@@ -11,6 +11,7 @@ import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitDetailsAllProps extends KitDetailsProps {
   onCreateKit?: () => void; // Used by useKitDetailsLogic hook
+  onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitDetailsLogic hook
   onRequestSamplesReload?: () => Promise<void>;
 }

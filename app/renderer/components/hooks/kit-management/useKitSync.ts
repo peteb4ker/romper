@@ -4,13 +4,14 @@ import { useSyncUpdate } from "../shared/useSyncUpdate";
 
 export interface UseKitSyncOptions {
   onMessage?: (text: string, type?: string, duration?: number) => void;
+  onRefreshKits?: () => Promise<void>;
 }
 
 /**
  * Hook for managing kit sync functionality including dialog state and operations
  * Extracted from KitBrowser to reduce component complexity
  */
-export function useKitSync({ onMessage }: UseKitSyncOptions) {
+export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [currentSyncKit, setCurrentSyncKit] = useState<null | string>(null);
   const [currentChangeSummary, setCurrentChangeSummary] = useState<any>(null);
@@ -81,6 +82,17 @@ export function useKitSync({ onMessage }: UseKitSyncOptions) {
         setShowSyncDialog(false);
         setCurrentSyncKit(null);
         setCurrentChangeSummary(null);
+
+        // Refresh kit data to ensure UI shows updated unsaved states
+        if (onRefreshKits) {
+          console.log("[useKitSync] Refreshing kit data after successful sync");
+          try {
+            await onRefreshKits();
+          } catch (error) {
+            console.error("[useKitSync] Failed to refresh kit data:", error);
+          }
+        }
+
         if (onMessage) {
           onMessage(
             `All kits synced successfully to ${options.sdCardPath}!`,
@@ -92,7 +104,7 @@ export function useKitSync({ onMessage }: UseKitSyncOptions) {
         onMessage(`Sync failed: ${syncError}`, "error");
       }
     },
-    [startSync, onMessage, syncError],
+    [startSync, onMessage, syncError, onRefreshKits],
   );
 
   // Handler to close sync dialog

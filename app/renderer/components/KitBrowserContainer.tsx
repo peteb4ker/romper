@@ -10,7 +10,7 @@ interface KitBrowserContainerProps {
   kits: KitWithRelations[];
   localStorePath: null | string;
   onMessage: (text: string, type?: string, duration?: number) => void;
-  onRefreshKits: () => void;
+  onRefreshKits: () => Promise<void>;
   onSelectKit: (kitName: string) => void;
   ref?: React.Ref<KitBrowserHandle>;
   sampleCounts: Record<string, [number, number, number, number]>;
@@ -43,8 +43,8 @@ const KitBrowserContainer = React.forwardRef<
     [onMessage],
   );
 
-  const handleRefreshKits = React.useCallback(() => {
-    onRefreshKits();
+  const handleRefreshKits = React.useCallback(async () => {
+    await onRefreshKits();
   }, [onRefreshKits]);
 
   const handleSelectKit = React.useCallback(

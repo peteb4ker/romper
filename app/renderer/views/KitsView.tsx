@@ -86,7 +86,6 @@ const KitsView: React.FC = () => {
   const {
     allKitSamples,
     kits,
-    loadKitsData,
     refreshAllKitsAndSamples,
     reloadCurrentKitSamples,
     sampleCounts,
@@ -270,7 +269,7 @@ const KitsView: React.FC = () => {
           kits={navigation.sortedKits}
           localStorePath={localStorePath}
           onMessage={showMessage}
-          onRefreshKits={loadKitsData}
+          onRefreshKits={refreshAllKitsAndSamples}
           onSelectKit={navigation.handleSelectKit}
           ref={kitBrowserRef}
           sampleCounts={sampleCounts}

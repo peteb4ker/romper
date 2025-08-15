@@ -325,12 +325,43 @@ export function markKitsAsSynced(
   kitNames: string[],
 ): DbResult<void> {
   return withDb(dbDir, (db) => {
+    console.log(
+      `[markKitsAsSynced] Attempting to mark ${kitNames.length} kits as synced:`,
+      kitNames,
+    );
+
+    let updatedCount = 0;
     for (const kitName of kitNames) {
-      db.update(kits)
-        .set({ modified_since_sync: false })
-        .where(eq(kits.name, kitName))
-        .run();
+      try {
+        const result = db
+          .update(kits)
+          .set({ modified_since_sync: false })
+          .where(eq(kits.name, kitName))
+          .run();
+
+        console.log(
+          `[markKitsAsSynced] Kit ${kitName}: updated ${result.changes} rows`,
+        );
+
+        if (result.changes > 0) {
+          updatedCount++;
+        } else {
+          console.warn(
+            `[markKitsAsSynced] Kit ${kitName} was not found or not updated`,
+          );
+        }
+      } catch (error) {
+        console.error(
+          `[markKitsAsSynced] Failed to update kit ${kitName}:`,
+          error,
+        );
+        throw error; // Re-throw to fail the entire operation
+      }
     }
+
+    console.log(
+      `[markKitsAsSynced] Successfully updated ${updatedCount}/${kitNames.length} kits`,
+    );
   });
 }
 

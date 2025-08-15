@@ -1,6 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import React, { useEffect, useImperativeHandle, useRef } from "react";
+import React, { useCallback, useEffect, useImperativeHandle, useRef } from "react";
 
 import KitDialogs from "./dialogs/KitDialogs";
 import SyncUpdateDialog from "./dialogs/SyncUpdateDialog";
@@ -35,11 +35,21 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     const { onMessage, setLocalStorePath } = props;
     const kitGridRef = useRef<KitGridHandle>(null);
 
+    // Create wrapper function for async onRefreshKits to match void return expectation
+    const handleRefreshKits = useCallback(() => {
+      if (props.onRefreshKits) {
+        props.onRefreshKits().catch((error) => {
+          console.error("Failed to refresh kits:", error);
+          onMessage?.({ message: "Failed to refresh kits", type: "error" });
+        });
+      }
+    }, [props.onRefreshKits, onMessage]);
+
     // Filter management hook
     const filters = useKitFilters({
       kits: props.kits,
       onMessage,
-      onRefreshKits: props.onRefreshKits,
+      onRefreshKits: handleRefreshKits,
     });
     const {
       favoritesCount,
@@ -52,11 +62,21 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       showModifiedOnly,
     } = filters;
 
+    // Create wrapper function for async onRefreshKits with scrollToKit parameter
+    const handleRefreshKitsWithScroll = useCallback((scrollToKit?: string) => {
+      if (props.onRefreshKits) {
+        props.onRefreshKits().catch((error) => {
+          console.error("Failed to refresh kits:", error);
+          onMessage?.({ message: "Failed to refresh kits", type: "error" });
+        });
+      }
+    }, [props.onRefreshKits, onMessage]);
+
     const logic = useKitBrowser({
       kitListRef: kitGridRef,
       kits: filteredKits,
       onMessage: props.onMessage,
-      onRefreshKits: props.onRefreshKits,
+      onRefreshKits: handleRefreshKitsWithScroll,
     });
     const {
       bankNames,
@@ -148,7 +168,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     // Use the new useKitScan hook for scanning logic
     const { handleScanAllKits } = useKitScan({
       kits,
-      onRefreshKits: props.onRefreshKits,
+      onRefreshKits: handleRefreshKits,
     });
 
     // Expose handleScanAllKits through ref for parent components

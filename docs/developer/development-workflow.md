@@ -349,7 +349,7 @@ The `npm run commit` command automatically:
 
 #### PR Title Guidelines
 
-**CRITICAL**: Keep PR titles concise and scannable. Titles should be **short sentences, not paragraphs**.
+CRITICAL: Keep PR titles concise and scannable. Titles should be **short sentences, not paragraphs**.
 
 **Length Limits:**
 - **Maximum 50-60 characters** for the main title

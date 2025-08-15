@@ -66,6 +66,32 @@ Before starting any task:
 5. If pre-commit hooks fail, fix issues - do NOT use --no-verify without explicit user permission
 ```
 
+### Phase 3.5: PR Quality Assurance (Agent Responsibility)
+
+**CRITICAL**: Agent is responsible for ensuring ALL CI/CD checks pass on the created PR.
+
+```markdown
+1. Monitor PR status after creation via enhanced commit workflow
+2. Check all required status checks: build, lint, unit-tests, e2e-tests-check, SonarCloud
+3. If any checks fail, investigate and fix the underlying issues:
+   - TypeScript compilation errors: npm run typecheck
+   - Linting issues: npm run lint
+   - Test failures: npm run test:fast or npm run test
+   - Build failures: npm run build
+   - SonarCloud issues: Review quality gate failures and fix code quality issues
+4. Commit fixes and push updates until all checks pass
+5. Ensure PR merges successfully through auto-merge process
+```
+
+**Available Commands for Check Resolution:**
+- `npm run typecheck` - Fix TypeScript compilation errors
+- `npm run lint` - Fix ESLint issues with auto-fix
+- `npm run test:fast` - Run fast tests to debug failures
+- `npm run test` - Run full test suite with coverage
+- `npm run build` - Validate production build
+- `gh pr checks <pr-number>` - Monitor PR check status
+- `gh pr view <pr-number>` - View PR details and status
+
 ### Phase 4: Documentation
 
 ```markdown
@@ -223,6 +249,31 @@ lsof romper.db
 - Common types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
 - Provide clear, concise descriptions of changes
 - Include context about why changes were made when not obvious
+
+### PR Title Guidelines (CRITICAL)
+
+**MANDATORY**: Keep PR titles concise and scannable. Titles should be **short sentences, not paragraphs**.
+
+**Length Requirements:**
+- **Maximum 50-60 characters** for the main title
+- Use body/description for implementation details, not the title
+
+**Format:**
+```
+<type>: <concise description>
+```
+
+**Examples:**
+- ✅ `feat: add dark mode toggle to settings`
+- ✅ `fix: resolve sample loading race condition`
+- ✅ `docs: update PR title guidelines`
+- ❌ `feat: add comprehensive dark mode toggle functionality to application settings with proper theme switching and CSS variable management for improved user experience`
+
+**Guidelines:**
+- Use imperative mood (`add`, `fix`, `update` not `adding`, `fixed`, `updated`)
+- Focus on the "what" in title, save "why" and "how" for description
+- Include conventional commit prefix (`feat:`, `fix:`, `docs:`, etc.)
+- Be specific but concise (`fix auth bug` → `fix: resolve login timeout issue`)
 
 ## Quality Gates
 

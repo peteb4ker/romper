@@ -108,7 +108,12 @@ const KitsView: React.FC = () => {
   const kitFilters = useKitFilters({
     kits,
     onMessage: showMessage,
-    onRefreshKits: loadKitsData,
+    onRefreshKits: () => {
+      // Fire and forget - don't await the Promise to match void return type
+      loadKitsData().catch((error) => {
+        console.error("Failed to refresh kits:", error);
+      });
+    },
   });
 
   // Get current kit's editable state for keyboard shortcuts

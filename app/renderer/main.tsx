@@ -1,6 +1,6 @@
 import "./styles/index.css";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import {
   Navigate,
@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 import { toast } from "sonner";
 
+import AboutDialog from "./components/dialogs/AboutDialog";
 import { useMessageDisplay } from "./components/hooks/shared/useMessageDisplay";
 import MessageDisplay from "./components/MessageDisplay";
 import { MessageDisplayContext } from "./components/MessageDisplayContext";
@@ -25,31 +26,47 @@ declare global {
   }
 }
 
+const AppContent = () => {
+  const messageDisplay = useMessageDisplay();
+  const [showAboutModal, setShowAboutModal] = useState(false);
+
+  const handleAboutClick = () => {
+    setShowAboutModal(true);
+  };
+
+  const handleCloseAbout = () => {
+    setShowAboutModal(false);
+  };
+
+  return (
+    <MessageDisplayContext.Provider value={messageDisplay}>
+      <div className="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+        <MessageDisplay />
+        <div className="flex flex-1 min-h-0">
+          <main className="flex-1 min-h-0 flex flex-col h-full pb-10">
+            <Routes>
+              <Route element={<Navigate replace to="/kits" />} path="/" />
+              <Route element={<KitsView />} path="/kits" />
+              <Route element={<AboutView />} path="/about" />
+            </Routes>
+          </main>
+        </div>
+        <StatusBar onAboutClick={handleAboutClick} />
+        <AboutDialog isOpen={showAboutModal} onClose={handleCloseAbout} />
+      </div>
+    </MessageDisplayContext.Provider>
+  );
+};
+
 const App = () => {
   useEffect(() => {
     applyTheme(); // Apply the saved theme on app load
   }, []);
 
-  const messageDisplay = useMessageDisplay();
-
   return (
-    <MessageDisplayContext.Provider value={messageDisplay}>
-      <Router>
-        <div className="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
-          <MessageDisplay />
-          <div className="flex flex-1 min-h-0">
-            <main className="flex-1 min-h-0 flex flex-col h-full pb-10">
-              <Routes>
-                <Route element={<Navigate replace to="/kits" />} path="/" />
-                <Route element={<KitsView />} path="/kits" />
-                <Route element={<AboutView />} path="/about" />
-              </Routes>
-            </main>
-          </div>
-          <StatusBar />
-        </div>
-      </Router>
-    </MessageDisplayContext.Provider>
+    <Router>
+      <AppContent />
+    </Router>
   );
 };
 

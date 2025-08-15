@@ -311,6 +311,12 @@ interface RomperDbResult extends DbResult<void> {
 }
 
 declare global {
+  interface ImportMeta {
+    env: {
+      VITE_APP_VERSION?: string;
+    };
+  }
+
   interface Window {
     electronAPI: ElectronAPI;
     electronFileAPI?: {

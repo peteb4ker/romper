@@ -4,10 +4,14 @@ import { FiDatabase, FiMonitor, FiMoon, FiSun } from "react-icons/fi";
 import { useSettings } from "../utils/SettingsContext";
 
 interface StatusBarProps {
+  onAboutClick?: () => void;
   progress?: null | number; // 0-100, or null for none
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
+const StatusBar: React.FC<StatusBarProps> = ({
+  onAboutClick,
+  progress = null,
+}) => {
   const { isDarkMode, localStorePath, setThemeMode, themeMode } = useSettings();
 
   // Extract nested ternary operations into independent statements
@@ -58,12 +62,13 @@ const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
         >
           Rample Manual
         </a>
-        <a
-          className="underline hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
-          href="/about"
+        <button
+          className="underline hover:text-blue-600 dark:hover:text-blue-300 transition-colors bg-transparent border-none p-0 cursor-pointer"
+          onClick={onAboutClick}
+          type="button"
         >
           About
-        </a>
+        </button>
         <button
           aria-label="Toggle theme mode"
           className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-gray-300 dark:bg-slate-700 hover:bg-gray-400 dark:hover:bg-slate-600 transition"

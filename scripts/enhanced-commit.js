@@ -139,7 +139,14 @@ async function main() {
     } else {
       // No type prefix, just truncate to 50 chars
       if (commitMessage.length > 50) {
-        prTitle = commitMessage.slice(0, 50).replace(/\s+\S*$/, '').trim();
+        const truncatedDesc = description.slice(0, maxDescLength);
+        prTitle = type + (/\s+\S*$/.test(truncatedDesc) ? truncatedDesc.replace(/\s+\S*$/, '') : truncatedDesc).trim();
+      }
+    } else {
+      // No type prefix, just truncate to 50 chars
+      if (commitMessage.length > 50) {
+        const truncated = commitMessage.slice(0, 50);
+        prTitle = (/\s+\S*$/.test(truncated) ? truncated.replace(/\s+\S*$/, '') : truncated).trim();
       }
     }
     

@@ -15,7 +15,8 @@ This document describes the development workflow, task execution patterns, and q
 2. **Implement one sub-task at a time** - never skip ahead or work on multiple tasks
 3. **Update task file** - mark sub-task as complete `[x]`
 4. **Commit changes** - pre-commit hooks automatically validate (TypeScript, linting, tests, build)
-5. **Ask for permission** before proceeding to next sub-task
+5. **Create pull request** - use enhanced commit workflow for automated PR creation with auto-merge
+6. **Ask for permission** before proceeding to next sub-task
 
 ### Automated Quality Gates (Pre-commit Hooks)
 
@@ -333,6 +334,42 @@ Tests: <passing>/<total> passing
 - `docs:` - Documentation changes
 - `test:` - Adding or updating tests
 - `chore:` - Maintenance tasks
+
+### Pull Request Standards
+
+All pull requests are created automatically via the enhanced commit workflow with standardized features:
+
+#### Automated PR Creation
+
+The `npm run commit` command automatically:
+1. **Creates PR with standard template** including summary and test plan
+2. **Enables auto-merge** for automatic merging when all checks pass
+3. **Sets up proper branch tracking** with upstream remote
+4. **Provides PR URL** for immediate review access
+
+#### Auto-Merge Requirements
+
+Auto-merge is enabled by default and will merge PRs when:
+- ✅ All required status checks have passed (pre-commit hooks)
+- ✅ All required reviews are met (if configured)
+- ✅ No blocking conversations remain unresolved
+
+#### Manual Auto-Merge Control
+
+If you need to manually enable/disable auto-merge for a PR:
+
+```bash
+# Enable auto-merge for current branch's PR
+gh pr merge --auto
+
+# Enable auto-merge for specific PR number
+gh pr merge 123 --auto
+
+# Disable auto-merge (web interface only)
+# Visit PR page and click "Disable auto-merge"
+```
+
+This streamlined approach ensures consistent PR quality while minimizing manual intervention in the development workflow.
 
 ## Build and Release
 

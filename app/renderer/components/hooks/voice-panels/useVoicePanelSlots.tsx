@@ -4,6 +4,9 @@ import type { SampleData } from "../../kitTypes";
 
 import SampleWaveform from "../../SampleWaveform";
 
+// Maximum number of sample slots per voice (Squarp Rample limit)
+export const MAX_SLOTS_PER_VOICE = 12;
+
 export interface UseVoicePanelSlotsOptions {
   dragAndDropHook: {
     getSampleDragHandlers: (slotNumber: number, sampleName: string) => any;
@@ -300,8 +303,8 @@ export function useVoicePanelSlots({
     const { nextAvailableSlot } = slotRenderingHook.calculateRenderSlots();
     const sampleCount = samples.filter((s) => s).length;
 
-    // Only show drop zone if editable and voice isn't full (less than 12 samples)
-    if (!isEditable || sampleCount >= 12) {
+    // Only show drop zone if editable and voice isn't full
+    if (!isEditable || sampleCount >= MAX_SLOTS_PER_VOICE) {
       return null;
     }
 
@@ -317,7 +320,7 @@ export function useVoicePanelSlots({
     return (
       <li
         aria-label={`Drop zone for voice ${voice}`}
-        className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass} border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500 min-h-[40px]`}
+        className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass} border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500 min-h-[28px] mb-1`}
         data-testid={`drop-zone-voice-${voice}`}
         key={`${voice}-drop-zone`}
         onDragLeave={isEditable ? handleCombinedDragLeave : undefined}
@@ -354,26 +357,59 @@ export function useVoicePanelSlots({
     handleCombinedDrop,
   ]);
 
-  // Main render function for all sample slots + single drop zone
+  // Helper function to render an empty slot placeholder (non-interactive)
+  const renderEmptySlot = React.useCallback(
+    (slotNumber: number) => {
+      return (
+        <li
+          className="min-h-[28px] mb-1 flex items-center text-gray-400 dark:text-gray-600"
+          key={`${voice}-empty-${slotNumber}`}
+        >
+          {/* Empty slot - maintains height */}
+        </li>
+      );
+    },
+    [voice],
+  );
+
+  // Main render function for all sample slots (always render exactly MAX_SLOTS_PER_VOICE for consistent height)
   const renderSampleSlots = React.useCallback(() => {
     const renderedSlots = [];
+    const sampleCount = samples.filter((s) => s).length;
 
-    // Render all existing samples
-    for (let i = 0; i < samples.length; i++) {
+    // Always render exactly MAX_SLOTS_PER_VOICE slot positions
+    for (let i = 0; i < MAX_SLOTS_PER_VOICE; i++) {
       const sample = samples[i];
       if (sample) {
+        // Render filled slot
         renderedSlots.push(renderSampleSlot(i, sample));
+      } else if (
+        i === sampleCount &&
+        isEditable &&
+        sampleCount < MAX_SLOTS_PER_VOICE
+      ) {
+        // Render the single drop zone at the first empty position (append-only)
+        const dropZone = renderSingleDropZone();
+        if (dropZone) {
+          renderedSlots.push(dropZone);
+        } else {
+          // If drop zone can't be rendered, render empty slot
+          renderedSlots.push(renderEmptySlot(i));
+        }
+      } else {
+        // Render empty slot placeholder
+        renderedSlots.push(renderEmptySlot(i));
       }
     }
 
-    // Add single drop zone at the end
-    const dropZone = renderSingleDropZone();
-    if (dropZone) {
-      renderedSlots.push(dropZone);
-    }
-
     return renderedSlots;
-  }, [samples, renderSampleSlot, renderSingleDropZone]);
+  }, [
+    samples,
+    renderSampleSlot,
+    renderSingleDropZone,
+    renderEmptySlot,
+    isEditable,
+  ]);
 
   return {
     renderSampleSlot,

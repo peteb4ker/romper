@@ -8,7 +8,7 @@ import type {
 
 import * as schema from "@romper/shared/db/schema.js";
 // Basic CRUD operations for database entities
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 
 import { withDb } from "../utils/dbUtilities.js";
 import { performVoiceReindexing } from "./sampleManagementOps.js";
@@ -325,11 +325,31 @@ export function markKitsAsSynced(
   kitNames: string[],
 ): DbResult<void> {
   return withDb(dbDir, (db) => {
-    for (const kitName of kitNames) {
-      db.update(kits)
+    console.log(
+      `[markKitsAsSynced] Attempting to mark ${kitNames.length} kits as synced:`,
+      kitNames,
+    );
+
+    try {
+      // Use single SQL UPDATE with WHERE IN for better performance
+      const result = db
+        .update(kits)
         .set({ modified_since_sync: false })
-        .where(eq(kits.name, kitName))
+        .where(inArray(kits.name, kitNames))
         .run();
+
+      console.log(
+        `[markKitsAsSynced] Successfully updated ${result.changes}/${kitNames.length} kits`,
+      );
+
+      if (result.changes !== kitNames.length) {
+        console.warn(
+          `[markKitsAsSynced] Expected to update ${kitNames.length} kits but updated ${result.changes}`,
+        );
+      }
+    } catch (error) {
+      console.error(`[markKitsAsSynced] Failed to update kits:`, error);
+      throw error; // Re-throw to fail the entire operation
     }
   });
 }

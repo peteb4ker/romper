@@ -132,18 +132,41 @@ export class SyncService {
     allFiles: SyncFileOperation[],
     syncedFiles: number,
   ): Promise<void> {
+    console.log(
+      `[SyncService] markKitsAsSynced called - syncedFiles: ${syncedFiles}, allFiles: ${allFiles.length}`,
+    );
+
     const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath || syncedFiles === 0) return;
+    if (!localStorePath) {
+      console.warn("[SyncService] No localStorePath found in settings");
+      return;
+    }
+
+    if (syncedFiles === 0) {
+      console.warn("[SyncService] No files were synced, skipping kit marking");
+      return;
+    }
 
     const dbDir = path.join(localStorePath, ".romperdb");
     const syncedKitNames = [...new Set(allFiles.map((file) => file.kitName))];
 
+    console.log(
+      `[SyncService] Attempting to mark ${syncedKitNames.length} kits as synced:`,
+      syncedKitNames,
+    );
+    console.log(`[SyncService] Database directory: ${dbDir}`);
+
     const markSyncedResult = markKitsAsSynced(dbDir, syncedKitNames);
     if (!markSyncedResult.success) {
-      console.warn("Failed to mark kits as synced:", markSyncedResult.error);
+      console.error(
+        "[SyncService] Failed to mark kits as synced:",
+        markSyncedResult.error,
+      );
+      // Don't throw here - we don't want to fail the entire sync for this
+      // But we should surface this error somehow
     } else {
       console.log(
-        `Marked ${syncedKitNames.length} kits as synced:`,
+        `[SyncService] Successfully marked ${syncedKitNames.length} kits as synced:`,
         syncedKitNames,
       );
     }

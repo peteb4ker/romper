@@ -4,11 +4,6 @@ import { FiCheck, FiEdit2, FiX } from "react-icons/fi";
 
 export interface UseVoicePanelUIOptions {
   isEditable: boolean;
-  slotRenderingHook: {
-    calculateRenderSlots: () => {
-      slotsToRender: number;
-    };
-  };
   voice: number;
   voiceName: null | string;
   voiceNameEditorHook: {
@@ -23,12 +18,11 @@ export interface UseVoicePanelUIOptions {
 }
 
 /**
- * Hook for rendering voice panel UI elements (voice name, slot numbers)
+ * Hook for rendering voice panel UI elements (voice name)
  * Extracted from useVoicePanelRendering to reduce complexity
  */
 export function useVoicePanelUI({
   isEditable,
-  slotRenderingHook,
   voice,
   voiceName,
   voiceNameEditorHook,
@@ -90,29 +84,7 @@ export function useVoicePanelUI({
     [voice, voiceNameEditorHook, voiceName, isEditable],
   );
 
-  // Render slot numbers column
-  const renderSlotNumbers = React.useCallback(() => {
-    const { slotsToRender } = slotRenderingHook.calculateRenderSlots();
-
-    return [...Array(slotsToRender)].map((_, i) => (
-      <div
-        className="min-h-[28px] flex items-center justify-end"
-        key={`voice-${voice}-slot-${i}`}
-        style={{ marginBottom: 4 }}
-      >
-        <span
-          className="text-xs font-mono text-gray-500 dark:text-gray-400 select-none bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
-          data-testid={`slot-number-${voice}-${i}`}
-          style={{ display: "inline-block", width: "32px" }}
-        >
-          {i + 1}.
-        </span>
-      </div>
-    ));
-  }, [slotRenderingHook, voice]);
-
   return {
-    renderSlotNumbers,
     renderVoiceName,
   };
 }

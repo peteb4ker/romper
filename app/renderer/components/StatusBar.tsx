@@ -7,9 +7,7 @@ interface StatusBarProps {
   progress?: null | number; // 0-100, or null for none
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({
-  progress = null,
-}) => {
+const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
   const { isDarkMode, localStorePath, setThemeMode, themeMode } = useSettings();
 
   // Extract nested ternary operations into independent statements

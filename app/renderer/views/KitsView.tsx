@@ -87,7 +87,6 @@ const KitsView: React.FC = () => {
   const {
     allKitSamples,
     kits,
-    loadKitsData,
     refreshAllKitsAndSamples,
     reloadCurrentKitSamples,
     sampleCounts,
@@ -110,7 +109,7 @@ const KitsView: React.FC = () => {
     onMessage: showMessage,
     onRefreshKits: () => {
       // Fire and forget - don't await the Promise to match void return type
-      loadKitsData().catch((error) => {
+      refreshAllKitsAndSamples().catch((error: unknown) => {
         console.error("Failed to refresh kits:", error);
       });
     },
@@ -284,7 +283,7 @@ const KitsView: React.FC = () => {
           kits={navigation.sortedKits}
           localStorePath={localStorePath}
           onMessage={showMessage}
-          onRefreshKits={loadKitsData}
+          onRefreshKits={refreshAllKitsAndSamples}
           onSelectKit={navigation.handleSelectKit}
           ref={kitBrowserRef}
           sampleCounts={sampleCounts}

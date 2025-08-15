@@ -4,7 +4,7 @@ import { useSyncUpdate } from "../shared/useSyncUpdate";
 
 export interface UseKitSyncOptions {
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onRefreshKits?: () => void;
+  onRefreshKits?: () => Promise<void>;
 }
 
 /**
@@ -82,6 +82,17 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
         setShowSyncDialog(false);
         setCurrentSyncKit(null);
         setCurrentChangeSummary(null);
+
+        // Refresh kit data to ensure UI shows updated unsaved states
+        if (onRefreshKits) {
+          console.log("[useKitSync] Refreshing kit data after successful sync");
+          try {
+            await onRefreshKits();
+          } catch (error) {
+            console.error("[useKitSync] Failed to refresh kit data:", error);
+          }
+        }
+
         if (onMessage) {
           onMessage(
             `All kits synced successfully to ${options.sdCardPath}!`,
@@ -89,13 +100,11 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
             3000,
           );
         }
-        // Refresh kit browser to show updated modification states
-        onRefreshKits?.();
       } else if (onMessage && syncError) {
         onMessage(`Sync failed: ${syncError}`, "error");
       }
     },
-    [startSync, onMessage, onRefreshKits, syncError],
+    [startSync, onMessage, syncError, onRefreshKits],
   );
 
   // Handler to close sync dialog

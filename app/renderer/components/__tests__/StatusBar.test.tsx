@@ -43,7 +43,6 @@ describe("StatusBar", () => {
       expect(screen.getByText("/test/path")).toBeInTheDocument();
     });
 
-
     it("should display local store path", () => {
       render(<StatusBar />);
       expect(screen.getByText("/test/path")).toBeInTheDocument();
@@ -237,6 +236,5 @@ describe("StatusBar", () => {
       render(<StatusBar progress={undefined} />);
       expect(screen.queryByTestId("progress-bar")).not.toBeInTheDocument();
     });
-
   });
 });

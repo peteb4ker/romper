@@ -278,6 +278,32 @@ export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
 }
 
 /**
+ * Get all kits metadata only (no samples or voices) - lightweight for favorites
+ */
+export function getKitsMetadataOnly(
+  dbDir: string,
+): DbResult<KitWithRelations[]> {
+  return withDb(dbDir, (db) => {
+    const allKits = db.select().from(kits).all();
+    const kitsWithBanks = allKits.map((kit: any) => {
+      // Load only bank relation, no samples or voices
+      const bank = kit.bank_letter
+        ? db.select().from(banks).where(eq(banks.letter, kit.bank_letter)).get()
+        : null;
+
+      return {
+        ...kit,
+        bank,
+        samples: [], // Empty array to maintain interface compatibility
+        voices: [], // Empty array to maintain interface compatibility
+      };
+    });
+
+    return kitsWithBanks;
+  });
+}
+
+/**
  * Helper function to get samples to delete
  */
 export function getSamplesToDelete(db: any, whereCondition: any): Sample[] {

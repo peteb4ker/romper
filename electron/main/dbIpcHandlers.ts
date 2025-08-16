@@ -16,6 +16,7 @@ import {
   getKit,
   getKits,
   getKitSamples,
+  getKitsMetadataOnly,
   updateKit,
   updateVoiceAlias,
 } from "./db/romperDbCoreORM.js";
@@ -76,6 +77,13 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     "get-all-kits",
     createDbHandler(inMemorySettings, (dbDir: string) => {
       return getKits(dbDir);
+    }),
+  );
+
+  ipcMain.handle(
+    "get-kits-metadata-only",
+    createDbHandler(inMemorySettings, (dbDir: string) => {
+      return getKitsMetadataOnly(dbDir);
     }),
   );
 

@@ -116,6 +116,20 @@ export interface ElectronAPI {
       }>
     >
   >;
+  getKitsMetadataOnly?: () => Promise<
+    DbResult<
+      Array<{
+        alias?: string;
+        artist?: string;
+        editable: boolean;
+        id: number;
+        locked: boolean;
+        name: string;
+        step_pattern?: number[][];
+        voices: { [voiceNumber: number]: string };
+      }>
+    >
+  >;
   getLocalStoreStatus: () => Promise<LocalStoreValidationDetailedResult>;
   getSampleAudioBuffer?: (
     kitName: string,

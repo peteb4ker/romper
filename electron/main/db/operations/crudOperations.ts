@@ -278,11 +278,9 @@ export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
 }
 
 /**
- * Get all kits metadata only (no samples or voices) - lightweight for favorites
+ * Get all kits metadata (no samples or voices) - lightweight for favorites
  */
-export function getKitsMetadataOnly(
-  dbDir: string,
-): DbResult<KitWithRelations[]> {
+export function getKitsMetadata(dbDir: string): DbResult<KitWithRelations[]> {
   return withDb(dbDir, (db) => {
     const allKits = db.select().from(kits).all();
     const kitsWithBanks = allKits.map((kit: any) => {

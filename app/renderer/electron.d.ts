@@ -116,7 +116,7 @@ export interface ElectronAPI {
       }>
     >
   >;
-  getKitsMetadataOnly?: () => Promise<
+  getKitsMetadata?: () => Promise<
     DbResult<
       Array<{
         alias?: string;

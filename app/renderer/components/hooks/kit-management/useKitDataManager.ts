@@ -180,7 +180,7 @@ export function useKitDataManager({
   // Helper function to refresh only kit metadata (for favorites, etc.)
   const refreshKitsOnly = useCallback(async () => {
     try {
-      const kitsResult = await window.electronAPI?.getKitsMetadataOnly?.();
+      const kitsResult = await window.electronAPI?.getKitsMetadata?.();
       if (kitsResult?.success && kitsResult.data) {
         const kitsWithBanks = kitsResult.data as unknown as KitWithRelations[];
         setKits(kitsWithBanks);

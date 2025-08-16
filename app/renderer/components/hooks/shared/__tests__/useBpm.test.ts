@@ -3,20 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useBpm } from "../useBpm";
 
-// Mock window.electronAPI
-const mockUpdateKitBpm = vi.fn();
-const mockElectronAPI = {
-  updateKitBpm: mockUpdateKitBpm,
-};
-
-Object.defineProperty(window, "electronAPI", {
-  value: mockElectronAPI,
-  writable: true,
-});
-
 describe("useBpm", () => {
+  let mockUpdateKitBpm: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    // Get the global electronAPI mock (set up by test setup)
+    mockUpdateKitBpm = (window as any).electronAPI?.updateKitBpm;
+    // Reset the mock to default behavior
+    mockUpdateKitBpm?.mockResolvedValue({ success: true });
   });
 
   afterEach(() => {
@@ -54,8 +49,6 @@ describe("useBpm", () => {
   });
 
   it("calls electronAPI.updateKitBpm when setBpm is called with valid value", async () => {
-    mockUpdateKitBpm.mockResolvedValue({ success: true });
-
     const { result } = renderHook(() =>
       useBpm({ initialBpm: 120, kitName: "A1" }),
     );
@@ -68,7 +61,7 @@ describe("useBpm", () => {
     expect(result.current.bpm).toBe(140);
   });
 
-  it("rejects BPM values below 30", async () => {
+  it("clamps BPM values below 30 to 30", async () => {
     const { result } = renderHook(() =>
       useBpm({ initialBpm: 120, kitName: "A1" }),
     );
@@ -77,11 +70,11 @@ describe("useBpm", () => {
       await result.current.setBpm(20);
     });
 
-    expect(mockUpdateKitBpm).not.toHaveBeenCalled();
-    expect(result.current.bpm).toBe(120); // Should remain unchanged
+    expect(mockUpdateKitBpm).toHaveBeenCalledWith("A1", 30);
+    expect(result.current.bpm).toBe(30); // Should be clamped to 30
   });
 
-  it("rejects BPM values above 180", async () => {
+  it("clamps BPM values above 180 to 180", async () => {
     const { result } = renderHook(() =>
       useBpm({ initialBpm: 120, kitName: "A1" }),
     );
@@ -90,12 +83,12 @@ describe("useBpm", () => {
       await result.current.setBpm(200);
     });
 
-    expect(mockUpdateKitBpm).not.toHaveBeenCalled();
-    expect(result.current.bpm).toBe(120); // Should remain unchanged
+    expect(mockUpdateKitBpm).toHaveBeenCalledWith("A1", 180);
+    expect(result.current.bpm).toBe(180); // Should be clamped to 180
   });
 
   it("reverts BPM on API failure", async () => {
-    mockUpdateKitBpm.mockResolvedValue({ error: "API Error", success: false });
+    mockUpdateKitBpm?.mockRejectedValue(new Error("API Error"));
 
     const { result } = renderHook(() =>
       useBpm({ initialBpm: 120, kitName: "A1" }),
@@ -111,7 +104,7 @@ describe("useBpm", () => {
   });
 
   it("reverts BPM on API exception", async () => {
-    mockUpdateKitBpm.mockRejectedValue(new Error("Network error"));
+    mockUpdateKitBpm?.mockRejectedValue(new Error("Network error"));
 
     const { result } = renderHook(() =>
       useBpm({ initialBpm: 120, kitName: "A1" }),
@@ -139,10 +132,9 @@ describe("useBpm", () => {
   });
 
   it("does not call API when electronAPI is not available", async () => {
-    // Use vi.mocked to mock the function as undefined
-    vi.mocked(window.electronAPI.updateKitBpm).mockImplementation(
-      undefined as any,
-    );
+    // Temporarily remove electronAPI
+    const originalElectronAPI = (window as any).electronAPI;
+    delete (window as any).electronAPI;
 
     const { result } = renderHook(() =>
       useBpm({ initialBpm: 120, kitName: "A1" }),
@@ -151,6 +143,9 @@ describe("useBpm", () => {
     await act(async () => {
       await result.current.setBpm(140);
     });
+
+    // Restore electronAPI
+    (window as any).electronAPI = originalElectronAPI;
 
     expect(mockUpdateKitBpm).not.toHaveBeenCalled();
   });

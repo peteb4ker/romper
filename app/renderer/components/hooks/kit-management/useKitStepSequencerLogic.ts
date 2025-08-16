@@ -123,13 +123,6 @@ export function useKitStepSequencerLogic(
     };
   }, [worker, workerUrl]);
 
-  // Calculate step duration based on BPM (16th notes)
-  const stepDuration = React.useMemo(() => {
-    // 60000ms per minute / BPM = time per beat (quarter note)
-    // Divide by 4 for 16th notes
-    return Math.round(60000 / (bpm * 4));
-  }, [bpm]);
-
   // Worker playback control
   React.useEffect(() => {
     const worker = workerRef.current;

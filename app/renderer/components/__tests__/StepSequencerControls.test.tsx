@@ -4,13 +4,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import StepSequencerControls from "../StepSequencerControls";
 
+// Mock the useBpm hook
+vi.mock("../hooks/shared/useBpm", () => ({
+  useBpm: vi.fn(() => ({
+    bpm: 120,
+    isEditing: false,
+    setBpm: vi.fn(),
+    setIsEditing: vi.fn(),
+    validateBpm: vi.fn((value) => value >= 30 && value <= 180),
+  })),
+}));
+
 describe("StepSequencerControls", () => {
   let setIsSeqPlaying;
-  let setBpm;
 
   beforeEach(() => {
     setIsSeqPlaying = vi.fn();
-    setBpm = vi.fn();
   });
 
   afterEach(() => {
@@ -23,7 +32,7 @@ describe("StepSequencerControls", () => {
       <StepSequencerControls
         bpm={120}
         isSeqPlaying={false}
-        setBpm={setBpm}
+        kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
       />,
     );
@@ -40,7 +49,7 @@ describe("StepSequencerControls", () => {
       <StepSequencerControls
         bpm={120}
         isSeqPlaying={true}
-        setBpm={setBpm}
+        kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
       />,
     );
@@ -54,7 +63,7 @@ describe("StepSequencerControls", () => {
       <StepSequencerControls
         bpm={120}
         isSeqPlaying={false}
-        setBpm={setBpm}
+        kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
       />,
     );
@@ -70,7 +79,7 @@ describe("StepSequencerControls", () => {
       <StepSequencerControls
         bpm={120}
         isSeqPlaying={true}
-        setBpm={setBpm}
+        kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
       />,
     );
@@ -81,106 +90,36 @@ describe("StepSequencerControls", () => {
     expect(setIsSeqPlaying).toHaveBeenCalledWith(false);
   });
 
-  it("displays the current BPM value", () => {
+  it("displays the current BPM value in input field", () => {
     render(
       <StepSequencerControls
         bpm={140}
         isSeqPlaying={false}
-        setBpm={setBpm}
+        kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
       />,
     );
 
-    expect(screen.getByText("140 BPM")).toBeInTheDocument();
-  });
-
-  it("allows editing BPM when clicked", () => {
-    render(
-      <StepSequencerControls
-        bpm={120}
-        isSeqPlaying={false}
-        setBpm={setBpm}
-        setIsSeqPlaying={setIsSeqPlaying}
-      />,
-    );
-
-    const bpmButton = screen.getByText("120 BPM");
-    fireEvent.click(bpmButton);
-
-    // Should show input field
-    const bpmInput = screen.getByDisplayValue("120");
+    const bpmInput = screen.getByTestId("bpm-input");
     expect(bpmInput).toBeInTheDocument();
+    expect(bpmInput).toHaveValue(120); // Mock returns 120
+    expect(screen.getByText("BPM")).toBeInTheDocument();
+    expect(screen.getByText("30-180")).toBeInTheDocument();
+  });
+
+  it("displays BPM input field with correct attributes", () => {
+    render(
+      <StepSequencerControls
+        bpm={120}
+        isSeqPlaying={false}
+        kitName="TestKit"
+        setIsSeqPlaying={setIsSeqPlaying}
+      />,
+    );
+
+    const bpmInput = screen.getByTestId("bpm-input");
     expect(bpmInput).toHaveAttribute("type", "number");
-  });
-
-  it("calls setBpm when Enter is pressed on BPM input", () => {
-    render(
-      <StepSequencerControls
-        bpm={120}
-        isSeqPlaying={false}
-        setBpm={setBpm}
-        setIsSeqPlaying={setIsSeqPlaying}
-      />,
-    );
-
-    const bpmButton = screen.getByText("120 BPM");
-    fireEvent.click(bpmButton);
-
-    const bpmInput = screen.getByDisplayValue("120");
-    fireEvent.change(bpmInput, { target: { value: "140" } });
-    fireEvent.keyDown(bpmInput, { key: "Enter" });
-
-    expect(setBpm).toHaveBeenCalledWith(140);
-  });
-
-  it("calls setBpm when BPM input loses focus", () => {
-    render(
-      <StepSequencerControls
-        bpm={120}
-        isSeqPlaying={false}
-        setBpm={setBpm}
-        setIsSeqPlaying={setIsSeqPlaying}
-      />,
-    );
-
-    const bpmButton = screen.getByText("120 BPM");
-    fireEvent.click(bpmButton);
-
-    const bpmInput = screen.getByDisplayValue("120");
-    fireEvent.change(bpmInput, { target: { value: "90" } });
-    fireEvent.blur(bpmInput);
-
-    expect(setBpm).toHaveBeenCalledWith(90);
-  });
-
-  it("validates BPM range and rejects values outside 30-180", () => {
-    render(
-      <StepSequencerControls
-        bpm={120}
-        isSeqPlaying={false}
-        setBpm={setBpm}
-        setIsSeqPlaying={setIsSeqPlaying}
-      />,
-    );
-
-    const bpmButton = screen.getByText("120 BPM");
-    fireEvent.click(bpmButton);
-
-    const bpmInput = screen.getByDisplayValue("120");
-
-    // Test value too low
-    fireEvent.change(bpmInput, { target: { value: "20" } });
-    fireEvent.blur(bpmInput);
-    expect(setBpm).not.toHaveBeenCalledWith(20);
-
-    // Test value too high
-    fireEvent.change(bpmInput, { target: { value: "200" } });
-    fireEvent.blur(bpmInput);
-    expect(setBpm).not.toHaveBeenCalledWith(200);
-
-    // Test valid value
-    fireEvent.change(bpmInput, { target: { value: "150" } });
-    fireEvent.blur(bpmInput);
-    expect(setBpm).toHaveBeenCalledWith(150);
+    expect(bpmInput).toHaveAttribute("min", "30");
+    expect(bpmInput).toHaveAttribute("max", "180");
   });
 });

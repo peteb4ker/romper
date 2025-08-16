@@ -10,6 +10,7 @@ import {
 } from "../shared/stepPatternConstants";
 
 interface UseKitStepSequencerLogicParams {
+  bpm: number;
   gridRef?: React.RefObject<HTMLDivElement>;
   kitName?: string; // Add kit name for secure playback
   onPlaySample: (voice: number, sample: string) => void;
@@ -28,6 +29,7 @@ export function useKitStepSequencerLogic(
   params: UseKitStepSequencerLogicParams,
 ) {
   const {
+    bpm,
     gridRef,
     onPlaySample,
     samples,
@@ -39,6 +41,11 @@ export function useKitStepSequencerLogic(
   // Worker management
   const workerRef = React.useRef<null | Worker>(null);
 
+  // Calculate step duration from BPM (assuming 16th notes)
+  const stepDuration = React.useMemo(() => {
+    return Math.round(60000 / (bpm * 4));
+  }, [bpm]);
+
   // Create worker from inline source to avoid MIME type issues
   const workerBlob = React.useMemo(() => {
     const workerScript = `
@@ -46,7 +53,7 @@ export function useKitStepSequencerLogic(
       let currentStep = 0;
       let numSteps = 16;
       let interval = null;
-      let stepDuration = 125;
+      let stepDuration = 125; // Default, will be overridden by START message
 
       self.onmessage = function (e) {
         if (!e.data || typeof e.data !== "object") {
@@ -123,13 +130,13 @@ export function useKitStepSequencerLogic(
 
     if (isSeqPlaying) {
       worker.postMessage({
-        payload: { numSteps: NUM_STEPS, stepDuration: 125 },
+        payload: { numSteps: NUM_STEPS, stepDuration },
         type: "START",
       });
     } else {
       worker.postMessage({ type: "STOP" });
     }
-  }, [isSeqPlaying]);
+  }, [isSeqPlaying, stepDuration]);
 
   // Sample triggering on step advance
   const lastStepRef = React.useRef<null | number>(null);

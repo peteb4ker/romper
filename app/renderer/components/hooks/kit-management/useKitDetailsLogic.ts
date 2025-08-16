@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { ErrorPatterns } from "../../../utils/errorHandling";
 import { useSampleManagement } from "../sample-management/useSampleManagement";
+import { useBpm } from "../shared/useBpm";
 import { useStepPattern } from "../shared/useStepPattern";
 import { useVoiceAlias } from "../voice-panels/useVoiceAlias";
 import { useKit } from "./useKit";
@@ -64,6 +65,12 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Step pattern management
   const { setStepPattern, stepPattern } = useStepPattern({
     initialPattern: kit?.step_pattern,
+    kitName: props.kitName,
+  });
+
+  // BPM management
+  const { bpm, setBpm } = useBpm({
+    initialBpm: kit?.bpm,
     kitName: props.kitName,
   });
 
@@ -278,31 +285,35 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   ]);
 
   return {
+    // BPM management
+    bpm,
     // Handlers
     handleScanKit,
     // Kit data
     kit,
     kitError,
     kitLoading,
-    kitVoicePanels,
 
+    kitVoicePanels,
     // Sub-hooks
     playback,
     reloadKit,
+
     // Sample management for drag-and-drop (Task 5.2.2 & 5.2.3)
     sampleManagement,
 
     // State
     samples,
-
     selectedSampleIdx,
     selectedVoice,
     sequencerGridRef,
     sequencerOpen,
+    setBpm,
     setSelectedSampleIdx,
     // State setters
     setSelectedVoice,
     setSequencerOpen,
+
     setStepPattern,
     stepPattern,
 

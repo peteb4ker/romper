@@ -1,3 +1,10 @@
+---
+title: "Romper Sample Manager - Claude Code Instructions"
+owners: ["maintainer"]
+last_reviewed: "2025-08-15"
+tags: ["documentation"]
+---
+
 # Romper Sample Manager - Claude Code Instructions
 
 > **Auto-Loading Context**: Additional file-specific instructions are automatically loaded based on the current working file. See `.agent/context.md` for pattern matching rules.
@@ -59,10 +66,10 @@ romper/
 
 File-specific standards automatically load based on current working file:
 
-- **React Components** (`*.tsx`) → `.agent/standards/react-components.md`
-- **Custom Hooks** (`hooks/use*.ts`) → `.agent/standards/custom-hooks.md`
-- **Database** (`db/*.ts`) → `.agent/standards/database.md`
-- **Tests** (`__tests__/*.test.ts`) → `.agent/standards/testing.md`
+- **React Components** (`*.tsx`) → [React Component Standards](.agent/standards/react-components.md)
+- **Custom Hooks** (`hooks/use*.ts`) → [Custom Hooks Standards](.agent/standards/custom-hooks.md)
+- **Database** (`db/*.ts`) → [Database Standards (Drizzle ORM)](.agent/standards/database.md)
+- **Tests** (`__tests__/*.test.ts`) → [Testing Standards (Vitest)](.agent/standards/testing.md)
 
 See `.agent/context.md` for pattern matching rules and `.agent/standards/` for detailed coding standards.
 

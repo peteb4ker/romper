@@ -284,7 +284,8 @@ This systematic approach prevents rushing through fixes and missing issues that 
 
 **Guidelines:**
 - Use imperative mood (`add`, `fix`, `update` not `adding`, `fixed`, `updated`)
-- Focus on the "what" in title, save "why" and "how" for description
+- Focus on the "what" in title
+- Save "why" and "how" for description
 - Include conventional commit prefix (`feat:`, `fix:`, `docs:`, etc.)
 - Be specific but concise (`fix auth bug` → `fix: resolve login timeout issue`)
 

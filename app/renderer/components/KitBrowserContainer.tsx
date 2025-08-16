@@ -12,6 +12,7 @@ interface KitBrowserContainerProps {
   onMessage: (text: string, type?: string, duration?: number) => void;
   onRefreshKits: () => Promise<void>;
   onSelectKit: (kitName: string) => void;
+  onShowSettings?: () => void;
   ref?: React.Ref<KitBrowserHandle>;
   sampleCounts: Record<string, [number, number, number, number]>;
   setLocalStorePath: (path: string) => void;
@@ -31,6 +32,7 @@ const KitBrowserContainer = React.forwardRef<
     onMessage,
     onRefreshKits,
     onSelectKit,
+    onShowSettings,
     sampleCounts,
     setLocalStorePath,
   } = props;
@@ -68,6 +70,7 @@ const KitBrowserContainer = React.forwardRef<
       onMessage={handleMessage}
       onRefreshKits={handleRefreshKits}
       onSelectKit={handleSelectKit}
+      onShowSettings={onShowSettings}
       ref={ref}
       sampleCounts={sampleCounts}
       setLocalStorePath={handleSetLocalStorePath}

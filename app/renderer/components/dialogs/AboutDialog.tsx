@@ -50,8 +50,8 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
       Licensed under the{" "}
       <button
         className={linkBtn}
-        type="button"
         onClick={() => openExternal("https://opensource.org/licenses/MIT")}
+        type="button"
       >
         MIT license
       </button>
@@ -60,30 +60,33 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
 
   return (
     <div
-      role="dialog"
       aria-labelledby="about-title"
-      tabIndex={-1}
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
-          handleBackdropClick(
-            e as unknown as React.MouseEvent<HTMLDivElement>
-          );
+          handleBackdropClick(e as unknown as React.MouseEvent<HTMLDivElement>);
         }
       }}
+      role="dialog"
+      tabIndex={-1}
     >
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden">
         {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b ${borderStyles}`}>
-          <h2 id="about-title" className={`text-xl font-semibold ${headingStyles}`}>
+        <div
+          className={`flex items-center justify-between p-6 border-b ${borderStyles}`}
+        >
+          <h2
+            className={`text-xl font-semibold ${headingStyles}`}
+            id="about-title"
+          >
             About Romper
           </h2>
           <button
-            type="button"
             aria-label="Close dialog"
-            onClick={onClose}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            onClick={onClose}
+            type="button"
           >
             <FiX size={20} />
           </button>
@@ -106,11 +109,19 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
 
             {/* Single external action button */}
             <button
-              type="button"
-              onClick={() => openExternal("https://github.com/peteb4ker/romper/")}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={() =>
+                openExternal("https://github.com/peteb4ker/romper/")
+              }
+              type="button"
             >
-              <svg className="inline-block" fill="currentColor" height="16" width="16" aria-hidden="true">
+              <svg
+                aria-hidden="true"
+                className="inline-block"
+                fill="currentColor"
+                height="16"
+                width="16"
+              >
                 <path d="M8 .3a8 8 0 0 0-2.53 15.59c.4.07.54-.17.54-.38v-1.36c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.88-1.17-.88-1.17-.72-.49.05-.48.05-.48.8.06 1.22.82 1.22.82.71 1.22 1.87.86 2.33.66.07-.52.28-.86.5-1.06-1.78-.2-3.65-.89-3.65-3.96 0-.87.31-1.58.82-2.14-.08-.2-.36-1.02.08-2.12 0 0 .67-.22 2.2.82A7.65 7.65 0 0 1 8 4.64c.68.003 1.36.09 2 .28 1.52-1.03 2.19-.82 2.19-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.14 0 3.08-1.87 3.76-3.65 3.96.29.25.54.73.54 1.48v2.19c0 .21.14.46.55.38A8 8 0 0 0 8 .3" />
               </svg>
               GitHub Repository
@@ -122,11 +133,14 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
             <div className="text-xs text-gray-600 dark:text-gray-400 space-y-2">
               {[
                 <p key="f1">
-                  Romper is an <span className="font-semibold">open-source</span>{" "}
-                  Electron app for managing Squarp Rample SD cards.
+                  Romper is an{" "}
+                  <span className="font-semibold">open-source</span> Electron
+                  app for managing Squarp Rample SD cards.
                 </p>,
-                <p key="f2">Feedback, bug reports, and contributions are welcome.</p>,
-                <p key="f3" className="font-mono">
+                <p key="f2">
+                  Feedback, bug reports, and contributions are welcome.
+                </p>,
+                <p className="font-mono" key="f3">
                   Version: <span className="font-medium">{version}</span>
                 </p>,
               ]}

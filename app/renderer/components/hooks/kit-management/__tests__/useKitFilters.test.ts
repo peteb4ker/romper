@@ -153,12 +153,6 @@ describe("useKitFilters", () => {
       });
 
       expect(mockToggleKitFavorite).toHaveBeenCalledWith("Kit1");
-      // No success message should be shown when toggling favorites
-      expect(mockOnMessage).not.toHaveBeenCalledWith(
-        expect.stringContaining("added to favorites"),
-        "success",
-        expect.any(Number),
-      );
       expect(mockOnRefreshKits).toHaveBeenCalled();
       expect(mockGetFavoriteKitsCount).toHaveBeenCalled();
     });

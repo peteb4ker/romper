@@ -252,4 +252,87 @@ describe("useKitSync", () => {
       expect(mockClearError).toHaveBeenCalled();
     });
   });
+
+  describe("onSdCardPathChange", () => {
+    it("updates local state and saves to settings when path is provided", async () => {
+      const mockWriteSettings = vi.fn().mockResolvedValue(undefined);
+      const mockElectronAPI = {
+        writeSettings: mockWriteSettings,
+      };
+      global.window = {
+        electronAPI: mockElectronAPI,
+      } as any;
+
+      const { result } = renderHook(() => useKitSync(defaultProps));
+
+      const testPath = "/new/sd/card/path";
+
+      await act(async () => {
+        await result.current.onSdCardPathChange(testPath);
+      });
+
+      expect(result.current.sdCardPath).toBe(testPath);
+      expect(mockWriteSettings).toHaveBeenCalledWith("sdCardPath", testPath);
+    });
+
+    it("updates local state but doesn't save when path is null", async () => {
+      const mockWriteSettings = vi.fn().mockResolvedValue(undefined);
+      const mockElectronAPI = {
+        writeSettings: mockWriteSettings,
+      };
+      global.window = {
+        electronAPI: mockElectronAPI,
+      } as any;
+
+      const { result } = renderHook(() => useKitSync(defaultProps));
+
+      await act(async () => {
+        await result.current.onSdCardPathChange(null);
+      });
+
+      expect(result.current.sdCardPath).toBe(null);
+      expect(mockWriteSettings).not.toHaveBeenCalled();
+    });
+
+    it("handles save errors gracefully", async () => {
+      const mockWriteSettings = vi
+        .fn()
+        .mockRejectedValue(new Error("Save failed"));
+      const mockElectronAPI = {
+        writeSettings: mockWriteSettings,
+      };
+      global.window = {
+        electronAPI: mockElectronAPI,
+      } as any;
+
+      const { result } = renderHook(() => useKitSync(defaultProps));
+
+      const testPath = "/new/sd/card/path";
+
+      await act(async () => {
+        await result.current.onSdCardPathChange(testPath);
+      });
+
+      expect(result.current.sdCardPath).toBe(testPath);
+      expect(mockWriteSettings).toHaveBeenCalledWith("sdCardPath", testPath);
+      expect(mockOnMessage).toHaveBeenCalledWith(
+        "Failed to save SD card path",
+        "warning",
+      );
+    });
+
+    it("works when electronAPI is not available", async () => {
+      global.window = {} as any;
+
+      const { result } = renderHook(() => useKitSync(defaultProps));
+
+      const testPath = "/new/sd/card/path";
+
+      await act(async () => {
+        await result.current.onSdCardPathChange(testPath);
+      });
+
+      expect(result.current.sdCardPath).toBe(testPath);
+    });
+  });
 });

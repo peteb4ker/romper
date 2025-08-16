@@ -115,6 +115,27 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
     clearSyncError();
   }, [clearSyncError]);
 
+  // Handler for SD card path change that persists to settings
+  const handleSdCardPathChange = useCallback(
+    async (path: null | string) => {
+      setSdCardPath(path);
+
+      // Save to settings if electronAPI is available
+      if (window.electronAPI?.writeSettings && path) {
+        try {
+          await window.electronAPI.writeSettings("sdCardPath", path);
+          console.log("SD card path saved to settings:", path);
+        } catch (error) {
+          console.error("Failed to save SD card path to settings:", error);
+          if (onMessage) {
+            onMessage("Failed to save SD card path", "warning");
+          }
+        }
+      }
+    },
+    [onMessage],
+  );
+
   return {
     currentChangeSummary,
     currentSyncKit,
@@ -125,7 +146,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
     handleSyncToSdCard,
 
     isSyncLoading,
-    onSdCardPathChange: setSdCardPath,
+    onSdCardPathChange: handleSdCardPathChange,
     sdCardPath,
     // State
     showSyncDialog,

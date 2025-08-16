@@ -203,6 +203,7 @@ export interface ElectronAPI {
     theme?: string;
     themeMode?: "dark" | "light" | "system";
   }>;
+  writeSettings: (key: string, value: any) => Promise<void>;
   replaceSampleInSlot?: (
     kitName: string,
     voiceNumber: number,

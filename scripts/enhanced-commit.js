@@ -137,11 +137,17 @@ async function main() {
         const maxDescLength = 60 - type.length;
 
         if (maxDescLength > 0) {
-          const descTrunc = description.slice(0, maxDescLength).replace(/\s+\S*$/, '').trim();
+          const descTrunc = description
+            .slice(0, maxDescLength)
+            .replace(/\s+\S*$/, "")
+            .trim();
           prTitle = type + descTrunc;
         } else {
           // Fallback: just truncate the commit message as in the "no type prefix" branch
-          prTitle = commitMessage.slice(0, 60).replace(/\s+\S*$/, '').trim();
+          prTitle = commitMessage
+            .slice(0, 60)
+            .replace(/\s+\S*$/, "")
+            .trim();
         }
       }
     } else {

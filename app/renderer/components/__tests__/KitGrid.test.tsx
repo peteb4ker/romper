@@ -1,14 +1,47 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import React from "react";
+import React, { createRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
-import KitGrid from "../KitGrid";
+import KitGrid, { type KitGridHandle } from "../KitGrid";
 
 const mockKits = [
-  { bank: "A", id: 1, name: "AKit1", samples: [] },
-  { bank: "A", id: 2, name: "AKit2", samples: [] },
-  { bank: "B", id: 3, name: "BKit3", samples: [] },
+  {
+    alias: null,
+    artist: null,
+    bank_letter: "A",
+    editable: false,
+    locked: false,
+    modified_since_sync: false,
+    name: "AKit1",
+    samples: [],
+    step_pattern: null,
+    voices: [],
+  },
+  {
+    alias: null,
+    artist: null,
+    bank_letter: "A",
+    editable: false,
+    locked: false,
+    modified_since_sync: false,
+    name: "AKit2",
+    samples: [],
+    step_pattern: null,
+    voices: [],
+  },
+  {
+    alias: null,
+    artist: null,
+    bank_letter: "B",
+    editable: false,
+    locked: false,
+    modified_since_sync: false,
+    name: "BKit3",
+    samples: [],
+    step_pattern: null,
+    voices: [],
+  },
 ];
 
 const baseProps = {
@@ -130,5 +163,45 @@ describe("KitGrid", () => {
 
     expect(onDuplicate).toBeDefined();
     expect(onSelectKit).toBeDefined();
+  });
+
+  describe("imperative handle", () => {
+    it("exposes scrollToKit method", () => {
+      const ref = createRef<KitGridHandle>();
+      render(<KitGrid {...baseProps} ref={ref} />);
+
+      // Verify the method exists
+      expect(ref.current?.scrollToKit).toBeDefined();
+      expect(typeof ref.current?.scrollToKit).toBe("function");
+    });
+
+    it("exposes scrollAndFocusKitByIndex method", () => {
+      const ref = createRef<KitGridHandle>();
+      render(<KitGrid {...baseProps} ref={ref} />);
+
+      // Verify the method exists
+      expect(ref.current?.scrollAndFocusKitByIndex).toBeDefined();
+      expect(typeof ref.current?.scrollAndFocusKitByIndex).toBe("function");
+    });
+
+    it("scrollToKit can be called without error for existing kit", () => {
+      const ref = createRef<KitGridHandle>();
+      render(<KitGrid {...baseProps} ref={ref} />);
+
+      // Call scrollToKit for existing kit - should not throw
+      expect(() => {
+        ref.current?.scrollToKit("AKit2");
+      }).not.toThrow();
+    });
+
+    it("scrollToKit can be called without error for non-existent kit", () => {
+      const ref = createRef<KitGridHandle>();
+      render(<KitGrid {...baseProps} ref={ref} />);
+
+      // Call scrollToKit for non-existent kit - should not throw
+      expect(() => {
+        ref.current?.scrollToKit("NonExistentKit");
+      }).not.toThrow();
+    });
   });
 });

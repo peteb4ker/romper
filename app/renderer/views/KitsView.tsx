@@ -266,7 +266,6 @@ const KitsView: React.FC = () => {
 
       {navigation.selectedKit && navigation.selectedKitSamples ? (
         <KitDetailsContainer
-          getKitFavoriteState={kitFilters.getKitFavoriteState}
           kitIndex={navigation.currentKitIndex}
           kitName={navigation.selectedKit}
           kits={navigation.sortedKits}

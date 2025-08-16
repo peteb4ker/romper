@@ -279,11 +279,16 @@ export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
 
 /**
  * Get all kits metadata (no samples or voices) - lightweight for favorites
+ *
+ * @returns KitWithRelations[] where samples and voices arrays are intentionally empty
+ *          to maintain interface compatibility while providing lightweight metadata access.
+ *          This function is optimized for operations that only need kit metadata (like favorites)
+ *          without the overhead of loading sample and voice data.
  */
 export function getKitsMetadata(dbDir: string): DbResult<KitWithRelations[]> {
   return withDb(dbDir, (db) => {
-    const allKits = db.select().from(kits).all();
-    const kitsWithBanks = allKits.map((kit: any) => {
+    const kitsMetadata = db.select().from(kits).all();
+    const kitsWithBanks = kitsMetadata.map((kit: any) => {
       // Load only bank relation, no samples or voices
       const bank = kit.bank_letter
         ? db.select().from(banks).where(eq(banks.letter, kit.bank_letter)).get()

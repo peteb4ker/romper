@@ -7,7 +7,6 @@ import type { VoiceSamples } from "./kitTypes";
 import KitDetails from "./KitDetails";
 
 interface KitDetailsContainerProps {
-  getKitFavoriteState?: (kitName: string) => boolean;
   kitIndex: number;
   kitName: string;
   kits: KitWithRelations[];
@@ -28,7 +27,6 @@ interface KitDetailsContainerProps {
  */
 const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
   const {
-    getKitFavoriteState,
     kitIndex,
     kitName,
     kits,
@@ -64,7 +62,6 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
 
   return (
     <KitDetails
-      getKitFavoriteState={getKitFavoriteState}
       kitIndex={kitIndex}
       kitName={kitName}
       kits={kits}

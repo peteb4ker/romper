@@ -10,7 +10,6 @@ import KitVoicePanels from "./KitVoicePanels";
 import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitDetailsAllProps extends KitDetailsProps {
-  getKitFavoriteState?: (kitName: string) => boolean; // Get favorite state independent of kit data
   onCreateKit?: () => void; // Used by useKitDetailsLogic hook
   onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitDetailsLogic hook
@@ -58,7 +57,6 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
     >
       <KitHeader
         editingKitAlias={editingKitAlias}
-        getKitFavoriteState={props.getKitFavoriteState}
         handleSaveKitAlias={logic.updateKitAlias}
         isEditable={logic.kit?.editable ?? false}
         kit={logic.kit}

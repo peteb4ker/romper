@@ -371,6 +371,79 @@ describe("KitGridItem", () => {
 
       expect(screen.getByTitle("Add to favorites")).toBeInTheDocument();
     });
+
+    it("prioritizes isFavorite prop over kitData.is_favorite", () => {
+      const mockOnToggleFavorite = vi.fn();
+      const props = {
+        ...defaultProps,
+        isFavorite: true, // but prop says it is favorite
+        kitData: {
+          ...defaultProps.kitData,
+          is_favorite: false, // kitData says not favorite
+        },
+        onToggleFavorite: mockOnToggleFavorite,
+      };
+      render(<KitGridItem {...props} />);
+
+      // Should show as favorited (using prop value)
+      const favoriteButton = screen.getByTitle("Remove from favorites");
+      expect(favoriteButton).toBeInTheDocument();
+      expect(favoriteButton).toHaveClass("text-yellow-500");
+    });
+
+    it("falls back to kitData.is_favorite when isFavorite prop is undefined", () => {
+      const mockOnToggleFavorite = vi.fn();
+      const props = {
+        ...defaultProps,
+        isFavorite: undefined, // No prop value provided
+        kitData: {
+          ...defaultProps.kitData,
+          is_favorite: true,
+        },
+        onToggleFavorite: mockOnToggleFavorite,
+      };
+      render(<KitGridItem {...props} />);
+
+      // Should fall back to kitData value
+      const favoriteButton = screen.getByTitle("Remove from favorites");
+      expect(favoriteButton).toBeInTheDocument();
+      expect(favoriteButton).toHaveClass("text-yellow-500");
+    });
+
+    it("uses false as default when both isFavorite prop and kitData.is_favorite are undefined", () => {
+      const mockOnToggleFavorite = vi.fn();
+      const props = {
+        ...defaultProps,
+        isFavorite: undefined, // No prop value
+        kitData: undefined, // No kitData
+        onToggleFavorite: mockOnToggleFavorite,
+      };
+      render(<KitGridItem {...props} />);
+
+      // Should default to not favorited
+      const favoriteButton = screen.getByTitle("Add to favorites");
+      expect(favoriteButton).toBeInTheDocument();
+      expect(favoriteButton).not.toHaveClass("text-yellow-500");
+    });
+
+    it("handles explicit false isFavorite prop correctly", () => {
+      const mockOnToggleFavorite = vi.fn();
+      const props = {
+        ...defaultProps,
+        isFavorite: false, // but prop explicitly says not favorite
+        kitData: {
+          ...defaultProps.kitData,
+          is_favorite: true, // kitData says favorite
+        },
+        onToggleFavorite: mockOnToggleFavorite,
+      };
+      render(<KitGridItem {...props} />);
+
+      // Should use prop value (not favorited)
+      const favoriteButton = screen.getByTitle("Add to favorites");
+      expect(favoriteButton).toBeInTheDocument();
+      expect(favoriteButton).not.toHaveClass("text-yellow-500");
+    });
   });
 
   describe("Duplicate button", () => {

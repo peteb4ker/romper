@@ -204,4 +204,90 @@ describe("KitGrid", () => {
       }).not.toThrow();
     });
   });
+
+  describe("getKitFavoriteState prop", () => {
+    it("passes getKitFavoriteState to KitGrid component", () => {
+      const mockGetKitFavoriteState = vi.fn(() => true);
+
+      expect(() => {
+        render(
+          <KitGrid
+            {...baseProps}
+            getKitFavoriteState={mockGetKitFavoriteState}
+          />,
+        );
+      }).not.toThrow();
+    });
+
+    it("renders without getKitFavoriteState prop", () => {
+      // Should render normally without the optional prop
+      expect(() => {
+        render(<KitGrid {...baseProps} />);
+      }).not.toThrow();
+
+      expect(screen.getByTestId("kit-grid")).toBeInTheDocument();
+    });
+
+    it("accepts getKitFavoriteState function prop", () => {
+      const mockGetKitFavoriteState = vi.fn((kitName: string) => {
+        return kitName === "AKit1"; // AKit1 is favorite, others are not
+      });
+
+      render(
+        <KitGrid
+          {...baseProps}
+          getKitFavoriteState={mockGetKitFavoriteState}
+        />,
+      );
+
+      // Component should render successfully with the prop
+      expect(screen.getByTestId("kit-grid")).toBeInTheDocument();
+      expect(screen.getByText("AKit1")).toBeInTheDocument();
+    });
+
+    it("works with kitData prop for favorite state fallback", () => {
+      const kitDataWithFavorites = [
+        {
+          alias: null,
+          artist: null,
+          bank_letter: "A",
+          editable: false,
+          id: 1,
+          is_favorite: true,
+          locked: false,
+          modified_since_sync: false,
+          name: "AKit1",
+          samples: [],
+          step_pattern: null,
+          voices: [],
+        },
+        {
+          alias: null,
+          artist: null,
+          bank_letter: "A",
+          editable: false,
+          id: 2,
+          is_favorite: false,
+          locked: false,
+          modified_since_sync: false,
+          name: "AKit2",
+          samples: [],
+          step_pattern: null,
+          voices: [],
+        },
+      ];
+
+      expect(() => {
+        render(
+          <KitGrid
+            {...baseProps}
+            kitData={kitDataWithFavorites}
+            kits={kitDataWithFavorites}
+          />,
+        );
+      }).not.toThrow();
+
+      expect(screen.getByTestId("kit-grid")).toBeInTheDocument();
+    });
+  });
 });

@@ -69,12 +69,21 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
 
     // Create wrapper function for async onRefreshKits with scrollToKit parameter
     const handleRefreshKitsWithScroll = useCallback(
-      (_scrollToKit?: string) => {
+      (scrollToKit?: string) => {
         if (onRefreshKits) {
           onRefreshKits().catch((error) => {
             console.error("Failed to refresh kits:", error);
             onMessage?.("Failed to refresh kits", "error");
           });
+        }
+        // If scrollToKit is provided, scroll to that kit after a short delay
+        if (scrollToKit) {
+          setTimeout(() => {
+            const kitEl = document.querySelector(`[data-kit='${scrollToKit}']`);
+            if (kitEl) {
+              kitEl.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }, 100);
         }
       },
       [onRefreshKits, onMessage],

@@ -28,7 +28,7 @@ describe("KitDialogs", () => {
 
   it("renders nothing if both dialogs are hidden", () => {
     render(<KitDialogs {...defaultProps} />);
-    expect(screen.queryByText("Kit Slot (A0-Z99):")).not.toBeInTheDocument();
+    expect(screen.queryByText("Kit Slot (A0-Z99)")).not.toBeInTheDocument();
     expect(screen.queryByText("Duplicate")).not.toBeInTheDocument();
   });
 
@@ -47,13 +47,13 @@ describe("KitDialogs", () => {
         showNewKit={true}
       />,
     );
-    expect(screen.getByLabelText("Kit Slot (A0-Z99):")).toHaveValue("A1");
+    expect(screen.getByLabelText("Kit Slot (A0-Z99)")).toHaveValue("A1");
     expect(screen.getByText("Slot error")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Kit Slot (A0-Z99):"), {
+    fireEvent.change(screen.getByLabelText("Kit Slot (A0-Z99)"), {
       target: { value: "b2" },
     });
     expect(onNewKitSlotChange).toHaveBeenCalledWith("B2");
-    fireEvent.click(screen.getByText("Create"));
+    fireEvent.click(screen.getByText("Create Kit"));
     expect(onCreateKit).toHaveBeenCalled();
     fireEvent.click(screen.getByText("Cancel"));
     expect(onCancelNewKit).toHaveBeenCalled();

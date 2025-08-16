@@ -249,8 +249,8 @@ describe("KitBrowser", () => {
       );
 
       // Now we should see the New Kit dialog content
-      expect(screen.getByText("Kit Slot (A0-Z99):")).toBeTruthy();
-      expect(screen.getByText("Create")).toBeTruthy();
+      expect(screen.getByText("Create New Kit")).toBeTruthy();
+      expect(screen.getByText("Create Kit")).toBeTruthy();
     });
   });
 
@@ -939,7 +939,7 @@ describe("KitBrowser", () => {
         expect(mockSetDuplicateKitError).toHaveBeenCalledWith(null);
       } else {
         // Test that the duplicate functionality is available
-        expect(screen.queryByText("Kit Slot (A0-Z99):")).toBeInTheDocument();
+        expect(screen.queryByText("Create New Kit")).toBeInTheDocument();
       }
     });
   });

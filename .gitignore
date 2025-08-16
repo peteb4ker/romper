@@ -41,3 +41,6 @@ test-results/
 *.cache
 *.tmp
 worktrees/
+
+# Documentation audit reports (generated files)
+docs/audits/

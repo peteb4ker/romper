@@ -1,3 +1,10 @@
+---
+title: "Technical Debt Todo List"
+owners: ["product-team"]
+last_reviewed: "2025-08-15"
+tags: ["project-management"]
+---
+
 # Technical Debt Todo List
 
 _Last updated: 2025-01-12_
@@ -71,7 +78,11 @@ _Last updated: 2025-01-12_
   - Priority: High | Effort: Medium | Risk: Low
   - COMPLETED STATE: Successfully migrated 13+ test files from manual mocks to centralized setup
   - CHANGES MADE: Updated vitest.setup.ts to import defaultElectronAPIMock and setupAudioMocks globally
-  - MIGRATED FILES: AboutView.test.tsx, KitsView.test.tsx, WizardSourceStep.test.tsx, useDb.test.ts, useKitPlayback.test.ts, useLocalStoreWizard.test.ts, useStartupActions.test.ts, useBankScanning.test.ts, useValidationResults.test.ts, SampleWaveform.test.tsx
+  - MIGRATED FILES: 10 test files
+    - AboutView, KitsView, WizardSourceStep
+    - useDb, useKitPlayback, useLocalStoreWizard
+    - useStartupActions, useBankScanning, useValidationResults
+    - SampleWaveform
   - RESULTS: Test count improved from 633 → 639 passing tests, infrastructure now centralized
   - APPROACH: Removed manual window.electronAPI assignments, tests now use global vitest.setup.ts mocks
 

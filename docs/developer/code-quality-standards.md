@@ -1,3 +1,10 @@
+---
+title: "Code Quality Standards"
+owners: ["developer-team"]
+last_reviewed: "2025-08-15"
+tags: ["developer"]
+---
+
 # Code Quality Standards
 
 **Based on**: Architecture audit findings from exceptional codebase patterns

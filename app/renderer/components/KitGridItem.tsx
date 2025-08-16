@@ -172,7 +172,7 @@ const KitGridItem = React.memo(
                   </span>
                 )}
               {/* Favorite toggle button */}
-              {isValid && onToggleFavorite && (
+              {onToggleFavorite && (
                 <button
                   className={`p-1 text-xs ml-1 transition-colors ${
                     kitData?.is_favorite

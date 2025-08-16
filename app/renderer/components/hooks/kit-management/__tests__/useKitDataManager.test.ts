@@ -396,4 +396,198 @@ describe("useKitDataManager", () => {
 
     expect(window.electronAPI.getKits).toHaveBeenCalled();
   });
+
+  describe("refreshKitsOnly", () => {
+    it("should refresh kit metadata without samples using getKitsMetadata", async () => {
+      const mockGetKitsMetadata = vi.fn().mockResolvedValue({
+        data: mockKits,
+        success: true,
+      });
+
+      globalThis.window = {
+        ...globalThis.window,
+        electronAPI: {
+          getAllSamplesForKit: vi.fn().mockResolvedValue({
+            data: mockSamples,
+            success: true,
+          }),
+          getKits: vi.fn().mockResolvedValue({
+            data: mockKits,
+            success: true,
+          }),
+          getKitsMetadata: mockGetKitsMetadata,
+        },
+      };
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.refreshKitsOnly();
+      });
+
+      expect(mockGetKitsMetadata).toHaveBeenCalled();
+      expect(result.current.kits).toEqual(mockKits);
+    });
+
+    it("should handle refreshKitsOnly failure gracefully", async () => {
+      const mockGetKitsMetadata = vi.fn().mockResolvedValue({
+        error: "Failed to get metadata",
+        success: false,
+      });
+
+      globalThis.window = {
+        ...globalThis.window,
+        electronAPI: {
+          getAllSamplesForKit: vi.fn().mockResolvedValue({
+            data: mockSamples,
+            success: true,
+          }),
+          getKits: vi.fn().mockResolvedValue({
+            data: mockKits,
+            success: true,
+          }),
+          getKitsMetadata: mockGetKitsMetadata,
+        },
+      };
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.refreshKitsOnly();
+      });
+
+      expect(mockGetKitsMetadata).toHaveBeenCalled();
+    });
+
+    it("should handle refreshKitsOnly exception", async () => {
+      const mockGetKitsMetadata = vi
+        .fn()
+        .mockRejectedValue(new Error("Network error"));
+
+      globalThis.window = {
+        ...globalThis.window,
+        electronAPI: {
+          getAllSamplesForKit: vi.fn().mockResolvedValue({
+            data: mockSamples,
+            success: true,
+          }),
+          getKits: vi.fn().mockResolvedValue({
+            data: mockKits,
+            success: true,
+          }),
+          getKitsMetadata: mockGetKitsMetadata,
+        },
+      };
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.refreshKitsOnly();
+      });
+
+      expect(mockGetKitsMetadata).toHaveBeenCalled();
+    });
+
+    it("should handle getKitsMetadata API error in refreshKitsOnly", async () => {
+      const mockGetKitsMetadata = vi.fn().mockResolvedValue({
+        data: [],
+        error: "Database connection failed",
+        success: false,
+      });
+
+      globalThis.window = {
+        ...globalThis.window,
+        electronAPI: {
+          getKitsMetadata: mockGetKitsMetadata,
+        },
+      };
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.refreshKitsOnly();
+      });
+
+      expect(mockGetKitsMetadata).toHaveBeenCalled();
+      // Should still maintain empty array state on error
+      expect(result.current.kits).toEqual([]);
+    });
+
+    it("should handle missing getKitsMetadata API in refreshKitsOnly", async () => {
+      globalThis.window = {
+        ...globalThis.window,
+        electronAPI: {
+          // Missing getKitsMetadata method
+        },
+      };
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.refreshKitsOnly();
+      });
+
+      // Should handle gracefully when API method is missing
+      expect(result.current.kits).toEqual([]);
+    });
+
+    it("should handle getKitsMetadata exception in refreshKitsOnly", async () => {
+      const mockGetKitsMetadata = vi
+        .fn()
+        .mockRejectedValue(new Error("Network error"));
+
+      globalThis.window = {
+        ...globalThis.window,
+        electronAPI: {
+          getKitsMetadata: mockGetKitsMetadata,
+        },
+      };
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.refreshKitsOnly();
+      });
+
+      expect(mockGetKitsMetadata).toHaveBeenCalled();
+      // Should handle exception gracefully
+      expect(result.current.kits).toEqual([]);
+    });
+  });
 });

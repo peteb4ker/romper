@@ -278,31 +278,69 @@ export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
 }
 
 /**
- * Get all kits metadata (no samples or voices) - lightweight for favorites
+ * Get all kits metadata (no samples or voices) - truly lightweight for favorites
  *
  * @returns KitWithRelations[] where samples and voices arrays are intentionally empty
  *          to maintain interface compatibility while providing lightweight metadata access.
- *          This function is optimized for operations that only need kit metadata (like favorites)
+ *          This function uses a single optimized query to fetch only kit and bank metadata
  *          without the overhead of loading sample and voice data.
  */
 export function getKitsMetadata(dbDir: string): DbResult<KitWithRelations[]> {
   return withDb(dbDir, (db) => {
-    const kitsMetadata = db.select().from(kits).all();
-    const kitsWithBanks = kitsMetadata.map((kit: any) => {
-      // Load only bank relation, no samples or voices
-      const bank = kit.bank_letter
-        ? db.select().from(banks).where(eq(banks.letter, kit.bank_letter)).get()
-        : null;
+    // Use a single LEFT JOIN query to get kit metadata with bank info efficiently
+    const kitsWithBanks = db
+      .select({
+        alias: kits.alias,
+        artist: kits.artist,
+        // Bank fields (prefixed to avoid conflicts)
+        bank_artist: banks.artist,
+        bank_letter: kits.bank_letter,
+        bank_rtf_filename: banks.rtf_filename,
+        bank_scanned_at: banks.scanned_at,
+        bpm: kits.bpm,
+        editable: kits.editable,
+        is_favorite: kits.is_favorite,
+        locked: kits.locked,
+        modified_since_sync: kits.modified_since_sync,
+        // Kit fields (only existing columns)
+        name: kits.name,
+        step_pattern: kits.step_pattern,
+      })
+      .from(kits)
+      .leftJoin(banks, eq(kits.bank_letter, banks.letter))
+      .all();
 
-      return {
-        ...kit,
-        bank,
-        samples: [], // Empty array to maintain interface compatibility
-        voices: [], // Empty array to maintain interface compatibility
-      };
-    });
+    // Transform the flat joined result into the expected KitWithRelations structure
+    return kitsWithBanks.map(
+      (row: (typeof kitsWithBanks)[0]) =>
+        ({
+          alias: row.alias,
+          artist: row.artist,
+          // Reconstruct bank object if bank data exists
+          bank: row.bank_artist
+            ? {
+                artist: row.bank_artist,
+                letter: row.bank_letter || "",
+                rtf_filename: row.bank_rtf_filename,
+                scanned_at: row.bank_scanned_at,
+              }
+            : null,
+          bank_letter: row.bank_letter,
+          bpm: row.bpm,
+          editable: row.editable,
+          is_favorite: row.is_favorite,
+          locked: row.locked,
+          modified_since_sync: row.modified_since_sync,
+          // Kit properties (only those that exist in schema)
+          name: row.name,
 
-    return kitsWithBanks;
+          // Empty arrays to maintain interface compatibility
+          samples: [],
+
+          step_pattern: row.step_pattern,
+          voices: [],
+        }) as KitWithRelations,
+    );
   });
 }
 
@@ -379,30 +417,6 @@ export function markKitsAsSynced(
     } catch (error) {
       console.error(`[markKitsAsSynced] Failed to update kits:`, error);
       throw error; // Re-throw to fail the entire operation
-    }
-  });
-}
-
-/**
- * Task 20.1.1: Set kit favorite status
- */
-export function setKitFavorite(
-  dbDir: string,
-  kitName: string,
-  isFavorite: boolean,
-): DbResult<void> {
-  return withDb(dbDir, (db) => {
-    const result = db
-      .update(kits)
-      .set({
-        is_favorite: isFavorite,
-        updated_at: new Date().toISOString(),
-      })
-      .where(eq(kits.name, kitName))
-      .run();
-
-    if (result.changes === 0) {
-      throw new Error(`Kit '${kitName}' not found`);
     }
   });
 }

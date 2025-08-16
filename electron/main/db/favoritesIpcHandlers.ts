@@ -4,7 +4,6 @@ import { createDbHandler } from "./ipcHandlerUtils.js";
 import {
   getFavoriteKits,
   getFavoriteKitsCount,
-  setKitFavorite,
   toggleKitFavorite,
 } from "./romperDbCoreORM.js";
 
@@ -18,11 +17,6 @@ export function registerFavoritesIpcHandlers(
   ipcMain.handle(
     "toggle-kit-favorite",
     createDbHandler(inMemorySettings, toggleKitFavorite),
-  );
-
-  ipcMain.handle(
-    "set-kit-favorite",
-    createDbHandler(inMemorySettings, setKitFavorite),
   );
 
   ipcMain.handle(

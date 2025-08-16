@@ -31,7 +31,6 @@ export {
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
-  setKitFavorite,
   toggleKitFavorite,
   updateBank,
   updateKit,

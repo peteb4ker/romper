@@ -462,10 +462,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] selectSdCard invoked");
     return ipcRenderer.invoke("select-sd-card");
   },
-  setKitFavorite: (kitName: string, isFavorite: boolean) => {
-    isDev && console.debug("[IPC] setKitFavorite invoked", kitName, isFavorite);
-    return ipcRenderer.invoke("set-kit-favorite", kitName, isFavorite);
-  },
   setSetting: async (key: string, value: any): Promise<void> => {
     return await settingsManager.setSetting(key as SettingsKey, value);
   },

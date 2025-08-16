@@ -239,10 +239,6 @@ export interface ElectronAPI {
 
   selectLocalStorePath?: () => Promise<string | undefined>;
   selectSdCard: () => Promise<null | string>;
-  setKitFavorite?: (
-    kitName: string,
-    isFavorite: boolean,
-  ) => Promise<DbResult<void>>;
   setSetting: (
     key: keyof {
       confirmDestructiveActions?: boolean;

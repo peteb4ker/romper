@@ -19,7 +19,6 @@ vi.mock("../db/romperDbCoreORM", () => ({
   getKit: vi.fn(),
   getKits: vi.fn(),
   getKitSamples: vi.fn(),
-  setKitFavorite: vi.fn(),
   toggleKitFavorite: vi.fn(),
   updateKit: vi.fn(),
   updateVoiceAlias: vi.fn(),

@@ -7,8 +7,16 @@ import type { KitBrowserHandle } from "./KitBrowser";
 import KitBrowser from "./KitBrowser";
 
 interface KitBrowserContainerProps {
+  // Favorites filter functionality
+  favoritesCount?: number;
+  getKitFavoriteState?: (kitName: string) => boolean;
+  handleToggleFavorite?: (kitName: string) => void;
+  handleToggleFavoritesFilter?: () => void;
+  handleToggleModifiedFilter?: () => void;
+  // Other props
   kits: KitWithRelations[];
   localStorePath: null | string;
+  modifiedCount?: number;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onRefreshKits: () => Promise<void>;
   onSelectKit: (kitName: string) => void;
@@ -16,6 +24,8 @@ interface KitBrowserContainerProps {
   ref?: React.Ref<KitBrowserHandle>;
   sampleCounts: Record<string, [number, number, number, number]>;
   setLocalStorePath: (path: string) => void;
+  showFavoritesOnly?: boolean;
+  showModifiedOnly?: boolean;
 }
 
 /**
@@ -27,14 +37,24 @@ const KitBrowserContainer = React.forwardRef<
   KitBrowserContainerProps
 >((props, ref) => {
   const {
+    // Favorites filter props
+    favoritesCount,
+    getKitFavoriteState,
+    handleToggleFavorite,
+    handleToggleFavoritesFilter,
+    handleToggleModifiedFilter,
+    // Other props
     kits,
     localStorePath,
+    modifiedCount,
     onMessage,
     onRefreshKits,
     onSelectKit,
     onShowSettings,
     sampleCounts,
     setLocalStorePath,
+    showFavoritesOnly,
+    showModifiedOnly,
   } = props;
 
   // Memoize callbacks to prevent unnecessary re-renders
@@ -65,8 +85,16 @@ const KitBrowserContainer = React.forwardRef<
 
   return (
     <KitBrowser
+      // Favorites filter props
+      favoritesCount={favoritesCount}
+      getKitFavoriteState={getKitFavoriteState}
+      handleToggleFavorite={handleToggleFavorite}
+      handleToggleFavoritesFilter={handleToggleFavoritesFilter}
+      handleToggleModifiedFilter={handleToggleModifiedFilter}
+      // Other props
       kits={kits}
       localStorePath={localStorePath}
+      modifiedCount={modifiedCount}
       onMessage={handleMessage}
       onRefreshKits={handleRefreshKits}
       onSelectKit={handleSelectKit}
@@ -74,6 +102,8 @@ const KitBrowserContainer = React.forwardRef<
       ref={ref}
       sampleCounts={sampleCounts}
       setLocalStorePath={handleSetLocalStorePath}
+      showFavoritesOnly={showFavoritesOnly}
+      showModifiedOnly={showModifiedOnly}
     />
   );
 });

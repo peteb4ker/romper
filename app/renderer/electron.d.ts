@@ -116,6 +116,20 @@ export interface ElectronAPI {
       }>
     >
   >;
+  getKitsMetadata?: () => Promise<
+    DbResult<
+      Array<{
+        alias?: string;
+        artist?: string;
+        editable: boolean;
+        id: number;
+        locked: boolean;
+        name: string;
+        step_pattern?: number[][];
+        voices: { [voiceNumber: number]: string };
+      }>
+    >
+  >;
   getLocalStoreStatus: () => Promise<LocalStoreValidationDetailedResult>;
   getSampleAudioBuffer?: (
     kitName: string,
@@ -225,10 +239,6 @@ export interface ElectronAPI {
 
   selectLocalStorePath?: () => Promise<string | undefined>;
   selectSdCard: () => Promise<null | string>;
-  setKitFavorite?: (
-    kitName: string,
-    isFavorite: boolean,
-  ) => Promise<DbResult<void>>;
   setSetting: (
     key: keyof {
       confirmDestructiveActions?: boolean;
@@ -252,7 +262,7 @@ export interface ElectronAPI {
   // Task 20.1: Favorites system
   toggleKitFavorite?: (
     kitName: string,
-  ) => Promise<DbResult<{ is_favorite: boolean }>>;
+  ) => Promise<DbResult<{ isFavorite: boolean }>>;
   updateKit?: (
     kitName: string,
     updates: {

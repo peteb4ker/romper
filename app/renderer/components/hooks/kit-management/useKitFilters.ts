@@ -1,6 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface UseKitFiltersOptions {
   kits?: KitWithRelations[];
@@ -20,6 +20,19 @@ export function useKitFilters({
   // Task 20.1.4: Favorites filter state
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);
+
+  // Track individual kit favorite states independently
+  const [kitFavoriteStates, setKitFavoriteStates] = useState<
+    Record<string, boolean>
+  >({});
+
+  // Use ref to always have access to the latest state in callbacks
+  const kitFavoriteStatesRef = useRef<Record<string, boolean>>({});
+
+  // Update ref whenever state changes
+  useEffect(() => {
+    kitFavoriteStatesRef.current = kitFavoriteStates;
+  }, [kitFavoriteStates]);
 
   // Task 20.2.2: Modified filter state
   const [showModifiedOnly, setShowModifiedOnly] = useState(false);
@@ -46,13 +59,22 @@ export function useKitFilters({
       try {
         const result = await window.electronAPI.toggleKitFavorite?.(kitName);
         if (result?.success) {
-          // Refresh kits to update the UI
-          onRefreshKits?.();
+          // Update individual kit favorite state immediately (for instant UI update)
+          const newFavoriteState = result.data?.isFavorite ?? false;
+          setKitFavoriteStates((prev) => ({
+            ...prev,
+            [kitName]: newFavoriteState,
+          }));
 
-          // Update favorites count
+          // Update favorites count for filter badge (lightweight)
           const countResult = await window.electronAPI.getFavoriteKitsCount?.();
           if (countResult?.success && typeof countResult.data === "number") {
             setFavoritesCount(countResult.data);
+          }
+
+          // Only refresh full data if favorites filter is active (to update filtered list)
+          if (showFavoritesOnly) {
+            onRefreshKits?.();
           }
         } else {
           onMessage?.(
@@ -67,7 +89,7 @@ export function useKitFilters({
         );
       }
     },
-    [onMessage, onRefreshKits],
+    [onMessage, onRefreshKits, showFavoritesOnly],
   );
 
   // Task 20.1.4: Toggle favorites filter
@@ -111,9 +133,24 @@ export function useKitFilters({
     setModifiedCount(modifiedKits.length);
   }, [kits]);
 
+  // Helper function to get favorite state for a kit (from local state or kit data)
+  const getKitFavoriteState = useCallback(
+    (kitName: string) => {
+      // Use ref to access the latest state to avoid stale closures
+      if (kitName in kitFavoriteStatesRef.current) {
+        return kitFavoriteStatesRef.current[kitName];
+      }
+      // Fallback to kit data from server
+      const kit = kits?.find((k) => k.name === kitName);
+      return kit?.is_favorite || false;
+    },
+    [kits],
+  );
+
   return {
     favoritesCount,
     filteredKits,
+    getKitFavoriteState,
     handleToggleFavorite,
     handleToggleFavoritesFilter,
     handleToggleModifiedFilter,

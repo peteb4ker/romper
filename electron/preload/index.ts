@@ -274,6 +274,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] getKits invoked");
     return ipcRenderer.invoke("get-all-kits");
   },
+  getKitsMetadata: () => {
+    isDev && console.debug("[IPC] getKitsMetadata invoked");
+    return ipcRenderer.invoke("get-kits-metadata");
+  },
   getLocalStoreStatus: async () => {
     isDev && console.debug("[IPC] getLocalStoreStatus invoked");
     return await ipcRenderer.invoke("get-local-store-status");
@@ -457,10 +461,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   selectSdCard: (): Promise<null | string> => {
     isDev && console.debug("[IPC] selectSdCard invoked");
     return ipcRenderer.invoke("select-sd-card");
-  },
-  setKitFavorite: (kitName: string, isFavorite: boolean) => {
-    isDev && console.debug("[IPC] setKitFavorite invoked", kitName, isFavorite);
-    return ipcRenderer.invoke("set-kit-favorite", kitName, isFavorite);
   },
   setSetting: async (key: string, value: any): Promise<void> => {
     return await settingsManager.setSetting(key as SettingsKey, value);

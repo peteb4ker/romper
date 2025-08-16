@@ -278,6 +278,21 @@ export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
 }
 
 /**
+ * Get lightweight kit metadata for efficient list rendering
+ * @param dbDir Database directory path
+ * @returns DbResult containing kit data with bank relations
+ */
+export function getKitsMetadata(dbDir: string): DbResult<any[]> {
+  return withDb(dbDir, (db) => {
+    return db.query.kits.findMany({
+      with: {
+        bank: true,
+      },
+    });
+  });
+}
+
+/**
  * Helper function to get samples to delete
  */
 export function getSamplesToDelete(db: any, whereCondition: any): Sample[] {
@@ -350,30 +365,6 @@ export function markKitsAsSynced(
     } catch (error) {
       console.error(`[markKitsAsSynced] Failed to update kits:`, error);
       throw error; // Re-throw to fail the entire operation
-    }
-  });
-}
-
-/**
- * Task 20.1.1: Set kit favorite status
- */
-export function setKitFavorite(
-  dbDir: string,
-  kitName: string,
-  isFavorite: boolean,
-): DbResult<void> {
-  return withDb(dbDir, (db) => {
-    const result = db
-      .update(kits)
-      .set({
-        is_favorite: isFavorite,
-        updated_at: new Date().toISOString(),
-      })
-      .where(eq(kits.name, kitName))
-      .run();
-
-    if (result.changes === 0) {
-      throw new Error(`Kit '${kitName}' not found`);
     }
   });
 }

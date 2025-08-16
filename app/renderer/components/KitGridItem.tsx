@@ -18,6 +18,7 @@ const KitGridItem = React.memo(
   React.forwardRef<HTMLDivElement, KitGridItemProps & KitItemRenderProps>(
     (
       {
+        isFavorite: isFavoriteProp,
         isSelected,
         isValid,
         kit,
@@ -37,6 +38,9 @@ const KitGridItem = React.memo(
 
       // Use shared icon renderer with medium size for grid view
       const icon = <KitIconRenderer iconType={iconType} size="md" />;
+
+      // Use direct prop value or fallback to kit data
+      const isFavorite = isFavoriteProp ?? kitData?.is_favorite ?? false;
 
       // Kit type visual identification borders and backgrounds
       const getKitTypeStyles = () => {
@@ -175,22 +179,21 @@ const KitGridItem = React.memo(
               {onToggleFavorite && (
                 <button
                   className={`p-1 text-xs ml-1 transition-colors ${
-                    kitData?.is_favorite
+                    isFavorite
                       ? "text-yellow-500 hover:text-yellow-600"
                       : "text-gray-400 hover:text-yellow-500"
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
+                    e.preventDefault();
                     onToggleFavorite(kit);
                   }}
                   title={
-                    kitData?.is_favorite
-                      ? "Remove from favorites"
-                      : "Add to favorites"
+                    isFavorite ? "Remove from favorites" : "Add to favorites"
                   }
                 >
                   <FaStar
-                    className={`w-4 h-4 ${kitData?.is_favorite ? "" : "opacity-30"}`}
+                    className={`w-4 h-4 ${isFavorite ? "" : "opacity-30"}`}
                   />
                 </button>
               )}

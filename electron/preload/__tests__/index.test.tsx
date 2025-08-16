@@ -645,11 +645,6 @@ describe("preload/index.tsx", () => {
         ipcChannel: "copy-dir",
         method: "copyDir",
       },
-      {
-        args: ["TestKit", true],
-        ipcChannel: "set-kit-favorite",
-        method: "setKitFavorite",
-      },
 
       // Methods with three parameters
       {

@@ -91,6 +91,7 @@ const KitsView: React.FC = () => {
     allKitSamples,
     kits,
     refreshAllKitsAndSamples,
+    refreshKitsOnly,
     reloadCurrentKitSamples,
     sampleCounts,
   } = useKitDataManager({
@@ -111,8 +112,8 @@ const KitsView: React.FC = () => {
     kits,
     onMessage: showMessage,
     onRefreshKits: () => {
-      // Fire and forget - don't await the Promise to match void return type
-      refreshAllKitsAndSamples().catch((error: unknown) => {
+      // Use lightweight refresh for favorites - only updates kit metadata, not samples
+      refreshKitsOnly().catch((error: unknown) => {
         console.error("Failed to refresh kits:", error);
       });
     },
@@ -283,8 +284,16 @@ const KitsView: React.FC = () => {
         />
       ) : (
         <KitBrowserContainer
+          // Favorites filter props
+          favoritesCount={kitFilters.favoritesCount}
+          getKitFavoriteState={kitFilters.getKitFavoriteState}
+          handleToggleFavorite={kitFilters.handleToggleFavorite}
+          handleToggleFavoritesFilter={kitFilters.handleToggleFavoritesFilter}
+          handleToggleModifiedFilter={kitFilters.handleToggleModifiedFilter}
+          // Other props
           kits={navigation.sortedKits}
           localStorePath={localStorePath}
+          modifiedCount={kitFilters.modifiedCount}
           onMessage={showMessage}
           onRefreshKits={refreshAllKitsAndSamples}
           onSelectKit={navigation.handleSelectKit}
@@ -292,6 +301,8 @@ const KitsView: React.FC = () => {
           ref={kitBrowserRef}
           sampleCounts={sampleCounts}
           setLocalStorePath={setLocalStorePath}
+          showFavoritesOnly={kitFilters.showFavoritesOnly}
+          showModifiedOnly={kitFilters.showModifiedOnly}
         />
       )}
 

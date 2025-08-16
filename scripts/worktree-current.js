@@ -52,7 +52,7 @@ function main() {
       } else {
         console.log("📦 Status: Main repository");
       }
-    } catch (_error) {
+    } catch {
       console.log("📦 Status: Unknown");
     }
 
@@ -62,7 +62,7 @@ function main() {
     console.log("-----------");
     try {
       runCommand("git status --porcelain", { silent: false });
-    } catch (_error) {
+    } catch {
       console.log("No git status available");
     }
 
@@ -72,10 +72,10 @@ function main() {
     console.log("--------------");
     try {
       runCommand("git worktree list");
-    } catch (_error) {
+    } catch {
       console.log("No worktrees found");
     }
-  } catch (_error) {
+  } catch {
     console.error("❌ Failed to get worktree information");
     process.exit(1);
   }

@@ -36,10 +36,11 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
 
   // Check if kit needs scanning - this is just a simple heuristic for now
   // A more robust implementation would check the database for scan status
-  // Don't show scanning prompt for editable kits when they're empty (reference-only kits)
+  // Don't show scanning prompt for empty kits (no samples to scan yet)
+  const hasAnySamples = logic.samples && Object.values(logic.samples).some(voiceSamples => voiceSamples.length > 0);
   const needsScanning =
     logic.kit &&
-    !logic.kit.editable && // Skip scanning prompt for editable (reference-only) kits
+    hasAnySamples && // Only show scanning prompt if there are actually samples to scan
     (!logic.kit.voices ||
       logic.kit.voices.length === 0 ||
       logic.kit.voices.every((v) => !v.voice_alias)) &&

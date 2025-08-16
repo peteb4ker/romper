@@ -410,14 +410,14 @@ describe("KitDetails", () => {
   });
 
   describe("UnscannedKitPrompt visibility", () => {
-    it("does not show scanning prompt for editable kits when empty", async () => {
+    it("does not show scanning prompt when kit has no samples", async () => {
       const mockLogic = {
         ...createMockLogic(),
         kit: {
           ...createMockLogic().kit,
-          editable: true,
-          voices: [], // Empty kit
+          voices: [], // Empty voices
         },
+        samples: { 1: [], 2: [], 3: [], 4: [] }, // No samples
       };
       (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
 
@@ -430,20 +430,27 @@ describe("KitDetails", () => {
         />,
       );
 
-      // UnscannedKitPrompt should not be rendered for editable empty kits
+      // UnscannedKitPrompt should not be rendered when there are no samples to scan
       expect(screen.queryByText(/kit needs scanning/i)).not.toBeInTheDocument();
       expect(
         screen.queryByTestId("unscanned-scan-button"),
       ).not.toBeInTheDocument();
     });
 
-    it("shows scanning prompt for non-editable kits when empty", async () => {
+    it("shows scanning prompt when kit has samples but no voice aliases", async () => {
       const mockLogic = {
         ...createMockLogic(),
         kit: {
           ...createMockLogic().kit,
-          editable: false,
-          voices: [], // Empty kit
+          voices: [
+            { id: 1, kit_name: "TestKit", voice_alias: null, voice_number: 1 },
+            { id: 2, kit_name: "TestKit", voice_alias: null, voice_number: 2 },
+          ],
+        },
+        samples: { 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }, // Has samples
+        playback: {
+          ...createMockLogic().playback,
+          samplePlaying: { "1:sample1.wav": false, "2:sample2.wav": false }, // Mock playback state
         },
       };
       (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
@@ -453,27 +460,31 @@ describe("KitDetails", () => {
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
+          samples={{ 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }}
         />,
       );
 
-      // UnscannedKitPrompt should be rendered for non-editable empty kits
+      // UnscannedKitPrompt should be rendered when there are samples but no voice aliases
       await waitFor(() => {
         expect(screen.getByText(/kit needs scanning/i)).toBeInTheDocument();
         expect(screen.getByTestId("unscanned-scan-button")).toBeInTheDocument();
       });
     });
 
-    it("does not show scanning prompt for editable kits with voices but no aliases", async () => {
+    it("does not show scanning prompt when kit has samples and voice aliases", async () => {
       const mockLogic = {
         ...createMockLogic(),
         kit: {
           ...createMockLogic().kit,
-          editable: true,
           voices: [
-            { id: 1, kit_name: "TestKit", voice_alias: null, voice_number: 1 },
-            { id: 2, kit_name: "TestKit", voice_alias: null, voice_number: 2 },
+            { id: 1, kit_name: "TestKit", voice_alias: "Kick", voice_number: 1 },
+            { id: 2, kit_name: "TestKit", voice_alias: "Snare", voice_number: 2 },
           ],
+        },
+        samples: { 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }, // Has samples
+        playback: {
+          ...createMockLogic().playback,
+          samplePlaying: { "1:sample1.wav": false, "2:sample2.wav": false }, // Mock playback state
         },
       };
       (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
@@ -483,11 +494,11 @@ describe("KitDetails", () => {
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
-          samples={{ 1: [], 2: [], 3: [], 4: [] }}
+          samples={{ 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }}
         />,
       );
 
-      // UnscannedKitPrompt should not be rendered for editable kits even with empty voice aliases
+      // UnscannedKitPrompt should not be rendered when kit has samples and voice aliases
       expect(screen.queryByText(/kit needs scanning/i)).not.toBeInTheDocument();
       expect(
         screen.queryByTestId("unscanned-scan-button"),

@@ -50,6 +50,13 @@
       "when": 1754019286310,
       "tag": "0006_next_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1755319964328,
+      "tag": "0007_giant_venus",
+      "breakpoints": true
     }
   ]
 }

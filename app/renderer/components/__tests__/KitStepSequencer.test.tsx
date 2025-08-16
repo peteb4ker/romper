@@ -31,6 +31,7 @@ describe("KitStepSequencer", () => {
   let setStepPattern;
   let sequencerOpen;
   let setSequencerOpen;
+  let setBpm;
   let mockLogic;
 
   // Helper to create default mock logic
@@ -71,6 +72,7 @@ describe("KitStepSequencer", () => {
     });
     sequencerOpen = false;
     setSequencerOpen = vi.fn();
+    setBpm = vi.fn();
 
     // Setup the hook mock
     mockLogic = createMockLogic();
@@ -84,9 +86,11 @@ describe("KitStepSequencer", () => {
   it("renders all subcomponents correctly", () => {
     render(
       <KitStepSequencer
+        bpm={120}
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={sequencerOpen}
+        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
@@ -105,9 +109,11 @@ describe("KitStepSequencer", () => {
 
     // Verify props are passed correctly to the hook - removing gridRef from assertion as it's handled internally
     expect(mockUseKitStepSequencerLogic).toHaveBeenCalledWith({
+      bpm: 120,
       onPlaySample,
       samples: defaultSamples,
       sequencerOpen,
+      setBpm,
       setSequencerOpen,
       setStepPattern,
       stepPattern,
@@ -123,9 +129,11 @@ describe("KitStepSequencer", () => {
 
     render(
       <KitStepSequencer
+        bpm={120}
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={true}
+        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
@@ -141,9 +149,11 @@ describe("KitStepSequencer", () => {
     // Test with sequencer open
     render(
       <KitStepSequencer
+        bpm={120}
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={true}
+        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
@@ -180,9 +190,11 @@ describe("KitStepSequencer", () => {
 
     render(
       <KitStepSequencer
+        bpm={120}
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={true}
+        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
@@ -203,9 +215,11 @@ describe("KitStepSequencer", () => {
 
     render(
       <KitStepSequencer
+        bpm={120}
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={true}
+        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
@@ -225,10 +239,12 @@ describe("KitStepSequencer", () => {
 
     render(
       <KitStepSequencer
+        bpm={120}
         gridRef={customGridRef}
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={true}
+        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
@@ -247,9 +263,11 @@ describe("KitStepSequencer", () => {
     // Test with different sequencer states
     render(
       <KitStepSequencer
+        bpm={120}
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={false}
+        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
@@ -270,9 +288,11 @@ describe("KitStepSequencer", () => {
 
     render(
       <KitStepSequencer
+        bpm={120}
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={true}
+        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}

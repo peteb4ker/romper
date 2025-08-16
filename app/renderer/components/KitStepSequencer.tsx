@@ -6,7 +6,9 @@ import StepSequencerDrawer from "./StepSequencerDrawer";
 import StepSequencerGrid from "./StepSequencerGrid";
 
 interface KitStepSequencerProps {
+  bpm?: number;
   gridRef?: React.RefObject<HTMLDivElement>;
+  kitName: string;
   onPlaySample: (voice: number, sample: string) => void;
   samples: { [voice: number]: string[] };
   sequencerOpen: boolean;
@@ -25,7 +27,9 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     >
       <div className="flex flex-row items-start justify-center gap-4">
         <StepSequencerControls
+          bpm={props.bpm}
           isSeqPlaying={logic.isSeqPlaying}
+          kitName={props.kitName}
           setIsSeqPlaying={logic.setIsSeqPlaying}
         />
         <StepSequencerGrid

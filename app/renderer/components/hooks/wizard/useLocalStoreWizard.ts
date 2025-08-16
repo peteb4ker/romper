@@ -159,9 +159,6 @@ export function useLocalStoreWizard(
       if (!state.source) throw new Error("No source selected");
       if (api.ensureDir) await api.ensureDir(state.targetPath);
 
-      // Set the local store path early in the process
-      await setLocalStorePathHelper();
-
       // Process source-specific operations
       await processSource();
 
@@ -179,6 +176,9 @@ export function useLocalStoreWizard(
       await scanningHook.runScanning(state.targetPath, dbDir, validKits);
       isDev &&
         console.debug("[Hook] initialize - scanning operations completed");
+
+      // Set the local store path only after everything is ready
+      await setLocalStorePathHelper();
 
       isDev && console.debug("[Hook] initialize completed successfully");
       return { success: true };

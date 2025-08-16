@@ -472,6 +472,7 @@ export function updateKit(
   kitName: string,
   updates: {
     bank_letter?: string;
+    bpm?: number;
     description?: string;
     editable?: boolean;
     is_favorite?: boolean;

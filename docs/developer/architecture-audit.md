@@ -1,3 +1,10 @@
+---
+title: "Romper Architecture Audit Report"
+owners: ["developer-team"]
+last_reviewed: "2025-08-15"
+tags: ["developer", "architecture"]
+---
+
 # Romper Architecture Audit Report
 
 **Date**: 2025-08-09

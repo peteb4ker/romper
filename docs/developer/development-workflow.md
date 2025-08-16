@@ -22,20 +22,20 @@ This document describes the development workflow, task execution patterns, and q
 
 **All quality checks are automated via pre-commit hooks** that run on every `git commit`:
 
-✅ **TypeScript type checking** - catches compilation errors
-✅ **ESLint linting with auto-fix** - enforces code style
-✅ **Full test suite execution** - ensures functionality
-✅ **Production build validation** - confirms deployability
-✅ **SonarCloud code analysis** - quality and security scanning (when SONAR_TOKEN is available)
+✅ **TypeScript type checking** - compilation validation
+✅ **ESLint linting** - code style enforcement
+✅ **Full test suite** - functionality validation
+✅ **Production build** - deployability check
+✅ **SonarCloud analysis** - quality/security scan
 
 ```bash
-# Manual pre-commit validation (optional - runs automatically on commit)
+# Manual pre-commit validation (auto on commit)
 npm run pre-commit
 
-# Individual validation commands (now automated)
+# Individual validation commands (automated)
 npm run typecheck    # TypeScript validation
 npm run lint         # ESLint with auto-fix
-npm run test         # Full test suite (verbose for development)
+npm run test         # Full test suite
 npm run build        # Production build
 npm run sonar:scan   # Local preview scan (requires SONAR_TOKEN)
 ```
@@ -381,7 +381,8 @@ CRITICAL: Keep PR titles concise and scannable. Titles should be **short sentenc
 
 **Guidelines:**
 - **Use imperative mood** (`add`, `fix`, `update` not `adding`, `fixed`, `updated`)
-- **Focus on the "what"** in title, save "why" and "how" for description
+- **Focus on the "what"** in title
+- **Save "why" and "how"** for description
 - **Include conventional commit prefix** (`feat:`, `fix:`, `docs:`, etc.)
 - **Be specific but concise** (`fix auth bug` → `fix: resolve login timeout issue`)
 

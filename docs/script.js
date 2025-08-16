@@ -34,8 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Terminal typing animation enhancement
-  animateTerminalCursor();
+  // App screenshot is static - no animation needed
 
   // Intersection Observer for fade-in animations
   const observerOptions = {
@@ -68,26 +67,17 @@ function detectPlatform() {
   const platform = window.navigator.platform.toLowerCase();
 
   if (userAgent.includes("mac") || platform.includes("mac")) {
-    return "macOS";
+    return "for macOS";
   } else if (userAgent.includes("win") || platform.includes("win")) {
-    return "Windows";
+    return "for Windows";
   } else if (userAgent.includes("linux") || platform.includes("linux")) {
-    return "Linux";
+    return "for Linux";
   } else {
-    return "Your Platform";
+    return "for Your Platform";
   }
 }
 
-function animateTerminalCursor() {
-  const cursor = document.querySelector(".cursor .command");
-  if (!cursor) return;
-
-  let isVisible = true;
-  setInterval(() => {
-    cursor.style.opacity = isVisible ? "0" : "1";
-    isVisible = !isVisible;
-  }, 500);
-}
+// Terminal animation removed - using app screenshot instead
 
 // Add some easter eggs for developers
 console.log(`

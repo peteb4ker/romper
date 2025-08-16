@@ -160,89 +160,24 @@ body {
     transform: translateY(-2px);
 }
 
-/* Terminal Window */
+/* App Screenshot */
 .hero-visual {
-    max-width: 600px;
+    max-width: 800px;
     margin: 0 auto;
 }
 
-.terminal-window {
-    background-color: var(--bg-tertiary);
+.app-screenshot {
     border-radius: 0.75rem;
-    border: 1px solid var(--border-primary);
     overflow: hidden;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-primary);
 }
 
-.terminal-header {
-    background-color: var(--bg-secondary);
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid var(--border-primary);
-}
-
-.terminal-controls {
-    display: flex;
-    gap: 0.5rem;
-    margin-right: 1rem;
-}
-
-.control {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-}
-
-.control-close {
-    background-color: #ff5f57;
-}
-
-.control-minimize {
-    background-color: #ffbd2e;
-}
-
-.control-maximize {
-    background-color: #28ca42;
-}
-
-.terminal-title {
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-
-.terminal-content {
-    padding: 2rem;
-    font-family: var(--font-mono);
-    font-size: 0.95rem;
-    line-height: 1.8;
-}
-
-.terminal-line {
-    margin-bottom: 0.5rem;
-}
-
-.prompt {
-    color: var(--accent-purple);
-    margin-right: 0.5rem;
-}
-
-.command {
-    color: var(--text-primary);
-}
-
-.output {
-    color: var(--text-secondary);
-}
-
-.cursor {
-    animation: blink 1s infinite;
-}
-
-@keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
+.screenshot-main {
+    width: 100%;
+    height: auto;
+    display: block;
+    background-color: var(--bg-tertiary);
 }
 
 /* Features Section */
@@ -531,9 +466,9 @@ body {
         font-size: 0.9rem;
     }
     
-    .terminal-content {
-        padding: 1.5rem;
-        font-size: 0.85rem;
+    .hero-visual {
+        max-width: 100%;
+        margin: 2rem auto 0;
     }
 }
 

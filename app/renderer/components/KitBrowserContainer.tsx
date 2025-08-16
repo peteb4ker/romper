@@ -12,7 +12,7 @@ interface KitBrowserContainerProps {
   onMessage: (text: string, type?: string, duration?: number) => void;
   onRefreshKits: () => Promise<void>;
   onSelectKit: (kitName: string) => void;
-  onShowSettings?: () => void;
+  onShowSettings: () => void;
   ref?: React.Ref<KitBrowserHandle>;
   sampleCounts: Record<string, [number, number, number, number]>;
   setLocalStorePath: (path: string) => void;

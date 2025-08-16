@@ -605,38 +605,19 @@ describe("KitBrowser", () => {
     });
   });
 
-  describe("Local Store Wizard", () => {
-    it("opens local store wizard when button is clicked", () => {
+  describe("Settings Button", () => {
+    it("clicking Settings button triggers onShowSettings prop", () => {
+      const mockOnShowSettings = vi.fn();
       render(
         <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} />
+          <KitBrowser {...baseProps} onShowSettings={mockOnShowSettings} />
         </MockMessageDisplayProvider>,
       );
 
-      const setupButton = screen.getByText("Settings");
-      fireEvent.click(setupButton);
+      const settingsButton = screen.getByText("Settings");
+      fireEvent.click(settingsButton);
 
-      expect(screen.getByText("Romper Local Store Setup")).toBeInTheDocument();
-    });
-
-    it("closes local store wizard when close is clicked", () => {
-      render(
-        <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>,
-      );
-
-      // Open wizard
-      const setupButton = screen.getByText("Settings");
-      fireEvent.click(setupButton);
-      expect(screen.getByText("Romper Local Store Setup")).toBeInTheDocument();
-
-      // Close wizard
-      const closeButton = screen.getByText("Cancel");
-      fireEvent.click(closeButton);
-      expect(
-        screen.queryByText("Romper Local Store Setup"),
-      ).not.toBeInTheDocument();
+      expect(mockOnShowSettings).toHaveBeenCalled();
     });
   });
 

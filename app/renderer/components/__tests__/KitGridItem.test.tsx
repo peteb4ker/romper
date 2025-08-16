@@ -286,6 +286,93 @@ describe("KitGridItem", () => {
     });
   });
 
+  describe("Favorite button", () => {
+    it("renders favorite button for valid kits when onToggleFavorite is provided", () => {
+      const mockOnToggleFavorite = vi.fn();
+      render(
+        <KitGridItem
+          {...defaultProps}
+          onToggleFavorite={mockOnToggleFavorite}
+        />,
+      );
+
+      const favoriteButton = screen.getByTitle("Add to favorites");
+      expect(favoriteButton).toBeInTheDocument();
+    });
+
+    it("calls onToggleFavorite when favorite button is clicked", () => {
+      const mockOnToggleFavorite = vi.fn();
+      render(
+        <KitGridItem
+          {...defaultProps}
+          onToggleFavorite={mockOnToggleFavorite}
+        />,
+      );
+
+      const favoriteButton = screen.getByTitle("Add to favorites");
+      fireEvent.click(favoriteButton);
+
+      expect(mockOnToggleFavorite).toHaveBeenCalledWith("A0");
+    });
+
+    it("stops propagation when favorite button is clicked", () => {
+      const mockOnSelect = vi.fn();
+      const mockOnToggleFavorite = vi.fn();
+      render(
+        <KitGridItem
+          {...defaultProps}
+          onSelect={mockOnSelect}
+          onToggleFavorite={mockOnToggleFavorite}
+        />,
+      );
+
+      const favoriteButton = screen.getByTitle("Add to favorites");
+      fireEvent.click(favoriteButton);
+
+      expect(mockOnToggleFavorite).toHaveBeenCalledTimes(1);
+      expect(mockOnSelect).not.toHaveBeenCalled();
+    });
+
+    it("shows correct visual state when kit is favorited", () => {
+      const mockOnToggleFavorite = vi.fn();
+      const props = {
+        ...defaultProps,
+        kitData: {
+          ...defaultProps.kitData,
+          is_favorite: true,
+        },
+        onToggleFavorite: mockOnToggleFavorite,
+      };
+      render(<KitGridItem {...props} />);
+
+      const favoriteButton = screen.getByTitle("Remove from favorites");
+      expect(favoriteButton).toBeInTheDocument();
+      expect(favoriteButton).toHaveClass("text-yellow-500");
+    });
+
+    it("does not render favorite button when onToggleFavorite is not provided", () => {
+      render(<KitGridItem {...defaultProps} />);
+
+      expect(screen.queryByTitle("Add to favorites")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTitle("Remove from favorites"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("renders favorite button for invalid kits when onToggleFavorite is provided", () => {
+      const mockOnToggleFavorite = vi.fn();
+      render(
+        <KitGridItem
+          {...defaultProps}
+          isValid={false}
+          onToggleFavorite={mockOnToggleFavorite}
+        />,
+      );
+
+      expect(screen.getByTitle("Add to favorites")).toBeInTheDocument();
+    });
+  });
+
   describe("Duplicate button", () => {
     it("renders duplicate button for valid kits", () => {
       render(<KitGridItem {...defaultProps} />);

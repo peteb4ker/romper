@@ -10,6 +10,7 @@ interface KitBrowserHeaderProps {
   modifiedCount?: number;
   onShowLocalStoreWizard: () => void;
   onShowNewKit: () => void; // Used by useKitBrowserHeader hook
+  onShowSettings: () => void;
   onSyncToSdCard?: () => void;
   onToggleFavoritesFilter?: () => void;
   onToggleModifiedFilter?: () => void;
@@ -124,8 +125,8 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           <button
             aria-label="Settings"
             className="px-3 py-1.5 text-xs bg-gray-600 text-white rounded shadow-sm hover:bg-gray-700 transition-colors font-medium flex items-center gap-1.5"
-            onClick={props.onShowLocalStoreWizard}
-            title="Configure settings and local store"
+            onClick={props.onShowSettings}
+            title="Configure settings and preferences"
           >
             <FiSettings className="w-3.5 h-3.5" />
             Settings

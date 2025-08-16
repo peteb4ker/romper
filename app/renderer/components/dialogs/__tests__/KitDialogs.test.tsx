@@ -28,7 +28,7 @@ describe("KitDialogs", () => {
 
   it("renders nothing if both dialogs are hidden", () => {
     render(<KitDialogs {...defaultProps} />);
-    expect(screen.queryByText("Kit Slot (A0-Z99):")).not.toBeInTheDocument();
+    expect(screen.queryByText("Kit Slot (A0-Z99)")).not.toBeInTheDocument();
     expect(screen.queryByText("Duplicate")).not.toBeInTheDocument();
   });
 
@@ -47,13 +47,13 @@ describe("KitDialogs", () => {
         showNewKit={true}
       />,
     );
-    expect(screen.getByLabelText("Kit Slot (A0-Z99):")).toHaveValue("A1");
+    expect(screen.getByLabelText("Kit Slot (A0-Z99)")).toHaveValue("A1");
     expect(screen.getByText("Slot error")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Kit Slot (A0-Z99):"), {
+    fireEvent.change(screen.getByLabelText("Kit Slot (A0-Z99)"), {
       target: { value: "b2" },
     });
     expect(onNewKitSlotChange).toHaveBeenCalledWith("B2");
-    fireEvent.click(screen.getByText("Create"));
+    fireEvent.click(screen.getByText("Create Kit"));
     expect(onCreateKit).toHaveBeenCalled();
     fireEvent.click(screen.getByText("Cancel"));
     expect(onCancelNewKit).toHaveBeenCalled();
@@ -85,5 +85,63 @@ describe("KitDialogs", () => {
     expect(onDuplicateKit).toHaveBeenCalled();
     fireEvent.click(screen.getAllByText("Cancel")[0]);
     expect(onCancelDuplicateKit).toHaveBeenCalled();
+  });
+
+  describe("modal structure", () => {
+    it("renders new kit dialog as a modal overlay", () => {
+      render(
+        <KitDialogs {...defaultProps} newKitSlot="A1" showNewKit={true} />,
+      );
+
+      // Check for modal overlay by finding the fixed positioned container
+      const modalContainer = document.querySelector(".fixed.inset-0.z-50");
+      expect(modalContainer).toBeInTheDocument();
+      expect(modalContainer).toHaveClass("bg-black", "bg-opacity-50");
+    });
+
+    it("renders modal dialog with proper heading", () => {
+      render(
+        <KitDialogs {...defaultProps} newKitSlot="A1" showNewKit={true} />,
+      );
+
+      expect(screen.getByText("Create New Kit")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+        "Create New Kit",
+      );
+    });
+
+    it("renders input with placeholder text", () => {
+      render(<KitDialogs {...defaultProps} newKitSlot="" showNewKit={true} />);
+
+      const input = screen.getByLabelText("Kit Slot (A0-Z99)");
+      expect(input).toHaveAttribute("placeholder", "e.g. A1");
+    });
+
+    it("renders error message with proper styling", () => {
+      render(
+        <KitDialogs
+          {...defaultProps}
+          newKitError="Test error message"
+          newKitSlot="A1"
+          showNewKit={true}
+        />,
+      );
+
+      const errorMessage = screen.getByText("Test error message");
+      expect(errorMessage).toHaveClass("text-sm", "text-red-600");
+      expect(errorMessage).toHaveClass("bg-red-50", "p-3", "rounded-md");
+    });
+
+    it("handles accessibility with proper label association", () => {
+      render(
+        <KitDialogs {...defaultProps} newKitSlot="A1" showNewKit={true} />,
+      );
+
+      const input = screen.getByLabelText("Kit Slot (A0-Z99)");
+      expect(input).toHaveAttribute("id", "new-kit-slot");
+
+      const label = screen.getByText("Kit Slot (A0-Z99)");
+      expect(label).toHaveAttribute("for", "new-kit-slot");
+    });
   });
 });

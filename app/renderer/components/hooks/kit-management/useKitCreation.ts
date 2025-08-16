@@ -3,6 +3,7 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { getNextKitSlot } from "@romper/shared/kitUtilsShared";
 import { useEffect, useState } from "react";
 
+import { markExplicitNavigation } from "../../../utils/hmrStateManager";
 import {
   createKit,
   formatKitError,
@@ -46,6 +47,10 @@ export function useKitCreation({
       const kitNameToScrollTo = newKitSlot;
       setShowNewKit(false);
       setNewKitSlot("");
+
+      // Mark as explicit navigation to prevent HMR from restoring previous kit
+      markExplicitNavigation();
+
       if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
       if (onMessage)
         onMessage(`Kit ${newKitSlot} created successfully!`, "info", 4000);
@@ -64,6 +69,10 @@ export function useKitCreation({
     try {
       await createKit(nextKitSlot);
       const kitNameToScrollTo = nextKitSlot;
+
+      // Mark as explicit navigation to prevent HMR from restoring previous kit
+      markExplicitNavigation();
+
       if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
     } catch (err) {
       setNewKitError(formatKitError(err));

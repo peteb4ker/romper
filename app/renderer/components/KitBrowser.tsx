@@ -36,6 +36,9 @@ interface KitBrowserProps {
   setLocalStorePath?: (path: string) => void;
 }
 
+// Constants
+const SCROLL_DELAY_MS = 100;
+
 const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
   (props, ref) => {
     const { onMessage, onRefreshKits, setLocalStorePath } = props;
@@ -70,12 +73,18 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
 
     // Create wrapper function for async onRefreshKits with scrollToKit parameter
     const handleRefreshKitsWithScroll = useCallback(
-      (_scrollToKit?: string) => {
+      (scrollToKit?: string) => {
         if (onRefreshKits) {
           onRefreshKits().catch((error) => {
             console.error("Failed to refresh kits:", error);
             onMessage?.("Failed to refresh kits", "error");
           });
+        }
+        // If scrollToKit is provided, scroll to that kit after a short delay using React ref
+        if (scrollToKit && kitGridRef.current) {
+          setTimeout(() => {
+            kitGridRef.current?.scrollToKit(scrollToKit);
+          }, SCROLL_DELAY_MS);
         }
       },
       [onRefreshKits, onMessage],

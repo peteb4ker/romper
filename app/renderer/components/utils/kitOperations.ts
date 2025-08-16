@@ -56,6 +56,12 @@ export async function duplicateKit(
  */
 export function formatKitError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
+
+  // Simplify duplicate kit error message
+  if (message === "Kit already exists.") {
+    return "Kit already exists";
+  }
+
   return `Failed to create kit: ${message}`;
 }
 

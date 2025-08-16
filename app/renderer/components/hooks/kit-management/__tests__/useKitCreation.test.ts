@@ -29,13 +29,20 @@ vi.mock("@romper/shared/kitUtilsShared", () => ({
   }),
 }));
 
+// Mock HMR state manager
+vi.mock("../../../../utils/hmrStateManager", () => ({
+  markExplicitNavigation: vi.fn(),
+}));
+
 import { getNextKitSlot } from "@romper/shared/kitUtilsShared";
 
+import { markExplicitNavigation } from "../../../../utils/hmrStateManager";
 import { createKit, formatKitError } from "../../../utils/kitOperations";
 
 const mockCreateKit = vi.mocked(createKit);
 const mockFormatKitError = vi.mocked(formatKitError);
 const mockGetNextKitSlot = vi.mocked(getNextKitSlot);
+const mockMarkExplicitNavigation = vi.mocked(markExplicitNavigation);
 
 describe("useKitCreation", () => {
   const mockKits: KitWithRelations[] = [
@@ -113,6 +120,7 @@ describe("useKitCreation", () => {
       });
 
       expect(mockCreateKit).toHaveBeenCalledWith("B0");
+      expect(mockMarkExplicitNavigation).toHaveBeenCalled();
       expect(result.current.showNewKit).toBe(false);
       expect(result.current.newKitSlot).toBe("");
       expect(result.current.newKitError).toBeNull();
@@ -169,6 +177,7 @@ describe("useKitCreation", () => {
       });
 
       expect(mockCreateKit).toHaveBeenCalledWith("A2");
+      expect(mockMarkExplicitNavigation).toHaveBeenCalled();
       expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("A2");
     });
 

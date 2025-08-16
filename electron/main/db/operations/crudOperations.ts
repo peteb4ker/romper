@@ -278,69 +278,17 @@ export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
 }
 
 /**
- * Get all kits metadata (no samples or voices) - truly lightweight for favorites
- *
- * @returns KitWithRelations[] where samples and voices arrays are intentionally empty
- *          to maintain interface compatibility while providing lightweight metadata access.
- *          This function uses a single optimized query to fetch only kit and bank metadata
- *          without the overhead of loading sample and voice data.
+ * Get lightweight kit metadata for efficient list rendering
+ * @param dbDir Database directory path
+ * @returns DbResult containing kit data with bank relations
  */
-export function getKitsMetadata(dbDir: string): DbResult<KitWithRelations[]> {
+export function getKitsMetadata(dbDir: string): DbResult<any[]> {
   return withDb(dbDir, (db) => {
-    // Use a single LEFT JOIN query to get kit metadata with bank info efficiently
-    const kitsWithBanks = db
-      .select({
-        alias: kits.alias,
-        artist: kits.artist,
-        // Bank fields (prefixed to avoid conflicts)
-        bank_artist: banks.artist,
-        bank_letter: kits.bank_letter,
-        bank_rtf_filename: banks.rtf_filename,
-        bank_scanned_at: banks.scanned_at,
-        bpm: kits.bpm,
-        editable: kits.editable,
-        is_favorite: kits.is_favorite,
-        locked: kits.locked,
-        modified_since_sync: kits.modified_since_sync,
-        // Kit fields (only existing columns)
-        name: kits.name,
-        step_pattern: kits.step_pattern,
-      })
-      .from(kits)
-      .leftJoin(banks, eq(kits.bank_letter, banks.letter))
-      .all();
-
-    // Transform the flat joined result into the expected KitWithRelations structure
-    return kitsWithBanks.map(
-      (row: (typeof kitsWithBanks)[0]) =>
-        ({
-          alias: row.alias,
-          artist: row.artist,
-          // Reconstruct bank object if bank data exists
-          bank: row.bank_artist
-            ? {
-                artist: row.bank_artist,
-                letter: row.bank_letter || "",
-                rtf_filename: row.bank_rtf_filename,
-                scanned_at: row.bank_scanned_at,
-              }
-            : null,
-          bank_letter: row.bank_letter,
-          bpm: row.bpm,
-          editable: row.editable,
-          is_favorite: row.is_favorite,
-          locked: row.locked,
-          modified_since_sync: row.modified_since_sync,
-          // Kit properties (only those that exist in schema)
-          name: row.name,
-
-          // Empty arrays to maintain interface compatibility
-          samples: [],
-
-          step_pattern: row.step_pattern,
-          voices: [],
-        }) as KitWithRelations,
-    );
+    return db.query.kits.findMany({
+      with: {
+        bank: true,
+      },
+    });
   });
 }
 

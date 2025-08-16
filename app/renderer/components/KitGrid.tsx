@@ -67,6 +67,7 @@ const BankHeader: React.FC<BankHeaderProps> = ({
 // Expose imperative scroll/focus API for parent components
 export interface KitGridHandle {
   scrollAndFocusKitByIndex: (idx: number) => void;
+  scrollToKit: (kitName: string) => void;
 }
 
 interface KitGridProps {
@@ -212,12 +213,24 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       [kitsToDisplay, setFocus, onFocusKit, containerRef],
     );
 
+    // Helper function to scroll to a kit by name
+    const scrollToKit = useCallback(
+      (kitName: string) => {
+        const index = kitsToDisplay.findIndex((kit) => kit.name === kitName);
+        if (index !== -1) {
+          scrollAndFocusKitByIndex(index);
+        }
+      },
+      [kitsToDisplay, scrollAndFocusKitByIndex],
+    );
+
     useImperativeHandle(
       ref,
       () => ({
         scrollAndFocusKitByIndex,
+        scrollToKit,
       }),
-      [scrollAndFocusKitByIndex],
+      [scrollAndFocusKitByIndex, scrollToKit],
     );
 
     // Helper function to handle bank selection via A-Z keys

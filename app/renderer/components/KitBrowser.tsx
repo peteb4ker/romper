@@ -31,6 +31,7 @@ interface KitBrowserProps {
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: () => Promise<void>;
   onSelectKit: (kitName: string) => void;
+  onShowSettings: () => void;
   sampleCounts?: Record<string, [number, number, number, number]>;
   setLocalStorePath?: (path: string) => void;
 }
@@ -202,6 +203,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           modifiedCount={modifiedCount}
           onShowLocalStoreWizard={handleShowLocalStoreWizard}
           onShowNewKit={() => setShowNewKit(true)}
+          onShowSettings={props.onShowSettings}
           onSyncToSdCard={handleSyncToSdCard}
           onToggleFavoritesFilter={handleToggleFavoritesFilter}
           onToggleModifiedFilter={handleToggleModifiedFilter}

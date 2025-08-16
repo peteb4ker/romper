@@ -10,4 +10,7 @@ Create a new isolated worktree following the mandatory worktree workflow.
 ## Steps
 1. Pull latest main: `git pull origin main`
 2. Create worktree: `npm run worktree:create <task-name>`
-3. Navigate: `cd worktrees/<task-name>`
+1. Switch to the main branch: `git checkout main`
+2. Pull latest main: `git pull origin main`
+3. Create worktree: `npm run worktree:create <task-name>`
+4. Navigate: `cd worktrees/<task-name>`

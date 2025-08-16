@@ -115,16 +115,6 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
   );
 
   ipcMain.handle(
-    "update-kit-bpm",
-    createDbHandler(
-      inMemorySettings,
-      (dbDir: string, kitName: string, bpm: number) => {
-        return updateKit(dbDir, kitName, { bpm });
-      },
-    ),
-  );
-
-  ipcMain.handle(
     "validate-local-store",
     async (_event, localStorePath?: string) => {
       // Check environment override first, then provided path, then settings

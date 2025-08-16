@@ -16,7 +16,7 @@ export const kits = sqliteTable("kits", {
   alias: text("alias"), // Optional human-readable name
   artist: text("artist"), // DEPRECATED: Use bank.artist instead, kept for migration
   bank_letter: text("bank_letter").references(() => banks.letter), // FK to banks.letter (derived from kit name)
-  bpm: integer("bpm").notNull().default(120), // BPM for sequence playback (30-180)
+  bpm: integer("bpm").notNull().default(120), // BPM setting for step sequencer (30-180)
   editable: integer("editable", { mode: "boolean" }).notNull().default(false), // New architecture: editable mode
   is_favorite: integer("is_favorite", { mode: "boolean" })
     .notNull()

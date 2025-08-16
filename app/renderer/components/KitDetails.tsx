@@ -117,12 +117,12 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         />
       </div>
       <KitStepSequencer
-        bpm={logic.bpm}
+        bpm={logic.kit?.bpm}
         gridRef={logic.sequencerGridRef as React.RefObject<HTMLDivElement>}
+        kitName={props.kitName}
         onPlaySample={logic.playback.handlePlay}
         samples={logic.samples}
         sequencerOpen={logic.sequencerOpen}
-        setBpm={logic.setBpm}
         setSequencerOpen={logic.setSequencerOpen}
         setStepPattern={logic.setStepPattern}
         stepPattern={logic.stepPattern}

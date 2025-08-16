@@ -6,12 +6,12 @@ import StepSequencerDrawer from "./StepSequencerDrawer";
 import StepSequencerGrid from "./StepSequencerGrid";
 
 interface KitStepSequencerProps {
-  bpm: number;
+  bpm?: number;
   gridRef?: React.RefObject<HTMLDivElement>;
+  kitName: string;
   onPlaySample: (voice: number, sample: string) => void;
   samples: { [voice: number]: string[] };
   sequencerOpen: boolean;
-  setBpm: (bpm: number) => void;
   setSequencerOpen: (open: boolean) => void;
   setStepPattern: (pattern: number[][]) => void; // Used by useKitStepSequencerLogic hook
   stepPattern: null | number[][]; // Used by useKitStepSequencerLogic hook
@@ -29,7 +29,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
         <StepSequencerControls
           bpm={props.bpm}
           isSeqPlaying={logic.isSeqPlaying}
-          setBpm={props.setBpm}
+          kitName={props.kitName}
           setIsSeqPlaying={logic.setIsSeqPlaying}
         />
         <StepSequencerGrid

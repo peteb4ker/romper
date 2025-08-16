@@ -1,51 +1,50 @@
-import { useCallback, useEffect, useState } from "react";
+import React from "react";
 
-export interface UseBpmParams {
+interface UseBpmParams {
   initialBpm?: number;
   kitName: string;
 }
 
 /**
- * Hook for managing BPM values
+ * Hook for managing BPM state and persistence
+ * Provides BPM state, validation, and persistence functionality
  */
-export function useBpm({ initialBpm, kitName }: UseBpmParams) {
-  const [bpm, setBpmState] = useState<number>(initialBpm || 120);
+export function useBpm({ initialBpm = 120, kitName }: UseBpmParams) {
+  const [bpm, setBpmState] = React.useState(initialBpm);
+  const [isEditing, setIsEditing] = React.useState(false);
 
-  useEffect(() => {
-    setBpmState(initialBpm || 120);
+  // Update local state when initial BPM changes (kit switching)
+  React.useEffect(() => {
+    setBpmState(initialBpm);
   }, [initialBpm]);
 
-  const updateBpm = useCallback(
+  const setBpm = React.useCallback(
     async (newBpm: number) => {
-      if (!window.electronAPI?.updateKitBpm || !kitName) return;
-
       // Validate BPM range
-      if (newBpm < 30 || newBpm > 180) {
-        console.error("BPM must be between 30 and 180");
-        return;
-      }
+      const clampedBpm = Math.max(30, Math.min(180, Math.round(newBpm)));
+      setBpmState(clampedBpm);
 
-      // Update UI state immediately for responsive feedback
-      setBpmState(newBpm);
-
+      // Persist to database
       try {
-        const result = await window.electronAPI.updateKitBpm(kitName, newBpm);
-        if (!result.success) {
-          console.error("Failed to save BPM:", result.error);
-          // Revert UI state on failure
-          setBpmState(initialBpm || 120);
-        }
-      } catch (e) {
-        console.error("Exception saving BPM:", e);
-        // Revert UI state on failure
-        setBpmState(initialBpm || 120);
+        await window.electronAPI.updateKitBpm?.(kitName, clampedBpm);
+      } catch (error) {
+        console.error("Failed to update BPM:", error);
+        // Revert on error
+        setBpmState(initialBpm);
       }
     },
     [kitName, initialBpm],
   );
 
+  const validateBpm = React.useCallback((value: number): boolean => {
+    return value >= 30 && value <= 180 && Number.isInteger(value);
+  }, []);
+
   return {
     bpm,
-    setBpm: updateBpm,
+    isEditing,
+    setBpm,
+    setIsEditing,
+    validateBpm,
   };
 }

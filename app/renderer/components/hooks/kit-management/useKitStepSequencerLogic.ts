@@ -10,7 +10,7 @@ import {
 } from "../shared/stepPatternConstants";
 
 interface UseKitStepSequencerLogicParams {
-  bpm: number;
+  bpm?: number;
   gridRef?: React.RefObject<HTMLDivElement>;
   kitName?: string; // Add kit name for secure playback
   onPlaySample: (voice: number, sample: string) => void;
@@ -29,7 +29,7 @@ export function useKitStepSequencerLogic(
   params: UseKitStepSequencerLogicParams,
 ) {
   const {
-    bpm,
+    bpm = 120,
     gridRef,
     onPlaySample,
     samples,
@@ -122,6 +122,13 @@ export function useKitStepSequencerLogic(
       URL.revokeObjectURL(workerUrl);
     };
   }, [worker, workerUrl]);
+
+  // Calculate step duration based on BPM (16th notes)
+  const stepDuration = React.useMemo(() => {
+    // 60000ms per minute / BPM = time per beat (quarter note)
+    // Divide by 4 for 16th notes
+    return Math.round(60000 / (bpm * 4));
+  }, [bpm]);
 
   // Worker playback control
   React.useEffect(() => {

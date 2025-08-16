@@ -172,6 +172,10 @@ body {
     transform: translateY(-2px);
 }
 
+#platform {
+    margin-left: 0.25rem;
+}
+
 /* App Screenshot */
 .hero-visual {
     max-width: 800px;

@@ -59,10 +59,10 @@ User-added samples are **referenced by absolute path** rather than copied locall
 
 ### Immutable Baseline Architecture
 
-- **Local store baseline**: Serves as immutable baseline from setup (SD card/factory samples/blank)
-- **User samples as references**: Referenced by `source_path` - never copied to local store
-- **Sync-time processing**: Only copied/converted during SD card sync operations
-- **Baseline preservation**: Original baseline content remains untouched
+- **Local store baseline**: Immutable baseline from setup
+- **User samples as references**: Referenced by `source_path` only
+- **Sync-time processing**: Copied/converted during sync only
+- **Baseline preservation**: Original content untouched
 
 ### Kit Editing System Architecture
 

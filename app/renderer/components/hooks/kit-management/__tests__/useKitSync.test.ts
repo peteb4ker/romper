@@ -275,7 +275,7 @@ describe("useKitSync", () => {
       expect(mockWriteSettings).toHaveBeenCalledWith("sdCardPath", testPath);
     });
 
-    it("updates local state but doesn't save when path is null", async () => {
+    it("updates local state and saves when path is null to persist clearing selection", async () => {
       const mockWriteSettings = vi.fn().mockResolvedValue(undefined);
       const mockElectronAPI = {
         writeSettings: mockWriteSettings,
@@ -291,7 +291,7 @@ describe("useKitSync", () => {
       });
 
       expect(result.current.sdCardPath).toBe(null);
-      expect(mockWriteSettings).not.toHaveBeenCalled();
+      expect(mockWriteSettings).toHaveBeenCalledWith("sdCardPath", null);
     });
 
     it("handles save errors gracefully", async () => {

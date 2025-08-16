@@ -203,7 +203,6 @@ export interface ElectronAPI {
     theme?: string;
     themeMode?: "dark" | "light" | "system";
   }>;
-  writeSettings: (key: string, value: any) => Promise<void>;
   replaceSampleInSlot?: (
     kitName: string,
     voiceNumber: number,
@@ -217,20 +216,19 @@ export interface ElectronAPI {
   scanBanks?: () => Promise<
     DbResult<{ scannedAt: Date; scannedFiles: number; updatedBanks: number }>
   >;
-
   // Existing local store selection
   selectExistingLocalStore?: () => Promise<{
     error: null | string;
     path: null | string;
     success: boolean;
   }>;
+
   selectLocalStorePath?: () => Promise<string | undefined>;
   selectSdCard: () => Promise<null | string>;
   setKitFavorite?: (
     kitName: string,
     isFavorite: boolean,
   ) => Promise<DbResult<void>>;
-
   setSetting: (
     key: keyof {
       confirmDestructiveActions?: boolean;
@@ -250,11 +248,11 @@ export interface ElectronAPI {
   }) => Promise<DbResult<{ syncedFiles: number }>>;
 
   stopSample?: () => Promise<any>;
+
   // Task 20.1: Favorites system
   toggleKitFavorite?: (
     kitName: string,
   ) => Promise<DbResult<{ is_favorite: boolean }>>;
-
   updateKit?: (
     kitName: string,
     updates: {
@@ -265,6 +263,7 @@ export interface ElectronAPI {
       tags?: string[];
     },
   ) => Promise<DbResult>;
+
   updateStepPattern?: (
     kitName: string,
     stepPattern: number[][],
@@ -277,10 +276,10 @@ export interface ElectronAPI {
   validateLocalStore: (
     localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
-
   validateLocalStore: (
     localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
+
   validateLocalStoreBasic: (
     localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
@@ -299,6 +298,7 @@ export interface ElectronAPI {
       validSamples: number;
     }>
   >;
+  writeSettings: (key: string, value: any) => Promise<void>;
 }
 
 // Custom type for insertSample return value

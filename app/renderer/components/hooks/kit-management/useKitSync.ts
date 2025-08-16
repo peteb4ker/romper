@@ -121,7 +121,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
       setSdCardPath(path);
 
       // Save to settings if electronAPI is available
-      if (window.electronAPI?.writeSettings && path) {
+      if (window.electronAPI?.writeSettings) {
         try {
           await window.electronAPI.writeSettings("sdCardPath", path);
           console.log("SD card path saved to settings:", path);

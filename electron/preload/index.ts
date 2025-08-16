@@ -413,10 +413,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] readSettings invoked");
     return await settingsManager.readSettings();
   },
-  writeSettings: async (key: string, value: any): Promise<void> => {
-    isDev && console.debug("[IPC] writeSettings invoked", key, value);
-    return await settingsManager.writeSettings(key as SettingsKey, value);
-  },
   replaceSampleInSlot: (
     kitName: string,
     voiceNumber: number,
@@ -473,7 +469,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] showItemInFolder invoked", path);
     return ipcRenderer.invoke("show-item-in-folder", path);
   },
-
   startKitSync: (syncData: {
     filesToConvert: Array<{
       destinationPath: string;
@@ -562,6 +557,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   validateSampleSources: (kitName: string) => {
     isDev && console.debug("[IPC] validateSampleSources invoked", kitName);
     return ipcRenderer.invoke("validate-sample-sources", kitName);
+  },
+
+  writeSettings: async (key: string, value: any): Promise<void> => {
+    isDev && console.debug("[IPC] writeSettings invoked", key, value);
+    return await settingsManager.writeSettings(key as SettingsKey, value);
   },
 });
 

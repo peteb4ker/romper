@@ -6,6 +6,7 @@ interface LocalStoreWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCloseApp?: () => void;
+  onInitializationChange?: (isInitializing: boolean) => void;
   onSuccess: () => void;
   setLocalStorePath: (path: string) => void;
 }
@@ -18,6 +19,7 @@ const LocalStoreWizardModal: React.FC<LocalStoreWizardModalProps> = ({
   isOpen,
   onClose,
   onCloseApp,
+  onInitializationChange,
   onSuccess,
   setLocalStorePath,
 }) => {
@@ -40,6 +42,7 @@ const LocalStoreWizardModal: React.FC<LocalStoreWizardModalProps> = ({
         </div>
         <LocalStoreWizardUI
           onClose={handleClose}
+          onInitializationChange={onInitializationChange}
           onSuccess={onSuccess}
           setLocalStorePath={setLocalStorePath}
         />

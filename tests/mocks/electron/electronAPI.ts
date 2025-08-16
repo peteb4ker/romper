@@ -156,7 +156,7 @@ export const createElectronAPIMock = (
   startKitSync: vi.fn().mockResolvedValue(undefined),
   stopSample: vi.fn().mockResolvedValue(undefined),
   updateKit: vi.fn().mockResolvedValue({ success: true }),
-
+  updateKitBpm: vi.fn().mockResolvedValue({ success: true }),
   updateStepPattern: vi.fn().mockResolvedValue({ success: true }),
   updateVoiceAlias: vi.fn().mockResolvedValue({ success: true }),
   validateLocalStore: vi.fn().mockResolvedValue({

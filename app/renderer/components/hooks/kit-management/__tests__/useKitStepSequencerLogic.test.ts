@@ -43,6 +43,7 @@ describe("useKitStepSequencerLogic", () => {
   });
 
   const getDefaultParams = () => ({
+    bpm: 120,
     onPlaySample: mockOnPlaySample,
     samples: defaultSamples,
     sequencerOpen: false,

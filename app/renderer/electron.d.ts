@@ -263,7 +263,7 @@ export interface ElectronAPI {
       tags?: string[];
     },
   ) => Promise<DbResult>;
-
+  updateKitBpm?: (kitName: string, bpm: number) => Promise<DbResult>;
   updateStepPattern?: (
     kitName: string,
     stepPattern: number[][],

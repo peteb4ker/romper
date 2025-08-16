@@ -73,6 +73,7 @@ export interface KitGridHandle {
 interface KitGridProps {
   bankNames: Record<string, string>;
   focusedKit?: null | string; // externally controlled focus
+  getKitFavoriteState?: (kitName: string) => boolean; // Still needed for computing state
   kitData?: KitWithRelations[]; // Kit data from database
   kits: KitWithRelations[];
   onBankFocus?: (bank: string) => void;
@@ -142,6 +143,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     {
       bankNames,
       focusedKit,
+      getKitFavoriteState,
       kitData,
       kits,
       onBankFocus,
@@ -360,6 +362,11 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                 const kitDataItem =
                   kitData?.find((k) => k.name === kit.name) ?? null;
 
+                // Compute the favorite state for this kit
+                const isFavorite = getKitFavoriteState
+                  ? getKitFavoriteState(kit.name)
+                  : kitDataItem?.is_favorite;
+
                 const handleSelectKit = () => {
                   if (isValid) {
                     onSelectKit(kit.name);
@@ -373,6 +380,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                     <KitGridItem
                       data-kit={kit.name}
                       data-testid={`kit-item-${kit.name}`}
+                      isFavorite={isFavorite}
                       isSelected={isSelected}
                       isValid={isValid}
                       kit={kit.name}

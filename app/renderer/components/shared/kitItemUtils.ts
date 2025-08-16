@@ -4,6 +4,7 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
  * Common interface for kit item props
  */
 export interface BaseKitItemProps {
+  isFavorite?: boolean; // Direct boolean value instead of function
   isValid: boolean;
   kit: string;
   kitData?: KitWithRelations | null;

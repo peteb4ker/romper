@@ -14,6 +14,7 @@ import {
 
 interface KitHeaderProps {
   editingKitAlias: boolean;
+  getKitFavoriteState?: (kitName: string) => boolean;
   handleSaveKitAlias: (alias: string) => void;
   isEditable?: boolean;
   kit: Kit | null;
@@ -124,6 +125,7 @@ const renderKitAliasButton = (
 
 const KitHeader: React.FC<KitHeaderProps> = ({
   editingKitAlias,
+  getKitFavoriteState,
   handleSaveKitAlias,
   isEditable,
   kit,
@@ -156,6 +158,11 @@ const KitHeader: React.FC<KitHeaderProps> = ({
     kits && kitIndex !== undefined
       ? getNavigationButtonState(true, kitIndex, kits)
       : null;
+
+  // Get current favorite state (use independent state if available, fallback to kit data)
+  const isFavorite = getKitFavoriteState
+    ? getKitFavoriteState(kitName)
+    : kit?.is_favorite;
 
   return (
     <div className="flex items-center mb-2 gap-2">
@@ -232,18 +239,14 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         {onToggleFavorite && (
           <button
             className={`ml-3 p-2 transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 ${
-              kit?.is_favorite
+              isFavorite
                 ? "text-yellow-500 hover:text-yellow-600"
                 : "text-gray-400 hover:text-yellow-500"
             }`}
             onClick={() => onToggleFavorite(kitName)}
-            title={
-              kit?.is_favorite ? "Remove from favorites" : "Add to favorites"
-            }
+            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
-            <FaStar
-              className={`w-6 h-6 ${kit?.is_favorite ? "" : "opacity-40"}`}
-            />
+            <FaStar className={`w-6 h-6 ${isFavorite ? "" : "opacity-40"}`} />
           </button>
         )}
       </div>

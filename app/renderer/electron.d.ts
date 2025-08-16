@@ -266,7 +266,7 @@ export interface ElectronAPI {
   // Task 20.1: Favorites system
   toggleKitFavorite?: (
     kitName: string,
-  ) => Promise<DbResult<{ is_favorite: boolean }>>;
+  ) => Promise<DbResult<{ isFavorite: boolean }>>;
   updateKit?: (
     kitName: string,
     updates: {

@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
 } from "react";
 
@@ -12,7 +13,6 @@ import SyncUpdateDialog from "./dialogs/SyncUpdateDialog";
 import ValidationResultsDialog from "./dialogs/ValidationResultsDialog";
 import { useKitBrowser } from "./hooks/kit-management/useKitBrowser";
 import { useKitDialogs } from "./hooks/kit-management/useKitDialogs";
-import { useKitFilters } from "./hooks/kit-management/useKitFilters";
 import { useKitKeyboardNav } from "./hooks/kit-management/useKitKeyboardNav";
 import { useKitScan } from "./hooks/kit-management/useKitScan";
 import { useKitSync } from "./hooks/kit-management/useKitSync";
@@ -26,14 +26,24 @@ export interface KitBrowserHandle {
 }
 
 interface KitBrowserProps {
+  // Favorites filter functionality
+  favoritesCount?: number;
+  getKitFavoriteState?: (kitName: string) => boolean;
+  handleToggleFavorite?: (kitName: string) => void;
+  handleToggleFavoritesFilter?: () => void;
+  handleToggleModifiedFilter?: () => void;
+  // Other props
   kits?: KitWithRelations[];
   localStorePath: null | string;
+  modifiedCount?: number;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: () => Promise<void>;
   onSelectKit: (kitName: string) => void;
   onShowSettings: () => void;
   sampleCounts?: Record<string, [number, number, number, number]>;
   setLocalStorePath?: (path: string) => void;
+  showFavoritesOnly?: boolean;
+  showModifiedOnly?: boolean;
 }
 
 // Constants
@@ -41,7 +51,19 @@ const SCROLL_DELAY_MS = 100;
 
 const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
   (props, ref) => {
-    const { onMessage, onRefreshKits, setLocalStorePath } = props;
+    const {
+      // Use props from parent instead of duplicate hook
+      favoritesCount,
+      handleToggleFavorite,
+      handleToggleFavoritesFilter,
+      handleToggleModifiedFilter,
+      modifiedCount,
+      onMessage,
+      onRefreshKits,
+      setLocalStorePath,
+      showFavoritesOnly,
+      showModifiedOnly,
+    } = props;
     const kitGridRef = useRef<KitGridHandle>(null);
 
     // Create wrapper function for async onRefreshKits to match void return expectation
@@ -54,22 +76,20 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       }
     }, [onRefreshKits, onMessage]);
 
-    // Filter management hook
-    const filters = useKitFilters({
-      kits: props.kits,
-      onMessage,
-      onRefreshKits: handleRefreshKits,
-    });
-    const {
-      favoritesCount,
-      filteredKits,
-      handleToggleFavorite,
-      handleToggleFavoritesFilter,
-      handleToggleModifiedFilter,
-      modifiedCount,
-      showFavoritesOnly,
-      showModifiedOnly,
-    } = filters;
+    // Apply filters to kits (since we removed the duplicate hook)
+    const filteredKits = useMemo(() => {
+      let filteredList = props.kits ?? [];
+
+      if (showFavoritesOnly) {
+        filteredList = filteredList.filter((kit) => kit.is_favorite);
+      }
+
+      if (showModifiedOnly) {
+        filteredList = filteredList.filter((kit) => kit.modified_since_sync);
+      }
+
+      return filteredList;
+    }, [props.kits, showFavoritesOnly, showModifiedOnly]);
 
     // Create wrapper function for async onRefreshKits with scrollToKit parameter
     const handleRefreshKitsWithScroll = useCallback(
@@ -150,9 +170,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     useKitKeyboardNav({
       focusedKit,
       globalBankHotkeyHandler,
-      onToggleFavorite: (kitName: string) => {
-        void handleToggleFavorite(kitName);
-      },
+      onToggleFavorite: handleToggleFavorite,
     });
 
     // Effect handlers for messages
@@ -248,6 +266,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           <KitGrid
             bankNames={bankNames}
             focusedKit={focusedKit}
+            getKitFavoriteState={props.getKitFavoriteState}
             kitData={kits}
             kits={kits}
             onBankFocus={handleBankFocus}

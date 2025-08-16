@@ -3,7 +3,7 @@ import { useCallback, useEffect } from "react";
 export interface UseKitKeyboardNavOptions {
   focusedKit: null | string;
   globalBankHotkeyHandler: (e: KeyboardEvent) => void;
-  onToggleFavorite: (kitName: string) => void;
+  onToggleFavorite?: (kitName: string) => void;
 }
 
 /**
@@ -25,7 +25,7 @@ export function useKitKeyboardNav({
       }
 
       // F key to toggle favorite on focused kit
-      if (e.key.toLowerCase() === "f" && focusedKit) {
+      if (e.key.toLowerCase() === "f" && focusedKit && onToggleFavorite) {
         e.preventDefault();
         e.stopPropagation();
         onToggleFavorite(focusedKit);

@@ -266,6 +266,7 @@ const KitsView: React.FC = () => {
 
       {navigation.selectedKit && navigation.selectedKitSamples ? (
         <KitDetailsContainer
+          getKitFavoriteState={kitFilters.getKitFavoriteState}
           kitIndex={navigation.currentKitIndex}
           kitName={navigation.selectedKit}
           kits={navigation.sortedKits}
@@ -281,8 +282,16 @@ const KitsView: React.FC = () => {
         />
       ) : (
         <KitBrowserContainer
+          // Favorites filter props
+          favoritesCount={kitFilters.favoritesCount}
+          getKitFavoriteState={kitFilters.getKitFavoriteState}
+          handleToggleFavorite={kitFilters.handleToggleFavorite}
+          handleToggleFavoritesFilter={kitFilters.handleToggleFavoritesFilter}
+          handleToggleModifiedFilter={kitFilters.handleToggleModifiedFilter}
+          // Other props
           kits={navigation.sortedKits}
           localStorePath={localStorePath}
+          modifiedCount={kitFilters.modifiedCount}
           onMessage={showMessage}
           onRefreshKits={refreshAllKitsAndSamples}
           onSelectKit={navigation.handleSelectKit}
@@ -290,6 +299,8 @@ const KitsView: React.FC = () => {
           ref={kitBrowserRef}
           sampleCounts={sampleCounts}
           setLocalStorePath={setLocalStorePath}
+          showFavoritesOnly={kitFilters.showFavoritesOnly}
+          showModifiedOnly={kitFilters.showModifiedOnly}
         />
       )}
 

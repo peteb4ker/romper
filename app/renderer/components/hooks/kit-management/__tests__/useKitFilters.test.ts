@@ -142,7 +142,7 @@ describe("useKitFilters", () => {
       expect(window.electronAPI.toggleKitFavorite).toBeDefined();
 
       mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { is_favorite: true },
+        data: { isFavorite: true },
         success: true,
       });
 
@@ -153,6 +153,30 @@ describe("useKitFilters", () => {
       });
 
       expect(mockToggleKitFavorite).toHaveBeenCalledWith("Kit1");
+      // onRefreshKits is only called when showFavoritesOnly is true
+      expect(mockOnRefreshKits).not.toHaveBeenCalled();
+      expect(mockGetFavoriteKitsCount).toHaveBeenCalled();
+    });
+
+    it("calls onRefreshKits when showFavoritesOnly is true", async () => {
+      mockToggleKitFavorite.mockResolvedValueOnce({
+        data: { isFavorite: true },
+        success: true,
+      });
+
+      const { result } = renderHook(() => useKitFilters(defaultProps));
+
+      // First enable favorites filter
+      act(() => {
+        result.current.handleToggleFavoritesFilter();
+      });
+
+      await act(async () => {
+        await result.current.handleToggleFavorite("Kit1");
+      });
+
+      expect(mockToggleKitFavorite).toHaveBeenCalledWith("Kit1");
+      // onRefreshKits should be called when showFavoritesOnly is true
       expect(mockOnRefreshKits).toHaveBeenCalled();
       expect(mockGetFavoriteKitsCount).toHaveBeenCalled();
     });

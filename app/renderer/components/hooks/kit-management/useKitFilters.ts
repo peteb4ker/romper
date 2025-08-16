@@ -46,12 +46,6 @@ export function useKitFilters({
       try {
         const result = await window.electronAPI.toggleKitFavorite?.(kitName);
         if (result?.success) {
-          const isFavorite = result.data?.is_favorite;
-          onMessage?.(
-            `Kit ${kitName} ${isFavorite ? "added to" : "removed from"} favorites`,
-            "success",
-            2000,
-          );
           // Refresh kits to update the UI
           onRefreshKits?.();
 

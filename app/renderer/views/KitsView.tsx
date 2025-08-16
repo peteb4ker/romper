@@ -83,6 +83,9 @@ const KitsView: React.FC = () => {
   // Track if we just completed the wizard to prevent re-opening
   const [wizardJustCompleted, setWizardJustCompleted] = useState(false);
 
+  // Track wizard initialization state to suppress invalid store dialog
+  const [isWizardInitializing, setIsWizardInitializing] = useState(false);
+
   // Kit data management
   const {
     allKitSamples,
@@ -301,6 +304,7 @@ const KitsView: React.FC = () => {
             ? () => window.electronAPI?.closeApp?.()
             : undefined
         }
+        onInitializationChange={setIsWizardInitializing}
         onSuccess={handleWizardSuccess}
         setLocalStorePath={setLocalStorePath}
       />
@@ -310,7 +314,11 @@ const KitsView: React.FC = () => {
         errorMessage={
           localStoreStatus?.error || "Invalid local store configuration"
         }
-        isOpen={hasInvalidLocalStore && !hasCriticalEnvironmentError}
+        isOpen={
+          hasInvalidLocalStore &&
+          !hasCriticalEnvironmentError &&
+          !isWizardInitializing
+        }
         localStorePath={localStoreStatus?.localStorePath || null}
         onMessage={showMessage}
       />

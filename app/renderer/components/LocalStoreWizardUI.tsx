@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FaArchive, FaFolderOpen, FaSdCard, FaSearch } from "react-icons/fa";
 
 import { config } from "../config";
@@ -20,12 +20,13 @@ enum WizardStep {
 
 interface LocalStoreWizardUIProps {
   onClose: () => void;
+  onInitializationChange?: (isInitializing: boolean) => void;
   onSuccess?: () => void;
   setLocalStorePath: (path: string) => void;
 }
 
 const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
-  ({ onClose, onSuccess, setLocalStorePath }) => {
+  ({ onClose, onInitializationChange, onSuccess, setLocalStorePath }) => {
     // Only log on development or if there's an issue
     const isDev = process.env.NODE_ENV === "development";
     isDev &&
@@ -52,6 +53,11 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
       setTargetPath,
       state,
     } = useLocalStoreWizard(undefined, setLocalStorePath);
+
+    // Notify parent when initialization state changes
+    useEffect(() => {
+      onInitializationChange?.(state.isInitializing);
+    }, [state.isInitializing, onInitializationChange]);
 
     const safeSelectLocalStorePath = useCallback(async () => {
       if (window.electronAPI?.selectLocalStorePath) {

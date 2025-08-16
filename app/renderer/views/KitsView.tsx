@@ -91,6 +91,7 @@ const KitsView: React.FC = () => {
     allKitSamples,
     kits,
     refreshAllKitsAndSamples,
+    refreshKitsOnly,
     reloadCurrentKitSamples,
     sampleCounts,
   } = useKitDataManager({
@@ -111,8 +112,8 @@ const KitsView: React.FC = () => {
     kits,
     onMessage: showMessage,
     onRefreshKits: () => {
-      // Fire and forget - don't await the Promise to match void return type
-      refreshAllKitsAndSamples().catch((error: unknown) => {
+      // Use lightweight refresh for favorites - only updates kit metadata, not samples
+      refreshKitsOnly().catch((error: unknown) => {
         console.error("Failed to refresh kits:", error);
       });
     },

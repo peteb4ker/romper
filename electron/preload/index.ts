@@ -274,6 +274,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] getKits invoked");
     return ipcRenderer.invoke("get-all-kits");
   },
+  getKitsMetadata: () => {
+    isDev && console.debug("[IPC] getKitsMetadata invoked");
+    return ipcRenderer.invoke("get-kits-metadata");
+  },
   getLocalStoreStatus: async () => {
     isDev && console.debug("[IPC] getLocalStoreStatus invoked");
     return await ipcRenderer.invoke("get-local-store-status");

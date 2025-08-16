@@ -285,6 +285,7 @@ const KitsView: React.FC = () => {
           onMessage={showMessage}
           onRefreshKits={refreshAllKitsAndSamples}
           onSelectKit={navigation.handleSelectKit}
+          onShowSettings={dialogState.openPreferences}
           ref={kitBrowserRef}
           sampleCounts={sampleCounts}
           setLocalStorePath={setLocalStorePath}

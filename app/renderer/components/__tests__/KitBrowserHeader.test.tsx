@@ -16,6 +16,7 @@ describe("KitBrowserHeader", () => {
     onCreateNextKit: vi.fn(),
     onShowLocalStoreWizard: vi.fn(),
     onShowNewKit: vi.fn(),
+    onShowSettings: vi.fn(),
     onValidateLocalStore: vi.fn(),
   };
 
@@ -48,16 +49,13 @@ describe("KitBrowserHeader", () => {
 
   // Next Kit button has been removed from the interface
 
-  it("calls onShowLocalStoreWizard when Settings button is clicked", () => {
-    const onShowLocalStoreWizard = vi.fn();
+  it("calls onShowSettings when Settings button is clicked", () => {
+    const onShowSettings = vi.fn();
     render(
-      <KitBrowserHeader
-        {...defaultProps}
-        onShowLocalStoreWizard={onShowLocalStoreWizard}
-      />,
+      <KitBrowserHeader {...defaultProps} onShowSettings={onShowSettings} />,
     );
     fireEvent.click(screen.getByText("Settings"));
-    expect(onShowLocalStoreWizard).toHaveBeenCalled();
+    expect(onShowSettings).toHaveBeenCalled();
   });
 
   it("renders bankNav if provided", () => {

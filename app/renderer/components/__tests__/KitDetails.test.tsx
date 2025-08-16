@@ -447,11 +447,11 @@ describe("KitDetails", () => {
             { id: 2, kit_name: "TestKit", voice_alias: null, voice_number: 2 },
           ],
         },
-        samples: { 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }, // Has samples
         playback: {
           ...createMockLogic().playback,
           samplePlaying: { "1:sample1.wav": false, "2:sample2.wav": false }, // Mock playback state
         },
+        samples: { 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }, // Has samples
       };
       (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
 
@@ -477,15 +477,25 @@ describe("KitDetails", () => {
         kit: {
           ...createMockLogic().kit,
           voices: [
-            { id: 1, kit_name: "TestKit", voice_alias: "Kick", voice_number: 1 },
-            { id: 2, kit_name: "TestKit", voice_alias: "Snare", voice_number: 2 },
+            {
+              id: 1,
+              kit_name: "TestKit",
+              voice_alias: "Kick",
+              voice_number: 1,
+            },
+            {
+              id: 2,
+              kit_name: "TestKit",
+              voice_alias: "Snare",
+              voice_number: 2,
+            },
           ],
         },
-        samples: { 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }, // Has samples
         playback: {
           ...createMockLogic().playback,
           samplePlaying: { "1:sample1.wav": false, "2:sample2.wav": false }, // Mock playback state
         },
+        samples: { 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }, // Has samples
       };
       (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
 

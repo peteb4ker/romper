@@ -67,13 +67,13 @@ function detectPlatform() {
   const platform = window.navigator.platform.toLowerCase();
 
   if (userAgent.includes("mac") || platform.includes("mac")) {
-    return "for macOS";
+    return "macOS";
   } else if (userAgent.includes("win") || platform.includes("win")) {
-    return "for Windows";
+    return "Windows";
   } else if (userAgent.includes("linux") || platform.includes("linux")) {
-    return "for Linux";
+    return "Linux";
   } else {
-    return "for Your Platform";
+    return "Your Platform";
   }
 }
 

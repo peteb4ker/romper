@@ -6,6 +6,7 @@ import * as path from "path";
 
 import { getAudioMetadata, validateSampleFormat } from "../audioUtils.js";
 import { getKitSamples } from "../db/romperDbCoreORM.js";
+import { rampleNamingService } from "./rampleNamingService.js";
 
 export interface SyncChangeSummary {
   filesToConvert: SyncFileOperation[];
@@ -107,9 +108,12 @@ export class SyncPlannerService {
     const issues = formatValidationResult.data?.issues || [];
     const issueMessages = issues.map((issue: any) => issue.message);
 
+    // Use the Rample-generated filename from the destination path
+    const rampleFilename = path.basename(destinationPath);
+
     results.filesToConvert.push({
       destinationPath,
-      filename,
+      filename: rampleFilename,
       kitName: sample.kitName,
       operation: "convert",
       originalFormat: metadataResult.success
@@ -136,9 +140,12 @@ export class SyncPlannerService {
     kitName: string,
     results: any,
   ): void {
+    // Use the Rample-generated filename from the destination path
+    const rampleFilename = path.basename(destinationPath);
+
     results.filesToCopy.push({
       destinationPath,
-      filename,
+      filename: rampleFilename,
       kitName,
       operation: "copy",
       sourcePath,
@@ -218,7 +225,7 @@ export class SyncPlannerService {
   }
 
   /**
-   * Get the destination path for a sample on the SD card
+   * Get the destination path for a sample on the SD card using Rample naming convention
    */
   private getDestinationPath(
     localStorePath: string,
@@ -226,10 +233,14 @@ export class SyncPlannerService {
     sample: Sample,
   ): string {
     // NOTE: Future enhancement - use actual SD card path when SD card detection is implemented
-    // For now, create a sync output directory in the local store
-    const syncDir = path.join(localStorePath, "sync_output", kitName);
-    const voiceDir = `${sample.voice_number}`;
-    return path.join(syncDir, voiceDir, sample.filename);
+    // For now, create a sync output directory in the local store with Rample structure
+    const syncOutputRoot = path.join(localStorePath, "sync_output");
+
+    // Use Rample naming service to generate compliant path
+    return rampleNamingService.transformSampleToDestinationPath(
+      sample,
+      syncOutputRoot,
+    );
   }
 
   /**

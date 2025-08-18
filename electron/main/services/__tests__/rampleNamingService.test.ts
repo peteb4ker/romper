@@ -121,6 +121,52 @@ describe("RampleNamingService", () => {
     });
   });
 
+  describe("transformSampleToPathAndFilename", () => {
+    it("should return both path and filename for sample", () => {
+      const sample: Sample = {
+        filename: "original_kick.wav",
+        id: 1,
+        is_stereo: false,
+        kit_name: "A0",
+        slot_number: 0,
+        source_path: "/local/samples/kick.wav",
+        voice_number: 1,
+        wav_bitrate: null,
+        wav_sample_rate: null,
+      };
+
+      const result = service.transformSampleToPathAndFilename(
+        sample,
+        "/sdcard",
+      );
+
+      expect(result.destinationPath).toBe("/sdcard/A0/1sample1.wav");
+      expect(result.filename).toBe("1sample1.wav");
+    });
+
+    it("should handle complex voice/slot combinations", () => {
+      const sample: Sample = {
+        filename: "complex_sample.wav",
+        id: 2,
+        is_stereo: true,
+        kit_name: "Z99",
+        slot_number: 11,
+        source_path: "/path/to/original.wav",
+        voice_number: 4,
+        wav_bitrate: null,
+        wav_sample_rate: null,
+      };
+
+      const result = service.transformSampleToPathAndFilename(
+        sample,
+        "/mnt/sd",
+      );
+
+      expect(result.destinationPath).toBe("/mnt/sd/Z99/4sample12.wav");
+      expect(result.filename).toBe("4sample12.wav");
+    });
+  });
+
   describe("transformSampleToDestinationPath", () => {
     it("should transform sample object to destination path", () => {
       const sample: Sample = {

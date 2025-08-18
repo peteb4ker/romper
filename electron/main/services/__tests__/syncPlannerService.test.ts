@@ -30,6 +30,7 @@ vi.mock("../../audioUtils.js", () => ({
 vi.mock("../rampleNamingService.js", () => ({
   rampleNamingService: {
     transformSampleToDestinationPath: vi.fn(),
+    transformSampleToPathAndFilename: vi.fn(),
   },
 }));
 
@@ -63,6 +64,14 @@ describe("SyncPlannerService", () => {
     mockRampleNamingService.transformSampleToDestinationPath.mockImplementation(
       (sample, sdCardRoot) => {
         return `${sdCardRoot}/${sample.kit_name}/${sample.voice_number}sample${sample.slot_number + 1}.wav`;
+      },
+    );
+
+    mockRampleNamingService.transformSampleToPathAndFilename.mockImplementation(
+      (sample, sdCardRoot) => {
+        const filename = `${sample.voice_number}sample${sample.slot_number + 1}.wav`;
+        const destinationPath = `${sdCardRoot}/${sample.kit_name}/${filename}`;
+        return { destinationPath, filename };
       },
     );
   });

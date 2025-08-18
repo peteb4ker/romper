@@ -108,12 +108,9 @@ export class SyncPlannerService {
     const issues = formatValidationResult.data?.issues || [];
     const issueMessages = issues.map((issue: any) => issue.message);
 
-    // Use the Rample-generated filename from the destination path
-    const rampleFilename = path.basename(destinationPath);
-
     results.filesToConvert.push({
       destinationPath,
-      filename: rampleFilename,
+      filename, // Now using the Rample-generated filename passed as parameter
       kitName: sample.kitName,
       operation: "convert",
       originalFormat: metadataResult.success
@@ -126,7 +123,7 @@ export class SyncPlannerService {
 
     results.hasFormatWarnings = true;
     results.warnings.push(
-      `${filename}: ${issueMessages.join(", ") || "Format conversion required"}`,
+      `${sample.filename}: ${issueMessages.join(", ") || "Format conversion required"}`,
     );
   }
 
@@ -140,12 +137,9 @@ export class SyncPlannerService {
     kitName: string,
     results: any,
   ): void {
-    // Use the Rample-generated filename from the destination path
-    const rampleFilename = path.basename(destinationPath);
-
     results.filesToCopy.push({
       destinationPath,
-      filename: rampleFilename,
+      filename, // Now using the Rample-generated filename passed as parameter
       kitName,
       operation: "copy",
       sourcePath,
@@ -225,19 +219,19 @@ export class SyncPlannerService {
   }
 
   /**
-   * Get the destination path for a sample on the SD card using Rample naming convention
+   * Get the destination path and filename for a sample on the SD card using Rample naming convention
+   * Returns both to avoid coupling between path generation and filename extraction
    */
-  private getDestinationPath(
+  private getDestinationPathAndFilename(
     localStorePath: string,
-    kitName: string,
     sample: Sample,
-  ): string {
+  ): { destinationPath: string; filename: string } {
     // NOTE: Future enhancement - use actual SD card path when SD card detection is implemented
     // For now, create a sync output directory in the local store with Rample structure
     const syncOutputRoot = path.join(localStorePath, "sync_output");
 
-    // Use Rample naming service to generate compliant path
-    return rampleNamingService.transformSampleToDestinationPath(
+    // Use Rample naming service to generate compliant path and filename
+    return rampleNamingService.transformSampleToPathAndFilename(
       sample,
       syncOutputRoot,
     );
@@ -262,7 +256,7 @@ export class SyncPlannerService {
       return; // Skip samples without source path
     }
 
-    const { filename, kitName, source_path: sourcePath } = sample;
+    const { filename, source_path: sourcePath } = sample;
 
     // Validate source file and handle errors
     const fileValidation = this.validateSourceFile(
@@ -278,14 +272,12 @@ export class SyncPlannerService {
     results.totalSize += fileValidation.fileSize;
 
     // Determine operation type and add to appropriate list
-    const destinationPath = this.getDestinationPath(
-      localStorePath,
-      kitName,
-      sample,
-    );
+    const { destinationPath, filename: rampleFilename } =
+      this.getDestinationPathAndFilename(localStorePath, sample);
+
     this.categorizeFileOperation(
       sample,
-      filename,
+      rampleFilename,
       sourcePath,
       destinationPath,
       results,

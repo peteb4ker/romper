@@ -41,7 +41,7 @@ export class RampleNamingService {
     this.validateVoiceNumber(voiceNumber);
     this.validateSlotNumber(slotNumber);
 
-    // Use slot_number + 1 since DB stores 0-based but display is 1-based
+    // Use slotNumber + 1 to convert from 0-based DB storage to 1-based slot numbering required by Rample hardware
     const displaySlotNumber = slotNumber + 1;
     return `${voiceNumber}sample${displaySlotNumber}.wav`;
   }
@@ -56,6 +56,27 @@ export class RampleNamingService {
       sample.voice_number,
       sample.slot_number,
     );
+  }
+
+  /**
+   * Transform a sample object to both its Rample-compliant destination path and filename
+   * Returns both values to avoid coupling between path generation and filename extraction
+   */
+  transformSampleToPathAndFilename(
+    sample: Sample,
+    sdCardRoot: string,
+  ): { destinationPath: string; filename: string } {
+    const filename = this.generateSampleFilename(
+      sample.voice_number,
+      sample.slot_number,
+    );
+    const destinationPath = this.generateSampleDestinationPath(
+      sdCardRoot,
+      sample.kit_name,
+      sample.voice_number,
+      sample.slot_number,
+    );
+    return { destinationPath, filename };
   }
 
   /**

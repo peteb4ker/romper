@@ -58,8 +58,8 @@ describe("Sync IPC Integration Tests", () => {
         filesToConvert: [],
         filesToCopy: [
           {
-            destinationPath: "/sd/A0/kick.wav",
-            filename: "kick.wav",
+            destinationPath: "/sd/A0/1sample1.wav",
+            filename: "1sample1.wav",
             operation: "copy",
             sourcePath: "/local/A0/kick.wav",
           },

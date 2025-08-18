@@ -10,6 +10,7 @@ vi.mock("fs", () => ({
 
 // Mock path
 vi.mock("path", () => ({
+  basename: vi.fn((filePath) => filePath.split("/").pop()),
   join: vi.fn((...args) => args.join("/")),
 }));
 
@@ -25,9 +26,22 @@ vi.mock("../../audioUtils.js", () => ({
   validateSampleFormat: vi.fn(),
 }));
 
+// Mock Rample naming service
+vi.mock("../rampleNamingService.js", () => ({
+  rampleNamingService: {
+    transformSampleToDestinationPath: vi.fn(),
+    transformSampleToPathAndFilename: vi.fn(),
+  },
+}));
+
 import { getAudioMetadata, validateSampleFormat } from "../../audioUtils.js";
 import { getKits, getKitSamples } from "../../db/romperDbCoreORM.js";
+import { rampleNamingService } from "../rampleNamingService.js";
 import { SyncPlannerService } from "../syncPlannerService.js";
+import {
+  generateMockRamplePath,
+  generateMockRamplePathAndFilename,
+} from "./testUtils/rampleNamingTestUtils.js";
 
 const mockFs = vi.mocked(fs);
 const _mockPath = vi.mocked(path);
@@ -35,6 +49,7 @@ const mockGetKits = vi.mocked(getKits);
 const mockGetKitSamples = vi.mocked(getKitSamples);
 const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 const mockValidateSampleFormat = vi.mocked(validateSampleFormat);
+const mockRampleNamingService = vi.mocked(rampleNamingService);
 
 describe("SyncPlannerService", () => {
   let service: SyncPlannerService;
@@ -48,6 +63,16 @@ describe("SyncPlannerService", () => {
       getKits: mockGetKits,
       getKitSamples: mockGetKitSamples,
     }));
+
+    // Set up default mock for Rample naming service using shared test utilities
+    // This avoids duplicating the naming logic and ensures consistency
+    mockRampleNamingService.transformSampleToDestinationPath.mockImplementation(
+      generateMockRamplePath,
+    );
+
+    mockRampleNamingService.transformSampleToPathAndFilename.mockImplementation(
+      generateMockRamplePathAndFilename,
+    );
   });
 
   describe("generateChangeSummary", () => {
@@ -76,14 +101,16 @@ describe("SyncPlannerService", () => {
     it("should generate summary with files to copy when format is valid", async () => {
       // Mock getKits to return test kits
       mockGetKits.mockReturnValue({
-        data: [{ name: "TestKit1" }],
+        data: [{ name: "A0" }],
         success: true,
       });
 
       // Mock sample data
       const testSample = {
         filename: "test.wav",
-        kitName: "TestKit1",
+        kit_name: "A0", // Use valid Rample kit name format
+        kitName: "A0",
+        slot_number: 0, // Add required slot_number field
         source_path: "/source/test.wav",
         voice_number: 1,
       };
@@ -122,13 +149,15 @@ describe("SyncPlannerService", () => {
     it("should generate summary with files to convert when format is invalid", async () => {
       // Mock getKits to return test kits
       mockGetKits.mockReturnValue({
-        data: [{ name: "TestKit1" }],
+        data: [{ name: "A0" }],
         success: true,
       });
 
       const testSample = {
         filename: "test.wav",
-        kitName: "TestKit1",
+        kit_name: "A0", // Use valid Rample kit name format
+        kitName: "A0",
+        slot_number: 0, // Add required slot_number field
         source_path: "/source/test.wav",
         voice_number: 1,
       };
@@ -182,13 +211,15 @@ describe("SyncPlannerService", () => {
     it("should add validation errors for missing files", async () => {
       // Mock getKits to return test kits
       mockGetKits.mockReturnValue({
-        data: [{ name: "TestKit1" }],
+        data: [{ name: "A0" }],
         success: true,
       });
 
       const testSample = {
         filename: "missing.wav",
-        kitName: "TestKit1",
+        kit_name: "A0", // Use valid Rample kit name format
+        kitName: "A0",
+        slot_number: 0, // Add required slot_number field
         source_path: "/source/missing.wav",
         voice_number: 1,
       };
@@ -219,20 +250,24 @@ describe("SyncPlannerService", () => {
     it("should skip samples without source path", async () => {
       // Mock getKits to return test kits
       mockGetKits.mockReturnValue({
-        data: [{ name: "TestKit1" }],
+        data: [{ name: "A0" }],
         success: true,
       });
 
       const testSamples = [
         {
           filename: "baseline.wav",
-          kitName: "TestKit1",
+          kit_name: "A0", // Use valid Rample kit name format
+          kitName: "A0",
+          slot_number: 0, // Add required slot_number field
           source_path: null, // No source path - should be skipped
           voice_number: 1,
         },
         {
           filename: "user.wav",
-          kitName: "TestKit1",
+          kit_name: "A0", // Use valid Rample kit name format
+          kitName: "A0",
+          slot_number: 0, // Add required slot_number field
           source_path: "/source/user.wav",
           voice_number: 2,
         },
@@ -257,7 +292,7 @@ describe("SyncPlannerService", () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.filesToCopy).toHaveLength(1); // Only the user sample
-      expect(result.data?.filesToCopy[0].filename).toBe("user.wav");
+      expect(result.data?.filesToCopy[0].filename).toBe("2sample1.wav");
     });
 
     it("should handle errors gracefully", async () => {
@@ -279,7 +314,7 @@ describe("SyncPlannerService", () => {
     it("should process multiple kits correctly", async () => {
       // Mock getKits to return multiple kits
       mockGetKits.mockReturnValue({
-        data: [{ name: "Kit1" }, { name: "Kit2" }],
+        data: [{ name: "A0" }, { name: "B1" }],
         success: true,
       });
 
@@ -289,7 +324,9 @@ describe("SyncPlannerService", () => {
           data: [
             {
               filename: "kit1_sample.wav",
-              kitName: "Kit1",
+              kit_name: "A0", // Use valid Rample kit name format
+              kitName: "A0",
+              slot_number: 0, // Add required slot_number field
               source_path: "/source/kit1_sample.wav",
               voice_number: 1,
             },
@@ -300,7 +337,9 @@ describe("SyncPlannerService", () => {
           data: [
             {
               filename: "kit2_sample.wav",
-              kitName: "Kit2",
+              kit_name: "B1", // Use valid Rample kit name format
+              kitName: "B1",
+              slot_number: 0, // Add required slot_number field
               source_path: "/source/kit2_sample.wav",
               voice_number: 1,
             },

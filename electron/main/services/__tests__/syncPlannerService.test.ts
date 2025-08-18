@@ -38,6 +38,10 @@ import { getAudioMetadata, validateSampleFormat } from "../../audioUtils.js";
 import { getKits, getKitSamples } from "../../db/romperDbCoreORM.js";
 import { rampleNamingService } from "../rampleNamingService.js";
 import { SyncPlannerService } from "../syncPlannerService.js";
+import {
+  generateMockRamplePath,
+  generateMockRamplePathAndFilename,
+} from "./testUtils/rampleNamingTestUtils.js";
 
 const mockFs = vi.mocked(fs);
 const _mockPath = vi.mocked(path);
@@ -60,19 +64,14 @@ describe("SyncPlannerService", () => {
       getKitSamples: mockGetKitSamples,
     }));
 
-    // Set up default mock for Rample naming service
+    // Set up default mock for Rample naming service using shared test utilities
+    // This avoids duplicating the naming logic and ensures consistency
     mockRampleNamingService.transformSampleToDestinationPath.mockImplementation(
-      (sample, sdCardRoot) => {
-        return `${sdCardRoot}/${sample.kit_name}/${sample.voice_number}sample${sample.slot_number + 1}.wav`;
-      },
+      generateMockRamplePath,
     );
 
     mockRampleNamingService.transformSampleToPathAndFilename.mockImplementation(
-      (sample, sdCardRoot) => {
-        const filename = `${sample.voice_number}sample${sample.slot_number + 1}.wav`;
-        const destinationPath = `${sdCardRoot}/${sample.kit_name}/${filename}`;
-        return { destinationPath, filename };
-      },
+      generateMockRamplePathAndFilename,
     );
   });
 

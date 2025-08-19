@@ -1,1 +1,0 @@
-ƒ 2tsXhr3app/renderer/components/ValidationResultsDialog.tsx

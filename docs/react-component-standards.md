@@ -1,9 +1,9 @@
----
-title: "React Component Standards"
-owners: ["maintainer"]
-last_reviewed: "2025-08-15"
-tags: ["documentation"]
----
+<!-- 
+title: React Component Standards
+owners: maintainer
+last_reviewed: 2025-08-15
+tags: documentation
+-->
 
 # React Component Standards
 

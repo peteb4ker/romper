@@ -1,1 +1,0 @@
-„ (2tsXchrFapp/renderer/components/hooks/shared/__tests__/useBankScanning.test.ts

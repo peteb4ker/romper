@@ -1,10 +1,10 @@
----
-title: "Technical Debt - Active Items"
-owners: ["product-team"]
-last_reviewed: "2025-08-19"
-tags: ["project-management"]
-reorganized: "2025-08-19"
----
+<!-- 
+title: Technical Debt - Active Items
+owners: product-team
+last_reviewed: 2025-08-19
+tags: project-management
+reorganized: 2025-08-19
+-->
 
 # Technical Debt - Active Items
 

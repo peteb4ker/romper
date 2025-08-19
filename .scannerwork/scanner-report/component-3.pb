@@ -1,1 +1,0 @@
- 2tsXhr%app/renderer/utils/settingsManager.ts

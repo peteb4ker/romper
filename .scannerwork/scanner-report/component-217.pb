@@ -1,1 +1,0 @@
-Ù (2tsXZhrAapp/renderer/components/__tests__/KitVoicePanel.dragdrop.test.tsx

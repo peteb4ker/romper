@@ -1,1 +1,0 @@
-è (2tsXÓhr<electron/main/services/__tests__/syncExecutorService.test.ts

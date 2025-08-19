@@ -1,1 +1,0 @@
-› (2tsX˜hrSapp/renderer/components/hooks/kit-management/__tests__/useKitBankNavigation.test.ts

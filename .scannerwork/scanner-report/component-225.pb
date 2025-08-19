@@ -1,1 +1,0 @@
-á (2tsX¿hr@app/renderer/components/__tests__/LocalStoreWizardModal.test.tsx

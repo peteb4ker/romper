@@ -1,11 +1,11 @@
----
-title: "Critical Tasks - v1.0.0 Blockers"
+<!-- 
+title: Critical Tasks - v1.0.0 Blockers
 priority: critical
 status: active
-updated: "2025-08-19"
+updated: 2025-08-19
 context_size: small
-target_release: "v1.0.0"
----
+target_release: v1.0.0
+-->
 
 # Critical Tasks - v1.0.0 Blockers
 

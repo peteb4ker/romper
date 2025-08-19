@@ -1,1 +1,0 @@
-Ù (2tsXjhr7electron/main/db/__tests__/favoritesIpcHandlers.test.ts

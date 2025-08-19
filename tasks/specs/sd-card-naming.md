@@ -1,11 +1,11 @@
----
-title: "SD Card Sync Naming Convention Compliance - Specification"
+<!-- 
+title: SD Card Sync Naming Convention Compliance - Specification
 priority: completed
 status: specification
-updated: "2025-08-19"
+updated: 2025-08-19
 context_size: medium
-implementation_status: "implemented in sd-card-naming worktree (see instructions below to access or create this worktree/branch)"
----
+implementation_status: implemented in sd-card-naming worktree (see instructions below to access or create this worktree/branch)
+-->
 
 # PRD: SD Card Sync Naming Convention Compliance
 

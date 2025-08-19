@@ -1,1 +1,0 @@
-´ (2tsXthrFapp/renderer/components/dialogs/__tests__/CriticalErrorDialog.test.tsx

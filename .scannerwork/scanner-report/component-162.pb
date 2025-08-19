@@ -1,1 +1,0 @@
-¢ 2tsXÛhr electron/main/applicationMenu.ts

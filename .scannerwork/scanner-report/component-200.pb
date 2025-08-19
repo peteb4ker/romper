@@ -1,1 +1,0 @@
-È (2tsXºhr@app/renderer/components/utils/__tests__/databaseScanning.test.ts

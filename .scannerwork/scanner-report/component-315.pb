@@ -1,1 +1,0 @@
-» (2tsXMhr$app/renderer/__tests__/main.test.tsx

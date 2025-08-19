@@ -1,1 +1,0 @@
-ì (2tsX‡hr4app/renderer/components/__tests__/StatusBar.test.tsx

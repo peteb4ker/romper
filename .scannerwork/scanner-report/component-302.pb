@@ -1,1 +1,0 @@
-® (2tsXehrTapp/renderer/components/hooks/voice-panels/__tests__/useVoicePanelRendering.test.tsx

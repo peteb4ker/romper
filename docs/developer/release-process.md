@@ -73,42 +73,72 @@ git tag v2.0.0  # Breaking changes
 
 ## Release Process
 
-### Prerequisites
+Romper now features an **automated release system** that streamlines the entire process while maintaining manual control over versioning.
 
-1. Ensure all tests pass:
+### Quick Release (Recommended)
+
+For most releases, use the automated release command:
+
+```bash
+# Interactive release with all checks
+npm run release
+
+# Preview what would happen without making changes
+npm run release:dry-run
+
+# Quick validation of release readiness
+npm run release:validate
+```
+
+### Manual Release (Legacy)
+
+If you need manual control, follow the legacy process:
+
+1. **Prerequisites**:
    ```bash
    npm run test
-   npm run test:e2e
-   ```
-
-2. Verify build works locally:
-   ```bash
    npm run build
    npm run make
    ```
 
-3. Ensure all changes are committed and pushed to main:
-   ```bash
-   git status  # Should be clean
-   git push origin main
-   ```
-
-### Creating a Release
-
-1. **Determine Version Number**:
-   - Check current version: `git tag --list | sort -V | tail -1`
-   - Decide on next version based on changes (patch/minor/major)
-
 2. **Create and Push Tag**:
    ```bash
-   # Create the version tag
    git tag v1.2.3
-   
-   # Push the tag to trigger the release workflow
    git push origin v1.2.3
    ```
 
-3. **Monitor Release**: Watch the release workflow in GitHub Actions.
+### Automated Release Process
+
+The `npm run release` command provides:
+
+#### 1. **Pre-Release Validation**
+- Checks you're on main branch with clean working directory
+- Validates all required files and configurations
+- Ensures tests pass and build succeeds
+- Verifies remote is up to date
+
+#### 2. **Intelligent Version Selection**
+- Interactive prompts for version type (patch/minor/major)
+- Shows changes since last release
+- Validates version format and uniqueness
+- Supports custom version numbers
+
+#### 3. **Release Notes Generation**
+- Parses commits since last tag
+- Categorizes changes (features, fixes, breaking)
+- Uses professional templates with consistent formatting
+- Includes contributor attribution and PR references
+
+#### 4. **Automated Updates**
+- Updates `package.json` version
+- Creates/updates `CHANGELOG.md` with new entry
+- Creates and pushes git tag
+- Triggers GitHub Actions build workflow
+
+#### 5. **Release Monitoring**
+- Provides GitHub Actions monitoring links
+- Verifies release creation
+- Shows progress indicators throughout
 
 ## Release Artifact Structure
 
@@ -192,6 +222,38 @@ npm run make
 2. **Revert Commits**: Use git revert for the problematic commits  
 3. **Create New Release**: Follow normal release process
 
+## Release Automation Architecture
+
+### File Structure
+
+The release automation system is organized in `scripts/release/`:
+
+```
+scripts/release/
+├── index.js              # Main orchestrator (npm run release)
+├── validate.js           # Pre-release validation
+├── parse-commits.js      # Git commit parser
+├── generate-notes.js     # Release notes generator
+└── utils/
+    └── git.js            # Git operations utilities
+```
+
+### Templates
+
+Release notes are generated from templates in `docs/templates/`:
+
+- **`RELEASE_NOTES_TEMPLATE.md`**: GitHub release notes format
+- **`CHANGELOG_ENTRY_TEMPLATE.md`**: CHANGELOG.md entry format
+
+Templates use Handlebars syntax with dynamic content injection.
+
+### Available Commands
+
+- `npm run release` - Interactive release process
+- `npm run release:dry-run` - Preview without changes
+- `npm run release:validate` - Check release readiness
+- `npm run release:preview` - Generate and preview release notes
+
 ## Configuration Files
 
 ### Key Files for Release Process
@@ -199,6 +261,7 @@ npm run make
 - **`forge.config.js`**: Electron packaging configuration
 - **`.github/workflows/release.yml`**: Release build workflow (triggered by tags)
 - **`package.json`**: Version information and build scripts
+- **`docs/templates/`**: Release notes templates (new)
 
 ### Package.json Scripts
 

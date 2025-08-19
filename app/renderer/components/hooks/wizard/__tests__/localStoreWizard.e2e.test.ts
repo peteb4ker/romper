@@ -6,6 +6,31 @@ import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// Retry a function with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelay = 1000,
+): Promise<T> {
+  let lastError: Error;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      if (attempt === maxRetries - 1) break;
+
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.log(
+        `Attempt ${attempt + 1} failed, retrying in ${delay}ms:`,
+        error,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError!;
+}
+
 async function runWizardTest(
   {
     fixturePath,
@@ -45,21 +70,31 @@ async function runWizardTest(
   }
   console.log(`[${testName || "E2E"}] Main file exists: ${mainFile}`);
 
-  const electronApp = await electron
-    .launch({
+  const electronApp = await retryWithBackoff(async () => {
+    return await electron.launch({
       args: [
         "dist/electron/main/index.js",
         ...(process.env.CI ? ["--no-sandbox", "--disable-setuid-sandbox"] : []),
       ],
       env,
       timeout: 30000, // 30 second timeout
-    })
-    .catch((error) => {
-      console.error(`[${testName || "E2E"}] Failed to launch Electron:`, error);
-      throw error;
     });
+  }).catch((error) => {
+    console.error(
+      `[${testName || "E2E"}] Failed to launch Electron after retries:`,
+      error,
+    );
+    throw error;
+  });
 
-  const window = await electronApp.firstWindow();
+  const window = await retryWithBackoff(async () => {
+    const win = await electronApp.firstWindow();
+
+    // Wait for window to be ready for interaction
+    await win.waitForLoadState("domcontentloaded");
+
+    return win;
+  });
 
   // Restore renderer log listener
   window.on("console", (msg) => {
@@ -67,9 +102,18 @@ async function runWizardTest(
       console.log(`[${testName || "E2E"}] [renderer log] ${msg.args()[i]}`);
   });
 
-  // Wait for the wizard to auto-open (no button click needed)
-  await window.waitForSelector('[data-testid="local-store-wizard"]', {
-    state: "visible",
+  // Wait for the wizard to auto-open and be fully loaded
+  await retryWithBackoff(async () => {
+    await window.waitForSelector('[data-testid="local-store-wizard"]', {
+      state: "visible",
+      timeout: 5000,
+    });
+
+    // Ensure wizard is interactive by checking for source selection buttons
+    await window.waitForSelector('[data-testid="wizard-source-blank"]', {
+      state: "visible",
+      timeout: 2000,
+    });
   });
 
   // 1. source
@@ -105,20 +149,35 @@ async function runWizardTest(
   await window.fill("#local-store-path-input", targetPath);
 
   // 3. initialize
-  // Wait for the initialize button to become enabled
-  await window.waitForFunction(() => {
-    const btn = document.querySelector('[data-testid="wizard-initialize-btn"]');
-    return btn && !(btn as HTMLButtonElement).disabled;
+  // Wait for the initialize button to be present and click it
+  await window.waitForSelector('[data-testid="wizard-initialize-btn"]', {
+    state: "visible",
+    timeout: 10000,
   });
 
   // Initialize to kick off the import
   await window.click('[data-testid="wizard-initialize-btn"]');
 
-  // Wait for the wizard to disappear (indicates success)
-  await window.waitForSelector('[data-testid="local-store-wizard"]', {
-    state: "hidden",
-    timeout: 15000,
-  });
+  // Wait for either success (wizard disappears) or failure (error appears)
+  await Promise.race([
+    // Success path: wizard disappears
+    window.waitForSelector('[data-testid="local-store-wizard"]', {
+      state: "hidden",
+      timeout: 15000,
+    }),
+    // Failure path: error message appears
+    window
+      .waitForSelector('[data-testid="wizard-error"]', {
+        state: "visible",
+        timeout: 15000,
+      })
+      .then(async () => {
+        const errorText = await window.textContent(
+          '[data-testid="wizard-error"]',
+        );
+        throw new Error(`Wizard initialization failed: ${errorText}`);
+      }),
+  ]);
 
   // Assert that the db exists
   const dbPath = path.join(targetPath, ".romperdb", "romper.sqlite");

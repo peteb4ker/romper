@@ -1,4 +1,31 @@
+---
+title: "SD Card Sync Naming Convention Compliance - Specification"
+priority: completed
+status: specification
+updated: "2025-08-19"
+context_size: medium
+implementation_status: "implemented in sd-card-naming worktree (see instructions below to access or create this worktree/branch)"
+---
+
 # PRD: SD Card Sync Naming Convention Compliance
+
+> **Implementation Status**: This specification has been implemented in the `sd-card-naming` worktree.
+>
+> **To access the implementation:**
+> 1. If you do not have the `sd-card-naming` worktree, you can create it with:
+>    ```sh
+>    npm run worktree:create sd-card-naming
+>    ```
+> 2. If you prefer to work with branches directly, you can check it out with:
+>    ```sh
+>    git checkout sd-card-naming
+>    ```
+> 3. If the branch does not exist locally, fetch it first:
+>    ```sh
+>    git fetch origin sd-card-naming:sd-card-naming
+>    ```
+>
+> Alternatively, check the main repository or ask a maintainer if you cannot find the branch/worktree.
 
 ## Overview
 
@@ -146,3 +173,22 @@ interface RampleNamingService {
 - Modification of sample import/reference system
 - User interface changes for naming preferences
 - Support for custom naming patterns
+
+---
+
+## Implementation Notes
+
+> **Note**: This specification was moved from `tasks/PRD-SD-Card-Naming.md` during task reorganization. The actual implementation work is being done in the `sd-card-naming` worktree.
+
+### Related Files
+- Implementation: See `worktrees/sd-card-naming/` branch
+- Tests: Unit tests for RampleNamingService
+- Integration: SyncPlannerService updates
+
+### References
+- [Squarp Rample Manual](https://squarp.net/rample/manual/) - Official hardware documentation
+- [SD Card Sync Architecture](../PRD.md#8-sd-card-sync-operations) - Original sync system design
+- [Database Schema](../../docs/developer/romper-db.md) - Current schema reference
+
+---
+*Specification moved to specs/ directory on 2025-08-19 during task reorganization*

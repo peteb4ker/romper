@@ -93,9 +93,10 @@ Quick navigation and overview of all project tasks. **Total Context Reduction: ~
 ```bash
 git worktree list
 # Main development happens in dedicated worktrees
-# /romper/worktrees/task-cleanup (this reorganization)
-# /romper/worktrees/sd-card-naming (SYNC.1 implementation)
-# /romper/worktrees/release-automation (CI/CD improvements)
+# Example: <project-root>/worktrees/<feature-name>
+# e.g. <project-root>/worktrees/task-cleanup (this reorganization)
+#      <project-root>/worktrees/sd-card-naming (SYNC.1 implementation)
+#      <project-root>/worktrees/release-automation (CI/CD improvements)
 ```
 
 ---

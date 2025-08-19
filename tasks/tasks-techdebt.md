@@ -19,11 +19,11 @@ reorganized: "2025-08-19"
 ## 🔄 Migration Summary
 
 ### Archived Content (Completed Items Moved)
-- **✅ Remove trailing whitespace** - Completed with ESLint integration
-- **✅ Refactor duplicated error handling** - Completed with lightweight patterns
-- **✅ Decompose SampleService class** - Completed (983 lines → 4 focused services)
-- **✅ Test Infrastructure Overhaul** - Phases 1 & 2 completed
-- **✅ Preserve route state during HMR** - Completed with testable functions
+- **✅ Remove trailing whitespace** - Completed with ESLint integration ([archive/technical-debt.md#remove-trailing-whitespace-from-codebase](archive/technical-debt.md#remove-trailing-whitespace-from-codebase))
+- **✅ Refactor duplicated error handling** - Completed with lightweight patterns ([archive/technical-debt.md#refactor-duplicated-error-handling-patterns](archive/technical-debt.md#refactor-duplicated-error-handling-patterns))
+- **✅ Decompose SampleService class** - Completed (983 lines → 4 focused services) ([archive/technical-debt.md#decompose-sampleservice-class-983-line-service-now-refactored](archive/technical-debt.md#decompose-sampleservice-class-983-line-service-now-refactored))
+- **✅ Test Infrastructure Overhaul** - Phases 1 & 2 completed ([archive/technical-debt.md#test-infrastructure-overhaul---phase-1-foundation](archive/technical-debt.md#test-infrastructure-overhaul---phase-1-foundation))
+- **✅ Preserve route state during HMR** - Completed with testable functions ([archive/technical-debt.md#preserve-route-state-during-hmr-reloads](archive/technical-debt.md#preserve-route-state-during-hmr-reloads))
 
 ### Active Technical Debt
 All remaining technical debt items have been moved to organized categories:

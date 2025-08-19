@@ -4,12 +4,28 @@ priority: completed
 status: specification
 updated: "2025-08-19"
 context_size: medium
-implementation_status: "implemented in sd-card-naming worktree"
+implementation_status: "implemented in sd-card-naming worktree (see instructions below to access or create this worktree/branch)"
 ---
 
 # PRD: SD Card Sync Naming Convention Compliance
 
-> **Implementation Status**: This specification has been implemented in the `sd-card-naming` worktree. See that branch for the actual implementation.
+> **Implementation Status**: This specification has been implemented in the `sd-card-naming` worktree.
+>
+> **To access the implementation:**
+> 1. If you do not have the `sd-card-naming` worktree, you can create it with:
+>    ```sh
+>    npm run worktree:create sd-card-naming
+>    ```
+> 2. If you prefer to work with branches directly, you can check it out with:
+>    ```sh
+>    git checkout sd-card-naming
+>    ```
+> 3. If the branch does not exist locally, fetch it first:
+>    ```sh
+>    git fetch origin sd-card-naming:sd-card-naming
+>    ```
+>
+> Alternatively, check the main repository or ask a maintainer if you cannot find the branch/worktree.
 
 ## Overview
 

@@ -28,7 +28,7 @@ async function retryWithBackoff<T>(
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  throw lastError!;
+  throw lastError || new Error("All retry attempts failed");
 }
 
 async function runWizardTest(

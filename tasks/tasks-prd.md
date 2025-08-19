@@ -1,10 +1,10 @@
----
-title: "Active Tasks - Development Progress"
-owners: ["product-team"]
-last_reviewed: "2025-08-19"
-tags: ["project-management"]
-reorganized: "2025-08-19"
----
+<!-- 
+title: Active Tasks - Development Progress
+owners: product-team
+last_reviewed: 2025-08-19
+tags: project-management
+reorganized: 2025-08-19
+-->
 
 # Development Progress - Active Tasks
 

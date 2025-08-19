@@ -1,11 +1,11 @@
----
-title: "Feature Tasks - Post v1.0.0"
+<!-- 
+title: Feature Tasks - Post v1.0.0
 priority: high
 status: active
-updated: "2025-08-19"
+updated: 2025-08-19
 context_size: medium
-target_release: "v1.1.0+"
----
+target_release: v1.1.0+
+-->
 
 # Feature Tasks - Post v1.0.0
 

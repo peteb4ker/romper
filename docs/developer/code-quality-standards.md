@@ -1,9 +1,9 @@
----
-title: "Code Quality Standards"
-owners: ["developer-team"]
-last_reviewed: "2025-08-15"
-tags: ["developer"]
----
+<!-- 
+title: Code Quality Standards
+owners: developer-team
+last_reviewed: 2025-08-15
+tags: developer
+-->
 
 # Code Quality Standards
 

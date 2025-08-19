@@ -1,9 +1,9 @@
----
-title: "Contributing to Romper Sample Manager"
-owners: ["maintainer", "developer-team"]
-last_reviewed: "2025-08-15"
-tags: ["contributing", "development", "documentation"]
----
+<!-- 
+title: Contributing to Romper Sample Manager
+owners: maintainer, developer-team
+last_reviewed: 2025-08-15
+tags: contributing, development, documentation
+-->
 
 # Contributing to Romper Sample Manager
 

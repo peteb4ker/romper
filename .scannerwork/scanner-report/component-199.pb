@@ -1,1 +1,0 @@
-Ç (2tsX¾hrAapp/renderer/components/utils/__tests__/FilePickerButton.test.tsx

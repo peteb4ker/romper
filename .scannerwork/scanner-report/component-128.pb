@@ -1,1 +1,0 @@
-€ 2tsXuhr&app/renderer/components/KitDetails.tsx

@@ -1,6 +1,6 @@
----
+<!-- 
 layout: default
----
+-->
 
 # Kit Details
 

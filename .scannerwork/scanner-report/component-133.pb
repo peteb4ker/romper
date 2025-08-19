@@ -1,1 +1,0 @@
-… 2tsXihr app/renderer/views/AboutView.tsx

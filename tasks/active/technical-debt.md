@@ -1,11 +1,11 @@
----
-title: "Technical Debt - Active Items"
+<!-- 
+title: Technical Debt - Active Items
 priority: medium
 status: active
-updated: "2025-08-19"
+updated: 2025-08-19
 context_size: medium
-target_release: "ongoing"
----
+target_release: ongoing
+-->
 
 # Technical Debt - Active Items
 

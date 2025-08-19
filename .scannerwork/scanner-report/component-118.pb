@@ -1,1 +1,0 @@
-v 2tsXÈhr4app/renderer/components/dialogs/SyncUpdateDialog.tsx

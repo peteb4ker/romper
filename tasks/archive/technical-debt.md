@@ -1,9 +1,9 @@
----
-title: "Archived Technical Debt - Completed Items"
-archived_date: "2025-08-19"
-source_file: "tasks-techdebt.md"
+<!-- 
+title: Archived Technical Debt - Completed Items
+archived_date: 2025-08-19
+source_file: tasks-techdebt.md
 status: archived
----
+-->
 
 # Archived Technical Debt - Completed Items
 

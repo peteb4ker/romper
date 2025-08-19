@@ -1,1 +1,0 @@
- 2tsXhr3app/renderer/components/utils/scanningOperations.ts

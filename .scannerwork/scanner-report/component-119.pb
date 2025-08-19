@@ -1,1 +1,0 @@
-w 2tsX2hr7app/renderer/components/dialogs/CriticalErrorDialog.tsx

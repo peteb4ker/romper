@@ -1,1 +1,0 @@
-à (2tsXÛhr4electron/main/services/__tests__/scanService.test.ts

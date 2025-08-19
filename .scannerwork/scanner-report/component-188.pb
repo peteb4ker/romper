@@ -1,1 +1,0 @@
-¼ (2tsX2hrCapp/renderer/components/wizard/__tests__/WizardSummaryStep.test.tsx

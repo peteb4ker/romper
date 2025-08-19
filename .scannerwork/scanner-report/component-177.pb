@@ -1,1 +1,0 @@
-± 2tsXèhr%electron/main/services/scanService.ts

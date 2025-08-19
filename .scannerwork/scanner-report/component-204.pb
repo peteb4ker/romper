@@ -1,1 +1,0 @@
-Ì (2tsXUhr>app/renderer/components/utils/scanners/__tests__/index.test.ts

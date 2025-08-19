@@ -1,1 +1,0 @@
-º (2tsXÔhrJapp/renderer/components/dialogs/__tests__/ValidationResultsDialog.test.tsx

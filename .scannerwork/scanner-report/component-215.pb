@@ -1,1 +1,0 @@
-× (2tsX¢hr;app/renderer/components/__tests__/KitStepSequencer.test.tsx

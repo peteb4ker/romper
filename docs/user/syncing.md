@@ -1,6 +1,6 @@
----
+<!-- 
 layout: default
----
+-->
 
 # Syncing Kits to SD Card
 

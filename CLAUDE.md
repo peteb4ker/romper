@@ -1,9 +1,9 @@
----
-title: "Romper Sample Manager - Claude Code Instructions"
-owners: ["maintainer"]
-last_reviewed: "2025-08-15"
-tags: ["documentation"]
----
+<!-- 
+title: Romper Sample Manager - Claude Code Instructions
+owners: maintainer
+last_reviewed: 2025-08-15
+tags: documentation
+-->
 
 # Romper Sample Manager - Claude Code Instructions
 

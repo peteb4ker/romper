@@ -1,1 +1,0 @@
-ã (2tsX³hr<electron/main/services/__tests__/syncProgressService.test.ts

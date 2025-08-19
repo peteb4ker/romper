@@ -1,7 +1,7 @@
----
+<!-- 
 layout: default
 title: Romper Sample Manager
----
+-->
 
 # Romper Sample Manager
 

@@ -1,1 +1,0 @@
-{ 2tsXèhr5app/renderer/components/dialogs/PreferencesDialog.tsx

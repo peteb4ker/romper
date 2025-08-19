@@ -1,1 +1,0 @@
-¶ 2tsXÇhrelectron/preload/index.ts

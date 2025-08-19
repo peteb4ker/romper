@@ -1,1 +1,0 @@
-¦ 2tsX´hr,electron/main/services/syncPlannerService.ts

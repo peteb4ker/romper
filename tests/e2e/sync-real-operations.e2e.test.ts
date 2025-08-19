@@ -1,15 +1,15 @@
 import { expect, test } from "@playwright/test";
-import { _electron as electron } from "playwright";
 import fs from "fs-extra";
-import path from "path";
 import os from "os";
+import path from "path";
+import { _electron as electron } from "playwright";
 
 /**
  * End-to-End Sync Test with Real File Operations
- * 
+ *
  * This test fills the gap in SYNC.1 testing by performing actual sync operations
  * with real files, using temp folders as local store and SD card.
- * 
+ *
  * Unlike existing E2E tests that cancel before sync, this test:
  * - Creates real kits with sample files
  * - Executes complete sync workflow
@@ -22,7 +22,7 @@ test.describe("Sync Real Operations E2E Tests", () => {
   let tempDir: string;
   let localStorePath: string;
   let sdCardPath: string;
-  let testSampleFiles: { wav: string; aiff: string; flac: string };
+  let testSampleFiles: { aiff: string; flac: string; wav: string };
 
   test.beforeEach(async () => {
     // Create temp directory structure
@@ -43,10 +43,10 @@ test.describe("Sync Real Operations E2E Tests", () => {
     // Set up environment to use temp directories
     const env = {
       ...process.env,
-      ROMPER_LOCAL_PATH: localStorePath,
-      ROMPER_SDCARD_PATH: sdCardPath,
       // Ensure clean database state
       NODE_ENV: "test",
+      ROMPER_LOCAL_PATH: localStorePath,
+      ROMPER_SDCARD_PATH: sdCardPath,
     };
 
     // Launch Electron app
@@ -67,7 +67,9 @@ test.describe("Sync Real Operations E2E Tests", () => {
 
     // Wait for app to load
     await window.waitForLoadState("domcontentloaded");
-    await window.waitForSelector('[data-testid="kits-view"]', { timeout: 10000 });
+    await window.waitForSelector('[data-testid="kits-view"]', {
+      timeout: 10000,
+    });
 
     // Complete wizard setup automatically
     await completeWizardSetup();
@@ -91,7 +93,9 @@ test.describe("Sync Real Operations E2E Tests", () => {
   test.describe("Full Sync Workflow with Real Files", () => {
     test("should perform complete sync with file conversion and copying", async () => {
       // Wait for kit list to be populated
-      await window.waitForSelector('[data-testid="kit-grid"]', { timeout: 10000 });
+      await window.waitForSelector('[data-testid="kit-grid"]', {
+        timeout: 10000,
+      });
 
       // Verify test kits are visible
       const kitCards = await window.locator('[data-testid^="kit-card-"]');
@@ -100,39 +104,53 @@ test.describe("Sync Real Operations E2E Tests", () => {
       console.log(`[E2E Sync Test] Found ${kitCount} kits ready for sync`);
 
       // Open sync dialog
-      const syncButton = await window.locator('[data-testid="sync-to-sd-card"]');
+      const syncButton = await window.locator(
+        '[data-testid="sync-to-sd-card"]',
+      );
       await syncButton.waitFor({ state: "visible", timeout: 5000 });
       await syncButton.click();
 
       // Wait for sync dialog
-      await window.waitForSelector('[data-testid="sync-dialog"]', { timeout: 5000 });
+      await window.waitForSelector('[data-testid="sync-dialog"]', {
+        timeout: 5000,
+      });
 
       // Wait for change summary generation
-      console.log("[E2E Sync Test] Waiting for sync change summary generation...");
+      console.log(
+        "[E2E Sync Test] Waiting for sync change summary generation...",
+      );
       await window.waitForTimeout(5000); // Allow time for file analysis
 
       // Verify change summary shows files to sync
-      const summaryText = await window.locator('[data-testid="sync-summary"]').textContent();
+      const summaryText = await window
+        .locator('[data-testid="sync-summary"]')
+        .textContent();
       console.log(`[E2E Sync Test] Sync summary: ${summaryText}`);
-      
+
       // The summary should show files to convert/copy
       expect(summaryText).toMatch(/\d+ files?/);
 
       // Confirm sync (this is the key difference from existing E2E test)
-      const confirmButton = await window.locator('[data-testid="confirm-sync"]');
+      const confirmButton = await window.locator(
+        '[data-testid="confirm-sync"]',
+      );
       await confirmButton.waitFor({ state: "visible", timeout: 5000 });
-      
+
       console.log("[E2E Sync Test] Starting actual sync operation...");
       await confirmButton.click();
 
       // Wait for sync to complete
-      await window.waitForSelector('[data-testid="sync-progress"]', { timeout: 5000 });
-      
+      await window.waitForSelector('[data-testid="sync-progress"]', {
+        timeout: 5000,
+      });
+
       // Monitor sync progress
       await waitForSyncCompletion();
 
       // Verify sync success dialog
-      const successMessage = await window.locator('text=Sync completed successfully');
+      const successMessage = await window.locator(
+        "text=Sync completed successfully",
+      );
       await expect(successMessage).toBeVisible({ timeout: 30000 });
 
       console.log("[E2E Sync Test] Sync completed successfully!");
@@ -141,7 +159,9 @@ test.describe("Sync Real Operations E2E Tests", () => {
       await verifySyncedFiles();
 
       // Close success dialog
-      const closeButton = await window.locator('[data-testid="close-sync-dialog"]');
+      const closeButton = await window.locator(
+        '[data-testid="close-sync-dialog"]',
+      );
       if (await closeButton.isVisible()) {
         await closeButton.click();
       }
@@ -155,29 +175,43 @@ test.describe("Sync Real Operations E2E Tests", () => {
       // Pre-populate SD card with some existing files
       await createExistingFilesOnSdCard();
 
-      await window.waitForSelector('[data-testid="kit-grid"]', { timeout: 10000 });
+      await window.waitForSelector('[data-testid="kit-grid"]', {
+        timeout: 10000,
+      });
 
       // Open sync dialog
-      const syncButton = await window.locator('[data-testid="sync-to-sd-card"]');
+      const syncButton = await window.locator(
+        '[data-testid="sync-to-sd-card"]',
+      );
       await syncButton.click();
 
-      await window.waitForSelector('[data-testid="sync-dialog"]', { timeout: 5000 });
+      await window.waitForSelector('[data-testid="sync-dialog"]', {
+        timeout: 5000,
+      });
 
       // Wait for change summary with existing files
       await window.waitForTimeout(5000);
 
       // Should show some files to overwrite/update
-      const summaryText = await window.locator('[data-testid="sync-summary"]').textContent();
-      console.log(`[E2E Sync Test] Sync summary with existing files: ${summaryText}`);
+      const summaryText = await window
+        .locator('[data-testid="sync-summary"]')
+        .textContent();
+      console.log(
+        `[E2E Sync Test] Sync summary with existing files: ${summaryText}`,
+      );
 
       // Proceed with sync
-      const confirmButton = await window.locator('[data-testid="confirm-sync"]');
+      const confirmButton = await window.locator(
+        '[data-testid="confirm-sync"]',
+      );
       await confirmButton.click();
 
       await waitForSyncCompletion();
 
       // Verify sync completed
-      const successMessage = await window.locator('text=Sync completed successfully');
+      const successMessage = await window.locator(
+        "text=Sync completed successfully",
+      );
       await expect(successMessage).toBeVisible({ timeout: 30000 });
 
       // Verify files were properly updated
@@ -194,33 +228,33 @@ test.describe("Sync Real Operations E2E Tests", () => {
     await fs.ensureDir(samplesDir);
 
     testSampleFiles = {
-      wav: path.join(samplesDir, "test-sample.wav"),
-      aiff: path.join(samplesDir, "test-sample.aiff"), 
+      aiff: path.join(samplesDir, "test-sample.aiff"),
       flac: path.join(samplesDir, "test-sample.flac"),
+      wav: path.join(samplesDir, "test-sample.wav"),
     };
 
     // Create simple test files with just enough data to test file operations
     // The sync system should handle format validation and conversion gracefully
     const testFileContent = Buffer.alloc(1024, 0x42); // Simple 1KB file with pattern
-    
+
     // Add minimal format headers to distinguish file types
     const wavFile = Buffer.concat([
       Buffer.from("RIFF", "ascii"),
       Buffer.from([0x00, 0x04, 0x00, 0x00]), // size placeholder
       Buffer.from("WAVE", "ascii"),
-      testFileContent
+      testFileContent,
     ]);
-    
+
     const aiffFile = Buffer.concat([
       Buffer.from("FORM", "ascii"),
-      Buffer.from([0x00, 0x04, 0x00, 0x00]), // size placeholder  
+      Buffer.from([0x00, 0x04, 0x00, 0x00]), // size placeholder
       Buffer.from("AIFF", "ascii"),
-      testFileContent
+      testFileContent,
     ]);
-    
+
     const flacFile = Buffer.concat([
       Buffer.from("fLaC", "ascii"),
-      testFileContent
+      testFileContent,
     ]);
 
     await fs.writeFile(testSampleFiles.wav, wavFile);
@@ -241,23 +275,24 @@ test.describe("Sync Real Operations E2E Tests", () => {
       // Wait for wizard or main app
       const wizardSelector = '[data-testid="wizard-container"]';
       const kitViewSelector = '[data-testid="kits-view"]';
-      
+
       // Check if wizard is present
       const wizardVisible = await window.isVisible(wizardSelector);
-      
+
       if (wizardVisible) {
         console.log("[E2E Sync Test] Completing wizard setup...");
-        
+
         // Complete wizard steps
         const nextButton = '[data-testid="wizard-next"]';
         const finishButton = '[data-testid="wizard-finish"]';
-        
+
         // Step through wizard
         let step = 0;
-        while (step < 5) { // Safety limit
+        while (step < 5) {
+          // Safety limit
           const nextVisible = await window.isVisible(nextButton);
           const finishVisible = await window.isVisible(finishButton);
-          
+
           if (finishVisible) {
             await window.click(finishButton);
             break;
@@ -269,11 +304,11 @@ test.describe("Sync Real Operations E2E Tests", () => {
           }
           step++;
         }
-        
+
         // Wait for main app to load
         await window.waitForSelector(kitViewSelector, { timeout: 10000 });
       }
-      
+
       console.log("[E2E Sync Test] App setup completed");
     } catch (error) {
       console.log(`[E2E Sync Test] Wizard setup handled gracefully: ${error}`);
@@ -286,7 +321,7 @@ test.describe("Sync Real Operations E2E Tests", () => {
    */
   async function createTestKitsWithSamples() {
     console.log("[E2E Sync Test] Creating test kits with sample files...");
-    
+
     // We'll use the Electron context to create kits in the database
     // This simulates having kits with sample references
     const createKitsScript = `
@@ -314,9 +349,11 @@ test.describe("Sync Real Operations E2E Tests", () => {
     `;
 
     await window.evaluate(createKitsScript);
-    
+
     const kitsCreated = await window.evaluate(() => window.testKitsCreated);
-    console.log(`[E2E Sync Test] Test setup indicates ${kitsCreated} kits prepared`);
+    console.log(
+      `[E2E Sync Test] Test setup indicates ${kitsCreated} kits prepared`,
+    );
   }
 
   /**
@@ -324,40 +361,48 @@ test.describe("Sync Real Operations E2E Tests", () => {
    */
   async function waitForSyncCompletion() {
     console.log("[E2E Sync Test] Monitoring sync progress...");
-    
+
     // Wait for progress indicators
-    let timeout = 30000; // 30 second timeout
+    const timeout = 30000; // 30 second timeout
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       // Check for completion indicators
-      const progressVisible = await window.isVisible('[data-testid="sync-progress"]');
-      const successVisible = await window.isVisible('text=Sync completed successfully');
-      const errorVisible = await window.isVisible('text=Sync failed');
-      
+      const progressVisible = await window.isVisible(
+        '[data-testid="sync-progress"]',
+      );
+      const successVisible = await window.isVisible(
+        "text=Sync completed successfully",
+      );
+      const errorVisible = await window.isVisible("text=Sync failed");
+
       if (successVisible) {
         console.log("[E2E Sync Test] Sync completed successfully!");
         return;
       }
-      
+
       if (errorVisible) {
-        const errorMessage = await window.locator('text=Sync failed').textContent();
+        const errorMessage = await window
+          .locator("text=Sync failed")
+          .textContent();
         throw new Error(`Sync failed: ${errorMessage}`);
       }
-      
+
       if (progressVisible) {
         // Log progress if available
         try {
-          const progressText = await window.locator('[data-testid="sync-progress"]').textContent();
+          const progressText = await window
+            .locator('[data-testid="sync-progress"]')
+            .textContent();
           console.log(`[E2E Sync Test] Progress: ${progressText}`);
-        } catch (e) {
+        } catch {
           // Progress text might be updating
         }
       }
-      
+
       await window.waitForTimeout(1000);
     }
-    
+
     throw new Error("Sync operation timed out");
   }
 
@@ -366,35 +411,42 @@ test.describe("Sync Real Operations E2E Tests", () => {
    */
   async function verifySyncedFiles() {
     console.log("[E2E Sync Test] Verifying synced files on SD card...");
-    
+
     // Check that SD card directory has content
     const sdCardContents = await fs.readdir(sdCardPath);
-    console.log(`[E2E Sync Test] SD card contents: ${sdCardContents.join(", ")}`);
-    
-    expect(sdCardContents.length).toBeGreaterThan(0);
-    
-    // Look for Rample naming convention files
-    const audioFiles = sdCardContents.filter(file => 
-      file.endsWith('.wav') || file.endsWith('.WAV')
+    console.log(
+      `[E2E Sync Test] SD card contents: ${sdCardContents.join(", ")}`,
     );
-    
+
+    expect(sdCardContents.length).toBeGreaterThan(0);
+
+    // Look for Rample naming convention files
+    const audioFiles = sdCardContents.filter(
+      (file) => file.endsWith(".wav") || file.endsWith(".WAV"),
+    );
+
     expect(audioFiles.length).toBeGreaterThan(0);
-    console.log(`[E2E Sync Test] Found ${audioFiles.length} audio files on SD card`);
-    
+    console.log(
+      `[E2E Sync Test] Found ${audioFiles.length} audio files on SD card`,
+    );
+
     // Verify Rample naming convention (should be like "001_TestKit.wav", etc.)
     const ramplePattern = /^\d{3}_.*\.wav$/i;
-    const validNames = audioFiles.filter(file => ramplePattern.test(file));
-    
+    const validNames = audioFiles.filter((file) => ramplePattern.test(file));
+
     expect(validNames.length).toBeGreaterThan(0);
-    console.log(`[E2E Sync Test] Found ${validNames.length} files with correct Rample naming`);
-    
+    console.log(
+      `[E2E Sync Test] Found ${validNames.length} files with correct Rample naming`,
+    );
+
     // Verify file contents exist and are non-empty
-    for (const file of audioFiles.slice(0, 3)) { // Check first few files
+    for (const file of audioFiles.slice(0, 3)) {
+      // Check first few files
       const filePath = path.join(sdCardPath, file);
       const stats = await fs.stat(filePath);
       expect(stats.size).toBeGreaterThan(0);
     }
-    
+
     console.log("[E2E Sync Test] All synced files verified successfully!");
   }
 
@@ -403,15 +455,15 @@ test.describe("Sync Real Operations E2E Tests", () => {
    */
   async function createExistingFilesOnSdCard() {
     console.log("[E2E Sync Test] Creating existing files on SD card...");
-    
+
     // Create a few existing files
     const existingFile1 = path.join(sdCardPath, "001_ExistingKit.wav");
     const existingFile2 = path.join(sdCardPath, "002_AnotherKit.wav");
-    
+
     const dummyAudio = Buffer.alloc(1024, 0);
     await fs.writeFile(existingFile1, dummyAudio);
     await fs.writeFile(existingFile2, dummyAudio);
-    
+
     console.log("[E2E Sync Test] Created existing files for update testing");
   }
 });

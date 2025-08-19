@@ -186,33 +186,12 @@ test.describe("Sync Real Operations E2E Tests", () => {
   });
 
   /**
-   * Creates test sample files in various formats
+   * Creates simple test sample files for sync testing
+   * Note: These are minimal files just for testing file operations, not real audio
    */
   async function createTestSampleFiles() {
     const samplesDir = path.join(tempDir, "test-samples");
     await fs.ensureDir(samplesDir);
-
-    // Create minimal valid audio files for testing
-    // These are simplified WAV headers + minimal audio data
-    const wavHeader = Buffer.concat([
-      Buffer.from("RIFF", "ascii"),
-      Buffer.from([0x24, 0x08, 0x00, 0x00]), // file size - 8
-      Buffer.from("WAVE", "ascii"),
-      Buffer.from("fmt ", "ascii"),
-      Buffer.from([0x10, 0x00, 0x00, 0x00]), // fmt chunk size
-      Buffer.from([0x01, 0x00]), // audio format (PCM)
-      Buffer.from([0x02, 0x00]), // channels
-      Buffer.from([0x44, 0xAC, 0x00, 0x00]), // sample rate (44100)
-      Buffer.from([0x10, 0xB1, 0x02, 0x00]), // byte rate
-      Buffer.from([0x04, 0x00]), // block align
-      Buffer.from([0x10, 0x00]), // bits per sample
-      Buffer.from("data", "ascii"),
-      Buffer.from([0x00, 0x08, 0x00, 0x00]), // data size
-    ]);
-    
-    // Add some audio data (silence)
-    const audioData = Buffer.alloc(2048, 0);
-    const wavFile = Buffer.concat([wavHeader, audioData]);
 
     testSampleFiles = {
       wav: path.join(samplesDir, "test-sample.wav"),
@@ -220,63 +199,33 @@ test.describe("Sync Real Operations E2E Tests", () => {
       flac: path.join(samplesDir, "test-sample.flac"),
     };
 
-    // Create test files
-    await fs.writeFile(testSampleFiles.wav, wavFile);
+    // Create simple test files with just enough data to test file operations
+    // The sync system should handle format validation and conversion gracefully
+    const testFileContent = Buffer.alloc(1024, 0x42); // Simple 1KB file with pattern
     
-    // For AIFF and FLAC, create valid formatted versions (they'll need conversion)
-    
-    // Minimal valid AIFF header: FORM chunk, COMM chunk, SSND chunk
-    // We'll create a mono, 16-bit, 44100Hz, 2048-sample file (all silence)
-    const numChannels = 1;
-    const numSampleFrames = 2048;
-    const sampleSize = 16;
-    const sampleRate = 44100;
-    // COMM chunk (18 bytes): "COMM" + chunk size (4) + channels (2) + frames (4) + size (2) + rate (10)
-    const commChunk = Buffer.alloc(26);
-    commChunk.write("COMM", 0, 4, "ascii");
-    commChunk.writeUInt32BE(18, 4); // chunk size
-    commChunk.writeUInt16BE(numChannels, 8); // channels
-    commChunk.writeUInt32BE(numSampleFrames, 10); // numSampleFrames
-    commChunk.writeUInt16BE(sampleSize, 14); // sampleSize
-    // Write 80-bit IEEE extended float for sampleRate (44100) at offset 16
-    // For 44100, the 10 bytes are: 0x400eac44000000000000
-    Buffer.from([0x40, 0x0e, 0xac, 0x44, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]).copy(commChunk, 16);
-    // SSND chunk: "SSND" + chunk size (4) + offset (4) + blocksize (4) + data
-    const ssndData = Buffer.alloc(numSampleFrames * numChannels * (sampleSize / 8), 0);
-    const ssndChunk = Buffer.alloc(16);
-    ssndChunk.write("SSND", 0, 4, "ascii");
-    ssndChunk.writeUInt32BE(8 + ssndData.length, 4); // chunk size
-    ssndChunk.writeUInt32BE(0, 8); // offset
-    ssndChunk.writeUInt32BE(0, 12); // blocksize
-    // FORM chunk: "FORM" + size (4) + "AIFF"
-    const formSize = 4 + commChunk.length + ssndChunk.length + ssndData.length; // "AIFF" + chunks
-    const formHeader = Buffer.alloc(12);
-    formHeader.write("FORM", 0, 4, "ascii");
-    formHeader.writeUInt32BE(formSize, 4); // FORM chunk size
-    formHeader.write("AIFF", 8, 4, "ascii");
-    // Concatenate all parts
-    const aiffFile = Buffer.concat([formHeader, commChunk, ssndChunk, ssndData]);
-    await fs.writeFile(testSampleFiles.aiff, aiffFile);
-
-    // Minimal valid FLAC header: "fLaC" + STREAMINFO metadata block (34 bytes)
-    const flacHeader = Buffer.from("fLaC", "ascii");
-    // STREAMINFO block: [isLast(1b)=1][type(7b)=0][length(24b)=34]
-    const streamInfoBlockHeader = Buffer.from([0x80, 0x00, 0x00, 0x22]); // 0x80 = last-metadata-block + type=0, 0x22 = 34 bytes
-    // STREAMINFO block body (34 bytes): use plausible but arbitrary values
-    // min/max block size (2+2), min/max frame size (3+3), sample rate+channels+bits+samples (8), MD5 (16)
-    const streamInfoBody = Buffer.concat([
-      Buffer.from([0x00, 0x10]), // min block size = 16
-      Buffer.from([0x01, 0x00]), // max block size = 256
-      Buffer.from([0x00, 0x00, 0x02]), // min frame size = 512
-      Buffer.from([0x00, 0x00, 0x10]), // max frame size = 4096
-      Buffer.from([0x00, 0xac, 0x44, 0x02, 0x00, 0x00, 0x00, 0x00]), // sample rate=44100, 2ch, 16bit, 0 samples
-      Buffer.alloc(16, 0), // MD5 = all zeros
+    // Add minimal format headers to distinguish file types
+    const wavFile = Buffer.concat([
+      Buffer.from("RIFF", "ascii"),
+      Buffer.from([0x00, 0x04, 0x00, 0x00]), // size placeholder
+      Buffer.from("WAVE", "ascii"),
+      testFileContent
     ]);
-    const flacData = Buffer.alloc(2048, 0);
-    await fs.writeFile(
-      testSampleFiles.flac,
-      Buffer.concat([flacHeader, streamInfoBlockHeader, streamInfoBody, flacData])
-    );
+    
+    const aiffFile = Buffer.concat([
+      Buffer.from("FORM", "ascii"),
+      Buffer.from([0x00, 0x04, 0x00, 0x00]), // size placeholder  
+      Buffer.from("AIFF", "ascii"),
+      testFileContent
+    ]);
+    
+    const flacFile = Buffer.concat([
+      Buffer.from("fLaC", "ascii"),
+      testFileContent
+    ]);
+
+    await fs.writeFile(testSampleFiles.wav, wavFile);
+    await fs.writeFile(testSampleFiles.aiff, aiffFile);
+    await fs.writeFile(testSampleFiles.flac, flacFile);
 
     console.log(`[E2E Sync Test] Created test sample files:`);
     console.log(`  WAV: ${testSampleFiles.wav}`);

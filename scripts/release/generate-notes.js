@@ -37,8 +37,8 @@ function loadTemplate(templateName) {
  * Get platform-specific platform identifier for artifacts
  */
 function getPlatformIdentifier() {
-  // This will be used in artifact naming
-  return process.platform === "darwin" ? process.arch : "x64";
+  // Return the actual architecture for all platforms
+  return process.arch;
 }
 
 /**

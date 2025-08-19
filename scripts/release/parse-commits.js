@@ -7,6 +7,9 @@
 
 import { getCommitsSinceTag, getLatestTag } from "./utils/git.js";
 
+// Constants
+const SHORT_HASH_LENGTH = 7;
+
 /**
  * Parse conventional commit format
  * Returns { type, scope, subject, breaking, body, footer }
@@ -82,7 +85,7 @@ function categorizeCommits(commits) {
     contributors.add(commit.authorName);
 
     const entry = {
-      hash: commit.hash.substring(0, 7),
+      hash: commit.hash.substring(0, SHORT_HASH_LENGTH),
       subject: parsed.subject,
       author: commit.authorName,
       date: commit.date,

@@ -159,7 +159,10 @@ function isRemoteUpToDate() {
 
     // Check if local and remote are in sync
     const localCommit = execGit("rev-parse HEAD", { silent: true });
-    const remoteCommit = execGit("rev-parse origin/main", { silent: true });
+    const defaultBranch = getDefaultBranch();
+    const remoteCommit = execGit(`rev-parse origin/${defaultBranch}`, {
+      silent: true,
+    });
 
     return localCommit === remoteCommit;
   } catch (error) {
@@ -208,6 +211,54 @@ function getRemoteUrl() {
   }
 }
 
+/**
+ * Get the default branch name from remote
+ */
+function getDefaultBranch() {
+  try {
+    // Try to get the default branch from remote
+    const result = execGit("symbolic-ref refs/remotes/origin/HEAD", {
+      silent: true,
+    });
+    return result.replace("refs/remotes/origin/", "");
+  } catch (_error) {
+    // Fallback to main if we can't detect
+    return "main";
+  }
+}
+
+/**
+ * Derive GitHub repository URL from git remote
+ */
+function getGitHubRepoUrl() {
+  try {
+    const remoteUrl = getRemoteUrl();
+    if (!remoteUrl) return null;
+
+    // Convert SSH or HTTPS git URL to GitHub web URL
+    // SSH: git@github.com:user/repo.git -> https://github.com/user/repo
+    // HTTPS: https://github.com/user/repo.git -> https://github.com/user/repo
+    const sshMatch = remoteUrl.match(/git@github\.com:(.+?)\.git$/);
+    if (sshMatch) {
+      return `https://github.com/${sshMatch[1]}`;
+    }
+
+    const httpsMatch = remoteUrl.match(/https:\/\/github\.com\/(.+?)\.git$/);
+    if (httpsMatch) {
+      return `https://github.com/${httpsMatch[1]}`;
+    }
+
+    // If it already looks like a GitHub web URL, return as-is
+    if (remoteUrl.startsWith("https://github.com/")) {
+      return remoteUrl.replace(/\.git$/, "");
+    }
+
+    return null;
+  } catch (_error) {
+    return null;
+  }
+}
+
 export {
   execGit,
   getCurrentBranch,
@@ -224,4 +275,6 @@ export {
   getTagCommit,
   hasUnpushedCommits,
   getRemoteUrl,
+  getDefaultBranch,
+  getGitHubRepoUrl,
 };

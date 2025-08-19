@@ -29,6 +29,8 @@ import {
   createTag,
   pushTags,
   isRemoteUpToDate,
+  getDefaultBranch,
+  getGitHubRepoUrl,
 } from "./utils/git.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -184,8 +186,11 @@ async function performPreReleaseChecks() {
   try {
     // Check git status
     const branch = getCurrentBranch();
-    if (branch !== "main") {
-      throw new Error(`Must be on main branch (currently on: ${branch})`);
+    const defaultBranch = getDefaultBranch();
+    if (branch !== defaultBranch) {
+      throw new Error(
+        `Must be on ${defaultBranch} branch (currently on: ${branch})`,
+      );
     }
 
     if (!isWorkingDirectoryClean()) {
@@ -244,11 +249,12 @@ async function executeRelease(version, dryRun = false) {
       console.log(
         chalk.green(`   🚀 GitHub Actions will build and publish the release`),
       );
-      console.log(
-        chalk.green(
-          `   🔗 Monitor progress: https://github.com/peteb4ker/romper/actions`,
-        ),
-      );
+      const githubUrl = getGitHubRepoUrl();
+      if (githubUrl) {
+        console.log(
+          chalk.green(`   🔗 Monitor progress: ${githubUrl}/actions`),
+        );
+      }
     } else {
       spinner.succeed("✅ Dry run completed - no changes made");
 

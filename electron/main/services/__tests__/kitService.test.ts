@@ -50,7 +50,7 @@ describe("KitService", () => {
           modified_since_sync: false,
           name: "A5",
           step_pattern: null,
-        }),
+        })
       );
     });
 
@@ -106,7 +106,7 @@ describe("KitService", () => {
         expect.objectContaining({
           bank_letter: "K",
           name: "K7",
-        }),
+        })
       );
     });
   });
@@ -147,7 +147,7 @@ describe("KitService", () => {
           modified_since_sync: false, // Reset for new kit
           name: "B2",
           step_pattern: "1010101010101010", // Copied from source
-        }),
+        })
       );
     });
 
@@ -212,7 +212,7 @@ describe("KitService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
-        "Failed to duplicate kit: Database connection failed",
+        "Failed to duplicate kit: Database connection failed"
       );
     });
   });

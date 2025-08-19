@@ -8,7 +8,7 @@ import { settingsService } from "./services/settingsService.js";
 
 export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
   ipcMain.handle("read-settings", () =>
-    settingsService.readSettings(inMemorySettings),
+    settingsService.readSettings(inMemorySettings)
   );
 
   ipcMain.handle("write-settings", (_event, key: string, value: any) => {
@@ -21,7 +21,7 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
 
     const result = localStoreService.getLocalStoreStatus(
       inMemorySettings.localStorePath,
-      process.env.ROMPER_LOCAL_PATH,
+      process.env.ROMPER_LOCAL_PATH
     );
 
     console.log("[Main] Returning local store status:", result);
@@ -83,10 +83,10 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
       if (!result.success) {
         throw new Error(result.error || "Failed to copy kit");
       }
-    },
+    }
   );
   ipcMain.handle("list-files-in-root", async (_event, localStorePath: string) =>
-    localStoreService.listFilesInRoot(localStorePath),
+    localStoreService.listFilesInRoot(localStorePath)
   );
   // Secure method - get audio buffer by sample identifier
   ipcMain.handle(
@@ -95,13 +95,13 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
       _event,
       kitName: string,
       voiceNumber: number,
-      slotNumber: number,
+      slotNumber: number
     ) => {
       const result = sampleService.getSampleAudioBuffer(
         inMemorySettings,
         kitName,
         voiceNumber,
-        slotNumber,
+        slotNumber
       );
 
       if (!result.success) {
@@ -109,7 +109,7 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
       }
 
       return result.data;
-    },
+    }
   );
   ipcMain.handle("read-file", async (_event, filePath: string) => {
     return localStoreService.readFile(filePath);
@@ -151,7 +151,7 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
           destDir,
           (progress) => {
             event.sender.send("archive-progress", progress);
-          },
+          }
         );
 
         if (!result.success) {
@@ -164,7 +164,7 @@ export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
         event.sender.send("archive-error", { message });
         return { error: message, success: false };
       }
-    },
+    }
   );
   ipcMain.handle("ensure-dir", async (_event, dir: string) => {
     return archiveService.ensureDirectory(dir);

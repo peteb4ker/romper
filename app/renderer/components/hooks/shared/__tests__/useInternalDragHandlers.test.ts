@@ -33,7 +33,7 @@ describe("useInternalDragHandlers", () => {
   describe("initialization", () => {
     it("initializes with null draggedSample", () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       expect(result.current.draggedSample).toBeNull();
@@ -41,7 +41,7 @@ describe("useInternalDragHandlers", () => {
 
     it("returns all expected functions", () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       expect(typeof result.current.getSampleDragHandlers).toBe("function");
@@ -56,7 +56,7 @@ describe("useInternalDragHandlers", () => {
   describe("handleSampleDragStart", () => {
     it("does nothing when not editable", () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers({ ...defaultProps, isEditable: false }),
+        useInternalDragHandlers({ ...defaultProps, isEditable: false })
       );
 
       const mockEvent = {
@@ -74,7 +74,7 @@ describe("useInternalDragHandlers", () => {
 
     it("sets up drag when editable", () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       const mockEvent = {
@@ -96,7 +96,7 @@ describe("useInternalDragHandlers", () => {
       });
       expect(mockEvent.dataTransfer.setData).toHaveBeenCalledWith(
         "application/x-romper-sample",
-        "true",
+        "true"
       );
       expect(mockEvent.dataTransfer.effectAllowed).toBe("move");
     });
@@ -105,7 +105,7 @@ describe("useInternalDragHandlers", () => {
   describe("handleSampleDragEnd", () => {
     it("clears dragged sample", () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // First start a drag
@@ -130,7 +130,7 @@ describe("useInternalDragHandlers", () => {
   describe("handleSampleDragOver", () => {
     it("does nothing when not editable", () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers({ ...defaultProps, isEditable: false }),
+        useInternalDragHandlers({ ...defaultProps, isEditable: false })
       );
 
       const mockEvent = {
@@ -149,7 +149,7 @@ describe("useInternalDragHandlers", () => {
 
     it("does nothing when no dragged sample", () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       const mockEvent = {
@@ -168,7 +168,7 @@ describe("useInternalDragHandlers", () => {
 
     it("prevents default for valid internal drag", () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag first
@@ -199,7 +199,7 @@ describe("useInternalDragHandlers", () => {
 
     it("sets dropEffect to none for same slot", () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag from slot 2
@@ -229,7 +229,7 @@ describe("useInternalDragHandlers", () => {
 
     it("ignores non-internal drags", () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag first
@@ -259,7 +259,7 @@ describe("useInternalDragHandlers", () => {
   describe("handleSampleDragLeave", () => {
     it("executes without errors", () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       expect(() => result.current.handleSampleDragLeave()).not.toThrow();
@@ -269,7 +269,7 @@ describe("useInternalDragHandlers", () => {
   describe("handleSampleDrop", () => {
     it("does nothing when not editable", async () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers({ ...defaultProps, isEditable: false }),
+        useInternalDragHandlers({ ...defaultProps, isEditable: false })
       );
 
       const mockEvent = {
@@ -287,7 +287,7 @@ describe("useInternalDragHandlers", () => {
 
     it("does nothing when no dragged sample", async () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       const mockEvent = {
@@ -305,7 +305,7 @@ describe("useInternalDragHandlers", () => {
 
     it("does nothing when no onSampleMove callback", async () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers({ ...defaultProps, onSampleMove: undefined }),
+        useInternalDragHandlers({ ...defaultProps, onSampleMove: undefined })
       );
 
       // Start drag first
@@ -332,7 +332,7 @@ describe("useInternalDragHandlers", () => {
 
     it("ignores non-internal drops", async () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag first
@@ -359,7 +359,7 @@ describe("useInternalDragHandlers", () => {
 
     it("ignores drop on same slot", async () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag from slot 2
@@ -386,7 +386,7 @@ describe("useInternalDragHandlers", () => {
 
     it("calls onSampleMove with insert mode for empty slot", async () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag from slot 0
@@ -416,13 +416,13 @@ describe("useInternalDragHandlers", () => {
         1, // fromVoice
         0, // fromSlot
         1, // toVoice
-        2, // toSlot
+        2 // toSlot
       );
     });
 
     it("calls onSampleMove with insert mode for same-voice occupied slot", async () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag from slot 0
@@ -452,7 +452,7 @@ describe("useInternalDragHandlers", () => {
         1, // fromVoice
         0, // fromSlot
         1, // toVoice
-        1, // toSlot
+        1 // toSlot
       );
     });
 
@@ -462,7 +462,7 @@ describe("useInternalDragHandlers", () => {
 
     it("clears dragged sample after successful drop", async () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag
@@ -494,7 +494,7 @@ describe("useInternalDragHandlers", () => {
 
     it("clears dragged sample after failed drop", async () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag
@@ -522,14 +522,14 @@ describe("useInternalDragHandlers", () => {
 
       expect(console.error).toHaveBeenCalledWith(
         "Failed to move sample:",
-        "Move failed",
+        "Move failed"
       );
       expect(result.current.draggedSample).toBeNull();
     });
 
     it("calls onSampleMove correctly", async () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag from slot 0
@@ -562,7 +562,7 @@ describe("useInternalDragHandlers", () => {
   describe("getSampleDragHandlers", () => {
     it("returns empty object when not editable", () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers({ ...defaultProps, isEditable: false }),
+        useInternalDragHandlers({ ...defaultProps, isEditable: false })
       );
 
       const handlers = result.current.getSampleDragHandlers(0, "sample.wav");
@@ -572,7 +572,7 @@ describe("useInternalDragHandlers", () => {
 
     it("returns all drag handlers when editable", () => {
       const { result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       const handlers = result.current.getSampleDragHandlers(0, "sample.wav");
@@ -592,7 +592,7 @@ describe("useInternalDragHandlers", () => {
 
     it("returned handlers work correctly", () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       const handlers = result.current.getSampleDragHandlers(1, "test.wav");
@@ -623,7 +623,7 @@ describe("useInternalDragHandlers", () => {
   describe("visual feedback", () => {
     it("sets visual feedback state on drag over", () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag first
@@ -661,7 +661,7 @@ describe("useInternalDragHandlers", () => {
 
     it("clears visual feedback state on drag leave", () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag and set up visual state
@@ -697,7 +697,7 @@ describe("useInternalDragHandlers", () => {
 
     it("clears visual feedback state on drag end", () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers(defaultProps),
+        useInternalDragHandlers(defaultProps)
       );
 
       // Start drag and set up visual state
@@ -736,10 +736,10 @@ describe("useInternalDragHandlers", () => {
   describe("edge cases", () => {
     it("handles different voices correctly", () => {
       const { rerender: rerender1, result: result1 } = renderHook(() =>
-        useInternalDragHandlers({ ...defaultProps, voice: 1 }),
+        useInternalDragHandlers({ ...defaultProps, voice: 1 })
       );
       const { rerender: rerender2, result: result2 } = renderHook(() =>
-        useInternalDragHandlers({ ...defaultProps, voice: 3 }),
+        useInternalDragHandlers({ ...defaultProps, voice: 3 })
       );
 
       const mockEvent = {
@@ -760,7 +760,7 @@ describe("useInternalDragHandlers", () => {
 
     it("handles empty samples array", async () => {
       const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers({ ...defaultProps, samples: [] }),
+        useInternalDragHandlers({ ...defaultProps, samples: [] })
       );
 
       const startEvent = {
@@ -795,7 +795,7 @@ describe("useInternalDragHandlers", () => {
         useInternalDragHandlers({
           ...defaultProps,
           samples: ["sample1.wav", undefined as any, "sample3.wav"],
-        }),
+        })
       );
 
       const startEvent = {

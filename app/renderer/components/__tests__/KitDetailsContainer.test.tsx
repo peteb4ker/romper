@@ -95,7 +95,7 @@ describe("KitDetailsContainer", () => {
       expect(defaultProps.onMessage).toHaveBeenCalledWith(
         "Test message",
         "info",
-        5000,
+        5000
       );
     });
 

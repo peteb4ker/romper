@@ -80,7 +80,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Default samples to avoid undefined errors
   const samples = React.useMemo(
     () => props.samples || { 1: [], 2: [], 3: [], 4: [] },
-    [props.samples],
+    [props.samples]
   );
 
   // Handler for kit rescanning (database-first approach)
@@ -109,7 +109,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
       if (result.success) {
         toast.success(
           `Kit rescanned successfully! Found ${result.data?.scannedSamples || 0} samples.`,
-          { duration: 5000, id: toastId },
+          { duration: 5000, id: toastId }
         );
 
         // Trigger sample reload in parent component
@@ -132,7 +132,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
       ErrorPatterns.kitOperation(error, "rescan");
       toast.error(
         `Kit scan error: ${error instanceof Error ? error.message : String(error)}`,
-        { duration: 8000, id: toastId },
+        { duration: 8000, id: toastId }
       );
     }
   }, [kitName, onRequestSamplesReload, reloadKit]);
@@ -198,7 +198,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     return () => {
       window.removeEventListener(
         "SampleWaveformError",
-        handler as EventListener,
+        handler as EventListener
       );
     };
   }, [onMessage]);

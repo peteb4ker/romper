@@ -74,7 +74,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
           // Log the error for debugging but don't show user-facing error for missing samples
           console.warn(
             `[SampleWaveform] Sample not found: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}:`,
-            err,
+            err
           );
           setError(null); // Don't show error to user for missing samples
         }

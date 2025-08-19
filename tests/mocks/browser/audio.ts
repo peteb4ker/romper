@@ -4,7 +4,7 @@ import { vi } from "vitest";
  * Mock Web Audio API for tests that need audio context
  */
 export const createAudioContextMock = (
-  overrides: Record<string, any> = {},
+  overrides: Record<string, any> = {}
 ) => ({
   close: vi.fn().mockResolvedValue(undefined),
   createAnalyser: vi.fn().mockReturnValue({
@@ -64,7 +64,7 @@ export const createAudioContextMock = (
  * Mock HTMLAudioElement for basic audio playback tests
  */
 export const createHTMLAudioElementMock = (
-  overrides: Record<string, any> = {},
+  overrides: Record<string, any> = {}
 ) => ({
   // Event handling
   addEventListener: vi.fn(),

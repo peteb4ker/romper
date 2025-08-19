@@ -52,7 +52,7 @@ export function useKitViewMenuHandlers({
     openValidationDialogAsync().catch((error) => {
       console.error(
         "[useKitViewMenuHandlers] Error opening validation dialog:",
-        error,
+        error
       );
       onMessage("Failed to open validation dialog", "error");
     });
@@ -83,7 +83,7 @@ export function useKitViewMenuHandlers({
     },
     onChangeLocalStoreDirectory: () => {
       console.log(
-        "[useKitViewMenuHandlers] Menu change local store directory triggered",
+        "[useKitViewMenuHandlers] Menu change local store directory triggered"
       );
       openChangeDirectory();
     },

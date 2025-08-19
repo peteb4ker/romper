@@ -70,7 +70,7 @@ describe("useExternalDragHandlers", () => {
   describe("initialization", () => {
     it("initializes with null state", () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       expect(result.current.dragOverSlot).toBeNull();
@@ -79,7 +79,7 @@ describe("useExternalDragHandlers", () => {
 
     it("returns all expected functions", () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       expect(typeof result.current.handleDragLeave).toBe("function");
@@ -91,7 +91,7 @@ describe("useExternalDragHandlers", () => {
   describe("handleDragOver", () => {
     it("does nothing when not editable", () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, isEditable: false }),
+        useExternalDragHandlers({ ...defaultProps, isEditable: false })
       );
 
       const mockEvent = {
@@ -110,7 +110,7 @@ describe("useExternalDragHandlers", () => {
 
     it("prevents default and sets state for file drag", () => {
       const { rerender, result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockEvent = {
@@ -132,7 +132,7 @@ describe("useExternalDragHandlers", () => {
 
     it("calls onStereoDragOver for single file", () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockEvent = {
@@ -150,7 +150,7 @@ describe("useExternalDragHandlers", () => {
 
     it("calls onStereoDragOver for stereo files", () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockEvent = {
@@ -168,7 +168,7 @@ describe("useExternalDragHandlers", () => {
 
     it("ignores non-file drags", () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       // Mock items that's not an array to simulate browser behavior
@@ -200,7 +200,7 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers({
           ...defaultProps,
           onStereoDragOver: undefined,
-        }),
+        })
       );
 
       const mockEvent = {
@@ -220,7 +220,7 @@ describe("useExternalDragHandlers", () => {
 
     it("handles Array.from on dataTransfer.items", () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       // Mock items that's not a real array
@@ -254,7 +254,7 @@ describe("useExternalDragHandlers", () => {
   describe("handleDragLeave", () => {
     it("clears drag state", () => {
       const { rerender, result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       // Set up some drag state first using createMockEvent for consistency
@@ -275,7 +275,7 @@ describe("useExternalDragHandlers", () => {
 
     it("calls onStereoDragLeave", () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       result.current.handleDragLeave();
@@ -288,7 +288,7 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers({
           ...defaultProps,
           onStereoDragLeave: undefined,
-        }),
+        })
       );
 
       expect(() => {
@@ -300,7 +300,7 @@ describe("useExternalDragHandlers", () => {
   describe("handleDrop", () => {
     beforeEach(() => {
       mockFileValidation.getFilePathFromDrop.mockResolvedValue(
-        "/path/to/file.wav",
+        "/path/to/file.wav"
       );
       mockFileValidation.validateDroppedFile.mockResolvedValue({ valid: true });
       mockSampleProcessing.getCurrentKitSamples.mockResolvedValue([]);
@@ -310,7 +310,7 @@ describe("useExternalDragHandlers", () => {
 
     it("does nothing when not editable", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, isEditable: false }),
+        useExternalDragHandlers({ ...defaultProps, isEditable: false })
       );
 
       const mockEvent = createMockEvent([createMockFile("test.wav")]);
@@ -323,7 +323,7 @@ describe("useExternalDragHandlers", () => {
 
     it("clears drag state on drop", async () => {
       const { rerender, result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       // Set up drag state using createMockEvent for consistency
@@ -343,7 +343,7 @@ describe("useExternalDragHandlers", () => {
 
     it("calls onStereoDragLeave on drop", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockEvent = createMockEvent([createMockFile("test.wav")]);
@@ -354,7 +354,7 @@ describe("useExternalDragHandlers", () => {
 
     it("does nothing with no files", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockEvent = createMockEvent([]);
@@ -365,7 +365,7 @@ describe("useExternalDragHandlers", () => {
 
     it("processes single file successfully", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockFile = createMockFile("test.wav");
@@ -374,28 +374,28 @@ describe("useExternalDragHandlers", () => {
       await result.current.handleDrop(mockEvent, 3);
 
       expect(mockFileValidation.getFilePathFromDrop).toHaveBeenCalledWith(
-        mockFile,
+        mockFile
       );
       expect(mockFileValidation.validateDroppedFile).toHaveBeenCalledWith(
-        "/path/to/file.wav",
+        "/path/to/file.wav"
       );
       expect(mockSampleProcessing.getCurrentKitSamples).toHaveBeenCalled();
       expect(mockSampleProcessing.isDuplicateSample).toHaveBeenCalledWith(
         [],
-        "/path/to/file.wav",
+        "/path/to/file.wav"
       );
       expect(mockSampleProcessing.processAssignment).toHaveBeenCalledWith(
         "/path/to/file.wav",
         { valid: true },
         [],
         { forceMonoDrop: false, forceStereoDrop: false },
-        3,
+        3
       );
     });
 
     it("processes multiple files", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockFiles = [
@@ -416,7 +416,7 @@ describe("useExternalDragHandlers", () => {
 
     it("detects modifier keys", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockEvent = {
@@ -432,13 +432,13 @@ describe("useExternalDragHandlers", () => {
         { valid: true },
         [],
         { forceMonoDrop: true, forceStereoDrop: true },
-        1,
+        1
       );
     });
 
     it("skips duplicate files", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       mockSampleProcessing.isDuplicateSample.mockResolvedValue(true);
@@ -451,7 +451,7 @@ describe("useExternalDragHandlers", () => {
 
     it("skips files with invalid format", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       mockFileValidation.validateDroppedFile.mockResolvedValue(null);
@@ -464,7 +464,7 @@ describe("useExternalDragHandlers", () => {
 
     it("handles getCurrentKitSamples failure", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       mockSampleProcessing.getCurrentKitSamples.mockResolvedValue(null);
@@ -477,11 +477,11 @@ describe("useExternalDragHandlers", () => {
 
     it("handles errors gracefully", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       mockFileValidation.getFilePathFromDrop.mockRejectedValue(
-        new Error("File error"),
+        new Error("File error")
       );
 
       const mockEvent = createMockEvent([createMockFile("error.wav")]);
@@ -489,13 +489,13 @@ describe("useExternalDragHandlers", () => {
 
       expect(console.error).toHaveBeenCalledWith(
         "Error handling drop:",
-        expect.any(Error),
+        expect.any(Error)
       );
     });
 
     it("logs dropped file path", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockEvent = createMockEvent([createMockFile("logged.wav")]);
@@ -503,7 +503,7 @@ describe("useExternalDragHandlers", () => {
 
       expect(console.log).toHaveBeenCalledWith(
         "Processing dropped file:",
-        "/path/to/file.wav",
+        "/path/to/file.wav"
       );
     });
 
@@ -512,7 +512,7 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers({
           ...defaultProps,
           onStereoDragLeave: undefined,
-        }),
+        })
       );
 
       const mockEvent = createMockEvent([createMockFile("test.wav")]);
@@ -524,7 +524,7 @@ describe("useExternalDragHandlers", () => {
 
     it("handles Array.from on dataTransfer.files", async () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockFiles = {
@@ -559,7 +559,7 @@ describe("useExternalDragHandlers", () => {
   describe("integration scenarios", () => {
     it("handles complete drag and drop workflow", async () => {
       const { rerender, result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       // Start drag over using createMockEvent for consistency
@@ -591,7 +591,7 @@ describe("useExternalDragHandlers", () => {
 
     it("handles drag over then drag leave", () => {
       const { rerender, result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       // Start drag over with two files for stereo test
@@ -618,7 +618,7 @@ describe("useExternalDragHandlers", () => {
   describe("edge cases", () => {
     it("handles mixed item kinds in drag over", () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockEvent = {
@@ -637,7 +637,7 @@ describe("useExternalDragHandlers", () => {
 
     it("handles empty items array in drag over", () => {
       const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
+        useExternalDragHandlers(defaultProps)
       );
 
       const mockEvent = {
@@ -656,10 +656,10 @@ describe("useExternalDragHandlers", () => {
 
     it("handles voice boundary values", () => {
       const { result: result0 } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, voice: 0 }),
+        useExternalDragHandlers({ ...defaultProps, voice: 0 })
       );
       const { result: result16 } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, voice: 16 }),
+        useExternalDragHandlers({ ...defaultProps, voice: 16 })
       );
 
       const mockEvent = {
@@ -695,7 +695,7 @@ describe("useExternalDragHandlers", () => {
     it("blocks external drops when voice has 12 samples", async () => {
       const fullSamples = Array(12).fill("sample.wav");
       const { result } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, samples: fullSamples }),
+        useExternalDragHandlers({ ...defaultProps, samples: fullSamples })
       );
 
       const mockEvent = createMockEvent([createMockFile("new.wav")]);
@@ -708,7 +708,7 @@ describe("useExternalDragHandlers", () => {
     it("allows external drops when voice has less than 12 samples", async () => {
       const partialSamples = Array(11).fill("sample.wav");
       const { result } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
+        useExternalDragHandlers({ ...defaultProps, samples: partialSamples })
       );
 
       const mockEvent = createMockEvent([createMockFile("new.wav")]);
@@ -721,7 +721,7 @@ describe("useExternalDragHandlers", () => {
     it("allows external drops when voice is empty", async () => {
       const emptySamples: string[] = [];
       const { result } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, samples: emptySamples }),
+        useExternalDragHandlers({ ...defaultProps, samples: emptySamples })
       );
 
       const mockEvent = createMockEvent([createMockFile("new.wav")]);
@@ -734,7 +734,7 @@ describe("useExternalDragHandlers", () => {
     it("shows blocked state during drag over full voice", () => {
       const fullSamples = Array(12).fill("sample.wav");
       const { rerender, result } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, samples: fullSamples }),
+        useExternalDragHandlers({ ...defaultProps, samples: fullSamples })
       );
 
       const mockEvent = {
@@ -755,7 +755,7 @@ describe("useExternalDragHandlers", () => {
     it("shows insert mode during drag over non-full voice", () => {
       const partialSamples = Array(5).fill("sample.wav");
       const { rerender, result } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
+        useExternalDragHandlers({ ...defaultProps, samples: partialSamples })
       );
 
       const mockEvent = {
@@ -776,7 +776,7 @@ describe("useExternalDragHandlers", () => {
     it("shows append mode when dropping at end of voice", () => {
       const partialSamples = Array(5).fill("sample.wav");
       const { rerender, result } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
+        useExternalDragHandlers({ ...defaultProps, samples: partialSamples })
       );
 
       const mockEvent = {
@@ -797,7 +797,7 @@ describe("useExternalDragHandlers", () => {
     it("handles multiple file drops respecting 12-sample limit", async () => {
       const partialSamples = Array(10).fill("sample.wav");
       const { result } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
+        useExternalDragHandlers({ ...defaultProps, samples: partialSamples })
       );
 
       const mockFiles = [

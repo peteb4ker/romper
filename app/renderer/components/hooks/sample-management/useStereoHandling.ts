@@ -44,7 +44,7 @@ export function useStereoHandling() {
       targetVoice: number,
       channels: number,
       allSamples: Array<{ filename: string; voice_number: number }>,
-      overrideSetting?: { forceMono?: boolean; forceStereo?: boolean },
+      overrideSetting?: { forceMono?: boolean; forceStereo?: boolean }
     ): StereoHandlingResult => {
       // Task 7.1.3: Check for per-sample override first
       let effectiveDefaultToMono = defaultToMonoSamples;
@@ -87,10 +87,10 @@ export function useStereoHandling() {
       // Task 7.2.3: Handle conflicts when target voices have existing samples
       // For stereo: check if voice N has samples AND if voice N+1 has samples (it needs to be empty)
       const targetVoiceSamples = allSamples.filter(
-        (s) => s.voice_number === targetVoice,
+        (s) => s.voice_number === targetVoice
       );
       const nextVoiceSamples = allSamples.filter(
-        (s) => s.voice_number === nextVoice,
+        (s) => s.voice_number === nextVoice
       );
 
       // Conflict if either voice has samples (voice N+1 must be empty for stereo)
@@ -130,7 +130,7 @@ export function useStereoHandling() {
         targetVoice,
       };
     },
-    [defaultToMonoSamples],
+    [defaultToMonoSamples]
   );
 
   /**
@@ -168,7 +168,7 @@ export function useStereoHandling() {
         resolve({ cancel: false, forceMono: true, replaceExisting: false });
       });
     },
-    [],
+    []
   );
 
   /**
@@ -183,8 +183,8 @@ export function useStereoHandling() {
         voice: number,
         slotNumber: number,
         filePath: string,
-        options?: { forceMono?: boolean; forceStereo?: boolean },
-      ) => Promise<void>,
+        options?: { forceMono?: boolean; forceStereo?: boolean }
+      ) => Promise<void>
     ): Promise<boolean> => {
       if (options.cancel) {
         return false;
@@ -226,7 +226,7 @@ export function useStereoHandling() {
         return false;
       }
     },
-    [],
+    []
   );
 
   return {

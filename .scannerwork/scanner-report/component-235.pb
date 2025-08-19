@@ -1,1 +1,0 @@
-ë (2tsX¢hr6app/renderer/components/__tests__/KitGridItem.test.tsx

@@ -84,7 +84,7 @@ describe("useVoicePanelRendering", () => {
   it("handles empty samples array", () => {
     const propsWithEmptySamples = { ...defaultProps, samples: [] };
     const { result } = renderHook(() =>
-      useVoicePanelRendering(propsWithEmptySamples),
+      useVoicePanelRendering(propsWithEmptySamples)
     );
     const slots = result.current.renderSampleSlots();
     expect(Array.isArray(slots)).toBe(true);
@@ -93,7 +93,7 @@ describe("useVoicePanelRendering", () => {
   it("works in non-editable mode", () => {
     const nonEditableProps = { ...defaultProps, isEditable: false };
     const { result } = renderHook(() =>
-      useVoicePanelRendering(nonEditableProps),
+      useVoicePanelRendering(nonEditableProps)
     );
     expect(result.current.renderSampleSlots).toBeDefined();
   });

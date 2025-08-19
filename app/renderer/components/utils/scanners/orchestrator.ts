@@ -16,7 +16,7 @@ export class ScannerOrchestrator {
 
   constructor(
     progressCallback?: ProgressCallback,
-    errorStrategy: ErrorHandlingStrategy = "continue",
+    errorStrategy: ErrorHandlingStrategy = "continue"
   ) {
     this.progressCallback = progressCallback;
     this.errorStrategy = errorStrategy;
@@ -41,7 +41,7 @@ export class ScannerOrchestrator {
       const shouldContinue = await this.executeOperation(
         operation,
         results,
-        errors,
+        errors
       );
 
       if (results[operation.name]) {
@@ -75,7 +75,7 @@ export class ScannerOrchestrator {
   private async executeOperation(
     operation: ScanOperation,
     results: Record<string, any>,
-    errors: Array<{ error: string; operation: string }>,
+    errors: Array<{ error: string; operation: string }>
   ): Promise<boolean> {
     try {
       const result = await operation.scanner(operation.input);
@@ -104,7 +104,7 @@ export class ScannerOrchestrator {
   private handleOperationError(
     operation: ScanOperation,
     errorMessage: string | undefined,
-    errors: Array<{ error: string; operation: string }>,
+    errors: Array<{ error: string; operation: string }>
   ): boolean {
     const message = errorMessage || "Unknown error";
     errors.push({ error: message, operation: operation.name });

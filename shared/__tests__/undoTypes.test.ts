@@ -163,7 +163,7 @@ describe("undoTypes", () => {
         const description = getActionDescription(action);
 
         expect(description).toBe(
-          "Undo move sample from voice 1, slot 1 to voice 2, slot 4",
+          "Undo move sample from voice 1, slot 1 to voice 2, slot 4"
         );
       });
 
@@ -187,7 +187,7 @@ describe("undoTypes", () => {
         const description = getActionDescription(action);
 
         expect(description).toBe(
-          "Undo move sample from voice 3, slot 8 to voice 1, slot 3",
+          "Undo move sample from voice 3, slot 8 to voice 1, slot 3"
         );
       });
     });
@@ -215,7 +215,7 @@ describe("undoTypes", () => {
         const description = getActionDescription(action);
 
         expect(description).toBe(
-          "Undo move sample from A0 voice 1, slot 1 to B5 voice 3, slot 3",
+          "Undo move sample from A0 voice 1, slot 1 to B5 voice 3, slot 3"
         );
       });
 
@@ -241,7 +241,7 @@ describe("undoTypes", () => {
         const description = getActionDescription(action);
 
         expect(description).toBe(
-          "Undo move sample from DrumKit voice 2, slot 6 to DrumKit voice 4, slot 1",
+          "Undo move sample from DrumKit voice 2, slot 6 to DrumKit voice 4, slot 1"
         );
       });
     });
@@ -264,7 +264,7 @@ describe("undoTypes", () => {
         const description = getActionDescription(action);
 
         expect(description).toBe(
-          "Undo reindex samples in voice 2 after deleting slot 2",
+          "Undo reindex samples in voice 2 after deleting slot 2"
         );
       });
 
@@ -285,7 +285,7 @@ describe("undoTypes", () => {
         const description = getActionDescription(action);
 
         expect(description).toBe(
-          "Undo reindex samples in voice 4 after deleting slot 10",
+          "Undo reindex samples in voice 4 after deleting slot 10"
         );
       });
     });

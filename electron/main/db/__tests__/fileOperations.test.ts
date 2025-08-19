@@ -86,7 +86,7 @@ describe("fileOperations unit tests", () => {
 
       // Windows implementation should not throw
       await expect(
-        deleteDbFileWithRetry(testDbPath, 1),
+        deleteDbFileWithRetry(testDbPath, 1)
       ).resolves.toBeUndefined();
 
       Object.defineProperty(process, "platform", { value: originalPlatform });

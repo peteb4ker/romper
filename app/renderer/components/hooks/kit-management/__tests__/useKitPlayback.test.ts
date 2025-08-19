@@ -61,7 +61,7 @@ describe("useKitPlayback", () => {
     vi.mocked(window.electronAPI.onSamplePlaybackError).mockImplementation(
       (cb) => {
         errorHandler = cb;
-      },
+      }
     );
     const { result } = renderHook(() => useKitPlayback(mockSamples));
     act(() => {

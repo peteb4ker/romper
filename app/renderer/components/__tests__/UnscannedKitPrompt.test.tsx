@@ -22,7 +22,7 @@ describe("UnscannedKitPrompt", () => {
         kitName="A01"
         onDismiss={mockOnDismiss}
         onScan={mockOnScan}
-      />,
+      />
     );
 
     expect(screen.getByText(/Kit needs scanning/i)).toBeInTheDocument();
@@ -35,7 +35,7 @@ describe("UnscannedKitPrompt", () => {
         kitName="A01"
         onDismiss={mockOnDismiss}
         onScan={mockOnScan}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByTestId("unscanned-scan-button"));
@@ -48,7 +48,7 @@ describe("UnscannedKitPrompt", () => {
         kitName="A01"
         onDismiss={mockOnDismiss}
         onScan={mockOnScan}
-      />,
+      />
     );
 
     fireEvent.click(screen.getAllByTestId("unscanned-dismiss-button")[0]);

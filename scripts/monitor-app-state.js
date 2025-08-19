@@ -21,7 +21,7 @@ ws.on("open", () => {
     JSON.stringify({
       id: 1,
       method: "Runtime.enable",
-    }),
+    })
   );
 
   // Enable Console
@@ -29,7 +29,7 @@ ws.on("open", () => {
     JSON.stringify({
       id: 2,
       method: "Console.enable",
-    }),
+    })
   );
 
   // Evaluate to check migration path
@@ -57,7 +57,7 @@ ws.on("open", () => {
         `,
           returnByValue: true,
         },
-      }),
+      })
     );
   }, 1000);
 
@@ -81,7 +81,7 @@ ws.on("open", () => {
         `,
           returnByValue: true,
         },
-      }),
+      })
     );
   }, 2000);
 });
@@ -100,14 +100,14 @@ ws.on("message", (data) => {
   if (msg.id === 3 && msg.result) {
     console.log(
       "Migration path check:",
-      JSON.stringify(msg.result.result.value, null, 2),
+      JSON.stringify(msg.result.result.value, null, 2)
     );
   }
 
   if (msg.id === 4 && msg.result) {
     console.log(
       "Local store status:",
-      JSON.stringify(msg.result.result.value, null, 2),
+      JSON.stringify(msg.result.result.value, null, 2)
     );
   }
 });

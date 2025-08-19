@@ -15,7 +15,7 @@ vi.mock("react-icons/fi", () => ({
 // Mock the shared utility
 vi.mock("@romper/shared/kitUtilsShared", () => ({
   toCapitalCase: vi.fn((str: string) =>
-    str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : str,
+    str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : str
   ),
 }));
 
@@ -80,7 +80,7 @@ describe("useVoicePanelUI", () => {
 
     it("does not render edit button when not editable", () => {
       const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, isEditable: false }),
+        useVoicePanelUI({ ...defaultProps, isEditable: false })
       );
 
       const { queryByTestId } = render(result.current.renderVoiceName());
@@ -97,11 +97,11 @@ describe("useVoicePanelUI", () => {
             editing: true,
             editValue: "New Name",
           },
-        }),
+        })
       );
 
       const { getByRole, getByTestId } = render(
-        result.current.renderVoiceName(),
+        result.current.renderVoiceName()
       );
 
       const input = getByRole("textbox");
@@ -113,7 +113,7 @@ describe("useVoicePanelUI", () => {
 
     it("renders 'No voice name set' when voice name is null", () => {
       const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, voiceName: null }),
+        useVoicePanelUI({ ...defaultProps, voiceName: null })
       );
 
       const { container } = render(result.current.renderVoiceName());
@@ -123,7 +123,7 @@ describe("useVoicePanelUI", () => {
 
     it("renders 'No voice name set' when voice name is empty string", () => {
       const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, voiceName: "" }),
+        useVoicePanelUI({ ...defaultProps, voiceName: "" })
       );
 
       const { container } = render(result.current.renderVoiceName());
@@ -135,7 +135,7 @@ describe("useVoicePanelUI", () => {
       const { result } = renderHook(() => useVoicePanelUI(defaultProps));
 
       const { getByTestId } = render(
-        result.current.renderVoiceName("custom-voice-name"),
+        result.current.renderVoiceName("custom-voice-name")
       );
 
       expect(getByTestId("custom-voice-name")).toBeInTheDocument();
@@ -143,7 +143,7 @@ describe("useVoicePanelUI", () => {
 
     it("uses default data-testid when not provided", () => {
       const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, voice: 5 }),
+        useVoicePanelUI({ ...defaultProps, voice: 5 })
       );
 
       const { getByTestId } = render(result.current.renderVoiceName());
@@ -162,7 +162,7 @@ describe("useVoicePanelUI", () => {
             editValue: "Current",
             setEditValue: mockSetEditValue,
           },
-        }),
+        })
       );
 
       const { getByRole } = render(result.current.renderVoiceName());
@@ -190,7 +190,7 @@ describe("useVoicePanelUI", () => {
             editing: true,
             handleKeyDown: mockHandleKeyDown,
           },
-        }),
+        })
       );
 
       const { getByRole } = render(result.current.renderVoiceName());
@@ -211,7 +211,7 @@ describe("useVoicePanelUI", () => {
             editing: true,
             handleSave: mockHandleSave,
           },
-        }),
+        })
       );
 
       const { getByTitle } = render(result.current.renderVoiceName());
@@ -232,7 +232,7 @@ describe("useVoicePanelUI", () => {
             editing: true,
             handleCancel: mockHandleCancel,
           },
-        }),
+        })
       );
 
       const { getByTitle } = render(result.current.renderVoiceName());
@@ -252,7 +252,7 @@ describe("useVoicePanelUI", () => {
             ...mockVoiceNameEditorHook,
             startEditing: mockStartEditing,
           },
-        }),
+        })
       );
 
       const { getByTitle } = render(result.current.renderVoiceName());
@@ -269,7 +269,7 @@ describe("useVoicePanelUI", () => {
       const { container } = render(result.current.renderVoiceName());
 
       const voiceNameSpan = container.querySelector(
-        '[data-testid="voice-name-2"]',
+        '[data-testid="voice-name-2"]'
       );
       expect(voiceNameSpan).toHaveClass(
         "ml-1",
@@ -282,19 +282,19 @@ describe("useVoicePanelUI", () => {
         "dark:text-blue-100",
         "text-sm",
         "font-semibold",
-        "tracking-wide",
+        "tracking-wide"
       );
     });
 
     it("applies correct CSS classes for no voice name", () => {
       const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, voiceName: null }),
+        useVoicePanelUI({ ...defaultProps, voiceName: null })
       );
 
       const { container } = render(result.current.renderVoiceName());
 
       const voiceNameSpan = container.querySelector(
-        '[data-testid="voice-name-2"]',
+        '[data-testid="voice-name-2"]'
       );
       expect(voiceNameSpan).toHaveClass(
         "ml-1",
@@ -308,7 +308,7 @@ describe("useVoicePanelUI", () => {
         "text-sm",
         "font-semibold",
         "tracking-wide",
-        "italic",
+        "italic"
       );
     });
   });
@@ -317,7 +317,7 @@ describe("useVoicePanelUI", () => {
     it("memoizes renderVoiceName based on dependencies", () => {
       const { rerender, result } = renderHook(
         (props) => useVoicePanelUI(props),
-        { initialProps: defaultProps },
+        { initialProps: defaultProps }
       );
 
       const firstRender = result.current.renderVoiceName;
@@ -334,7 +334,7 @@ describe("useVoicePanelUI", () => {
     it("recreates renderVoiceName when dependencies change", () => {
       const { rerender, result } = renderHook(
         (props) => useVoicePanelUI(props),
-        { initialProps: defaultProps },
+        { initialProps: defaultProps }
       );
 
       const firstRender = result.current.renderVoiceName;
@@ -352,7 +352,7 @@ describe("useVoicePanelUI", () => {
   describe("edge cases", () => {
     it("handles voice number 0", () => {
       const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, voice: 0 }),
+        useVoicePanelUI({ ...defaultProps, voice: 0 })
       );
 
       const { container } = render(result.current.renderVoiceName());
@@ -362,7 +362,7 @@ describe("useVoicePanelUI", () => {
 
     it("handles voice number 16", () => {
       const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, voice: 16 }),
+        useVoicePanelUI({ ...defaultProps, voice: 16 })
       );
 
       const { container } = render(result.current.renderVoiceName());
@@ -372,7 +372,7 @@ describe("useVoicePanelUI", () => {
 
     it("handles undefined voiceName", () => {
       const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, voiceName: undefined as any }),
+        useVoicePanelUI({ ...defaultProps, voiceName: undefined as any })
       );
 
       const { container } = render(result.current.renderVoiceName());
@@ -389,7 +389,7 @@ describe("useVoicePanelUI", () => {
             editing: true,
             editValue: "",
           },
-        }),
+        })
       );
 
       const { container } = render(result.current.renderVoiceName());
@@ -408,14 +408,14 @@ describe("useVoicePanelUI", () => {
             ...mockVoiceNameEditorHook,
             editing: false, // Make sure we're not in editing mode
           },
-        }),
+        })
       );
 
       render(result.current.renderVoiceName());
 
       // Should still render the whitespace (toCapitalCase would handle it)
       expect(vi.mocked(kitUtilsShared.toCapitalCase)).toHaveBeenCalledWith(
-        "   ",
+        "   "
       );
     });
   });

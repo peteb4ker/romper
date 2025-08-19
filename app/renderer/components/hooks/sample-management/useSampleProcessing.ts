@@ -10,12 +10,12 @@ export interface UseSampleProcessingOptions {
   onSampleAdd?: (
     voice: number,
     slotNumber: number,
-    filePath: string,
+    filePath: string
   ) => Promise<void>;
   onSampleReplace?: (
     voice: number,
     slotNumber: number,
-    filePath: string,
+    filePath: string
   ) => Promise<void>;
   samples: string[];
   voice: number;
@@ -57,10 +57,10 @@ export function useSampleProcessing({
   const isDuplicateSample = useCallback(
     async (allSamples: any[], filePath: string): Promise<boolean> => {
       const voiceSamples = allSamples.filter(
-        (s: any) => s.voice_number === voice,
+        (s: any) => s.voice_number === voice
       );
       const isDuplicate = voiceSamples.some(
-        (s: any) => s.source_path === filePath,
+        (s: any) => s.source_path === filePath
       );
 
       if (isDuplicate) {
@@ -72,7 +72,7 @@ export function useSampleProcessing({
 
       return isDuplicate;
     },
-    [voice],
+    [voice]
   );
 
   const calculateTargetSlot = useCallback(
@@ -91,7 +91,7 @@ export function useSampleProcessing({
 
       return targetSlot;
     },
-    [kitName, samples],
+    [kitName, samples]
   );
 
   const executeAssignment = useCallback(
@@ -99,7 +99,7 @@ export function useSampleProcessing({
       filePath: string,
       allSamples: any[],
       droppedSlotNumber: number,
-      options: { forceMono: boolean; replaceExisting: boolean },
+      options: { forceMono: boolean; replaceExisting: boolean }
     ) => {
       const existingSample = samples[droppedSlotNumber];
       const targetSlot = calculateTargetSlot(filePath, -1, droppedSlotNumber);
@@ -126,7 +126,7 @@ export function useSampleProcessing({
         });
       }
     },
-    [samples, calculateTargetSlot, voice, onSampleAdd, onSampleReplace],
+    [samples, calculateTargetSlot, voice, onSampleAdd, onSampleReplace]
   );
 
   const processAssignment = useCallback(
@@ -135,18 +135,18 @@ export function useSampleProcessing({
       formatValidation: any,
       allSamples: any[],
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
-      droppedSlotNumber: number,
+      droppedSlotNumber: number
     ): Promise<boolean> => {
       const channels = formatValidation.metadata?.channels || 1;
 
       if (modifierKeys.forceMonoDrop || modifierKeys.forceStereoDrop) {
         console.log(
           `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}, ` +
-            `override: ${modifierKeys.forceMonoDrop ? "force mono" : "force stereo"}`,
+            `override: ${modifierKeys.forceMonoDrop ? "force mono" : "force stereo"}`
         );
       } else {
         console.log(
-          `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}`,
+          `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}`
         );
       }
 
@@ -159,7 +159,7 @@ export function useSampleProcessing({
               forceMono: modifierKeys.forceMonoDrop,
               forceStereo: modifierKeys.forceStereoDrop,
             }
-          : undefined,
+          : undefined
       );
 
       let assignmentOptions = {
@@ -170,7 +170,7 @@ export function useSampleProcessing({
 
       if (stereoResult.requiresConfirmation && stereoResult.conflictInfo) {
         assignmentOptions = await handleStereoConflict(
-          stereoResult.conflictInfo,
+          stereoResult.conflictInfo
         );
         if (assignmentOptions.cancel) {
           return false;
@@ -181,7 +181,7 @@ export function useSampleProcessing({
         filePath,
         allSamples,
         droppedSlotNumber,
-        assignmentOptions,
+        assignmentOptions
       );
 
       // Apply stereo assignment if sample has multiple channels and isn't forced mono
@@ -190,7 +190,7 @@ export function useSampleProcessing({
           filePath,
           stereoResult,
           assignmentOptions,
-          onSampleAdd,
+          onSampleAdd
         );
       }
 
@@ -204,7 +204,7 @@ export function useSampleProcessing({
       voice,
       executeAssignment,
       onSampleAdd,
-    ],
+    ]
   );
 
   return {

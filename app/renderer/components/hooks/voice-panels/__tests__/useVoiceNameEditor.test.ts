@@ -24,7 +24,7 @@ describe("useVoiceNameEditor", () => {
 
   it("handles null voice name", () => {
     const { result } = renderHook(() =>
-      useVoiceNameEditor({ ...defaultProps, voiceName: null }),
+      useVoiceNameEditor({ ...defaultProps, voiceName: null })
     );
 
     expect(result.current.editValue).toBe("");
@@ -67,7 +67,7 @@ describe("useVoiceNameEditor", () => {
 
     expect(defaultProps.onSaveVoiceName).toHaveBeenCalledWith(
       1,
-      "New Voice Name",
+      "New Voice Name"
     );
     expect(result.current.editing).toBe(false);
   });
@@ -89,7 +89,7 @@ describe("useVoiceNameEditor", () => {
 
     expect(defaultProps.onSaveVoiceName).toHaveBeenCalledWith(
       1,
-      "Trimmed Voice",
+      "Trimmed Voice"
     );
   });
 
@@ -125,7 +125,7 @@ describe("useVoiceNameEditor", () => {
 
     expect(defaultProps.onSaveVoiceName).toHaveBeenCalledWith(
       1,
-      "Enter Save Test",
+      "Enter Save Test"
     );
     expect(result.current.editing).toBe(false);
   });
@@ -175,7 +175,7 @@ describe("useVoiceNameEditor", () => {
   it("updates edit value when voice name prop changes", () => {
     const { rerender, result } = renderHook(
       ({ voiceName }) => useVoiceNameEditor({ ...defaultProps, voiceName }),
-      { initialProps: { voiceName: "Initial Voice" } },
+      { initialProps: { voiceName: "Initial Voice" } }
     );
 
     expect(result.current.editValue).toBe("Initial Voice");

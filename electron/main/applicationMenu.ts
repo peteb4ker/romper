@@ -145,7 +145,7 @@ export function createApplicationMenu() {
             const focusedWindow = BrowserWindow.getFocusedWindow();
             if (focusedWindow) {
               focusedWindow.webContents.send(
-                "menu-change-local-store-directory",
+                "menu-change-local-store-directory"
               );
             }
           },

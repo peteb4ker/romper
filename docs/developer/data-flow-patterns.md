@@ -1,7 +1,7 @@
----
+<!-- 
 layout: default
 title: Data Flow Patterns
----
+-->
 
 # Data Flow Patterns
 

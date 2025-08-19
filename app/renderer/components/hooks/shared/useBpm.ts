@@ -35,7 +35,7 @@ export function useBpm({ initialBpm = 120, kitName }: UseBpmParams) {
         }
       }
     },
-    [kitName, initialBpm],
+    [kitName, initialBpm]
   );
 
   const validateBpm = React.useCallback((value: number): boolean => {

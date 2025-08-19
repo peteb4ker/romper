@@ -38,7 +38,7 @@ describe("useStereoHandling", () => {
         1, // voice 1
         2, // stereo file (2 channels)
         [], // no existing samples
-        { forceMono: true, forceStereo: false }, // Override to force mono
+        { forceMono: true, forceStereo: false } // Override to force mono
       );
 
       expect(stereoResult.assignAsMono).toBe(true);
@@ -54,7 +54,7 @@ describe("useStereoHandling", () => {
         1, // voice 1
         2, // stereo file (2 channels)
         [], // no existing samples
-        { forceMono: false, forceStereo: true }, // Override to force stereo
+        { forceMono: false, forceStereo: true } // Override to force stereo
       );
 
       expect(stereoResult.assignAsMono).toBe(false);
@@ -70,7 +70,7 @@ describe("useStereoHandling", () => {
         1, // voice 1
         2, // stereo file (2 channels)
         [], // no existing samples
-        undefined, // No override - use global setting
+        undefined // No override - use global setting
       );
 
       expect(stereoResult.assignAsMono).toBe(true);
@@ -86,7 +86,7 @@ describe("useStereoHandling", () => {
         1, // voice 1
         1, // mono file (1 channel)
         [], // no existing samples
-        { forceMono: false, forceStereo: true }, // Try to force stereo on mono file
+        { forceMono: false, forceStereo: true } // Try to force stereo on mono file
       );
 
       expect(stereoResult.assignAsMono).toBe(true); // Should still be mono because file is mono
@@ -102,7 +102,7 @@ describe("useStereoHandling", () => {
         4, // voice 4 (no voice 5 available)
         2, // stereo file (2 channels)
         [], // no existing samples
-        { forceMono: false, forceStereo: true }, // Try to force stereo to voice 4
+        { forceMono: false, forceStereo: true } // Try to force stereo to voice 4
       );
 
       expect(stereoResult.canAssign).toBe(false);
@@ -122,7 +122,7 @@ describe("useStereoHandling", () => {
         1, // voice 1
         2, // stereo file (2 channels)
         existingSamples,
-        { forceMono: false, forceStereo: true }, // Force stereo would need voices 1 and 2
+        { forceMono: false, forceStereo: true } // Force stereo would need voices 1 and 2
       );
 
       expect(stereoResult.canAssign).toBe(false);

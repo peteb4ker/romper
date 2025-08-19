@@ -5,7 +5,7 @@ export function useMessageDisplay() {
   const showMessage = (
     text: string,
     _type: string = "info",
-    duration?: number,
+    duration?: number
   ) => {
     // Only pass supported options to toast
     return toast(text, { duration });

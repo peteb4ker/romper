@@ -25,7 +25,7 @@ test.describe("Sync Workflow E2E Tests", () => {
     }
 
     console.log(
-      `[E2E Test] Using pre-initialized local store with ${testEnv.metadata.kits.length} kits: ${testEnv.metadata.kits.join(", ")}`,
+      `[E2E Test] Using pre-initialized local store with ${testEnv.metadata.kits.length} kits: ${testEnv.metadata.kits.join(", ")}`
     );
 
     // Set up environment using extracted fixtures
@@ -86,7 +86,7 @@ test.describe("Sync Workflow E2E Tests", () => {
 
       // Verify sync button is available in header
       const syncButton = await window.locator(
-        '[data-testid="sync-to-sd-card"]',
+        '[data-testid="sync-to-sd-card"]'
       );
       await syncButton.waitFor({ state: "visible", timeout: 5000 });
 
@@ -127,7 +127,7 @@ test.describe("Sync Workflow E2E Tests", () => {
       // For now, just verify the workflow gets this far
       // The button might be disabled if there are no files to sync (which is fine for test fixtures)
       const confirmButton = await window.locator(
-        '[data-testid="confirm-sync"]',
+        '[data-testid="confirm-sync"]'
       );
       const buttonExists = (await confirmButton.count()) > 0;
       expect(buttonExists).toBe(true);
@@ -150,7 +150,7 @@ test.describe("Sync Workflow E2E Tests", () => {
 
       // Verify dialog closes
       const dialogStillVisible = await window.isVisible(
-        '[data-testid="sync-dialog"]',
+        '[data-testid="sync-dialog"]'
       );
       expect(dialogStillVisible).toBe(false);
 
@@ -166,7 +166,7 @@ test.describe("Sync Workflow E2E Tests", () => {
 
       // Open sync dialog
       const syncButton = await window.locator(
-        '[data-testid="sync-to-sd-card"]',
+        '[data-testid="sync-to-sd-card"]'
       );
       await syncButton.click();
 
@@ -186,7 +186,7 @@ test.describe("Sync Workflow E2E Tests", () => {
 
       // Verify dialog is closed
       const dialogVisible = await window.isVisible(
-        '[data-testid="sync-dialog"]',
+        '[data-testid="sync-dialog"]'
       );
       expect(dialogVisible).toBe(false);
 
@@ -218,7 +218,7 @@ test.describe("Sync Workflow E2E Tests", () => {
 
       // Complete sync workflow
       const syncButton = await window.locator(
-        '[data-testid="sync-to-sd-card"]',
+        '[data-testid="sync-to-sd-card"]'
       );
       await syncButton.click();
 
@@ -253,7 +253,7 @@ test.describe("Sync Workflow E2E Tests", () => {
 
       // Verify dialog is closed first
       const dialogVisible = await window.isVisible(
-        '[data-testid="sync-dialog"]',
+        '[data-testid="sync-dialog"]'
       );
       expect(dialogVisible).toBe(false);
 

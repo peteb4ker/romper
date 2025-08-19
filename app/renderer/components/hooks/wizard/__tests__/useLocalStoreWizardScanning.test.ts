@@ -19,7 +19,7 @@ vi.mock("../utils/scanners/orchestrationFunctions", () => ({
         data: { errors: [] },
         success: true,
       },
-    }),
+    })
   ),
 }));
 
@@ -34,33 +34,33 @@ describe("useLocalStoreWizardScanning", () => {
         Promise.resolve({
           data: [{ bank_letter: "A", name: "A0" }],
           success: true,
-        }),
+        })
       ),
       listFilesInRoot: vi.fn(() =>
-        Promise.resolve(["sample1.wav", "sample2.wav"]),
+        Promise.resolve(["sample1.wav", "sample2.wav"])
       ),
       readFile: vi.fn(() =>
         Promise.resolve({
           data: new ArrayBuffer(8),
           success: true,
-        }),
+        })
       ),
       scanKitForData: vi.fn(() =>
         Promise.resolve({
           data: { kits: [], samples: [] },
           success: true,
-        }),
+        })
       ),
       updateVoiceAlias: vi.fn(() =>
         Promise.resolve({
           success: true,
-        }),
+        })
       ),
       validateAndStoreScannedKit: vi.fn(() =>
         Promise.resolve({
           data: { errors: [] },
           success: true,
-        }),
+        })
       ),
     };
 
@@ -81,7 +81,7 @@ describe("useLocalStoreWizardScanning", () => {
         useLocalStoreWizardScanning({
           api: mockApi,
           reportStepProgress: mockReportStepProgress,
-        }),
+        })
       );
 
       await result.current.runScanning("/target/path", "/db/dir", []);
@@ -94,7 +94,7 @@ describe("useLocalStoreWizardScanning", () => {
         useLocalStoreWizardScanning({
           api: mockApi,
           reportStepProgress: mockReportStepProgress,
-        }),
+        })
       );
 
       await result.current.runScanning("/target/path", "/db/dir", ["A0", "B1"]);
@@ -113,7 +113,7 @@ describe("useLocalStoreWizardScanning", () => {
         useLocalStoreWizardScanning({
           api: mockApi,
           reportStepProgress: mockReportStepProgress,
-        }),
+        })
       );
 
       await result.current.runScanning("/target/path", "/db/dir", ["A0"]);
@@ -128,7 +128,7 @@ describe("useLocalStoreWizardScanning", () => {
         useLocalStoreWizardScanning({
           api: apiWithoutReadFile,
           reportStepProgress: mockReportStepProgress,
-        }),
+        })
       );
 
       // Implementation handles errors gracefully, doesn't throw
@@ -147,7 +147,7 @@ describe("useLocalStoreWizardScanning", () => {
         useLocalStoreWizardScanning({
           api: mockApi,
           reportStepProgress: mockReportStepProgress,
-        }),
+        })
       );
 
       // Implementation handles errors gracefully, doesn't throw
@@ -159,14 +159,14 @@ describe("useLocalStoreWizardScanning", () => {
     it("should handle scan operation errors gracefully", async () => {
       // Mock listFilesInRoot to throw an error to simulate scan failure
       mockApi.listFilesInRoot.mockRejectedValueOnce(
-        new Error("File access failed"),
+        new Error("File access failed")
       );
 
       const { result } = renderHook(() =>
         useLocalStoreWizardScanning({
           api: mockApi,
           reportStepProgress: mockReportStepProgress,
-        }),
+        })
       );
 
       // The hook should handle errors gracefully and continue with other kits
@@ -181,7 +181,7 @@ describe("useLocalStoreWizardScanning", () => {
         useLocalStoreWizardScanning({
           api: mockApi,
           reportStepProgress: mockReportStepProgress,
-        }),
+        })
       );
 
       const kitNames = ["A0", "B1", "C2"];
@@ -204,7 +204,7 @@ describe("useLocalStoreWizardScanning", () => {
         useLocalStoreWizardScanning({
           api: mockApi,
           reportStepProgress: mockReportStepProgress,
-        }),
+        })
       );
 
       await result.current.runScanning("", "/db/dir", ["A0"]);
@@ -218,7 +218,7 @@ describe("useLocalStoreWizardScanning", () => {
         useLocalStoreWizardScanning({
           api: mockApi,
           reportStepProgress: mockReportStepProgress,
-        }),
+        })
       );
 
       await result.current.runScanning("/target/path", "", ["A0"]);

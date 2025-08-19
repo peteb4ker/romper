@@ -19,7 +19,7 @@ describe("ScannerOrchestrator", () => {
     it("executes operations in sequence with progress tracking", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "continue",
+        "continue"
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi
@@ -61,7 +61,7 @@ describe("ScannerOrchestrator", () => {
     it("handles scanner failure with continue strategy", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "continue",
+        "continue"
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi
@@ -99,7 +99,7 @@ describe("ScannerOrchestrator", () => {
     it("handles scanner failure with stop strategy", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "stop",
+        "stop"
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi
@@ -138,7 +138,7 @@ describe("ScannerOrchestrator", () => {
     it("handles unexpected exceptions with continue strategy", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "continue",
+        "continue"
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi
@@ -173,7 +173,7 @@ describe("ScannerOrchestrator", () => {
     it("handles unexpected exceptions with stop strategy", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "stop",
+        "stop"
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi
@@ -267,7 +267,7 @@ describe("ScannerOrchestrator", () => {
     it("continues execution when strategy is continue and operation has no error message", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "continue",
+        "continue"
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi

@@ -217,7 +217,7 @@ describe("SyncService", () => {
 
       const result = await syncService.startKitSync(
         mockSettings,
-        wipeSdCardOptions,
+        wipeSdCardOptions
       );
 
       expect(result).toBeDefined();
@@ -239,7 +239,7 @@ describe("SyncService", () => {
 
       const result = await syncService.startKitSync(
         mockSettings,
-        invalidOptions,
+        invalidOptions
       );
 
       expect(result.success).toBe(false);
@@ -279,7 +279,7 @@ describe("SyncService", () => {
 
       const result = await syncService.startKitSync(
         mockSettings,
-        wipeSdCardOptions,
+        wipeSdCardOptions
       );
 
       expect(result).toBeDefined();
@@ -296,7 +296,7 @@ describe("SyncService", () => {
 
       const result = await syncService.startKitSync(
         mockSettings,
-        wipeSdCardOptions,
+        wipeSdCardOptions
       );
 
       expect(result.success).toBe(false);
@@ -335,7 +335,7 @@ describe("SyncService", () => {
       // Mock generateChangeSummary to fail
       const mockGenerateChangeSummary = vi.spyOn(
         syncService,
-        "generateChangeSummary",
+        "generateChangeSummary"
       );
       mockGenerateChangeSummary.mockResolvedValue({
         error: "Failed to generate summary",
@@ -373,7 +373,7 @@ describe("SyncService", () => {
       const destPath = (syncService as any).getDestinationPath(
         "/local/store",
         "A01",
-        sample,
+        sample
       );
 
       expect(typeof destPath).toBe("string");
@@ -384,7 +384,7 @@ describe("SyncService", () => {
       const estimatedTime = (syncService as any).estimateSyncTime(
         5, // totalFiles
         1024 * 1024, // 1MB total size
-        2, // conversions
+        2 // conversions
       );
 
       expect(typeof estimatedTime).toBe("number");
@@ -393,21 +393,21 @@ describe("SyncService", () => {
 
     it("categorizes errors correctly", () => {
       const permissionError = (syncService as any).categorizeError(
-        new Error("EACCES: permission denied"),
+        new Error("EACCES: permission denied")
       );
 
       expect(permissionError.type).toBe("permission");
       expect(permissionError.canRetry).toBe(true);
 
       const diskSpaceError = (syncService as any).categorizeError(
-        new Error("ENOSPC: no space left on device"),
+        new Error("ENOSPC: no space left on device")
       );
 
       expect(diskSpaceError.type).toBe("disk_space");
       expect(diskSpaceError.canRetry).toBe(false);
 
       const unknownError = (syncService as any).categorizeError(
-        new Error("Unknown error"),
+        new Error("Unknown error")
       );
 
       expect(unknownError.type).toBe("unknown");
@@ -446,7 +446,7 @@ describe("SyncService", () => {
 
       expect(mockWindow.webContents.send).toHaveBeenCalledWith(
         "sync-progress",
-        progress,
+        progress
       );
     });
   });

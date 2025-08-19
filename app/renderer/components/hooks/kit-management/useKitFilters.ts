@@ -79,17 +79,17 @@ export function useKitFilters({
         } else {
           onMessage?.(
             `Failed to toggle favorite: ${result?.error || "Unknown error"}`,
-            "error",
+            "error"
           );
         }
       } catch (error) {
         onMessage?.(
           `Failed to toggle favorite: ${error instanceof Error ? error.message : String(error)}`,
-          "error",
+          "error"
         );
       }
     },
-    [onMessage, onRefreshKits, showFavoritesOnly],
+    [onMessage, onRefreshKits, showFavoritesOnly]
   );
 
   // Task 20.1.4: Toggle favorites filter
@@ -144,7 +144,7 @@ export function useKitFilters({
       const kit = kits?.find((k) => k.name === kitName);
       return kit?.is_favorite || false;
     },
-    [kits],
+    [kits]
   );
 
   return {

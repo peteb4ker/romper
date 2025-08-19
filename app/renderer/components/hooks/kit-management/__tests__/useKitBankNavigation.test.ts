@@ -8,7 +8,7 @@ import { useKitBankNavigation } from "../useKitBankNavigation";
 // Mock the bank operations
 vi.mock("../../../utils/bankOperations", () => ({
   bankHasKits: vi.fn((kits, bank) =>
-    kits.some((kit: any) => kit.name?.[0]?.toUpperCase() === bank),
+    kits.some((kit: any) => kit.name?.[0]?.toUpperCase() === bank)
   ),
   getFirstKitInBank: vi.fn((kits, bank) => {
     const kit = kits.find((k: any) => k.name?.[0]?.toUpperCase() === bank);
@@ -294,7 +294,7 @@ describe("useKitBankNavigation", () => {
       expect(result.current.selectedBank).toBe("B");
       expect(result.current.focusedKit).toBe("B0");
       expect(
-        mockKitListRef.current.scrollAndFocusKitByIndex,
+        mockKitListRef.current.scrollAndFocusKitByIndex
       ).toHaveBeenCalledWith(2); // B0 is at index 2
     });
 
@@ -308,7 +308,7 @@ describe("useKitBankNavigation", () => {
 
       expect(result.current.selectedBank).toBe(initialBank); // Should not change
       expect(
-        mockKitListRef.current.scrollAndFocusKitByIndex,
+        mockKitListRef.current.scrollAndFocusKitByIndex
       ).not.toHaveBeenCalled();
     });
 
@@ -318,7 +318,7 @@ describe("useKitBankNavigation", () => {
         kitListRef: { current: null },
       };
       const { result } = renderHook(() =>
-        useKitBankNavigation(propsWithoutRef),
+        useKitBankNavigation(propsWithoutRef)
       );
 
       act(() => {
@@ -334,7 +334,7 @@ describe("useKitBankNavigation", () => {
         kitListRef: { current: {} },
       };
       const { result } = renderHook(() =>
-        useKitBankNavigation(propsWithIncompleteRef),
+        useKitBankNavigation(propsWithIncompleteRef)
       );
 
       act(() => {
@@ -374,7 +374,7 @@ describe("useKitBankNavigation", () => {
 
     it("should maintain state across re-renders", () => {
       const { rerender, result } = renderHook(() =>
-        useKitBankNavigation(defaultProps),
+        useKitBankNavigation(defaultProps)
       );
 
       // Change to bank 'C'

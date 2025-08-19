@@ -20,7 +20,7 @@ describe("AboutView", () => {
     const githubBtn = screen.getByText(/github.com\/peteb4ker\/romper/);
     fireEvent.click(githubBtn);
     expect(window.electronAPI.openExternal).toHaveBeenCalledWith(
-      "https://github.com/peteb4ker/romper/",
+      "https://github.com/peteb4ker/romper/"
     );
   });
   it("navigates back when Back button is clicked", () => {

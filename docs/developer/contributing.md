@@ -1,7 +1,7 @@
----
+<!-- 
 layout: default
 title: Contributing to Romper
----
+-->
 
 # Contributing to Romper
 

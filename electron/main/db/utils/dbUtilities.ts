@@ -24,13 +24,13 @@ export function checkMigrationState(sqlite: BetterSqlite3.Database): void {
   // Check if schema tables exist
   const tables = sqlite
     .prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
     )
     .all() as { name: string }[];
 
   console.log(
     `[Main] Found ${tables.length} tables:`,
-    tables.map((t) => t.name),
+    tables.map((t) => t.name)
   );
 
   // Check if __drizzle_migrations table exists
@@ -62,13 +62,13 @@ export function createRomperDbFile(dbDir: string): {
     if (migrationsPath) {
       console.log(
         "[Main] Creating database with migrations path:",
-        migrationsPath,
+        migrationsPath
       );
       migrate(db, { migrationsFolder: migrationsPath });
       console.log("[Main] Initial migrations completed successfully");
     } else {
       console.error(
-        "[Main] Migrations folder not found at any known location.",
+        "[Main] Migrations folder not found at any known location."
       );
       sqlite.close();
       return { error: `Migrations folder not found.`, success: false };
@@ -79,7 +79,7 @@ export function createRomperDbFile(dbDir: string): {
     if (!validation.success) {
       console.error(
         "[Main] Database validation failed after creation:",
-        validation.error,
+        validation.error
       );
       return {
         error: `Database validation failed: ${validation.error}`,
@@ -138,7 +138,7 @@ export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
 export function executeMigrations(
   db: any,
   dbPath: string,
-  dbDir: string,
+  dbDir: string
 ): void {
   const migrationsPath = getMigrationsPath();
   if (!migrationsPath) {
@@ -198,7 +198,7 @@ export function getMigrationsPath(): null | string {
 export function logMigrationError(
   e: unknown,
   dbPath: string,
-  dbDir: string,
+  dbDir: string
 ): void {
   const error = e instanceof Error ? e.message : String(e);
   console.error(`[Main] Migration error for ${dbPath}:`, error);
@@ -228,7 +228,7 @@ export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
     const expectedTables = ["banks", "kits", "samples", "voices"];
     const actualTables = sqlite
       .prepare(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '__drizzle_migrations'",
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '__drizzle_migrations'"
       )
       .all() as { name: string }[];
 
@@ -236,7 +236,7 @@ export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
       .map((t) => t.name)
       .sort((a, b) => a.localeCompare(b));
     const missingTables = expectedTables.filter(
-      (table) => !actualTableNames.includes(table),
+      (table) => !actualTableNames.includes(table)
     );
 
     sqlite.close();
@@ -289,7 +289,7 @@ export function withDb<T>(dbDir: string, fn: (db: any) => T): DbResult<T> {
  */
 export function withDbTransaction<T>(
   dbDir: string,
-  fn: (db: any, sqlite: BetterSqlite3.Database) => T,
+  fn: (db: any, sqlite: BetterSqlite3.Database) => T
 ): DbResult<T> {
   const dbPath = path.join(dbDir, DB_FILENAME);
 

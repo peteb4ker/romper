@@ -67,7 +67,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
       (channel: string, handler: Function) => {
         handlerRegistry[channel] = handler;
         return undefined as any;
-      },
+      }
     );
 
     // Set up successful service responses
@@ -179,7 +179,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         1,
         0,
         "/test/file.wav",
-        undefined,
+        undefined
       );
     });
 
@@ -194,7 +194,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         2,
         5,
         "/test/new.wav",
-        undefined,
+        undefined
       );
     });
 
@@ -207,7 +207,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         mockInMemorySettings,
         "TestKit",
         3,
-        7,
+        7
       );
     });
 
@@ -218,7 +218,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
       expect(result.success).toBe(true);
       expect(mockSampleService.validateSampleSources).toHaveBeenCalledWith(
         mockInMemorySettings,
-        "TestKit",
+        "TestKit"
       );
     });
   });
@@ -231,7 +231,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
       expect(result.success).toBe(true);
       expect(mockScanService.rescanKit).toHaveBeenCalledWith(
         mockInMemorySettings,
-        "TestKit",
+        "TestKit"
       );
     });
 
@@ -241,7 +241,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
 
       expect(result.success).toBe(true);
       expect(mockScanService.scanBanks).toHaveBeenCalledWith(
-        mockInMemorySettings,
+        mockInMemorySettings
       );
     });
   });
@@ -291,7 +291,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         4,
         11,
         "/path/to/sample.wav",
-        undefined,
+        undefined
       );
     });
 
@@ -301,7 +301,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
 
       expect(romperDbCore.getKit).toHaveBeenCalledWith(
         "/test/path/.romperdb",
-        "A5",
+        "A5"
       );
     });
   });

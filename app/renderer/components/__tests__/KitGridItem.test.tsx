@@ -160,7 +160,7 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...props} />);
 
       const indicator = screen.getByTitle(
-        "High priority kit (favorite, modified, or well-loaded)",
+        "High priority kit (favorite, modified, or well-loaded)"
       );
       expect(indicator).toBeInTheDocument();
       expect(indicator).toHaveClass("bg-orange-500");
@@ -178,8 +178,8 @@ describe("KitGridItem", () => {
 
       expect(
         screen.getByTitle(
-          "High priority kit (favorite, modified, or well-loaded)",
-        ),
+          "High priority kit (favorite, modified, or well-loaded)"
+        )
       ).toBeInTheDocument();
     });
 
@@ -192,8 +192,8 @@ describe("KitGridItem", () => {
 
       expect(
         screen.getByTitle(
-          "High priority kit (favorite, modified, or well-loaded)",
-        ),
+          "High priority kit (favorite, modified, or well-loaded)"
+        )
       ).toBeInTheDocument();
     });
 
@@ -202,8 +202,8 @@ describe("KitGridItem", () => {
 
       expect(
         screen.queryByTitle(
-          "High priority kit (favorite, modified, or well-loaded)",
-        ),
+          "High priority kit (favorite, modified, or well-loaded)"
+        )
       ).not.toBeInTheDocument();
     });
 
@@ -220,8 +220,8 @@ describe("KitGridItem", () => {
 
       expect(
         screen.queryByTitle(
-          "High priority kit (favorite, modified, or well-loaded)",
-        ),
+          "High priority kit (favorite, modified, or well-loaded)"
+        )
       ).not.toBeInTheDocument();
     });
   });
@@ -293,7 +293,7 @@ describe("KitGridItem", () => {
         <KitGridItem
           {...defaultProps}
           onToggleFavorite={mockOnToggleFavorite}
-        />,
+        />
       );
 
       const favoriteButton = screen.getByTitle("Add to favorites");
@@ -306,7 +306,7 @@ describe("KitGridItem", () => {
         <KitGridItem
           {...defaultProps}
           onToggleFavorite={mockOnToggleFavorite}
-        />,
+        />
       );
 
       const favoriteButton = screen.getByTitle("Add to favorites");
@@ -323,7 +323,7 @@ describe("KitGridItem", () => {
           {...defaultProps}
           onSelect={mockOnSelect}
           onToggleFavorite={mockOnToggleFavorite}
-        />,
+        />
       );
 
       const favoriteButton = screen.getByTitle("Add to favorites");
@@ -355,7 +355,7 @@ describe("KitGridItem", () => {
 
       expect(screen.queryByTitle("Add to favorites")).not.toBeInTheDocument();
       expect(
-        screen.queryByTitle("Remove from favorites"),
+        screen.queryByTitle("Remove from favorites")
       ).not.toBeInTheDocument();
     });
 
@@ -366,7 +366,7 @@ describe("KitGridItem", () => {
           {...defaultProps}
           isValid={false}
           onToggleFavorite={mockOnToggleFavorite}
-        />,
+        />
       );
 
       expect(screen.getByTitle("Add to favorites")).toBeInTheDocument();
@@ -472,7 +472,7 @@ describe("KitGridItem", () => {
           {...defaultProps}
           onDuplicate={mockOnDuplicate}
           onSelect={mockOnSelect}
-        />,
+        />
       );
 
       const duplicateButton = screen.getByTitle("Duplicate kit");
@@ -495,7 +495,7 @@ describe("KitGridItem", () => {
 
       // Should render 4 voice indicators
       const voiceIndicators = screen.getAllByText(
-        /Kick|Snare|Hihat|Percussion/,
+        /Kick|Snare|Hihat|Percussion/
       );
       expect(voiceIndicators).toHaveLength(4);
 
@@ -539,7 +539,7 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...defaultProps} isValid={false} />);
 
       expect(
-        screen.queryByText(/Kick|Snare|Hihat|Percussion/),
+        screen.queryByText(/Kick|Snare|Hihat|Percussion/)
       ).not.toBeInTheDocument();
     });
 
@@ -621,7 +621,7 @@ describe("KitGridItem", () => {
       const container = screen.getByTestId("kit-item-A0");
       expect(container).toHaveClass(
         "focus:outline-none",
-        "focus-visible:ring-2",
+        "focus-visible:ring-2"
       );
     });
 
@@ -648,7 +648,7 @@ describe("KitGridItem", () => {
       const voiceElement2 = screen.getByTitle("Voice 2: 3 samples (snare)");
       const voiceElement3 = screen.getByTitle("Voice 3: 2 samples (hihat)");
       const voiceElement4 = screen.getByTitle(
-        "Voice 4: 1 samples (percussion)",
+        "Voice 4: 1 samples (percussion)"
       );
 
       expect(voiceElement1).toBeInTheDocument();

@@ -55,7 +55,7 @@ describe("useKitStepSequencerLogic", () => {
   describe("Initialization", () => {
     it("should initialize with default state", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       expect(result.current.isSeqPlaying).toBe(false);
@@ -97,7 +97,7 @@ describe("useKitStepSequencerLogic", () => {
 
     it("should handle step messages from worker", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       // Simulate worker sending step message
@@ -112,7 +112,7 @@ describe("useKitStepSequencerLogic", () => {
 
     it("should ignore non-STEP messages from worker", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       act(() => {
@@ -126,7 +126,7 @@ describe("useKitStepSequencerLogic", () => {
 
     it("should terminate worker on cleanup", () => {
       const { unmount } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       unmount();
@@ -138,7 +138,7 @@ describe("useKitStepSequencerLogic", () => {
   describe("Playback Control", () => {
     it("should start worker when playback begins", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       act(() => {
@@ -153,7 +153,7 @@ describe("useKitStepSequencerLogic", () => {
 
     it("should stop worker when playback stops", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       // Start playback first
@@ -175,7 +175,7 @@ describe("useKitStepSequencerLogic", () => {
   describe("Sample Triggering", () => {
     it("should trigger samples when step advances during playback", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       // Start playback
@@ -210,7 +210,7 @@ describe("useKitStepSequencerLogic", () => {
 
     it("should not trigger same step twice", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       act(() => {
@@ -260,7 +260,7 @@ describe("useKitStepSequencerLogic", () => {
       });
 
       expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining("No sample available for voice 2"),
+        expect.stringContaining("No sample available for voice 2")
       );
     });
 
@@ -298,7 +298,7 @@ describe("useKitStepSequencerLogic", () => {
   describe("Step Pattern Management", () => {
     it("should toggle step from 0 to 127", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       act(() => {
@@ -311,13 +311,13 @@ describe("useKitStepSequencerLogic", () => {
           defaultStepPattern[1],
           defaultStepPattern[2],
           defaultStepPattern[3],
-        ]),
+        ])
       );
     });
 
     it("should toggle step from 127 to 0", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       act(() => {
@@ -330,7 +330,7 @@ describe("useKitStepSequencerLogic", () => {
           defaultStepPattern[1],
           defaultStepPattern[2],
           defaultStepPattern[3],
-        ]),
+        ])
       );
     });
 
@@ -639,7 +639,7 @@ describe("useKitStepSequencerLogic", () => {
   describe("Constants and UI Styling", () => {
     it("should return correct UI constants", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       expect(result.current.NUM_VOICES).toBe(4);
@@ -650,7 +650,7 @@ describe("useKitStepSequencerLogic", () => {
 
     it("should return proper row colors", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       expect(result.current.ROW_COLORS[0]).toContain("bg-red-500");
@@ -661,7 +661,7 @@ describe("useKitStepSequencerLogic", () => {
 
     it("should return proper LED glow effects", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       expect(result.current.LED_GLOWS[0]).toContain("rgba(239,68,68,0.7)");
@@ -674,7 +674,7 @@ describe("useKitStepSequencerLogic", () => {
   describe("Performance and Edge Cases", () => {
     it("should handle rapid step changes efficiently", () => {
       const { result } = renderHook(() =>
-        useKitStepSequencerLogic(getDefaultParams()),
+        useKitStepSequencerLogic(getDefaultParams())
       );
 
       act(() => {

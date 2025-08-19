@@ -30,7 +30,7 @@ describe("SampleCrudService", () => {
 
     // Setup common mocks
     mockFileSystem.ServicePathManager.getLocalStorePath.mockReturnValue(
-      "/mock/path",
+      "/mock/path"
     );
     mockFileSystem.ServicePathManager.getDbPath.mockReturnValue(mockDbPath);
   });
@@ -64,7 +64,7 @@ describe("SampleCrudService", () => {
         "TestKit",
         1,
         0,
-        "/path/to/sample.wav",
+        "/path/to/sample.wav"
       );
 
       expect(result.success).toBe(true);
@@ -79,7 +79,7 @@ describe("SampleCrudService", () => {
       });
       expect(mockORM.markKitAsModified).toHaveBeenCalledWith(
         mockDbPath,
-        "TestKit",
+        "TestKit"
       );
     });
 
@@ -91,7 +91,7 @@ describe("SampleCrudService", () => {
         "TestKit",
         1,
         0,
-        "/path/to/sample.wav",
+        "/path/to/sample.wav"
       );
 
       expect(result.success).toBe(false);
@@ -109,7 +109,7 @@ describe("SampleCrudService", () => {
         "TestKit",
         5, // Invalid voice
         0,
-        "/path/to/sample.wav",
+        "/path/to/sample.wav"
       );
 
       expect(result.success).toBe(false);
@@ -130,7 +130,7 @@ describe("SampleCrudService", () => {
         "TestKit",
         1,
         0,
-        "/path/to/sample.wav",
+        "/path/to/sample.wav"
       );
 
       expect(result.success).toBe(false);
@@ -174,7 +174,7 @@ describe("SampleCrudService", () => {
         mockSettings,
         "TestKit",
         1,
-        0,
+        0
       );
 
       expect(result.success).toBe(true);
@@ -184,11 +184,11 @@ describe("SampleCrudService", () => {
         {
           slotNumber: 0,
           voiceNumber: 1,
-        },
+        }
       );
       expect(mockORM.markKitAsModified).toHaveBeenCalledWith(
         mockDbPath,
-        "TestKit",
+        "TestKit"
       );
     });
 
@@ -205,7 +205,7 @@ describe("SampleCrudService", () => {
         mockSettings,
         "TestKit",
         1,
-        0,
+        0
       );
 
       expect(result.success).toBe(false);

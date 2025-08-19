@@ -96,7 +96,7 @@ describe("Menu IPC Integration Tests", () => {
 
     // Verify that the registration was logged (since no actual IPC handlers are registered)
     expect(consoleSpy).toHaveBeenCalledWith(
-      "[Menu] Menu IPC handlers registered",
+      "[Menu] Menu IPC handlers registered"
     );
 
     consoleSpy.mockRestore();
@@ -125,7 +125,7 @@ describe("Menu IPC Integration Tests", () => {
 
     // Find and trigger the "Scan All Kits" menu item
     const scanMenuItem = submenu.find(
-      (item: any) => item.label === "Scan All Kits",
+      (item: any) => item.label === "Scan All Kits"
     );
     expect(scanMenuItem).toBeDefined();
     expect(scanMenuItem.click).toBeDefined();
@@ -135,7 +135,7 @@ describe("Menu IPC Integration Tests", () => {
 
     // Verify that the IPC message was sent to renderer
     expect(mockWindow.webContents.send).toHaveBeenCalledWith(
-      "menu-scan-all-kits",
+      "menu-scan-all-kits"
     );
   });
 
@@ -209,7 +209,7 @@ describe("Menu IPC Integration Tests", () => {
 
     // Find and trigger the "Scan All Kits" menu item
     const scanMenuItem = submenu.find(
-      (item: any) => item.label === "Scan All Kits",
+      (item: any) => item.label === "Scan All Kits"
     );
 
     // This should not throw an error even with no windows

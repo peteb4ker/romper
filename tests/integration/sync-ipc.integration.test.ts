@@ -89,15 +89,15 @@ describe("Sync IPC Integration Tests", () => {
       // Verify all expected handlers are registered
       expect(ipcMain.handle).toHaveBeenCalledWith(
         "generateSyncChangeSummary",
-        expect.any(Function),
+        expect.any(Function)
       );
       expect(ipcMain.handle).toHaveBeenCalledWith(
         "startKitSync",
-        expect.any(Function),
+        expect.any(Function)
       );
       expect(ipcMain.handle).toHaveBeenCalledWith(
         "cancelKitSync",
-        expect.any(Function),
+        expect.any(Function)
       );
     });
   });
@@ -108,7 +108,7 @@ describe("Sync IPC Integration Tests", () => {
 
       // Get the registered handler
       const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
+        (call) => call[0] === "generateSyncChangeSummary"
       );
       expect(handlerCall).toBeDefined();
 
@@ -120,7 +120,7 @@ describe("Sync IPC Integration Tests", () => {
 
       expect(mockSyncService.generateChangeSummary).toHaveBeenCalledWith(
         {},
-        mockSettings,
+        mockSettings
       );
       expect(result.success).toBe(true);
       expect(result.data).toHaveProperty("filesToCopy");
@@ -136,7 +136,7 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
+        (call) => call[0] === "generateSyncChangeSummary"
       );
       const handler = handlerCall[1];
       const result = await handler({}, { localStorePath: "/invalid" });
@@ -149,14 +149,14 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
+        (call) => call[0] === "generateSyncChangeSummary"
       );
       const handler = handlerCall[1];
       await handler({}, null);
 
       expect(mockSyncService.generateChangeSummary).toHaveBeenCalledWith(
         {},
-        null,
+        null
       );
     });
   });
@@ -166,7 +166,7 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
+        (call) => call[0] === "startKitSync"
       );
       expect(handlerCall).toBeDefined();
 
@@ -184,7 +184,7 @@ describe("Sync IPC Integration Tests", () => {
         {
           sdCardPath: "/sd/card",
           wipeSdCard: false,
-        },
+        }
       );
       expect(result.success).toBe(true);
       expect(result.data).toHaveProperty("syncedFiles");
@@ -199,7 +199,7 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
+        (call) => call[0] === "startKitSync"
       );
       const handler = handlerCall[1];
       const result = await handler(
@@ -207,7 +207,7 @@ describe("Sync IPC Integration Tests", () => {
         {
           sdCardPath: "/nonexistent",
           wipeSdCard: false,
-        },
+        }
       );
 
       expect(result.success).toBe(false);
@@ -218,7 +218,7 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
+        (call) => call[0] === "startKitSync"
       );
       const handler = handlerCall[1];
       const result = await handler(
@@ -226,7 +226,7 @@ describe("Sync IPC Integration Tests", () => {
         {
           sdCardPath: "/sd/card",
           wipeSdCard: true,
-        },
+        }
       );
 
       expect(mockSyncService.startKitSync).toHaveBeenCalledWith(
@@ -234,7 +234,7 @@ describe("Sync IPC Integration Tests", () => {
         {
           sdCardPath: "/sd/card",
           wipeSdCard: true,
-        },
+        }
       );
       expect(result.success).toBe(true);
     });
@@ -243,7 +243,7 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
+        (call) => call[0] === "startKitSync"
       );
       const handler = handlerCall[1];
 
@@ -252,14 +252,14 @@ describe("Sync IPC Integration Tests", () => {
         {},
         {
           wipeSdCard: false,
-        },
+        }
       );
 
       expect(mockSyncService.startKitSync).toHaveBeenCalledWith(
         {},
         {
           wipeSdCard: false,
-        },
+        }
       );
     });
   });
@@ -270,7 +270,7 @@ describe("Sync IPC Integration Tests", () => {
 
       // Step 1: Generate change summary
       const generateSummaryHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
+        (call) => call[0] === "generateSyncChangeSummary"
       )[1];
 
       const settings = { localStorePath: "/local/store" };
@@ -281,7 +281,7 @@ describe("Sync IPC Integration Tests", () => {
 
       // Step 2: Start sync
       const startSyncHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
+        (call) => call[0] === "startKitSync"
       )[1];
 
       const syncRequest = {
@@ -296,11 +296,11 @@ describe("Sync IPC Integration Tests", () => {
       // Verify all services were called correctly
       expect(mockSyncService.generateChangeSummary).toHaveBeenCalledWith(
         {},
-        settings,
+        settings
       );
       expect(mockSyncService.startKitSync).toHaveBeenCalledWith(
         {},
-        syncRequest,
+        syncRequest
       );
     });
 
@@ -308,10 +308,10 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       const generateSummaryHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
+        (call) => call[0] === "generateSyncChangeSummary"
       )[1];
       const startSyncHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
+        (call) => call[0] === "startKitSync"
       )[1];
 
       // Generate summary
@@ -332,7 +332,7 @@ describe("Sync IPC Integration Tests", () => {
         {
           sdCardPath: "/sd/card",
           wipeSdCard: true,
-        },
+        }
       );
     });
 
@@ -346,12 +346,12 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       const generateSummaryHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
+        (call) => call[0] === "generateSyncChangeSummary"
       )[1];
 
       const result = await generateSummaryHandler(
         {},
-        { localStorePath: "/corrupt" },
+        { localStorePath: "/corrupt" }
       );
 
       expect(result.success).toBe(false);
@@ -359,7 +359,7 @@ describe("Sync IPC Integration Tests", () => {
 
       // Subsequent sync should not be called if summary fails
       const startSyncHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
+        (call) => call[0] === "startKitSync"
       )[1];
 
       // Even if sync is attempted, it should handle the missing data gracefully
@@ -368,7 +368,7 @@ describe("Sync IPC Integration Tests", () => {
         {
           sdCardPath: "/sd/card",
           wipeSdCard: false,
-        },
+        }
       );
 
       // Service should still be called, but may fail due to lack of valid data
@@ -379,13 +379,13 @@ describe("Sync IPC Integration Tests", () => {
   describe("Error Handling and Edge Cases", () => {
     it("should handle IPC communication errors", async () => {
       mockSyncService.generateChangeSummary.mockRejectedValue(
-        new Error("Service crashed"),
+        new Error("Service crashed")
       );
 
       registerSyncIpcHandlers({});
 
       const handler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
+        (call) => call[0] === "generateSyncChangeSummary"
       )[1];
 
       try {
@@ -401,7 +401,7 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       const handler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
+        (call) => call[0] === "startKitSync"
       )[1];
 
       // Test with undefined request
@@ -414,7 +414,7 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       const handler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
+        (call) => call[0] === "generateSyncChangeSummary"
       )[1];
 
       // Simulate concurrent requests

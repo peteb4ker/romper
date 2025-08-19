@@ -32,7 +32,7 @@ export function useKitVoicePanels({
   onWaveformPlayingChange: (
     voice: number,
     sample: string,
-    playing: boolean,
+    playing: boolean
   ) => void;
   playTriggers: { [key: string]: number };
   samplePlaying: { [key: string]: boolean };
@@ -47,7 +47,7 @@ export function useKitVoicePanels({
   // Helper to get number of samples for a voice
   const getNumSamples = useCallback(
     (voice: number) => (samples[voice] ? samples[voice].length : 0),
-    [samples],
+    [samples]
   );
 
   // Helper function to handle downward navigation
@@ -61,7 +61,7 @@ export function useKitVoicePanels({
         setSelectedSampleIdx(0);
       }
     },
-    [getNumSamples, setSelectedVoice, setSelectedSampleIdx],
+    [getNumSamples, setSelectedVoice, setSelectedSampleIdx]
   );
 
   // Helper function to handle upward navigation
@@ -74,7 +74,7 @@ export function useKitVoicePanels({
         setSelectedSampleIdx(getNumSamples(currentVoice - 1) - 1);
       }
     },
-    [getNumSamples, setSelectedVoice, setSelectedSampleIdx],
+    [getNumSamples, setSelectedVoice, setSelectedSampleIdx]
   );
 
   // Handler for sample navigation (up/down, cross-voice)
@@ -94,7 +94,7 @@ export function useKitVoicePanels({
       sequencerOpen,
       handleDownNavigation,
       handleUpNavigation,
-    ],
+    ]
   );
 
   // This hook is a pass-through for now, but can be extended for memoization or logic

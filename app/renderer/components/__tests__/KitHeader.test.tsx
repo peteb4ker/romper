@@ -42,7 +42,7 @@ describe("KitHeader", () => {
   it("calls setEditingKitAlias(true) when alias is clicked", () => {
     const setEditingKitAlias = vi.fn();
     render(
-      <KitHeader {...baseProps} setEditingKitAlias={setEditingKitAlias} />,
+      <KitHeader {...baseProps} setEditingKitAlias={setEditingKitAlias} />
     );
     fireEvent.click(screen.getByText("My Kit"));
     expect(setEditingKitAlias).toHaveBeenCalledWith(true);
@@ -68,7 +68,7 @@ describe("KitHeader", () => {
         kitAliasInput="Edit Alias"
         setEditingKitAlias={setEditingKitAlias}
         setKitAliasInput={setKitAliasInput}
-      />,
+      />
     );
     const input = screen.getByDisplayValue("Edit Alias");
     fireEvent.change(input, { target: { value: "New Alias" } });
@@ -126,7 +126,7 @@ describe("KitHeader", () => {
       render(<KitHeader {...baseProps} onToggleEditableMode={vi.fn()} />);
 
       expect(
-        screen.getByRole("button", { name: /enable editable mode/i }),
+        screen.getByRole("button", { name: /enable editable mode/i })
       ).toBeInTheDocument();
       expect(screen.getByText("Locked")).toBeInTheDocument();
       expect(screen.getByTitle("Enable editable mode")).toBeInTheDocument();
@@ -138,7 +138,7 @@ describe("KitHeader", () => {
           {...baseProps}
           isEditable={false}
           onToggleEditableMode={vi.fn()}
-        />,
+        />
       );
 
       expect(screen.getByText("Locked")).toBeInTheDocument();
@@ -155,7 +155,7 @@ describe("KitHeader", () => {
           {...baseProps}
           isEditable={true}
           onToggleEditableMode={vi.fn()}
-        />,
+        />
       );
 
       expect(screen.getByText("Editable")).toBeInTheDocument();
@@ -173,7 +173,7 @@ describe("KitHeader", () => {
           {...baseProps}
           isEditable={false}
           onToggleEditableMode={onToggleEditableMode}
-        />,
+        />
       );
 
       const toggleButton = screen.getByRole("button", {
@@ -190,7 +190,7 @@ describe("KitHeader", () => {
       expect(screen.queryByText("Locked")).not.toBeInTheDocument();
       expect(screen.queryByText("Editable")).not.toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: /editable mode/i }),
+        screen.queryByRole("button", { name: /editable mode/i })
       ).not.toBeInTheDocument();
     });
 
@@ -200,7 +200,7 @@ describe("KitHeader", () => {
           {...baseProps}
           isEditable={false}
           onToggleEditableMode={vi.fn()}
-        />,
+        />
       );
 
       const toggleButton = screen.getByRole("button", {
@@ -218,7 +218,7 @@ describe("KitHeader", () => {
           {...baseProps}
           isEditable={false}
           onToggleEditableMode={vi.fn()}
-        />,
+        />
       );
 
       expect(screen.getByTitle("Enable editable mode")).toBeInTheDocument();
@@ -228,7 +228,7 @@ describe("KitHeader", () => {
           {...baseProps}
           isEditable={true}
           onToggleEditableMode={vi.fn()}
-        />,
+        />
       );
 
       expect(screen.getByTitle("Disable editable mode")).toBeInTheDocument();
@@ -274,7 +274,7 @@ describe("KitHeader", () => {
           kit={kit}
           kitName="A1"
           onToggleFavorite={onToggleFavorite}
-        />,
+        />
       );
 
       const favoriteButton = screen.getByTitle("Add to favorites");
@@ -288,7 +288,7 @@ describe("KitHeader", () => {
 
       expect(screen.queryByTitle("Add to favorites")).not.toBeInTheDocument();
       expect(
-        screen.queryByTitle("Remove from favorites"),
+        screen.queryByTitle("Remove from favorites")
       ).not.toBeInTheDocument();
     });
   });

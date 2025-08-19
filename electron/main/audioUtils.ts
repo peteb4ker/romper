@@ -257,7 +257,7 @@ export function validateFileExtension(filePath: string): FormatIssue | null {
  * This combines file extension validation and audio format validation
  */
 export function validateSampleFormat(
-  filePath: string,
+  filePath: string
 ): DbResult<FormatValidationResult> {
   const issues: FormatIssue[] = [];
 

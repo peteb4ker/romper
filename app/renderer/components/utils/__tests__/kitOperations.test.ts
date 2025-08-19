@@ -57,7 +57,7 @@ describe("createKit", () => {
 
   it("throws error for invalid kit slot", async () => {
     await expect(createKit("invalid")).rejects.toThrow(
-      "Invalid kit slot. Use format A0-Z99.",
+      "Invalid kit slot. Use format A0-Z99."
     );
 
     expect(mockElectronAPI.createKit).not.toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe("duplicateKit", () => {
 
   it("throws error for invalid destination slot", async () => {
     await expect(duplicateKit("A1", "invalid")).rejects.toThrow(
-      "Invalid destination slot. Use format A0-Z99.",
+      "Invalid destination slot. Use format A0-Z99."
     );
 
     expect(mockElectronAPI.copyKit).not.toHaveBeenCalled();
@@ -97,30 +97,30 @@ describe("duplicateKit", () => {
     global.window = { electronAPI: {} } as any;
 
     await expect(duplicateKit("A1", "B2")).rejects.toThrow(
-      "Electron API not available",
+      "Electron API not available"
     );
   });
 
   it("cleans up error messages from Electron API", async () => {
     mockElectronAPI.copyKit.mockRejectedValue(
       new Error(
-        "Error invoking remote method 'copy-kit': Error: Source kit not found",
-      ),
+        "Error invoking remote method 'copy-kit': Error: Source kit not found"
+      )
     );
 
     await expect(duplicateKit("A1", "B2")).rejects.toThrow(
-      "Source kit not found",
+      "Source kit not found"
     );
   });
 
   it("handles various error message formats", async () => {
     // Test different error prefixes
     mockElectronAPI.copyKit.mockRejectedValue(
-      new Error("Error: Kit already exists"),
+      new Error("Error: Kit already exists")
     );
 
     await expect(duplicateKit("A1", "B2")).rejects.toThrow(
-      "Kit already exists",
+      "Kit already exists"
     );
   });
 });
@@ -152,7 +152,7 @@ describe("formatKitError", () => {
 
     expect(formatKitError(error1)).toBe("Failed to create kit: File not found");
     expect(formatKitError(error2)).toBe(
-      "Failed to create kit: Permission denied",
+      "Failed to create kit: Permission denied"
     );
   });
 

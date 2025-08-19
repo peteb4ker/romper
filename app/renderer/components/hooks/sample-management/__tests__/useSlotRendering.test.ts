@@ -29,7 +29,7 @@ describe("useSlotRendering", () => {
 
     it("handles empty samples array", () => {
       const { result } = renderHook(() =>
-        useSlotRendering({ ...defaultProps, samples: [] }),
+        useSlotRendering({ ...defaultProps, samples: [] })
       );
 
       const { nextAvailableSlot, slotsToRender } =
@@ -42,7 +42,7 @@ describe("useSlotRendering", () => {
     it("limits slots to maximum of 12", () => {
       const fullSamples = Array(15).fill("sample.wav");
       const { result } = renderHook(() =>
-        useSlotRendering({ ...defaultProps, samples: fullSamples }),
+        useSlotRendering({ ...defaultProps, samples: fullSamples })
       );
 
       const { slotsToRender } = result.current.calculateRenderSlots();
@@ -56,7 +56,7 @@ describe("useSlotRendering", () => {
         useSlotRendering({
           ...defaultProps,
           samples: samplesWithEmptyStrings,
-        }),
+        })
       );
 
       const { nextAvailableSlot, slotsToRender } =
@@ -69,7 +69,7 @@ describe("useSlotRendering", () => {
     it("shows exactly 12 slots when voice has 12 samples", () => {
       const fullSamples = Array(12).fill("sample.wav");
       const { result } = renderHook(() =>
-        useSlotRendering({ ...defaultProps, samples: fullSamples }),
+        useSlotRendering({ ...defaultProps, samples: fullSamples })
       );
 
       const { slotsToRender } = result.current.calculateRenderSlots();
@@ -85,7 +85,7 @@ describe("useSlotRendering", () => {
       const styling = result.current.getSlotStyling(0, "kick.wav");
 
       expect(styling.slotBaseClass).toBe(
-        "truncate flex items-center gap-2 mb-1 min-h-[28px]",
+        "truncate flex items-center gap-2 mb-1 min-h-[28px]"
       );
       expect(styling.dragOverClass).toBe("");
       expect(styling.isDragOver).toBe(false);
@@ -95,7 +95,7 @@ describe("useSlotRendering", () => {
 
     it("applies drag over styling", () => {
       const { result } = renderHook(() =>
-        useSlotRendering({ ...defaultProps, dragOverSlot: 0 }),
+        useSlotRendering({ ...defaultProps, dragOverSlot: 0 })
       );
 
       const styling = result.current.getSlotStyling(0, "kick.wav");
@@ -109,7 +109,7 @@ describe("useSlotRendering", () => {
         useSlotRendering({
           ...defaultProps,
           dropZone: { mode: "insert", slot: 0 },
-        }),
+        })
       );
 
       const styling = result.current.getSlotStyling(0, "kick.wav");
@@ -117,7 +117,7 @@ describe("useSlotRendering", () => {
       expect(styling.isDropZone).toBe(true);
       expect(styling.dragOverClass).toContain("bg-green-100");
       expect(styling.dropHintTitle).toBe(
-        "Insert sample here (other samples will shift down)",
+        "Insert sample here (other samples will shift down)"
       );
     });
 
@@ -126,7 +126,7 @@ describe("useSlotRendering", () => {
         useSlotRendering({
           ...defaultProps,
           dropZone: { mode: "append", slot: 0 },
-        }),
+        })
       );
 
       const styling = result.current.getSlotStyling(0, "kick.wav");
@@ -141,7 +141,7 @@ describe("useSlotRendering", () => {
         useSlotRendering({
           ...defaultProps,
           dropZone: { mode: "blocked", slot: 0 },
-        }),
+        })
       );
 
       const styling = result.current.getSlotStyling(0, "kick.wav");
@@ -157,7 +157,7 @@ describe("useSlotRendering", () => {
           ...defaultProps,
           isStereoDragTarget: true,
           stereoDragSlotNumber: 0,
-        }),
+        })
       );
 
       const styling = result.current.getSlotStyling(0, "kick.wav");
@@ -174,7 +174,7 @@ describe("useSlotRendering", () => {
           isStereoDragTarget: true,
           stereoDragSlotNumber: 0,
           voice: 2,
-        }),
+        })
       );
 
       const styling = result.current.getSlotStyling(0, "kick.wav");
@@ -190,7 +190,7 @@ describe("useSlotRendering", () => {
       const className = result.current.getSampleSlotClassName(
         0,
         "base-class",
-        "",
+        ""
       );
 
       expect(className).toContain("bg-blue-100");
@@ -200,13 +200,13 @@ describe("useSlotRendering", () => {
 
     it("does not apply selected styling when not active", () => {
       const { result } = renderHook(() =>
-        useSlotRendering({ ...defaultProps, isActive: false }),
+        useSlotRendering({ ...defaultProps, isActive: false })
       );
 
       const className = result.current.getSampleSlotClassName(
         0,
         "base-class",
-        "",
+        ""
       );
 
       expect(className).not.toContain("bg-blue-100");
@@ -215,13 +215,13 @@ describe("useSlotRendering", () => {
 
     it("does not apply selected styling when different slot is selected", () => {
       const { result } = renderHook(() =>
-        useSlotRendering({ ...defaultProps, selectedIdx: 1 }),
+        useSlotRendering({ ...defaultProps, selectedIdx: 1 })
       );
 
       const className = result.current.getSampleSlotClassName(
         0,
         "base-class",
-        "",
+        ""
       );
 
       expect(className).not.toContain("bg-blue-100");
@@ -234,7 +234,7 @@ describe("useSlotRendering", () => {
       const className = result.current.getSampleSlotClassName(
         0,
         "base-class",
-        " drag-over-class",
+        " drag-over-class"
       );
 
       expect(className).toContain("drag-over-class");
@@ -255,7 +255,7 @@ describe("useSlotRendering", () => {
         false,
         false,
         false,
-        "",
+        ""
       );
 
       expect(title).toBe("Slot 1");
@@ -270,7 +270,7 @@ describe("useSlotRendering", () => {
         false,
         false,
         false,
-        "",
+        ""
       );
 
       expect(title).toBe("Slot 1\nSource: /path/to/kick.wav");
@@ -285,7 +285,7 @@ describe("useSlotRendering", () => {
         true,
         false,
         false,
-        "Custom drop hint",
+        "Custom drop hint"
       );
 
       expect(title).toBe("Custom drop hint");
@@ -300,7 +300,7 @@ describe("useSlotRendering", () => {
         false,
         true,
         false,
-        "Stereo hint",
+        "Stereo hint"
       );
 
       expect(title).toBe("Stereo hint");
@@ -315,7 +315,7 @@ describe("useSlotRendering", () => {
         false,
         false,
         true,
-        "Drop zone hint",
+        "Drop zone hint"
       );
 
       expect(title).toBe("Drop zone hint");

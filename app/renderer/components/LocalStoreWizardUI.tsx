@@ -32,13 +32,13 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     isDev &&
       console.debug(
         "[LocalStoreWizardUI] Rendered with setLocalStorePath:",
-        !!setLocalStorePath,
+        !!setLocalStorePath
       );
 
     const [showExistingStoreSelector, setShowExistingStoreSelector] =
       useState(false);
     const [existingStoreError, setExistingStoreError] = useState<null | string>(
-      null,
+      null
     );
     const [isSelectingExisting, setIsSelectingExisting] = useState(false);
     const {
@@ -134,7 +134,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
           onSuccess();
         }
       },
-      [setLocalStorePath, onSuccess],
+      [setLocalStorePath, onSuccess]
     );
 
     const handleChooseExistingStore = useCallback(async () => {
@@ -142,7 +142,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
       isDev &&
         console.debug(
           "selectExistingLocalStore method available:",
-          !!window.electronAPI?.selectExistingLocalStore,
+          !!window.electronAPI?.selectExistingLocalStore
         );
 
       const validation = validateElectronAPI();
@@ -326,7 +326,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
         />
       </div>
     );
-  },
+  }
 );
 
 export default LocalStoreWizardUI;

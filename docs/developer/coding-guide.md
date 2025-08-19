@@ -1,7 +1,7 @@
----
+<!-- 
 layout: default
 title: Coding Guide
----
+-->
 
 # Romper Coding Guide (Human-Readable)
 

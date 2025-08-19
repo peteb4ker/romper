@@ -92,7 +92,7 @@ describe("ScanService", () => {
     it("successfully rescans a kit directory", async () => {
       const result = await scanService.rescanKit(
         mockInMemorySettings,
-        "TestKit",
+        "TestKit"
       );
 
       expect(result.success).toBe(true);
@@ -102,7 +102,7 @@ describe("ScanService", () => {
       // Should delete existing samples first
       expect(mockDeleteSamples).toHaveBeenCalledWith(
         "/test/path/.romperdb",
-        "TestKit",
+        "TestKit"
       );
 
       // Should scan kit directory
@@ -119,7 +119,7 @@ describe("ScanService", () => {
           slot_number: 0,
           source_path: "/test/path/TestKit/1_kick.wav",
           voice_number: 1,
-        }),
+        })
       );
 
       // Should update voice aliases
@@ -127,13 +127,13 @@ describe("ScanService", () => {
         "/test/path/.romperdb",
         "TestKit",
         1,
-        "KICK",
+        "KICK"
       );
       expect(mockUpdateVoiceAlias).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "TestKit",
         2,
-        "HIHAT",
+        "HIHAT"
       );
     });
 
@@ -149,7 +149,7 @@ describe("ScanService", () => {
 
       const result = await scanService.rescanKit(
         mockInMemorySettings,
-        "TestKit",
+        "TestKit"
       );
 
       expect(result.success).toBe(true);
@@ -158,14 +158,14 @@ describe("ScanService", () => {
         expect.objectContaining({
           filename: "1_kick_stereo.wav",
           is_stereo: true,
-        }),
+        })
       );
       expect(mockAddSample).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
           filename: "2_hat_st.wav",
           is_stereo: true,
-        }),
+        })
       );
     });
 
@@ -178,12 +178,12 @@ describe("ScanService", () => {
 
     it("returns error when kit directory does not exist", async () => {
       mockFs.existsSync.mockImplementation(
-        (path: string) => !path.includes("TestKit"),
+        (path: string) => !path.includes("TestKit")
       );
 
       const result = await scanService.rescanKit(
         mockInMemorySettings,
-        "TestKit",
+        "TestKit"
       );
 
       expect(result.success).toBe(false);
@@ -198,7 +198,7 @@ describe("ScanService", () => {
 
       const result = await scanService.rescanKit(
         mockInMemorySettings,
-        "TestKit",
+        "TestKit"
       );
 
       expect(result.success).toBe(false);
@@ -211,7 +211,7 @@ describe("ScanService", () => {
 
       const result = await scanService.rescanKit(
         mockInMemorySettings,
-        "TestKit",
+        "TestKit"
       );
 
       expect(result.success).toBe(false);
@@ -225,12 +225,12 @@ describe("ScanService", () => {
 
       const result = await scanService.rescanKit(
         mockInMemorySettings,
-        "TestKit",
+        "TestKit"
       );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain(
-        "Failed to scan kit directory: Permission denied",
+        "Failed to scan kit directory: Permission denied"
       );
     });
   });
@@ -265,7 +265,7 @@ describe("ScanService", () => {
         expect.objectContaining({
           artist: "Artist One",
           rtf_filename: "A - Artist One.rtf",
-        }),
+        })
       );
       expect(mockUpdateBank).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -273,7 +273,7 @@ describe("ScanService", () => {
         expect.objectContaining({
           artist: "Artist Two",
           rtf_filename: "B - Artist Two.rtf",
-        }),
+        })
       );
       expect(mockUpdateBank).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -281,7 +281,7 @@ describe("ScanService", () => {
         expect.objectContaining({
           artist: "Artist Three",
           rtf_filename: "C - Artist Three.rtf",
-        }),
+        })
       );
     });
 
@@ -297,7 +297,7 @@ describe("ScanService", () => {
         expect.objectContaining({
           artist: "Artist Lower",
           rtf_filename: "a - Artist Lower.rtf",
-        }),
+        })
       );
     });
 

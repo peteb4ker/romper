@@ -1,9 +1,9 @@
----
-title: "Performance Guidelines"
-owners: ["developer-team"]
-last_reviewed: "2025-08-15"
-tags: ["developer"]
----
+<!-- 
+title: Performance Guidelines
+owners: developer-team
+last_reviewed: 2025-08-15
+tags: developer
+-->
 
 # Performance Guidelines
 

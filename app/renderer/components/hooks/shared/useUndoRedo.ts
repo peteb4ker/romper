@@ -28,7 +28,7 @@ export function useUndoRedo(kitName: string) {
     } else {
       console.log(
         "[UNDO] Undo operation failed:",
-        result?.error || "No error message",
+        result?.error || "No error message"
       );
       state.setError(result?.error || "Failed to undo action");
     }
@@ -47,7 +47,7 @@ export function useUndoRedo(kitName: string) {
   // Handle redo error
   const handleRedoError = (error: any) => {
     state.setError(
-      `Failed to redo action: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to redo action: ${error instanceof Error ? error.message : String(error)}`
     );
   };
 
@@ -64,11 +64,11 @@ export function useUndoRedo(kitName: string) {
     try {
       console.log(
         "[UNDO] Starting undo execution for type:",
-        actionToUndo.type,
+        actionToUndo.type
       );
       console.log(
         "[UNDO] ElectronAPI available:",
-        !!(window as any).electronAPI,
+        !!(window as any).electronAPI
       );
 
       const result = await undoHandlers.executeUndoAction(actionToUndo);
@@ -76,11 +76,11 @@ export function useUndoRedo(kitName: string) {
     } catch (error) {
       console.log("[UNDO] Exception during undo:", error);
       state.setError(
-        `Failed to undo action: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to undo action: ${error instanceof Error ? error.message : String(error)}`
       );
     } finally {
       console.log(
-        "[UNDO] Undo operation completed, setting isUndoing to false",
+        "[UNDO] Undo operation completed, setting isUndoing to false"
       );
       state.setUndoing(false);
     }

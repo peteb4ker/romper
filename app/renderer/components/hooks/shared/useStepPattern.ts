@@ -30,7 +30,7 @@ export function useStepPattern({
       try {
         const result = await window.electronAPI.updateStepPattern(
           kitName,
-          pattern,
+          pattern
         );
         if (!result.success) {
           console.error("Failed to save step pattern:", result.error);
@@ -43,7 +43,7 @@ export function useStepPattern({
         setStepPatternState(ensureValidStepPattern(initialPattern));
       }
     },
-    [kitName, initialPattern],
+    [kitName, initialPattern]
   );
 
   return {

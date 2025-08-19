@@ -12,7 +12,7 @@ export const MAX_SLOTS = 12;
 export function displayNumberToSlotNumber(displayNumber: number): number {
   if (displayNumber < 1 || displayNumber > MAX_SLOTS) {
     throw new Error(
-      `Display number must be 1-${MAX_SLOTS}, got ${displayNumber}`,
+      `Display number must be 1-${MAX_SLOTS}, got ${displayNumber}`
     );
   }
   return displayNumber - 1;
@@ -31,7 +31,7 @@ export function getFilledSampleCount(samples: (string | undefined)[]): number {
  */
 export function getInsertionDbSlot(
   samples: { slot_number: number }[],
-  displayPosition: number,
+  displayPosition: number
 ): number {
   const slotNumber = displayNumberToSlotNumber(displayPosition);
 
@@ -54,7 +54,7 @@ export function isValidSlotNumber(slotNumber: number): boolean {
 export function slotNumberToDisplayNumber(slotNumber: number): number {
   if (!isValidSlotNumber(slotNumber)) {
     throw new Error(
-      `Slot number must be 0-${MAX_SLOTS - 1}, got ${slotNumber}`,
+      `Slot number must be 0-${MAX_SLOTS - 1}, got ${slotNumber}`
     );
   }
   return slotNumber + 1;

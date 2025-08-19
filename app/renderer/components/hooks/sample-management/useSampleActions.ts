@@ -29,7 +29,7 @@ export function useSampleActions({
         ErrorPatterns.sampleOperation(error, "delete sample");
       }
     },
-    [isEditable, onSampleDelete, voice],
+    [isEditable, onSampleDelete, voice]
   );
 
   const handleSampleContextMenu = useCallback(
@@ -39,7 +39,7 @@ export function useSampleActions({
         window.electronAPI.showItemInFolder(sampleData.source_path);
       }
     },
-    [],
+    []
   );
 
   return {

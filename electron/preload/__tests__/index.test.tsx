@@ -60,7 +60,7 @@ describe("preload/index.tsx", () => {
         ROMPER_LOCAL_PATH: process.env.ROMPER_LOCAL_PATH,
         ROMPER_SDCARD_PATH: process.env.ROMPER_SDCARD_PATH,
         ROMPER_SQUARP_ARCHIVE_URL: process.env.ROMPER_SQUARP_ARCHIVE_URL,
-      },
+      }
     );
   });
 
@@ -110,7 +110,7 @@ describe("preload/index.tsx", () => {
         validateLocalStoreBasic: expect.any(Function),
         validateSampleFormat: expect.any(Function),
         validateSampleSources: expect.any(Function),
-      }),
+      })
     );
   });
 
@@ -120,7 +120,7 @@ describe("preload/index.tsx", () => {
       "electronFileAPI",
       expect.objectContaining({
         getDroppedFilePath: expect.any(Function),
-      }),
+      })
     );
   });
 
@@ -131,7 +131,7 @@ describe("preload/index.tsx", () => {
     // Check for specific menu events
     expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
       "menu-scan-all-kits",
-      expect.any(Function),
+      expect.any(Function)
     );
   });
 
@@ -140,7 +140,7 @@ describe("preload/index.tsx", () => {
 
     const electronAPICall =
       mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-        (call) => call[0] === "electronAPI",
+        (call) => call[0] === "electronAPI"
       );
     expect(electronAPICall).toBeDefined();
     const api = electronAPICall[1];
@@ -159,7 +159,7 @@ describe("preload/index.tsx", () => {
     // Test getSetting - should call read-settings via IPC
     const result = await api.getSetting("testKey");
     expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
-      "read-settings",
+      "read-settings"
     );
     expect(result).toBe("test-value");
 
@@ -168,13 +168,13 @@ describe("preload/index.tsx", () => {
     expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
       "write-settings",
       "testKey",
-      "test-value",
+      "test-value"
     );
 
     // Test readSettings - should call read-settings via IPC
     const settings = await api.readSettings();
     expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
-      "read-settings",
+      "read-settings"
     );
     expect(settings).toEqual({ testKey: "test-value" });
   });
@@ -184,12 +184,12 @@ describe("preload/index.tsx", () => {
 
     const fileApi =
       mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-        (c) => c[0] === "electronFileAPI",
+        (c) => c[0] === "electronFileAPI"
       )?.[1];
 
     const file = new File([], "test.wav");
     mockElectron.webUtils.getPathForFile.mockResolvedValue(
-      "/mock/path/test.wav",
+      "/mock/path/test.wav"
     );
 
     const result = await fileApi.getDroppedFilePath(file);
@@ -216,11 +216,11 @@ describe("preload/index.tsx", () => {
 
     const fileApi =
       mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-        (c) => c[0] === "electronFileAPI",
+        (c) => c[0] === "electronFileAPI"
       )?.[1];
 
     await expect(fileApi.getDroppedFilePath({})).rejects.toThrow(
-      "webUtils.getPathForFile is not available.",
+      "webUtils.getPathForFile is not available."
     );
   });
 
@@ -229,7 +229,7 @@ describe("preload/index.tsx", () => {
 
     const electronAPICall =
       mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-        (call) => call[0] === "electronAPI",
+        (call) => call[0] === "electronAPI"
       );
     const api = electronAPICall[1];
 
@@ -238,18 +238,18 @@ describe("preload/index.tsx", () => {
 
     await api.selectSdCard();
     expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
-      "select-sd-card",
+      "select-sd-card"
     );
 
     await api.getLocalStoreStatus();
     expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
-      "get-local-store-status",
+      "get-local-store-status"
     );
 
     await api.createKit("A01");
     expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
       "create-kit",
-      "A01",
+      "A01"
     );
   });
 
@@ -259,7 +259,7 @@ describe("preload/index.tsx", () => {
     await import("../index");
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Preload script updated and loaded",
+      "Preload script updated and loaded"
     );
 
     consoleSpy.mockRestore();
@@ -273,7 +273,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -303,7 +303,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -311,7 +311,7 @@ describe("preload/index.tsx", () => {
       expect(result).toEqual({ localStorePath: "/env/fallback/path" });
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to read settings:",
-        expect.any(Error),
+        expect.any(Error)
       );
 
       consoleErrorSpy.mockRestore();
@@ -335,7 +335,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -343,7 +343,7 @@ describe("preload/index.tsx", () => {
       await api.setSetting("testKey", "testValue");
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to write settings:",
-        expect.any(Error),
+        expect.any(Error)
       );
 
       consoleErrorSpy.mockRestore();
@@ -362,7 +362,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -377,7 +377,7 @@ describe("preload/index.tsx", () => {
 
       // Get the callback function that was registered for the menu-scan-all-kits event
       const scanAllKitsCall = mockElectron.ipcRenderer.on.mock.calls.find(
-        (call) => call[0] === "menu-scan-all-kits",
+        (call) => call[0] === "menu-scan-all-kits"
       );
       expect(scanAllKitsCall).toBeDefined();
 
@@ -393,7 +393,7 @@ describe("preload/index.tsx", () => {
       expect(global.window.dispatchEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "menu-scan-all-kits",
-        }),
+        })
       );
     });
 
@@ -413,7 +413,7 @@ describe("preload/index.tsx", () => {
       expectedEvents.forEach((event) => {
         expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
           event,
-          expect.any(Function),
+          expect.any(Function)
         );
       });
     });
@@ -425,7 +425,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -434,11 +434,11 @@ describe("preload/index.tsx", () => {
       api.onSamplePlaybackEnded(callback);
 
       expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
-        "sample-playback-ended",
+        "sample-playback-ended"
       );
       expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
         "sample-playback-ended",
-        callback,
+        callback
       );
     });
 
@@ -447,7 +447,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -456,11 +456,11 @@ describe("preload/index.tsx", () => {
       api.onSamplePlaybackError(callback);
 
       expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
-        "sample-playback-error",
+        "sample-playback-error"
       );
       expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
         "sample-playback-error",
-        expect.any(Function),
+        expect.any(Function)
       );
     });
 
@@ -469,7 +469,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -482,27 +482,27 @@ describe("preload/index.tsx", () => {
         "http://test.com",
         "/dest",
         onProgress,
-        onError,
+        onError
       );
 
       expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
-        "archive-progress",
+        "archive-progress"
       );
       expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
-        "archive-error",
+        "archive-error"
       );
       expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
         "archive-progress",
-        expect.any(Function),
+        expect.any(Function)
       );
       expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
         "archive-error",
-        expect.any(Function),
+        expect.any(Function)
       );
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "download-and-extract-archive",
         "http://test.com",
-        "/dest",
+        "/dest"
       );
     });
 
@@ -511,7 +511,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -520,11 +520,11 @@ describe("preload/index.tsx", () => {
       api.onSyncProgress(callback);
 
       expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
-        "sync-progress",
+        "sync-progress"
       );
       expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
         "sync-progress",
-        expect.any(Function),
+        expect.any(Function)
       );
     });
   });
@@ -676,7 +676,7 @@ describe("preload/index.tsx", () => {
 
         const electronAPICall =
           mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-            (call) => call[0] === "electronAPI",
+            (call) => call[0] === "electronAPI"
           );
         const api = electronAPICall[1];
 
@@ -685,9 +685,9 @@ describe("preload/index.tsx", () => {
         await api[method](...args);
         expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
           ipcChannel,
-          ...args,
+          ...args
         );
-      },
+      }
     );
 
     // Parameterized test for methods with object parameters
@@ -726,7 +726,7 @@ describe("preload/index.tsx", () => {
 
         const electronAPICall =
           mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-            (call) => call[0] === "electronAPI",
+            (call) => call[0] === "electronAPI"
           );
         const api = electronAPICall[1];
 
@@ -735,9 +735,9 @@ describe("preload/index.tsx", () => {
         await api[method](...args);
         expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
           ipcChannel,
-          ...args,
+          ...args
         );
-      },
+      }
     );
 
     // Test methods with options parameters
@@ -766,7 +766,7 @@ describe("preload/index.tsx", () => {
 
         const electronAPICall =
           mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-            (call) => call[0] === "electronAPI",
+            (call) => call[0] === "electronAPI"
           );
         const api = electronAPICall[1];
 
@@ -775,9 +775,9 @@ describe("preload/index.tsx", () => {
         await api[method](...args);
         expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
           ipcChannel,
-          ...args,
+          ...args
         );
-      },
+      }
     );
 
     // Test moveSampleInKit method specifically (has multiple parameters)
@@ -786,7 +786,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -800,7 +800,7 @@ describe("preload/index.tsx", () => {
         0,
         2,
         1,
-        "insert",
+        "insert"
       );
     });
 
@@ -810,7 +810,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -827,7 +827,7 @@ describe("preload/index.tsx", () => {
           toKit: "Kit2",
           toSlot: 1,
           toVoice: 2,
-        },
+        }
       );
     });
 
@@ -837,7 +837,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -847,14 +847,14 @@ describe("preload/index.tsx", () => {
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "download-and-extract-archive",
         "http://test.com",
-        "/dest/path",
+        "/dest/path"
       );
       // Should not set up listeners when no callbacks provided
       expect(
-        mockElectron.ipcRenderer.removeAllListeners,
+        mockElectron.ipcRenderer.removeAllListeners
       ).not.toHaveBeenCalledWith("archive-progress");
       expect(
-        mockElectron.ipcRenderer.removeAllListeners,
+        mockElectron.ipcRenderer.removeAllListeners
       ).not.toHaveBeenCalledWith("archive-error");
     });
   });
@@ -865,7 +865,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -880,7 +880,7 @@ describe("preload/index.tsx", () => {
         1,
         0,
         "/path/to/sample.wav",
-        { forceMono: true },
+        { forceMono: true }
       );
 
       await api.replaceSampleInSlot("testKit", 1, 0, "/path/to/sample.wav");
@@ -890,7 +890,7 @@ describe("preload/index.tsx", () => {
         1,
         0,
         "/path/to/sample.wav",
-        undefined,
+        undefined
       );
 
       await api.deleteSampleFromSlot("testKit", 1, 0);
@@ -898,7 +898,7 @@ describe("preload/index.tsx", () => {
         "delete-sample-from-slot",
         "testKit",
         1,
-        0,
+        0
       );
     });
 
@@ -907,7 +907,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -915,19 +915,19 @@ describe("preload/index.tsx", () => {
 
       await api.generateSyncChangeSummary();
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
-        "generateSyncChangeSummary",
+        "generateSyncChangeSummary"
       );
 
       const syncData = { filesToConvert: [], filesToCopy: [] };
       await api.startKitSync(syncData);
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "startKitSync",
-        syncData,
+        syncData
       );
 
       await api.cancelKitSync();
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
-        "cancelKitSync",
+        "cancelKitSync"
       );
     });
 
@@ -936,7 +936,7 @@ describe("preload/index.tsx", () => {
 
       const electronAPICall =
         mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
+          (call) => call[0] === "electronAPI"
         );
       const api = electronAPICall[1];
 
@@ -945,13 +945,13 @@ describe("preload/index.tsx", () => {
       await api.getAudioMetadata("/path/to/file.wav");
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "get-audio-metadata",
-        "/path/to/file.wav",
+        "/path/to/file.wav"
       );
 
       await api.validateSampleFormat("/path/to/file.wav");
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "validate-sample-format",
-        "/path/to/file.wav",
+        "/path/to/file.wav"
       );
     });
   });

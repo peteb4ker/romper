@@ -38,7 +38,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "nonexistent.wav",
-        "output.wav",
+        "output.wav"
       );
 
       expect(result.success).toBe(false);
@@ -54,7 +54,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
-        "output.wav",
+        "output.wav"
       );
 
       expect(result.success).toBe(false);
@@ -72,7 +72,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options,
+        options
       );
 
       expect(result.success).toBe(false);
@@ -90,7 +90,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options,
+        options
       );
 
       expect(result.success).toBe(false);
@@ -129,7 +129,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options,
+        options
       );
 
       expect(result.success).toBe(true);
@@ -140,7 +140,7 @@ describe("formatConverter", () => {
           bitDepth: 16,
           float: false,
           sampleRate: 44100,
-        }),
+        })
       );
     });
 
@@ -168,7 +168,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options,
+        options
       );
 
       expect(result.success).toBe(true);
@@ -199,7 +199,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options,
+        options
       );
 
       expect(result.success).toBe(true);
@@ -227,7 +227,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
-        "/output/dir/output.wav",
+        "/output/dir/output.wav"
       );
 
       expect(mockFs.mkdirSync).toHaveBeenCalledWith("/output/dir", {
@@ -248,7 +248,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
-        "output.wav",
+        "output.wav"
       );
 
       expect(result.success).toBe(false);
@@ -267,7 +267,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
-        "output.wav",
+        "output.wav"
       );
 
       expect(result.success).toBe(false);
@@ -281,7 +281,7 @@ describe("formatConverter", () => {
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
-        "output.wav",
+        "output.wav"
       );
 
       expect(result.success).toBe(false);
@@ -312,7 +312,7 @@ describe("formatConverter", () => {
       const result = await convertSampleToRampleFormat(
         "input.wav",
         "output.wav",
-        options,
+        options
       );
 
       expect(result.success).toBe(true);
@@ -343,7 +343,7 @@ describe("formatConverter", () => {
       const result = await convertToRampleDefault(
         "input.wav",
         "output.wav",
-        true,
+        true
       );
 
       expect(result.success).toBe(true);

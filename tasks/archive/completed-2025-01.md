@@ -1,10 +1,10 @@
----
-title: "Archived Completed Tasks - January 2025"
-archived_date: "2025-08-19"
-source_files: ["tasks-prd.md", "tasks-techdebt.md"]
+<!-- 
+title: Archived Completed Tasks - January 2025
+archived_date: 2025-08-19
+source_files: tasks-prd.md, tasks-techdebt.md
 context_size: large
 status: archived
----
+-->
 
 # Archived Completed Tasks - January 2025
 

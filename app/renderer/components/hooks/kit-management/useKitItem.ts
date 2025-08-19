@@ -12,11 +12,11 @@ export function useKitItem(voiceNames?: Record<number | string, string>) {
                 typeof v === "string" &&
                 v.trim() &&
                 v !== "..." &&
-                v !== "loading",
+                v !== "loading"
             )
             .map((v) => v.toLowerCase())
         : [],
-    [voiceNames],
+    [voiceNames]
   );
   const unique = useMemo(() => Array.from(new Set(arr)), [arr]);
 

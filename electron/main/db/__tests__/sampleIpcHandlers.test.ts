@@ -26,7 +26,7 @@ import { registerSampleIpcHandlers } from "../sampleIpcHandlers";
 
 const mockIpcMain = vi.mocked(ipcMain);
 const mockCreateHandler = vi.mocked(
-  ipcHandlerUtils.createSampleOperationHandler,
+  ipcHandlerUtils.createSampleOperationHandler
 );
 
 describe("registerSampleIpcHandlers - Unit Tests", () => {
@@ -49,7 +49,7 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
       registerSampleIpcHandlers(mockInMemorySettings);
 
       const registeredHandlers = mockIpcMain.handle.mock.calls.map(
-        (call) => call[0],
+        (call) => call[0]
       );
 
       expect(registeredHandlers).toEqual([
@@ -79,15 +79,15 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
       expect(mockCreateHandler).toHaveBeenCalledTimes(3);
       expect(mockCreateHandler).toHaveBeenCalledWith(
         mockInMemorySettings,
-        "add",
+        "add"
       );
       expect(mockCreateHandler).toHaveBeenCalledWith(
         mockInMemorySettings,
-        "replace",
+        "replace"
       );
       expect(mockCreateHandler).toHaveBeenCalledWith(
         mockInMemorySettings,
-        "delete",
+        "delete"
       );
     });
 

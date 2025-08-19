@@ -51,7 +51,7 @@ describe("scanVoiceInference", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe(
-      "No voice types could be inferred from filenames",
+      "No voice types could be inferred from filenames"
     );
   });
 
@@ -67,7 +67,7 @@ describe("scanVoiceInference", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe(
-      "No voice types could be inferred from filenames",
+      "No voice types could be inferred from filenames"
     );
   });
 
@@ -85,7 +85,7 @@ describe("scanVoiceInference", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe(
-      "No voice types could be inferred from filenames",
+      "No voice types could be inferred from filenames"
     );
   });
 

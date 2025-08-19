@@ -36,7 +36,7 @@ export async function insertSample(
     voice_number: number;
     wav_bitrate?: number;
     wav_sample_rate?: number;
-  },
+  }
 ) {
   if (!window.electronAPI?.insertSample) throw new Error("IPC not available");
 
@@ -50,7 +50,7 @@ export async function insertSample(
 
   const result = await window.electronAPI.insertSample(
     dbDir,
-    sampleWithDefaults,
+    sampleWithDefaults
   );
   if (!result.success)
     throw new Error(result.error || "Failed to insert sample");

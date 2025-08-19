@@ -60,7 +60,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     expect(result.current.selectedKit).toBeNull();
@@ -74,7 +74,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     act(() => {
@@ -91,7 +91,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     act(() => {
@@ -111,7 +111,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     act(() => {
@@ -131,7 +131,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     act(() => {
@@ -151,7 +151,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     act(() => {
@@ -171,7 +171,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     act(() => {
@@ -192,7 +192,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     expect(result.current.sortedKits.map((k) => k.name)).toEqual([
@@ -208,7 +208,7 @@ describe("useKitNavigation", () => {
         allKitSamples: {},
         kits: [],
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     expect(result.current.sortedKits).toEqual([]);
@@ -221,7 +221,7 @@ describe("useKitNavigation", () => {
         allKitSamples: {},
         kits: null,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     expect(result.current.sortedKits).toEqual([]);
@@ -234,7 +234,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     act(() => {
@@ -255,7 +255,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     act(() => {
@@ -279,7 +279,7 @@ describe("useKitNavigation", () => {
         allKitSamples: mockAllKitSamples,
         kits: mockKits,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
+      })
     );
 
     // Initially no kit selected
@@ -314,7 +314,7 @@ describe("useKitNavigation", () => {
           kits,
           refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
         }),
-      { initialProps: { kits: mockKits } },
+      { initialProps: { kits: mockKits } }
     );
 
     const firstSortedKits = result.current.sortedKits;
@@ -344,7 +344,7 @@ describe("useKitNavigation", () => {
           allKitSamples: mockAllKitSamples,
           kits: mockKits,
           refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-        }),
+        })
       );
 
       // First select a kit
@@ -379,7 +379,7 @@ describe("useKitNavigation", () => {
           allKitSamples: mockAllKitSamples,
           kits: mockKits,
           refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-        }),
+        })
       );
 
       await act(async () => {
@@ -395,7 +395,7 @@ describe("useKitNavigation", () => {
           allKitSamples: mockAllKitSamples,
           kits: mockKits,
           refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-        }),
+        })
       );
 
       await act(async () => {
@@ -411,7 +411,7 @@ describe("useKitNavigation", () => {
           allKitSamples: mockAllKitSamples,
           kits: mockKits,
           refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-        }),
+        })
       );
 
       await act(async () => {
@@ -427,7 +427,7 @@ describe("useKitNavigation", () => {
           allKitSamples: mockAllKitSamples,
           kits: mockKits,
           refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-        }),
+        })
       );
 
       await act(async () => {
@@ -449,7 +449,7 @@ describe("useKitNavigation", () => {
           allKitSamples: mockAllKitSamples,
           kits: mockKits,
           refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-        }),
+        })
       );
 
       await act(async () => {
@@ -471,7 +471,7 @@ describe("useKitNavigation", () => {
           allKitSamples: mockAllKitSamples,
           kits: mockKits,
           refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-        }),
+        })
       );
 
       await act(async () => {

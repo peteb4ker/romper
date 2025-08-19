@@ -84,7 +84,7 @@ describe("SettingsService", () => {
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         "/test/userData/romper-settings.json",
         JSON.stringify(mockInMemorySettings, null, 2),
-        "utf-8",
+        "utf-8"
       );
     });
 
@@ -100,9 +100,9 @@ describe("SettingsService", () => {
             theme: "light",
           },
           null,
-          2,
+          2
         ),
-        "utf-8",
+        "utf-8"
       );
     });
 
@@ -115,14 +115,14 @@ describe("SettingsService", () => {
       settingsService.writeSetting(
         mockInMemorySettings,
         "complex",
-        complexValue,
+        complexValue
       );
 
       expect(mockInMemorySettings.complex).toEqual(complexValue);
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         "/test/userData/romper-settings.json",
         expect.stringContaining('"complex"'),
-        "utf-8",
+        "utf-8"
       );
     });
 
@@ -134,12 +134,12 @@ describe("SettingsService", () => {
       expect(mockApp.getPath).toHaveBeenCalledWith("userData");
       expect(mockPath.join).toHaveBeenCalledWith(
         "/custom/userData",
-        "romper-settings.json",
+        "romper-settings.json"
       );
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         "/custom/userData/romper-settings.json",
         expect.any(String),
-        "utf-8",
+        "utf-8"
       );
     });
   });
@@ -148,7 +148,7 @@ describe("SettingsService", () => {
     it("returns environment override when provided", () => {
       const result = settingsService.getLocalStorePath(
         mockInMemorySettings,
-        "/env/override/path",
+        "/env/override/path"
       );
 
       expect(result).toBe("/env/override/path");
@@ -170,7 +170,7 @@ describe("SettingsService", () => {
     it("prioritizes environment override over in-memory settings", () => {
       const result = settingsService.getLocalStorePath(
         mockInMemorySettings,
-        "/priority/env/path",
+        "/priority/env/path"
       );
 
       expect(result).toBe("/priority/env/path");
@@ -181,7 +181,7 @@ describe("SettingsService", () => {
     it("handles falsy environment override", () => {
       const result = settingsService.getLocalStorePath(
         mockInMemorySettings,
-        "",
+        ""
       );
 
       expect(result).toBe("/test/local/store");
@@ -221,7 +221,7 @@ describe("SettingsService", () => {
     it("prioritizes environment override in validation", () => {
       const result = settingsService.validateLocalStorePath(
         mockInMemorySettings,
-        "/env/override",
+        "/env/override"
       );
 
       expect(result).toEqual({

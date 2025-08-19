@@ -31,7 +31,7 @@ export interface ElectronAPI {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
+    options?: { forceMono?: boolean; forceStereo?: boolean }
   ) => Promise<DbResult<{ sampleId: number }>>;
   cancelKitSync?: () => void;
   closeApp?: () => Promise<void>;
@@ -43,20 +43,20 @@ export interface ElectronAPI {
   deleteSampleFromSlot?: (
     kitName: string,
     voiceNumber: number,
-    slotNumber: number,
+    slotNumber: number
   ) => Promise<
     DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }>
   >;
   deleteSampleFromSlotWithoutReindexing?: (
     kitName: string,
     voiceNumber: number,
-    slotNumber: number,
+    slotNumber: number
   ) => Promise<DbResult<{ deletedSamples: Sample[] }>>;
   downloadAndExtractArchive?: (
     url: string,
     destDir: string,
     onProgress?: (p: any) => void,
-    onError?: (e: any) => void,
+    onError?: (e: any) => void
   ) => Promise<DbResult>;
   ensureDir?: (dir: string) => Promise<void>;
   // Task 8.1: SD Card Sync Operations
@@ -134,7 +134,7 @@ export interface ElectronAPI {
   getSampleAudioBuffer?: (
     kitName: string,
     voiceNumber: number,
-    slotNumber: number,
+    slotNumber: number
   ) => Promise<ArrayBuffer | null>;
   getSetting: (
     key: keyof {
@@ -143,14 +143,14 @@ export interface ElectronAPI {
       localStorePath?: string;
       theme?: string;
       themeMode?: "dark" | "light" | "system";
-    },
+    }
   ) => Promise<any>;
   getUserHomeDir?: () => Promise<string>;
   insertKit?: (dbDir: string, kit: NewKit) => Promise<DbResult>;
 
   insertSample?: (
     dbDir: string,
-    sample: NewSample,
+    sample: NewSample
   ) => Promise<InsertSampleResult>;
   listFilesInRoot?: (localStorePath: string) => Promise<string[]>;
   // Cross-kit sample movement with source reindexing
@@ -161,7 +161,7 @@ export interface ElectronAPI {
     toKit: string,
     toVoice: number,
     toSlot: number,
-    mode: "insert" | "overwrite",
+    mode: "insert" | "overwrite"
   ) => Promise<
     DbResult<{
       affectedSamples: ({ original_slot_number: number } & Sample)[];
@@ -175,7 +175,7 @@ export interface ElectronAPI {
     fromVoice: number,
     fromSlot: number,
     toVoice: number,
-    toSlot: number,
+    toSlot: number
   ) => Promise<
     DbResult<{
       affectedSamples: Sample[];
@@ -200,12 +200,12 @@ export interface ElectronAPI {
         | "preparing";
       totalBytes: number;
       totalFiles: number;
-    }) => void,
+    }) => void
   ) => void;
   openExternal?: (url: string) => Promise<void>;
   playSample?: (
     filePath: string,
-    options?: { channel?: "left" | "mono" | "right" | "stereo" },
+    options?: { channel?: "left" | "mono" | "right" | "stereo" }
   ) => Promise<any>;
   readAudioFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // ArrayBuffer for audio files
   readFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // Returns file content as ArrayBuffer
@@ -222,10 +222,10 @@ export interface ElectronAPI {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
+    options?: { forceMono?: boolean; forceStereo?: boolean }
   ) => Promise<DbResult<{ sampleId: number }>>;
   rescanKit: (
-    kitName: string,
+    kitName: string
   ) => Promise<DbResult<{ scannedSamples: number; updatedVoices: number }>>;
   scanBanks?: () => Promise<
     DbResult<{ scannedAt: Date; scannedFiles: number; updatedBanks: number }>
@@ -247,7 +247,7 @@ export interface ElectronAPI {
       theme?: string;
       themeMode?: "dark" | "light" | "system";
     },
-    value: any,
+    value: any
   ) => Promise<void>;
 
   showItemInFolder: (path: string) => Promise<void>;
@@ -261,7 +261,7 @@ export interface ElectronAPI {
 
   // Task 20.1: Favorites system
   toggleKitFavorite?: (
-    kitName: string,
+    kitName: string
   ) => Promise<DbResult<{ isFavorite: boolean }>>;
   updateKit?: (
     kitName: string,
@@ -271,30 +271,30 @@ export interface ElectronAPI {
       description?: string;
       editable?: boolean;
       tags?: string[];
-    },
+    }
   ) => Promise<DbResult>;
   updateKitBpm?: (kitName: string, bpm: number) => Promise<DbResult>;
   updateStepPattern?: (
     kitName: string,
-    stepPattern: number[][],
+    stepPattern: number[][]
   ) => Promise<DbResult>;
   updateVoiceAlias?: (
     kitName: string,
     voiceNumber: number,
-    voiceAlias: string,
+    voiceAlias: string
   ) => Promise<DbResult>;
   validateLocalStore: (
-    localStorePath?: string,
+    localStorePath?: string
   ) => Promise<LocalStoreValidationDetailedResult>;
   validateLocalStore: (
-    localStorePath?: string,
+    localStorePath?: string
   ) => Promise<LocalStoreValidationDetailedResult>;
 
   validateLocalStoreBasic: (
-    localStorePath?: string,
+    localStorePath?: string
   ) => Promise<LocalStoreValidationDetailedResult>;
   validateSampleFormat?: (
-    filePath: string,
+    filePath: string
   ) => Promise<DbResult<FormatValidationResult>>;
   // Task 5.2.5: Validate source_path files for existing samples
   validateSampleSources?: (kitName: string) => Promise<

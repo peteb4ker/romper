@@ -10,7 +10,7 @@ export class SampleSlotService {
    */
   findNextAvailableSlot(
     voiceNumber: number,
-    existingSamples: Sample[],
+    existingSamples: Sample[]
   ): number {
     // Get samples for the target voice
     const voiceSamples = existingSamples
@@ -36,7 +36,7 @@ export class SampleSlotService {
    */
   getOccupiedSlotsForVoice(
     voiceNumber: number,
-    existingSamples: Sample[],
+    existingSamples: Sample[]
   ): number[] {
     return existingSamples
       .filter((s) => s.voice_number === voiceNumber)
@@ -49,7 +49,7 @@ export class SampleSlotService {
    */
   getSampleCountForVoice(
     voiceNumber: number,
-    existingSamples: Sample[],
+    existingSamples: Sample[]
   ): number {
     return existingSamples.filter((s) => s.voice_number === voiceNumber).length;
   }
@@ -67,7 +67,7 @@ export class SampleSlotService {
   hasGapsInVoice(voiceNumber: number, existingSamples: Sample[]): boolean {
     const occupiedSlots = this.getOccupiedSlotsForVoice(
       voiceNumber,
-      existingSamples,
+      existingSamples
     );
 
     if (occupiedSlots.length === 0) {
@@ -90,10 +90,10 @@ export class SampleSlotService {
   isSlotOccupied(
     voiceNumber: number,
     slotNumber: number,
-    existingSamples: Sample[],
+    existingSamples: Sample[]
   ): boolean {
     return existingSamples.some(
-      (s) => s.voice_number === voiceNumber && s.slot_number === slotNumber,
+      (s) => s.voice_number === voiceNumber && s.slot_number === slotNumber
     );
   }
 
@@ -104,7 +104,7 @@ export class SampleSlotService {
   validateSlotBoundary(
     toVoice: number,
     toSlot: number, // ZERO-BASED slot number (0-11)
-    existingSamples: Sample[],
+    existingSamples: Sample[]
   ): DbResult<void> {
     // Get samples for the target voice
     const voiceSamples = existingSamples

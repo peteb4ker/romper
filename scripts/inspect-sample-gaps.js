@@ -27,7 +27,7 @@ function inspectSampleGaps() {
       SELECT kit_name, voice_number, slot_number, filename
       FROM samples
       ORDER BY kit_name, voice_number, slot_number
-    `,
+    `
       )
       .all();
 
@@ -67,7 +67,7 @@ function inspectSampleGaps() {
         });
       } else {
         console.log(
-          `  ✅ No gaps - contiguous from 1 to ${Math.max(...slots)}`,
+          `  ✅ No gaps - contiguous from 1 to ${Math.max(...slots)}`
         );
       }
       console.log("");

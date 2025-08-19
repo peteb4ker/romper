@@ -23,7 +23,7 @@ export function getRomperDbPath(localStorePath: string): string {
 }
 
 export function validateLocalStoreAgainstDb(
-  localStorePath: string,
+  localStorePath: string
 ): LocalStoreValidationDetailedResult {
   // Perform basic validation
   const basicResult = performBasicValidation(localStorePath);
@@ -58,7 +58,7 @@ export function validateLocalStoreAgainstDb(
     const kitValidation = validateKitSamples(
       basicResult.dbDir!,
       kit,
-      localStorePath,
+      localStorePath
     );
 
     if (!kitValidation.isValid) {
@@ -100,7 +100,7 @@ export function validateLocalStoreAgainstDb(
  * @returns Validation result with isValid flag, optional error message, and derived DB path
  */
 export function validateLocalStoreAndDb(
-  localStorePath: string,
+  localStorePath: string
 ): LocalStoreValidationDetailedResult {
   // First check basic structure
   const basicValidation = validateLocalStoreBasic(localStorePath);
@@ -138,7 +138,7 @@ export function validateLocalStoreAndDb(
  * @returns Validation result with isValid flag, optional error message, and derived DB path
  */
 export function validateLocalStoreBasic(
-  localStorePath: string,
+  localStorePath: string
 ): LocalStoreValidationDetailedResult {
   try {
     // Check if local store directory exists
@@ -207,7 +207,7 @@ export function validateLocalStoreBasic(
  */
 function findExtraFiles(
   kitFolderPath: string,
-  samplesData: any[],
+  samplesData: any[]
 ): { extraFiles: string[] } {
   const extraFiles: string[] = [];
 
@@ -217,7 +217,7 @@ function findExtraFiles(
       .filter((file) => file.toLowerCase().endsWith(".wav"));
 
     const dbFiles = new Set(
-      samplesData.map((s) => path.basename(s.source_path).toLowerCase()),
+      samplesData.map((s) => path.basename(s.source_path).toLowerCase())
     );
 
     for (const file of filesInDir) {
@@ -244,7 +244,7 @@ function findExtraFiles(
 function performBasicValidation(localStorePath: string) {
   console.log(
     "[Validation] Starting validateLocalStoreAgainstDb for:",
-    localStorePath,
+    localStorePath
   );
 
   const basicValidation = validateLocalStoreAndDb(localStorePath);
@@ -276,7 +276,7 @@ function performBasicValidation(localStorePath: string) {
 function validateKitSamples(
   dbDir: string,
   kit: any,
-  localStorePath: string,
+  localStorePath: string
 ): { extraFiles: string[]; isValid: boolean; missingFiles: string[] } {
   const missingFiles: string[] = [];
   const extraFiles: string[] = [];

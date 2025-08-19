@@ -11,7 +11,7 @@ export function registerSyncIpcHandlers(inMemorySettings: Record<string, any>) {
     "generateSyncChangeSummary",
     async (_event, sdCardPath?: string) => {
       return syncService.generateChangeSummary(inMemorySettings, sdCardPath);
-    },
+    }
   );
 
   ipcMain.handle(
@@ -21,10 +21,10 @@ export function registerSyncIpcHandlers(inMemorySettings: Record<string, any>) {
       options: {
         sdCardPath: string;
         wipeSdCard?: boolean;
-      },
+      }
     ) => {
       return syncService.startKitSync(inMemorySettings, options);
-    },
+    }
   );
 
   ipcMain.handle("cancelKitSync", async () => {

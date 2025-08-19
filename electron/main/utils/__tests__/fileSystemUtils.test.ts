@@ -216,7 +216,7 @@ describe("fileSystemUtils", () => {
       expect(result).toBe(0);
       expect(console.warn).toHaveBeenCalledWith(
         `Failed to get file size for ${filePath}:`,
-        expect.any(Error),
+        expect.any(Error)
       );
     });
 
@@ -232,7 +232,7 @@ describe("fileSystemUtils", () => {
       expect(result).toBe(0);
       expect(console.warn).toHaveBeenCalledWith(
         `Failed to get file size for ${filePath}:`,
-        expect.any(Error),
+        expect.any(Error)
       );
     });
 

@@ -1,1 +1,0 @@
-É (2tsXhrAapp/renderer/components/utils/__tests__/scannerOperations.test.ts

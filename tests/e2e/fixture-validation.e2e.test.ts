@@ -45,7 +45,7 @@ test.describe("Fixture System Validation", () => {
 
     // Check that wizard is NOT visible
     const wizardVisible = await window.isVisible(
-      '[data-testid="local-store-wizard"]',
+      '[data-testid="local-store-wizard"]'
     );
     expect(wizardVisible).toBe(false);
 
@@ -60,7 +60,7 @@ test.describe("Fixture System Validation", () => {
     expect(kitsResult.success).toBe(true);
     expect(kitsResult.data).toHaveLength(2);
     expect(kitsResult.data.map((kit: any) => kit.name)).toEqual(
-      expect.arrayContaining(["A0", "B1"]),
+      expect.arrayContaining(["A0", "B1"])
     );
   });
 
@@ -77,7 +77,7 @@ test.describe("Fixture System Validation", () => {
     expect(localStoreStatus.isValid).toBe(true);
     expect(localStoreStatus.error).toBe(null);
     expect(localStoreStatus.localStorePath).toEqual(
-      testEnv.environment.ROMPER_LOCAL_PATH,
+      testEnv.environment.ROMPER_LOCAL_PATH
     );
   });
 

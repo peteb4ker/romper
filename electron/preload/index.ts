@@ -126,7 +126,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
+    options?: { forceMono?: boolean; forceStereo?: boolean }
   ) => {
     isDev &&
       console.debug(
@@ -135,7 +135,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
         voiceNumber,
         slotNumber,
         filePath,
-        options,
+        options
       );
     return ipcRenderer.invoke(
       "add-sample-to-slot",
@@ -143,7 +143,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       voiceNumber,
       slotNumber,
       filePath,
-      options,
+      options
     );
   },
   cancelKitSync: () => {
@@ -173,59 +173,59 @@ contextBridge.exposeInMainWorld("electronAPI", {
   deleteSampleFromSlot: (
     kitName: string,
     voiceNumber: number,
-    slotNumber: number,
+    slotNumber: number
   ) => {
     isDev &&
       console.debug(
         "[IPC] deleteSampleFromSlot invoked",
         kitName,
         voiceNumber,
-        slotNumber,
+        slotNumber
       );
     return ipcRenderer.invoke(
       "delete-sample-from-slot",
       kitName,
       voiceNumber,
-      slotNumber,
+      slotNumber
     );
   },
   deleteSampleFromSlotWithoutReindexing: (
     kitName: string,
     voiceNumber: number,
-    slotNumber: number,
+    slotNumber: number
   ) => {
     isDev &&
       console.debug(
         "[IPC] deleteSampleFromSlotWithoutReindexing invoked",
         kitName,
         voiceNumber,
-        slotNumber,
+        slotNumber
       );
     return ipcRenderer.invoke(
       "delete-sample-from-slot-without-reindexing",
       kitName,
       voiceNumber,
-      slotNumber,
+      slotNumber
     );
   },
   downloadAndExtractArchive: (
     url: string,
     destDir: string,
     onProgress?: (p: any) => void,
-    onError?: (e: any) => void,
+    onError?: (e: any) => void
   ) => {
     isDev &&
       console.debug("[IPC] downloadAndExtractArchive invoked", url, destDir);
     if (onProgress) {
       ipcRenderer.removeAllListeners("archive-progress");
       ipcRenderer.on("archive-progress", (_event: any, progress: any) =>
-        onProgress(progress),
+        onProgress(progress)
       );
     }
     if (onError) {
       ipcRenderer.removeAllListeners("archive-error");
       ipcRenderer.on("archive-error", (_event: any, error: any) =>
-        onError(error),
+        onError(error)
       );
     }
     return ipcRenderer.invoke("download-and-extract-archive", url, destDir);
@@ -285,20 +285,20 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getSampleAudioBuffer: (
     kitName: string,
     voiceNumber: number,
-    slotNumber: number,
+    slotNumber: number
   ) => {
     isDev &&
       console.debug(
         "[IPC] getSampleAudioBuffer invoked",
         kitName,
         voiceNumber,
-        slotNumber,
+        slotNumber
       );
     return ipcRenderer.invoke(
       "get-sample-audio-buffer",
       kitName,
       voiceNumber,
-      slotNumber,
+      slotNumber
     );
   },
   getSetting: async (key: string): Promise<any> => {
@@ -328,13 +328,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     toKit: string,
     toVoice: number,
     toSlot: number,
-    mode: "insert" | "overwrite",
+    mode: "insert" | "overwrite"
   ) => {
     isDev &&
       console.debug(
         "[IPC] moveSampleBetweenKits invoked",
         `${fromKit}:${fromVoice}:${fromSlot} -> ${toKit}:${toVoice}:${toSlot}`,
-        mode,
+        mode
       );
     return ipcRenderer.invoke("move-sample-between-kits", {
       fromKit,
@@ -353,14 +353,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-    mode: "insert" | "overwrite",
+    mode: "insert" | "overwrite"
   ) => {
     isDev &&
       console.debug(
         "[IPC] moveSampleInKit invoked",
         kitName,
         `${fromVoice}:${fromSlot} -> ${toVoice}:${toSlot}`,
-        mode,
+        mode
       );
     return ipcRenderer.invoke(
       "move-sample-in-kit",
@@ -369,7 +369,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       fromSlot,
       toVoice,
       toSlot,
-      mode,
+      mode
     );
   },
   onSamplePlaybackEnded: (cb: () => void) => {
@@ -381,7 +381,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] onSamplePlaybackError registered");
     ipcRenderer.removeAllListeners("sample-playback-error");
     ipcRenderer.on("sample-playback-error", (_event: any, errMsg: string) =>
-      cb(errMsg),
+      cb(errMsg)
     );
   },
   onSyncProgress: (
@@ -394,17 +394,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
       status: "complete" | "converting" | "copying" | "error" | "preparing";
       totalBytes: number;
       totalFiles: number;
-    }) => void,
+    }) => void
   ) => {
     isDev && console.debug("[IPC] onSyncProgress listener registered");
     ipcRenderer.removeAllListeners("sync-progress");
     ipcRenderer.on("sync-progress", (_event: any, progress: any) =>
-      callback(progress),
+      callback(progress)
     );
   },
   playSample: (
     filePath: string,
-    options?: { channel?: "left" | "mono" | "right" | "stereo" },
+    options?: { channel?: "left" | "mono" | "right" | "stereo" }
   ) => {
     isDev && console.debug("[IPC] playSample invoked", filePath, options);
     return ipcRenderer.invoke("play-sample", filePath, options);
@@ -422,7 +422,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
+    options?: { forceMono?: boolean; forceStereo?: boolean }
   ) => {
     isDev &&
       console.debug(
@@ -431,7 +431,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
         voiceNumber,
         slotNumber,
         filePath,
-        options,
+        options
       );
     return ipcRenderer.invoke(
       "replace-sample-in-slot",
@@ -439,7 +439,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       voiceNumber,
       slotNumber,
       filePath,
-      options,
+      options
     );
   },
   rescanKit: (kitName: string) => {
@@ -505,7 +505,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       artist?: string;
       description?: string;
       tags?: string[];
-    },
+    }
   ) => {
     isDev && console.debug("[IPC] updateKit invoked", kitName, updates);
     return ipcRenderer.invoke("update-kit-metadata", kitName, updates);
@@ -524,20 +524,20 @@ contextBridge.exposeInMainWorld("electronAPI", {
   updateVoiceAlias: (
     kitName: string,
     voiceNumber: number,
-    voiceAlias: string,
+    voiceAlias: string
   ) => {
     isDev &&
       console.debug(
         "[IPC] updateVoiceAlias invoked",
         kitName,
         voiceNumber,
-        voiceAlias,
+        voiceAlias
       );
     return ipcRenderer.invoke(
       "update-voice-alias",
       kitName,
       voiceNumber,
-      voiceAlias,
+      voiceAlias
     );
   },
 

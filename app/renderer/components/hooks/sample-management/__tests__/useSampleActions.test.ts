@@ -36,7 +36,7 @@ describe("useSampleActions", () => {
 
     it("does not call onSampleDelete when not editable", async () => {
       const { result } = renderHook(() =>
-        useSampleActions({ ...defaultProps, isEditable: false }),
+        useSampleActions({ ...defaultProps, isEditable: false })
       );
 
       await result.current.handleDeleteSample(0);
@@ -46,7 +46,7 @@ describe("useSampleActions", () => {
 
     it("does not call onSampleDelete when callback is undefined", async () => {
       const { result } = renderHook(() =>
-        useSampleActions({ ...defaultProps, onSampleDelete: undefined }),
+        useSampleActions({ ...defaultProps, onSampleDelete: undefined })
       );
 
       await result.current.handleDeleteSample(0);
@@ -61,14 +61,14 @@ describe("useSampleActions", () => {
       const errorMock = vi.fn().mockRejectedValue(new Error("Delete failed"));
 
       const { result } = renderHook(() =>
-        useSampleActions({ ...defaultProps, onSampleDelete: errorMock }),
+        useSampleActions({ ...defaultProps, onSampleDelete: errorMock })
       );
 
       await result.current.handleDeleteSample(0);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to delete sample:",
-        "Delete failed",
+        "Delete failed"
       );
       consoleSpy.mockRestore();
     });
@@ -126,7 +126,7 @@ describe("useSampleActions", () => {
       // Temporarily mock electronAPI as undefined
       const originalDescriptor = Object.getOwnPropertyDescriptor(
         window,
-        "electronAPI",
+        "electronAPI"
       );
       Object.defineProperty(window, "electronAPI", {
         configurable: true,

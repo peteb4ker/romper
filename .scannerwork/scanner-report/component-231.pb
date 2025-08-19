@@ -1,1 +1,0 @@
-ç (2tsXPhr@app/renderer/components/__tests__/StepSequencerControls.test.tsx

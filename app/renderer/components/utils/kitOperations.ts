@@ -29,7 +29,7 @@ export async function createKit(kitSlot: string): Promise<void> {
  */
 export async function duplicateKit(
   sourceSlot: string,
-  destSlot: string,
+  destSlot: string
 ): Promise<void> {
   if (!validateKitSlot(destSlot)) {
     throw new Error("Invalid destination slot. Use format A0-Z99.");
@@ -70,7 +70,7 @@ export function formatKitError(error: unknown): string {
  */
 export function formatKitOperationError(
   error: unknown,
-  operation: string,
+  operation: string
 ): string {
   const message = error instanceof Error ? error.message : String(error);
   return `Failed to ${operation} kit: ${message}`;

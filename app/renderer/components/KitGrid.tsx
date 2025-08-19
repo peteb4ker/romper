@@ -39,7 +39,7 @@ const BankHeader: React.FC<BankHeaderProps> = ({
       {
         rootMargin: "-10% 0px -80% 0px",
         threshold: 0.5,
-      },
+      }
     );
 
     observer.observe(headerRef.current);
@@ -96,7 +96,7 @@ const MAX_COLUMNS = 6;
 const useResponsiveColumns = (containerWidth: number) => {
   return Math.max(
     MIN_COLUMNS,
-    Math.min(MAX_COLUMNS, Math.floor(containerWidth / (CARD_WIDTH + GAP))),
+    Math.min(MAX_COLUMNS, Math.floor(containerWidth / (CARD_WIDTH + GAP)))
   );
 };
 
@@ -154,7 +154,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       onVisibleBankChange,
       sampleCounts,
     },
-    ref,
+    ref
   ) => {
     const { isValidKit, kitsToDisplay } = useKitListLogic(kits);
     const { containerRef, size } = useContainerSize();
@@ -165,7 +165,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     const navFocusedKit = typeof focusedKit === "string" ? focusedKit : null;
     const { focusedIdx, setFocus } = useKitListNavigation(
       kitsToDisplay,
-      navFocusedKit,
+      navFocusedKit
     );
 
     useEffect(() => {
@@ -181,7 +181,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
         const columnIndex = index % columnCount;
         return { columnIndex, rowIndex };
       },
-      [columnCount],
+      [columnCount]
     );
 
     // Convert grid coordinates to flat index
@@ -189,7 +189,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       (rowIndex: number, columnIndex: number) => {
         return rowIndex * columnCount + columnIndex;
       },
-      [columnCount],
+      [columnCount]
     );
 
     // Scroll and focus logic for CSS grid
@@ -199,7 +199,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
 
         const kit = kitsToDisplay[idx];
         const kitElement = containerRef.current?.querySelector(
-          `[data-kit="${kit.name}"]`,
+          `[data-kit="${kit.name}"]`
         );
 
         if (kitElement && containerRef.current) {
@@ -212,7 +212,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
         setFocus(idx);
         if (onFocusKit) onFocusKit(kitsToDisplay[idx].name);
       },
-      [kitsToDisplay, setFocus, onFocusKit, containerRef],
+      [kitsToDisplay, setFocus, onFocusKit, containerRef]
     );
 
     // Helper function to scroll to a kit by name
@@ -223,7 +223,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
           scrollAndFocusKitByIndex(index);
         }
       },
-      [kitsToDisplay, scrollAndFocusKitByIndex],
+      [kitsToDisplay, scrollAndFocusKitByIndex]
     );
 
     useImperativeHandle(
@@ -232,14 +232,14 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
         scrollAndFocusKitByIndex,
         scrollToKit,
       }),
-      [scrollAndFocusKitByIndex, scrollToKit],
+      [scrollAndFocusKitByIndex, scrollToKit]
     );
 
     // Helper function to handle bank selection via A-Z keys
     const handleBankSelection = (e: React.KeyboardEvent) => {
       const bank = e.key.toUpperCase();
       const idx = kitsToDisplay.findIndex(
-        (k) => k?.name?.[0]?.toUpperCase() === bank,
+        (k) => k?.name?.[0]?.toUpperCase() === bank
       );
       if (idx !== -1) {
         if (typeof onBankFocus === "function") onBankFocus(bank);
@@ -323,7 +323,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
         acc[bank].push(kit);
         return acc;
       },
-      {} as Record<string, typeof kitsToDisplay>,
+      {} as Record<string, typeof kitsToDisplay>
     );
 
     return (
@@ -355,7 +355,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
               {/* Kit cards for this bank */}
               {bankKits.map((kit) => {
                 const globalIndex = kitsToDisplay.findIndex(
-                  (k) => k.name === kit.name,
+                  (k) => k.name === kit.name
                 );
                 const isValid = isValidKit(kit);
                 const isSelected = focusedIdx === globalIndex;
@@ -400,7 +400,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
         </div>
       </div>
     );
-  },
+  }
 );
 
 KitGrid.displayName = "KitGrid";

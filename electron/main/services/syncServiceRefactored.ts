@@ -26,7 +26,7 @@ export class SyncService {
   constructor(
     private readonly plannerService: SyncPlannerService = syncPlannerService,
     private readonly executorService: SyncExecutorService = syncExecutorService,
-    private readonly progressService: SyncProgressService = syncProgressService,
+    private readonly progressService: SyncProgressService = syncProgressService
   ) {}
 
   /**
@@ -40,7 +40,7 @@ export class SyncService {
    * Generate a summary of changes needed to sync all kits to SD card
    */
   async generateChangeSummary(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, any>
   ): Promise<DbResult<SyncChangeSummary>> {
     return this.plannerService.generateChangeSummary(inMemorySettings);
   }
@@ -53,7 +53,7 @@ export class SyncService {
     syncData: {
       filesToConvert: SyncFileOperation[];
       filesToCopy: SyncFileOperation[];
-    },
+    }
   ): Promise<DbResult<{ syncedFiles: number }>> {
     try {
       const allFiles = [...syncData.filesToCopy, ...syncData.filesToConvert];
@@ -63,7 +63,7 @@ export class SyncService {
 
       const syncedFiles = await this.processAllFiles(
         allFiles,
-        inMemorySettings,
+        inMemorySettings
       );
 
       this.progressService.completeSync();
@@ -88,16 +88,16 @@ export class SyncService {
 
   private async handleFileError(
     error: unknown,
-    fileOp: SyncFileOperation,
+    fileOp: SyncFileOperation
   ): Promise<void> {
     const errorInfo = this.executorService.categorizeError(
       error,
-      fileOp.sourcePath,
+      fileOp.sourcePath
     );
 
     console.error(
       `Failed to process file ${fileOp.filename}:`,
-      errorInfo.userMessage,
+      errorInfo.userMessage
     );
 
     // Emit error progress update
@@ -111,7 +111,7 @@ export class SyncService {
         error: errorInfo.userMessage,
         fileName: fileOp.filename,
         operation: fileOp.operation,
-      },
+      }
     );
 
     // Rethrow with enhanced error message
@@ -130,10 +130,10 @@ export class SyncService {
   private async markKitsAsSynced(
     inMemorySettings: Record<string, any>,
     allFiles: SyncFileOperation[],
-    syncedFiles: number,
+    syncedFiles: number
   ): Promise<void> {
     console.log(
-      `[SyncService] markKitsAsSynced called - syncedFiles: ${syncedFiles}, allFiles: ${allFiles.length}`,
+      `[SyncService] markKitsAsSynced called - syncedFiles: ${syncedFiles}, allFiles: ${allFiles.length}`
     );
 
     const localStorePath = inMemorySettings.localStorePath;
@@ -152,7 +152,7 @@ export class SyncService {
 
     console.log(
       `[SyncService] Attempting to mark ${syncedKitNames.length} kits as synced:`,
-      syncedKitNames,
+      syncedKitNames
     );
     console.log(`[SyncService] Database directory: ${dbDir}`);
 
@@ -160,21 +160,21 @@ export class SyncService {
     if (!markSyncedResult.success) {
       console.error(
         "[SyncService] Failed to mark kits as synced:",
-        markSyncedResult.error,
+        markSyncedResult.error
       );
       // Don't throw here - we don't want to fail the entire sync for this
       // But we should surface this error somehow
     } else {
       console.log(
         `[SyncService] Successfully marked ${syncedKitNames.length} kits as synced:`,
-        syncedKitNames,
+        syncedKitNames
       );
     }
   }
 
   private async processAllFiles(
     allFiles: SyncFileOperation[],
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, any>
   ): Promise<number> {
     let syncedFiles = 0;
 
@@ -196,21 +196,21 @@ export class SyncService {
 
   private async processFile(
     fileOp: SyncFileOperation,
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, any>
   ): Promise<number> {
     // Emit progress update at start of file processing
     this.progressService.updateProgress(
       fileOp.filename,
       0,
       fileOp.operation === "convert" ? "converting" : "copying",
-      0,
+      0
     );
 
     // Execute the file operation
     const forceMonoConversion = Boolean(inMemorySettings.defaultToMonoSamples);
     const result = await this.executorService.executeFileOperation(
       fileOp,
-      forceMonoConversion,
+      forceMonoConversion
     );
 
     if (!result.success) {
@@ -222,7 +222,7 @@ export class SyncService {
       fileOp.filename,
       result.data?.bytesTransferred || 0,
       fileOp.operation === "convert" ? "converting" : "copying",
-      100,
+      100
     );
 
     return 1;

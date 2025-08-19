@@ -8,11 +8,11 @@ interface UseKitDuplicationProps {
 
 export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
   const [duplicateKitSource, setDuplicateKitSource] = useState<null | string>(
-    null,
+    null
   );
   const [duplicateKitDest, setDuplicateKitDest] = useState("");
   const [duplicateKitError, setDuplicateKitError] = useState<null | string>(
-    null,
+    null
   );
 
   const handleDuplicateKit = async () => {

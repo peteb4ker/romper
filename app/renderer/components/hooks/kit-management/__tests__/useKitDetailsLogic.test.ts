@@ -206,7 +206,7 @@ describe("useKitDetailsLogic", () => {
   it("initializes with default samples when not provided", () => {
     const propsWithoutSamples = { ...mockProps, samples: undefined };
     const { result } = renderHook(() =>
-      useKitDetailsLogic(propsWithoutSamples),
+      useKitDetailsLogic(propsWithoutSamples)
     );
 
     expect(result.current.samples).toEqual({ 1: [], 2: [], 3: [], 4: [] });
@@ -245,7 +245,7 @@ describe("useKitDetailsLogic", () => {
 
     expect(mockProps.onMessage).toHaveBeenCalledWith(
       "Playback failed",
-      "error",
+      "error"
     );
   });
 
@@ -263,7 +263,7 @@ describe("useKitDetailsLogic", () => {
 
     expect(mockProps.onMessage).toHaveBeenCalledWith(
       "Kit loading failed",
-      "error",
+      "error"
     );
   });
 
@@ -275,14 +275,14 @@ describe("useKitDetailsLogic", () => {
 
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       "SampleWaveformError",
-      expect.any(Function),
+      expect.any(Function)
     );
 
     unmount();
 
     expect(removeEventListenerSpy).toHaveBeenCalledWith(
       "SampleWaveformError",
-      expect.any(Function),
+      expect.any(Function)
     );
   });
 
@@ -297,7 +297,7 @@ describe("useKitDetailsLogic", () => {
 
     expect(mockProps.onMessage).toHaveBeenCalledWith(
       "Waveform rendering failed",
-      "error",
+      "error"
     );
   });
 
@@ -360,7 +360,7 @@ describe("useKitDetailsLogic", () => {
 
   it("handles global keyboard navigation for sequencer toggle", () => {
     const { rerender, result } = renderHook(() =>
-      useKitDetailsLogic(mockProps),
+      useKitDetailsLogic(mockProps)
     );
     expect(result.current.sequencerOpen).toBe(false);
 
@@ -481,7 +481,7 @@ describe("useKitDetailsLogic", () => {
     });
 
     const { rerender, result } = renderHook(() =>
-      useKitDetailsLogic(mockProps),
+      useKitDetailsLogic(mockProps)
     );
 
     // Open sequencer first
@@ -597,7 +597,7 @@ describe("useKitDetailsLogic", () => {
 
     expect(removeEventListenerSpy).toHaveBeenCalledWith(
       "keydown",
-      expect.any(Function),
+      expect.any(Function)
     );
   });
 });

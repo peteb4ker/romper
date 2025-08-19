@@ -100,7 +100,7 @@ describe("crudOperations pure functions", () => {
       expect(and).toHaveBeenCalledWith(
         mockKitCondition,
         mockVoiceCondition,
-        mockSlotCondition,
+        mockSlotCondition
       );
       expect(result).toBe("combined_condition");
     });

@@ -81,7 +81,7 @@ export function useUndoRedoState({ kitName }: UseUndoRedoStateOptions) {
     document.dispatchEvent(
       new CustomEvent("romper:refresh-samples", {
         detail: { kitName },
-      }),
+      })
     );
   }, [kitName]);
 

@@ -137,7 +137,7 @@ export const createDatabaseMock = (overrides: Record<string, any> = {}) => ({
  * Mock for database error scenarios
  */
 export const createDatabaseErrorMock = (
-  errorMessage: string = "Database error",
+  errorMessage: string = "Database error"
 ) => ({
   ...createDatabaseMock(),
   getAllKits: vi.fn().mockResolvedValue({

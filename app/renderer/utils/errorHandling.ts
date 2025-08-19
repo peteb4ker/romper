@@ -15,7 +15,7 @@ export interface RendererErrorHandler {
     error: unknown,
     operation: string,
     userMessage: string,
-    options?: { duration?: number },
+    options?: { duration?: number }
   ): void;
 
   /**
@@ -29,7 +29,7 @@ export interface RendererErrorHandler {
   showErrorToast(
     title: string,
     error: unknown,
-    options?: { duration?: number },
+    options?: { duration?: number }
   ): void;
 }
 
@@ -38,7 +38,7 @@ export interface RendererErrorHandler {
  * Standardizes the common pattern: console.error + toast.error
  */
 export function createRendererErrorHandler(
-  context: string,
+  context: string
 ): RendererErrorHandler {
   const baseHandler = createErrorHandler(context);
 
@@ -47,7 +47,7 @@ export function createRendererErrorHandler(
       error: unknown,
       operation: string,
       userMessage: string,
-      options?: { duration?: number },
+      options?: { duration?: number }
     ): void {
       this.logError(error, operation);
       this.showErrorToast(userMessage, error, options);
@@ -60,7 +60,7 @@ export function createRendererErrorHandler(
     showErrorToast(
       title: string,
       error: unknown,
-      options?: { duration?: number },
+      options?: { duration?: number }
     ): void {
       toast.error(title, {
         description: baseHandler.formatErrorForUser(error),

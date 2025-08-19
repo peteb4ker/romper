@@ -34,19 +34,19 @@ describe("useMenuEvents", () => {
 
     expect(mockAddEventListener).toHaveBeenCalledWith(
       "menu-scan-all-kits",
-      expect.any(Function),
+      expect.any(Function)
     );
     expect(mockAddEventListener).toHaveBeenCalledWith(
       "menu-validate-database",
-      expect.any(Function),
+      expect.any(Function)
     );
     expect(mockAddEventListener).toHaveBeenCalledWith(
       "menu-setup-local-store",
-      expect.any(Function),
+      expect.any(Function)
     );
     expect(mockAddEventListener).toHaveBeenCalledWith(
       "menu-about",
-      expect.any(Function),
+      expect.any(Function)
     );
   });
 
@@ -63,19 +63,19 @@ describe("useMenuEvents", () => {
 
     expect(mockRemoveEventListener).toHaveBeenCalledWith(
       "menu-scan-all-kits",
-      expect.any(Function),
+      expect.any(Function)
     );
     expect(mockRemoveEventListener).toHaveBeenCalledWith(
       "menu-validate-database",
-      expect.any(Function),
+      expect.any(Function)
     );
     expect(mockRemoveEventListener).toHaveBeenCalledWith(
       "menu-setup-local-store",
-      expect.any(Function),
+      expect.any(Function)
     );
     expect(mockRemoveEventListener).toHaveBeenCalledWith(
       "menu-about",
-      expect.any(Function),
+      expect.any(Function)
     );
   });
 
@@ -91,16 +91,16 @@ describe("useMenuEvents", () => {
 
     // Get the registered event handlers
     const scanHandler = mockAddEventListener.mock.calls.find(
-      (call) => call[0] === "menu-scan-all-kits",
+      (call) => call[0] === "menu-scan-all-kits"
     )?.[1];
     const validateHandler = mockAddEventListener.mock.calls.find(
-      (call) => call[0] === "menu-validate-database",
+      (call) => call[0] === "menu-validate-database"
     )?.[1];
     const setupHandler = mockAddEventListener.mock.calls.find(
-      (call) => call[0] === "menu-setup-local-store",
+      (call) => call[0] === "menu-setup-local-store"
     )?.[1];
     const aboutHandler = mockAddEventListener.mock.calls.find(
-      (call) => call[0] === "menu-about",
+      (call) => call[0] === "menu-about"
     )?.[1];
 
     // Trigger the events

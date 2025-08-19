@@ -50,7 +50,7 @@ export class LocalStoreService {
    */
   getLocalStoreStatus(
     localStorePath: null | string,
-    envPath?: string,
+    envPath?: string
   ): {
     error: null | string;
     hasLocalStore: boolean;
@@ -143,7 +143,7 @@ export class LocalStoreService {
       return fs.readdirSync(localStorePath);
     } catch (error) {
       throw new Error(
-        `Failed to read directory: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to read directory: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }
@@ -161,7 +161,7 @@ export class LocalStoreService {
       return {
         data: data.buffer.slice(
           data.byteOffset,
-          data.byteOffset + data.byteLength,
+          data.byteOffset + data.byteLength
         ),
         success: true,
       };
@@ -169,7 +169,7 @@ export class LocalStoreService {
       console.error(
         "[LocalStoreService] Failed to read file:",
         filePath,
-        error,
+        error
       );
       return {
         error: error.message ?? "Failed to read file",
@@ -188,7 +188,7 @@ export class LocalStoreService {
   } {
     console.log(
       "[LocalStoreService] Validating existing local store:",
-      selectedPath,
+      selectedPath
     );
 
     // Validate that the selected path contains a .romperdb directory and database schema
@@ -224,7 +224,7 @@ export class LocalStoreService {
    * Returns detailed validation with file-level errors for warnings/reporting
    */
   validateFileSyncStatus(
-    localStorePath: string,
+    localStorePath: string
   ): LocalStoreValidationDetailedResult {
     return validateLocalStoreAgainstDb(localStorePath);
   }
@@ -233,7 +233,7 @@ export class LocalStoreService {
    * Validate local store path against database
    */
   validateLocalStore(
-    localStorePath: string,
+    localStorePath: string
   ): LocalStoreValidationDetailedResult {
     return validateLocalStoreAgainstDb(localStorePath);
   }
@@ -242,7 +242,7 @@ export class LocalStoreService {
    * Basic validation of local store path (filesystem only)
    */
   validateLocalStoreBasic(
-    localStorePath: string,
+    localStorePath: string
   ): LocalStoreValidationDetailedResult {
     return validateLocalStoreBasic(localStorePath);
   }

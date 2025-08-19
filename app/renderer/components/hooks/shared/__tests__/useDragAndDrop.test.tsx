@@ -94,7 +94,7 @@ describe("useDragAndDrop", () => {
           }),
           samples: expect.any(Array),
           voice: 2,
-        }),
+        })
       );
 
       // Verify useInternalDragHandlers was called with correct props
@@ -108,7 +108,7 @@ describe("useDragAndDrop", () => {
 
     it("returns composed interface from sub-hooks", () => {
       const { result } = renderHookWithSettings(() =>
-        useDragAndDrop(defaultProps),
+        useDragAndDrop(defaultProps)
       );
 
       // Should return properties from both hooks
@@ -137,14 +137,14 @@ describe("useDragAndDrop", () => {
       (useInternalDragHandlers as any).mockReturnValue(mockInternalHandlers);
 
       const { result } = renderHookWithSettings(() =>
-        useDragAndDrop(defaultProps),
+        useDragAndDrop(defaultProps)
       );
 
       expect(result.current.draggedSample).toBe(
-        mockInternalHandlers.draggedSample,
+        mockInternalHandlers.draggedSample
       );
       expect(result.current.getSampleDragHandlers).toBe(
-        mockInternalHandlers.getSampleDragHandlers,
+        mockInternalHandlers.getSampleDragHandlers
       );
     });
 
@@ -160,18 +160,18 @@ describe("useDragAndDrop", () => {
       (useExternalDragHandlers as any).mockReturnValue(mockExternalHandlers);
 
       const { result } = renderHookWithSettings(() =>
-        useDragAndDrop(defaultProps),
+        useDragAndDrop(defaultProps)
       );
 
       expect(result.current.dragOverSlot).toBe(
-        mockExternalHandlers.dragOverSlot,
+        mockExternalHandlers.dragOverSlot
       );
       expect(result.current.dropZone).toBe(mockExternalHandlers.dropZone);
       expect(result.current.handleDragLeave).toBe(
-        mockExternalHandlers.handleDragLeave,
+        mockExternalHandlers.handleDragLeave
       );
       expect(result.current.handleDragOver).toBe(
-        mockExternalHandlers.handleDragOver,
+        mockExternalHandlers.handleDragOver
       );
       expect(result.current.handleDrop).toBe(mockExternalHandlers.handleDrop);
     });
@@ -212,7 +212,7 @@ describe("useDragAndDrop", () => {
 
     it("handles isEditable false", () => {
       renderHookWithSettings(() =>
-        useDragAndDrop({ ...defaultProps, isEditable: false }),
+        useDragAndDrop({ ...defaultProps, isEditable: false })
       );
 
       const externalCall = (useExternalDragHandlers as any).mock.calls[0][0];
@@ -224,7 +224,7 @@ describe("useDragAndDrop", () => {
 
     it("passes voice correctly", () => {
       renderHookWithSettings(() =>
-        useDragAndDrop({ ...defaultProps, voice: 5 }),
+        useDragAndDrop({ ...defaultProps, voice: 5 })
       );
 
       const externalCall = (useExternalDragHandlers as any).mock.calls[0][0];
@@ -237,7 +237,7 @@ describe("useDragAndDrop", () => {
     it("passes samples array correctly", () => {
       const customSamples = ["a.wav", "b.wav", "c.wav"];
       renderHookWithSettings(() =>
-        useDragAndDrop({ ...defaultProps, samples: customSamples }),
+        useDragAndDrop({ ...defaultProps, samples: customSamples })
       );
 
       const internalCall = (useInternalDragHandlers as any).mock.calls[0][0];
@@ -246,7 +246,7 @@ describe("useDragAndDrop", () => {
 
     it("passes kitName to sample processing", () => {
       renderHookWithSettings(() =>
-        useDragAndDrop({ ...defaultProps, kitName: "CustomKit" }),
+        useDragAndDrop({ ...defaultProps, kitName: "CustomKit" })
       );
 
       const externalCall = (useExternalDragHandlers as any).mock.calls[0][0];
@@ -261,7 +261,7 @@ describe("useDragAndDrop", () => {
         (props) => useDragAndDrop(props),
         {
           initialProps: defaultProps,
-        },
+        }
       );
 
       const firstCallCount = (useInternalDragHandlers as any).mock.calls.length;
@@ -279,7 +279,7 @@ describe("useDragAndDrop", () => {
         (props) => useDragAndDrop(props),
         {
           initialProps: defaultProps,
-        },
+        }
       );
 
       // Update samples
@@ -288,14 +288,14 @@ describe("useDragAndDrop", () => {
 
       // Should have been called again with new samples
       const latestCall = (useInternalDragHandlers as any).mock.calls.slice(
-        -1,
+        -1
       )[0][0];
       expect(latestCall.samples).toBe(newSamples);
     });
 
     it("maintains stable references when props don't change", () => {
       const { rerender, result } = renderHookWithSettings(() =>
-        useDragAndDrop(defaultProps),
+        useDragAndDrop(defaultProps)
       );
 
       const firstHandlers = result.current;
@@ -322,7 +322,7 @@ describe("useDragAndDrop", () => {
         expect.objectContaining({
           getFilePathFromDrop: expect.any(Function),
           validateDroppedFile: expect.any(Function),
-        }),
+        })
       );
     });
 
@@ -335,7 +335,7 @@ describe("useDragAndDrop", () => {
           getCurrentKitSamples: expect.any(Function),
           isDuplicateSample: expect.any(Function),
           processAssignment: expect.any(Function),
-        }),
+        })
       );
     });
   });
@@ -344,7 +344,7 @@ describe("useDragAndDrop", () => {
     it("handles empty samples array", () => {
       expect(() => {
         renderHookWithSettings(() =>
-          useDragAndDrop({ ...defaultProps, samples: [] }),
+          useDragAndDrop({ ...defaultProps, samples: [] })
         );
       }).not.toThrow();
 
@@ -355,7 +355,7 @@ describe("useDragAndDrop", () => {
     it("handles undefined kitName", () => {
       expect(() => {
         renderHookWithSettings(() =>
-          useDragAndDrop({ ...defaultProps, kitName: undefined as any }),
+          useDragAndDrop({ ...defaultProps, kitName: undefined as any })
         );
       }).not.toThrow();
     });
@@ -363,10 +363,10 @@ describe("useDragAndDrop", () => {
     it("handles voice boundary values", () => {
       expect(() => {
         renderHookWithSettings(() =>
-          useDragAndDrop({ ...defaultProps, voice: 0 }),
+          useDragAndDrop({ ...defaultProps, voice: 0 })
         );
         renderHookWithSettings(() =>
-          useDragAndDrop({ ...defaultProps, voice: 16 }),
+          useDragAndDrop({ ...defaultProps, voice: 16 })
         );
       }).not.toThrow();
     });
@@ -381,7 +381,7 @@ describe("useDragAndDrop", () => {
 
       expect(() => {
         renderHookWithSettings(() =>
-          useDragAndDrop({ ...defaultProps, samples: samplesWithNulls }),
+          useDragAndDrop({ ...defaultProps, samples: samplesWithNulls })
         );
       }).not.toThrow();
 
@@ -393,7 +393,7 @@ describe("useDragAndDrop", () => {
   describe("return value consistency", () => {
     it("always returns the same structure", () => {
       const { rerender, result } = renderHookWithSettings(() =>
-        useDragAndDrop(defaultProps),
+        useDragAndDrop(defaultProps)
       );
 
       const expectedKeys = [
@@ -417,7 +417,7 @@ describe("useDragAndDrop", () => {
 
     it("returns functions for all handler properties", () => {
       const { result } = renderHookWithSettings(() =>
-        useDragAndDrop(defaultProps),
+        useDragAndDrop(defaultProps)
       );
 
       expect(typeof result.current.getSampleDragHandlers).toBe("function");

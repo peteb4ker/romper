@@ -187,7 +187,7 @@ describe("stepPatternConstants", () => {
       ];
       expect(isValidStepPattern(patternWithVelocities)).toBe(true);
       expect(ensureValidStepPattern(patternWithVelocities)).toBe(
-        patternWithVelocities,
+        patternWithVelocities
       );
     });
 
@@ -200,7 +200,7 @@ describe("stepPatternConstants", () => {
       ];
       expect(isValidStepPattern(patternWithNegatives)).toBe(true);
       expect(ensureValidStepPattern(patternWithNegatives)).toBe(
-        patternWithNegatives,
+        patternWithNegatives
       );
     });
   });

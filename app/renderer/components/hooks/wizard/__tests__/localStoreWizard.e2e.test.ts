@@ -41,7 +41,7 @@ async function runWizardTest(
     source: "blank" | "sdcard" | "squarp";
     squarpArchiveUrl?: string;
   },
-  testName?: string,
+  testName?: string
 ) {
   const env = Object.fromEntries(
     Object.entries({
@@ -53,13 +53,13 @@ async function runWizardTest(
         ? { ROMPER_SQUARP_ARCHIVE_URL: squarpArchiveUrl }
         : {}),
       ROMPER_LOCAL_PATH: "", // Empty string triggers wizard (no local store override)
-    }).filter(([_, v]) => typeof v === "string"),
+    }).filter(([_, v]) => typeof v === "string")
   ) as { [key: string]: string };
 
   // Enhanced logging for debugging
   console.log(
     `[${testName || "E2E"}] Launching Electron with env:`,
-    Object.keys(env),
+    Object.keys(env)
   );
   console.log(`[${testName || "E2E"}] Working directory:`, process.cwd());
   console.log(`[${testName || "E2E"}] Checking if main file exists...`);
@@ -123,7 +123,7 @@ async function runWizardTest(
 
   // 1.5 Check the source URL, which is source dependent
   const sourceNameLabel = await window.textContent(
-    '[data-testid="wizard-source-name"]',
+    '[data-testid="wizard-source-name"]'
   );
   let sourceUrlLabel: null | string = null;
   if (source === "blank") {
@@ -132,7 +132,7 @@ async function runWizardTest(
     expect(sourceUrlElem).toBeNull();
   } else {
     sourceUrlLabel = await window.textContent(
-      '[data-testid="wizard-source-url"]',
+      '[data-testid="wizard-source-url"]'
     );
     if (source === "squarp") {
       expect(sourceNameLabel).toContain("Squarp.net Factory Samples");
@@ -192,7 +192,7 @@ async function runWizardTest(
 async function waitForFileExists(
   filePath: string,
   timeoutMs = 5000,
-  intervalMs = 100,
+  intervalMs = 100
 ) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
@@ -209,7 +209,7 @@ test.describe("Local Store Wizard E2E", () => {
   test("can initialize from SD card fixture via UI", async () => {
     const sdcardPath = path.resolve(
       __dirname,
-      "../../../../../../tests/fixtures/sdcard",
+      "../../../../../../tests/fixtures/sdcard"
     );
     await runWizardTest({ fixturePath: sdcardPath, source: "sdcard" });
   });
@@ -218,7 +218,7 @@ test.describe("Local Store Wizard E2E", () => {
     // Use a local fixture zip for the Squarp archive in E2E
     const fixtureSquarpZip = path.resolve(
       __dirname,
-      "../../../../../../tests/fixtures/squarp.zip",
+      "../../../../../../tests/fixtures/squarp.zip"
     );
     const squarpArchiveUrl = `file://${fixtureSquarpZip}`;
     await runWizardTest({

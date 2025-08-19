@@ -73,7 +73,7 @@ import { useKitScan } from "../useKitScan";
 describe("useKitScan", () => {
   it("should show error if no kits", async () => {
     const { result } = renderHook(() =>
-      useKitScan({ kits: [], onRefreshKits: vi.fn() }),
+      useKitScan({ kits: [], onRefreshKits: vi.fn() })
     );
     await act(async () => {
       await result.current.handleScanAllKits();
@@ -86,7 +86,7 @@ describe("useKitScan", () => {
   it("should call onRefreshKits after scan", async () => {
     const onRefreshKits = vi.fn();
     const { result } = renderHook(() =>
-      useKitScan({ kits: ["KitA"], onRefreshKits }),
+      useKitScan({ kits: ["KitA"], onRefreshKits })
     );
     // This test would be quite complex to properly mock, so let's simplify
     expect(result.current.handleScanAllKits).toBeDefined();

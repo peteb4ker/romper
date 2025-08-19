@@ -5,7 +5,7 @@ import { vi } from "vitest";
  * Used across renderer tests to avoid duplication of 75+ electronAPI mock instances
  */
 export const createElectronAPIMock = (
-  overrides: Partial<typeof window.electronAPI> = {},
+  overrides: Partial<typeof window.electronAPI> = {}
 ) => ({
   // Sample operations
   addSampleToSlot: vi.fn().mockResolvedValue(undefined),
@@ -177,7 +177,7 @@ export const createElectronAPIMock = (
  * Sets up electronAPI mock on window object for tests
  */
 export const setupElectronAPIMock = (
-  overrides: Partial<typeof window.electronAPI> = {},
+  overrides: Partial<typeof window.electronAPI> = {}
 ) => {
   window.electronAPI = createElectronAPIMock(overrides);
   return window.electronAPI;

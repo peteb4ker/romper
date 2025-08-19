@@ -1,8 +1,8 @@
----
-title: "Task Index - Romper Sample Manager"
-updated: "2025-08-19"
-context_optimization: "Focus on active tasks, archive completed work"
----
+<!-- 
+title: Task Index - Romper Sample Manager
+updated: 2025-08-19
+context_optimization: Focus on active tasks, archive completed work
+-->
 
 # Task Index - Romper Sample Manager
 

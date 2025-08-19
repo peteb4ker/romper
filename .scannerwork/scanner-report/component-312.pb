@@ -1,1 +1,0 @@
-¸ (2tsX™hrDapp/renderer/components/dialogs/__tests__/PreferencesDialog.test.tsx

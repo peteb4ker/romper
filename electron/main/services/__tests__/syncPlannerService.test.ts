@@ -67,11 +67,11 @@ describe("SyncPlannerService", () => {
     // Set up default mock for Rample naming service using shared test utilities
     // This avoids duplicating the naming logic and ensures consistency
     mockRampleNamingService.transformSampleToDestinationPath.mockImplementation(
-      generateMockRamplePath,
+      generateMockRamplePath
     );
 
     mockRampleNamingService.transformSampleToPathAndFilename.mockImplementation(
-      generateMockRamplePathAndFilename,
+      generateMockRamplePathAndFilename
     );
   });
 
@@ -195,13 +195,13 @@ describe("SyncPlannerService", () => {
       expect(result.data?.filesToConvert).toHaveLength(1);
       expect(result.data?.filesToConvert[0].operation).toBe("convert");
       expect(result.data?.filesToConvert[0].reason).toBe(
-        "Bit depth must be 16, Sample rate must be 44100Hz",
+        "Bit depth must be 16, Sample rate must be 44100Hz"
       );
       expect(result.data?.filesToConvert[0].originalFormat).toBe(
-        "24bit/48000Hz",
+        "24bit/48000Hz"
       );
       expect(result.data?.filesToConvert[0].targetFormat).toBe(
-        "16bit/44100Hz WAV",
+        "16bit/44100Hz WAV"
       );
       expect(result.data?.totalSize).toBe(2048);
       expect(result.data?.hasFormatWarnings).toBe(true);
@@ -307,7 +307,7 @@ describe("SyncPlannerService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
-        "Failed to load kits: Database connection failed",
+        "Failed to load kits: Database connection failed"
       );
     });
 

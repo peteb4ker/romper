@@ -1,1 +1,0 @@
-³ (2tsX¼hrOapp/renderer/components/hooks/voice-panels/__tests__/useVoiceNameEditor.test.ts

@@ -1,10 +1,10 @@
----
-title: "Release Automation - Product Requirements Document"
-owners: ["maintainer"]
-created: "2025-08-19"
-status: "approved"
-tags: ["prd", "release", "automation"]
----
+<!-- 
+title: Release Automation - Product Requirements Document
+owners: maintainer
+created: 2025-08-19
+status: approved
+tags: prd, release, automation
+-->
 
 # Release Automation - Product Requirements Document
 

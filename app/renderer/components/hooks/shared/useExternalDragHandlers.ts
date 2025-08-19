@@ -13,20 +13,20 @@ export interface UseExternalDragHandlersOptions {
   onStereoDragOver?: (
     voice: number,
     slotNumber: number,
-    isStereo: boolean,
+    isStereo: boolean
   ) => void;
   sampleProcessing: {
     getCurrentKitSamples: () => Promise<any[] | null>;
     isDuplicateSample: (
       allSamples: any[],
-      filePath: string,
+      filePath: string
     ) => Promise<boolean>;
     processAssignment: (
       filePath: string,
       formatValidation: any,
       allSamples: any[],
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
-      droppedSlotNumber: number,
+      droppedSlotNumber: number
     ) => Promise<boolean>;
   };
   samples: string[];
@@ -87,7 +87,7 @@ export function useExternalDragHandlers({
         }
       }
     },
-    [isEditable, voice, onStereoDragOver, samples],
+    [isEditable, voice, onStereoDragOver, samples]
   );
 
   const handleDragLeave = useCallback(() => {
@@ -142,7 +142,7 @@ export function useExternalDragHandlers({
 
           const isDuplicate = await sampleProcessing.isDuplicateSample(
             allSamples,
-            filePath,
+            filePath
           );
           if (isDuplicate) continue;
 
@@ -155,14 +155,14 @@ export function useExternalDragHandlers({
             formatValidation,
             allSamples,
             modifierKeys,
-            slotNumber,
+            slotNumber
           );
         }
       } catch (error) {
         console.error("Error handling drop:", error);
       }
     },
-    [isEditable, onStereoDragLeave, fileValidation, sampleProcessing, samples],
+    [isEditable, onStereoDragLeave, fileValidation, sampleProcessing, samples]
   );
 
   return {

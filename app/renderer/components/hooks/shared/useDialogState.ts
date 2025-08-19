@@ -39,17 +39,17 @@ export function useDialogState(): UseDialogStateReturn {
 
   const openChangeDirectory = useCallback(
     () => setShowChangeDirectoryDialog(true),
-    [],
+    []
   );
   const closeChangeDirectory = useCallback(
     () => setShowChangeDirectoryDialog(false),
-    [],
+    []
   );
 
   const openPreferences = useCallback(() => setShowPreferencesDialog(true), []);
   const closePreferences = useCallback(
     () => setShowPreferencesDialog(false),
-    [],
+    []
   );
 
   return {

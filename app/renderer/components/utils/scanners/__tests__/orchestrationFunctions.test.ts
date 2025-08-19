@@ -136,7 +136,7 @@ describe("executeVoiceInferenceScan", () => {
 
     const result = await executeVoiceInferenceScan(
       samples,
-      mockProgressCallback,
+      mockProgressCallback
     );
 
     expect(result.success).toBe(true);
@@ -184,7 +184,7 @@ describe("executeWAVAnalysisScan", () => {
     const result = await executeWAVAnalysisScan(
       wavFiles,
       fileReader,
-      mockProgressCallback,
+      mockProgressCallback
     );
 
     expect(result.success).toBe(true);

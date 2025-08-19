@@ -33,7 +33,7 @@ describe("errorCategorizationUtils", () => {
 
     it("should have file_access rule with correct properties", () => {
       const fileAccessRule = ERROR_CATEGORIZATION_RULES.find(
-        (rule) => rule.type === "file_access",
+        (rule) => rule.type === "file_access"
       );
       expect(fileAccessRule).toBeDefined();
       expect(fileAccessRule!.canRetry).toBe(false);
@@ -43,31 +43,31 @@ describe("errorCategorizationUtils", () => {
 
     it("should have permission rule with correct properties", () => {
       const permissionRule = ERROR_CATEGORIZATION_RULES.find(
-        (rule) => rule.type === "permission",
+        (rule) => rule.type === "permission"
       );
       expect(permissionRule).toBeDefined();
       expect(permissionRule!.canRetry).toBe(true);
       expect(permissionRule!.keywords).toEqual(["eacces", "permission denied"]);
       expect(permissionRule!.messageTemplate).toBe(
-        "Permission denied. Check file/folder permissions.",
+        "Permission denied. Check file/folder permissions."
       );
     });
 
     it("should have disk_space rule with correct properties", () => {
       const diskSpaceRule = ERROR_CATEGORIZATION_RULES.find(
-        (rule) => rule.type === "disk_space",
+        (rule) => rule.type === "disk_space"
       );
       expect(diskSpaceRule).toBeDefined();
       expect(diskSpaceRule!.canRetry).toBe(false);
       expect(diskSpaceRule!.keywords).toEqual(["enospc", "no space"]);
       expect(diskSpaceRule!.messageTemplate).toBe(
-        "Not enough disk space on destination drive.",
+        "Not enough disk space on destination drive."
       );
     });
 
     it("should have format_error rule with correct properties", () => {
       const formatErrorRule = ERROR_CATEGORIZATION_RULES.find(
-        (rule) => rule.type === "format_error",
+        (rule) => rule.type === "format_error"
       );
       expect(formatErrorRule).toBeDefined();
       expect(formatErrorRule!.canRetry).toBe(false);
@@ -77,13 +77,13 @@ describe("errorCategorizationUtils", () => {
 
     it("should have network rule with correct properties", () => {
       const networkRule = ERROR_CATEGORIZATION_RULES.find(
-        (rule) => rule.type === "network",
+        (rule) => rule.type === "network"
       );
       expect(networkRule).toBeDefined();
       expect(networkRule!.canRetry).toBe(true);
       expect(networkRule!.keywords).toEqual(["network", "connection"]);
       expect(networkRule!.messageTemplate).toBe(
-        "Network error. Check connection and try again.",
+        "Network error. Check connection and try again."
       );
     });
   });
@@ -93,13 +93,13 @@ describe("errorCategorizationUtils", () => {
       it("should categorize ENOENT error", () => {
         const result = categorizeErrorByRules(
           "ENOENT: file not found",
-          "/path/to/file.wav",
+          "/path/to/file.wav"
         );
 
         expect(result.type).toBe("file_access");
         expect(result.canRetry).toBe(false);
         expect(result.userMessage).toBe(
-          "Source file not found: /path/to/file.wav",
+          "Source file not found: /path/to/file.wav"
         );
       });
 
@@ -133,19 +133,19 @@ describe("errorCategorizationUtils", () => {
         expect(result.type).toBe("permission");
         expect(result.canRetry).toBe(true);
         expect(result.userMessage).toBe(
-          "Permission denied. Check file/folder permissions.",
+          "Permission denied. Check file/folder permissions."
         );
       });
 
       it("should categorize permission denied error", () => {
         const result = categorizeErrorByRules(
-          "Permission denied to access file",
+          "Permission denied to access file"
         );
 
         expect(result.type).toBe("permission");
         expect(result.canRetry).toBe(true);
         expect(result.userMessage).toBe(
-          "Permission denied. Check file/folder permissions.",
+          "Permission denied. Check file/folder permissions."
         );
       });
 
@@ -160,13 +160,13 @@ describe("errorCategorizationUtils", () => {
     describe("disk_space errors", () => {
       it("should categorize ENOSPC error", () => {
         const result = categorizeErrorByRules(
-          "ENOSPC: no space left on device",
+          "ENOSPC: no space left on device"
         );
 
         expect(result.type).toBe("disk_space");
         expect(result.canRetry).toBe(false);
         expect(result.userMessage).toBe(
-          "Not enough disk space on destination drive.",
+          "Not enough disk space on destination drive."
         );
       });
 
@@ -176,7 +176,7 @@ describe("errorCategorizationUtils", () => {
         expect(result.type).toBe("disk_space");
         expect(result.canRetry).toBe(false);
         expect(result.userMessage).toBe(
-          "Not enough disk space on destination drive.",
+          "Not enough disk space on destination drive."
         );
       });
     });
@@ -217,7 +217,7 @@ describe("errorCategorizationUtils", () => {
         expect(result.type).toBe("network");
         expect(result.canRetry).toBe(true);
         expect(result.userMessage).toBe(
-          "Network error. Check connection and try again.",
+          "Network error. Check connection and try again."
         );
       });
 
@@ -227,7 +227,7 @@ describe("errorCategorizationUtils", () => {
         expect(result.type).toBe("network");
         expect(result.canRetry).toBe(true);
         expect(result.userMessage).toBe(
-          "Network error. Check connection and try again.",
+          "Network error. Check connection and try again."
         );
       });
     });
@@ -264,7 +264,7 @@ describe("errorCategorizationUtils", () => {
       it("should handle error message with multiple matching keywords", () => {
         // This should match the first rule (file_access) since rules are checked in order
         const result = categorizeErrorByRules(
-          "File not found and permission denied",
+          "File not found and permission denied"
         );
 
         expect(result.type).toBe("file_access");
@@ -283,12 +283,12 @@ describe("errorCategorizationUtils", () => {
           "File not found: /path/with/spaces and & symbols.wav";
         const result = categorizeErrorByRules(
           errorMessage,
-          "/path/with/spaces and & symbols.wav",
+          "/path/with/spaces and & symbols.wav"
         );
 
         expect(result.type).toBe("file_access");
         expect(result.userMessage).toBe(
-          "Source file not found: /path/with/spaces and & symbols.wav",
+          "Source file not found: /path/with/spaces and & symbols.wav"
         );
       });
 

@@ -12,7 +12,7 @@ describe("useKitVoicePanel", () => {
 
   it("initializes with custom initial selected voice", () => {
     const { result } = renderHook(() =>
-      useKitVoicePanel({ initialSelectedVoice: 3 }),
+      useKitVoicePanel({ initialSelectedVoice: 3 })
     );
 
     expect(result.current.selectedVoice).toBe(3);
@@ -31,7 +31,7 @@ describe("useKitVoicePanel", () => {
   it("calls onVoiceSelect callback when voice is selected", () => {
     const mockOnVoiceSelect = vi.fn();
     const { result } = renderHook(() =>
-      useKitVoicePanel({ onVoiceSelect: mockOnVoiceSelect }),
+      useKitVoicePanel({ onVoiceSelect: mockOnVoiceSelect })
     );
 
     act(() => {
@@ -55,7 +55,7 @@ describe("useKitVoicePanel", () => {
 
   it("handles numVoices parameter (for future use)", () => {
     const { result } = renderHook(() =>
-      useKitVoicePanel({ initialSelectedVoice: 2, numVoices: 8 }),
+      useKitVoicePanel({ initialSelectedVoice: 2, numVoices: 8 })
     );
 
     expect(result.current.selectedVoice).toBe(2);
@@ -64,7 +64,7 @@ describe("useKitVoicePanel", () => {
   it("maintains voice selection state across multiple calls", () => {
     const mockOnVoiceSelect = vi.fn();
     const { result } = renderHook(() =>
-      useKitVoicePanel({ onVoiceSelect: mockOnVoiceSelect }),
+      useKitVoicePanel({ onVoiceSelect: mockOnVoiceSelect })
     );
 
     act(() => {

@@ -45,7 +45,7 @@ export function useLocalStoreWizardFileOps({
       }
       return null;
     },
-    [api],
+    [api]
   );
 
   // --- SD Card validation and copy combined ---
@@ -72,13 +72,13 @@ export function useLocalStoreWizardFileOps({
           if (!api.copyDir) throw new Error("Missing Electron API");
           await api.copyDir(
             `${sdCardSourcePath}/${kit}`,
-            `${targetPath}/${kit}`,
+            `${targetPath}/${kit}`
           );
         },
         phase: "Copying kits...",
       });
     },
-    [api, validateSdCardFolder, reportStepProgress, setWizardState],
+    [api, validateSdCardFolder, reportStepProgress, setWizardState]
   );
 
   const extractSquarpArchive = useCallback(
@@ -106,12 +106,12 @@ export function useLocalStoreWizardFileOps({
             reportProgress(p);
           }
         },
-        (e: any) => setError(e?.message || String(e)),
+        (e: any) => setError(e?.message || String(e))
       );
       if (!result?.success)
         throw new Error(result?.error || "Failed to extract archive");
     },
-    [api, reportProgress, setError],
+    [api, reportProgress, setError]
   );
 
   const createAndPopulateDb = useCallback(
@@ -163,7 +163,7 @@ export function useLocalStoreWizardFileOps({
                   const isDev = process.env.NODE_ENV === "development";
                   isDev &&
                     console.debug(
-                      `[Hook] Skipped ${voiceSamples.length - 12} samples in voice ${voiceNum} (exceeds 12 slot limit)`,
+                      `[Hook] Skipped ${voiceSamples.length - 12} samples in voice ${voiceNum} (exceeds 12 slot limit)`
                     );
                 }
               }
@@ -174,7 +174,7 @@ export function useLocalStoreWizardFileOps({
       }
       return { dbDir, validKits };
     },
-    [api, reportStepProgress],
+    [api, reportStepProgress]
   );
 
   return useMemo(
@@ -189,7 +189,7 @@ export function useLocalStoreWizardFileOps({
       extractSquarpArchive,
       validateAndCopySdCardKits,
       validateSdCardFolder,
-    ],
+    ]
   );
 }
 

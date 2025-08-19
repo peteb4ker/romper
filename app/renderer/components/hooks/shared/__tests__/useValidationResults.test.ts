@@ -32,7 +32,7 @@ describe("useValidationResults", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(window.electronAPI.validateLocalStore).mockResolvedValue(
-      mockValidationResult,
+      mockValidationResult
     );
     vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
       data: { scannedSamples: 5, updatedVoices: 2 },
@@ -57,7 +57,7 @@ describe("useValidationResults", () => {
       useValidationResults({
         localStorePath: mockLocalStorePath,
         onMessage: mockOnMessage,
-      }),
+      })
     );
 
     // First validate to populate validation result
@@ -102,7 +102,7 @@ describe("useValidationResults", () => {
     expect(mockOnMessage).toHaveBeenCalledWith(
       "Successfully rescanned 2 kit(s). Found 10 samples, updated 4 voices.",
       "success",
-      5000,
+      5000
     );
 
     // Should re-validate and close dialog
@@ -116,7 +116,7 @@ describe("useValidationResults", () => {
       useValidationResults({
         localStorePath: mockLocalStorePath,
         onMessage: mockOnMessage,
-      }),
+      })
     );
 
     expect(result.current.isOpen).toBe(false);
@@ -131,7 +131,7 @@ describe("useValidationResults", () => {
       useValidationResults({
         localStorePath: mockLocalStorePath,
         onMessage: mockOnMessage,
-      }),
+      })
     );
 
     await act(async () => {
@@ -139,13 +139,13 @@ describe("useValidationResults", () => {
     });
 
     expect(window.electronAPI.validateLocalStore).toHaveBeenCalledWith(
-      mockLocalStorePath,
+      mockLocalStorePath
     );
     expect(result.current.validationResult).toEqual(mockValidationResult);
     expect(mockOnMessage).toHaveBeenCalledWith(
       "Found 3 kit(s) with validation errors",
       "error",
-      5000,
+      5000
     );
 
     // Check grouped errors
@@ -167,7 +167,7 @@ describe("useValidationResults", () => {
       useValidationResults({
         localStorePath: mockLocalStorePath,
         onMessage: mockOnMessage,
-      }),
+      })
     );
 
     await act(async () => {
@@ -183,7 +183,7 @@ describe("useValidationResults", () => {
       useValidationResults({
         localStorePath: mockLocalStorePath,
         onMessage: mockOnMessage,
-      }),
+      })
     );
 
     await act(async () => {
@@ -206,7 +206,7 @@ describe("useValidationResults", () => {
       useValidationResults({
         localStorePath: mockLocalStorePath,
         onMessage: mockOnMessage,
-      }),
+      })
     );
 
     await act(async () => {
@@ -233,7 +233,7 @@ describe("useValidationResults", () => {
       useValidationResults({
         localStorePath: mockLocalStorePath,
         onMessage: mockOnMessage,
-      }),
+      })
     );
 
     // First validate to populate validation result
@@ -274,7 +274,7 @@ describe("useValidationResults", () => {
       useValidationResults({
         localStorePath: mockLocalStorePath,
         onMessage: mockOnMessage,
-      }),
+      })
     );
 
     // First validate to populate validation result
@@ -302,7 +302,7 @@ describe("useValidationResults", () => {
     expect(mockOnMessage).toHaveBeenCalledWith(
       "Partially completed rescan. 1 kit(s) succeeded, 1 failed. Found 3 samples.",
       "warning",
-      7000,
+      7000
     );
 
     // Should not close dialog on partial failure

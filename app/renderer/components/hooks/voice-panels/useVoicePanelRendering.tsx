@@ -27,14 +27,14 @@ export interface UseVoicePanelRenderingOptions {
   onWaveformPlayingChange: (
     voice: number,
     sample: string,
-    playing: boolean,
+    playing: boolean
   ) => void;
   playTriggers: { [key: string]: number };
   sampleActionsHook: {
     handleDeleteSample: (slotNumber: number) => Promise<void>;
     handleSampleContextMenu: (
       e: React.MouseEvent,
-      sampleData: SampleData | undefined,
+      sampleData: SampleData | undefined
     ) => void;
   };
   sampleMetadata?: { [filename: string]: SampleData };
@@ -49,7 +49,7 @@ export interface UseVoicePanelRenderingOptions {
     getSampleSlotClassName: (
       slotNumber: number,
       baseClass: string,
-      dragOverClass: string,
+      dragOverClass: string
     ) => string;
     getSampleSlotTitle: (
       slotNumber: number,
@@ -57,11 +57,11 @@ export interface UseVoicePanelRenderingOptions {
       isDragOver: boolean,
       isStereoHighlight: boolean,
       isDropZone: boolean,
-      dropHintTitle: string,
+      dropHintTitle: string
     ) => string;
     getSlotStyling: (
       slotNumber: number,
-      sample: string | undefined,
+      sample: string | undefined
     ) => {
       dragOverClass: string;
       dropHintTitle: string;

@@ -109,7 +109,7 @@ describe("audioUtils", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain(
-        "Only uncompressed PCM format is supported",
+        "Only uncompressed PCM format is supported"
       );
     });
 
@@ -285,7 +285,7 @@ describe("audioUtils", () => {
         isFormatIssueCritical({
           message: "Wrong file type",
           type: "extension",
-        }),
+        })
       ).toBe(true);
     });
 
@@ -294,7 +294,7 @@ describe("audioUtils", () => {
         isFormatIssueCritical({
           message: "File not found",
           type: "fileAccess",
-        }),
+        })
       ).toBe(true);
     });
 
@@ -303,7 +303,7 @@ describe("audioUtils", () => {
         isFormatIssueCritical({
           message: "Corrupt file",
           type: "invalidFormat",
-        }),
+        })
       ).toBe(true);
     });
 
@@ -312,21 +312,21 @@ describe("audioUtils", () => {
         isFormatIssueCritical({
           message: "Wrong bit depth",
           type: "bitDepth",
-        }),
+        })
       ).toBe(false);
 
       expect(
         isFormatIssueCritical({
           message: "Wrong sample rate",
           type: "sampleRate",
-        }),
+        })
       ).toBe(false);
 
       expect(
         isFormatIssueCritical({
           message: "Too many channels",
           type: "channels",
-        }),
+        })
       ).toBe(false);
     });
   });

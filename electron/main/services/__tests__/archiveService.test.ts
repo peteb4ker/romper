@@ -105,12 +105,12 @@ describe("download-and-extract-archive handler", () => {
     const result = await handler(
       mockEvent as any,
       "https://example.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
     expect(result).toBeTypeOf("object");
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
-      expect.objectContaining({ phase: expect.any(String) }),
+      expect.objectContaining({ phase: expect.any(String) })
     );
   }, 15000);
 
@@ -123,12 +123,12 @@ describe("download-and-extract-archive handler", () => {
     const result = await handler(
       mockEvent as any,
       "https://example.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
     expect(result.success).toBe(false);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       "archive-error",
-      expect.objectContaining({ message: expect.any(String) }),
+      expect.objectContaining({ message: expect.any(String) })
     );
   }, 15000);
 
@@ -145,12 +145,12 @@ describe("download-and-extract-archive handler", () => {
     const result = await handler(
       mockEvent as any,
       "https://fail.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
     expect(result.success).toBe(false);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       "archive-error",
-      expect.objectContaining({ message: expect.any(String) }),
+      expect.objectContaining({ message: expect.any(String) })
     );
   }, 15000);
 
@@ -185,12 +185,12 @@ describe("download-and-extract-archive handler", () => {
     const result = await handler(
       mockEvent as any,
       "https://skip.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
-      expect.objectContaining({ phase: expect.any(String) }),
+      expect.objectContaining({ phase: expect.any(String) })
     );
   }, 15000);
 
@@ -213,30 +213,30 @@ describe("download-and-extract-archive handler", () => {
     const result = await handler(
       mockEvent as any,
       "https://zero.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
-      expect.objectContaining({ phase: expect.any(String) }),
+      expect.objectContaining({ phase: expect.any(String) })
     );
   }, 15000);
 
   it("logs directory creation errors but continues extraction", async () => {
     (fs.mkdir as any).mockImplementation(
-      (dir: any, opts: any, cb: any) => cb && cb(new Error("mkdir fail")),
+      (dir: any, opts: any, cb: any) => cb && cb(new Error("mkdir fail"))
     );
     (fs.createReadStream as any).mockImplementation(() => new MockStream());
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
       mockEvent as any,
       "https://mkdir.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
-      expect.objectContaining({ phase: expect.any(String) }),
+      expect.objectContaining({ phase: expect.any(String) })
     );
   }, 15000);
 
@@ -279,12 +279,12 @@ describe("download-and-extract-archive handler", () => {
     const result = await handler(
       mockEvent as any,
       "https://write.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
-      expect.objectContaining({ phase: expect.any(String) }),
+      expect.objectContaining({ phase: expect.any(String) })
     );
   }, 15000);
 
@@ -295,13 +295,13 @@ describe("download-and-extract-archive handler", () => {
     const result = await handler(
       mockEvent as any,
       "file:///mock/local/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
 
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
-      expect.objectContaining({ phase: expect.any(String) }),
+      expect.objectContaining({ phase: expect.any(String) })
     );
   }, 15000);
 
@@ -312,14 +312,14 @@ describe("download-and-extract-archive handler", () => {
     const result = await handler(
       mockEvent as any,
       "file:///mock/nonexistent/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("Local file does not exist");
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       "archive-error",
-      expect.objectContaining({ message: expect.any(String) }),
+      expect.objectContaining({ message: expect.any(String) })
     );
   }, 15000);
 
@@ -344,13 +344,13 @@ describe("download-and-extract-archive handler", () => {
     const result = await handler(
       mockEvent as any,
       "https://nocontent.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
 
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
       expect.stringContaining("archive-progress"),
-      expect.objectContaining({ phase: expect.any(String) }),
+      expect.objectContaining({ phase: expect.any(String) })
     );
   }, 15000);
 
@@ -377,7 +377,7 @@ describe("download-and-extract-archive handler", () => {
     const result = await handler(
       mockEvent as any,
       "https://large.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
 
     expect(result.success).toBe(true);
@@ -386,7 +386,7 @@ describe("download-and-extract-archive handler", () => {
       expect.objectContaining({
         percent: expect.any(Number),
         phase: expect.any(String),
-      }),
+      })
     );
   }, 15000);
 });

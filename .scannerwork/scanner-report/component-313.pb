@@ -1,1 +1,0 @@
-¹ (2tsXÚhrJapp/renderer/components/dialogs/__tests__/InvalidLocalStoreDialog.test.tsx

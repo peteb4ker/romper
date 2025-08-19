@@ -1,1 +1,0 @@
- 2tsXjhr0app/renderer/components/wizard/WizardStepNav.tsx

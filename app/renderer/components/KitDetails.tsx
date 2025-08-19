@@ -25,7 +25,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   // Kit alias editing state
   const [editingKitAlias, setEditingKitAlias] = React.useState(false);
   const [kitAliasInput, setKitAliasInput] = React.useState(
-    logic.kit?.alias || "",
+    logic.kit?.alias || ""
   );
   const kitAliasInputRef = React.useRef<HTMLInputElement>(null!);
 
@@ -40,7 +40,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   const hasAnySamples =
     logic.samples &&
     Object.values(logic.samples).some(
-      (voiceSamples) => voiceSamples.length > 0,
+      (voiceSamples) => voiceSamples.length > 0
     );
   const needsScanning =
     logic.kit &&

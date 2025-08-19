@@ -29,25 +29,25 @@ describe("RampleNamingService", () => {
 
     it("should throw error for invalid voice number (0)", () => {
       expect(() => service.generateSampleFilename(0, 0)).toThrow(
-        "Invalid voice number: 0. Must be 1-4 for Rample compatibility.",
+        "Invalid voice number: 0. Must be 1-4 for Rample compatibility."
       );
     });
 
     it("should throw error for invalid voice number (5)", () => {
       expect(() => service.generateSampleFilename(5, 0)).toThrow(
-        "Invalid voice number: 5. Must be 1-4 for Rample compatibility.",
+        "Invalid voice number: 5. Must be 1-4 for Rample compatibility."
       );
     });
 
     it("should throw error for invalid slot number (-1)", () => {
       expect(() => service.generateSampleFilename(1, -1)).toThrow(
-        "Invalid slot number: -1. Must be 0-11 for Rample compatibility.",
+        "Invalid slot number: -1. Must be 0-11 for Rample compatibility."
       );
     });
 
     it("should throw error for invalid slot number (12)", () => {
       expect(() => service.generateSampleFilename(1, 12)).toThrow(
-        "Invalid slot number: 12. Must be 0-11 for Rample compatibility.",
+        "Invalid slot number: 12. Must be 0-11 for Rample compatibility."
       );
     });
   });
@@ -70,19 +70,19 @@ describe("RampleNamingService", () => {
 
     it("should throw error for invalid kit name (lowercase)", () => {
       expect(() => service.generateKitPath("/sdcard", "a0")).toThrow(
-        "Invalid kit name: a0. Must follow format {BankLetter}{KitNumber} (e.g., A0, B1, Z99).",
+        "Invalid kit name: a0. Must follow format {BankLetter}{KitNumber} (e.g., A0, B1, Z99)."
       );
     });
 
     it("should throw error for invalid kit name (wrong format)", () => {
       expect(() => service.generateKitPath("/sdcard", "AA0")).toThrow(
-        "Invalid kit name: AA0. Must follow format {BankLetter}{KitNumber} (e.g., A0, B1, Z99).",
+        "Invalid kit name: AA0. Must follow format {BankLetter}{KitNumber} (e.g., A0, B1, Z99)."
       );
     });
 
     it("should throw error for invalid kit name (three digits)", () => {
       expect(() => service.generateKitPath("/sdcard", "A100")).toThrow(
-        "Invalid kit name: A100. Must follow format {BankLetter}{KitNumber} (e.g., A0, B1, Z99).",
+        "Invalid kit name: A100. Must follow format {BankLetter}{KitNumber} (e.g., A0, B1, Z99)."
       );
     });
   });
@@ -93,7 +93,7 @@ describe("RampleNamingService", () => {
         "/sdcard",
         "A0",
         1,
-        0,
+        0
       );
       expect(result).toBe("/sdcard/A0/1sample1.wav");
     });
@@ -103,7 +103,7 @@ describe("RampleNamingService", () => {
         "/mnt/sdcard",
         "Z99",
         4,
-        11,
+        11
       );
       expect(result).toBe("/mnt/sdcard/Z99/4sample12.wav");
     });
@@ -113,7 +113,7 @@ describe("RampleNamingService", () => {
         "D:\\sdcard",
         "B10",
         2,
-        3,
+        3
       );
       // Note: path.join normalizes separators based on platform
       expect(result).toContain("B10");
@@ -137,7 +137,7 @@ describe("RampleNamingService", () => {
 
       const result = service.transformSampleToPathAndFilename(
         sample,
-        "/sdcard",
+        "/sdcard"
       );
 
       expect(result.destinationPath).toBe("/sdcard/A0/1sample1.wav");
@@ -159,7 +159,7 @@ describe("RampleNamingService", () => {
 
       const result = service.transformSampleToPathAndFilename(
         sample,
-        "/mnt/sd",
+        "/mnt/sd"
       );
 
       expect(result.destinationPath).toBe("/mnt/sd/Z99/4sample12.wav");
@@ -183,7 +183,7 @@ describe("RampleNamingService", () => {
 
       const result = service.transformSampleToDestinationPath(
         sample,
-        "/sdcard",
+        "/sdcard"
       );
       expect(result).toBe("/sdcard/A0/1sample1.wav");
     });
@@ -230,11 +230,11 @@ describe("RampleNamingService", () => {
 
     it("should identify invalid kit directory name", () => {
       const result = service.validateRampleCompliance(
-        "/sdcard/InvalidKit/1sample.wav",
+        "/sdcard/InvalidKit/1sample.wav"
       );
       expect(result.isValid).toBe(false);
       expect(result.issues).toContain(
-        'Kit directory "InvalidKit" does not follow format {BankLetter}{KitNumber}',
+        'Kit directory "InvalidKit" does not follow format {BankLetter}{KitNumber}'
       );
     });
 
@@ -242,7 +242,7 @@ describe("RampleNamingService", () => {
       const result = service.validateRampleCompliance("/sdcard/A0/sample.wav");
       expect(result.isValid).toBe(false);
       expect(result.issues).toContain(
-        'Sample filename "sample.wav" does not start with voice number (1-4)',
+        'Sample filename "sample.wav" does not start with voice number (1-4)'
       );
     });
 
@@ -250,7 +250,7 @@ describe("RampleNamingService", () => {
       const result = service.validateRampleCompliance("/sdcard/A0/5sample.wav");
       expect(result.isValid).toBe(false);
       expect(result.issues).toContain(
-        'Sample filename "5sample.wav" does not start with voice number (1-4)',
+        'Sample filename "5sample.wav" does not start with voice number (1-4)'
       );
     });
 
@@ -258,36 +258,36 @@ describe("RampleNamingService", () => {
       const result = service.validateRampleCompliance("/sdcard/A0/1sample.mp3");
       expect(result.isValid).toBe(false);
       expect(result.issues).toContain(
-        'Sample filename "1sample.mp3" is not a .wav file',
+        'Sample filename "1sample.mp3" is not a .wav file'
       );
     });
 
     it("should identify multiple issues at once", () => {
       const result = service.validateRampleCompliance(
-        "/sdcard/invalid/0sample.mp3",
+        "/sdcard/invalid/0sample.mp3"
       );
       expect(result.isValid).toBe(false);
       expect(result.issues).toHaveLength(3);
       expect(result.issues).toContain(
-        'Kit directory "invalid" does not follow format {BankLetter}{KitNumber}',
+        'Kit directory "invalid" does not follow format {BankLetter}{KitNumber}'
       );
       expect(result.issues).toContain(
-        'Sample filename "0sample.mp3" does not start with voice number (1-4)',
+        'Sample filename "0sample.mp3" does not start with voice number (1-4)'
       );
       expect(result.issues).toContain(
-        'Sample filename "0sample.mp3" is not a .wav file',
+        'Sample filename "0sample.mp3" is not a .wav file'
       );
     });
 
     it("should handle case-insensitive WAV extension", () => {
       const resultLower = service.validateRampleCompliance(
-        "/sdcard/A0/1sample.wav",
+        "/sdcard/A0/1sample.wav"
       );
       const resultUpper = service.validateRampleCompliance(
-        "/sdcard/A0/1sample.WAV",
+        "/sdcard/A0/1sample.WAV"
       );
       const resultMixed = service.validateRampleCompliance(
-        "/sdcard/A0/1sample.Wav",
+        "/sdcard/A0/1sample.Wav"
       );
 
       expect(resultLower.isValid).toBe(true);
@@ -322,7 +322,7 @@ describe("RampleNamingService", () => {
 
     it("should validate double digit kit numbers", () => {
       const result = service.validateRampleCompliance(
-        "/sdcard/A99/1sample.wav",
+        "/sdcard/A99/1sample.wav"
       );
       expect(result.isValid).toBe(true);
     });

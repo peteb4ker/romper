@@ -18,7 +18,7 @@ export interface ErrorHandler {
 export class KitError extends Error {
   constructor(
     message: string,
-    public readonly context?: string,
+    public readonly context?: string
   ) {
     super(message);
     this.name = "KitError";
@@ -31,7 +31,7 @@ export class KitError extends Error {
 export class SampleError extends Error {
   constructor(
     message: string,
-    public readonly context?: string,
+    public readonly context?: string
   ) {
     super(message);
     this.name = "SampleError";
@@ -41,7 +41,7 @@ export class SampleError extends Error {
 export class ValidationError extends Error {
   constructor(
     message: string,
-    public readonly field?: string,
+    public readonly field?: string
   ) {
     super(message);
     this.name = "ValidationError";
@@ -74,7 +74,7 @@ export function createErrorHandler(_context: string): ErrorHandler {
  */
 export function createErrorResult(
   error: unknown,
-  prefix?: string,
+  prefix?: string
 ): { error: string; success: false } {
   const message = getErrorMessage(error);
   return {

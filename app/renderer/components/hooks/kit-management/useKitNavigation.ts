@@ -57,7 +57,7 @@ export function useKitNavigation({
       return;
     }
     setSelectedKitSamples(
-      allKitSamples[selectedKit] ?? { 1: [], 2: [], 3: [], 4: [] },
+      allKitSamples[selectedKit] ?? { 1: [], 2: [], 3: [], 4: [] }
     );
   }, [selectedKit, allKitSamples]);
 
@@ -153,7 +153,7 @@ export function useKitNavigation({
         scrollToKitElement(scrollToKitName);
       }
     },
-    [refreshAllKitsAndSamples],
+    [refreshAllKitsAndSamples]
   );
 
   // Cleanup effect to clear all active timeouts on unmount

@@ -27,7 +27,7 @@ interface UseSyncUpdateResult {
   clearError: () => void;
   error: null | string;
   generateChangeSummary: (
-    sdCardPath?: string,
+    sdCardPath?: string
   ) => Promise<null | SyncChangeSummary>;
   isLoading: boolean;
   startSync: (options: {
@@ -38,7 +38,7 @@ interface UseSyncUpdateResult {
 }
 
 export function useSyncUpdate(
-  deps: SyncUpdateDependencies = {},
+  deps: SyncUpdateDependencies = {}
 ): UseSyncUpdateResult {
   const electronAPI = deps.electronAPI || window.electronAPI;
 
@@ -80,7 +80,7 @@ export function useSyncUpdate(
         setIsLoading(false);
       }
     },
-    [electronAPI],
+    [electronAPI]
   );
 
   const startSync = useCallback(
@@ -120,13 +120,13 @@ export function useSyncUpdate(
         if (!result.success) {
           setError(result.error || "Sync operation failed");
           setSyncProgress((prev) =>
-            prev ? { ...prev, error: result.error, status: "error" } : null,
+            prev ? { ...prev, error: result.error, status: "error" } : null
           );
           return false;
         }
 
         setSyncProgress((prev) =>
-          prev ? { ...prev, status: "completed" } : null,
+          prev ? { ...prev, status: "completed" } : null
         );
         return true;
       } catch (err) {
@@ -134,14 +134,14 @@ export function useSyncUpdate(
           err instanceof Error ? err.message : "Unknown error occurred";
         setError(`Sync failed: ${errorMessage}`);
         setSyncProgress((prev) =>
-          prev ? { ...prev, error: errorMessage, status: "error" } : null,
+          prev ? { ...prev, error: errorMessage, status: "error" } : null
         );
         return false;
       } finally {
         setIsLoading(false);
       }
     },
-    [electronAPI],
+    [electronAPI]
   );
 
   const cancelSync = useCallback(() => {

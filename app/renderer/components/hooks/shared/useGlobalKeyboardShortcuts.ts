@@ -29,12 +29,12 @@ export function useGlobalKeyboardShortcuts({
       // Safely check for dialog elements (handle test environments where closest may not exist)
       const isInDialog = Boolean(
         target.closest &&
-          (target.closest('[role="dialog"]') || target.closest(".fixed")),
+          (target.closest('[role="dialog"]') || target.closest(".fixed"))
       );
 
       return isInInput || isInDialog;
     },
-    [],
+    []
   );
 
   // Helper function to handle escape key navigation
@@ -53,7 +53,7 @@ export function useGlobalKeyboardShortcuts({
       }
       return false;
     },
-    [onBackNavigation, currentKitName, isTargetInInputOrDialog],
+    [onBackNavigation, currentKitName, isTargetInInputOrDialog]
   );
 
   // Helper function to handle undo operation
@@ -70,7 +70,7 @@ export function useGlobalKeyboardShortcuts({
       }
       return false;
     },
-    [undoRedo],
+    [undoRedo]
   );
 
   // Helper function to handle redo operation
@@ -87,7 +87,7 @@ export function useGlobalKeyboardShortcuts({
       }
       return false;
     },
-    [undoRedo],
+    [undoRedo]
   );
 
   // Return the addAction function so it can be passed to components that need it

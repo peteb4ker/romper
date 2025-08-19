@@ -73,7 +73,7 @@ export async function checkE2EFixtureStatus(): Promise<{
  * Clean up extracted E2E fixtures
  */
 export async function cleanupE2EFixture(
-  testEnv: E2ETestEnvironment,
+  testEnv: E2ETestEnvironment
 ): Promise<void> {
   console.log(`[E2E Fixture] Cleaning up test environment...`);
 
@@ -101,13 +101,13 @@ export async function extractE2EFixture(): Promise<E2ETestEnvironment> {
   // Verify fixtures exist
   if (!(await fs.pathExists(fixtureArchivePath))) {
     throw new Error(
-      `E2E fixture archive not found: ${fixtureArchivePath}. Run 'npm run fixtures:e2e' to generate fixtures.`,
+      `E2E fixture archive not found: ${fixtureArchivePath}. Run 'npm run fixtures:e2e' to generate fixtures.`
     );
   }
 
   if (!(await fs.pathExists(metadataPath))) {
     throw new Error(
-      `E2E fixture metadata not found: ${metadataPath}. Run 'npm run fixtures:e2e' to generate fixtures.`,
+      `E2E fixture metadata not found: ${metadataPath}. Run 'npm run fixtures:e2e' to generate fixtures.`
     );
   }
 
@@ -132,7 +132,7 @@ export async function extractE2EFixture(): Promise<E2ETestEnvironment> {
   });
 
   console.log(
-    `[E2E Fixture] Extraction completed. Found kits: ${metadata.kits.join(", ")}`,
+    `[E2E Fixture] Extraction completed. Found kits: ${metadata.kits.join(", ")}`
   );
 
   // Set up environment variables
@@ -170,13 +170,13 @@ export async function getE2EFixtureInfo(): Promise<E2EFixtureMetadata | null> {
  * Verify that extracted fixtures are valid
  */
 export async function verifyE2EFixture(
-  testEnv: E2ETestEnvironment,
+  testEnv: E2ETestEnvironment
 ): Promise<boolean> {
   try {
     // Check that local store directory exists
     if (!(await fs.pathExists(testEnv.localStorePath))) {
       console.error(
-        `[E2E Fixture] Local store path does not exist: ${testEnv.localStorePath}`,
+        `[E2E Fixture] Local store path does not exist: ${testEnv.localStorePath}`
       );
       return false;
     }
@@ -185,7 +185,7 @@ export async function verifyE2EFixture(
     const dbPath = path.join(
       testEnv.localStorePath,
       ".romperdb",
-      "romper.sqlite",
+      "romper.sqlite"
     );
     if (!(await fs.pathExists(dbPath))) {
       console.error(`[E2E Fixture] Database does not exist: ${dbPath}`);
@@ -210,7 +210,7 @@ export async function verifyE2EFixture(
     }
 
     console.log(
-      `[E2E Fixture] Verification completed successfully. Database and ${testEnv.metadata.kits.length} kits verified.`,
+      `[E2E Fixture] Verification completed successfully. Database and ${testEnv.metadata.kits.length} kits verified.`
     );
     return true;
   } catch (error) {

@@ -10,7 +10,7 @@ export function useKitListLogic(kits: KitWithRelations[]) {
       kits.length > 0
         ? [...kits].sort((a, b) => compareKitSlots(a.name, b.name))
         : [],
-    [kits],
+    [kits]
   );
 
   // Helper to determine if a kit is valid
@@ -25,7 +25,7 @@ export function useKitListLogic(kits: KitWithRelations[]) {
   const showBankAnchor = (
     kit: KitWithRelations,
     idx: number,
-    arr: KitWithRelations[],
+    arr: KitWithRelations[]
   ) =>
     isValidKit(kit) &&
     (idx === 0 || !kit.name.startsWith(arr[idx - 1].name[0]));

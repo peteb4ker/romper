@@ -66,7 +66,7 @@ describe("useKitDuplication", () => {
 
       expect(mockDuplicateKit).not.toHaveBeenCalled();
       expect(result.current.duplicateKitError).toBe(
-        "Invalid destination slot. Use format A0-Z99.",
+        "Invalid destination slot. Use format A0-Z99."
       );
     });
 
@@ -84,7 +84,7 @@ describe("useKitDuplication", () => {
 
       expect(mockDuplicateKit).not.toHaveBeenCalled();
       expect(result.current.duplicateKitError).toBe(
-        "Invalid destination slot. Use format A0-Z99.",
+        "Invalid destination slot. Use format A0-Z99."
       );
     });
 
@@ -172,7 +172,7 @@ describe("useKitDuplication", () => {
 
       mockDuplicateKit.mockResolvedValueOnce(undefined);
       const { result } = renderHook(() =>
-        useKitDuplication(propsWithoutRefresh),
+        useKitDuplication(propsWithoutRefresh)
       );
 
       act(() => {
@@ -211,7 +211,7 @@ describe("useKitDuplication", () => {
       });
 
       expect(result.current.duplicateKitError).toBe(
-        "Invalid destination slot. Use format A0-Z99.",
+        "Invalid destination slot. Use format A0-Z99."
       );
     });
   });

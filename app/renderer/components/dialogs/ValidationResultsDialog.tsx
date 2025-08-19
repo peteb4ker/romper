@@ -147,19 +147,19 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
                 {groupedErrors.missing.length > 0 &&
                   renderErrorList(
                     groupedErrors.missing,
-                    "Kits with missing files (files in database but not in file system)",
+                    "Kits with missing files (files in database but not in file system)"
                   )}
 
                 {groupedErrors.extra.length > 0 &&
                   renderErrorList(
                     groupedErrors.extra,
-                    "Kits with extra files (files in file system but not in database)",
+                    "Kits with extra files (files in file system but not in database)"
                   )}
 
                 {groupedErrors.both.length > 0 &&
                   renderErrorList(
                     groupedErrors.both,
-                    "Kits with both missing and extra files",
+                    "Kits with both missing and extra files"
                   )}
 
                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-300 dark:border-slate-600">

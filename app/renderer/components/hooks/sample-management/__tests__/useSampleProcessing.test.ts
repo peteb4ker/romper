@@ -76,7 +76,7 @@ describe("useSampleProcessing", () => {
       const samples = await result.current.getCurrentKitSamples();
 
       expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-        "Test Kit",
+        "Test Kit"
       );
       expect(samples).toEqual([
         { source_path: "/path/sample1.wav", voice_number: 1 },
@@ -96,7 +96,7 @@ describe("useSampleProcessing", () => {
 
       expect(samples).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Sample management not available",
+        "Sample management not available"
       );
 
       consoleErrorSpy.mockRestore();
@@ -118,7 +118,7 @@ describe("useSampleProcessing", () => {
       expect(samples).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to get samples:",
-        "API Error",
+        "API Error"
       );
 
       consoleErrorSpy.mockRestore();
@@ -150,7 +150,7 @@ describe("useSampleProcessing", () => {
 
       const isDupe = await result.current.isDuplicateSample(
         allSamples,
-        "/path/existing.wav",
+        "/path/existing.wav"
       );
 
       expect(isDupe).toBe(true);
@@ -159,7 +159,7 @@ describe("useSampleProcessing", () => {
         {
           description: "Sample already exists in voice 1",
           duration: 5000,
-        },
+        }
       );
     });
 
@@ -173,7 +173,7 @@ describe("useSampleProcessing", () => {
 
       const isDupe = await result.current.isDuplicateSample(
         allSamples,
-        "/path/new.wav",
+        "/path/new.wav"
       );
 
       expect(isDupe).toBe(false);
@@ -189,7 +189,7 @@ describe("useSampleProcessing", () => {
 
       const isDupe = await result.current.isDuplicateSample(
         allSamples,
-        "/path/sample.wav",
+        "/path/sample.wav"
       );
 
       expect(isDupe).toBe(false);
@@ -203,7 +203,7 @@ describe("useSampleProcessing", () => {
       const targetSlot = result.current.calculateTargetSlot(
         "/path/sample.wav",
         2,
-        5,
+        5
       );
 
       expect(targetSlot).toBe(2);
@@ -215,7 +215,7 @@ describe("useSampleProcessing", () => {
       const targetSlot = result.current.calculateTargetSlot(
         "/path/Test Kit/sample.wav",
         -1,
-        3,
+        3
       );
 
       expect(targetSlot).toBe(3);
@@ -227,7 +227,7 @@ describe("useSampleProcessing", () => {
       const targetSlot = result.current.calculateTargetSlot(
         "/external/path/sample.wav", // Not from local store
         -1,
-        0, // droppedSlotNumber, but sample[0] is occupied
+        0 // droppedSlotNumber, but sample[0] is occupied
       );
 
       expect(targetSlot).toBe(1); // First available slot
@@ -238,13 +238,13 @@ describe("useSampleProcessing", () => {
       const optionsWithFullSamples = { ...mockOptions, samples: fullSamples };
 
       const { result } = renderHook(() =>
-        useSampleProcessing(optionsWithFullSamples),
+        useSampleProcessing(optionsWithFullSamples)
       );
 
       const targetSlot = result.current.calculateTargetSlot(
         "/external/path/sample.wav",
         -1,
-        5,
+        5
       );
 
       expect(targetSlot).toBe(-1);
@@ -256,7 +256,7 @@ describe("useSampleProcessing", () => {
       const targetSlot = result.current.calculateTargetSlot(
         "/path/Test Kit/sample.wav", // From local store (contains kitName)
         -1,
-        5,
+        5
       );
 
       expect(targetSlot).toBe(5); // Use droppedSlotNumber for local store
@@ -270,7 +270,7 @@ describe("useSampleProcessing", () => {
         samples: Array(12).fill("occupied.wav"), // All slots filled
       };
       const { result } = renderHook(() =>
-        useSampleProcessing(fullSamplesOptions),
+        useSampleProcessing(fullSamplesOptions)
       );
       const { toast } = await import("sonner");
 
@@ -284,7 +284,7 @@ describe("useSampleProcessing", () => {
         {
           description: "Cannot add sample - all slots are filled",
           duration: 5000,
-        },
+        }
       );
     });
 
@@ -295,13 +295,13 @@ describe("useSampleProcessing", () => {
         "/path/Test Kit/new.wav",
         [],
         0, // Slot with existing sample
-        { forceMono: false, replaceExisting: true },
+        { forceMono: false, replaceExisting: true }
       );
 
       expect(mockOptions.onSampleReplace).toHaveBeenCalledWith(
         1,
         0,
-        "/path/Test Kit/new.wav",
+        "/path/Test Kit/new.wav"
       );
       expect(mockOptions.onSampleAdd).not.toHaveBeenCalled();
     });
@@ -313,13 +313,13 @@ describe("useSampleProcessing", () => {
         "/path/new.wav",
         [],
         1, // Empty slot
-        { forceMono: false, replaceExisting: false },
+        { forceMono: false, replaceExisting: false }
       );
 
       expect(mockOptions.onSampleAdd).toHaveBeenCalledWith(
         1,
         1,
-        "/path/new.wav",
+        "/path/new.wav"
       );
       expect(mockOptions.onSampleReplace).not.toHaveBeenCalled();
     });
@@ -339,14 +339,14 @@ describe("useSampleProcessing", () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to assign sample:",
-        "Assignment failed",
+        "Assignment failed"
       );
       expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
         "Failed to assign sample",
         {
           description: "Assignment failed",
           duration: 5000,
-        },
+        }
       );
 
       consoleErrorSpy.mockRestore();
@@ -370,7 +370,7 @@ describe("useSampleProcessing", () => {
         {
           description: "String error",
           duration: 5000,
-        },
+        }
       );
 
       consoleErrorSpy.mockRestore();
@@ -419,11 +419,11 @@ describe("useSampleProcessing", () => {
         mockFormatValidation,
         mockAllSamples,
         mockModifierKeys,
-        1,
+        1
       );
 
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Sample has 2 channel(s), defaultToMonoSamples: true",
+        "Sample has 2 channel(s), defaultToMonoSamples: true"
       );
 
       consoleLogSpy.mockRestore();
@@ -439,11 +439,11 @@ describe("useSampleProcessing", () => {
         mockFormatValidation,
         mockAllSamples,
         { forceMonoDrop: true, forceStereoDrop: false },
-        1,
+        1
       );
 
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Sample has 2 channel(s), defaultToMonoSamples: true, override: force mono",
+        "Sample has 2 channel(s), defaultToMonoSamples: true, override: force mono"
       );
 
       consoleLogSpy.mockRestore();
@@ -459,11 +459,11 @@ describe("useSampleProcessing", () => {
         mockFormatValidation,
         mockAllSamples,
         { forceMonoDrop: false, forceStereoDrop: true },
-        1,
+        1
       );
 
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Sample has 2 channel(s), defaultToMonoSamples: true, override: force stereo",
+        "Sample has 2 channel(s), defaultToMonoSamples: true, override: force stereo"
       );
 
       consoleLogSpy.mockRestore();
@@ -477,14 +477,14 @@ describe("useSampleProcessing", () => {
         mockFormatValidation,
         mockAllSamples,
         { forceMonoDrop: true, forceStereoDrop: false },
-        1,
+        1
       );
 
       expect(mockStereoHandling.analyzeStereoAssignment).toHaveBeenCalledWith(
         1, // voice
         2, // channels
         mockAllSamples,
-        { forceMono: true, forceStereo: false },
+        { forceMono: true, forceStereo: false }
       );
     });
 
@@ -502,7 +502,7 @@ describe("useSampleProcessing", () => {
       };
 
       mockStereoHandling.analyzeStereoAssignment.mockReturnValue(
-        conflictResult,
+        conflictResult
       );
 
       const { result } = renderHook(() => useSampleProcessing(mockOptions));
@@ -512,11 +512,11 @@ describe("useSampleProcessing", () => {
         mockFormatValidation,
         mockAllSamples,
         mockModifierKeys,
-        1,
+        1
       );
 
       expect(mockStereoHandling.handleStereoConflict).toHaveBeenCalledWith(
-        conflictResult.conflictInfo,
+        conflictResult.conflictInfo
       );
       expect(success).toBe(true);
     });
@@ -535,7 +535,7 @@ describe("useSampleProcessing", () => {
       };
 
       mockStereoHandling.analyzeStereoAssignment.mockReturnValue(
-        conflictResult,
+        conflictResult
       );
       mockStereoHandling.handleStereoConflict.mockResolvedValue({
         cancel: true,
@@ -550,7 +550,7 @@ describe("useSampleProcessing", () => {
         mockFormatValidation,
         mockAllSamples,
         mockModifierKeys,
-        1,
+        1
       );
 
       expect(success).toBe(false);
@@ -571,14 +571,14 @@ describe("useSampleProcessing", () => {
         mockFormatValidation,
         mockAllSamples,
         mockModifierKeys,
-        1,
+        1
       );
 
       expect(mockStereoHandling.applyStereoAssignment).toHaveBeenCalledWith(
         "/path/sample.wav",
         expect.objectContaining({ assignAsMono: false }),
         expect.objectContaining({ forceMono: false }),
-        mockOptions.onSampleAdd,
+        mockOptions.onSampleAdd
       );
     });
 
@@ -594,7 +594,7 @@ describe("useSampleProcessing", () => {
         monoFormatValidation,
         mockAllSamples,
         mockModifierKeys,
-        1,
+        1
       );
 
       expect(mockStereoHandling.applyStereoAssignment).not.toHaveBeenCalled();
@@ -608,7 +608,7 @@ describe("useSampleProcessing", () => {
         mockFormatValidation,
         mockAllSamples,
         mockModifierKeys,
-        1,
+        1
       );
 
       // mockStereoHandling.analyzeStereoAssignment returns assignAsMono: true by default
@@ -629,17 +629,17 @@ describe("useSampleProcessing", () => {
         noChannelsValidation,
         mockAllSamples,
         mockModifierKeys,
-        1,
+        1
       );
 
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Sample has 1 channel(s), defaultToMonoSamples: true",
+        "Sample has 1 channel(s), defaultToMonoSamples: true"
       );
       expect(mockStereoHandling.analyzeStereoAssignment).toHaveBeenCalledWith(
         1,
         1, // Default to 1 channel
         mockAllSamples,
-        undefined,
+        undefined
       );
 
       consoleLogSpy.mockRestore();

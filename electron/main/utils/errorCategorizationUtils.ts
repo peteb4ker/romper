@@ -72,14 +72,14 @@ export const ERROR_CATEGORIZATION_RULES: ErrorCategoryRule[] = [
  */
 export function categorizeErrorByRules(
   errorMessage: string,
-  filePath?: string,
+  filePath?: string
 ): SyncErrorInfo {
   const errorLower = errorMessage.toLowerCase();
 
   // Check each rule to find a match
   for (const rule of ERROR_CATEGORIZATION_RULES) {
     const matchesKeyword = rule.keywords.some((keyword) =>
-      errorLower.includes(keyword),
+      errorLower.includes(keyword)
     );
 
     if (matchesKeyword) {

@@ -31,7 +31,7 @@ export function useKeyboardNavigation({
         onPlay(voice, sample);
       }
     },
-    [samples, isActive, selectedIdx, voice, onPlay],
+    [samples, isActive, selectedIdx, voice, onPlay]
   );
 
   return {

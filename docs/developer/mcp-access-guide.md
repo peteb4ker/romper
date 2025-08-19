@@ -1,7 +1,7 @@
----
+<!-- 
 layout: default
 title: MCP Access Guide for Romper Debugging
----
+-->
 
 # MCP Access Guide for Romper Debugging
 

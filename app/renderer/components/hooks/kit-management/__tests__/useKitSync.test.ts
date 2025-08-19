@@ -103,7 +103,7 @@ describe("useKitSync", () => {
       expect(mockOnMessage).toHaveBeenCalledWith(
         "All kits synced successfully to /path/to/sd!",
         "success",
-        3000,
+        3000
       );
       expect(mockOnRefreshKits).toHaveBeenCalled();
     });
@@ -170,7 +170,7 @@ describe("useKitSync", () => {
       expect(mockOnMessage).toHaveBeenCalledWith(
         "All kits synced successfully to /path/to/sd!",
         "success",
-        3000,
+        3000
       );
     });
 
@@ -222,7 +222,7 @@ describe("useKitSync", () => {
       expect(mockOnMessage).toHaveBeenCalledWith(
         "All kits synced successfully to /path/to/sd!",
         "success",
-        3000,
+        3000
       );
     });
   });
@@ -317,7 +317,7 @@ describe("useKitSync", () => {
       expect(mockWriteSettings).toHaveBeenCalledWith("sdCardPath", testPath);
       expect(mockOnMessage).toHaveBeenCalledWith(
         "Failed to save SD card path",
-        "warning",
+        "warning"
       );
     });
 

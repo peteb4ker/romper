@@ -49,7 +49,7 @@ describe("SampleValidator", () => {
       const result = validator.validateVoiceAndSlot(2, -1);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe(
-        "Slot index must be between 0 and 11 (12 slots per voice)",
+        "Slot index must be between 0 and 11 (12 slots per voice)"
       );
     });
 
@@ -57,7 +57,7 @@ describe("SampleValidator", () => {
       const result = validator.validateVoiceAndSlot(2, 12);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe(
-        "Slot index must be between 0 and 11 (12 slots per voice)",
+        "Slot index must be between 0 and 11 (12 slots per voice)"
       );
     });
   });
@@ -125,7 +125,7 @@ describe("SampleValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.error).toBe(
-        "Invalid WAV file: missing WAVE format identifier",
+        "Invalid WAV file: missing WAVE format identifier"
       );
     });
 
@@ -246,7 +246,7 @@ describe("SampleValidator", () => {
     const createSample = (
       voiceNumber: number,
       slotNumber: number,
-      isStereo = false,
+      isStereo = false
     ): Sample => ({
       created_at: "2023-01-01",
       filename: `sample_${voiceNumber}_${slotNumber}.wav`,
@@ -267,7 +267,7 @@ describe("SampleValidator", () => {
         2,
         1,
         "insert",
-        existingSamples,
+        existingSamples
       );
 
       expect(result.success).toBe(true);
@@ -282,12 +282,12 @@ describe("SampleValidator", () => {
         4,
         1,
         "insert",
-        existingSamples,
+        existingSamples
       );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
-        "Cannot move stereo sample to voice 4 (no adjacent voice available)",
+        "Cannot move stereo sample to voice 4 (no adjacent voice available)"
       );
     });
 
@@ -301,12 +301,12 @@ describe("SampleValidator", () => {
         2, // Moving to voice 2, would need voice 3 slot 1 free
         1,
         "insert",
-        existingSamples,
+        existingSamples
       );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain(
-        "Stereo sample move would conflict with sample in voice 3, slot 2",
+        "Stereo sample move would conflict with sample in voice 3, slot 2"
       );
     });
 
@@ -319,7 +319,7 @@ describe("SampleValidator", () => {
         2,
         1,
         "insert",
-        existingSamples,
+        existingSamples
       );
 
       expect(result.success).toBe(true);
@@ -330,7 +330,7 @@ describe("SampleValidator", () => {
     const createSample = (
       voiceNumber: number,
       slotNumber: number,
-      isStereo = false,
+      isStereo = false
     ): Sample => ({
       created_at: "2023-01-01",
       filename: `sample_${voiceNumber}_${slotNumber}.wav`,
@@ -352,7 +352,7 @@ describe("SampleValidator", () => {
         1,
         destSamples,
         "insert",
-        "DestKit",
+        "DestKit"
       );
 
       expect(result.hasConflict).toBe(false);
@@ -369,12 +369,12 @@ describe("SampleValidator", () => {
         1,
         destSamples,
         "insert",
-        "DestKit",
+        "DestKit"
       );
 
       expect(result.hasConflict).toBe(true);
       expect(result.error).toBe(
-        "Cannot move stereo sample to voice 4 (no adjacent voice available)",
+        "Cannot move stereo sample to voice 4 (no adjacent voice available)"
       );
     });
 
@@ -389,12 +389,12 @@ describe("SampleValidator", () => {
         1,
         destSamples,
         "insert",
-        "DestKit",
+        "DestKit"
       );
 
       expect(result.hasConflict).toBe(true);
       expect(result.error).toContain(
-        "Cannot move stereo sample to voice 2 slot 2 in kit DestKit",
+        "Cannot move stereo sample to voice 2 slot 2 in kit DestKit"
       );
     });
 
@@ -408,7 +408,7 @@ describe("SampleValidator", () => {
         1,
         destSamples,
         "insert",
-        "DestKit",
+        "DestKit"
       );
 
       expect(result.hasConflict).toBe(false);

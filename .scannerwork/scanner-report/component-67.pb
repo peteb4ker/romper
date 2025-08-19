@@ -1,1 +1,0 @@
-C 2tsXåhr<app/renderer/components/hooks/shared/useValidationResults.ts

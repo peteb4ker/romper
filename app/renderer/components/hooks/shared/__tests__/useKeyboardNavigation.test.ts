@@ -54,7 +54,7 @@ describe("useKeyboardNavigation", () => {
 
   it("plays correct sample based on selectedIdx", () => {
     const { result } = renderHook(() =>
-      useKeyboardNavigation({ ...defaultProps, selectedIdx: 1 }),
+      useKeyboardNavigation({ ...defaultProps, selectedIdx: 1 })
     );
 
     const mockEvent = {
@@ -69,7 +69,7 @@ describe("useKeyboardNavigation", () => {
 
   it("ignores keys when not active", () => {
     const { result } = renderHook(() =>
-      useKeyboardNavigation({ ...defaultProps, isActive: false }),
+      useKeyboardNavigation({ ...defaultProps, isActive: false })
     );
 
     const mockEvent = {
@@ -85,7 +85,7 @@ describe("useKeyboardNavigation", () => {
 
   it("ignores keys when no samples", () => {
     const { result } = renderHook(() =>
-      useKeyboardNavigation({ ...defaultProps, samples: [] }),
+      useKeyboardNavigation({ ...defaultProps, samples: [] })
     );
 
     const mockEvent = {
@@ -115,7 +115,7 @@ describe("useKeyboardNavigation", () => {
 
   it("handles edge case when selectedIdx is out of bounds", () => {
     const { result } = renderHook(() =>
-      useKeyboardNavigation({ ...defaultProps, selectedIdx: 5 }),
+      useKeyboardNavigation({ ...defaultProps, selectedIdx: 5 })
     );
 
     const mockEvent = {

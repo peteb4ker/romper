@@ -1,7 +1,7 @@
----
+<!-- 
 layout: default
 title: Coding Standards
----
+-->
 
 # Romper Coding Standards (Machine-Readable)
 

@@ -28,7 +28,7 @@ export const TestElectronProvider: React.FC<TestElectronProviderProps> = ({
  */
 export const withElectronMock = <P extends object>(
   Component: React.ComponentType<P>,
-  mockOverrides: Partial<typeof window.electronAPI> = {},
+  mockOverrides: Partial<typeof window.electronAPI> = {}
 ) => {
   return (props: P) => (
     <TestElectronProvider
@@ -43,7 +43,7 @@ export const withElectronMock = <P extends object>(
  * Setup function for tests that need electronAPI without React
  */
 export const setupElectronAPI = (
-  overrides: Partial<typeof window.electronAPI> = {},
+  overrides: Partial<typeof window.electronAPI> = {}
 ) => {
   const mockAPI = createElectronAPIMock(overrides);
 

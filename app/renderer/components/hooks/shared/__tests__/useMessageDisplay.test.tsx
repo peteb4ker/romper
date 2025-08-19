@@ -27,7 +27,7 @@ describe("useMessageDisplay", () => {
     });
     expect(toast).toHaveBeenCalledWith(
       "Test info",
-      expect.objectContaining({ duration: 1234 }),
+      expect.objectContaining({ duration: 1234 })
     );
   });
 

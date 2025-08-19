@@ -53,7 +53,7 @@ export function useKitDataManager({
 
       return { 1: [], 2: [], 3: [], 4: [] };
     },
-    [],
+    []
   );
 
   // Main function to load all kits and their data
@@ -78,7 +78,7 @@ export function useKitDataManager({
         } else {
           console.error(
             "Failed to load kits from database:",
-            kitsResult?.error,
+            kitsResult?.error
           );
           setKits([]);
           loadedKits = [];
@@ -93,13 +93,13 @@ export function useKitDataManager({
       const samples: { [kit: string]: VoiceSamples } = {};
       if (kitNames.length > 0) {
         console.debug(
-          `[useKitDataManager] Loading samples for ${kitNames.length} kits...`,
+          `[useKitDataManager] Loading samples for ${kitNames.length} kits...`
         );
         for (const kit of kitNames) {
           samples[kit] = await loadKitSamples(kit);
         }
         console.debug(
-          `[useKitDataManager] Loaded samples for ${kitNames.length} kits`,
+          `[useKitDataManager] Loaded samples for ${kitNames.length} kits`
         );
       }
       setAllKitSamples(samples);
@@ -112,7 +112,7 @@ export function useKitDataManager({
             .map((k) => k.name)
             .sort(compareKitSlots);
           const kitIndex = sortedKitNames.findIndex(
-            (name) => name === scrollToKit,
+            (name) => name === scrollToKit
           );
 
           if (kitIndex !== -1) {
@@ -124,7 +124,7 @@ export function useKitDataManager({
         }, 100); // Small delay to ensure DOM is updated
       }
     },
-    [isInitialized, localStorePath, needsLocalStoreSetup, loadKitSamples],
+    [isInitialized, localStorePath, needsLocalStoreSetup, loadKitSamples]
   );
 
   // Function to reload samples for a specific kit
@@ -140,7 +140,7 @@ export function useKitDataManager({
         console.error(`Error reloading samples for kit ${kitName}:`, error);
       }
     },
-    [loadKitSamples],
+    [loadKitSamples]
   );
 
   // Helper function to load all kits and samples from database
@@ -155,13 +155,13 @@ export function useKitDataManager({
         const samples: { [kit: string]: VoiceSamples } = {};
         if (kitNames.length > 0) {
           console.debug(
-            `[useKitDataManager] Refreshing samples for ${kitNames.length} kits...`,
+            `[useKitDataManager] Refreshing samples for ${kitNames.length} kits...`
           );
           for (const kit of kitNames) {
             samples[kit] = await loadKitSamples(kit);
           }
           console.debug(
-            `[useKitDataManager] Refreshed samples for ${kitNames.length} kits`,
+            `[useKitDataManager] Refreshed samples for ${kitNames.length} kits`
           );
         }
         setAllKitSamples(samples);
@@ -187,7 +187,7 @@ export function useKitDataManager({
       } else {
         console.error(
           "Failed to load kits metadata from database:",
-          kitsResult?.error,
+          kitsResult?.error
         );
       }
     } catch (error) {

@@ -56,13 +56,13 @@ describe("useKitVoicePanels", () => {
       expect(result.current.kitName).toBe("TestKit");
       expect(result.current.onPlay).toBe(defaultProps.onPlay);
       expect(result.current.onRescanVoiceName).toBe(
-        defaultProps.onRescanVoiceName,
+        defaultProps.onRescanVoiceName
       );
       expect(result.current.onSampleSelect).toBe(defaultProps.onSampleSelect);
       expect(result.current.onSaveVoiceName).toBe(defaultProps.onSaveVoiceName);
       expect(result.current.onStop).toBe(defaultProps.onStop);
       expect(result.current.onWaveformPlayingChange).toBe(
-        defaultProps.onWaveformPlayingChange,
+        defaultProps.onWaveformPlayingChange
       );
       expect(result.current.playTriggers).toBe(defaultProps.playTriggers);
       expect(result.current.samplePlaying).toBe(defaultProps.samplePlaying);

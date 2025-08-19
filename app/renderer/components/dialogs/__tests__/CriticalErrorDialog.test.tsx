@@ -29,7 +29,7 @@ describe("CriticalErrorDialog", () => {
   it("should not render when closed", () => {
     render(<CriticalErrorDialog {...defaultProps} isOpen={false} />);
     expect(
-      screen.queryByText("Critical Configuration Error"),
+      screen.queryByText("Critical Configuration Error")
     ).not.toBeInTheDocument();
   });
 
@@ -37,12 +37,12 @@ describe("CriticalErrorDialog", () => {
     render(<CriticalErrorDialog {...defaultProps} />);
 
     expect(
-      screen.getByText("Critical Configuration Error"),
+      screen.getByText("Critical Configuration Error")
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "The environment variable ROMPER_LOCAL_PATH is set to an invalid path.",
-      ),
+        "The environment variable ROMPER_LOCAL_PATH is set to an invalid path."
+      )
     ).toBeInTheDocument();
     expect(screen.getByTestId("alert-triangle")).toBeInTheDocument();
   });
@@ -88,7 +88,7 @@ describe("CriticalErrorDialog", () => {
 
     expect(screen.getByText("Custom Error Title")).toBeInTheDocument();
     expect(
-      screen.getByText("This is a custom error message for testing purposes."),
+      screen.getByText("This is a custom error message for testing purposes.")
     ).toBeInTheDocument();
   });
 
@@ -99,7 +99,7 @@ describe("CriticalErrorDialog", () => {
     expect(okButton).toHaveClass(
       "focus:outline-none",
       "focus:ring-2",
-      "focus:ring-red-500",
+      "focus:ring-red-500"
     );
   });
 

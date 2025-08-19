@@ -1,8 +1,8 @@
----
+<!-- 
 description: Create a detailed git commit with pre-commit validation following project best practices
-argument-hint: "[optional commit message]"
-allowed-tools: ["Bash", "Grep", "Read", "Edit", "TodoWrite"]
----
+argument-hint: optional commit message
+allowed-tools: Bash, Grep, Read, Edit, TodoWrite
+-->
 
 I'll create a detailed git commit following the project's best practices, ensuring all pre-commit checks pass before finalizing the commit.
 

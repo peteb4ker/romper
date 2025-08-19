@@ -22,7 +22,7 @@ function loadTemplate(templateName) {
     projectRoot,
     "docs",
     "templates",
-    templateName,
+    templateName
   );
 
   if (!fs.existsSync(templatePath)) {
@@ -187,7 +187,7 @@ function previewReleaseNotes(version, customData = {}) {
     console.log("⚠️  No commits found since last release!");
   } else {
     console.log(
-      `📊 Summary: ${commitData.commitCount} commits from ${commitData.contributors.length} contributors`,
+      `📊 Summary: ${commitData.commitCount} commits from ${commitData.contributors.length} contributors`
     );
   }
 

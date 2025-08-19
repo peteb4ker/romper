@@ -8,7 +8,7 @@ export interface UseInternalDragHandlersOptions {
     fromVoice: number,
     fromSlot: number,
     toVoice: number,
-    toSlot: number,
+    toSlot: number
   ) => Promise<void>;
   samples: string[];
   setSharedDraggedSample?: (
@@ -16,7 +16,7 @@ export interface UseInternalDragHandlersOptions {
       sampleName: string;
       slot: number;
       voice: number;
-    } | null,
+    } | null
   ) => void;
   // Shared drag state for cross-voice operations
   sharedDraggedSample?: {
@@ -73,7 +73,7 @@ export function useInternalDragHandlers({
       e.dataTransfer.setData("application/x-romper-sample", "true");
       e.dataTransfer.effectAllowed = "move";
     },
-    [isEditable, voice, setDraggedSample],
+    [isEditable, voice, setDraggedSample]
   );
 
   const handleSampleDragEnd = useCallback(
@@ -83,7 +83,7 @@ export function useInternalDragHandlers({
       setInternalDragOverSlot(null);
       setInternalDropZone(null);
     },
-    [setDraggedSample],
+    [setDraggedSample]
   );
 
   const handleSampleDragOver = useCallback(
@@ -96,7 +96,7 @@ export function useInternalDragHandlers({
 
       // Check if this is an internal sample drag
       const isInternalDrag = e.dataTransfer.types.includes(
-        "application/x-romper-sample",
+        "application/x-romper-sample"
       );
       if (!isInternalDrag) return;
 
@@ -122,7 +122,7 @@ export function useInternalDragHandlers({
 
       setInternalDropZone({ mode, slot: slotNumber });
     },
-    [isEditable, draggedSample, voice, samples],
+    [isEditable, draggedSample, voice, samples]
   );
 
   const handleSampleDragLeave = useCallback(() => {
@@ -140,7 +140,7 @@ export function useInternalDragHandlers({
 
       // Check if this is an internal sample drag
       const isInternalDrag = e.dataTransfer.types.includes(
-        "application/x-romper-sample",
+        "application/x-romper-sample"
       );
       if (!isInternalDrag) return;
 
@@ -156,7 +156,7 @@ export function useInternalDragHandlers({
           draggedSample.voice,
           draggedSample.slot,
           voice,
-          slotNumber,
+          slotNumber
         );
       } catch (error) {
         ErrorPatterns.sampleOperation(error, "move sample");
@@ -167,7 +167,7 @@ export function useInternalDragHandlers({
         setInternalDropZone(null);
       }
     },
-    [isEditable, draggedSample, voice, onSampleMove, setDraggedSample],
+    [isEditable, draggedSample, voice, onSampleMove, setDraggedSample]
   );
 
   const getSampleDragHandlers = useCallback(
@@ -192,7 +192,7 @@ export function useInternalDragHandlers({
       handleSampleDragOver,
       handleSampleDragStart,
       handleSampleDrop,
-    ],
+    ]
   );
 
   return {

@@ -85,7 +85,7 @@ function getSystemThemePreference(): boolean {
 
 function settingsReducer(
   state: SettingsState,
-  action: SettingsAction,
+  action: SettingsAction
 ): SettingsState {
   switch (action.type) {
     case "CLEAR_ERROR":
@@ -161,7 +161,7 @@ function shouldUseDarkMode(themeMode: ThemeMode): boolean {
 }
 
 const SettingsContext = createContext<SettingsContextProps | undefined>(
-  undefined,
+  undefined
 );
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -230,7 +230,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("Failed to update local store path:", error);
       }
     },
-    [refreshLocalStoreStatus],
+    [refreshLocalStoreStatus]
   );
 
   // Update theme mode setting
@@ -244,7 +244,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("Failed to update theme mode:", error);
       }
     },
-    [applyTheme],
+    [applyTheme]
   );
 
   // Update default to mono samples setting
@@ -268,7 +268,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error(
         "Failed to update confirmDestructiveActions setting:",
-        error,
+        error
       );
     }
   }, []);
@@ -344,7 +344,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       setDefaultToMonoSamples,
       setLocalStorePath,
       setThemeMode,
-    ],
+    ]
   );
 
   return (

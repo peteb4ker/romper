@@ -148,7 +148,7 @@ export const createDocumentMock = (overrides: Record<string, any> = {}) => ({
  */
 export const setupBrowserMocks = (
   windowOverrides: Record<string, any> = {},
-  documentOverrides: Record<string, any> = {},
+  documentOverrides: Record<string, any> = {}
 ) => {
   const windowMock = createWindowMock(windowOverrides);
   const documentMock = createDocumentMock(documentOverrides);

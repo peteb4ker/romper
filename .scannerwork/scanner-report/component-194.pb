@@ -1,1 +1,0 @@
-Â (2tsX‡hr8app/renderer/components/utils/__tests__/Spinner.test.tsx

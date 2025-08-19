@@ -54,7 +54,7 @@ describe("LocalStoreWizardModal", () => {
 
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("local-store-wizard-ui"),
+        screen.queryByTestId("local-store-wizard-ui")
       ).not.toBeInTheDocument();
     });
 
@@ -62,12 +62,12 @@ describe("LocalStoreWizardModal", () => {
       render(<LocalStoreWizardModal {...defaultProps} />);
 
       expect(
-        screen.getByText("Local Store Setup Required"),
+        screen.getByText("Local Store Setup Required")
       ).toBeInTheDocument();
       expect(
         screen.getByText(
-          /The local store must be set up before the app can be used/,
-        ),
+          /The local store must be set up before the app can be used/
+        )
       ).toBeInTheDocument();
       expect(screen.getByTestId("local-store-wizard-ui")).toBeInTheDocument();
     });
@@ -77,7 +77,7 @@ describe("LocalStoreWizardModal", () => {
 
       // Check for modal backdrop
       const backdrop = container.querySelector(
-        ".fixed.inset-0.bg-black.bg-opacity-50",
+        ".fixed.inset-0.bg-black.bg-opacity-50"
       );
       expect(backdrop).toBeInTheDocument();
       expect(backdrop).toHaveClass(
@@ -88,12 +88,12 @@ describe("LocalStoreWizardModal", () => {
         "flex",
         "items-center",
         "justify-center",
-        "z-50",
+        "z-50"
       );
 
       // Check for modal content container
       const contentContainer = container.querySelector(
-        ".bg-white.dark\\:bg-slate-800",
+        ".bg-white.dark\\:bg-slate-800"
       );
       expect(contentContainer).toBeInTheDocument();
       expect(contentContainer).toHaveClass(
@@ -103,7 +103,7 @@ describe("LocalStoreWizardModal", () => {
         "p-6",
         "max-w-2xl",
         "w-full",
-        "mx-4",
+        "mx-4"
       );
     });
   });
@@ -118,7 +118,7 @@ describe("LocalStoreWizardModal", () => {
         "text-xl",
         "font-bold",
         "text-gray-900",
-        "dark:text-gray-100",
+        "dark:text-gray-100"
       );
     });
 
@@ -126,13 +126,13 @@ describe("LocalStoreWizardModal", () => {
       render(<LocalStoreWizardModal {...defaultProps} />);
 
       const description = screen.getByText(
-        /The local store must be set up before the app can be used/,
+        /The local store must be set up before the app can be used/
       );
       expect(description).toBeInTheDocument();
       expect(description).toHaveClass(
         "text-gray-600",
         "dark:text-gray-300",
-        "mt-2",
+        "mt-2"
       );
     });
 
@@ -147,7 +147,7 @@ describe("LocalStoreWizardModal", () => {
           onClose={mockOnClose}
           onSuccess={mockOnSuccess}
           setLocalStorePath={mockSetLocalStorePath}
-        />,
+        />
       );
 
       expect(screen.getByTestId("local-store-wizard-ui")).toBeInTheDocument();
@@ -160,7 +160,7 @@ describe("LocalStoreWizardModal", () => {
         const mockOnClose = vi.fn();
 
         render(
-          <LocalStoreWizardModal {...defaultProps} onClose={mockOnClose} />,
+          <LocalStoreWizardModal {...defaultProps} onClose={mockOnClose} />
         );
 
         screen.getByTestId("wizard-close").click();
@@ -180,7 +180,7 @@ describe("LocalStoreWizardModal", () => {
             {...defaultProps}
             onClose={mockOnClose}
             onCloseApp={mockOnCloseApp}
-          />,
+          />
         );
 
         screen.getByTestId("wizard-close").click();
@@ -205,7 +205,7 @@ describe("LocalStoreWizardModal", () => {
               {...defaultProps}
               isAutoTriggered={true}
               onClose={mockOnClose}
-            />,
+            />
           );
 
           screen.getByTestId("wizard-close").click();
@@ -223,7 +223,7 @@ describe("LocalStoreWizardModal", () => {
       const mockOnSuccess = vi.fn();
 
       render(
-        <LocalStoreWizardModal {...defaultProps} onSuccess={mockOnSuccess} />,
+        <LocalStoreWizardModal {...defaultProps} onSuccess={mockOnSuccess} />
       );
 
       screen.getByTestId("wizard-success").click();
@@ -238,7 +238,7 @@ describe("LocalStoreWizardModal", () => {
         <LocalStoreWizardModal
           {...defaultProps}
           setLocalStorePath={mockSetLocalStorePath}
-        />,
+        />
       );
 
       screen.getByTestId("wizard-set-path").click();
@@ -269,7 +269,7 @@ describe("LocalStoreWizardModal", () => {
           onClose={mockOnClose}
           onSuccess={vi.fn()}
           setLocalStorePath={vi.fn()}
-        />,
+        />
       );
 
       // Should use normal close behavior (not auto-triggered)

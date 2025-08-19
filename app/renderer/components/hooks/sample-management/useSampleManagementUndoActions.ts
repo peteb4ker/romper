@@ -33,14 +33,13 @@ export function useSampleManagementUndoActions({
       if (samplesResult?.success && samplesResult.data) {
         return (
           samplesResult.data.find(
-            (s: any) =>
-              s.voice_number === voice && s.slot_number === slotNumber,
+            (s: any) => s.voice_number === voice && s.slot_number === slotNumber
           ) || null
         );
       }
       return null;
     },
-    [kitName, skipUndoRecording],
+    [kitName, skipUndoRecording]
   );
 
   // Helper function to get sample to delete for undo recording
@@ -57,19 +56,19 @@ export function useSampleManagementUndoActions({
             samplesResult.data.find(
               (sample: any) =>
                 sample.voice_number === voice &&
-                sample.slot_number === slotNumber,
+                sample.slot_number === slotNumber
             ) || null
           );
         }
       } catch (error) {
         console.error(
           "[SampleManagement] Failed to get sample data for undo recording:",
-          error,
+          error
         );
       }
       return null;
     },
-    [kitName, skipUndoRecording],
+    [kitName, skipUndoRecording]
   );
 
   // Helper function to create add sample undo action
@@ -78,7 +77,7 @@ export function useSampleManagementUndoActions({
       voice: number,
       slotNumber: number,
       filePath: string,
-      options?: { forceMono?: boolean; forceStereo?: boolean },
+      options?: { forceMono?: boolean; forceStereo?: boolean }
     ): AddSampleAction => ({
       data: {
         addedSample: {
@@ -94,7 +93,7 @@ export function useSampleManagementUndoActions({
       timestamp: new Date(),
       type: "ADD_SAMPLE",
     }),
-    [],
+    []
   );
 
   // Helper function to create replace sample undo action
@@ -104,7 +103,7 @@ export function useSampleManagementUndoActions({
       slotNumber: number,
       oldSample: any,
       filePath: string,
-      options?: { forceMono?: boolean; forceStereo?: boolean },
+      options?: { forceMono?: boolean; forceStereo?: boolean }
     ): ReplaceSampleAction => ({
       data: {
         newSample: {
@@ -125,7 +124,7 @@ export function useSampleManagementUndoActions({
       timestamp: new Date(),
       type: "REPLACE_SAMPLE",
     }),
-    [],
+    []
   );
 
   // Helper function to create reindex samples undo action
@@ -134,7 +133,7 @@ export function useSampleManagementUndoActions({
       voice: number,
       slotNumber: number,
       sampleToDelete: any,
-      result: any,
+      result: any
     ): ReindexSamplesAction => ({
       data: {
         affectedSamples: result.data.affectedSamples.map((sample: any) => ({
@@ -160,7 +159,7 @@ export function useSampleManagementUndoActions({
       timestamp: new Date(),
       type: "REINDEX_SAMPLES",
     }),
-    [],
+    []
   );
 
   const createSameKitMoveAction = useCallback(
@@ -183,7 +182,7 @@ export function useSampleManagementUndoActions({
               source_path: sample.source_path,
             },
             voice: sample.voice_number,
-          }),
+          })
         ),
         fromSlot: params.fromSlot,
         fromVoice: params.fromVoice,
@@ -208,7 +207,7 @@ export function useSampleManagementUndoActions({
       timestamp: new Date(),
       type: "MOVE_SAMPLE",
     }),
-    [],
+    []
   );
 
   const createCrossKitMoveAction = useCallback(
@@ -231,7 +230,7 @@ export function useSampleManagementUndoActions({
               source_path: sample.source_path,
             },
             voice: sample.voice_number,
-          }),
+          })
         ),
         fromKit: kitName,
         fromSlot: params.fromSlot,
@@ -258,7 +257,7 @@ export function useSampleManagementUndoActions({
       timestamp: new Date(),
       type: "MOVE_SAMPLE_BETWEEN_KITS",
     }),
-    [kitName],
+    [kitName]
   );
 
   return {

@@ -91,7 +91,7 @@ describe("LocalStoreService", () => {
     it("prioritizes environment path over local store path", () => {
       const result = localStoreService.getLocalStoreStatus(
         "/local/path",
-        "/env/path",
+        "/env/path"
       );
 
       expect(result.localStorePath).toBe("/env/path");
@@ -143,7 +143,7 @@ describe("LocalStoreService", () => {
 
       const result = localStoreService.getLocalStoreStatus(
         null,
-        "/invalid/env/path",
+        "/invalid/env/path"
       );
 
       expect(result).toEqual({
@@ -171,7 +171,7 @@ describe("LocalStoreService", () => {
 
       const result = localStoreService.getLocalStoreStatus(
         null,
-        "/invalid/env/path",
+        "/invalid/env/path"
       );
 
       expect(result).toEqual({
@@ -414,7 +414,7 @@ describe("LocalStoreService", () => {
       const result = localStoreService.getLocalStorePath(
         "/base",
         "sub",
-        "path",
+        "path"
       );
 
       expect(result).toBe("/base/sub/path");

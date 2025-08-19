@@ -9,7 +9,7 @@ describe("useKitBrowserHeader", () => {
     const { result } = renderHook(() =>
       useKitBrowserHeader({
         onShowNewKit,
-      }),
+      })
     );
     act(() => result.current.handleShowNewKit());
     expect(onShowNewKit).toHaveBeenCalled();

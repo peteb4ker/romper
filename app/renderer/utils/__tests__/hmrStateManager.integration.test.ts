@@ -318,7 +318,7 @@ describe("HMR State Manager Integration Tests", () => {
     it("should handle invalid timestamp in session storage", () => {
       mockSessionStorage.setItem(
         "hmr_explicit_navigation",
-        "invalid-timestamp",
+        "invalid-timestamp"
       );
 
       expect(wasRecentExplicitNavigation()).toBe(false);
@@ -335,7 +335,7 @@ describe("HMR State Manager Integration Tests", () => {
       const oneHourAgo = Date.now() - 3600000;
       mockSessionStorage.setItem(
         "hmr_explicit_navigation",
-        oneHourAgo.toString(),
+        oneHourAgo.toString()
       );
 
       expect(wasRecentExplicitNavigation()).toBe(false);
@@ -346,7 +346,7 @@ describe("HMR State Manager Integration Tests", () => {
       const futureTime = Date.now() + 3600000;
       mockSessionStorage.setItem(
         "hmr_explicit_navigation",
-        futureTime.toString(),
+        futureTime.toString()
       );
 
       // Since now - futureTime < 0, which is < 1000, it returns true

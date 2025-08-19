@@ -17,7 +17,7 @@ describe("useUndoRedoState", () => {
   describe("initial state", () => {
     it("should initialize with empty stacks and no errors", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       expect(result.current.undoStack).toEqual([]);
@@ -35,7 +35,7 @@ describe("useUndoRedoState", () => {
   describe("addAction", () => {
     it("should add action to undo stack", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       act(() => {
@@ -50,7 +50,7 @@ describe("useUndoRedoState", () => {
 
     it("should clear redo stack when adding new action", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       // Add action, undo it, then add a new action
@@ -74,7 +74,7 @@ describe("useUndoRedoState", () => {
 
     it("should clear error when adding action", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       // Set error first
@@ -96,7 +96,7 @@ describe("useUndoRedoState", () => {
   describe("error handling", () => {
     it("should set and clear errors", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       act(() => {
@@ -116,7 +116,7 @@ describe("useUndoRedoState", () => {
   describe("loading states", () => {
     it("should manage undoing state", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       act(() => {
@@ -134,7 +134,7 @@ describe("useUndoRedoState", () => {
 
     it("should manage redoing state", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       act(() => {
@@ -152,7 +152,7 @@ describe("useUndoRedoState", () => {
 
     it("should disable canUndo when undoing", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       // Add action to make canUndo true
@@ -172,7 +172,7 @@ describe("useUndoRedoState", () => {
 
     it("should disable canRedo when redoing", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       // Add action and undo it to populate redo stack
@@ -198,7 +198,7 @@ describe("useUndoRedoState", () => {
   describe("handleUndoSuccess", () => {
     it("should move action from undo to redo stack", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       // Add action first
@@ -223,7 +223,7 @@ describe("useUndoRedoState", () => {
 
     it("should clear error on successful undo", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       // Add action first
@@ -250,7 +250,7 @@ describe("useUndoRedoState", () => {
   describe("handleRedoSuccess", () => {
     it("should move action from redo to undo stack", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       // Set up redo stack
@@ -276,7 +276,7 @@ describe("useUndoRedoState", () => {
 
     it("should clear error on successful redo", () => {
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       // Set up redo stack and error
@@ -301,7 +301,7 @@ describe("useUndoRedoState", () => {
     it("should dispatch custom event with kit name", () => {
       const dispatchEventSpy = vi.spyOn(document, "dispatchEvent");
       const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
+        useUndoRedoState({ kitName: "Test Kit" })
       );
 
       act(() => {
@@ -312,7 +312,7 @@ describe("useUndoRedoState", () => {
         expect.objectContaining({
           detail: { kitName: "Test Kit" },
           type: "romper:refresh-samples",
-        }),
+        })
       );
 
       dispatchEventSpy.mockRestore();
@@ -323,7 +323,7 @@ describe("useUndoRedoState", () => {
     it("should clear stacks when kit name changes", () => {
       const { rerender, result } = renderHook(
         ({ kitName }) => useUndoRedoState({ kitName }),
-        { initialProps: { kitName: "Original Kit" } },
+        { initialProps: { kitName: "Original Kit" } }
       );
 
       // Add some state

@@ -36,7 +36,7 @@ describe("ipcHandlerUtils", () => {
 
     // Mock path.join
     vi.mocked(path.join).mockImplementation((...segments) =>
-      segments.join("/"),
+      segments.join("/")
     );
   });
 
@@ -92,7 +92,7 @@ describe("ipcHandlerUtils", () => {
       expect(mockHandler).toHaveBeenCalledWith(
         "/test/local/store/.romperdb",
         "arg1",
-        "arg2",
+        "arg2"
       );
     });
 
@@ -121,7 +121,7 @@ describe("ipcHandlerUtils", () => {
       expect(result).toEqual({ data: "sync", success: true });
       expect(mockHandler).toHaveBeenCalledWith(
         "/test/local/store/.romperdb",
-        "arg1",
+        "arg1"
       );
     });
 
@@ -132,7 +132,7 @@ describe("ipcHandlerUtils", () => {
       const wrappedHandler = createDbHandler(mockInMemorySettings, mockHandler);
 
       await expect(wrappedHandler(mockEvent, "arg1")).rejects.toThrow(
-        "Handler error",
+        "Handler error"
       );
     });
   });
@@ -151,7 +151,7 @@ describe("ipcHandlerUtils", () => {
 
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "add",
+          "add"
         );
         const result = await handler(
           mockEvent,
@@ -159,7 +159,7 @@ describe("ipcHandlerUtils", () => {
           voiceNumber,
           slotNumber,
           filePath,
-          options,
+          options
         );
 
         expect(result).toEqual(mockResult);
@@ -169,20 +169,20 @@ describe("ipcHandlerUtils", () => {
           voiceNumber,
           slotNumber,
           filePath,
-          options,
+          options
         );
       });
 
       it("should return error when file path is missing for add operation", async () => {
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "add",
+          "add"
         );
         const result = await handler(
           mockEvent,
           kitName,
           voiceNumber,
-          slotNumber,
+          slotNumber
         );
 
         expect(result).toEqual({
@@ -199,14 +199,14 @@ describe("ipcHandlerUtils", () => {
 
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "add",
+          "add"
         );
         const result = await handler(
           mockEvent,
           kitName,
           voiceNumber,
           slotNumber,
-          filePath,
+          filePath
         );
 
         expect(result).toEqual({
@@ -220,18 +220,18 @@ describe("ipcHandlerUtils", () => {
       it("should handle successful delete operation", async () => {
         const mockResult = { data: { deletedSamples: [] }, success: true };
         vi.mocked(sampleService.deleteSampleFromSlot).mockReturnValue(
-          mockResult,
+          mockResult
         );
 
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "delete",
+          "delete"
         );
         const result = await handler(
           mockEvent,
           kitName,
           voiceNumber,
-          slotNumber,
+          slotNumber
         );
 
         expect(result).toEqual(mockResult);
@@ -239,7 +239,7 @@ describe("ipcHandlerUtils", () => {
           mockInMemorySettings,
           kitName,
           voiceNumber,
-          slotNumber,
+          slotNumber
         );
       });
 
@@ -250,13 +250,13 @@ describe("ipcHandlerUtils", () => {
 
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "delete",
+          "delete"
         );
         const result = await handler(
           mockEvent,
           kitName,
           voiceNumber,
-          slotNumber,
+          slotNumber
         );
 
         expect(result).toEqual({
@@ -270,12 +270,12 @@ describe("ipcHandlerUtils", () => {
       it("should handle successful replace operation", async () => {
         const mockResult = { data: { sampleId: 456 }, success: true };
         vi.mocked(sampleService.replaceSampleInSlot).mockReturnValue(
-          mockResult,
+          mockResult
         );
 
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "replace",
+          "replace"
         );
         const result = await handler(
           mockEvent,
@@ -283,7 +283,7 @@ describe("ipcHandlerUtils", () => {
           voiceNumber,
           slotNumber,
           filePath,
-          options,
+          options
         );
 
         expect(result).toEqual(mockResult);
@@ -293,20 +293,20 @@ describe("ipcHandlerUtils", () => {
           voiceNumber,
           slotNumber,
           filePath,
-          options,
+          options
         );
       });
 
       it("should return error when file path is missing for replace operation", async () => {
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "replace",
+          "replace"
         );
         const result = await handler(
           mockEvent,
           kitName,
           voiceNumber,
-          slotNumber,
+          slotNumber
         );
 
         expect(result).toEqual({
@@ -323,14 +323,14 @@ describe("ipcHandlerUtils", () => {
 
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "replace",
+          "replace"
         );
         const result = await handler(
           mockEvent,
           kitName,
           voiceNumber,
           slotNumber,
-          filePath,
+          filePath
         );
 
         expect(result).toEqual({
@@ -344,14 +344,14 @@ describe("ipcHandlerUtils", () => {
       it("should return error for unknown operation type", async () => {
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "unknown" as any,
+          "unknown" as any
         );
         const result = await handler(
           mockEvent,
           kitName,
           voiceNumber,
           slotNumber,
-          filePath,
+          filePath
         );
 
         expect(result).toEqual({
@@ -369,14 +369,14 @@ describe("ipcHandlerUtils", () => {
 
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "add",
+          "add"
         );
         const result = await handler(
           mockEvent,
           kitName,
           voiceNumber,
           slotNumber,
-          filePath,
+          filePath
         );
 
         expect(result).toEqual({
@@ -392,14 +392,14 @@ describe("ipcHandlerUtils", () => {
 
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "add",
+          "add"
         );
         const result = await handler(
           mockEvent,
           kitName,
           voiceNumber,
           slotNumber,
-          filePath,
+          filePath
         );
 
         expect(result).toEqual({

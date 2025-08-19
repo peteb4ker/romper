@@ -89,7 +89,7 @@ describe("LocalStoreWizardUI", () => {
     expect(screen.getByTestId("wizard-progress-bar")).toBeInTheDocument();
     expect(screen.getByText("Downloading")).toBeInTheDocument();
     expect(screen.getByTestId("wizard-progress-file")).toHaveTextContent(
-      "foo.zip",
+      "foo.zip"
     );
   });
 

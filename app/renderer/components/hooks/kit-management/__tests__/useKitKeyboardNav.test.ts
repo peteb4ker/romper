@@ -39,11 +39,11 @@ describe("useKitKeyboardNav", () => {
       expect(mockAddEventListener).toHaveBeenCalledTimes(2);
       expect(mockAddEventListener).toHaveBeenCalledWith(
         "keydown",
-        mockGlobalBankHotkeyHandler,
+        mockGlobalBankHotkeyHandler
       );
       expect(mockAddEventListener).toHaveBeenCalledWith(
         "keydown",
-        expect.any(Function),
+        expect.any(Function)
       );
     });
 
@@ -55,11 +55,11 @@ describe("useKitKeyboardNav", () => {
       expect(mockRemoveEventListener).toHaveBeenCalledTimes(2);
       expect(mockRemoveEventListener).toHaveBeenCalledWith(
         "keydown",
-        mockGlobalBankHotkeyHandler,
+        mockGlobalBankHotkeyHandler
       );
       expect(mockRemoveEventListener).toHaveBeenCalledWith(
         "keydown",
-        expect.any(Function),
+        expect.any(Function)
       );
     });
 
@@ -70,7 +70,7 @@ describe("useKitKeyboardNav", () => {
             ...defaultProps,
             globalBankHotkeyHandler: handler,
           }),
-        { initialProps: { handler: mockGlobalBankHotkeyHandler } },
+        { initialProps: { handler: mockGlobalBankHotkeyHandler } }
       );
 
       const newHandler = vi.fn();
@@ -79,7 +79,7 @@ describe("useKitKeyboardNav", () => {
       // Should remove old listeners and add new ones
       expect(mockRemoveEventListener).toHaveBeenCalledWith(
         "keydown",
-        mockGlobalBankHotkeyHandler,
+        mockGlobalBankHotkeyHandler
       );
       expect(mockAddEventListener).toHaveBeenCalledWith("keydown", newHandler);
     });
@@ -94,7 +94,7 @@ describe("useKitKeyboardNav", () => {
       // Extract the favorites handler from the addEventListener calls
       const calls = mockAddEventListener.mock.calls;
       const favoritesCall = calls.find(
-        (call) => call[1] !== mockGlobalBankHotkeyHandler,
+        (call) => call[1] !== mockGlobalBankHotkeyHandler
       );
       favoritesHandler = favoritesCall?.[1];
     });
@@ -131,7 +131,7 @@ describe("useKitKeyboardNav", () => {
       const { rerender } = renderHook(
         ({ focused }) =>
           useKitKeyboardNav({ ...defaultProps, focusedKit: focused }),
-        { initialProps: { focused: "Kit1" } },
+        { initialProps: { focused: "Kit1" } }
       );
 
       rerender({ focused: null });

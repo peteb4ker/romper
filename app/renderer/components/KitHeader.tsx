@@ -37,7 +37,7 @@ const renderNavigationButtonContent = (
   isNext: boolean,
   kitIndex: number,
   kits: KitWithRelations[],
-  Icon: React.ComponentType<{ className?: string }>,
+  Icon: React.ComponentType<{ className?: string }>
 ) => {
   const targetIndex = isNext ? kitIndex + 1 : kitIndex - 1;
   const hasTargetKit = isNext ? kitIndex < kits.length - 1 : kitIndex > 0;
@@ -56,7 +56,7 @@ const renderNavigationButtonContent = (
 const getNavigationButtonState = (
   isNext: boolean,
   kitIndex: number,
-  kits: KitWithRelations[],
+  kits: KitWithRelations[]
 ) => {
   const isDisabled = isNext ? kitIndex === kits.length - 1 : kitIndex === 0;
   const targetIndex = isNext ? kitIndex + 1 : kitIndex - 1;
@@ -79,7 +79,7 @@ const renderKitAliasInput = (
   setEditingKitAlias: (v: boolean) => void,
   setKitAliasInput: (v: string) => void,
   handleSaveKitAlias: (alias: string) => void,
-  kit: Kit | null,
+  kit: Kit | null
 ) => (
   <input
     autoFocus
@@ -106,7 +106,7 @@ const renderKitAliasInput = (
 // Helper function to render kit alias button
 const renderKitAliasButton = (
   setEditingKitAlias: (v: boolean) => void,
-  kit: Kit | null,
+  kit: Kit | null
 ) => (
   <button
     className="font-semibold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline bg-transparent border-none p-0 text-center"
@@ -182,7 +182,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
               false,
               kitIndex!,
               kits!,
-              FiChevronLeft,
+              FiChevronLeft
             )}
           </button>
         )}
@@ -198,7 +198,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
               true,
               kitIndex!,
               kits!,
-              FiChevronRight,
+              FiChevronRight
             )}
           </button>
         )}
@@ -223,7 +223,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
                 setEditingKitAlias,
                 setKitAliasInput,
                 handleSaveKitAlias,
-                kit,
+                kit
               )
             : renderKitAliasButton(setEditingKitAlias, kit)}
         </div>

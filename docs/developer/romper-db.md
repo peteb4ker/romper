@@ -1,7 +1,7 @@
----
+<!-- 
 layout: default
 title: Database Schema
----
+-->
 
 # Romper Database Schema
 

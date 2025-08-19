@@ -82,7 +82,7 @@ export class SyncProgressService {
   initializeSyncJob(
     kitName: string,
     fileOperations: SyncFileOperation[],
-    totalBytes: number,
+    totalBytes: number
   ): void {
     this.currentSyncJob = {
       bytesTransferred: 0,
@@ -111,7 +111,7 @@ export class SyncProgressService {
     bytesTransferred: number,
     status: SyncProgress["status"],
     currentFileProgress?: number,
-    errorDetails?: SyncProgress["errorDetails"],
+    errorDetails?: SyncProgress["errorDetails"]
   ): void {
     if (!this.currentSyncJob) return;
 

@@ -23,7 +23,7 @@ describe("StepSequencerDrawer", () => {
         setSequencerOpen={setSequencerOpen}
       >
         <div data-testid="drawer-content">Content</div>
-      </StepSequencerDrawer>,
+      </StepSequencerDrawer>
     );
 
     const drawer = screen.getByTestId("kit-step-sequencer-drawer");
@@ -44,7 +44,7 @@ describe("StepSequencerDrawer", () => {
         setSequencerOpen={setSequencerOpen}
       >
         <div data-testid="drawer-content">Content</div>
-      </StepSequencerDrawer>,
+      </StepSequencerDrawer>
     );
 
     const drawer = screen.getByTestId("kit-step-sequencer-drawer");
@@ -65,7 +65,7 @@ describe("StepSequencerDrawer", () => {
         setSequencerOpen={setSequencerOpen}
       >
         <div>Content</div>
-      </StepSequencerDrawer>,
+      </StepSequencerDrawer>
     );
 
     const handle = screen.getByTestId("kit-step-sequencer-handle");
@@ -83,7 +83,7 @@ describe("StepSequencerDrawer", () => {
         setSequencerOpen={setSequencerOpen}
       >
         <div>Content</div>
-      </StepSequencerDrawer>,
+      </StepSequencerDrawer>
     );
 
     const openHandle = screen.getByTestId("kit-step-sequencer-handle");
@@ -103,7 +103,7 @@ describe("StepSequencerDrawer", () => {
         setSequencerOpen={setSequencerOpen}
       >
         {testContent}
-      </StepSequencerDrawer>,
+      </StepSequencerDrawer>
     );
 
     expect(screen.getByTestId("custom-content")).toBeInTheDocument();

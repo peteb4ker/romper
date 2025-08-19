@@ -1,1 +1,0 @@
-© 2tsXðhr+electron/main/services/localStoreService.ts

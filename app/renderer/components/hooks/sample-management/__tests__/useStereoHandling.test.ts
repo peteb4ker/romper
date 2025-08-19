@@ -51,7 +51,7 @@ describe("useStereoHandling", () => {
         const analysis = result.current.analyzeStereoAssignment(
           1,
           1, // mono
-          mockSamples,
+          mockSamples
         );
 
         expect(analysis).toEqual({
@@ -68,7 +68,7 @@ describe("useStereoHandling", () => {
         const analysis = result.current.analyzeStereoAssignment(
           1,
           2, // stereo
-          mockSamples,
+          mockSamples
         );
 
         expect(analysis).toEqual({
@@ -86,7 +86,7 @@ describe("useStereoHandling", () => {
           1,
           2, // stereo
           [], // no existing samples
-          { forceStereo: true },
+          { forceStereo: true }
         );
 
         expect(analysis).toEqual({
@@ -104,7 +104,7 @@ describe("useStereoHandling", () => {
           1,
           2, // stereo
           mockSamples,
-          { forceMono: true },
+          { forceMono: true }
         );
 
         expect(analysis).toEqual({
@@ -129,7 +129,7 @@ describe("useStereoHandling", () => {
         const analysis = result.current.analyzeStereoAssignment(
           1,
           1, // mono
-          mockSamples,
+          mockSamples
         );
 
         expect(analysis).toEqual({
@@ -146,7 +146,7 @@ describe("useStereoHandling", () => {
         const analysis = result.current.analyzeStereoAssignment(
           4,
           2, // stereo
-          [], // no existing samples
+          [] // no existing samples
         );
 
         expect(analysis).toEqual({
@@ -168,7 +168,7 @@ describe("useStereoHandling", () => {
         const analysis = result.current.analyzeStereoAssignment(
           1,
           2, // stereo
-          mockSamples, // voice 1 has samples
+          mockSamples // voice 1 has samples
         );
 
         expect(analysis).toEqual({
@@ -199,7 +199,7 @@ describe("useStereoHandling", () => {
         const analysis = result.current.analyzeStereoAssignment(
           1,
           2, // stereo
-          [{ filename: "sample2.wav", voice_number: 2 }], // voice 2 has samples
+          [{ filename: "sample2.wav", voice_number: 2 }] // voice 2 has samples
         );
 
         expect(analysis).toEqual({
@@ -226,7 +226,7 @@ describe("useStereoHandling", () => {
         const analysis = result.current.analyzeStereoAssignment(
           2,
           2, // stereo
-          mockSamples, // voices 2 and 3 have samples
+          mockSamples // voices 2 and 3 have samples
         );
 
         expect(analysis).toEqual({
@@ -257,7 +257,7 @@ describe("useStereoHandling", () => {
         const analysis = result.current.analyzeStereoAssignment(
           4,
           2, // stereo
-          [], // no existing samples
+          [] // no existing samples
         );
 
         expect(analysis).toEqual({
@@ -298,7 +298,7 @@ describe("useStereoHandling", () => {
           description:
             "Voice 5 doesn't exist. Sample will be assigned as mono to voice 4.",
           duration: 5000,
-        },
+        }
       );
     });
 
@@ -327,7 +327,7 @@ describe("useStereoHandling", () => {
           description:
             "voice 1 and voice 2 already have samples. Sample will be assigned as mono to voice 1.",
           duration: 7000,
-        },
+        }
       );
     });
 
@@ -353,7 +353,7 @@ describe("useStereoHandling", () => {
           description:
             "voice 1 already have samples. Sample will be assigned as mono to voice 1.",
           duration: 7000,
-        },
+        }
       );
     });
   });
@@ -386,7 +386,7 @@ describe("useStereoHandling", () => {
         testFilePath,
         stereoResult,
         options,
-        mockOnSampleAdd,
+        mockOnSampleAdd
       );
 
       expect(success).toBe(false);
@@ -414,12 +414,12 @@ describe("useStereoHandling", () => {
       const success = await result.current.applyStereoAssignment(
         testFilePath,
         stereoResult,
-        options,
+        options
       );
 
       expect(success).toBe(false);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "No sample add handler provided",
+        "No sample add handler provided"
       );
 
       consoleErrorSpy.mockRestore();
@@ -447,7 +447,7 @@ describe("useStereoHandling", () => {
         testFilePath,
         stereoResult,
         options,
-        mockOnSampleAdd,
+        mockOnSampleAdd
       );
 
       expect(success).toBe(true);
@@ -478,7 +478,7 @@ describe("useStereoHandling", () => {
         testFilePath,
         stereoResult,
         options,
-        mockOnSampleAdd,
+        mockOnSampleAdd
       );
 
       expect(success).toBe(true);
@@ -509,7 +509,7 @@ describe("useStereoHandling", () => {
         testFilePath,
         stereoResult,
         options,
-        mockOnSampleAdd,
+        mockOnSampleAdd
       );
 
       expect(success).toBe(true);
@@ -547,13 +547,13 @@ describe("useStereoHandling", () => {
         testFilePath,
         stereoResult,
         options,
-        mockOnSampleAdd,
+        mockOnSampleAdd
       );
 
       expect(success).toBe(false);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to apply stereo assignment:",
-        "Sample add failed",
+        "Sample add failed"
       );
       expect(mockToast.error).toHaveBeenCalledWith("Assignment failed", {
         description: "Failed to assign sample. Please try again.",

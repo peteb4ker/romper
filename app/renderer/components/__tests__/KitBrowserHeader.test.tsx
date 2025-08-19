@@ -39,7 +39,7 @@ describe("KitBrowserHeader", () => {
       <KitBrowserHeader
         {...defaultProps}
         onValidateLocalStore={onValidateLocalStore}
-      />,
+      />
     );
     fireEvent.click(screen.getByText("Validate Store"));
     expect(onValidateLocalStore).toHaveBeenCalled();
@@ -52,7 +52,7 @@ describe("KitBrowserHeader", () => {
   it("calls onShowSettings when Settings button is clicked", () => {
     const onShowSettings = vi.fn();
     render(
-      <KitBrowserHeader {...defaultProps} onShowSettings={onShowSettings} />,
+      <KitBrowserHeader {...defaultProps} onShowSettings={onShowSettings} />
     );
     fireEvent.click(screen.getByText("Settings"));
     expect(onShowSettings).toHaveBeenCalled();
@@ -63,7 +63,7 @@ describe("KitBrowserHeader", () => {
       <KitBrowserHeader
         {...defaultProps}
         bankNav={<div data-testid="bank-nav">BANKS</div>}
-      />,
+      />
     );
     expect(screen.getByTestId("bank-nav")).toBeInTheDocument();
   });

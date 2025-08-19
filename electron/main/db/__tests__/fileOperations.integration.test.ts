@@ -13,7 +13,7 @@ describe("fileOperations integration tests", () => {
   beforeEach(async () => {
     // Create a unique test directory for each test
     testDir = await fs.promises.mkdtemp(
-      path.join(os.tmpdir(), "romper-fileops-test-"),
+      path.join(os.tmpdir(), "romper-fileops-test-")
     );
     testDbPath = path.join(testDir, "test.sqlite");
   });
@@ -47,12 +47,12 @@ describe("fileOperations integration tests", () => {
       if (process.platform === "win32") {
         // Windows doesn't throw - it resolves even on failure
         await expect(
-          deleteDbFileWithRetry(nonExistentPath, 2),
+          deleteDbFileWithRetry(nonExistentPath, 2)
         ).resolves.toBeUndefined();
       } else {
         // Other platforms throw on failure
         await expect(
-          deleteDbFileWithRetry(nonExistentPath, 2),
+          deleteDbFileWithRetry(nonExistentPath, 2)
         ).rejects.toThrow();
       }
     });
@@ -74,7 +74,7 @@ describe("fileOperations integration tests", () => {
 
       // The function should still succeed (either delete or rename)
       await expect(
-        deleteDbFileWithRetry(testDbPath, 3),
+        deleteDbFileWithRetry(testDbPath, 3)
       ).resolves.toBeUndefined();
 
       // File should be gone or renamed
@@ -85,7 +85,7 @@ describe("fileOperations integration tests", () => {
         const backupFiles = files.filter(
           (f) =>
             f.startsWith("test.sqlite.") &&
-            (f.includes("corrupted") || f.includes("locked")),
+            (f.includes("corrupted") || f.includes("locked"))
         );
         expect(backupFiles.length).toBeGreaterThan(0);
       }
@@ -96,7 +96,7 @@ describe("fileOperations integration tests", () => {
       if (process.platform === "win32") {
         // Windows doesn't throw - it resolves even on failure
         await expect(
-          deleteDbFileWithRetry(testDir, 2),
+          deleteDbFileWithRetry(testDir, 2)
         ).resolves.toBeUndefined();
       } else {
         // Other platforms throw on failure
@@ -107,7 +107,7 @@ describe("fileOperations integration tests", () => {
     it("should work with files containing special characters", async () => {
       const specialPath = path.join(
         testDir,
-        "test with spaces & symbols!.sqlite",
+        "test with spaces & symbols!.sqlite"
       );
 
       // Create a test file with special characters
@@ -153,12 +153,12 @@ describe("fileOperations integration tests", () => {
         if (process.platform === "win32") {
           // Windows doesn't throw - it resolves even on failure
           await expect(
-            deleteDbFileWithRetry(restrictedPath, 2),
+            deleteDbFileWithRetry(restrictedPath, 2)
           ).resolves.toBeUndefined();
         } else {
           // Other platforms throw on failure
           await expect(
-            deleteDbFileWithRetry(restrictedPath, 2),
+            deleteDbFileWithRetry(restrictedPath, 2)
           ).rejects.toThrow();
         }
 
@@ -213,14 +213,14 @@ describe("fileOperations integration tests", () => {
     it("should handle concurrent access patterns", async () => {
       // Create multiple files and try to delete them concurrently
       const files = Array.from({ length: 5 }, (_, i) =>
-        path.join(testDir, `concurrent-${i}.sqlite`),
+        path.join(testDir, `concurrent-${i}.sqlite`)
       );
 
       // Create all files
       await Promise.all(
         files.map((filePath) =>
-          fs.promises.writeFile(filePath, `content ${filePath}`),
-        ),
+          fs.promises.writeFile(filePath, `content ${filePath}`)
+        )
       );
 
       // Verify all created
@@ -230,7 +230,7 @@ describe("fileOperations integration tests", () => {
 
       // Delete all concurrently
       await Promise.all(
-        files.map((filePath) => deleteDbFileWithRetry(filePath)),
+        files.map((filePath) => deleteDbFileWithRetry(filePath))
       );
 
       // Verify all deleted
@@ -266,7 +266,7 @@ describe("fileOperations integration tests", () => {
 
       // Delete using platform-appropriate separators
       await expect(
-        deleteDbFileWithRetry(pathWithMixedSeparators),
+        deleteDbFileWithRetry(pathWithMixedSeparators)
       ).resolves.toBeUndefined();
       expect(fs.existsSync(testDbPath)).toBe(false);
     });

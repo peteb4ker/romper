@@ -1,10 +1,10 @@
----
-title: "Release Automation - Task List"
-owners: ["maintainer"]
-created: "2025-08-19"
-status: "in-progress"
-tags: ["tasks", "release", "automation"]
----
+<!-- 
+title: Release Automation - Task List
+owners: maintainer
+created: 2025-08-19
+status: in-progress
+tags: tasks, release, automation
+-->
 
 # Release Automation - Task List
 

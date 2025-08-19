@@ -18,7 +18,7 @@ interface KitVoicePanelsProps {
   onSampleAdd?: (
     voice: number,
     slotNumber: number,
-    filePath: string,
+    filePath: string
   ) => Promise<void>;
   onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
   onSampleKeyNav: (direction: "down" | "up") => void; // Used directly in KitVoicePanel
@@ -27,12 +27,12 @@ interface KitVoicePanelsProps {
     fromVoice: number,
     fromSlot: number,
     toVoice: number,
-    toSlot: number,
+    toSlot: number
   ) => Promise<void>;
   onSampleReplace?: (
     voice: number,
     slotNumber: number,
-    filePath: string,
+    filePath: string
   ) => Promise<void>;
   onSampleSelect: (voice: number, idx: number) => void; // Used by useKitVoicePanels hook
   onSaveVoiceName: (voice: number, newName: string) => void; // Used by useKitVoicePanels hook
@@ -40,7 +40,7 @@ interface KitVoicePanelsProps {
   onWaveformPlayingChange: (
     voice: number,
     sample: string,
-    playing: boolean,
+    playing: boolean
   ) => void; // Used by useKitVoicePanels hook
   playTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
   samplePlaying: { [key: string]: boolean }; // Used by useKitVoicePanels hook
@@ -92,7 +92,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
 
       try {
         const samplesResult = await window.electronAPI.getAllSamplesForKit(
-          hookProps.kitName,
+          hookProps.kitName
         );
         if (samplesResult?.success && samplesResult.data) {
           const metadata: { [filename: string]: SampleData } = {};
@@ -117,7 +117,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const handleStereoDragOver = (
     voice: number,
     slotNumber: number,
-    isStereo: boolean,
+    isStereo: boolean
   ) => {
     const canHandleStereo = isStereo && voice < 4;
     const shouldSetDragInfo = canHandleStereo;

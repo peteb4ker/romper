@@ -130,7 +130,7 @@ describe.sequential("main/index.ts", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     await import("../index");
     expect(() =>
-      process.emit("unhandledRejection", undefined, Promise.resolve()),
+      process.emit("unhandledRejection", undefined, Promise.resolve())
     ).not.toThrow();
     spy.mockRestore();
   });
@@ -143,7 +143,7 @@ describe.sequential("main/index.ts", () => {
     await import("../index");
     expect(spy).toHaveBeenCalledWith(
       "[Settings] Failed to parse settings file:",
-      expect.any(Error),
+      expect.any(Error)
     );
     spy.mockRestore();
     readFileSyncSpy.mockRestore();
@@ -155,7 +155,7 @@ describe.sequential("main/index.ts", () => {
     await import("../index");
     // Verify no warning is logged for missing settings file (simplified logging)
     expect(spy).not.toHaveBeenCalledWith(
-      expect.stringContaining("Settings file not found"),
+      expect.stringContaining("Settings file not found")
     );
     spy.mockRestore();
     existsSyncSpy.mockRestore();
@@ -170,7 +170,7 @@ describe.sequential("main/index.ts", () => {
     // Logs settings when loaded
     expect(spy).toHaveBeenCalledWith(
       "[Settings] Loaded settings:",
-      expect.any(String),
+      expect.any(String)
     );
     spy.mockRestore();
     readFileSyncSpy.mockRestore();
@@ -181,7 +181,7 @@ describe.sequential("main/index.ts", () => {
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
     await import("../index");
     expect(spy).toHaveBeenCalledWith(
-      "[Settings] Settings file is empty - using empty settings",
+      "[Settings] Settings file is empty - using empty settings"
     );
     spy.mockRestore();
     readFileSyncSpy.mockRestore();
@@ -194,7 +194,7 @@ describe.sequential("main/index.ts", () => {
     const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
     await import("../index");
     expect(spy).toHaveBeenCalledWith(
-      "[Settings] Settings file did not contain an object. Using empty settings.",
+      "[Settings] Settings file did not contain an object. Using empty settings."
     );
     spy.mockRestore();
     readFileSyncSpy.mockRestore();
@@ -213,7 +213,7 @@ describe.sequential("main/index.ts", () => {
 
     expect(validateLocalStoreAndDb).toHaveBeenCalledWith("/mock/store/path");
     expect(spy).toHaveBeenCalledWith(
-      "[Validation] ✓ Local store path is valid",
+      "[Validation] ✓ Local store path is valid"
     );
     spy.mockRestore();
     readFileSyncSpy.mockRestore();
@@ -239,7 +239,7 @@ describe.sequential("main/index.ts", () => {
     await import("../index");
 
     expect(spy).toHaveBeenCalledWith(
-      "[Startup] ✗ Saved local store path is invalid",
+      "[Startup] ✗ Saved local store path is invalid"
     );
     expect(writeFileSyncSpy).toHaveBeenCalled();
     spy.mockRestore();
@@ -269,7 +269,7 @@ describe.sequential("main/index.ts", () => {
 
     expect(spy).toHaveBeenCalledWith(
       "[Startup] Failed to update settings file:",
-      expect.any(Error),
+      expect.any(Error)
     );
     spy.mockRestore();
     readFileSyncSpy.mockRestore();
@@ -285,13 +285,13 @@ describe.sequential("main/index.ts", () => {
     await import("../index");
 
     expect(spy).toHaveBeenCalledWith(
-      "[Electron Main] Environment variables check:",
+      "[Electron Main] Environment variables check:"
     );
     expect(spy).toHaveBeenCalledWith("  ROMPER_SDCARD_PATH:", "/mock/sdcard");
     expect(spy).toHaveBeenCalledWith("  ROMPER_LOCAL_PATH:", "/mock/local");
     expect(spy).toHaveBeenCalledWith(
       "  ROMPER_SQUARP_ARCHIVE_URL:",
-      "https://mock.com/archive.zip",
+      "https://mock.com/archive.zip"
     );
 
     spy.mockRestore();
@@ -311,7 +311,7 @@ describe.sequential("main/index.ts", () => {
 
     expect(spy).toHaveBeenCalledWith(
       "[Romper Electron] Attempting to load:",
-      expect.stringContaining("index.html"),
+      expect.stringContaining("index.html")
     );
 
     spy.mockRestore();
@@ -330,7 +330,7 @@ describe.sequential("main/index.ts", () => {
 
     expect(spy).toHaveBeenCalledWith(
       "[Romper Electron] index.html not found at:",
-      expect.stringContaining("index.html"),
+      expect.stringContaining("index.html")
     );
 
     spy.mockRestore();
@@ -380,7 +380,7 @@ describe.sequential("main/index.ts", () => {
 
     expect(spy).toHaveBeenCalledWith(
       "Failed to load index.html:",
-      "Load file failed",
+      "Load file failed"
     );
 
     spy.mockRestore();
@@ -398,7 +398,7 @@ describe.sequential("main/index.ts", () => {
 
     expect(spy).toHaveBeenCalledWith(
       "[Startup] Error during app initialization:",
-      "Menu creation failed",
+      "Menu creation failed"
     );
 
     spy.mockRestore();

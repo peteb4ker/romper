@@ -11,7 +11,7 @@ const log = {
 
 export async function deleteDbFileWithRetry(
   dbPath: string,
-  maxRetries = 15,
+  maxRetries = 15
 ): Promise<void> {
   let lastError: Error | null = null;
   const isWindows = process.platform === "win32";
@@ -22,7 +22,7 @@ export async function deleteDbFileWithRetry(
         dbPath,
         i,
         isWindows,
-        i === maxRetries - 1,
+        i === maxRetries - 1
       );
       if (success) {
         return;
@@ -45,7 +45,7 @@ export async function deleteDbFileWithRetry(
 function calculateRetryDelay(
   attempt: number,
   isWindows: boolean,
-  isRenameFailure: boolean = false,
+  isRenameFailure: boolean = false
 ): number {
   if (!isWindows) {
     // Non-Windows platforms
@@ -85,7 +85,7 @@ async function handleDeleteAttempt(
   dbPath: string,
   attempt: number,
   isWindows: boolean,
-  isLastAttempt: boolean,
+  isLastAttempt: boolean
 ): Promise<boolean> {
   try {
     // Wait before retry on Windows
@@ -131,7 +131,7 @@ async function tryDelete(dbPath: string, attempt: number): Promise<boolean> {
 async function tryRename(
   dbPath: string,
   attempt: number,
-  suffix: string = "corrupted",
+  suffix: string = "corrupted"
 ): Promise<boolean> {
   const backupPath = `${dbPath}.${suffix}.${Date.now()}.${attempt}`;
   fs.renameSync(dbPath, backupPath);
@@ -149,7 +149,7 @@ async function tryRename(
 // Helper for Windows rename fallback
 async function tryWindowsRenameFallback(
   dbPath: string,
-  attempt: number,
+  attempt: number
 ): Promise<boolean> {
   try {
     return await tryRename(dbPath, attempt);
@@ -164,7 +164,7 @@ async function tryWindowsRenameFallback(
 async function waitForRetry(
   attempt: number,
   isWindows: boolean,
-  isRenameFailure: boolean = false,
+  isRenameFailure: boolean = false
 ): Promise<void> {
   const delay = calculateRetryDelay(attempt, isWindows, isRenameFailure);
   if (delay > 0) {

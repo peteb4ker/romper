@@ -24,7 +24,7 @@ describe("useFileValidation", () => {
     // Reset centralized mocks to default state
     if (window.electronFileAPI) {
       vi.mocked(window.electronFileAPI.getDroppedFilePath).mockResolvedValue(
-        "/default/path.wav",
+        "/default/path.wav"
       );
     }
 
@@ -48,7 +48,7 @@ describe("useFileValidation", () => {
       const expectedPath = "/path/to/test.wav";
 
       vi.mocked(window.electronFileAPI.getDroppedFilePath).mockResolvedValue(
-        expectedPath,
+        expectedPath
       );
 
       const { result } = renderHook(() => useFileValidation());
@@ -56,7 +56,7 @@ describe("useFileValidation", () => {
       const filePath = await result.current.getFilePathFromDrop(mockFile);
 
       expect(window.electronFileAPI.getDroppedFilePath).toHaveBeenCalledWith(
-        mockFile,
+        mockFile
       );
       expect(filePath).toBe(expectedPath);
     });
@@ -138,7 +138,7 @@ describe("useFileValidation", () => {
       expect(canContinue).toBe(false);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Cannot assign sample due to critical format issues:",
-        "Unsupported extension, File access denied",
+        "Unsupported extension, File access denied"
       );
       expect(mockToast.error).toHaveBeenCalledWith("Cannot assign sample", {
         description: "Unsupported extension, File access denied",
@@ -166,7 +166,7 @@ describe("useFileValidation", () => {
       expect(canContinue).toBe(true);
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         "Sample has format issues that will require conversion during SD card sync:",
-        "High bitrate, Unsupported sample rate",
+        "High bitrate, Unsupported sample rate"
       );
       expect(mockToast.warning).toHaveBeenCalledWith("Sample format warning", {
         description:
@@ -213,7 +213,7 @@ describe("useFileValidation", () => {
       expect(canContinue).toBe(true);
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         "Sample has format issues that will require conversion during SD card sync:",
-        "",
+        ""
       );
       expect(mockToast.warning).toHaveBeenCalledWith("Sample format warning", {
         description: " The sample will be converted during SD card sync.",
@@ -270,7 +270,7 @@ describe("useFileValidation", () => {
       const validation = await result.current.validateDroppedFile(testFilePath);
 
       expect(window.electronAPI.validateSampleFormat).toHaveBeenCalledWith(
-        testFilePath,
+        testFilePath
       );
       expect(validation).toEqual(mockValidation);
     });
@@ -335,7 +335,7 @@ describe("useFileValidation", () => {
 
       expect(validation).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Format validation not available",
+        "Format validation not available"
       );
 
       consoleErrorSpy.mockRestore();
@@ -354,7 +354,7 @@ describe("useFileValidation", () => {
 
       expect(validation).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Format validation not available",
+        "Format validation not available"
       );
 
       consoleErrorSpy.mockRestore();
@@ -376,7 +376,7 @@ describe("useFileValidation", () => {
       expect(validation).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Format validation failed:",
-        "Validation service unavailable",
+        "Validation service unavailable"
       );
 
       consoleErrorSpy.mockRestore();
@@ -397,7 +397,7 @@ describe("useFileValidation", () => {
       expect(validation).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Format validation failed:",
-        undefined,
+        undefined
       );
 
       consoleErrorSpy.mockRestore();

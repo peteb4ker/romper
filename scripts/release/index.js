@@ -56,7 +56,7 @@ function updatePackageVersion(newVersion) {
   fs.writeFileSync(
     packagePath,
     JSON.stringify(packageJson, null, 2) + "\n",
-    "utf8",
+    "utf8"
   );
   console.log(chalk.green(`✅ Updated package.json version to ${newVersion}`));
 }
@@ -148,7 +148,7 @@ async function promptVersionSelection() {
   // Check if tag already exists
   if (tagExists(`v${newVersion}`)) {
     throw new Error(
-      `Tag v${newVersion} already exists. Choose a different version.`,
+      `Tag v${newVersion} already exists. Choose a different version.`
     );
   }
 
@@ -189,19 +189,19 @@ async function performPreReleaseChecks() {
     const defaultBranch = getDefaultBranch();
     if (branch !== defaultBranch) {
       throw new Error(
-        `Must be on ${defaultBranch} branch (currently on: ${branch})`,
+        `Must be on ${defaultBranch} branch (currently on: ${branch})`
       );
     }
 
     if (!isWorkingDirectoryClean()) {
       throw new Error(
-        "Working directory is not clean. Please commit or stash changes.",
+        "Working directory is not clean. Please commit or stash changes."
       );
     }
 
     if (!isRemoteUpToDate()) {
       throw new Error(
-        "Local branch is not up to date with remote. Please pull latest changes.",
+        "Local branch is not up to date with remote. Please pull latest changes."
       );
     }
 
@@ -224,7 +224,7 @@ async function performPreReleaseChecks() {
  */
 async function executeRelease(version, dryRun = false) {
   const spinner = ora(
-    dryRun ? "Dry run: Simulating release..." : "Creating release...",
+    dryRun ? "Dry run: Simulating release..." : "Creating release..."
   ).start();
 
   try {
@@ -247,12 +247,12 @@ async function executeRelease(version, dryRun = false) {
       console.log(chalk.green(`   🏷️  Tag: v${version}`));
       console.log(chalk.green(`   📄 Changelog: ${changelogPath}`));
       console.log(
-        chalk.green(`   🚀 GitHub Actions will build and publish the release`),
+        chalk.green(`   🚀 GitHub Actions will build and publish the release`)
       );
       const githubUrl = getGitHubRepoUrl();
       if (githubUrl) {
         console.log(
-          chalk.green(`   🔗 Monitor progress: ${githubUrl}/actions`),
+          chalk.green(`   🔗 Monitor progress: ${githubUrl}/actions`)
         );
       }
     } else {
@@ -305,13 +305,13 @@ async function release(options = {}) {
       console.log(chalk.green("\n✨ Release completed successfully!"));
       console.log(
         chalk.green(
-          "   The GitHub Actions workflow will now build and publish the release.",
-        ),
+          "   The GitHub Actions workflow will now build and publish the release."
+        )
       );
       console.log(
         chalk.green(
-          "   You can monitor the progress in the Actions tab on GitHub.",
-        ),
+          "   You can monitor the progress in the Actions tab on GitHub."
+        )
       );
     }
   } catch (error) {

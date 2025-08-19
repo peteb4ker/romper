@@ -9,7 +9,7 @@ vi.mock("electron", () => ({
   },
   dialog: {
     showOpenDialog: vi.fn(() =>
-      Promise.resolve({ canceled: false, filePaths: ["/mock/sd"] }),
+      Promise.resolve({ canceled: false, filePaths: ["/mock/sd"] })
     ),
   },
   ipcMain: {
@@ -111,7 +111,7 @@ describe("registerIpcHandlers", () => {
     vi.mocked(settingsService.writeSetting).mockImplementation(
       (settings, key, value) => {
         settings[key] = value;
-      },
+      }
     );
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
@@ -147,7 +147,7 @@ describe("registerIpcHandlers", () => {
     const result = await ipcMainHandlers["copy-dir"](
       {},
       "/mock/src",
-      "/mock/dest",
+      "/mock/dest"
     );
     // copyRecursiveSync is called, but we can't spy directly; just check success
     expect(result).toEqual({ success: true });
@@ -163,7 +163,7 @@ describe("registerIpcHandlers", () => {
     const result = await ipcMainHandlers["copy-dir"](
       {},
       "/fail/src",
-      "/fail/dest",
+      "/fail/dest"
     );
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/fail/);
@@ -215,7 +215,7 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
     await expect(
-      ipcMainHandlers["create-kit"]({}, "A0"),
+      ipcMainHandlers["create-kit"]({}, "A0")
     ).resolves.toBeUndefined();
   });
 
@@ -230,7 +230,7 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
     await expect(ipcMainHandlers["create-kit"]({}, "A0")).rejects.toThrow(
-      "Create failed",
+      "Create failed"
     );
   });
 
@@ -239,7 +239,7 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
     await expect(
-      ipcMainHandlers["copy-kit"]({}, "A0", "A1"),
+      ipcMainHandlers["copy-kit"]({}, "A0", "A1")
     ).resolves.toBeUndefined();
   });
 
@@ -254,7 +254,7 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
     await expect(ipcMainHandlers["copy-kit"]({}, "A0", "A1")).rejects.toThrow(
-      "Copy failed",
+      "Copy failed"
     );
   });
 
@@ -264,7 +264,7 @@ describe("registerIpcHandlers", () => {
 
     const result = await ipcMainHandlers["list-files-in-root"](
       {},
-      "/mock/path",
+      "/mock/path"
     );
     expect(result).toBeDefined();
   });
@@ -277,7 +277,7 @@ describe("registerIpcHandlers", () => {
       {},
       "A0",
       1,
-      0,
+      0
     );
     expect(result).toBeInstanceOf(ArrayBuffer);
   });
@@ -293,7 +293,7 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
     await expect(
-      ipcMainHandlers["get-sample-audio-buffer"]({}, "A0", 1, 0),
+      ipcMainHandlers["get-sample-audio-buffer"]({}, "A0", 1, 0)
     ).rejects.toThrow("Buffer failed");
   });
 
@@ -383,7 +383,7 @@ describe("registerIpcHandlers", () => {
       (url, dest, callback) => {
         callback({ percent: 50 }); // Simulate progress
         return Promise.resolve({ success: true });
-      },
+      }
     );
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
@@ -392,7 +392,7 @@ describe("registerIpcHandlers", () => {
     const result = await ipcMainHandlers["download-and-extract-archive"](
       mockEvent,
       "https://example.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
 
     expect(result.success).toBe(true);
@@ -420,7 +420,7 @@ describe("registerIpcHandlers", () => {
     const result = await ipcMainHandlers["download-and-extract-archive"](
       mockEvent,
       "https://example.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
 
     expect(result.success).toBe(false);
@@ -438,7 +438,7 @@ describe("registerIpcHandlers", () => {
 
     const { archiveService } = await import("../services/archiveService.js");
     vi.mocked(archiveService.downloadAndExtractArchive).mockRejectedValue(
-      new Error("Network error"),
+      new Error("Network error")
     );
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
@@ -447,7 +447,7 @@ describe("registerIpcHandlers", () => {
     const result = await ipcMainHandlers["download-and-extract-archive"](
       mockEvent,
       "https://example.com/archive.zip",
-      "/mock/dest",
+      "/mock/dest"
     );
 
     expect(result.success).toBe(false);

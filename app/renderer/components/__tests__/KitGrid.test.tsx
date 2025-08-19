@@ -157,7 +157,7 @@ describe("KitGrid", () => {
           {...baseProps}
           onDuplicate={onDuplicate}
           onSelectKit={onSelectKit}
-        />,
+        />
       );
     }).not.toThrow();
 
@@ -214,7 +214,7 @@ describe("KitGrid", () => {
           <KitGrid
             {...baseProps}
             getKitFavoriteState={mockGetKitFavoriteState}
-          />,
+          />
         );
       }).not.toThrow();
     });
@@ -234,10 +234,7 @@ describe("KitGrid", () => {
       });
 
       render(
-        <KitGrid
-          {...baseProps}
-          getKitFavoriteState={mockGetKitFavoriteState}
-        />,
+        <KitGrid {...baseProps} getKitFavoriteState={mockGetKitFavoriteState} />
       );
 
       // Component should render successfully with the prop
@@ -283,7 +280,7 @@ describe("KitGrid", () => {
             {...baseProps}
             kitData={kitDataWithFavorites}
             kits={kitDataWithFavorites}
-          />,
+          />
         );
       }).not.toThrow();
 

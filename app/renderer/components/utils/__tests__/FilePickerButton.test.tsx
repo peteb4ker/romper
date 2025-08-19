@@ -18,7 +18,7 @@ describe("FilePickerButton", () => {
         onClick={() => {}}
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     expect(screen.getByTestId("file-picker")).toHaveTextContent("Choose File");
@@ -33,11 +33,11 @@ describe("FilePickerButton", () => {
         selectingText="Loading..."
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     expect(screen.getByTestId("file-picker-selecting")).toHaveTextContent(
-      "Loading...",
+      "Loading..."
     );
     expect(screen.getByTestId("spinner")).toBeInTheDocument();
   });
@@ -50,11 +50,11 @@ describe("FilePickerButton", () => {
         onClick={() => {}}
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     expect(screen.getByTestId("file-picker-default")).toHaveTextContent(
-      "Selecting...",
+      "Selecting..."
     );
   });
 
@@ -67,7 +67,7 @@ describe("FilePickerButton", () => {
         onClick={() => {}}
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     expect(screen.getByTestId("folder-icon")).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe("FilePickerButton", () => {
         onClick={() => {}}
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     expect(screen.queryByTestId("folder-icon")).not.toBeInTheDocument();
@@ -99,7 +99,7 @@ describe("FilePickerButton", () => {
         onClick={onClick}
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     await user.click(screen.getByTestId("file-picker-clickable"));
@@ -117,7 +117,7 @@ describe("FilePickerButton", () => {
         onClick={onClick}
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     await user.click(screen.getByTestId("file-picker-disabled"));
@@ -136,7 +136,7 @@ describe("FilePickerButton", () => {
         onClick={onClick}
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     await user.click(screen.getByTestId("file-picker-explicitly-disabled"));
@@ -151,7 +151,7 @@ describe("FilePickerButton", () => {
         onClick={() => {}}
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     expect(screen.getByTestId("file-picker-disabled-test")).toBeDisabled();
@@ -164,7 +164,7 @@ describe("FilePickerButton", () => {
         onClick={() => {}}
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     expect(screen.getByTestId("file-picker-disabled-test")).toBeDisabled();
@@ -179,11 +179,11 @@ describe("FilePickerButton", () => {
         onClick={() => {}}
       >
         Choose File
-      </FilePickerButton>,
+      </FilePickerButton>
     );
 
     expect(screen.getByTestId("file-picker-custom-class")).toHaveClass(
-      "custom-class",
+      "custom-class"
     );
   });
 });

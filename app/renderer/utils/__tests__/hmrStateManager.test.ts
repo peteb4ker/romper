@@ -118,7 +118,7 @@ describe("hmrStateManager", () => {
         markExplicitNavigation();
 
         expect(sessionStorage.getItem("hmr_explicit_navigation")).toBe(
-          now.toString()
+          now.toString(),
         );
       });
     });

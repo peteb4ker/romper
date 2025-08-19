@@ -49,7 +49,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       expect(result.current.canUndo).toBe(true);
@@ -64,7 +64,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "",
           isEditMode: true,
-        })
+        }),
       );
 
       expect(result.current.addUndoAction).toBe(mockAddAction);
@@ -77,7 +77,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -94,7 +94,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -127,7 +127,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -160,7 +160,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -179,7 +179,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -196,7 +196,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -212,7 +212,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -244,7 +244,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -277,7 +277,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -296,7 +296,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
           currentKitName: "test-kit",
           isEditMode: false,
           onBackNavigation: mockOnBackNavigation,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -311,7 +311,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: false,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -326,7 +326,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           isEditMode: false,
           onBackNavigation: mockOnBackNavigation,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -343,7 +343,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: false,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -359,7 +359,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -376,7 +376,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       fireEvent.keyDown(document, {
@@ -396,7 +396,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",
           isEditMode: true,
-        })
+        }),
       );
 
       unmount();
@@ -404,7 +404,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       expect(removeEventListenerSpy).toHaveBeenCalledWith(
         "keydown",
         expect.any(Function),
-        true
+        true,
       );
 
       removeEventListenerSpy.mockRestore();

@@ -22,7 +22,7 @@ export class SampleService {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: StereoOptions
+    options?: StereoOptions,
   ): DbResult<{ sampleId: number }> {
     return sampleCrudService.addSampleToSlot(
       inMemorySettings,
@@ -30,7 +30,7 @@ export class SampleService {
       voiceNumber,
       slotNumber,
       filePath,
-      options
+      options,
     );
   }
 
@@ -41,13 +41,13 @@ export class SampleService {
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
-    slotNumber: number
+    slotNumber: number,
   ): DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }> {
     return sampleCrudService.deleteSampleFromSlot(
       inMemorySettings,
       kitName,
       voiceNumber,
-      slotNumber
+      slotNumber,
     );
   }
 
@@ -59,13 +59,13 @@ export class SampleService {
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
-    slotNumber: number
+    slotNumber: number,
   ): DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }> {
     return sampleCrudService.deleteSampleFromSlotWithoutReindexing(
       inMemorySettings,
       kitName,
       voiceNumber,
-      slotNumber
+      slotNumber,
     );
   }
 
@@ -74,11 +74,11 @@ export class SampleService {
    */
   findNextAvailableSlot(
     voiceNumber: number,
-    existingSamples: Sample[]
+    existingSamples: Sample[],
   ): number {
     return sampleSlotService.findNextAvailableSlot(
       voiceNumber,
-      existingSamples
+      existingSamples,
     );
   }
 
@@ -89,13 +89,13 @@ export class SampleService {
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
-    slotNumber: number
+    slotNumber: number,
   ): DbResult<ArrayBuffer | null> {
     return sampleMetadataService.getSampleAudioBuffer(
       inMemorySettings,
       kitName,
       voiceNumber,
-      slotNumber
+      slotNumber,
     );
   }
 
@@ -113,7 +113,7 @@ export class SampleService {
       toKit: string;
       toSlot: number;
       toVoice: number;
-    }
+    },
   ): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
@@ -133,7 +133,7 @@ export class SampleService {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-    mode: "insert"
+    mode: "insert",
   ): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
@@ -146,7 +146,7 @@ export class SampleService {
       fromSlot,
       toVoice,
       toSlot,
-      mode
+      mode,
     );
   }
 
@@ -159,14 +159,14 @@ export class SampleService {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: StereoOptions
+    options?: StereoOptions,
   ): DbResult<{ sampleId: number }> {
     // Delegate to CRUD service - first delete then add
     const deleteResult = this.deleteSampleFromSlotWithoutReindexing(
       inMemorySettings,
       kitName,
       voiceNumber,
-      slotNumber
+      slotNumber,
     );
 
     if (!deleteResult.success) {
@@ -179,7 +179,7 @@ export class SampleService {
       voiceNumber,
       slotNumber,
       filePath,
-      options
+      options,
     );
   }
 
@@ -198,7 +198,7 @@ export class SampleService {
    */
   validateSampleSources(
     inMemorySettings: Record<string, any>,
-    kitName: string
+    kitName: string,
   ): DbResult<{
     invalidSamples: Array<{
       error: string;
@@ -224,12 +224,12 @@ export class SampleService {
   validateSlotBoundary(
     toVoice: number,
     toSlot: number,
-    existingSamples: Sample[]
+    existingSamples: Sample[],
   ): DbResult<void> {
     return sampleSlotService.validateSlotBoundary(
       toVoice,
       toSlot,
-      existingSamples
+      existingSamples,
     );
   }
 
@@ -239,7 +239,7 @@ export class SampleService {
    */
   validateVoiceAndSlot(
     voiceNumber: number,
-    slotNumber: number
+    slotNumber: number,
   ): { error?: string; isValid: boolean } {
     return sampleValidator.validateVoiceAndSlot(voiceNumber, slotNumber);
   }
@@ -250,7 +250,7 @@ export class SampleService {
   }
 
   private getLocalStorePath(
-    inMemorySettings: Record<string, any>
+    inMemorySettings: Record<string, any>,
   ): null | string {
     return ServicePathManager.getLocalStorePath(inMemorySettings);
   }

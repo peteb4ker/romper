@@ -124,7 +124,7 @@ describe("Spinner", () => {
 
     it("should handle undefined props gracefully", () => {
       const { container } = render(
-        <Spinner className={undefined} size={undefined} />
+        <Spinner className={undefined} size={undefined} />,
       );
       const svg = container.querySelector("svg");
       expect(svg).toHaveAttribute("width", "20");

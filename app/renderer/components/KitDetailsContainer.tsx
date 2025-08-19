@@ -46,14 +46,14 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
     (scrollToKit?: any) => {
       return onBack(scrollToKit);
     },
-    [onBack]
+    [onBack],
   );
 
   const handleMessage = React.useCallback(
     (text: string, type?: string, duration?: number) => {
       onMessage(text, type, duration);
     },
-    [onMessage]
+    [onMessage],
   );
 
   const handleRequestSamplesReload = React.useCallback(() => {

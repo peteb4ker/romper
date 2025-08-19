@@ -35,20 +35,20 @@ function createWindow() {
   console.log("[Electron Main] Environment variables check:");
   console.log(
     "  ROMPER_SDCARD_PATH:",
-    process.env.ROMPER_SDCARD_PATH || "(not set)"
+    process.env.ROMPER_SDCARD_PATH || "(not set)",
   );
   console.log(
     "  ROMPER_LOCAL_PATH:",
-    process.env.ROMPER_LOCAL_PATH || "(not set)"
+    process.env.ROMPER_LOCAL_PATH || "(not set)",
   );
   console.log(
     "  ROMPER_SQUARP_ARCHIVE_URL:",
-    process.env.ROMPER_SQUARP_ARCHIVE_URL || "(not set)"
+    process.env.ROMPER_SQUARP_ARCHIVE_URL || "(not set)",
   );
 
   if (process.env.ROMPER_LOCAL_PATH) {
     console.log(
-      "[Electron Main] Environment override: Using ROMPER_LOCAL_PATH for local store"
+      "[Electron Main] Environment override: Using ROMPER_LOCAL_PATH for local store",
     );
   }
 
@@ -68,7 +68,7 @@ function createWindow() {
     win.loadURL("http://localhost:5173").catch((err: unknown) => {
       console.error(
         "Failed to load URL:",
-        err instanceof Error ? err.message : String(err)
+        err instanceof Error ? err.message : String(err),
       );
     });
   } else {
@@ -82,7 +82,7 @@ function createWindow() {
     win.loadFile(indexPath).catch((err: unknown) => {
       console.error(
         "Failed to load index.html:",
-        err instanceof Error ? err.message : String(err)
+        err instanceof Error ? err.message : String(err),
       );
     });
   }
@@ -115,17 +115,17 @@ function loadSettings(): Settings {
       settings = parsed as Settings;
       console.log(
         "[Settings] Loaded settings:",
-        JSON.stringify(settings, null, 2)
+        JSON.stringify(settings, null, 2),
       );
     } else {
       console.warn(
-        "[Settings] Settings file did not contain an object. Using empty settings."
+        "[Settings] Settings file did not contain an object. Using empty settings.",
       );
       console.warn(
         "[Settings] Parsed type:",
         typeof parsed,
         "Is array:",
-        Array.isArray(parsed)
+        Array.isArray(parsed),
       );
     }
   } catch (error) {
@@ -172,13 +172,13 @@ function validateAndFixLocalStore(settings: Settings): Settings {
 
   console.log(
     "[Validation] Settings have localStorePath:",
-    !!settings.localStorePath
+    !!settings.localStorePath,
   );
 
   if (settings.localStorePath) {
     console.log(
       "[Validation] Validating local store path:",
-      settings.localStorePath
+      settings.localStorePath,
     );
     const validation = validateLocalStoreAndDb(settings.localStorePath);
     console.log("[Validation] Validation result:", {
@@ -198,10 +198,10 @@ function validateAndFixLocalStore(settings: Settings): Settings {
         fs.writeFileSync(
           settingsPath,
           JSON.stringify(settings, null, 2),
-          "utf-8"
+          "utf-8",
         );
         console.log(
-          "[Startup] Invalid local store path removed from settings file"
+          "[Startup] Invalid local store path removed from settings file",
         );
       } catch (writeError) {
         console.error("[Startup] Failed to update settings file:", writeError);
@@ -233,12 +233,12 @@ app.whenReady().then(async () => {
     if (process.env.ROMPER_LOCAL_PATH) {
       console.log(
         "  - Using environment override:",
-        process.env.ROMPER_LOCAL_PATH
+        process.env.ROMPER_LOCAL_PATH,
       );
     } else if (inMemorySettings.localStorePath) {
       console.log(
         "  - Using settings file path:",
-        inMemorySettings.localStorePath
+        inMemorySettings.localStorePath,
       );
     } else {
       console.log("  - No local store configured - wizard will be shown");
@@ -250,7 +250,7 @@ app.whenReady().then(async () => {
   } catch (error: unknown) {
     console.error(
       "[Startup] Error during app initialization:",
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
   }
 });
@@ -259,6 +259,6 @@ app.whenReady().then(async () => {
 process.on("unhandledRejection", (reason: unknown) => {
   console.error(
     "Unhandled Promise Rejection:",
-    reason instanceof Error ? reason.message : String(reason)
+    reason instanceof Error ? reason.message : String(reason),
   );
 });

@@ -34,13 +34,13 @@ describe("StepSequencerControls", () => {
         isSeqPlaying={false}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
-      />
+      />,
     );
 
     const playButton = screen.getByTestId("play-step-sequencer");
     expect(playButton).toBeInTheDocument();
     expect(
-      screen.getByTestId("kit-step-sequencer-controls")
+      screen.getByTestId("kit-step-sequencer-controls"),
     ).toBeInTheDocument();
   });
 
@@ -51,7 +51,7 @@ describe("StepSequencerControls", () => {
         isSeqPlaying={true}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
-      />
+      />,
     );
 
     const stopButton = screen.getByTestId("stop-step-sequencer");
@@ -65,7 +65,7 @@ describe("StepSequencerControls", () => {
         isSeqPlaying={false}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
-      />
+      />,
     );
 
     const playButton = screen.getByTestId("play-step-sequencer");
@@ -81,7 +81,7 @@ describe("StepSequencerControls", () => {
         isSeqPlaying={true}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
-      />
+      />,
     );
 
     const stopButton = screen.getByTestId("stop-step-sequencer");
@@ -97,7 +97,7 @@ describe("StepSequencerControls", () => {
         isSeqPlaying={false}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
-      />
+      />,
     );
 
     const bpmInput = screen.getByTestId("bpm-input");
@@ -114,7 +114,7 @@ describe("StepSequencerControls", () => {
         isSeqPlaying={false}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
-      />
+      />,
     );
 
     const bpmInput = screen.getByTestId("bpm-input");

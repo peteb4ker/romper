@@ -36,11 +36,11 @@ describe("KitForm", () => {
 
   it("shows loading and error states", () => {
     const { rerender } = render(
-      <KitForm kit={baseKit} loading={true} onSave={vi.fn()} />
+      <KitForm kit={baseKit} loading={true} onSave={vi.fn()} />,
     );
     expect(screen.getByText("Loading kit metadata...")).toBeInTheDocument();
     rerender(
-      <KitForm error="Something went wrong" kit={baseKit} onSave={vi.fn()} />
+      <KitForm error="Something went wrong" kit={baseKit} onSave={vi.fn()} />,
     );
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
   });
@@ -51,7 +51,7 @@ describe("KitForm", () => {
         kit={{ alias: "Empty" } as Kit}
         onSave={vi.fn()}
         tagsEditable={true}
-      />
+      />,
     );
     expect(screen.getByText("No tags")).toBeInTheDocument();
   });

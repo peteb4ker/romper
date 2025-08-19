@@ -12,12 +12,12 @@ describe("WizardProgressBar", () => {
     render(
       <WizardProgressBar
         progress={{ file: "foo.wav", percent: 42, phase: "Copying" }}
-      />
+      />,
     );
     expect(screen.getByText(/copying/i)).toBeInTheDocument();
     expect(screen.getByText(/42%/i)).toBeInTheDocument();
     expect(screen.getByTestId("wizard-progress-file")).toHaveTextContent(
-      "foo.wav"
+      "foo.wav",
     );
   });
 });

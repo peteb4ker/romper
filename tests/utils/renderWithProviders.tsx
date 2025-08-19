@@ -13,7 +13,7 @@ interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {}
 
 const customRender = (
   ui: React.ReactElement,
-  options?: CustomRenderOptions
+  options?: CustomRenderOptions,
 ): RenderResult => {
   const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <AllTheProviders>{children}</AllTheProviders>

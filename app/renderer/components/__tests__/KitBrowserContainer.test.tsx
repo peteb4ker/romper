@@ -86,7 +86,7 @@ describe("KitBrowserContainer", () => {
       expect(defaultProps.onMessage).toHaveBeenCalledWith(
         "Test message",
         "info",
-        5000
+        5000,
       );
     });
 
@@ -141,7 +141,7 @@ describe("KitBrowserContainer", () => {
 
       // Rerender with different props
       rerender(
-        <KitBrowserContainer {...defaultProps} localStorePath="/new/path" />
+        <KitBrowserContainer {...defaultProps} localStorePath="/new/path" />,
       );
 
       expect(screen.getByTestId("kit-browser")).toBeInTheDocument();

@@ -26,7 +26,7 @@ export const createMockSample = (overrides: Partial<Sample> = {}): Sample => ({
  * Factory for creating mock NewSample objects
  */
 export const createMockNewSample = (
-  overrides: Partial<NewSample> = {}
+  overrides: Partial<NewSample> = {},
 ): NewSample => ({
   bit_depth: 16,
   channels: 1,
@@ -82,7 +82,7 @@ export const createMockDrumKitSamples = (kitName: string = "A0"): Sample[] => [
 export const createMockVoiceSamples = (
   kitName: string,
   voiceNumber: number,
-  slotCount: number = 4
+  slotCount: number = 4,
 ): Sample[] =>
   Array.from({ length: slotCount }, (_, i) =>
     createMockSample({
@@ -91,7 +91,7 @@ export const createMockVoiceSamples = (
       kit_name: kitName,
       slot_number: i,
       voice_number: voiceNumber,
-    })
+    }),
   );
 
 /**

@@ -69,7 +69,7 @@ export function useKitBankNavigation({
         top: scrollContainerRef.current.scrollTop + offset,
       });
     },
-    [scrollContainerRef]
+    [scrollContainerRef],
   );
 
   const handleBankClick = useCallback(
@@ -78,7 +78,7 @@ export function useKitBankNavigation({
       if (!bankHasKits(kits, bank)) return;
       scrollToBankInContainer(bank);
     },
-    [kits, scrollToBankInContainer]
+    [kits, scrollToBankInContainer],
   );
 
   const handleBankClickWithScroll = useCallback(
@@ -88,7 +88,7 @@ export function useKitBankNavigation({
       setSelectedBank(bank);
       handleBankClick(bank);
     },
-    [kits, handleBankClick]
+    [kits, handleBankClick],
   );
 
   // Global A-Z hotkey handler: select bank and focus first kit in that bank
@@ -118,7 +118,7 @@ export function useKitBankNavigation({
         e.preventDefault();
       }
     },
-    [kits, setSelectedBank, handleBankClick]
+    [kits, setSelectedBank, handleBankClick],
   );
 
   // Virtualization-based bank focus/scroll logic
@@ -136,7 +136,7 @@ export function useKitBankNavigation({
       }
       // If no kit in that bank, do not update selectedBank or focusedKit
     },
-    [kits, kitListRef]
+    [kits, kitListRef],
   );
 
   // Handler for visible bank change during scroll

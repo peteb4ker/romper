@@ -56,7 +56,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
     } catch (error) {
       onMessage?.(
         `Failed to select directory: ${error instanceof Error ? error.message : String(error)}`,
-        "error"
+        "error",
       );
     } finally {
       if (isMountedRef.current) {
@@ -117,7 +117,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
       onMessage?.(
         "Local store directory updated successfully! The application has been refreshed with the new directory.",
         "success",
-        5000
+        5000,
       );
 
       // Reset dialog state
@@ -127,7 +127,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
     } catch (error) {
       onMessage?.(
         `Failed to update directory: ${error instanceof Error ? error.message : String(error)}`,
-        "error"
+        "error",
       );
     } finally {
       if (isMountedRef.current) {

@@ -7,21 +7,21 @@ import { createSampleOperationHandler } from "./ipcHandlerUtils.js";
  * Registers all sample-related IPC handlers
  */
 export function registerSampleIpcHandlers(
-  inMemorySettings: Record<string, any>
+  inMemorySettings: Record<string, any>,
 ) {
   ipcMain.handle(
     "add-sample-to-slot",
-    createSampleOperationHandler(inMemorySettings, "add")
+    createSampleOperationHandler(inMemorySettings, "add"),
   );
 
   ipcMain.handle(
     "replace-sample-in-slot",
-    createSampleOperationHandler(inMemorySettings, "replace")
+    createSampleOperationHandler(inMemorySettings, "replace"),
   );
 
   ipcMain.handle(
     "delete-sample-from-slot",
-    createSampleOperationHandler(inMemorySettings, "delete")
+    createSampleOperationHandler(inMemorySettings, "delete"),
   );
 
   ipcMain.handle(
@@ -30,15 +30,15 @@ export function registerSampleIpcHandlers(
       _event,
       kitName: string,
       voiceNumber: number,
-      slotNumber: number
+      slotNumber: number,
     ) => {
       return sampleService.deleteSampleFromSlotWithoutReindexing(
         inMemorySettings,
         kitName,
         voiceNumber,
-        slotNumber
+        slotNumber,
       );
-    }
+    },
   );
 
   ipcMain.handle(
@@ -49,7 +49,7 @@ export function registerSampleIpcHandlers(
       fromVoice: number,
       fromSlot: number,
       toVoice: number,
-      toSlot: number
+      toSlot: number,
     ) => {
       try {
         const result = sampleService.moveSampleInKit(
@@ -59,7 +59,7 @@ export function registerSampleIpcHandlers(
           fromSlot,
           toVoice,
           toSlot,
-          "insert"
+          "insert",
         );
         return result;
       } catch (error) {
@@ -70,7 +70,7 @@ export function registerSampleIpcHandlers(
           success: false,
         };
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -85,12 +85,12 @@ export function registerSampleIpcHandlers(
         toKit: string;
         toSlot: number;
         toVoice: number;
-      }
+      },
     ) => {
       try {
         const result = sampleService.moveSampleBetweenKits(
           inMemorySettings,
-          params
+          params,
         );
         return result;
       } catch (error) {
@@ -101,7 +101,7 @@ export function registerSampleIpcHandlers(
           success: false,
         };
       }
-    }
+    },
   );
 
   ipcMain.handle("validate-sample-sources", async (_event, kitName: string) => {

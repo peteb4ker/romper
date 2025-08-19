@@ -87,7 +87,7 @@ describe("sampleManagementOps unit tests", () => {
             success: false,
           };
         }
-      }
+      },
     );
 
     // Mock withDbTransaction to execute the function with mockDb and mock sqlite
@@ -115,7 +115,7 @@ describe("sampleManagementOps unit tests", () => {
             success: false,
           };
         }
-      }
+      },
     );
   });
 
@@ -142,7 +142,7 @@ describe("sampleManagementOps unit tests", () => {
         mockDb,
         testKitName,
         testFromVoice,
-        testFromSlot
+        testFromSlot,
       );
 
       expect(result).toEqual(mockSample);
@@ -157,12 +157,12 @@ describe("sampleManagementOps unit tests", () => {
         mockDb,
         testKitName,
         testFromVoice,
-        testFromSlot
+        testFromSlot,
       );
 
       expect(result).toBe(null);
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        `[Main] No sample found at voice ${testFromVoice}, slot ${testFromSlot}`
+        `[Main] No sample found at voice ${testFromVoice}, slot ${testFromSlot}`,
       );
     });
   });
@@ -237,7 +237,7 @@ describe("sampleManagementOps unit tests", () => {
         testFromVoice,
         testFromSlot,
         testToVoice,
-        testToSlot
+        testToSlot,
       );
 
       if (!result.success) {
@@ -256,12 +256,12 @@ describe("sampleManagementOps unit tests", () => {
         testFromVoice,
         testFromSlot,
         testToVoice,
-        testToSlot
+        testToSlot,
       );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
-        `No sample found at voice ${testFromVoice}, slot ${testFromSlot}`
+        `No sample found at voice ${testFromVoice}, slot ${testFromSlot}`,
       );
     });
   });
@@ -289,13 +289,13 @@ describe("sampleManagementOps unit tests", () => {
           };
           const result = fn(mockDb);
           return { data: result, success: true };
-        }
+        },
       );
 
       const result = performVoiceReindexing(
         testDbDir,
         testKitName,
-        samplesToDelete
+        samplesToDelete,
       );
 
       expect(result).toHaveLength(2); // 2 voices to reindex (voice 1 and voice 2)
@@ -321,7 +321,7 @@ describe("sampleManagementOps unit tests", () => {
       const result = performVoiceReindexing(
         testDbDir,
         testKitName,
-        samplesToDelete
+        samplesToDelete,
       );
 
       expect(result).toEqual([]);

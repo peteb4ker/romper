@@ -29,7 +29,7 @@ describe("stereoProcessingUtils", () => {
         const result = determineStereoConfiguration(
           testFilePath,
           mockInMemorySettings,
-          { forceMono: true }
+          { forceMono: true },
         );
 
         expect(result).toBe(false);
@@ -40,7 +40,7 @@ describe("stereoProcessingUtils", () => {
         const result = determineStereoConfiguration(
           testFilePath,
           mockInMemorySettings,
-          { forceMono: true, forceStereo: true }
+          { forceMono: true, forceStereo: true },
         );
 
         expect(result).toBe(false);
@@ -52,7 +52,7 @@ describe("stereoProcessingUtils", () => {
         const result = determineStereoConfiguration(
           testFilePath,
           mockInMemorySettings,
-          { forceStereo: true }
+          { forceStereo: true },
         );
 
         expect(result).toBe(true);
@@ -65,7 +65,7 @@ describe("stereoProcessingUtils", () => {
         const result = determineStereoConfiguration(
           testFilePath,
           mockInMemorySettings,
-          { forceStereo: true }
+          { forceStereo: true },
         );
 
         expect(result).toBe(true);
@@ -78,7 +78,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(false);
@@ -90,7 +90,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(false);
@@ -106,7 +106,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(true);
@@ -122,7 +122,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(false);
@@ -140,7 +140,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(false);
@@ -156,7 +156,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(false);
@@ -171,7 +171,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(false);
@@ -186,7 +186,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(false);
@@ -203,7 +203,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(true); // More than 1 channel = stereo in this context
@@ -218,7 +218,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(false); // 0 channels <= 1, so mono
@@ -231,7 +231,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(false);
@@ -247,7 +247,7 @@ describe("stereoProcessingUtils", () => {
 
         const result = determineStereoConfiguration(
           testFilePath,
-          mockInMemorySettings
+          mockInMemorySettings,
         );
 
         expect(result).toBe(true);
@@ -264,7 +264,7 @@ describe("stereoProcessingUtils", () => {
         const result = determineStereoConfiguration(
           testFilePath,
           mockInMemorySettings,
-          { forceMono: true }
+          { forceMono: true },
         );
 
         expect(result).toBe(false);

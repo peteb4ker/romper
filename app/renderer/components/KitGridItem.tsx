@@ -29,7 +29,7 @@ const KitGridItem = React.memo(
         sampleCounts,
         ...rest
       },
-      ref
+      ref,
     ) => {
       // Extract voice names using shared utility
       const voiceNames = extractVoiceNames(kitData);
@@ -264,8 +264,8 @@ const KitGridItem = React.memo(
           )}
         </div>
       );
-    }
-  )
+    },
+  ),
 );
 
 KitGridItem.displayName = "KitGridItem";

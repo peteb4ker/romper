@@ -32,7 +32,7 @@ describe("ScannerOrchestrator", () => {
     it("executes operations in sequence with progress tracking", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "continue"
+        "continue",
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi
@@ -74,7 +74,7 @@ describe("ScannerOrchestrator", () => {
     it("handles scanner failure with continue strategy", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "continue"
+        "continue",
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi
@@ -112,7 +112,7 @@ describe("ScannerOrchestrator", () => {
     it("handles scanner failure with stop strategy", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "stop"
+        "stop",
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi
@@ -151,7 +151,7 @@ describe("ScannerOrchestrator", () => {
     it("handles unexpected exceptions with continue strategy", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "continue"
+        "continue",
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi
@@ -186,7 +186,7 @@ describe("ScannerOrchestrator", () => {
     it("handles unexpected exceptions with stop strategy", async () => {
       const orchestrator = new ScannerOrchestrator(
         mockProgressCallback,
-        "stop"
+        "stop",
       );
 
       const mockOperation1: ScannerFunction<any, any> = vi
@@ -316,7 +316,7 @@ describe("executeFullKitScan", () => {
     const result = await executeFullKitScan(
       kitData,
       mockProgressCallback,
-      "continue"
+      "continue",
     );
 
     expect(result.success).toBe(false);
@@ -410,7 +410,7 @@ describe("executeFullKitScan", () => {
       expect.objectContaining({
         filePath: "kick.wav",
         wavData: expect.any(ArrayBuffer),
-      })
+      }),
     );
   });
 });
@@ -425,7 +425,7 @@ describe("executeVoiceInferenceScan", () => {
     const samples = { 1: ["kick.wav"], 2: ["snare.wav"] };
     const result = await executeVoiceInferenceScan(
       samples,
-      mockProgressCallback
+      mockProgressCallback,
     );
 
     expect(result.success).toBe(true);
@@ -445,7 +445,7 @@ describe("executeVoiceInferenceScan", () => {
     const samples = { 1: ["kick.wav"] };
     const result = await executeVoiceInferenceScan(
       samples,
-      mockProgressCallback
+      mockProgressCallback,
     );
 
     expect(result.success).toBe(false);
@@ -487,7 +487,7 @@ describe("executeWAVAnalysisScan", () => {
     const result = await executeWAVAnalysisScan(
       wavFiles,
       undefined,
-      mockProgressCallback
+      mockProgressCallback,
     );
 
     // Updated to match actual implementation where success is false when there are errors
@@ -525,7 +525,7 @@ describe("executeWAVAnalysisScan", () => {
     const result = await executeWAVAnalysisScan(
       wavFiles,
       undefined,
-      mockProgressCallback
+      mockProgressCallback,
     );
 
     // Updated to match actual implementation where success is false when there are errors
@@ -546,7 +546,7 @@ describe("executeWAVAnalysisScan", () => {
     const result = await executeWAVAnalysisScan(
       wavFiles,
       undefined,
-      mockProgressCallback
+      mockProgressCallback,
     );
 
     expect(result.success).toBe(false);
@@ -578,7 +578,7 @@ describe("executeWAVAnalysisScan", () => {
       expect.objectContaining({
         filePath: "kick.wav",
         wavData: expect.any(ArrayBuffer),
-      })
+      }),
     );
   });
 });

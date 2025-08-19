@@ -18,7 +18,7 @@ export class SampleMetadataService {
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
-    slotNumber: number
+    slotNumber: number,
   ): DbResult<ArrayBuffer | null> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -42,7 +42,7 @@ export class SampleMetadataService {
       // Database uses 0-11 slot indexing
       const sample = samplesResult.data.find(
         (s: Sample) =>
-          s.voice_number === voiceNumber && s.slot_number === slotNumber
+          s.voice_number === voiceNumber && s.slot_number === slotNumber,
       );
 
       if (!sample) {
@@ -55,7 +55,7 @@ export class SampleMetadataService {
       return {
         data: data.buffer.slice(
           data.byteOffset,
-          data.byteOffset + data.byteLength
+          data.byteOffset + data.byteLength,
         ),
         success: true,
       };
@@ -72,7 +72,7 @@ export class SampleMetadataService {
   }
 
   private getLocalStorePath(
-    inMemorySettings: Record<string, any>
+    inMemorySettings: Record<string, any>,
   ): null | string {
     return ServicePathManager.getLocalStorePath(inMemorySettings);
   }

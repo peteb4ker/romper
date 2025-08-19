@@ -94,7 +94,7 @@ describe("SyncProgressService", () => {
           status: "copying",
           totalBytes: 1024,
           totalFiles: 1,
-        })
+        }),
       );
     });
 
@@ -142,7 +142,7 @@ describe("SyncProgressService", () => {
         expect.objectContaining({
           errorDetails,
           status: "error",
-        })
+        }),
       );
     });
 
@@ -254,7 +254,7 @@ describe("SyncProgressService", () => {
           filesCompleted: 1,
           status: "complete",
           totalFiles: 1,
-        })
+        }),
       );
 
       expect(service.getCurrentSyncJob()).toBeNull();
@@ -268,7 +268,7 @@ describe("SyncProgressService", () => {
         "sync-progress",
         expect.objectContaining({
           status: "error",
-        })
+        }),
       );
     });
 

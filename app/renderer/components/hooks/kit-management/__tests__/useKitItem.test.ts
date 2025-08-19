@@ -206,7 +206,7 @@ describe("useKitItem", () => {
       const voiceNames = { 1: "kick", 2: "snare" };
       const { rerender, result } = renderHook(
         ({ voices }) => useKitItem(voices),
-        { initialProps: { voices: voiceNames } }
+        { initialProps: { voices: voiceNames } },
       );
 
       const firstResult = result.current;

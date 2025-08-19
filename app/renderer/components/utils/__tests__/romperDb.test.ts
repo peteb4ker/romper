@@ -10,7 +10,7 @@ describe("romperDb", () => {
       async (dbDir: string) => ({
         dbPath: dbDir + "/romper.sqlite",
         success: true,
-      })
+      }),
     );
     vi.mocked(window.electronAPI.insertKit).mockImplementation(async () => ({
       kitId: 42,
@@ -41,7 +41,7 @@ describe("romperDb", () => {
     const kitId = await insertKit("/mock/path", kit);
     expect(window.electronAPI.insertKit).toHaveBeenCalledWith(
       "/mock/path",
-      kit
+      kit,
     );
     expect(kitId).toBe("Test Kit");
   });
@@ -52,7 +52,7 @@ describe("romperDb", () => {
       success: false,
     });
     await expect(
-      insertKit("/fail/path", { editable: false, name: "fail" })
+      insertKit("/fail/path", { editable: false, name: "fail" }),
     ).rejects.toThrow("kit fail");
   });
 
@@ -87,7 +87,7 @@ describe("romperDb", () => {
         is_stereo: false,
         kit_id: 1,
         slot_number: 100,
-      })
+      }),
     ).rejects.toThrow("sample fail");
   });
 });

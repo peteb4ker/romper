@@ -44,7 +44,7 @@ function MultiVoicePanelsTestWrapper({
 } = {}) {
   const [selectedVoice, setSelectedVoice] = useState(initialSelectedVoice);
   const [selectedSampleIdx, setSelectedSampleIdx] = useState(
-    initialSelectedSampleIdx
+    initialSelectedSampleIdx,
   );
   const { kit, samples } = voicesToProps(voices);
   React.useEffect(() => {
@@ -141,7 +141,7 @@ describe("KitVoicePanels", () => {
     expect(screen.getByTestId("global-slot-number-0")).toHaveTextContent("1.");
     expect(screen.getByTestId("global-slot-number-1")).toHaveTextContent("2.");
     expect(
-      screen.getByTestId(`global-slot-number-${MAX_SLOTS_PER_VOICE - 1}`)
+      screen.getByTestId(`global-slot-number-${MAX_SLOTS_PER_VOICE - 1}`),
     ).toHaveTextContent(`${MAX_SLOTS_PER_VOICE}.`);
 
     // Verify individual voice panels do not render their own slot numbers
@@ -158,10 +158,10 @@ describe("KitVoicePanels", () => {
 
     // Check that drop zones have proper labels
     expect(screen.getByTestId("drop-zone-voice-1")).toHaveTextContent(
-      "Drop WAV files here"
+      "Drop WAV files here",
     );
     expect(screen.getByTestId("drop-zone-voice-2")).toHaveTextContent(
-      "Drop WAV files here"
+      "Drop WAV files here",
     );
   });
 

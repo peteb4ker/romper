@@ -56,7 +56,7 @@ describe("SyncService", () => {
     service = new SyncService(
       mockPlannerService,
       mockExecutorService,
-      mockProgressService
+      mockProgressService,
     );
   });
 
@@ -82,7 +82,7 @@ describe("SyncService", () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockSummary);
       expect(mockPlannerService.generateChangeSummary).toHaveBeenCalledWith(
-        settings
+        settings,
       );
     });
 
@@ -155,18 +155,18 @@ describe("SyncService", () => {
       expect(mockProgressService.initializeSyncJob).toHaveBeenCalledWith(
         "All Kits",
         expect.any(Array),
-        2048
+        2048,
       );
 
       // Verify file operations
       expect(mockExecutorService.executeFileOperation).toHaveBeenCalledTimes(2);
       expect(mockExecutorService.executeFileOperation).toHaveBeenCalledWith(
         mockSyncData.filesToCopy[0],
-        true // forceMonoConversion from settings
+        true, // forceMonoConversion from settings
       );
       expect(mockExecutorService.executeFileOperation).toHaveBeenCalledWith(
         mockSyncData.filesToConvert[0],
-        true
+        true,
       );
 
       // Verify progress updates
@@ -178,7 +178,7 @@ describe("SyncService", () => {
       // Verify kits marked as synced
       expect(mockMarkKitsAsSynced).toHaveBeenCalledWith(
         "/test/path/.romperdb",
-        ["Kit1", "Kit2"]
+        ["Kit1", "Kit2"],
       );
     });
 
@@ -200,7 +200,7 @@ describe("SyncService", () => {
 
       const result = await service.startKitSync(
         { localStorePath: "/test/path" },
-        { filesToConvert: [], filesToCopy: mockSyncData.filesToCopy }
+        { filesToConvert: [], filesToCopy: mockSyncData.filesToCopy },
       );
 
       expect(result.success).toBe(false);
@@ -208,7 +208,7 @@ describe("SyncService", () => {
       expect(mockProgressService.completeSync).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to process file copy.wav:",
-        "File not found"
+        "File not found",
       );
 
       consoleSpy.mockRestore();
@@ -219,7 +219,7 @@ describe("SyncService", () => {
 
       const result = await service.startKitSync(
         { localStorePath: "/test/path" },
-        mockSyncData
+        mockSyncData,
       );
 
       expect(result.success).toBe(false);
@@ -247,7 +247,7 @@ describe("SyncService", () => {
 
       expect(mockExecutorService.executeFileOperation).toHaveBeenCalledWith(
         mockSyncData.filesToCopy[0],
-        false // forceMonoConversion should be false
+        false, // forceMonoConversion should be false
       );
     });
 
@@ -268,13 +268,13 @@ describe("SyncService", () => {
 
       const result = await service.startKitSync(
         { localStorePath: "/test/path" },
-        { filesToConvert: [], filesToCopy: mockSyncData.filesToCopy }
+        { filesToConvert: [], filesToCopy: mockSyncData.filesToCopy },
       );
 
       expect(result.success).toBe(true); // Should still succeed
       expect(consoleSpy).toHaveBeenCalledWith(
         "[SyncService] Failed to mark kits as synced:",
-        "Database error"
+        "Database error",
       );
 
       consoleSpy.mockRestore();
@@ -288,7 +288,7 @@ describe("SyncService", () => {
         {
           filesToConvert: [],
           filesToCopy: [],
-        }
+        },
       );
 
       expect(mockMarkKitsAsSynced).not.toHaveBeenCalled();
@@ -316,13 +316,13 @@ describe("SyncService", () => {
 
       const result = await service.startKitSync(
         { localStorePath: "/test/path" },
-        { filesToConvert: [], filesToCopy: mockSyncData.filesToCopy }
+        { filesToConvert: [], filesToCopy: mockSyncData.filesToCopy },
       );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Failed to sync kit");
       expect(consoleSpy).toHaveBeenCalledWith(
-        "Sync failed, attempting cleanup..."
+        "Sync failed, attempting cleanup...",
       );
       expect(mockProgressService.completeSync).toHaveBeenCalled();
 

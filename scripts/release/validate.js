@@ -30,7 +30,7 @@ const checks = [
       const iconsPath = path.join(projectRoot, "electron", "resources");
       const requiredIcons = ["app-icon.icns", "app-icon.png"];
       return requiredIcons.every((icon) =>
-        fs.existsSync(path.join(iconsPath, icon))
+        fs.existsSync(path.join(iconsPath, icon)),
       );
     },
     fix: "Ensure app-icon.icns and app-icon.png exist in electron/resources/",
@@ -73,7 +73,7 @@ const checks = [
       ];
       return requiredMakers.every(
         (maker) =>
-          packageJson.devDependencies && packageJson.devDependencies[maker]
+          packageJson.devDependencies && packageJson.devDependencies[maker],
       );
     },
     fix: "Install all required electron-forge makers",
@@ -147,17 +147,17 @@ async function validateRelease() {
 
   if (failed > 0) {
     console.log(
-      "\n❌ Pre-release validation failed! Please fix the issues above before releasing."
+      "\n❌ Pre-release validation failed! Please fix the issues above before releasing.",
     );
     process.exit(1);
   } else if (warnings > 0) {
     console.log(
-      "\n⚠️  Pre-release validation passed with warnings. Consider addressing them."
+      "\n⚠️  Pre-release validation passed with warnings. Consider addressing them.",
     );
     process.exit(0);
   } else {
     console.log(
-      "\n✅ All pre-release validation checks passed! Ready to release."
+      "\n✅ All pre-release validation checks passed! Ready to release.",
     );
     process.exit(0);
   }

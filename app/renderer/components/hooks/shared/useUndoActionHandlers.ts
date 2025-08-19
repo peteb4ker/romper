@@ -22,7 +22,7 @@ export function useUndoActionHandlers({
 
     if (currentSamplesResult?.success && currentSamplesResult.data) {
       const currentSamples = currentSamplesResult.data.filter((s: any) =>
-        affectedVoices.has(s.voice_number)
+        affectedVoices.has(s.voice_number),
       );
 
       for (const sample of currentSamples) {
@@ -31,7 +31,7 @@ export function useUndoActionHandlers({
         ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
           kitName,
           sample.voice_number,
-          dbSlotToUiSlot(sample.slot_number) - 1
+          dbSlotToUiSlot(sample.slot_number) - 1,
         );
       }
     }
@@ -46,7 +46,7 @@ export function useUndoActionHandlers({
         voice,
         apiSlotNumber,
         sample.source_path,
-        { forceMono: !sample.is_stereo }
+        { forceMono: !sample.is_stereo },
       );
     }
   };
@@ -58,7 +58,7 @@ export function useUndoActionHandlers({
 
     if (currentSamplesResult?.success && currentSamplesResult.data) {
       const currentSamples = currentSamplesResult.data.filter(
-        (s: any) => s.voice_number === voice
+        (s: any) => s.voice_number === voice,
       );
 
       for (const sample of currentSamples) {
@@ -67,7 +67,7 @@ export function useUndoActionHandlers({
         ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
           kitName,
           sample.voice_number,
-          dbSlotToUiSlot(sample.slot_number) - 1
+          dbSlotToUiSlot(sample.slot_number) - 1,
         );
       }
     }
@@ -81,7 +81,7 @@ export function useUndoActionHandlers({
       ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
         kitName,
         voice,
-        slot
+        slot,
       );
     }
   };
@@ -95,7 +95,7 @@ export function useUndoActionHandlers({
         voice,
         slot,
         sample.source_path,
-        { forceMono: !sample.is_stereo }
+        { forceMono: !sample.is_stereo },
       );
     }
   };
@@ -108,7 +108,7 @@ export function useUndoActionHandlers({
       action.data.voice,
       action.data.slot,
       action.data.deletedSample.source_path,
-      { forceMono: !action.data.deletedSample.is_stereo }
+      { forceMono: !action.data.deletedSample.is_stereo },
     );
     console.log("[UNDO] DELETE_SAMPLE undo result:", result);
     return result;
@@ -119,7 +119,7 @@ export function useUndoActionHandlers({
     const result = await (window as any).electronAPI?.deleteSampleFromSlot?.(
       kitName,
       action.data.voice,
-      action.data.slot
+      action.data.slot,
     );
     console.log("[UNDO] ADD_SAMPLE undo result:", result);
     return result;
@@ -132,7 +132,7 @@ export function useUndoActionHandlers({
       action.data.voice,
       action.data.slot,
       action.data.oldSample.source_path,
-      { forceMono: !action.data.oldSample.is_stereo }
+      { forceMono: !action.data.oldSample.is_stereo },
     );
     console.log("[UNDO] REPLACE_SAMPLE undo result:", result);
     return result;
@@ -141,7 +141,7 @@ export function useUndoActionHandlers({
   const undoMoveSampleWithSnapshot = async (action: any) => {
     console.log(
       "[UNDO] Using snapshot-based restoration, snapshot length:",
-      action.data.stateSnapshot.length
+      action.data.stateSnapshot.length,
     );
 
     await clearAffectedVoices(action.data.fromVoice, action.data.toVoice);
@@ -227,7 +227,7 @@ export function useUndoActionHandlers({
         action.data.fromKit,
         action.data.fromVoice,
         action.data.fromSlot,
-        action.data.mode
+        action.data.mode,
       );
 
       // Restore replaced sample if any
@@ -237,7 +237,7 @@ export function useUndoActionHandlers({
           action.data.toVoice,
           action.data.toSlot,
           action.data.replacedSample.source_path,
-          { forceMono: !action.data.replacedSample.is_stereo }
+          { forceMono: !action.data.replacedSample.is_stereo },
         );
       }
 
@@ -256,7 +256,7 @@ export function useUndoActionHandlers({
       actionData.voice,
       actionData.deletedSlot,
       actionData.deletedSample.source_path,
-      { forceMono: !actionData.deletedSample.is_stereo }
+      { forceMono: !actionData.deletedSample.is_stereo },
     );
   };
 
@@ -267,14 +267,14 @@ export function useUndoActionHandlers({
         affectedSample.voice,
         affectedSample.newSlot,
         affectedSample.sample.source_path,
-        { forceMono: !affectedSample.sample.is_stereo }
+        { forceMono: !affectedSample.sample.is_stereo },
       );
     }
   };
 
   const undoReindexSamples = async (action: any) => {
     console.log(
-      "[UNDO] Undoing REINDEX_SAMPLES - restoring pre-reindexing state"
+      "[UNDO] Undoing REINDEX_SAMPLES - restoring pre-reindexing state",
     );
 
     try {
@@ -309,7 +309,7 @@ export function useUndoActionHandlers({
       default: {
         const _exhaustiveCheck: never = action;
         throw new Error(
-          `Unknown action type: ${(_exhaustiveCheck as any).type}`
+          `Unknown action type: ${(_exhaustiveCheck as any).type}`,
         );
       }
     }

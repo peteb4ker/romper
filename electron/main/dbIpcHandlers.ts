@@ -44,14 +44,14 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     "insert-sample",
     async (_event, dbDir: string, sample: NewSample) => {
       return addSample(dbDir, sample);
-    }
+    },
   );
 
   ipcMain.handle(
     "get-kit",
     createDbHandler(inMemorySettings, (dbDir: string, kitName: string) => {
       return getKit(dbDir, kitName);
-    })
+    }),
   );
 
   ipcMain.handle(
@@ -66,25 +66,25 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
           artist?: string;
           description?: string;
           tags?: string[];
-        }
+        },
       ) => {
         return updateKit(dbDir, kitName, updates);
-      }
-    )
+      },
+    ),
   );
 
   ipcMain.handle(
     "get-all-kits",
     createDbHandler(inMemorySettings, (dbDir: string) => {
       return getKits(dbDir);
-    })
+    }),
   );
 
   ipcMain.handle(
     "get-kits-metadata",
     createDbHandler(inMemorySettings, (dbDir: string) => {
       return getKitsMetadata(dbDir);
-    })
+    }),
   );
 
   ipcMain.handle(
@@ -95,11 +95,11 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
         dbDir: string,
         kitName: string,
         voiceNumber: number,
-        voiceAlias: string
+        voiceAlias: string,
       ) => {
         return updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias);
-      }
-    )
+      },
+    ),
   );
 
   ipcMain.handle(
@@ -108,8 +108,8 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       inMemorySettings,
       (dbDir: string, kitName: string, bpm: number) => {
         return updateKit(dbDir, kitName, { bpm });
-      }
-    )
+      },
+    ),
   );
 
   ipcMain.handle(
@@ -118,8 +118,8 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
       inMemorySettings,
       (dbDir: string, kitName: string, stepPattern: number[][]) => {
         return updateKit(dbDir, kitName, { step_pattern: stepPattern });
-      }
-    )
+      },
+    ),
   );
 
   ipcMain.handle(
@@ -134,7 +134,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
         throw new Error("No local store path provided or configured");
       }
       return localStoreService.validateLocalStore(pathToValidate);
-    }
+    },
   );
 
   ipcMain.handle(
@@ -149,7 +149,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
         throw new Error("No local store path provided or configured");
       }
       return localStoreService.validateLocalStoreBasic(pathToValidate);
-    }
+    },
   );
 
   ipcMain.handle("get-all-samples", async (_event, dbDir: string) => {
@@ -160,7 +160,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     "get-all-samples-for-kit",
     createDbHandler(inMemorySettings, (dbDir: string, kitName: string) => {
       return getKitSamples(dbDir, kitName);
-    })
+    }),
   );
 
   ipcMain.handle("rescan-kit", async (_event, kitName: string) => {
@@ -171,7 +171,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     "delete-all-samples-for-kit",
     async (_event, dbDir: string, kitName: string) => {
       return deleteSamples(dbDir, kitName);
-    }
+    },
   );
 
   // Bank operations
@@ -179,7 +179,7 @@ export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
     "get-all-banks",
     createDbHandler(inMemorySettings, (dbDir: string) => {
       return getAllBanks(dbDir);
-    })
+    }),
   );
 
   ipcMain.handle("scan-banks", async () => {

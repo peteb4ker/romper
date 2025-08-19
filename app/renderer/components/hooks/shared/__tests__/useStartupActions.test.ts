@@ -20,7 +20,7 @@ describe("useStartupActions", () => {
       useStartupActions({
         localStorePath: "/mock/local/store",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -33,7 +33,7 @@ describe("useStartupActions", () => {
       useStartupActions({
         localStorePath: null,
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     // Wait a bit to ensure the effect doesn't run
@@ -47,7 +47,7 @@ describe("useStartupActions", () => {
       useStartupActions({
         localStorePath: "/mock/local/store",
         needsLocalStoreSetup: true,
-      })
+      }),
     );
 
     // Wait a bit to ensure the effect doesn't run
@@ -66,7 +66,7 @@ describe("useStartupActions", () => {
       useStartupActions({
         localStorePath: "/mock/local/store",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -76,14 +76,14 @@ describe("useStartupActions", () => {
 
   it("should handle bank scanning exception gracefully", async () => {
     vi.mocked(window.electronAPI.scanBanks).mockRejectedValue(
-      new Error("Connection timeout")
+      new Error("Connection timeout"),
     );
 
     renderHook(() =>
       useStartupActions({
         localStorePath: "/mock/local/store",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -105,7 +105,7 @@ describe("useStartupActions", () => {
           localStorePath: "/mock/store1",
           needsLocalStoreSetup: false,
         },
-      }
+      },
     );
 
     await waitFor(() => {

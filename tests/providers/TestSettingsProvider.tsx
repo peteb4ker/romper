@@ -64,7 +64,7 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       setThemeModeFunc,
       setDefaultToMonoSamplesFunc,
       setConfirmDestructiveActionsFunc,
-    ]
+    ],
   );
 
   return (

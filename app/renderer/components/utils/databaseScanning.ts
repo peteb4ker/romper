@@ -13,7 +13,7 @@ interface DatabaseOperations {
     dbDir: string,
     kitName: string,
     voiceNumber: number,
-    voiceAlias: null | string
+    voiceAlias: null | string,
   ) => Promise<VoiceUpdateResult>;
   // Add more database operations as needed
 }
@@ -47,7 +47,7 @@ export interface KitScanData {
 export async function scanKitToDatabase(
   dbDir: string,
   kitScanData: KitScanData,
-  progressCallback?: ProgressCallback
+  progressCallback?: ProgressCallback,
 ): Promise<DatabaseScanResult> {
   const result: DatabaseScanResult = {
     errors: [],
@@ -65,7 +65,7 @@ export async function scanKitToDatabase(
         wavFiles: kitScanData.wavFiles,
       },
       progressCallback,
-      "continue"
+      "continue",
     );
 
     if (scanResult.results.voiceInference) {
@@ -73,7 +73,7 @@ export async function scanKitToDatabase(
         dbDir,
         kitScanData.kitName,
         scanResult.results.voiceInference.voiceNames,
-        result
+        result,
       );
     }
 
@@ -81,7 +81,7 @@ export async function scanKitToDatabase(
       processWAVAnalysisResults(
         scanResult.results.wavAnalysis,
         kitScanData.wavFiles,
-        result
+        result,
       );
     }
 
@@ -116,7 +116,7 @@ export async function scanKitToDatabase(
 export async function scanMultipleKitsToDatabase(
   dbDir: string,
   kitsToScan: KitScanData[],
-  progressCallback?: ProgressCallback
+  progressCallback?: ProgressCallback,
 ): Promise<DatabaseScanResult> {
   const combinedResult: DatabaseScanResult = {
     errors: [],
@@ -168,7 +168,7 @@ export async function scanMultipleKitsToDatabase(
 export async function scanVoiceNamesToDatabase(
   dbDir: string,
   kitName: string,
-  samples: { [voice: number]: string[] }
+  samples: { [voice: number]: string[] },
 ): Promise<DatabaseScanResult> {
   const result: DatabaseScanResult = {
     errors: [],
@@ -187,7 +187,7 @@ export async function scanVoiceNamesToDatabase(
         dbDir,
         kitName,
         scanResult.results.voiceInference.voiceNames,
-        result
+        result,
       );
       result.scannedKits = 1;
     } else {
@@ -217,7 +217,7 @@ export async function scanVoiceNamesToDatabase(
 export async function scanWavFilesToDatabase(
   dbDir: string,
   wavFiles: string[],
-  fileReader?: (filePath: string) => Promise<ArrayBuffer>
+  fileReader?: (filePath: string) => Promise<ArrayBuffer>,
 ): Promise<DatabaseScanResult> {
   const result: DatabaseScanResult = {
     errors: [],
@@ -273,7 +273,7 @@ async function processVoiceInferenceResults(
   dbDir: string,
   kitName: string,
   voiceNames: Record<number, string>,
-  result: DatabaseScanResult
+  result: DatabaseScanResult,
 ): Promise<void> {
   for (const voiceNumStr in voiceNames) {
     const voiceNumber = parseInt(voiceNumStr, 10);
@@ -293,7 +293,7 @@ async function processVoiceInferenceResults(
         dbDir,
         kitName,
         voiceNumber,
-        voiceAlias
+        voiceAlias,
       );
 
       if (updateResult.success) {
@@ -313,7 +313,7 @@ async function processVoiceInferenceResults(
 function processWAVAnalysisResults(
   wavAnalyses: any[],
   wavFiles: string[],
-  result: DatabaseScanResult
+  result: DatabaseScanResult,
 ): void {
   for (let i = 0; i < wavAnalyses.length; i++) {
     const analysis = wavAnalyses[i];

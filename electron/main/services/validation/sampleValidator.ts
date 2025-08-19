@@ -19,7 +19,7 @@ export class SampleValidator {
     toSlot: number,
     destSamples: Sample[],
     mode: "insert",
-    toKit: string
+    toKit: string,
   ): { error?: string; hasConflict: boolean } {
     // Check for stereo conflicts at destination
     if (sampleToMove.is_stereo && toVoice === 4) {
@@ -33,7 +33,7 @@ export class SampleValidator {
     if (sampleToMove.is_stereo && mode === "insert") {
       // Check if destination's adjacent voice has a sample in the same slot
       const conflictingDestSample = destSamples.find(
-        (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot
+        (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot,
       );
 
       if (conflictingDestSample) {
@@ -110,7 +110,7 @@ export class SampleValidator {
    */
   validateSampleSources(
     dbPath: string,
-    kitName: string
+    kitName: string,
   ): DbResult<{
     invalidSamples: Array<{
       error: string;
@@ -170,7 +170,7 @@ export class SampleValidator {
     toVoice: number,
     toSlot: number,
     mode: "insert",
-    existingSamples: Sample[]
+    existingSamples: Sample[],
   ): DbResult<void> {
     if (!sampleToMove.is_stereo) {
       return { success: true };
@@ -188,7 +188,7 @@ export class SampleValidator {
     // Check for destination conflicts (always insert mode)
     {
       const conflictSample = existingSamples.find(
-        (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot
+        (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot,
       );
       if (conflictSample) {
         return {
@@ -207,7 +207,7 @@ export class SampleValidator {
    */
   validateVoiceAndSlot(
     voiceNumber: number,
-    slotNumber: number
+    slotNumber: number,
   ): { error?: string; isValid: boolean } {
     // Validate voice number (1-4)
     if (voiceNumber < 1 || voiceNumber > 4) {

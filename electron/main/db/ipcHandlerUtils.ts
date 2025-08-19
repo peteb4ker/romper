@@ -9,7 +9,7 @@ import { sampleService } from "../services/sampleService.js";
  */
 export function createDbHandler<T extends any[], R>(
   inMemorySettings: Record<string, any>,
-  handler: (dbDir: string, ...args: T) => Promise<R> | R
+  handler: (dbDir: string, ...args: T) => Promise<R> | R,
 ): (_event: any, ...args: T) => Promise<R> {
   return async (_event: any, ...args: T): Promise<R> => {
     const dbDirResult = validateAndGetDbDir(inMemorySettings);
@@ -25,7 +25,7 @@ export function createDbHandler<T extends any[], R>(
  */
 export function createSampleOperationHandler(
   inMemorySettings: Record<string, any>,
-  operationType: "add" | "delete" | "replace"
+  operationType: "add" | "delete" | "replace",
 ) {
   return async (
     _event: any,
@@ -33,7 +33,7 @@ export function createSampleOperationHandler(
     voiceNumber: number,
     slotNumber: number,
     filePath?: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean }
+    options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
     try {
       let result: DbResult<any>;
@@ -52,7 +52,7 @@ export function createSampleOperationHandler(
             voiceNumber,
             slotNumber,
             filePath,
-            options
+            options,
           );
           break;
 
@@ -61,7 +61,7 @@ export function createSampleOperationHandler(
             inMemorySettings,
             kitName,
             voiceNumber,
-            slotNumber
+            slotNumber,
           );
           break;
 
@@ -78,7 +78,7 @@ export function createSampleOperationHandler(
             voiceNumber,
             slotNumber,
             filePath,
-            options
+            options,
           );
           break;
 

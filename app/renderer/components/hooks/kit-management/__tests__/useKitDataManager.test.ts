@@ -63,7 +63,7 @@ describe("useKitDataManager", () => {
         isInitialized: false,
         localStorePath: null,
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     expect(result.current.kits).toEqual([]);
@@ -77,7 +77,7 @@ describe("useKitDataManager", () => {
         isInitialized: false,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     expect(window.electronAPI.getKits).not.toHaveBeenCalled();
@@ -89,7 +89,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: true,
-      })
+      }),
     );
 
     expect(window.electronAPI.getKits).not.toHaveBeenCalled();
@@ -101,7 +101,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     // Wait for useEffect to run
@@ -121,7 +121,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     // Wait for useEffect to run
@@ -132,7 +132,7 @@ describe("useKitDataManager", () => {
 
   it("should handle getKits API exception", async () => {
     vi.mocked(window.electronAPI.getKits).mockRejectedValue(
-      new Error("Network error")
+      new Error("Network error"),
     );
 
     const { result } = renderHook(() =>
@@ -140,7 +140,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     // Wait for useEffect to run
@@ -155,7 +155,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     // Mock new sample data
@@ -186,7 +186,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
@@ -207,11 +207,11 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(
-      new Error("Network error")
+      new Error("Network error"),
     );
 
     await act(async () => {
@@ -227,7 +227,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     // Mock updated data
@@ -257,7 +257,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     vi.mocked(window.electronAPI.getKits).mockResolvedValue({
@@ -278,7 +278,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     // Wait for async data loading to complete
@@ -314,7 +314,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     await act(async () => {
@@ -345,7 +345,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     await act(async () => {
@@ -365,7 +365,7 @@ describe("useKitDataManager", () => {
           localStorePath: null,
           needsLocalStoreSetup: false,
         },
-      }
+      },
     );
 
     expect(result.current.kits).toEqual([]);
@@ -387,7 +387,7 @@ describe("useKitDataManager", () => {
         isInitialized: true,
         localStorePath: "/test/path",
         needsLocalStoreSetup: false,
-      })
+      }),
     );
 
     await act(async () => {
@@ -424,7 +424,7 @@ describe("useKitDataManager", () => {
           isInitialized: true,
           localStorePath: "/test/path",
           needsLocalStoreSetup: false,
-        })
+        }),
       );
 
       await act(async () => {
@@ -461,7 +461,7 @@ describe("useKitDataManager", () => {
           isInitialized: true,
           localStorePath: "/test/path",
           needsLocalStoreSetup: false,
-        })
+        }),
       );
 
       await act(async () => {
@@ -496,7 +496,7 @@ describe("useKitDataManager", () => {
           isInitialized: true,
           localStorePath: "/test/path",
           needsLocalStoreSetup: false,
-        })
+        }),
       );
 
       await act(async () => {
@@ -525,7 +525,7 @@ describe("useKitDataManager", () => {
           isInitialized: true,
           localStorePath: "/test/path",
           needsLocalStoreSetup: false,
-        })
+        }),
       );
 
       await act(async () => {
@@ -550,7 +550,7 @@ describe("useKitDataManager", () => {
           isInitialized: true,
           localStorePath: "/test/path",
           needsLocalStoreSetup: false,
-        })
+        }),
       );
 
       await act(async () => {
@@ -578,7 +578,7 @@ describe("useKitDataManager", () => {
           isInitialized: true,
           localStorePath: "/test/path",
           needsLocalStoreSetup: false,
-        })
+        }),
       );
 
       await act(async () => {

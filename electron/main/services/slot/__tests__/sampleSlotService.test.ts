@@ -52,7 +52,7 @@ describe("SampleSlotService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
-        "Cannot move to slot 4. Next available slot is 3"
+        "Cannot move to slot 4. Next available slot is 3",
       );
     });
 

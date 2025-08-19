@@ -52,14 +52,14 @@ export function useValidationResults({
         onMessage(
           result.errorSummary || "Validation errors found in local store",
           "error",
-          5000
+          5000,
         );
       }
     } catch (error) {
       if (onMessage) {
         onMessage(
           `Validation error: ${error instanceof Error ? error.message : String(error)}`,
-          "error"
+          "error",
         );
       }
     } finally {
@@ -81,14 +81,14 @@ export function useValidationResults({
     setSelectedKits((prev) =>
       prev.includes(kitName)
         ? prev.filter((k) => k !== kitName)
-        : [...prev, kitName]
+        : [...prev, kitName],
     );
   }, []);
 
   const selectAllKits = useCallback(() => {
     if (validationResult?.errors && validationResult.errors.length > 0) {
       const kitNames = validationResult.errors.map(
-        (e: KitValidationError) => e.kitName
+        (e: KitValidationError) => e.kitName,
       );
       setSelectedKits(kitNames);
     }
@@ -125,7 +125,7 @@ export function useValidationResults({
       selectedKitsCount: number,
       errors: string[],
       totalScannedSamples: number,
-      totalUpdatedVoices: number
+      totalUpdatedVoices: number,
     ) => {
       if (errors.length === 0) {
         return {
@@ -147,7 +147,7 @@ export function useValidationResults({
         };
       }
     },
-    []
+    [],
   );
 
   const rescanSelectedKits = useCallback(async () => {
@@ -178,7 +178,7 @@ export function useValidationResults({
           selectedKits.length,
           errors,
           totalScannedSamples,
-          totalUpdatedVoices
+          totalUpdatedVoices,
         );
         onMessage(message.text, message.type, message.duration);
       }
@@ -196,7 +196,7 @@ export function useValidationResults({
       if (onMessage) {
         onMessage(
           `Rescan error: ${error instanceof Error ? error.message : String(error)}`,
-          "error"
+          "error",
         );
       }
     } finally {

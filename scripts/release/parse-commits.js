@@ -208,7 +208,7 @@ function getChangesSummary() {
 
   if (formattedCategories.breaking.length > 0) {
     summary.push(
-      `⚠️  ${formattedCategories.breaking.length} breaking change(s)`
+      `⚠️  ${formattedCategories.breaking.length} breaking change(s)`,
     );
   }
 
@@ -222,7 +222,7 @@ function getChangesSummary() {
 
   if (formattedCategories.performance.length > 0) {
     summary.push(
-      `⚡ ${formattedCategories.performance.length} performance improvement(s)`
+      `⚡ ${formattedCategories.performance.length} performance improvement(s)`,
     );
   }
 

@@ -32,7 +32,7 @@ export class SampleCrudService {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: StereoOptions
+    options?: StereoOptions,
   ): DbResult<{ sampleId: number }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -44,7 +44,7 @@ export class SampleCrudService {
     // Validate voice and slot
     const voiceSlotValidation = sampleValidator.validateVoiceAndSlot(
       voiceNumber,
-      slotNumber
+      slotNumber,
     );
     if (!voiceSlotValidation.isValid) {
       return { error: voiceSlotValidation.error, success: false };
@@ -64,7 +64,7 @@ export class SampleCrudService {
       const isStereo = determineStereoConfiguration(
         filePath,
         inMemorySettings,
-        options
+        options,
       );
 
       const sampleRecord: NewSample = {
@@ -82,7 +82,7 @@ export class SampleCrudService {
 
       if (existingSamplesResult.success && existingSamplesResult.data) {
         _previousSample = existingSamplesResult.data.find(
-          (s) => s.voice_number === voiceNumber && s.slot_number === slotNumber
+          (s) => s.voice_number === voiceNumber && s.slot_number === slotNumber,
         );
       }
 
@@ -109,7 +109,7 @@ export class SampleCrudService {
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
-    slotNumber: number
+    slotNumber: number,
   ): DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -121,7 +121,7 @@ export class SampleCrudService {
     // Validate voice and slot
     const voiceSlotValidation = sampleValidator.validateVoiceAndSlot(
       voiceNumber,
-      slotNumber
+      slotNumber,
     );
     if (!voiceSlotValidation.isValid) {
       return { error: voiceSlotValidation.error, success: false };
@@ -134,7 +134,7 @@ export class SampleCrudService {
 
       if (existingSamplesResult.success && existingSamplesResult.data) {
         sampleExists = existingSamplesResult.data.some(
-          (s) => s.voice_number === voiceNumber && s.slot_number === slotNumber
+          (s) => s.voice_number === voiceNumber && s.slot_number === slotNumber,
         );
       }
 
@@ -173,7 +173,7 @@ export class SampleCrudService {
     inMemorySettings: Record<string, any>,
     kitName: string,
     voiceNumber: number,
-    slotNumber: number
+    slotNumber: number,
   ): DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -185,7 +185,7 @@ export class SampleCrudService {
     // Validate voice and slot
     const voiceSlotValidation = sampleValidator.validateVoiceAndSlot(
       voiceNumber,
-      slotNumber
+      slotNumber,
     );
     if (!voiceSlotValidation.isValid) {
       return { error: voiceSlotValidation.error, success: false };
@@ -232,7 +232,7 @@ export class SampleCrudService {
       toKit: string;
       toSlot: number;
       toVoice: number;
-    }
+    },
   ): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
@@ -250,7 +250,7 @@ export class SampleCrudService {
     // Validate voice and slot for both source and destination
     const fromValidation = sampleValidator.validateVoiceAndSlot(
       fromVoice,
-      fromSlot
+      fromSlot,
     );
     if (!fromValidation.isValid) {
       return { error: `Source ${fromValidation.error}`, success: false };
@@ -267,7 +267,7 @@ export class SampleCrudService {
         dbPath,
         fromKit,
         fromVoice,
-        fromSlot
+        fromSlot,
       );
       if (!sampleResult.success) {
         return {
@@ -284,7 +284,7 @@ export class SampleCrudService {
           toKit,
           toVoice,
           toSlot,
-          mode
+          mode,
         );
 
       // Check for stereo conflicts using helper method
@@ -294,7 +294,7 @@ export class SampleCrudService {
         toSlot,
         destSamples,
         mode,
-        toKit
+        toKit,
       );
       if (conflictCheck.hasConflict) {
         return { error: conflictCheck.error, success: false };
@@ -310,7 +310,7 @@ export class SampleCrudService {
         {
           forceMono: !sampleToMove.is_stereo,
           forceStereo: sampleToMove.is_stereo,
-        }
+        },
       );
 
       if (!addResult.success) {
@@ -325,7 +325,7 @@ export class SampleCrudService {
         inMemorySettings,
         fromKit,
         fromVoice,
-        fromSlot
+        fromSlot,
       );
 
       if (!deleteResult.success) {
@@ -342,7 +342,7 @@ export class SampleCrudService {
         (sample) => ({
           ...sample,
           original_slot_number: sample.slot_number, // Use current slot as original since it's from delete result
-        })
+        }),
       );
 
       return {
@@ -372,7 +372,7 @@ export class SampleCrudService {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-    mode: "insert"
+    mode: "insert",
   ): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
@@ -390,7 +390,7 @@ export class SampleCrudService {
       fromVoice,
       fromSlot,
       toVoice,
-      toSlot
+      toSlot,
     );
     if (!validationResult.success) {
       return { error: validationResult.error, success: false };
@@ -404,7 +404,7 @@ export class SampleCrudService {
       }
 
       const sampleToMove = existingSamplesResult.data.find(
-        (s) => s.voice_number === fromVoice && s.slot_number === fromSlot // Database stores 0-11 directly
+        (s) => s.voice_number === fromVoice && s.slot_number === fromSlot, // Database stores 0-11 directly
       );
 
       if (!sampleToMove) {
@@ -420,7 +420,7 @@ export class SampleCrudService {
         toVoice,
         toSlot,
         mode,
-        existingSamplesResult.data
+        existingSamplesResult.data,
       );
       if (!stereoValidation.success) {
         return { error: stereoValidation.error, success: false };
@@ -433,7 +433,7 @@ export class SampleCrudService {
         fromVoice,
         fromSlot,
         toVoice,
-        toSlot
+        toSlot,
       );
 
       // Mark kit as modified if operation succeeded
@@ -478,7 +478,7 @@ export class SampleCrudService {
     toKit: string,
     _toVoice: number,
     _toSlot: number,
-    _mode: "insert"
+    _mode: "insert",
   ): { destSamples: Sample[]; replacedSample?: Sample } {
     const destSamplesResult = getKitSamples(dbPath, toKit);
     let destSamples: Sample[] = [];
@@ -494,7 +494,7 @@ export class SampleCrudService {
   }
 
   private getLocalStorePath(
-    inMemorySettings: Record<string, any>
+    inMemorySettings: Record<string, any>,
   ): null | string {
     return ServicePathManager.getLocalStorePath(inMemorySettings);
   }
@@ -506,7 +506,7 @@ export class SampleCrudService {
     dbPath: string,
     fromKit: string,
     fromVoice: number,
-    fromSlot: number
+    fromSlot: number,
   ): DbResult<Sample> {
     const sourceSamplesResult = getKitSamples(dbPath, fromKit);
     if (!sourceSamplesResult.success || !sourceSamplesResult.data) {
@@ -514,7 +514,7 @@ export class SampleCrudService {
     }
 
     const sampleToMove = sourceSamplesResult.data.find(
-      (s) => s.voice_number === fromVoice && s.slot_number === fromSlot
+      (s) => s.voice_number === fromVoice && s.slot_number === fromSlot,
     );
 
     if (!sampleToMove) {
@@ -534,12 +534,12 @@ export class SampleCrudService {
     fromVoice: number,
     fromSlot: number,
     toVoice: number,
-    toSlot: number
+    toSlot: number,
   ): DbResult<void> {
     // Validate source voice and slot
     const fromValidation = sampleValidator.validateVoiceAndSlot(
       fromVoice,
-      fromSlot
+      fromSlot,
     );
     if (!fromValidation.isValid) {
       return { error: `Source ${fromValidation.error}`, success: false };

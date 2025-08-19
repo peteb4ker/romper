@@ -57,7 +57,7 @@ function main() {
       // Check if branch has unmerged changes
       const _result = runCommand(
         `git branch --no-merged main | grep -q ${branchName}`,
-        { silent: true }
+        { silent: true },
       );
       console.log("⚠️  Warning: Branch has unmerged changes!");
       console.log("If you are sure you want to remove it, use:");
@@ -81,7 +81,7 @@ function main() {
     } catch {
       // Branch might not exist or might be protected, that's okay
       console.log(
-        `ℹ️  Branch ${branchName} not deleted (might not exist or be protected)`
+        `ℹ️  Branch ${branchName} not deleted (might not exist or be protected)`,
       );
     }
 

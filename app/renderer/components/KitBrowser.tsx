@@ -107,7 +107,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           }, SCROLL_DELAY_MS);
         }
       },
-      [onRefreshKits, onMessage]
+      [onRefreshKits, onMessage],
     );
 
     const logic = useKitBrowser({
@@ -322,7 +322,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 export default React.memo(KitBrowser);

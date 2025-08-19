@@ -9,24 +9,24 @@ export interface UseDragAndDropOptions {
   onSampleAdd?: (
     voice: number,
     slotNumber: number,
-    filePath: string
+    filePath: string,
   ) => Promise<void>;
   onSampleMove?: (
     fromVoice: number,
     fromSlot: number,
     toVoice: number,
-    toSlot: number
+    toSlot: number,
   ) => Promise<void>;
   onSampleReplace?: (
     voice: number,
     slotNumber: number,
-    filePath: string
+    filePath: string,
   ) => Promise<void>;
   onStereoDragLeave?: () => void;
   onStereoDragOver?: (
     voice: number,
     slotNumber: number,
-    isStereo: boolean
+    isStereo: boolean,
   ) => void;
   samples: string[];
   setSharedDraggedSample?: (
@@ -34,7 +34,7 @@ export interface UseDragAndDropOptions {
       sampleName: string;
       slot: number;
       voice: number;
-    } | null
+    } | null,
   ) => void;
   // Shared drag state for cross-voice operations
   sharedDraggedSample?: {

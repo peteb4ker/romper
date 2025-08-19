@@ -73,7 +73,7 @@ function getCommitsSinceTag(tag) {
     const range = tag ? `${tag}..HEAD` : "HEAD";
     const commits = execGit(
       `log ${range} --pretty=format:"%H|%s|%an|%ae|%ai"`,
-      { silent: true }
+      { silent: true },
     );
 
     if (!commits) return [];
@@ -91,8 +91,8 @@ function getCommitsSinceTag(tag) {
   } catch (error) {
     console.warn(
       chalk.yellow(
-        `Warning: Could not get commits since ${tag}: ${error.message}`
-      )
+        `Warning: Could not get commits since ${tag}: ${error.message}`,
+      ),
     );
     return [];
   }
@@ -144,7 +144,7 @@ function deleteTag(tag) {
     console.log(chalk.yellow(`🗑️  Deleted remote tag: ${tag}`));
   } catch (error) {
     console.warn(
-      chalk.yellow(`Warning: Could not delete tag ${tag}: ${error.message}`)
+      chalk.yellow(`Warning: Could not delete tag ${tag}: ${error.message}`),
     );
   }
 }
@@ -167,7 +167,7 @@ function isRemoteUpToDate() {
     return localCommit === remoteCommit;
   } catch (error) {
     console.warn(
-      chalk.yellow(`Warning: Could not check remote status: ${error.message}`)
+      chalk.yellow(`Warning: Could not check remote status: ${error.message}`),
     );
     return false;
   }

@@ -50,7 +50,7 @@ describe("useLocalStoreWizard", () => {
       async (dbDir: string) => ({
         dbPath: dbDir + "/romper.sqlite",
         success: true,
-      })
+      }),
     );
     vi.mocked(window.electronAPI.ensureDir).mockResolvedValue(true);
     vi.mocked(window.electronAPI.getSetting).mockImplementation(async (key) => {
@@ -59,39 +59,39 @@ describe("useLocalStoreWizard", () => {
     });
     vi.mocked(window.electronAPI.setSetting).mockResolvedValue(undefined);
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
-      async (_url, _destDir, _onProgress, _onError) => ({ success: true })
+      async (_url, _destDir, _onProgress, _onError) => ({ success: true }),
     );
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-      async (_path) => []
+      async (_path) => [],
     );
     vi.mocked(window.electronAPI.copyDir).mockImplementation(
-      async (_src, _dest) => {}
+      async (_src, _dest) => {},
     );
     vi.mocked(window.electronAPI.insertKit).mockImplementation(
       async (_dbDir, _kit) => ({
         success: true,
-      })
+      }),
     );
     vi.mocked(window.electronAPI.insertSample).mockImplementation(
       async (_dbDir, _sample) => ({
         success: true,
-      })
+      }),
     );
     vi.mocked(window.electronAPI.updateKit).mockImplementation(
       async (_dbDir, _kitName, _updates) => ({
         success: true,
-      })
+      }),
     );
     vi.mocked(window.electronAPI.updateVoiceAlias).mockImplementation(
       async (_kitName, _voiceNumber, _voiceAlias) => ({
         success: true,
-      })
+      }),
     );
     vi.mocked(window.electronAPI.readFile).mockImplementation(
       async (_filePath) => ({
         data: new ArrayBuffer(1024),
         success: true,
-      })
+      }),
     );
   });
 
@@ -175,7 +175,7 @@ describe("useLocalStoreWizard", () => {
         if (!url.endsWith(".zip")) throw new Error("Invalid URL");
         if (!destDir.includes("romper")) throw new Error("Invalid destDir");
         return { success: true };
-      }
+      },
     );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -195,7 +195,7 @@ describe("useLocalStoreWizard", () => {
       async () => ({
         error: "fail",
         success: false,
-      })
+      }),
     );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -219,7 +219,7 @@ describe("useLocalStoreWizard", () => {
         if (progressCb) progressCb({ percent: 10, phase: "Downloading" });
         if (progressCb) progressCb({ percent: 80, phase: "Extracting" });
         return { success: true };
-      }
+      },
     );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -240,7 +240,7 @@ describe("useLocalStoreWizard", () => {
       async (url, destDir, onProgress, onError) => {
         if (onError) onError({ message: "premature close" });
         return { error: "premature close", success: false };
-      }
+      },
     );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -287,7 +287,7 @@ describe("useLocalStoreWizard", () => {
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async (_url, _destDir) => {
         return { success: true };
-      }
+      },
     );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -366,11 +366,11 @@ describe("useLocalStoreWizard", () => {
     expect(copyDir).toHaveBeenCalledTimes(2);
     expect(copyDir).toHaveBeenCalledWith(
       "/mock/sd/A0",
-      "/mock/home/Documents/romper/A0"
+      "/mock/home/Documents/romper/A0",
     );
     expect(copyDir).toHaveBeenCalledWith(
       "/mock/sd/B12",
-      "/mock/home/Documents/romper/B12"
+      "/mock/home/Documents/romper/B12",
     );
   });
 
@@ -388,7 +388,7 @@ describe("useLocalStoreWizard", () => {
     vi.mocked(window.electronAPI.setSetting).mockImplementation(
       async (key, value) => {
         if (key === "localStorePath") setSettingCalled = value;
-      }
+      },
     );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -412,7 +412,7 @@ describe("useLocalStoreWizard", () => {
           return ["kick.wav", "snare.wav"];
         if (path === "/mock/home/Documents/romper/B12") return ["hat.wav"];
         return [];
-      }
+      },
     );
     vi.mocked(window.electronAPI.copyDir).mockImplementation(async () => {});
     vi.mocked(window.electronAPI.insertKit).mockImplementation(async () => ({
@@ -423,7 +423,7 @@ describe("useLocalStoreWizard", () => {
     }));
     // Use the new progress callback for testability
     const { result } = renderHook(() =>
-      useLocalStoreWizard((p) => progressEvents.push(p))
+      useLocalStoreWizard((p) => progressEvents.push(p)),
     );
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -435,7 +435,7 @@ describe("useLocalStoreWizard", () => {
       await result.current.initialize();
     });
     expect(progressEvents.some((e) => e.phase === "Writing to database")).toBe(
-      true
+      true,
     );
   });
 
@@ -449,11 +449,11 @@ describe("useLocalStoreWizard", () => {
         if (path === "/mock/home/Documents/romper/B12")
           return ["1hat.wav", "3tom.wav"];
         return [];
-      }
+      },
     );
 
     const { result } = renderHook(() =>
-      useLocalStoreWizard((p) => progressEvents.push(p))
+      useLocalStoreWizard((p) => progressEvents.push(p)),
     );
 
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -481,34 +481,34 @@ describe("useLocalStoreWizard", () => {
         ],
       }),
       undefined,
-      "continue"
+      "continue",
     );
 
     // Verify voice aliases were updated
     expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
       "A0",
       1,
-      "kick"
+      "kick",
     );
     expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
       "A0",
       2,
-      "snare"
+      "snare",
     );
     expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
       "A0",
       3,
-      "hat"
+      "hat",
     );
     expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
       "A0",
       4,
-      "tom"
+      "tom",
     );
 
     // Verify scanning progress was reported
     expect(
-      progressEvents.some((e) => e.phase === "Scanning kits for metadata...")
+      progressEvents.some((e) => e.phase === "Scanning kits for metadata..."),
     ).toBe(true);
   });
 
@@ -538,7 +538,7 @@ describe("useLocalStoreWizard", () => {
         if (path === "/mock/home/Documents/romper/A0") return ["1kick.wav"];
         if (path === "/mock/home/Documents/romper/B12") return ["1hat.wav"];
         return [];
-      }
+      },
     );
 
     const { result } = renderHook(() => useLocalStoreWizard());
@@ -569,7 +569,7 @@ describe("useLocalStoreWizard", () => {
       async (path) => {
         if (path === "/mock/home/Documents/romper") return []; // No kit folders
         return [];
-      }
+      },
     );
 
     const { result } = renderHook(() => useLocalStoreWizard());

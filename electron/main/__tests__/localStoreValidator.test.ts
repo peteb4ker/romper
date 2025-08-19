@@ -70,7 +70,7 @@ describe("localStoreValidator", () => {
       const result = validateLocalStoreAndDb(localStorePath);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe(
-        "This directory does not contain a valid Romper database (.romperdb folder)."
+        "This directory does not contain a valid Romper database (.romperdb folder).",
       );
     });
 
@@ -188,7 +188,7 @@ describe("localStoreValidator", () => {
             };
           }
           return { error: "Kit not found", success: false };
-        }
+        },
       );
     });
 

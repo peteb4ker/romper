@@ -32,7 +32,7 @@ export function getAvailableBanks(kits: KitWithRelations[]): string[] {
  * Returns { bank, name } or null if not a valid bank RTF filename
  */
 export function getBankNameFromRtfFilename(
-  filename: string
+  filename: string,
 ): { bank: string; name: string } | null {
   const match = /^(\p{Lu}) - (.+)\.rtf$/iu.exec(filename);
   if (match) {
@@ -49,7 +49,7 @@ export function getBankNameFromRtfFilename(
  */
 export function getFirstKitInBank(
   kits: KitWithRelations[],
-  bank: string
+  bank: string,
 ): null | string {
   const kit = kits.find((k) => k?.name?.startsWith(bank));
   return kit ? kit.name : null;

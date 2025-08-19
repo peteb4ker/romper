@@ -22,7 +22,7 @@ interface KitVoicePanelProps {
   onSampleAdd?: (
     voice: number,
     slotNumber: number,
-    filePath: string
+    filePath: string,
   ) => Promise<void>;
   onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
   onSampleKeyNav?: (direction: "down" | "up") => void;
@@ -31,12 +31,12 @@ interface KitVoicePanelProps {
     fromVoice: number,
     fromSlot: number,
     toVoice: number,
-    toSlot: number
+    toSlot: number,
   ) => Promise<void>;
   onSampleReplace?: (
     voice: number,
     slotNumber: number,
-    filePath: string
+    filePath: string,
   ) => Promise<void>;
   onSampleSelect?: (voice: number, idx: number) => void;
   onSaveVoiceName: (voice: number, newName: string) => void;
@@ -45,13 +45,13 @@ interface KitVoicePanelProps {
   onStereoDragOver?: (
     voice: number,
     slotNumber: number,
-    isStereo: boolean
+    isStereo: boolean,
   ) => void;
   onStop: (voice: number, sample: string) => void;
   onWaveformPlayingChange: (
     voice: number,
     sample: string,
-    playing: boolean
+    playing: boolean,
   ) => void;
   playTriggers: { [key: string]: number };
   sampleMetadata?: { [filename: string]: SampleData }; // Optional metadata lookup
@@ -65,7 +65,7 @@ interface KitVoicePanelProps {
       sampleName: string;
       slot: number;
       voice: number;
-    } | null
+    } | null,
   ) => void;
 
   // Shared drag state for cross-voice operations

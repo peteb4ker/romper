@@ -100,13 +100,13 @@ describe("InvalidLocalStoreDialog", () => {
 
     await waitFor(() => {
       expect(mockElectronAPI.validateLocalStore).toHaveBeenCalledWith(
-        "/new/path"
+        "/new/path",
       );
     });
 
     expect(screen.getByText("/new/path")).toBeInTheDocument();
     expect(
-      screen.getByText("✓ Valid local store directory")
+      screen.getByText("✓ Valid local store directory"),
     ).toBeInTheDocument();
   });
 
@@ -124,7 +124,7 @@ describe("InvalidLocalStoreDialog", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("✗ Directory is not writable")
+        screen.getByText("✗ Directory is not writable"),
       ).toBeInTheDocument();
     });
   });
@@ -150,7 +150,7 @@ describe("InvalidLocalStoreDialog", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("✓ Valid local store directory")
+        screen.getByText("✓ Valid local store directory"),
       ).toBeInTheDocument();
     });
 
@@ -162,7 +162,7 @@ describe("InvalidLocalStoreDialog", () => {
     expect(mockSetLocalStorePath).toHaveBeenCalledWith("/valid/path");
     expect(defaultProps.onMessage).toHaveBeenCalledWith(
       "Local store directory updated successfully. Refreshing...",
-      "success"
+      "success",
     );
   });
 
@@ -184,7 +184,7 @@ describe("InvalidLocalStoreDialog", () => {
 
   it("should handle API errors gracefully", async () => {
     mockElectronAPI.selectLocalStorePath.mockRejectedValue(
-      new Error("API not available")
+      new Error("API not available"),
     );
 
     render(<InvalidLocalStoreDialog {...defaultProps} />);
@@ -195,7 +195,7 @@ describe("InvalidLocalStoreDialog", () => {
     await waitFor(() => {
       expect(defaultProps.onMessage).toHaveBeenCalledWith(
         "Failed to select directory: API not available",
-        "error"
+        "error",
       );
     });
   });
@@ -203,7 +203,7 @@ describe("InvalidLocalStoreDialog", () => {
   it("should disable buttons during operations", async () => {
     mockElectronAPI.selectLocalStorePath.mockImplementation(
       () =>
-        new Promise((resolve) => setTimeout(() => resolve("/test/path"), 100))
+        new Promise((resolve) => setTimeout(() => resolve("/test/path"), 100)),
     );
 
     render(<InvalidLocalStoreDialog {...defaultProps} />);

@@ -124,7 +124,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
               );
             })}
           </div>
-        )
+        ),
       )}
     </div>
   );

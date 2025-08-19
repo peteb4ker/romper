@@ -82,7 +82,7 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
       window.addEventListener("menu-setup-local-store", handleSetupLocalStore);
       window.addEventListener(
         "menu-change-local-store-directory",
-        handleChangeLocalStoreDirectory
+        handleChangeLocalStoreDirectory,
       );
       window.addEventListener("menu-preferences", handlePreferences);
       window.addEventListener("menu-about", handleAbout);
@@ -96,15 +96,15 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
       window.removeEventListener("menu-scan-banks", handleScanBanks);
       window.removeEventListener(
         "menu-validate-database",
-        handleValidateDatabase
+        handleValidateDatabase,
       );
       window.removeEventListener(
         "menu-setup-local-store",
-        handleSetupLocalStore
+        handleSetupLocalStore,
       );
       window.removeEventListener(
         "menu-change-local-store-directory",
-        handleChangeLocalStoreDirectory
+        handleChangeLocalStoreDirectory,
       );
       window.removeEventListener("menu-preferences", handlePreferences);
       window.removeEventListener("menu-about", handleAbout);

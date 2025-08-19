@@ -79,12 +79,12 @@ function getTestStatus(sourceFile) {
   const integrationPathTs = join(
     dir,
     "__tests__",
-    `${name}.integration.test.ts`
+    `${name}.integration.test.ts`,
   );
   const integrationPathTsx = join(
     dir,
     "__tests__",
-    `${name}.integration.test.tsx`
+    `${name}.integration.test.tsx`,
   );
 
   return {
@@ -148,13 +148,13 @@ async function checkTestCoverage() {
   console.log(`  Files missing tests: ${missingTests.length}`);
   console.log(`  Files with integration tests only: ${integrationOnly.length}`);
   console.log(
-    `  Test coverage: ${Math.round((testedFiles / totalFiles.length) * 100)}%\n`
+    `  Test coverage: ${Math.round((testedFiles / totalFiles.length) * 100)}%\n`,
   );
 
   // Show integration-only files as info
   if (integrationOnly.length > 0) {
     console.log(
-      `ℹ️  ${integrationOnly.length} files covered by integration tests only:\n`
+      `ℹ️  ${integrationOnly.length} files covered by integration tests only:\n`,
     );
 
     const integrationGrouped = integrationOnly.reduce(
@@ -164,7 +164,7 @@ async function checkTestCoverage() {
         acc[dir].push({ sourceFile, integrationPath });
         return acc;
       },
-      {}
+      {},
     );
 
     Object.keys(integrationGrouped)
@@ -208,13 +208,13 @@ async function checkTestCoverage() {
     });
 
   console.log(
-    "💡 To fix: Create test files in the expected __tests__ subdirectories."
+    "💡 To fix: Create test files in the expected __tests__ subdirectories.",
   );
   console.log(
-    "💡 Use existing test files as templates for structure and patterns."
+    "💡 Use existing test files as templates for structure and patterns.",
   );
   console.log(
-    "💡 Integration tests can substitute for unit tests in some cases."
+    "💡 Integration tests can substitute for unit tests in some cases.",
   );
   console.log("💡 Run this script again to verify all tests are created.");
 

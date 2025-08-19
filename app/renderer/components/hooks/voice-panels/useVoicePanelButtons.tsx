@@ -55,7 +55,7 @@ export function useVoicePanelButtons({
         </button>
       );
     },
-    [onPlay, onStop, voice]
+    [onPlay, onStop, voice],
   );
 
   // Helper function to render delete button
@@ -80,7 +80,7 @@ export function useVoicePanelButtons({
         <FiTrash2 />
       </button>
     ),
-    [sampleActionsHook]
+    [sampleActionsHook],
   );
 
   return {

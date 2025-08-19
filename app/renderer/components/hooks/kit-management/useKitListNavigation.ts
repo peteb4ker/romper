@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useKitListNavigation(
   kits: KitWithRelations[],
-  focusedKit: null | string
+  focusedKit: null | string,
 ) {
   const [focusedIdx, setFocusedIdx] = useState(0);
   const lastExternalIdx = useRef<null | number>(null);
@@ -20,7 +20,7 @@ export function useKitListNavigation(
         return next;
       });
     },
-    [kits.length]
+    [kits.length],
   );
 
   // Set focus to a specific index
@@ -30,7 +30,7 @@ export function useKitListNavigation(
       setFocusedIdx(idx);
       lastExternalIdx.current = null; // user navigation
     },
-    [kits.length]
+    [kits.length],
   );
 
   // Reset focus if kits change
@@ -43,7 +43,7 @@ export function useKitListNavigation(
   useEffect(() => {
     if (focusedKit) {
       const idx = kits.findIndex(
-        (k: KitWithRelations) => k.name === focusedKit
+        (k: KitWithRelations) => k.name === focusedKit,
       );
       if (idx !== -1 && lastExternalIdx.current !== idx) {
         setFocusedIdx(idx);

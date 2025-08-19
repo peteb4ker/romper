@@ -65,7 +65,7 @@ const KitsView: React.FC = () => {
 
   // Critical environment variable error - should close app
   const hasCriticalEnvironmentError = Boolean(
-    localStoreStatus?.isCriticalEnvironmentError
+    localStoreStatus?.isCriticalEnvironmentError,
   );
 
   const [showEnvironmentBanner, setShowEnvironmentBanner] = useState(false);
@@ -162,7 +162,7 @@ const KitsView: React.FC = () => {
     restoreSelectedKitIfExists(
       kits,
       navigation.selectedKit,
-      navigation.setSelectedKit
+      navigation.setSelectedKit,
     );
   }, [kits, navigation.selectedKit, navigation.setSelectedKit]);
 
@@ -200,7 +200,7 @@ const KitsView: React.FC = () => {
       if (customEvent.detail.kitName === selectedKitRef.current) {
         console.log(
           "[KitsView] Refreshing samples after undo operation for kit:",
-          selectedKitRef.current
+          selectedKitRef.current,
         );
         reloadCurrentKitSamplesRef.current(selectedKitRef.current);
       }
@@ -211,7 +211,7 @@ const KitsView: React.FC = () => {
     return () => {
       document.removeEventListener(
         "romper:refresh-samples",
-        handleRefreshSamples
+        handleRefreshSamples,
       );
     };
   }, []); // Empty dependency array - event listener is created only once

@@ -61,7 +61,7 @@ describe("useKitDialogs", () => {
       expect(mockOnMessage).toHaveBeenCalledWith(
         "Local store initialized successfully!",
         "success",
-        5000
+        5000,
       );
     });
 
@@ -77,11 +77,11 @@ describe("useKitDialogs", () => {
 
     it("handles undefined setLocalStorePath", () => {
       const { result } = renderHook(() =>
-        useKitDialogs({ ...defaultProps, setLocalStorePath: undefined })
+        useKitDialogs({ ...defaultProps, setLocalStorePath: undefined }),
       );
 
       expect(
-        typeof result.current.localStoreWizardProps.setLocalStorePath
+        typeof result.current.localStoreWizardProps.setLocalStorePath,
       ).toBe("function");
 
       // Should not throw when called
@@ -117,7 +117,7 @@ describe("useKitDialogs", () => {
         useKitDialogs({
           onMessage: undefined,
           setLocalStorePath: mockSetLocalStorePath,
-        })
+        }),
       );
 
       expect(() => {

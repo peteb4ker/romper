@@ -18,7 +18,7 @@ describe("ErrorPatterns", () => {
       expect(() => {
         ErrorPatterns.apiOperation(
           new Error("Test API error"),
-          "test operation"
+          "test operation",
         );
       }).not.toThrow();
 
@@ -31,7 +31,7 @@ describe("ErrorPatterns", () => {
       expect(() => {
         ErrorPatterns.kitOperation(
           new Error("Test kit error"),
-          "test operation"
+          "test operation",
         );
       }).not.toThrow();
 
@@ -44,7 +44,7 @@ describe("ErrorPatterns", () => {
       expect(() => {
         ErrorPatterns.sampleOperation(
           new Error("Test sample error"),
-          "test operation"
+          "test operation",
         );
       }).not.toThrow();
 

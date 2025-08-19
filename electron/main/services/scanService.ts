@@ -31,7 +31,7 @@ export class ScanService {
    */
   async rescanKit(
     inMemorySettings: Record<string, any>,
-    kitName: string
+    kitName: string,
   ): Promise<
     DbResult<{
       scannedSamples: number;
@@ -65,7 +65,7 @@ export class ScanService {
 
       const files = fs.readdirSync(kitPath);
       const wavFiles = files.filter((file) =>
-        file.toLowerCase().endsWith(".wav")
+        file.toLowerCase().endsWith(".wav"),
       );
 
       // Step 3: Group samples by voice using filename prefix parsing
@@ -79,7 +79,7 @@ export class ScanService {
           kitName,
           kitPath,
           voice,
-          voiceFiles
+          voiceFiles,
         );
 
         if (!processResult.success) {
@@ -93,7 +93,7 @@ export class ScanService {
       const updatedVoices = this.updateVoiceAliases(
         dbDir,
         kitName,
-        groupedSamples
+        groupedSamples,
       );
 
       // Return success with scan results
@@ -140,7 +140,7 @@ export class ScanService {
 
       const files = fs.readdirSync(localStorePath);
       const rtfFiles = files.filter((file) =>
-        /^\p{Lu} - .+\.rtf$/iu.test(file)
+        /^\p{Lu} - .+\.rtf$/iu.test(file),
       );
 
       let updatedBanks = 0;
@@ -189,7 +189,7 @@ export class ScanService {
   }
 
   private getLocalStorePath(
-    inMemorySettings: Record<string, any>
+    inMemorySettings: Record<string, any>,
   ): null | string {
     return inMemorySettings.localStorePath || null;
   }
@@ -202,7 +202,7 @@ export class ScanService {
     kitName: string,
     kitPath: string,
     voice: number,
-    voiceFiles: string[]
+    voiceFiles: string[],
   ): DbResult<number> {
     let samplesProcessed = 0;
 
@@ -237,7 +237,7 @@ export class ScanService {
   private updateVoiceAliases(
     dbDir: string,
     kitName: string,
-    groupedSamples: { [voice: number]: string[] }
+    groupedSamples: { [voice: number]: string[] },
   ): number {
     let updatedVoices = 0;
 
@@ -253,7 +253,7 @@ export class ScanService {
             dbDir,
             kitName,
             voice,
-            inferredType
+            inferredType,
           );
           if (updateResult.success) {
             updatedVoices++;

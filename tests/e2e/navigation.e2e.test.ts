@@ -71,7 +71,7 @@ test.describe("Back Navigation E2E Tests", () => {
 
     // Verify we're on the kit details page
     const kitDetailsVisible = await window.isVisible(
-      '[data-testid="kit-details"]'
+      '[data-testid="kit-details"]',
     );
     expect(kitDetailsVisible).toBe(true);
 
@@ -89,7 +89,7 @@ test.describe("Back Navigation E2E Tests", () => {
 
     // Verify kit details page is no longer visible
     const kitDetailsGone = await window.isVisible(
-      '[data-testid="kit-details"]'
+      '[data-testid="kit-details"]',
     );
     expect(kitDetailsGone).toBe(false);
   });
@@ -197,7 +197,7 @@ test.describe("Back Navigation E2E Tests", () => {
 
     // Verify we're on the kit details page
     const kitDetailsVisible = await window.isVisible(
-      '[data-testid="kit-details"]'
+      '[data-testid="kit-details"]',
     );
     expect(kitDetailsVisible).toBe(true);
 
@@ -217,12 +217,12 @@ test.describe("Back Navigation E2E Tests", () => {
     // Verify we stay on the kit grid and don't auto-navigate back to kit details
     // (This would happen if HMR restoration wasn't properly blocked)
     const kitGridStillVisible = await window.isVisible(
-      '[data-testid="kit-grid"]'
+      '[data-testid="kit-grid"]',
     );
     expect(kitGridStillVisible).toBe(true);
 
     const kitDetailsNotVisible = await window.isVisible(
-      '[data-testid="kit-details"]'
+      '[data-testid="kit-details"]',
     );
     expect(kitDetailsNotVisible).toBe(false);
   });
@@ -292,7 +292,7 @@ test.describe("Back Navigation E2E Tests", () => {
 
     // Verify we're back on kit details page
     const kitDetailsVisible = await window.isVisible(
-      '[data-testid="kit-details"]'
+      '[data-testid="kit-details"]',
     );
     expect(kitDetailsVisible).toBe(true);
   });
@@ -360,7 +360,7 @@ test.describe("Back Navigation E2E Tests", () => {
 
         // Verify we're on the kit details page
         const kitDetailsVisible = await window.isVisible(
-          '[data-testid="kit-details"]'
+          '[data-testid="kit-details"]',
         );
         expect(kitDetailsVisible).toBe(true);
 
@@ -374,7 +374,7 @@ test.describe("Back Navigation E2E Tests", () => {
         });
 
         const kitGridVisible = await window.isVisible(
-          '[data-testid="kit-grid"]'
+          '[data-testid="kit-grid"]',
         );
         expect(kitGridVisible).toBe(true);
 

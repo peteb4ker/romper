@@ -14,7 +14,7 @@ import type {
  * @returns Voice names mapped by voice number
  */
 export function scanVoiceInference(
-  input: VoiceInferenceInput
+  input: VoiceInferenceInput,
 ): ScanResult<VoiceInferenceOutput> {
   try {
     const { samples } = input;

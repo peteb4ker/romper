@@ -90,7 +90,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
     } catch (error) {
       onMessage?.(
         `Failed to select directory: ${error instanceof Error ? error.message : String(error)}`,
-        "error"
+        "error",
       );
     } finally {
       if (isMountedRef.current) {
@@ -135,7 +135,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
       setLocalStorePath(selectedPath);
       onMessage?.(
         "Local store directory updated successfully. Refreshing...",
-        "success"
+        "success",
       );
 
       // Give user a moment to see the success message before refresh
@@ -146,7 +146,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
     } catch (error) {
       onMessage?.(
         `Failed to update local store path: ${error instanceof Error ? error.message : String(error)}`,
-        "error"
+        "error",
       );
     } finally {
       if (isMountedRef.current) {

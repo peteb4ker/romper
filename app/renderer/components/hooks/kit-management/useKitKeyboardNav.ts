@@ -31,7 +31,7 @@ export function useKitKeyboardNav({
         onToggleFavorite(focusedKit);
       }
     },
-    [focusedKit, onToggleFavorite]
+    [focusedKit, onToggleFavorite],
   );
 
   // Register global A-Z navigation for bank selection and kit focus

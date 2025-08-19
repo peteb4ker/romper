@@ -20,7 +20,7 @@ export class ServicePathManager {
    * Get local store path from settings
    */
   static getLocalStorePath(
-    inMemorySettings: Record<string, any>
+    inMemorySettings: Record<string, any>,
   ): null | string {
     return inMemorySettings.localStorePath || null;
   }

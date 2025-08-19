@@ -45,7 +45,7 @@ export class SyncExecutorService {
    */
   async executeFileOperation(
     fileOp: SyncFileOperation,
-    forceMonoConversion: boolean = false
+    forceMonoConversion: boolean = false,
   ): Promise<DbResult<{ bytesTransferred: number }>> {
     try {
       // Ensure destination directory exists
@@ -65,12 +65,12 @@ export class SyncExecutorService {
         const conversionResult = await convertToRampleDefault(
           fileOp.sourcePath,
           fileOp.destinationPath,
-          forceMonoConversion
+          forceMonoConversion,
         );
 
         if (!conversionResult.success) {
           throw new Error(
-            `Failed to convert ${fileOp.filename}: ${conversionResult.error}`
+            `Failed to convert ${fileOp.filename}: ${conversionResult.error}`,
           );
         }
 

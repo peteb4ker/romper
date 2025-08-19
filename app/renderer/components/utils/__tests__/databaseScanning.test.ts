@@ -98,13 +98,13 @@ describe("databaseScanning", () => {
         "/mock/db",
         "Test Kit",
         1,
-        "Kick"
+        "Kick",
       );
       expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
         "/mock/db",
         "Test Kit",
         2,
-        "Snare"
+        "Snare",
       );
     });
 
@@ -147,7 +147,7 @@ describe("databaseScanning", () => {
         "/mock/db",
         "Test Kit",
         1,
-        "Kick"
+        "Kick",
       );
     });
 
@@ -183,7 +183,7 @@ describe("databaseScanning", () => {
     it("handles unexpected exceptions", async () => {
       // Mock orchestration throwing an exception
       vi.mocked(executeFullKitScan).mockRejectedValue(
-        new Error("Unexpected error")
+        new Error("Unexpected error"),
       );
 
       const result = await scanKitToDatabase("/mock/db", mockKitData);
@@ -212,7 +212,7 @@ describe("databaseScanning", () => {
       expect(executeFullKitScan).toHaveBeenCalledWith(
         expect.any(Object),
         mockProgressCallback,
-        "continue"
+        "continue",
       );
     });
   });
@@ -254,7 +254,7 @@ describe("databaseScanning", () => {
       const result = await scanMultipleKitsToDatabase(
         "/mock/db",
         [mockKitData1, mockKitData2],
-        mockProgressCallback
+        mockProgressCallback,
       );
 
       expect(result.success).toBe(true);
@@ -266,17 +266,17 @@ describe("databaseScanning", () => {
       expect(mockProgressCallback).toHaveBeenCalledWith(
         0,
         2,
-        "Scanning kit Kit 1"
+        "Scanning kit Kit 1",
       );
       expect(mockProgressCallback).toHaveBeenCalledWith(
         1,
         2,
-        "Scanning kit Kit 2"
+        "Scanning kit Kit 2",
       );
       expect(mockProgressCallback).toHaveBeenCalledWith(
         2,
         2,
-        "Scanning complete"
+        "Scanning complete",
       );
     });
 
@@ -342,19 +342,19 @@ describe("databaseScanning", () => {
         "/mock/db",
         1,
         1,
-        "Kick"
+        "Kick",
       );
       expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
         "/mock/db",
         1,
         2,
-        "Snare"
+        "Snare",
       );
       expect(mockDbOps.updateVoiceAlias).toHaveBeenCalledWith(
         "/mock/db",
         1,
         3,
-        "Hat"
+        "Hat",
       );
     });
 

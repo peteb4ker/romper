@@ -18,7 +18,7 @@ export function getSampleToMove(
   db: any,
   kitName: string,
   fromVoice: number,
-  fromSlot: number
+  fromSlot: number,
 ): null | Sample {
   const sampleToMove = db
     .select()
@@ -27,14 +27,14 @@ export function getSampleToMove(
       and(
         eq(samples.kit_name, kitName),
         eq(samples.voice_number, fromVoice),
-        eq(samples.slot_number, fromSlot)
-      )
+        eq(samples.slot_number, fromSlot),
+      ),
     )
     .get();
 
   if (!sampleToMove) {
     console.log(
-      `[Main] No sample found at voice ${fromVoice}, slot ${fromSlot}`
+      `[Main] No sample found at voice ${fromVoice}, slot ${fromSlot}`,
     );
     return null;
   }
@@ -46,7 +46,7 @@ export function getSampleToMove(
  * Group samples by voice number for batch processing
  */
 export function groupSamplesByVoice(
-  samplesToDelete: Sample[]
+  samplesToDelete: Sample[],
 ): Map<number, Sample[]> {
   const groupedSamples = new Map<number, Sample[]>();
   for (const sample of samplesToDelete) {
@@ -74,7 +74,7 @@ export function moveSample(
   fromVoice: number,
   fromSlot: number,
   toVoice: number,
-  toSlot: number
+  toSlot: number,
 ): DbResult<{
   affectedSamples: SampleWithOriginalSlot[];
   movedSample: Sample;
@@ -86,7 +86,7 @@ export function moveSample(
     fromVoice,
     fromSlot,
     toVoice,
-    toSlot
+    toSlot,
   );
 
   if (!result.success) {
@@ -116,7 +116,7 @@ export function moveSample(
 export function performVoiceReindexing(
   dbDir: string,
   kitName: string,
-  samplesToDelete: Sample[]
+  samplesToDelete: Sample[],
 ): Sample[] {
   const allAffectedSamples: Sample[] = [];
 
@@ -141,7 +141,7 @@ export function performVoiceReindexing(
 function reindexVoiceAfterDeletion(
   dbDir: string,
   kitName: string,
-  voiceNumber: number
+  voiceNumber: number,
 ): DbResult<Sample[]> {
   return withDb(dbDir, (db) => {
     // Get all remaining samples for this voice
@@ -151,8 +151,8 @@ function reindexVoiceAfterDeletion(
       .where(
         and(
           eq(samples.kit_name, kitName),
-          eq(samples.voice_number, voiceNumber)
-        )
+          eq(samples.voice_number, voiceNumber),
+        ),
       )
       .all() as Sample[];
 
@@ -162,7 +162,7 @@ function reindexVoiceAfterDeletion(
 
     // Sort samples by slot number and reassign to contiguous 0-based slots
     const sortedSamples = [...remainingSamples].sort(
-      (a, b) => a.slot_number - b.slot_number
+      (a, b) => a.slot_number - b.slot_number,
     );
     const reindexedSamples = sortedSamples.map((sample, index) => ({
       ...sample,

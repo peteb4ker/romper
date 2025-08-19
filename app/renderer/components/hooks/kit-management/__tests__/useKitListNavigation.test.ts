@@ -154,7 +154,7 @@ describe("useKitListNavigation", () => {
         ({ focusedKit, kits }) => useKitListNavigation(kits, focusedKit),
         {
           initialProps: { focusedKit: null as null | string, kits: mockKits },
-        }
+        },
       );
 
       expect(result.current.focusedIdx).toBe(0);
@@ -169,7 +169,7 @@ describe("useKitListNavigation", () => {
         ({ focusedKit, kits }) => useKitListNavigation(kits, focusedKit),
         {
           initialProps: { focusedKit: null as null | string, kits: mockKits },
-        }
+        },
       );
 
       const initialIndex = result.current.focusedIdx;
@@ -184,7 +184,7 @@ describe("useKitListNavigation", () => {
         ({ focusedKit, kits }) => useKitListNavigation(kits, focusedKit),
         {
           initialProps: { focusedKit: "Kit1" as null | string, kits: mockKits },
-        }
+        },
       );
 
       expect(result.current.focusedIdx).toBe(0);
@@ -200,7 +200,7 @@ describe("useKitListNavigation", () => {
         ({ focusedKit, kits }) => useKitListNavigation(kits, focusedKit),
         {
           initialProps: { focusedKit: "Kit2" as null | string, kits: mockKits },
-        }
+        },
       );
 
       expect(result.current.focusedIdx).toBe(1);
@@ -217,7 +217,7 @@ describe("useKitListNavigation", () => {
         ({ focusedKit, kits }) => useKitListNavigation(kits, focusedKit),
         {
           initialProps: { focusedKit: null as null | string, kits: mockKits },
-        }
+        },
       );
 
       // Move focus away from 0
@@ -254,7 +254,7 @@ describe("useKitListNavigation", () => {
     it("should handle single kit", () => {
       const singleKit = [createMockKit("OnlyKit")];
       const { result } = renderHook(() =>
-        useKitListNavigation(singleKit, null)
+        useKitListNavigation(singleKit, null),
       );
 
       expect(result.current.focusedIdx).toBe(0);
@@ -278,7 +278,7 @@ describe("useKitListNavigation", () => {
         ({ focusedKit, kits }) => useKitListNavigation(kits, focusedKit),
         {
           initialProps: { focusedKit: "Kit3" as null | string, kits: mockKits },
-        }
+        },
       );
 
       expect(result.current.focusedIdx).toBe(2);
@@ -299,7 +299,7 @@ describe("useKitListNavigation", () => {
         ({ focusedKit, kits }) => useKitListNavigation(kits, focusedKit),
         {
           initialProps: { focusedKit: null as null | string, kits: mockKits },
-        }
+        },
       );
 
       // User navigates to index 2

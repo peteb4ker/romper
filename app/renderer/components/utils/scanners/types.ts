@@ -25,7 +25,7 @@ export interface FullKitScanOutput {
 export type ProgressCallback = (
   completed: number,
   total: number,
-  currentOperation: string
+  currentOperation: string,
 ) => void;
 
 // RTF artist types
@@ -38,7 +38,7 @@ export interface RTFArtistOutput {
 }
 
 export type ScannerFunction<TInput, TOutput> = (
-  input: TInput
+  input: TInput,
 ) => Promise<ScanResult<TOutput>> | ScanResult<TOutput>;
 
 export interface ScanOperation<TInput = any, TOutput = any> {

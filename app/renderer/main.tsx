@@ -74,7 +74,7 @@ const root = ReactDOM.createRoot(document.getElementById("app")!);
 root.render(
   <SettingsProvider>
     <App />
-  </SettingsProvider>
+  </SettingsProvider>,
 );
 
 import { setupRouteHmrHandlers } from "./utils/hmrStateManager";

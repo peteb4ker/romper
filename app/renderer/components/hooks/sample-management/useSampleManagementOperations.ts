@@ -35,7 +35,7 @@ export function useSampleManagementOperations({
       voice: number,
       slotNumber: number,
       filePath: string,
-      options?: { forceMono?: boolean; forceStereo?: boolean }
+      options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => {
       if (!(window as any).electronAPI?.addSampleToSlot) {
         onMessage?.("Sample management not available", "error");
@@ -48,13 +48,13 @@ export function useSampleManagementOperations({
           voice,
           slotNumber,
           filePath,
-          options
+          options,
         );
 
         if (result.success) {
           onMessage?.(
             `Sample added to voice ${voice}, slot ${slotNumber + 1}`,
-            "success"
+            "success",
           );
 
           // Record undo action unless explicitly skipped
@@ -64,7 +64,7 @@ export function useSampleManagementOperations({
               voice,
               slotNumber,
               filePath,
-              options
+              options,
             );
             onAddUndoAction(addAction);
           } else {
@@ -74,7 +74,7 @@ export function useSampleManagementOperations({
               "onAddUndoAction:",
               !!onAddUndoAction,
               "result.data:",
-              !!result.data
+              !!result.data,
             );
           }
 
@@ -88,7 +88,7 @@ export function useSampleManagementOperations({
       } catch (error) {
         onMessage?.(
           `Failed to add sample: ${error instanceof Error ? error.message : String(error)}`,
-          "error"
+          "error",
         );
       }
     },
@@ -99,7 +99,7 @@ export function useSampleManagementOperations({
       skipUndoRecording,
       onAddUndoAction,
       undoActions,
-    ]
+    ],
   );
 
   const handleSampleReplace = useCallback(
@@ -107,7 +107,7 @@ export function useSampleManagementOperations({
       voice: number,
       slotNumber: number,
       filePath: string,
-      options?: { forceMono?: boolean; forceStereo?: boolean }
+      options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => {
       if (!(window as any).electronAPI?.replaceSampleInSlot) {
         onMessage?.("Sample management not available", "error");
@@ -117,7 +117,7 @@ export function useSampleManagementOperations({
       try {
         const oldSample = await undoActions.getOldSampleForUndo(
           voice,
-          slotNumber
+          slotNumber,
         );
 
         const result = await (window as any).electronAPI.replaceSampleInSlot(
@@ -125,13 +125,13 @@ export function useSampleManagementOperations({
           voice,
           slotNumber,
           filePath,
-          options
+          options,
         );
 
         if (result.success) {
           onMessage?.(
             `Sample replaced in voice ${voice}, slot ${slotNumber + 1}`,
-            "success"
+            "success",
           );
 
           // Record undo action unless explicitly skipped
@@ -142,7 +142,7 @@ export function useSampleManagementOperations({
               slotNumber,
               oldSample,
               filePath,
-              options
+              options,
             );
             onAddUndoAction(replaceAction);
           }
@@ -157,11 +157,11 @@ export function useSampleManagementOperations({
       } catch (error) {
         onMessage?.(
           `Failed to replace sample: ${getErrorMessage(error)}`,
-          "error"
+          "error",
         );
       }
     },
-    [kitName, onSamplesChanged, onMessage, undoActions, onAddUndoAction]
+    [kitName, onSamplesChanged, onMessage, undoActions, onAddUndoAction],
   );
 
   const handleSampleDelete = useCallback(
@@ -174,19 +174,19 @@ export function useSampleManagementOperations({
       try {
         const sampleToDelete = await undoActions.getSampleToDeleteForUndo(
           voice,
-          slotNumber
+          slotNumber,
         );
 
         const result = await (window as any).electronAPI.deleteSampleFromSlot(
           kitName,
           voice,
-          slotNumber
+          slotNumber,
         );
 
         if (result.success) {
           onMessage?.(
             `Sample deleted from voice ${voice}, slot ${slotNumber + 1}`,
-            "success"
+            "success",
           );
 
           // Record REINDEX_SAMPLES action since deletion now triggers automatic reindexing
@@ -195,7 +195,7 @@ export function useSampleManagementOperations({
               voice,
               slotNumber,
               sampleToDelete,
-              result
+              result,
             );
             onAddUndoAction(reindexAction);
           }
@@ -210,11 +210,11 @@ export function useSampleManagementOperations({
       } catch (error) {
         onMessage?.(
           `Failed to delete sample: ${getErrorMessage(error)}`,
-          "error"
+          "error",
         );
       }
     },
-    [kitName, onSamplesChanged, onMessage, undoActions, onAddUndoAction]
+    [kitName, onSamplesChanged, onMessage, undoActions, onAddUndoAction],
   );
 
   return {

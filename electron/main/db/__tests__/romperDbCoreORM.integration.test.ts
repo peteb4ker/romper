@@ -697,7 +697,7 @@ describe("Drizzle ORM Database Operations", () => {
       const remainingSamples = getKitSamples(TEST_DB_DIR, "TestKit");
       expect(remainingSamples.success).toBe(true);
       const samples = remainingSamples.data!.sort(
-        (a, b) => a.slot_number - b.slot_number
+        (a, b) => a.slot_number - b.slot_number,
       );
       expect(samples).toHaveLength(2);
       expect(samples[0].slot_number).toBe(0); // sample1 unchanged

@@ -48,7 +48,7 @@ describe("PreferencesDialog", () => {
   describe("Dialog rendering", () => {
     it("renders nothing when not open", () => {
       const { container } = render(
-        <PreferencesDialog isOpen={false} onClose={mockOnClose} />
+        <PreferencesDialog isOpen={false} onClose={mockOnClose} />,
       );
 
       expect(container.firstChild).toBeNull();
@@ -260,7 +260,7 @@ describe("PreferencesDialog", () => {
 
       // Click inside the dialog content area
       const dialogContent = document.querySelector(
-        ".bg-white.dark\\:bg-slate-800"
+        ".bg-white.dark\\:bg-slate-800",
       ) as HTMLElement;
       fireEvent.click(dialogContent);
 

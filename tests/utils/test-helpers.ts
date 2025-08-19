@@ -99,7 +99,7 @@ export const mockWindowLocation = (url: string = "http://localhost:3000") => {
 export const createMockFile = (
   filename: string = "test.wav",
   type: string = "audio/wav",
-  size: number = 1024
+  size: number = 1024,
 ): File => {
   const file = new File(["mock file content"], filename, { type });
   Object.defineProperty(file, "size", { value: size });

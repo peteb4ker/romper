@@ -81,7 +81,7 @@ export function useVoicePanelUI({
         )}
       </div>
     ),
-    [voice, voiceNameEditorHook, voiceName, isEditable]
+    [voice, voiceNameEditorHook, voiceName, isEditable],
   );
 
   return {

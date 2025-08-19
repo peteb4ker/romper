@@ -133,7 +133,7 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
       const noNameIndicators = await screen.findAllByText("No voice name set");
       expect(noNameIndicators.length).toBeGreaterThan(0);
@@ -156,13 +156,13 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // Edit buttons should show when kit is editable
       await waitFor(() => {
         expect(screen.getAllByTitle("Edit voice name").length).toBeGreaterThan(
-          0
+          0,
         );
       });
     });
@@ -210,7 +210,7 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // Debug: log what's actually rendered
@@ -233,7 +233,7 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
       expect(await screen.findByTestId("voice-name-1")).toBeInTheDocument();
       expect(screen.getByTestId("voice-name-2")).toBeInTheDocument();
@@ -258,7 +258,7 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // KitHeader should receive the toggle function and current editable state
@@ -286,14 +286,14 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // KitVoicePanels should receive isEditable={true}
       // This would be reflected in the voice panel edit buttons being visible
       await waitFor(() => {
         expect(screen.getAllByTitle("Edit voice name").length).toBeGreaterThan(
-          0
+          0,
         );
       });
     });
@@ -311,7 +311,7 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // KitHeader should show "Locked" state
@@ -334,7 +334,7 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // Toggle should be visible with correct state
@@ -358,7 +358,7 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // Should not crash and should handle isEditable defaulting to false
@@ -380,7 +380,7 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // Initially locked
@@ -401,7 +401,7 @@ describe("KitDetails", () => {
             onMessage={vi.fn()}
             samples={{ 1: [], 2: [], 3: [], 4: [] }}
           />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Should now show editable
@@ -427,13 +427,13 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: [], 2: [], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // UnscannedKitPrompt should not be rendered when there are no samples to scan
       expect(screen.queryByText(/kit needs scanning/i)).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("unscanned-scan-button")
+        screen.queryByTestId("unscanned-scan-button"),
       ).not.toBeInTheDocument();
     });
 
@@ -461,7 +461,7 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // UnscannedKitPrompt should be rendered when there are samples but no voice aliases
@@ -505,13 +505,13 @@ describe("KitDetails", () => {
           onBack={() => {}}
           onMessage={vi.fn()}
           samples={{ 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }}
-        />
+        />,
       );
 
       // UnscannedKitPrompt should not be rendered when kit has samples and voice aliases
       expect(screen.queryByText(/kit needs scanning/i)).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("unscanned-scan-button")
+        screen.queryByTestId("unscanned-scan-button"),
       ).not.toBeInTheDocument();
     });
   });

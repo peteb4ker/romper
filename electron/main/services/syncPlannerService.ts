@@ -44,7 +44,7 @@ export class SyncPlannerService {
    * Generate a summary of changes needed to sync all kits to SD card
    */
   async generateChangeSummary(
-    inMemorySettings: Record<string, any>
+    inMemorySettings: Record<string, any>,
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
@@ -103,7 +103,7 @@ export class SyncPlannerService {
     destinationPath: string,
     metadataResult: any,
     formatValidationResult: any,
-    results: any
+    results: any,
   ): void {
     const issues = formatValidationResult.data?.issues || [];
     const issueMessages = issues.map((issue: any) => issue.message);
@@ -123,7 +123,7 @@ export class SyncPlannerService {
 
     results.hasFormatWarnings = true;
     results.warnings.push(
-      `${sample.filename}: ${issueMessages.join(", ") || "Format conversion required"}`
+      `${sample.filename}: ${issueMessages.join(", ") || "Format conversion required"}`,
     );
   }
 
@@ -135,7 +135,7 @@ export class SyncPlannerService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
-    results: any
+    results: any,
   ): void {
     results.filesToCopy.push({
       destinationPath,
@@ -154,7 +154,7 @@ export class SyncPlannerService {
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    results: any
+    results: any,
   ): void {
     const metadataResult = getAudioMetadata(sourcePath);
     const formatValidationResult = validateSampleFormat(sourcePath);
@@ -170,7 +170,7 @@ export class SyncPlannerService {
         destinationPath,
         metadataResult,
         formatValidationResult,
-        results
+        results,
       );
     } else {
       this.addFileToCopy(
@@ -178,7 +178,7 @@ export class SyncPlannerService {
         sourcePath,
         destinationPath,
         sample.kitName,
-        results
+        results,
       );
     }
   }
@@ -224,7 +224,7 @@ export class SyncPlannerService {
    */
   private getDestinationPathAndFilename(
     localStorePath: string,
-    sample: Sample
+    sample: Sample,
   ): { destinationPath: string; filename: string } {
     // NOTE: Future enhancement - use actual SD card path when SD card detection is implemented
     // For now, create a sync output directory in the local store with Rample structure
@@ -233,7 +233,7 @@ export class SyncPlannerService {
     // Use Rample naming service to generate compliant path and filename
     return rampleNamingService.transformSampleToPathAndFilename(
       sample,
-      syncOutputRoot
+      syncOutputRoot,
     );
   }
 
@@ -250,7 +250,7 @@ export class SyncPlannerService {
       totalSize: number;
       validationErrors: SyncValidationError[];
       warnings: string[];
-    }
+    },
   ): void {
     if (!sample.source_path) {
       return; // Skip samples without source path
@@ -262,7 +262,7 @@ export class SyncPlannerService {
     const fileValidation = this.validateSourceFile(
       filename,
       sourcePath,
-      results
+      results,
     );
     if (!fileValidation.isValid) {
       return;
@@ -280,7 +280,7 @@ export class SyncPlannerService {
       rampleFilename,
       sourcePath,
       destinationPath,
-      results
+      results,
     );
   }
 
@@ -290,7 +290,7 @@ export class SyncPlannerService {
   private validateSourceFile(
     filename: string,
     sourcePath: string,
-    results: any
+    results: any,
   ): { fileSize: number; isValid: boolean } {
     if (!fs.existsSync(sourcePath)) {
       results.validationErrors.push({

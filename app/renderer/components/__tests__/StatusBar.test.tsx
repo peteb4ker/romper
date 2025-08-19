@@ -200,7 +200,7 @@ describe("StatusBar", () => {
       const manualLink = screen.getByRole("link", { name: "Rample Manual" });
       expect(manualLink).toHaveAttribute(
         "href",
-        "https://squarp.net/rample/manual/"
+        "https://squarp.net/rample/manual/",
       );
       expect(manualLink).toHaveAttribute("target", "_blank");
       expect(manualLink).toHaveAttribute("rel", "noopener noreferrer");

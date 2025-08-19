@@ -75,7 +75,7 @@ describe("SampleWaveform", () => {
             slotNumber={1}
             voiceNumber={1}
           />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
     });
     const canvas = document.querySelector("canvas");
@@ -87,7 +87,7 @@ describe("SampleWaveform", () => {
 
   it("loads and decodes audio buffer on mount", async () => {
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
-      new ArrayBuffer(1024)
+      new ArrayBuffer(1024),
     );
 
     await act(async () => {
@@ -97,14 +97,14 @@ describe("SampleWaveform", () => {
           playTrigger={0}
           slotNumber={1}
           voiceNumber={2}
-        />
+        />,
       );
     });
 
     expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith(
       "A1",
       2,
-      1
+      1,
     );
   });
 
@@ -115,7 +115,7 @@ describe("SampleWaveform", () => {
         playTrigger={0}
         slotNumber={1}
         voiceNumber={1}
-      />
+      />,
     );
 
     vi.clearAllMocks();
@@ -127,14 +127,14 @@ describe("SampleWaveform", () => {
           playTrigger={0}
           slotNumber={2}
           voiceNumber={3}
-        />
+        />,
       );
     });
 
     expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith(
       "A2",
       3,
-      2
+      2,
     );
   });
 
@@ -150,14 +150,14 @@ describe("SampleWaveform", () => {
           playTrigger={0}
           slotNumber={1}
           voiceNumber={1}
-        />
+        />,
       );
     });
 
     expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith(
       "A1",
       1,
-      1
+      1,
     );
     expect(onError).not.toHaveBeenCalled();
   });
@@ -173,7 +173,7 @@ describe("SampleWaveform", () => {
           playTrigger={1}
           slotNumber={1}
           voiceNumber={1}
-        />
+        />,
       );
     });
 
@@ -196,12 +196,12 @@ describe("SampleWaveform", () => {
             slotNumber={1}
             voiceNumber={1}
           />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
     });
 
     expect(onError).toHaveBeenCalledWith(
-      "Sample audio buffer API not available"
+      "Sample audio buffer API not available",
     );
 
     // Restore for other tests
@@ -211,7 +211,7 @@ describe("SampleWaveform", () => {
   it("handles audio buffer loading errors gracefully", async () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockRejectedValue(
-      new Error("File not found")
+      new Error("File not found"),
     );
     const onError = vi.fn();
 
@@ -223,14 +223,14 @@ describe("SampleWaveform", () => {
           playTrigger={0}
           slotNumber={1}
           voiceNumber={1}
-        />
+        />,
       );
     });
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
         "[SampleWaveform] Sample not found: kit=A1, voice=1, slot=1:",
-        expect.any(Error)
+        expect.any(Error),
       );
     });
 
@@ -247,7 +247,7 @@ describe("SampleWaveform", () => {
         playTrigger={0}
         slotNumber={1}
         voiceNumber={1}
-      />
+      />,
     );
 
     await act(async () => {
@@ -266,7 +266,7 @@ describe("SampleWaveform", () => {
         slotNumber={1}
         stopTrigger={0}
         voiceNumber={1}
-      />
+      />,
     );
 
     // Change all parameters
@@ -278,7 +278,7 @@ describe("SampleWaveform", () => {
           slotNumber={12}
           stopTrigger={1}
           voiceNumber={4}
-        />
+        />,
       );
     });
 
@@ -286,7 +286,7 @@ describe("SampleWaveform", () => {
     expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledWith(
       "B2",
       4,
-      12
+      12,
     );
   });
 
@@ -319,7 +319,7 @@ describe("SampleWaveform", () => {
     global.AudioContext = vi.fn(() => mockAudioContext);
 
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
-      new ArrayBuffer(1024)
+      new ArrayBuffer(1024),
     );
 
     const { rerender } = render(
@@ -328,7 +328,7 @@ describe("SampleWaveform", () => {
         playTrigger={0}
         slotNumber={1}
         voiceNumber={1}
-      />
+      />,
     );
 
     // Wait for initial setup
@@ -344,7 +344,7 @@ describe("SampleWaveform", () => {
           playTrigger={0}
           slotNumber={1}
           voiceNumber={1}
-        />
+        />,
       );
     });
 
@@ -373,7 +373,7 @@ describe("SampleWaveform", () => {
     global.AudioContext = vi.fn(() => mockAudioContext);
 
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
-      new ArrayBuffer(1024)
+      new ArrayBuffer(1024),
     );
 
     const { rerender } = render(
@@ -382,7 +382,7 @@ describe("SampleWaveform", () => {
         playTrigger={0}
         slotNumber={1}
         voiceNumber={1}
-      />
+      />,
     );
 
     // Trigger a re-render to cause previous AudioContext to be closed
@@ -393,7 +393,7 @@ describe("SampleWaveform", () => {
           playTrigger={0}
           slotNumber={1}
           voiceNumber={1}
-        />
+        />,
       );
     });
 

@@ -27,7 +27,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
           if (settings?.sdCardPath) {
             console.log(
               "Setting SD card path from settings:",
-              settings.sdCardPath
+              settings.sdCardPath,
             );
             setSdCardPath(settings.sdCardPath);
           }
@@ -63,7 +63,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
       if (onMessage) {
         onMessage(
           `Failed to initiate sync: ${error instanceof Error ? error.message : "Unknown error"}`,
-          "error"
+          "error",
         );
       }
     }
@@ -97,14 +97,14 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
           onMessage(
             `All kits synced successfully to ${options.sdCardPath}!`,
             "success",
-            3000
+            3000,
           );
         }
       } else if (onMessage && syncError) {
         onMessage(`Sync failed: ${syncError}`, "error");
       }
     },
-    [startSync, onMessage, syncError, onRefreshKits]
+    [startSync, onMessage, syncError, onRefreshKits],
   );
 
   // Handler to close sync dialog
@@ -133,7 +133,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
         }
       }
     },
-    [onMessage]
+    [onMessage],
   );
 
   return {

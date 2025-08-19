@@ -37,7 +37,7 @@ export interface ConversionResult {
 export async function convertSampleToRampleFormat(
   inputPath: string,
   outputPath: string,
-  options: ConversionOptions = {}
+  options: ConversionOptions = {},
 ): Promise<DbResult<ConversionResult>> {
   try {
     // Validate input file exists
@@ -62,13 +62,13 @@ export async function convertSampleToRampleFormat(
     const targetSampleRate = options.targetSampleRate || 44100;
     const targetChannels = determineTargetChannels(
       options,
-      inputMetadata.channels || 1
+      inputMetadata.channels || 1,
     );
 
     // Validate target format
     const validationResult = validateTargetFormat(
       targetBitDepth,
-      targetSampleRate
+      targetSampleRate,
     );
     if (!validationResult.success) {
       return {
@@ -92,7 +92,7 @@ export async function convertSampleToRampleFormat(
     let outputChannelData = convertChannelData(
       [...decoded.channelData],
       targetChannels,
-      inputSamples
+      inputSamples,
     );
 
     // Handle sample rate conversion if needed
@@ -100,7 +100,7 @@ export async function convertSampleToRampleFormat(
       outputChannelData = resampleAudio(
         outputChannelData,
         inputSampleRate,
-        targetSampleRate
+        targetSampleRate,
       );
     }
 
@@ -109,7 +109,7 @@ export async function convertSampleToRampleFormat(
       outputPath,
       outputChannelData,
       targetSampleRate,
-      targetBitDepth
+      targetBitDepth,
     );
 
     // Get output file stats and calculate result
@@ -150,7 +150,7 @@ export async function convertSampleToRampleFormat(
 export async function convertToRampleDefault(
   inputPath: string,
   outputPath: string,
-  forceMonoConversion = false
+  forceMonoConversion = false,
 ): Promise<DbResult<ConversionResult>> {
   return convertSampleToRampleFormat(inputPath, outputPath, {
     forceMonoConversion,
@@ -165,7 +165,7 @@ export async function convertToRampleDefault(
  */
 export function getRequiredConversionOptions(
   metadata: { bitDepth?: number; channels?: number; sampleRate?: number },
-  forceMonoConversion = false
+  forceMonoConversion = false,
 ): ConversionOptions | null {
   const options: ConversionOptions = {};
   let needsConversion = false;
@@ -213,7 +213,7 @@ export function getRequiredConversionOptions(
 function adjustChannelCount(
   channelData: Float32Array[],
   targetChannels: number,
-  inputSamples: number
+  inputSamples: number,
 ): Float32Array[] {
   const inputChannels = channelData.length;
   const outputChannelData: Float32Array[] = [];
@@ -236,7 +236,7 @@ function adjustChannelCount(
 function convertChannelData(
   channelData: Float32Array[],
   targetChannels: number,
-  inputSamples: number
+  inputSamples: number,
 ): Float32Array[] {
   const inputChannels = channelData.length;
 
@@ -256,7 +256,7 @@ function convertChannelData(
  */
 function convertToMono(
   channelData: Float32Array[],
-  inputSamples: number
+  inputSamples: number,
 ): Float32Array[] {
   const inputChannels = channelData.length;
   const monoData = new Float32Array(inputSamples);
@@ -286,7 +286,7 @@ function convertToStereo(monoChannel: Float32Array): Float32Array[] {
  */
 function determineTargetChannels(
   options: ConversionOptions,
-  inputChannels: number
+  inputChannels: number,
 ): number {
   if (options.forceMonoConversion && inputChannels > 1) {
     return 1;
@@ -305,7 +305,7 @@ function determineTargetChannels(
 function resampleAudio(
   channelData: Float32Array[],
   inputSampleRate: number,
-  targetSampleRate: number
+  targetSampleRate: number,
 ): Float32Array[] {
   const ratio = targetSampleRate / inputSampleRate;
   const outputSamples = Math.floor(channelData[0].length * ratio);
@@ -335,7 +335,7 @@ function resampleAudio(
  */
 function validateTargetFormat(
   targetBitDepth: number,
-  targetSampleRate: number
+  targetSampleRate: number,
 ): DbResult<void> {
   if (!RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(targetBitDepth)) {
     return {
@@ -361,7 +361,7 @@ function writeOutputFile(
   outputPath: string,
   channelData: Float32Array[],
   targetSampleRate: number,
-  targetBitDepth: number
+  targetBitDepth: number,
 ): void {
   const outputBuffer = wav.encode(channelData, {
     bitDepth: targetBitDepth,

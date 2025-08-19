@@ -27,7 +27,7 @@ const KitViewDialogs: React.FC<KitViewDialogsProps> = ({
     (text: string, type?: string, duration?: number) => {
       onMessage(text, type, duration);
     },
-    [onMessage]
+    [onMessage],
   );
 
   return (

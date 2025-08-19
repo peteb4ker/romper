@@ -188,7 +188,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
       // Should see all buttons available
       expect(screen.getByText("+ New Kit")).toBeTruthy();
@@ -205,7 +205,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
       const kit = screen.getByTestId("kit-item-A0");
       fireEvent.click(kit);
@@ -245,7 +245,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       // Now we should see the New Kit dialog content
@@ -259,7 +259,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
       const kitGrid = screen.getAllByTestId("kit-grid")[0];
       kitGrid.focus();
@@ -385,7 +385,7 @@ describe("KitBrowser", () => {
         render(
           <MockMessageDisplayProvider>
             <KitBrowser {...navProps} />
-          </MockMessageDisplayProvider>
+          </MockMessageDisplayProvider>,
         );
 
         // The first kit in bank B should be focused/highlighted
@@ -393,12 +393,12 @@ describe("KitBrowser", () => {
           () => {
             const kitB1s = screen.getAllByTestId("kit-item-B1");
             const selected = kitB1s.filter(
-              (el) => el.getAttribute("aria-selected") === "true"
+              (el) => el.getAttribute("aria-selected") === "true",
             );
             if (selected.length !== 1) {
               console.log(
                 "kitB1s:",
-                kitB1s.map((el) => el.outerHTML)
+                kitB1s.map((el) => el.outerHTML),
               );
             }
             expect(selected.length).toBe(1);
@@ -410,7 +410,7 @@ describe("KitBrowser", () => {
               }
             });
           },
-          { timeout: 2000 }
+          { timeout: 2000 },
         );
       });
       it("should highlight/select the first kit in a bank when A-Z hotkey is pressed", async () => {
@@ -447,7 +447,7 @@ describe("KitBrowser", () => {
         render(
           <MockMessageDisplayProvider>
             <KitBrowser {...navProps} />
-          </MockMessageDisplayProvider>
+          </MockMessageDisplayProvider>,
         );
 
         // The first kit in bank B should be focused/highlighted
@@ -455,12 +455,12 @@ describe("KitBrowser", () => {
           () => {
             const kitB1s = screen.getAllByTestId("kit-item-B1");
             const selected = kitB1s.filter(
-              (el) => el.getAttribute("aria-selected") === "true"
+              (el) => el.getAttribute("aria-selected") === "true",
             );
             if (selected.length !== 1) {
               console.log(
                 "kitB1s:",
-                kitB1s.map((el) => el.outerHTML)
+                kitB1s.map((el) => el.outerHTML),
               );
             }
             expect(selected.length).toBe(1);
@@ -472,7 +472,7 @@ describe("KitBrowser", () => {
               }
             });
           },
-          { timeout: 2000 }
+          { timeout: 2000 },
         );
       });
     });
@@ -496,19 +496,19 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       // Find and click the validate button
       const validateButton = screen.getByTitle(
-        "Validate local store and database consistency"
+        "Validate local store and database consistency",
       );
       fireEvent.click(validateButton);
 
       // Wait for dialog to appear
       await waitFor(() => {
         expect(
-          screen.getByText("Local Store Validation Results")
+          screen.getByText("Local Store Validation Results"),
         ).toBeInTheDocument();
         expect(window.electronAPI.validateLocalStore).toHaveBeenCalled();
       });
@@ -550,13 +550,13 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} onMessage={mockOnMessage} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       expect(mockOnMessage).toHaveBeenCalledWith(
         "Test error message",
         "error",
-        7000
+        7000,
       );
     });
 
@@ -594,13 +594,13 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} onMessage={mockOnMessage} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       expect(mockOnMessage).toHaveBeenCalledWith(
         "SD card warning message",
         "warning",
-        5000
+        5000,
       );
     });
   });
@@ -611,7 +611,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} onShowSettings={mockOnShowSettings} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       const settingsButton = screen.getByText("Settings");
@@ -659,7 +659,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       // Skip this test - duplicate functionality might be in a different component or context menu
@@ -700,7 +700,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       // Test the duplicate functionality exists when source is set
@@ -744,7 +744,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       // Find and click a bank button by aria-label
@@ -791,19 +791,19 @@ describe("KitBrowser", () => {
       const { unmount } = render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       expect(addEventListenerSpy).toHaveBeenCalledWith(
         "keydown",
-        mockGlobalBankHotkeyHandler
+        mockGlobalBankHotkeyHandler,
       );
 
       unmount();
 
       expect(removeEventListenerSpy).toHaveBeenCalledWith(
         "keydown",
-        mockGlobalBankHotkeyHandler
+        mockGlobalBankHotkeyHandler,
       );
     });
   });
@@ -815,7 +815,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} ref={ref} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       // The ref should expose handleScanAllKits method
@@ -861,7 +861,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       const cancelButton = screen.getByText("Cancel");
@@ -909,7 +909,7 @@ describe("KitBrowser", () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>
+        </MockMessageDisplayProvider>,
       );
 
       const cancelButtons = screen.getAllByText("Cancel");

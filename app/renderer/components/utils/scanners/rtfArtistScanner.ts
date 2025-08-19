@@ -8,7 +8,7 @@ import type { RTFArtistInput, RTFArtistOutput, ScanResult } from "./types";
  * @returns Artist names mapped by bank letter
  */
 export function scanRTFArtist(
-  input: RTFArtistInput
+  input: RTFArtistInput,
 ): ScanResult<RTFArtistOutput> {
   try {
     const { rtfFiles } = input;

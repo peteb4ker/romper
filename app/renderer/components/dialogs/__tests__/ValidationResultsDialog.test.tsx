@@ -84,11 +84,11 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     expect(
-      screen.queryByText("Local Store Validation Results")
+      screen.queryByText("Local Store Validation Results"),
     ).not.toBeInTheDocument();
   });
 
@@ -104,11 +104,11 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     expect(
-      screen.getAllByText("Local Store Validation Results")[0]
+      screen.getAllByText("Local Store Validation Results")[0],
     ).toBeInTheDocument();
     expect(container.querySelector(".animate-spin")).toBeInTheDocument();
   });
@@ -122,16 +122,16 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     expect(
-      screen.getAllByText("Local Store Validation Results")[0]
+      screen.getAllByText("Local Store Validation Results")[0],
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "No validation errors found. The database matches the file system."
-      )
+        "No validation errors found. The database matches the file system.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -144,24 +144,24 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     expect(
-      screen.getAllByText("Local Store Validation Results")[0]
+      screen.getAllByText("Local Store Validation Results")[0],
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Found 2 kit(s) with validation errors")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Kits with missing files (files in database but not in file system)"
-      )
+      screen.getByText("Found 2 kit(s) with validation errors"),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Kits with extra files (files in file system but not in database)"
-      )
+        "Kits with missing files (files in database but not in file system)",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Kits with extra files (files in file system but not in database)",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("A1")).toBeInTheDocument();
     expect(screen.getByText(/Missing files:/)).toBeInTheDocument();
@@ -183,7 +183,7 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     // Find the list item that contains the kit name "A1"
@@ -211,7 +211,7 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     const selectAllCheckbox = screen.getByLabelText("Select All");
@@ -236,13 +236,13 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     // Find the button by its role and text content together
     const buttons = screen.getAllByRole("button");
     const rescanButton = Array.from(buttons).find((button) =>
-      button.textContent?.includes("Rescan Selected Kits")
+      button.textContent?.includes("Rescan Selected Kits"),
     );
 
     expect(rescanButton).toBeInTheDocument();
@@ -259,7 +259,7 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     // Find the close button by its aria-label
@@ -279,13 +279,13 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     // Find the cancel button by role and text
     const buttons = screen.getAllByRole("button");
     const cancelButton = Array.from(buttons).find(
-      (button) => button.textContent === "Cancel"
+      (button) => button.textContent === "Cancel",
     );
 
     fireEvent.click(cancelButton!);
@@ -304,13 +304,13 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     // Find the button by its role and text content
     const buttons = screen.getAllByRole("button");
     const rescanButton = Array.from(buttons).find((button) =>
-      button.textContent?.includes("Rescan Selected Kits")
+      button.textContent?.includes("Rescan Selected Kits"),
     );
 
     expect(rescanButton).toBeDisabled();
@@ -330,7 +330,7 @@ describe("ValidationResultsDialog", () => {
         localStorePath={mockLocalStorePath}
         onClose={mockOnClose}
         onMessage={mockOnMessage}
-      />
+      />,
     );
 
     expect(screen.getByText("Rescanning...")).toBeInTheDocument();

@@ -72,7 +72,7 @@ describe("Drag & Drop Operations - Integration Tests", () => {
       1, // fromVoice
       5, // fromSlot (sample6 at slot 5)
       1, // toVoice
-      1 // toSlot (insert at slot 1)
+      1, // toSlot (insert at slot 1)
     );
 
     expect(result.success).toBe(true);
@@ -136,7 +136,7 @@ describe("Drag & Drop Operations - Integration Tests", () => {
       1, // fromVoice
       1, // fromSlot
       2, // toVoice
-      1 // toSlot
+      1, // toSlot
     );
 
     expect(result.success).toBe(true);

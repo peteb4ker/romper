@@ -48,7 +48,7 @@ export async function scanAllKits({
 
   const toastId = toastImpl.loading(
     `Starting ${scanTypeDisplay} scan of all kits...`,
-    { duration: Infinity }
+    { duration: Infinity },
   );
 
   try {
@@ -60,14 +60,14 @@ export async function scanAllKits({
       const kitName = kits[i].name;
       toastImpl.loading(
         `Scanning kit ${i + 1}/${kits.length}: ${kitName} (${scanTypeDisplay})`,
-        { duration: Infinity, id: toastId }
+        { duration: Infinity, id: toastId },
       );
 
       const result = await processSingleKitScan(
         kitName,
         scanType,
         scanTypeDisplay,
-        fileReaderImpl
+        fileReaderImpl,
       );
 
       if (result.success) {
@@ -82,7 +82,7 @@ export async function scanAllKits({
       successCount,
       errorCount,
       errors,
-      scanTypeDisplay
+      scanTypeDisplay,
     );
 
     if (completion.type === "success") {
@@ -103,7 +103,7 @@ export async function scanAllKits({
   } catch (error) {
     toastImpl.error(
       `Scan error: ${error instanceof Error ? error.message : String(error)}`,
-      { duration: 8000, id: toastId }
+      { duration: 8000, id: toastId },
     );
   }
 }
@@ -151,7 +151,7 @@ export function useKitScan({
         onRefreshKits,
         operations,
       }),
-    [kits, onRefreshKits]
+    [kits, onRefreshKits],
   );
   return { handleScanAllKits };
 }
@@ -161,7 +161,7 @@ function getCompletionMessage(
   successCount: number,
   errorCount: number,
   errors: string[],
-  scanTypeDisplay: string
+  scanTypeDisplay: string,
 ) {
   if (errorCount === 0) {
     return {
@@ -196,7 +196,7 @@ async function processSingleKitScan(
   kitName: string,
   scanType: string,
   scanTypeDisplay: string,
-  fileReaderImpl: typeof fileReader
+  fileReaderImpl: typeof fileReader,
 ) {
   try {
     const result = await scanSingleKit({

@@ -63,7 +63,7 @@ const renderKitVoicePanel = (props = {}) => {
       <MockMessageDisplayProvider>
         <KitVoicePanel {...finalProps} />
       </MockMessageDisplayProvider>
-    </MockSettingsProvider>
+    </MockSettingsProvider>,
   );
 };
 

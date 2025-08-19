@@ -137,7 +137,7 @@ describe("scanner types", () => {
 
     it("should allow asynchronous scanner functions", () => {
       const asyncScanner: ScannerFunction<string, number> = async (
-        input: string
+        input: string,
       ) => ({
         data: input.length,
         success: true,

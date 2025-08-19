@@ -12,7 +12,7 @@ export class SettingsService {
    */
   getLocalStorePath(
     inMemorySettings: Record<string, any>,
-    envOverride?: string
+    envOverride?: string,
   ): null | string {
     return envOverride || inMemorySettings.localStorePath || null;
   }
@@ -41,11 +41,11 @@ export class SettingsService {
    */
   validateLocalStorePath(
     inMemorySettings: Record<string, any>,
-    envOverride?: string
+    envOverride?: string,
   ): { error: string; success: false } | { path: string; success: true } {
     const localStorePath = this.getLocalStorePath(
       inMemorySettings,
-      envOverride
+      envOverride,
     );
 
     if (!localStorePath) {
@@ -61,13 +61,13 @@ export class SettingsService {
   writeSetting(
     inMemorySettings: Record<string, any>,
     key: string,
-    value: any
+    value: any,
   ): void {
     console.log(
       "[SettingsService] write-setting called with key:",
       key,
       "value:",
-      value
+      value,
     );
 
     const settingsPath = this.getSettingsPath();
@@ -77,14 +77,14 @@ export class SettingsService {
     inMemorySettings[key] = value;
     console.log(
       "[SettingsService] Updated inMemorySettings:",
-      inMemorySettings
+      inMemorySettings,
     );
 
     // Write to persistent storage
     fs.writeFileSync(
       settingsPath,
       JSON.stringify(inMemorySettings, null, 2),
-      "utf-8"
+      "utf-8",
     );
     console.log("[SettingsService] Settings written to file");
   }

@@ -8,7 +8,7 @@ export interface RomperConfig {
 
 function getConfigValue<T = string>(
   envKey: string,
-  fallback?: T
+  fallback?: T,
 ): T | undefined {
   // Check window.romperEnv (exposed from preload script)
   if (typeof window !== "undefined" && (window as any).romperEnv?.[envKey]) {
@@ -32,7 +32,7 @@ function createConfig(): RomperConfig {
     squarpArchiveUrl:
       getConfigValue(
         "ROMPER_SQUARP_ARCHIVE_URL",
-        "https://data.squarp.net/RampleSamplesV1-2.zip"
+        "https://data.squarp.net/RampleSamplesV1-2.zip",
       ) || "https://data.squarp.net/RampleSamplesV1-2.zip",
   };
 

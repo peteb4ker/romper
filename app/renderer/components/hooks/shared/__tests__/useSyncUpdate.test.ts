@@ -36,7 +36,7 @@ describe("useSyncUpdate", () => {
   describe("initialization", () => {
     it("should initialize with correct default state", () => {
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       expect(result.current.syncProgress).toBeNull();
@@ -57,7 +57,7 @@ describe("useSyncUpdate", () => {
       });
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       let summary: null | SyncChangeSummary = null;
@@ -66,7 +66,7 @@ describe("useSyncUpdate", () => {
       });
 
       expect(mockElectronAPI.generateSyncChangeSummary).toHaveBeenCalledWith(
-        undefined
+        undefined,
       );
       expect(summary).toEqual(mockChangeSummary);
       expect(result.current.isLoading).toBe(false);
@@ -80,7 +80,7 @@ describe("useSyncUpdate", () => {
       });
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       let summary: null | SyncChangeSummary = null;
@@ -95,11 +95,11 @@ describe("useSyncUpdate", () => {
 
     it("should handle thrown exceptions", async () => {
       mockElectronAPI.generateSyncChangeSummary.mockRejectedValue(
-        new Error("Network error")
+        new Error("Network error"),
       );
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       let summary: null | SyncChangeSummary = null;
@@ -109,7 +109,7 @@ describe("useSyncUpdate", () => {
 
       expect(summary).toBeNull();
       expect(result.current.error).toBe(
-        "Failed to generate sync summary: Network error"
+        "Failed to generate sync summary: Network error",
       );
       expect(result.current.isLoading).toBe(false);
     });
@@ -119,7 +119,7 @@ describe("useSyncUpdate", () => {
       delete incompleteAPI.generateSyncChangeSummary;
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: incompleteAPI })
+        useSyncUpdate({ electronAPI: incompleteAPI }),
       );
 
       let summary: null | SyncChangeSummary = null;
@@ -139,7 +139,7 @@ describe("useSyncUpdate", () => {
       mockElectronAPI.generateSyncChangeSummary.mockReturnValue(promise);
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       act(() => {
@@ -165,7 +165,7 @@ describe("useSyncUpdate", () => {
       });
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       let success = false;
@@ -192,7 +192,7 @@ describe("useSyncUpdate", () => {
       });
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       let success = true;
@@ -212,7 +212,7 @@ describe("useSyncUpdate", () => {
       });
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       await act(async () => {
@@ -239,7 +239,7 @@ describe("useSyncUpdate", () => {
       });
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       await act(async () => {
@@ -254,7 +254,7 @@ describe("useSyncUpdate", () => {
       delete incompleteAPI.startKitSync;
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: incompleteAPI })
+        useSyncUpdate({ electronAPI: incompleteAPI }),
       );
 
       let success = true;
@@ -270,7 +270,7 @@ describe("useSyncUpdate", () => {
   describe("cancelSync", () => {
     it("should cancel sync and reset state", () => {
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       act(() => {
@@ -288,7 +288,7 @@ describe("useSyncUpdate", () => {
       delete incompleteAPI.cancelKitSync;
 
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: incompleteAPI })
+        useSyncUpdate({ electronAPI: incompleteAPI }),
       );
 
       act(() => {
@@ -304,7 +304,7 @@ describe("useSyncUpdate", () => {
   describe("clearError", () => {
     it("should clear error state", () => {
       const { result } = renderHook(() =>
-        useSyncUpdate({ electronAPI: mockElectronAPI })
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
       // Set error first
@@ -327,7 +327,7 @@ describe("useSyncUpdate", () => {
         {
           data: mockChangeSummary,
           success: true,
-        }
+        },
       );
 
       const { result } = renderHook(() => useSyncUpdate());
@@ -337,7 +337,7 @@ describe("useSyncUpdate", () => {
       });
 
       expect(window.electronAPI.generateSyncChangeSummary).toHaveBeenCalledWith(
-        undefined
+        undefined,
       );
     });
   });

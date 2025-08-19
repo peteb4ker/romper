@@ -46,23 +46,23 @@ export function useLocalStoreWizardState({
   // --- State setters ---
   const setTargetPath = useCallback(
     (targetPath: string) => setState((s) => ({ ...s, targetPath })),
-    []
+    [],
   );
   const setSource = useCallback(
     (source: LocalStoreSource) => setState((s) => ({ ...s, source })),
-    []
+    [],
   );
   const setSdCardMounted = useCallback(
     (mounted: boolean) => setState((s) => ({ ...s, sdCardMounted: mounted })),
-    []
+    [],
   );
   const setError = useCallback(
     (error: null | string) => setState((s) => ({ ...s, error })),
-    []
+    [],
   );
   const setIsInitializing = useCallback(
     (isInitializing: boolean) => setState((s) => ({ ...s, isInitializing })),
-    []
+    [],
   );
   const setSdCardPath = useCallback(
     (sdCardSourcePath: string) =>
@@ -71,12 +71,12 @@ export function useLocalStoreWizardState({
         kitFolderValidationError: undefined,
         sdCardSourcePath,
       })),
-    []
+    [],
   );
   const setSourceConfirmed = useCallback(
     (confirmed: boolean) =>
       setState((s) => ({ ...s, sourceConfirmed: confirmed })),
-    []
+    [],
   );
 
   // --- State update helper ---
@@ -84,7 +84,7 @@ export function useLocalStoreWizardState({
     (patch: Partial<LocalStoreWizardState>) => {
       setState((s) => ({ ...s, ...patch }));
     },
-    []
+    [],
   );
 
   // Progress management
@@ -136,7 +136,7 @@ export function useLocalStoreWizardState({
       state.source &&
       (!isSdCardSource ||
         (state.sdCardSourcePath && !state.kitFolderValidationError)) &&
-      !state.isInitializing
+      !state.isInitializing,
   );
 
   return useMemo(
@@ -178,6 +178,6 @@ export function useLocalStoreWizardState({
       setTargetPath,
       setWizardState,
       state,
-    ]
+    ],
   );
 }

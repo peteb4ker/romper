@@ -62,7 +62,7 @@ const KitBrowserContainer = React.forwardRef<
     (text: string, type?: string, duration?: number) => {
       onMessage(text, type, duration);
     },
-    [onMessage]
+    [onMessage],
   );
 
   const handleRefreshKits = React.useCallback(async () => {
@@ -73,14 +73,14 @@ const KitBrowserContainer = React.forwardRef<
     (kitName: string) => {
       onSelectKit(kitName);
     },
-    [onSelectKit]
+    [onSelectKit],
   );
 
   const handleSetLocalStorePath = React.useCallback(
     (path: string) => {
       setLocalStorePath(path);
     },
-    [setLocalStorePath]
+    [setLocalStorePath],
   );
 
   return (

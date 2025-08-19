@@ -19,13 +19,13 @@ describe("WizardSourceStep", () => {
         handleSourceSelect={() => {}}
         sourceOptions={sourceOptions}
         stateSource={"sdcard"}
-      />
+      />,
     );
     expect(screen.getByTestId("wizard-source-sdcard")).toBeInTheDocument();
     expect(screen.getByTestId("wizard-source-squarp")).toBeInTheDocument();
     expect(screen.getByTestId("wizard-source-sdcard")).toHaveAttribute(
       "aria-pressed",
-      "true"
+      "true",
     );
   });
   it("calls handleSourceSelect when a non-sdcard source is clicked", async () => {
@@ -36,7 +36,7 @@ describe("WizardSourceStep", () => {
         handleSourceSelect={handleSourceSelect}
         sourceOptions={sourceOptions}
         stateSource={null}
-      />
+      />,
     );
     const squarpButton = screen.getByTestId("wizard-source-squarp");
     await user.click(squarpButton);
@@ -47,7 +47,7 @@ describe("WizardSourceStep", () => {
     const setSdCardPath = vi.fn();
     const setSourceConfirmed = vi.fn();
     vi.mocked(window.electronAPI.selectSdCard).mockResolvedValue(
-      "/mock/sdcard"
+      "/mock/sdcard",
     );
     render(
       <WizardSourceStep
@@ -56,7 +56,7 @@ describe("WizardSourceStep", () => {
         setSourceConfirmed={setSourceConfirmed}
         sourceOptions={sourceOptions}
         stateSource={"sdcard"}
-      />
+      />,
     );
     const sdCardBtn = screen.getByTestId("wizard-source-sdcard");
     await user.click(sdCardBtn);
@@ -71,7 +71,7 @@ describe("WizardSourceStep", () => {
         localStorePath="/mock/sdcard"
         sourceOptions={sourceOptions}
         stateSource="sdcard"
-      />
+      />,
     );
     // Path should NOT be shown during source step
     expect(screen.queryByTestId("wizard-sdcard-path-display")).toBeNull();

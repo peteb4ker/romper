@@ -37,7 +37,7 @@ function main() {
   // Validate task name (no spaces, reasonable characters)
   if (!/^[a-zA-Z0-9._-]+$/.test(taskName)) {
     console.error(
-      "❌ Invalid task name. Use only letters, numbers, dots, hyphens, and underscores."
+      "❌ Invalid task name. Use only letters, numbers, dots, hyphens, and underscores.",
     );
     process.exit(1);
   }
@@ -65,7 +65,7 @@ function main() {
     runCommand(`git rev-parse --verify ${branchName}`, { silent: true });
     console.error(`❌ Branch ${branchName} already exists`);
     console.error(
-      "Use: npm run worktree:remove to clean up, or choose a different task name"
+      "Use: npm run worktree:remove to clean up, or choose a different task name",
     );
     process.exit(1);
   } catch {

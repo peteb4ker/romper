@@ -41,7 +41,7 @@ describe("registerSyncIpcHandlers - Unit Tests", () => {
       registerSyncIpcHandlers(mockInMemorySettings);
 
       const registeredHandlers = mockIpcMain.handle.mock.calls.map(
-        (call) => call[0]
+        (call) => call[0],
       );
 
       expect(registeredHandlers).toEqual([

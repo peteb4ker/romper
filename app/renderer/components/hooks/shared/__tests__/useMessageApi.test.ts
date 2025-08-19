@@ -18,7 +18,7 @@ describe("useMessageApi", () => {
       React.createElement(
         MessageDisplayContext.Provider,
         { value: mockContextValue },
-        children
+        children,
       );
 
     const { result } = renderHook(() => useMessageApi(), { wrapper });
@@ -49,7 +49,7 @@ describe("useMessageApi", () => {
       React.createElement(
         MessageDisplayContext.Provider,
         { value: null },
-        children
+        children,
       );
 
     expect(() => {
@@ -69,7 +69,7 @@ describe("useMessageApi", () => {
       React.createElement(
         MessageDisplayContext.Provider,
         { value: undefined },
-        children
+        children,
       );
 
     expect(() => {

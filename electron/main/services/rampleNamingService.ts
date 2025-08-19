@@ -25,7 +25,7 @@ export class RampleNamingService {
     sdCardRoot: string,
     kitName: string,
     voiceNumber: number,
-    slotNumber: number
+    slotNumber: number,
   ): string {
     const kitPath = this.generateKitPath(sdCardRoot, kitName);
     const filename = this.generateSampleFilename(voiceNumber, slotNumber);
@@ -54,7 +54,7 @@ export class RampleNamingService {
       sdCardRoot,
       sample.kit_name,
       sample.voice_number,
-      sample.slot_number
+      sample.slot_number,
     );
   }
 
@@ -64,17 +64,17 @@ export class RampleNamingService {
    */
   transformSampleToPathAndFilename(
     sample: Sample,
-    sdCardRoot: string
+    sdCardRoot: string,
   ): { destinationPath: string; filename: string } {
     const filename = this.generateSampleFilename(
       sample.voice_number,
-      sample.slot_number
+      sample.slot_number,
     );
     const destinationPath = this.generateSampleDestinationPath(
       sdCardRoot,
       sample.kit_name,
       sample.voice_number,
-      sample.slot_number
+      sample.slot_number,
     );
     return { destinationPath, filename };
   }
@@ -93,14 +93,14 @@ export class RampleNamingService {
     // Validate kit directory name (should be like A0, B1, Z99)
     if (!this.isValidKitName(kitDir)) {
       issues.push(
-        `Kit directory "${kitDir}" does not follow format {BankLetter}{KitNumber}`
+        `Kit directory "${kitDir}" does not follow format {BankLetter}{KitNumber}`,
       );
     }
 
     // Validate sample filename (should start with voice number 1-4)
     if (!this.isValidSampleFilename(filename)) {
       issues.push(
-        `Sample filename "${filename}" does not start with voice number (1-4)`
+        `Sample filename "${filename}" does not start with voice number (1-4)`,
       );
     }
 
@@ -137,7 +137,7 @@ export class RampleNamingService {
   private validateKitName(kitName: string): void {
     if (!this.isValidKitName(kitName)) {
       throw new Error(
-        `Invalid kit name: ${kitName}. Must follow format {BankLetter}{KitNumber} (e.g., A0, B1, Z99).`
+        `Invalid kit name: ${kitName}. Must follow format {BankLetter}{KitNumber} (e.g., A0, B1, Z99).`,
       );
     }
   }
@@ -148,7 +148,7 @@ export class RampleNamingService {
   private validateSlotNumber(slotNumber: number): void {
     if (slotNumber < 0 || slotNumber > 11) {
       throw new Error(
-        `Invalid slot number: ${slotNumber}. Must be 0-11 for Rample compatibility.`
+        `Invalid slot number: ${slotNumber}. Must be 0-11 for Rample compatibility.`,
       );
     }
   }
@@ -159,7 +159,7 @@ export class RampleNamingService {
   private validateVoiceNumber(voiceNumber: number): void {
     if (voiceNumber < 1 || voiceNumber > 4) {
       throw new Error(
-        `Invalid voice number: ${voiceNumber}. Must be 1-4 for Rample compatibility.`
+        `Invalid voice number: ${voiceNumber}. Must be 1-4 for Rample compatibility.`,
       );
     }
   }

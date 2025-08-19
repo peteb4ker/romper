@@ -22,7 +22,7 @@ import { ScannerOrchestrator } from "./orchestrator";
 export async function executeFullKitScan(
   kitData: FullKitScanInput,
   progressCallback?: ProgressCallback,
-  errorStrategy: ErrorHandlingStrategy = "continue"
+  errorStrategy: ErrorHandlingStrategy = "continue",
 ): Promise<ChainResult> {
   const orchestrator = new ScannerOrchestrator(progressCallback, errorStrategy);
 
@@ -52,7 +52,7 @@ export async function executeFullKitScan(
 export async function executeVoiceInferenceScan(
   samples: Record<number, string[]>,
   progressCallback?: ProgressCallback,
-  errorStrategy: ErrorHandlingStrategy = "continue"
+  errorStrategy: ErrorHandlingStrategy = "continue",
 ): Promise<ChainResult> {
   const orchestrator = new ScannerOrchestrator(progressCallback, errorStrategy);
 
@@ -79,7 +79,7 @@ export async function executeWAVAnalysisScan(
   wavFiles: string[],
   fileReader?: (filePath: string) => Promise<ArrayBuffer>,
   progressCallback?: ProgressCallback,
-  errorStrategy: ErrorHandlingStrategy = "continue"
+  errorStrategy: ErrorHandlingStrategy = "continue",
 ): Promise<ChainResult> {
   const orchestrator = new ScannerOrchestrator(progressCallback, errorStrategy);
 
@@ -102,7 +102,7 @@ export async function executeWAVAnalysisScan(
  */
 function createWAVAnalysisScanner(
   wavFiles: string[],
-  fileReader?: (filePath: string) => Promise<ArrayBuffer>
+  fileReader?: (filePath: string) => Promise<ArrayBuffer>,
 ) {
   return async () => {
     const results: WAVAnalysisOutput[] = [];
@@ -130,14 +130,14 @@ function createWAVAnalysisScanner(
           errors.push(
             `Failed to analyze ${filePath}: ${
               analysis.error || "Unknown error"
-            }`
+            }`,
           );
         }
       } catch (error) {
         errors.push(
           `Error processing ${filePath}: ${
             error instanceof Error ? error.message : String(error)
-          }`
+          }`,
         );
       }
     }

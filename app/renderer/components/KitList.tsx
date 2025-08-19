@@ -39,7 +39,7 @@ const BankHeader: React.FC<BankHeaderProps> = ({
       {
         rootMargin: "-10% 0px -80% 0px", // Only consider the top 20% of the viewport
         threshold: 0.5, // Trigger when 50% of the header is visible
-      }
+      },
     );
 
     observer.observe(headerRef.current);
@@ -162,14 +162,14 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       onVisibleBankChange,
       sampleCounts,
     },
-    ref
+    ref,
   ) => {
     const { isValidKit, kitsToDisplay, showBankAnchor } = useKitListLogic(kits);
     // Only use focusedKit if defined, otherwise undefined
     const navFocusedKit = typeof focusedKit === "string" ? focusedKit : null;
     const { focusedIdx, setFocus } = useKitListNavigation(
       kitsToDisplay,
-      navFocusedKit
+      navFocusedKit,
     );
     const kitRefs = useRef<(HTMLDivElement | null)[]>([]);
     const listRef = useRef<VariableSizeList>(null);
@@ -191,14 +191,14 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
 
     // Precompute which rows have anchors for height calculation
     const rowHasAnchor = kitsToDisplay.map((kit, idx, arr) =>
-      showBankAnchor(kit, idx, arr)
+      showBankAnchor(kit, idx, arr),
     );
 
     // Height function for VariableSizeList
     const getItemSize = useCallback(
       (index: number) =>
         rowHasAnchor[index] ? BANK_ROW_HEIGHT : KIT_ROW_HEIGHT,
-      [rowHasAnchor]
+      [rowHasAnchor],
     );
 
     // Helper to sum row heights up to a given index
@@ -210,7 +210,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
         }
         return offset;
       },
-      [getItemSize]
+      [getItemSize],
     );
 
     // Shared scroll and focus logic
@@ -224,7 +224,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
             "[KitList] scrollAndFocusKitByIndex",
             idx,
             "offset",
-            offset
+            offset,
           );
         } else {
           console.warn("[KitList] listRef.current is null");
@@ -232,7 +232,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
         setFocus(idx);
         if (onFocusKit) onFocusKit(kitsToDisplay[idx].name);
       },
-      [kitsToDisplay, setFocus, onFocusKit, getOffsetForIndex]
+      [kitsToDisplay, setFocus, onFocusKit, getOffsetForIndex],
     );
 
     useImperativeHandle(
@@ -240,7 +240,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       () => ({
         scrollAndFocusKitByIndex,
       }),
-      [scrollAndFocusKitByIndex]
+      [scrollAndFocusKitByIndex],
     );
 
     // Keyboard navigation handler: Support A-Z hotkeys only (remove up/down/left/right/Enter/Space)
@@ -254,7 +254,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
       if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {
         const bank = e.key.toUpperCase();
         const idx = kitsToDisplay.findIndex(
-          (k) => k?.name?.[0]?.toUpperCase() === bank
+          (k) => k?.name?.[0]?.toUpperCase() === bank,
         );
         if (idx !== -1) {
           if (typeof onBankFocus === "function") onBankFocus(bank);
@@ -311,7 +311,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
         </VariableSizeList>
       </div>
     );
-  }
+  },
 );
 
 export default React.memo(KitList);

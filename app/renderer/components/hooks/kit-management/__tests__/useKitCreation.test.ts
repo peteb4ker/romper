@@ -128,7 +128,7 @@ describe("useKitCreation", () => {
       expect(defaultProps.onMessage).toHaveBeenCalledWith(
         "Kit B0 created successfully!",
         "info",
-        4000
+        4000,
       );
     });
 
@@ -145,7 +145,7 @@ describe("useKitCreation", () => {
 
       expect(mockCreateKit).not.toHaveBeenCalled();
       expect(result.current.newKitError).toBe(
-        "Invalid kit slot. Use format A0-Z99."
+        "Invalid kit slot. Use format A0-Z99.",
       );
     });
 
@@ -210,7 +210,7 @@ describe("useKitCreation", () => {
       });
 
       expect(result.current.newKitError).toBe(
-        "Formatted: Next kit creation failed"
+        "Formatted: Next kit creation failed",
       );
     });
   });

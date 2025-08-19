@@ -125,7 +125,7 @@ async function main() {
     // Extract a short PR title from commit message (max 50-60 chars)
     // Try to detect type prefix (feat:, fix:, etc.) and preserve it
     const typeMatch = commitMessage.match(
-      /^(feat|fix|docs|style|refactor|test|chore|perf|build|ci):\s*/i
+      /^(feat|fix|docs|style|refactor|test|chore|perf|build|ci):\s*/i,
     );
     let prTitle = commitMessage;
 
@@ -187,7 +187,7 @@ ${commitMessage}
     try {
       runCommand("gh pr merge --auto --squash", { silent: true });
       console.log(
-        "✅ Auto-merge enabled - PR will merge when all checks pass!"
+        "✅ Auto-merge enabled - PR will merge when all checks pass!",
       );
     } catch {
       console.error("⚠️  Failed to enable auto-merge");

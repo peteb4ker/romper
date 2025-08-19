@@ -71,7 +71,7 @@ describe("SampleService", () => {
         "TestKit",
         1,
         0,
-        "/path/to/sample.wav"
+        "/path/to/sample.wav",
       );
 
       expect(mockCrudService.addSampleToSlot).toHaveBeenCalledWith(
@@ -80,7 +80,7 @@ describe("SampleService", () => {
         1,
         0,
         "/path/to/sample.wav",
-        undefined
+        undefined,
       );
       expect(result.success).toBe(true);
       expect(result.data?.sampleId).toBe(123);
@@ -98,7 +98,7 @@ describe("SampleService", () => {
         mockSettings,
         "TestKit",
         1,
-        0
+        0,
       );
     });
 
@@ -115,7 +115,7 @@ describe("SampleService", () => {
         0,
         2,
         1,
-        "insert"
+        "insert",
       );
 
       expect(mockCrudService.moveSampleInKit).toHaveBeenCalledWith(
@@ -125,7 +125,7 @@ describe("SampleService", () => {
         0,
         2,
         1,
-        "insert"
+        "insert",
       );
     });
   });
@@ -142,14 +142,14 @@ describe("SampleService", () => {
         mockSettings,
         "TestKit",
         1,
-        0
+        0,
       );
 
       expect(mockMetadataService.getSampleAudioBuffer).toHaveBeenCalledWith(
         mockSettings,
         "TestKit",
         1,
-        0
+        0,
       );
       expect(result.success).toBe(true);
       expect(result.data).toBe(mockBuffer);
@@ -176,7 +176,7 @@ describe("SampleService", () => {
       const result = sampleService.validateSampleFile("/path/to/file.wav");
 
       expect(mockValidator.validateSampleFile).toHaveBeenCalledWith(
-        "/path/to/file.wav"
+        "/path/to/file.wav",
       );
       expect(result.isValid).toBe(true);
     });
@@ -193,7 +193,7 @@ describe("SampleService", () => {
       expect(mockSlotService.validateSlotBoundary).toHaveBeenCalledWith(
         1,
         0,
-        []
+        [],
       );
       expect(result.success).toBe(true);
     });

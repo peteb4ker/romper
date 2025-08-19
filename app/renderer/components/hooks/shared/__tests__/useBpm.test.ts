@@ -20,7 +20,7 @@ describe("useBpm", () => {
 
   it("initializes with provided BPM value", () => {
     const { result } = renderHook(() =>
-      useBpm({ initialBpm: 140, kitName: "A1" })
+      useBpm({ initialBpm: 140, kitName: "A1" }),
     );
 
     expect(result.current.bpm).toBe(140);
@@ -28,7 +28,7 @@ describe("useBpm", () => {
 
   it("defaults to 120 BPM when no initial value provided", () => {
     const { result } = renderHook(() =>
-      useBpm({ initialBpm: undefined, kitName: "A1" })
+      useBpm({ initialBpm: undefined, kitName: "A1" }),
     );
 
     expect(result.current.bpm).toBe(120);
@@ -39,7 +39,7 @@ describe("useBpm", () => {
       ({ initialBpm }) => useBpm({ initialBpm, kitName: "A1" }),
       {
         initialProps: { initialBpm: 120 },
-      }
+      },
     );
 
     expect(result.current.bpm).toBe(120);
@@ -50,7 +50,7 @@ describe("useBpm", () => {
 
   it("calls electronAPI.updateKitBpm when setBpm is called with valid value", async () => {
     const { result } = renderHook(() =>
-      useBpm({ initialBpm: 120, kitName: "A1" })
+      useBpm({ initialBpm: 120, kitName: "A1" }),
     );
 
     await act(async () => {
@@ -63,7 +63,7 @@ describe("useBpm", () => {
 
   it("clamps BPM values below 30 to 30", async () => {
     const { result } = renderHook(() =>
-      useBpm({ initialBpm: 120, kitName: "A1" })
+      useBpm({ initialBpm: 120, kitName: "A1" }),
     );
 
     await act(async () => {
@@ -76,7 +76,7 @@ describe("useBpm", () => {
 
   it("clamps BPM values above 180 to 180", async () => {
     const { result } = renderHook(() =>
-      useBpm({ initialBpm: 120, kitName: "A1" })
+      useBpm({ initialBpm: 120, kitName: "A1" }),
     );
 
     await act(async () => {
@@ -91,7 +91,7 @@ describe("useBpm", () => {
     mockUpdateKitBpm?.mockRejectedValue(new Error("API Error"));
 
     const { result } = renderHook(() =>
-      useBpm({ initialBpm: 120, kitName: "A1" })
+      useBpm({ initialBpm: 120, kitName: "A1" }),
     );
 
     await act(async () => {
@@ -107,7 +107,7 @@ describe("useBpm", () => {
     mockUpdateKitBpm?.mockRejectedValue(new Error("Network error"));
 
     const { result } = renderHook(() =>
-      useBpm({ initialBpm: 120, kitName: "A1" })
+      useBpm({ initialBpm: 120, kitName: "A1" }),
     );
 
     await act(async () => {
@@ -121,7 +121,7 @@ describe("useBpm", () => {
 
   it("does not call API when kitName is empty", async () => {
     const { result } = renderHook(() =>
-      useBpm({ initialBpm: 120, kitName: "" })
+      useBpm({ initialBpm: 120, kitName: "" }),
     );
 
     await act(async () => {
@@ -137,7 +137,7 @@ describe("useBpm", () => {
     delete (window as any).electronAPI;
 
     const { result } = renderHook(() =>
-      useBpm({ initialBpm: 120, kitName: "A1" })
+      useBpm({ initialBpm: 120, kitName: "A1" }),
     );
 
     await act(async () => {

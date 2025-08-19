@@ -72,11 +72,11 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
   describe("Rendering", () => {
     it("renders nothing when isOpen is false", () => {
       render(
-        <ChangeLocalStoreDirectoryDialog {...defaultProps} isOpen={false} />
+        <ChangeLocalStoreDirectoryDialog {...defaultProps} isOpen={false} />,
       );
 
       expect(
-        screen.queryByText("Change Local Store Directory")
+        screen.queryByText("Change Local Store Directory"),
       ).not.toBeInTheDocument();
     });
 
@@ -84,7 +84,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
 
       expect(
-        screen.getByText("Change Local Store Directory")
+        screen.getByText("Change Local Store Directory"),
       ).toBeInTheDocument();
       expect(screen.getByText("Current Directory")).toBeInTheDocument();
       expect(screen.getByText("Select New Directory")).toBeInTheDocument();
@@ -125,7 +125,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
   describe("Directory selection", () => {
     it("calls selectLocalStorePath when choose directory button is clicked", async () => {
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        "/new/path"
+        "/new/path",
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -134,14 +134,14 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
       fireEvent.click(chooseButton);
 
       expect(
-        vi.mocked(window.electronAPI.selectLocalStorePath)
+        vi.mocked(window.electronAPI.selectLocalStorePath),
       ).toHaveBeenCalled();
     });
 
     it("updates selected path when directory is chosen", async () => {
       const newPath = "/new/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -157,7 +157,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("auto-validates directory after selection", async () => {
       const newPath = "/new/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -167,7 +167,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
 
       await waitFor(() => {
         expect(
-          vi.mocked(window.electronAPI.validateLocalStoreBasic)
+          vi.mocked(window.electronAPI.validateLocalStoreBasic),
         ).toHaveBeenCalledWith(newPath);
       });
     });
@@ -175,14 +175,14 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("handles directory selection error", async () => {
       const mockOnMessage = vi.fn();
       vi.mocked(window.electronAPI.selectLocalStorePath).mockRejectedValue(
-        new Error("Permission denied")
+        new Error("Permission denied"),
       );
 
       render(
         <ChangeLocalStoreDirectoryDialog
           {...defaultProps}
           onMessage={mockOnMessage}
-        />
+        />,
       );
 
       const chooseButton = screen.getByTestId("file-picker-button");
@@ -191,7 +191,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
       await waitFor(() => {
         expect(mockOnMessage).toHaveBeenCalledWith(
           "Failed to select directory: Permission denied",
-          "error"
+          "error",
         );
       });
     });
@@ -199,14 +199,14 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("handles missing electronAPI", async () => {
       const mockOnMessage = vi.fn();
       vi.mocked(window.electronAPI.selectLocalStorePath).mockRejectedValue(
-        new Error("Directory selection not available")
+        new Error("Directory selection not available"),
       );
 
       render(
         <ChangeLocalStoreDirectoryDialog
           {...defaultProps}
           onMessage={mockOnMessage}
-        />
+        />,
       );
 
       const chooseButton = screen.getByTestId("file-picker-button");
@@ -215,7 +215,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
       await waitFor(() => {
         expect(mockOnMessage).toHaveBeenCalledWith(
           "Failed to select directory: Directory selection not available",
-          "error"
+          "error",
         );
       });
     });
@@ -225,7 +225,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("shows warning for same directory", async () => {
       const currentPath = "/current/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        currentPath
+        currentPath,
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -235,7 +235,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/This is the same as your current directory/)
+          screen.getByText(/This is the same as your current directory/),
         ).toBeInTheDocument();
         expect(screen.getByTestId("alert-triangle")).toBeInTheDocument();
       });
@@ -244,7 +244,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("shows error for invalid directory", async () => {
       const newPath = "/invalid/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
       vi.mocked(window.electronAPI.validateLocalStoreBasic).mockResolvedValue({
         error: "Directory does not contain a valid database",
@@ -258,7 +258,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Directory does not contain a valid database")
+          screen.getByText("Directory does not contain a valid database"),
         ).toBeInTheDocument();
         expect(screen.getAllByTestId("alert-triangle")).toHaveLength(1);
       });
@@ -267,7 +267,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("shows default error message when no specific error", async () => {
       const newPath = "/invalid/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
       vi.mocked(window.electronAPI.validateLocalStoreBasic).mockResolvedValue({
         error: null,
@@ -282,8 +282,8 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            /This directory does not contain a valid Romper database/
-          )
+            /This directory does not contain a valid Romper database/,
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -291,7 +291,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("applies success styling for valid directory", async () => {
       const newPath = "/valid/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
       vi.mocked(window.electronAPI.validateLocalStoreBasic).mockResolvedValue({
         error: null,
@@ -312,10 +312,10 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("handles validation error", async () => {
       const newPath = "/new/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
       vi.mocked(window.electronAPI.validateLocalStoreBasic).mockRejectedValue(
-        new Error("Network error")
+        new Error("Network error"),
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -331,10 +331,10 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("handles missing validation API", async () => {
       const newPath = "/new/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
       vi.mocked(window.electronAPI.validateLocalStoreBasic).mockRejectedValue(
-        new Error("Directory validation not available")
+        new Error("Directory validation not available"),
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -344,7 +344,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Directory validation not available")
+          screen.getByText("Directory validation not available"),
         ).toBeInTheDocument();
       });
     });
@@ -354,7 +354,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("enables update button for valid new directory", async () => {
       const newPath = "/valid/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -378,7 +378,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("disables update button for invalid directory", async () => {
       const newPath = "/invalid/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
       vi.mocked(window.electronAPI.validateLocalStoreBasic).mockResolvedValue({
         error: "Invalid",
@@ -399,7 +399,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("disables update button for same directory", async () => {
       const currentPath = "/current/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        currentPath
+        currentPath,
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -421,7 +421,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
         setLocalStorePath: mockSetLocalStorePath,
       });
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -452,7 +452,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
         setLocalStorePath: mockSetLocalStorePath,
       });
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
 
       render(
@@ -460,7 +460,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
           {...defaultProps}
           onClose={mockOnClose}
           onMessage={mockOnMessage}
-        />
+        />,
       );
 
       const chooseButton = screen.getByTestId("file-picker-button");
@@ -478,7 +478,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
         expect(mockOnMessage).toHaveBeenCalledWith(
           "Local store directory updated successfully! The application has been refreshed with the new directory.",
           "success",
-          5000
+          5000,
         );
         expect(mockOnClose).toHaveBeenCalled();
       });
@@ -489,14 +489,14 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
       const mockSetLocalStorePath = vi
         .fn()
         .mockImplementation(
-          () => new Promise((resolve) => setTimeout(resolve, 100))
+          () => new Promise((resolve) => setTimeout(resolve, 100)),
         );
       vi.mocked(useSettings).mockReturnValue({
         ...mockSettings,
         setLocalStorePath: mockSetLocalStorePath,
       });
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -528,14 +528,14 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
         setLocalStorePath: mockSetLocalStorePath,
       });
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
 
       render(
         <ChangeLocalStoreDirectoryDialog
           {...defaultProps}
           onMessage={mockOnMessage}
-        />
+        />,
       );
 
       const chooseButton = screen.getByTestId("file-picker-button");
@@ -552,7 +552,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
       await waitFor(() => {
         expect(mockOnMessage).toHaveBeenCalledWith(
           "Failed to update directory: Update failed",
-          "error"
+          "error",
         );
       });
     });
@@ -565,7 +565,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
         <ChangeLocalStoreDirectoryDialog
           {...defaultProps}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       const closeButton = screen.getByTestId("close-x");
@@ -580,7 +580,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
         <ChangeLocalStoreDirectoryDialog
           {...defaultProps}
           onClose={mockOnClose}
-        />
+        />,
       );
 
       const cancelButton = screen.getByText("Cancel");
@@ -592,7 +592,7 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
     it("resets state when dialog is closed", async () => {
       const newPath = "/test/path";
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);
@@ -611,15 +611,15 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
 
       // Reopen the dialog
       const { rerender } = render(
-        <ChangeLocalStoreDirectoryDialog {...defaultProps} isOpen={false} />
+        <ChangeLocalStoreDirectoryDialog {...defaultProps} isOpen={false} />,
       );
       rerender(
-        <ChangeLocalStoreDirectoryDialog {...defaultProps} isOpen={true} />
+        <ChangeLocalStoreDirectoryDialog {...defaultProps} isOpen={true} />,
       );
 
       // Should be reset - there might be multiple instances, just check one exists
       expect(
-        screen.getAllByText("No directory selected")[0]
+        screen.getAllByText("No directory selected")[0],
       ).toBeInTheDocument();
     });
 
@@ -628,14 +628,14 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
       const mockSetLocalStorePath = vi
         .fn()
         .mockImplementation(
-          () => new Promise((resolve) => setTimeout(resolve, 100))
+          () => new Promise((resolve) => setTimeout(resolve, 100)),
         );
       vi.mocked(useSettings).mockReturnValue({
         ...mockSettings,
         setLocalStorePath: mockSetLocalStorePath,
       });
       vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
-        newPath
+        newPath,
       );
 
       render(<ChangeLocalStoreDirectoryDialog {...defaultProps} />);

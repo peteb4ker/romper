@@ -90,7 +90,7 @@ export function compareKitSlots(a: string, b: string): number {
 // Get the next available kit slot (e.g. 'A0', 'A1', ..., 'B0', ...)
 export function getNextKitSlot(existing: string[]): null | string {
   const banks = Array.from({ length: 26 }, (_, i) =>
-    String.fromCharCode(65 + i)
+    String.fromCharCode(65 + i),
   ); // 'A' to 'Z'
   for (const bank of banks) {
     for (let num = 0; num <= 99; num++) {
@@ -120,7 +120,7 @@ export function isValidKit(kit: string): boolean {
 export function showBankAnchor(
   kit: string,
   idx: number,
-  kits: string[]
+  kits: string[],
 ): boolean {
   // Show anchor if this is the first kit in a bank or the first kit overall
   if (idx === 0) return true;
@@ -129,7 +129,7 @@ export function showBankAnchor(
 }
 
 export function uniqueVoiceLabels(
-  voiceNames: Record<number, string>
+  voiceNames: Record<number, string>,
 ): string[] {
   const seen = new Set<string>();
   return Object.values(voiceNames)

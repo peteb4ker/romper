@@ -68,7 +68,7 @@ describe("MessageDisplayContext", () => {
       const { getByTestId } = render(
         <MessageDisplayContext.Provider value={mockMessageDisplay}>
           <TestConsumer />
-        </MessageDisplayContext.Provider>
+        </MessageDisplayContext.Provider>,
       );
 
       expect(getByTestId("test-message")).toHaveTextContent("test message");

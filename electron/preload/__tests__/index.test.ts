@@ -29,7 +29,7 @@ describe("preload index", () => {
     it("should mock contextBridge methods", () => {
       expect(mockElectron.contextBridge.exposeInMainWorld).toBeDefined();
       expect(typeof mockElectron.contextBridge.exposeInMainWorld).toBe(
-        "function"
+        "function",
       );
     });
   });
@@ -91,7 +91,7 @@ describe("preload index", () => {
       expect(typeof mockElectron.ipcRenderer.invoke).toBe("function");
       expect(typeof mockElectron.ipcRenderer.on).toBe("function");
       expect(typeof mockElectron.ipcRenderer.removeAllListeners).toBe(
-        "function"
+        "function",
       );
     });
 
@@ -99,7 +99,7 @@ describe("preload index", () => {
       // Verify that contextBridge is available for exposing APIs
       expect(mockElectron.contextBridge.exposeInMainWorld).toBeDefined();
       expect(typeof mockElectron.contextBridge.exposeInMainWorld).toBe(
-        "function"
+        "function",
       );
     });
   });

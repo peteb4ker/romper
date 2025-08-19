@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 export function useKitPlayback(samples: any) {
   const [playbackError, setPlaybackError] = useState<null | string>(null);
   const [playTriggers, setPlayTriggers] = useState<{ [key: string]: number }>(
-    {}
+    {},
   );
   const [stopTriggers, setStopTriggers] = useState<{ [key: string]: number }>(
-    {}
+    {},
   );
   const [samplePlaying, setSamplePlaying] = useState<{
     [key: string]: boolean;
@@ -55,7 +55,7 @@ export function useKitPlayback(samples: any) {
   const handleWaveformPlayingChange = (
     voice: number,
     sample: string,
-    playing: boolean
+    playing: boolean,
   ) => {
     setSamplePlaying((state) => ({
       ...state,

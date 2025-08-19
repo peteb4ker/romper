@@ -61,7 +61,7 @@ describe("KitItem", () => {
     // At least one kit name span should have the invalid class
     const kitNameEls = screen.getAllByText("A1");
     expect(
-      kitNameEls.some((el) => el.className.includes("text-red"))
+      kitNameEls.some((el) => el.className.includes("text-red")),
     ).toBeTruthy();
   });
 
@@ -94,14 +94,14 @@ describe("KitItem voice label deduplication", () => {
         onDuplicate={() => {}}
         onSelect={() => {}}
         sampleCounts={[12, 12, 12, 12]}
-      />
+      />,
     );
     // Always select the correct KitItem root to avoid confusion if multiple are rendered
     const kitRoot = screen.getByTestId("kit-item-Test Kit");
     // Query only within this KitItem for deduped, capitalized labels
     const getLabel = (label) => {
       return Array.from(kitRoot.querySelectorAll("span")).filter(
-        (el) => el.textContent === label
+        (el) => el.textContent === label,
       );
     };
     expect(getLabel("Vox").length).toBe(1);

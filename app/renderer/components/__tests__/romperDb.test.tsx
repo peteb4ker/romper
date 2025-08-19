@@ -10,7 +10,7 @@ describe("romperDb", () => {
       async (dbDir: string) => ({
         dbPath: dbDir + "/romper.sqlite",
         success: true,
-      })
+      }),
     );
   });
 

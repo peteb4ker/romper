@@ -71,7 +71,7 @@ describe("SyncExecutorService", () => {
       expect(result.data?.bytesTransferred).toBe(1024);
       expect(mockFs.copyFileSync).toHaveBeenCalledWith(
         "/source/test.wav",
-        "/dest/kit/1/test.wav"
+        "/dest/kit/1/test.wav",
       );
     });
 
@@ -103,7 +103,7 @@ describe("SyncExecutorService", () => {
 
       const result = await service.executeFileOperation(
         mockConvertOperation,
-        false
+        false,
       );
 
       expect(result.success).toBe(true);
@@ -111,7 +111,7 @@ describe("SyncExecutorService", () => {
       expect(mockConvertToRampleDefault).toHaveBeenCalledWith(
         "/source/test.wav",
         "/dest/kit/1/test.wav",
-        false
+        false,
       );
     });
 
@@ -130,7 +130,7 @@ describe("SyncExecutorService", () => {
       expect(mockConvertToRampleDefault).toHaveBeenCalledWith(
         "/source/test.wav",
         "/dest/kit/1/test.wav",
-        true
+        true,
       );
     });
 
@@ -198,7 +198,7 @@ describe("SyncExecutorService", () => {
       expect(size).toBe(0);
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to get file size for /test/error.wav:",
-        expect.any(Error)
+        expect.any(Error),
       );
 
       consoleSpy.mockRestore();
@@ -278,7 +278,7 @@ describe("SyncExecutorService", () => {
       expect(result.type).toBe("permission");
       expect(result.canRetry).toBe(true);
       expect(result.userMessage).toBe(
-        "Permission denied. Check file/folder permissions."
+        "Permission denied. Check file/folder permissions.",
       );
     });
 
@@ -289,7 +289,7 @@ describe("SyncExecutorService", () => {
       expect(result.type).toBe("disk_space");
       expect(result.canRetry).toBe(false);
       expect(result.userMessage).toBe(
-        "Not enough disk space on destination drive."
+        "Not enough disk space on destination drive.",
       );
     });
 
@@ -300,7 +300,7 @@ describe("SyncExecutorService", () => {
       expect(result.type).toBe("format_error");
       expect(result.canRetry).toBe(false);
       expect(result.userMessage).toBe(
-        "Audio format error: Invalid WAV format header"
+        "Audio format error: Invalid WAV format header",
       );
     });
 
@@ -311,7 +311,7 @@ describe("SyncExecutorService", () => {
       expect(result.type).toBe("network");
       expect(result.canRetry).toBe(true);
       expect(result.userMessage).toBe(
-        "Network error. Check connection and try again."
+        "Network error. Check connection and try again.",
       );
     });
 
@@ -322,7 +322,7 @@ describe("SyncExecutorService", () => {
       expect(result.type).toBe("unknown");
       expect(result.canRetry).toBe(true);
       expect(result.userMessage).toBe(
-        "Unexpected error: Something unexpected happened"
+        "Unexpected error: Something unexpected happened",
       );
     });
 

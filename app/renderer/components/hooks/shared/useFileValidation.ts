@@ -13,13 +13,13 @@ export function useFileValidation() {
       }
       return (file as any).path || file.name;
     },
-    []
+    [],
   );
 
   const handleValidationIssues = useCallback(
     async (validation: any): Promise<boolean> => {
       const criticalIssues = validation.issues.filter((issue: any) =>
-        ["extension", "fileAccess", "invalidFormat"].includes(issue.type)
+        ["extension", "fileAccess", "invalidFormat"].includes(issue.type),
       );
 
       if (criticalIssues.length > 0) {
@@ -28,7 +28,7 @@ export function useFileValidation() {
           .join(", ");
         console.error(
           "Cannot assign sample due to critical format issues:",
-          errorMessage
+          errorMessage,
         );
 
         toast.error("Cannot assign sample", {
@@ -43,7 +43,7 @@ export function useFileValidation() {
         .join(", ");
       console.warn(
         "Sample has format issues that will require conversion during SD card sync:",
-        warningMessage
+        warningMessage,
       );
 
       toast.warning("Sample format warning", {
@@ -52,7 +52,7 @@ export function useFileValidation() {
       });
       return true;
     },
-    []
+    [],
   );
 
   const validateDroppedFile = useCallback(
@@ -76,7 +76,7 @@ export function useFileValidation() {
 
       return validation;
     },
-    [handleValidationIssues]
+    [handleValidationIssues],
   );
 
   return {

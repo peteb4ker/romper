@@ -22,7 +22,7 @@ vi.mock("../useSampleManagementUndoActions", () => ({
 
 import * as undoActions from "../useSampleManagementUndoActions";
 const mockUseSampleManagementUndoActions = vi.mocked(
-  undoActions.useSampleManagementUndoActions
+  undoActions.useSampleManagementUndoActions,
 );
 
 // Mock window.electronAPI
@@ -59,7 +59,7 @@ describe("useSampleManagementOperations", () => {
       });
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav", {
@@ -71,11 +71,11 @@ describe("useSampleManagementOperations", () => {
         1,
         0,
         "/path/to/sample.wav",
-        { forceMono: true }
+        { forceMono: true },
       );
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample added to voice 1, slot 1",
-        "success"
+        "success",
       );
       expect(mockOptions.onSamplesChanged).toHaveBeenCalled();
       expect(mockOptions.onAddUndoAction).toHaveBeenCalled();
@@ -88,14 +88,14 @@ describe("useSampleManagementOperations", () => {
       });
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Failed to add sample",
-        "error"
+        "error",
       );
       expect(mockOptions.onSamplesChanged).not.toHaveBeenCalled();
       expect(mockOptions.onAddUndoAction).not.toHaveBeenCalled();
@@ -103,18 +103,18 @@ describe("useSampleManagementOperations", () => {
 
     it("should handle add sample exception", async () => {
       mockElectronAPI.addSampleToSlot.mockRejectedValue(
-        new Error("Network error")
+        new Error("Network error"),
       );
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Failed to add sample: Network error",
-        "error"
+        "error",
       );
     });
 
@@ -126,7 +126,7 @@ describe("useSampleManagementOperations", () => {
 
       const optionsWithSkip = { ...mockOptions, skipUndoRecording: true };
       const { result } = renderHook(() =>
-        useSampleManagementOperations(optionsWithSkip)
+        useSampleManagementOperations(optionsWithSkip),
       );
 
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
@@ -139,14 +139,14 @@ describe("useSampleManagementOperations", () => {
       (window as any).electronAPI = undefined;
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample management not available",
-        "error"
+        "error",
       );
 
       // Restore
@@ -178,7 +178,7 @@ describe("useSampleManagementOperations", () => {
       });
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleReplace(1, 0, "/path/to/new.wav", {
@@ -191,11 +191,11 @@ describe("useSampleManagementOperations", () => {
         1,
         0,
         "/path/to/new.wav",
-        { forceStereo: true }
+        { forceStereo: true },
       );
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample replaced in voice 1, slot 1",
-        "success"
+        "success",
       );
       expect(mockOptions.onSamplesChanged).toHaveBeenCalled();
       expect(mockOptions.onAddUndoAction).toHaveBeenCalled();
@@ -208,14 +208,14 @@ describe("useSampleManagementOperations", () => {
       });
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleReplace(1, 0, "/path/to/new.wav");
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Replace failed",
-        "error"
+        "error",
       );
       expect(mockOptions.onSamplesChanged).not.toHaveBeenCalled();
     });
@@ -225,14 +225,14 @@ describe("useSampleManagementOperations", () => {
       (window as any).electronAPI = { addSampleToSlot: vi.fn() }; // Missing replaceSampleInSlot
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleReplace(1, 0, "/path/to/new.wav");
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample management not available",
-        "error"
+        "error",
       );
 
       // Restore
@@ -266,30 +266,30 @@ describe("useSampleManagementOperations", () => {
       mockElectronAPI.deleteSampleFromSlot.mockResolvedValue(mockDeleteResult);
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleDelete(1, 0);
 
       expect(mockUndoActions.getSampleToDeleteForUndo).toHaveBeenCalledWith(
         1,
-        0
+        0,
       );
       expect(mockElectronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
         "Test Kit",
         1,
-        0
+        0,
       );
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample deleted from voice 1, slot 1",
-        "success"
+        "success",
       );
       expect(mockOptions.onSamplesChanged).toHaveBeenCalled();
       expect(mockUndoActions.createReindexSamplesAction).toHaveBeenCalledWith(
         1,
         0,
         mockSampleToDelete,
-        mockDeleteResult
+        mockDeleteResult,
       );
       expect(mockOptions.onAddUndoAction).toHaveBeenCalled();
     });
@@ -301,14 +301,14 @@ describe("useSampleManagementOperations", () => {
       });
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleDelete(1, 0);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Delete failed",
-        "error"
+        "error",
       );
       expect(mockOptions.onSamplesChanged).not.toHaveBeenCalled();
       expect(mockOptions.onAddUndoAction).not.toHaveBeenCalled();
@@ -325,14 +325,14 @@ describe("useSampleManagementOperations", () => {
       mockUseSampleManagementUndoActions.mockReturnValue(mockUndoActions);
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleDelete(1, 0);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Failed to delete sample: Undo prep failed",
-        "error"
+        "error",
       );
     });
 
@@ -341,14 +341,14 @@ describe("useSampleManagementOperations", () => {
       (window as any).electronAPI = { addSampleToSlot: vi.fn() }; // Missing deleteSampleFromSlot
 
       const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions)
+        useSampleManagementOperations(mockOptions),
       );
 
       await result.current.handleSampleDelete(1, 0);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample management not available",
-        "error"
+        "error",
       );
 
       // Restore

@@ -16,7 +16,7 @@ export class KitService {
   copyKit(
     inMemorySettings: Record<string, any>,
     sourceKit: string,
-    destKit: string
+    destKit: string,
   ): DbResult<void> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -71,7 +71,7 @@ export class KitService {
    */
   createKit(
     inMemorySettings: Record<string, any>,
-    kitSlot: string
+    kitSlot: string,
   ): DbResult<void> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -112,7 +112,7 @@ export class KitService {
   }
 
   private getLocalStorePath(
-    inMemorySettings: Record<string, any>
+    inMemorySettings: Record<string, any>,
   ): null | string {
     return inMemorySettings.localStorePath || null;
   }

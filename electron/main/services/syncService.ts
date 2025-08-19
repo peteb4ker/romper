@@ -75,7 +75,7 @@ class SyncService {
    */
   async generateChangeSummary(
     inMemorySettings: Record<string, any>,
-    _sdCardPath?: string
+    _sdCardPath?: string,
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
@@ -135,7 +135,7 @@ class SyncService {
     options: {
       sdCardPath: string;
       wipeSdCard?: boolean;
-    }
+    },
   ): Promise<DbResult<{ syncedFiles: number }>> {
     try {
       // For now, we need to generate file operations for sync
@@ -167,7 +167,7 @@ class SyncService {
           sample,
           localStorePath,
           results,
-          options.sdCardPath
+          options.sdCardPath,
         );
       }
 
@@ -184,7 +184,7 @@ class SyncService {
       const syncedFiles = await this.processAllFiles(
         allFiles,
         inMemorySettings,
-        options.sdCardPath
+        options.sdCardPath,
       );
 
       this.emitCompletionProgress(syncedFiles, allFiles.length);
@@ -216,7 +216,7 @@ class SyncService {
     destinationPath: string,
     metadataResult: any,
     formatValidationResult: any,
-    results: any
+    results: any,
   ): void {
     const issues = formatValidationResult.data?.issues || [];
     const issueMessages = issues.map((issue: any) => issue.message);
@@ -236,7 +236,7 @@ class SyncService {
 
     results.hasFormatWarnings = true;
     results.warnings.push(
-      `${filename}: ${issueMessages.join(", ") || "Format conversion required"}`
+      `${filename}: ${issueMessages.join(", ") || "Format conversion required"}`,
     );
   }
 
@@ -248,7 +248,7 @@ class SyncService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
-    results: any
+    results: any,
   ): void {
     results.filesToCopy.push({
       destinationPath,
@@ -301,7 +301,7 @@ class SyncService {
       } catch (error) {
         console.warn(
           `Failed to get file size for ${fileOp.sourcePath}:`,
-          error
+          error,
         );
       }
     }
@@ -313,7 +313,7 @@ class SyncService {
    */
   private categorizeError(
     error: any,
-    filePath?: string
+    filePath?: string,
   ): {
     canRetry: boolean;
     type:
@@ -393,7 +393,7 @@ class SyncService {
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    results: any
+    results: any,
   ): void {
     const metadataResult = getAudioMetadata(sourcePath);
     const formatValidationResult = validateSampleFormat(sourcePath);
@@ -409,7 +409,7 @@ class SyncService {
         destinationPath,
         metadataResult,
         formatValidationResult,
-        results
+        results,
       );
     } else {
       this.addSyncFileToCopy(
@@ -417,7 +417,7 @@ class SyncService {
         sourcePath,
         destinationPath,
         sample.kitName,
-        results
+        results,
       );
     }
   }
@@ -427,7 +427,7 @@ class SyncService {
    */
   private emitCompletionProgress(
     syncedFiles: number,
-    totalFiles: number
+    totalFiles: number,
   ): void {
     if (!this.currentSyncJob) return;
 
@@ -450,7 +450,7 @@ class SyncService {
   private emitFileCompletionProgress(
     fileOp: SyncFileOperation,
     completedFiles: number,
-    totalFiles: number
+    totalFiles: number,
   ): void {
     if (!this.currentSyncJob) return;
 
@@ -473,7 +473,7 @@ class SyncService {
   private emitFileStartProgress(
     fileOp: SyncFileOperation,
     syncedFiles: number,
-    totalFiles: number
+    totalFiles: number,
   ): void {
     if (!this.currentSyncJob) return;
 
@@ -516,7 +516,7 @@ class SyncService {
   private estimateSyncTime(
     totalFiles: number,
     totalSize: number,
-    conversions: number
+    conversions: number,
   ): number {
     // Base time per file (seconds)
     const baseTimePerFile = 0.5;
@@ -529,7 +529,7 @@ class SyncService {
     return Math.ceil(
       totalFiles * baseTimePerFile +
         sizeInMB * timePerMB +
-        conversions * timePerConversion
+        conversions * timePerConversion,
     );
   }
 
@@ -539,7 +539,7 @@ class SyncService {
   private async executeFileOperation(
     fileOp: SyncFileOperation,
     fileSize: number,
-    inMemorySettings: Record<string, any>
+    inMemorySettings: Record<string, any>,
   ): Promise<void> {
     if (fileOp.operation === "copy") {
       fs.copyFileSync(fileOp.sourcePath, fileOp.destinationPath);
@@ -602,7 +602,7 @@ class SyncService {
     localStorePath: string,
     kitName: string,
     sample: Sample,
-    sdCardPath?: string
+    sdCardPath?: string,
   ): string {
     // Use SD card path if provided, otherwise fall back to sync_output directory
     const baseDir = sdCardPath || path.join(localStorePath, "sync_output");
@@ -632,13 +632,13 @@ class SyncService {
   private async handleFileConversion(
     fileOp: SyncFileOperation,
     originalFileSize: number,
-    inMemorySettings: Record<string, any>
+    inMemorySettings: Record<string, any>,
   ): Promise<void> {
     const forceMonoConversion = Boolean(inMemorySettings.defaultToMonoSamples);
     const conversionResult = await convertToRampleDefault(
       fileOp.sourcePath,
       fileOp.destinationPath,
-      forceMonoConversion
+      forceMonoConversion,
     );
 
     if (!conversionResult.success) {
@@ -649,7 +649,7 @@ class SyncService {
 
       if (isWavFormatError) {
         console.warn(
-          `Skipping problematic WAV file ${fileOp.filename}: ${conversionResult.error}`
+          `Skipping problematic WAV file ${fileOp.filename}: ${conversionResult.error}`,
         );
         // Copy the original file instead of converting it
         try {
@@ -660,19 +660,19 @@ class SyncService {
         } catch (copyError) {
           console.error(
             `Failed to copy problematic file ${fileOp.filename}:`,
-            copyError
+            copyError,
           );
         }
       }
 
       throw new Error(
-        `Failed to convert ${fileOp.filename}: ${conversionResult.error}`
+        `Failed to convert ${fileOp.filename}: ${conversionResult.error}`,
       );
     }
 
     this.updateBytesTransferredForConversion(
       fileOp.destinationPath,
-      originalFileSize
+      originalFileSize,
     );
   }
 
@@ -683,12 +683,12 @@ class SyncService {
     error: any,
     fileOp: SyncFileOperation,
     syncedFiles: number,
-    totalFiles: number
+    totalFiles: number,
   ): void {
     const errorInfo = this.categorizeError(error, fileOp.sourcePath);
     console.error(
       `Failed to process file ${fileOp.filename}:`,
-      errorInfo.userMessage
+      errorInfo.userMessage,
     );
 
     if (this.currentSyncJob) {
@@ -718,7 +718,7 @@ class SyncService {
    */
   private async handleSyncFailure(
     inMemorySettings: Record<string, any>,
-    _error: any
+    _error: any,
   ): Promise<void> {
     if (this.currentSyncJob) {
       console.error("Sync failed, attempting cleanup...");
@@ -745,7 +745,7 @@ class SyncService {
    */
   private initializeSyncJob(
     allFiles: SyncFileOperation[],
-    totalBytes: number
+    totalBytes: number,
   ): void {
     this.currentSyncJob = {
       bytesTransferred: 0,
@@ -765,7 +765,7 @@ class SyncService {
   private async markKitsAsSynced(
     inMemorySettings: Record<string, any>,
     allFiles: SyncFileOperation[],
-    syncedFiles: number
+    syncedFiles: number,
   ): Promise<void> {
     const localStorePath = inMemorySettings.localStorePath;
     if (!localStorePath || !syncedFiles) return;
@@ -779,7 +779,7 @@ class SyncService {
     } else {
       console.log(
         `Marked ${syncedKitNames.length} kits as synced:`,
-        syncedKitNames
+        syncedKitNames,
       );
     }
   }
@@ -790,7 +790,7 @@ class SyncService {
   private async processAllFiles(
     allFiles: SyncFileOperation[],
     inMemorySettings: Record<string, any>,
-    _sdCardPath?: string
+    _sdCardPath?: string,
   ): Promise<number> {
     let syncedFiles = 0;
 
@@ -804,7 +804,7 @@ class SyncService {
           fileOp,
           syncedFiles,
           allFiles.length,
-          inMemorySettings
+          inMemorySettings,
         );
         syncedFiles++;
         if (this.currentSyncJob) {
@@ -815,7 +815,7 @@ class SyncService {
           error,
           fileOp,
           syncedFiles,
-          allFiles.length
+          allFiles.length,
         );
       }
     }
@@ -837,7 +837,7 @@ class SyncService {
       validationErrors: SyncValidationError[];
       warnings: string[];
     },
-    sdCardPath?: string
+    sdCardPath?: string,
   ): void {
     if (!sample.source_path) {
       return; // Skip samples without source path
@@ -849,7 +849,7 @@ class SyncService {
     const fileValidation = this.validateSyncSourceFile(
       filename,
       sourcePath,
-      results
+      results,
     );
     if (!fileValidation.isValid) {
       return;
@@ -863,14 +863,14 @@ class SyncService {
       localStorePath,
       kitName,
       sample,
-      sdCardPath
+      sdCardPath,
     );
     this.categorizeSyncFileOperation(
       sample,
       filename,
       sourcePath,
       destinationPath,
-      results
+      results,
     );
   }
 
@@ -881,7 +881,7 @@ class SyncService {
     fileOp: SyncFileOperation,
     syncedFiles: number,
     totalFiles: number,
-    inMemorySettings: Record<string, any>
+    inMemorySettings: Record<string, any>,
   ): Promise<void> {
     const fileSize = this.getFileSizeForProgress(fileOp.sourcePath);
 
@@ -908,7 +908,7 @@ class SyncService {
    */
   private updateBytesTransferredForConversion(
     destinationPath: string,
-    originalFileSize: number
+    originalFileSize: number,
   ): void {
     try {
       if (fs.existsSync(destinationPath)) {
@@ -928,7 +928,7 @@ class SyncService {
   private validateSyncSourceFile(
     filename: string,
     sourcePath: string,
-    results: any
+    results: any,
   ): { fileSize: number; isValid: boolean } {
     if (!fs.existsSync(sourcePath)) {
       results.validationErrors.push({
@@ -972,7 +972,7 @@ class SyncService {
       console.log(`Successfully wiped SD card at: ${sdCardPath}`);
     } catch (error) {
       throw new Error(
-        `Failed to wipe SD card: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to wipe SD card: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

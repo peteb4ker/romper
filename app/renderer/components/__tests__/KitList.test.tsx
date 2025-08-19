@@ -96,7 +96,7 @@ describe("KitList", () => {
         onDuplicate={vi.fn()}
         onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
     kits.forEach((kit) => {
       expect(getKitItem(kit.name)).toBeDefined();
@@ -117,7 +117,7 @@ describe("KitList", () => {
         onDuplicate={vi.fn()}
         onSelectKit={onSelectKit}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
     fireEvent.click(getKitItem("A1"));
     expect(onSelectKit).toHaveBeenCalledWith("A1");
@@ -133,7 +133,7 @@ describe("KitList", () => {
         onDuplicate={onDuplicate}
         onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
     // Find the duplicate button inside the kit item
     const kitItem = getKitItem("A1");
@@ -151,7 +151,7 @@ describe("KitList", () => {
         onDuplicate={vi.fn()}
         onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
     kits.forEach((kit) => {
       const kitItem = getKitItem(kit.name);
@@ -175,7 +175,7 @@ describe("KitList", () => {
         onDuplicate={vi.fn()}
         onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
     expectOnlySelected(kits, "A1");
   });
@@ -189,7 +189,7 @@ describe("KitList", () => {
         onDuplicate={vi.fn()}
         onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
     const list = screen.getByLabelText("Kit list");
     list.focus();
@@ -210,7 +210,7 @@ describe("KitList", () => {
         onDuplicate={vi.fn()}
         onSelectKit={onSelectKit}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
     const list = screen.getByLabelText("Kit list");
     list.focus();
@@ -329,7 +329,7 @@ describe("KitList", () => {
         onDuplicate={vi.fn()}
         onSelectKit={vi.fn()}
         sampleCounts={sampleCounts}
-      />
+      />,
     );
     // A1 should show 'Kick' and 'Snare' (deduped, capitalized)
     const kitA1 = getKitItem("A1");

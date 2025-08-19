@@ -21,7 +21,7 @@ export async function countZipEntries(zipPath: string): Promise<number> {
 export async function downloadArchive(
   url: string,
   tmpZipPath: string,
-  onProgress: (percent: null | number) => void
+  onProgress: (percent: null | number) => void,
 ): Promise<void> {
   const https = await import("https");
 
@@ -32,7 +32,7 @@ export async function downloadArchive(
     const request = https.get(url, (response) => {
       const totalBytes = parseInt(
         response.headers["content-length"] || "0",
-        10
+        10,
       );
 
       const trackProgress = createProgressTracker(totalBytes, onProgress);
@@ -48,7 +48,7 @@ export async function extractZipEntries(
   zipPath: string,
   destDir: string,
   entryCount: number,
-  onProgress: (info: { file: string; percent: null | number }) => void
+  onProgress: (info: { file: string; percent: null | number }) => void,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     let processedCount = 0;
@@ -61,7 +61,7 @@ export async function extractZipEntries(
           destDir,
           processedCount,
           entryCount,
-          onProgress
+          onProgress,
         );
       })
       .on("close", resolve)
@@ -80,7 +80,7 @@ export function isValidEntry(entryPath: string): boolean {
 // Helper to track download progress
 function createProgressTracker(
   totalBytes: number,
-  onProgress: (percent: null | number) => void
+  onProgress: (percent: null | number) => void,
 ) {
   let receivedBytes = 0;
   let lastPercent = 0;
@@ -114,7 +114,7 @@ function handleFileEntry(entry: any, destPath: string): void {
       console.warn(
         "Failed to create parent directory:",
         path.dirname(destPath),
-        err
+        err,
       );
       entry.autodrain();
       return;
@@ -137,7 +137,7 @@ function processZipEntry(
   destDir: string,
   processedCount: number,
   entryCount: number,
-  onProgress: (info: { file: string; percent: null | number }) => void
+  onProgress: (info: { file: string; percent: null | number }) => void,
 ): number {
   if (!isValidEntry(entry.path)) {
     entry.autodrain();
@@ -164,7 +164,7 @@ function processZipEntry(
 function setupFileStream(
   fileStream: fs.WriteStream,
   resolve: () => void,
-  reject: (error: any) => void
+  reject: (error: any) => void,
 ) {
   fileStream.on("finish", () => {
     fileStream.close(() => resolve());

@@ -16,7 +16,7 @@ describe("WizardTargetStep", () => {
         safeSelectLocalStorePath={() => {}}
         setTargetPath={() => {}}
         stateTargetPath="/mock/target"
-      />
+      />,
     );
     expect(screen.getByLabelText(/local store path/i)).toBeInTheDocument();
     expect(screen.getAllByText(/choose/i).length).toBeGreaterThan(0);

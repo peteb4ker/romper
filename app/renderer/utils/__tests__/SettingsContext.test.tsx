@@ -140,7 +140,7 @@ describe("SettingsContext", () => {
 
       expect(mockElectronAPI.setSetting).toHaveBeenCalledWith(
         "localStorePath",
-        "/new/path"
+        "/new/path",
       );
       expect(result.current.localStorePath).toBe("/new/path");
     });
@@ -164,7 +164,7 @@ describe("SettingsContext", () => {
       expect(result.current.isDarkMode).toBe(true);
       expect(document.documentElement.classList.toggle).toHaveBeenCalledWith(
         "dark",
-        true
+        true,
       );
     });
 
@@ -217,7 +217,7 @@ describe("SettingsContext", () => {
       expect(result.current).not.toBe(null);
       expect(console.error).toHaveBeenCalledWith(
         "Failed to update defaultToMonoSamples setting:",
-        expect.any(Error)
+        expect.any(Error),
       );
     });
 

@@ -17,7 +17,7 @@ export class ArchiveService {
    */
   copyDirectory(
     src: string,
-    dest: string
+    dest: string,
   ): { error?: string; success: boolean } {
     try {
       this.copyRecursiveSync(src, dest);
@@ -37,7 +37,7 @@ export class ArchiveService {
       file?: string;
       percent: null | number;
       phase: string;
-    }) => void
+    }) => void,
   ): Promise<{ error?: string; success: boolean }> {
     let tmpZipPath: string | undefined;
 
@@ -74,7 +74,7 @@ export class ArchiveService {
    */
   private async cleanupTempFile(
     url: string,
-    tmpZipPath: string
+    tmpZipPath: string,
   ): Promise<void> {
     // Only clean up the temp file if we downloaded it (not for file:// URLs)
     if (!url.startsWith("file://") && tmpZipPath) {
@@ -112,7 +112,7 @@ export class ArchiveService {
       file?: string;
       percent: null | number;
       phase: string;
-    }) => void
+    }) => void,
   ): Promise<string> {
     const os = await import("os");
     const tmp = os.tmpdir();
@@ -147,7 +147,7 @@ export class ArchiveService {
     const tmpZipPath = url.replace("file://", "");
     console.log(
       "[ArchiveService] Using local file for extraction:",
-      tmpZipPath
+      tmpZipPath,
     );
 
     if (!fs.existsSync(tmpZipPath)) {
@@ -167,7 +167,7 @@ export class ArchiveService {
       file?: string;
       percent: null | number;
       phase: string;
-    }) => void
+    }) => void,
   ): Promise<void> {
     // Count entries for progress tracking
     let entryCount = 0;
@@ -188,7 +188,7 @@ export class ArchiveService {
           percent,
           phase: "Extracting",
         });
-      }
+      },
     );
   }
 
@@ -205,7 +205,7 @@ export class ArchiveService {
       file?: string;
       percent: null | number;
       phase: string;
-    }) => void
+    }) => void,
   ): Promise<string> {
     if (url.startsWith("file://")) {
       return this.handleFileUrl(url);

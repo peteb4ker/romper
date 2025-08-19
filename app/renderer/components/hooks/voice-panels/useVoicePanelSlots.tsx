@@ -23,18 +23,18 @@ export interface UseVoicePanelSlotsOptions {
   onWaveformPlayingChange: (
     voice: number,
     sample: string,
-    playing: boolean
+    playing: boolean,
   ) => void;
   playTriggers: { [key: string]: number };
   renderDeleteButton: (slotNumber: number) => React.ReactElement;
   renderPlayButton: (
     isPlaying: boolean,
-    sampleName: string
+    sampleName: string,
   ) => React.ReactElement;
   sampleActionsHook: {
     handleSampleContextMenu: (
       e: React.MouseEvent,
-      sampleData: SampleData | undefined
+      sampleData: SampleData | undefined,
     ) => void;
   };
   sampleMetadata?: { [filename: string]: SampleData };
@@ -49,7 +49,7 @@ export interface UseVoicePanelSlotsOptions {
     getSampleSlotClassName: (
       slotNumber: number,
       baseClass: string,
-      dragOverClass: string
+      dragOverClass: string,
     ) => string;
     getSampleSlotTitle: (
       slotNumber: number,
@@ -57,11 +57,11 @@ export interface UseVoicePanelSlotsOptions {
       isDragOver: boolean,
       isStereoHighlight: boolean,
       isDropZone: boolean,
-      dropHintTitle: string
+      dropHintTitle: string,
     ) => string;
     getSlotStyling: (
       slotNumber: number,
-      sample: string | undefined
+      sample: string | undefined,
     ) => {
       dragOverClass: string;
       dropHintTitle: string;
@@ -105,7 +105,7 @@ export function useVoicePanelSlots({
 
       // Check if this is an internal sample drag
       const isInternalDrag = e.dataTransfer.types.includes(
-        "application/x-romper-sample"
+        "application/x-romper-sample",
       );
 
       if (isInternalDrag) {
@@ -116,7 +116,7 @@ export function useVoicePanelSlots({
         dragAndDropHook.handleDragOver(e, slotNumber);
       }
     },
-    [isEditable, dragAndDropHook]
+    [isEditable, dragAndDropHook],
   );
 
   const handleCombinedDragLeave = React.useCallback(() => {
@@ -133,7 +133,7 @@ export function useVoicePanelSlots({
 
       // Check if this is an internal sample drag
       const isInternalDrag = e.dataTransfer.types.includes(
-        "application/x-romper-sample"
+        "application/x-romper-sample",
       );
 
       if (isInternalDrag) {
@@ -144,7 +144,7 @@ export function useVoicePanelSlots({
         dragAndDropHook.handleDrop(e, slotNumber);
       }
     },
-    [isEditable, dragAndDropHook]
+    [isEditable, dragAndDropHook],
   );
 
   // Helper function to render a filled sample slot
@@ -168,7 +168,7 @@ export function useVoicePanelSlots({
       const className = slotRenderingHook.getSampleSlotClassName(
         slotNumber,
         slotBaseClass,
-        dragOverClass
+        dragOverClass,
       );
       const title = slotRenderingHook.getSampleSlotTitle(
         slotNumber,
@@ -176,11 +176,11 @@ export function useVoicePanelSlots({
         isDragOver,
         isStereoHighlight,
         isDropZone,
-        dropHintTitle
+        dropHintTitle,
       );
       const dragHandlers = dragAndDropHook.getSampleDragHandlers(
         slotNumber,
-        sampleName
+        sampleName,
       );
 
       // Combine internal drag handlers for drop targets - support both internal and external drops
@@ -190,7 +190,7 @@ export function useVoicePanelSlots({
             onDragOver: (e: React.DragEvent) => {
               // Check if this is an internal sample drag
               const isInternalDrag = e.dataTransfer.types.includes(
-                "application/x-romper-sample"
+                "application/x-romper-sample",
               );
 
               if (isInternalDrag && dragHandlers.onDragOver) {
@@ -204,7 +204,7 @@ export function useVoicePanelSlots({
             onDrop: (e: React.DragEvent) => {
               // Check if this is an internal sample drag
               const isInternalDrag = e.dataTransfer.types.includes(
-                "application/x-romper-sample"
+                "application/x-romper-sample",
               );
 
               if (isInternalDrag && dragHandlers.onDrop) {
@@ -261,7 +261,7 @@ export function useVoicePanelSlots({
             onError={(err) => {
               if (typeof window !== "undefined" && window.dispatchEvent) {
                 window.dispatchEvent(
-                  new CustomEvent("SampleWaveformError", { detail: err })
+                  new CustomEvent("SampleWaveformError", { detail: err }),
                 );
               }
             }}
@@ -295,7 +295,7 @@ export function useVoicePanelSlots({
       stopTriggers,
       handleCombinedDragOver,
       handleCombinedDrop,
-    ]
+    ],
   );
 
   // Helper function to render single drop zone per voice (append-only)
@@ -369,7 +369,7 @@ export function useVoicePanelSlots({
         </li>
       );
     },
-    [voice]
+    [voice],
   );
 
   // Main render function for all sample slots (always render exactly MAX_SLOTS_PER_VOICE for consistent height)

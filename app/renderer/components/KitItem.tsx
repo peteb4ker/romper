@@ -26,7 +26,7 @@ const KitItem = React.memo(
         sampleCounts,
         ...rest
       },
-      ref
+      ref,
     ) => {
       // Extract voice names using shared utility
       const voiceNames = extractVoiceNames(kitData);
@@ -152,7 +152,7 @@ const KitItem = React.memo(
               {isValid && voiceNames && (
                 <div className="flex flex-wrap gap-1 mt-1 w-full min-h-[1.5rem] justify-end">
                   {Array.from(
-                    new Set(Object.values(voiceNames).filter(Boolean))
+                    new Set(Object.values(voiceNames).filter(Boolean)),
                   ).map((label, i) => (
                     <span
                       className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-1 py-0.5 rounded-sm text-[10px] font-mono"
@@ -167,8 +167,8 @@ const KitItem = React.memo(
           </div>
         </div>
       );
-    }
-  )
+    },
+  ),
 );
 KitItem.displayName = "KitItem";
 export default KitItem;

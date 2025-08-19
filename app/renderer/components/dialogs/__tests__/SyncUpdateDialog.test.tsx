@@ -31,11 +31,11 @@ describe("SyncUpdateDialog", () => {
           localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-        />
+        />,
       );
 
       expect(
-        screen.queryByText("Sync All Kits to SD Card")
+        screen.queryByText("Sync All Kits to SD Card"),
       ).not.toBeInTheDocument();
     });
   });
@@ -49,7 +49,7 @@ describe("SyncUpdateDialog", () => {
           localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-        />
+        />,
       );
 
       expect(screen.getByText("Sync All Kits to SD Card")).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe("SyncUpdateDialog", () => {
           localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-        />
+        />,
       );
 
       expect(screen.getByText("Clear SD card before sync")).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe("SyncUpdateDialog", () => {
           localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-        />
+        />,
       );
 
       const startSyncButton = screen.getByText("Start Sync");
@@ -100,7 +100,7 @@ describe("SyncUpdateDialog", () => {
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
-        />
+        />,
       );
 
       const startSyncButton = screen.getByText("Start Sync");
@@ -123,7 +123,7 @@ describe("SyncUpdateDialog", () => {
           localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-        />
+        />,
       );
 
       await user.click(screen.getByText("Cancel"));
@@ -141,7 +141,7 @@ describe("SyncUpdateDialog", () => {
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
-        />
+        />,
       );
 
       const wipeCheckbox = screen.getByTestId("wipe-sd-card-checkbox");
@@ -163,13 +163,13 @@ describe("SyncUpdateDialog", () => {
           localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-        />
+        />,
       );
 
       expect(screen.getByText("Cancel")).toBeDisabled();
       expect(screen.getByText("Syncing...")).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /close sync dialog/i })
+        screen.getByRole("button", { name: /close sync dialog/i }),
       ).toBeDisabled();
     });
 
@@ -187,7 +187,7 @@ describe("SyncUpdateDialog", () => {
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
-        />
+        />,
       );
 
       expect(screen.getByText("Start Sync")).toBeDisabled();
@@ -213,7 +213,7 @@ describe("SyncUpdateDialog", () => {
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
           syncProgress={mockSyncProgress}
-        />
+        />,
       );
 
       expect(screen.getByText("Copying files...")).toBeInTheDocument();
@@ -240,12 +240,12 @@ describe("SyncUpdateDialog", () => {
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
           syncProgress={mockSyncProgress}
-        />
+        />,
       );
 
       expect(screen.getByText("Sync Complete!")).toBeInTheDocument();
       expect(
-        screen.getByText("Successfully synced 15 files to SD card")
+        screen.getByText("Successfully synced 15 files to SD card"),
       ).toBeInTheDocument();
     });
 
@@ -257,7 +257,7 @@ describe("SyncUpdateDialog", () => {
           localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-        />
+        />,
       );
 
       const selectButton = screen.getByTestId("select-sd-card");
@@ -274,13 +274,13 @@ describe("SyncUpdateDialog", () => {
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
-        />
+        />,
       );
 
       const selectButton = screen.getByTestId("select-sd-card");
       expect(selectButton).toHaveTextContent("Change");
       expect(screen.getByTestId("sd-card-path")).toHaveTextContent(
-        "/path/to/sd"
+        "/path/to/sd",
       );
     });
 
@@ -292,7 +292,7 @@ describe("SyncUpdateDialog", () => {
           localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-        />
+        />,
       );
 
       // Open dialog
@@ -303,12 +303,12 @@ describe("SyncUpdateDialog", () => {
           localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-        />
+        />,
       );
 
       // Wipe option should be unchecked initially
       const wipeCheckbox = screen.getByTestId(
-        "wipe-sd-card-checkbox"
+        "wipe-sd-card-checkbox",
       ) as HTMLInputElement;
       expect(wipeCheckbox.checked).toBe(false);
     });
@@ -339,7 +339,7 @@ describe("SyncUpdateDialog", () => {
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           syncProgress={mockSyncProgressWithError}
-        />
+        />,
       );
 
       expect(screen.getAllByText("Sync Failed")).toHaveLength(1); // Only error section now
@@ -373,7 +373,7 @@ describe("SyncUpdateDialog", () => {
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           syncProgress={mockSyncProgressWithRetryableError}
-        />
+        />,
       );
 
       expect(screen.getByTestId("retry-sync")).toBeInTheDocument();
@@ -400,12 +400,12 @@ describe("SyncUpdateDialog", () => {
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           syncProgress={mockSyncProgressWithGenericError}
-        />
+        />,
       );
 
       expect(screen.getAllByText("Sync Failed")).toHaveLength(1); // Only error section now
       expect(
-        screen.getByText("Generic sync error occurred")
+        screen.getByText("Generic sync error occurred"),
       ).toBeInTheDocument();
       expect(screen.getByText("Failed on file:")).toBeInTheDocument();
       expect(screen.getByText("test.wav")).toBeInTheDocument();
@@ -436,14 +436,14 @@ describe("SyncUpdateDialog", () => {
           onConfirm={mockOnConfirm}
           sdCardPath="/test/path"
           syncProgress={mockSyncProgressWithNonRetryableError}
-        />
+        />,
       );
 
       expect(screen.queryByTestId("retry-sync")).not.toBeInTheDocument();
       const startButton = screen.getByTestId("confirm-sync");
       expect(startButton).toBeDisabled();
       expect(
-        screen.getByText(/This error requires attention/)
+        screen.getByText(/This error requires attention/),
       ).toBeInTheDocument();
     });
   });
@@ -457,11 +457,11 @@ describe("SyncUpdateDialog", () => {
           localChangeSummary={mockChangeSummary}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
-        />
+        />,
       );
 
       expect(
-        screen.getByRole("button", { name: /close sync dialog/i })
+        screen.getByRole("button", { name: /close sync dialog/i }),
       ).toBeInTheDocument();
     });
   });

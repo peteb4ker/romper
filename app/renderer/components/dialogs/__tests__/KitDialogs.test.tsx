@@ -45,7 +45,7 @@ describe("KitDialogs", () => {
         onCreateKit={onCreateKit}
         onNewKitSlotChange={onNewKitSlotChange}
         showNewKit={true}
-      />
+      />,
     );
     expect(screen.getByLabelText("Kit Slot (A0-Z99)")).toHaveValue("A1");
     expect(screen.getByText("Slot error")).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe("KitDialogs", () => {
         onDuplicateKit={onDuplicateKit}
         onDuplicateKitDestChange={onDuplicateKitDestChange}
         showDuplicateKit={true}
-      />
+      />,
     );
     expect(screen.getByLabelText("Duplicate A1 to:")).toHaveValue("B2");
     expect(screen.getByText("Duplicate error")).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("KitDialogs", () => {
   describe("modal structure", () => {
     it("renders new kit dialog as a modal overlay", () => {
       render(
-        <KitDialogs {...defaultProps} newKitSlot="A1" showNewKit={true} />
+        <KitDialogs {...defaultProps} newKitSlot="A1" showNewKit={true} />,
       );
 
       // Check for modal overlay by finding the fixed positioned container
@@ -101,12 +101,12 @@ describe("KitDialogs", () => {
 
     it("renders modal dialog with proper heading", () => {
       render(
-        <KitDialogs {...defaultProps} newKitSlot="A1" showNewKit={true} />
+        <KitDialogs {...defaultProps} newKitSlot="A1" showNewKit={true} />,
       );
 
       expect(screen.getByText("Create New Kit")).toBeInTheDocument();
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
-        "Create New Kit"
+        "Create New Kit",
       );
     });
 
@@ -124,7 +124,7 @@ describe("KitDialogs", () => {
           newKitError="Test error message"
           newKitSlot="A1"
           showNewKit={true}
-        />
+        />,
       );
 
       const errorMessage = screen.getByText("Test error message");
@@ -134,7 +134,7 @@ describe("KitDialogs", () => {
 
     it("handles accessibility with proper label association", () => {
       render(
-        <KitDialogs {...defaultProps} newKitSlot="A1" showNewKit={true} />
+        <KitDialogs {...defaultProps} newKitSlot="A1" showNewKit={true} />,
       );
 
       const input = screen.getByLabelText("Kit Slot (A0-Z99)");

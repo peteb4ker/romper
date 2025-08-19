@@ -96,7 +96,7 @@ describe("useKitFilters", () => {
       expect(result.current.showFavoritesOnly).toBe(true);
       expect(result.current.filteredKits).toHaveLength(2);
       expect(result.current.filteredKits.every((kit) => kit.is_favorite)).toBe(
-        true
+        true,
       );
     });
 
@@ -110,7 +110,7 @@ describe("useKitFilters", () => {
       expect(result.current.showModifiedOnly).toBe(true);
       expect(result.current.filteredKits).toHaveLength(2);
       expect(
-        result.current.filteredKits.every((kit) => kit.modified_since_sync)
+        result.current.filteredKits.every((kit) => kit.modified_since_sync),
       ).toBe(true);
     });
 
@@ -128,7 +128,7 @@ describe("useKitFilters", () => {
 
     it("handles empty kits array", () => {
       const { result } = renderHook(() =>
-        useKitFilters({ ...defaultProps, kits: undefined })
+        useKitFilters({ ...defaultProps, kits: undefined }),
       );
 
       expect(result.current.filteredKits).toEqual([]);
@@ -195,7 +195,7 @@ describe("useKitFilters", () => {
 
       expect(mockOnMessage).toHaveBeenCalledWith(
         "Failed to toggle favorite: Database error",
-        "error"
+        "error",
       );
       expect(mockOnRefreshKits).not.toHaveBeenCalled();
     });
@@ -211,7 +211,7 @@ describe("useKitFilters", () => {
 
       expect(mockOnMessage).toHaveBeenCalledWith(
         "Failed to toggle favorite: Network error",
-        "error"
+        "error",
       );
     });
   });
@@ -239,7 +239,7 @@ describe("useKitFilters", () => {
         ({ kits }) => useKitFilters({ ...defaultProps, kits }),
         {
           initialProps: { kits: mockKits },
-        }
+        },
       );
 
       const newKits = [
@@ -350,7 +350,7 @@ describe("useKitFilters", () => {
 
     it("works with undefined kits array", () => {
       const { result } = renderHook(() =>
-        useKitFilters({ ...defaultProps, kits: undefined })
+        useKitFilters({ ...defaultProps, kits: undefined }),
       );
 
       expect(result.current.getKitFavoriteState("AnyKit")).toBe(false);

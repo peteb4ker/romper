@@ -46,7 +46,7 @@ describe("registerFavoritesIpcHandlers - Unit Tests", () => {
       registerFavoritesIpcHandlers(mockInMemorySettings);
 
       const registeredHandlers = mockIpcMain.handle.mock.calls.map(
-        (call) => call[0]
+        (call) => call[0],
       );
 
       expect(registeredHandlers).toEqual([
@@ -72,15 +72,15 @@ describe("registerFavoritesIpcHandlers - Unit Tests", () => {
       expect(mockCreateDbHandler).toHaveBeenCalledTimes(3);
       expect(mockCreateDbHandler).toHaveBeenCalledWith(
         mockInMemorySettings,
-        romperDbCoreORM.toggleKitFavorite
+        romperDbCoreORM.toggleKitFavorite,
       );
       expect(mockCreateDbHandler).toHaveBeenCalledWith(
         mockInMemorySettings,
-        romperDbCoreORM.getFavoriteKits
+        romperDbCoreORM.getFavoriteKits,
       );
       expect(mockCreateDbHandler).toHaveBeenCalledWith(
         mockInMemorySettings,
-        romperDbCoreORM.getFavoriteKitsCount
+        romperDbCoreORM.getFavoriteKitsCount,
       );
     });
 

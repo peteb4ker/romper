@@ -21,7 +21,7 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
     {banks.map((bank) => {
       const enabled = kits.some(
         (k) =>
-          k && k.name && typeof k.name === "string" && k.name.startsWith(bank)
+          k && k.name && typeof k.name === "string" && k.name.startsWith(bank),
       );
       const isSelected = enabled && selectedBank === bank;
 

@@ -9,7 +9,7 @@
  */
 export function generateMockRamplePath(
   sample: any,
-  sdCardRoot: string
+  sdCardRoot: string,
 ): string {
   return `${sdCardRoot}/${sample.kit_name}/${sample.voice_number}sample${sample.slot_number + 1}.wav`;
 }
@@ -20,7 +20,7 @@ export function generateMockRamplePath(
  */
 export function generateMockRamplePathAndFilename(
   sample: any,
-  sdCardRoot: string
+  sdCardRoot: string,
 ): { destinationPath: string; filename: string } {
   const filename = `${sample.voice_number}sample${sample.slot_number + 1}.wav`;
   const destinationPath = `${sdCardRoot}/${sample.kit_name}/${filename}`;

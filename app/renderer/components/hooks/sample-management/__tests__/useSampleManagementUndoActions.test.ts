@@ -12,14 +12,14 @@ describe("useSampleManagementUndoActions", () => {
 
   it("initializes without error", () => {
     const { result } = renderHook(() =>
-      useSampleManagementUndoActions(defaultProps)
+      useSampleManagementUndoActions(defaultProps),
     );
     expect(result.current).toBeDefined();
   });
 
   it("provides undo action functions", () => {
     const { result } = renderHook(() =>
-      useSampleManagementUndoActions(defaultProps)
+      useSampleManagementUndoActions(defaultProps),
     );
 
     expect(typeof result.current.getOldSampleForUndo).toBe("function");
@@ -33,7 +33,7 @@ describe("useSampleManagementUndoActions", () => {
     };
 
     const { result } = renderHook(() =>
-      useSampleManagementUndoActions(emptyProps)
+      useSampleManagementUndoActions(emptyProps),
     );
 
     expect(result.current).toBeDefined();

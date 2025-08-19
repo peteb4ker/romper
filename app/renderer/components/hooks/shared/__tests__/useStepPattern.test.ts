@@ -67,7 +67,7 @@ describe("useStepPattern", () => {
         useStepPattern({
           initialPattern,
           kitName: "A0",
-        })
+        }),
       );
 
       expect(result.current.stepPattern).toEqual(initialPattern);
@@ -89,7 +89,7 @@ describe("useStepPattern", () => {
           useStepPattern({ initialPattern, kitName: "A0" }),
         {
           initialProps: { initialPattern: initialPattern1 },
-        }
+        },
       );
 
       expect(result.current.stepPattern).toEqual(initialPattern1);
@@ -115,7 +115,7 @@ describe("useStepPattern", () => {
 
       expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
         "A0",
-        newPattern
+        newPattern,
       );
       expect(result.current.stepPattern).toEqual(newPattern);
     });
@@ -203,7 +203,7 @@ describe("useStepPattern", () => {
         useStepPattern({
           initialPattern,
           kitName: "A0",
-        })
+        }),
       );
 
       const newPattern = [
@@ -217,14 +217,14 @@ describe("useStepPattern", () => {
 
       expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
         "A0",
-        newPattern
+        newPattern,
       );
 
       // Should revert to initial pattern after failure
       expect(result.current.stepPattern).toEqual(initialPattern);
       expect(console.error).toHaveBeenCalledWith(
         "Failed to save step pattern:",
-        "Database error"
+        "Database error",
       );
     });
 
@@ -236,14 +236,14 @@ describe("useStepPattern", () => {
 
       const apiError = new Error("Network error");
       vi.mocked(window.electronAPI.updateStepPattern).mockRejectedValue(
-        apiError
+        apiError,
       );
 
       const { result } = renderHook(() =>
         useStepPattern({
           initialPattern,
           kitName: "A0",
-        })
+        }),
       );
 
       const newPattern = [
@@ -257,14 +257,14 @@ describe("useStepPattern", () => {
 
       expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
         "A0",
-        newPattern
+        newPattern,
       );
 
       // Should revert to initial pattern after exception
       expect(result.current.stepPattern).toEqual(initialPattern);
       expect(console.error).toHaveBeenCalledWith(
         "Exception saving step pattern:",
-        apiError
+        apiError,
       );
     });
 
@@ -301,7 +301,7 @@ describe("useStepPattern", () => {
         ({ kitName }) => useStepPattern({ kitName }),
         {
           initialProps: { kitName: "A0" },
-        }
+        },
       );
 
       const newPattern = [
@@ -315,7 +315,7 @@ describe("useStepPattern", () => {
 
       expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
         "A0",
-        newPattern
+        newPattern,
       );
 
       // Clear previous calls
@@ -330,7 +330,7 @@ describe("useStepPattern", () => {
 
       expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
         "B0",
-        newPattern
+        newPattern,
       );
     });
 
@@ -355,7 +355,7 @@ describe("useStepPattern", () => {
           useStepPattern({ initialPattern, kitName: "A0" }),
         {
           initialProps: { initialPattern: initialPattern1 },
-        }
+        },
       );
 
       const newPattern = [
@@ -393,7 +393,7 @@ describe("useStepPattern", () => {
 
     it("maintains stable function reference", () => {
       const { rerender, result } = renderHook(() =>
-        useStepPattern({ kitName: "A0" })
+        useStepPattern({ kitName: "A0" }),
       );
 
       const firstSetStepPattern = result.current.setStepPattern;

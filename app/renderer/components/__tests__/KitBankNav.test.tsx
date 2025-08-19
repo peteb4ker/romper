@@ -83,7 +83,7 @@ describe("KitBankNav", () => {
         bankNames={{ A: "Alpha" }}
         kits={mockKits}
         onBankClick={() => {}}
-      />
+      />,
     );
     expect(screen.getByTitle("Alpha")).not.toBeNull();
   });
@@ -104,11 +104,11 @@ describe("A-Z hotkey navigation and bank highlighting", () => {
       createMockKitWithRelations({ bank_letter: "B", name: "B2" }),
     ];
     render(
-      <KitBankNav kits={mockKits} onBankClick={() => {}} selectedBank="B" />
+      <KitBankNav kits={mockKits} onBankClick={() => {}} selectedBank="B" />,
     );
     const bButtons = screen.getAllByRole("button", { name: "Jump to bank B" });
     const selectedBButton = bButtons.find(
-      (btn) => btn.getAttribute("aria-current") === "true"
+      (btn) => btn.getAttribute("aria-current") === "true",
     );
     expect(selectedBButton).toBeDefined();
     expect(selectedBButton!.className).toContain("bg-blue-800");

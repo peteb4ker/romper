@@ -37,7 +37,7 @@ describe("useKitViewMenuHandlers", () => {
         openChangeDirectory: vi.fn(),
         openPreferences: vi.fn(),
         openWizard: vi.fn(),
-      })
+      }),
     );
 
     expect(result.current.kitBrowserRef).toBeDefined();
@@ -53,7 +53,7 @@ describe("useKitViewMenuHandlers", () => {
         openChangeDirectory: vi.fn(),
         openPreferences: vi.fn(),
         openWizard: vi.fn(),
-      })
+      }),
     );
 
     expect(result.current.kitBrowserRef).toBeDefined();
@@ -70,7 +70,7 @@ describe("useKitViewMenuHandlers", () => {
         openChangeDirectory: vi.fn(),
         openPreferences: vi.fn(),
         openWizard: vi.fn(),
-      })
+      }),
     );
 
     expect(result.current.kitBrowserRef).toBeDefined();
@@ -84,7 +84,7 @@ describe("useKitViewMenuHandlers", () => {
         openChangeDirectory: vi.fn(),
         openPreferences: vi.fn(),
         openWizard: vi.fn(),
-      })
+      }),
     );
 
     expect(result.current.kitBrowserRef).toBeDefined();
@@ -99,7 +99,7 @@ describe("useKitViewMenuHandlers", () => {
         openChangeDirectory: vi.fn(),
         openPreferences: vi.fn(),
         openWizard: vi.fn(),
-      })
+      }),
     );
 
     const { result: result2 } = renderHook(() =>
@@ -109,7 +109,7 @@ describe("useKitViewMenuHandlers", () => {
         openChangeDirectory: vi.fn(),
         openPreferences: vi.fn(),
         openWizard: vi.fn(),
-      })
+      }),
     );
 
     expect(result1.current.kitBrowserRef).toBeDefined();
@@ -128,7 +128,7 @@ describe("useKitViewMenuHandlers", () => {
         openChangeDirectory: mockOpenChangeDirectory,
         openPreferences: mockOpenPreferences,
         openWizard: mockOpenWizard,
-      })
+      }),
     );
 
     expect(result.current.kitBrowserRef).toBeDefined();

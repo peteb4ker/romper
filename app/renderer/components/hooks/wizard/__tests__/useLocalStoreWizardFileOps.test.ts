@@ -44,7 +44,7 @@ describe("useLocalStoreWizardFileOps", () => {
       copyDir: vi.fn(() => Promise.resolve({ success: true })),
       createFolder: vi.fn(() => Promise.resolve()),
       downloadAndExtractArchive: vi.fn(() =>
-        Promise.resolve({ success: true })
+        Promise.resolve({ success: true }),
       ),
       getUserHome: vi.fn(() => "/home/user"),
       listFilesInRoot: vi.fn(() => Promise.resolve(["A0", "B1", "file.txt"])),
@@ -75,7 +75,7 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       const error = await result.current.validateSdCardFolder("");
@@ -93,7 +93,7 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       const error = await result.current.validateSdCardFolder("/path");
@@ -103,7 +103,7 @@ describe("useLocalStoreWizardFileOps", () => {
 
     it("should return error when no kit folders found", async () => {
       mockApi.listFilesInRoot = vi.fn(() =>
-        Promise.resolve(["file.txt", "README.md"])
+        Promise.resolve(["file.txt", "README.md"]),
       );
 
       const { result } = renderHook(() =>
@@ -113,19 +113,19 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       const error = await result.current.validateSdCardFolder("/path");
 
       expect(error).toBe(
-        "No valid kit folders found. Please choose a folder with kit subfolders (e.g. A0, B12, etc)."
+        "No valid kit folders found. Please choose a folder with kit subfolders (e.g. A0, B12, etc).",
       );
     });
 
     it("should return null when kit folders are found", async () => {
       mockApi.listFilesInRoot = vi.fn(() =>
-        Promise.resolve(["A0", "B12", "file.txt"])
+        Promise.resolve(["A0", "B12", "file.txt"]),
       );
 
       const { result } = renderHook(() =>
@@ -135,7 +135,7 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       const error = await result.current.validateSdCardFolder("/path");
@@ -148,7 +148,7 @@ describe("useLocalStoreWizardFileOps", () => {
   describe("validateAndCopySdCardKits", () => {
     it("should validate and copy kit folders successfully", async () => {
       mockApi.listFilesInRoot = vi.fn(() =>
-        Promise.resolve(["A0", "B1", "file.txt"])
+        Promise.resolve(["A0", "B1", "file.txt"]),
       );
       mockApi.copyDir = vi.fn(() => Promise.resolve({ success: true }));
 
@@ -159,7 +159,7 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       await result.current.validateAndCopySdCardKits("/sd/card", "/target");
@@ -183,11 +183,11 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       await expect(
-        result.current.validateAndCopySdCardKits("/invalid/path", "/target")
+        result.current.validateAndCopySdCardKits("/invalid/path", "/target"),
       ).rejects.toThrow();
 
       expect(mockSetWizardState).toHaveBeenCalledWith({
@@ -206,11 +206,11 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       await expect(
-        result.current.validateAndCopySdCardKits("/sd/card", "/target")
+        result.current.validateAndCopySdCardKits("/sd/card", "/target"),
       ).rejects.toThrow("Missing Electron API");
     });
 
@@ -222,11 +222,11 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       await expect(
-        result.current.validateAndCopySdCardKits("", "/target")
+        result.current.validateAndCopySdCardKits("", "/target"),
       ).rejects.toThrow();
     });
   });
@@ -235,7 +235,7 @@ describe("useLocalStoreWizardFileOps", () => {
   describe("extractSquarpArchive", () => {
     it("should extract archive successfully", async () => {
       mockApi.downloadAndExtractArchive = vi.fn(() =>
-        Promise.resolve({ success: true })
+        Promise.resolve({ success: true }),
       );
 
       const { result } = renderHook(() =>
@@ -245,7 +245,7 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       await result.current.extractSquarpArchive("/target/path");
@@ -254,13 +254,13 @@ describe("useLocalStoreWizardFileOps", () => {
         "https://data.squarp.net/RampleSamplesV1-2.zip",
         "/target/path",
         expect.any(Function), // progress callback
-        expect.any(Function) // error callback
+        expect.any(Function), // error callback
       );
     });
 
     it("should handle extraction errors", async () => {
       mockApi.downloadAndExtractArchive = vi.fn(() =>
-        Promise.resolve({ error: "Download failed", success: false })
+        Promise.resolve({ error: "Download failed", success: false }),
       );
 
       const { result } = renderHook(() =>
@@ -270,11 +270,11 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       await expect(
-        result.current.extractSquarpArchive("/target/path")
+        result.current.extractSquarpArchive("/target/path"),
       ).rejects.toThrow("Download failed");
     });
 
@@ -291,11 +291,11 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       await expect(
-        result.current.extractSquarpArchive("/target/path")
+        result.current.extractSquarpArchive("/target/path"),
       ).rejects.toThrow("Failed to extract archive");
     });
   });
@@ -321,7 +321,7 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       const dbResult = await result.current.createAndPopulateDb("/target/path");
@@ -345,7 +345,7 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       const dbResult = await result.current.createAndPopulateDb("/target/path");
@@ -368,7 +368,7 @@ describe("useLocalStoreWizardFileOps", () => {
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
-        })
+        }),
       );
 
       const dbResult = await result.current.createAndPopulateDb("/target/path");

@@ -24,7 +24,7 @@ export const createMockKit = (overrides: Partial<Kit> = {}): Kit => ({
  * Factory for creating mock KitWithRelations objects
  */
 export const createMockKitWithRelations = (
-  overrides: Partial<KitWithRelations> = {}
+  overrides: Partial<KitWithRelations> = {},
 ): KitWithRelations => {
   const baseKit = createMockKit(overrides);
   return {
@@ -60,14 +60,14 @@ export const createMockNewKit = (overrides: Partial<NewKit> = {}): NewKit => ({
  */
 export const createMockKitList = (
   count: number = 5,
-  baseOverrides: Partial<Kit> = {}
+  baseOverrides: Partial<Kit> = {},
 ): Kit[] =>
   Array.from({ length: count }, (_, i) =>
     createMockKit({
       id: i + 1,
       name: `A${i}`,
       ...baseOverrides,
-    })
+    }),
   );
 
 /**
@@ -75,14 +75,14 @@ export const createMockKitList = (
  */
 export const createMockKitWithRelationsList = (
   count: number = 5,
-  baseOverrides: Partial<KitWithRelations> = {}
+  baseOverrides: Partial<KitWithRelations> = {},
 ): KitWithRelations[] =>
   Array.from({ length: count }, (_, i) =>
     createMockKitWithRelations({
       id: i + 1,
       name: `A${i}`,
       ...baseOverrides,
-    })
+    }),
   );
 
 /**
@@ -90,14 +90,14 @@ export const createMockKitWithRelationsList = (
  */
 export const createMockBankKits = (
   bankLetter: string,
-  count: number = 16
+  count: number = 16,
 ): Kit[] =>
   Array.from({ length: count }, (_, i) =>
     createMockKit({
       bank_letter: bankLetter,
       id: i + 1,
       name: `${bankLetter}${i}`,
-    })
+    }),
   );
 
 /**
@@ -118,6 +118,6 @@ export const createMockLockedKits = (count: number = 3): Kit[] =>
 export const createMockKitsWithStepPatterns = (count: number = 3): Kit[] =>
   createMockKitList(count, {
     step_pattern: JSON.stringify(
-      Array.from({ length: 4 }, () => Array(16).fill(0))
+      Array.from({ length: 4 }, () => Array(16).fill(0)),
     ),
   });

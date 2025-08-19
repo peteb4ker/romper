@@ -24,7 +24,7 @@ declare global {
 // --- Main Hook ---
 export function useLocalStoreWizard(
   onProgress?: (p: ProgressEvent) => void,
-  setLocalStorePath?: (path: string) => void
+  setLocalStorePath?: (path: string) => void,
 ) {
   const api = useElectronAPI();
   const progressCb = useRef(onProgress);
@@ -40,7 +40,7 @@ export function useLocalStoreWizard(
       stateHook.setProgress(p);
       if (progressCb.current) progressCb.current(p);
     },
-    [stateHook]
+    [stateHook],
   );
 
   // --- Error message normalization ---
@@ -76,7 +76,7 @@ export function useLocalStoreWizard(
         if (items.length > 0) reportProgress({ percent: 100, phase });
       })();
     },
-    [reportProgress]
+    [reportProgress],
   );
 
   // File operations hook
@@ -100,7 +100,7 @@ export function useLocalStoreWizard(
     isDev &&
       console.debug(
         "[Hook] setLocalStorePath callback available:",
-        !!setLocalStorePath
+        !!setLocalStorePath,
       );
     isDev && console.debug("[Hook] state.targetPath:", state.targetPath);
 
@@ -108,7 +108,7 @@ export function useLocalStoreWizard(
       isDev &&
         console.debug(
           "[Hook] Calling setLocalStorePath with:",
-          state.targetPath
+          state.targetPath,
         );
       setLocalStorePath(state.targetPath);
       isDev && console.debug("[Hook] setLocalStorePath called successfully");
@@ -131,14 +131,14 @@ export function useLocalStoreWizard(
       isDev && console.debug("[Hook] initialize - copying SD card kits");
       await fileOpsHook.validateAndCopySdCardKits(
         state.sdCardSourcePath,
-        state.targetPath
+        state.targetPath,
       );
     } else if (state.source === "squarp") {
       isDev && console.debug("[Hook] initialize - extracting Squarp archive");
       await fileOpsHook.extractSquarpArchive(state.targetPath);
       isDev &&
         console.debug(
-          "[Hook] initialize - Squarp archive extraction completed"
+          "[Hook] initialize - Squarp archive extraction completed",
         );
       // Add a small delay to ensure filesystem sync
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -166,7 +166,7 @@ export function useLocalStoreWizard(
       isDev &&
         console.debug("[Hook] initialize - creating and populating database");
       const { dbDir, validKits } = await fileOpsHook.createAndPopulateDb(
-        state.targetPath
+        state.targetPath,
       );
       isDev && console.debug("[Hook] initialize - database creation completed");
 
@@ -234,7 +234,7 @@ export function useLocalStoreWizard(
         targetPath: "",
       });
     },
-    [api, stateHook]
+    [api, stateHook],
   );
 
   return useMemo(
@@ -273,7 +273,7 @@ export function useLocalStoreWizard(
       stateHook.setTargetPath,
       state,
       fileOpsHook.validateSdCardFolder,
-    ]
+    ],
   );
 }
 

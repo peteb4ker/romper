@@ -14,7 +14,7 @@ export function useBankScanning({ onMessage }: UseBankScanningProps) {
       if (result?.success) {
         onMessage?.(
           `Bank scanning complete. Updated ${result.data?.updatedBanks} banks.`,
-          "success"
+          "success",
         );
       } else {
         onMessage?.(`Bank scanning failed: ${result?.error}`, "error");
@@ -22,7 +22,7 @@ export function useBankScanning({ onMessage }: UseBankScanningProps) {
     } catch (error) {
       onMessage?.(
         `Bank scanning error: ${error instanceof Error ? error.message : String(error)}`,
-        "error"
+        "error",
       );
     }
   }, [onMessage]);

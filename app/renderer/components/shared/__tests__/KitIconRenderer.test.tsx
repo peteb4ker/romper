@@ -59,7 +59,7 @@ describe("KitIconRenderer", () => {
   describe("Size Classes", () => {
     it("should apply small size class", () => {
       const { container } = render(
-        <KitIconRenderer iconType="mic" size="sm" />
+        <KitIconRenderer iconType="mic" size="sm" />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toHaveClass("text-xl");
@@ -73,7 +73,7 @@ describe("KitIconRenderer", () => {
 
     it("should apply large size class", () => {
       const { container } = render(
-        <KitIconRenderer iconType="mic" size="lg" />
+        <KitIconRenderer iconType="mic" size="lg" />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toHaveClass("text-3xl");
@@ -83,7 +83,7 @@ describe("KitIconRenderer", () => {
   describe("Custom Classes", () => {
     it("should apply custom className", () => {
       const { container } = render(
-        <KitIconRenderer className="custom-class" iconType="mic" />
+        <KitIconRenderer className="custom-class" iconType="mic" />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toHaveClass("custom-class");
@@ -91,7 +91,7 @@ describe("KitIconRenderer", () => {
 
     it("should apply both size and custom classes", () => {
       const { container } = render(
-        <KitIconRenderer className="custom-class" iconType="piano" size="lg" />
+        <KitIconRenderer className="custom-class" iconType="piano" size="lg" />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toHaveClass("text-3xl", "custom-class");
@@ -99,7 +99,7 @@ describe("KitIconRenderer", () => {
 
     it("should handle empty className gracefully", () => {
       const { container } = render(
-        <KitIconRenderer className="" iconType="drumkit" />
+        <KitIconRenderer className="" iconType="drumkit" />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument();
@@ -122,7 +122,7 @@ describe("KitIconRenderer", () => {
   describe("Component Stability", () => {
     it("should handle undefined iconType gracefully", () => {
       const { container } = render(
-        <KitIconRenderer iconType={undefined as any} />
+        <KitIconRenderer iconType={undefined as any} />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument(); // Should render default folder icon

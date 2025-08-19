@@ -52,7 +52,7 @@ export function isHmrAvailable(): boolean {
  */
 export function kitExists(
   kitName: string,
-  kits: Array<{ name: string }>
+  kits: Array<{ name: string }>,
 ): boolean {
   return kits.some((k) => k.name === kitName);
 }
@@ -80,7 +80,7 @@ export function restoreRouteState(): void {
 export function restoreSelectedKitIfExists(
   kits: Array<{ name: string }>,
   currentSelectedKit: null | string,
-  setSelectedKit: ((kit: string) => void) | undefined
+  setSelectedKit: ((kit: string) => void) | undefined,
 ): void {
   if (!isHmrAvailable() || !setSelectedKit) return;
 

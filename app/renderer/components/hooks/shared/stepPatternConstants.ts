@@ -34,7 +34,7 @@ export function createDefaultStepPattern(): number[][] {
  * Ensures a step pattern is valid, returning default if invalid
  */
 export function ensureValidStepPattern(
-  pattern: null | number[][] | undefined
+  pattern: null | number[][] | undefined,
 ): number[][] {
   if (!pattern || !isValidStepPattern(pattern)) {
     return createDefaultStepPattern();

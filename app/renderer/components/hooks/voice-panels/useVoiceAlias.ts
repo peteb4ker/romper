@@ -17,7 +17,7 @@ export function useVoiceAlias({ kitName, onUpdate }: UseVoiceAliasParams) {
         const result = await window.electronAPI.updateVoiceAlias(
           kitName,
           voiceNumber,
-          voiceAlias
+          voiceAlias,
         );
         if (result.success) {
           onUpdate?.();
@@ -28,7 +28,7 @@ export function useVoiceAlias({ kitName, onUpdate }: UseVoiceAliasParams) {
         console.error("Failed to update voice alias:", e);
       }
     },
-    [kitName, onUpdate]
+    [kitName, onUpdate],
   );
 
   return {

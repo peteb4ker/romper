@@ -58,7 +58,7 @@ describe("StepSequencerGrid", () => {
     const customFocusedStep = { step: 5, voice: 2 };
 
     render(
-      <StepSequencerGrid {...defaultProps} focusedStep={customFocusedStep} />
+      <StepSequencerGrid {...defaultProps} focusedStep={customFocusedStep} />,
     );
 
     // Check that focus ring is displayed at the correct position
@@ -76,7 +76,7 @@ describe("StepSequencerGrid", () => {
         {...defaultProps}
         currentSeqStep={3}
         isSeqPlaying={true}
-      />
+      />,
     );
 
     // Just verify the steps at column 3 are rendered - playhead state
@@ -111,7 +111,7 @@ describe("StepSequencerGrid", () => {
     activePattern[2][3] = 1; // Voice 2, Step 3 is active
 
     render(
-      <StepSequencerGrid {...defaultProps} safeStepPattern={activePattern} />
+      <StepSequencerGrid {...defaultProps} safeStepPattern={activePattern} />,
     );
 
     // Check active steps have the LED glow class

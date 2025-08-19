@@ -64,15 +64,15 @@ export const samples = sqliteTable(
     unique("unique_slot").on(
       table.kit_name,
       table.voice_number,
-      table.slot_number
+      table.slot_number,
     ),
     // Unique constraint: prevent duplicate source paths within the same voice
     unique("unique_voice_source").on(
       table.kit_name,
       table.voice_number,
-      table.source_path
+      table.source_path,
     ),
-  ]
+  ],
 );
 
 // Export types inferred from schema

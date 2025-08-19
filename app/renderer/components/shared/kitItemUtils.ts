@@ -27,13 +27,13 @@ export interface KitItemRenderProps {
  * Reduces duplication between KitItem and KitGridItem components
  */
 export function extractVoiceNames(
-  kitData?: KitWithRelations | null
+  kitData?: KitWithRelations | null,
 ): Record<number | string, string> | undefined {
   return kitData?.voices
     ? Object.fromEntries(
         kitData.voices
           .filter((v) => v.voice_alias !== null)
-          .map((v) => [v.voice_number, v.voice_alias!])
+          .map((v) => [v.voice_number, v.voice_alias!]),
       )
     : undefined;
 }

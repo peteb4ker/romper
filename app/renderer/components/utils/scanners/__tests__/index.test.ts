@@ -76,7 +76,7 @@ describe("scanner index exports", () => {
 
       functionExports.forEach((exportName) => {
         expect(
-          typeof scannerIndex[exportName as keyof typeof scannerIndex]
+          typeof scannerIndex[exportName as keyof typeof scannerIndex],
         ).toBe("function");
       });
     });

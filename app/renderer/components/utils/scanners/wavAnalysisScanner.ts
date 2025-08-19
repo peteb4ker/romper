@@ -8,7 +8,7 @@ import type { ScanResult, WAVAnalysisInput, WAVAnalysisOutput } from "./types";
  * @returns Audio properties of the WAV file
  */
 export async function scanWAVAnalysis(
-  _input: WAVAnalysisInput
+  _input: WAVAnalysisInput,
 ): Promise<ScanResult<WAVAnalysisOutput>> {
   // NOTE: WAV analysis is currently disabled in renderer process due to Buffer requirements.
   // The functionality will be implemented in the main process when needed for advanced analysis.
@@ -20,7 +20,7 @@ export async function scanWAVAnalysis(
     process.env.NODE_ENV !== "test"
   ) {
     console.warn(
-      `[WAV Analysis] WAV analysis not yet implemented - using default values`
+      `[WAV Analysis] WAV analysis not yet implemented - using default values`,
     );
     (globalThis as any).__wavAnalysisWarningShown = true;
   }

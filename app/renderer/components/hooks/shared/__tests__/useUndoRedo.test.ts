@@ -58,7 +58,7 @@ describe("useUndoRedo - Basic Tests", () => {
     expect(result.current.canUndo).toBe(true);
     expect(result.current.undoCount).toBe(1);
     expect(result.current.undoDescription).toBe(
-      "Undo add sample to voice 1, slot 1"
+      "Undo add sample to voice 1, slot 1",
     );
   });
 
@@ -87,7 +87,7 @@ describe("useUndoRedo - Basic Tests", () => {
     expect(mockElectronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
       "test-kit",
       1,
-      2
+      2,
     );
     expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(true);
@@ -98,7 +98,7 @@ describe("useUndoRedo - Basic Tests", () => {
       ({ kitName }) => useUndoRedo(kitName),
       {
         initialProps: { kitName: "kit1" },
-      }
+      },
     );
 
     // Add some actions
@@ -440,11 +440,11 @@ describe("useUndoRedo - Basic Tests", () => {
           (call) =>
             call[1] === snapshotSample.voice && // voice matches
             call[2] === dbSlotToUiSlot(snapshotSample.slot) - 1 && // slot matches (convert db slot to 0-based display slot)
-            call[3] === snapshotSample.sample.source_path // source_path matches
+            call[3] === snapshotSample.sample.source_path, // source_path matches
         );
 
         expect(correspondingAddCall).toBeDefined(
-          `Sample ${snapshotSample.sample.filename} should be restored to voice ${snapshotSample.voice}, slot ${snapshotSample.slot}`
+          `Sample ${snapshotSample.sample.filename} should be restored to voice ${snapshotSample.voice}, slot ${snapshotSample.slot}`,
         );
       });
 
@@ -480,7 +480,7 @@ describe("useUndoRedo - Basic Tests", () => {
       expect(result.current.canRedo).toBe(true);
       expect(result.current.redoCount).toBe(1);
       expect(result.current.redoDescription).toBe(
-        "Undo add sample to voice 1, slot 1"
+        "Undo add sample to voice 1, slot 1",
       );
 
       // Now redo
@@ -493,7 +493,7 @@ describe("useUndoRedo - Basic Tests", () => {
         1,
         0,
         "/path/to/test.wav",
-        { forceMono: true }
+        { forceMono: true },
       );
       expect(result.current.canRedo).toBe(false);
       expect(result.current.canUndo).toBe(true);
@@ -528,7 +528,7 @@ describe("useUndoRedo - Basic Tests", () => {
       expect(mockElectronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
         "test-kit",
         2,
-        1
+        1,
       );
     });
 
@@ -597,7 +597,7 @@ describe("useUndoRedo - Basic Tests", () => {
         2,
         3,
         "/path/to/deleted.wav",
-        { forceMono: false } // stereo sample
+        { forceMono: false }, // stereo sample
       );
     });
   });
@@ -635,7 +635,7 @@ describe("useUndoRedo - Basic Tests", () => {
         1,
         1,
         "/path/to/old.wav",
-        { forceMono: true } // old sample was mono
+        { forceMono: true }, // old sample was mono
       );
     });
   });
@@ -786,7 +786,7 @@ describe("useUndoRedo - Basic Tests", () => {
       expect(eventListener).toHaveBeenCalledWith(
         expect.objectContaining({
           detail: { kitName: "test-kit" },
-        })
+        }),
       );
 
       document.removeEventListener("romper:refresh-samples", eventListener);

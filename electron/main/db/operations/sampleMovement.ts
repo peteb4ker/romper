@@ -19,7 +19,7 @@ type SampleWithOriginalPosition = {
 export function canVoiceAcceptSample(
   dbDir: string,
   kitName: string,
-  voiceNumber: number
+  voiceNumber: number,
 ): DbResult<boolean> {
   return withDbTransaction(dbDir, (db) => {
     const sampleCount = db
@@ -28,8 +28,8 @@ export function canVoiceAcceptSample(
       .where(
         and(
           eq(samples.kit_name, kitName),
-          eq(samples.voice_number, voiceNumber)
-        )
+          eq(samples.voice_number, voiceNumber),
+        ),
       )
       .all().length;
 
@@ -48,7 +48,7 @@ export function moveSampleInsertOnly(
   fromVoice: number,
   fromSlot: number,
   toVoice: number,
-  toSlot: number
+  toSlot: number,
 ): DbResult<{
   affectedSamples: SampleWithOriginalPosition[];
   movedSample: Sample;
@@ -57,13 +57,13 @@ export function moveSampleInsertOnly(
     // Validate inputs - 0-based indexing (0-11 slots)
     if (fromSlot < 0 || fromSlot >= 12 || toSlot < 0 || toSlot >= 12) {
       throw new Error(
-        `Invalid slot numbers. Must be 0-11. Got from:${fromSlot}, to:${toSlot}`
+        `Invalid slot numbers. Must be 0-11. Got from:${fromSlot}, to:${toSlot}`,
       );
     }
 
     if (fromVoice < 1 || fromVoice > 4 || toVoice < 1 || toVoice > 4) {
       throw new Error(
-        `Invalid voice numbers. Must be 1-4. Got from:${fromVoice}, to:${toVoice}`
+        `Invalid voice numbers. Must be 1-4. Got from:${fromVoice}, to:${toVoice}`,
       );
     }
 
@@ -75,14 +75,14 @@ export function moveSampleInsertOnly(
         and(
           eq(samples.kit_name, kitName),
           eq(samples.voice_number, fromVoice),
-          eq(samples.slot_number, fromSlot)
-        )
+          eq(samples.slot_number, fromSlot),
+        ),
       )
       .get();
 
     if (!sampleToMove) {
       throw new Error(
-        `No sample found at voice ${fromVoice}, slot ${fromSlot}`
+        `No sample found at voice ${fromVoice}, slot ${fromSlot}`,
       );
     }
 
@@ -105,8 +105,8 @@ export function moveSampleInsertOnly(
           sampleToMove,
           fromSlot,
           toSlot,
-          fromVoice
-        )
+          fromVoice,
+        ),
       );
     } else {
       // Cross-voice move: insert-only between voices
@@ -118,8 +118,8 @@ export function moveSampleInsertOnly(
           fromSlot,
           toSlot,
           fromVoice,
-          toVoice
-        )
+          toVoice,
+        ),
       );
     }
 
@@ -149,7 +149,7 @@ export function moveSampleInsertOnly(
  */
 function compactToContiguousSlots(
   db: any,
-  samplesToCompact: Sample[]
+  samplesToCompact: Sample[],
 ): SampleWithOriginalPosition[] {
   const affectedSamples: SampleWithOriginalPosition[] = [];
 
@@ -184,7 +184,7 @@ function insertAtPositionWithShift(
   kitName: string,
   voiceNumber: number,
   insertSlot: number,
-  sampleId: number
+  sampleId: number,
 ): SampleWithOriginalPosition[] {
   const affectedSamples: SampleWithOriginalPosition[] = [];
 
@@ -193,7 +193,7 @@ function insertAtPositionWithShift(
     .select()
     .from(samples)
     .where(
-      and(eq(samples.kit_name, kitName), eq(samples.voice_number, voiceNumber))
+      and(eq(samples.kit_name, kitName), eq(samples.voice_number, voiceNumber)),
     )
     .all()
     .filter((s: Sample) => s.slot_number >= insertSlot)
@@ -206,7 +206,7 @@ function insertAtPositionWithShift(
     // Validate we don't exceed 12-slot limit
     if (newSlot >= 12) {
       throw new Error(
-        `Cannot shift sample beyond slot 11. Voice ${voiceNumber} would exceed 12-sample limit.`
+        `Cannot shift sample beyond slot 11. Voice ${voiceNumber} would exceed 12-sample limit.`,
       );
     }
 
@@ -246,7 +246,7 @@ function performCrossVoiceMove(
   fromSlot: number,
   toSlot: number,
   fromVoice: number,
-  toVoice: number
+  toVoice: number,
 ): SampleWithOriginalPosition[] {
   const affectedSamples: SampleWithOriginalPosition[] = [];
 
@@ -264,8 +264,8 @@ function performCrossVoiceMove(
       and(
         eq(samples.kit_name, kitName),
         eq(samples.voice_number, fromVoice),
-        ne(samples.id, sampleToMove.id)
-      )
+        ne(samples.id, sampleToMove.id),
+      ),
     )
     .orderBy(samples.slot_number)
     .all();
@@ -278,7 +278,7 @@ function performCrossVoiceMove(
     .select()
     .from(samples)
     .where(
-      and(eq(samples.kit_name, kitName), eq(samples.voice_number, toVoice))
+      and(eq(samples.kit_name, kitName), eq(samples.voice_number, toVoice)),
     )
     .all().length;
 
@@ -290,7 +290,7 @@ function performCrossVoiceMove(
       .run();
 
     throw new Error(
-      `Destination voice ${toVoice} is full (12 samples maximum)`
+      `Destination voice ${toVoice} is full (12 samples maximum)`,
     );
   }
 
@@ -303,7 +303,7 @@ function performCrossVoiceMove(
     kitName,
     toVoice,
     adjustedToSlot,
-    sampleToMove.id
+    sampleToMove.id,
   );
   affectedSamples.push(...insertedSamples);
 
@@ -320,7 +320,7 @@ function performSameVoiceMove(
   sampleToMove: Sample,
   fromSlot: number,
   toSlot: number,
-  voiceNumber: number
+  voiceNumber: number,
 ): SampleWithOriginalPosition[] {
   const affectedSamples: SampleWithOriginalPosition[] = [];
 
@@ -338,8 +338,8 @@ function performSameVoiceMove(
       and(
         eq(samples.kit_name, kitName),
         eq(samples.voice_number, voiceNumber),
-        ne(samples.id, sampleToMove.id)
-      )
+        ne(samples.id, sampleToMove.id),
+      ),
     )
     .orderBy(samples.slot_number)
     .all()
@@ -358,7 +358,7 @@ function performSameVoiceMove(
     kitName,
     voiceNumber,
     adjustedToSlot,
-    sampleToMove.id
+    sampleToMove.id,
   );
   affectedSamples.push(...insertedSamples);
 

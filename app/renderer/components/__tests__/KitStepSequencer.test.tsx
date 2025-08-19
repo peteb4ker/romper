@@ -22,7 +22,7 @@ const defaultSamples = {
   4: ["tom.wav"],
 };
 const defaultStepPattern = Array.from({ length: 4 }, () =>
-  Array(16).fill(false)
+  Array(16).fill(false),
 );
 
 describe("KitStepSequencer", () => {
@@ -94,17 +94,17 @@ describe("KitStepSequencer", () => {
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
-      />
+      />,
     );
 
     // Verify drawer component is rendered
     expect(
-      screen.getByRole("button", { name: /step sequencer/i })
+      screen.getByRole("button", { name: /step sequencer/i }),
     ).toBeInTheDocument();
 
     // Verify controls are rendered
     expect(
-      screen.getByTestId("kit-step-sequencer-controls")
+      screen.getByTestId("kit-step-sequencer-controls"),
     ).toBeInTheDocument();
 
     // Verify props are passed correctly to the hook - removing gridRef from assertion as it's handled internally
@@ -137,7 +137,7 @@ describe("KitStepSequencer", () => {
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
-      />
+      />,
     );
 
     // The test now focuses on checking if props are passed correctly
@@ -157,7 +157,7 @@ describe("KitStepSequencer", () => {
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
-      />
+      />,
     );
 
     // Verify that the drawer component receives the correct props
@@ -166,7 +166,7 @@ describe("KitStepSequencer", () => {
       expect.objectContaining({
         sequencerOpen: true,
         setSequencerOpen,
-      })
+      }),
     );
   });
 
@@ -198,7 +198,7 @@ describe("KitStepSequencer", () => {
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
-      />
+      />,
     );
 
     // Check that grid is rendered and receives correct props
@@ -223,7 +223,7 @@ describe("KitStepSequencer", () => {
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
-      />
+      />,
     );
 
     // Find the play/stop button in StepSequencerControls
@@ -248,14 +248,14 @@ describe("KitStepSequencer", () => {
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
-      />
+      />,
     );
 
     // Verify that custom grid ref was passed to the hook
     expect(mockUseKitStepSequencerLogic).toHaveBeenCalledWith(
       expect.objectContaining({
         gridRef: customGridRef,
-      })
+      }),
     );
   });
 
@@ -271,7 +271,7 @@ describe("KitStepSequencer", () => {
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
-      />
+      />,
     );
 
     // Verify the hook receives the correct props
@@ -279,7 +279,7 @@ describe("KitStepSequencer", () => {
       expect.objectContaining({
         sequencerOpen: false,
         setSequencerOpen,
-      })
+      }),
     );
 
     // Re-render with different state
@@ -296,14 +296,14 @@ describe("KitStepSequencer", () => {
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
-      />
+      />,
     );
 
     expect(mockUseKitStepSequencerLogic).toHaveBeenCalledWith(
       expect.objectContaining({
         sequencerOpen: true,
         setSequencerOpen,
-      })
+      }),
     );
   });
 });

@@ -78,7 +78,7 @@ async function testPlaywrightMCP() {
         console.log("✅ Playwright MCP server is available and working");
         console.log("   To start: npx @playwright/mcp");
         console.log(
-          "   Available options include: --browser, --headless, --port, etc."
+          "   Available options include: --browser, --headless, --port, etc.",
         );
         resolve(true);
       } else {
@@ -116,7 +116,7 @@ function showConnectionInstructions() {
 
   console.log("\n🔍 Renderer Process DevTools:");
   console.log(
-    "1. With Romper running, press Cmd+Option+I (Mac) or Ctrl+Shift+I"
+    "1. With Romper running, press Cmd+Option+I (Mac) or Ctrl+Shift+I",
   );
   console.log("2. Or add win.webContents.openDevTools() to main process code");
 
@@ -133,10 +133,10 @@ async function runTests() {
   console.log("\n📊 Test Summary");
   console.log("===============");
   console.log(
-    `Chrome DevTools Inspector: ${inspectorWorking ? "✅ Ready" : "❌ Not accessible"}`
+    `Chrome DevTools Inspector: ${inspectorWorking ? "✅ Ready" : "❌ Not accessible"}`,
   );
   console.log(
-    `Playwright MCP Server: ${playwrightWorking ? "✅ Ready" : "❌ Not available"}`
+    `Playwright MCP Server: ${playwrightWorking ? "✅ Ready" : "❌ Not available"}`,
   );
 
   if (!inspectorWorking) {

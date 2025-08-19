@@ -56,7 +56,7 @@ describe("AboutDialog", () => {
       render(<AboutDialog {...defaultProps} />);
 
       expect(
-        screen.getByText(`© Pete Baker ${currentYear}`)
+        screen.getByText(`© Pete Baker ${currentYear}`),
       ).toBeInTheDocument();
     });
 
@@ -65,7 +65,7 @@ describe("AboutDialog", () => {
 
       expect(screen.getByText("This application is")).toBeInTheDocument();
       expect(
-        screen.getByText("not affiliated with Squarp SAS")
+        screen.getByText("not affiliated with Squarp SAS"),
       ).toBeInTheDocument();
     });
 
@@ -82,7 +82,7 @@ describe("AboutDialog", () => {
       expect(screen.getByText(/Romper is an/)).toBeInTheDocument();
       expect(screen.getByText("open-source")).toBeInTheDocument();
       expect(
-        screen.getByText(/Electron app for managing Squarp Rample SD cards/)
+        screen.getByText(/Electron app for managing Squarp Rample SD cards/),
       ).toBeInTheDocument();
     });
 
@@ -161,7 +161,7 @@ describe("AboutDialog", () => {
       await user.click(githubButton);
 
       expect(vi.mocked(window.electronAPI.openExternal)).toHaveBeenCalledWith(
-        "https://github.com/peteb4ker/romper/"
+        "https://github.com/peteb4ker/romper/",
       );
     });
 
@@ -176,7 +176,7 @@ describe("AboutDialog", () => {
       await user.click(licenseButton);
 
       expect(vi.mocked(window.electronAPI.openExternal)).toHaveBeenCalledWith(
-        "https://opensource.org/licenses/MIT"
+        "https://opensource.org/licenses/MIT",
       );
     });
 
@@ -201,7 +201,7 @@ describe("AboutDialog", () => {
       expect(mockWindowOpen).toHaveBeenCalledWith(
         "https://github.com/peteb4ker/romper/",
         "_blank",
-        "noopener,noreferrer"
+        "noopener,noreferrer",
       );
     });
   });
@@ -247,7 +247,7 @@ describe("AboutDialog", () => {
         "flex",
         "items-center",
         "justify-center",
-        "z-50"
+        "z-50",
       );
     });
 
@@ -263,7 +263,7 @@ describe("AboutDialog", () => {
         "w-full",
         "max-w-lg",
         "max-h-[80vh]",
-        "overflow-hidden"
+        "overflow-hidden",
       );
     });
   });
@@ -284,7 +284,7 @@ describe("AboutDialog", () => {
       const onClose = vi.fn();
 
       render(
-        <AboutDialog {...defaultProps} isOpen={false} onClose={onClose} />
+        <AboutDialog {...defaultProps} isOpen={false} onClose={onClose} />,
       );
 
       // Dialog should not be in DOM, so escape handler should not be attached

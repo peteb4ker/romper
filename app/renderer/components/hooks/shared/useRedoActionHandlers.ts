@@ -20,13 +20,13 @@ export function useRedoActionHandlers({
           action.data.voice,
           action.data.slot,
           action.data.addedSample.source_path,
-          { forceMono: !action.data.addedSample.is_stereo }
+          { forceMono: !action.data.addedSample.is_stereo },
         );
       case "DELETE_SAMPLE":
         return (window as any).electronAPI?.deleteSampleFromSlot?.(
           kitName,
           action.data.voice,
-          action.data.slot
+          action.data.slot,
         );
       case "MOVE_SAMPLE":
         return (window as any).electronAPI?.moveSampleInKit?.(
@@ -35,7 +35,7 @@ export function useRedoActionHandlers({
           action.data.fromSlot,
           action.data.toVoice,
           action.data.toSlot,
-          action.data.mode
+          action.data.mode,
         );
       case "MOVE_SAMPLE_BETWEEN_KITS":
         return (window as any).electronAPI?.moveSampleBetweenKits?.(
@@ -45,13 +45,13 @@ export function useRedoActionHandlers({
           action.data.toKit,
           action.data.toVoice,
           action.data.toSlot,
-          action.data.mode
+          action.data.mode,
         );
       case "REINDEX_SAMPLES":
         return (window as any).electronAPI?.deleteSampleFromSlot?.(
           kitName,
           action.data.voice,
-          action.data.deletedSlot
+          action.data.deletedSlot,
         );
       case "REPLACE_SAMPLE":
         return (window as any).electronAPI?.replaceSampleInSlot?.(
@@ -59,12 +59,12 @@ export function useRedoActionHandlers({
           action.data.voice,
           action.data.slot,
           action.data.newSample.source_path,
-          { forceMono: !action.data.newSample.is_stereo }
+          { forceMono: !action.data.newSample.is_stereo },
         );
       default: {
         const _exhaustiveCheck: never = action;
         throw new Error(
-          `Unknown action type: ${(_exhaustiveCheck as any).type}`
+          `Unknown action type: ${(_exhaustiveCheck as any).type}`,
         );
       }
     }

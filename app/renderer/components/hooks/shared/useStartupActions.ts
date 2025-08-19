@@ -23,16 +23,16 @@ export function useStartupActions({
         const bankScanResult = await window.electronAPI.scanBanks?.();
         if (bankScanResult?.success) {
           console.info(
-            `[Startup] Bank scanning complete. Updated ${bankScanResult.data?.updatedBanks} banks.`
+            `[Startup] Bank scanning complete. Updated ${bankScanResult.data?.updatedBanks} banks.`,
           );
         } else {
           console.error(
-            `[Startup] Bank scanning failed: ${bankScanResult?.error}`
+            `[Startup] Bank scanning failed: ${bankScanResult?.error}`,
           );
         }
       } catch (error) {
         console.error(
-          `[Startup] Bank scanning error: ${error instanceof Error ? error.message : String(error)}`
+          `[Startup] Bank scanning error: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     };

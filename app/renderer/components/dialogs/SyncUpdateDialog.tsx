@@ -65,7 +65,7 @@ interface SyncUpdateDialogProps {
     wipeSdCard: boolean;
   }) => void;
   onGenerateChangeSummary?: (
-    sdCardPath: string
+    sdCardPath: string,
   ) => Promise<null | SyncChangeSummary>;
   onSdCardPathChange?: (path: null | string) => void;
   sdCardPath?: null | string;
@@ -86,10 +86,10 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 }) => {
   const [wipeSdCard, setWipeSdCard] = useState(false);
   const [localSdCardPath, setLocalSdCardPath] = useState<null | string>(
-    sdCardPath || null
+    sdCardPath || null,
   );
   const [changeSummary, setChangeSummary] = useState<null | SyncChangeSummary>(
-    localChangeSummary
+    localChangeSummary,
   );
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 

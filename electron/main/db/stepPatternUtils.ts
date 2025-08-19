@@ -6,7 +6,7 @@ export const STEP_PATTERN_BLOB_SIZE = STEP_PATTERN_STEPS * STEP_PATTERN_VOICES; 
 export const MAX_VELOCITY = 127;
 
 export function decodeStepPatternFromBlob(
-  blob: null | Uint8Array
+  blob: null | Uint8Array,
 ): null | number[][] {
   if (!blob || blob.length !== STEP_PATTERN_BLOB_SIZE) {
     return null;
@@ -34,7 +34,7 @@ export function decodeStepPatternFromBlob(
  * Layout: [step0_voice0, step0_voice1, step0_voice2, step0_voice3, step1_voice0, step1_voice1, ...]
  */
 export function encodeStepPatternToBlob(
-  stepPattern: null | number[][] | undefined
+  stepPattern: null | number[][] | undefined,
 ): null | Uint8Array {
   if (!stepPattern || stepPattern.length === 0) {
     return null;

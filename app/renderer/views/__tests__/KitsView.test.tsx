@@ -20,7 +20,7 @@ class MockIntersectionObserver {
 
   constructor(
     callback: IntersectionObserverCallback,
-    options?: IntersectionObserverInit
+    options?: IntersectionObserverInit,
   ) {
     this.rootMargin = options?.rootMargin || "0px";
     this.thresholds = options?.threshold ? [options.threshold] : [0];
@@ -67,22 +67,22 @@ vi.mock("../../components/hooks/shared/useMenuEvents", () => ({
     // Register menu event listeners
     if (typeof window !== "undefined") {
       window.addEventListener("menu-scan-all-kits", () =>
-        callbacks.onScanAllKits?.()
+        callbacks.onScanAllKits?.(),
       );
       window.addEventListener("menu-scan-banks", () =>
-        callbacks.onScanBanks?.()
+        callbacks.onScanBanks?.(),
       );
       window.addEventListener("menu-validate-database", () =>
-        callbacks.onValidateDatabase?.()
+        callbacks.onValidateDatabase?.(),
       );
       window.addEventListener("menu-setup-local-store", () =>
-        callbacks.onSetupLocalStore?.()
+        callbacks.onSetupLocalStore?.(),
       );
       window.addEventListener("menu-change-local-store-directory", () =>
-        callbacks.onChangeLocalStoreDirectory?.()
+        callbacks.onChangeLocalStoreDirectory?.(),
       );
       window.addEventListener("menu-preferences", () =>
-        callbacks.onPreferences?.()
+        callbacks.onPreferences?.(),
       );
       window.addEventListener("menu-about", () => callbacks.onAbout?.());
     }
@@ -209,7 +209,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
       // There may be multiple elements with the same kit label, so use findAllByText
       const kitA0s = await screen.findAllByText("A0");
@@ -222,7 +222,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Wait for kits to load and click on a kit
@@ -244,7 +244,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -263,7 +263,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -302,7 +302,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Wait for component to render and callbacks to be set up
@@ -321,7 +321,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Wait for component to render and callbacks to be set up
@@ -341,7 +341,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Wait for component to render and callbacks to be set up
@@ -361,7 +361,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Wait for component to render and callbacks to be set up
@@ -381,7 +381,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Wait for component to render and callbacks to be set up
@@ -401,7 +401,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Wait for component to render and callbacks to be set up
@@ -421,7 +421,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Trigger the menu event
@@ -439,19 +439,19 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
         expect(window.electronAPI.getKits).toHaveBeenCalled();
         expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-          "A0"
+          "A0",
         );
         expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-          "A1"
+          "A1",
         );
         expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-          "B0"
+          "B0",
         );
       });
     });
@@ -465,7 +465,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -482,7 +482,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -526,7 +526,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -543,7 +543,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -568,7 +568,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -624,13 +624,13 @@ describe("KitsView", () => {
       render(
         <TestSettingsProviderNeedsSetup>
           <KitsView />
-        </TestSettingsProviderNeedsSetup>
+        </TestSettingsProviderNeedsSetup>,
       );
 
       // Should show wizard
       await waitFor(() => {
         expect(
-          screen.getByText("Local Store Setup Required")
+          screen.getByText("Local Store Setup Required"),
         ).toBeInTheDocument();
       });
     });
@@ -678,7 +678,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProviderNeedsSetup>
           <KitsView />
-        </TestSettingsProviderNeedsSetup>
+        </TestSettingsProviderNeedsSetup>,
       );
 
       // Wait a bit for any UI to render
@@ -687,7 +687,7 @@ describe("KitsView", () => {
           // Just ensure the component rendered
           expect(screen.getByTestId("kits-view")).toBeInTheDocument();
         },
-        { timeout: 1000 }
+        { timeout: 1000 },
       );
 
       // Wait for the wizard modal to appear
@@ -705,7 +705,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Wait for component to render and callbacks to be set up
@@ -725,7 +725,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Wait for component to render and callbacks to be set up
@@ -747,7 +747,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -782,13 +782,13 @@ describe("KitsView", () => {
   describe("Error handling", () => {
     it("handles kit loading exceptions", async () => {
       vi.mocked(window.electronAPI.getKits).mockRejectedValue(
-        new Error("Network error")
+        new Error("Network error"),
       );
 
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -801,13 +801,13 @@ describe("KitsView", () => {
 
     it("handles sample loading exceptions", async () => {
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(
-        new Error("File not found")
+        new Error("File not found"),
       );
 
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -824,7 +824,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -846,7 +846,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -870,7 +870,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -912,7 +912,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -942,7 +942,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -979,7 +979,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -1044,13 +1044,13 @@ describe("KitsView", () => {
       render(
         <TestSettingsProviderWithMock>
           <KitsView />
-        </TestSettingsProviderWithMock>
+        </TestSettingsProviderWithMock>,
       );
 
       // Should show wizard
       await waitFor(() => {
         expect(
-          screen.getByText("Local Store Setup Required")
+          screen.getByText("Local Store Setup Required"),
         ).toBeInTheDocument();
       });
 
@@ -1109,7 +1109,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       // Wait for all data to load
@@ -1145,7 +1145,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -1172,7 +1172,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -1189,7 +1189,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProvider>
           <KitsView />
-        </TestSettingsProvider>
+        </TestSettingsProvider>,
       );
 
       await waitFor(() => {
@@ -1256,7 +1256,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProviderNotInitialized>
           <KitsView />
-        </TestSettingsProviderNotInitialized>
+        </TestSettingsProviderNotInitialized>,
       );
 
       // Should not attempt to load data when not initialized
@@ -1295,7 +1295,7 @@ describe("KitsView", () => {
       render(
         <TestSettingsProviderNoPath>
           <KitsView />
-        </TestSettingsProviderNoPath>
+        </TestSettingsProviderNoPath>,
       );
 
       // Should not attempt to load data when path is missing

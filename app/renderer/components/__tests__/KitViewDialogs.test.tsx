@@ -14,7 +14,7 @@ vi.mock("../dialogs/ChangeLocalStoreDirectoryDialog", () => ({
           Message
         </button>
       </div>
-    ) : null
+    ) : null,
   ),
 }));
 
@@ -24,7 +24,7 @@ vi.mock("../dialogs/PreferencesDialog", () => ({
       <div data-testid="preferences-dialog">
         <button onClick={onClose}>Close</button>
       </div>
-    ) : null
+    ) : null,
   ),
 }));
 
@@ -49,7 +49,7 @@ describe("KitViewDialogs", () => {
     it("should render without crashing", () => {
       render(<KitViewDialogs {...defaultProps} />);
       expect(
-        screen.queryByTestId("change-directory-dialog")
+        screen.queryByTestId("change-directory-dialog"),
       ).not.toBeInTheDocument();
     });
 
@@ -57,21 +57,21 @@ describe("KitViewDialogs", () => {
       render(<KitViewDialogs {...defaultProps} />);
 
       expect(
-        screen.queryByTestId("change-directory-dialog")
+        screen.queryByTestId("change-directory-dialog"),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("preferences-dialog")
+        screen.queryByTestId("preferences-dialog"),
       ).not.toBeInTheDocument();
     });
 
     it("should show ChangeLocalStoreDirectoryDialog when showChangeDirectoryDialog is true", () => {
       render(
-        <KitViewDialogs {...defaultProps} showChangeDirectoryDialog={true} />
+        <KitViewDialogs {...defaultProps} showChangeDirectoryDialog={true} />,
       );
 
       expect(screen.getByTestId("change-directory-dialog")).toBeInTheDocument();
       expect(
-        screen.queryByTestId("preferences-dialog")
+        screen.queryByTestId("preferences-dialog"),
       ).not.toBeInTheDocument();
     });
 
@@ -80,7 +80,7 @@ describe("KitViewDialogs", () => {
 
       expect(screen.getByTestId("preferences-dialog")).toBeInTheDocument();
       expect(
-        screen.queryByTestId("change-directory-dialog")
+        screen.queryByTestId("change-directory-dialog"),
       ).not.toBeInTheDocument();
     });
 
@@ -90,7 +90,7 @@ describe("KitViewDialogs", () => {
           {...defaultProps}
           showChangeDirectoryDialog={true}
           showPreferencesDialog={true}
-        />
+        />,
       );
 
       expect(screen.getByTestId("change-directory-dialog")).toBeInTheDocument();
@@ -106,7 +106,7 @@ describe("KitViewDialogs", () => {
           {...defaultProps}
           onCloseChangeDirectory={onCloseChangeDirectory}
           showChangeDirectoryDialog={true}
-        />
+        />,
       );
 
       const dialog = screen.getByTestId("change-directory-dialog");
@@ -123,7 +123,7 @@ describe("KitViewDialogs", () => {
           {...defaultProps}
           onClosePreferences={onClosePreferences}
           showPreferencesDialog={true}
-        />
+        />,
       );
 
       const closeButton = screen.getByText("Close");
@@ -139,7 +139,7 @@ describe("KitViewDialogs", () => {
           {...defaultProps}
           onMessage={onMessage}
           showChangeDirectoryDialog={true}
-        />
+        />,
       );
 
       const dialog = screen.getByTestId("change-directory-dialog");
@@ -157,19 +157,19 @@ describe("KitViewDialogs", () => {
 
       // Initially no dialogs shown
       expect(
-        screen.queryByTestId("change-directory-dialog")
+        screen.queryByTestId("change-directory-dialog"),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("preferences-dialog")
+        screen.queryByTestId("preferences-dialog"),
       ).not.toBeInTheDocument();
 
       // Show change directory dialog
       rerender(
-        <KitViewDialogs {...defaultProps} showChangeDirectoryDialog={true} />
+        <KitViewDialogs {...defaultProps} showChangeDirectoryDialog={true} />,
       );
       expect(screen.getByTestId("change-directory-dialog")).toBeInTheDocument();
       expect(
-        screen.queryByTestId("preferences-dialog")
+        screen.queryByTestId("preferences-dialog"),
       ).not.toBeInTheDocument();
 
       // Show preferences dialog too
@@ -178,7 +178,7 @@ describe("KitViewDialogs", () => {
           {...defaultProps}
           showChangeDirectoryDialog={true}
           showPreferencesDialog={true}
-        />
+        />,
       );
       expect(screen.getByTestId("change-directory-dialog")).toBeInTheDocument();
       expect(screen.getByTestId("preferences-dialog")).toBeInTheDocument();
@@ -186,10 +186,10 @@ describe("KitViewDialogs", () => {
       // Hide both
       rerender(<KitViewDialogs {...defaultProps} />);
       expect(
-        screen.queryByTestId("change-directory-dialog")
+        screen.queryByTestId("change-directory-dialog"),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("preferences-dialog")
+        screen.queryByTestId("preferences-dialog"),
       ).not.toBeInTheDocument();
     });
   });

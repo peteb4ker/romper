@@ -26,7 +26,7 @@ interface UseKitStepSequencerLogicParams {
  * Handles worker management, playback, pattern management, and keyboard navigation
  */
 export function useKitStepSequencerLogic(
-  params: UseKitStepSequencerLogicParams
+  params: UseKitStepSequencerLogicParams,
 ) {
   const {
     bpm = 120,
@@ -158,13 +158,13 @@ export function useKitStepSequencerLogic(
       if (isStepActive) {
         console.log(
           `[Sequencer] Step ${currentSeqStep} voice ${voiceNumber}: active=${isStepActive}, sample=${sample}, voiceSamples=`,
-          voiceSamples
+          voiceSamples,
         );
         if (sample) {
           onPlaySample(voiceNumber, sample);
         } else {
           console.log(
-            `[Sequencer] No sample available for voice ${voiceNumber}`
+            `[Sequencer] No sample available for voice ${voiceNumber}`,
           );
         }
       }
@@ -184,22 +184,22 @@ export function useKitStepSequencerLogic(
       const newVelocity = oldVelocity > 0 ? 0 : 127;
 
       console.log(
-        `[Sequencer] Toggling step voice ${voiceIdx + 1}, step ${stepIdx}: ${oldVelocity} -> ${newVelocity}`
+        `[Sequencer] Toggling step voice ${voiceIdx + 1}, step ${stepIdx}: ${oldVelocity} -> ${newVelocity}`,
       );
 
       const newPattern = stepPattern.map((row, v) =>
         v === voiceIdx
           ? row.map((velocity, s) => (s === stepIdx ? newVelocity : velocity))
-          : row
+          : row,
       );
 
       console.log(
         `[Sequencer] New pattern for voice ${voiceIdx + 1}:`,
-        newPattern[voiceIdx]
+        newPattern[voiceIdx],
       );
       setStepPattern(newPattern);
     },
-    [stepPattern, setStepPattern]
+    [stepPattern, setStepPattern],
   );
 
   // Focus navigation
@@ -227,7 +227,7 @@ export function useKitStepSequencerLogic(
         return { step: newStep, voice: newVoice };
       });
     },
-    []
+    [],
   );
 
   // Keyboard navigation
@@ -250,7 +250,7 @@ export function useKitStepSequencerLogic(
       }
       e.preventDefault();
     },
-    [sequencerOpen, focusedStep, moveFocus, toggleStep]
+    [sequencerOpen, focusedStep, moveFocus, toggleStep],
   );
 
   // Focus management when sequencer opens

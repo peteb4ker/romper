@@ -19,7 +19,7 @@ describe("useBankScanning", () => {
     const { result } = renderHook(() =>
       useBankScanning({
         onMessage: mockOnMessage,
-      })
+      }),
     );
 
     await act(async () => {
@@ -29,7 +29,7 @@ describe("useBankScanning", () => {
     expect(window.electronAPI.scanBanks).toHaveBeenCalledWith();
     expect(mockOnMessage).toHaveBeenCalledWith(
       "Bank scanning complete. Updated 3 banks.",
-      "success"
+      "success",
     );
   });
 
@@ -42,7 +42,7 @@ describe("useBankScanning", () => {
     const { result } = renderHook(() =>
       useBankScanning({
         onMessage: mockOnMessage,
-      })
+      }),
     );
 
     await act(async () => {
@@ -51,19 +51,19 @@ describe("useBankScanning", () => {
 
     expect(mockOnMessage).toHaveBeenCalledWith(
       "Bank scanning failed: Database connection failed",
-      "error"
+      "error",
     );
   });
 
   it("should handle scanning exception", async () => {
     vi.mocked(window.electronAPI.scanBanks).mockRejectedValue(
-      new Error("Network error")
+      new Error("Network error"),
     );
 
     const { result } = renderHook(() =>
       useBankScanning({
         onMessage: mockOnMessage,
-      })
+      }),
     );
 
     await act(async () => {
@@ -72,7 +72,7 @@ describe("useBankScanning", () => {
 
     expect(mockOnMessage).toHaveBeenCalledWith(
       "Bank scanning error: Network error",
-      "error"
+      "error",
     );
   });
 
@@ -85,7 +85,7 @@ describe("useBankScanning", () => {
     const { result } = renderHook(() =>
       useBankScanning({
         onMessage: undefined,
-      })
+      }),
     );
 
     await act(async () => {

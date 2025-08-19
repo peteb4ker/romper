@@ -139,13 +139,16 @@ describe("Drag and Drop Integration Tests", () => {
 
   // Helper function to get all samples for a voice sorted by slot
   function getSamplesInVoice(
-    voiceNumber: number
+    voiceNumber: number,
   ): Array<{ filename: string; slot_number: number }> {
     return db
       .select({ filename: samples.filename, slot_number: samples.slot_number })
       .from(samples)
       .where(
-        and(eq(samples.kit_name, "TEST"), eq(samples.voice_number, voiceNumber))
+        and(
+          eq(samples.kit_name, "TEST"),
+          eq(samples.voice_number, voiceNumber),
+        ),
       )
       .orderBy(samples.slot_number)
       .all();
@@ -154,7 +157,7 @@ describe("Drag and Drop Integration Tests", () => {
   // Helper function to verify contiguous slots starting from 0
   function verifyContiguousSlots(
     voiceNumber: number,
-    expectedFilenames: string[]
+    expectedFilenames: string[],
   ) {
     const voiceSamples = getSamplesInVoice(voiceNumber);
     expect(voiceSamples).toHaveLength(expectedFilenames.length);

@@ -98,7 +98,7 @@ export function useSlotRendering({
 
       return { dragOverClass, dropHintTitle };
     },
-    []
+    [],
   );
 
   // Helper function to calculate slot styling and drag feedback
@@ -138,7 +138,7 @@ export function useSlotRendering({
       calculateDragStyling,
       defaultToMonoSamples,
       voice,
-    ]
+    ],
   );
 
   // Helper function to get sample slot CSS classes
@@ -150,7 +150,7 @@ export function useSlotRendering({
         : "";
       return `${slotBaseClass}${selectedClass}${dragOverClass}`;
     },
-    [selectedIdx, isActive]
+    [selectedIdx, isActive],
   );
 
   // Helper function to get sample slot title
@@ -161,7 +161,7 @@ export function useSlotRendering({
       isDragOver: boolean,
       isStereoHighlight: boolean,
       isDropZone: boolean,
-      dropHintTitle: string
+      dropHintTitle: string,
     ) => {
       if (isDragOver || isStereoHighlight || isDropZone) {
         return dropHintTitle;
@@ -173,7 +173,7 @@ export function useSlotRendering({
         : "";
       return baseTitle + sourceInfo;
     },
-    []
+    [],
   );
 
   return {

@@ -79,7 +79,7 @@ export function useKit({ kitName, onKitUpdated }: UseKitParams) {
       }
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "Failed to toggle editable mode"
+        e instanceof Error ? e.message : "Failed to toggle editable mode",
       );
     }
   };

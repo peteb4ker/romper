@@ -53,7 +53,7 @@ describe("KitVoicePanel Drag & Drop Integration", () => {
         <MockMessageDisplayProvider>
           <KitVoicePanel {...finalProps} />
         </MockMessageDisplayProvider>
-      </MockSettingsProvider>
+      </MockSettingsProvider>,
     );
   };
 

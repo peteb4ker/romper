@@ -50,7 +50,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container, getByTestId } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>
+        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
       );
 
       const button = container.querySelector("button");
@@ -62,7 +62,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { getByLabelText, getByTestId } = render(
-        <div>{result.current.renderPlayButton(true, "test.wav")}</div>
+        <div>{result.current.renderPlayButton(true, "test.wav")}</div>,
       );
 
       const button = getByLabelText("Stop");
@@ -74,7 +74,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>
+        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
       );
 
       const button = container.querySelector('button[aria-label="Play"]');
@@ -83,7 +83,7 @@ describe("useVoicePanelButtons", () => {
         "rounded",
         "hover:bg-blue-100",
         "dark:hover:bg-slate-700",
-        "text-xs"
+        "text-xs",
       );
     });
 
@@ -91,7 +91,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(true, "test.wav")}</div>
+        <div>{result.current.renderPlayButton(true, "test.wav")}</div>,
       );
 
       const button = container.querySelector('button[aria-label="Stop"]');
@@ -102,7 +102,7 @@ describe("useVoicePanelButtons", () => {
         "dark:hover:bg-slate-700",
         "text-xs",
         "text-red-600",
-        "dark:text-red-400"
+        "dark:text-red-400",
       );
     });
 
@@ -110,7 +110,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>
+        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
       );
 
       const button = container.querySelector('button[aria-label="Play"]');
@@ -127,7 +127,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "sample.wav")}</div>
+        <div>{result.current.renderPlayButton(false, "sample.wav")}</div>,
       );
 
       const button = container.querySelector('button[aria-label="Play"]');
@@ -140,7 +140,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(true, "sample.wav")}</div>
+        <div>{result.current.renderPlayButton(true, "sample.wav")}</div>,
       );
 
       const button = container.querySelector('button[aria-label="Stop"]');
@@ -151,11 +151,11 @@ describe("useVoicePanelButtons", () => {
 
     it("handles different voice numbers correctly", () => {
       const { result } = renderHook(() =>
-        useVoicePanelButtons({ ...defaultProps, voice: 7 })
+        useVoicePanelButtons({ ...defaultProps, voice: 7 }),
       );
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>
+        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
       );
 
       const button = container.querySelector('button[aria-label="Play"]');
@@ -170,7 +170,7 @@ describe("useVoicePanelButtons", () => {
       const { container } = render(
         <div>
           {result.current.renderPlayButton(false, "different-sample.wav")}
-        </div>
+        </div>,
       );
 
       const button = container.querySelector('button[aria-label="Play"]');
@@ -183,7 +183,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "")}</div>
+        <div>{result.current.renderPlayButton(false, "")}</div>,
       );
 
       const button = container.querySelector("button");
@@ -195,7 +195,7 @@ describe("useVoicePanelButtons", () => {
     it("memoizes correctly based on dependencies", () => {
       const { rerender, result } = renderHook(
         (props) => useVoicePanelButtons(props),
-        { initialProps: defaultProps }
+        { initialProps: defaultProps },
       );
 
       const firstRender = result.current.renderPlayButton;
@@ -212,7 +212,7 @@ describe("useVoicePanelButtons", () => {
     it("recreates when dependencies change", () => {
       const { rerender, result } = renderHook(
         (props) => useVoicePanelButtons(props),
-        { initialProps: defaultProps }
+        { initialProps: defaultProps },
       );
 
       const firstRender = result.current.renderPlayButton;
@@ -232,7 +232,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container, getByTestId } = render(
-        <div>{result.current.renderDeleteButton(2)}</div>
+        <div>{result.current.renderDeleteButton(2)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -245,7 +245,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderDeleteButton(0)}</div>
+        <div>{result.current.renderDeleteButton(0)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -257,7 +257,7 @@ describe("useVoicePanelButtons", () => {
         "text-xs",
         "text-red-600",
         "dark:text-red-400",
-        "ml-2"
+        "ml-2",
       );
     });
 
@@ -265,7 +265,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderDeleteButton(1)}</div>
+        <div>{result.current.renderDeleteButton(1)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -282,7 +282,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderDeleteButton(4)}</div>
+        <div>{result.current.renderDeleteButton(4)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -295,7 +295,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderDeleteButton(0)}</div>
+        <div>{result.current.renderDeleteButton(0)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -312,10 +312,10 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container: container1 } = render(
-        <div>{result.current.renderDeleteButton(0)}</div>
+        <div>{result.current.renderDeleteButton(0)}</div>,
       );
       const { container: container2 } = render(
-        <div>{result.current.renderDeleteButton(7)}</div>
+        <div>{result.current.renderDeleteButton(7)}</div>,
       );
 
       const button1 = container1.querySelector("button");
@@ -336,7 +336,7 @@ describe("useVoicePanelButtons", () => {
       }).not.toThrow();
 
       const { container } = render(
-        <div>{result.current.renderDeleteButton(-1)}</div>
+        <div>{result.current.renderDeleteButton(-1)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -353,7 +353,7 @@ describe("useVoicePanelButtons", () => {
       }).not.toThrow();
 
       const { container } = render(
-        <div>{result.current.renderDeleteButton(999)}</div>
+        <div>{result.current.renderDeleteButton(999)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -365,7 +365,7 @@ describe("useVoicePanelButtons", () => {
     it("memoizes correctly based on dependencies", () => {
       const { rerender, result } = renderHook(
         (props) => useVoicePanelButtons(props),
-        { initialProps: defaultProps }
+        { initialProps: defaultProps },
       );
 
       const firstRender = result.current.renderDeleteButton;
@@ -382,7 +382,7 @@ describe("useVoicePanelButtons", () => {
     it("recreates when dependencies change", () => {
       const { rerender, result } = renderHook(
         (props) => useVoicePanelButtons(props),
-        { initialProps: defaultProps }
+        { initialProps: defaultProps },
       );
 
       const firstRender = result.current.renderDeleteButton;
@@ -408,7 +408,7 @@ describe("useVoicePanelButtons", () => {
         <div>
           {result.current.renderPlayButton(false, "test.wav")}
           {result.current.renderDeleteButton(1)}
-        </div>
+        </div>,
       );
 
       const buttons = container.querySelectorAll("button");
@@ -437,7 +437,7 @@ describe("useVoicePanelButtons", () => {
           {playButton2}
           {deleteButton1}
           {deleteButton2}
-        </div>
+        </div>,
       );
 
       const buttons = container.querySelectorAll("button");
@@ -461,11 +461,11 @@ describe("useVoicePanelButtons", () => {
   describe("edge cases", () => {
     it("handles voice number 0", () => {
       const { result } = renderHook(() =>
-        useVoicePanelButtons({ ...defaultProps, voice: 0 })
+        useVoicePanelButtons({ ...defaultProps, voice: 0 }),
       );
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>
+        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
       );
 
       const button = container.querySelector("button");
@@ -476,11 +476,11 @@ describe("useVoicePanelButtons", () => {
 
     it("handles voice number 16", () => {
       const { result } = renderHook(() =>
-        useVoicePanelButtons({ ...defaultProps, voice: 16 })
+        useVoicePanelButtons({ ...defaultProps, voice: 16 }),
       );
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>
+        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
       );
 
       const button = container.querySelector("button");
@@ -493,7 +493,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, undefined as any)}</div>
+        <div>{result.current.renderPlayButton(false, undefined as any)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -506,7 +506,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, null as any)}</div>
+        <div>{result.current.renderPlayButton(false, null as any)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -519,7 +519,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderDeleteButton(2)}</div>
+        <div>{result.current.renderDeleteButton(2)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -541,7 +541,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(errorProps));
 
       const { container } = render(
-        <div>{result.current.renderDeleteButton(1)}</div>
+        <div>{result.current.renderDeleteButton(1)}</div>,
       );
 
       const button = container.querySelector("button");

@@ -43,7 +43,7 @@ export function useSampleManagementMoveOps({
       }
       return true;
     },
-    [onMessage]
+    [onMessage],
   );
 
   const captureStateSnapshot = useCallback(
@@ -68,7 +68,7 @@ export function useSampleManagementMoveOps({
           voice: s.voice_number,
         }));
     },
-    [kitName, skipUndoRecording, onAddUndoAction]
+    [kitName, skipUndoRecording, onAddUndoAction],
   );
 
   const handleMoveSuccess = useCallback(
@@ -79,7 +79,7 @@ export function useSampleManagementMoveOps({
       _fromVoice: number,
       _fromSlot: number,
       _toVoice: number,
-      _toSlot: number
+      _toSlot: number,
     ) => {
       // Toast notifications removed per user request
 
@@ -87,7 +87,7 @@ export function useSampleManagementMoveOps({
         await onSamplesChanged();
       }
     },
-    [onSamplesChanged]
+    [onSamplesChanged],
   );
 
   const handleSampleMove = useCallback(
@@ -96,7 +96,7 @@ export function useSampleManagementMoveOps({
       fromSlot: number,
       toVoice: number,
       toSlot: number,
-      toKit?: string
+      toKit?: string,
     ) => {
       const targetKit = toKit || kitName;
       const isCrossKit = targetKit !== kitName;
@@ -123,7 +123,7 @@ export function useSampleManagementMoveOps({
             fromVoice,
             fromSlot,
             toVoice,
-            toSlot
+            toSlot,
           );
 
           if (
@@ -170,7 +170,7 @@ export function useSampleManagementMoveOps({
             fromVoice,
             fromSlot,
             toVoice,
-            toSlot
+            toSlot,
           );
         } else {
           onMessage?.(result.error || "Failed to move sample", "error");
@@ -178,7 +178,7 @@ export function useSampleManagementMoveOps({
       } catch (error) {
         onMessage?.(
           `Failed to move sample: ${error instanceof Error ? error.message : String(error)}`,
-          "error"
+          "error",
         );
       }
     },
@@ -191,7 +191,7 @@ export function useSampleManagementMoveOps({
       onAddUndoAction,
       handleMoveSuccess,
       onMessage,
-    ]
+    ],
   );
 
   return {

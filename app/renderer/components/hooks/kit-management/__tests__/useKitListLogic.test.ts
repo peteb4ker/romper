@@ -72,13 +72,13 @@ describe("useKitListLogic", () => {
 
     const sortedKits = result.current.kitsToDisplay;
     expect(result.current.showBankAnchor(sortedKits[0], 0, sortedKits)).toBe(
-      true
+      true,
     ); // A1 - first kit
     expect(result.current.showBankAnchor(sortedKits[1], 1, sortedKits)).toBe(
-      false
+      false,
     ); // A2 - same bank as A1
     expect(result.current.showBankAnchor(sortedKits[2], 2, sortedKits)).toBe(
-      true
+      true,
     ); // B2 - different bank
   });
 });

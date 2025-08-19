@@ -30,7 +30,7 @@ export function addKit(dbDir: string, kit: NewKit): DbResult<void> {
           kit_name: kit.name,
           voice_alias: null,
           voice_number: i + 1,
-        }))
+        })),
       )
       .run();
   });
@@ -41,7 +41,7 @@ export function addKit(dbDir: string, kit: NewKit): DbResult<void> {
  */
 export function addSample(
   dbDir: string,
-  sample: NewSample
+  sample: NewSample,
 ): DbResult<{ sampleId: number }> {
   return withDb(dbDir, (db) => {
     const result = db
@@ -61,7 +61,7 @@ export function addSample(
  */
 export function buildDeleteConditions(
   kitName: string,
-  filter?: { slotNumber?: number; voiceNumber?: number }
+  filter?: { slotNumber?: number; voiceNumber?: number },
 ) {
   let conditions = [eq(samples.kit_name, kitName)];
 
@@ -83,7 +83,7 @@ export function buildDeleteConditions(
 export function deleteSamples(
   dbDir: string,
   kitName: string,
-  filter?: { slotNumber?: number; voiceNumber?: number }
+  filter?: { slotNumber?: number; voiceNumber?: number },
 ): DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }> {
   return withDb(dbDir, (db) => {
     const whereCondition = buildDeleteConditions(kitName, filter);
@@ -95,7 +95,7 @@ export function deleteSamples(
     const affectedSamples = performVoiceReindexing(
       dbDir,
       kitName,
-      samplesToDelete
+      samplesToDelete,
     );
 
     return {
@@ -111,7 +111,7 @@ export function deleteSamples(
 export function deleteSamplesWithoutReindexing(
   dbDir: string,
   kitName: string,
-  filter?: { slotNumber?: number; voiceNumber?: number }
+  filter?: { slotNumber?: number; voiceNumber?: number },
 ): DbResult<{ deletedSamples: Sample[] }> {
   return withDb(dbDir, (db) => {
     const whereCondition = buildDeleteConditions(kitName, filter);
@@ -183,7 +183,7 @@ export function getFavoriteKitsCount(dbDir: string): DbResult<number> {
  */
 export function getKit(
   dbDir: string,
-  kitName: string
+  kitName: string,
 ): DbResult<KitWithRelations | null> {
   return withDb(dbDir, (db) => {
     const kit = db.select().from(kits).where(eq(kits.name, kitName)).get();
@@ -304,7 +304,7 @@ export function getSamplesToDelete(db: any, whereCondition: any): Sample[] {
  */
 export function markKitAsModified(
   dbDir: string,
-  kitName: string
+  kitName: string,
 ): DbResult<void> {
   return withDb(dbDir, (db) => {
     db.update(kits)
@@ -322,7 +322,7 @@ export function markKitAsModified(
  */
 export function markKitAsSynced(
   dbDir: string,
-  kitName: string
+  kitName: string,
 ): DbResult<void> {
   return withDb(dbDir, (db) => {
     db.update(kits)
@@ -337,12 +337,12 @@ export function markKitAsSynced(
  */
 export function markKitsAsSynced(
   dbDir: string,
-  kitNames: string[]
+  kitNames: string[],
 ): DbResult<void> {
   return withDb(dbDir, (db) => {
     console.log(
       `[markKitsAsSynced] Attempting to mark ${kitNames.length} kits as synced:`,
-      kitNames
+      kitNames,
     );
 
     try {
@@ -354,12 +354,12 @@ export function markKitsAsSynced(
         .run();
 
       console.log(
-        `[markKitsAsSynced] Successfully updated ${result.changes}/${kitNames.length} kits`
+        `[markKitsAsSynced] Successfully updated ${result.changes}/${kitNames.length} kits`,
       );
 
       if (result.changes !== kitNames.length) {
         console.warn(
-          `[markKitsAsSynced] Expected to update ${kitNames.length} kits but updated ${result.changes}`
+          `[markKitsAsSynced] Expected to update ${kitNames.length} kits but updated ${result.changes}`,
         );
       }
     } catch (error) {
@@ -374,7 +374,7 @@ export function markKitsAsSynced(
  */
 export function toggleKitFavorite(
   dbDir: string,
-  kitName: string
+  kitName: string,
 ): DbResult<{ isFavorite: boolean }> {
   return withDb(dbDir, (db) => {
     // Get current favorite status
@@ -409,7 +409,7 @@ export function updateBank(
     artist?: string;
     rtf_filename?: string;
     scanned_at?: Date;
-  }
+  },
 ): DbResult<void> {
   return withDb(dbDir, (db) => {
     const result = db
@@ -441,7 +441,7 @@ export function updateKit(
     modified?: boolean;
     name?: string;
     step_pattern?: null | number[][];
-  }
+  },
 ): DbResult<void> {
   return withDb(dbDir, (db) => {
     const result = db
@@ -466,7 +466,7 @@ export function updateVoiceAlias(
   dbDir: string,
   kitName: string,
   voiceNumber: number,
-  alias: string
+  alias: string,
 ): DbResult<void> {
   return withDb(dbDir, (db) => {
     const result = db
@@ -476,7 +476,7 @@ export function updateVoiceAlias(
         voice_alias: alias,
       })
       .where(
-        and(eq(voices.kit_name, kitName), eq(voices.voice_number, voiceNumber))
+        and(eq(voices.kit_name, kitName), eq(voices.voice_number, voiceNumber)),
       )
       .run();
 

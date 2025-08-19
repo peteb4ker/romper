@@ -49,7 +49,7 @@ export function useVoiceNameEditor({
         handleCancel();
       }
     },
-    [handleSave, handleCancel]
+    [handleSave, handleCancel],
   );
 
   return {

@@ -42,7 +42,7 @@ describe("useUndoActionHandlers", () => {
   it("handles null kit name", () => {
     const propsWithNullKit = { ...defaultProps, kitName: null };
     const { result } = renderHook(() =>
-      useUndoActionHandlers(propsWithNullKit)
+      useUndoActionHandlers(propsWithNullKit),
     );
 
     expect(result.current).toBeDefined();

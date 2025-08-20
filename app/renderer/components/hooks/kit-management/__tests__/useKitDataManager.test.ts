@@ -41,20 +41,15 @@ describe("useKitDataManager", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock window.electronAPI
-    globalThis.window = {
-      ...globalThis.window,
-      electronAPI: {
-        getAllSamplesForKit: vi.fn().mockResolvedValue({
-          data: mockSamples,
-          success: true,
-        }),
-        getKits: vi.fn().mockResolvedValue({
-          data: mockKits,
-          success: true,
-        }),
-      },
-    };
+    // Use centralized mocks and override specific methods for this test
+    vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+      data: mockSamples,
+      success: true,
+    });
+    vi.mocked(window.electronAPI.getKits).mockResolvedValue({
+      data: mockKits,
+      success: true,
+    });
   });
 
   it("should initialize with empty state", () => {
@@ -396,4 +391,7 @@ describe("useKitDataManager", () => {
 
     expect(window.electronAPI.getKits).toHaveBeenCalled();
   });
+
+  // TODO: Add comprehensive tests for new mutation methods once React test environment is fixed
+  // Tests needed: getKitByName, updateKit, toggleKitFavorite, updateKitAlias, toggleKitEditable
 });

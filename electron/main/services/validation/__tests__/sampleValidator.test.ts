@@ -83,7 +83,7 @@ describe("SampleValidator", () => {
 
     it("should reject files too small for WAV header", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 20 } as any);
+      mockFs.statSync.mockReturnValue({ size: 20 } as NodeJS.Stats);
 
       const result = validator.validateSampleFile("/path/to/file.wav");
 
@@ -93,15 +93,15 @@ describe("SampleValidator", () => {
 
     it("should reject files with invalid RIFF signature", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 100 } as any);
+      mockFs.statSync.mockReturnValue({ size: 100 } as NodeJS.Stats);
 
       const buffer = Buffer.from("FAIL....WAVE", "ascii");
-      mockFs.openSync.mockReturnValue(1 as any);
+      mockFs.openSync.mockReturnValue(1);
       mockFs.readSync.mockImplementation((_fd, buf) => {
         buffer.copy(buf as Buffer);
         return 12;
       });
-      mockFs.closeSync.mockReturnValue(undefined as any);
+      mockFs.closeSync.mockReturnValue(undefined);
 
       const result = validator.validateSampleFile("/path/to/file.wav");
 
@@ -111,15 +111,15 @@ describe("SampleValidator", () => {
 
     it("should reject files with invalid WAVE format", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 100 } as any);
+      mockFs.statSync.mockReturnValue({ size: 100 } as NodeJS.Stats);
 
       const buffer = Buffer.from("RIFF....FAIL", "ascii");
-      mockFs.openSync.mockReturnValue(1 as any);
+      mockFs.openSync.mockReturnValue(1);
       mockFs.readSync.mockImplementation((_fd, buf) => {
         buffer.copy(buf as Buffer);
         return 12;
       });
-      mockFs.closeSync.mockReturnValue(undefined as any);
+      mockFs.closeSync.mockReturnValue(undefined);
 
       const result = validator.validateSampleFile("/path/to/file.wav");
 
@@ -131,15 +131,15 @@ describe("SampleValidator", () => {
 
     it("should accept valid WAV files", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 100 } as any);
+      mockFs.statSync.mockReturnValue({ size: 100 } as NodeJS.Stats);
 
       const buffer = Buffer.from("RIFF....WAVE", "ascii");
-      mockFs.openSync.mockReturnValue(1 as any);
+      mockFs.openSync.mockReturnValue(1);
       mockFs.readSync.mockImplementation((_fd, buf) => {
         buffer.copy(buf as Buffer);
         return 12;
       });
-      mockFs.closeSync.mockReturnValue(undefined as any);
+      mockFs.closeSync.mockReturnValue(undefined);
 
       const result = validator.validateSampleFile("/path/to/file.wav");
 
@@ -196,14 +196,14 @@ describe("SampleValidator", () => {
       });
 
       // Mock for valid file
-      mockFs.statSync.mockReturnValue({ size: 100 } as any);
+      mockFs.statSync.mockReturnValue({ size: 100 } as NodeJS.Stats);
       const buffer = Buffer.from("RIFF....WAVE", "ascii");
-      mockFs.openSync.mockReturnValue(1 as any);
+      mockFs.openSync.mockReturnValue(1);
       mockFs.readSync.mockImplementation((_fd, buf) => {
         buffer.copy(buf as Buffer);
         return 12;
       });
-      mockFs.closeSync.mockReturnValue(undefined as any);
+      mockFs.closeSync.mockReturnValue(undefined);
 
       const result = validator.validateSampleSources("/db/path", "TestKit");
 

@@ -3,9 +3,9 @@ import * as fs from "fs";
 
 // Logging utilities
 const log = {
-  error: (message: string, ...args: any[]) =>
+  error: (message: string, ...args: unknown[]) =>
     console.error(`[Romper Electron] ${message}`, ...args),
-  info: (message: string, ...args: any[]) =>
+  info: (message: string, ...args: unknown[]) =>
     console.log(`[Romper Electron] ${message}`, ...args),
 };
 

@@ -85,6 +85,14 @@ export default defineConfig([
         },
       ],
       "no-unused-vars": "off", // Turn off base rule to avoid conflicts
+      // TypeScript any type restrictions
+      "@typescript-eslint/no-explicit-any": [
+        "error", 
+        { 
+          fixToUnknown: true,
+          ignoreRestArgs: false
+        }
+      ],
     },
   },
 
@@ -119,6 +127,14 @@ export default defineConfig([
       ],
       // Encourage use of centralized factories
       "prefer-const": "error",
+      // TypeScript any type restrictions
+      "@typescript-eslint/no-explicit-any": [
+        "error", 
+        { 
+          fixToUnknown: true,
+          ignoreRestArgs: false
+        }
+      ],
     },
   },
 
@@ -167,6 +183,14 @@ export default defineConfig([
         },
       ],
       "no-unused-vars": "off",
+      // TypeScript any type restrictions
+      "@typescript-eslint/no-explicit-any": [
+        "error", 
+        { 
+          fixToUnknown: true,
+          ignoreRestArgs: false
+        }
+      ],
     },
   },
 

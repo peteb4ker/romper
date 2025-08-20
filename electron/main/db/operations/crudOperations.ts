@@ -1,14 +1,17 @@
 import type {
+  Bank,
   DbResult,
+  Kit,
   KitWithRelations,
   NewKit,
   NewSample,
   Sample,
 } from "@romper/shared/db/schema.js";
+import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 
 import * as schema from "@romper/shared/db/schema.js";
 // Basic CRUD operations for database entities
-import { and, count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray, type SQL } from "drizzle-orm";
 
 import { withDb } from "../utils/dbUtilities.js";
 import { performVoiceReindexing } from "./sampleManagementOps.js";
@@ -62,7 +65,7 @@ export function addSample(
 export function buildDeleteConditions(
   kitName: string,
   filter?: { slotNumber?: number; voiceNumber?: number },
-) {
+): SQL {
   let conditions = [eq(samples.kit_name, kitName)];
 
   if (filter?.voiceNumber !== undefined) {
@@ -74,7 +77,7 @@ export function buildDeleteConditions(
     conditions.push(eq(samples.slot_number, filter.slotNumber));
   }
 
-  return and(...conditions);
+  return conditions.length === 1 ? conditions[0] : and(...conditions)!;
 }
 
 /**
@@ -129,14 +132,14 @@ export function deleteSamplesWithoutReindexing(
 /**
  * Get all banks from the database
  */
-export function getAllBanks(dbDir: string): DbResult<any[]> {
+export function getAllBanks(dbDir: string): DbResult<Bank[]> {
   return withDb(dbDir, (db) => db.select().from(banks).all());
 }
 
 /**
  * Get all samples from the database
  */
-export function getAllSamples(dbDir: string): DbResult<any[]> {
+export function getAllSamples(dbDir: string): DbResult<Sample[]> {
   return withDb(dbDir, (db) => db.select().from(samples).all());
 }
 
@@ -151,7 +154,7 @@ export function getFavoriteKits(dbDir: string): DbResult<KitWithRelations[]> {
       .where(eq(kits.is_favorite, true))
       .all();
 
-    const kitsWithRelations = favoriteKits.map((kit: any) => ({
+    const kitsWithRelations = favoriteKits.map((kit: Kit) => ({
       ...kit,
       bank: null,
       samples: [],
@@ -227,7 +230,7 @@ export function getKit(
 export function getKits(dbDir: string): DbResult<KitWithRelations[]> {
   return withDb(dbDir, (db) => {
     const allKits = db.select().from(kits).all();
-    const kitsWithRelations = allKits.map((kit: any) => {
+    const kitsWithRelations = allKits.map((kit: Kit) => {
       // Load bank relation
       const bank = kit.bank_letter
         ? db.select().from(banks).where(eq(banks.letter, kit.bank_letter)).get()
@@ -264,7 +267,10 @@ export function getKits(dbDir: string): DbResult<KitWithRelations[]> {
 /**
  * Get all samples for a specific kit
  */
-export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
+export function getKitSamples(
+  dbDir: string,
+  kitName: string,
+): DbResult<Sample[]> {
   return withDb(dbDir, (db) => {
     const result = db
       .select()
@@ -282,7 +288,7 @@ export function getKitSamples(dbDir: string, kitName: string): DbResult<any[]> {
  * @param dbDir Database directory path
  * @returns DbResult containing kit data with bank relations
  */
-export function getKitsMetadata(dbDir: string): DbResult<any[]> {
+export function getKitsMetadata(dbDir: string): DbResult<Kit[]> {
   return withDb(dbDir, (db) => {
     return db.query.kits.findMany({
       with: {
@@ -295,7 +301,10 @@ export function getKitsMetadata(dbDir: string): DbResult<any[]> {
 /**
  * Helper function to get samples to delete
  */
-export function getSamplesToDelete(db: any, whereCondition: any): Sample[] {
+export function getSamplesToDelete(
+  db: BetterSQLite3Database<typeof schema>,
+  whereCondition: SQL,
+): Sample[] {
   return db.select().from(samples).where(whereCondition).all();
 }
 

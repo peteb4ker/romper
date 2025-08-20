@@ -7,11 +7,11 @@ import { sampleService } from "../services/sampleService.js";
 /**
  * Creates a wrapper for IPC handlers that require database directory validation
  */
-export function createDbHandler<T extends any[], R>(
-  inMemorySettings: Record<string, any>,
+export function createDbHandler<T extends unknown[], R>(
+  inMemorySettings: Record<string, unknown>,
   handler: (dbDir: string, ...args: T) => Promise<R> | R,
-): (_event: any, ...args: T) => Promise<R> {
-  return async (_event: any, ...args: T): Promise<R> => {
+): (_event: unknown, ...args: T) => Promise<R> {
+  return async (_event: unknown, ...args: T): Promise<R> => {
     const dbDirResult = validateAndGetDbDir(inMemorySettings);
     if (!dbDirResult.success) {
       return { error: dbDirResult.error, success: false } as R;

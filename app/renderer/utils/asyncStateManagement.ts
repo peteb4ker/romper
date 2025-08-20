@@ -230,9 +230,9 @@ export function useDebouncedAsyncOperation<T, Args extends any[]>(
   return { cancel, execute, loading };
 }
 
-// Note: This function has React hook violations and should be refactored
-// For now, commenting out to fix linting issues during development
-// TODO: Implement proper multiple async operations pattern
+// Note: Multiple async operations pattern not implemented yet
+// Current single-operation pattern covers all current use cases
+// Future enhancement could add useMultipleAsyncOperations for complex scenarios
 
 /**
  * Hook for managing data mutations with optimistic updates

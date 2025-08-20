@@ -12,17 +12,17 @@ import KitVoicePanels from "./KitVoicePanels";
 import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitDetailsAllProps extends KitDetailsProps {
-  kit?: KitWithRelations; // Kit data passed from parent
-  kitError?: null | string; // Error from parent kit loading
+  kit?: KitWithRelations; // Kit data passed from parent - used via useKitDetailsLogic hook
+  kitError?: null | string; // Error from parent kit loading - used via useKitDetailsLogic hook
   onCreateKit?: () => void; // Used by useKitDetailsLogic hook
   onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitDetailsLogic hook
   onRequestSamplesReload?: () => Promise<void>;
-  onToggleEditableMode?: (kitName: string) => Promise<void>; // Toggle editable mode
+  onToggleEditableMode?: (kitName: string) => Promise<void>; // Toggle editable mode - used via useKitDetailsLogic hook
   onToggleFavorite?: (
     kitName: string,
   ) => Promise<{ isFavorite?: boolean; success: boolean }>; // For favorite star button
-  onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>; // Update kit alias
+  onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>; // Update kit alias - used via useKitDetailsLogic hook
 }
 
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {

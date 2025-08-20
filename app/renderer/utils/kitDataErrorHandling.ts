@@ -10,7 +10,7 @@ import { toast } from "sonner";
  * Standard error handler for kit data operations
  */
 export class KitDataErrorHandler {
-  constructor(private context: string) {}
+  constructor(private readonly context: string) {}
 
   /**
    * Handle errors from kit data API calls
@@ -54,7 +54,7 @@ export class KitDataErrorHandler {
     operation: string,
     fallbackValue: T,
   ): T {
-    if (!result || !result.success) {
+    if (!result?.success) {
       const errorMessage = result?.error || "Unknown database error";
       console.error(`[${this.context}] Failed to ${operation}:`, errorMessage);
       return fallbackValue;
@@ -137,7 +137,7 @@ export const KitErrorPatterns = {
    * Handle API validation errors
    */
   apiValidation: (result: any, operation: string): void => {
-    if (!result || !result.success) {
+    if (!result?.success) {
       const errorMessage = result?.error || `Failed to ${operation}`;
       throw new Error(errorMessage);
     }

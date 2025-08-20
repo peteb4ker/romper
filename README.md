@@ -208,6 +208,7 @@ npm run make        # Create distributables
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development workflows, coding standards, and the mandatory worktree system.
 
-## 📄 License
+## 📄 License & Privacy
 
-[MIT License](LICENSE) — feel free to fork and contribute!
+- **License:** [MIT License](LICENSE) — feel free to fork and contribute!
+- **Privacy:** [Privacy Policy](PRIVACY.md) — We collect NO user data

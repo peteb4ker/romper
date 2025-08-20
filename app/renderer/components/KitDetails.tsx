@@ -26,11 +26,8 @@ interface KitDetailsAllProps extends KitDetailsProps {
 }
 
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
-  // These props are used indirectly via useKitDetailsLogic hook
-  // SonarQube doesn't detect this usage pattern, so we destructure them explicitly
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { kit, kitError, onToggleEditableMode, onUpdateKitAlias } = props;
-  
+  // Note: props kit, kitError, onToggleEditableMode, onUpdateKitAlias are used via useKitDetailsLogic hook
+  // but SonarQube static analysis doesn't detect this indirect usage pattern
   const logic = useKitDetailsLogic(props);
   const [dismissedUnscannedPrompt, setDismissedUnscannedPrompt] =
     React.useState(false);

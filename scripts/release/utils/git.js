@@ -142,9 +142,7 @@ function deleteTag(tag) {
     execGit(`push origin :refs/tags/${tag}`);
     console.log(`Deleted remote tag: ${tag}`);
   } catch (error) {
-    console.warn(
-      `Warning: Could not delete tag ${tag}: ${error.message}`,
-    );
+    console.warn(`Warning: Could not delete tag ${tag}: ${error.message}`);
   }
 }
 
@@ -165,9 +163,7 @@ function isRemoteUpToDate() {
 
     return localCommit === remoteCommit;
   } catch (error) {
-    console.warn(
-      `Warning: Could not check remote status: ${error.message}`,
-    );
+    console.warn(`Warning: Could not check remote status: ${error.message}`);
     return false;
   }
 }

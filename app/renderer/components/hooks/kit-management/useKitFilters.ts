@@ -72,10 +72,9 @@ export function useKitFilters({
             setFavoritesCount(countResult.data);
           }
 
-          // Only refresh full data if favorites filter is active (to update filtered list)
-          if (showFavoritesOnly) {
-            onRefreshKits?.();
-          }
+          // Always refresh kit data to ensure kit details view shows updated favorite state
+          // This also updates the filtered list when favorites filter is active
+          onRefreshKits?.();
         } else {
           onMessage?.(
             `Failed to toggle favorite: ${result?.error || "Unknown error"}`,
@@ -89,7 +88,7 @@ export function useKitFilters({
         );
       }
     },
-    [onMessage, onRefreshKits, showFavoritesOnly],
+    [onMessage, onRefreshKits],
   );
 
   // Task 20.1.4: Toggle favorites filter

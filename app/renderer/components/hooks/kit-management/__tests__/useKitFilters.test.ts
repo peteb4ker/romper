@@ -153,8 +153,8 @@ describe("useKitFilters", () => {
       });
 
       expect(mockToggleKitFavorite).toHaveBeenCalledWith("Kit1");
-      // onRefreshKits is only called when showFavoritesOnly is true
-      expect(mockOnRefreshKits).not.toHaveBeenCalled();
+      // onRefreshKits is always called to ensure kit details view is updated
+      expect(mockOnRefreshKits).toHaveBeenCalled();
       expect(mockGetFavoriteKitsCount).toHaveBeenCalled();
     });
 

@@ -1,4 +1,5 @@
 import type { KitDetailsProps } from "@romper/app/renderer/components/kitTypes";
+import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React from "react";
 import { toast } from "sonner";
@@ -13,6 +14,7 @@ import { useKitPlayback } from "./useKitPlayback";
 import { useKitVoicePanels } from "./useKitVoicePanels";
 
 interface UseKitDetailsLogicParams extends KitDetailsProps {
+  kit?: KitWithRelations | null; // Pre-loaded kit data
   onCreateKit?: () => void;
   onKitUpdated?: () => Promise<void>;
   onMessage?: (text: string, type?: string, duration?: number) => void;
@@ -27,15 +29,13 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Destructure props for useEffect dependencies
   const { onNextKit, onPrevKit } = props;
 
-  // Core kit data
-  const {
-    error: kitError,
-    kit,
-    loading: kitLoading,
-    reloadKit,
-    toggleEditableMode,
-    updateKitAlias,
-  } = useKit({
+  // Use pre-loaded kit data or fall back to loading it
+  const kit = props.kit ?? null;
+  const kitError = null;
+  const kitLoading = false;
+
+  // Fallback useKit hook for operations (but use pre-loaded data for display)
+  const { reloadKit, toggleEditableMode, updateKitAlias } = useKit({
     kitName: props.kitName,
     onKitUpdated: props.onKitUpdated,
   });

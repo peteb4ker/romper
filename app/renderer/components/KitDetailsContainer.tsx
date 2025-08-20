@@ -7,6 +7,7 @@ import type { VoiceSamples } from "./kitTypes";
 import KitDetails from "./KitDetails";
 
 interface KitDetailsContainerProps {
+  kit?: KitWithRelations | null;
   kitIndex: number;
   kitName: string;
   kits: KitWithRelations[];
@@ -27,6 +28,7 @@ interface KitDetailsContainerProps {
  */
 const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
   const {
+    kit,
     kitIndex,
     kitName,
     kits,
@@ -62,6 +64,7 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
 
   return (
     <KitDetails
+      kit={kit}
       kitIndex={kitIndex}
       kitName={kitName}
       kits={kits}

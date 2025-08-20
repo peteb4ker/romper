@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface UseKitFiltersOptions {
   kits?: KitWithRelations[];
+  onKitUpdated?: () => Promise<void>;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: () => void;
 }
@@ -14,6 +15,7 @@ export interface UseKitFiltersOptions {
  */
 export function useKitFilters({
   kits,
+  onKitUpdated,
   onMessage,
   onRefreshKits,
 }: UseKitFiltersOptions) {
@@ -75,6 +77,11 @@ export function useKitFilters({
           // Always refresh kit data to ensure kit details view shows updated favorite state
           // This also updates the filtered list when favorites filter is active
           onRefreshKits?.();
+
+          // If we're in kit details view, also refresh the current kit's data
+          if (onKitUpdated) {
+            await onKitUpdated();
+          }
         } else {
           onMessage?.(
             `Failed to toggle favorite: ${result?.error || "Unknown error"}`,
@@ -88,7 +95,7 @@ export function useKitFilters({
         );
       }
     },
-    [onMessage, onRefreshKits],
+    [onMessage, onRefreshKits, onKitUpdated],
   );
 
   // Task 20.1.4: Toggle favorites filter

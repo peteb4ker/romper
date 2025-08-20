@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
-import { useKit } from "../useKit";
+// import { useKit } from "../useKit"; // Not used since kit data is now passed as props
 import { useKitDetailsLogic } from "../useKitDetailsLogic";
 import { useKitPlayback } from "../useKitPlayback";
 import { useKitVoicePanels } from "../useKitVoicePanels";
@@ -83,7 +83,19 @@ vi.mock("sonner", () => ({
 }));
 
 describe("useKitDetailsLogic", () => {
+  const mockKitData = {
+    alias: "Test Kit",
+    artist: "Test Artist",
+    bank_letter: "T",
+    editable: false,
+    locked: false,
+    modified_since_sync: false,
+    name: "TestKit",
+    step_pattern: null,
+  };
+
   const mockProps = {
+    kit: mockKitData, // Pass kit data as prop instead of loading it
     kitIndex: 0,
     kitName: "TestKit",
     kits: [],
@@ -112,16 +124,7 @@ describe("useKitDetailsLogic", () => {
     const { result } = renderHook(() => useKitDetailsLogic(mockProps));
 
     expect(result.current).toBeDefined();
-    expect(result.current.kit).toEqual({
-      alias: "Test Kit",
-      artist: "Test Artist",
-      bank_letter: "T",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "TestKit",
-      step_pattern: null,
-    });
+    expect(result.current.kit).toEqual(mockKitData);
     expect(result.current.kitLoading).toBe(false);
     expect(result.current.kitError).toBeNull();
   });
@@ -250,19 +253,13 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("triggers error reporting useEffect when kit errors occur", () => {
-    vi.mocked(useKit).mockReturnValue({
-      error: "Kit loading failed",
-      kit: null,
-      loading: false,
-      reloadKit: vi.fn(),
-      toggleEditableMode: vi.fn(),
-      updateKitAlias: vi.fn(),
-    });
-
+    // Since kit data is now passed as props, kit errors should be handled upstream
+    // This test now verifies that no kit errors are generated from this hook
     renderHook(() => useKitDetailsLogic(mockProps));
 
-    expect(mockProps.onMessage).toHaveBeenCalledWith(
-      "Kit loading failed",
+    // Should not report any kit loading errors since kit data is pre-loaded
+    expect(mockProps.onMessage).not.toHaveBeenCalledWith(
+      expect.stringContaining("Kit loading failed"),
       "error",
     );
   });

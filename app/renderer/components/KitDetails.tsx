@@ -1,3 +1,5 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import React from "react";
 
 import type { KitDetailsProps } from "./kitTypes";
@@ -10,6 +12,7 @@ import KitVoicePanels from "./KitVoicePanels";
 import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitDetailsAllProps extends KitDetailsProps {
+  kit?: KitWithRelations | null; // Pre-loaded kit data to avoid duplicate loading
   onCreateKit?: () => void; // Used by useKitDetailsLogic hook
   onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitDetailsLogic hook
@@ -47,7 +50,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
     hasAnySamples && // Only show scanning prompt if there are actually samples to scan
     (!logic.kit.voices ||
       logic.kit.voices.length === 0 ||
-      logic.kit.voices.every((v) => !v.voice_alias)) &&
+      logic.kit.voices.every((v: any) => !v.voice_alias)) &&
     !dismissedUnscannedPrompt;
 
   return (
@@ -59,7 +62,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         editingKitAlias={editingKitAlias}
         handleSaveKitAlias={logic.updateKitAlias}
         isEditable={logic.kit?.editable ?? false}
-        kit={logic.kit}
+        kit={logic.kit ?? null}
         kitAliasInput={kitAliasInput}
         kitAliasInputRef={kitAliasInputRef}
         kitIndex={props.kitIndex}
@@ -85,7 +88,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
 
       <KitForm
         error={null} // error now handled by centralized message display
-        kit={logic.kit}
+        kit={logic.kit ?? null}
         loading={logic.kitLoading}
         onSave={logic.updateKitAlias}
         tagsEditable={false} // Remove tag editing
@@ -93,7 +96,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
       <div className="flex-1 min-h-0 overflow-y-auto">
         <KitVoicePanels
           isEditable={logic.kit?.editable ?? false}
-          kit={logic.kit}
+          kit={logic.kit ?? null}
           kitName={props.kitName}
           onPlay={logic.playback.handlePlay}
           onRescanVoiceName={() => {}}

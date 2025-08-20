@@ -24,6 +24,10 @@ export function useKit({ kitName, onKitUpdated }: UseKitParams) {
     try {
       const result = await window.electronAPI.getKit(kitName);
       if (result.success && result.data) {
+        console.log(
+          `[useKit] Loaded kit ${kitName}, is_favorite:`,
+          result.data.is_favorite,
+        );
         setKit(result.data);
       } else {
         setKit(null);

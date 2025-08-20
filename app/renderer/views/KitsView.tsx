@@ -107,9 +107,26 @@ const KitsView: React.FC = () => {
     refreshAllKitsAndSamples,
   });
 
+  // Get current kit's editable state for keyboard shortcuts
+  const { kit: currentKit, reloadKit } = useKit({
+    kitName: navigation.selectedKit ?? "",
+  });
+
+  // Create optimized kit update callback that only reloads current kit when in details view
+  const handleKitUpdated = React.useCallback(async () => {
+    if (navigation.selectedKit) {
+      // In kit details view - only reload the current kit, not all kits and samples
+      await reloadKit();
+    } else {
+      // In kit list view - refresh all kits and samples
+      await refreshAllKitsAndSamples();
+    }
+  }, [navigation.selectedKit, reloadKit, refreshAllKitsAndSamples]);
+
   // Kit filters management for favorites functionality
   const kitFilters = useKitFilters({
     kits,
+    onKitUpdated: handleKitUpdated,
     onMessage: showMessage,
     onRefreshKits: () => {
       // Use lightweight refresh for favorites - only updates kit metadata, not samples
@@ -118,9 +135,6 @@ const KitsView: React.FC = () => {
       });
     },
   });
-
-  // Get current kit's editable state for keyboard shortcuts
-  const { kit: currentKit } = useKit({ kitName: navigation.selectedKit ?? "" });
 
   // Global keyboard shortcuts
   const keyboardShortcuts = useGlobalKeyboardShortcuts({
@@ -269,12 +283,13 @@ const KitsView: React.FC = () => {
 
       {navigation.selectedKit && navigation.selectedKitSamples ? (
         <KitDetailsContainer
+          kit={currentKit}
           kitIndex={navigation.currentKitIndex}
           kitName={navigation.selectedKit}
           kits={navigation.sortedKits}
           onAddUndoAction={keyboardShortcuts.addUndoAction}
           onBack={navigation.handleBack}
-          onKitUpdated={refreshAllKitsAndSamples}
+          onKitUpdated={handleKitUpdated}
           onMessage={showMessage}
           onNextKit={navigation.handleNextKit}
           onPrevKit={navigation.handlePrevKit}

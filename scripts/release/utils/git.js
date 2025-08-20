@@ -6,7 +6,6 @@
  */
 
 import { execSync } from "child_process";
-import chalk from "chalk";
 
 /**
  * Execute a git command
@@ -119,7 +118,7 @@ function createTag(tag, message) {
   }
 
   execGit(`tag -a ${tag} -m "${message}"`);
-  console.log(chalk.green(`✅ Created tag: ${tag}`));
+  console.log(`Created tag: ${tag}`);
 }
 
 /**
@@ -127,7 +126,7 @@ function createTag(tag, message) {
  */
 function pushTags() {
   execGit("push origin --tags");
-  console.log(chalk.green("✅ Pushed tags to remote"));
+  console.log("Pushed tags to remote");
 }
 
 /**
@@ -137,14 +136,14 @@ function deleteTag(tag) {
   try {
     // Delete locally
     execGit(`tag -d ${tag}`);
-    console.log(chalk.yellow(`🗑️  Deleted local tag: ${tag}`));
+    console.log(`Deleted local tag: ${tag}`);
 
     // Delete remotely
     execGit(`push origin :refs/tags/${tag}`);
-    console.log(chalk.yellow(`🗑️  Deleted remote tag: ${tag}`));
+    console.log(`Deleted remote tag: ${tag}`);
   } catch (error) {
     console.warn(
-      chalk.yellow(`Warning: Could not delete tag ${tag}: ${error.message}`),
+      `Warning: Could not delete tag ${tag}: ${error.message}`,
     );
   }
 }
@@ -167,7 +166,7 @@ function isRemoteUpToDate() {
     return localCommit === remoteCommit;
   } catch (error) {
     console.warn(
-      chalk.yellow(`Warning: Could not check remote status: ${error.message}`),
+      `Warning: Could not check remote status: ${error.message}`,
     );
     return false;
   }

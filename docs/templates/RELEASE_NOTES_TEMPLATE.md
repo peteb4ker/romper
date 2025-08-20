@@ -1,80 +1,79 @@
-# Release {{version}}
+# Romper Sample Manager {{version}}
 
 **Release Date**: {{date}}
 
+{{#if highlights}}
 ## 🎉 Highlights
 
-{{#if highlights}}
 {{highlights}}
-{{else}}
-This release includes bug fixes, performance improvements, and new features for the Romper Sample Manager.
 {{/if}}
 
+{{#if breaking}}
 ## 🚨 Breaking Changes
 
-{{#if breaking}}
 {{#each breaking}}
 - {{this}}
 {{/each}}
-{{else}}
-No breaking changes in this release.
 {{/if}}
 
+{{#if features}}
 ## ✨ New Features
 
-{{#if features}}
 {{#each features}}
 - {{this}}
 {{/each}}
-{{else}}
-No new features in this release.
 {{/if}}
 
+{{#if fixes}}
 ## 🐛 Bug Fixes
 
-{{#if fixes}}
 {{#each fixes}}
 - {{this}}
 {{/each}}
-{{else}}
-No bug fixes in this release.
 {{/if}}
 
+{{#if performance}}
 ## ⚡ Performance Improvements
 
-{{#if performance}}
 {{#each performance}}
 - {{this}}
 {{/each}}
-{{else}}
-No performance improvements in this release.
 {{/if}}
 
+{{#if other}}
 ## 🔧 Other Changes
 
-{{#if other}}
 {{#each other}}
 - {{this}}
 {{/each}}
+{{/if}}
+
+{{#if commitCount}}
+## 📊 Release Summary
+
+- **Commits**: {{commitCount}} changes since {{previous_version}}
+{{#if contributors}}
+- **Contributors**: {{contributors.length}} developers
+{{/if}}
 {{else}}
-No other changes in this release.
+## 📊 Release Summary
+
+This is a maintenance release with minor updates.
 {{/if}}
 
 ## 📥 Downloads
 
 ### Windows
-- **Installer**: `Romper-Sample-Manager-Setup-{{version}}.exe` - Recommended for most users
-- **MSI Package**: `Romper-Sample-Manager-{{version}}.msi` - For enterprise deployment
-- **Portable**: `Romper-Sample-Manager-win32-x64-{{version}}.zip` - No installation required
+- **Installer**: `Romper.Sample.Manager-{{version}}.Setup.exe` - Recommended for most users
 
 ### macOS
-- **DMG**: `Romper-Sample-Manager-{{version}}.dmg` - Recommended for most users
-- **ZIP**: `Romper-Sample-Manager-darwin-{{platform}}-{{version}}.zip` - Portable version
+- **DMG**: `Romper.Sample.Manager.dmg` - Recommended for most users
+- **ZIP**: `Romper.Sample.Manager-darwin-arm64-{{version}}.zip` - Alternative download
 
 ### Linux
-- **DEB**: `romper-sample-manager_{{version}}_amd64.deb` - For Debian/Ubuntu
-- **RPM**: `romper-sample-manager-{{version}}.x86_64.rpm` - For Fedora/RHEL
-- **Portable**: `Romper-Sample-Manager-linux-x64-{{version}}.zip` - Universal package
+- **DEB**: `romper_{{version}}_amd64.deb` - For Debian/Ubuntu
+- **RPM**: `romper-{{version}}-1.x86_64.rpm` - For Fedora/RHEL
+- **ZIP**: `Romper.Sample.Manager-linux-x64-{{version}}.zip` - Universal package
 
 ## 💾 Installation
 

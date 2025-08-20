@@ -92,6 +92,9 @@ function generateReleaseData(version, customData = {}) {
     contributors:
       commitData.contributors.length > 0 ? commitData.contributors : null,
 
+    // Commit count
+    commitCount: commitData.commitCount || 0,
+
     // Known issues (can be customized)
     known_issues: customData.knownIssues || null,
 

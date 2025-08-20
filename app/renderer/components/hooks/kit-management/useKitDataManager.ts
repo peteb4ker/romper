@@ -223,59 +223,64 @@ export function useKitDataManager({
     [updateKit],
   );
 
-  // Update kit alias
-  const updateKitAlias = useCallback(
-    async (kitName: string, alias: string) => {
+  // Helper function to update kit via API and sync local state
+  const updateKitViaAPI = useCallback(
+    async (
+      kitName: string,
+      updates: {
+        alias?: string;
+        editable?: boolean;
+      },
+      errorContext: string,
+    ) => {
       if (!window.electronAPI?.updateKit) {
         throw new Error("Update kit API not available");
       }
 
       try {
-        const result = await window.electronAPI.updateKit(kitName, { alias });
+        const result = await window.electronAPI.updateKit(kitName, updates);
         if (result.success) {
-          // Update local state
-          updateKit(kitName, { alias });
+          // Update local state with properly typed updates
+          const stateUpdates: Partial<KitWithRelations> = {};
+          if (updates.alias !== undefined) stateUpdates.alias = updates.alias;
+          if (updates.editable !== undefined)
+            stateUpdates.editable = updates.editable;
+          updateKit(kitName, stateUpdates);
         } else {
-          throw new Error(result.error || "Failed to update kit alias");
+          throw new Error(result.error || `Failed to ${errorContext}`);
         }
       } catch (error) {
-        console.error("Error updating kit alias:", error);
+        console.error(`Error ${errorContext}:`, error);
         throw error;
       }
     },
     [updateKit],
   );
 
+  // Update kit alias
+  const updateKitAlias = useCallback(
+    async (kitName: string, alias: string) => {
+      await updateKitViaAPI(kitName, { alias }, "update kit alias");
+    },
+    [updateKitViaAPI],
+  );
+
   // Toggle kit editable mode
   const toggleKitEditable = useCallback(
     async (kitName: string) => {
-      if (!window.electronAPI?.updateKit) {
-        throw new Error("Update kit API not available");
-      }
-
       const kit = getKitByName(kitName);
       if (!kit) {
         throw new Error(`Kit ${kitName} not found`);
       }
 
       const newEditableState = !kit.editable;
-
-      try {
-        const result = await window.electronAPI.updateKit(kitName, {
-          editable: newEditableState,
-        });
-        if (result.success) {
-          // Update local state
-          updateKit(kitName, { editable: newEditableState });
-        } else {
-          throw new Error(result.error || "Failed to toggle editable mode");
-        }
-      } catch (error) {
-        console.error("Error toggling kit editable mode:", error);
-        throw error;
-      }
+      await updateKitViaAPI(
+        kitName,
+        { editable: newEditableState },
+        "toggle editable mode",
+      );
     },
-    [getKitByName, updateKit],
+    [getKitByName, updateKitViaAPI],
   );
 
   // Calculate sample counts for all kits

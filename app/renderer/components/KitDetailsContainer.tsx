@@ -1,3 +1,4 @@
+import type { AnyUndoAction } from "@romper/shared/undoTypes";
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React from "react";
@@ -12,8 +13,8 @@ interface KitDetailsContainerProps {
   kitIndex: number;
   kitName: string;
   kits: KitWithRelations[];
-  onAddUndoAction: (action: any) => void;
-  onBack: (scrollToKit?: any) => Promise<void>;
+  onAddUndoAction: (action: AnyUndoAction) => void;
+  onBack: (scrollToKit?: string) => Promise<void>;
   onKitUpdated: () => Promise<void>;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onNextKit: () => void;
@@ -53,7 +54,7 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
 
   // Memoize callbacks to prevent unnecessary re-renders
   const handleBack = React.useCallback(
-    (scrollToKit?: any) => {
+    (scrollToKit?: string) => {
       return onBack(scrollToKit);
     },
     [onBack],

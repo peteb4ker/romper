@@ -41,15 +41,24 @@ describe("useKitDataManager", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Use centralized mocks and override specific methods for this test
-    vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-      data: mockSamples,
-      success: true,
-    });
-    vi.mocked(window.electronAPI.getKits).mockResolvedValue({
-      data: mockKits,
-      success: true,
-    });
+    // Reset window.electronAPI to default state for each test
+    window.electronAPI = {
+      getAllSamplesForKit: vi.fn().mockResolvedValue({
+        data: mockSamples,
+        success: true,
+      }),
+      getKits: vi.fn().mockResolvedValue({
+        data: mockKits,
+        success: true,
+      }),
+      toggleKitFavorite: vi.fn().mockResolvedValue({
+        data: { isFavorite: true },
+        success: true,
+      }),
+      updateKit: vi.fn().mockResolvedValue({
+        success: true,
+      }),
+    } as any;
   });
 
   it("should initialize with empty state", () => {
@@ -392,6 +401,472 @@ describe("useKitDataManager", () => {
     expect(window.electronAPI.getKits).toHaveBeenCalled();
   });
 
-  // TODO: Add comprehensive tests for new mutation methods once React test environment is fixed
-  // Tests needed: getKitByName, updateKit, toggleKitFavorite, updateKitAlias, toggleKitEditable
+  describe("getKitByName", () => {
+    it("should return kit when it exists", async () => {
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      const kit = result.current.getKitByName("A0");
+      expect(kit).toBeDefined();
+      expect(kit?.name).toBe("A0");
+      expect(kit?.bank_letter).toBe("A");
+    });
+
+    it("should return undefined for non-existing kit", async () => {
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      const kit = result.current.getKitByName("NonExistent");
+      expect(kit).toBeUndefined();
+    });
+  });
+
+  describe("updateKit", () => {
+    it("should update kit properties in state", async () => {
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      // Update kit with new properties
+      act(() => {
+        result.current.updateKit("A0", { alias: "Updated Kit", editable: true });
+      });
+
+      const updatedKit = result.current.getKitByName("A0");
+      expect(updatedKit?.alias).toBe("Updated Kit");
+      expect(updatedKit?.editable).toBe(true);
+      expect(updatedKit?.name).toBe("A0"); // Should preserve other properties
+    });
+
+    it("should not affect other kits", async () => {
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      // Update one kit
+      act(() => {
+        result.current.updateKit("A0", { alias: "Updated Kit" });
+      });
+
+      // Check that other kit is unchanged
+      const otherKit = result.current.getKitByName("A1");
+      expect(otherKit?.alias).toBeNull();
+      expect(otherKit?.name).toBe("A1");
+    });
+  });
+
+  describe("toggleKitFavorite", () => {
+    it("should successfully toggle kit favorite status", async () => {
+      window.electronAPI.toggleKitFavorite = vi.fn().mockResolvedValue({
+        data: { isFavorite: true },
+        success: true,
+      });
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      let toggleResult: any;
+      await act(async () => {
+        toggleResult = await result.current.toggleKitFavorite("A0");
+      });
+
+      expect(toggleResult.success).toBe(true);
+      expect(toggleResult.isFavorite).toBe(true);
+      expect(window.electronAPI.toggleKitFavorite).toHaveBeenCalledWith("A0");
+
+      // Check that local state was updated
+      const kit = result.current.getKitByName("A0");
+      expect(kit?.is_favorite).toBe(true);
+    });
+
+    it("should handle API failure", async () => {
+      window.electronAPI.toggleKitFavorite = vi.fn().mockResolvedValue({
+        error: "Failed to toggle favorite",
+        success: false,
+      });
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      let toggleResult: any;
+      await act(async () => {
+        toggleResult = await result.current.toggleKitFavorite("A0");
+      });
+
+      expect(toggleResult.success).toBe(false);
+      expect(toggleResult.isFavorite).toBeUndefined();
+    });
+
+    it("should handle API exception", async () => {
+      window.electronAPI.toggleKitFavorite = vi.fn().mockRejectedValue(
+        new Error("Network error"),
+      );
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      let toggleResult: any;
+      await act(async () => {
+        toggleResult = await result.current.toggleKitFavorite("A0");
+      });
+
+      expect(toggleResult.success).toBe(false);
+      expect(toggleResult.isFavorite).toBeUndefined();
+    });
+  });
+
+  describe("updateKitAlias", () => {
+    it("should successfully update kit alias", async () => {
+      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+        success: true,
+      });
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await result.current.updateKitAlias("A0", "New Alias");
+      });
+
+      expect(window.electronAPI.updateKit).toHaveBeenCalledWith("A0", {
+        alias: "New Alias",
+      });
+
+      // Check that local state was updated
+      const kit = result.current.getKitByName("A0");
+      expect(kit?.alias).toBe("New Alias");
+    });
+
+    it("should handle API failure", async () => {
+      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+        error: "Failed to update alias",
+        success: false,
+      });
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await expect(
+          result.current.updateKitAlias("A0", "New Alias"),
+        ).rejects.toThrow("Failed to update alias");
+      });
+    });
+
+    it("should handle API exception", async () => {
+      window.electronAPI.updateKit = vi.fn().mockRejectedValue(
+        new Error("Network error"),
+      );
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await expect(
+          result.current.updateKitAlias("A0", "New Alias"),
+        ).rejects.toThrow("Network error");
+      });
+    });
+
+    it("should throw error when updateKit API not available", async () => {
+      // Mock missing API
+      const mockAPI = { ...window.electronAPI };
+      delete (mockAPI as any).updateKit;
+      window.electronAPI = mockAPI;
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await expect(
+          result.current.updateKitAlias("A0", "New Alias"),
+        ).rejects.toThrow("Update kit API not available");
+      });
+    });
+  });
+
+  describe("toggleKitEditable", () => {
+    it("should successfully toggle kit editable mode from false to true", async () => {
+      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+        success: true,
+      });
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      // Initially kit should be non-editable
+      const initialKit = result.current.getKitByName("A0");
+      expect(initialKit?.editable).toBe(false);
+
+      await act(async () => {
+        await result.current.toggleKitEditable("A0");
+      });
+
+      expect(window.electronAPI.updateKit).toHaveBeenCalledWith("A0", {
+        editable: true,
+      });
+
+      // Check that local state was updated
+      const updatedKit = result.current.getKitByName("A0");
+      expect(updatedKit?.editable).toBe(true);
+    });
+
+    it("should successfully toggle kit editable mode from true to false", async () => {
+      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+        success: true,
+      });
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      // First set kit to editable
+      act(() => {
+        result.current.updateKit("A0", { editable: true });
+      });
+
+      // Now toggle it back to false
+      await act(async () => {
+        await result.current.toggleKitEditable("A0");
+      });
+
+      expect(window.electronAPI.updateKit).toHaveBeenCalledWith("A0", {
+        editable: false,
+      });
+
+      // Check that local state was updated
+      const updatedKit = result.current.getKitByName("A0");
+      expect(updatedKit?.editable).toBe(false);
+    });
+
+    it("should handle non-existing kit", async () => {
+      // Ensure updateKit API is available for this test
+      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+        success: true,
+      });
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await expect(
+          result.current.toggleKitEditable("NonExistent"),
+        ).rejects.toThrow("Kit NonExistent not found");
+      });
+    });
+
+    it("should handle API failure", async () => {
+      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+        error: "Failed to toggle editable mode",
+        success: false,
+      });
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await expect(
+          result.current.toggleKitEditable("A0"),
+        ).rejects.toThrow("Failed to toggle editable mode");
+      });
+    });
+
+    it("should handle API exception", async () => {
+      window.electronAPI.updateKit = vi.fn().mockRejectedValue(
+        new Error("Network error"),
+      );
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await expect(
+          result.current.toggleKitEditable("A0"),
+        ).rejects.toThrow("Network error");
+      });
+    });
+
+    it("should throw error when updateKit API not available", async () => {
+      // Mock missing API
+      const mockAPI = { ...window.electronAPI };
+      delete (mockAPI as any).updateKit;
+      window.electronAPI = mockAPI;
+
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+
+      // Wait for data to load
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await expect(
+          result.current.toggleKitEditable("A0"),
+        ).rejects.toThrow("Update kit API not available");
+      });
+    });
+  });
 });

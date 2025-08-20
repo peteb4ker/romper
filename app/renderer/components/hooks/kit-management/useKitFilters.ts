@@ -58,7 +58,7 @@ export function useKitFilters({
     }
 
     // Sort by kit slot names for consistent order (matches useKitNavigation.sortedKits)
-    return filteredList.slice().sort((a, b) => compareKitSlots(a.name, b.name));
+    return filteredList.sort((a, b) => compareKitSlots(a.name, b.name));
   }, [
     kits,
     showFavoritesOnly,

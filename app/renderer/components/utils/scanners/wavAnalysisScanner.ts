@@ -15,14 +15,14 @@ export async function scanWAVAnalysis(
 
   // Only log once per test run to avoid spam
   if (
-    !(globalThis as any).__wavAnalysisWarningShown &&
+    !(globalThis as unknown).__wavAnalysisWarningShown &&
     typeof process !== "undefined" &&
     process.env.NODE_ENV !== "test"
   ) {
     console.warn(
       `[WAV Analysis] WAV analysis not yet implemented - using default values`,
     );
-    (globalThis as any).__wavAnalysisWarningShown = true;
+    (globalThis as unknown).__wavAnalysisWarningShown = true;
   }
 
   return {
@@ -45,7 +45,7 @@ export async function scanWAVAnalysis(
  */
 // NOTE: This function is disabled as Buffer/node-wav are not available in renderer process.
 // WAV parsing will be implemented in the main process when advanced analysis is needed.
-function _parseWAVFile(_buffer: any): WAVAnalysisOutput {
+function _parseWAVFile(_buffer: unknown): WAVAnalysisOutput {
   // Disabled - needs main process implementation
   return {
     bitDepth: 16,

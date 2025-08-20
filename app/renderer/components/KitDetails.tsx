@@ -25,7 +25,6 @@ interface KitDetailsAllProps extends KitDetailsProps {
   onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>; // Update kit alias - used via useKitDetailsLogic hook
 }
 
-// eslint-disable-next-line react/prop-types
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   // Note: All props are used via useKitDetailsLogic hook
   // SonarQube doesn't detect indirect prop usage through hooks

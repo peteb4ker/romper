@@ -17,7 +17,7 @@ export interface KitDetailsProps {
 }
 
 export interface KitSamplePlanSlot {
-  meta?: Record<string, any>;
+  meta?: Record<string, unknown>;
   source: string;
   target: string;
   voice: number; // 1-4
@@ -25,7 +25,7 @@ export interface KitSamplePlanSlot {
 }
 
 export interface SampleData {
-  [key: string]: any;
+  [key: string]: unknown;
   filename: string;
   is_stereo?: boolean;
   source_path: string;

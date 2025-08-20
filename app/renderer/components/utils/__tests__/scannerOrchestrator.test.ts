@@ -35,14 +35,14 @@ describe("ScannerOrchestrator", () => {
         "continue",
       );
 
-      const mockOperation1: ScannerFunction<any, any> = vi
+      const mockOperation1: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockResolvedValue({
           data: { result: "operation1" },
           success: true,
         });
 
-      const mockOperation2: ScannerFunction<any, any> = vi
+      const mockOperation2: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockResolvedValue({
           data: { result: "operation2" },
@@ -77,14 +77,14 @@ describe("ScannerOrchestrator", () => {
         "continue",
       );
 
-      const mockOperation1: ScannerFunction<any, any> = vi
+      const mockOperation1: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockResolvedValue({
           error: "Operation 1 failed",
           success: false,
         });
 
-      const mockOperation2: ScannerFunction<any, any> = vi
+      const mockOperation2: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockResolvedValue({
           data: { result: "operation2" },
@@ -115,14 +115,14 @@ describe("ScannerOrchestrator", () => {
         "stop",
       );
 
-      const mockOperation1: ScannerFunction<any, any> = vi
+      const mockOperation1: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockResolvedValue({
           error: "Operation 1 failed",
           success: false,
         });
 
-      const mockOperation2: ScannerFunction<any, any> = vi
+      const mockOperation2: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockResolvedValue({
           data: { result: "operation2" },
@@ -154,11 +154,11 @@ describe("ScannerOrchestrator", () => {
         "continue",
       );
 
-      const mockOperation1: ScannerFunction<any, any> = vi
+      const mockOperation1: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockRejectedValue(new Error("Unexpected error"));
 
-      const mockOperation2: ScannerFunction<any, any> = vi
+      const mockOperation2: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockResolvedValue({
           data: { result: "operation2" },
@@ -189,11 +189,11 @@ describe("ScannerOrchestrator", () => {
         "stop",
       );
 
-      const mockOperation1: ScannerFunction<any, any> = vi
+      const mockOperation1: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockRejectedValue(new Error("Unexpected error"));
 
-      const mockOperation2: ScannerFunction<any, any> = vi
+      const mockOperation2: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockResolvedValue({
           data: { result: "operation2" },
@@ -222,7 +222,7 @@ describe("ScannerOrchestrator", () => {
     it("works without progress callback", async () => {
       const orchestrator = new ScannerOrchestrator();
 
-      const mockOperation: ScannerFunction<any, any> = vi
+      const mockOperation: ScannerFunction<unknown, unknown> = vi
         .fn()
         .mockResolvedValue({
           data: { result: "operation" },

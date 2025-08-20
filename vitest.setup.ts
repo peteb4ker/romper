@@ -35,7 +35,7 @@ beforeAll(() => {
     globalThis.URL = {
       createObjectURL: vi.fn(() => "blob:mock-url"),
       revokeObjectURL: vi.fn(),
-    } as any;
+    } as unknown;
   } else {
     if (!globalThis.URL.createObjectURL) {
       globalThis.URL.createObjectURL = vi.fn(() => "blob:mock-url");

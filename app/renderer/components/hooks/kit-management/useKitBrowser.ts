@@ -8,7 +8,7 @@ import { useKitDuplication } from "./useKitDuplication";
 import { useKitErrorHandling } from "./useKitErrorHandling";
 
 interface UseKitBrowserProps {
-  kitListRef: RefObject<any>;
+  kitListRef: RefObject<unknown>;
   kits: KitWithRelations[];
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: (scrollToKit?: string) => void;

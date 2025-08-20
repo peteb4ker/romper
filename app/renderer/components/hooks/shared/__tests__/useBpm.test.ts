@@ -4,12 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useBpm } from "../useBpm";
 
 describe("useBpm", () => {
-  let mockUpdateKitBpm: any;
+  let mockUpdateKitBpm: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();
     // Get the global electronAPI mock (set up by test setup)
-    mockUpdateKitBpm = (window as any).electronAPI?.updateKitBpm;
+    mockUpdateKitBpm = (window as unknown).electronAPI?.updateKitBpm;
     // Reset the mock to default behavior
     mockUpdateKitBpm?.mockResolvedValue({ success: true });
   });
@@ -133,8 +133,8 @@ describe("useBpm", () => {
 
   it("does not call API when electronAPI is not available", async () => {
     // Temporarily remove electronAPI
-    const originalElectronAPI = (window as any).electronAPI;
-    delete (window as any).electronAPI;
+    const originalElectronAPI = (window as unknown).electronAPI;
+    delete (window as unknown).electronAPI;
 
     const { result } = renderHook(() =>
       useBpm({ initialBpm: 120, kitName: "A1" }),
@@ -145,7 +145,7 @@ describe("useBpm", () => {
     });
 
     // Restore electronAPI
-    (window as any).electronAPI = originalElectronAPI;
+    (window as unknown).electronAPI = originalElectronAPI;
 
     expect(mockUpdateKitBpm).not.toHaveBeenCalled();
   });

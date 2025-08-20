@@ -36,13 +36,13 @@ describe("SyncService", () => {
     // Create mock services
     mockPlannerService = {
       generateChangeSummary: vi.fn(),
-    } as any;
+    } as unknown;
 
     mockExecutorService = {
       calculateTotalSize: vi.fn(),
       categorizeError: vi.fn(),
       executeFileOperation: vi.fn(),
-    } as any;
+    } as unknown;
 
     mockProgressService = {
       cancelSync: vi.fn(),
@@ -51,7 +51,7 @@ describe("SyncService", () => {
       initializeSyncJob: vi.fn(),
       isCancelled: vi.fn(),
       updateProgress: vi.fn(),
-    } as any;
+    } as unknown;
 
     service = new SyncService(
       mockPlannerService,

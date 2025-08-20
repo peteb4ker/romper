@@ -49,7 +49,7 @@ describe("preload/index.tsx", () => {
     // Mock global window for menuEventForwarder
     global.window = {
       dispatchEvent: vi.fn(),
-    } as any;
+    } as unknown;
   });
 
   it("exposes romperEnv in main world", async () => {

@@ -11,7 +11,7 @@ export interface UseVoicePanelRenderingOptions {
   dragAndDropHook: {
     dragOverSlot: null | number;
     dropZone: { mode: "append" | "blocked" | "insert"; slot: number } | null;
-    getSampleDragHandlers: (slotNumber: number, sampleName: string) => any;
+    getSampleDragHandlers: (slotNumber: number, sampleName: string) => unknown;
     handleDragLeave: () => void;
     handleDragOver: (e: React.DragEvent, slotNumber: number) => void;
     handleDrop: (e: React.DragEvent, slotNumber: number) => void;

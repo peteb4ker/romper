@@ -6,7 +6,7 @@ import type { VoiceSamples } from "../components/kitTypes";
  * Convert database sample objects to VoiceSamples format
  * Groups samples by voice number and handles stereo samples
  */
-export function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
+export function groupDbSamplesByVoice(dbSamples: unknown[]): VoiceSamples {
   const voices: VoiceSamples = { 1: [], 2: [], 3: [], 4: [] };
 
   // First, sort samples by voice_number and slot_number to ensure proper ordering
@@ -18,7 +18,7 @@ export function groupDbSamplesByVoice(dbSamples: any[]): VoiceSamples {
   });
 
   // Group samples by voice, maintaining slot order
-  sortedSamples.forEach((sample: any) => {
+  sortedSamples.forEach((sample: unknown) => {
     const voiceNumber = sample.voice_number;
     if (voiceNumber >= 1 && voiceNumber <= 4) {
       // Create array with proper slot positions (12 slots per voice)

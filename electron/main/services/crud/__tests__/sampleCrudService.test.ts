@@ -220,7 +220,7 @@ describe("SampleCrudService", () => {
         .mockReturnValueOnce({ isValid: true }); // to
 
       // Access private method for testing
-      const result = (service as any).validateSampleMovement(1, 0, 2, 1);
+      const result = (service as unknown).validateSampleMovement(1, 0, 2, 1);
 
       expect(result.success).toBe(true);
     });
@@ -230,7 +230,7 @@ describe("SampleCrudService", () => {
         .mockReturnValueOnce({ isValid: true })
         .mockReturnValueOnce({ isValid: true });
 
-      const result = (service as any).validateSampleMovement(1, 0, 1, 0);
+      const result = (service as unknown).validateSampleMovement(1, 0, 1, 0);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Cannot move sample to the same position");

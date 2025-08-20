@@ -15,7 +15,7 @@ const { samples } = schema;
  * Get the sample to move for move operations
  */
 export function getSampleToMove(
-  db: any,
+  db: unknown,
   kitName: string,
   fromVoice: number,
   fromSlot: number,
@@ -90,7 +90,7 @@ export function moveSample(
   );
 
   if (!result.success) {
-    return result as any;
+    return result as unknown;
   }
 
   // Convert to expected return format for backward compatibility

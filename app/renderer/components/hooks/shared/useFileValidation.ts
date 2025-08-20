@@ -11,20 +11,20 @@ export function useFileValidation() {
       if (window.electronFileAPI?.getDroppedFilePath) {
         return await window.electronFileAPI.getDroppedFilePath(file);
       }
-      return (file as any).path || file.name;
+      return (file as unknown).path || file.name;
     },
     [],
   );
 
   const handleValidationIssues = useCallback(
-    async (validation: any): Promise<boolean> => {
-      const criticalIssues = validation.issues.filter((issue: any) =>
+    async (validation: unknown): Promise<boolean> => {
+      const criticalIssues = validation.issues.filter((issue: unknown) =>
         ["extension", "fileAccess", "invalidFormat"].includes(issue.type),
       );
 
       if (criticalIssues.length > 0) {
         const errorMessage = criticalIssues
-          .map((i: any) => i.message)
+          .map((i: unknown) => i.message)
           .join(", ");
         console.error(
           "Cannot assign sample due to critical format issues:",
@@ -39,7 +39,7 @@ export function useFileValidation() {
       }
 
       const warningMessage = validation.issues
-        .map((i: any) => i.message)
+        .map((i: unknown) => i.message)
         .join(", ");
       console.warn(
         "Sample has format issues that will require conversion during SD card sync:",

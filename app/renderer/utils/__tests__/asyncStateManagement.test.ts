@@ -185,7 +185,7 @@ describe("Async State Management - Unit Tests", () => {
       expect(result.current.state.data).toBeNull();
       expect(result.current.state.loading).toBe(false);
 
-      let executePromise: Promise<any>;
+      let executePromise: Promise<unknown>;
       act(() => {
         executePromise = result.current.execute("arg1", "arg2");
       });
@@ -207,7 +207,7 @@ describe("Async State Management - Unit Tests", () => {
       const mockOperation = vi.fn().mockRejectedValue(error);
       const { result } = renderHook(() => useAsyncOperation(mockOperation));
 
-      let executePromise: Promise<any>;
+      let executePromise: Promise<unknown>;
       act(() => {
         executePromise = result.current.execute();
       });
@@ -343,9 +343,9 @@ describe("Async State Management - Unit Tests", () => {
       );
 
       // Call execute multiple times quickly within act
-      let promise1: Promise<any>,
-        promise2: Promise<any>,
-        promise3: Promise<any>;
+      let promise1: Promise<unknown>,
+        promise2: Promise<unknown>,
+        promise3: Promise<unknown>;
       act(() => {
         promise1 = result.current.execute("arg1");
         promise2 = result.current.execute("arg2");
@@ -375,7 +375,7 @@ describe("Async State Management - Unit Tests", () => {
         useDebouncedAsyncOperation(mockOperation, 100),
       );
 
-      let promise: Promise<any>;
+      let promise: Promise<unknown>;
       act(() => {
         promise = result.current.execute("arg1");
       });
@@ -431,7 +431,7 @@ describe("Async State Management - Unit Tests", () => {
         useDebouncedAsyncOperation(mockOperation, 100),
       );
 
-      let promise: Promise<any>;
+      let promise: Promise<unknown>;
       act(() => {
         promise = result.current.execute("arg");
       });

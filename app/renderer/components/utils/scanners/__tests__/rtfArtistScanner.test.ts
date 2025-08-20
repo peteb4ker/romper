@@ -39,7 +39,7 @@ describe("scanRTFArtist", () => {
   });
 
   it("handles undefined RTF files", () => {
-    const input = { rtfFiles: undefined as any };
+    const input = { rtfFiles: undefined as unknown };
     const result = scanRTFArtist(input);
 
     expect(result.success).toBe(false);
@@ -174,7 +174,7 @@ describe("scanRTFArtist", () => {
   it("handles exceptions during processing", () => {
     // This is a bit contrived since the function is pure, but let's test edge cases
     const input = {
-      rtfFiles: [null as any, undefined as any, "A - Valid.rtf"],
+      rtfFiles: [null as unknown, undefined as unknown, "A - Valid.rtf"],
     };
 
     const result = scanRTFArtist(input);

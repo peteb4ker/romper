@@ -23,8 +23,8 @@ import {
  * - Tests edge cases with real filesystem operations
  */
 test.describe("Sync Real Operations E2E Tests", () => {
-  let electronApp: any;
-  let window: any;
+  let electronApp: unknown;
+  let window: unknown;
   let testEnv: E2ETestEnvironment;
   let tempSdCardDir: string;
   let testSampleFiles: { aiff: string; flac: string; wav: string };
@@ -366,10 +366,10 @@ test.describe("Sync Real Operations E2E Tests", () => {
     // The fixture already has kits (A0, B1), we'll add sample references to them
     const result = await window.evaluate((sampleFiles) => {
       // Access the electron API to update kits with sample paths
-      if (!(window as any).electronAPI?.updateKitSamples) {
+      if (!(window as unknown).electronAPI?.updateKitSamples) {
         console.log("updateKitSamples API not available, using test approach");
         // Store reference for the test to use
-        (window as any).testSampleFiles = sampleFiles;
+        (window as unknown).testSampleFiles = sampleFiles;
         return {
           message: "Sample files referenced for testing",
           success: true,

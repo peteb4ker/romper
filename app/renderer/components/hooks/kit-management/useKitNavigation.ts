@@ -14,7 +14,7 @@ interface UseKitNavigationProps {
 
 interface UseKitNavigationReturn {
   currentKitIndex: number;
-  handleBack: (scrollToKit?: any) => Promise<void>;
+  handleBack: (scrollToKit?: unknown) => Promise<void>;
   handleNextKit: () => void;
   handlePrevKit: () => void;
   handleSelectKit: (kitName: string) => void;
@@ -81,7 +81,7 @@ export function useKitNavigation({
   }, [sortedKits, currentKitIndex]);
 
   // Helper function to parse scroll parameters
-  const parseScrollParameters = (scrollToKit?: any) => {
+  const parseScrollParameters = (scrollToKit?: unknown) => {
     let scrollToKitName = null;
     let refresh = false;
 
@@ -136,7 +136,7 @@ export function useKitNavigation({
 
   // Back navigation handler with refresh and scroll support
   const handleBack = useCallback(
-    async (scrollToKit?: any) => {
+    async (scrollToKit?: unknown) => {
       const { refresh, scrollToKitName } = parseScrollParameters(scrollToKit);
 
       // Mark this as an explicit navigation action to prevent HMR restoration

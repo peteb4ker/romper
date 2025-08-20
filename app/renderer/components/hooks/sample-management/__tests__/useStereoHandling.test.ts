@@ -34,7 +34,7 @@ describe("useStereoHandling", () => {
     vi.resetAllMocks();
     mockUseSettings.mockReturnValue({
       defaultToMonoSamples: true,
-    } as any);
+    } as unknown);
   });
 
   describe("analyzeStereoAssignment", () => {
@@ -42,7 +42,7 @@ describe("useStereoHandling", () => {
       beforeEach(() => {
         mockUseSettings.mockReturnValue({
           defaultToMonoSamples: true,
-        } as any);
+        } as unknown);
       });
 
       it("should assign mono sample as mono", () => {
@@ -120,7 +120,7 @@ describe("useStereoHandling", () => {
       beforeEach(() => {
         mockUseSettings.mockReturnValue({
           defaultToMonoSamples: false,
-        } as any);
+        } as unknown);
       });
 
       it("should assign mono sample as mono even when defaultToMonoSamples is false", () => {
@@ -579,7 +579,7 @@ describe("useStereoHandling", () => {
     it("should reflect settings changes", () => {
       mockUseSettings.mockReturnValue({
         defaultToMonoSamples: false,
-      } as any);
+      } as unknown);
 
       const { result } = renderHook(() => useStereoHandling());
 

@@ -161,7 +161,7 @@ describe("stepPatternConstants", () => {
     });
 
     it("should return default pattern for non-array", () => {
-      const result = ensureValidStepPattern("not array" as any);
+      const result = ensureValidStepPattern("not array" as unknown);
       expect(isValidStepPattern(result)).toBe(true);
       expect(result).toEqual(createDefaultStepPattern());
     });

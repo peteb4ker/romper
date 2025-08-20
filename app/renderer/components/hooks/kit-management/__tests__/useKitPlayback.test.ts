@@ -57,7 +57,7 @@ describe("useKitPlayback", () => {
   });
 
   it("sets playbackError on error event", () => {
-    let errorHandler: any;
+    let errorHandler: unknown;
     vi.mocked(window.electronAPI.onSamplePlaybackError).mockImplementation(
       (cb) => {
         errorHandler = cb;

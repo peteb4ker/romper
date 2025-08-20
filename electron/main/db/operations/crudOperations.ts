@@ -80,11 +80,11 @@ export function buildDeleteConditions(
   if (conditions.length === 0) {
     throw new Error("No conditions provided to buildDeleteConditions");
   }
-  
+
   if (conditions.length === 1) {
     return conditions[0];
   }
-  
+
   const result = and(...conditions);
   if (!result) {
     throw new Error("Failed to combine conditions with AND operator");

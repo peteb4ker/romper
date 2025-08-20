@@ -55,12 +55,12 @@ export function useSampleProcessing({
   }, [kitName]);
 
   const isDuplicateSample = useCallback(
-    async (allSamples: any[], filePath: string): Promise<boolean> => {
+    async (allSamples: unknown[], filePath: string): Promise<boolean> => {
       const voiceSamples = allSamples.filter(
-        (s: any) => s.voice_number === voice,
+        (s: unknown) => s.voice_number === voice,
       );
       const isDuplicate = voiceSamples.some(
-        (s: any) => s.source_path === filePath,
+        (s: unknown) => s.source_path === filePath,
       );
 
       if (isDuplicate) {
@@ -97,7 +97,7 @@ export function useSampleProcessing({
   const executeAssignment = useCallback(
     async (
       filePath: string,
-      allSamples: any[],
+      allSamples: unknown[],
       droppedSlotNumber: number,
       options: { forceMono: boolean; replaceExisting: boolean },
     ) => {
@@ -132,8 +132,8 @@ export function useSampleProcessing({
   const processAssignment = useCallback(
     async (
       filePath: string,
-      formatValidation: any,
-      allSamples: any[],
+      formatValidation: unknown,
+      allSamples: unknown[],
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
       droppedSlotNumber: number,
     ): Promise<boolean> => {

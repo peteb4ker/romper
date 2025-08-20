@@ -313,7 +313,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       slotNumber,
     );
   },
-  getSetting: async (key: string): Promise<any> => {
+  getSetting: async (key: string): Promise<unknown> => {
     return await settingsManager.getSetting(key as SettingsKey);
   },
   getUserHomeDir: () => {
@@ -396,9 +396,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       cb(errMsg),
     );
   },
-  onSyncProgress: (
-    callback: (progress: SyncProgress) => void,
-  ) => {
+  onSyncProgress: (callback: (progress: SyncProgress) => void) => {
     isDev && console.debug("[IPC] onSyncProgress listener registered");
     ipcRenderer.removeAllListeners("sync-progress");
     ipcRenderer.on("sync-progress", (_event: unknown, progress: SyncProgress) =>

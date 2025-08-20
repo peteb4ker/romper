@@ -25,7 +25,9 @@ import { registerSyncIpcHandlers } from "./db/syncIpcHandlers.js";
 import { localStoreService } from "./services/localStoreService.js";
 import { scanService } from "./services/scanService.js";
 
-export function registerDbIpcHandlers(inMemorySettings: Record<string, any>) {
+export function registerDbIpcHandlers(
+  inMemorySettings: Record<string, unknown>,
+) {
   // Register all handler groups
   registerSampleIpcHandlers(inMemorySettings);
   registerSyncIpcHandlers(inMemorySettings);

@@ -3,7 +3,7 @@
 export interface ChainResult {
   completedOperations: number;
   errors: Array<{ error: string; operation: string }>;
-  results: Record<string, any>;
+  results: Record<string, unknown>;
   success: boolean;
   totalOperations: number;
 }
@@ -41,13 +41,13 @@ export type ScannerFunction<TInput, TOutput> = (
   input: TInput,
 ) => Promise<ScanResult<TOutput>> | ScanResult<TOutput>;
 
-export interface ScanOperation<TInput = any, TOutput = any> {
+export interface ScanOperation<TInput = unknown, TOutput = unknown> {
   input: TInput;
   name: string;
   scanner: ScannerFunction<TInput, TOutput>;
 }
 
-export interface ScanResult<T = any> {
+export interface ScanResult<T = unknown> {
   data?: T;
   error?: string;
   success: boolean;

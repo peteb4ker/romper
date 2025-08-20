@@ -80,7 +80,7 @@ describe("useKitDetailsLogic", () => {
   };
 
   const mockProps = {
-    kit: mockKit as any,
+    kit: mockKit as unknown,
     kitIndex: 0,
     kitName: "TestKit",
     kits: [],
@@ -177,7 +177,7 @@ describe("useKitDetailsLogic", () => {
 
   it("handles missing rescan API", async () => {
     // Remove the rescanKit method to simulate missing API
-    delete (window.electronAPI as any).rescanKit;
+    delete (window.electronAPI as unknown).rescanKit;
 
     const { result } = renderHook(() => useKitDetailsLogic(mockProps));
 
@@ -284,7 +284,7 @@ describe("useKitDetailsLogic", () => {
     // Mock the sequencer grid ref
     const mockGridElement = {
       focus: vi.fn(),
-    } as any;
+    } as unknown;
 
     // Set the ref before opening the sequencer
     act(() => {

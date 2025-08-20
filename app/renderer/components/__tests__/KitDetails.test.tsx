@@ -109,7 +109,7 @@ describe("KitDetails", () => {
   beforeAll(() => {
     HTMLCanvasElement.prototype.getContext = function () {
       return null;
-    } as any;
+    } as unknown;
   });
 
   beforeEach(() => {

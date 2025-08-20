@@ -91,7 +91,7 @@ export const createWorkerMock = () => {
   return class MockWorker {
     onmessage = null;
     constructor() {}
-    postMessage(msg: any) {
+    postMessage(msg: unknown) {
       // Simulate immediate step event for sequencer tests
       if (msg.type === "START" && this.onmessage) {
         // Simulate a STEP event
@@ -121,12 +121,12 @@ export const setupDOMMocks = () => {
 
   // Document
   if (typeof global.document === "undefined") {
-    global.document = createDocumentMock() as any;
+    global.document = createDocumentMock() as unknown;
   }
 
   // Worker
   if (typeof globalThis.Worker === "undefined") {
-    globalThis.Worker = createWorkerMock() as any;
+    globalThis.Worker = createWorkerMock() as unknown;
   }
 
   // HTMLCanvasElement.getContext

@@ -30,7 +30,7 @@ export class ScanService {
    * 5. Infers voice types from filenames
    */
   async rescanKit(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
   ): Promise<
     DbResult<{
@@ -115,7 +115,7 @@ export class ScanService {
    * Scan local store for bank RTF files and update database
    * Looks for files matching "A - Artist Name.rtf" pattern
    */
-  async scanBanks(inMemorySettings: Record<string, any>): Promise<
+  async scanBanks(inMemorySettings: Record<string, unknown>): Promise<
     DbResult<{
       scannedAt: Date;
       scannedFiles: number;
@@ -189,7 +189,7 @@ export class ScanService {
   }
 
   private getLocalStorePath(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): null | string {
     return inMemorySettings.localStorePath || null;
   }

@@ -166,8 +166,8 @@ describe("useKitItem", () => {
     it("should handle non-string values being filtered out", () => {
       const voiceNames = {
         1: "kick",
-        2: null as any,
-        3: undefined as any,
+        2: null as unknown,
+        3: undefined as unknown,
         4: "snare",
       };
       const { result } = renderHook(() => useKitItem(voiceNames));

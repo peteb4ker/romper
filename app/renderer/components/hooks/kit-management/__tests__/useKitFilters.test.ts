@@ -21,7 +21,7 @@ Object.defineProperty(globalThis, "window", {
 });
 
 // Ensure global window is also set
-global.window = globalThis.window as any;
+global.window = globalThis.window as unknown;
 
 describe("useKitFilters", () => {
   const mockOnMessage = vi.fn();

@@ -75,7 +75,7 @@ describe("ScanService", () => {
         "2_hihat.wav",
         "2_openhat.wav",
         "readme.txt", // Non-WAV file should be ignored
-      ] as any);
+      ] as unknown);
 
       mockGroupSamplesByVoice.mockReturnValue({
         "1": ["1_kick.wav", "1_snare.wav"],
@@ -141,7 +141,7 @@ describe("ScanService", () => {
       mockFs.readdirSync.mockReturnValue([
         "1_kick_stereo.wav",
         "2_hat_st.wav",
-      ] as any);
+      ] as unknown);
       mockGroupSamplesByVoice.mockReturnValue({
         "1": ["1_kick_stereo.wav"],
         "2": ["2_hat_st.wav"],
@@ -244,7 +244,7 @@ describe("ScanService", () => {
         "invalid-format.rtf",
         "D - Artist Four.txt", // Wrong extension
         "regular-file.wav",
-      ] as any);
+      ] as unknown);
     });
 
     it("successfully scans bank RTF files", async () => {
@@ -286,7 +286,7 @@ describe("ScanService", () => {
     });
 
     it("converts bank letters to uppercase", async () => {
-      mockFs.readdirSync.mockReturnValue(["a - Artist Lower.rtf"] as any);
+      mockFs.readdirSync.mockReturnValue(["a - Artist Lower.rtf"] as unknown);
 
       const result = await scanService.scanBanks(mockInMemorySettings);
 

@@ -14,12 +14,12 @@ const mockElectronAPI = {
 };
 
 beforeEach(() => {
-  (window as any).electronAPI = mockElectronAPI;
+  (window as unknown).electronAPI = mockElectronAPI;
   vi.clearAllMocks();
 });
 
 afterEach(() => {
-  delete (window as any).electronAPI;
+  delete (window as unknown).electronAPI;
 });
 
 describe("useSampleManagement", () => {

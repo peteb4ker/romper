@@ -6,7 +6,9 @@ import { vi } from "vitest";
  * Centralized database mock factory for Drizzle ORM operations
  * Reduces duplication across tests that mock database operations
  */
-export const createDatabaseMock = (overrides: Record<string, any> = {}) => ({
+export const createDatabaseMock = (
+  overrides: Record<string, unknown> = {},
+) => ({
   // Database connection
   close: vi.fn().mockResolvedValue(undefined),
 
@@ -52,7 +54,7 @@ export const createDatabaseMock = (overrides: Record<string, any> = {}) => ({
       },
     ],
     success: true,
-  } as DbResult<any[]>),
+  } as DbResult<unknown[]>),
 
   // Sample operations
   getAllSamplesForKit: vi.fn().mockResolvedValue({

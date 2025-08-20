@@ -6,7 +6,7 @@ export interface UseExternalDragHandlersOptions {
   // Processing hooks
   fileValidation: {
     getFilePathFromDrop: (file: File) => Promise<string>;
-    validateDroppedFile: (filePath: string) => Promise<any>;
+    validateDroppedFile: (filePath: string) => Promise<unknown>;
   };
   isEditable: boolean;
   onStereoDragLeave?: () => void;
@@ -16,15 +16,15 @@ export interface UseExternalDragHandlersOptions {
     isStereo: boolean,
   ) => void;
   sampleProcessing: {
-    getCurrentKitSamples: () => Promise<any[] | null>;
+    getCurrentKitSamples: () => Promise<null | unknown[]>;
     isDuplicateSample: (
-      allSamples: any[],
+      allSamples: unknown[],
       filePath: string,
     ) => Promise<boolean>;
     processAssignment: (
       filePath: string,
-      formatValidation: any,
-      allSamples: any[],
+      formatValidation: unknown,
+      allSamples: unknown[],
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
       droppedSlotNumber: number,
     ) => Promise<boolean>;

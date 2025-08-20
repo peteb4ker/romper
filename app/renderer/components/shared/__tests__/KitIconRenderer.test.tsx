@@ -122,14 +122,16 @@ describe("KitIconRenderer", () => {
   describe("Component Stability", () => {
     it("should handle undefined iconType gracefully", () => {
       const { container } = render(
-        <KitIconRenderer iconType={undefined as any} />,
+        <KitIconRenderer iconType={undefined as unknown} />,
       );
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument(); // Should render default folder icon
     });
 
     it("should handle null iconType gracefully", () => {
-      const { container } = render(<KitIconRenderer iconType={null as any} />);
+      const { container } = render(
+        <KitIconRenderer iconType={null as unknown} />,
+      );
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument(); // Should render default folder icon
     });

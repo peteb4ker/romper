@@ -673,7 +673,7 @@ describe("useKitDataManager", () => {
     it("should throw error when updateKit API not available", async () => {
       // Mock missing API by setting updateKit to undefined
       setupElectronAPIMock({
-        updateKit: undefined as any,
+        updateKit: undefined as unknown,
       });
 
       const { result } = renderHook(() =>
@@ -816,9 +816,9 @@ describe("useKitDataManager", () => {
       });
 
       await act(async () => {
-        await expect(
-          result.current.toggleKitEditable("A0"),
-        ).rejects.toThrow("Failed to toggle editable mode");
+        await expect(result.current.toggleKitEditable("A0")).rejects.toThrow(
+          "Failed to toggle editable mode",
+        );
       });
     });
 
@@ -841,16 +841,16 @@ describe("useKitDataManager", () => {
       });
 
       await act(async () => {
-        await expect(
-          result.current.toggleKitEditable("A0"),
-        ).rejects.toThrow("Network error");
+        await expect(result.current.toggleKitEditable("A0")).rejects.toThrow(
+          "Network error",
+        );
       });
     });
 
     it("should throw error when updateKit API not available", async () => {
       // Mock missing API by setting updateKit to undefined
       setupElectronAPIMock({
-        updateKit: undefined as any,
+        updateKit: undefined as unknown,
       });
 
       const { result } = renderHook(() =>
@@ -867,9 +867,9 @@ describe("useKitDataManager", () => {
       });
 
       await act(async () => {
-        await expect(
-          result.current.toggleKitEditable("A0"),
-        ).rejects.toThrow("Update kit API not available");
+        await expect(result.current.toggleKitEditable("A0")).rejects.toThrow(
+          "Update kit API not available",
+        );
       });
     });
   });

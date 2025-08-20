@@ -93,7 +93,7 @@ export function useLocalStoreWizardFileOps({
       const result = await api.downloadAndExtractArchive?.(
         url,
         targetPath,
-        (p: any) => {
+        (p: unknown) => {
           const now = Date.now();
           // Always report phase changes and completion
           if (
@@ -106,7 +106,7 @@ export function useLocalStoreWizardFileOps({
             reportProgress(p);
           }
         },
-        (e: any) => setError(e?.message || String(e)),
+        (e: unknown) => setError(e?.message || String(e)),
       );
       if (!result?.success)
         throw new Error(result?.error || "Failed to extract archive");

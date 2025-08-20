@@ -9,7 +9,7 @@ import {
 } from "../../utils/bankOperations";
 
 interface UseKitBankNavigationProps {
-  kitListRef: RefObject<any>;
+  kitListRef: RefObject<unknown>;
   kits: KitWithRelations[];
 }
 
@@ -59,7 +59,9 @@ export function useKitBankNavigation({
 
       const header = document.querySelector(".sticky.top-0");
       const headerHeight =
-        header && "offsetHeight" in header ? (header as any).offsetHeight : 0;
+        header && "offsetHeight" in header
+          ? (header as unknown).offsetHeight
+          : 0;
       const containerRect = scrollContainerRef.current.getBoundingClientRect();
       const elRect = el.getBoundingClientRect();
       const offset = elRect.top - containerRect.top - headerHeight - 8;

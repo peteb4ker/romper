@@ -55,8 +55,8 @@ export interface ElectronAPI {
   downloadAndExtractArchive?: (
     url: string,
     destDir: string,
-    onProgress?: (p: any) => void,
-    onError?: (e: any) => void,
+    onProgress?: (p: unknown) => void,
+    onError?: (e: unknown) => void,
   ) => Promise<DbResult>;
   ensureDir?: (dir: string) => Promise<void>;
   // Task 8.1: SD Card Sync Operations
@@ -144,7 +144,7 @@ export interface ElectronAPI {
       theme?: string;
       themeMode?: "dark" | "light" | "system";
     },
-  ) => Promise<any>;
+  ) => Promise<unknown>;
   getUserHomeDir?: () => Promise<string>;
   insertKit?: (dbDir: string, kit: NewKit) => Promise<DbResult>;
 
@@ -206,7 +206,7 @@ export interface ElectronAPI {
   playSample?: (
     filePath: string,
     options?: { channel?: "left" | "mono" | "right" | "stereo" },
-  ) => Promise<any>;
+  ) => Promise<unknown>;
   readAudioFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // ArrayBuffer for audio files
   readFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // Returns file content as ArrayBuffer
   readSettings: () => Promise<{
@@ -247,7 +247,7 @@ export interface ElectronAPI {
       theme?: string;
       themeMode?: "dark" | "light" | "system";
     },
-    value: any,
+    value: unknown,
   ) => Promise<void>;
 
   showItemInFolder: (path: string) => Promise<void>;
@@ -257,7 +257,7 @@ export interface ElectronAPI {
     wipeSdCard?: boolean;
   }) => Promise<DbResult<{ syncedFiles: number }>>;
 
-  stopSample?: () => Promise<any>;
+  stopSample?: () => Promise<unknown>;
 
   // Task 20.1: Favorites system
   toggleKitFavorite?: (
@@ -308,7 +308,7 @@ export interface ElectronAPI {
       validSamples: number;
     }>
   >;
-  writeSettings: (key: string, value: any) => Promise<void>;
+  writeSettings: (key: string, value: unknown) => Promise<void>;
 }
 
 // Custom type for insertSample return value

@@ -22,8 +22,8 @@ vi.mock("../../services/sampleService.js", () => ({
 import { sampleService } from "../../services/sampleService.js";
 
 describe("ipcHandlerUtils", () => {
-  let mockInMemorySettings: Record<string, any>;
-  let mockEvent: any;
+  let mockInMemorySettings: Record<string, unknown>;
+  let mockEvent: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -344,7 +344,7 @@ describe("ipcHandlerUtils", () => {
       it("should return error for unknown operation type", async () => {
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "unknown" as any,
+          "unknown" as unknown,
         );
         const result = await handler(
           mockEvent,

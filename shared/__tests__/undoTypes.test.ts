@@ -297,7 +297,7 @@ describe("undoTypes", () => {
           description: "Test action",
           id: "test-id",
           timestamp: new Date(),
-          type: "UNKNOWN_ACTION" as any,
+          type: "UNKNOWN_ACTION" as unknown,
         } as AnyUndoAction;
 
         const description = getActionDescription(unknownAction);

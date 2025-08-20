@@ -6,12 +6,12 @@ import { localStoreService } from "./services/localStoreService.js";
 import { sampleService } from "./services/sampleService.js";
 import { settingsService } from "./services/settingsService.js";
 
-export function registerIpcHandlers(inMemorySettings: Record<string, any>) {
+export function registerIpcHandlers(inMemorySettings: Record<string, unknown>) {
   ipcMain.handle("read-settings", () =>
     settingsService.readSettings(inMemorySettings),
   );
 
-  ipcMain.handle("write-settings", (_event, key: string, value: any) => {
+  ipcMain.handle("write-settings", (_event, key: string, value: unknown) => {
     settingsService.writeSetting(inMemorySettings, key, value);
   });
 

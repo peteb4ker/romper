@@ -43,7 +43,7 @@ export function createInitialAsyncState<T>(initialData: T): AsyncState<T> {
 /**
  * Hook for managing async operations with automatic state management
  */
-export function useAsyncOperation<T, Args extends any[]>(
+export function useAsyncOperation<T, Args extends unknown[]>(
   operation: (...args: Args) => Promise<T>,
   deps: DependencyList = [],
 ): {
@@ -161,7 +161,7 @@ export function useAsyncState<T>(
 /**
  * Hook for debounced async operations
  */
-export function useDebouncedAsyncOperation<T, Args extends any[]>(
+export function useDebouncedAsyncOperation<T, Args extends unknown[]>(
   operation: (...args: Args) => Promise<T>,
   delay: number = 300,
 ): {
@@ -173,17 +173,17 @@ export function useDebouncedAsyncOperation<T, Args extends any[]>(
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const pendingArgsRef = useRef<Args | undefined>(undefined);
   const resolveRef = useRef<((value: T) => void) | undefined>(undefined);
-  const rejectRef = useRef<((error: any) => void) | undefined>(undefined);
+  const rejectRef = useRef<((error: unknown) => void) | undefined>(undefined);
 
   const cancel = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
-      (timeoutRef as any).current = undefined;
+      (timeoutRef as unknown).current = undefined;
     }
     if (rejectRef.current) {
       rejectRef.current(new Error("Operation cancelled"));
-      (rejectRef as any).current = undefined;
-      (resolveRef as any).current = undefined;
+      (rejectRef as unknown).current = undefined;
+      (resolveRef as unknown).current = undefined;
     }
     setLoading(false);
   }, []);
@@ -213,8 +213,8 @@ export function useDebouncedAsyncOperation<T, Args extends any[]>(
             }
           } finally {
             setLoading(false);
-            (resolveRef as any).current = undefined;
-            (rejectRef as any).current = undefined;
+            (resolveRef as unknown).current = undefined;
+            (rejectRef as unknown).current = undefined;
           }
         }, delay);
       });
@@ -237,7 +237,7 @@ export function useDebouncedAsyncOperation<T, Args extends any[]>(
 /**
  * Hook for managing data mutations with optimistic updates
  */
-export function useOptimisticMutation<T, Args extends any[]>(
+export function useOptimisticMutation<T, Args extends unknown[]>(
   data: T,
   mutationFn: (...args: Args) => Promise<T>,
   options: {

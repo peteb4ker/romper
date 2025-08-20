@@ -13,7 +13,7 @@ const mockGetAudioMetadata = vi.mocked(audioUtils.getAudioMetadata);
 
 describe("stereoProcessingUtils", () => {
   const testFilePath = "/path/to/sample.wav";
-  let mockInMemorySettings: Record<string, any>;
+  let mockInMemorySettings: Record<string, unknown>;
 
   beforeEach(() => {
     vi.clearAllMocks();

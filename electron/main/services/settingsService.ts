@@ -11,7 +11,7 @@ export class SettingsService {
    * Get the local store path with environment variable override support
    */
   getLocalStorePath(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     envOverride?: string,
   ): null | string {
     return envOverride || inMemorySettings.localStorePath || null;
@@ -20,7 +20,9 @@ export class SettingsService {
   /**
    * Read current in-memory settings with environment overrides
    */
-  readSettings(inMemorySettings: Record<string, any>): Record<string, any> {
+  readSettings(
+    inMemorySettings: Record<string, unknown>,
+  ): Record<string, unknown> {
     // Include environment overrides when available
     const settings = { ...inMemorySettings };
 
@@ -40,7 +42,7 @@ export class SettingsService {
    * Validate that a local store path is configured
    */
   validateLocalStorePath(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     envOverride?: string,
   ): { error: string; success: false } | { path: string; success: true } {
     const localStorePath = this.getLocalStorePath(
@@ -59,9 +61,9 @@ export class SettingsService {
    * Write a setting value to both memory and persistent storage
    */
   writeSetting(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     key: string,
-    value: any,
+    value: unknown,
   ): void {
     console.log(
       "[SettingsService] write-setting called with key:",

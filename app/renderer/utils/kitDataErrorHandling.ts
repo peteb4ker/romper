@@ -20,11 +20,11 @@ export class KitDataErrorHandler {
     error: unknown,
     operation: string,
     options: {
-      defaultValue?: any;
+      defaultValue?: unknown;
       showToast?: boolean;
       silent?: boolean;
     } = {},
-  ): { data?: any; error: string; success: false } {
+  ): { data?: unknown; error: string; success: false } {
     const errorMessage = getErrorMessage(error);
     const fullMessage = `Failed to ${operation}: ${errorMessage}`;
 
@@ -136,7 +136,7 @@ export const KitErrorPatterns = {
   /**
    * Handle API validation errors
    */
-  apiValidation: (result: any, operation: string): void => {
+  apiValidation: (result: unknown, operation: string): void => {
     if (!result?.success) {
       const errorMessage = result?.error || `Failed to ${operation}`;
       throw new Error(errorMessage);
@@ -154,7 +154,7 @@ export const KitErrorPatterns = {
   /**
    * Handle kit loading errors with appropriate fallbacks
    */
-  kitLoading: (error: unknown): { kits: any[]; samples: {} } => {
+  kitLoading: (error: unknown): { kits: unknown[]; samples: {} } => {
     console.error("Error loading data from database:", error);
     return { kits: [], samples: {} };
   },
@@ -215,9 +215,9 @@ export const ApiValidation = {
    * Check if API method exists before calling
    */
   checkApiMethod(
-    apiMethod: any,
+    apiMethod: unknown,
     methodName: string,
-  ): asserts apiMethod is (...args: any[]) => any {
+  ): asserts apiMethod is (...args: unknown[]) => unknown {
     if (!apiMethod || typeof apiMethod !== "function") {
       throw new Error(`${methodName} API method not available`);
     }
@@ -227,7 +227,7 @@ export const ApiValidation = {
    * Validate API response structure
    */
   validateResponse<T>(
-    response: any,
+    response: unknown,
     operation: string,
   ): { data: T; success: true } | { error: string; success: false } {
     if (!response) {

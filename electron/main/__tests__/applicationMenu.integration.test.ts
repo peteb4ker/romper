@@ -63,22 +63,26 @@ describe("Menu IPC Integration Tests", () => {
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
 
     // Find the Tools menu
-    const toolsMenu = menuTemplate.find((item: any) => item.label === "Tools");
+    const toolsMenu = menuTemplate.find(
+      (item: unknown) => item.label === "Tools",
+    );
     expect(toolsMenu).toBeDefined();
     expect(toolsMenu.submenu).toBeDefined();
 
     // Verify Tools submenu contains expected items
     const toolsSubmenu = toolsMenu.submenu;
-    const toolsMenuLabels = toolsSubmenu.map((item: any) => item.label);
+    const toolsMenuLabels = toolsSubmenu.map((item: unknown) => item.label);
     expect(toolsMenuLabels).toContain("Scan All Kits");
     expect(toolsMenuLabels).toContain("Validate Database");
     expect(toolsMenuLabels).toContain("Setup Local Store...");
 
     // Find the Help menu and verify About Romper is there
-    const helpMenu = menuTemplate.find((item: any) => item.label === "Help");
+    const helpMenu = menuTemplate.find(
+      (item: unknown) => item.label === "Help",
+    );
     expect(helpMenu).toBeDefined();
     const helpSubmenu = helpMenu.submenu;
-    const helpMenuLabels = helpSubmenu.map((item: any) => item.label);
+    const helpMenuLabels = helpSubmenu.map((item: unknown) => item.label);
     expect(helpMenuLabels).toContain("About Romper");
 
     // Verify that Menu.setApplicationMenu was called
@@ -120,12 +124,14 @@ describe("Menu IPC Integration Tests", () => {
 
     // Get the menu template
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
-    const toolsMenu = menuTemplate.find((item: any) => item.label === "Tools");
+    const toolsMenu = menuTemplate.find(
+      (item: unknown) => item.label === "Tools",
+    );
     const submenu = toolsMenu.submenu;
 
     // Find and trigger the "Scan All Kits" menu item
     const scanMenuItem = submenu.find(
-      (item: any) => item.label === "Scan All Kits",
+      (item: unknown) => item.label === "Scan All Kits",
     );
     expect(scanMenuItem).toBeDefined();
     expect(scanMenuItem.click).toBeDefined();
@@ -175,9 +181,11 @@ describe("Menu IPC Integration Tests", () => {
     ];
 
     menuItems.forEach(({ event, label, menu }) => {
-      const targetMenu = menuTemplate.find((item: any) => item.label === menu);
+      const targetMenu = menuTemplate.find(
+        (item: unknown) => item.label === menu,
+      );
       const submenu = targetMenu.submenu;
-      const menuItem = submenu.find((item: any) => item.label === label);
+      const menuItem = submenu.find((item: unknown) => item.label === label);
       expect(menuItem).toBeDefined();
       expect(menuItem.click).toBeDefined();
 
@@ -204,12 +212,14 @@ describe("Menu IPC Integration Tests", () => {
 
     // Get the menu template
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
-    const toolsMenu = menuTemplate.find((item: any) => item.label === "Tools");
+    const toolsMenu = menuTemplate.find(
+      (item: unknown) => item.label === "Tools",
+    );
     const submenu = toolsMenu.submenu;
 
     // Find and trigger the "Scan All Kits" menu item
     const scanMenuItem = submenu.find(
-      (item: any) => item.label === "Scan All Kits",
+      (item: unknown) => item.label === "Scan All Kits",
     );
 
     // This should not throw an error even with no windows

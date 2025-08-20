@@ -347,7 +347,7 @@ describe.sequential("main/index.ts", () => {
       loadFile: vi.fn().mockResolvedValue(undefined),
       loadURL: vi.fn().mockRejectedValue(new Error("Load URL failed")),
     };
-    vi.mocked(BrowserWindow).mockReturnValue(mockWindow as any);
+    vi.mocked(BrowserWindow).mockReturnValue(mockWindow as unknown);
 
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     await import("../index");
@@ -370,7 +370,7 @@ describe.sequential("main/index.ts", () => {
       loadFile: vi.fn().mockRejectedValue(new Error("Load file failed")),
       loadURL: vi.fn().mockResolvedValue(undefined),
     };
-    vi.mocked(BrowserWindow).mockReturnValue(mockWindow as any);
+    vi.mocked(BrowserWindow).mockReturnValue(mockWindow as unknown);
 
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     await import("../index");

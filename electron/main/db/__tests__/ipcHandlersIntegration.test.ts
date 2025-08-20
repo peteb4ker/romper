@@ -94,7 +94,7 @@ describe("IPC Handlers Integration Tests", () => {
       expect(() => JSON.stringify(result)).not.toThrow();
 
       // Verify no bank relation objects that cause IPC serialization issues
-      result.forEach((kit: any) => {
+      result.forEach((kit: unknown) => {
         expect(kit).not.toHaveProperty("bank");
         expect(kit.bank_letter).toBeDefined(); // Only the bank letter, not the relation
       });

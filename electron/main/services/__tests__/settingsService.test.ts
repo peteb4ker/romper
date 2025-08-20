@@ -29,7 +29,7 @@ const mockPath = vi.mocked(path);
 
 describe("SettingsService", () => {
   let settingsService: SettingsService;
-  let mockInMemorySettings: Record<string, any>;
+  let mockInMemorySettings: Record<string, unknown>;
 
   beforeEach(() => {
     vi.clearAllMocks();

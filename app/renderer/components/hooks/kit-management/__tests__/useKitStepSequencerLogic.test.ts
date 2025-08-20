@@ -368,7 +368,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowUp",
           preventDefault: vi.fn(),
-        } as any);
+        } as unknown);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 1 });
@@ -386,7 +386,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowDown",
           preventDefault: vi.fn(),
-        } as any);
+        } as unknown);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 1 });
@@ -409,7 +409,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowLeft",
           preventDefault: vi.fn(),
-        } as any);
+        } as unknown);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 4, voice: 0 });
@@ -427,7 +427,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowRight",
           preventDefault: vi.fn(),
-        } as any);
+        } as unknown);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 1, voice: 0 });
@@ -446,7 +446,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowUp",
           preventDefault: vi.fn(),
-        } as any);
+        } as unknown);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 });
@@ -456,7 +456,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowLeft",
           preventDefault: vi.fn(),
-        } as any);
+        } as unknown);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 });
@@ -470,7 +470,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowDown",
           preventDefault: vi.fn(),
-        } as any);
+        } as unknown);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 3 });
@@ -484,7 +484,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowRight",
           preventDefault: vi.fn(),
-        } as any);
+        } as unknown);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 15, voice: 0 });
@@ -506,7 +506,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: " ",
           preventDefault: mockPreventDefault,
-        } as any);
+        } as unknown);
       });
 
       expect(mockPreventDefault).toHaveBeenCalled();
@@ -527,7 +527,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "Enter",
           preventDefault: mockPreventDefault,
-        } as any);
+        } as unknown);
       });
 
       expect(mockPreventDefault).toHaveBeenCalled();
@@ -548,7 +548,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowUp",
           preventDefault: mockPreventDefault,
-        } as any);
+        } as unknown);
       });
 
       expect(mockPreventDefault).not.toHaveBeenCalled();
@@ -569,7 +569,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "a",
           preventDefault: mockPreventDefault,
-        } as any);
+        } as unknown);
       });
 
       expect(mockPreventDefault).not.toHaveBeenCalled();

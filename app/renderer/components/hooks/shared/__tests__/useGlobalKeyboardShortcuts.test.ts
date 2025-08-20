@@ -9,10 +9,10 @@ vi.mock("../useUndoRedo");
 
 describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
   // Create fresh mocks for each test
-  let mockUndo: any;
-  let mockRedo: any;
-  let mockAddAction: any;
-  let mockOnBackNavigation: any;
+  let mockUndo: unknown;
+  let mockRedo: unknown;
+  let mockAddAction: unknown;
+  let mockOnBackNavigation: unknown;
 
   beforeEach(() => {
     // Create fresh mocks for each test

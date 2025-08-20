@@ -33,7 +33,7 @@ const mockElectronAPI = {
 };
 
 // Ensure window is properly typed and electronAPI is available
-(window as any).electronAPI = mockElectronAPI;
+(window as unknown).electronAPI = mockElectronAPI;
 
 describe("useSampleManagementOperations", () => {
   const mockOptions = {
@@ -48,7 +48,7 @@ describe("useSampleManagementOperations", () => {
     vi.clearAllMocks();
     vi.resetAllMocks();
     // Ensure electronAPI is always available
-    (window as any).electronAPI = mockElectronAPI;
+    (window as unknown).electronAPI = mockElectronAPI;
   });
 
   describe("handleSampleAdd", () => {
@@ -135,8 +135,8 @@ describe("useSampleManagementOperations", () => {
     });
 
     it("should handle missing electronAPI", async () => {
-      const originalAPI = (window as any).electronAPI;
-      (window as any).electronAPI = undefined;
+      const originalAPI = (window as unknown).electronAPI;
+      (window as unknown).electronAPI = undefined;
 
       const { result } = renderHook(() =>
         useSampleManagementOperations(mockOptions),
@@ -150,7 +150,7 @@ describe("useSampleManagementOperations", () => {
       );
 
       // Restore
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
   });
 
@@ -221,8 +221,8 @@ describe("useSampleManagementOperations", () => {
     });
 
     it("should handle missing electronAPI for replace", async () => {
-      const originalAPI = (window as any).electronAPI;
-      (window as any).electronAPI = { addSampleToSlot: vi.fn() }; // Missing replaceSampleInSlot
+      const originalAPI = (window as unknown).electronAPI;
+      (window as unknown).electronAPI = { addSampleToSlot: vi.fn() }; // Missing replaceSampleInSlot
 
       const { result } = renderHook(() =>
         useSampleManagementOperations(mockOptions),
@@ -236,7 +236,7 @@ describe("useSampleManagementOperations", () => {
       );
 
       // Restore
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
   });
 
@@ -337,8 +337,8 @@ describe("useSampleManagementOperations", () => {
     });
 
     it("should handle missing electronAPI for delete", async () => {
-      const originalAPI = (window as any).electronAPI;
-      (window as any).electronAPI = { addSampleToSlot: vi.fn() }; // Missing deleteSampleFromSlot
+      const originalAPI = (window as unknown).electronAPI;
+      (window as unknown).electronAPI = { addSampleToSlot: vi.fn() }; // Missing deleteSampleFromSlot
 
       const { result } = renderHook(() =>
         useSampleManagementOperations(mockOptions),
@@ -352,7 +352,7 @@ describe("useSampleManagementOperations", () => {
       );
 
       // Restore
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
   });
 });

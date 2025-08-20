@@ -243,7 +243,7 @@ describe("useRedoActionHandlers", () => {
 
       const unknownAction = {
         data: {},
-        type: "UNKNOWN_ACTION" as any,
+        type: "UNKNOWN_ACTION" as unknown,
       };
 
       await expect(
@@ -252,8 +252,8 @@ describe("useRedoActionHandlers", () => {
     });
 
     it("should handle missing electronAPI gracefully", async () => {
-      const originalAPI = (window as any).electronAPI;
-      (window as any).electronAPI = undefined;
+      const originalAPI = (window as unknown).electronAPI;
+      (window as unknown).electronAPI = undefined;
 
       const { result } = renderHook(() =>
         useRedoActionHandlers({ kitName: testKitName }),
@@ -276,12 +276,12 @@ describe("useRedoActionHandlers", () => {
       expect(redoResult).toBeUndefined();
 
       // Restore
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should handle missing specific API method", async () => {
-      const originalAPI = (window as any).electronAPI;
-      (window as any).electronAPI = {}; // Missing addSampleToSlot
+      const originalAPI = (window as unknown).electronAPI;
+      (window as unknown).electronAPI = {}; // Missing addSampleToSlot
 
       const { result } = renderHook(() =>
         useRedoActionHandlers({ kitName: testKitName }),
@@ -304,7 +304,7 @@ describe("useRedoActionHandlers", () => {
       expect(redoResult).toBeUndefined();
 
       // Restore
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should handle API call failures", async () => {

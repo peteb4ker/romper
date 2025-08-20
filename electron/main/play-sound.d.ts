@@ -1,6 +1,6 @@
 declare module "play-sound" {
   interface PlaySoundOptions {
-    [key: string]: any;
+    [key: string]: unknown;
     player?: string;
     players?: string[];
   }
@@ -9,8 +9,8 @@ declare module "play-sound" {
       file: string,
       options?: PlaySoundOptions,
       callback?: (err?: Error) => void,
-    ): any;
-    play(file: string, callback?: (err?: Error) => void): any;
+    ): unknown;
+    play(file: string, callback?: (err?: Error) => void): unknown;
   }
   function playSound(options?: PlaySoundOptions): PlaySoundPlayer;
   export = playSound;

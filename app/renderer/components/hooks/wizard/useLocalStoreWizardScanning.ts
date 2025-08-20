@@ -100,7 +100,7 @@ export function useLocalStoreWizardScanning({
       // Helper function to apply voice inference results
       const applyVoiceInferenceResults = async (
         kitName: string,
-        scanResult: any,
+        scanResult: unknown,
       ) => {
         if (
           scanResult.success &&
@@ -119,7 +119,7 @@ export function useLocalStoreWizardScanning({
       const updateSingleVoiceAlias = async (
         kitName: string,
         voiceNumber: string,
-        voiceName: any,
+        voiceName: unknown,
       ) => {
         if (
           voiceName &&

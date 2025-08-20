@@ -74,7 +74,7 @@ class SyncService {
    * Generate a summary of changes needed to sync all kits to SD card
    */
   async generateChangeSummary(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     _sdCardPath?: string,
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
@@ -131,7 +131,7 @@ class SyncService {
    * Start syncing all kits to SD card
    */
   async startKitSync(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     options: {
       sdCardPath: string;
       wipeSdCard?: boolean;
@@ -210,16 +210,16 @@ class SyncService {
    * Add file to sync conversion list
    */
   private addSyncFileToConvert(
-    sample: any,
+    sample: unknown,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    metadataResult: any,
-    formatValidationResult: any,
-    results: any,
+    metadataResult: unknown,
+    formatValidationResult: unknown,
+    results: unknown,
   ): void {
     const issues = formatValidationResult.data?.issues || [];
-    const issueMessages = issues.map((issue: any) => issue.message);
+    const issueMessages = issues.map((issue: unknown) => issue.message);
 
     results.filesToConvert.push({
       destinationPath,
@@ -248,7 +248,7 @@ class SyncService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
-    results: any,
+    results: unknown,
   ): void {
     results.filesToCopy.push({
       destinationPath,
@@ -312,7 +312,7 @@ class SyncService {
    * Categorize sync errors for better error reporting
    */
   private categorizeError(
-    error: any,
+    error: unknown,
     filePath?: string,
   ): {
     canRetry: boolean;
@@ -389,11 +389,11 @@ class SyncService {
    * Categorizes sync file operation as copy or convert
    */
   private categorizeSyncFileOperation(
-    sample: any,
+    sample: unknown,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    results: any,
+    results: unknown,
   ): void {
     const metadataResult = getAudioMetadata(sourcePath);
     const formatValidationResult = validateSampleFormat(sourcePath);
@@ -539,7 +539,7 @@ class SyncService {
   private async executeFileOperation(
     fileOp: SyncFileOperation,
     fileSize: number,
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): Promise<void> {
     if (fileOp.operation === "copy") {
       fs.copyFileSync(fileOp.sourcePath, fileOp.destinationPath);
@@ -632,7 +632,7 @@ class SyncService {
   private async handleFileConversion(
     fileOp: SyncFileOperation,
     originalFileSize: number,
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): Promise<void> {
     const forceMonoConversion = Boolean(inMemorySettings.defaultToMonoSamples);
     const conversionResult = await convertToRampleDefault(
@@ -680,7 +680,7 @@ class SyncService {
    * Handle file processing errors
    */
   private handleFileProcessingError(
-    error: any,
+    error: unknown,
     fileOp: SyncFileOperation,
     syncedFiles: number,
     totalFiles: number,
@@ -717,8 +717,8 @@ class SyncService {
    * Handle sync failure and cleanup
    */
   private async handleSyncFailure(
-    inMemorySettings: Record<string, any>,
-    _error: any,
+    inMemorySettings: Record<string, unknown>,
+    _error: unknown,
   ): Promise<void> {
     if (this.currentSyncJob) {
       console.error("Sync failed, attempting cleanup...");
@@ -763,7 +763,7 @@ class SyncService {
    * Mark kits as synced after successful operation
    */
   private async markKitsAsSynced(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     allFiles: SyncFileOperation[],
     syncedFiles: number,
   ): Promise<void> {
@@ -789,7 +789,7 @@ class SyncService {
    */
   private async processAllFiles(
     allFiles: SyncFileOperation[],
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     _sdCardPath?: string,
   ): Promise<number> {
     let syncedFiles = 0;
@@ -827,7 +827,7 @@ class SyncService {
    * Process a single sample for sync operations
    */
   private processSampleForSync(
-    sample: any,
+    sample: unknown,
     localStorePath: string,
     results: {
       filesToConvert: SyncFileOperation[];
@@ -881,7 +881,7 @@ class SyncService {
     fileOp: SyncFileOperation,
     syncedFiles: number,
     totalFiles: number,
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): Promise<void> {
     const fileSize = this.getFileSizeForProgress(fileOp.sourcePath);
 
@@ -928,7 +928,7 @@ class SyncService {
   private validateSyncSourceFile(
     filename: string,
     sourcePath: string,
-    results: any,
+    results: unknown,
   ): { fileSize: number; isValid: boolean } {
     if (!fs.existsSync(sourcePath)) {
       results.validationErrors.push({

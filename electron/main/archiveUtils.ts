@@ -7,7 +7,7 @@ export async function countZipEntries(zipPath: string): Promise<number> {
     let count = 0;
     fs.createReadStream(zipPath)
       .pipe(unzipper.Parse())
-      .on("entry", (entry: any) => {
+      .on("entry", (entry: unknown) => {
         if (isValidEntry(entry.path)) {
           count++;
         }
@@ -55,7 +55,7 @@ export async function extractZipEntries(
 
     fs.createReadStream(zipPath)
       .pipe(unzipper.Parse())
-      .on("entry", (entry: any) => {
+      .on("entry", (entry: unknown) => {
         processedCount = processZipEntry(
           entry,
           destDir,
@@ -85,7 +85,7 @@ function createProgressTracker(
   let receivedBytes = 0;
   let lastPercent = 0;
 
-  return (chunk: any) => {
+  return (chunk: unknown) => {
     receivedBytes += chunk.length;
     if (totalBytes > 0) {
       const percent = Math.floor((receivedBytes / totalBytes) * 100);
@@ -100,7 +100,7 @@ function createProgressTracker(
 }
 
 // Helper function to handle directory extraction
-function handleDirectoryEntry(entry: any, destPath: string): void {
+function handleDirectoryEntry(entry: unknown, destPath: string): void {
   fs.mkdir(destPath, { recursive: true }, (err) => {
     if (err) console.warn("Failed to create directory:", destPath, err);
     entry.autodrain();
@@ -108,7 +108,7 @@ function handleDirectoryEntry(entry: any, destPath: string): void {
 }
 
 // Helper function to handle file extraction
-function handleFileEntry(entry: any, destPath: string): void {
+function handleFileEntry(entry: unknown, destPath: string): void {
   fs.mkdir(path.dirname(destPath), { recursive: true }, (err) => {
     if (err) {
       console.warn(
@@ -122,7 +122,7 @@ function handleFileEntry(entry: any, destPath: string): void {
 
     entry
       .pipe(fs.createWriteStream(destPath))
-      .on("error", (err: any) => {
+      .on("error", (err: unknown) => {
         setImmediate(() => {
           console.warn("Failed to write file:", destPath, err);
         });
@@ -133,7 +133,7 @@ function handleFileEntry(entry: any, destPath: string): void {
 
 // Helper function to process a single zip entry
 function processZipEntry(
-  entry: any,
+  entry: unknown,
   destDir: string,
   processedCount: number,
   entryCount: number,
@@ -164,7 +164,7 @@ function processZipEntry(
 function setupFileStream(
   fileStream: fs.WriteStream,
   resolve: () => void,
-  reject: (error: any) => void,
+  reject: (error: unknown) => void,
 ) {
   fileStream.on("finish", () => {
     fileStream.close(() => resolve());

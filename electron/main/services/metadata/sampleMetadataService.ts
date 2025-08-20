@@ -15,7 +15,7 @@ export class SampleMetadataService {
    * Get audio buffer for a specific sample by kit/voice/slot identifier
    */
   getSampleAudioBuffer(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
@@ -72,7 +72,7 @@ export class SampleMetadataService {
   }
 
   private getLocalStorePath(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): null | string {
     return ServicePathManager.getLocalStorePath(inMemorySettings);
   }

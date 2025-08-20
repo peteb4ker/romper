@@ -47,7 +47,7 @@ describe("useExternalDragHandlers", () => {
     type: "audio/wav",
   });
 
-  const createMockEvent = (files: any[]) => {
+  const createMockEvent = (files: unknown[]) => {
     // Create corresponding items array for dragover events
     const items = files.map(() => ({ kind: "file" }));
 
@@ -100,7 +100,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleDragOver(mockEvent, 1);
 
@@ -119,7 +119,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleDragOver(mockEvent, 3);
       rerender();
@@ -141,7 +141,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleDragOver(mockEvent, 2);
 
@@ -159,7 +159,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleDragOver(mockEvent, 1);
 
@@ -186,7 +186,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleDragOver(mockEvent, 1);
 
@@ -209,7 +209,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       expect(() => {
         result.current.handleDragOver(mockEvent, 1);
@@ -235,7 +235,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       // Mock Array.from to return our test data
       const originalArrayFrom = Array.from;
@@ -540,7 +540,7 @@ describe("useExternalDragHandlers", () => {
         preventDefault: vi.fn(),
         shiftKey: false,
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       // Mock Array.from to return our test data
       const originalArrayFrom = Array.from;
@@ -579,7 +579,7 @@ describe("useExternalDragHandlers", () => {
         preventDefault: vi.fn(),
         shiftKey: false,
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       await result.current.handleDrop(dropEvent, 2);
       rerender(); // Force rerender to see state updates
@@ -627,7 +627,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleDragOver(mockEvent, 1);
 
@@ -646,7 +646,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleDragOver(mockEvent, 1);
 
@@ -668,7 +668,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result0.current.handleDragOver(mockEvent, 1);
       expect(mockOnStereoDragOver).toHaveBeenCalledWith(0, 1, false);
@@ -743,7 +743,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleDragOver(mockEvent, 1);
       rerender();
@@ -764,7 +764,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleDragOver(mockEvent, 3);
       rerender();
@@ -785,7 +785,7 @@ describe("useExternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleDragOver(mockEvent, 5);
       rerender();

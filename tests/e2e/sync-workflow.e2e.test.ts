@@ -9,8 +9,8 @@ import {
 } from "../utils/e2e-fixture-extractor";
 
 test.describe("Sync Workflow E2E Tests", () => {
-  let electronApp: any;
-  let window: any;
+  let electronApp: unknown;
+  let window: unknown;
   let testEnv: E2ETestEnvironment;
 
   test.beforeEach(async () => {

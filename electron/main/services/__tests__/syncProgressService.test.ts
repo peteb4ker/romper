@@ -17,7 +17,7 @@ const mockBrowserWindow = vi.mocked(BrowserWindow);
 
 describe("SyncProgressService", () => {
   let service: SyncProgressService;
-  let mockWindow: any;
+  let mockWindow: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();

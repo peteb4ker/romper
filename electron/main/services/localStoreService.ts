@@ -165,7 +165,7 @@ export class LocalStoreService {
         ),
         success: true,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         "[LocalStoreService] Failed to read file:",
         filePath,

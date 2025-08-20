@@ -24,8 +24,8 @@ vi.mock("../utils/scanners/orchestrationFunctions", () => ({
 }));
 
 describe("useLocalStoreWizardScanning", () => {
-  let mockApi: any;
-  let mockReportStepProgress: any;
+  let mockApi: unknown;
+  let mockReportStepProgress: unknown;
 
   beforeEach(() => {
     mockApi = {

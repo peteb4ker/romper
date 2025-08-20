@@ -62,7 +62,7 @@ describe("ThemeToggle", () => {
     });
 
     it("should display Theme as fallback for unknown themeMode", () => {
-      mockSettings.themeMode = "unknown" as any;
+      mockSettings.themeMode = "unknown" as unknown;
       render(<ThemeToggle />);
       expect(screen.getByText("Theme")).toBeInTheDocument();
     });
@@ -133,7 +133,7 @@ describe("ThemeToggle", () => {
 
   describe("edge cases", () => {
     it("should handle undefined themeMode", () => {
-      mockSettings.themeMode = undefined as any;
+      mockSettings.themeMode = undefined as unknown;
       render(<ThemeToggle />);
 
       const button = screen.getByRole("button");
@@ -143,7 +143,7 @@ describe("ThemeToggle", () => {
     });
 
     it("should handle null themeMode", () => {
-      mockSettings.themeMode = null as any;
+      mockSettings.themeMode = null as unknown;
       render(<ThemeToggle />);
 
       expect(screen.getByText("Theme")).toBeInTheDocument();

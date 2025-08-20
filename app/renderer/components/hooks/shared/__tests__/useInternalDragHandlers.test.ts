@@ -64,7 +64,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
 
       result.current.handleSampleDragStart(mockEvent, 0, "sample1.wav");
 
@@ -82,7 +82,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
 
       result.current.handleSampleDragStart(mockEvent, 2, "sample3.wav");
 
@@ -114,14 +114,14 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
 
       result.current.handleSampleDragStart(mockEvent, 0, "sample1.wav");
       rerender();
       expect(result.current.draggedSample).not.toBeNull();
 
       // End the drag
-      result.current.handleSampleDragEnd({} as any);
+      result.current.handleSampleDragEnd({} as unknown);
       rerender();
       expect(result.current.draggedSample).toBeNull();
     });
@@ -140,7 +140,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleSampleDragOver(mockEvent, 1);
 
@@ -159,7 +159,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleSampleDragOver(mockEvent, 1);
 
@@ -177,7 +177,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -188,7 +188,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleSampleDragOver(mockEvent, 1);
 
@@ -208,7 +208,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 2, "sample3.wav");
       rerender();
 
@@ -219,7 +219,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       // Try to drag over same slot
       result.current.handleSampleDragOver(mockEvent, 2);
@@ -238,7 +238,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
 
       const mockEvent = {
@@ -248,7 +248,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleSampleDragOver(mockEvent, 1);
 
@@ -278,7 +278,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       await result.current.handleSampleDrop(mockEvent, 1);
 
@@ -296,7 +296,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       await result.current.handleSampleDrop(mockEvent, 1);
 
@@ -314,7 +314,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
 
       const mockEvent = {
@@ -323,7 +323,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       await result.current.handleSampleDrop(mockEvent, 1);
 
@@ -341,7 +341,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
 
       const mockEvent = {
@@ -350,7 +350,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       await result.current.handleSampleDrop(mockEvent, 1);
 
@@ -368,7 +368,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 2, "sample3.wav");
 
       const mockEvent = {
@@ -377,7 +377,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       await result.current.handleSampleDrop(mockEvent, 2);
 
@@ -395,7 +395,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -405,7 +405,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       mockOnSampleMove.mockResolvedValue(undefined);
 
@@ -431,7 +431,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -441,7 +441,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       mockOnSampleMove.mockResolvedValue(undefined);
 
@@ -471,7 +471,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
       expect(result.current.draggedSample).not.toBeNull();
@@ -482,7 +482,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       mockOnSampleMove.mockResolvedValue(undefined);
 
@@ -503,7 +503,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -513,7 +513,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       mockOnSampleMove.mockRejectedValue(new Error("Move failed"));
 
@@ -538,7 +538,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -548,7 +548,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       mockOnSampleMove.mockResolvedValue(undefined);
 
@@ -602,7 +602,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
 
       // Test onDragStart
       handlers.onDragStart!(mockEvent);
@@ -632,7 +632,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -647,7 +647,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       result.current.handleSampleDragOver(mockEvent, 1);
       rerender();
@@ -670,7 +670,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -681,7 +681,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
       result.current.handleSampleDragOver(dragOverEvent, 1);
       rerender();
 
@@ -706,7 +706,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -717,14 +717,14 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
       result.current.handleSampleDragOver(dragOverEvent, 1);
       rerender();
 
       expect(result.current.internalDragOverSlot).toBe(1);
 
       // Drag end should clear all state
-      result.current.handleSampleDragEnd({} as any);
+      result.current.handleSampleDragEnd({} as unknown);
       rerender();
 
       expect(result.current.draggedSample).toBeNull();
@@ -747,7 +747,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
 
       result1.current.handleSampleDragStart(mockEvent, 0, "sample1.wav");
       rerender1();
@@ -768,7 +768,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -781,7 +781,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       mockOnSampleMove.mockResolvedValue(undefined);
 
@@ -794,7 +794,7 @@ describe("useInternalDragHandlers", () => {
       const { rerender, result } = renderHook(() =>
         useInternalDragHandlers({
           ...defaultProps,
-          samples: ["sample1.wav", undefined as any, "sample3.wav"],
+          samples: ["sample1.wav", undefined as unknown, "sample3.wav"],
         }),
       );
 
@@ -803,7 +803,7 @@ describe("useInternalDragHandlers", () => {
           effectAllowed: "",
           setData: vi.fn(),
         },
-      } as any;
+      } as unknown;
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -813,7 +813,7 @@ describe("useInternalDragHandlers", () => {
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as any;
+      } as unknown;
 
       mockOnSampleMove.mockResolvedValue(undefined);
 

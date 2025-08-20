@@ -18,7 +18,7 @@ const mockElectronAPI = {
 // Setup window.electronAPI mock
 beforeEach(() => {
   vi.clearAllMocks();
-  (window as any).electronAPI = mockElectronAPI;
+  (window as unknown).electronAPI = mockElectronAPI;
 
   // Reset all mocks to return success by default
   Object.values(mockElectronAPI).forEach((mock) => {
@@ -647,7 +647,7 @@ describe("useUndoRedo - Basic Tests", () => {
       act(() => {
         result.current.addAction({
           data: {},
-          type: "UNKNOWN_ACTION" as any,
+          type: "UNKNOWN_ACTION" as unknown,
         });
       });
 
@@ -665,7 +665,7 @@ describe("useUndoRedo - Basic Tests", () => {
       act(() => {
         result.current.addAction({
           data: {},
-          type: "UNKNOWN_ACTION" as any,
+          type: "UNKNOWN_ACTION" as unknown,
         });
       });
 

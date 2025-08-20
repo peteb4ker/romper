@@ -5,6 +5,7 @@ This directory contains completed tasks that have been archived to reduce contex
 ## Archive Organization
 
 - **completed-2025-01.md** - All completed tasks from the original task files
+- **critical-2025-01.md** - Completed critical v1.0.0 blocker tasks (SYNC.1, QA.1)
 - **ux-improvements.md** - Completed UX improvement tasks (Tasks 17-19)
 - **technical-debt.md** - Completed technical debt items
 
@@ -24,4 +25,4 @@ For current active tasks, see:
 - `/tasks/PRD.md` - Product requirements (reference)
 
 ---
-*Last updated: 2025-08-19*
+*Last updated: 2025-08-20*

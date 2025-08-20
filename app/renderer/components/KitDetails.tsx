@@ -13,6 +13,7 @@ import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitDetailsAllProps extends KitDetailsProps {
   kit?: KitWithRelations; // Kit data passed from parent
+  kitError?: null | string; // Error from parent kit loading
   onCreateKit?: () => void; // Used by useKitDetailsLogic hook
   onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitDetailsLogic hook

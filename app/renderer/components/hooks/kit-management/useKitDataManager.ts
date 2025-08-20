@@ -18,7 +18,6 @@ interface UseKitDataManagerReturn {
   kits: KitWithRelations[];
   loadKitsData: (scrollToKit?: string) => Promise<void>;
   refreshAllKitsAndSamples: () => Promise<void>;
-  refreshKitsOnly: () => Promise<void>;
   reloadCurrentKitSamples: (kitName: string) => Promise<void>;
   sampleCounts: Record<string, [number, number, number, number]>;
   toggleKitEditable: (kitName: string) => Promise<void>;
@@ -184,24 +183,6 @@ export function useKitDataManager({
     }
   }, [loadKitSamples]);
 
-  // Helper function to refresh only kit metadata (for favorites, etc.)
-  const refreshKitsOnly = useCallback(async () => {
-    try {
-      const kitsResult = await window.electronAPI?.getKitsMetadata?.();
-      if (kitsResult?.success && kitsResult.data) {
-        const kitsWithBanks = kitsResult.data as unknown as KitWithRelations[];
-        setKits(kitsWithBanks);
-      } else {
-        console.error(
-          "Failed to load kits metadata from database:",
-          kitsResult?.error,
-        );
-      }
-    } catch (error) {
-      console.error("Error loading kits metadata from database:", error);
-    }
-  }, []);
-
   // Get a specific kit by name from the cached data
   const getKitByName = useCallback(
     (kitName: string): KitWithRelations | undefined => {
@@ -326,7 +307,6 @@ export function useKitDataManager({
     kits,
     loadKitsData,
     refreshAllKitsAndSamples,
-    refreshKitsOnly,
     reloadCurrentKitSamples,
     sampleCounts,
     toggleKitEditable,

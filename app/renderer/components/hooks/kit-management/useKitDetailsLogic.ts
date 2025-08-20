@@ -14,6 +14,7 @@ import { useKitVoicePanels } from "./useKitVoicePanels";
 
 interface UseKitDetailsLogicParams extends KitDetailsProps {
   kit?: KitWithRelations; // Kit data passed from parent
+  kitError?: null | string; // Error from parent kit loading
   onCreateKit?: () => void;
   onKitUpdated?: () => Promise<void>;
   onMessage?: (text: string, type?: string, duration?: number) => void;
@@ -43,7 +44,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
 
   // Use kit data from props instead of loading it
   const kit = props.kit ?? null; // Convert undefined to null for compatibility
-  const kitError = null; // No longer loading, so no error
+  const kitError = props.kitError ?? null; // Accept error from parent if provided
   const kitLoading = false; // Data is passed from parent
 
   // Reload kit function - now just triggers parent refresh

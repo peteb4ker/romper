@@ -113,10 +113,6 @@ const KitsView: React.FC = () => {
   const kitFilters = useKitFilters({
     kits,
     onMessage: showMessage,
-    onRefreshKits: () => {
-      // No longer needed - favorites update happens in shared state
-      // keeping for backwards compatibility
-    },
   });
 
   // Get current kit from shared data for keyboard shortcuts

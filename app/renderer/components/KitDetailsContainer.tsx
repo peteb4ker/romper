@@ -8,6 +8,7 @@ import KitDetails from "./KitDetails";
 
 interface KitDetailsContainerProps {
   kit: KitWithRelations;
+  kitError?: null | string;
   kitIndex: number;
   kitName: string;
   kits: KitWithRelations[];
@@ -33,6 +34,7 @@ interface KitDetailsContainerProps {
 const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
   const {
     kit,
+    kitError,
     kitIndex,
     kitName,
     kits,
@@ -71,6 +73,7 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
   return (
     <KitDetails
       kit={kit}
+      kitError={kitError}
       kitIndex={kitIndex}
       kitName={kitName}
       kits={kits}

@@ -40,13 +40,12 @@ describe("crudOperations pure functions", () => {
     it("should build conditions with kit name only", () => {
       const mockCondition = { kit_name: testKitName };
       vi.mocked(eq).mockReturnValue(mockCondition as any);
-      vi.mocked(and).mockReturnValue("combined_condition" as any);
 
       const result = buildDeleteConditions(testKitName);
 
       expect(eq).toHaveBeenCalledWith(schema.samples.kit_name, testKitName);
-      expect(and).toHaveBeenCalledWith(mockCondition);
-      expect(result).toBe("combined_condition");
+      expect(and).not.toHaveBeenCalled(); // Single condition doesn't need and()
+      expect(result).toBe(mockCondition);
     });
 
     it("should build conditions with voice filter", () => {

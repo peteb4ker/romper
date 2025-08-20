@@ -186,7 +186,7 @@ export class SyncPlannerService {
   /**
    * Get all samples from all kits
    */
-  private async getAllSamplesFromKits(dbDir: string): Promise<DbResult<any[]>> {
+  private async getAllSamplesFromKits(dbDir: string): Promise<DbResult<Sample[]>> {
     try {
       const { getKits } = await import("../db/romperDbCoreORM.js");
       const kitsResult = getKits(dbDir);
@@ -197,7 +197,7 @@ export class SyncPlannerService {
         };
       }
 
-      let allSamples: any[] = [];
+      let allSamples: Sample[] = [];
       for (const kit of kitsResult.data) {
         const samplesResult = getKitSamples(dbDir, kit.name);
         if (samplesResult.success && samplesResult.data) {

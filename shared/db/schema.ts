@@ -81,7 +81,7 @@ export type Bank = typeof banks.$inferSelect;
 export interface DbKitsResult extends DbResult<Kit[]> {}
 
 // Database operation result wrapper
-export interface DbResult<T = any> {
+export interface DbResult<T = unknown> {
   data?: T;
   error?: string;
   success: boolean;

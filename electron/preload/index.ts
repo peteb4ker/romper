@@ -15,9 +15,21 @@ interface SettingsData {
 }
 
 type SettingsKey = keyof SettingsData;
+type SettingsValue = SettingsData[SettingsKey];
+
+interface SyncProgress {
+  bytesTransferred: number;
+  currentFile: string;
+  elapsedTime: number;
+  estimatedTimeRemaining: number;
+  filesCompleted: number;
+  status: "complete" | "converting" | "copying" | "error" | "preparing";
+  totalBytes: number;
+  totalFiles: number;
+}
 
 class SettingsManager {
-  async getSetting(key: SettingsKey): Promise<any> {
+  async getSetting(key: SettingsKey): Promise<SettingsValue> {
     isDev && console.debug("[IPC] getSetting invoked", key);
 
     // For localStorePath, check environment variable first
@@ -52,13 +64,13 @@ class SettingsManager {
     }
   }
 
-  async setSetting(key: SettingsKey, value: any): Promise<void> {
+  async setSetting(key: SettingsKey, value: SettingsValue): Promise<void> {
     isDev &&
       console.debug(`[IPC] setSetting called with key: ${key}, value:`, value);
     await this.writeSettings(key, value);
   }
 
-  async writeSettings(key: SettingsKey, value: any): Promise<void> {
+  async writeSettings(key: SettingsKey, value: SettingsValue): Promise<void> {
     try {
       await ipcRenderer.invoke("write-settings", key, value);
     } catch (e) {
@@ -211,20 +223,20 @@ contextBridge.exposeInMainWorld("electronAPI", {
   downloadAndExtractArchive: (
     url: string,
     destDir: string,
-    onProgress?: (p: any) => void,
-    onError?: (e: any) => void,
+    onProgress?: (p: unknown) => void,
+    onError?: (e: unknown) => void,
   ) => {
     isDev &&
       console.debug("[IPC] downloadAndExtractArchive invoked", url, destDir);
     if (onProgress) {
       ipcRenderer.removeAllListeners("archive-progress");
-      ipcRenderer.on("archive-progress", (_event: any, progress: any) =>
+      ipcRenderer.on("archive-progress", (_event: unknown, progress: unknown) =>
         onProgress(progress),
       );
     }
     if (onError) {
       ipcRenderer.removeAllListeners("archive-error");
-      ipcRenderer.on("archive-error", (_event: any, error: any) =>
+      ipcRenderer.on("archive-error", (_event: unknown, error: unknown) =>
         onError(error),
       );
     }
@@ -380,25 +392,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onSamplePlaybackError: (cb: (errMsg: string) => void) => {
     isDev && console.debug("[IPC] onSamplePlaybackError registered");
     ipcRenderer.removeAllListeners("sample-playback-error");
-    ipcRenderer.on("sample-playback-error", (_event: any, errMsg: string) =>
+    ipcRenderer.on("sample-playback-error", (_event: unknown, errMsg: string) =>
       cb(errMsg),
     );
   },
   onSyncProgress: (
-    callback: (progress: {
-      bytesTransferred: number;
-      currentFile: string;
-      elapsedTime: number;
-      estimatedTimeRemaining: number;
-      filesCompleted: number;
-      status: "complete" | "converting" | "copying" | "error" | "preparing";
-      totalBytes: number;
-      totalFiles: number;
-    }) => void,
+    callback: (progress: SyncProgress) => void,
   ) => {
     isDev && console.debug("[IPC] onSyncProgress listener registered");
     ipcRenderer.removeAllListeners("sync-progress");
-    ipcRenderer.on("sync-progress", (_event: any, progress: any) =>
+    ipcRenderer.on("sync-progress", (_event: unknown, progress: SyncProgress) =>
       callback(progress),
     );
   },
@@ -462,7 +465,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] selectSdCard invoked");
     return ipcRenderer.invoke("select-sd-card");
   },
-  setSetting: async (key: string, value: any): Promise<void> => {
+  setSetting: async (key: string, value: SettingsValue): Promise<void> => {
     return await settingsManager.setSetting(key as SettingsKey, value);
   },
   showItemInFolder: (path: string): Promise<void> => {
@@ -563,7 +566,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("validate-sample-sources", kitName);
   },
 
-  writeSettings: async (key: string, value: any): Promise<void> => {
+  writeSettings: async (key: string, value: SettingsValue): Promise<void> => {
     isDev && console.debug("[IPC] writeSettings invoked", key, value);
     return await settingsManager.writeSettings(key as SettingsKey, value);
   },

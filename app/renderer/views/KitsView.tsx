@@ -291,7 +291,7 @@ const KitsView: React.FC = () => {
           handleToggleFavoritesFilter={kitFilters.handleToggleFavoritesFilter}
           handleToggleModifiedFilter={kitFilters.handleToggleModifiedFilter}
           // Other props
-          kits={navigation.sortedKits}
+          kits={kitFilters.filteredKits}
           localStorePath={localStorePath}
           modifiedCount={kitFilters.modifiedCount}
           onMessage={showMessage}

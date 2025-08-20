@@ -1,5 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
+import { compareKitSlots } from "@romper/shared/kitUtilsShared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface UseKitFiltersOptions {
@@ -38,20 +39,42 @@ export function useKitFilters({
   const [showModifiedOnly, setShowModifiedOnly] = useState(false);
   const [modifiedCount, setModifiedCount] = useState(0);
 
-  // Task 20.1.4 & 20.2.2: Filter kits based on active filters
+  // Helper function to get favorite state for filtering (matches getKitFavoriteState logic)
+  const getKitFavoriteStateForFiltering = useCallback(
+    (kitName: string): boolean => {
+      // Use ref to access the latest state to avoid stale closures
+      if (kitName in kitFavoriteStatesRef.current) {
+        return kitFavoriteStatesRef.current[kitName];
+      }
+      // Fallback to kit data from server
+      const kit = kits?.find((k) => k.name === kitName);
+      return kit?.is_favorite || false;
+    },
+    [kits],
+  );
+
+  // Task 20.1.4 & 20.2.2: Filter kits based on active filters and maintain sorted order
   const filteredKits = useMemo(() => {
     let filteredList = kits ?? [];
 
     if (showFavoritesOnly) {
-      filteredList = filteredList.filter((kit) => kit.is_favorite);
+      filteredList = filteredList.filter((kit) =>
+        getKitFavoriteStateForFiltering(kit.name),
+      );
     }
 
     if (showModifiedOnly) {
       filteredList = filteredList.filter((kit) => kit.modified_since_sync);
     }
 
-    return filteredList;
-  }, [kits, showFavoritesOnly, showModifiedOnly]);
+    // Sort by kit slot names for consistent order (matches useKitNavigation.sortedKits)
+    return filteredList.slice().sort((a, b) => compareKitSlots(a.name, b.name));
+  }, [
+    kits,
+    showFavoritesOnly,
+    showModifiedOnly,
+    getKitFavoriteStateForFiltering,
+  ]);
 
   // Task 20.1.2: Handler for favorites toggle
   const handleToggleFavorite = useCallback(

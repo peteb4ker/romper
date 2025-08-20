@@ -9,6 +9,15 @@ export interface UseKitParams {
 
 /**
  * Hook for loading and managing kit data from database
+ *
+ * @deprecated This hook creates a duplicate source of truth for kit data.
+ * Use useKitDataManager in the parent component and pass kit data as props instead.
+ * This ensures a single source of truth and prevents synchronization issues.
+ *
+ * Migration path:
+ * 1. Use useKitDataManager in KitsView or similar parent component
+ * 2. Pass kit object as prop to child components
+ * 3. Use parent callbacks for mutations (updateKitAlias, toggleEditableMode, etc.)
  */
 export function useKit({ kitName, onKitUpdated }: UseKitParams) {
   const [kit, setKit] = useState<KitWithRelations | null>(null);

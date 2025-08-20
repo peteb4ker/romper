@@ -7,6 +7,7 @@ import type { VoiceSamples } from "./kitTypes";
 import KitDetails from "./KitDetails";
 
 interface KitDetailsContainerProps {
+  kit: KitWithRelations;
   kitIndex: number;
   kitName: string;
   kits: KitWithRelations[];
@@ -17,7 +18,11 @@ interface KitDetailsContainerProps {
   onNextKit: () => void;
   onPrevKit: () => void;
   onRequestSamplesReload: () => Promise<void>;
-  onToggleFavorite?: (kitName: string) => void;
+  onToggleEditableMode?: (kitName: string) => Promise<void>;
+  onToggleFavorite?: (
+    kitName: string,
+  ) => Promise<{ isFavorite?: boolean; success: boolean }>;
+  onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>;
   samples: VoiceSamples;
 }
 
@@ -27,6 +32,7 @@ interface KitDetailsContainerProps {
  */
 const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
   const {
+    kit,
     kitIndex,
     kitName,
     kits,
@@ -37,7 +43,9 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
     onNextKit,
     onPrevKit,
     onRequestSamplesReload,
+    onToggleEditableMode,
     onToggleFavorite,
+    onUpdateKitAlias,
     samples,
   } = props;
 
@@ -62,6 +70,7 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
 
   return (
     <KitDetails
+      kit={kit}
       kitIndex={kitIndex}
       kitName={kitName}
       kits={kits}
@@ -72,7 +81,9 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
       onNextKit={onNextKit}
       onPrevKit={onPrevKit}
       onRequestSamplesReload={handleRequestSamplesReload}
+      onToggleEditableMode={onToggleEditableMode}
       onToggleFavorite={onToggleFavorite}
+      onUpdateKitAlias={onUpdateKitAlias}
       samples={samples}
     />
   );

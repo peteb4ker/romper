@@ -1,3 +1,5 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import React from "react";
 
 import type { KitDetailsProps } from "./kitTypes";
@@ -10,11 +12,16 @@ import KitVoicePanels from "./KitVoicePanels";
 import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitDetailsAllProps extends KitDetailsProps {
+  kit?: KitWithRelations; // Kit data passed from parent
   onCreateKit?: () => void; // Used by useKitDetailsLogic hook
   onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitDetailsLogic hook
   onRequestSamplesReload?: () => Promise<void>;
-  onToggleFavorite?: (kitName: string) => void; // For favorite star button
+  onToggleEditableMode?: (kitName: string) => Promise<void>; // Toggle editable mode
+  onToggleFavorite?: (
+    kitName: string,
+  ) => Promise<{ isFavorite?: boolean; success: boolean }>; // For favorite star button
+  onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>; // Update kit alias
 }
 
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {

@@ -14,12 +14,19 @@ interface UseKitDataManagerProps {
 
 interface UseKitDataManagerReturn {
   allKitSamples: { [kit: string]: VoiceSamples };
+  getKitByName: (kitName: string) => KitWithRelations | undefined;
   kits: KitWithRelations[];
   loadKitsData: (scrollToKit?: string) => Promise<void>;
   refreshAllKitsAndSamples: () => Promise<void>;
   refreshKitsOnly: () => Promise<void>;
   reloadCurrentKitSamples: (kitName: string) => Promise<void>;
   sampleCounts: Record<string, [number, number, number, number]>;
+  toggleKitEditable: (kitName: string) => Promise<void>;
+  toggleKitFavorite: (
+    kitName: string,
+  ) => Promise<{ isFavorite?: boolean; success: boolean }>;
+  updateKit: (kitName: string, updates: Partial<KitWithRelations>) => void;
+  updateKitAlias: (kitName: string, alias: string) => Promise<void>;
 }
 
 /**
@@ -195,6 +202,101 @@ export function useKitDataManager({
     }
   }, []);
 
+  // Get a specific kit by name from the cached data
+  const getKitByName = useCallback(
+    (kitName: string): KitWithRelations | undefined => {
+      return kits.find((kit) => kit.name === kitName);
+    },
+    [kits],
+  );
+
+  // Update kit data in local state (optimistic update)
+  const updateKit = useCallback(
+    (kitName: string, updates: Partial<KitWithRelations>) => {
+      setKits((prevKits) =>
+        prevKits.map((kit) =>
+          kit.name === kitName ? { ...kit, ...updates } : kit,
+        ),
+      );
+    },
+    [],
+  );
+
+  // Toggle kit favorite status
+  const toggleKitFavorite = useCallback(
+    async (kitName: string) => {
+      try {
+        const result = await window.electronAPI?.toggleKitFavorite?.(kitName);
+        if (result?.success) {
+          // Update local state immediately for optimistic UI update
+          const newFavoriteState = result.data?.isFavorite ?? false;
+          updateKit(kitName, { is_favorite: newFavoriteState });
+          return { isFavorite: newFavoriteState, success: true };
+        }
+        return { success: false };
+      } catch (error) {
+        console.error("Error toggling kit favorite:", error);
+        return { success: false };
+      }
+    },
+    [updateKit],
+  );
+
+  // Update kit alias
+  const updateKitAlias = useCallback(
+    async (kitName: string, alias: string) => {
+      if (!window.electronAPI?.updateKit) {
+        throw new Error("Update kit API not available");
+      }
+
+      try {
+        const result = await window.electronAPI.updateKit(kitName, { alias });
+        if (result.success) {
+          // Update local state
+          updateKit(kitName, { alias });
+        } else {
+          throw new Error(result.error || "Failed to update kit alias");
+        }
+      } catch (error) {
+        console.error("Error updating kit alias:", error);
+        throw error;
+      }
+    },
+    [updateKit],
+  );
+
+  // Toggle kit editable mode
+  const toggleKitEditable = useCallback(
+    async (kitName: string) => {
+      if (!window.electronAPI?.updateKit) {
+        throw new Error("Update kit API not available");
+      }
+
+      const kit = getKitByName(kitName);
+      if (!kit) {
+        throw new Error(`Kit ${kitName} not found`);
+      }
+
+      const newEditableState = !kit.editable;
+
+      try {
+        const result = await window.electronAPI.updateKit(kitName, {
+          editable: newEditableState,
+        });
+        if (result.success) {
+          // Update local state
+          updateKit(kitName, { editable: newEditableState });
+        } else {
+          throw new Error(result.error || "Failed to toggle editable mode");
+        }
+      } catch (error) {
+        console.error("Error toggling kit editable mode:", error);
+        throw error;
+      }
+    },
+    [getKitByName, updateKit],
+  );
+
   // Calculate sample counts for all kits
   const sampleCounts = React.useMemo(() => {
     const counts: Record<string, [number, number, number, number]> = {};
@@ -220,11 +322,16 @@ export function useKitDataManager({
 
   return {
     allKitSamples,
+    getKitByName,
     kits,
     loadKitsData,
     refreshAllKitsAndSamples,
     refreshKitsOnly,
     reloadCurrentKitSamples,
     sampleCounts,
+    toggleKitEditable,
+    toggleKitFavorite,
+    updateKit,
+    updateKitAlias,
   };
 }

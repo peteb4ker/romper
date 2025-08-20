@@ -29,7 +29,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   // These props are used indirectly via useKitDetailsLogic hook
   // SonarQube doesn't detect this usage pattern, so we destructure them explicitly
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { kit, kitError, onToggleEditableMode, onUpdateKitAlias, ...restProps } = props;
+  const { kit, kitError, onToggleEditableMode, onUpdateKitAlias } = props;
   
   const logic = useKitDetailsLogic(props);
   const [dismissedUnscannedPrompt, setDismissedUnscannedPrompt] =

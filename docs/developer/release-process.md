@@ -1,21 +1,21 @@
 <!-- 
 title: Release Process
 owners: developer-team
-last_reviewed: 2025-08-15
+last_reviewed: 2025-08-20
 tags: developer
 -->
 
 # Release Process
 
-This document outlines the complete release process for Romper Sample Manager using manual tag-based releases.
+This document outlines the simple, standardized release process for Romper Sample Manager using git tag-based automation.
 
 ## Overview
 
-Romper uses a manual tag-based release system with the following components:
+Romper uses a **git tag-based release system** with the following components:
 
 - **Manual Version Control**: Developers create tags when ready to release
-- **Cross-Platform Builds**: Automated builds for Windows, macOS, and Linux triggered by tags
-- **GitHub Releases**: Automated release creation with proper artifacts
+- **Automated Builds**: Cross-platform builds triggered by tags via GitHub Actions
+- **Dynamic Release Notes**: Automatically generated from commits since last release
 - **Full Release Control**: Complete control over when releases are created
 
 ## Release Strategy
@@ -23,42 +23,65 @@ Romper uses a manual tag-based release system with the following components:
 Romper uses **manual tag-based releases** because:
 - Desktop applications need careful testing before release
 - Full control over release timing
-- No automation conflicts with development workflow
-- Standard practice for desktop applications in 2025
+- Simple, reliable workflow
+- Standard practice for desktop applications
 
-## Release Workflow
+## The Release Process
 
-### Manual Tag Creation
+### Step 1: Prepare for Release
 
-Releases are triggered by manually creating and pushing version tags:
+1. **Ensure you're on main branch with latest changes**:
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
 
-```bash
-# Create and push a new version tag
-git tag v1.2.3
-git push origin v1.2.3
-```
+2. **Run pre-release validation** (optional but recommended):
+   ```bash
+   npm run pre-release
+   ```
 
-### Automated Build Process (`.github/workflows/release.yml`)
+3. **Test the application locally**:
+   ```bash
+   npm run test
+   npm run build
+   ```
 
-Triggered by version tags (`v*`):
+### Step 2: Update Version and Create Release
 
-1. **Multi-Platform Build Matrix**:
-   - **Ubuntu**: Builds `.deb`, `.rpm`, `.zip` packages
-   - **macOS**: Builds `.dmg` and `.zip` packages
-   - **Windows**: Builds `.exe`, `.msi` packages
+1. **Update package.json version**:
+   ```bash
+   # Edit package.json and bump the version number
+   # Example: "version": "1.0.1"
+   ```
 
-2. **Cross-Platform Artifacts**:
-   - Uploads platform-specific build artifacts
-   - Collects all artifacts for release publication
+2. **Commit the version bump**:
+   ```bash
+   git add package.json
+   git commit -m "bump: version 1.0.1"
+   ```
 
-3. **GitHub Release Creation**:
-   - Downloads all platform artifacts
-   - Creates GitHub release with auto-generated notes
-   - Attaches all distribution packages
+3. **Create and push git tag**:
+   ```bash
+   # Create tag (this triggers the release workflow)
+   git tag v1.0.1
+   git push origin main --tags
+   ```
+
+### Step 3: Monitor Automated Process
+
+The GitHub Actions workflow will automatically:
+
+1. **Build for all platforms** (Windows, macOS, Linux)
+2. **Generate release notes** from commits since the last tag
+3. **Create GitHub release** with all artifacts and proper release notes
+4. **Attach distribution packages** for all platforms
+
+You can monitor progress at: https://github.com/peteb4ker/romper/actions
 
 ## Version Numbering
 
-Follow semantic versioning (semver) when creating tags:
+Follow semantic versioning (semver):
 
 - **Patch releases** (`v1.0.1`): Bug fixes and small improvements
 - **Minor releases** (`v1.1.0`): New features that don't break existing functionality
@@ -67,107 +90,48 @@ Follow semantic versioning (semver) when creating tags:
 ```bash
 # Examples
 git tag v1.0.1  # Bug fixes
-git tag v1.1.0  # New features
+git tag v1.1.0  # New features  
 git tag v2.0.0  # Breaking changes
 ```
 
-## Release Process
+## Release Artifacts
 
-Romper now features an **automated release system** that streamlines the entire process while maintaining manual control over versioning.
-
-### Quick Release (Recommended)
-
-For most releases, use the automated release command:
-
-```bash
-# Interactive release with all checks
-npm run release
-
-# Preview what would happen without making changes
-npm run release:dry-run
-
-# Quick validation of release readiness
-npm run release:validate
-```
-
-### Manual Release (Legacy)
-
-If you need manual control, follow the legacy process:
-
-1. **Prerequisites**:
-   ```bash
-   npm run test
-   npm run build
-   npm run make
-   ```
-
-2. **Create and Push Tag**:
-   ```bash
-   git tag v1.2.3
-   git push origin v1.2.3
-   ```
-
-### Automated Release Process
-
-The `npm run release` command provides:
-
-#### 1. **Pre-Release Validation**
-- Checks you're on main branch with clean working directory
-- Validates all required files and configurations
-- Ensures tests pass and build succeeds
-- Verifies remote is up to date
-
-#### 2. **Intelligent Version Selection**
-- Interactive prompts for version type (patch/minor/major)
-- Shows changes since last release
-- Validates version format and uniqueness
-- Supports custom version numbers
-
-#### 3. **Release Notes Generation**
-- Parses commits since last tag
-- Categorizes changes (features, fixes, breaking)
-- Uses professional templates with consistent formatting
-- Includes contributor attribution and PR references
-
-#### 4. **Automated Updates**
-- Updates `package.json` version
-- Creates/updates `CHANGELOG.md` with new entry
-- Creates and pushes git tag
-- Triggers GitHub Actions build workflow
-
-#### 5. **Release Monitoring**
-- Provides GitHub Actions monitoring links
-- Verifies release creation
-- Shows progress indicators throughout
-
-## Release Artifact Structure
-
-Each release includes platform-specific packages:
+Each release automatically includes platform-specific packages:
 
 ### Windows
-- `Romper-Sample-Manager-Setup-1.2.3.exe` - Installer
-- `Romper-Sample-Manager-1.2.3.msi` - MSI package
+- `Romper.Sample.Manager-X.X.X.Setup.exe` - Installer (recommended)
 
 ### macOS  
-- `Romper-Sample-Manager-1.2.3.dmg` - Disk image
-- `Romper-Sample-Manager-1.2.3-mac.zip` - Portable app
+- `Romper.Sample.Manager.dmg` - Disk image (recommended)
+- `Romper.Sample.Manager-darwin-arm64-X.X.X.zip` - Alternative download
 
 ### Linux
-- `romper-sample-manager_1.2.3_amd64.deb` - Debian package
-- `romper-sample-manager-1.2.3.x86_64.rpm` - RPM package
-- `Romper-Sample-Manager-1.2.3-linux.zip` - Portable app
+- `romper_X.X.X_amd64.deb` - Debian package
+- `romper-X.X.X-1.x86_64.rpm` - RPM package
+- `Romper.Sample.Manager-linux-x64-X.X.X.zip` - Universal package
+
+## Automated Release Notes
+
+Release notes are automatically generated from commits since the last tag and include:
+
+- **New Features** (commits starting with `feat:`)
+- **Bug Fixes** (commits starting with `fix:`)
+- **Performance Improvements** (commits starting with `perf:`)
+- **Other Changes** (all other commits)
+- **Contributor List** and commit counts
+- **Download Links** with correct artifact names
 
 ## Post-Release Tasks
 
 ### Verify Release
 
-1. **Check GitHub Release**: Verify all artifacts are attached
+1. **Check GitHub Release**: Verify all artifacts are attached at https://github.com/peteb4ker/romper/releases
 2. **Test Downloads**: Download and test at least one package per platform
-3. **Verify Changelog**: Ensure `CHANGELOG.md` was updated correctly
+3. **Verify Release Notes**: Ensure the generated notes are accurate
 
 ### Communication
 
-1. **Update Documentation**: Update any version-specific docs
+1. **Update Documentation**: Update any version-specific docs if needed
 2. **Announce Release**: Post in relevant channels/forums
 3. **Monitor Issues**: Watch for release-related bug reports
 
@@ -177,115 +141,98 @@ Each release includes platform-specific packages:
 
 #### Build Failures
 ```bash
-# Check build locally
+# Check build locally first
 npm run build
-npm run make
 
 # Check logs in GitHub Actions for specific platform failures
+# Visit: https://github.com/peteb4ker/romper/actions
 ```
 
 #### Artifact Upload Issues
-- Verify `electron/out/make/` contains expected files
-- Check forge.config.js maker configurations
-- Ensure all platforms completed successfully
+- Verify workflow completed all platform builds
+- Check GitHub Actions logs for specific errors
+- Ensure all platforms show green checkmarks
 
-#### Tag Creation Issues
+#### Tag Issues
 - Verify tag format matches `v*` pattern (e.g., `v1.2.3`)
-- Ensure tag was pushed to remote: `git push origin v1.2.3`
-- Check that main branch is up to date before tagging
+- Ensure tag was pushed to remote: `git push origin --tags`
+- Check that main branch was up to date before tagging
 
 ### Emergency Fixes
 
 #### Hotfix Releases
-1. Create hotfix branch from release tag:
+1. **Create hotfix branch from release tag**:
    ```bash
    git checkout v1.2.3
    git checkout -b hotfix/1.2.4
    ```
 
-2. Make minimal fix and commit:
+2. **Make minimal fix and commit**:
    ```bash
+   # Make your fixes
    git add .
    git commit -m "fix: critical security vulnerability"
    ```
 
-3. Merge to main and tag:
+3. **Merge to main and release**:
    ```bash
    git checkout main
    git merge hotfix/1.2.4
+   
+   # Update package.json version to 1.2.4
+   git add package.json
+   git commit -m "bump: version 1.2.4"
+   
    git tag v1.2.4
    git push origin main --tags
    ```
 
 #### Rollback Process
-1. **Remove Bad Tag**: Delete the problematic tag
+1. **Remove Bad Tag**: Delete the problematic tag locally and remotely
+   ```bash
+   git tag -d v1.2.3
+   git push origin :refs/tags/v1.2.3
+   ```
 2. **Revert Commits**: Use git revert for the problematic commits  
 3. **Create New Release**: Follow normal release process
-
-## Release Automation Architecture
-
-### File Structure
-
-The release automation system is organized in `scripts/release/`:
-
-```
-scripts/release/
-├── index.js              # Main orchestrator (npm run release)
-├── validate.js           # Pre-release validation
-├── parse-commits.js      # Git commit parser
-├── generate-notes.js     # Release notes generator
-└── utils/
-    └── git.js            # Git operations utilities
-```
-
-### Templates
-
-Release notes are generated from templates in `docs/templates/`:
-
-- **`RELEASE_NOTES_TEMPLATE.md`**: GitHub release notes format
-- **`CHANGELOG_ENTRY_TEMPLATE.md`**: CHANGELOG.md entry format
-
-Templates use Handlebars syntax with dynamic content injection.
-
-### Available Commands
-
-- `npm run release` - Interactive release process
-- `npm run release:dry-run` - Preview without changes
-- `npm run release:validate` - Check release readiness
-- `npm run release:preview` - Generate and preview release notes
 
 ## Configuration Files
 
 ### Key Files for Release Process
 
-- **`forge.config.js`**: Electron packaging configuration
 - **`.github/workflows/release.yml`**: Release build workflow (triggered by tags)
+- **`scripts/generate-github-release-notes.js`**: Release notes generator for CI/CD
+- **`docs/templates/RELEASE_NOTES_TEMPLATE.md`**: Release notes template
+- **`forge.config.js`**: Electron packaging configuration
 - **`package.json`**: Version information and build scripts
-- **`docs/templates/`**: Release notes templates (new)
 
-### Package.json Scripts
+### Pre-Release Validation
 
-```json
-{
-  "scripts": {
-    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
-    "make": "npm run build && electron-forge make",
-    "package": "npm run build && electron-forge package",
-    "publish": "npm run build && electron-forge publish"
-  }
-}
-```
+The `npm run pre-release` command validates:
+- Forge configuration exists
+- Required icon files exist  
+- Electron in devDependencies
+- Build artifacts are clean
+- All required makers installed
+- Required package.json metadata
+- Tests passing
 
 ## Security Considerations
 
-- **Code Signing**: Add certificates for Windows/macOS distribution
-- **Notarization**: Configure macOS notarization for Gatekeeper
-- **Artifact Verification**: Implement checksums for release packages
-- **Access Control**: Limit who can push to main branch
+- **Access Control**: Only maintainers can push to main branch and create tags
+- **Branch Protection**: Main branch requires PR reviews and passing CI
+- **Artifact Verification**: All artifacts are built in isolated GitHub runners
+- **Code Signing**: Consider adding certificates for Windows/macOS distribution in the future
 
-## Next Steps
+## Summary
 
-1. **Add Code Signing**: Configure certificates for production distribution
-2. **Beta Channel**: Create pre-release workflow for beta testing
-3. **Auto-Updates**: Implement in-app update notifications
-4. **Metrics**: Add download tracking and usage analytics
+The Romper release process is designed to be:
+- **Simple**: Just update version, commit, tag, and push
+- **Reliable**: Automated builds ensure consistency
+- **Informative**: Dynamic release notes show exactly what changed
+- **Complete**: All platforms built and released simultaneously
+
+For most releases, the process is just:
+1. `git tag v1.0.1`
+2. `git push origin --tags`
+3. Monitor GitHub Actions for completion

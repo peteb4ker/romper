@@ -37,9 +37,9 @@ vi.mock("../../electron/main/services/syncService.js", () => ({
 }));
 
 describe("Sync IPC Integration Tests", () => {
-  let ipcMain: any;
-  let dialog: any;
-  let registerSyncIpcHandlers: any;
+  let ipcMain: unknown;
+  let dialog: unknown;
+  let registerSyncIpcHandlers: unknown;
 
   beforeEach(async () => {
     vi.clearAllMocks();

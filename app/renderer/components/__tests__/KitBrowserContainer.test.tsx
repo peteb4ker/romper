@@ -8,7 +8,7 @@ import KitBrowserContainer from "../KitBrowserContainer";
 
 // Mock KitBrowser component
 vi.mock("../KitBrowser", () => ({
-  default: React.forwardRef((props: any, ref: any) => (
+  default: React.forwardRef((props: unknown, ref: unknown) => (
     <div data-testid="kit-browser" ref={ref}>
       <button onClick={() => props.onMessage("Test message", "info", 5000)}>
         Message
@@ -120,14 +120,14 @@ describe("KitBrowserContainer", () => {
 
   describe("forwardRef", () => {
     it("should forward ref correctly", () => {
-      const ref = React.createRef<any>();
+      const ref = React.createRef<unknown>();
       render(<KitBrowserContainer {...defaultProps} ref={ref} />);
 
       expect(ref.current).toBeDefined();
     });
 
     it("should handle forwardRef behavior correctly", () => {
-      const ref = React.createRef<any>();
+      const ref = React.createRef<unknown>();
       render(<KitBrowserContainer {...defaultProps} ref={ref} />);
 
       // Additional verification that ref is passed through

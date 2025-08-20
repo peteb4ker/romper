@@ -20,7 +20,7 @@ export class ServicePathManager {
    * Get local store path from settings
    */
   static getLocalStorePath(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): null | string {
     return inMemorySettings.localStorePath || null;
   }
@@ -28,7 +28,7 @@ export class ServicePathManager {
   /**
    * Validate and get paths for service operations
    */
-  static validateAndGetPaths(inMemorySettings: Record<string, any>): {
+  static validateAndGetPaths(inMemorySettings: Record<string, unknown>): {
     dbPath?: string;
     error?: string;
     isValid: boolean;

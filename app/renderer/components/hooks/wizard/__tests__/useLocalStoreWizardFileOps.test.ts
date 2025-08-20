@@ -22,11 +22,11 @@ vi.mock("../utils/romperDb", () => ({
 }));
 
 describe("useLocalStoreWizardFileOps", () => {
-  let mockApi: any;
-  let mockReportProgress: any;
-  let mockReportStepProgress: any;
-  let mockSetError: any;
-  let mockSetWizardState: any;
+  let mockApi: unknown;
+  let mockReportProgress: unknown;
+  let mockReportStepProgress: unknown;
+  let mockSetError: unknown;
+  let mockSetWizardState: unknown;
 
   beforeEach(() => {
     // Use centralized mocks instead of manual assignment

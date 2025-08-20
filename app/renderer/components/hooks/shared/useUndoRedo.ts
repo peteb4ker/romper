@@ -17,7 +17,7 @@ export function useUndoRedo(kitName: string) {
   const redoHandlers = useRedoActionHandlers({ kitName });
 
   // Handle undo result and state updates
-  const handleUndoResult = (result: any, actionToUndo: any) => {
+  const handleUndoResult = (result: unknown, actionToUndo: unknown) => {
     console.log("[UNDO] Final result:", result);
 
     if (result?.success) {
@@ -35,7 +35,7 @@ export function useUndoRedo(kitName: string) {
   };
 
   // Handle redo result and state updates
-  const handleRedoResult = (result: any, actionToRedo: any) => {
+  const handleRedoResult = (result: unknown, actionToRedo: unknown) => {
     if (result?.success) {
       state.handleRedoSuccess(actionToRedo);
       state.emitRefreshEvent();
@@ -45,7 +45,7 @@ export function useUndoRedo(kitName: string) {
   };
 
   // Handle redo error
-  const handleRedoError = (error: any) => {
+  const handleRedoError = (error: unknown) => {
     state.setError(
       `Failed to redo action: ${error instanceof Error ? error.message : String(error)}`,
     );
@@ -68,7 +68,7 @@ export function useUndoRedo(kitName: string) {
       );
       console.log(
         "[UNDO] ElectronAPI available:",
-        !!(window as any).electronAPI,
+        !!(window as unknown).electronAPI,
       );
 
       const result = await undoHandlers.executeUndoAction(actionToUndo);

@@ -182,7 +182,7 @@ export function useLocalStoreWizard(
 
       isDev && console.debug("[Hook] initialize completed successfully");
       return { success: true };
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("[Hook] initialize error:", e);
       stateHook.setError(normalizeErrorMessage(e.message || "Unknown error"));
       if (state.source === "sdcard") {

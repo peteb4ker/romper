@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export function useKitPlayback(samples: any) {
+export function useKitPlayback(samples: unknown) {
   const [playbackError, setPlaybackError] = useState<null | string>(null);
   const [playTriggers, setPlayTriggers] = useState<{ [key: string]: number }>(
     {},

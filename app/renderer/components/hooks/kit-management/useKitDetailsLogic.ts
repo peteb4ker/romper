@@ -1,4 +1,5 @@
 import type { KitDetailsProps } from "@romper/app/renderer/components/kitTypes";
+import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React from "react";
 import { toast } from "sonner";
@@ -8,15 +9,21 @@ import { useSampleManagement } from "../sample-management/useSampleManagement";
 import { useBpm } from "../shared/useBpm";
 import { useStepPattern } from "../shared/useStepPattern";
 import { useVoiceAlias } from "../voice-panels/useVoiceAlias";
-import { useKit } from "./useKit";
 import { useKitPlayback } from "./useKitPlayback";
 import { useKitVoicePanels } from "./useKitVoicePanels";
 
 interface UseKitDetailsLogicParams extends KitDetailsProps {
+  kit?: KitWithRelations; // Kit data passed from parent
+  kitError?: null | string; // Error from parent kit loading
   onCreateKit?: () => void;
   onKitUpdated?: () => Promise<void>;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRequestSamplesReload?: () => Promise<void>;
+  onToggleEditableMode?: (kitName: string) => Promise<void>;
+  onToggleFavorite?: (
+    kitName: string,
+  ) => Promise<{ isFavorite?: boolean; success: boolean }>;
+  onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>;
 }
 
 /**
@@ -25,24 +32,48 @@ interface UseKitDetailsLogicParams extends KitDetailsProps {
  */
 export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Destructure props for useEffect dependencies
-  const { onNextKit, onPrevKit } = props;
-
-  // Core kit data
   const {
-    error: kitError,
-    kit,
-    loading: kitLoading,
-    reloadKit,
-    toggleEditableMode,
-    updateKitAlias,
-  } = useKit({
-    kitName: props.kitName,
-    onKitUpdated: props.onKitUpdated,
-  });
+    kitName,
+    onKitUpdated,
+    onNextKit,
+    onPrevKit,
+    onRequestSamplesReload,
+    onToggleEditableMode,
+    onUpdateKitAlias,
+  } = props;
+
+  // Use kit data from props instead of loading it
+  const kit = props.kit ?? null; // Convert undefined to null for compatibility
+  const kitError = props.kitError ?? null; // Accept error from parent if provided
+  const kitLoading = false; // Data is passed from parent
+
+  // Reload kit function - now just triggers parent refresh
+  const reloadKit = React.useCallback(async () => {
+    if (onKitUpdated) {
+      await onKitUpdated();
+    }
+  }, [onKitUpdated]);
+
+  // Toggle editable mode via parent callback
+  const toggleEditableMode = React.useCallback(async () => {
+    if (onToggleEditableMode && kitName) {
+      await onToggleEditableMode(kitName);
+    }
+  }, [onToggleEditableMode, kitName]);
+
+  // Update kit alias via parent callback
+  const updateKitAlias = React.useCallback(
+    async (alias: string) => {
+      if (onUpdateKitAlias && kitName) {
+        await onUpdateKitAlias(kitName, alias);
+      }
+    },
+    [onUpdateKitAlias, kitName],
+  );
 
   // Voice alias management
   const { updateVoiceAlias } = useVoiceAlias({
-    kitName: props.kitName,
+    kitName,
     onUpdate: () => {
       reloadKit().catch(console.error);
     },
@@ -50,14 +81,14 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
 
   // Sample management for drag-and-drop operations (Task 5.2.2 & 5.2.3)
   const sampleManagement = useSampleManagement({
-    kitName: props.kitName,
+    kitName,
     onAddUndoAction: props.onAddUndoAction,
     onMessage: props.onMessage,
     onSamplesChanged: async () => {
       // Reload both kit data and samples when samples change
       await reloadKit();
-      if (props.onRequestSamplesReload) {
-        await props.onRequestSamplesReload();
+      if (onRequestSamplesReload) {
+        await onRequestSamplesReload();
       }
     },
   });
@@ -65,13 +96,13 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Step pattern management
   const { setStepPattern, stepPattern } = useStepPattern({
     initialPattern: kit?.step_pattern,
-    kitName: props.kitName,
+    kitName,
   });
 
   // BPM management
   const { bpm, setBpm } = useBpm({
     initialBpm: kit?.bpm,
-    kitName: props.kitName,
+    kitName,
   });
 
   // Playback logic
@@ -84,7 +115,6 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   );
 
   // Handler for kit rescanning (database-first approach)
-  const { kitName, onRequestSamplesReload } = props;
   const handleScanKit = React.useCallback(async () => {
     if (!kitName) {
       toast.error("Kit name is required for scanning");
@@ -148,7 +178,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Use KitVoicePanels hook for navigation logic
   const kitVoicePanels = useKitVoicePanels({
     kit,
-    kitName: props.kitName,
+    kitName,
     onPlay: playback.handlePlay,
     onRescanVoiceName: () => {
       // Legacy voice rescanning is no longer needed as kit scanning handles voice inference

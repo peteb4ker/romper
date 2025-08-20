@@ -211,7 +211,7 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("sets and clears progress during Squarp.net archive initialization", async () => {
-    let progressCb: any = null;
+    let progressCb: unknown = null;
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async (url, destDir, onProgress) => {
         progressCb = onProgress;
@@ -403,7 +403,7 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("shows progress for writing to database during DB import", async () => {
-    const progressEvents: any[] = [];
+    const progressEvents: unknown[] = [];
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
       async (path) => {
         if (path === "/mock/sd") return ["A0", "B12"];
@@ -440,7 +440,7 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("runs scanning operations after database creation", async () => {
-    const progressEvents: any[] = [];
+    const progressEvents: unknown[] = [];
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
       async (path) => {
         if (path === "/mock/home/Documents/romper") return ["A0", "B12"];

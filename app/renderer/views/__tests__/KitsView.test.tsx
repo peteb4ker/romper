@@ -27,9 +27,9 @@ class MockIntersectionObserver {
   }
 }
 
-globalThis.IntersectionObserver = MockIntersectionObserver as any;
+globalThis.IntersectionObserver = MockIntersectionObserver as unknown;
 if (typeof window !== "undefined") {
-  window.IntersectionObserver = MockIntersectionObserver as any;
+  window.IntersectionObserver = MockIntersectionObserver as unknown;
 }
 
 import React from "react";
@@ -58,7 +58,7 @@ vi.mock("../../components/hooks/shared/useBankScanning", () => ({
 }));
 
 // Store the menu callbacks globally for testing
-let globalMenuCallbacks: any = null;
+let globalMenuCallbacks: unknown = null;
 
 vi.mock("../../components/hooks/shared/useMenuEvents", () => ({
   useMenuEvents: vi.fn((callbacks) => {
@@ -164,9 +164,9 @@ describe("KitsView", () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
 
     // Refresh the IntersectionObserver mock before each test
-    globalThis.IntersectionObserver = MockIntersectionObserver as any;
+    globalThis.IntersectionObserver = MockIntersectionObserver as unknown;
     if (typeof window !== "undefined") {
-      window.IntersectionObserver = MockIntersectionObserver as any;
+      window.IntersectionObserver = MockIntersectionObserver as unknown;
     }
 
     // Mock electronAPI methods using centralized mocks
@@ -201,7 +201,7 @@ describe("KitsView", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     cleanup();
-    delete (globalThis as any).menuEventCallbacks;
+    delete (globalThis as unknown).menuEventCallbacks;
   });
 
   describe("Component rendering", () => {

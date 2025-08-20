@@ -8,8 +8,8 @@ import {
 } from "../utils/e2e-fixture-extractor";
 
 test.describe("Simple Fixture Loading Test", () => {
-  let electronApp: any;
-  let window: any;
+  let electronApp: unknown;
+  let window: unknown;
   let testEnv: E2ETestEnvironment;
 
   test.beforeEach(async () => {
@@ -45,7 +45,7 @@ test.describe("Simple Fixture Loading Test", () => {
 
     // Check for console errors
     const errors: string[] = [];
-    window.on("console", (msg: any) => {
+    window.on("console", (msg: unknown) => {
       if (msg.type() === "error") {
         errors.push(msg.text());
       }
@@ -56,8 +56,8 @@ test.describe("Simple Fixture Loading Test", () => {
     // Log environment info
     const envDebug = await window.evaluate(() => {
       return {
-        romperLocalPath: (window as any).romperEnv?.ROMPER_LOCAL_PATH,
-        romperSdCardPath: (window as any).romperEnv?.ROMPER_SDCARD_PATH,
+        romperLocalPath: (window as unknown).romperEnv?.ROMPER_LOCAL_PATH,
+        romperSdCardPath: (window as unknown).romperEnv?.ROMPER_SDCARD_PATH,
       };
     });
 
@@ -66,10 +66,10 @@ test.describe("Simple Fixture Loading Test", () => {
 
     // Verify kits are loaded via IPC
     const kitsResult = await window.evaluate(async () => {
-      if (!(window as any).electronAPI?.getKits) {
+      if (!(window as unknown).electronAPI?.getKits) {
         return { error: "getKits API not available", success: false };
       }
-      return await (window as any).electronAPI.getKits();
+      return await (window as unknown).electronAPI.getKits();
     });
 
     expect(kitsResult.success).toBe(true);

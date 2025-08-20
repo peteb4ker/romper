@@ -5,7 +5,9 @@ import { syncService } from "../services/syncService.js";
 /**
  * Registers all sync-related IPC handlers
  */
-export function registerSyncIpcHandlers(inMemorySettings: Record<string, any>) {
+export function registerSyncIpcHandlers(
+  inMemorySettings: Record<string, unknown>,
+) {
   // SD Card sync operations
   ipcMain.handle(
     "generateSyncChangeSummary",

@@ -12,12 +12,12 @@ const mockElectronAPI = {
 };
 
 beforeEach(() => {
-  (window as any).electronAPI = mockElectronAPI;
+  (window as unknown).electronAPI = mockElectronAPI;
   vi.clearAllMocks();
 });
 
 afterEach(() => {
-  delete (window as any).electronAPI;
+  delete (window as unknown).electronAPI;
 });
 
 describe("useKit", () => {
@@ -195,7 +195,7 @@ describe("useKit", () => {
     });
 
     it("does nothing when electronAPI is not available", async () => {
-      delete (window as any).electronAPI;
+      delete (window as unknown).electronAPI;
 
       const { result } = renderHook(() => useKit({ kitName: "TestKit" }));
 

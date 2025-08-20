@@ -11,7 +11,7 @@ import {
  * Registers all favorites-related IPC handlers
  */
 export function registerFavoritesIpcHandlers(
-  inMemorySettings: Record<string, any>,
+  inMemorySettings: Record<string, unknown>,
 ) {
   // Task 20.1: Favorites system IPC handlers
   ipcMain.handle(

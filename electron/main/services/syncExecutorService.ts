@@ -35,7 +35,7 @@ export class SyncExecutorService {
   /**
    * Categorize sync errors for better error reporting
    */
-  categorizeError(error: any, filePath?: string): SyncErrorInfo {
+  categorizeError(error: unknown, filePath?: string): SyncErrorInfo {
     const errorMessage = getErrorMessage(error);
     return categorizeErrorByRules(errorMessage, filePath);
   }

@@ -28,7 +28,7 @@ export class ScannerOrchestrator {
    * @returns Result containing success status, results, and errors
    */
   async executeChain(operations: ScanOperation[]): Promise<ChainResult> {
-    const results: Record<string, any> = {};
+    const results: Record<string, unknown> = {};
     const errors: Array<{ error: string; operation: string }> = [];
     let completedOperations = 0;
 
@@ -74,7 +74,7 @@ export class ScannerOrchestrator {
    */
   private async executeOperation(
     operation: ScanOperation,
-    results: Record<string, any>,
+    results: Record<string, unknown>,
     errors: Array<{ error: string; operation: string }>,
   ): Promise<boolean> {
     try {

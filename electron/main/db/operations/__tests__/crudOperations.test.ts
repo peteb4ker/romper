@@ -39,7 +39,7 @@ describe("crudOperations pure functions", () => {
 
     it("should build conditions with kit name only", () => {
       const mockCondition = { kit_name: testKitName };
-      vi.mocked(eq).mockReturnValue(mockCondition as any);
+      vi.mocked(eq).mockReturnValue(mockCondition as unknown);
 
       const result = buildDeleteConditions(testKitName);
 
@@ -52,9 +52,9 @@ describe("crudOperations pure functions", () => {
       const mockKitCondition = { kit_name: testKitName };
       const mockVoiceCondition = { voice_number: 1 };
       vi.mocked(eq)
-        .mockReturnValueOnce(mockKitCondition as any)
-        .mockReturnValueOnce(mockVoiceCondition as any);
-      vi.mocked(and).mockReturnValue("combined_condition" as any);
+        .mockReturnValueOnce(mockKitCondition as unknown)
+        .mockReturnValueOnce(mockVoiceCondition as unknown);
+      vi.mocked(and).mockReturnValue("combined_condition" as unknown);
 
       const result = buildDeleteConditions(testKitName, { voiceNumber: 1 });
 
@@ -68,9 +68,9 @@ describe("crudOperations pure functions", () => {
       const mockKitCondition = { kit_name: testKitName };
       const mockSlotCondition = { slot_number: 2 };
       vi.mocked(eq)
-        .mockReturnValueOnce(mockKitCondition as any)
-        .mockReturnValueOnce(mockSlotCondition as any);
-      vi.mocked(and).mockReturnValue("combined_condition" as any);
+        .mockReturnValueOnce(mockKitCondition as unknown)
+        .mockReturnValueOnce(mockSlotCondition as unknown);
+      vi.mocked(and).mockReturnValue("combined_condition" as unknown);
 
       const result = buildDeleteConditions(testKitName, { slotNumber: 2 });
 
@@ -85,10 +85,10 @@ describe("crudOperations pure functions", () => {
       const mockVoiceCondition = { voice_number: 1 };
       const mockSlotCondition = { slot_number: 2 };
       vi.mocked(eq)
-        .mockReturnValueOnce(mockKitCondition as any)
-        .mockReturnValueOnce(mockVoiceCondition as any)
-        .mockReturnValueOnce(mockSlotCondition as any);
-      vi.mocked(and).mockReturnValue("combined_condition" as any);
+        .mockReturnValueOnce(mockKitCondition as unknown)
+        .mockReturnValueOnce(mockVoiceCondition as unknown)
+        .mockReturnValueOnce(mockSlotCondition as unknown);
+      vi.mocked(and).mockReturnValue("combined_condition" as unknown);
 
       const result = buildDeleteConditions(testKitName, {
         slotNumber: 2,
@@ -119,7 +119,7 @@ describe("crudOperations pure functions", () => {
 
       const mockCondition = { kit_name: "Test Kit" };
 
-      const result = getSamplesToDelete(mockDb as any, mockCondition);
+      const result = getSamplesToDelete(mockDb as unknown, mockCondition);
 
       expect(mockDb.select).toHaveBeenCalled();
       expect(mockDb.from).toHaveBeenCalledWith(schema.samples);

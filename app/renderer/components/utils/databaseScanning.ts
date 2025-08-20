@@ -311,7 +311,7 @@ async function processVoiceInferenceResults(
 
 // Helper function to process WAV analysis results
 function processWAVAnalysisResults(
-  wavAnalyses: any[],
+  wavAnalyses: unknown[],
   wavFiles: string[],
   result: DatabaseScanResult,
 ): void {

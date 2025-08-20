@@ -104,7 +104,7 @@ describe("SampleService", () => {
 
     it("should delegate moveSampleInKit to sampleCrudService", () => {
       mockCrudService.moveSampleInKit.mockReturnValue({
-        data: { affectedSamples: [], movedSample: {} as any },
+        data: { affectedSamples: [], movedSample: {} as unknown },
         success: true,
       });
 

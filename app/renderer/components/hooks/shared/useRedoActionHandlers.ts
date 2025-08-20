@@ -15,7 +15,7 @@ export function useRedoActionHandlers({
   const executeRedoAction = async (action: AnyUndoAction) => {
     switch (action.type) {
       case "ADD_SAMPLE":
-        return (window as any).electronAPI?.addSampleToSlot?.(
+        return (window as unknown).electronAPI?.addSampleToSlot?.(
           kitName,
           action.data.voice,
           action.data.slot,
@@ -23,13 +23,13 @@ export function useRedoActionHandlers({
           { forceMono: !action.data.addedSample.is_stereo },
         );
       case "DELETE_SAMPLE":
-        return (window as any).electronAPI?.deleteSampleFromSlot?.(
+        return (window as unknown).electronAPI?.deleteSampleFromSlot?.(
           kitName,
           action.data.voice,
           action.data.slot,
         );
       case "MOVE_SAMPLE":
-        return (window as any).electronAPI?.moveSampleInKit?.(
+        return (window as unknown).electronAPI?.moveSampleInKit?.(
           kitName,
           action.data.fromVoice,
           action.data.fromSlot,
@@ -38,7 +38,7 @@ export function useRedoActionHandlers({
           action.data.mode,
         );
       case "MOVE_SAMPLE_BETWEEN_KITS":
-        return (window as any).electronAPI?.moveSampleBetweenKits?.(
+        return (window as unknown).electronAPI?.moveSampleBetweenKits?.(
           action.data.fromKit,
           action.data.fromVoice,
           action.data.fromSlot,
@@ -48,13 +48,13 @@ export function useRedoActionHandlers({
           action.data.mode,
         );
       case "REINDEX_SAMPLES":
-        return (window as any).electronAPI?.deleteSampleFromSlot?.(
+        return (window as unknown).electronAPI?.deleteSampleFromSlot?.(
           kitName,
           action.data.voice,
           action.data.deletedSlot,
         );
       case "REPLACE_SAMPLE":
-        return (window as any).electronAPI?.replaceSampleInSlot?.(
+        return (window as unknown).electronAPI?.replaceSampleInSlot?.(
           kitName,
           action.data.voice,
           action.data.slot,
@@ -64,7 +64,7 @@ export function useRedoActionHandlers({
       default: {
         const _exhaustiveCheck: never = action;
         throw new Error(
-          `Unknown action type: ${(_exhaustiveCheck as any).type}`,
+          `Unknown action type: ${(_exhaustiveCheck as unknown).type}`,
         );
       }
     }

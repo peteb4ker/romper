@@ -96,7 +96,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         );
         if (samplesResult?.success && samplesResult.data) {
           const metadata: { [filename: string]: SampleData } = {};
-          samplesResult.data.forEach((sample: any) => {
+          samplesResult.data.forEach((sample: unknown) => {
             metadata[sample.filename] = {
               filename: sample.filename,
               source_path: sample.source_path,

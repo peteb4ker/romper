@@ -6,18 +6,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 export interface UseKitFiltersOptions {
   kits?: KitWithRelations[];
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onRefreshKits?: () => void; // Still kept for API compatibility but not used
 }
 
 /**
  * Hook for managing kit filtering functionality including favorites and modified filters
  * Extracted from KitBrowser to reduce component complexity
  */
-export function useKitFilters({
-  kits,
-  onMessage,
-  onRefreshKits: _onRefreshKits, // Prefix with underscore to indicate intentionally unused
-}: UseKitFiltersOptions) {
+export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
   // Task 20.1.4: Favorites filter state
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);

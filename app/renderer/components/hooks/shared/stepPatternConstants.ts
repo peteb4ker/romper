@@ -45,7 +45,7 @@ export function ensureValidStepPattern(
 /**
  * Validates if a step pattern has the correct structure
  */
-export function isValidStepPattern(pattern: any): pattern is number[][] {
+export function isValidStepPattern(pattern: unknown): pattern is number[][] {
   return (
     Array.isArray(pattern) &&
     pattern.length === NUM_VOICES &&

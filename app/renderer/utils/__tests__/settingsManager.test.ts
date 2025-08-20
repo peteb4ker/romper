@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { applyTheme } from "../settingsManager";
 
 describe("settingsManager", () => {
-  let mockLocalStorage: any;
-  let mockClassList: any;
+  let mockLocalStorage: unknown;
+  let mockClassList: unknown;
 
   beforeEach(() => {
     // Mock localStorage
@@ -23,7 +23,7 @@ describe("settingsManager", () => {
       documentElement: {
         classList: mockClassList,
       },
-    } as any;
+    } as unknown;
 
     // Mock console.error
     vi.spyOn(console, "error").mockImplementation(() => {});

@@ -21,7 +21,7 @@ beforeEach(() => {
   global.window = {
     ...global.window,
     electronAPI: mockElectronAPI,
-  } as any;
+  } as unknown;
 });
 
 describe("validateKitSlot", () => {
@@ -64,7 +64,7 @@ describe("createKit", () => {
   });
 
   it("throws error when Electron API is not available", async () => {
-    global.window = { electronAPI: {} } as any;
+    global.window = { electronAPI: {} } as unknown;
 
     await expect(createKit("A1")).rejects.toThrow("Electron API not available");
   });
@@ -94,7 +94,7 @@ describe("duplicateKit", () => {
   });
 
   it("throws error when Electron API is not available", async () => {
-    global.window = { electronAPI: {} } as any;
+    global.window = { electronAPI: {} } as unknown;
 
     await expect(duplicateKit("A1", "B2")).rejects.toThrow(
       "Electron API not available",

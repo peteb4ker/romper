@@ -493,7 +493,9 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, undefined as any)}</div>,
+        <div>
+          {result.current.renderPlayButton(false, undefined as unknown)}
+        </div>,
       );
 
       const button = container.querySelector("button");
@@ -506,7 +508,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, null as any)}</div>,
+        <div>{result.current.renderPlayButton(false, null as unknown)}</div>,
       );
 
       const button = container.querySelector("button");

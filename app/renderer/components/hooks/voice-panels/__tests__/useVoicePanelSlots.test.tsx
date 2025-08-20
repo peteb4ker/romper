@@ -6,7 +6,7 @@ import { useVoicePanelSlots } from "../useVoicePanelSlots";
 
 // Mock SampleWaveform component
 vi.mock("../../../SampleWaveform", () => ({
-  default: ({ kitName, slotNumber, voiceNumber }: any) => (
+  default: ({ kitName, slotNumber, voiceNumber }: unknown) => (
     <div
       data-testid={`sample-waveform-${kitName}-${voiceNumber}-${slotNumber - 1}`}
     >

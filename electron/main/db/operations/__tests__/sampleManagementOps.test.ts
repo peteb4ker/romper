@@ -39,8 +39,8 @@ vi.mock("../../utils/dbUtilities.js", () => ({
 }));
 
 describe("sampleManagementOps unit tests", () => {
-  let mockDb: any;
-  let consoleLogSpy: any;
+  let mockDb: unknown;
+  let consoleLogSpy: unknown;
   const testDbDir = "/test/db/dir";
   const testKitName = "Test Kit";
 
@@ -68,7 +68,7 @@ describe("sampleManagementOps unit tests", () => {
 
     // Mock withDb to execute the function with mockDb
     vi.mocked(withDb).mockImplementation(
-      (dbDir: string, fn: (db: any) => any) => {
+      (dbDir: string, fn: (db: unknown) => unknown) => {
         if (!dbDir || dbDir.includes("/test/")) {
           // For test database paths, actually execute the function
           try {
@@ -92,7 +92,7 @@ describe("sampleManagementOps unit tests", () => {
 
     // Mock withDbTransaction to execute the function with mockDb and mock sqlite
     vi.mocked(withDbTransaction).mockImplementation(
-      (dbDir: string, fn: (db: any, sqlite: any) => any) => {
+      (dbDir: string, fn: (db: unknown, sqlite: unknown) => unknown) => {
         if (!dbDir || dbDir.includes("/test/")) {
           // For test database paths, actually execute the function
           try {
@@ -276,7 +276,7 @@ describe("sampleManagementOps unit tests", () => {
 
       // Mock the database calls for reindexing
       vi.mocked(withDb).mockImplementation(
-        (_dbDir: string, fn: (db: any) => any) => {
+        (_dbDir: string, fn: (db: unknown) => unknown) => {
           // Mock the database query and update calls for reindexing
           const mockDb = {
             all: vi.fn().mockReturnValue([{ id: 4, slot_number: 300 }]), // Reindexed result

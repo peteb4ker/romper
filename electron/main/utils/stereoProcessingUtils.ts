@@ -15,7 +15,7 @@ export interface StereoOptions {
  */
 export function determineStereoConfiguration(
   filePath: string,
-  inMemorySettings: Record<string, any>,
+  inMemorySettings: Record<string, unknown>,
   options?: StereoOptions,
 ): boolean {
   let isStereo = false;

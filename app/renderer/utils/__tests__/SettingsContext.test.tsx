@@ -29,7 +29,7 @@ describe("SettingsContext", () => {
 
     // Setup window mocks using centralized mocks
     Object.assign(window.electronAPI, mockElectronAPI);
-    window.matchMedia = mockMatchMedia as any;
+    window.matchMedia = mockMatchMedia as unknown;
 
     // Mock document.documentElement.classList
     document.documentElement.classList.toggle = vi.fn();

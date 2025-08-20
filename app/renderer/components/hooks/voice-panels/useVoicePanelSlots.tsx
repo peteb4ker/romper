@@ -9,7 +9,7 @@ export const MAX_SLOTS_PER_VOICE = 12;
 
 export interface UseVoicePanelSlotsOptions {
   dragAndDropHook: {
-    getSampleDragHandlers: (slotNumber: number, sampleName: string) => any;
+    getSampleDragHandlers: (slotNumber: number, sampleName: string) => unknown;
     handleDragLeave: () => void;
     handleDragOver: (e: React.DragEvent, slotNumber: number) => void;
     handleDrop: (e: React.DragEvent, slotNumber: number) => void;

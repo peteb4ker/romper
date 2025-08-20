@@ -121,7 +121,7 @@ describe("SyncPlannerService", () => {
       });
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       mockGetAudioMetadata.mockReturnValue({
         data: { bitDepth: 16, sampleRate: 44100 },
@@ -168,7 +168,7 @@ describe("SyncPlannerService", () => {
       });
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 2048 } as any);
+      mockFs.statSync.mockReturnValue({ size: 2048 } as unknown);
 
       mockGetAudioMetadata.mockReturnValue({
         data: { bitDepth: 24, sampleRate: 48000 },
@@ -279,7 +279,7 @@ describe("SyncPlannerService", () => {
       });
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       mockValidateSampleFormat.mockReturnValue({
         data: { issues: [], isValid: true },
@@ -348,7 +348,7 @@ describe("SyncPlannerService", () => {
         });
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       mockValidateSampleFormat.mockReturnValue({
         data: { issues: [], isValid: true },

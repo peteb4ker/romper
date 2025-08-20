@@ -1,4 +1,5 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 import React from "react";
 
@@ -7,17 +8,23 @@ import type { VoiceSamples } from "./kitTypes";
 import KitDetails from "./KitDetails";
 
 interface KitDetailsContainerProps {
+  kit: KitWithRelations;
+  kitError?: null | string;
   kitIndex: number;
   kitName: string;
   kits: KitWithRelations[];
-  onAddUndoAction: (action: any) => void;
-  onBack: (scrollToKit?: any) => Promise<void>;
+  onAddUndoAction: (action: AnyUndoAction) => void;
+  onBack: (scrollToKit?: string) => Promise<void>;
   onKitUpdated: () => Promise<void>;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onNextKit: () => void;
   onPrevKit: () => void;
   onRequestSamplesReload: () => Promise<void>;
-  onToggleFavorite?: (kitName: string) => void;
+  onToggleEditableMode?: (kitName: string) => Promise<void>;
+  onToggleFavorite?: (
+    kitName: string,
+  ) => Promise<{ isFavorite?: boolean; success: boolean }>;
+  onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>;
   samples: VoiceSamples;
 }
 
@@ -27,6 +34,8 @@ interface KitDetailsContainerProps {
  */
 const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
   const {
+    kit,
+    kitError,
     kitIndex,
     kitName,
     kits,
@@ -37,13 +46,15 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
     onNextKit,
     onPrevKit,
     onRequestSamplesReload,
+    onToggleEditableMode,
     onToggleFavorite,
+    onUpdateKitAlias,
     samples,
   } = props;
 
   // Memoize callbacks to prevent unnecessary re-renders
   const handleBack = React.useCallback(
-    (scrollToKit?: any) => {
+    (scrollToKit?: string) => {
       return onBack(scrollToKit);
     },
     [onBack],
@@ -62,6 +73,8 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
 
   return (
     <KitDetails
+      kit={kit}
+      kitError={kitError}
       kitIndex={kitIndex}
       kitName={kitName}
       kits={kits}
@@ -72,7 +85,9 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
       onNextKit={onNextKit}
       onPrevKit={onPrevKit}
       onRequestSamplesReload={handleRequestSamplesReload}
+      onToggleEditableMode={onToggleEditableMode}
       onToggleFavorite={onToggleFavorite}
+      onUpdateKitAlias={onUpdateKitAlias}
       samples={samples}
     />
   );

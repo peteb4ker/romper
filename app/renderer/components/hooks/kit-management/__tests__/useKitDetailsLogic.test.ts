@@ -2,31 +2,12 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
-import { useKit } from "../useKit";
 import { useKitDetailsLogic } from "../useKitDetailsLogic";
 import { useKitPlayback } from "../useKitPlayback";
 import { useKitVoicePanels } from "../useKitVoicePanels";
 
 // Mock all the hooks that useKitDetailsLogic depends on
-vi.mock("../useKit", () => ({
-  useKit: vi.fn(() => ({
-    error: null,
-    kit: {
-      alias: "Test Kit",
-      artist: "Test Artist",
-      bank_letter: "T",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "TestKit",
-      step_pattern: null,
-    },
-    loading: false,
-    reloadKit: vi.fn(),
-    toggleEditableMode: vi.fn(),
-    updateKitAlias: vi.fn(),
-  })),
-}));
+// Note: useKit is no longer used by useKitDetailsLogic
 
 vi.mock("../useVoiceAlias", () => ({
   useVoiceAlias: vi.fn(() => ({
@@ -83,15 +64,35 @@ vi.mock("sonner", () => ({
 }));
 
 describe("useKitDetailsLogic", () => {
+  const mockKit = {
+    alias: "Test Kit",
+    artist: "Test Artist",
+    bank_letter: "T",
+    bpm: null,
+    editable: false,
+    id: "test-kit-id",
+    is_favorite: false,
+    locked: false,
+    modified_since_sync: false,
+    name: "TestKit",
+    step_pattern: null,
+    voices: [],
+  };
+
   const mockProps = {
+    kit: mockKit as unknown,
     kitIndex: 0,
     kitName: "TestKit",
     kits: [],
     onBack: vi.fn(),
+    onKitUpdated: vi.fn(),
     onMessage: vi.fn(),
     onNextKit: vi.fn(),
     onPrevKit: vi.fn(),
     onRequestSamplesReload: vi.fn(),
+    onToggleEditableMode: vi.fn(),
+    onToggleFavorite: vi.fn(),
+    onUpdateKitAlias: vi.fn(),
     samples: { 1: [], 2: [], 3: [], 4: [] },
   };
 
@@ -112,16 +113,7 @@ describe("useKitDetailsLogic", () => {
     const { result } = renderHook(() => useKitDetailsLogic(mockProps));
 
     expect(result.current).toBeDefined();
-    expect(result.current.kit).toEqual({
-      alias: "Test Kit",
-      artist: "Test Artist",
-      bank_letter: "T",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "TestKit",
-      step_pattern: null,
-    });
+    expect(result.current.kit).toEqual(mockKit);
     expect(result.current.kitLoading).toBe(false);
     expect(result.current.kitError).toBeNull();
   });
@@ -185,7 +177,7 @@ describe("useKitDetailsLogic", () => {
 
   it("handles missing rescan API", async () => {
     // Remove the rescanKit method to simulate missing API
-    delete (window.electronAPI as any).rescanKit;
+    delete (window.electronAPI as unknown).rescanKit;
 
     const { result } = renderHook(() => useKitDetailsLogic(mockProps));
 
@@ -249,23 +241,8 @@ describe("useKitDetailsLogic", () => {
     );
   });
 
-  it("triggers error reporting useEffect when kit errors occur", () => {
-    vi.mocked(useKit).mockReturnValue({
-      error: "Kit loading failed",
-      kit: null,
-      loading: false,
-      reloadKit: vi.fn(),
-      toggleEditableMode: vi.fn(),
-      updateKitAlias: vi.fn(),
-    });
-
-    renderHook(() => useKitDetailsLogic(mockProps));
-
-    expect(mockProps.onMessage).toHaveBeenCalledWith(
-      "Kit loading failed",
-      "error",
-    );
-  });
+  // Kit errors are no longer applicable since kit is passed as prop
+  // This test is removed as kit loading is handled by parent component
 
   it("sets up and removes SampleWaveformError event listener", () => {
     const addEventListenerSpy = vi.spyOn(window, "addEventListener");
@@ -307,7 +284,7 @@ describe("useKitDetailsLogic", () => {
     // Mock the sequencer grid ref
     const mockGridElement = {
       focus: vi.fn(),
-    } as any;
+    } as unknown;
 
     // Set the ref before opening the sequencer
     act(() => {

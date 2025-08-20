@@ -123,7 +123,7 @@ describe("formatConverter", () => {
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.mkdirSync.mockImplementation(() => {});
       mockFs.writeFileSync.mockImplementation(() => {});
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       const options: ConversionOptions = { forceMonoConversion: true };
       const result = await convertSampleToRampleFormat(
@@ -162,7 +162,7 @@ describe("formatConverter", () => {
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.mkdirSync.mockImplementation(() => {});
       mockFs.writeFileSync.mockImplementation(() => {});
-      mockFs.statSync.mockReturnValue({ size: 2048 } as any);
+      mockFs.statSync.mockReturnValue({ size: 2048 } as unknown);
 
       const options: ConversionOptions = { targetChannels: 2 };
       const result = await convertSampleToRampleFormat(
@@ -193,7 +193,7 @@ describe("formatConverter", () => {
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.mkdirSync.mockImplementation(() => {});
       mockFs.writeFileSync.mockImplementation(() => {});
-      mockFs.statSync.mockReturnValue({ size: 1536 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1536 } as unknown);
 
       const options: ConversionOptions = { targetSampleRate: 44100 };
       const result = await convertSampleToRampleFormat(
@@ -223,7 +223,7 @@ describe("formatConverter", () => {
       mockFs.readFileSync.mockReturnValue(Buffer.from("input wav data"));
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.writeFileSync.mockImplementation(() => {});
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
@@ -306,7 +306,7 @@ describe("formatConverter", () => {
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.mkdirSync.mockImplementation(() => {});
       mockFs.writeFileSync.mockImplementation(() => {});
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       const options: ConversionOptions = { targetChannels: 4 };
       const result = await convertSampleToRampleFormat(
@@ -338,7 +338,7 @@ describe("formatConverter", () => {
       mockFs.readFileSync.mockReturnValue(Buffer.from("input wav data"));
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.writeFileSync.mockImplementation(() => {});
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       const result = await convertToRampleDefault(
         "input.wav",

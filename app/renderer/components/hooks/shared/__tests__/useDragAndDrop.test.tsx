@@ -41,7 +41,7 @@ import { useExternalDragHandlers } from "../useExternalDragHandlers";
 import { useInternalDragHandlers } from "../useInternalDragHandlers";
 
 // Helper function to render hook with MockSettingsProvider
-const renderHookWithSettings = (hookFn: () => any, options?: any) => {
+const renderHookWithSettings = (hookFn: () => unknown, options?: unknown) => {
   return renderHook(hookFn, {
     ...options,
     wrapper: ({ children }: { children: React.ReactNode }) => (
@@ -134,7 +134,9 @@ describe("useDragAndDrop", () => {
         handleSampleDrop: vi.fn(),
       };
 
-      (useInternalDragHandlers as any).mockReturnValue(mockInternalHandlers);
+      (useInternalDragHandlers as unknown).mockReturnValue(
+        mockInternalHandlers,
+      );
 
       const { result } = renderHookWithSettings(() =>
         useDragAndDrop(defaultProps),
@@ -157,7 +159,9 @@ describe("useDragAndDrop", () => {
         handleDrop: vi.fn(),
       };
 
-      (useExternalDragHandlers as any).mockReturnValue(mockExternalHandlers);
+      (useExternalDragHandlers as unknown).mockReturnValue(
+        mockExternalHandlers,
+      );
 
       const { result } = renderHookWithSettings(() =>
         useDragAndDrop(defaultProps),
@@ -191,22 +195,26 @@ describe("useDragAndDrop", () => {
       }).not.toThrow();
 
       // Should pass undefined callbacks to sub-hooks
-      const externalCall = (useExternalDragHandlers as any).mock.calls[0][0];
+      const externalCall = (useExternalDragHandlers as unknown).mock
+        .calls[0][0];
       expect(externalCall.onStereoDragLeave).toBeUndefined();
       expect(externalCall.onStereoDragOver).toBeUndefined();
 
-      const internalCall = (useInternalDragHandlers as any).mock.calls[0][0];
+      const internalCall = (useInternalDragHandlers as unknown).mock
+        .calls[0][0];
       expect(internalCall.onSampleMove).toBeUndefined();
     });
 
     it("passes all callbacks when provided", () => {
       renderHookWithSettings(() => useDragAndDrop(defaultProps));
 
-      const externalCall = (useExternalDragHandlers as any).mock.calls[0][0];
+      const externalCall = (useExternalDragHandlers as unknown).mock
+        .calls[0][0];
       expect(externalCall.onStereoDragLeave).toBe(mockOnStereoDragLeave);
       expect(externalCall.onStereoDragOver).toBe(mockOnStereoDragOver);
 
-      const internalCall = (useInternalDragHandlers as any).mock.calls[0][0];
+      const internalCall = (useInternalDragHandlers as unknown).mock
+        .calls[0][0];
       expect(internalCall.onSampleMove).toBe(mockOnSampleMove);
     });
 
@@ -215,8 +223,10 @@ describe("useDragAndDrop", () => {
         useDragAndDrop({ ...defaultProps, isEditable: false }),
       );
 
-      const externalCall = (useExternalDragHandlers as any).mock.calls[0][0];
-      const internalCall = (useInternalDragHandlers as any).mock.calls[0][0];
+      const externalCall = (useExternalDragHandlers as unknown).mock
+        .calls[0][0];
+      const internalCall = (useInternalDragHandlers as unknown).mock
+        .calls[0][0];
 
       expect(externalCall.isEditable).toBe(false);
       expect(internalCall.isEditable).toBe(false);
@@ -227,8 +237,10 @@ describe("useDragAndDrop", () => {
         useDragAndDrop({ ...defaultProps, voice: 5 }),
       );
 
-      const externalCall = (useExternalDragHandlers as any).mock.calls[0][0];
-      const internalCall = (useInternalDragHandlers as any).mock.calls[0][0];
+      const externalCall = (useExternalDragHandlers as unknown).mock
+        .calls[0][0];
+      const internalCall = (useInternalDragHandlers as unknown).mock
+        .calls[0][0];
 
       expect(externalCall.voice).toBe(5);
       expect(internalCall.voice).toBe(5);
@@ -240,7 +252,8 @@ describe("useDragAndDrop", () => {
         useDragAndDrop({ ...defaultProps, samples: customSamples }),
       );
 
-      const internalCall = (useInternalDragHandlers as any).mock.calls[0][0];
+      const internalCall = (useInternalDragHandlers as unknown).mock
+        .calls[0][0];
       expect(internalCall.samples).toBe(customSamples);
     });
 
@@ -249,7 +262,8 @@ describe("useDragAndDrop", () => {
         useDragAndDrop({ ...defaultProps, kitName: "CustomKit" }),
       );
 
-      const externalCall = (useExternalDragHandlers as any).mock.calls[0][0];
+      const externalCall = (useExternalDragHandlers as unknown).mock
+        .calls[0][0];
       // The kitName should be passed through the sampleProcessing hook
       expect(externalCall.sampleProcessing).toBeDefined();
     });
@@ -264,12 +278,13 @@ describe("useDragAndDrop", () => {
         },
       );
 
-      const firstCallCount = (useInternalDragHandlers as any).mock.calls.length;
+      const firstCallCount = (useInternalDragHandlers as unknown).mock.calls
+        .length;
 
       // Change a prop that should cause recreation
       rerender({ ...defaultProps, voice: 3 });
 
-      const secondCallCount = (useInternalDragHandlers as any).mock.calls
+      const secondCallCount = (useInternalDragHandlers as unknown).mock.calls
         .length;
       expect(secondCallCount).toBeGreaterThan(firstCallCount);
     });
@@ -287,7 +302,7 @@ describe("useDragAndDrop", () => {
       rerender({ ...defaultProps, samples: newSamples });
 
       // Should have been called again with new samples
-      const latestCall = (useInternalDragHandlers as any).mock.calls.slice(
+      const latestCall = (useInternalDragHandlers as unknown).mock.calls.slice(
         -1,
       )[0][0];
       expect(latestCall.samples).toBe(newSamples);
@@ -317,7 +332,8 @@ describe("useDragAndDrop", () => {
       renderHookWithSettings(() => useDragAndDrop(defaultProps));
 
       // The file validation should be passed to external handlers
-      const externalCall = (useExternalDragHandlers as any).mock.calls[0][0];
+      const externalCall = (useExternalDragHandlers as unknown).mock
+        .calls[0][0];
       expect(externalCall.fileValidation).toEqual(
         expect.objectContaining({
           getFilePathFromDrop: expect.any(Function),
@@ -329,7 +345,8 @@ describe("useDragAndDrop", () => {
     it("forwards sample processing correctly", () => {
       renderHookWithSettings(() => useDragAndDrop(defaultProps));
 
-      const externalCall = (useExternalDragHandlers as any).mock.calls[0][0];
+      const externalCall = (useExternalDragHandlers as unknown).mock
+        .calls[0][0];
       expect(externalCall.sampleProcessing).toEqual(
         expect.objectContaining({
           getCurrentKitSamples: expect.any(Function),
@@ -348,14 +365,15 @@ describe("useDragAndDrop", () => {
         );
       }).not.toThrow();
 
-      const internalCall = (useInternalDragHandlers as any).mock.calls[0][0];
+      const internalCall = (useInternalDragHandlers as unknown).mock
+        .calls[0][0];
       expect(internalCall.samples).toEqual([]);
     });
 
     it("handles undefined kitName", () => {
       expect(() => {
         renderHookWithSettings(() =>
-          useDragAndDrop({ ...defaultProps, kitName: undefined as any }),
+          useDragAndDrop({ ...defaultProps, kitName: undefined as unknown }),
         );
       }).not.toThrow();
     });
@@ -374,8 +392,8 @@ describe("useDragAndDrop", () => {
     it("handles null/undefined in samples array", () => {
       const samplesWithNulls = [
         "sample1.wav",
-        null as any,
-        undefined as any,
+        null as unknown,
+        undefined as unknown,
         "sample4.wav",
       ];
 
@@ -385,7 +403,8 @@ describe("useDragAndDrop", () => {
         );
       }).not.toThrow();
 
-      const internalCall = (useInternalDragHandlers as any).mock.calls[0][0];
+      const internalCall = (useInternalDragHandlers as unknown).mock
+        .calls[0][0];
       expect(internalCall.samples).toBe(samplesWithNulls);
     });
   });

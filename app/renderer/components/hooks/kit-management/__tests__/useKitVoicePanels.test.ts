@@ -356,7 +356,7 @@ describe("useKitVoicePanels", () => {
       const { result } = renderHook(() => useKitVoicePanels(props));
 
       act(() => {
-        result.current.onSampleKeyNav("invalid" as any);
+        result.current.onSampleKeyNav("invalid" as unknown);
       });
 
       expect(props.setSelectedSampleIdx).not.toHaveBeenCalled();

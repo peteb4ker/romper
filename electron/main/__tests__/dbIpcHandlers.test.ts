@@ -66,7 +66,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
     mockIpcMain.handle.mockImplementation(
       (channel: string, handler: Function) => {
         handlerRegistry[channel] = handler;
-        return undefined as any;
+        return undefined as unknown;
       },
     );
 

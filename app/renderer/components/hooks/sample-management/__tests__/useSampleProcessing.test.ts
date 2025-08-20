@@ -57,7 +57,7 @@ describe("useSampleProcessing", () => {
 
     vi.mocked(useSettings).mockReturnValue({
       defaultToMonoSamples: true,
-    } as any);
+    } as unknown);
 
     vi.mocked(useStereoHandling).mockReturnValue(mockStereoHandling);
     vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
@@ -85,8 +85,8 @@ describe("useSampleProcessing", () => {
     });
 
     it("should handle missing electronAPI", async () => {
-      const originalAPI = (window as any).electronAPI;
-      (window as any).electronAPI = undefined;
+      const originalAPI = (window as unknown).electronAPI;
+      (window as unknown).electronAPI = undefined;
 
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
 
@@ -100,7 +100,7 @@ describe("useSampleProcessing", () => {
       );
 
       consoleErrorSpy.mockRestore();
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should handle API call failure", async () => {

@@ -73,7 +73,7 @@ describe("kitItemUtils", () => {
 
     it("should return undefined for kitData without voices", () => {
       const kitData: MockKitWithRelations = {};
-      const result = extractVoiceNames(kitData as any);
+      const result = extractVoiceNames(kitData as unknown);
       expect(result).toBeUndefined();
     });
 
@@ -86,7 +86,7 @@ describe("kitItemUtils", () => {
           { voice_alias: "Cymbal", voice_number: 4 },
         ],
       };
-      const result = extractVoiceNames(kitData as any);
+      const result = extractVoiceNames(kitData as unknown);
       expect(result).toEqual({
         1: "Kick",
         2: "Snare",
@@ -104,7 +104,7 @@ describe("kitItemUtils", () => {
           { voice_alias: null, voice_number: 4 },
         ],
       };
-      const result = extractVoiceNames(kitData as any);
+      const result = extractVoiceNames(kitData as unknown);
       expect(result).toEqual({
         1: "Kick",
         3: "Hi-Hat",
@@ -120,7 +120,7 @@ describe("kitItemUtils", () => {
           { voice_alias: null, voice_number: 4 },
         ],
       };
-      const result = extractVoiceNames(kitData as any);
+      const result = extractVoiceNames(kitData as unknown);
       expect(result).toEqual({});
     });
 
@@ -128,7 +128,7 @@ describe("kitItemUtils", () => {
       const kitData: MockKitWithRelations = {
         voices: [],
       };
-      const result = extractVoiceNames(kitData as any);
+      const result = extractVoiceNames(kitData as unknown);
       expect(result).toEqual({});
     });
 
@@ -140,7 +140,7 @@ describe("kitItemUtils", () => {
           { voice_alias: "First", voice_number: 1 },
         ],
       };
-      const result = extractVoiceNames(kitData as any);
+      const result = extractVoiceNames(kitData as unknown);
       expect(result).toEqual({
         1: "First",
         2: "Second",

@@ -261,7 +261,7 @@ describe("useKitSync", () => {
       };
       global.window = {
         electronAPI: mockElectronAPI,
-      } as any;
+      } as unknown;
 
       const { result } = renderHook(() => useKitSync(defaultProps));
 
@@ -282,7 +282,7 @@ describe("useKitSync", () => {
       };
       global.window = {
         electronAPI: mockElectronAPI,
-      } as any;
+      } as unknown;
 
       const { result } = renderHook(() => useKitSync(defaultProps));
 
@@ -303,7 +303,7 @@ describe("useKitSync", () => {
       };
       global.window = {
         electronAPI: mockElectronAPI,
-      } as any;
+      } as unknown;
 
       const { result } = renderHook(() => useKitSync(defaultProps));
 
@@ -322,7 +322,7 @@ describe("useKitSync", () => {
     });
 
     it("works when electronAPI is not available", async () => {
-      global.window = {} as any;
+      global.window = {} as unknown;
 
       const { result } = renderHook(() => useKitSync(defaultProps));
 

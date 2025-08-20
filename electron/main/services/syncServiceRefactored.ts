@@ -40,7 +40,7 @@ export class SyncService {
    * Generate a summary of changes needed to sync all kits to SD card
    */
   async generateChangeSummary(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): Promise<DbResult<SyncChangeSummary>> {
     return this.plannerService.generateChangeSummary(inMemorySettings);
   }
@@ -49,7 +49,7 @@ export class SyncService {
    * Start syncing all kits to SD card
    */
   async startKitSync(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     syncData: {
       filesToConvert: SyncFileOperation[];
       filesToCopy: SyncFileOperation[];
@@ -128,7 +128,7 @@ export class SyncService {
   }
 
   private async markKitsAsSynced(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     allFiles: SyncFileOperation[],
     syncedFiles: number,
   ): Promise<void> {
@@ -174,7 +174,7 @@ export class SyncService {
 
   private async processAllFiles(
     allFiles: SyncFileOperation[],
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): Promise<number> {
     let syncedFiles = 0;
 
@@ -196,7 +196,7 @@ export class SyncService {
 
   private async processFile(
     fileOp: SyncFileOperation,
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): Promise<number> {
     // Emit progress update at start of file processing
     this.progressService.updateProgress(

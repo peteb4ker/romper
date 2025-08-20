@@ -24,11 +24,11 @@ export function createDbHandler<T extends unknown[], R>(
  * Creates a sample operation handler using the sample service
  */
 export function createSampleOperationHandler(
-  inMemorySettings: Record<string, any>,
+  inMemorySettings: Record<string, unknown>,
   operationType: "add" | "delete" | "replace",
 ) {
   return async (
-    _event: any,
+    _event: unknown,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
@@ -36,7 +36,7 @@ export function createSampleOperationHandler(
     options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
     try {
-      let result: DbResult<any>;
+      let result: DbResult<unknown>;
 
       switch (operationType) {
         case "add":
@@ -102,7 +102,9 @@ export function createSampleOperationHandler(
  * Validates local store path and returns database directory
  * Checks environment variable override first, then settings
  */
-export function validateAndGetDbDir(inMemorySettings: Record<string, any>): {
+export function validateAndGetDbDir(
+  inMemorySettings: Record<string, unknown>,
+): {
   dbDir?: string;
   error?: string;
   success: boolean;

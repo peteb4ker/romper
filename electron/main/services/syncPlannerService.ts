@@ -44,7 +44,7 @@ export class SyncPlannerService {
    * Generate a summary of changes needed to sync all kits to SD card
    */
   async generateChangeSummary(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
@@ -97,16 +97,16 @@ export class SyncPlannerService {
    * Add file to conversion list
    */
   private addFileToConvert(
-    sample: any,
+    sample: unknown,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    metadataResult: any,
-    formatValidationResult: any,
-    results: any,
+    metadataResult: unknown,
+    formatValidationResult: unknown,
+    results: unknown,
   ): void {
     const issues = formatValidationResult.data?.issues || [];
-    const issueMessages = issues.map((issue: any) => issue.message);
+    const issueMessages = issues.map((issue: unknown) => issue.message);
 
     results.filesToConvert.push({
       destinationPath,
@@ -135,7 +135,7 @@ export class SyncPlannerService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
-    results: any,
+    results: unknown,
   ): void {
     results.filesToCopy.push({
       destinationPath,
@@ -150,11 +150,11 @@ export class SyncPlannerService {
    * Categorizes file operation as copy or convert
    */
   private categorizeFileOperation(
-    sample: any,
+    sample: unknown,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    results: any,
+    results: unknown,
   ): void {
     const metadataResult = getAudioMetadata(sourcePath);
     const formatValidationResult = validateSampleFormat(sourcePath);
@@ -186,7 +186,9 @@ export class SyncPlannerService {
   /**
    * Get all samples from all kits
    */
-  private async getAllSamplesFromKits(dbDir: string): Promise<DbResult<Sample[]>> {
+  private async getAllSamplesFromKits(
+    dbDir: string,
+  ): Promise<DbResult<Sample[]>> {
     try {
       const { getKits } = await import("../db/romperDbCoreORM.js");
       const kitsResult = getKits(dbDir);
@@ -241,7 +243,7 @@ export class SyncPlannerService {
    * Process a single sample for sync planning
    */
   private processSampleForSync(
-    sample: any,
+    sample: unknown,
     localStorePath: string,
     results: {
       filesToConvert: SyncFileOperation[];
@@ -290,7 +292,7 @@ export class SyncPlannerService {
   private validateSourceFile(
     filename: string,
     sourcePath: string,
-    results: any,
+    results: unknown,
   ): { fileSize: number; isValid: boolean } {
     if (!fs.existsSync(sourcePath)) {
       results.validationErrors.push({

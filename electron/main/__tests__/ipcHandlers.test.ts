@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mocks for Electron and Node APIs
-const ipcMainHandlers: { [key: string]: any } = {};
+const ipcMainHandlers: { [key: string]: unknown } = {};
 vi.mock("electron", () => ({
   app: {
     getPath: vi.fn(() => "/mock/userData"),
@@ -105,7 +105,7 @@ describe("registerIpcHandlers", () => {
 
   it("registers write-settings and updates inMemorySettings", async () => {
     const { settingsService } = await import("../services/settingsService.js");
-    const inMemorySettings: { [key: string]: any } = { foo: "bar" };
+    const inMemorySettings: { [key: string]: unknown } = { foo: "bar" };
 
     // Mock writeSetting to actually modify the settings object
     vi.mocked(settingsService.writeSetting).mockImplementation(

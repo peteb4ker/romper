@@ -207,7 +207,7 @@ export function validateLocalStoreBasic(
  */
 function findExtraFiles(
   kitFolderPath: string,
-  samplesData: any[],
+  samplesData: unknown[],
 ): { extraFiles: string[] } {
   const extraFiles: string[] = [];
 
@@ -275,7 +275,7 @@ function performBasicValidation(localStorePath: string) {
  */
 function validateKitSamples(
   dbDir: string,
-  kit: any,
+  kit: unknown,
   localStorePath: string,
 ): { extraFiles: string[]; isValid: boolean; missingFiles: string[] } {
   const missingFiles: string[] = [];

@@ -4,7 +4,7 @@ import { vi } from "vitest";
  * Centralized file system mock factory
  * Reduces duplication across 12+ test files that mock fs
  */
-export const createFsMock = (overrides: Record<string, any> = {}) => ({
+export const createFsMock = (overrides: Record<string, unknown> = {}) => ({
   closeSync: vi.fn(),
   copyFileSync: vi.fn(),
   existsSync: vi.fn().mockReturnValue(true),
@@ -41,7 +41,7 @@ export const createFsMock = (overrides: Record<string, any> = {}) => ({
 /**
  * Centralized path mock factory
  */
-export const createPathMock = (overrides: Record<string, any> = {}) => ({
+export const createPathMock = (overrides: Record<string, unknown> = {}) => ({
   basename: vi.fn((p: string) => p.split("/").pop()),
   delimiter: ":",
   dirname: vi.fn((p: string) => p.split("/").slice(0, -1).join("/")),

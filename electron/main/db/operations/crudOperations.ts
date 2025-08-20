@@ -80,11 +80,11 @@ export function buildDeleteConditions(
   if (conditions.length === 0) {
     throw new Error("No conditions provided to buildDeleteConditions");
   }
-  
+
   if (conditions.length === 1) {
     return conditions[0];
   }
-  
+
   const result = and(...conditions);
   if (!result) {
     throw new Error("Failed to combine conditions with AND operator");
@@ -297,14 +297,23 @@ export function getKitSamples(
 
 /**
  * Get lightweight kit metadata for efficient list rendering
+ * Uses explicit column selection to avoid circular references in IPC serialization
  * @param dbDir Database directory path
- * @returns DbResult containing kit data with bank relations
+ * @returns DbResult containing serializable kit data
  */
 export function getKitsMetadata(dbDir: string): DbResult<Kit[]> {
   return withDb(dbDir, (db) => {
     return db.query.kits.findMany({
-      with: {
-        bank: true,
+      columns: {
+        alias: true,
+        bank_letter: true,
+        bpm: true,
+        created_at: true,
+        editable: true,
+        is_favorite: true,
+        name: true,
+        step_pattern: true,
+        updated_at: true,
       },
     });
   });

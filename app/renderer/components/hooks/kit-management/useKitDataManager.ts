@@ -14,12 +14,18 @@ interface UseKitDataManagerProps {
 
 interface UseKitDataManagerReturn {
   allKitSamples: { [kit: string]: VoiceSamples };
+  getKitByName: (kitName: string) => KitWithRelations | undefined;
   kits: KitWithRelations[];
   loadKitsData: (scrollToKit?: string) => Promise<void>;
   refreshAllKitsAndSamples: () => Promise<void>;
-  refreshKitsOnly: () => Promise<void>;
   reloadCurrentKitSamples: (kitName: string) => Promise<void>;
   sampleCounts: Record<string, [number, number, number, number]>;
+  toggleKitEditable: (kitName: string) => Promise<void>;
+  toggleKitFavorite: (
+    kitName: string,
+  ) => Promise<{ isFavorite?: boolean; success: boolean }>;
+  updateKit: (kitName: string, updates: Partial<KitWithRelations>) => void;
+  updateKitAlias: (kitName: string, alias: string) => Promise<void>;
 }
 
 /**
@@ -177,23 +183,105 @@ export function useKitDataManager({
     }
   }, [loadKitSamples]);
 
-  // Helper function to refresh only kit metadata (for favorites, etc.)
-  const refreshKitsOnly = useCallback(async () => {
-    try {
-      const kitsResult = await window.electronAPI?.getKitsMetadata?.();
-      if (kitsResult?.success && kitsResult.data) {
-        const kitsWithBanks = kitsResult.data as unknown as KitWithRelations[];
-        setKits(kitsWithBanks);
-      } else {
-        console.error(
-          "Failed to load kits metadata from database:",
-          kitsResult?.error,
-        );
+  // Get a specific kit by name from the cached data
+  const getKitByName = useCallback(
+    (kitName: string): KitWithRelations | undefined => {
+      return kits.find((kit) => kit.name === kitName);
+    },
+    [kits],
+  );
+
+  // Update kit data in local state (optimistic update)
+  const updateKit = useCallback(
+    (kitName: string, updates: Partial<KitWithRelations>) => {
+      setKits((prevKits) =>
+        prevKits.map((kit) =>
+          kit.name === kitName ? { ...kit, ...updates } : kit,
+        ),
+      );
+    },
+    [],
+  );
+
+  // Toggle kit favorite status
+  const toggleKitFavorite = useCallback(
+    async (kitName: string) => {
+      try {
+        const result = await window.electronAPI?.toggleKitFavorite?.(kitName);
+        if (result?.success) {
+          // Update local state immediately for optimistic UI update
+          const newFavoriteState = result.data?.isFavorite ?? false;
+          updateKit(kitName, { is_favorite: newFavoriteState });
+          return { isFavorite: newFavoriteState, success: true };
+        }
+        return { success: false };
+      } catch (error) {
+        console.error("Error toggling kit favorite:", error);
+        return { success: false };
       }
-    } catch (error) {
-      console.error("Error loading kits metadata from database:", error);
-    }
-  }, []);
+    },
+    [updateKit],
+  );
+
+  // Helper function to update kit via API and sync local state
+  const updateKitViaAPI = useCallback(
+    async (
+      kitName: string,
+      updates: {
+        alias?: string;
+        editable?: boolean;
+      },
+      errorContext: string,
+    ) => {
+      if (!window.electronAPI?.updateKit) {
+        throw new Error("Update kit API not available");
+      }
+
+      try {
+        const result = await window.electronAPI.updateKit(kitName, updates);
+        if (result.success) {
+          // Update local state with properly typed updates
+          const stateUpdates: Partial<KitWithRelations> = {};
+          if (updates.alias !== undefined) stateUpdates.alias = updates.alias;
+          if (updates.editable !== undefined)
+            stateUpdates.editable = updates.editable;
+          updateKit(kitName, stateUpdates);
+        } else {
+          throw new Error(result.error || `Failed to ${errorContext}`);
+        }
+      } catch (error) {
+        console.error(`Error ${errorContext}:`, error);
+        throw error;
+      }
+    },
+    [updateKit],
+  );
+
+  // Update kit alias
+  const updateKitAlias = useCallback(
+    async (kitName: string, alias: string) => {
+      await updateKitViaAPI(kitName, { alias }, "update kit alias");
+    },
+    [updateKitViaAPI],
+  );
+
+  // Toggle kit editable mode
+  const toggleKitEditable = useCallback(
+    async (kitName: string) => {
+      const kit = getKitByName(kitName);
+      if (!kit) {
+        throw new Error(`Kit ${kitName} not found`);
+      }
+
+      const newEditableState = !kit.editable;
+      await updateKitViaAPI(
+        kitName,
+        { editable: newEditableState },
+        "toggle editable mode",
+      );
+    },
+    [getKitByName, updateKitViaAPI],
+  );
 
   // Calculate sample counts for all kits
   const sampleCounts = React.useMemo(() => {
@@ -220,11 +308,15 @@ export function useKitDataManager({
 
   return {
     allKitSamples,
+    getKitByName,
     kits,
     loadKitsData,
     refreshAllKitsAndSamples,
-    refreshKitsOnly,
     reloadCurrentKitSamples,
     sampleCounts,
+    toggleKitEditable,
+    toggleKitFavorite,
+    updateKit,
+    updateKitAlias,
   };
 }

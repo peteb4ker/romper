@@ -4,7 +4,7 @@ import { vi } from "vitest";
  * Centralized browser window API mocks
  * Reduces duplication across tests that need window object mocking
  */
-export const createWindowMock = (overrides: Record<string, any> = {}) => ({
+export const createWindowMock = (overrides: Record<string, unknown> = {}) => ({
   // Events
   addEventListener: vi.fn(),
 
@@ -82,7 +82,9 @@ export const createWindowMock = (overrides: Record<string, any> = {}) => ({
 /**
  * Centralized document API mocks
  */
-export const createDocumentMock = (overrides: Record<string, any> = {}) => ({
+export const createDocumentMock = (
+  overrides: Record<string, unknown> = {},
+) => ({
   // Events
   addEventListener: vi.fn(),
   body: {
@@ -147,8 +149,8 @@ export const createDocumentMock = (overrides: Record<string, any> = {}) => ({
  * Sets up global window and document mocks for tests
  */
 export const setupBrowserMocks = (
-  windowOverrides: Record<string, any> = {},
-  documentOverrides: Record<string, any> = {},
+  windowOverrides: Record<string, unknown> = {},
+  documentOverrides: Record<string, unknown> = {},
 ) => {
   const windowMock = createWindowMock(windowOverrides);
   const documentMock = createDocumentMock(documentOverrides);

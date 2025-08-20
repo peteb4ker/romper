@@ -63,7 +63,7 @@ describe("SyncExecutorService", () => {
       mockPath.dirname.mockReturnValue("/dest/kit/1");
       mockFs.existsSync.mockReturnValueOnce(true); // dest dir exists
       mockFs.existsSync.mockReturnValueOnce(true); // source file exists
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       const result = await service.executeFileOperation(mockCopyOperation);
 
@@ -79,7 +79,7 @@ describe("SyncExecutorService", () => {
       mockPath.dirname.mockReturnValue("/dest/kit/1");
       mockFs.existsSync.mockReturnValueOnce(false); // dest dir doesn't exist
       mockFs.existsSync.mockReturnValueOnce(true); // source file exists
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       const result = await service.executeFileOperation(mockCopyOperation);
 
@@ -94,7 +94,7 @@ describe("SyncExecutorService", () => {
       mockPath.dirname.mockReturnValue("/dest/kit/1");
       mockFs.existsSync.mockReturnValueOnce(true); // dest dir exists
       mockFs.existsSync.mockReturnValueOnce(true); // converted file exists
-      mockFs.statSync.mockReturnValue({ size: 2048 } as any);
+      mockFs.statSync.mockReturnValue({ size: 2048 } as unknown);
 
       mockConvertToRampleDefault.mockResolvedValue({
         data: { outputPath: "/dest/kit/1/test.wav" },
@@ -118,7 +118,7 @@ describe("SyncExecutorService", () => {
     it("should pass mono conversion flag correctly", async () => {
       mockPath.dirname.mockReturnValue("/dest/kit/1");
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 2048 } as any);
+      mockFs.statSync.mockReturnValue({ size: 2048 } as unknown);
 
       mockConvertToRampleDefault.mockResolvedValue({
         data: { outputPath: "/dest/kit/1/test.wav" },
@@ -168,7 +168,7 @@ describe("SyncExecutorService", () => {
   describe("getFileSize", () => {
     it("should return file size when file exists", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       const size = service.getFileSize("/test/file.wav");
 
@@ -226,8 +226,8 @@ describe("SyncExecutorService", () => {
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync
-        .mockReturnValueOnce({ size: 1024 } as any)
-        .mockReturnValueOnce({ size: 2048 } as any);
+        .mockReturnValueOnce({ size: 1024 } as unknown)
+        .mockReturnValueOnce({ size: 2048 } as unknown);
 
       const totalSize = service.calculateTotalSize(fileOperations);
 
@@ -253,7 +253,7 @@ describe("SyncExecutorService", () => {
       ];
 
       mockFs.existsSync.mockReturnValueOnce(true).mockReturnValueOnce(false);
-      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
 
       const totalSize = service.calculateTotalSize(fileOperations);
 

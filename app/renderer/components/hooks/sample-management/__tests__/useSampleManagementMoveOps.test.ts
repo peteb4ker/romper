@@ -6,7 +6,7 @@ import { useSampleManagementMoveOps } from "../useSampleManagementMoveOps";
 // Extend Window interface
 declare global {
   interface Window {
-    electronAPI: any;
+    electronAPI: unknown;
   }
 }
 
@@ -29,7 +29,7 @@ const mockElectronAPI = {
 };
 
 // Ensure window is properly typed and electronAPI is available
-(window as any).electronAPI = mockElectronAPI;
+(window as unknown).electronAPI = mockElectronAPI;
 
 describe("useSampleManagementMoveOps", () => {
   const mockOptions = {
@@ -53,7 +53,7 @@ describe("useSampleManagementMoveOps", () => {
     vi.resetAllMocks();
     mockUseSampleManagementUndoActions.mockReturnValue(mockUndoActions);
     // Ensure electronAPI is always available
-    (window as any).electronAPI = mockElectronAPI;
+    (window as unknown).electronAPI = mockElectronAPI;
   });
 
   describe("handleSampleMove - within kit", () => {
@@ -191,8 +191,8 @@ describe("useSampleManagementMoveOps", () => {
     });
 
     it("should handle same-kit move API unavailable", async () => {
-      const originalAPI = (window as any).electronAPI;
-      (window as any).electronAPI = {}; // Missing moveSampleInKit
+      const originalAPI = (window as unknown).electronAPI;
+      (window as unknown).electronAPI = {}; // Missing moveSampleInKit
 
       const { result } = renderHook(() =>
         useSampleManagementMoveOps(mockOptions),
@@ -206,7 +206,7 @@ describe("useSampleManagementMoveOps", () => {
       );
 
       // Restore
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should handle same-kit move exception", async () => {
@@ -321,8 +321,8 @@ describe("useSampleManagementMoveOps", () => {
     });
 
     it("should handle cross-kit move API unavailable", async () => {
-      const originalAPI = (window as any).electronAPI;
-      (window as any).electronAPI = { moveSampleInKit: vi.fn() }; // Missing moveSampleBetweenKits
+      const originalAPI = (window as unknown).electronAPI;
+      (window as unknown).electronAPI = { moveSampleInKit: vi.fn() }; // Missing moveSampleBetweenKits
 
       const { result } = renderHook(() =>
         useSampleManagementMoveOps(mockOptions),
@@ -336,7 +336,7 @@ describe("useSampleManagementMoveOps", () => {
       );
 
       // Restore
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should handle cross-kit move exception", async () => {
@@ -409,7 +409,7 @@ describe("useSampleManagementMoveOps", () => {
       const stateSnapshot =
         mockUndoActions.createSameKitMoveAction.mock.calls[0][0].stateSnapshot;
       expect(stateSnapshot).toHaveLength(2);
-      expect(stateSnapshot.every((s: any) => s.voice !== 3)).toBe(true);
+      expect(stateSnapshot.every((s: unknown) => s.voice !== 3)).toBe(true);
     });
 
     it("should handle empty state snapshot when getAllSamplesForKit fails", async () => {

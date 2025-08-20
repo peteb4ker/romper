@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
 import InvalidLocalStoreDialog from "../components/dialogs/InvalidLocalStoreDialog";
-import { useKit } from "../components/hooks/kit-management/useKit";
 import { useKitDataManager } from "../components/hooks/kit-management/useKitDataManager";
 import { useKitFilters } from "../components/hooks/kit-management/useKitFilters";
 import { useKitNavigation } from "../components/hooks/kit-management/useKitNavigation";
@@ -40,8 +39,8 @@ const KitsView: React.FC = () => {
   // A1-A3: No local store configured - show setup wizard
   // Also includes test environment overrides with invalid paths (for wizard tests)
   const isTestEnvironment =
-    (import.meta.env as any).MODE === "test" ||
-    (import.meta.env as any).VITE_ROMPER_TEST_MODE === "true";
+    (import.meta.env as unknown).MODE === "test" ||
+    (import.meta.env as unknown).VITE_ROMPER_TEST_MODE === "true";
   const isEnvironmentOverride =
     localStoreStatus?.isEnvironmentOverride || false;
   const needsLocalStoreSetup =
@@ -89,11 +88,14 @@ const KitsView: React.FC = () => {
   // Kit data management
   const {
     allKitSamples,
+    getKitByName,
     kits,
     refreshAllKitsAndSamples,
-    refreshKitsOnly,
     reloadCurrentKitSamples,
     sampleCounts,
+    toggleKitEditable,
+    toggleKitFavorite,
+    updateKitAlias,
   } = useKitDataManager({
     isInitialized,
     localStorePath,
@@ -111,16 +113,12 @@ const KitsView: React.FC = () => {
   const kitFilters = useKitFilters({
     kits,
     onMessage: showMessage,
-    onRefreshKits: () => {
-      // Use lightweight refresh for favorites - only updates kit metadata, not samples
-      refreshKitsOnly().catch((error: unknown) => {
-        console.error("Failed to refresh kits:", error);
-      });
-    },
   });
 
-  // Get current kit's editable state for keyboard shortcuts
-  const { kit: currentKit } = useKit({ kitName: navigation.selectedKit ?? "" });
+  // Get current kit from shared data for keyboard shortcuts
+  const currentKit = navigation.selectedKit
+    ? getKitByName(navigation.selectedKit)
+    : undefined;
 
   // Global keyboard shortcuts
   const keyboardShortcuts = useGlobalKeyboardShortcuts({
@@ -168,7 +166,7 @@ const KitsView: React.FC = () => {
 
   // HMR: Save selected kit state before hot reload
   useEffect(() => {
-    if ((import.meta as any).hot && navigation.selectedKit) {
+    if ((import.meta as unknown).hot && navigation.selectedKit) {
       saveSelectedKitState(navigation.selectedKit);
     }
   }, [navigation.selectedKit]);
@@ -267,8 +265,9 @@ const KitsView: React.FC = () => {
           </div>
         )}
 
-      {navigation.selectedKit && navigation.selectedKitSamples ? (
+      {navigation.selectedKit && navigation.selectedKitSamples && currentKit ? (
         <KitDetailsContainer
+          kit={currentKit}
           kitIndex={navigation.currentKitIndex}
           kitName={navigation.selectedKit}
           kits={navigation.sortedKits}
@@ -279,7 +278,9 @@ const KitsView: React.FC = () => {
           onNextKit={navigation.handleNextKit}
           onPrevKit={navigation.handlePrevKit}
           onRequestSamplesReload={handleRequestSamplesReload}
-          onToggleFavorite={kitFilters.handleToggleFavorite}
+          onToggleEditableMode={toggleKitEditable}
+          onToggleFavorite={toggleKitFavorite}
+          onUpdateKitAlias={updateKitAlias}
           samples={navigation.selectedKitSamples}
         />
       ) : (

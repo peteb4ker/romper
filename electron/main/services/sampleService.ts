@@ -17,7 +17,7 @@ export class SampleService {
    * Add a sample to a specific voice slot
    */
   addSampleToSlot(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
@@ -38,7 +38,7 @@ export class SampleService {
    * Delete a sample from a specific voice slot with automatic contiguity maintenance
    */
   deleteSampleFromSlot(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
@@ -56,7 +56,7 @@ export class SampleService {
    * Used for undo operations where we want precise control over slot positions
    */
   deleteSampleFromSlotWithoutReindexing(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
@@ -86,7 +86,7 @@ export class SampleService {
    * Get audio buffer for a specific sample by kit/voice/slot identifier
    */
   getSampleAudioBuffer(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
@@ -104,7 +104,7 @@ export class SampleService {
    * Task: Cross-kit sample movement with gap prevention
    */
   moveSampleBetweenKits(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     params: {
       fromKit: string;
       fromSlot: number;
@@ -127,7 +127,7 @@ export class SampleService {
    * Task 22.2: Cross-voice sample movement within same kit
    */
   moveSampleInKit(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     fromVoice: number,
     fromSlot: number,
@@ -154,7 +154,7 @@ export class SampleService {
    * Replace a sample in a specific voice slot
    */
   replaceSampleInSlot(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
@@ -197,7 +197,7 @@ export class SampleService {
    * Task 5.2.5: Validate source_path files for existing samples
    */
   validateSampleSources(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
   ): DbResult<{
     invalidSamples: Array<{
@@ -250,7 +250,7 @@ export class SampleService {
   }
 
   private getLocalStorePath(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): null | string {
     return ServicePathManager.getLocalStorePath(inMemorySettings);
   }

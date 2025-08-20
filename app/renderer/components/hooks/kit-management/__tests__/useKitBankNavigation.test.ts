@@ -8,10 +8,10 @@ import { useKitBankNavigation } from "../useKitBankNavigation";
 // Mock the bank operations
 vi.mock("../../../utils/bankOperations", () => ({
   bankHasKits: vi.fn((kits, bank) =>
-    kits.some((kit: any) => kit.name?.[0]?.toUpperCase() === bank),
+    kits.some((kit: unknown) => kit.name?.[0]?.toUpperCase() === bank),
   ),
   getFirstKitInBank: vi.fn((kits, bank) => {
-    const kit = kits.find((k: any) => k.name?.[0]?.toUpperCase() === bank);
+    const kit = kits.find((k: unknown) => k.name?.[0]?.toUpperCase() === bank);
     return kit?.name || null;
   }),
 }));
@@ -198,7 +198,7 @@ describe("useKitBankNavigation", () => {
         key: "B",
         preventDefault: vi.fn(),
         target: { tagName: "DIV" },
-      } as any;
+      } as unknown;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -217,7 +217,7 @@ describe("useKitBankNavigation", () => {
         key: "B",
         preventDefault: vi.fn(),
         target: { tagName: "INPUT" },
-      } as any;
+      } as unknown;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -235,7 +235,7 @@ describe("useKitBankNavigation", () => {
         key: "B",
         preventDefault: vi.fn(),
         target: { tagName: "TEXTAREA" },
-      } as any;
+      } as unknown;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -252,7 +252,7 @@ describe("useKitBankNavigation", () => {
         key: "1",
         preventDefault: vi.fn(),
         target: { tagName: "DIV" },
-      } as any;
+      } as unknown;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -272,7 +272,7 @@ describe("useKitBankNavigation", () => {
         key: "Z",
         preventDefault: vi.fn(),
         target: { tagName: "DIV" },
-      } as any;
+      } as unknown;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);

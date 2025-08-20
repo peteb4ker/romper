@@ -9,7 +9,7 @@ class MockStream extends EventEmitter {
   close(cb?: Function) {
     if (cb) cb();
   }
-  pipe(dest: any) {
+  pipe(dest: unknown) {
     if (dest && typeof dest.emitUnzipEvents === "function") {
       dest.emitUnzipEvents();
       return dest;
@@ -19,7 +19,7 @@ class MockStream extends EventEmitter {
 }
 
 // Track unzipper streams for event emission
-const unzipperStreams: any[] = [];
+const unzipperStreams: unknown[] = [];
 let lastWriteStream: MockStream | null = null;
 
 vi.mock("fs", () => ({
@@ -39,7 +39,7 @@ vi.mock("path", () => ({
 vi.mock("unzipper", () => ({
   Parse: vi.fn(() => {
     const stream = new MockStream();
-    (stream as any).emitUnzipEvents = () => {
+    (stream as unknown).emitUnzipEvents = () => {
       setTimeout(() => {
         stream.emit("entry", {
           autodrain: () => {},
@@ -61,7 +61,7 @@ vi.mock("unzipper", () => ({
   }),
 }));
 vi.mock("https", () => ({
-  get: vi.fn((_url: any, cb: any) => {
+  get: vi.fn((_url: unknown, cb: unknown) => {
     const res = new MockStream();
     res.headers = { "content-length": "100" };
     setTimeout(() => {
@@ -78,7 +78,7 @@ vi.mock("https", () => ({
 }));
 
 const mockEvent = { sender: { send: vi.fn() } };
-const ipcMainHandlers: { [key: string]: any } = {};
+const ipcMainHandlers: { [key: string]: unknown } = {};
 vi.mock("electron", () => ({
   app: { getPath: vi.fn(() => "/mock/userData") },
   dialog: { showOpenDialog: vi.fn() },
@@ -103,7 +103,7 @@ describe("download-and-extract-archive handler", () => {
   it("emits progress events for download and extraction", async () => {
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "https://example.com/archive.zip",
       "/mock/dest",
     );
@@ -115,13 +115,15 @@ describe("download-and-extract-archive handler", () => {
   }, 15000);
 
   it("handles extraction errors and emits archive-error", async () => {
-    (fs.createReadStream as any).mockImplementationOnce(() => new MockStream());
-    (fs.createReadStream as any).mockImplementationOnce(() => {
+    (fs.createReadStream as unknown).mockImplementationOnce(
+      () => new MockStream(),
+    );
+    (fs.createReadStream as unknown).mockImplementationOnce(() => {
       throw new Error("fail");
     });
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "https://example.com/archive.zip",
       "/mock/dest",
     );
@@ -134,7 +136,7 @@ describe("download-and-extract-archive handler", () => {
 
   it("handles download errors and emits archive-error", async () => {
     const https = await import("https");
-    (https.get as any).mockImplementationOnce(() => {
+    (https.get as unknown).mockImplementationOnce(() => {
       const req = new MockStream();
       setTimeout(() => {
         req.emit("error", new Error("network fail"));
@@ -143,7 +145,7 @@ describe("download-and-extract-archive handler", () => {
     });
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "https://fail.com/archive.zip",
       "/mock/dest",
     );
@@ -159,7 +161,7 @@ describe("download-and-extract-archive handler", () => {
     vi.mock("unzipper", () => ({
       Parse: vi.fn(() => {
         const stream = new MockStream();
-        (stream as any).emitUnzipEvents = () => {
+        (stream as unknown).emitUnzipEvents = () => {
           setTimeout(() => {
             stream.emit("entry", {
               autodrain: vi.fn(),
@@ -180,10 +182,10 @@ describe("download-and-extract-archive handler", () => {
         return stream;
       }),
     }));
-    (fs.createReadStream as any).mockImplementation(() => new MockStream());
+    (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "https://skip.com/archive.zip",
       "/mock/dest",
     );
@@ -199,7 +201,7 @@ describe("download-and-extract-archive handler", () => {
     vi.mock("unzipper", () => ({
       Parse: vi.fn(() => {
         const stream = new MockStream();
-        (stream as any).emitUnzipEvents = () => {
+        (stream as unknown).emitUnzipEvents = () => {
           setTimeout(() => {
             stream.emit("close");
           }, 10);
@@ -208,10 +210,10 @@ describe("download-and-extract-archive handler", () => {
         return stream;
       }),
     }));
-    (fs.createReadStream as any).mockImplementation(() => new MockStream());
+    (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "https://zero.com/archive.zip",
       "/mock/dest",
     );
@@ -223,13 +225,14 @@ describe("download-and-extract-archive handler", () => {
   }, 15000);
 
   it("logs directory creation errors but continues extraction", async () => {
-    (fs.mkdir as any).mockImplementation(
-      (dir: any, opts: any, cb: any) => cb && cb(new Error("mkdir fail")),
+    (fs.mkdir as unknown).mockImplementation(
+      (dir: unknown, opts: unknown, cb: unknown) =>
+        cb && cb(new Error("mkdir fail")),
     );
-    (fs.createReadStream as any).mockImplementation(() => new MockStream());
+    (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "https://mkdir.com/archive.zip",
       "/mock/dest",
     );
@@ -245,7 +248,7 @@ describe("download-and-extract-archive handler", () => {
     vi.mock("unzipper", () => ({
       Parse: vi.fn(() => {
         const stream = new MockStream();
-        (stream as any).emitUnzipEvents = () => {
+        (stream as unknown).emitUnzipEvents = () => {
           setTimeout(() => {
             // Emit an entry to trigger file extraction
             stream.emit("entry", {
@@ -267,7 +270,7 @@ describe("download-and-extract-archive handler", () => {
         return stream;
       }),
     }));
-    (fs.createReadStream as any).mockImplementation(() => {
+    (fs.createReadStream as unknown).mockImplementation(() => {
       const s = new MockStream();
       setTimeout(() => {
         // Trigger unzipper events
@@ -277,7 +280,7 @@ describe("download-and-extract-archive handler", () => {
     });
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "https://write.com/archive.zip",
       "/mock/dest",
     );
@@ -293,7 +296,7 @@ describe("download-and-extract-archive handler", () => {
 
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "file:///mock/local/archive.zip",
       "/mock/dest",
     );
@@ -310,7 +313,7 @@ describe("download-and-extract-archive handler", () => {
 
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "file:///mock/nonexistent/archive.zip",
       "/mock/dest",
     );
@@ -325,24 +328,26 @@ describe("download-and-extract-archive handler", () => {
 
   it("handles response with no content-length header", async () => {
     const https = await import("https");
-    (https.get as any).mockImplementationOnce((_url: any, cb: any) => {
-      const res = new MockStream();
-      res.headers = {}; // No content-length header
-      setTimeout(() => {
-        res.emit("data", Buffer.alloc(50));
-        res.emit("data", Buffer.alloc(50));
-        res.emit("end");
+    (https.get as unknown).mockImplementationOnce(
+      (_url: unknown, cb: unknown) => {
+        const res = new MockStream();
+        res.headers = {}; // No content-length header
         setTimeout(() => {
-          if (lastWriteStream) lastWriteStream.emit("finish");
-        }, 1);
-      }, 5);
-      cb(res);
-      return { on: vi.fn() };
-    });
+          res.emit("data", Buffer.alloc(50));
+          res.emit("data", Buffer.alloc(50));
+          res.emit("end");
+          setTimeout(() => {
+            if (lastWriteStream) lastWriteStream.emit("finish");
+          }, 1);
+        }, 5);
+        cb(res);
+        return { on: vi.fn() };
+      },
+    );
 
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "https://nocontent.com/archive.zip",
       "/mock/dest",
     );
@@ -356,26 +361,28 @@ describe("download-and-extract-archive handler", () => {
 
   it("handles large download progress reporting", async () => {
     const https = await import("https");
-    (https.get as any).mockImplementationOnce((_url: any, cb: any) => {
-      const res = new MockStream();
-      res.headers = { "content-length": "2000" };
-      setTimeout(() => {
-        // Emit multiple data chunks to test progress reporting
-        for (let i = 0; i < 10; i++) {
-          res.emit("data", Buffer.alloc(200));
-        }
-        res.emit("end");
+    (https.get as unknown).mockImplementationOnce(
+      (_url: unknown, cb: unknown) => {
+        const res = new MockStream();
+        res.headers = { "content-length": "2000" };
         setTimeout(() => {
-          if (lastWriteStream) lastWriteStream.emit("finish");
-        }, 1);
-      }, 5);
-      cb(res);
-      return { on: vi.fn() };
-    });
+          // Emit multiple data chunks to test progress reporting
+          for (let i = 0; i < 10; i++) {
+            res.emit("data", Buffer.alloc(200));
+          }
+          res.emit("end");
+          setTimeout(() => {
+            if (lastWriteStream) lastWriteStream.emit("finish");
+          }, 1);
+        }, 5);
+        cb(res);
+        return { on: vi.fn() };
+      },
+    );
 
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
-      mockEvent as any,
+      mockEvent as unknown,
       "https://large.com/archive.zip",
       "/mock/dest",
     );

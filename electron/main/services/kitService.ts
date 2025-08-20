@@ -14,7 +14,7 @@ export class KitService {
    * Copies metadata and references, not physical files
    */
   copyKit(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     sourceKit: string,
     destKit: string,
   ): DbResult<void> {
@@ -70,7 +70,7 @@ export class KitService {
    * Kit creation is reference-only - no physical folders are created
    */
   createKit(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitSlot: string,
   ): DbResult<void> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
@@ -112,7 +112,7 @@ export class KitService {
   }
 
   private getLocalStorePath(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): null | string {
     return inMemorySettings.localStorePath || null;
   }

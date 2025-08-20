@@ -62,8 +62,8 @@ describe("useFileValidation", () => {
     });
 
     it("should fallback to file.path when electronFileAPI not available", async () => {
-      const originalAPI = (window as any).electronFileAPI;
-      (window as any).electronFileAPI = undefined;
+      const originalAPI = (window as unknown).electronFileAPI;
+      (window as unknown).electronFileAPI = undefined;
 
       const mockFile = {
         name: "test.wav",
@@ -77,12 +77,12 @@ describe("useFileValidation", () => {
       expect(filePath).toBe("/fallback/path/test.wav");
 
       // Restore
-      (window as any).electronFileAPI = originalAPI;
+      (window as unknown).electronFileAPI = originalAPI;
     });
 
     it("should fallback to file.name when file.path not available", async () => {
-      const originalAPI = (window as any).electronFileAPI;
-      (window as any).electronFileAPI = undefined;
+      const originalAPI = (window as unknown).electronFileAPI;
+      (window as unknown).electronFileAPI = undefined;
 
       const mockFile = {
         name: "test.wav",
@@ -95,12 +95,12 @@ describe("useFileValidation", () => {
       expect(filePath).toBe("test.wav");
 
       // Restore
-      (window as any).electronFileAPI = originalAPI;
+      (window as unknown).electronFileAPI = originalAPI;
     });
 
     it("should handle electronFileAPI method not available", async () => {
       const originalAPI = window.electronFileAPI;
-      (window as any).electronFileAPI = {}; // Missing getDroppedFilePath
+      (window as unknown).electronFileAPI = {}; // Missing getDroppedFilePath
 
       const mockFile = {
         name: "test.wav",
@@ -114,7 +114,7 @@ describe("useFileValidation", () => {
       expect(filePath).toBe("/fallback/path/test.wav");
 
       // Restore
-      (window as any).electronFileAPI = originalAPI;
+      (window as unknown).electronFileAPI = originalAPI;
     });
   });
 
@@ -324,8 +324,8 @@ describe("useFileValidation", () => {
     });
 
     it("should return null when electronAPI not available", async () => {
-      const originalAPI = (window as any).electronAPI;
-      (window as any).electronAPI = undefined;
+      const originalAPI = (window as unknown).electronAPI;
+      (window as unknown).electronAPI = undefined;
 
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
 
@@ -339,12 +339,12 @@ describe("useFileValidation", () => {
       );
 
       consoleErrorSpy.mockRestore();
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should return null when validateSampleFormat method not available", async () => {
-      const originalAPI = (window as any).electronAPI;
-      (window as any).electronAPI = {}; // Missing validateSampleFormat
+      const originalAPI = (window as unknown).electronAPI;
+      (window as unknown).electronAPI = {}; // Missing validateSampleFormat
 
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
 
@@ -358,7 +358,7 @@ describe("useFileValidation", () => {
       );
 
       consoleErrorSpy.mockRestore();
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should return null when validation API call fails", async () => {

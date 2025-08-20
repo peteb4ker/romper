@@ -148,7 +148,7 @@ export function moveSampleInsertOnly(
  * Core utility for maintaining slot contiguity
  */
 function compactToContiguousSlots(
-  db: any,
+  db: unknown,
   samplesToCompact: Sample[],
 ): SampleWithOriginalPosition[] {
   const affectedSamples: SampleWithOriginalPosition[] = [];
@@ -180,7 +180,7 @@ function compactToContiguousSlots(
  * Implements pure insert-only behavior
  */
 function insertAtPositionWithShift(
-  db: any,
+  db: unknown,
   kitName: string,
   voiceNumber: number,
   insertSlot: number,
@@ -240,7 +240,7 @@ function insertAtPositionWithShift(
  * Compacts source voice and inserts into destination voice
  */
 function performCrossVoiceMove(
-  db: any,
+  db: unknown,
   kitName: string,
   sampleToMove: Sample,
   fromSlot: number,
@@ -315,7 +315,7 @@ function performCrossVoiceMove(
  * Uses 0-based slot indexing throughout
  */
 function performSameVoiceMove(
-  db: any,
+  db: unknown,
   kitName: string,
   sampleToMove: Sample,
   fromSlot: number,

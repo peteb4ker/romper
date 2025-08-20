@@ -8,7 +8,7 @@
  * This centralizes the mock naming logic to avoid duplication across tests
  */
 export function generateMockRamplePath(
-  sample: any,
+  sample: unknown,
   sdCardRoot: string,
 ): string {
   return `${sdCardRoot}/${sample.kit_name}/${sample.voice_number}sample${sample.slot_number + 1}.wav`;
@@ -19,7 +19,7 @@ export function generateMockRamplePath(
  * This centralizes the mock naming logic to avoid duplication across tests
  */
 export function generateMockRamplePathAndFilename(
-  sample: any,
+  sample: unknown,
   sdCardRoot: string,
 ): { destinationPath: string; filename: string } {
   const filename = `${sample.voice_number}sample${sample.slot_number + 1}.wav`;

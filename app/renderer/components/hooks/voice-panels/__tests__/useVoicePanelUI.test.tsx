@@ -372,7 +372,7 @@ describe("useVoicePanelUI", () => {
 
     it("handles undefined voiceName", () => {
       const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, voiceName: undefined as any }),
+        useVoicePanelUI({ ...defaultProps, voiceName: undefined as unknown }),
       );
 
       const { container } = render(result.current.renderVoiceName());

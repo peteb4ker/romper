@@ -183,7 +183,7 @@ describe("SampleWaveform", () => {
 
   it("handles missing API gracefully", async () => {
     const originalMethod = window.electronAPI.getSampleAudioBuffer;
-    delete (window.electronAPI as any).getSampleAudioBuffer;
+    delete (window.electronAPI as unknown).getSampleAudioBuffer;
     const onError = vi.fn();
 
     await act(async () => {
@@ -205,7 +205,7 @@ describe("SampleWaveform", () => {
     );
 
     // Restore for other tests
-    (window.electronAPI as any).getSampleAudioBuffer = originalMethod;
+    (window.electronAPI as unknown).getSampleAudioBuffer = originalMethod;
   });
 
   it("handles audio buffer loading errors gracefully", async () => {

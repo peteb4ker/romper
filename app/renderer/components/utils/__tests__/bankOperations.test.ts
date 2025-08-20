@@ -462,7 +462,7 @@ describe("getAvailableBanks", () => {
         step_pattern: null,
         voices: [],
       },
-      null as any,
+      null as unknown,
       {
         alias: null,
         artist: null,

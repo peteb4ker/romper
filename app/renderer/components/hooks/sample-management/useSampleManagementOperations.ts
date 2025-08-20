@@ -37,13 +37,13 @@ export function useSampleManagementOperations({
       filePath: string,
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => {
-      if (!(window as any).electronAPI?.addSampleToSlot) {
+      if (!(window as unknown).electronAPI?.addSampleToSlot) {
         onMessage?.("Sample management not available", "error");
         return;
       }
 
       try {
-        const result = await (window as any).electronAPI.addSampleToSlot(
+        const result = await (window as unknown).electronAPI.addSampleToSlot(
           kitName,
           voice,
           slotNumber,
@@ -109,7 +109,7 @@ export function useSampleManagementOperations({
       filePath: string,
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => {
-      if (!(window as any).electronAPI?.replaceSampleInSlot) {
+      if (!(window as unknown).electronAPI?.replaceSampleInSlot) {
         onMessage?.("Sample management not available", "error");
         return;
       }
@@ -120,7 +120,9 @@ export function useSampleManagementOperations({
           slotNumber,
         );
 
-        const result = await (window as any).electronAPI.replaceSampleInSlot(
+        const result = await (
+          window as unknown
+        ).electronAPI.replaceSampleInSlot(
           kitName,
           voice,
           slotNumber,
@@ -166,7 +168,7 @@ export function useSampleManagementOperations({
 
   const handleSampleDelete = useCallback(
     async (voice: number, slotNumber: number) => {
-      if (!(window as any).electronAPI?.deleteSampleFromSlot) {
+      if (!(window as unknown).electronAPI?.deleteSampleFromSlot) {
         onMessage?.("Sample management not available", "error");
         return;
       }
@@ -177,11 +179,9 @@ export function useSampleManagementOperations({
           slotNumber,
         );
 
-        const result = await (window as any).electronAPI.deleteSampleFromSlot(
-          kitName,
-          voice,
-          slotNumber,
-        );
+        const result = await (
+          window as unknown
+        ).electronAPI.deleteSampleFromSlot(kitName, voice, slotNumber);
 
         if (result.success) {
           onMessage?.(

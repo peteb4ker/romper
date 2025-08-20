@@ -7,7 +7,7 @@ import { createSampleOperationHandler } from "./ipcHandlerUtils.js";
  * Registers all sample-related IPC handlers
  */
 export function registerSampleIpcHandlers(
-  inMemorySettings: Record<string, any>,
+  inMemorySettings: Record<string, unknown>,
 ) {
   ipcMain.handle(
     "add-sample-to-slot",

@@ -122,7 +122,7 @@ export const createMockFileList = (files: File[]): FileList => {
 
   // Add files as indexed properties
   files.forEach((file, index) => {
-    (fileList as any)[index] = file;
+    (fileList as unknown)[index] = file;
   });
 
   return fileList as FileList;

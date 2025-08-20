@@ -27,7 +27,7 @@ export class SampleCrudService {
    * Add a sample to a specific voice slot
    */
   addSampleToSlot(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
@@ -106,7 +106,7 @@ export class SampleCrudService {
    * Delete a sample from a specific voice slot with automatic contiguity maintenance
    */
   deleteSampleFromSlot(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
@@ -170,7 +170,7 @@ export class SampleCrudService {
    * Used for undo operations where we want precise control over slot positions
    */
   deleteSampleFromSlotWithoutReindexing(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
@@ -223,7 +223,7 @@ export class SampleCrudService {
    * Task: Cross-kit sample movement with gap prevention
    */
   moveSampleBetweenKits(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     params: {
       fromKit: string;
       fromSlot: number;
@@ -366,7 +366,7 @@ export class SampleCrudService {
    * Task 22.2: Cross-voice sample movement within same kit
    */
   moveSampleInKit(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
     kitName: string,
     fromVoice: number,
     fromSlot: number,
@@ -494,7 +494,7 @@ export class SampleCrudService {
   }
 
   private getLocalStorePath(
-    inMemorySettings: Record<string, any>,
+    inMemorySettings: Record<string, unknown>,
   ): null | string {
     return ServicePathManager.getLocalStorePath(inMemorySettings);
   }

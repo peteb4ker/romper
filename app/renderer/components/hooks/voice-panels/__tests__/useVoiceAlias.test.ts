@@ -44,7 +44,7 @@ describe("useVoiceAlias", () => {
     });
 
     it("does not call API when electronAPI is not available", async () => {
-      (window as any).electronAPI = undefined;
+      (window as unknown).electronAPI = undefined;
       const onUpdate = vi.fn();
 
       const { result } = renderHook(() =>
@@ -59,7 +59,7 @@ describe("useVoiceAlias", () => {
     });
 
     it("does not call API when updateVoiceAlias method is not available", async () => {
-      (window as any).electronAPI = {};
+      (window as unknown).electronAPI = {};
       const onUpdate = vi.fn();
 
       const { result } = renderHook(() =>

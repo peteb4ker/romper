@@ -59,7 +59,7 @@ describe("InvalidLocalStoreDialog", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useSettings as any).mockReturnValue({
+    (useSettings as unknown).mockReturnValue({
       refreshLocalStoreStatus: mockRefreshLocalStoreStatus,
       setLocalStorePath: mockSetLocalStorePath,
     });

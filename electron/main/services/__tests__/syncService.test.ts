@@ -42,7 +42,7 @@ const _mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
 const mockBrowserWindow = vi.mocked(BrowserWindow);
 
 describe("SyncService", () => {
-  let mockWindow: any;
+  let mockWindow: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -68,7 +68,7 @@ describe("SyncService", () => {
       isDirectory: () => false,
       isFile: () => true,
       size: 1024 * 1024, // 1MB
-    } as any);
+    } as unknown);
     mockFs.mkdirSync.mockImplementation(() => undefined);
     mockFs.copyFileSync.mockImplementation(() => undefined);
 
@@ -273,7 +273,7 @@ describe("SyncService", () => {
       };
 
       // Mock fs.readdirSync to return some files
-      mockFs.readdirSync.mockReturnValue(["file1.wav", "file2.wav"] as any);
+      mockFs.readdirSync.mockReturnValue(["file1.wav", "file2.wav"] as unknown);
       const mockRm = vi.fn().mockResolvedValue(undefined);
       mockFs.rm = mockRm;
 
@@ -370,7 +370,7 @@ describe("SyncService", () => {
       };
 
       // Access private method through bracket notation for testing
-      const destPath = (syncService as any).getDestinationPath(
+      const destPath = (syncService as unknown).getDestinationPath(
         "/local/store",
         "A01",
         sample,
@@ -381,7 +381,7 @@ describe("SyncService", () => {
     });
 
     it("estimates sync time", () => {
-      const estimatedTime = (syncService as any).estimateSyncTime(
+      const estimatedTime = (syncService as unknown).estimateSyncTime(
         5, // totalFiles
         1024 * 1024, // 1MB total size
         2, // conversions
@@ -392,21 +392,21 @@ describe("SyncService", () => {
     });
 
     it("categorizes errors correctly", () => {
-      const permissionError = (syncService as any).categorizeError(
+      const permissionError = (syncService as unknown).categorizeError(
         new Error("EACCES: permission denied"),
       );
 
       expect(permissionError.type).toBe("permission");
       expect(permissionError.canRetry).toBe(true);
 
-      const diskSpaceError = (syncService as any).categorizeError(
+      const diskSpaceError = (syncService as unknown).categorizeError(
         new Error("ENOSPC: no space left on device"),
       );
 
       expect(diskSpaceError.type).toBe("disk_space");
       expect(diskSpaceError.canRetry).toBe(false);
 
-      const unknownError = (syncService as any).categorizeError(
+      const unknownError = (syncService as unknown).categorizeError(
         new Error("Unknown error"),
       );
 
@@ -416,7 +416,7 @@ describe("SyncService", () => {
 
     it("calculates time remaining", () => {
       // Set up a mock sync job
-      (syncService as any).currentSyncJob = {
+      (syncService as unknown).currentSyncJob = {
         bytesTransferred: 1024 * 1024, // 1MB
         completedFiles: 5,
         startTime: Date.now() - 10000, // Started 10 seconds ago
@@ -424,7 +424,7 @@ describe("SyncService", () => {
         totalFiles: 10,
       };
 
-      const timeRemaining = (syncService as any).calculateTimeRemaining();
+      const timeRemaining = (syncService as unknown).calculateTimeRemaining();
 
       expect(typeof timeRemaining).toBe("number");
       expect(timeRemaining).toBeGreaterThanOrEqual(0);
@@ -442,7 +442,7 @@ describe("SyncService", () => {
         totalFiles: 2,
       };
 
-      (syncService as any).emitProgress(progress);
+      (syncService as unknown).emitProgress(progress);
 
       expect(mockWindow.webContents.send).toHaveBeenCalledWith(
         "sync-progress",

@@ -8,8 +8,8 @@ import {
 } from "../utils/e2e-fixture-extractor";
 
 test.describe("Debug Navigation Logic", () => {
-  let electronApp: any;
-  let window: any;
+  let electronApp: unknown;
+  let window: unknown;
   let testEnv: E2ETestEnvironment;
 
   test.beforeEach(async () => {
@@ -52,7 +52,7 @@ test.describe("Debug Navigation Logic", () => {
     const sampleGroupingResult = await window.evaluate(async () => {
       // First get the sample data
       const samplesResult = await (
-        window as any
+        window as unknown
       ).electronAPI.getAllSamplesForKit("A0");
       console.log("Raw samples result:", samplesResult);
 
@@ -61,11 +61,11 @@ test.describe("Debug Navigation Logic", () => {
       }
 
       // Now test the grouping function manually
-      const groupDbSamplesByVoice = (dbSamples: any[]) => {
+      const groupDbSamplesByVoice = (dbSamples: unknown[]) => {
         const voices = { 1: [], 2: [], 3: [], 4: [] };
 
         // First, sort samples by voice_number and slot_number to ensure proper ordering
-        const sortedSamples = [...dbSamples].sort((a: any, b: any) => {
+        const sortedSamples = [...dbSamples].sort((a: unknown, b: unknown) => {
           if (a.voice_number !== b.voice_number) {
             return a.voice_number - b.voice_number;
           }
@@ -73,7 +73,7 @@ test.describe("Debug Navigation Logic", () => {
         });
 
         // Group samples by voice, maintaining slot order
-        sortedSamples.forEach((sample: any) => {
+        sortedSamples.forEach((sample: unknown) => {
           const voiceNumber = sample.voice_number;
           if (voiceNumber >= 1 && voiceNumber <= 4) {
             // Create array with proper slot positions (12 slots per voice)
@@ -136,23 +136,23 @@ test.describe("Debug Navigation Logic", () => {
 
       // Get samples for the kit
       const samplesResult = await (
-        window as any
+        window as unknown
       ).electronAPI.getAllSamplesForKit(kitName);
       if (!samplesResult.success) {
         return { error: "Could not get samples for kit", kitName };
       }
 
       // Group them
-      const groupDbSamplesByVoice = (dbSamples: any[]) => {
+      const groupDbSamplesByVoice = (dbSamples: unknown[]) => {
         const voices = { 1: [], 2: [], 3: [], 4: [] };
-        const sortedSamples = [...dbSamples].sort((a: any, b: any) => {
+        const sortedSamples = [...dbSamples].sort((a: unknown, b: unknown) => {
           if (a.voice_number !== b.voice_number) {
             return a.voice_number - b.voice_number;
           }
           return a.slot_number - b.slot_number;
         });
 
-        sortedSamples.forEach((sample: any) => {
+        sortedSamples.forEach((sample: unknown) => {
           const voiceNumber = sample.voice_number;
           if (voiceNumber >= 1 && voiceNumber <= 4) {
             if (!Array.isArray(voices[voiceNumber])) {

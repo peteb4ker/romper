@@ -121,7 +121,7 @@ describe("useStepPattern", () => {
     });
 
     it("does not call API when electronAPI is not available", async () => {
-      (window as any).electronAPI = undefined;
+      (window as unknown).electronAPI = undefined;
 
       const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
 
@@ -144,7 +144,7 @@ describe("useStepPattern", () => {
     });
 
     it("does not call API when updateStepPattern method is not available", async () => {
-      (window as any).electronAPI = {};
+      (window as unknown).electronAPI = {};
 
       const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
 

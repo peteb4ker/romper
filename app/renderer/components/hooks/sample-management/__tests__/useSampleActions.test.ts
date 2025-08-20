@@ -158,7 +158,7 @@ describe("useSampleActions", () => {
       // Mock electronAPI without showItemInFolder method
       setupElectronAPIMock({
         // Explicitly omit showItemInFolder from the mock
-        showItemInFolder: undefined as any,
+        showItemInFolder: undefined as unknown,
       });
 
       const { result } = renderHook(() => useSampleActions(defaultProps));

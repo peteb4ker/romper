@@ -7,7 +7,7 @@ describe("useLocalStoreWizardState", () => {
   const mockApi = {
     getDefaultLocalStorePath: vi.fn(),
     validateLocalStoreDirectory: vi.fn(),
-  } as any;
+  } as unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();

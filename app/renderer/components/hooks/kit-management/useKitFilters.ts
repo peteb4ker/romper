@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 export interface UseKitFiltersOptions {
   kits?: KitWithRelations[];
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onRefreshKits?: () => void;
+  onRefreshKits?: () => void; // Still kept for API compatibility but not used
 }
 
 /**
@@ -16,7 +16,7 @@ export interface UseKitFiltersOptions {
 export function useKitFilters({
   kits,
   onMessage,
-  onRefreshKits,
+  onRefreshKits: _onRefreshKits, // Prefix with underscore to indicate intentionally unused
 }: UseKitFiltersOptions) {
   // Task 20.1.4: Favorites filter state
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -39,28 +39,18 @@ export function useKitFilters({
   const [showModifiedOnly, setShowModifiedOnly] = useState(false);
   const [modifiedCount, setModifiedCount] = useState(0);
 
-  // Helper function to get favorite state for filtering (matches getKitFavoriteState logic)
-  const getKitFavoriteStateForFiltering = useCallback(
-    (kitName: string): boolean => {
-      // Use ref to access the latest state to avoid stale closures
-      if (kitName in kitFavoriteStatesRef.current) {
-        return kitFavoriteStatesRef.current[kitName];
-      }
-      // Fallback to kit data from server
-      const kit = kits?.find((k) => k.name === kitName);
-      return kit?.is_favorite || false;
-    },
-    [kits],
-  );
-
   // Task 20.1.4 & 20.2.2: Filter kits based on active filters and maintain sorted order
   const filteredKits = useMemo(() => {
     let filteredList = kits ?? [];
 
     if (showFavoritesOnly) {
-      filteredList = filteredList.filter((kit) =>
-        getKitFavoriteStateForFiltering(kit.name),
-      );
+      filteredList = filteredList.filter((kit) => {
+        // Check local state first (for immediate updates), then database state
+        if (kit.name in kitFavoriteStates) {
+          return kitFavoriteStates[kit.name];
+        }
+        return kit.is_favorite || false;
+      });
     }
 
     if (showModifiedOnly) {
@@ -73,7 +63,7 @@ export function useKitFilters({
     kits,
     showFavoritesOnly,
     showModifiedOnly,
-    getKitFavoriteStateForFiltering,
+    kitFavoriteStates, // Direct dependency ensures immediate re-filtering when local state changes
   ]);
 
   // Task 20.1.2: Handler for favorites toggle
@@ -95,10 +85,8 @@ export function useKitFilters({
             setFavoritesCount(countResult.data);
           }
 
-          // Only refresh full data if favorites filter is active (to update filtered list)
-          if (showFavoritesOnly) {
-            onRefreshKits?.();
-          }
+          // Note: No need to call onRefreshKits since local state update will trigger
+          // immediate re-filtering via kitFavoriteStates dependency in filteredKits memo
         } else {
           onMessage?.(
             `Failed to toggle favorite: ${result?.error || "Unknown error"}`,
@@ -112,7 +100,7 @@ export function useKitFilters({
         );
       }
     },
-    [onMessage, onRefreshKits, showFavoritesOnly],
+    [onMessage], // Removed onRefreshKits and showFavoritesOnly since they're no longer needed
   );
 
   // Task 20.1.4: Toggle favorites filter
@@ -159,15 +147,15 @@ export function useKitFilters({
   // Helper function to get favorite state for a kit (from local state or kit data)
   const getKitFavoriteState = useCallback(
     (kitName: string) => {
-      // Use ref to access the latest state to avoid stale closures
-      if (kitName in kitFavoriteStatesRef.current) {
-        return kitFavoriteStatesRef.current[kitName];
+      // Check local state first, then database state
+      if (kitName in kitFavoriteStates) {
+        return kitFavoriteStates[kitName];
       }
       // Fallback to kit data from server
       const kit = kits?.find((k) => k.name === kitName);
       return kit?.is_favorite || false;
     },
-    [kits],
+    [kits, kitFavoriteStates], // Include kitFavoriteStates dependency for consistency
   );
 
   return {

@@ -153,12 +153,12 @@ describe("useKitFilters", () => {
       });
 
       expect(mockToggleKitFavorite).toHaveBeenCalledWith("Kit1");
-      // onRefreshKits is only called when showFavoritesOnly is true
+      // onRefreshKits is no longer called since local state handles filtering
       expect(mockOnRefreshKits).not.toHaveBeenCalled();
       expect(mockGetFavoriteKitsCount).toHaveBeenCalled();
     });
 
-    it("calls onRefreshKits when showFavoritesOnly is true", async () => {
+    it("does not call onRefreshKits even when showFavoritesOnly is true", async () => {
       mockToggleKitFavorite.mockResolvedValueOnce({
         data: { isFavorite: true },
         success: true,
@@ -176,8 +176,8 @@ describe("useKitFilters", () => {
       });
 
       expect(mockToggleKitFavorite).toHaveBeenCalledWith("Kit1");
-      // onRefreshKits should be called when showFavoritesOnly is true
-      expect(mockOnRefreshKits).toHaveBeenCalled();
+      // onRefreshKits should not be called since local state handles filtering immediately
+      expect(mockOnRefreshKits).not.toHaveBeenCalled();
       expect(mockGetFavoriteKitsCount).toHaveBeenCalled();
     });
 
@@ -354,6 +354,76 @@ describe("useKitFilters", () => {
       );
 
       expect(result.current.getKitFavoriteState("AnyKit")).toBe(false);
+    });
+  });
+
+  describe("immediate filtering when favorites filter is active", () => {
+    it("removes kit from filtered list immediately when unfavorited", async () => {
+      const { result } = renderHook(() => useKitFilters(defaultProps));
+
+      // Enable favorites filter
+      act(() => {
+        result.current.handleToggleFavoritesFilter();
+      });
+
+      // Should show 2 favorite kits initially
+      expect(result.current.filteredKits).toHaveLength(2);
+      expect(result.current.filteredKits.every((kit) => kit.is_favorite)).toBe(
+        true,
+      );
+
+      // Mock unfavoriting Kit1 (was originally favorited)
+      mockToggleKitFavorite.mockResolvedValueOnce({
+        data: { isFavorite: false },
+        success: true,
+      });
+
+      // Unfavorite Kit1
+      await act(async () => {
+        await result.current.handleToggleFavorite("Kit1");
+      });
+
+      // Kit1 should be immediately removed from filtered list due to local state update
+      expect(result.current.filteredKits).toHaveLength(1);
+      expect(result.current.filteredKits[0].name).toBe("Kit3");
+      expect(
+        result.current.filteredKits.find((kit) => kit.name === "Kit1"),
+      ).toBeUndefined();
+
+      // Verify local state was updated
+      expect(result.current.getKitFavoriteState("Kit1")).toBe(false);
+    });
+
+    it("adds kit to filtered list immediately when favorited", async () => {
+      const { result } = renderHook(() => useKitFilters(defaultProps));
+
+      // Enable favorites filter
+      act(() => {
+        result.current.handleToggleFavoritesFilter();
+      });
+
+      // Should show 2 favorite kits initially
+      expect(result.current.filteredKits).toHaveLength(2);
+
+      // Mock favoriting Kit2 (was originally not favorited)
+      mockToggleKitFavorite.mockResolvedValueOnce({
+        data: { isFavorite: true },
+        success: true,
+      });
+
+      // Favorite Kit2
+      await act(async () => {
+        await result.current.handleToggleFavorite("Kit2");
+      });
+
+      // Kit2 should be immediately added to filtered list due to local state update
+      expect(result.current.filteredKits).toHaveLength(3);
+      expect(
+        result.current.filteredKits.find((kit) => kit.name === "Kit2"),
+      ).toBeDefined();
+
+      // Verify local state was updated
+      expect(result.current.getKitFavoriteState("Kit2")).toBe(true);
     });
   });
 

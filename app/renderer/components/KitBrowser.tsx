@@ -4,7 +4,6 @@ import React, {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
 } from "react";
 
@@ -76,20 +75,8 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       }
     }, [onRefreshKits, onMessage]);
 
-    // Apply filters to kits (since we removed the duplicate hook)
-    const filteredKits = useMemo(() => {
-      let filteredList = props.kits ?? [];
-
-      if (showFavoritesOnly) {
-        filteredList = filteredList.filter((kit) => kit.is_favorite);
-      }
-
-      if (showModifiedOnly) {
-        filteredList = filteredList.filter((kit) => kit.modified_since_sync);
-      }
-
-      return filteredList;
-    }, [props.kits, showFavoritesOnly, showModifiedOnly]);
+    // Use kits directly from props since filtering is done by the parent useKitFilters hook
+    const filteredKits = props.kits ?? [];
 
     // Create wrapper function for async onRefreshKits with scrollToKit parameter
     const handleRefreshKitsWithScroll = useCallback(

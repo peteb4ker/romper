@@ -77,6 +77,9 @@ export function buildDeleteConditions(
     conditions.push(eq(samples.slot_number, filter.slotNumber));
   }
 
+  if (conditions.length === 0) {
+    throw new Error("No conditions provided to buildDeleteConditions");
+  }
   return conditions.length === 1 ? conditions[0] : and(...conditions)!;
 }
 

@@ -17,6 +17,17 @@ interface SettingsData {
 type SettingsKey = keyof SettingsData;
 type SettingsValue = SettingsData[SettingsKey];
 
+interface SyncProgress {
+  bytesTransferred: number;
+  currentFile: string;
+  elapsedTime: number;
+  estimatedTimeRemaining: number;
+  filesCompleted: number;
+  status: "complete" | "converting" | "copying" | "error" | "preparing";
+  totalBytes: number;
+  totalFiles: number;
+}
+
 class SettingsManager {
   async getSetting(key: SettingsKey): Promise<SettingsValue> {
     isDev && console.debug("[IPC] getSetting invoked", key);
@@ -381,25 +392,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onSamplePlaybackError: (cb: (errMsg: string) => void) => {
     isDev && console.debug("[IPC] onSamplePlaybackError registered");
     ipcRenderer.removeAllListeners("sample-playback-error");
-    ipcRenderer.on("sample-playback-error", (_event: any, errMsg: string) =>
+    ipcRenderer.on("sample-playback-error", (_event: unknown, errMsg: string) =>
       cb(errMsg),
     );
   },
   onSyncProgress: (
-    callback: (progress: {
-      bytesTransferred: number;
-      currentFile: string;
-      elapsedTime: number;
-      estimatedTimeRemaining: number;
-      filesCompleted: number;
-      status: "complete" | "converting" | "copying" | "error" | "preparing";
-      totalBytes: number;
-      totalFiles: number;
-    }) => void,
+    callback: (progress: SyncProgress) => void,
   ) => {
     isDev && console.debug("[IPC] onSyncProgress listener registered");
     ipcRenderer.removeAllListeners("sync-progress");
-    ipcRenderer.on("sync-progress", (_event: unknown, progress: unknown) =>
+    ipcRenderer.on("sync-progress", (_event: unknown, progress: SyncProgress) =>
       callback(progress),
     );
   },

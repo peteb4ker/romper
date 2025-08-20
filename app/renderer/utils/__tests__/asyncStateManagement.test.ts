@@ -216,7 +216,7 @@ describe("Async State Management - Unit Tests", () => {
       await act(async () => {
         try {
           await executePromise!;
-        } catch (_err) {
+        } catch {
           // Expected error - do nothing
         }
       });
@@ -396,7 +396,7 @@ describe("Async State Management - Unit Tests", () => {
       await act(async () => {
         try {
           await promise!;
-        } catch (_err) {
+        } catch {
           // Expected cancellation error - do nothing
         }
       });
@@ -449,7 +449,7 @@ describe("Async State Management - Unit Tests", () => {
       await act(async () => {
         try {
           await promise!;
-        } catch (_err) {
+        } catch {
           // Expected cancellation error - do nothing
         }
       });

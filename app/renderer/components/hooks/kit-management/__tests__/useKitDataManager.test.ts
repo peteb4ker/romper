@@ -3,6 +3,7 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setupElectronAPIMock } from "@romper/tests/mocks/electron/electronAPI";
 import { useKitDataManager } from "../useKitDataManager";
 
 // Using real groupDbSamplesByVoice implementation to handle spaced slots correctly
@@ -42,7 +43,7 @@ describe("useKitDataManager", () => {
     vi.clearAllMocks();
 
     // Reset window.electronAPI to default state for each test
-    window.electronAPI = {
+    setupElectronAPIMock({
       getAllSamplesForKit: vi.fn().mockResolvedValue({
         data: mockSamples,
         success: true,
@@ -58,7 +59,7 @@ describe("useKitDataManager", () => {
       updateKit: vi.fn().mockResolvedValue({
         success: true,
       }),
-    } as any;
+    });
   });
 
   it("should initialize with empty state", () => {
@@ -458,7 +459,10 @@ describe("useKitDataManager", () => {
 
       // Update kit with new properties
       act(() => {
-        result.current.updateKit("A0", { alias: "Updated Kit", editable: true });
+        result.current.updateKit("A0", {
+          alias: "Updated Kit",
+          editable: true,
+        });
       });
 
       const updatedKit = result.current.getKitByName("A0");
@@ -495,7 +499,7 @@ describe("useKitDataManager", () => {
 
   describe("toggleKitFavorite", () => {
     it("should successfully toggle kit favorite status", async () => {
-      window.electronAPI.toggleKitFavorite = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.toggleKitFavorite).mockResolvedValue({
         data: { isFavorite: true },
         success: true,
       });
@@ -513,7 +517,7 @@ describe("useKitDataManager", () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      let toggleResult: any;
+      let toggleResult: { isFavorite?: boolean; success: boolean };
       await act(async () => {
         toggleResult = await result.current.toggleKitFavorite("A0");
       });
@@ -528,7 +532,7 @@ describe("useKitDataManager", () => {
     });
 
     it("should handle API failure", async () => {
-      window.electronAPI.toggleKitFavorite = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.toggleKitFavorite).mockResolvedValue({
         error: "Failed to toggle favorite",
         success: false,
       });
@@ -546,7 +550,7 @@ describe("useKitDataManager", () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      let toggleResult: any;
+      let toggleResult: { isFavorite?: boolean; success: boolean };
       await act(async () => {
         toggleResult = await result.current.toggleKitFavorite("A0");
       });
@@ -556,7 +560,7 @@ describe("useKitDataManager", () => {
     });
 
     it("should handle API exception", async () => {
-      window.electronAPI.toggleKitFavorite = vi.fn().mockRejectedValue(
+      vi.mocked(window.electronAPI.toggleKitFavorite).mockRejectedValue(
         new Error("Network error"),
       );
 
@@ -573,7 +577,7 @@ describe("useKitDataManager", () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      let toggleResult: any;
+      let toggleResult: { isFavorite?: boolean; success: boolean };
       await act(async () => {
         toggleResult = await result.current.toggleKitFavorite("A0");
       });
@@ -585,7 +589,7 @@ describe("useKitDataManager", () => {
 
   describe("updateKitAlias", () => {
     it("should successfully update kit alias", async () => {
-      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.updateKit).mockResolvedValue({
         success: true,
       });
 
@@ -616,7 +620,7 @@ describe("useKitDataManager", () => {
     });
 
     it("should handle API failure", async () => {
-      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.updateKit).mockResolvedValue({
         error: "Failed to update alias",
         success: false,
       });
@@ -642,7 +646,7 @@ describe("useKitDataManager", () => {
     });
 
     it("should handle API exception", async () => {
-      window.electronAPI.updateKit = vi.fn().mockRejectedValue(
+      vi.mocked(window.electronAPI.updateKit).mockRejectedValue(
         new Error("Network error"),
       );
 
@@ -669,8 +673,8 @@ describe("useKitDataManager", () => {
     it("should throw error when updateKit API not available", async () => {
       // Mock missing API
       const mockAPI = { ...window.electronAPI };
-      delete (mockAPI as any).updateKit;
-      window.electronAPI = mockAPI;
+      delete (mockAPI as Partial<typeof mockAPI>).updateKit;
+      setupElectronAPIMock(mockAPI);
 
       const { result } = renderHook(() =>
         useKitDataManager({
@@ -695,7 +699,7 @@ describe("useKitDataManager", () => {
 
   describe("toggleKitEditable", () => {
     it("should successfully toggle kit editable mode from false to true", async () => {
-      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.updateKit).mockResolvedValue({
         success: true,
       });
 
@@ -730,7 +734,7 @@ describe("useKitDataManager", () => {
     });
 
     it("should successfully toggle kit editable mode from true to false", async () => {
-      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.updateKit).mockResolvedValue({
         success: true,
       });
 
@@ -768,7 +772,7 @@ describe("useKitDataManager", () => {
 
     it("should handle non-existing kit", async () => {
       // Ensure updateKit API is available for this test
-      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.updateKit).mockResolvedValue({
         success: true,
       });
 
@@ -793,7 +797,7 @@ describe("useKitDataManager", () => {
     });
 
     it("should handle API failure", async () => {
-      window.electronAPI.updateKit = vi.fn().mockResolvedValue({
+      vi.mocked(window.electronAPI.updateKit).mockResolvedValue({
         error: "Failed to toggle editable mode",
         success: false,
       });
@@ -819,7 +823,7 @@ describe("useKitDataManager", () => {
     });
 
     it("should handle API exception", async () => {
-      window.electronAPI.updateKit = vi.fn().mockRejectedValue(
+      vi.mocked(window.electronAPI.updateKit).mockRejectedValue(
         new Error("Network error"),
       );
 
@@ -846,8 +850,8 @@ describe("useKitDataManager", () => {
     it("should throw error when updateKit API not available", async () => {
       // Mock missing API
       const mockAPI = { ...window.electronAPI };
-      delete (mockAPI as any).updateKit;
-      window.electronAPI = mockAPI;
+      delete (mockAPI as Partial<typeof mockAPI>).updateKit;
+      setupElectronAPIMock(mockAPI);
 
       const { result } = renderHook(() =>
         useKitDataManager({

@@ -3,7 +3,7 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { setupElectronAPIMock } from "@romper/tests/mocks/electron/electronAPI";
+import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { useKitDataManager } from "../useKitDataManager";
 
 // Using real groupDbSamplesByVoice implementation to handle spaced slots correctly
@@ -671,10 +671,10 @@ describe("useKitDataManager", () => {
     });
 
     it("should throw error when updateKit API not available", async () => {
-      // Mock missing API
-      const mockAPI = { ...window.electronAPI };
-      delete (mockAPI as Partial<typeof mockAPI>).updateKit;
-      setupElectronAPIMock(mockAPI);
+      // Mock missing API by setting updateKit to undefined
+      setupElectronAPIMock({
+        updateKit: undefined as any,
+      });
 
       const { result } = renderHook(() =>
         useKitDataManager({
@@ -848,10 +848,10 @@ describe("useKitDataManager", () => {
     });
 
     it("should throw error when updateKit API not available", async () => {
-      // Mock missing API
-      const mockAPI = { ...window.electronAPI };
-      delete (mockAPI as Partial<typeof mockAPI>).updateKit;
-      setupElectronAPIMock(mockAPI);
+      // Mock missing API by setting updateKit to undefined
+      setupElectronAPIMock({
+        updateKit: undefined as any,
+      });
 
       const { result } = renderHook(() =>
         useKitDataManager({

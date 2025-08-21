@@ -37,13 +37,13 @@ export function useSampleManagementOperations({
       filePath: string,
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => {
-      if (!(window as unknown).electronAPI?.addSampleToSlot) {
+      if (!window.electronAPI?.addSampleToSlot) {
         onMessage?.("Sample management not available", "error");
         return;
       }
 
       try {
-        const result = await (window as unknown).electronAPI.addSampleToSlot(
+        const result = await window.electronAPI.addSampleToSlot(
           kitName,
           voice,
           slotNumber,
@@ -109,7 +109,7 @@ export function useSampleManagementOperations({
       filePath: string,
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => {
-      if (!(window as unknown).electronAPI?.replaceSampleInSlot) {
+      if (!window.electronAPI?.replaceSampleInSlot) {
         onMessage?.("Sample management not available", "error");
         return;
       }
@@ -120,9 +120,7 @@ export function useSampleManagementOperations({
           slotNumber,
         );
 
-        const result = await (
-          window as unknown
-        ).electronAPI.replaceSampleInSlot(
+        const result = await window.electronAPI.replaceSampleInSlot(
           kitName,
           voice,
           slotNumber,
@@ -168,7 +166,7 @@ export function useSampleManagementOperations({
 
   const handleSampleDelete = useCallback(
     async (voice: number, slotNumber: number) => {
-      if (!(window as unknown).electronAPI?.deleteSampleFromSlot) {
+      if (!window.electronAPI?.deleteSampleFromSlot) {
         onMessage?.("Sample management not available", "error");
         return;
       }
@@ -179,9 +177,7 @@ export function useSampleManagementOperations({
           slotNumber,
         );
 
-        const result = await (
-          window as unknown
-        ).electronAPI.deleteSampleFromSlot(kitName, voice, slotNumber);
+        const result = await window.electronAPI.deleteSampleFromSlot(kitName, voice, slotNumber);
 
         if (result.success) {
           onMessage?.(

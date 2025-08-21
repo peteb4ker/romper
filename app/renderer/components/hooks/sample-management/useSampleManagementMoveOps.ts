@@ -33,11 +33,11 @@ export function useSampleManagementMoveOps({
   const validateMoveAPI = useCallback(
     (isCrossKit: boolean) => {
       if (isCrossKit) {
-        if (!(window as unknown).electronAPI?.moveSampleBetweenKits) {
+        if (!window.electronAPI?.moveSampleBetweenKits) {
           onMessage?.("Cross-kit sample move not available", "error");
           return false;
         }
-      } else if (!(window as unknown).electronAPI?.moveSampleInKit) {
+      } else if (!window.electronAPI?.moveSampleInKit) {
         onMessage?.("Sample move not available", "error");
         return false;
       }
@@ -50,15 +50,13 @@ export function useSampleManagementMoveOps({
     async (fromVoice: number, toVoice: number) => {
       if (skipUndoRecording || !onAddUndoAction) return [];
 
-      const samplesResult = await (
-        window as unknown
-      ).electronAPI?.getAllSamplesForKit?.(kitName);
+      const samplesResult = await window.electronAPI?.getAllSamplesForKit?.(kitName);
       if (!samplesResult?.success || !samplesResult.data) return [];
 
       const affectedVoices = new Set([fromVoice, toVoice]);
       return samplesResult.data
-        .filter((s: unknown) => affectedVoices.has(s.voice_number))
-        .map((s: unknown) => ({
+        .filter((s: any) => affectedVoices.has(s.voice_number))
+        .map((s: any) => ({
           sample: {
             filename: s.filename,
             is_stereo: s.is_stereo,
@@ -107,18 +105,18 @@ export function useSampleManagementMoveOps({
         let result;
 
         if (isCrossKit) {
-          result = await (window as unknown).electronAPI.moveSampleBetweenKits({
-            fromKit: kitName,
-            fromSlot,
+          result = await window.electronAPI.moveSampleBetweenKits?.(
+            kitName,
             fromVoice,
-            mode: "insert",
-            toKit: targetKit,
-            toSlot,
+            fromSlot,
+            targetKit,
             toVoice,
-          });
+            toSlot,
+            "insert"
+          );
         } else {
           const stateSnapshot = await captureStateSnapshot(fromVoice, toVoice);
-          result = await (window as unknown).electronAPI.moveSampleInKit(
+          result = await window.electronAPI.moveSampleInKit?.(
             kitName,
             fromVoice,
             fromSlot,

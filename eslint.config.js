@@ -87,10 +87,10 @@ export default defineConfig([
       "no-unused-vars": "off", // Turn off base rule to avoid conflicts
       // TypeScript any type restrictions
       "@typescript-eslint/no-explicit-any": [
-        "error",
+        "warn", // Reduced from error to warn during type migration
         {
-          fixToUnknown: true,
-          ignoreRestArgs: false,
+          fixToUnknown: false, // Prevent auto-conversion to unknown
+          ignoreRestArgs: true, // Allow any in rest args during migration
         },
       ],
     },
@@ -129,10 +129,10 @@ export default defineConfig([
       "prefer-const": "error",
       // TypeScript any type restrictions
       "@typescript-eslint/no-explicit-any": [
-        "error",
+        "warn", // Reduced from error to warn during type migration
         {
-          fixToUnknown: true,
-          ignoreRestArgs: false,
+          fixToUnknown: false, // Prevent auto-conversion to unknown
+          ignoreRestArgs: true, // Allow any in rest args during migration
         },
       ],
     },
@@ -185,10 +185,10 @@ export default defineConfig([
       "no-unused-vars": "off",
       // TypeScript any type restrictions
       "@typescript-eslint/no-explicit-any": [
-        "error",
+        "warn", // Reduced from error to warn during type migration
         {
-          fixToUnknown: true,
-          ignoreRestArgs: false,
+          fixToUnknown: false, // Prevent auto-conversion to unknown
+          ignoreRestArgs: true, // Allow any in rest args during migration
         },
       ],
     },

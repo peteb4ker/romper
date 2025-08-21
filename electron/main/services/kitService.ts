@@ -1,8 +1,8 @@
-import type { DbResult, NewKit } from "@romper/shared/db/schema.js";
+import type { DbResult, NewKit, NewSample } from "@romper/shared/db/schema.js";
 
 import * as path from "path";
 
-import { addKit, getKit } from "../db/romperDbCoreORM.js";
+import { addKit, addSample, getKit, getKitSamples } from "../db/romperDbCoreORM.js";
 
 /**
  * Service for kit management operations
@@ -59,8 +59,31 @@ export class KitService {
       };
     }
 
-    // NOTE: Sample references are not copied as the kit duplication creates
-    // empty kits that will be populated through the sample assignment system
+    // Copy all sample references from source kit to destination kit
+    const sourceSamples = getKitSamples(dbPath, sourceKit);
+    if (sourceSamples.success && sourceSamples.data) {
+      for (const sample of sourceSamples.data) {
+        // Create new sample record for destination kit, preserving all original properties
+        const newSample: NewSample = {
+          filename: sample.filename,
+          is_stereo: sample.is_stereo,
+          kit_name: destKit, // Change kit_name to destination
+          slot_number: sample.slot_number,
+          source_path: sample.source_path,
+          voice_number: sample.voice_number,
+          wav_bitrate: sample.wav_bitrate,
+          wav_sample_rate: sample.wav_sample_rate,
+        };
+
+        const sampleResult = addSample(dbPath, newSample);
+        if (!sampleResult.success) {
+          return {
+            error: `Failed to copy sample: ${sampleResult.error}`,
+            success: false,
+          };
+        }
+      }
+    }
 
     return { success: true };
   }

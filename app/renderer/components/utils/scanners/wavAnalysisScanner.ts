@@ -3,10 +3,9 @@
 import type { ScanResult, WAVAnalysisInput, WAVAnalysisOutput } from "./types";
 
 // Use existing electronAPI interface (defined in app/renderer/electron.d.ts)
-declare const window: Window & {
+declare const window: {
   electronAPI: {
     getAudioMetadata: (filePath: string) => Promise<{
-      success: boolean;
       data?: {
         bitDepth?: number;
         channels?: number;
@@ -15,9 +14,10 @@ declare const window: Window & {
         sampleRate?: number;
       };
       error?: string;
+      success: boolean;
     }>;
   };
-};
+} & Window;
 
 /**
  * Rample format requirements for validation
@@ -111,7 +111,8 @@ function checkRampleCompatibility(metadata: {
   // Check if natively compatible (no conversion needed)
   const bitDepthOk = RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(bitDepth);
   const channelsOk = channels <= RAMPLE_FORMAT_REQUIREMENTS.maxChannels;
-  const sampleRateOk = RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(sampleRate);
+  const sampleRateOk =
+    RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(sampleRate);
 
   if (bitDepthOk && channelsOk && sampleRateOk) {
     return "native";

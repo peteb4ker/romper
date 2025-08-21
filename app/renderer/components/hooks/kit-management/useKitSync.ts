@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
+import type { SyncChangeSummary } from "../../dialogs/SyncUpdateDialog";
 import { useSyncUpdate } from "../shared/useSyncUpdate";
 
 export interface UseKitSyncOptions {
@@ -15,7 +16,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [currentSyncKit, setCurrentSyncKit] = useState<null | string>(null);
   const [currentChangeSummary, setCurrentChangeSummary] =
-    useState<unknown>(null);
+    useState<SyncChangeSummary | null>(null);
   const [sdCardPath, setSdCardPath] = useState<null | string>(null);
 
   // Get SD card path from settings (includes environment overrides)

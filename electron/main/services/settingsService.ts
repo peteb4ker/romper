@@ -14,7 +14,9 @@ export class SettingsService {
     inMemorySettings: Record<string, unknown>,
     envOverride?: string,
   ): null | string {
-    return envOverride || inMemorySettings.localStorePath || null;
+    if (envOverride) return envOverride;
+    const path = inMemorySettings.localStorePath;
+    return typeof path === 'string' ? path : null;
   }
 
   /**

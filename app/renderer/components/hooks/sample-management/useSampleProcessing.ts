@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
+import type { Sample } from "@romper/shared/db/schema";
 
 import { ErrorPatterns } from "../../../utils/errorHandling";
 import { useSettings } from "../../../utils/SettingsContext";
@@ -55,12 +56,12 @@ export function useSampleProcessing({
   }, [kitName]);
 
   const isDuplicateSample = useCallback(
-    async (allSamples: unknown[], filePath: string): Promise<boolean> => {
+    async (allSamples: Sample[], filePath: string): Promise<boolean> => {
       const voiceSamples = allSamples.filter(
-        (s: unknown) => s.voice_number === voice,
+        (s: Sample) => s.voice_number === voice,
       );
       const isDuplicate = voiceSamples.some(
-        (s: unknown) => s.source_path === filePath,
+        (s: Sample) => s.source_path === filePath,
       );
 
       if (isDuplicate) {
@@ -132,8 +133,8 @@ export function useSampleProcessing({
   const processAssignment = useCallback(
     async (
       filePath: string,
-      formatValidation: unknown,
-      allSamples: unknown[],
+      formatValidation: { metadata?: { channels?: number } },
+      allSamples: Sample[],
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
       droppedSlotNumber: number,
     ): Promise<boolean> => {
@@ -153,7 +154,7 @@ export function useSampleProcessing({
       const stereoResult = analyzeStereoAssignment(
         voice,
         channels,
-        allSamples,
+        allSamples as Array<{ filename: string; voice_number: number }>,
         modifierKeys.forceMonoDrop || modifierKeys.forceStereoDrop
           ? {
               forceMono: modifierKeys.forceMonoDrop,

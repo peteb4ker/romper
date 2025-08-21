@@ -13,9 +13,9 @@ function getConfigValue<T = string>(
   // Check window.romperEnv (exposed from preload script)
   if (
     typeof window !== "undefined" &&
-    (window as unknown).romperEnv?.[envKey]
+    (window as typeof window & { romperEnv?: Record<string, unknown> }).romperEnv?.[envKey]
   ) {
-    return (window as unknown).romperEnv[envKey] as T;
+    return (window as typeof window & { romperEnv?: Record<string, unknown> }).romperEnv![envKey] as T;
   }
 
   // Fallback to process.env if available (for development)

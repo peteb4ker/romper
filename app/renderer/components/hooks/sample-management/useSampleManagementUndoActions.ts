@@ -5,9 +5,22 @@ import type {
   ReindexSamplesAction,
   ReplaceSampleAction,
 } from "@romper/shared/undoTypes";
+import type { Sample, DbResult } from "@romper/shared/db/schema";
 
 import { createActionId } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
+
+// Define move result types for better type safety
+type MoveResult = DbResult<{
+  affectedSamples: (Sample & { original_slot_number: number })[];
+  movedSample: Sample;
+  replacedSample?: Sample;
+}>;
+
+type DeleteResult = DbResult<{
+  affectedSamples: Sample[];
+  deletedSamples: Sample[];
+}>;
 
 export interface UseSampleManagementUndoActionsOptions {
   kitName: string;
@@ -27,13 +40,11 @@ export function useSampleManagementUndoActions({
     async (voice: number, slotNumber: number) => {
       if (skipUndoRecording) return null;
 
-      const samplesResult = await (
-        window as unknown
-      ).electronAPI?.getAllSamplesForKit?.(kitName);
+      const samplesResult = await window.electronAPI?.getAllSamplesForKit?.(kitName);
       if (samplesResult?.success && samplesResult.data) {
         return (
           samplesResult.data.find(
-            (s: unknown) =>
+            (s: Sample) =>
               s.voice_number === voice && s.slot_number === slotNumber,
           ) || null
         );
@@ -49,13 +60,11 @@ export function useSampleManagementUndoActions({
       if (skipUndoRecording) return null;
 
       try {
-        const samplesResult = await (
-          window as unknown
-        ).electronAPI?.getAllSamplesForKit?.(kitName);
+        const samplesResult = await window.electronAPI?.getAllSamplesForKit?.(kitName);
         if (samplesResult?.success && samplesResult.data) {
           return (
             samplesResult.data.find(
-              (sample: unknown) =>
+              (sample: Sample) =>
                 sample.voice_number === voice &&
                 sample.slot_number === slotNumber,
             ) || null
@@ -102,7 +111,7 @@ export function useSampleManagementUndoActions({
     (
       voice: number,
       slotNumber: number,
-      oldSample: unknown,
+      oldSample: Sample,
       filePath: string,
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ): ReplaceSampleAction => ({
@@ -133,11 +142,11 @@ export function useSampleManagementUndoActions({
     (
       voice: number,
       slotNumber: number,
-      sampleToDelete: unknown,
-      result: unknown,
+      sampleToDelete: Sample,
+      result: DeleteResult,
     ): ReindexSamplesAction => ({
       data: {
-        affectedSamples: result.data.affectedSamples.map((sample: unknown) => ({
+        affectedSamples: result.data?.affectedSamples?.map((sample: Sample) => ({
           newSlot: sample.slot_number - 1, // Original position before reindexing
           oldSlot: sample.slot_number, // New position after reindexing
           sample: {
@@ -146,7 +155,7 @@ export function useSampleManagementUndoActions({
             source_path: sample.source_path,
           },
           voice: sample.voice_number,
-        })),
+        })) || [],
         deletedSample: {
           filename: sampleToDelete.filename,
           is_stereo: sampleToDelete.is_stereo,
@@ -167,14 +176,18 @@ export function useSampleManagementUndoActions({
     (params: {
       fromSlot: number;
       fromVoice: number;
-      result: unknown;
-      stateSnapshot: unknown[];
+      result: MoveResult;
+      stateSnapshot: Array<{
+        sample: { filename: string; is_stereo: boolean; source_path: string };
+        slot: number;
+        voice: number;
+      }>;
       toSlot: number;
       toVoice: number;
     }): MoveSampleAction => ({
       data: {
-        affectedSamples: params.result.data.affectedSamples.map(
-          (sample: unknown) => ({
+        affectedSamples: params.result.data?.affectedSamples.map(
+          (sample: Sample & { original_slot_number: number }) => ({
             newSlot: sample.slot_number,
             oldSlot: sample.original_slot_number,
             sample: {
@@ -184,15 +197,15 @@ export function useSampleManagementUndoActions({
             },
             voice: sample.voice_number,
           }),
-        ),
+        ) || [],
         fromSlot: params.fromSlot,
         fromVoice: params.fromVoice,
         movedSample: {
-          filename: params.result.data.movedSample.filename,
-          is_stereo: params.result.data.movedSample.is_stereo,
-          source_path: params.result.data.movedSample.source_path,
+          filename: params.result.data?.movedSample.filename || '',
+          is_stereo: params.result.data?.movedSample.is_stereo || false,
+          source_path: params.result.data?.movedSample.source_path || '',
         },
-        replacedSample: params.result.data.replacedSample
+        replacedSample: params.result.data?.replacedSample
           ? {
               filename: params.result.data.replacedSample.filename,
               is_stereo: params.result.data.replacedSample.is_stereo,
@@ -215,14 +228,14 @@ export function useSampleManagementUndoActions({
     (params: {
       fromSlot: number;
       fromVoice: number;
-      result: unknown;
+      result: MoveResult;
       targetKit: string;
       toSlot: number;
       toVoice: number;
     }): MoveSampleBetweenKitsAction => ({
       data: {
-        affectedSamples: params.result.data.affectedSamples.map(
-          (sample: unknown) => ({
+        affectedSamples: params.result.data?.affectedSamples.map(
+          (sample: Sample & { original_slot_number: number }) => ({
             newSlot: sample.slot_number,
             oldSlot: sample.original_slot_number,
             sample: {
@@ -232,17 +245,17 @@ export function useSampleManagementUndoActions({
             },
             voice: sample.voice_number,
           }),
-        ),
+        ) || [],
         fromKit: kitName,
         fromSlot: params.fromSlot,
         fromVoice: params.fromVoice,
         mode: "insert",
         movedSample: {
-          filename: params.result.data.movedSample.filename,
-          is_stereo: params.result.data.movedSample.is_stereo,
-          source_path: params.result.data.movedSample.source_path,
+          filename: params.result.data?.movedSample.filename || '',
+          is_stereo: params.result.data?.movedSample.is_stereo || false,
+          source_path: params.result.data?.movedSample.source_path || '',
         },
-        replacedSample: params.result.data.replacedSample
+        replacedSample: params.result.data?.replacedSample
           ? {
               filename: params.result.data.replacedSample.filename,
               is_stereo: params.result.data.replacedSample.is_stereo,

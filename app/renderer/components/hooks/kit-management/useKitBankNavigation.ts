@@ -8,8 +8,12 @@ import {
   getFirstKitInBank,
 } from "../../utils/bankOperations";
 
+interface KitListRef {
+  scrollAndFocusKitByIndex: (index: number) => void;
+}
+
 interface UseKitBankNavigationProps {
-  kitListRef: RefObject<unknown>;
+  kitListRef: RefObject<KitListRef | null>;
   kits: KitWithRelations[];
 }
 
@@ -57,11 +61,8 @@ export function useKitBankNavigation({
       const el = document.getElementById(`bank-${bank}`);
       if (!el) return;
 
-      const header = document.querySelector(".sticky.top-0");
-      const headerHeight =
-        header && "offsetHeight" in header
-          ? (header as unknown).offsetHeight
-          : 0;
+      const header = document.querySelector(".sticky.top-0") as HTMLElement | null;
+      const headerHeight = header?.offsetHeight ?? 0;
       const containerRect = scrollContainerRef.current.getBoundingClientRect();
       const elRect = el.getBoundingClientRect();
       const offset = elRect.top - containerRect.top - headerHeight - 8;
@@ -127,11 +128,7 @@ export function useKitBankNavigation({
   const focusBankInKitList = useCallback(
     (bank: string) => {
       const idx = kits.findIndex((k) => k?.name?.[0]?.toUpperCase() === bank);
-      if (
-        idx !== -1 &&
-        kitListRef?.current &&
-        typeof kitListRef.current.scrollAndFocusKitByIndex === "function"
-      ) {
+      if (idx !== -1 && kitListRef?.current) {
         setSelectedBank(bank);
         kitListRef.current.scrollAndFocusKitByIndex(idx);
         setFocusedKit(kits[idx].name);

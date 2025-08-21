@@ -13,6 +13,10 @@ import { useKitListLogic } from "./hooks/kit-management/useKitListLogic";
 import { useKitListNavigation } from "./hooks/kit-management/useKitListNavigation";
 import KitGridItem from "./KitGridItem";
 
+interface KitListRef {
+  scrollAndFocusKitByIndex: (index: number) => void;
+}
+
 // Bank header component for grid layout
 interface BankHeaderProps {
   bank: string;
@@ -65,8 +69,7 @@ const BankHeader: React.FC<BankHeaderProps> = ({
 };
 
 // Expose imperative scroll/focus API for parent components
-export interface KitGridHandle {
-  scrollAndFocusKitByIndex: (idx: number) => void;
+export interface KitGridHandle extends KitListRef {
   scrollToKit: (kitName: string) => void;
 }
 

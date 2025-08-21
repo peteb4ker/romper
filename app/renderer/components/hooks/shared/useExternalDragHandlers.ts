@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import type { Sample } from "@romper/shared/db/schema";
 
 import { isVoiceAtSampleLimit } from "../../utils/kitOperations";
 
@@ -16,15 +17,15 @@ export interface UseExternalDragHandlersOptions {
     isStereo: boolean,
   ) => void;
   sampleProcessing: {
-    getCurrentKitSamples: () => Promise<null | unknown[]>;
+    getCurrentKitSamples: () => Promise<null | Sample[]>;
     isDuplicateSample: (
-      allSamples: unknown[],
+      allSamples: Sample[],
       filePath: string,
     ) => Promise<boolean>;
     processAssignment: (
       filePath: string,
-      formatValidation: unknown,
-      allSamples: unknown[],
+      formatValidation: { metadata?: { channels?: number } },
+      allSamples: Sample[],
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
       droppedSlotNumber: number,
     ) => Promise<boolean>;

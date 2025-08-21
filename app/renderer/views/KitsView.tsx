@@ -39,8 +39,8 @@ const KitsView: React.FC = () => {
   // A1-A3: No local store configured - show setup wizard
   // Also includes test environment overrides with invalid paths (for wizard tests)
   const isTestEnvironment =
-    (import.meta.env as unknown).MODE === "test" ||
-    (import.meta.env as unknown).VITE_ROMPER_TEST_MODE === "true";
+    (import.meta.env as ImportMeta["env"] & { MODE?: string; VITE_ROMPER_TEST_MODE?: string }).MODE === "test" ||
+    (import.meta.env as ImportMeta["env"] & { MODE?: string; VITE_ROMPER_TEST_MODE?: string }).VITE_ROMPER_TEST_MODE === "true";
   const isEnvironmentOverride =
     localStoreStatus?.isEnvironmentOverride || false;
   const needsLocalStoreSetup =
@@ -166,7 +166,7 @@ const KitsView: React.FC = () => {
 
   // HMR: Save selected kit state before hot reload
   useEffect(() => {
-    if ((import.meta as unknown).hot && navigation.selectedKit) {
+    if ((import.meta as ImportMeta & { hot?: unknown }).hot && navigation.selectedKit) {
       saveSelectedKitState(navigation.selectedKit);
     }
   }, [navigation.selectedKit]);

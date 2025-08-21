@@ -42,8 +42,8 @@ export function getSavedSelectedKit(): null | string {
  */
 export function isHmrAvailable(): boolean {
   return (
-    typeof (import.meta as unknown).hot !== "undefined" &&
-    (import.meta as unknown).hot !== null
+    typeof (import.meta as ImportMeta & { hot?: unknown }).hot !== "undefined" &&
+    (import.meta as ImportMeta & { hot?: unknown }).hot !== null
   );
 }
 
@@ -116,13 +116,14 @@ export function saveSelectedKitState(kitName: string): void {
  * Setup HMR handlers for route preservation
  */
 export function setupRouteHmrHandlers(): void {
-  if (!(import.meta as unknown).hot) return;
+  const hotModule = import.meta as ImportMeta & { hot?: { dispose: (cb: () => void) => void; accept: (cb: () => void) => void } };
+  if (!hotModule.hot) return;
 
-  (import.meta as unknown).hot.dispose(() => {
+  hotModule.hot.dispose(() => {
     saveRouteState();
   });
 
-  (import.meta as unknown).hot.accept(() => {
+  hotModule.hot.accept(() => {
     restoreRouteState();
   });
 }

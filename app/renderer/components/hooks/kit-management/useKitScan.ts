@@ -210,7 +210,7 @@ async function processSingleKitScan(
       return { success: true };
     } else {
       return {
-        error: `${kitName}: ${result.errors.map((e: unknown) => e.error).join(", ")}`,
+        error: `${kitName}: ${result.errors.map((e: unknown) => (e && typeof e === 'object' && 'error' in e ? (e.error as string) : String(e))).join(", ")}`,
         success: false,
       };
     }

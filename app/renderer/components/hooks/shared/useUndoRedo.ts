@@ -1,6 +1,8 @@
 // Memory-only undo/redo hook for kit editing
 // Maintains undo/redo stacks in React state for immediate UI updates
 
+import type { DbResult } from "@romper/shared/db/schema";
+import type { AnyUndoAction } from "@romper/shared/undoTypes";
 import { getActionDescription } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
 
@@ -17,7 +19,7 @@ export function useUndoRedo(kitName: string) {
   const redoHandlers = useRedoActionHandlers({ kitName });
 
   // Handle undo result and state updates
-  const handleUndoResult = (result: unknown, actionToUndo: unknown) => {
+  const handleUndoResult = (result: DbResult<unknown> | undefined, actionToUndo: AnyUndoAction) => {
     console.log("[UNDO] Final result:", result);
 
     if (result?.success) {
@@ -35,7 +37,7 @@ export function useUndoRedo(kitName: string) {
   };
 
   // Handle redo result and state updates
-  const handleRedoResult = (result: unknown, actionToRedo: unknown) => {
+  const handleRedoResult = (result: DbResult<unknown> | undefined, actionToRedo: AnyUndoAction) => {
     if (result?.success) {
       state.handleRedoSuccess(actionToRedo);
       state.emitRefreshEvent();
@@ -68,7 +70,7 @@ export function useUndoRedo(kitName: string) {
       );
       console.log(
         "[UNDO] ElectronAPI available:",
-        !!(window as unknown).electronAPI,
+        !!(window as { electronAPI?: unknown }).electronAPI,
       );
 
       const result = await undoHandlers.executeUndoAction(actionToUndo);

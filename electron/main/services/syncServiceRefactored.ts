@@ -137,7 +137,7 @@ export class SyncService {
     );
 
     const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath) {
+    if (!localStorePath || typeof localStorePath !== 'string') {
       console.warn("[SyncService] No localStorePath found in settings");
       return;
     }

@@ -2,7 +2,13 @@ import { groupSamplesByVoice } from "@romper/shared/kitUtilsShared";
 import { useCallback, useMemo } from "react";
 
 import type { ElectronAPI } from "../../../electron.d";
-import type { FullKitScanInput } from "../../utils/scanners/types";
+import type { FullKitScanInput, FullKitScanOutput } from "../../utils/scanners/types";
+
+interface FullKitScanResult {
+  success: boolean;
+  results: FullKitScanOutput;
+  errors?: Array<{ operation: string; error: string }>;
+}
 
 import { executeFullKitScan } from "../../utils/scanners/orchestrationFunctions";
 
@@ -100,7 +106,7 @@ export function useLocalStoreWizardScanning({
       // Helper function to apply voice inference results
       const applyVoiceInferenceResults = async (
         kitName: string,
-        scanResult: unknown,
+        scanResult: FullKitScanResult,
       ) => {
         if (
           scanResult.success &&

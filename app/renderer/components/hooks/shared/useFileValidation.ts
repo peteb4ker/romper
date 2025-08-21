@@ -1,6 +1,16 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 
+// Define validation types
+interface ValidationIssue {
+  type: string;
+  message: string;
+}
+
+interface Validation {
+  issues: ValidationIssue[];
+}
+
 /**
  * Hook for file validation and format checking
  * Extracted from useDragAndDrop to reduce complexity
@@ -11,20 +21,20 @@ export function useFileValidation() {
       if (window.electronFileAPI?.getDroppedFilePath) {
         return await window.electronFileAPI.getDroppedFilePath(file);
       }
-      return (file as unknown).path || file.name;
+      return (file as { path?: string }).path || file.name;
     },
     [],
   );
 
   const handleValidationIssues = useCallback(
-    async (validation: unknown): Promise<boolean> => {
-      const criticalIssues = validation.issues.filter((issue: unknown) =>
+    async (validation: Validation): Promise<boolean> => {
+      const criticalIssues = validation.issues.filter((issue: ValidationIssue) =>
         ["extension", "fileAccess", "invalidFormat"].includes(issue.type),
       );
 
       if (criticalIssues.length > 0) {
         const errorMessage = criticalIssues
-          .map((i: unknown) => i.message)
+          .map((i: ValidationIssue) => i.message)
           .join(", ");
         console.error(
           "Cannot assign sample due to critical format issues:",
@@ -39,7 +49,7 @@ export function useFileValidation() {
       }
 
       const warningMessage = validation.issues
-        .map((i: unknown) => i.message)
+        .map((i: ValidationIssue) => i.message)
         .join(", ");
       console.warn(
         "Sample has format issues that will require conversion during SD card sync:",

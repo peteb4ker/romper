@@ -15,14 +15,14 @@ export async function scanWAVAnalysis(
 
   // Only log once per test run to avoid spam
   if (
-    !(globalThis as unknown).__wavAnalysisWarningShown &&
+    !(globalThis as typeof globalThis & { __wavAnalysisWarningShown?: boolean }).__wavAnalysisWarningShown &&
     typeof process !== "undefined" &&
     process.env.NODE_ENV !== "test"
   ) {
     console.warn(
       `[WAV Analysis] WAV analysis not yet implemented - using default values`,
     );
-    (globalThis as unknown).__wavAnalysisWarningShown = true;
+    (globalThis as typeof globalThis & { __wavAnalysisWarningShown?: boolean }).__wavAnalysisWarningShown = true;
   }
 
   return {

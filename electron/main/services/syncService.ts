@@ -79,7 +79,7 @@ class SyncService {
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
+      if (!localStorePath || typeof localStorePath !== 'string') {
         return { error: "No local store path configured", success: false };
       }
 
@@ -141,7 +141,7 @@ class SyncService {
       // For now, we need to generate file operations for sync
       // This is a temporary fix - we should separate summary from sync operations
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
+      if (!localStorePath || typeof localStorePath !== 'string') {
         return { error: "No local store path configured", success: false };
       }
 

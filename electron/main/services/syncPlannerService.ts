@@ -48,7 +48,7 @@ export class SyncPlannerService {
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
+      if (!localStorePath || typeof localStorePath !== 'string') {
         return { error: "No local store path configured", success: false };
       }
 
@@ -72,7 +72,7 @@ export class SyncPlannerService {
 
       // Process each sample
       for (const sample of samplesResult.data || []) {
-        this.processSampleForSync(sample, localStorePath, results);
+        this.processSampleForSync(sample, localStorePath as string, results);
       }
 
       const summary: SyncChangeSummary = {
@@ -97,24 +97,26 @@ export class SyncPlannerService {
    * Add file to conversion list
    */
   private addFileToConvert(
-    sample: unknown,
+    sample: Sample,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    metadataResult: unknown,
-    formatValidationResult: unknown,
-    results: unknown,
+    metadataResult: DbResult,
+    formatValidationResult: DbResult,
+    results: { filesToConvert: any[]; filesToCopy: any[]; validationErrors: any[]; warnings: any[]; hasFormatWarnings?: boolean },
   ): void {
-    const issues = formatValidationResult.data?.issues || [];
-    const issueMessages = issues.map((issue: unknown) => issue.message);
+    const validationData = formatValidationResult.data as { issues?: Array<{ message: string }> };
+    const issues = validationData?.issues || [];
+    const issueMessages = issues.map((issue: { message: string }) => issue.message);
 
+    const metadataData = metadataResult.data as { bitDepth?: number; sampleRate?: number };
     results.filesToConvert.push({
       destinationPath,
       filename, // Now using the Rample-generated filename passed as parameter
-      kitName: sample.kitName,
+      kitName: sample.kit_name,
       operation: "convert",
       originalFormat: metadataResult.success
-        ? `${metadataResult.data?.bitDepth}bit/${metadataResult.data?.sampleRate}Hz`
+        ? `${metadataData?.bitDepth}bit/${metadataData?.sampleRate}Hz`
         : "Unknown",
       reason: issueMessages.join(", ") || "Format conversion required",
       sourcePath,

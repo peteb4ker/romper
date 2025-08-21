@@ -24,7 +24,7 @@ export class KitDataErrorHandler {
       showToast?: boolean;
       silent?: boolean;
     } = {},
-  ): { data?: unknown; error: string; success: false } {
+  ): { data?: undefined; error: string; success: false } {
     const errorMessage = getErrorMessage(error);
     const fullMessage = `Failed to ${operation}: ${errorMessage}`;
 
@@ -40,7 +40,7 @@ export class KitDataErrorHandler {
     }
 
     return {
-      data: options.defaultValue,
+      data: undefined,
       error: fullMessage,
       success: false,
     };
@@ -137,8 +137,10 @@ export const KitErrorPatterns = {
    * Handle API validation errors
    */
   apiValidation: (result: unknown, operation: string): void => {
-    if (!result?.success) {
-      const errorMessage = result?.error || `Failed to ${operation}`;
+    if (!result || typeof result !== 'object' || !('success' in result) || !result.success) {
+      const errorMessage = (result && typeof result === 'object' && 'error' in result && typeof result.error === 'string') 
+        ? result.error 
+        : `Failed to ${operation}`;
       throw new Error(errorMessage);
     }
   },
@@ -234,10 +236,17 @@ export const ApiValidation = {
       return { error: `No response from ${operation}`, success: false };
     }
 
-    if (response.success === false) {
-      return { error: response.error || `${operation} failed`, success: false };
+    if (typeof response === 'object' && 'success' in response && response.success === false) {
+      const errorMsg = (typeof response === 'object' && 'error' in response && typeof response.error === 'string') 
+        ? response.error 
+        : `${operation} failed`;
+      return { error: errorMsg, success: false };
     }
 
-    return { data: response.data || response, success: true };
+    if (typeof response === 'object' && 'data' in response) {
+      return { data: response.data as T, success: true };
+    }
+    
+    return { data: response as T, success: true };
   },
 };

@@ -114,7 +114,8 @@ export class KitService {
   private getLocalStorePath(
     inMemorySettings: Record<string, unknown>,
   ): null | string {
-    return inMemorySettings.localStorePath || null;
+    const path = inMemorySettings.localStorePath;
+    return typeof path === 'string' ? path : null;
   }
 
   private validateKitSlot(kitSlot: string): void {

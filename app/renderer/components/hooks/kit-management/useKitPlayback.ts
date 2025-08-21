@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import type { VoiceSamples } from "../../kitTypes";
 
-export function useKitPlayback(samples: unknown) {
+export function useKitPlayback(samples: VoiceSamples | null | undefined) {
   const [playbackError, setPlaybackError] = useState<null | string>(null);
   const [playTriggers, setPlayTriggers] = useState<{ [key: string]: number }>(
     {},

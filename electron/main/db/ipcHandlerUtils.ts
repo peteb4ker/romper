@@ -111,8 +111,9 @@ export function validateAndGetDbDir(
 } {
   // Check environment override first, then settings
   const localStorePath =
-    process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath;
-  if (!localStorePath) {
+    process.env.ROMPER_LOCAL_PATH || 
+    (typeof inMemorySettings.localStorePath === 'string' ? inMemorySettings.localStorePath : undefined);
+  if (!localStorePath || typeof localStorePath !== 'string') {
     return { error: "No local store path configured", success: false };
   }
   return { dbDir: path.join(localStorePath, ".romperdb"), success: true };

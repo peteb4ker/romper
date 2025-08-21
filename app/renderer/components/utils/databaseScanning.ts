@@ -4,6 +4,7 @@ import {
   executeFullKitScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
+  type ChainResult,
   type ProgressCallback,
 } from "./scanners";
 
@@ -59,7 +60,7 @@ export async function scanKitToDatabase(
   };
 
   try {
-    const scanResult = await executeFullKitScan(
+    const scanResult: ChainResult = await executeFullKitScan(
       {
         samples: kitScanData.samples,
         wavFiles: kitScanData.wavFiles,
@@ -69,17 +70,18 @@ export async function scanKitToDatabase(
     );
 
     if (scanResult.results.voiceInference) {
+      const voiceInference = scanResult.results.voiceInference as { voiceNames: Record<string, string> };
       await processVoiceInferenceResults(
         dbDir,
         kitScanData.kitName,
-        scanResult.results.voiceInference.voiceNames,
+        voiceInference.voiceNames,
         result,
       );
     }
 
     if (scanResult.results.wavAnalysis) {
       processWAVAnalysisResults(
-        scanResult.results.wavAnalysis,
+        scanResult.results.wavAnalysis as unknown[],
         kitScanData.wavFiles,
         result,
       );
@@ -180,13 +182,14 @@ export async function scanVoiceNamesToDatabase(
   };
 
   try {
-    const scanResult = await executeVoiceInferenceScan(samples);
+    const scanResult: ChainResult = await executeVoiceInferenceScan(samples);
 
     if (scanResult.success && scanResult.results.voiceInference) {
+      const voiceInference = scanResult.results.voiceInference as { voiceNames: Record<string, string> };
       await processVoiceInferenceResults(
         dbDir,
         kitName,
-        scanResult.results.voiceInference.voiceNames,
+        voiceInference.voiceNames,
         result,
       );
       result.scannedKits = 1;
@@ -229,10 +232,11 @@ export async function scanWavFilesToDatabase(
   };
 
   try {
-    const scanResult = await executeWAVAnalysisScan(wavFiles, fileReader);
+    const scanResult: ChainResult = await executeWAVAnalysisScan(wavFiles, fileReader);
 
     if (scanResult.success && scanResult.results.wavAnalysis) {
-      result.scannedWavFiles = scanResult.results.wavAnalysis.length;
+      const wavAnalysis = scanResult.results.wavAnalysis as unknown[];
+      result.scannedWavFiles = wavAnalysis.length;
 
       // Note: The WAV metadata would be stored when updating sample records
       // This would require additional database operations to update existing samples
@@ -316,7 +320,7 @@ function processWAVAnalysisResults(
   result: DatabaseScanResult,
 ): void {
   for (let i = 0; i < wavAnalyses.length; i++) {
-    const analysis = wavAnalyses[i];
+    const analysis = wavAnalyses[i] as { isValid: boolean };
     const filePath = wavFiles[i];
 
     if (analysis.isValid) {

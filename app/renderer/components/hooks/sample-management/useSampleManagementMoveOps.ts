@@ -1,6 +1,14 @@
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
+import type { Sample, DbResult } from "@romper/shared/db/schema";
 
 import { useCallback } from "react";
+
+// Define move result types for better type safety
+type MoveResult = DbResult<{
+  affectedSamples: (Sample & { original_slot_number: number })[];
+  movedSample: Sample;
+  replacedSample?: Sample;
+}>;
 
 import { useSampleManagementUndoActions } from "./useSampleManagementUndoActions";
 
@@ -33,11 +41,11 @@ export function useSampleManagementMoveOps({
   const validateMoveAPI = useCallback(
     (isCrossKit: boolean) => {
       if (isCrossKit) {
-        if (!(window as unknown).electronAPI?.moveSampleBetweenKits) {
+        if (!window.electronAPI?.moveSampleBetweenKits) {
           onMessage?.("Cross-kit sample move not available", "error");
           return false;
         }
-      } else if (!(window as unknown).electronAPI?.moveSampleInKit) {
+      } else if (!window.electronAPI?.moveSampleInKit) {
         onMessage?.("Sample move not available", "error");
         return false;
       }
@@ -50,15 +58,13 @@ export function useSampleManagementMoveOps({
     async (fromVoice: number, toVoice: number) => {
       if (skipUndoRecording || !onAddUndoAction) return [];
 
-      const samplesResult = await (
-        window as unknown
-      ).electronAPI?.getAllSamplesForKit?.(kitName);
+      const samplesResult = await window.electronAPI?.getAllSamplesForKit?.(kitName);
       if (!samplesResult?.success || !samplesResult.data) return [];
 
       const affectedVoices = new Set([fromVoice, toVoice]);
       return samplesResult.data
-        .filter((s: unknown) => affectedVoices.has(s.voice_number))
-        .map((s: unknown) => ({
+        .filter((s: Sample) => affectedVoices.has(s.voice_number))
+        .map((s: Sample) => ({
           sample: {
             filename: s.filename,
             is_stereo: s.is_stereo,
@@ -107,18 +113,10 @@ export function useSampleManagementMoveOps({
         let result;
 
         if (isCrossKit) {
-          result = await (window as unknown).electronAPI.moveSampleBetweenKits({
-            fromKit: kitName,
-            fromSlot,
-            fromVoice,
-            mode: "insert",
-            toKit: targetKit,
-            toSlot,
-            toVoice,
-          });
+          result = await window.electronAPI.moveSampleBetweenKits?.(kitName, fromVoice, fromSlot, targetKit, toVoice, toSlot, "insert");
         } else {
           const stateSnapshot = await captureStateSnapshot(fromVoice, toVoice);
-          result = await (window as unknown).electronAPI.moveSampleInKit(
+          result = await window.electronAPI.moveSampleInKit?.(
             kitName,
             fromVoice,
             fromSlot,
@@ -127,7 +125,7 @@ export function useSampleManagementMoveOps({
           );
 
           if (
-            result.success &&
+            result?.success &&
             !skipUndoRecording &&
             onAddUndoAction &&
             result.data
@@ -135,7 +133,7 @@ export function useSampleManagementMoveOps({
             const moveAction = undoActions.createSameKitMoveAction({
               fromSlot,
               fromVoice,
-              result,
+              result: result as MoveResult,
               stateSnapshot,
               toSlot,
               toVoice,
@@ -146,7 +144,7 @@ export function useSampleManagementMoveOps({
 
         if (
           isCrossKit &&
-          result.success &&
+          result?.success &&
           !skipUndoRecording &&
           onAddUndoAction &&
           result.data
@@ -154,7 +152,7 @@ export function useSampleManagementMoveOps({
           const crossKitMoveAction = undoActions.createCrossKitMoveAction({
             fromSlot,
             fromVoice,
-            result,
+            result: result as MoveResult,
             targetKit,
             toSlot,
             toVoice,
@@ -162,7 +160,7 @@ export function useSampleManagementMoveOps({
           onAddUndoAction(crossKitMoveAction);
         }
 
-        if (result.success) {
+        if (result?.success) {
           await handleMoveSuccess(
             result,
             isCrossKit,
@@ -173,7 +171,7 @@ export function useSampleManagementMoveOps({
             toSlot,
           );
         } else {
-          onMessage?.(result.error || "Failed to move sample", "error");
+          onMessage?.(result?.error || "Failed to move sample", "error");
         }
       } catch (error) {
         onMessage?.(

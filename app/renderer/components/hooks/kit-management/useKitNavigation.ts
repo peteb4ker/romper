@@ -149,7 +149,7 @@ export function useKitNavigation({
       setSelectedKit(null);
       setSelectedKitSamples(null);
 
-      if (scrollToKitName) {
+      if (scrollToKitName && typeof scrollToKitName === 'string') {
         scrollToKitElement(scrollToKitName);
       }
     },

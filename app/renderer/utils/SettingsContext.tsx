@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useReducer,
 } from "react";
+import { config } from "../config";
 
 interface Settings {
   confirmDestructiveActions: boolean;
@@ -192,8 +193,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const loadedSettings = await window.electronAPI.readSettings();
 
-      // Import config to check for environment override
-      const { config } = await import("../config");
+      // Use config to check for environment override
 
       const settings: Settings = {
         confirmDestructiveActions:

@@ -1,8 +1,11 @@
 // Memory-only undo/redo hook for kit editing
 // Maintains undo/redo stacks in React state for immediate UI updates
 
+import type { AnyUndoAction } from "@romper/shared/undoTypes";
 import { getActionDescription } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
+
+import type { OperationResult } from "../sample-management/types";
 
 import { useRedoActionHandlers } from "./useRedoActionHandlers";
 import { useUndoActionHandlers } from "./useUndoActionHandlers";
@@ -17,10 +20,10 @@ export function useUndoRedo(kitName: string) {
   const redoHandlers = useRedoActionHandlers({ kitName });
 
   // Handle undo result and state updates
-  const handleUndoResult = (result: unknown, actionToUndo: unknown) => {
+  const handleUndoResult = (result: OperationResult, actionToUndo: AnyUndoAction) => {
     console.log("[UNDO] Final result:", result);
 
-    if (result?.success) {
+    if (result.success) {
       console.log("[UNDO] Undo operation successful, updating state");
       state.handleUndoSuccess(actionToUndo);
       console.log("[UNDO] Emitting refresh event");
@@ -28,19 +31,19 @@ export function useUndoRedo(kitName: string) {
     } else {
       console.log(
         "[UNDO] Undo operation failed:",
-        result?.error || "No error message",
+        result.error || "No error message",
       );
-      state.setError(result?.error || "Failed to undo action");
+      state.setError(result.error || "Failed to undo action");
     }
   };
 
   // Handle redo result and state updates
-  const handleRedoResult = (result: unknown, actionToRedo: unknown) => {
-    if (result?.success) {
+  const handleRedoResult = (result: OperationResult, actionToRedo: AnyUndoAction) => {
+    if (result.success) {
       state.handleRedoSuccess(actionToRedo);
       state.emitRefreshEvent();
     } else {
-      state.setError(result?.error || "Failed to redo action");
+      state.setError(result.error || "Failed to redo action");
     }
   };
 
@@ -68,11 +71,12 @@ export function useUndoRedo(kitName: string) {
       );
       console.log(
         "[UNDO] ElectronAPI available:",
-        !!(window as unknown).electronAPI,
+        !!window.electronAPI,
       );
 
       const result = await undoHandlers.executeUndoAction(actionToUndo);
-      handleUndoResult(result, actionToUndo);
+      const operationResult: OperationResult = result || { success: false, error: "No result returned" };
+      handleUndoResult(operationResult, actionToUndo);
     } catch (error) {
       console.log("[UNDO] Exception during undo:", error);
       state.setError(
@@ -99,7 +103,8 @@ export function useUndoRedo(kitName: string) {
 
     try {
       const result = await redoHandlers.executeRedoAction(actionToRedo);
-      handleRedoResult(result, actionToRedo);
+      const operationResult: OperationResult = result || { success: false, error: "No result returned" };
+      handleRedoResult(operationResult, actionToRedo);
     } catch (error) {
       handleRedoError(error);
     } finally {

@@ -27,13 +27,11 @@ export function useSampleManagementUndoActions({
     async (voice: number, slotNumber: number) => {
       if (skipUndoRecording) return null;
 
-      const samplesResult = await (
-        window as unknown
-      ).electronAPI?.getAllSamplesForKit?.(kitName);
+      const samplesResult = await window.electronAPI?.getAllSamplesForKit?.(kitName);
       if (samplesResult?.success && samplesResult.data) {
         return (
           samplesResult.data.find(
-            (s: unknown) =>
+            (s: any) =>
               s.voice_number === voice && s.slot_number === slotNumber,
           ) || null
         );
@@ -49,13 +47,11 @@ export function useSampleManagementUndoActions({
       if (skipUndoRecording) return null;
 
       try {
-        const samplesResult = await (
-          window as unknown
-        ).electronAPI?.getAllSamplesForKit?.(kitName);
+        const samplesResult = await window.electronAPI?.getAllSamplesForKit?.(kitName);
         if (samplesResult?.success && samplesResult.data) {
           return (
             samplesResult.data.find(
-              (sample: unknown) =>
+              (sample: any) =>
                 sample.voice_number === voice &&
                 sample.slot_number === slotNumber,
             ) || null
@@ -133,11 +129,11 @@ export function useSampleManagementUndoActions({
     (
       voice: number,
       slotNumber: number,
-      sampleToDelete: unknown,
-      result: unknown,
+      sampleToDelete: any,
+      result: any,
     ): ReindexSamplesAction => ({
       data: {
-        affectedSamples: result.data.affectedSamples.map((sample: unknown) => ({
+        affectedSamples: result.data.affectedSamples.map((sample: any) => ({
           newSlot: sample.slot_number - 1, // Original position before reindexing
           oldSlot: sample.slot_number, // New position after reindexing
           sample: {
@@ -167,14 +163,14 @@ export function useSampleManagementUndoActions({
     (params: {
       fromSlot: number;
       fromVoice: number;
-      result: unknown;
-      stateSnapshot: unknown[];
+      result: any;
+      stateSnapshot: any[];
       toSlot: number;
       toVoice: number;
     }): MoveSampleAction => ({
       data: {
         affectedSamples: params.result.data.affectedSamples.map(
-          (sample: unknown) => ({
+          (sample: any) => ({
             newSlot: sample.slot_number,
             oldSlot: sample.original_slot_number,
             sample: {
@@ -222,7 +218,7 @@ export function useSampleManagementUndoActions({
     }): MoveSampleBetweenKitsAction => ({
       data: {
         affectedSamples: params.result.data.affectedSamples.map(
-          (sample: unknown) => ({
+          (sample: any) => ({
             newSlot: sample.slot_number,
             oldSlot: sample.original_slot_number,
             sample: {

@@ -7,9 +7,17 @@ import SampleWaveform from "../../SampleWaveform";
 // Maximum number of sample slots per voice (Squarp Rample limit)
 export const MAX_SLOTS_PER_VOICE = 12;
 
+interface DragHandlers {
+  onDragEnd?: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;  
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+}
+
 export interface UseVoicePanelSlotsOptions {
   dragAndDropHook: {
-    getSampleDragHandlers: (slotNumber: number, sampleName: string) => unknown;
+    getSampleDragHandlers: (slotNumber: number, sampleName: string) => DragHandlers;
     handleDragLeave: () => void;
     handleDragOver: (e: React.DragEvent, slotNumber: number) => void;
     handleDrop: (e: React.DragEvent, slotNumber: number) => void;

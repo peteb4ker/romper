@@ -1,6 +1,8 @@
 import type {
+  Kit,
   KitValidationError,
   LocalStoreValidationDetailedResult,
+  Sample,
 } from "@romper/shared/db/schema.js";
 
 import fs from "fs";
@@ -207,7 +209,7 @@ export function validateLocalStoreBasic(
  */
 function findExtraFiles(
   kitFolderPath: string,
-  samplesData: unknown[],
+  samplesData: Sample[],
 ): { extraFiles: string[] } {
   const extraFiles: string[] = [];
 
@@ -275,7 +277,7 @@ function performBasicValidation(localStorePath: string) {
  */
 function validateKitSamples(
   dbDir: string,
-  kit: unknown,
+  kit: Kit,
   localStorePath: string,
 ): { extraFiles: string[]; isValid: boolean; missingFiles: string[] } {
   const missingFiles: string[] = [];

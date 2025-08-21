@@ -123,13 +123,14 @@ export function saveSelectedKitState(kitName: string): void {
  * Setup HMR handlers for route preservation
  */
 export function setupRouteHmrHandlers(): void {
-  if (!(import.meta as ImportMeta).hot) return;
+  const hot = (import.meta as ImportMeta).hot;
+  if (!hot) return;
 
-  (import.meta as ImportMeta).hot.dispose(() => {
+  hot.dispose(() => {
     saveRouteState();
   });
 
-  (import.meta as ImportMeta).hot.accept(() => {
+  hot.accept(() => {
     restoreRouteState();
   });
 }

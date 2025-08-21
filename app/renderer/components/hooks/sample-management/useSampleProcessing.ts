@@ -1,7 +1,14 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
+import type { Sample } from "@romper/shared/db/schema.js";
 
 import { ErrorPatterns } from "../../../utils/errorHandling";
+
+interface FormatValidation {
+  metadata?: {
+    channels?: number;
+  };
+}
 import { useSettings } from "../../../utils/SettingsContext";
 import { useStereoHandling } from "./useStereoHandling";
 
@@ -55,12 +62,12 @@ export function useSampleProcessing({
   }, [kitName]);
 
   const isDuplicateSample = useCallback(
-    async (allSamples: unknown[], filePath: string): Promise<boolean> => {
+    async (allSamples: Sample[], filePath: string): Promise<boolean> => {
       const voiceSamples = allSamples.filter(
-        (s: unknown) => s.voice_number === voice,
+        (s: Sample) => s.voice_number === voice,
       );
       const isDuplicate = voiceSamples.some(
-        (s: unknown) => s.source_path === filePath,
+        (s: Sample) => s.source_path === filePath,
       );
 
       if (isDuplicate) {
@@ -132,8 +139,8 @@ export function useSampleProcessing({
   const processAssignment = useCallback(
     async (
       filePath: string,
-      formatValidation: unknown,
-      allSamples: unknown[],
+      formatValidation: FormatValidation,
+      allSamples: Sample[],
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
       droppedSlotNumber: number,
     ): Promise<boolean> => {

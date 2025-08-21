@@ -135,7 +135,7 @@ export class SyncPlannerService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
-    results: unknown,
+    results: SyncChangeSummary,
   ): void {
     results.filesToCopy.push({
       destinationPath,
@@ -150,11 +150,11 @@ export class SyncPlannerService {
    * Categorizes file operation as copy or convert
    */
   private categorizeFileOperation(
-    sample: unknown,
+    sample: Sample,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    results: unknown,
+    results: SyncChangeSummary,
   ): void {
     const metadataResult = getAudioMetadata(sourcePath);
     const formatValidationResult = validateSampleFormat(sourcePath);
@@ -177,7 +177,7 @@ export class SyncPlannerService {
         filename,
         sourcePath,
         destinationPath,
-        sample.kitName,
+        sample.kit_name,
         results,
       );
     }
@@ -243,16 +243,9 @@ export class SyncPlannerService {
    * Process a single sample for sync planning
    */
   private processSampleForSync(
-    sample: unknown,
+    sample: Sample,
     localStorePath: string,
-    results: {
-      filesToConvert: SyncFileOperation[];
-      filesToCopy: SyncFileOperation[];
-      hasFormatWarnings: boolean;
-      totalSize: number;
-      validationErrors: SyncValidationError[];
-      warnings: string[];
-    },
+    results: SyncChangeSummary,
   ): void {
     if (!sample.source_path) {
       return; // Skip samples without source path
@@ -292,7 +285,7 @@ export class SyncPlannerService {
   private validateSourceFile(
     filename: string,
     sourcePath: string,
-    results: unknown,
+    results: SyncChangeSummary,
   ): { fileSize: number; isValid: boolean } {
     if (!fs.existsSync(sourcePath)) {
       results.validationErrors.push({

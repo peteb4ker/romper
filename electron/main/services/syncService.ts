@@ -13,6 +13,15 @@ export interface SyncChangeSummary {
   kitCount: number;
 }
 
+interface SyncResults {
+  filesToConvert: SyncFileOperation[];
+  filesToCopy: SyncFileOperation[];
+  hasFormatWarnings: boolean;
+  totalSize: number;
+  validationErrors: SyncValidationError[];
+  warnings: string[];
+}
+
 export interface SyncFileOperation {
   destinationPath: string;
   filename: string;
@@ -254,7 +263,7 @@ class SyncService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
-    results: unknown,
+    results: SyncResults,
   ): void {
     results.filesToCopy.push({
       destinationPath,
@@ -395,11 +404,11 @@ class SyncService {
    * Categorizes sync file operation as copy or convert
    */
   private categorizeSyncFileOperation(
-    sample: unknown,
+    sample: Sample,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    results: unknown,
+    results: SyncResults,
   ): void {
     const metadataResult = getAudioMetadata(sourcePath);
     const formatValidationResult = validateSampleFormat(sourcePath);
@@ -422,7 +431,7 @@ class SyncService {
         filename,
         sourcePath,
         destinationPath,
-        sample.kitName,
+        sample.kit_name,
         results,
       );
     }
@@ -731,7 +740,7 @@ class SyncService {
 
       try {
         const localStorePath = inMemorySettings.localStorePath;
-        if (localStorePath) {
+        if (localStorePath && typeof localStorePath === 'string') {
           const syncOutputDir = path.join(localStorePath, "sync_output");
           if (fs.existsSync(syncOutputDir)) {
             fs.rmSync(syncOutputDir, { force: true, recursive: true });
@@ -774,7 +783,7 @@ class SyncService {
     syncedFiles: number,
   ): Promise<void> {
     const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath || !syncedFiles) return;
+    if (!localStorePath || !syncedFiles || typeof localStorePath !== 'string') return;
 
     const dbDir = path.join(localStorePath, ".romperdb");
     const syncedKitNames = [...new Set(allFiles.map((file) => file.kitName))];
@@ -833,23 +842,16 @@ class SyncService {
    * Process a single sample for sync operations
    */
   private processSampleForSync(
-    sample: unknown,
+    sample: Sample,
     localStorePath: string,
-    results: {
-      filesToConvert: SyncFileOperation[];
-      filesToCopy: SyncFileOperation[];
-      hasFormatWarnings: boolean;
-      totalSize: number;
-      validationErrors: SyncValidationError[];
-      warnings: string[];
-    },
+    results: SyncResults,
     sdCardPath?: string,
   ): void {
     if (!sample.source_path) {
       return; // Skip samples without source path
     }
 
-    const { filename, kitName, source_path: sourcePath } = sample;
+    const { filename, kit_name: kitName, source_path: sourcePath } = sample;
 
     // Validate source file and handle errors
     const fileValidation = this.validateSyncSourceFile(
@@ -934,7 +936,7 @@ class SyncService {
   private validateSyncSourceFile(
     filename: string,
     sourcePath: string,
-    results: unknown,
+    results: SyncResults,
   ): { fileSize: number; isValid: boolean } {
     if (!fs.existsSync(sourcePath)) {
       results.validationErrors.push({

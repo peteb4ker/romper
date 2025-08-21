@@ -1,4 +1,4 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
 
 import React, { useState } from "react";
 import { FiLink } from "react-icons/fi";
@@ -96,7 +96,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         );
         if (samplesResult?.success && samplesResult.data) {
           const metadata: { [filename: string]: SampleData } = {};
-          samplesResult.data.forEach((sample: unknown) => {
+          samplesResult.data.forEach((sample: Sample) => {
             metadata[sample.filename] = {
               filename: sample.filename,
               source_path: sample.source_path,

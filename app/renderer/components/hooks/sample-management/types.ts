@@ -2,11 +2,13 @@
 
 import type { Sample } from "@romper/shared/db/schema.js";
 
+type SampleWithOriginalSlot = { original_slot_number: number } & Sample;
+
 export interface MoveOperationResult {
   success: boolean;
   data?: {
     movedSample: Sample;
-    affectedSamples: Sample[];
+    affectedSamples: SampleWithOriginalSlot[];
     replacedSample?: Sample;
   };
   error?: string;

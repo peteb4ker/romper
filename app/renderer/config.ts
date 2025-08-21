@@ -6,6 +6,10 @@ export interface RomperConfig {
   // Add more config options here as needed
 }
 
+interface WindowWithRomperEnv extends Window {
+  romperEnv?: Record<string, string>;
+}
+
 function getConfigValue<T = string>(
   envKey: string,
   fallback?: T,
@@ -13,9 +17,9 @@ function getConfigValue<T = string>(
   // Check window.romperEnv (exposed from preload script)
   if (
     typeof window !== "undefined" &&
-    (window as unknown).romperEnv?.[envKey]
+    (window as WindowWithRomperEnv).romperEnv?.[envKey]
   ) {
-    return (window as unknown).romperEnv[envKey] as T;
+    return (window as WindowWithRomperEnv).romperEnv[envKey] as T;
   }
 
   // Fallback to process.env if available (for development)

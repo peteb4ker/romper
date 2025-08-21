@@ -190,11 +190,11 @@ export function useSampleManagementUndoActions({
           is_stereo: params.result.data.movedSample.is_stereo,
           source_path: params.result.data.movedSample.source_path,
         },
-        replacedSample: params.result.data.replacedSample
+        replacedSample: params.result.data?.replacedSample
           ? {
-              filename: params.result.data.replacedSample.filename,
-              is_stereo: params.result.data.replacedSample.is_stereo,
-              source_path: params.result.data.replacedSample.source_path,
+              filename: params.result.data?.replacedSample?.filename || "",
+              is_stereo: params.result.data?.replacedSample?.is_stereo || false,
+              source_path: params.result.data?.replacedSample?.source_path || "",
             }
           : undefined,
         stateSnapshot: params.stateSnapshot,
@@ -220,7 +220,7 @@ export function useSampleManagementUndoActions({
     }): MoveSampleBetweenKitsAction => ({
       data: {
         affectedSamples: params.result.data?.affectedSamples?.map(
-          (sample: Sample) => ({
+          (sample) => ({
             newSlot: sample.slot_number,
             oldSlot: sample.original_slot_number,
             sample: {
@@ -230,7 +230,7 @@ export function useSampleManagementUndoActions({
             },
             voice: sample.voice_number,
           }),
-        ),
+        ) || [],
         fromKit: kitName,
         fromSlot: params.fromSlot,
         fromVoice: params.fromVoice,
@@ -240,11 +240,11 @@ export function useSampleManagementUndoActions({
           is_stereo: params.result.data?.movedSample?.is_stereo || false,
           source_path: params.result.data?.movedSample?.source_path || "",
         },
-        replacedSample: params.result.data.replacedSample
+        replacedSample: params.result.data?.replacedSample
           ? {
-              filename: params.result.data.replacedSample.filename,
-              is_stereo: params.result.data.replacedSample.is_stereo,
-              source_path: params.result.data.replacedSample.source_path,
+              filename: params.result.data?.replacedSample?.filename || "",
+              is_stereo: params.result.data?.replacedSample?.is_stereo || false,
+              source_path: params.result.data?.replacedSample?.source_path || "",
             }
           : undefined,
         toKit: params.targetKit,

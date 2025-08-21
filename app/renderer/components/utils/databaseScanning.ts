@@ -198,10 +198,11 @@ export async function scanVoiceNamesToDatabase(
     const scanResult = await executeVoiceInferenceScan(samples);
 
     if (scanResult.success && scanResult.results.voiceInference) {
+      const voiceInferenceResult = scanResult.results.voiceInference as VoiceInferenceOutput;
       await processVoiceInferenceResults(
         dbDir,
         kitName,
-        scanResult.results.voiceInference.voiceNames,
+        voiceInferenceResult.voiceNames,
         result,
       );
       result.scannedKits = 1;
@@ -247,7 +248,8 @@ export async function scanWavFilesToDatabase(
     const scanResult = await executeWAVAnalysisScan(wavFiles, fileReader);
 
     if (scanResult.success && scanResult.results.wavAnalysis) {
-      result.scannedWavFiles = scanResult.results.wavAnalysis.length;
+      const wavAnalysisResult = scanResult.results.wavAnalysis as WAVAnalysisOutput[];
+      result.scannedWavFiles = wavAnalysisResult.length;
 
       // Note: The WAV metadata would be stored when updating sample records
       // This would require additional database operations to update existing samples
@@ -326,7 +328,7 @@ async function processVoiceInferenceResults(
 
 // Helper function to process WAV analysis results
 function processWAVAnalysisResults(
-  wavAnalyses: unknown[],
+  wavAnalyses: WAVAnalysisOutput[],
   wavFiles: string[],
   result: DatabaseScanResult,
 ): void {

@@ -8,7 +8,7 @@ import {
   getFirstKitInBank,
 } from "../../utils/bankOperations";
 
-interface KitListComponent {
+export interface KitListComponent {
   scrollAndFocusKitByIndex: (index: number) => void;
 }
 

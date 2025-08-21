@@ -128,10 +128,13 @@ export function registerDbIpcHandlers(
     "validate-local-store",
     async (_event, localStorePath?: string) => {
       // Check environment override first, then provided path, then settings
+      const settingsPath = typeof inMemorySettings.localStorePath === 'string' 
+        ? inMemorySettings.localStorePath 
+        : undefined;
       const pathToValidate =
         process.env.ROMPER_LOCAL_PATH ||
         localStorePath ||
-        inMemorySettings.localStorePath;
+        settingsPath;
       if (!pathToValidate) {
         throw new Error("No local store path provided or configured");
       }
@@ -143,10 +146,13 @@ export function registerDbIpcHandlers(
     "validate-local-store-basic",
     async (_event, localStorePath?: string) => {
       // Check environment override first, then provided path, then settings
+      const settingsPath = typeof inMemorySettings.localStorePath === 'string' 
+        ? inMemorySettings.localStorePath 
+        : undefined;
       const pathToValidate =
         process.env.ROMPER_LOCAL_PATH ||
         localStorePath ||
-        inMemorySettings.localStorePath;
+        settingsPath;
       if (!pathToValidate) {
         throw new Error("No local store path provided or configured");
       }

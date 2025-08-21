@@ -5,8 +5,8 @@ import type { InMemorySettings } from "../settings.js";
 describe("InMemorySettings Interface", () => {
   test("should accept valid settings configuration", () => {
     const validSettings: InMemorySettings = {
-      localStorePath: "/path/to/store",
       defaultToMonoSamples: true,
+      localStorePath: "/path/to/store",
       sdCardPath: "/path/to/sdcard",
     };
 
@@ -17,8 +17,8 @@ describe("InMemorySettings Interface", () => {
 
   test("should accept null localStorePath", () => {
     const settingsWithNullPath: InMemorySettings = {
-      localStorePath: null,
       defaultToMonoSamples: false,
+      localStorePath: null,
     };
 
     expect(settingsWithNullPath.localStorePath).toBe(null);
@@ -37,8 +37,8 @@ describe("InMemorySettings Interface", () => {
 
   test("should accept all optional fields as undefined", () => {
     const settingsWithUndefined: InMemorySettings = {
-      localStorePath: "/test/path",
       defaultToMonoSamples: undefined,
+      localStorePath: "/test/path",
       sdCardPath: undefined,
     };
 
@@ -49,38 +49,38 @@ describe("InMemorySettings Interface", () => {
 
   test("should extend Record<string, unknown> for additional properties", () => {
     const extendedSettings: InMemorySettings = {
-      localStorePath: "/path",
-      customProperty: "custom value",
       anotherProperty: 123,
+      customProperty: "custom value",
+      localStorePath: "/path",
     };
 
     // Test Record<string, unknown> extension
     expect(extendedSettings.customProperty).toBe("custom value");
     expect(extendedSettings.anotherProperty).toBe(123);
-    
+
     // Test required property
     expect(extendedSettings.localStorePath).toBe("/path");
   });
 
   test("should work with type assertions in settings service patterns", () => {
     const unknownData: Record<string, unknown> = {
-      localStorePath: "/test/path",
       defaultToMonoSamples: true,
+      localStorePath: "/test/path",
       randomField: "should be preserved",
     };
 
     const typedSettings = unknownData as InMemorySettings;
-    
+
     expect(typedSettings.localStorePath).toBe("/test/path");
     expect(typedSettings.defaultToMonoSamples).toBe(true);
-    expect((typedSettings as any).randomField).toBe("should be preserved");
+    expect((typedSettings as unknown).randomField).toBe("should be preserved");
   });
 
   test("should handle boolean values correctly", () => {
     const booleanTests: InMemorySettings[] = [
-      { localStorePath: null, defaultToMonoSamples: true },
-      { localStorePath: null, defaultToMonoSamples: false },
-      { localStorePath: null, defaultToMonoSamples: undefined },
+      { defaultToMonoSamples: true, localStorePath: null },
+      { defaultToMonoSamples: false, localStorePath: null },
+      { defaultToMonoSamples: undefined, localStorePath: null },
     ];
 
     expect(booleanTests[0].defaultToMonoSamples).toBe(true);

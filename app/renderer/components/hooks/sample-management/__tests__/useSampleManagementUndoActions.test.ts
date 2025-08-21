@@ -1,8 +1,8 @@
+import type { Sample } from "@romper/shared/db/schema.js";
+
+import { createActionId } from "@romper/shared/undoTypes";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import type { Sample } from "@romper/shared/db/schema.js";
-import { createActionId } from "@romper/shared/undoTypes";
 
 import { useSampleManagementUndoActions } from "../useSampleManagementUndoActions";
 
@@ -20,13 +20,13 @@ describe("useSampleManagementUndoActions", () => {
   };
 
   const mockSample: Sample = {
-    id: 1,
-    kit_name: "TestKit",
-    voice_number: 1,
-    slot_number: 0,
     filename: "test.wav",
+    id: 1,
     is_stereo: false,
+    kit_name: "TestKit",
+    slot_number: 0,
     source_path: "/path/to/test.wav",
+    voice_number: 1,
     wav_bitrate: null,
     wav_sample_rate: null,
   };
@@ -37,8 +37,8 @@ describe("useSampleManagementUndoActions", () => {
     // Use centralized mocks - they should be accessible via window.electronAPI
     if (window.electronAPI?.getAllSamplesForKit) {
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        success: true,
         data: [mockSample],
+        success: true,
       });
     }
   });
@@ -57,18 +57,18 @@ describe("useSampleManagementUndoActions", () => {
       );
 
       const expectedMethods = [
-        'createAddSampleAction',
-        'createReindexSamplesAction', 
-        'createSameKitMoveAction',
-        'createCrossKitMoveAction',
-        'createReplaceSampleAction',
-        'getOldSampleForUndo',
-        'getSampleToDeleteForUndo',
+        "createAddSampleAction",
+        "createReindexSamplesAction",
+        "createSameKitMoveAction",
+        "createCrossKitMoveAction",
+        "createReplaceSampleAction",
+        "getOldSampleForUndo",
+        "getSampleToDeleteForUndo",
       ];
 
-      expectedMethods.forEach(method => {
+      expectedMethods.forEach((method) => {
         expect(result.current).toHaveProperty(method);
-        expect(typeof result.current[method]).toBe('function');
+        expect(typeof result.current[method]).toBe("function");
       });
     });
   });
@@ -76,7 +76,10 @@ describe("useSampleManagementUndoActions", () => {
   describe("getOldSampleForUndo", () => {
     it("should return null when skipUndoRecording is true", async () => {
       const { result } = renderHook(() =>
-        useSampleManagementUndoActions({ ...mockOptions, skipUndoRecording: true }),
+        useSampleManagementUndoActions({
+          ...mockOptions,
+          skipUndoRecording: true,
+        }),
       );
 
       const oldSample = await result.current.getOldSampleForUndo(1, 0);
@@ -91,7 +94,9 @@ describe("useSampleManagementUndoActions", () => {
 
       const oldSample = await result.current.getOldSampleForUndo(1, 0);
       expect(oldSample).toEqual(mockSample);
-      expect(window.electronAPI?.getAllSamplesForKit).toHaveBeenCalledWith("TestKit");
+      expect(window.electronAPI?.getAllSamplesForKit).toHaveBeenCalledWith(
+        "TestKit",
+      );
     });
 
     it("should return null when sample not found", async () => {
@@ -106,8 +111,8 @@ describe("useSampleManagementUndoActions", () => {
     it("should return null when API call fails", async () => {
       if (window.electronAPI?.getAllSamplesForKit) {
         vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-          success: false,
           data: null,
+          success: false,
         });
       }
 
@@ -123,10 +128,16 @@ describe("useSampleManagementUndoActions", () => {
   describe("getSampleToDeleteForUndo", () => {
     it("should return null when skipUndoRecording is true", async () => {
       const { result } = renderHook(() =>
-        useSampleManagementUndoActions({ ...mockOptions, skipUndoRecording: true }),
+        useSampleManagementUndoActions({
+          ...mockOptions,
+          skipUndoRecording: true,
+        }),
       );
 
-      const sampleToDelete = await result.current.getSampleToDeleteForUndo(1, 0);
+      const sampleToDelete = await result.current.getSampleToDeleteForUndo(
+        1,
+        0,
+      );
       expect(sampleToDelete).toBe(null);
       expect(window.electronAPI?.getAllSamplesForKit).not.toHaveBeenCalled();
     });
@@ -136,26 +147,36 @@ describe("useSampleManagementUndoActions", () => {
         useSampleManagementUndoActions(mockOptions),
       );
 
-      const sampleToDelete = await result.current.getSampleToDeleteForUndo(1, 0);
+      const sampleToDelete = await result.current.getSampleToDeleteForUndo(
+        1,
+        0,
+      );
       expect(sampleToDelete).toEqual(mockSample);
-      expect(window.electronAPI?.getAllSamplesForKit).toHaveBeenCalledWith("TestKit");
+      expect(window.electronAPI?.getAllSamplesForKit).toHaveBeenCalledWith(
+        "TestKit",
+      );
     });
 
     it("should handle API errors gracefully", async () => {
       if (window.electronAPI?.getAllSamplesForKit) {
-        vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(new Error("API Error"));
+        vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(
+          new Error("API Error"),
+        );
       }
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation();
 
       const { result } = renderHook(() =>
         useSampleManagementUndoActions(mockOptions),
       );
 
-      const sampleToDelete = await result.current.getSampleToDeleteForUndo(1, 0);
+      const sampleToDelete = await result.current.getSampleToDeleteForUndo(
+        1,
+        0,
+      );
       expect(sampleToDelete).toBe(null);
       expect(consoleSpy).toHaveBeenCalledWith(
         "[SampleManagement] Failed to get sample data for undo recording:",
-        expect.any(Error)
+        expect.any(Error),
       );
 
       consoleSpy.mockRestore();
@@ -168,22 +189,26 @@ describe("useSampleManagementUndoActions", () => {
         useSampleManagementUndoActions(mockOptions),
       );
 
-      const action = result.current.createAddSampleAction(1, 0, "/path/to/new.wav");
+      const action = result.current.createAddSampleAction(
+        1,
+        0,
+        "/path/to/new.wav",
+      );
 
       expect(action).toEqual({
-        type: "ADD_SAMPLE",
-        id: "test-action-id",
-        timestamp: expect.any(Date),
-        description: "Add sample to voice 1, slot 1",
         data: {
-          voice: 1,
-          slot: 0,
           addedSample: {
             filename: "new.wav",
             is_stereo: false,
             source_path: "/path/to/new.wav",
           },
+          slot: 0,
+          voice: 1,
         },
+        description: "Add sample to voice 1, slot 1",
+        id: "test-action-id",
+        timestamp: expect.any(Date),
+        type: "ADD_SAMPLE",
       });
     });
 
@@ -192,7 +217,12 @@ describe("useSampleManagementUndoActions", () => {
         useSampleManagementUndoActions(mockOptions),
       );
 
-      const action = result.current.createAddSampleAction(1, 0, "/path/to/stereo.wav", { forceStereo: true });
+      const action = result.current.createAddSampleAction(
+        1,
+        0,
+        "/path/to/stereo.wav",
+        { forceStereo: true },
+      );
 
       expect(action.data.addedSample.is_stereo).toBe(true);
     });
@@ -204,27 +234,32 @@ describe("useSampleManagementUndoActions", () => {
         useSampleManagementUndoActions(mockOptions),
       );
 
-      const action = result.current.createReplaceSampleAction(1, 0, mockSample, "/path/to/new.wav");
+      const action = result.current.createReplaceSampleAction(
+        1,
+        0,
+        mockSample,
+        "/path/to/new.wav",
+      );
 
       expect(action).toEqual({
-        type: "REPLACE_SAMPLE",
-        id: "test-action-id",
-        timestamp: expect.any(Date),
-        description: "Replace sample in voice 1, slot 1",
         data: {
-          voice: 1,
-          slot: 0,
-          oldSample: {
-            filename: "test.wav",
-            is_stereo: false,
-            source_path: "/path/to/test.wav",
-          },
           newSample: {
             filename: "new.wav",
             is_stereo: false,
             source_path: "/path/to/new.wav",
           },
+          oldSample: {
+            filename: "test.wav",
+            is_stereo: false,
+            source_path: "/path/to/test.wav",
+          },
+          slot: 0,
+          voice: 1,
         },
+        description: "Replace sample in voice 1, slot 1",
+        id: "test-action-id",
+        timestamp: expect.any(Date),
+        type: "REPLACE_SAMPLE",
       });
     });
   });
@@ -236,38 +271,45 @@ describe("useSampleManagementUndoActions", () => {
       );
 
       const reindexResult = {
-        success: true,
         data: {
           affectedSamples: [mockSample],
         },
+        success: true,
       };
 
-      const action = result.current.createReindexSamplesAction(1, 0, mockSample, reindexResult);
+      const action = result.current.createReindexSamplesAction(
+        1,
+        0,
+        mockSample,
+        reindexResult,
+      );
 
       expect(action).toEqual({
-        type: "REINDEX_SAMPLES",
-        id: "test-action-id",
-        timestamp: expect.any(Date),
-        description: "Delete sample from voice 1, slot 1 (with reindexing)",
         data: {
-          voice: 1,
-          deletedSlot: 0,
+          affectedSamples: [
+            {
+              newSlot: -1,
+              oldSlot: 0,
+              sample: {
+                filename: "test.wav",
+                is_stereo: false,
+                source_path: "/path/to/test.wav",
+              },
+              voice: 1,
+            },
+          ],
           deletedSample: {
             filename: "test.wav",
             is_stereo: false,
             source_path: "/path/to/test.wav",
           },
-          affectedSamples: [{
-            voice: 1,
-            oldSlot: 0,
-            newSlot: -1,
-            sample: {
-              filename: "test.wav",
-              is_stereo: false,
-              source_path: "/path/to/test.wav",
-            },
-          }],
+          deletedSlot: 0,
+          voice: 1,
         },
+        description: "Delete sample from voice 1, slot 1 (with reindexing)",
+        id: "test-action-id",
+        timestamp: expect.any(Date),
+        type: "REINDEX_SAMPLES",
       });
     });
   });
@@ -279,43 +321,51 @@ describe("useSampleManagementUndoActions", () => {
       );
 
       const moveResult = {
-        success: true,
         data: {
-          movedSample: mockSample,
           affectedSamples: [mockSample],
+          movedSample: mockSample,
           replacedSample: undefined,
         },
+        success: true,
       };
 
-      const stateSnapshot = [{
-        voice: 1,
-        slot: 0,
-        sample: {
-          filename: "test.wav",
-          is_stereo: false,
-          source_path: "/path/to/test.wav",
+      const stateSnapshot = [
+        {
+          sample: {
+            filename: "test.wav",
+            is_stereo: false,
+            source_path: "/path/to/test.wav",
+          },
+          slot: 0,
+          voice: 1,
         },
-      }];
+      ];
 
       const action = result.current.createSameKitMoveAction({
-        fromVoice: 1,
         fromSlot: 0,
-        toVoice: 2,
-        toSlot: 1,
+        fromVoice: 1,
         result: moveResult,
         stateSnapshot,
+        toSlot: 1,
+        toVoice: 2,
       });
 
       expect(action).toEqual({
-        type: "MOVE_SAMPLE",
-        id: "test-action-id",
-        timestamp: expect.any(Date),
-        description: "Move sample from voice 1, slot 1 to voice 2, slot 2",
         data: {
-          fromVoice: 1,
+          affectedSamples: [
+            {
+              newSlot: 0,
+              oldSlot: 0,
+              sample: {
+                filename: "test.wav",
+                is_stereo: false,
+                source_path: "/path/to/test.wav",
+              },
+              voice: 1,
+            },
+          ],
           fromSlot: 0,
-          toVoice: 2,
-          toSlot: 1,
+          fromVoice: 1,
           movedSample: {
             filename: "test.wav",
             is_stereo: false,
@@ -323,17 +373,13 @@ describe("useSampleManagementUndoActions", () => {
           },
           replacedSample: undefined,
           stateSnapshot,
-          affectedSamples: [{
-            voice: 1,
-            oldSlot: 0,
-            newSlot: 0,
-            sample: {
-              filename: "test.wav",
-              is_stereo: false,
-              source_path: "/path/to/test.wav",
-            },
-          }],
+          toSlot: 1,
+          toVoice: 2,
         },
+        description: "Move sample from voice 1, slot 1 to voice 2, slot 2",
+        id: "test-action-id",
+        timestamp: expect.any(Date),
+        type: "MOVE_SAMPLE",
       });
     });
   });
@@ -345,35 +391,40 @@ describe("useSampleManagementUndoActions", () => {
       );
 
       const moveResult = {
-        success: true,
         data: {
-          movedSample: { ...mockSample, original_slot_number: 0 },
           affectedSamples: [{ ...mockSample, original_slot_number: 0 }],
+          movedSample: { ...mockSample, original_slot_number: 0 },
           replacedSample: undefined,
         },
+        success: true,
       };
 
       const action = result.current.createCrossKitMoveAction({
-        fromVoice: 1,
         fromSlot: 0,
-        toVoice: 2,
-        toSlot: 1,
-        targetKit: "TargetKit",
+        fromVoice: 1,
         result: moveResult,
+        targetKit: "TargetKit",
+        toSlot: 1,
+        toVoice: 2,
       });
 
       expect(action).toEqual({
-        type: "MOVE_SAMPLE_BETWEEN_KITS",
-        id: "test-action-id",
-        timestamp: expect.any(Date),
-        description: "Move sample from TestKit voice 1, slot 1 to TargetKit voice 2, slot 2",
         data: {
+          affectedSamples: [
+            {
+              newSlot: 0,
+              oldSlot: 0,
+              sample: {
+                filename: "test.wav",
+                is_stereo: false,
+                source_path: "/path/to/test.wav",
+              },
+              voice: 1,
+            },
+          ],
           fromKit: "TestKit",
-          fromVoice: 1,
           fromSlot: 0,
-          toKit: "TargetKit",
-          toVoice: 2,
-          toSlot: 1,
+          fromVoice: 1,
           mode: "insert",
           movedSample: {
             filename: "test.wav",
@@ -381,17 +432,15 @@ describe("useSampleManagementUndoActions", () => {
             source_path: "/path/to/test.wav",
           },
           replacedSample: undefined,
-          affectedSamples: [{
-            voice: 1,
-            oldSlot: 0,
-            newSlot: 0,
-            sample: {
-              filename: "test.wav",
-              is_stereo: false,
-              source_path: "/path/to/test.wav",
-            },
-          }],
+          toKit: "TargetKit",
+          toSlot: 1,
+          toVoice: 2,
         },
+        description:
+          "Move sample from TestKit voice 1, slot 1 to TargetKit voice 2, slot 2",
+        id: "test-action-id",
+        timestamp: expect.any(Date),
+        type: "MOVE_SAMPLE_BETWEEN_KITS",
       });
     });
   });

@@ -191,7 +191,6 @@ describe("getKitsMetadata - Unit Tests", () => {
 
     // Verify the query uses explicit column selection to avoid circular references
     expect(selectMock).toHaveBeenCalledWith({
-      name: expect.any(Object),
       alias: expect.any(Object),
       bank_letter: expect.any(Object),
       bpm: expect.any(Object),
@@ -199,6 +198,7 @@ describe("getKitsMetadata - Unit Tests", () => {
       is_favorite: expect.any(Object),
       locked: expect.any(Object),
       modified_since_sync: expect.any(Object),
+      name: expect.any(Object),
       step_pattern: expect.any(Object),
     });
     expect(findManyMock).toHaveBeenCalledWith();

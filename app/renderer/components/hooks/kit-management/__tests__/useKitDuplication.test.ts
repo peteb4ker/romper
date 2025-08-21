@@ -24,7 +24,9 @@ describe("useKitDuplication", () => {
     vi.clearAllMocks();
     // Use centralized mocks - they should be accessible via window.electronAPI
     if (window.electronAPI?.rescanKit) {
-      vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({ success: true });
+      vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
+        success: true,
+      });
     }
   });
 
@@ -148,9 +150,11 @@ describe("useKitDuplication", () => {
     it("should handle rescanKit failure gracefully", async () => {
       mockDuplicateKit.mockResolvedValueOnce(undefined);
       if (window.electronAPI?.rescanKit) {
-        vi.mocked(window.electronAPI.rescanKit).mockRejectedValue(new Error("Rescan failed"));
+        vi.mocked(window.electronAPI.rescanKit).mockRejectedValue(
+          new Error("Rescan failed"),
+        );
       }
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation();
 
       const { result } = renderHook(() => useKitDuplication(defaultProps));
 
@@ -168,7 +172,7 @@ describe("useKitDuplication", () => {
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to scan newly duplicated kit:",
         "B0",
-        expect.any(Error)
+        expect.any(Error),
       );
       // Duplication should still succeed even if rescan fails
       expect(result.current.duplicateKitError).toBeNull();
@@ -180,8 +184,8 @@ describe("useKitDuplication", () => {
     it("should work when electronAPI rescanKit is not available", async () => {
       // Test with a mock that doesn't have rescanKit
       const originalAPI = window.electronAPI;
-      (window as any).electronAPI = { ...window.electronAPI };
-      delete (window as any).electronAPI.rescanKit;
+      (window as unknown).electronAPI = { ...window.electronAPI };
+      delete (window as unknown).electronAPI.rescanKit;
 
       mockDuplicateKit.mockResolvedValueOnce(undefined);
       const { result } = renderHook(() => useKitDuplication(defaultProps));
@@ -200,13 +204,13 @@ describe("useKitDuplication", () => {
       expect(result.current.duplicateKitSource).toBeNull();
 
       // Restore
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should work when electronAPI is completely unavailable", async () => {
       const originalAPI = window.electronAPI;
       // Set to undefined instead of delete to avoid property deletion issues
-      (window as any).electronAPI = undefined;
+      (window as unknown).electronAPI = undefined;
 
       mockDuplicateKit.mockResolvedValueOnce(undefined);
       const { result } = renderHook(() => useKitDuplication(defaultProps));
@@ -225,7 +229,7 @@ describe("useKitDuplication", () => {
       expect(result.current.duplicateKitSource).toBeNull();
 
       // Restore
-      (window as any).electronAPI = originalAPI;
+      (window as unknown).electronAPI = originalAPI;
     });
   });
 

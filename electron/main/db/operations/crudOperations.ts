@@ -301,24 +301,28 @@ export function getKitSamples(
  * @param dbDir Database directory path
  * @returns DbResult containing serializable kit data
  */
-export function getKitsMetadata(dbDir: string): DbResult<Kit[]> {
+export function getKitsMetadata(dbDir: string): DbResult<Partial<Kit>[]> {
   return withDb(dbDir, (db) => {
     // Explicitly select only metadata columns to avoid circular references in IPC serialization
-    return db.query.kits.findMany({
-      columns: {
-        alias: true,
-        bank_letter: true,
-        bpm: true,
-        created_at: true,
-        editable: true,
-        is_favorite: true,
-        locked: true,
-        modified_since_sync: true,
-        name: true,
-        step_pattern: true,
-        updated_at: true,
-      },
-    });
+    // Note: Using explicit column selection with .select() to prevent circular references
+    // while ensuring the query executes properly (unlike db.query.findMany which returns a query object)
+    return db
+      .select({
+        alias: kits.alias,
+        artist: kits.artist,
+        bank_letter: kits.bank_letter,
+        bpm: kits.bpm,
+        editable: kits.editable,
+        is_favorite: kits.is_favorite,
+        locked: kits.locked,
+        modified_since_sync: kits.modified_since_sync,
+        name: kits.name,
+        step_pattern: kits.step_pattern,
+        // Note: created_at and updated_at columns do not exist in the current schema
+        // They were documented erroneously but are not part of the implementation
+      })
+      .from(kits)
+      .all();
   });
 }
 

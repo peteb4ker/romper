@@ -304,21 +304,21 @@ export function getKitSamples(
 export function getKitsMetadata(dbDir: string): DbResult<Kit[]> {
   return withDb(dbDir, (db) => {
     // Explicitly select only metadata columns to avoid circular references in IPC serialization
-    return db.query.kits.findMany({
-      columns: {
-        alias: true,
-        bank_letter: true,
-        bpm: true,
-        created_at: true,
-        editable: true,
-        is_favorite: true,
-        locked: true,
-        modified_since_sync: true,
-        name: true,
-        step_pattern: true,
-        updated_at: true,
-      },
-    });
+    return db
+      .select({
+        alias: kits.alias,
+        artist: kits.artist,
+        bank_letter: kits.bank_letter,
+        bpm: kits.bpm,
+        editable: kits.editable,
+        is_favorite: kits.is_favorite,
+        locked: kits.locked,
+        modified_since_sync: kits.modified_since_sync,
+        name: kits.name,
+        step_pattern: kits.step_pattern,
+      })
+      .from(kits)
+      .all();
   });
 }
 

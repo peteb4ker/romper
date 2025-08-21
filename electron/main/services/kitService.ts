@@ -61,7 +61,13 @@ export class KitService {
 
     // Copy all sample references from source kit to destination kit
     const sourceSamples = getKitSamples(dbPath, sourceKit);
-    if (sourceSamples.success && sourceSamples.data) {
+    if (!sourceSamples.success) {
+      return {
+        error: `Failed to fetch samples for source kit: ${sourceSamples.error ?? "Unknown error"}`,
+        success: false,
+      };
+    }
+    if (sourceSamples.data) {
       for (const sample of sourceSamples.data) {
         // Create new sample record for destination kit, preserving all original properties
         const newSample: NewSample = {

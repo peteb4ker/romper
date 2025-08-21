@@ -263,6 +263,19 @@ describe("KitService", () => {
       expect(result.error).toBe("Failed to copy sample: Sample insertion failed");
     });
 
+    it("handles failure to fetch source kit samples", () => {
+      mockGetKitSamples.mockReturnValue({
+        error: "Database connection failed",
+        success: false,
+      });
+
+      const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Failed to fetch samples for source kit: Database connection failed");
+      expect(mockAddSample).not.toHaveBeenCalled();
+    });
+
     it("rejects invalid source kit slot", () => {
       expect(() => {
         kitService.copyKit(mockInMemorySettings, "invalid", "B2");

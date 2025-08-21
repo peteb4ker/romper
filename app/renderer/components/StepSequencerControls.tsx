@@ -1,29 +1,30 @@
 import React from "react";
 import { FiPlay, FiSquare } from "react-icons/fi";
 
-import { useBpm } from "./hooks/shared/useBpm";
+interface BpmLogic {
+  bpm: number;
+  isEditing: boolean;
+  setBpm: (bpm: number) => void;
+  setIsEditing: (editing: boolean) => void;
+  validateBpm: (bpm: number) => boolean;
+}
 
 interface StepSequencerControlsProps {
-  bpm?: number;
+  bpmLogic: BpmLogic;
   isSeqPlaying: boolean;
   kitName: string;
   setIsSeqPlaying: (playing: boolean) => void;
 }
 
 const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
-  bpm: initialBpm,
+  bpmLogic,
   isSeqPlaying,
   kitName,
   setIsSeqPlaying,
 }) => {
   console.log("[BPM Debug] StepSequencerControls props:", {
-    initialBpm,
-    kitName,
-  });
-  const bpmLogic = useBpm({ initialBpm, kitName });
-  console.log("[BPM Debug] useBpm result:", {
     bpm: bpmLogic.bpm,
-    isEditing: bpmLogic.isEditing,
+    kitName,
   });
   const [inputValue, setInputValue] = React.useState(bpmLogic.bpm.toString());
 
@@ -39,6 +40,18 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
     const newBpm = parseInt(newValue, 10);
     if (bpmLogic.validateBpm(newBpm)) {
       bpmLogic.setBpm(newBpm);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const currentBpm = bpmLogic.bpm;
+      const newBpm = e.key === "ArrowUp" ? currentBpm + 1 : currentBpm - 1;
+
+      if (bpmLogic.validateBpm(newBpm)) {
+        bpmLogic.setBpm(newBpm);
+      }
     }
   };
   return (
@@ -67,6 +80,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
             max={180}
             min={30}
             onChange={handleBpmChange}
+            onKeyDown={handleKeyDown}
             type="number"
             value={inputValue}
           />

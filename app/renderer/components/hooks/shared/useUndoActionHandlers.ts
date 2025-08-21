@@ -336,12 +336,10 @@ export function useUndoActionHandlers({
         return await undoReindexSamples(action);
       case "REPLACE_SAMPLE":
         return await undoReplaceSample(action);
-      default: {
-        const _exhaustiveCheck: never = action;
+      default:
         throw new Error(
-          `Unknown action type: ${(_exhaustiveCheck as any).type}`,
+          `Unknown action type: ${(action as AnyUndoAction).type}`,
         );
-      }
     }
   };
 

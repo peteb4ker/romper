@@ -1,6 +1,11 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 
+// Extended File interface for Electron context where dropped files may have a path property
+interface ElectronFile extends File {
+  path?: string;
+}
+
 // Local type definitions to avoid import issues
 interface FormatIssue {
   current?: number | string;
@@ -37,7 +42,7 @@ export function useFileValidation() {
       if (window.electronFileAPI?.getDroppedFilePath) {
         return await window.electronFileAPI.getDroppedFilePath(file);
       }
-      return (file as any).path || file.name;
+      return (file as ElectronFile).path || file.name;
     },
     [],
   );

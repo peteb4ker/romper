@@ -60,12 +60,10 @@ export function useRedoActionHandlers({
           action.data.newSample.source_path,
           { forceMono: !action.data.newSample.is_stereo },
         );
-      default: {
-        const _exhaustiveCheck: never = action;
+      default:
         throw new Error(
-          `Unknown action type: ${(_exhaustiveCheck as any).type}`,
+          `Unknown action type: ${(action as AnyUndoAction).type}`,
         );
-      }
     }
   };
 

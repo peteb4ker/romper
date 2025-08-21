@@ -304,6 +304,8 @@ export function getKitSamples(
 export function getKitsMetadata(dbDir: string): DbResult<Kit[]> {
   return withDb(dbDir, (db) => {
     // Explicitly select only metadata columns to avoid circular references in IPC serialization
+    // Note: Using .select() instead of db.query to ensure proper execution while maintaining
+    // the same anti-circular-reference column selection approach
     return db
       .select({
         alias: kits.alias,
@@ -316,6 +318,8 @@ export function getKitsMetadata(dbDir: string): DbResult<Kit[]> {
         modified_since_sync: kits.modified_since_sync,
         name: kits.name,
         step_pattern: kits.step_pattern,
+        // Note: created_at and updated_at columns do not exist in the current schema
+        // They were documented erroneously but are not part of the implementation
       })
       .from(kits)
       .all();

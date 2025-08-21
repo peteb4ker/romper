@@ -90,7 +90,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
       onClick={handleBackdropClick}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
-          handleBackdropClick(e as unknown);
+          onClose();
         }
       }}
       role="dialog"

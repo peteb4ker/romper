@@ -172,7 +172,7 @@ export class LocalStoreService {
         error,
       );
       return {
-        error: error.message ?? "Failed to read file",
+        error: error instanceof Error ? error.message : "Failed to read file",
         success: false,
       };
     }

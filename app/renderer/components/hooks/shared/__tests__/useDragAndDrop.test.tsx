@@ -416,15 +416,20 @@ describe("useDragAndDrop", () => {
       );
 
       const expectedKeys = [
+        "calculateTargetSlot",
         "draggedSample",
         "dragOverSlot",
         "dropZone",
+        "executeAssignment",
+        "getCurrentKitSamples",
         "getSampleDragHandlers",
         "handleDragLeave",
         "handleDragOver",
         "handleDrop",
         "handleInternalDragOver",
         "handleInternalDrop",
+        "isDuplicateSample",
+        "processAssignment",
       ];
 
       expect(Object.keys(result.current).sort()).toEqual(expectedKeys.sort());

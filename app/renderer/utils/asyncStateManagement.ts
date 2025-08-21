@@ -178,12 +178,12 @@ export function useDebouncedAsyncOperation<T, Args extends unknown[]>(
   const cancel = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
-      (timeoutRef as unknown).current = undefined;
+      timeoutRef.current = undefined;
     }
     if (rejectRef.current) {
       rejectRef.current(new Error("Operation cancelled"));
-      (rejectRef as unknown).current = undefined;
-      (resolveRef as unknown).current = undefined;
+      rejectRef.current = undefined;
+      resolveRef.current = undefined;
     }
     setLoading(false);
   }, []);
@@ -213,8 +213,8 @@ export function useDebouncedAsyncOperation<T, Args extends unknown[]>(
             }
           } finally {
             setLoading(false);
-            (resolveRef as unknown).current = undefined;
-            (rejectRef as unknown).current = undefined;
+            resolveRef.current = undefined;
+            rejectRef.current = undefined;
           }
         }, delay);
       });

@@ -303,6 +303,7 @@ export function getKitSamples(
  */
 export function getKitsMetadata(dbDir: string): DbResult<Kit[]> {
   return withDb(dbDir, (db) => {
+    // Explicitly select only metadata columns to avoid circular references in IPC serialization
     return db.query.kits.findMany({
       columns: {
         alias: true,
@@ -311,6 +312,8 @@ export function getKitsMetadata(dbDir: string): DbResult<Kit[]> {
         created_at: true,
         editable: true,
         is_favorite: true,
+        locked: true,
+        modified_since_sync: true,
         name: true,
         step_pattern: true,
         updated_at: true,
@@ -340,7 +343,6 @@ export function markKitAsModified(
     db.update(kits)
       .set({
         modified_since_sync: true,
-        updated_at: new Date().toISOString(),
       })
       .where(eq(kits.name, kitName))
       .run();
@@ -420,7 +422,6 @@ export function toggleKitFavorite(
     db.update(kits)
       .set({
         is_favorite: newFavoriteStatus,
-        updated_at: new Date().toISOString(),
       })
       .where(eq(kits.name, kitName))
       .run();
@@ -478,7 +479,6 @@ export function updateKit(
       .update(kits)
       .set({
         ...updates,
-        updated_at: new Date().toISOString(),
       })
       .where(eq(kits.name, kitName))
       .run();
@@ -502,7 +502,6 @@ export function updateVoiceAlias(
     const result = db
       .update(voices)
       .set({
-        updated_at: new Date().toISOString(),
         voice_alias: alias,
       })
       .where(

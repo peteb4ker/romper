@@ -5,6 +5,8 @@ import {
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
   type ProgressCallback,
+  type VoiceInferenceOutput,
+  type WAVAnalysisOutput,
 } from "./scanners";
 
 // Database operations interface (to be implemented via IPC)
@@ -27,7 +29,6 @@ interface VoiceUpdateResult {
 // Global database operations - will be injected
 let dbOps: DatabaseOperations | null = null;
 
-// Types for database scanning operations
 export interface DatabaseScanResult {
   errors: Array<{ error: string; operation: string }>;
   scannedKits: number;
@@ -42,6 +43,19 @@ export interface KitScanData {
   kitPath: string;
   samples: { [voice: number]: string[] };
   wavFiles: string[];
+}
+interface KitScanResult {
+  completedOperations: number;
+  errors: Array<{ error: string; operation: string }>;
+  results: KitScanResults;
+  success: boolean;
+  totalOperations: number;
+}
+
+// Types for database scanning operations
+interface KitScanResults {
+  voiceInference?: VoiceInferenceOutput;
+  wavAnalysis?: WAVAnalysisOutput[];
 }
 
 export async function scanKitToDatabase(
@@ -59,7 +73,7 @@ export async function scanKitToDatabase(
   };
 
   try {
-    const scanResult = await executeFullKitScan(
+    const scanResult: KitScanResult = await executeFullKitScan(
       {
         samples: kitScanData.samples,
         wavFiles: kitScanData.wavFiles,
@@ -183,10 +197,12 @@ export async function scanVoiceNamesToDatabase(
     const scanResult = await executeVoiceInferenceScan(samples);
 
     if (scanResult.success && scanResult.results.voiceInference) {
+      const voiceInferenceResult = scanResult.results
+        .voiceInference as VoiceInferenceOutput;
       await processVoiceInferenceResults(
         dbDir,
         kitName,
-        scanResult.results.voiceInference.voiceNames,
+        voiceInferenceResult.voiceNames,
         result,
       );
       result.scannedKits = 1;
@@ -232,7 +248,9 @@ export async function scanWavFilesToDatabase(
     const scanResult = await executeWAVAnalysisScan(wavFiles, fileReader);
 
     if (scanResult.success && scanResult.results.wavAnalysis) {
-      result.scannedWavFiles = scanResult.results.wavAnalysis.length;
+      const wavAnalysisResult = scanResult.results
+        .wavAnalysis as WAVAnalysisOutput[];
+      result.scannedWavFiles = wavAnalysisResult.length;
 
       // Note: The WAV metadata would be stored when updating sample records
       // This would require additional database operations to update existing samples
@@ -311,7 +329,7 @@ async function processVoiceInferenceResults(
 
 // Helper function to process WAV analysis results
 function processWAVAnalysisResults(
-  wavAnalyses: unknown[],
+  wavAnalyses: WAVAnalysisOutput[],
   wavFiles: string[],
   result: DatabaseScanResult,
 ): void {

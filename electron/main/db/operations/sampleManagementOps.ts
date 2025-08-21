@@ -2,6 +2,7 @@ import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 
 import { withDb } from "../utils/dbUtilities.js";
 import { moveSampleInsertOnly } from "./sampleMovement.js";
@@ -15,7 +16,7 @@ const { samples } = schema;
  * Get the sample to move for move operations
  */
 export function getSampleToMove(
-  db: unknown,
+  db: ReturnType<typeof drizzle<typeof schema>>,
   kitName: string,
   fromVoice: number,
   fromSlot: number,
@@ -90,7 +91,10 @@ export function moveSample(
   );
 
   if (!result.success) {
-    return result as unknown;
+    return {
+      error: result.error,
+      success: false,
+    };
   }
 
   // Convert to expected return format for backward compatibility

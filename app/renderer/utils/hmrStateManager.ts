@@ -3,6 +3,13 @@
  * Preserves application state during development hot reloads
  */
 
+interface ImportMeta {
+  hot?: {
+    accept: (callback?: () => void) => void;
+    dispose: (callback: () => void) => void;
+  };
+}
+
 const HMR_ROUTE_KEY = "hmr_route";
 const HMR_SELECTED_KIT_KEY = "hmr_selected_kit";
 const HMR_EXPLICIT_NAVIGATION_KEY = "hmr_explicit_navigation";
@@ -42,8 +49,8 @@ export function getSavedSelectedKit(): null | string {
  */
 export function isHmrAvailable(): boolean {
   return (
-    typeof (import.meta as unknown).hot !== "undefined" &&
-    (import.meta as unknown).hot !== null
+    typeof (import.meta as ImportMeta).hot !== "undefined" &&
+    (import.meta as ImportMeta).hot !== null
   );
 }
 
@@ -116,13 +123,14 @@ export function saveSelectedKitState(kitName: string): void {
  * Setup HMR handlers for route preservation
  */
 export function setupRouteHmrHandlers(): void {
-  if (!(import.meta as unknown).hot) return;
+  const hot = (import.meta as ImportMeta).hot;
+  if (!hot) return;
 
-  (import.meta as unknown).hot.dispose(() => {
+  hot.dispose(() => {
     saveRouteState();
   });
 
-  (import.meta as unknown).hot.accept(() => {
+  hot.accept(() => {
     restoreRouteState();
   });
 }

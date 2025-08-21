@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
-export function useKitPlayback(samples: unknown) {
+import type { VoiceSamples } from "../../kitTypes";
+
+export function useKitPlayback(samples: null | undefined | VoiceSamples) {
   const [playbackError, setPlaybackError] = useState<null | string>(null);
   const [playTriggers, setPlayTriggers] = useState<{ [key: string]: number }>(
     {},
@@ -22,7 +24,7 @@ export function useKitPlayback(samples: unknown) {
 
     // Initialize states for all samples across all voices
     for (let voice = 1; voice <= 4; voice++) {
-      const voiceSamples = samples[voice] || [];
+      const voiceSamples = samples?.[voice] || [];
       voiceSamples.forEach((sample: string) => {
         if (sample) {
           const sampleKey = voice + ":" + sample;

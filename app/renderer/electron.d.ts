@@ -12,12 +12,15 @@ import type {
 // Import shared types from the schema file
 import type {
   AudioMetadata,
+  FormatIssue,
   FormatValidationResult,
 } from "../../electron/main/audioUtils.js";
 
 export {
   Bank,
   DbResult,
+  FormatIssue,
+  FormatValidationResult,
   KitValidationError,
   LocalStoreValidationDetailedResult,
   NewKit,

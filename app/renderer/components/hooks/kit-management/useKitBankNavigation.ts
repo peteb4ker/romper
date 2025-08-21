@@ -8,8 +8,12 @@ import {
   getFirstKitInBank,
 } from "../../utils/bankOperations";
 
+export interface KitListComponent {
+  scrollAndFocusKitByIndex: (index: number) => void;
+}
+
 interface UseKitBankNavigationProps {
-  kitListRef: RefObject<unknown>;
+  kitListRef: RefObject<KitListComponent | null>;
   kits: KitWithRelations[];
 }
 
@@ -60,7 +64,7 @@ export function useKitBankNavigation({
       const header = document.querySelector(".sticky.top-0");
       const headerHeight =
         header && "offsetHeight" in header
-          ? (header as unknown).offsetHeight
+          ? (header as HTMLElement).offsetHeight
           : 0;
       const containerRect = scrollContainerRef.current.getBoundingClientRect();
       const elRect = el.getBoundingClientRect();

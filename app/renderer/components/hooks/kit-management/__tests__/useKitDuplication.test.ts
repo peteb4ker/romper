@@ -13,6 +13,8 @@ import { duplicateKit } from "../../../utils/kitOperations";
 
 const mockDuplicateKit = vi.mocked(duplicateKit);
 
+// Use centralized mocks from vitest.setup.ts
+
 describe("useKitDuplication", () => {
   const defaultProps = {
     onRefreshKits: vi.fn(),
@@ -20,6 +22,12 @@ describe("useKitDuplication", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Use centralized mocks - they should be accessible via window.electronAPI
+    if (window.electronAPI?.rescanKit) {
+      vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
+        success: true,
+      });
+    }
   });
 
   describe("initial state", () => {
@@ -119,6 +127,109 @@ describe("useKitDuplication", () => {
       });
 
       expect(result.current.duplicateKitError).toBe("String error");
+    });
+
+    it("should call rescanKit after successful duplication", async () => {
+      mockDuplicateKit.mockResolvedValueOnce(undefined);
+      const { result } = renderHook(() => useKitDuplication(defaultProps));
+
+      act(() => {
+        result.current.setDuplicateKitSource("A0");
+        result.current.setDuplicateKitDest("B0");
+      });
+
+      await act(async () => {
+        await result.current.handleDuplicateKit();
+      });
+
+      expect(mockDuplicateKit).toHaveBeenCalledWith("A0", "B0");
+      expect(window.electronAPI?.rescanKit).toHaveBeenCalledWith("B0");
+      expect(result.current.duplicateKitError).toBeNull();
+    });
+
+    it("should handle rescanKit failure gracefully", async () => {
+      mockDuplicateKit.mockResolvedValueOnce(undefined);
+      if (window.electronAPI?.rescanKit) {
+        vi.mocked(window.electronAPI.rescanKit).mockRejectedValue(
+          new Error("Rescan failed"),
+        );
+      }
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation();
+
+      const { result } = renderHook(() => useKitDuplication(defaultProps));
+
+      act(() => {
+        result.current.setDuplicateKitSource("A0");
+        result.current.setDuplicateKitDest("B0");
+      });
+
+      await act(async () => {
+        await result.current.handleDuplicateKit();
+      });
+
+      expect(mockDuplicateKit).toHaveBeenCalledWith("A0", "B0");
+      expect(window.electronAPI?.rescanKit).toHaveBeenCalledWith("B0");
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Failed to scan newly duplicated kit:",
+        "B0",
+        expect.any(Error),
+      );
+      // Duplication should still succeed even if rescan fails
+      expect(result.current.duplicateKitError).toBeNull();
+      expect(result.current.duplicateKitSource).toBeNull();
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should work when electronAPI rescanKit is not available", async () => {
+      // Test with a mock that doesn't have rescanKit
+      const originalAPI = window.electronAPI;
+      (window as unknown).electronAPI = { ...window.electronAPI };
+      delete (window as unknown).electronAPI.rescanKit;
+
+      mockDuplicateKit.mockResolvedValueOnce(undefined);
+      const { result } = renderHook(() => useKitDuplication(defaultProps));
+
+      act(() => {
+        result.current.setDuplicateKitSource("A0");
+        result.current.setDuplicateKitDest("B0");
+      });
+
+      await act(async () => {
+        await result.current.handleDuplicateKit();
+      });
+
+      expect(mockDuplicateKit).toHaveBeenCalledWith("A0", "B0");
+      expect(result.current.duplicateKitError).toBeNull();
+      expect(result.current.duplicateKitSource).toBeNull();
+
+      // Restore
+      (window as unknown).electronAPI = originalAPI;
+    });
+
+    it("should work when electronAPI is completely unavailable", async () => {
+      const originalAPI = window.electronAPI;
+      // Set to undefined instead of delete to avoid property deletion issues
+      (window as unknown).electronAPI = undefined;
+
+      mockDuplicateKit.mockResolvedValueOnce(undefined);
+      const { result } = renderHook(() => useKitDuplication(defaultProps));
+
+      act(() => {
+        result.current.setDuplicateKitSource("A0");
+        result.current.setDuplicateKitDest("B0");
+      });
+
+      await act(async () => {
+        await result.current.handleDuplicateKit();
+      });
+
+      expect(mockDuplicateKit).toHaveBeenCalledWith("A0", "B0");
+      expect(result.current.duplicateKitError).toBeNull();
+      expect(result.current.duplicateKitSource).toBeNull();
+
+      // Restore
+      (window as unknown).electronAPI = originalAPI;
     });
   });
 

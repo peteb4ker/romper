@@ -151,7 +151,6 @@ describe("toggleKitFavorite - Unit Tests", () => {
 
     expect(mockSet).toHaveBeenCalledWith({
       is_favorite: true,
-      updated_at: expect.any(String),
     });
     expect(mockRun).toHaveBeenCalled();
   });

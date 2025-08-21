@@ -3,7 +3,7 @@ import React from "react";
 import type { SampleData } from "../../kitTypes";
 
 import { useVoicePanelButtons } from "./useVoicePanelButtons";
-import { useVoicePanelSlots } from "./useVoicePanelSlots";
+import { type DragHandlers, useVoicePanelSlots } from "./useVoicePanelSlots";
 import { useVoicePanelUI } from "./useVoicePanelUI";
 
 export interface UseVoicePanelRenderingOptions {
@@ -11,7 +11,10 @@ export interface UseVoicePanelRenderingOptions {
   dragAndDropHook: {
     dragOverSlot: null | number;
     dropZone: { mode: "append" | "blocked" | "insert"; slot: number } | null;
-    getSampleDragHandlers: (slotNumber: number, sampleName: string) => unknown;
+    getSampleDragHandlers: (
+      slotNumber: number,
+      sampleName: string,
+    ) => DragHandlers;
     handleDragLeave: () => void;
     handleDragOver: (e: React.DragEvent, slotNumber: number) => void;
     handleDrop: (e: React.DragEvent, slotNumber: number) => void;

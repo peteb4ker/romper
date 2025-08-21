@@ -1,9 +1,9 @@
+import type { Sample } from "@romper/shared/db/schema.js";
+
 import { useCallback } from "react";
 import { toast } from "sonner";
 
 import { ErrorPatterns } from "../../../utils/errorHandling";
-import { useSettings } from "../../../utils/SettingsContext";
-import { useStereoHandling } from "./useStereoHandling";
 
 export interface UseSampleProcessingOptions {
   kitName: string;
@@ -19,6 +19,14 @@ export interface UseSampleProcessingOptions {
   ) => Promise<void>;
   samples: string[];
   voice: number;
+}
+import { useSettings } from "../../../utils/SettingsContext";
+import { useStereoHandling } from "./useStereoHandling";
+
+interface FormatValidation {
+  metadata?: {
+    channels?: number;
+  };
 }
 
 /**
@@ -56,11 +64,12 @@ export function useSampleProcessing({
 
   const isDuplicateSample = useCallback(
     async (allSamples: unknown[], filePath: string): Promise<boolean> => {
-      const voiceSamples = allSamples.filter(
-        (s: unknown) => s.voice_number === voice,
+      const samples = allSamples as Sample[];
+      const voiceSamples = samples.filter(
+        (s: Sample) => s.voice_number === voice,
       );
       const isDuplicate = voiceSamples.some(
-        (s: unknown) => s.source_path === filePath,
+        (s: Sample) => s.source_path === filePath,
       );
 
       if (isDuplicate) {
@@ -137,7 +146,9 @@ export function useSampleProcessing({
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
       droppedSlotNumber: number,
     ): Promise<boolean> => {
-      const channels = formatValidation.metadata?.channels || 1;
+      const validation = formatValidation as FormatValidation;
+      const samples = allSamples as Sample[];
+      const channels = validation.metadata?.channels || 1;
 
       if (modifierKeys.forceMonoDrop || modifierKeys.forceStereoDrop) {
         console.log(
@@ -153,7 +164,7 @@ export function useSampleProcessing({
       const stereoResult = analyzeStereoAssignment(
         voice,
         channels,
-        allSamples,
+        samples,
         modifierKeys.forceMonoDrop || modifierKeys.forceStereoDrop
           ? {
               forceMono: modifierKeys.forceMonoDrop,
@@ -179,7 +190,7 @@ export function useSampleProcessing({
 
       await executeAssignment(
         filePath,
-        allSamples,
+        samples,
         droppedSlotNumber,
         assignmentOptions,
       );

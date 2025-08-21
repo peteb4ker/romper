@@ -4,7 +4,13 @@ import { BrowserWindow } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 
-import { getAudioMetadata, validateSampleFormat } from "../audioUtils.js";
+import {
+  type AudioMetadata,
+  type FormatIssue,
+  type FormatValidationResult,
+  getAudioMetadata,
+  validateSampleFormat,
+} from "../audioUtils.js";
 import { getKitSamples, markKitsAsSynced } from "../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 
@@ -49,6 +55,21 @@ export interface SyncValidationError {
   type: "access_denied" | "invalid_format" | "missing_file" | "other";
 }
 
+interface SyncResults {
+  filesToConvert: SyncFileOperation[];
+  filesToCopy: SyncFileOperation[];
+  hasFormatWarnings: boolean;
+  totalSize: number;
+  validationErrors: SyncValidationError[];
+  warnings: string[];
+}
+
+interface SyncResults {
+  filesToConvert: SyncFileOperation[];
+  hasFormatWarnings: boolean;
+  warnings: string[];
+}
+
 class SyncService {
   private currentSyncJob: {
     bytesTransferred: number;
@@ -79,7 +100,7 @@ class SyncService {
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
+      if (!localStorePath || typeof localStorePath !== "string") {
         return { error: "No local store path configured", success: false };
       }
 
@@ -141,7 +162,7 @@ class SyncService {
       // For now, we need to generate file operations for sync
       // This is a temporary fix - we should separate summary from sync operations
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
+      if (!localStorePath || typeof localStorePath !== "string") {
         return { error: "No local store path configured", success: false };
       }
 
@@ -210,21 +231,21 @@ class SyncService {
    * Add file to sync conversion list
    */
   private addSyncFileToConvert(
-    sample: unknown,
+    sample: Sample,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    metadataResult: unknown,
-    formatValidationResult: unknown,
-    results: unknown,
+    metadataResult: DbResult<AudioMetadata>,
+    formatValidationResult: DbResult<FormatValidationResult>,
+    results: SyncResults,
   ): void {
     const issues = formatValidationResult.data?.issues || [];
-    const issueMessages = issues.map((issue: unknown) => issue.message);
+    const issueMessages = issues.map((issue: FormatIssue) => issue.message);
 
     results.filesToConvert.push({
       destinationPath,
       filename,
-      kitName: sample.kitName,
+      kitName: sample.kit_name,
       operation: "convert",
       originalFormat: metadataResult.success
         ? `${metadataResult.data?.bitDepth}bit/${metadataResult.data?.sampleRate}Hz`
@@ -248,7 +269,7 @@ class SyncService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
-    results: unknown,
+    results: SyncResults,
   ): void {
     results.filesToCopy.push({
       destinationPath,
@@ -389,11 +410,11 @@ class SyncService {
    * Categorizes sync file operation as copy or convert
    */
   private categorizeSyncFileOperation(
-    sample: unknown,
+    sample: Sample,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    results: unknown,
+    results: SyncResults,
   ): void {
     const metadataResult = getAudioMetadata(sourcePath);
     const formatValidationResult = validateSampleFormat(sourcePath);
@@ -416,7 +437,7 @@ class SyncService {
         filename,
         sourcePath,
         destinationPath,
-        sample.kitName,
+        sample.kit_name,
         results,
       );
     }
@@ -725,7 +746,7 @@ class SyncService {
 
       try {
         const localStorePath = inMemorySettings.localStorePath;
-        if (localStorePath) {
+        if (localStorePath && typeof localStorePath === "string") {
           const syncOutputDir = path.join(localStorePath, "sync_output");
           if (fs.existsSync(syncOutputDir)) {
             fs.rmSync(syncOutputDir, { force: true, recursive: true });
@@ -768,7 +789,8 @@ class SyncService {
     syncedFiles: number,
   ): Promise<void> {
     const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath || !syncedFiles) return;
+    if (!localStorePath || !syncedFiles || typeof localStorePath !== "string")
+      return;
 
     const dbDir = path.join(localStorePath, ".romperdb");
     const syncedKitNames = [...new Set(allFiles.map((file) => file.kitName))];
@@ -827,23 +849,16 @@ class SyncService {
    * Process a single sample for sync operations
    */
   private processSampleForSync(
-    sample: unknown,
+    sample: Sample,
     localStorePath: string,
-    results: {
-      filesToConvert: SyncFileOperation[];
-      filesToCopy: SyncFileOperation[];
-      hasFormatWarnings: boolean;
-      totalSize: number;
-      validationErrors: SyncValidationError[];
-      warnings: string[];
-    },
+    results: SyncResults,
     sdCardPath?: string,
   ): void {
     if (!sample.source_path) {
       return; // Skip samples without source path
     }
 
-    const { filename, kitName, source_path: sourcePath } = sample;
+    const { filename, kit_name: kitName, source_path: sourcePath } = sample;
 
     // Validate source file and handle errors
     const fileValidation = this.validateSyncSourceFile(
@@ -928,7 +943,7 @@ class SyncService {
   private validateSyncSourceFile(
     filename: string,
     sourcePath: string,
-    results: unknown,
+    results: SyncResults,
   ): { fileSize: number; isValid: boolean } {
     if (!fs.existsSync(sourcePath)) {
       results.validationErrors.push({

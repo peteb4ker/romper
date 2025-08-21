@@ -162,7 +162,6 @@ describe("useRedoActionHandlers", () => {
         0,
         2,
         1,
-        "insert",
       );
       expect(redoResult).toEqual({ success: true });
     });

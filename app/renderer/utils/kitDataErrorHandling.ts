@@ -1,6 +1,8 @@
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import { toast } from "sonner";
 
+import type { OperationResult } from "../components/hooks/sample-management/types";
+
 /**
  * Enhanced error handling utilities for kit data management operations
  * Reduces duplication and standardizes error handling patterns across hooks
@@ -16,15 +18,15 @@ export class KitDataErrorHandler {
    * Handle errors from kit data API calls
    * Logs error and returns a standardized error response
    */
-  handleApiError(
+  handleApiError<T = unknown>(
     error: unknown,
     operation: string,
     options: {
-      defaultValue?: unknown;
+      defaultValue?: T;
       showToast?: boolean;
       silent?: boolean;
     } = {},
-  ): { data?: unknown; error: string; success: false } {
+  ): { data?: T; error?: string; success: boolean } {
     const errorMessage = getErrorMessage(error);
     const fullMessage = `Failed to ${operation}: ${errorMessage}`;
 
@@ -136,7 +138,7 @@ export const KitErrorPatterns = {
   /**
    * Handle API validation errors
    */
-  apiValidation: (result: unknown, operation: string): void => {
+  apiValidation: (result: OperationResult, operation: string): void => {
     if (!result?.success) {
       const errorMessage = result?.error || `Failed to ${operation}`;
       throw new Error(errorMessage);
@@ -192,9 +194,13 @@ export async function executeAsyncOperation<T>(
     return { data: result, success: true };
   } catch (error) {
     if (options.errorHandler && options.operationName) {
-      return options.errorHandler.handleApiError(error, options.operationName, {
-        silent: options.silent,
-      });
+      return options.errorHandler.handleApiError<T>(
+        error,
+        options.operationName,
+        {
+          silent: options.silent,
+        },
+      );
     }
 
     const errorMessage = getErrorMessage(error);
@@ -234,10 +240,31 @@ export const ApiValidation = {
       return { error: `No response from ${operation}`, success: false };
     }
 
-    if (response.success === false) {
-      return { error: response.error || `${operation} failed`, success: false };
+    // Type guard for response with success property
+    if (
+      typeof response === "object" &&
+      response !== null &&
+      "success" in response
+    ) {
+      const typedResponse = response as OperationResult;
+      if (typedResponse.success === false) {
+        return {
+          error: typedResponse.error || `${operation} failed`,
+          success: false,
+        };
+      }
+      return {
+        data: (typedResponse.data || typedResponse) as T,
+        success: true,
+      };
     }
 
-    return { data: response.data || response, success: true };
+    // Fallback for responses without success property
+    // If response has a data property, extract it; otherwise use the whole response
+    const responseData =
+      typeof response === "object" && response !== null && "data" in response
+        ? (response as { data: T }).data
+        : (response as T);
+    return { data: responseData, success: true };
   },
 };

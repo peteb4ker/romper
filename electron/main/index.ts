@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import type { InMemorySettings } from "./types/settings.js";
+
 import {
   createApplicationMenu,
   registerMenuIpcHandlers,
@@ -16,15 +18,9 @@ import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
 import { registerIpcHandlers } from "./ipcHandlers.js";
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
 
-type Settings = {
-  [key: string]: unknown;
-  darkMode?: boolean;
-  localStorePath?: string;
-  sdCardPath?: string;
-  theme?: string;
-};
-
-let inMemorySettings: Settings = {}; // Store settings in memory
+let inMemorySettings: InMemorySettings = {
+  localStorePath: null,
+}; // Store settings in memory
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -88,7 +84,7 @@ function createWindow() {
   }
 }
 
-function loadSettings(): Settings {
+function loadSettings(): InMemorySettings {
   const userDataPath = app.getPath("userData");
   const settingsPath = path.join(userDataPath, "romper-settings.json");
 
@@ -97,22 +93,26 @@ function loadSettings(): Settings {
 
   if (!fs.existsSync(settingsPath)) {
     console.log("[Settings] Settings file not found - will use empty settings");
-    return {};
+    return { localStorePath: null };
   }
 
-  let settings: Settings = {};
+  let settings: InMemorySettings = { localStorePath: null };
   try {
     const fileContent = fs.readFileSync(settingsPath, "utf-8");
 
     if (fileContent.length === 0) {
       console.log("[Settings] Settings file is empty - using empty settings");
-      return {};
+      return { localStorePath: null };
     }
 
     const parsed = JSON.parse(fileContent);
 
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      settings = parsed as Settings;
+      settings = {
+        defaultToMonoSamples: parsed.defaultToMonoSamples,
+        localStorePath: parsed.localStorePath || null,
+        sdCardPath: parsed.sdCardPath,
+      };
       console.log(
         "[Settings] Loaded settings:",
         JSON.stringify(settings, null, 2),
@@ -136,12 +136,14 @@ function loadSettings(): Settings {
   return settings;
 }
 
-function registerAllIpcHandlers(settings: Settings) {
+function registerAllIpcHandlers(settings: InMemorySettings) {
   registerIpcHandlers(settings);
   registerDbIpcHandlers(settings);
 }
 
-function validateAndFixLocalStore(settings: Settings): Settings {
+function validateAndFixLocalStore(
+  settings: InMemorySettings,
+): InMemorySettings {
   const userDataPath = app.getPath("userData");
   const settingsPath = path.join(userDataPath, "romper-settings.json");
 
@@ -193,7 +195,7 @@ function validateAndFixLocalStore(settings: Settings): Settings {
       console.warn("  - Error:", validation.error);
       console.warn("[Startup] Removing invalid path from settings...");
 
-      delete settings.localStorePath;
+      settings.localStorePath = null;
       try {
         fs.writeFileSync(
           settingsPath,

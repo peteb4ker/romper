@@ -184,11 +184,12 @@ export function useLocalStoreWizard(
       return { success: true };
     } catch (e: unknown) {
       console.error("[Hook] initialize error:", e);
-      stateHook.setError(normalizeErrorMessage(e.message || "Unknown error"));
+      const errorMessage = e instanceof Error ? e.message : "Unknown error";
+      stateHook.setError(normalizeErrorMessage(errorMessage));
       if (state.source === "sdcard") {
         stateHook.setWizardState({ source: null });
       }
-      return { error: e.message || "Unknown error", success: false };
+      return { error: errorMessage, success: false };
     } finally {
       stateHook.setIsInitializing(false);
       stateHook.setProgress(null);

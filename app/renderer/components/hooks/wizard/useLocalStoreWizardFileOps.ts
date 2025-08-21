@@ -94,19 +94,23 @@ export function useLocalStoreWizardFileOps({
         url,
         targetPath,
         (p: unknown) => {
+          const progress = p as ProgressEvent;
           const now = Date.now();
           // Always report phase changes and completion
           if (
-            p.percent === 100 ||
-            p.phase !== lastProgressPhase ||
+            progress.percent === 100 ||
+            progress.phase !== lastProgressPhase ||
             now - lastProgressUpdate > progressThrottle
           ) {
             lastProgressUpdate = now;
-            lastProgressPhase = p.phase;
-            reportProgress(p);
+            lastProgressPhase = progress.phase;
+            reportProgress(progress);
           }
         },
-        (e: unknown) => setError(e?.message || String(e)),
+        (e: unknown) => {
+          const error = e as Error;
+          setError(error.message || String(e));
+        },
       );
       if (!result?.success)
         throw new Error(result?.error || "Failed to extract archive");

@@ -42,7 +42,6 @@ describe("updateKit - Unit Tests", () => {
 
     expect(mockSet).toHaveBeenCalledWith({
       bpm: 120,
-      updated_at: expect.any(String),
     });
     expect(mockRun).toHaveBeenCalled();
   });
@@ -82,7 +81,6 @@ describe("updateKit - Unit Tests", () => {
       description: "Updated description",
       editable: true,
       is_favorite: false,
-      updated_at: expect.any(String),
     });
   });
 
@@ -117,7 +115,6 @@ describe("updateKit - Unit Tests", () => {
 
     expect(mockSet).toHaveBeenCalledWith({
       step_pattern: stepPattern,
-      updated_at: expect.any(String),
     });
   });
 
@@ -148,7 +145,6 @@ describe("updateKit - Unit Tests", () => {
 
     expect(mockSet).toHaveBeenCalledWith({
       step_pattern: null,
-      updated_at: expect.any(String),
     });
   });
 
@@ -205,7 +201,6 @@ describe("updateKit - Unit Tests", () => {
 
     expect(mockSet).toHaveBeenCalledWith({
       bank_letter: "B",
-      updated_at: expect.any(String),
     });
   });
 
@@ -236,7 +231,6 @@ describe("updateKit - Unit Tests", () => {
 
     expect(mockSet).toHaveBeenCalledWith({
       name: "A1",
-      updated_at: expect.any(String),
     });
   });
 
@@ -273,7 +267,7 @@ describe("updateKit - Unit Tests", () => {
     expect(withDb).toHaveBeenCalledWith(mockDbDir, expect.any(Function));
   });
 
-  test("should preserve timestamp format in updated_at", () => {
+  test("should not add updated_at field (not in schema)", () => {
     const mockResult = { changes: 1 };
 
     const mockRun = vi.fn().mockReturnValue(mockResult);
@@ -297,8 +291,7 @@ describe("updateKit - Unit Tests", () => {
     updateKit(mockDbDir, mockKitName, { bpm: 120 });
 
     const callArgs = mockSet.mock.calls[0][0];
-    expect(callArgs.updated_at).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
-    );
+    expect(callArgs).not.toHaveProperty("updated_at");
+    expect(callArgs.bpm).toBe(120);
   });
 });

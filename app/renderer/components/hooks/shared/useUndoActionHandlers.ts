@@ -1,9 +1,39 @@
-import type { AnyUndoAction } from "@romper/shared/undoTypes";
+import type { Sample } from "@romper/shared/db/schema.js";
+import type {
+  AddSampleAction,
+  AnyUndoAction,
+  DeleteSampleAction,
+  MoveSampleAction,
+  MoveSampleBetweenKitsAction,
+  ReindexSamplesAction,
+  ReplaceSampleAction,
+} from "@romper/shared/undoTypes";
 
 import { dbSlotToUiSlot } from "@romper/shared/slotUtils";
 
 export interface UseUndoActionHandlersOptions {
   kitName: string;
+}
+
+interface SampleToRestore {
+  sample: {
+    filename: string;
+    is_stereo: boolean;
+    source_path: string;
+  };
+  slot: number;
+  voice: number;
+}
+
+// Type interfaces for undo action data structures
+interface StateSnapshotItem {
+  sample: {
+    filename: string;
+    is_stereo: boolean;
+    source_path: string;
+  };
+  slot: number;
+  voice: number;
 }
 
 /**
@@ -16,19 +46,16 @@ export function useUndoActionHandlers({
   // Helper functions for clearing and restoring samples
   const clearAffectedVoices = async (fromVoice: number, toVoice: number) => {
     const affectedVoices = new Set([fromVoice, toVoice]);
-    const currentSamplesResult = await (
-      window as unknown
-    ).electronAPI?.getAllSamplesForKit?.(kitName);
+    const currentSamplesResult =
+      await window.electronAPI?.getAllSamplesForKit?.(kitName);
 
     if (currentSamplesResult?.success && currentSamplesResult.data) {
-      const currentSamples = currentSamplesResult.data.filter((s: unknown) =>
-        affectedVoices.has(s.voice_number),
+      const currentSamples = (currentSamplesResult.data as Sample[]).filter(
+        (s) => affectedVoices.has(s.voice_number),
       );
 
       for (const sample of currentSamples) {
-        await (
-          window as unknown
-        ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
+        await window.electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
           kitName,
           sample.voice_number,
           dbSlotToUiSlot(sample.slot_number) - 1,
@@ -37,11 +64,11 @@ export function useUndoActionHandlers({
     }
   };
 
-  const restoreFromSnapshot = async (stateSnapshot: unknown[]) => {
+  const restoreFromSnapshot = async (stateSnapshot: StateSnapshotItem[]) => {
     for (const { sample, slot, voice } of stateSnapshot) {
       // Convert database slot to 0-based slot number for API call
       const apiSlotNumber = dbSlotToUiSlot(slot) - 1;
-      await (window as unknown).electronAPI?.addSampleToSlot?.(
+      await window.electronAPI?.addSampleToSlot?.(
         kitName,
         voice,
         apiSlotNumber,
@@ -52,19 +79,16 @@ export function useUndoActionHandlers({
   };
 
   const clearCurrentVoiceSamples = async (voice: number) => {
-    const currentSamplesResult = await (
-      window as unknown
-    ).electronAPI?.getAllSamplesForKit?.(kitName);
+    const currentSamplesResult =
+      await window.electronAPI?.getAllSamplesForKit?.(kitName);
 
     if (currentSamplesResult?.success && currentSamplesResult.data) {
-      const currentSamples = currentSamplesResult.data.filter(
-        (s: unknown) => s.voice_number === voice,
+      const currentSamples = (currentSamplesResult.data as Sample[]).filter(
+        (s) => s.voice_number === voice,
       );
 
       for (const sample of currentSamples) {
-        await (
-          window as unknown
-        ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
+        await window.electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
           kitName,
           sample.voice_number,
           dbSlotToUiSlot(sample.slot_number) - 1,
@@ -76,9 +100,7 @@ export function useUndoActionHandlers({
   const cleanSlots = async (slotsToClean: Set<string>) => {
     for (const slotKey of slotsToClean) {
       const [voice, slot] = slotKey.split("-").map(Number);
-      await (
-        window as unknown
-      ).electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
+      await window.electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
         kitName,
         voice,
         slot,
@@ -86,11 +108,11 @@ export function useUndoActionHandlers({
     }
   };
 
-  const restoreSamples = async (samplesToRestore: unknown[]) => {
+  const restoreSamples = async (samplesToRestore: SampleToRestore[]) => {
     const sortedSamples = [...samplesToRestore].sort((a, b) => a.slot - b.slot);
 
     for (const { sample, slot, voice } of sortedSamples) {
-      await (window as unknown).electronAPI?.addSampleToSlot?.(
+      await window.electronAPI?.addSampleToSlot?.(
         kitName,
         voice,
         slot,
@@ -101,9 +123,9 @@ export function useUndoActionHandlers({
   };
 
   // Individual undo action handlers
-  const undoDeleteSample = async (action: unknown) => {
+  const undoDeleteSample = async (action: DeleteSampleAction) => {
     console.log("[UNDO] Undoing DELETE_SAMPLE - adding sample back");
-    const result = await (window as unknown).electronAPI?.addSampleToSlot?.(
+    const result = await window.electronAPI?.addSampleToSlot?.(
       kitName,
       action.data.voice,
       action.data.slot,
@@ -114,11 +136,9 @@ export function useUndoActionHandlers({
     return result;
   };
 
-  const undoAddSample = async (action: unknown) => {
+  const undoAddSample = async (action: AddSampleAction) => {
     console.log("[UNDO] Undoing ADD_SAMPLE - deleting sample");
-    const result = await (
-      window as unknown
-    ).electronAPI?.deleteSampleFromSlot?.(
+    const result = await window.electronAPI?.deleteSampleFromSlot?.(
       kitName,
       action.data.voice,
       action.data.slot,
@@ -127,9 +147,9 @@ export function useUndoActionHandlers({
     return result;
   };
 
-  const undoReplaceSample = async (action: unknown) => {
+  const undoReplaceSample = async (action: ReplaceSampleAction) => {
     console.log("[UNDO] Undoing REPLACE_SAMPLE - restoring old sample");
-    const result = await (window as unknown).electronAPI?.replaceSampleInSlot?.(
+    const result = await window.electronAPI?.replaceSampleInSlot?.(
       kitName,
       action.data.voice,
       action.data.slot,
@@ -140,19 +160,21 @@ export function useUndoActionHandlers({
     return result;
   };
 
-  const undoMoveSampleWithSnapshot = async (action: unknown) => {
+  const undoMoveSampleWithSnapshot = async (action: MoveSampleAction) => {
     console.log(
       "[UNDO] Using snapshot-based restoration, snapshot length:",
-      action.data.stateSnapshot.length,
+      action.data.stateSnapshot?.length || 0,
     );
 
     await clearAffectedVoices(action.data.fromVoice, action.data.toVoice);
-    await restoreFromSnapshot(action.data.stateSnapshot);
+    if (action.data.stateSnapshot) {
+      await restoreFromSnapshot(action.data.stateSnapshot);
+    }
 
     return { success: true };
   };
 
-  const buildSamplesToRestore = (action: unknown) => {
+  const buildSamplesToRestore = (action: MoveSampleAction) => {
     const samples = [];
 
     // Restore moved sample to original position
@@ -183,7 +205,7 @@ export function useUndoActionHandlers({
     return samples;
   };
 
-  const buildSlotsToClean = (action: unknown) => {
+  const buildSlotsToClean = (action: MoveSampleAction) => {
     const slotsToClean = new Set<string>();
     slotsToClean.add(`${action.data.toVoice}-${action.data.toSlot}`);
 
@@ -194,7 +216,7 @@ export function useUndoActionHandlers({
     return slotsToClean;
   };
 
-  const undoMoveSampleLegacy = async (action: unknown) => {
+  const undoMoveSampleLegacy = async (action: MoveSampleAction) => {
     const samplesToRestore = buildSamplesToRestore(action);
     const slotsToClean = buildSlotsToClean(action);
 
@@ -204,7 +226,7 @@ export function useUndoActionHandlers({
     return { success: true };
   };
 
-  const undoMoveSample = async (action: unknown) => {
+  const undoMoveSample = async (action: MoveSampleAction) => {
     console.log("[UNDO] Undoing MOVE_SAMPLE");
     try {
       if (action.data.stateSnapshot && action.data.stateSnapshot.length > 0) {
@@ -220,11 +242,11 @@ export function useUndoActionHandlers({
     }
   };
 
-  const undoMoveSampleBetweenKits = async (action: unknown) => {
+  const undoMoveSampleBetweenKits = async (
+    action: MoveSampleBetweenKitsAction,
+  ) => {
     try {
-      const result = await (
-        window as unknown
-      ).electronAPI?.moveSampleBetweenKits?.(
+      const result = await window.electronAPI?.moveSampleBetweenKits?.(
         action.data.toKit,
         action.data.toVoice,
         action.data.toSlot,
@@ -236,7 +258,7 @@ export function useUndoActionHandlers({
 
       // Restore replaced sample if any
       if (action.data.replacedSample && result?.success) {
-        await (window as unknown).electronAPI?.addSampleToSlot?.(
+        await window.electronAPI?.addSampleToSlot?.(
           action.data.toKit,
           action.data.toVoice,
           action.data.toSlot,
@@ -254,8 +276,10 @@ export function useUndoActionHandlers({
     }
   };
 
-  const restoreDeletedSample = async (actionData: unknown) => {
-    await (window as unknown).electronAPI?.addSampleToSlot?.(
+  const restoreDeletedSample = async (
+    actionData: ReindexSamplesAction["data"],
+  ) => {
+    await window.electronAPI?.addSampleToSlot?.(
       kitName,
       actionData.voice,
       actionData.deletedSlot,
@@ -264,9 +288,11 @@ export function useUndoActionHandlers({
     );
   };
 
-  const restoreAffectedSamples = async (affectedSamples: unknown[]) => {
+  const restoreAffectedSamples = async (
+    affectedSamples: ReindexSamplesAction["data"]["affectedSamples"],
+  ) => {
     for (const affectedSample of affectedSamples) {
-      await (window as unknown).electronAPI?.addSampleToSlot?.(
+      await window.electronAPI?.addSampleToSlot?.(
         kitName,
         affectedSample.voice,
         affectedSample.newSlot,
@@ -276,7 +302,7 @@ export function useUndoActionHandlers({
     }
   };
 
-  const undoReindexSamples = async (action: unknown) => {
+  const undoReindexSamples = async (action: ReindexSamplesAction) => {
     console.log(
       "[UNDO] Undoing REINDEX_SAMPLES - restoring pre-reindexing state",
     );
@@ -310,12 +336,10 @@ export function useUndoActionHandlers({
         return await undoReindexSamples(action);
       case "REPLACE_SAMPLE":
         return await undoReplaceSample(action);
-      default: {
-        const _exhaustiveCheck: never = action;
+      default:
         throw new Error(
-          `Unknown action type: ${(_exhaustiveCheck as unknown).type}`,
+          `Unknown action type: ${(action as AnyUndoAction).type}`,
         );
-      }
     }
   };
 

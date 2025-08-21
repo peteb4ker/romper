@@ -5,6 +5,8 @@ import type {
   ErrorHandlingStrategy,
   FullKitScanInput,
   ProgressCallback,
+  ScannerFunction,
+  ScanOperation,
   VoiceInferenceInput,
   WAVAnalysisOutput,
 } from "./types";
@@ -26,16 +28,19 @@ export async function executeFullKitScan(
 ): Promise<ChainResult> {
   const orchestrator = new ScannerOrchestrator(progressCallback, errorStrategy);
 
-  const operations = [
+  const operations: ScanOperation[] = [
     {
       input: { samples: kitData.samples } as VoiceInferenceInput,
       name: "voiceInference",
-      scanner: scanVoiceInference,
+      scanner: scanVoiceInference as ScannerFunction<unknown, unknown>,
     },
     {
       input: {},
       name: "wavAnalysis",
-      scanner: createWAVAnalysisScanner(kitData.wavFiles, kitData.fileReader),
+      scanner: createWAVAnalysisScanner(
+        kitData.wavFiles,
+        kitData.fileReader,
+      ) as ScannerFunction<unknown, unknown>,
     },
   ];
 
@@ -56,11 +61,11 @@ export async function executeVoiceInferenceScan(
 ): Promise<ChainResult> {
   const orchestrator = new ScannerOrchestrator(progressCallback, errorStrategy);
 
-  const operations = [
+  const operations: ScanOperation[] = [
     {
       input: { samples } as VoiceInferenceInput,
       name: "voiceInference",
-      scanner: scanVoiceInference,
+      scanner: scanVoiceInference as ScannerFunction<unknown, unknown>,
     },
   ];
 
@@ -83,11 +88,14 @@ export async function executeWAVAnalysisScan(
 ): Promise<ChainResult> {
   const orchestrator = new ScannerOrchestrator(progressCallback, errorStrategy);
 
-  const operations = [
+  const operations: ScanOperation[] = [
     {
       input: {},
       name: "wavAnalysis",
-      scanner: createWAVAnalysisScanner(wavFiles, fileReader),
+      scanner: createWAVAnalysisScanner(
+        wavFiles,
+        fileReader,
+      ) as ScannerFunction<unknown, unknown>,
     },
   ];
 

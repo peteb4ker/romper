@@ -1,12 +1,14 @@
 import { app, dialog, ipcMain, shell } from "electron";
 
+import type { InMemorySettings } from "./types/settings.js";
+
 import { archiveService } from "./services/archiveService.js";
 import { kitService } from "./services/kitService.js";
 import { localStoreService } from "./services/localStoreService.js";
 import { sampleService } from "./services/sampleService.js";
 import { settingsService } from "./services/settingsService.js";
 
-export function registerIpcHandlers(inMemorySettings: Record<string, unknown>) {
+export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("read-settings", () =>
     settingsService.readSettings(inMemorySettings),
   );
@@ -57,7 +59,7 @@ export function registerIpcHandlers(inMemorySettings: Record<string, unknown>) {
   });
   ipcMain.handle("create-kit", async (_event, kitSlot: string) => {
     // Add environment override to settings for this operation
-    const effectiveSettings = {
+    const effectiveSettings: InMemorySettings = {
       ...inMemorySettings,
       localStorePath:
         process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
@@ -73,7 +75,7 @@ export function registerIpcHandlers(inMemorySettings: Record<string, unknown>) {
     "copy-kit",
     async (_event, sourceKit: string, destKit: string) => {
       // Add environment override to settings for this operation
-      const effectiveSettings = {
+      const effectiveSettings: InMemorySettings = {
         ...inMemorySettings,
         localStorePath:
           process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,

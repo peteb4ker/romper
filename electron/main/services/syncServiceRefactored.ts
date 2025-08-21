@@ -136,7 +136,10 @@ export class SyncService {
       `[SyncService] markKitsAsSynced called - syncedFiles: ${syncedFiles}, allFiles: ${allFiles.length}`,
     );
 
-    const localStorePath = inMemorySettings.localStorePath;
+    const localStorePath =
+      typeof inMemorySettings.localStorePath === "string"
+        ? inMemorySettings.localStorePath
+        : undefined;
     if (!localStorePath) {
       console.warn("[SyncService] No localStorePath found in settings");
       return;

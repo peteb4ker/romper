@@ -15,7 +15,7 @@ export function useRedoActionHandlers({
   const executeRedoAction = async (action: AnyUndoAction) => {
     switch (action.type) {
       case "ADD_SAMPLE":
-        return (window as unknown).electronAPI?.addSampleToSlot?.(
+        return window.electronAPI?.addSampleToSlot?.(
           kitName,
           action.data.voice,
           action.data.slot,
@@ -23,22 +23,21 @@ export function useRedoActionHandlers({
           { forceMono: !action.data.addedSample.is_stereo },
         );
       case "DELETE_SAMPLE":
-        return (window as unknown).electronAPI?.deleteSampleFromSlot?.(
+        return window.electronAPI?.deleteSampleFromSlot?.(
           kitName,
           action.data.voice,
           action.data.slot,
         );
       case "MOVE_SAMPLE":
-        return (window as unknown).electronAPI?.moveSampleInKit?.(
+        return window.electronAPI?.moveSampleInKit?.(
           kitName,
           action.data.fromVoice,
           action.data.fromSlot,
           action.data.toVoice,
           action.data.toSlot,
-          action.data.mode,
         );
       case "MOVE_SAMPLE_BETWEEN_KITS":
-        return (window as unknown).electronAPI?.moveSampleBetweenKits?.(
+        return window.electronAPI?.moveSampleBetweenKits?.(
           action.data.fromKit,
           action.data.fromVoice,
           action.data.fromSlot,
@@ -48,25 +47,23 @@ export function useRedoActionHandlers({
           action.data.mode,
         );
       case "REINDEX_SAMPLES":
-        return (window as unknown).electronAPI?.deleteSampleFromSlot?.(
+        return window.electronAPI?.deleteSampleFromSlot?.(
           kitName,
           action.data.voice,
           action.data.deletedSlot,
         );
       case "REPLACE_SAMPLE":
-        return (window as unknown).electronAPI?.replaceSampleInSlot?.(
+        return window.electronAPI?.replaceSampleInSlot?.(
           kitName,
           action.data.voice,
           action.data.slot,
           action.data.newSample.source_path,
           { forceMono: !action.data.newSample.is_stereo },
         );
-      default: {
-        const _exhaustiveCheck: never = action;
+      default:
         throw new Error(
-          `Unknown action type: ${(_exhaustiveCheck as unknown).type}`,
+          `Unknown action type: ${(action as AnyUndoAction).type}`,
         );
-      }
     }
   };
 

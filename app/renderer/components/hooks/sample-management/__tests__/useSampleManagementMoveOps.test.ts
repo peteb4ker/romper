@@ -241,15 +241,15 @@ describe("useSampleManagementMoveOps", () => {
 
       await result.current.handleSampleMove(1, 0, 2, 1, "Target Kit");
 
-      expect(mockElectronAPI.moveSampleBetweenKits).toHaveBeenCalledWith({
-        fromKit: "Test Kit",
-        fromSlot: 0,
-        fromVoice: 1,
-        mode: "insert",
-        toKit: "Target Kit",
-        toSlot: 1,
-        toVoice: 2,
-      });
+      expect(mockElectronAPI.moveSampleBetweenKits).toHaveBeenCalledWith(
+        "Test Kit",
+        1,
+        0,
+        "Target Kit",
+        2,
+        1,
+        "insert",
+      );
       expect(mockUndoActions.createCrossKitMoveAction).toHaveBeenCalledWith({
         fromSlot: 0,
         fromVoice: 1,
@@ -282,15 +282,15 @@ describe("useSampleManagementMoveOps", () => {
 
       await result.current.handleSampleMove(1, 0, 2, 1, "Target Kit");
 
-      expect(mockElectronAPI.moveSampleBetweenKits).toHaveBeenCalledWith({
-        fromKit: "Test Kit",
-        fromSlot: 0,
-        fromVoice: 1,
-        mode: "insert",
-        toKit: "Target Kit",
-        toSlot: 1,
-        toVoice: 2,
-      });
+      expect(mockElectronAPI.moveSampleBetweenKits).toHaveBeenCalledWith(
+        "Test Kit",
+        1,
+        0,
+        "Target Kit",
+        2,
+        1,
+        "insert",
+      );
       expect(mockOptions.onAddUndoAction).not.toHaveBeenCalled();
       // Toast notification was removed per user request
       expect(mockOptions.onMessage).not.toHaveBeenCalledWith(

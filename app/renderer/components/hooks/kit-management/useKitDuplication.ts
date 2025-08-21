@@ -30,7 +30,7 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
         try {
           await window.electronAPI.rescanKit(duplicateKitDest);
         } catch (scanError) {
-          console.warn("Failed to scan newly duplicated kit:", scanError);
+          console.warn("Failed to scan newly duplicated kit:", duplicateKitDest, scanError);
           // Don't fail the whole operation if scanning fails
         }
       }

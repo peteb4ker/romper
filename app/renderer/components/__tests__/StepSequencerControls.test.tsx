@@ -4,22 +4,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import StepSequencerControls from "../StepSequencerControls";
 
-// Mock the useBpm hook
-vi.mock("../hooks/shared/useBpm", () => ({
-  useBpm: vi.fn(() => ({
-    bpm: 120,
-    isEditing: false,
-    setBpm: vi.fn(),
-    setIsEditing: vi.fn(),
-    validateBpm: vi.fn((value) => value >= 30 && value <= 180),
-  })),
-}));
-
 describe("StepSequencerControls", () => {
   let setIsSeqPlaying;
+  let mockBpmLogic;
 
   beforeEach(() => {
     setIsSeqPlaying = vi.fn();
+    mockBpmLogic = {
+      bpm: 120,
+      isEditing: false,
+      setBpm: vi.fn(),
+      setIsEditing: vi.fn(),
+      validateBpm: vi.fn((value) => value >= 30 && value <= 180),
+    };
   });
 
   afterEach(() => {
@@ -30,7 +27,7 @@ describe("StepSequencerControls", () => {
   it("renders play button when sequencer is stopped", () => {
     render(
       <StepSequencerControls
-        bpm={120}
+        bpmLogic={mockBpmLogic}
         isSeqPlaying={false}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
@@ -47,7 +44,7 @@ describe("StepSequencerControls", () => {
   it("renders stop button when sequencer is playing", () => {
     render(
       <StepSequencerControls
-        bpm={120}
+        bpmLogic={mockBpmLogic}
         isSeqPlaying={true}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
@@ -61,7 +58,7 @@ describe("StepSequencerControls", () => {
   it("calls setIsSeqPlaying when play button is clicked", () => {
     render(
       <StepSequencerControls
-        bpm={120}
+        bpmLogic={mockBpmLogic}
         isSeqPlaying={false}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
@@ -77,7 +74,7 @@ describe("StepSequencerControls", () => {
   it("calls setIsSeqPlaying when stop button is clicked", () => {
     render(
       <StepSequencerControls
-        bpm={120}
+        bpmLogic={mockBpmLogic}
         isSeqPlaying={true}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
@@ -91,9 +88,10 @@ describe("StepSequencerControls", () => {
   });
 
   it("displays the current BPM value in input field", () => {
+    const customBpmLogic = { ...mockBpmLogic, bpm: 140 };
     render(
       <StepSequencerControls
-        bpm={140}
+        bpmLogic={customBpmLogic}
         isSeqPlaying={false}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
@@ -102,7 +100,7 @@ describe("StepSequencerControls", () => {
 
     const bpmInput = screen.getByTestId("bpm-input");
     expect(bpmInput).toBeInTheDocument();
-    expect(bpmInput).toHaveValue(120); // Mock returns 120
+    expect(bpmInput).toHaveValue(140);
     expect(screen.getByText("BPM")).toBeInTheDocument();
     expect(screen.getByText("30-180")).toBeInTheDocument();
   });
@@ -110,7 +108,7 @@ describe("StepSequencerControls", () => {
   it("displays BPM input field with correct attributes", () => {
     render(
       <StepSequencerControls
-        bpm={120}
+        bpmLogic={mockBpmLogic}
         isSeqPlaying={false}
         kitName="TestKit"
         setIsSeqPlaying={setIsSeqPlaying}
@@ -121,5 +119,47 @@ describe("StepSequencerControls", () => {
     expect(bpmInput).toHaveAttribute("type", "number");
     expect(bpmInput).toHaveAttribute("min", "30");
     expect(bpmInput).toHaveAttribute("max", "180");
+  });
+
+  it("handles arrow key BPM changes", () => {
+    mockBpmLogic.validateBpm.mockReturnValue(true);
+
+    render(
+      <StepSequencerControls
+        bpmLogic={mockBpmLogic}
+        isSeqPlaying={false}
+        kitName="TestKit"
+        setIsSeqPlaying={setIsSeqPlaying}
+      />,
+    );
+
+    const bpmInput = screen.getByTestId("bpm-input");
+
+    // Test arrow up
+    fireEvent.keyDown(bpmInput, { key: "ArrowUp" });
+    expect(mockBpmLogic.setBpm).toHaveBeenCalledWith(121);
+
+    // Test arrow down
+    fireEvent.keyDown(bpmInput, { key: "ArrowDown" });
+    expect(mockBpmLogic.setBpm).toHaveBeenCalledWith(119);
+  });
+
+  it("validates BPM range on arrow key changes", () => {
+    mockBpmLogic.validateBpm.mockReturnValue(false);
+
+    render(
+      <StepSequencerControls
+        bpmLogic={mockBpmLogic}
+        isSeqPlaying={false}
+        kitName="TestKit"
+        setIsSeqPlaying={setIsSeqPlaying}
+      />,
+    );
+
+    const bpmInput = screen.getByTestId("bpm-input");
+
+    // Test invalid BPM - should not call setBpm
+    fireEvent.keyDown(bpmInput, { key: "ArrowUp" });
+    expect(mockBpmLogic.setBpm).not.toHaveBeenCalled();
   });
 });

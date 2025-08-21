@@ -1,6 +1,7 @@
 import React from "react";
 
 import { useKitStepSequencerLogic } from "./hooks/kit-management/useKitStepSequencerLogic";
+import { useBpm } from "./hooks/shared/useBpm";
 import StepSequencerControls from "./StepSequencerControls";
 import StepSequencerDrawer from "./StepSequencerDrawer";
 import StepSequencerGrid from "./StepSequencerGrid";
@@ -18,7 +19,14 @@ interface KitStepSequencerProps {
 }
 
 const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
-  const logic = useKitStepSequencerLogic(props);
+  // Manage BPM state at this level to ensure sequencer logic gets live updates
+  const bpmLogic = useBpm({ initialBpm: props.bpm, kitName: props.kitName });
+
+  // Pass the current BPM from bpmLogic to sequencer logic for live updates
+  const logic = useKitStepSequencerLogic({
+    ...props,
+    bpm: bpmLogic.bpm, // Use live BPM value instead of initial prop
+  });
 
   return (
     <StepSequencerDrawer
@@ -27,7 +35,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     >
       <div className="flex flex-row items-start justify-center gap-4">
         <StepSequencerControls
-          bpm={props.bpm}
+          bpmLogic={bpmLogic}
           isSeqPlaying={logic.isSeqPlaying}
           kitName={props.kitName}
           setIsSeqPlaying={logic.setIsSeqPlaying}

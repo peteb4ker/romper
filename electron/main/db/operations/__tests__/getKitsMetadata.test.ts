@@ -143,7 +143,7 @@ describe("getKitsMetadata - Unit Tests", () => {
     expect(result[1].name).toBe("B1");
     expect(result[1].bank_letter).toBe("B");
 
-    // Verify single query was made
+    // Verify single query was made with explicit column selection to avoid circular references
     expect(findManyMock).toHaveBeenCalledTimes(1);
     expect(findManyMock).toHaveBeenCalledWith();
   });
@@ -175,20 +175,32 @@ describe("getKitsMetadata - Unit Tests", () => {
     expect(withDb).toHaveBeenCalledWith(mockDbDir, expect.any(Function));
   });
 
-  test("should use Drizzle query API", () => {
+  test("should use Drizzle query API with explicit column selection", () => {
     const findManyMock = vi.fn().mockReturnValue([]);
+    const selectMock = vi.fn().mockReturnThis();
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
         all: findManyMock,
         from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
+        select: selectMock,
       };
       return fn(mockDb);
     });
 
     getKitsMetadata(mockDbDir);
 
-    // Verify the query uses the Drizzle API
+    // Verify the query uses explicit column selection to avoid circular references
+    expect(selectMock).toHaveBeenCalledWith({
+      name: expect.any(Object),
+      alias: expect.any(Object),
+      bank_letter: expect.any(Object),
+      bpm: expect.any(Object),
+      editable: expect.any(Object),
+      is_favorite: expect.any(Object),
+      locked: expect.any(Object),
+      modified_since_sync: expect.any(Object),
+      step_pattern: expect.any(Object),
+    });
     expect(findManyMock).toHaveBeenCalledWith();
   });
 

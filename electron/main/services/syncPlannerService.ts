@@ -4,7 +4,7 @@ import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as fs from "fs";
 import * as path from "path";
 
-import { getAudioMetadata, validateSampleFormat } from "../audioUtils.js";
+import { getAudioMetadata, validateSampleFormat, type FormatValidationResult, type AudioMetadata, type FormatIssue } from "../audioUtils.js";
 import { getKitSamples } from "../db/romperDbCoreORM.js";
 import { rampleNamingService } from "./rampleNamingService.js";
 
@@ -48,7 +48,7 @@ export class SyncPlannerService {
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
+      if (!localStorePath || typeof localStorePath !== 'string') {
         return { error: "No local store path configured", success: false };
       }
 
@@ -97,21 +97,21 @@ export class SyncPlannerService {
    * Add file to conversion list
    */
   private addFileToConvert(
-    sample: unknown,
+    sample: Sample,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    metadataResult: unknown,
-    formatValidationResult: unknown,
-    results: unknown,
+    metadataResult: DbResult<AudioMetadata>,
+    formatValidationResult: DbResult<FormatValidationResult>,
+    results: SyncChangeSummary,
   ): void {
     const issues = formatValidationResult.data?.issues || [];
-    const issueMessages = issues.map((issue: unknown) => issue.message);
+    const issueMessages = issues.map((issue: FormatIssue) => issue.message);
 
     results.filesToConvert.push({
       destinationPath,
       filename, // Now using the Rample-generated filename passed as parameter
-      kitName: sample.kitName,
+      kitName: sample.kit_name,
       operation: "convert",
       originalFormat: metadataResult.success
         ? `${metadataResult.data?.bitDepth}bit/${metadataResult.data?.sampleRate}Hz`

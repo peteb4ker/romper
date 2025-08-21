@@ -5,6 +5,8 @@ import type {
   ReindexSamplesAction,
   ReplaceSampleAction,
 } from "@romper/shared/undoTypes";
+import type { Sample } from "@romper/shared/db/schema.js";
+import type { MoveOperationResult } from "./types.js";
 
 import { createActionId } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
@@ -98,7 +100,7 @@ export function useSampleManagementUndoActions({
     (
       voice: number,
       slotNumber: number,
-      oldSample: unknown,
+      oldSample: Sample,
       filePath: string,
       options?: { forceMono?: boolean; forceStereo?: boolean },
     ): ReplaceSampleAction => ({
@@ -211,14 +213,14 @@ export function useSampleManagementUndoActions({
     (params: {
       fromSlot: number;
       fromVoice: number;
-      result: unknown;
+      result: MoveOperationResult;
       targetKit: string;
       toSlot: number;
       toVoice: number;
     }): MoveSampleBetweenKitsAction => ({
       data: {
-        affectedSamples: params.result.data.affectedSamples.map(
-          (sample: any) => ({
+        affectedSamples: params.result.data?.affectedSamples?.map(
+          (sample: Sample) => ({
             newSlot: sample.slot_number,
             oldSlot: sample.original_slot_number,
             sample: {
@@ -234,9 +236,9 @@ export function useSampleManagementUndoActions({
         fromVoice: params.fromVoice,
         mode: "insert",
         movedSample: {
-          filename: params.result.data.movedSample.filename,
-          is_stereo: params.result.data.movedSample.is_stereo,
-          source_path: params.result.data.movedSample.source_path,
+          filename: params.result.data?.movedSample?.filename || "",
+          is_stereo: params.result.data?.movedSample?.is_stereo || false,
+          source_path: params.result.data?.movedSample?.source_path || "",
         },
         replacedSample: params.result.data.replacedSample
           ? {

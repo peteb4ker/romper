@@ -125,10 +125,10 @@ export function useSampleManagementMoveOps({
           );
 
           if (
-            result.success &&
+            result?.success &&
             !skipUndoRecording &&
             onAddUndoAction &&
-            result.data
+            result?.data
           ) {
             const moveAction = undoActions.createSameKitMoveAction({
               fromSlot,
@@ -144,10 +144,10 @@ export function useSampleManagementMoveOps({
 
         if (
           isCrossKit &&
-          result.success &&
+          result?.success &&
           !skipUndoRecording &&
           onAddUndoAction &&
-          result.data
+          result?.data
         ) {
           const crossKitMoveAction = undoActions.createCrossKitMoveAction({
             fromSlot,
@@ -160,7 +160,7 @@ export function useSampleManagementMoveOps({
           onAddUndoAction(crossKitMoveAction);
         }
 
-        if (result.success) {
+        if (result?.success) {
           await handleMoveSuccess(
             result,
             isCrossKit,
@@ -171,7 +171,7 @@ export function useSampleManagementMoveOps({
             toSlot,
           );
         } else {
-          onMessage?.(result.error || "Failed to move sample", "error");
+          onMessage?.(result?.error || "Failed to move sample", "error");
         }
       } catch (error) {
         onMessage?.(

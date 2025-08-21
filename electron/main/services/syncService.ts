@@ -4,7 +4,7 @@ import { BrowserWindow } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 
-import { getAudioMetadata, validateSampleFormat } from "../audioUtils.js";
+import { getAudioMetadata, validateSampleFormat, type FormatValidationResult, type AudioMetadata, type FormatIssue } from "../audioUtils.js";
 import { getKitSamples, markKitsAsSynced } from "../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 
@@ -49,6 +49,12 @@ export interface SyncValidationError {
   type: "access_denied" | "invalid_format" | "missing_file" | "other";
 }
 
+interface SyncResults {
+  filesToConvert: SyncFileOperation[];
+  hasFormatWarnings: boolean;
+  warnings: string[];
+}
+
 class SyncService {
   private currentSyncJob: {
     bytesTransferred: number;
@@ -79,7 +85,7 @@ class SyncService {
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
+      if (!localStorePath || typeof localStorePath !== 'string') {
         return { error: "No local store path configured", success: false };
       }
 
@@ -141,7 +147,7 @@ class SyncService {
       // For now, we need to generate file operations for sync
       // This is a temporary fix - we should separate summary from sync operations
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath) {
+      if (!localStorePath || typeof localStorePath !== 'string') {
         return { error: "No local store path configured", success: false };
       }
 
@@ -210,21 +216,21 @@ class SyncService {
    * Add file to sync conversion list
    */
   private addSyncFileToConvert(
-    sample: unknown,
+    sample: Sample,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    metadataResult: unknown,
-    formatValidationResult: unknown,
-    results: unknown,
+    metadataResult: DbResult<AudioMetadata>,
+    formatValidationResult: DbResult<FormatValidationResult>,
+    results: SyncResults,
   ): void {
     const issues = formatValidationResult.data?.issues || [];
-    const issueMessages = issues.map((issue: unknown) => issue.message);
+    const issueMessages = issues.map((issue: FormatIssue) => issue.message);
 
     results.filesToConvert.push({
       destinationPath,
       filename,
-      kitName: sample.kitName,
+      kitName: sample.kit_name,
       operation: "convert",
       originalFormat: metadataResult.success
         ? `${metadataResult.data?.bitDepth}bit/${metadataResult.data?.sampleRate}Hz`

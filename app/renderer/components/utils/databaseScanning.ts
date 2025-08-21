@@ -5,6 +5,9 @@ import {
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
   type ProgressCallback,
+  type VoiceInferenceOutput,
+  type WAVAnalysisOutput,
+  type ChainResult,
 } from "./scanners";
 
 // Database operations interface (to be implemented via IPC)
@@ -28,6 +31,18 @@ interface VoiceUpdateResult {
 let dbOps: DatabaseOperations | null = null;
 
 // Types for database scanning operations
+interface KitScanResults {
+  voiceInference?: VoiceInferenceOutput;
+  wavAnalysis?: WAVAnalysisOutput[];
+}
+
+interface KitScanResult {
+  completedOperations: number;
+  errors: Array<{ error: string; operation: string }>;
+  results: KitScanResults;
+  success: boolean;
+  totalOperations: number;
+}
 export interface DatabaseScanResult {
   errors: Array<{ error: string; operation: string }>;
   scannedKits: number;
@@ -59,7 +74,7 @@ export async function scanKitToDatabase(
   };
 
   try {
-    const scanResult = await executeFullKitScan(
+    const scanResult: KitScanResult = await executeFullKitScan(
       {
         samples: kitScanData.samples,
         wavFiles: kitScanData.wavFiles,

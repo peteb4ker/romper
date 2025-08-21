@@ -258,7 +258,7 @@ export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
 /**
  * Execute a function with a database connection, handling errors and cleanup
  */
-export function withDb<T>(dbDir: string, fn: (db: unknown) => T): DbResult<T> {
+export function withDb<T>(dbDir: string, fn: (db: ReturnType<typeof drizzle<typeof schema>>) => T): DbResult<T> {
   const dbPath = path.join(dbDir, DB_FILENAME);
 
   // Ensure migrations are up to date
@@ -289,7 +289,7 @@ export function withDb<T>(dbDir: string, fn: (db: unknown) => T): DbResult<T> {
  */
 export function withDbTransaction<T>(
   dbDir: string,
-  fn: (db: unknown, sqlite: BetterSqlite3.Database) => T,
+  fn: (db: ReturnType<typeof drizzle<typeof schema>>, sqlite: BetterSqlite3.Database) => T,
 ): DbResult<T> {
   const dbPath = path.join(dbDir, DB_FILENAME);
 

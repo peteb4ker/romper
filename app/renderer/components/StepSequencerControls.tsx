@@ -22,10 +22,6 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
   kitName,
   setIsSeqPlaying,
 }) => {
-  console.log("[BPM Debug] StepSequencerControls props:", {
-    bpm: bpmLogic.bpm,
-    kitName,
-  });
   const [inputValue, setInputValue] = React.useState(bpmLogic.bpm.toString());
 
   React.useEffect(() => {

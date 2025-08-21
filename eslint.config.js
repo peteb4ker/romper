@@ -17,9 +17,10 @@ export default defineConfig([
     ignores: ["node_modules", "dist", "out", "coverage", "build"],
   },
 
-  // JS files (browser environment)
+  // JS files (browser environment) - excluding Node.js files
   {
     files: ["**/*.js"],
+    ignores: ["scripts/**/*.js", "*.config.js", "tailwind.config.js"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -196,7 +197,7 @@ export default defineConfig([
 
   // Config files (Node environment)
   {
-    files: ["*.config.js", "*.config.ts"],
+    files: ["*.config.js", "*.config.ts", "tailwind.config.js"],
     languageOptions: {
       globals: trimGlobals(globals.node),
     },

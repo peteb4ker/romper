@@ -2,33 +2,31 @@
 
 import type { ScanResult, WAVAnalysisInput, WAVAnalysisOutput } from "./types";
 
-// TypeScript global declaration for window.electronAPI
-declare global {
-  interface Window {
-    electronAPI: {
-      getAudioMetadata: (filePath: string) => Promise<{
-        success: boolean;
-        data?: {
-          bitDepth?: number;
-          channels?: number;
-          duration?: number;
-          fileSize?: number;
-          sampleRate?: number;
-        };
-        error?: string;
-      }>;
-    };
-  }
-}
+// Use existing electronAPI interface (defined in app/renderer/electron.d.ts)
+declare const window: Window & {
+  electronAPI: {
+    getAudioMetadata: (filePath: string) => Promise<{
+      success: boolean;
+      data?: {
+        bitDepth?: number;
+        channels?: number;
+        duration?: number;
+        fileSize?: number;
+        sampleRate?: number;
+      };
+      error?: string;
+    }>;
+  };
+};
 
 /**
  * Rample format requirements for validation
  */
 const RAMPLE_FORMAT_REQUIREMENTS = {
-  bitDepths: [8, 16],
+  bitDepths: [8, 16] as number[],
   maxChannels: 2, // mono or stereo
-  sampleRates: [44100],
-} as const;
+  sampleRates: [44100] as number[],
+};
 
 /**
  * Analyzes a WAV file to extract audio properties
@@ -111,10 +109,9 @@ function checkRampleCompatibility(metadata: {
   const { bitDepth, channels, sampleRate } = metadata;
 
   // Check if natively compatible (no conversion needed)
-  const bitDepthOk = RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(bitDepth as 8 | 16);
+  const bitDepthOk = RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(bitDepth);
   const channelsOk = channels <= RAMPLE_FORMAT_REQUIREMENTS.maxChannels;
-  const sampleRateOk =
-    RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(sampleRate as 44100);
+  const sampleRateOk = RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(sampleRate);
 
   if (bitDepthOk && channelsOk && sampleRateOk) {
     return "native";

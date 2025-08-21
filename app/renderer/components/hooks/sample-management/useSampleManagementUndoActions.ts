@@ -1,3 +1,4 @@
+import type { Sample } from "@romper/shared/db/schema.js";
 import type {
   AddSampleAction,
   MoveSampleAction,
@@ -5,11 +6,28 @@ import type {
   ReindexSamplesAction,
   ReplaceSampleAction,
 } from "@romper/shared/undoTypes";
-import type { Sample } from "@romper/shared/db/schema.js";
-import type { MoveOperationResult } from "./types.js";
 
 import { createActionId } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
+
+import type { MoveOperationResult } from "./types.js";
+
+// Type interfaces for operation results
+interface ReindexOperationResult {
+  success: boolean;
+  data?: {
+    affectedSamples: Sample[];
+  };
+}
+
+interface SampleOperationResult {
+  success: boolean;
+  data?: {
+    affectedSamples: Sample[];
+    movedSample: Sample;
+    replacedSample?: Sample;
+  };
+}
 
 export interface UseSampleManagementUndoActionsOptions {
   kitName: string;
@@ -29,11 +47,12 @@ export function useSampleManagementUndoActions({
     async (voice: number, slotNumber: number) => {
       if (skipUndoRecording) return null;
 
-      const samplesResult = await window.electronAPI?.getAllSamplesForKit?.(kitName);
+      const samplesResult =
+        await window.electronAPI?.getAllSamplesForKit?.(kitName);
       if (samplesResult?.success && samplesResult.data) {
         return (
-          samplesResult.data.find(
-            (s: any) =>
+          (samplesResult.data as Sample[]).find(
+            (s) =>
               s.voice_number === voice && s.slot_number === slotNumber,
           ) || null
         );
@@ -49,11 +68,12 @@ export function useSampleManagementUndoActions({
       if (skipUndoRecording) return null;
 
       try {
-        const samplesResult = await window.electronAPI?.getAllSamplesForKit?.(kitName);
+        const samplesResult =
+          await window.electronAPI?.getAllSamplesForKit?.(kitName);
         if (samplesResult?.success && samplesResult.data) {
           return (
-            samplesResult.data.find(
-              (sample: any) =>
+            (samplesResult.data as Sample[]).find(
+              (sample) =>
                 sample.voice_number === voice &&
                 sample.slot_number === slotNumber,
             ) || null
@@ -131,11 +151,11 @@ export function useSampleManagementUndoActions({
     (
       voice: number,
       slotNumber: number,
-      sampleToDelete: any,
-      result: any,
+      sampleToDelete: Sample,
+      result: ReindexOperationResult,
     ): ReindexSamplesAction => ({
       data: {
-        affectedSamples: result.data.affectedSamples.map((sample: any) => ({
+        affectedSamples: result.data?.affectedSamples?.map((sample) => ({
           newSlot: sample.slot_number - 1, // Original position before reindexing
           oldSlot: sample.slot_number, // New position after reindexing
           sample: {
@@ -144,7 +164,7 @@ export function useSampleManagementUndoActions({
             source_path: sample.source_path,
           },
           voice: sample.voice_number,
-        })),
+        })) || [],
         deletedSample: {
           filename: sampleToDelete.filename,
           is_stereo: sampleToDelete.is_stereo,
@@ -165,16 +185,16 @@ export function useSampleManagementUndoActions({
     (params: {
       fromSlot: number;
       fromVoice: number;
-      result: any;
-      stateSnapshot: any[];
+      result: SampleOperationResult;
+      stateSnapshot: { sample: { filename: string; is_stereo: boolean; source_path: string }; slot: number; voice: number }[];
       toSlot: number;
       toVoice: number;
     }): MoveSampleAction => ({
       data: {
-        affectedSamples: params.result.data.affectedSamples.map(
-          (sample: any) => ({
+        affectedSamples: params.result.data?.affectedSamples?.map(
+          (sample) => ({
             newSlot: sample.slot_number,
-            oldSlot: sample.original_slot_number,
+            oldSlot: sample.slot_number, // Using slot_number for both since original_slot_number doesn't exist in Sample
             sample: {
               filename: sample.filename,
               is_stereo: sample.is_stereo,
@@ -182,19 +202,19 @@ export function useSampleManagementUndoActions({
             },
             voice: sample.voice_number,
           }),
-        ),
+        ) || [],
         fromSlot: params.fromSlot,
         fromVoice: params.fromVoice,
         movedSample: {
-          filename: params.result.data.movedSample.filename,
-          is_stereo: params.result.data.movedSample.is_stereo,
-          source_path: params.result.data.movedSample.source_path,
+          filename: params.result.data?.movedSample?.filename || "",
+          is_stereo: params.result.data?.movedSample?.is_stereo || false,
+          source_path: params.result.data?.movedSample?.source_path || "",
         },
         replacedSample: params.result.data?.replacedSample
           ? {
-              filename: params.result.data?.replacedSample?.filename || "",
-              is_stereo: params.result.data?.replacedSample?.is_stereo || false,
-              source_path: params.result.data?.replacedSample?.source_path || "",
+              filename: params.result.data.replacedSample.filename,
+              is_stereo: params.result.data.replacedSample.is_stereo,
+              source_path: params.result.data.replacedSample.source_path,
             }
           : undefined,
         stateSnapshot: params.stateSnapshot,
@@ -219,8 +239,8 @@ export function useSampleManagementUndoActions({
       toVoice: number;
     }): MoveSampleBetweenKitsAction => ({
       data: {
-        affectedSamples: params.result.data?.affectedSamples?.map(
-          (sample) => ({
+        affectedSamples:
+          params.result.data?.affectedSamples?.map((sample) => ({
             newSlot: sample.slot_number,
             oldSlot: sample.original_slot_number,
             sample: {
@@ -229,8 +249,7 @@ export function useSampleManagementUndoActions({
               source_path: sample.source_path,
             },
             voice: sample.voice_number,
-          }),
-        ) || [],
+          })) || [],
         fromKit: kitName,
         fromSlot: params.fromSlot,
         fromVoice: params.fromVoice,
@@ -244,7 +263,8 @@ export function useSampleManagementUndoActions({
           ? {
               filename: params.result.data?.replacedSample?.filename || "",
               is_stereo: params.result.data?.replacedSample?.is_stereo || false,
-              source_path: params.result.data?.replacedSample?.source_path || "",
+              source_path:
+                params.result.data?.replacedSample?.source_path || "",
             }
           : undefined,
         toKit: params.targetKit,

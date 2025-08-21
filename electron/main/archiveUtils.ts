@@ -3,10 +3,10 @@ import * as path from "path";
 import * as unzipper from "unzipper";
 
 interface UnzipperEntry {
-  path: string;
-  type: string;
   autodrain(): void;
+  path: string;
   pipe(destination: fs.WriteStream): fs.WriteStream;
+  type: string;
 }
 
 export async function countZipEntries(zipPath: string): Promise<number> {
@@ -14,7 +14,7 @@ export async function countZipEntries(zipPath: string): Promise<number> {
     let count = 0;
     fs.createReadStream(zipPath)
       .pipe(unzipper.Parse())
-      .on("entry", (entry: any) => {
+      .on("entry", (entry: UnzipperEntry) => {
         if (isValidEntry(entry.path)) {
           count++;
         }
@@ -62,7 +62,7 @@ export async function extractZipEntries(
 
     fs.createReadStream(zipPath)
       .pipe(unzipper.Parse())
-      .on("entry", (entry: any) => {
+      .on("entry", (entry: UnzipperEntry) => {
         processedCount = processZipEntry(
           entry,
           destDir,

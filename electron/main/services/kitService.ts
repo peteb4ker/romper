@@ -2,6 +2,8 @@ import type { DbResult, NewKit, NewSample } from "@romper/shared/db/schema.js";
 
 import * as path from "path";
 
+import type { InMemorySettings } from "../types/settings.js";
+
 import {
   addKit,
   addSample,
@@ -19,7 +21,7 @@ export class KitService {
    * Copies metadata and references, not physical files
    */
   copyKit(
-    inMemorySettings: Record<string, unknown>,
+    inMemorySettings: InMemorySettings,
     sourceKit: string,
     destKit: string,
   ): DbResult<void> {
@@ -104,7 +106,7 @@ export class KitService {
    * Kit creation is reference-only - no physical folders are created
    */
   createKit(
-    inMemorySettings: Record<string, unknown>,
+    inMemorySettings: InMemorySettings,
     kitSlot: string,
   ): DbResult<void> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
@@ -145,10 +147,8 @@ export class KitService {
     return path.join(localStorePath, ".romperdb");
   }
 
-  private getLocalStorePath(
-    inMemorySettings: Record<string, unknown>,
-  ): null | string {
-    return inMemorySettings.localStorePath || null;
+  private getLocalStorePath(inMemorySettings: InMemorySettings): null | string {
+    return inMemorySettings.localStorePath;
   }
 
   private validateKitSlot(kitSlot: string): void {

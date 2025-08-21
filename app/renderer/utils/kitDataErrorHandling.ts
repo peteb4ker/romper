@@ -1,7 +1,7 @@
-import type { OperationResult } from "../components/hooks/sample-management/types";
-
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import { toast } from "sonner";
+
+import type { OperationResult } from "../components/hooks/sample-management/types";
 
 /**
  * Enhanced error handling utilities for kit data management operations
@@ -194,9 +194,13 @@ export async function executeAsyncOperation<T>(
     return { data: result, success: true };
   } catch (error) {
     if (options.errorHandler && options.operationName) {
-      return options.errorHandler.handleApiError<T>(error, options.operationName, {
-        silent: options.silent,
-      });
+      return options.errorHandler.handleApiError<T>(
+        error,
+        options.operationName,
+        {
+          silent: options.silent,
+        },
+      );
     }
 
     const errorMessage = getErrorMessage(error);
@@ -237,15 +241,32 @@ export const ApiValidation = {
     }
 
     // Type guard for response with success property
-    if (typeof response === 'object' && response !== null && 'success' in response) {
+    if (
+      typeof response === "object" &&
+      response !== null &&
+      "success" in response
+    ) {
       const typedResponse = response as OperationResult;
       if (typedResponse.success === false) {
-        return { error: typedResponse.error || `${operation} failed`, success: false };
+        return {
+          error: typedResponse.error || `${operation} failed`,
+          success: false,
+        };
       }
-      return { data: (typedResponse.data || typedResponse) as T, success: true };
+      return {
+        data: (typedResponse.data || typedResponse) as T,
+        success: true,
+      };
     }
 
     // Fallback for responses without success property
-    return { data: response as T, success: true };
+    // If response has a data property, extract it; otherwise use the whole response
+    const responseData = 
+      typeof response === "object" && 
+      response !== null && 
+      "data" in response ? 
+      (response as { data: T }).data : 
+      response as T;
+    return { data: responseData, success: true };
   },
 };

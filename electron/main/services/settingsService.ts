@@ -2,6 +2,8 @@ import { app } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 
+import type { InMemorySettings } from "../types/settings.js";
+
 /**
  * Service for application settings management
  * Extracted from ipcHandlers.ts to separate business logic from IPC routing
@@ -11,7 +13,7 @@ export class SettingsService {
    * Get the local store path with environment variable override support
    */
   getLocalStorePath(
-    inMemorySettings: Record<string, unknown>,
+    inMemorySettings: InMemorySettings,
     envOverride?: string,
   ): null | string {
     return envOverride || inMemorySettings.localStorePath || null;
@@ -20,9 +22,7 @@ export class SettingsService {
   /**
    * Read current in-memory settings with environment overrides
    */
-  readSettings(
-    inMemorySettings: Record<string, unknown>,
-  ): Record<string, unknown> {
+  readSettings(inMemorySettings: InMemorySettings): InMemorySettings {
     // Include environment overrides when available
     const settings = { ...inMemorySettings };
 
@@ -42,7 +42,7 @@ export class SettingsService {
    * Validate that a local store path is configured
    */
   validateLocalStorePath(
-    inMemorySettings: Record<string, unknown>,
+    inMemorySettings: InMemorySettings,
     envOverride?: string,
   ): { error: string; success: false } | { path: string; success: true } {
     const localStorePath = this.getLocalStorePath(
@@ -61,7 +61,7 @@ export class SettingsService {
    * Write a setting value to both memory and persistent storage
    */
   writeSetting(
-    inMemorySettings: Record<string, unknown>,
+    inMemorySettings: InMemorySettings,
     key: string,
     value: unknown,
   ): void {

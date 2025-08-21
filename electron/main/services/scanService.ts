@@ -191,7 +191,9 @@ export class ScanService {
   private getLocalStorePath(
     inMemorySettings: Record<string, unknown>,
   ): null | string {
-    return inMemorySettings.localStorePath || null;
+    return typeof inMemorySettings.localStorePath === "string"
+      ? inMemorySettings.localStorePath
+      : null;
   }
 
   /**

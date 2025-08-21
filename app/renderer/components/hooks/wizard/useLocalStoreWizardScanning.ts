@@ -2,7 +2,11 @@ import { groupSamplesByVoice } from "@romper/shared/kitUtilsShared";
 import { useCallback, useMemo } from "react";
 
 import type { ElectronAPI } from "../../../electron.d";
-import type { FullKitScanInput, ChainResult, VoiceInferenceOutput } from "../../utils/scanners/types";
+import type {
+  ChainResult,
+  FullKitScanInput,
+  VoiceInferenceOutput,
+} from "../../utils/scanners/types";
 
 import { executeFullKitScan } from "../../utils/scanners/orchestrationFunctions";
 
@@ -102,11 +106,9 @@ export function useLocalStoreWizardScanning({
         kitName: string,
         scanResult: ChainResult,
       ) => {
-        if (
-          scanResult.success &&
-          scanResult.results.voiceInference
-        ) {
-          const voiceInferenceResult = scanResult.results.voiceInference as VoiceInferenceOutput;
+        if (scanResult.success && scanResult.results.voiceInference) {
+          const voiceInferenceResult = scanResult.results
+            .voiceInference as VoiceInferenceOutput;
           const voiceNames = voiceInferenceResult.voiceNames;
 
           // Update each voice with its inferred alias

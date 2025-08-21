@@ -1,13 +1,13 @@
 // Database-backed scanning operations that replace JSON file dependency
 
 import {
+  type ChainResult,
   executeFullKitScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,
   type ProgressCallback,
   type VoiceInferenceOutput,
   type WAVAnalysisOutput,
-  type ChainResult,
 } from "./scanners";
 
 // Database operations interface (to be implemented via IPC)
@@ -30,19 +30,6 @@ interface VoiceUpdateResult {
 // Global database operations - will be injected
 let dbOps: DatabaseOperations | null = null;
 
-// Types for database scanning operations
-interface KitScanResults {
-  voiceInference?: VoiceInferenceOutput;
-  wavAnalysis?: WAVAnalysisOutput[];
-}
-
-interface KitScanResult {
-  completedOperations: number;
-  errors: Array<{ error: string; operation: string }>;
-  results: KitScanResults;
-  success: boolean;
-  totalOperations: number;
-}
 export interface DatabaseScanResult {
   errors: Array<{ error: string; operation: string }>;
   scannedKits: number;
@@ -57,6 +44,19 @@ export interface KitScanData {
   kitPath: string;
   samples: { [voice: number]: string[] };
   wavFiles: string[];
+}
+interface KitScanResult {
+  completedOperations: number;
+  errors: Array<{ error: string; operation: string }>;
+  results: KitScanResults;
+  success: boolean;
+  totalOperations: number;
+}
+
+// Types for database scanning operations
+interface KitScanResults {
+  voiceInference?: VoiceInferenceOutput;
+  wavAnalysis?: WAVAnalysisOutput[];
 }
 
 export async function scanKitToDatabase(
@@ -198,7 +198,8 @@ export async function scanVoiceNamesToDatabase(
     const scanResult = await executeVoiceInferenceScan(samples);
 
     if (scanResult.success && scanResult.results.voiceInference) {
-      const voiceInferenceResult = scanResult.results.voiceInference as VoiceInferenceOutput;
+      const voiceInferenceResult = scanResult.results
+        .voiceInference as VoiceInferenceOutput;
       await processVoiceInferenceResults(
         dbDir,
         kitName,
@@ -248,7 +249,8 @@ export async function scanWavFilesToDatabase(
     const scanResult = await executeWAVAnalysisScan(wavFiles, fileReader);
 
     if (scanResult.success && scanResult.results.wavAnalysis) {
-      const wavAnalysisResult = scanResult.results.wavAnalysis as WAVAnalysisOutput[];
+      const wavAnalysisResult = scanResult.results
+        .wavAnalysis as WAVAnalysisOutput[];
       result.scannedWavFiles = wavAnalysisResult.length;
 
       // Note: The WAV metadata would be stored when updating sample records

@@ -1,16 +1,9 @@
-import { useCallback } from "react";
-import { toast } from "sonner";
 import type { Sample } from "@romper/shared/db/schema.js";
 
-import { ErrorPatterns } from "../../../utils/errorHandling";
+import { useCallback } from "react";
+import { toast } from "sonner";
 
-interface FormatValidation {
-  metadata?: {
-    channels?: number;
-  };
-}
-import { useSettings } from "../../../utils/SettingsContext";
-import { useStereoHandling } from "./useStereoHandling";
+import { ErrorPatterns } from "../../../utils/errorHandling";
 
 export interface UseSampleProcessingOptions {
   kitName: string;
@@ -26,6 +19,14 @@ export interface UseSampleProcessingOptions {
   ) => Promise<void>;
   samples: string[];
   voice: number;
+}
+import { useSettings } from "../../../utils/SettingsContext";
+import { useStereoHandling } from "./useStereoHandling";
+
+interface FormatValidation {
+  metadata?: {
+    channels?: number;
+  };
 }
 
 /**
@@ -62,8 +63,9 @@ export function useSampleProcessing({
   }, [kitName]);
 
   const isDuplicateSample = useCallback(
-    async (allSamples: Sample[], filePath: string): Promise<boolean> => {
-      const voiceSamples = allSamples.filter(
+    async (allSamples: unknown[], filePath: string): Promise<boolean> => {
+      const samples = allSamples as Sample[];
+      const voiceSamples = samples.filter(
         (s: Sample) => s.voice_number === voice,
       );
       const isDuplicate = voiceSamples.some(
@@ -139,12 +141,14 @@ export function useSampleProcessing({
   const processAssignment = useCallback(
     async (
       filePath: string,
-      formatValidation: FormatValidation,
-      allSamples: Sample[],
+      formatValidation: unknown,
+      allSamples: unknown[],
       modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
       droppedSlotNumber: number,
     ): Promise<boolean> => {
-      const channels = formatValidation.metadata?.channels || 1;
+      const validation = formatValidation as FormatValidation;
+      const samples = allSamples as Sample[];
+      const channels = validation.metadata?.channels || 1;
 
       if (modifierKeys.forceMonoDrop || modifierKeys.forceStereoDrop) {
         console.log(
@@ -160,7 +164,7 @@ export function useSampleProcessing({
       const stereoResult = analyzeStereoAssignment(
         voice,
         channels,
-        allSamples,
+        samples,
         modifierKeys.forceMonoDrop || modifierKeys.forceStereoDrop
           ? {
               forceMono: modifierKeys.forceMonoDrop,
@@ -186,7 +190,7 @@ export function useSampleProcessing({
 
       await executeAssignment(
         filePath,
-        allSamples,
+        samples,
         droppedSlotNumber,
         assignmentOptions,
       );

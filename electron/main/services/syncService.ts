@@ -4,22 +4,19 @@ import { BrowserWindow } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 
-import { getAudioMetadata, validateSampleFormat, type FormatValidationResult, type AudioMetadata, type FormatIssue } from "../audioUtils.js";
+import {
+  type AudioMetadata,
+  type FormatIssue,
+  type FormatValidationResult,
+  getAudioMetadata,
+  validateSampleFormat,
+} from "../audioUtils.js";
 import { getKitSamples, markKitsAsSynced } from "../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 
 export interface SyncChangeSummary {
   fileCount: number;
   kitCount: number;
-}
-
-interface SyncResults {
-  filesToConvert: SyncFileOperation[];
-  filesToCopy: SyncFileOperation[];
-  hasFormatWarnings: boolean;
-  totalSize: number;
-  validationErrors: SyncValidationError[];
-  warnings: string[];
 }
 
 export interface SyncFileOperation {
@@ -60,6 +57,15 @@ export interface SyncValidationError {
 
 interface SyncResults {
   filesToConvert: SyncFileOperation[];
+  filesToCopy: SyncFileOperation[];
+  hasFormatWarnings: boolean;
+  totalSize: number;
+  validationErrors: SyncValidationError[];
+  warnings: string[];
+}
+
+interface SyncResults {
+  filesToConvert: SyncFileOperation[];
   hasFormatWarnings: boolean;
   warnings: string[];
 }
@@ -94,7 +100,7 @@ class SyncService {
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath || typeof localStorePath !== 'string') {
+      if (!localStorePath || typeof localStorePath !== "string") {
         return { error: "No local store path configured", success: false };
       }
 
@@ -156,7 +162,7 @@ class SyncService {
       // For now, we need to generate file operations for sync
       // This is a temporary fix - we should separate summary from sync operations
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath || typeof localStorePath !== 'string') {
+      if (!localStorePath || typeof localStorePath !== "string") {
         return { error: "No local store path configured", success: false };
       }
 
@@ -740,7 +746,7 @@ class SyncService {
 
       try {
         const localStorePath = inMemorySettings.localStorePath;
-        if (localStorePath && typeof localStorePath === 'string') {
+        if (localStorePath && typeof localStorePath === "string") {
           const syncOutputDir = path.join(localStorePath, "sync_output");
           if (fs.existsSync(syncOutputDir)) {
             fs.rmSync(syncOutputDir, { force: true, recursive: true });
@@ -783,7 +789,8 @@ class SyncService {
     syncedFiles: number,
   ): Promise<void> {
     const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath || !syncedFiles || typeof localStorePath !== 'string') return;
+    if (!localStorePath || !syncedFiles || typeof localStorePath !== "string")
+      return;
 
     const dbDir = path.join(localStorePath, ".romperdb");
     const syncedKitNames = [...new Set(allFiles.map((file) => file.kitName))];

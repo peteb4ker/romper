@@ -1,6 +1,9 @@
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
+import type { Sample } from "@romper/shared/db/schema.js";
 
 import { useCallback } from "react";
+
+import type { MoveOperationResult } from "./types";
 
 import { useSampleManagementUndoActions } from "./useSampleManagementUndoActions";
 
@@ -50,13 +53,14 @@ export function useSampleManagementMoveOps({
     async (fromVoice: number, toVoice: number) => {
       if (skipUndoRecording || !onAddUndoAction) return [];
 
-      const samplesResult = await window.electronAPI?.getAllSamplesForKit?.(kitName);
+      const samplesResult =
+        await window.electronAPI?.getAllSamplesForKit?.(kitName);
       if (!samplesResult?.success || !samplesResult.data) return [];
 
       const affectedVoices = new Set([fromVoice, toVoice]);
-      return samplesResult.data
-        .filter((s: any) => affectedVoices.has(s.voice_number))
-        .map((s: any) => ({
+      return (samplesResult.data as Sample[])
+        .filter((s) => affectedVoices.has(s.voice_number))
+        .map((s) => ({
           sample: {
             filename: s.filename,
             is_stereo: s.is_stereo,
@@ -112,7 +116,7 @@ export function useSampleManagementMoveOps({
             targetKit,
             toVoice,
             toSlot,
-            "insert"
+            "insert",
           );
         } else {
           const stateSnapshot = await captureStateSnapshot(fromVoice, toVoice);
@@ -152,7 +156,7 @@ export function useSampleManagementMoveOps({
           const crossKitMoveAction = undoActions.createCrossKitMoveAction({
             fromSlot,
             fromVoice,
-            result,
+            result: result as MoveOperationResult,
             targetKit,
             toSlot,
             toVoice,

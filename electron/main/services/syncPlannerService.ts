@@ -4,7 +4,13 @@ import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as fs from "fs";
 import * as path from "path";
 
-import { getAudioMetadata, validateSampleFormat, type FormatValidationResult, type AudioMetadata, type FormatIssue } from "../audioUtils.js";
+import {
+  type AudioMetadata,
+  type FormatIssue,
+  type FormatValidationResult,
+  getAudioMetadata,
+  validateSampleFormat,
+} from "../audioUtils.js";
 import { getKitSamples } from "../db/romperDbCoreORM.js";
 import { rampleNamingService } from "./rampleNamingService.js";
 
@@ -48,7 +54,7 @@ export class SyncPlannerService {
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
       const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath || typeof localStorePath !== 'string') {
+      if (!localStorePath || typeof localStorePath !== "string") {
         return { error: "No local store path configured", success: false };
       }
 

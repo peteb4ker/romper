@@ -2,6 +2,7 @@
 // Maintains undo/redo stacks in React state for immediate UI updates
 
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
+
 import { getActionDescription } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
 
@@ -20,7 +21,10 @@ export function useUndoRedo(kitName: string) {
   const redoHandlers = useRedoActionHandlers({ kitName });
 
   // Handle undo result and state updates
-  const handleUndoResult = (result: OperationResult, actionToUndo: AnyUndoAction) => {
+  const handleUndoResult = (
+    result: OperationResult,
+    actionToUndo: AnyUndoAction,
+  ) => {
     console.log("[UNDO] Final result:", result);
 
     if (result.success) {
@@ -38,7 +42,10 @@ export function useUndoRedo(kitName: string) {
   };
 
   // Handle redo result and state updates
-  const handleRedoResult = (result: OperationResult, actionToRedo: AnyUndoAction) => {
+  const handleRedoResult = (
+    result: OperationResult,
+    actionToRedo: AnyUndoAction,
+  ) => {
     if (result.success) {
       state.handleRedoSuccess(actionToRedo);
       state.emitRefreshEvent();
@@ -69,13 +76,13 @@ export function useUndoRedo(kitName: string) {
         "[UNDO] Starting undo execution for type:",
         actionToUndo.type,
       );
-      console.log(
-        "[UNDO] ElectronAPI available:",
-        !!window.electronAPI,
-      );
+      console.log("[UNDO] ElectronAPI available:", !!window.electronAPI);
 
       const result = await undoHandlers.executeUndoAction(actionToUndo);
-      const operationResult: OperationResult = result || { success: false, error: "No result returned" };
+      const operationResult: OperationResult = result || {
+        error: "No result returned",
+        success: false,
+      };
       handleUndoResult(operationResult, actionToUndo);
     } catch (error) {
       console.log("[UNDO] Exception during undo:", error);
@@ -103,7 +110,10 @@ export function useUndoRedo(kitName: string) {
 
     try {
       const result = await redoHandlers.executeRedoAction(actionToRedo);
-      const operationResult: OperationResult = result || { success: false, error: "No result returned" };
+      const operationResult: OperationResult = result || {
+        error: "No result returned",
+        success: false,
+      };
       handleRedoResult(operationResult, actionToRedo);
     } catch (error) {
       handleRedoError(error);

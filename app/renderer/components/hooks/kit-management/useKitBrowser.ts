@@ -2,13 +2,16 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import { RefObject } from "react";
 
-import { useKitBankNavigation, type KitListComponent } from "./useKitBankNavigation";
+import {
+  type KitListComponent,
+  useKitBankNavigation,
+} from "./useKitBankNavigation";
 import { useKitCreation } from "./useKitCreation";
 import { useKitDuplication } from "./useKitDuplication";
 import { useKitErrorHandling } from "./useKitErrorHandling";
 
 interface UseKitBrowserProps {
-  kitListRef: RefObject<KitListComponent>;
+  kitListRef: RefObject<KitListComponent | null>;
   kits: KitWithRelations[];
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: (scrollToKit?: string) => void;

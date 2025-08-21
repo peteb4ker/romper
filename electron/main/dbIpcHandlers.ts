@@ -3,6 +3,8 @@ import type { NewKit, NewSample } from "@romper/shared/db/schema.js";
 // IMPORTANT: Drizzle ORM with better-sqlite3 is SYNCHRONOUS - do not use await with database operations
 import { ipcMain } from "electron";
 
+import type { InMemorySettings } from "./types/settings.js";
+
 import { getAudioMetadata, validateSampleFormat } from "./audioUtils.js";
 import { registerFavoritesIpcHandlers } from "./db/favoritesIpcHandlers.js";
 import { createDbHandler } from "./db/ipcHandlerUtils.js";
@@ -25,9 +27,7 @@ import { registerSyncIpcHandlers } from "./db/syncIpcHandlers.js";
 import { localStoreService } from "./services/localStoreService.js";
 import { scanService } from "./services/scanService.js";
 
-export function registerDbIpcHandlers(
-  inMemorySettings: Record<string, unknown>,
-) {
+export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   // Register all handler groups
   registerSampleIpcHandlers(inMemorySettings);
   registerSyncIpcHandlers(inMemorySettings);
@@ -128,13 +128,12 @@ export function registerDbIpcHandlers(
     "validate-local-store",
     async (_event, localStorePath?: string) => {
       // Check environment override first, then provided path, then settings
-      const settingsPath = typeof inMemorySettings.localStorePath === 'string' 
-        ? inMemorySettings.localStorePath 
-        : undefined;
+      const settingsPath =
+        typeof inMemorySettings.localStorePath === "string"
+          ? inMemorySettings.localStorePath
+          : undefined;
       const pathToValidate =
-        process.env.ROMPER_LOCAL_PATH ||
-        localStorePath ||
-        settingsPath;
+        process.env.ROMPER_LOCAL_PATH || localStorePath || settingsPath;
       if (!pathToValidate) {
         throw new Error("No local store path provided or configured");
       }
@@ -146,13 +145,12 @@ export function registerDbIpcHandlers(
     "validate-local-store-basic",
     async (_event, localStorePath?: string) => {
       // Check environment override first, then provided path, then settings
-      const settingsPath = typeof inMemorySettings.localStorePath === 'string' 
-        ? inMemorySettings.localStorePath 
-        : undefined;
+      const settingsPath =
+        typeof inMemorySettings.localStorePath === "string"
+          ? inMemorySettings.localStorePath
+          : undefined;
       const pathToValidate =
-        process.env.ROMPER_LOCAL_PATH ||
-        localStorePath ||
-        settingsPath;
+        process.env.ROMPER_LOCAL_PATH || localStorePath || settingsPath;
       if (!pathToValidate) {
         throw new Error("No local store path provided or configured");
       }

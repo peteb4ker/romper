@@ -19,7 +19,7 @@ function getConfigValue<T = string>(
     typeof window !== "undefined" &&
     (window as WindowWithRomperEnv).romperEnv?.[envKey]
   ) {
-    return (window as WindowWithRomperEnv).romperEnv[envKey] as T;
+    return (window as WindowWithRomperEnv).romperEnv?.[envKey] as T;
   }
 
   // Fallback to process.env if available (for development)

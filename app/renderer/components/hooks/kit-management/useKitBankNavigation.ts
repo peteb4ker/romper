@@ -13,7 +13,7 @@ export interface KitListComponent {
 }
 
 interface UseKitBankNavigationProps {
-  kitListRef: RefObject<KitListComponent>;
+  kitListRef: RefObject<KitListComponent | null>;
   kits: KitWithRelations[];
 }
 

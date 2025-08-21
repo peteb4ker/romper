@@ -177,7 +177,11 @@ export function useSampleManagementOperations({
           slotNumber,
         );
 
-        const result = await window.electronAPI.deleteSampleFromSlot(kitName, voice, slotNumber);
+        const result = await window.electronAPI.deleteSampleFromSlot(
+          kitName,
+          voice,
+          slotNumber,
+        );
 
         if (result.success) {
           onMessage?.(

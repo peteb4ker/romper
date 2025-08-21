@@ -43,7 +43,6 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
 
       expect(mockSet).toHaveBeenCalledWith({
         modified_since_sync: true,
-        updated_at: expect.any(String),
       });
       expect(mockRun).toHaveBeenCalled();
     });
@@ -79,7 +78,7 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
       expect(result.error).toBe("Database connection failed");
     });
 
-    test("should preserve timestamp format in updated_at", () => {
+    test("should not add updated_at field (not in schema)", () => {
       const mockRun = vi.fn();
       const mockWhere = vi.fn().mockReturnValue({
         run: mockRun,
@@ -101,9 +100,8 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
       markKitAsModified(mockDbDir, "A0");
 
       const callArgs = mockSet.mock.calls[0][0];
-      expect(callArgs.updated_at).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
-      );
+      expect(callArgs).not.toHaveProperty("updated_at");
+      expect(callArgs.modified_since_sync).toBe(true);
     });
   });
 

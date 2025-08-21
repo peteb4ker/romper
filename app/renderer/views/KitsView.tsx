@@ -174,7 +174,7 @@ const KitsView: React.FC = () => {
 
   // HMR: Save selected kit state before hot reload
   useEffect(() => {
-    if ((import.meta as unknown).hot && navigation.selectedKit) {
+    if ((import.meta as { hot?: unknown }).hot && navigation.selectedKit) {
       saveSelectedKitState(navigation.selectedKit);
     }
   }, [navigation.selectedKit]);

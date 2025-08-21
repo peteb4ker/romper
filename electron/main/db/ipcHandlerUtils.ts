@@ -111,7 +111,10 @@ export function validateAndGetDbDir(
 } {
   // Check environment override first, then settings
   const localStorePath =
-    process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath;
+    process.env.ROMPER_LOCAL_PATH ||
+    (typeof inMemorySettings.localStorePath === "string"
+      ? inMemorySettings.localStorePath
+      : undefined);
   if (!localStorePath) {
     return { error: "No local store path configured", success: false };
   }

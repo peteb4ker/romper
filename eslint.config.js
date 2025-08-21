@@ -20,7 +20,7 @@ export default defineConfig([
   // JS files (browser environment) - excluding Node.js files
   {
     files: ["**/*.js"],
-    ignores: ["scripts/**/*.js", "*.config.js", "tailwind.config.js"],
+    ignores: ["scripts/**/*.js", "tailwind.config.js"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",

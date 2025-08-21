@@ -18,9 +18,11 @@ describe("getKitsMetadata - Unit Tests", () => {
   test("should return empty array when no kits exist", () => {
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        all: vi.fn().mockReturnValue([]),
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
+        query: {
+          kits: {
+            findMany: vi.fn().mockReturnValue([]),
+          },
+        },
       };
       return fn(mockDb);
     });
@@ -35,29 +37,26 @@ describe("getKitsMetadata - Unit Tests", () => {
     const mockKitData = [
       {
         alias: "Test Kit",
-        artist: "Test Artist",
-        bank: {
-          artist: "Bank Artist",
-          letter: "A",
-          rtf_filename: "BankA.rtf",
-          scanned_at: new Date("2023-01-01"),
-        },
         bank_letter: "A",
         bpm: 120,
+        created_at: "2023-01-01T00:00:00.000Z",
         editable: true,
         is_favorite: false,
         locked: false,
         modified_since_sync: false,
         name: "A0",
         step_pattern: null,
+        updated_at: "2023-01-01T00:00:00.000Z",
       },
     ];
 
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        all: vi.fn().mockReturnValue(mockKitData),
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
+        query: {
+          kits: {
+            findMany: vi.fn().mockReturnValue(mockKitData),
+          },
+        },
       };
       return fn(mockDb);
     });
@@ -71,24 +70,26 @@ describe("getKitsMetadata - Unit Tests", () => {
     const mockKitData = [
       {
         alias: "Test Kit",
-        artist: "Test Artist",
-        bank: null,
         bank_letter: null,
         bpm: 120,
+        created_at: "2023-01-01T00:00:00.000Z",
         editable: true,
         is_favorite: false,
         locked: false,
         modified_since_sync: false,
         name: "A0",
         step_pattern: null,
+        updated_at: "2023-01-01T00:00:00.000Z",
       },
     ];
 
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        all: vi.fn().mockReturnValue(mockKitData),
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
+        query: {
+          kits: {
+            findMany: vi.fn().mockReturnValue(mockKitData),
+          },
+        },
       };
       return fn(mockDb);
     });
@@ -107,6 +108,8 @@ describe("getKitsMetadata - Unit Tests", () => {
         created_at: "2023-01-01T00:00:00.000Z",
         editable: true,
         is_favorite: true,
+        locked: false,
+        modified_since_sync: false,
         name: "A0",
         step_pattern: [[1, 0, 1, 0]],
         updated_at: "2023-01-01T00:00:00.000Z",
@@ -118,6 +121,8 @@ describe("getKitsMetadata - Unit Tests", () => {
         created_at: "2023-01-02T00:00:00.000Z",
         editable: false,
         is_favorite: false,
+        locked: false,
+        modified_since_sync: false,
         name: "B1",
         step_pattern: null,
         updated_at: "2023-01-02T00:00:00.000Z",
@@ -127,9 +132,11 @@ describe("getKitsMetadata - Unit Tests", () => {
     const findManyMock = vi.fn().mockReturnValue(mockKitData);
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        all: findManyMock,
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
+        query: {
+          kits: {
+            findMany: findManyMock,
+          },
+        },
       };
       return fn(mockDb);
     });
@@ -145,7 +152,21 @@ describe("getKitsMetadata - Unit Tests", () => {
 
     // Verify single query was made with explicit column selection to avoid circular references
     expect(findManyMock).toHaveBeenCalledTimes(1);
-    expect(findManyMock).toHaveBeenCalledWith();
+    expect(findManyMock).toHaveBeenCalledWith({
+      columns: {
+        alias: true,
+        bank_letter: true,
+        bpm: true,
+        created_at: true,
+        editable: true,
+        is_favorite: true,
+        locked: true,
+        modified_since_sync: true,
+        name: true,
+        step_pattern: true,
+        updated_at: true,
+      },
+    });
   });
 
   test("should handle database errors gracefully", () => {
@@ -163,9 +184,11 @@ describe("getKitsMetadata - Unit Tests", () => {
   test("should call withDb with correct parameters", () => {
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        all: vi.fn().mockReturnValue([]),
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
+        query: {
+          kits: {
+            findMany: vi.fn().mockReturnValue([]),
+          },
+        },
       };
       return fn(mockDb);
     });
@@ -177,12 +200,13 @@ describe("getKitsMetadata - Unit Tests", () => {
 
   test("should use Drizzle query API with explicit column selection", () => {
     const findManyMock = vi.fn().mockReturnValue([]);
-    const selectMock = vi.fn().mockReturnThis();
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        all: findManyMock,
-        from: vi.fn().mockReturnThis(),
-        select: selectMock,
+        query: {
+          kits: {
+            findMany: findManyMock,
+          },
+        },
       };
       return fn(mockDb);
     });
@@ -190,18 +214,21 @@ describe("getKitsMetadata - Unit Tests", () => {
     getKitsMetadata(mockDbDir);
 
     // Verify the query uses explicit column selection to avoid circular references
-    expect(selectMock).toHaveBeenCalledWith({
-      alias: expect.any(Object),
-      bank_letter: expect.any(Object),
-      bpm: expect.any(Object),
-      editable: expect.any(Object),
-      is_favorite: expect.any(Object),
-      locked: expect.any(Object),
-      modified_since_sync: expect.any(Object),
-      name: expect.any(Object),
-      step_pattern: expect.any(Object),
+    expect(findManyMock).toHaveBeenCalledWith({
+      columns: {
+        alias: true,
+        bank_letter: true,
+        bpm: true,
+        created_at: true,
+        editable: true,
+        is_favorite: true,
+        locked: true,
+        modified_since_sync: true,
+        name: true,
+        step_pattern: true,
+        updated_at: true,
+      },
     });
-    expect(findManyMock).toHaveBeenCalledWith();
   });
 
   test("should return only selected columns without relations", () => {
@@ -213,6 +240,8 @@ describe("getKitsMetadata - Unit Tests", () => {
         created_at: "2023-01-01T00:00:00.000Z",
         editable: true,
         is_favorite: false,
+        locked: false,
+        modified_since_sync: false,
         name: "A0",
         step_pattern: null,
         updated_at: "2023-01-01T00:00:00.000Z",
@@ -221,9 +250,11 @@ describe("getKitsMetadata - Unit Tests", () => {
 
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        all: vi.fn().mockReturnValue(mockKitData),
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
+        query: {
+          kits: {
+            findMany: vi.fn().mockReturnValue(mockKitData),
+          },
+        },
       };
       return fn(mockDb);
     });

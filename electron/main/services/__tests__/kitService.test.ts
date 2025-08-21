@@ -9,15 +9,19 @@ vi.mock("path", () => ({
 // Mock database operations
 vi.mock("../../db/romperDbCoreORM.js", () => ({
   addKit: vi.fn(),
+  addSample: vi.fn(),
   getKit: vi.fn(),
+  getKitSamples: vi.fn(),
 }));
 
-import { addKit, getKit } from "../../db/romperDbCoreORM.js";
+import { addKit, addSample, getKit, getKitSamples } from "../../db/romperDbCoreORM.js";
 import { KitService } from "../kitService.js";
 
 const mockPath = vi.mocked(path);
 const mockAddKit = vi.mocked(addKit);
+const mockAddSample = vi.mocked(addSample);
 const mockGetKit = vi.mocked(getKit);
+const mockGetKitSamples = vi.mocked(getKitSamples);
 
 describe("KitService", () => {
   let kitService: KitService;
@@ -31,7 +35,9 @@ describe("KitService", () => {
 
     mockPath.join.mockImplementation((...args) => args.join("/"));
     mockAddKit.mockReturnValue({ success: true });
+    mockAddSample.mockReturnValue({ success: true, data: { sampleId: 1 } });
     mockGetKit.mockReturnValue({ success: false }); // Kit doesn't exist by default
+    mockGetKitSamples.mockReturnValue({ success: true, data: [] }); // No samples by default
   });
 
   describe("createKit", () => {
@@ -149,6 +155,125 @@ describe("KitService", () => {
           step_pattern: "1010101010101010", // Copied from source
         }),
       );
+    });
+
+    it("successfully copies samples from source to destination kit", () => {
+      const mockSamples = [
+        {
+          filename: "kick.wav",
+          id: 1,
+          is_stereo: false,
+          kit_name: "A1",
+          slot_number: 0,
+          source_path: "/path/to/kick.wav",
+          voice_number: 1,
+          wav_bitrate: 16,
+          wav_sample_rate: 44100,
+        },
+        {
+          filename: "snare.wav",
+          id: 2,
+          is_stereo: true,
+          kit_name: "A1",
+          slot_number: 1,
+          source_path: "/path/to/snare.wav",
+          voice_number: 1,
+          wav_bitrate: 16,
+          wav_sample_rate: 44100,
+        },
+      ];
+
+      mockGetKitSamples.mockReturnValue({
+        data: mockSamples,
+        success: true,
+      });
+
+      const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
+
+      expect(result.success).toBe(true);
+      expect(mockGetKitSamples).toHaveBeenCalledWith("/test/path/.romperdb", "A1");
+      expect(mockAddSample).toHaveBeenCalledTimes(2);
+      
+      // Check first sample
+      expect(mockAddSample).toHaveBeenNthCalledWith(1, "/test/path/.romperdb", {
+        filename: "kick.wav",
+        is_stereo: false,
+        kit_name: "B2", // Changed to destination kit
+        slot_number: 0,
+        source_path: "/path/to/kick.wav",
+        voice_number: 1,
+        wav_bitrate: 16,
+        wav_sample_rate: 44100,
+      });
+      
+      // Check second sample
+      expect(mockAddSample).toHaveBeenNthCalledWith(2, "/test/path/.romperdb", {
+        filename: "snare.wav",
+        is_stereo: true,
+        kit_name: "B2", // Changed to destination kit
+        slot_number: 1,
+        source_path: "/path/to/snare.wav",
+        voice_number: 1,
+        wav_bitrate: 16,
+        wav_sample_rate: 44100,
+      });
+    });
+
+    it("handles empty source kit (no samples to copy)", () => {
+      mockGetKitSamples.mockReturnValue({
+        data: [],
+        success: true,
+      });
+
+      const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
+
+      expect(result.success).toBe(true);
+      expect(mockGetKitSamples).toHaveBeenCalledWith("/test/path/.romperdb", "A1");
+      expect(mockAddSample).not.toHaveBeenCalled();
+    });
+
+    it("handles sample copy failure", () => {
+      const mockSamples = [
+        {
+          filename: "kick.wav",
+          id: 1,
+          is_stereo: false,
+          kit_name: "A1",
+          slot_number: 0,
+          source_path: "/path/to/kick.wav",
+          voice_number: 1,
+          wav_bitrate: 16,
+          wav_sample_rate: 44100,
+        },
+      ];
+
+      mockGetKitSamples.mockReturnValue({
+        data: mockSamples,
+        success: true,
+      });
+      
+      mockAddSample.mockReturnValue({
+        error: "Sample insertion failed",
+        success: false,
+      });
+
+      const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Failed to copy sample: Sample insertion failed");
+    });
+
+    it("handles failure to fetch source kit samples", () => {
+      mockGetKitSamples.mockReturnValue({
+        error: "Database connection failed",
+        success: false,
+      });
+
+      const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Failed to fetch samples for source kit: Database connection failed");
+      expect(mockAddSample).not.toHaveBeenCalled();
     });
 
     it("rejects invalid source kit slot", () => {

@@ -301,11 +301,11 @@ export function getKitSamples(
  * @param dbDir Database directory path
  * @returns DbResult containing serializable kit data
  */
-export function getKitsMetadata(dbDir: string): DbResult<Kit[]> {
+export function getKitsMetadata(dbDir: string): DbResult<Partial<Kit>[]> {
   return withDb(dbDir, (db) => {
     // Explicitly select only metadata columns to avoid circular references in IPC serialization
-    // Note: Using .select() instead of db.query to ensure proper execution while maintaining
-    // the same anti-circular-reference column selection approach
+    // Note: Using explicit column selection with .select() to prevent circular references
+    // while ensuring the query executes properly (unlike db.query.findMany which returns a query object)
     return db
       .select({
         alias: kits.alias,

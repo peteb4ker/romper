@@ -19,7 +19,7 @@ interface StepSequencerControlsProps {
 const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
   bpmLogic,
   isSeqPlaying,
-  kitName,
+  kitName: _kitName,
   setIsSeqPlaying,
 }) => {
   const [inputValue, setInputValue] = React.useState(bpmLogic.bpm.toString());

@@ -1,25 +1,18 @@
-import type { 
-  AnyUndoAction,
+import type { Sample } from "@romper/shared/db/schema.js";
+import type {
   AddSampleAction,
+  AnyUndoAction,
   DeleteSampleAction,
-  ReplaceSampleAction,
   MoveSampleAction,
   MoveSampleBetweenKitsAction,
-  ReindexSamplesAction
+  ReindexSamplesAction,
+  ReplaceSampleAction,
 } from "@romper/shared/undoTypes";
-import type { Sample } from "@romper/shared/db/schema.js";
 
 import { dbSlotToUiSlot } from "@romper/shared/slotUtils";
 
-// Type interfaces for undo action data structures
-interface StateSnapshotItem {
-  sample: {
-    filename: string;
-    is_stereo: boolean;
-    source_path: string;
-  };
-  slot: number;
-  voice: number;
+export interface UseUndoActionHandlersOptions {
+  kitName: string;
 }
 
 interface SampleToRestore {
@@ -32,8 +25,15 @@ interface SampleToRestore {
   voice: number;
 }
 
-export interface UseUndoActionHandlersOptions {
-  kitName: string;
+// Type interfaces for undo action data structures
+interface StateSnapshotItem {
+  sample: {
+    filename: string;
+    is_stereo: boolean;
+    source_path: string;
+  };
+  slot: number;
+  voice: number;
 }
 
 /**
@@ -50,8 +50,8 @@ export function useUndoActionHandlers({
       await window.electronAPI?.getAllSamplesForKit?.(kitName);
 
     if (currentSamplesResult?.success && currentSamplesResult.data) {
-      const currentSamples = (currentSamplesResult.data as Sample[]).filter((s) =>
-        affectedVoices.has(s.voice_number),
+      const currentSamples = (currentSamplesResult.data as Sample[]).filter(
+        (s) => affectedVoices.has(s.voice_number),
       );
 
       for (const sample of currentSamples) {
@@ -242,7 +242,9 @@ export function useUndoActionHandlers({
     }
   };
 
-  const undoMoveSampleBetweenKits = async (action: MoveSampleBetweenKitsAction) => {
+  const undoMoveSampleBetweenKits = async (
+    action: MoveSampleBetweenKitsAction,
+  ) => {
     try {
       const result = await window.electronAPI?.moveSampleBetweenKits?.(
         action.data.toKit,
@@ -274,7 +276,9 @@ export function useUndoActionHandlers({
     }
   };
 
-  const restoreDeletedSample = async (actionData: ReindexSamplesAction['data']) => {
+  const restoreDeletedSample = async (
+    actionData: ReindexSamplesAction["data"],
+  ) => {
     await window.electronAPI?.addSampleToSlot?.(
       kitName,
       actionData.voice,
@@ -284,7 +288,9 @@ export function useUndoActionHandlers({
     );
   };
 
-  const restoreAffectedSamples = async (affectedSamples: ReindexSamplesAction['data']['affectedSamples']) => {
+  const restoreAffectedSamples = async (
+    affectedSamples: ReindexSamplesAction["data"]["affectedSamples"],
+  ) => {
     for (const affectedSample of affectedSamples) {
       await window.electronAPI?.addSampleToSlot?.(
         kitName,

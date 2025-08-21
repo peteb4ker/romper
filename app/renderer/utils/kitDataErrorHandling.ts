@@ -261,12 +261,10 @@ export const ApiValidation = {
 
     // Fallback for responses without success property
     // If response has a data property, extract it; otherwise use the whole response
-    const responseData = 
-      typeof response === "object" && 
-      response !== null && 
-      "data" in response ? 
-      (response as { data: T }).data : 
-      response as T;
+    const responseData =
+      typeof response === "object" && response !== null && "data" in response
+        ? (response as { data: T }).data
+        : (response as T);
     return { data: responseData, success: true };
   },
 };

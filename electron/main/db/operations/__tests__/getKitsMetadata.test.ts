@@ -18,9 +18,9 @@ describe("getKitsMetadata - Unit Tests", () => {
   test("should return empty array when no kits exist", () => {
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
         all: vi.fn().mockReturnValue([]),
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
       };
       return fn(mockDb);
     });
@@ -55,9 +55,9 @@ describe("getKitsMetadata - Unit Tests", () => {
 
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
         all: vi.fn().mockReturnValue(mockKitData),
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
       };
       return fn(mockDb);
     });
@@ -86,9 +86,9 @@ describe("getKitsMetadata - Unit Tests", () => {
 
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
         all: vi.fn().mockReturnValue(mockKitData),
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
       };
       return fn(mockDb);
     });
@@ -127,9 +127,9 @@ describe("getKitsMetadata - Unit Tests", () => {
     const findManyMock = vi.fn().mockReturnValue(mockKitData);
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
         all: findManyMock,
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
       };
       return fn(mockDb);
     });
@@ -163,9 +163,9 @@ describe("getKitsMetadata - Unit Tests", () => {
   test("should call withDb with correct parameters", () => {
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
         all: vi.fn().mockReturnValue([]),
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
       };
       return fn(mockDb);
     });
@@ -179,9 +179,9 @@ describe("getKitsMetadata - Unit Tests", () => {
     const findManyMock = vi.fn().mockReturnValue([]);
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
         all: findManyMock,
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
       };
       return fn(mockDb);
     });
@@ -209,9 +209,9 @@ describe("getKitsMetadata - Unit Tests", () => {
 
     vi.mocked(withDb).mockImplementation((dbDir, fn) => {
       const mockDb = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
         all: vi.fn().mockReturnValue(mockKitData),
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
       };
       return fn(mockDb);
     });

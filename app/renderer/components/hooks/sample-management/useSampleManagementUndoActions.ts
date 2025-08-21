@@ -12,26 +12,26 @@ import { useCallback } from "react";
 
 import type { MoveOperationResult } from "./types.js";
 
+export interface UseSampleManagementUndoActionsOptions {
+  kitName: string;
+  skipUndoRecording: boolean;
+}
+
 // Type interfaces for operation results
 interface ReindexOperationResult {
-  success: boolean;
   data?: {
     affectedSamples: Sample[];
   };
+  success: boolean;
 }
 
 interface SampleOperationResult {
-  success: boolean;
   data?: {
     affectedSamples: Sample[];
     movedSample: Sample;
     replacedSample?: Sample;
   };
-}
-
-export interface UseSampleManagementUndoActionsOptions {
-  kitName: string;
-  skipUndoRecording: boolean;
+  success: boolean;
 }
 
 /**
@@ -52,8 +52,7 @@ export function useSampleManagementUndoActions({
       if (samplesResult?.success && samplesResult.data) {
         return (
           (samplesResult.data as Sample[]).find(
-            (s) =>
-              s.voice_number === voice && s.slot_number === slotNumber,
+            (s) => s.voice_number === voice && s.slot_number === slotNumber,
           ) || null
         );
       }
@@ -155,16 +154,17 @@ export function useSampleManagementUndoActions({
       result: ReindexOperationResult,
     ): ReindexSamplesAction => ({
       data: {
-        affectedSamples: result.data?.affectedSamples?.map((sample) => ({
-          newSlot: sample.slot_number - 1, // Original position before reindexing
-          oldSlot: sample.slot_number, // New position after reindexing
-          sample: {
-            filename: sample.filename,
-            is_stereo: sample.is_stereo,
-            source_path: sample.source_path,
-          },
-          voice: sample.voice_number,
-        })) || [],
+        affectedSamples:
+          result.data?.affectedSamples?.map((sample) => ({
+            newSlot: sample.slot_number - 1, // Original position before reindexing
+            oldSlot: sample.slot_number, // New position after reindexing
+            sample: {
+              filename: sample.filename,
+              is_stereo: sample.is_stereo,
+              source_path: sample.source_path,
+            },
+            voice: sample.voice_number,
+          })) || [],
         deletedSample: {
           filename: sampleToDelete.filename,
           is_stereo: sampleToDelete.is_stereo,
@@ -186,13 +186,17 @@ export function useSampleManagementUndoActions({
       fromSlot: number;
       fromVoice: number;
       result: SampleOperationResult;
-      stateSnapshot: { sample: { filename: string; is_stereo: boolean; source_path: string }; slot: number; voice: number }[];
+      stateSnapshot: {
+        sample: { filename: string; is_stereo: boolean; source_path: string };
+        slot: number;
+        voice: number;
+      }[];
       toSlot: number;
       toVoice: number;
     }): MoveSampleAction => ({
       data: {
-        affectedSamples: params.result.data?.affectedSamples?.map(
-          (sample) => ({
+        affectedSamples:
+          params.result.data?.affectedSamples?.map((sample) => ({
             newSlot: sample.slot_number,
             oldSlot: sample.slot_number, // Using slot_number for both since original_slot_number doesn't exist in Sample
             sample: {
@@ -201,8 +205,7 @@ export function useSampleManagementUndoActions({
               source_path: sample.source_path,
             },
             voice: sample.voice_number,
-          }),
-        ) || [],
+          })) || [],
         fromSlot: params.fromSlot,
         fromVoice: params.fromVoice,
         movedSample: {

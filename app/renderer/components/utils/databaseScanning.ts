@@ -1,7 +1,6 @@
 // Database-backed scanning operations that replace JSON file dependency
 
 import {
-  type ChainResult,
   executeFullKitScan,
   executeVoiceInferenceScan,
   executeWAVAnalysisScan,

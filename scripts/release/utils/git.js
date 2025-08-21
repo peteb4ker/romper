@@ -6,6 +6,7 @@
  */
 
 import { execSync } from "child_process";
+import chalk from "chalk";
 
 /**
  * Execute a git command
@@ -44,7 +45,7 @@ function isWorkingDirectoryClean() {
 function getLatestTag() {
   try {
     return execGit("describe --tags --abbrev=0", { silent: true });
-  } catch (_error) {
+  } catch {
     // No tags exist yet
     return null;
   }
@@ -59,7 +60,7 @@ function getAllTags() {
       silent: true,
     });
     return tags ? tags.split("\n").filter(Boolean) : [];
-  } catch (_error) {
+  } catch {
     return [];
   }
 }
@@ -104,7 +105,7 @@ function tagExists(tag) {
   try {
     execGit(`rev-parse --verify ${tag}`, { silent: true });
     return true;
-  } catch (_error) {
+  } catch {
     return false;
   }
 }
@@ -189,7 +190,7 @@ function hasUnpushedCommits() {
   try {
     const unpushed = execGit("log @{u}..HEAD --oneline", { silent: true });
     return unpushed.length > 0;
-  } catch (_error) {
+  } catch {
     // No upstream branch or other error
     return false;
   }
@@ -201,7 +202,7 @@ function hasUnpushedCommits() {
 function getRemoteUrl() {
   try {
     return execGit("remote get-url origin", { silent: true });
-  } catch (_error) {
+  } catch {
     return null;
   }
 }
@@ -216,7 +217,7 @@ function getDefaultBranch() {
       silent: true,
     });
     return result.replace("refs/remotes/origin/", "");
-  } catch (_error) {
+  } catch {
     // Fallback to main if we can't detect
     return "main";
   }
@@ -249,7 +250,7 @@ function getGitHubRepoUrl() {
     }
 
     return null;
-  } catch (_error) {
+  } catch {
     return null;
   }
 }

@@ -14,7 +14,12 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
   getKitSamples: vi.fn(),
 }));
 
-import { addKit, addSample, getKit, getKitSamples } from "../../db/romperDbCoreORM.js";
+import {
+  addKit,
+  addSample,
+  getKit,
+  getKitSamples,
+} from "../../db/romperDbCoreORM.js";
 import { KitService } from "../kitService.js";
 
 const mockPath = vi.mocked(path);
@@ -35,9 +40,9 @@ describe("KitService", () => {
 
     mockPath.join.mockImplementation((...args) => args.join("/"));
     mockAddKit.mockReturnValue({ success: true });
-    mockAddSample.mockReturnValue({ success: true, data: { sampleId: 1 } });
+    mockAddSample.mockReturnValue({ data: { sampleId: 1 }, success: true });
     mockGetKit.mockReturnValue({ success: false }); // Kit doesn't exist by default
-    mockGetKitSamples.mockReturnValue({ success: true, data: [] }); // No samples by default
+    mockGetKitSamples.mockReturnValue({ data: [], success: true }); // No samples by default
   });
 
   describe("createKit", () => {
@@ -146,7 +151,7 @@ describe("KitService", () => {
       expect(mockAddKit).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         expect.objectContaining({
-          alias: "B2", // Destination kit name as alias
+          alias: "Original Kit", // Copy source kit's alias
           bank_letter: "B",
           editable: true, // Always editable for copied kits
           locked: false, // Always unlocked for copied kits
@@ -191,9 +196,12 @@ describe("KitService", () => {
       const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
 
       expect(result.success).toBe(true);
-      expect(mockGetKitSamples).toHaveBeenCalledWith("/test/path/.romperdb", "A1");
+      expect(mockGetKitSamples).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        "A1",
+      );
       expect(mockAddSample).toHaveBeenCalledTimes(2);
-      
+
       // Check first sample
       expect(mockAddSample).toHaveBeenNthCalledWith(1, "/test/path/.romperdb", {
         filename: "kick.wav",
@@ -205,7 +213,7 @@ describe("KitService", () => {
         wav_bitrate: 16,
         wav_sample_rate: 44100,
       });
-      
+
       // Check second sample
       expect(mockAddSample).toHaveBeenNthCalledWith(2, "/test/path/.romperdb", {
         filename: "snare.wav",
@@ -228,7 +236,10 @@ describe("KitService", () => {
       const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
 
       expect(result.success).toBe(true);
-      expect(mockGetKitSamples).toHaveBeenCalledWith("/test/path/.romperdb", "A1");
+      expect(mockGetKitSamples).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        "A1",
+      );
       expect(mockAddSample).not.toHaveBeenCalled();
     });
 
@@ -251,7 +262,7 @@ describe("KitService", () => {
         data: mockSamples,
         success: true,
       });
-      
+
       mockAddSample.mockReturnValue({
         error: "Sample insertion failed",
         success: false,
@@ -260,7 +271,9 @@ describe("KitService", () => {
       const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Failed to copy sample: Sample insertion failed");
+      expect(result.error).toBe(
+        "Failed to copy sample: Sample insertion failed",
+      );
     });
 
     it("handles failure to fetch source kit samples", () => {
@@ -272,7 +285,9 @@ describe("KitService", () => {
       const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Failed to fetch samples for source kit: Database connection failed");
+      expect(result.error).toBe(
+        "Failed to fetch samples for source kit: Database connection failed",
+      );
       expect(mockAddSample).not.toHaveBeenCalled();
     });
 

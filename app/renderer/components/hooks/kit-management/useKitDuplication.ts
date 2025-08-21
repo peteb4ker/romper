@@ -24,6 +24,17 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
 
     try {
       await duplicateKit(duplicateKitSource, duplicateKitDest);
+
+      // Scan the newly created kit to populate voice names and metadata
+      if (window.electronAPI?.rescanKit) {
+        try {
+          await window.electronAPI.rescanKit(duplicateKitDest);
+        } catch (scanError) {
+          console.warn("Failed to scan newly duplicated kit:", scanError);
+          // Don't fail the whole operation if scanning fails
+        }
+      }
+
       const kitNameToScrollTo = duplicateKitDest;
       setDuplicateKitSource(null);
       setDuplicateKitDest("");

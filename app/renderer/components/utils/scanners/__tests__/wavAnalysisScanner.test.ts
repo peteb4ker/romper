@@ -11,7 +11,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 
   // Setup global mock for window.electronAPI
-  Object.defineProperty(global, 'window', {
+  Object.defineProperty(global, "window", {
     value: {
       electronAPI: {
         getAudioMetadata: mockGetAudioMetadata,
@@ -165,7 +165,7 @@ describe("scanWAVAnalysis", () => {
   });
 
   it("handles IPC API not available", async () => {
-    Object.defineProperty(global, 'window', {
+    Object.defineProperty(global, "window", {
       value: {}, // No electronAPI
       writable: true,
     });

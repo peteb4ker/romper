@@ -15,7 +15,7 @@ import KitDetailsContainer from "../components/KitDetailsContainer";
 import KitViewDialogs from "../components/KitViewDialogs";
 import LocalStoreWizardModal from "../components/LocalStoreWizardModal";
 import {
-  restoreSelectedKitIfExists,
+  // restoreSelectedKitIfExists, // DISABLED
   saveSelectedKitState,
 } from "../utils/hmrStateManager";
 import { useSettings } from "../utils/SettingsContext";
@@ -156,13 +156,14 @@ const KitsView: React.FC = () => {
   }, [needsLocalStoreSetup, dialogState, wizardJustCompleted]);
 
   // HMR: Restore selected kit state after hot reload
-  useEffect(() => {
-    restoreSelectedKitIfExists(
-      kits,
-      navigation.selectedKit,
-      navigation.setSelectedKit,
-    );
-  }, [kits, navigation.selectedKit, navigation.setSelectedKit]);
+  // DISABLED: This was causing kits to be auto-selected after copy operations
+  // useEffect(() => {
+  //   restoreSelectedKitIfExists(
+  //     kits,
+  //     navigation.selectedKit,
+  //     navigation.setSelectedKit,
+  //   );
+  // }, [kits, navigation.selectedKit, navigation.setSelectedKit]);
 
   // HMR: Save selected kit state before hot reload
   useEffect(() => {

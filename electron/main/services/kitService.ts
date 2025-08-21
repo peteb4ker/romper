@@ -2,7 +2,12 @@ import type { DbResult, NewKit, NewSample } from "@romper/shared/db/schema.js";
 
 import * as path from "path";
 
-import { addKit, addSample, getKit, getKitSamples } from "../db/romperDbCoreORM.js";
+import {
+  addKit,
+  addSample,
+  getKit,
+  getKitSamples,
+} from "../db/romperDbCoreORM.js";
 
 /**
  * Service for kit management operations
@@ -42,7 +47,7 @@ export class KitService {
 
     // Copy kit metadata in database only (no folder copying)
     const destKitRecord: NewKit = {
-      alias: destKit,
+      alias: sourceKitData.data.alias, // Copy source kit's alias
       bank_letter: destKit.charAt(0), // Extract bank letter from kit name
       editable: true, // Duplicated kits are editable by default
       locked: false,

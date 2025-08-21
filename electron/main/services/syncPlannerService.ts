@@ -47,7 +47,7 @@ export class SyncPlannerService {
     inMemorySettings: Record<string, unknown>,
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
-      const localStorePath = inMemorySettings.localStorePath;
+      const localStorePath = inMemorySettings.localStorePath as string;
       if (!localStorePath) {
         return { error: "No local store path configured", success: false };
       }
@@ -97,16 +97,16 @@ export class SyncPlannerService {
    * Add file to conversion list
    */
   private addFileToConvert(
-    sample: unknown,
+    sample: any,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    metadataResult: unknown,
-    formatValidationResult: unknown,
-    results: unknown,
+    metadataResult: any,
+    formatValidationResult: any,
+    results: any,
   ): void {
     const issues = formatValidationResult.data?.issues || [];
-    const issueMessages = issues.map((issue: unknown) => issue.message);
+    const issueMessages = issues.map((issue: any) => issue.message);
 
     results.filesToConvert.push({
       destinationPath,
@@ -135,7 +135,7 @@ export class SyncPlannerService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
-    results: unknown,
+    results: any,
   ): void {
     results.filesToCopy.push({
       destinationPath,
@@ -150,11 +150,11 @@ export class SyncPlannerService {
    * Categorizes file operation as copy or convert
    */
   private categorizeFileOperation(
-    sample: unknown,
+    sample: any,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    results: unknown,
+    results: any,
   ): void {
     const metadataResult = getAudioMetadata(sourcePath);
     const formatValidationResult = validateSampleFormat(sourcePath);
@@ -243,7 +243,7 @@ export class SyncPlannerService {
    * Process a single sample for sync planning
    */
   private processSampleForSync(
-    sample: unknown,
+    sample: any,
     localStorePath: string,
     results: {
       filesToConvert: SyncFileOperation[];
@@ -292,7 +292,7 @@ export class SyncPlannerService {
   private validateSourceFile(
     filename: string,
     sourcePath: string,
-    results: unknown,
+    results: any,
   ): { fileSize: number; isValid: boolean } {
     if (!fs.existsSync(sourcePath)) {
       results.validationErrors.push({

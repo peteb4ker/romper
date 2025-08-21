@@ -78,7 +78,7 @@ class SyncService {
     _sdCardPath?: string,
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
-      const localStorePath = inMemorySettings.localStorePath;
+      const localStorePath = inMemorySettings.localStorePath as string;
       if (!localStorePath) {
         return { error: "No local store path configured", success: false };
       }
@@ -140,7 +140,7 @@ class SyncService {
     try {
       // For now, we need to generate file operations for sync
       // This is a temporary fix - we should separate summary from sync operations
-      const localStorePath = inMemorySettings.localStorePath;
+      const localStorePath = inMemorySettings.localStorePath as string;
       if (!localStorePath) {
         return { error: "No local store path configured", success: false };
       }
@@ -210,16 +210,16 @@ class SyncService {
    * Add file to sync conversion list
    */
   private addSyncFileToConvert(
-    sample: unknown,
+    sample: any,
     filename: string,
     sourcePath: string,
     destinationPath: string,
-    metadataResult: unknown,
-    formatValidationResult: unknown,
-    results: unknown,
+    metadataResult: any,
+    formatValidationResult: any,
+    results: any,
   ): void {
     const issues = formatValidationResult.data?.issues || [];
-    const issueMessages = issues.map((issue: unknown) => issue.message);
+    const issueMessages = issues.map((issue: any) => issue.message);
 
     results.filesToConvert.push({
       destinationPath,
@@ -248,7 +248,7 @@ class SyncService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
-    results: unknown,
+    results: any,
   ): void {
     results.filesToCopy.push({
       destinationPath,
@@ -724,7 +724,7 @@ class SyncService {
       console.error("Sync failed, attempting cleanup...");
 
       try {
-        const localStorePath = inMemorySettings.localStorePath;
+        const localStorePath = inMemorySettings.localStorePath as string;
         if (localStorePath) {
           const syncOutputDir = path.join(localStorePath, "sync_output");
           if (fs.existsSync(syncOutputDir)) {
@@ -767,7 +767,7 @@ class SyncService {
     allFiles: SyncFileOperation[],
     syncedFiles: number,
   ): Promise<void> {
-    const localStorePath = inMemorySettings.localStorePath;
+    const localStorePath = inMemorySettings.localStorePath as string;
     if (!localStorePath || !syncedFiles) return;
 
     const dbDir = path.join(localStorePath, ".romperdb");
@@ -827,7 +827,7 @@ class SyncService {
    * Process a single sample for sync operations
    */
   private processSampleForSync(
-    sample: unknown,
+    sample: any,
     localStorePath: string,
     results: {
       filesToConvert: SyncFileOperation[];

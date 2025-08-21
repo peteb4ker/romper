@@ -7,7 +7,7 @@ export async function countZipEntries(zipPath: string): Promise<number> {
     let count = 0;
     fs.createReadStream(zipPath)
       .pipe(unzipper.Parse())
-      .on("entry", (entry: unknown) => {
+      .on("entry", (entry: any) => {
         if (isValidEntry(entry.path)) {
           count++;
         }
@@ -55,7 +55,7 @@ export async function extractZipEntries(
 
     fs.createReadStream(zipPath)
       .pipe(unzipper.Parse())
-      .on("entry", (entry: unknown) => {
+      .on("entry", (entry: any) => {
         processedCount = processZipEntry(
           entry,
           destDir,

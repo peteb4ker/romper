@@ -138,11 +138,11 @@ describe("KitVoicePanels", () => {
   it("renders global slot numbers on the left side only", () => {
     render(<MultiVoicePanelsTestWrapper />);
     // Check that global slot numbers 1-MAX_SLOTS_PER_VOICE are rendered
-    expect(screen.getByTestId("global-slot-number-0")).toHaveTextContent("1.");
-    expect(screen.getByTestId("global-slot-number-1")).toHaveTextContent("2.");
+    expect(screen.getByTestId("global-slot-number-0")).toHaveTextContent("1");
+    expect(screen.getByTestId("global-slot-number-1")).toHaveTextContent("2");
     expect(
       screen.getByTestId(`global-slot-number-${MAX_SLOTS_PER_VOICE - 1}`),
-    ).toHaveTextContent(`${MAX_SLOTS_PER_VOICE}.`);
+    ).toHaveTextContent(`${MAX_SLOTS_PER_VOICE}`);
 
     // Verify individual voice panels do not render their own slot numbers
     expect(screen.queryByTestId("slot-number-1-0")).not.toBeInTheDocument();

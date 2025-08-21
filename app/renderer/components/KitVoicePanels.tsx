@@ -140,7 +140,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   return (
     <div className="flex w-full relative" data-testid="voice-panels-row">
       {/* Global slot numbers column */}
-      <div className="flex flex-col justify-start pt-12 pr-3">
+      <div className="flex flex-col justify-start pt-8 pr-3">
         {[...Array(12)].map((_, i) => (
           <div
             className="min-h-[28px] flex items-center justify-end"
@@ -152,7 +152,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
               data-testid={`global-slot-number-${i}`}
               style={{ display: "inline-block", width: "32px" }}
             >
-              {i + 1}.
+              {i + 1}
             </span>
           </div>
         ))}

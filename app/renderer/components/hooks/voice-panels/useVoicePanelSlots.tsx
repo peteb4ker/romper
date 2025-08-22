@@ -260,7 +260,7 @@ export function useVoicePanelSlots({
           <div className="flex-1 min-w-0">
             <span
               className="truncate text-xs font-mono font-medium text-gray-700 dark:text-gray-200"
-              title={sampleName}
+              title=""
             >
               {sampleName}
             </span>

@@ -337,5 +337,68 @@ describe("useSlotRendering", () => {
 
       expect(title).toBe("Drop zone hint");
     });
+
+    it("returns fallback filename when sample data is missing WAV metadata", () => {
+      const sampleDataWithoutMetadata = {
+        filename: "kick.wav",
+        source_path: "/path/to/kick.wav",
+        // Missing WAV metadata fields
+      };
+
+      const { result } = renderHook(() => useSlotRendering(defaultProps));
+
+      result.current.getSampleSlotTitle(
+        0,
+        sampleDataWithoutMetadata,
+        false,
+        false,
+        false,
+        "",
+        "kick.wav",
+      );
+
+      // Should call formatTooltip but without WAV metadata, it should still show filename + path
+      expect(formatTooltip).toHaveBeenCalledWith(
+        sampleDataWithoutMetadata,
+        sampleDataWithoutMetadata.source_path,
+        "kick.wav",
+      );
+    });
+
+    it("should use formatTooltip with complete WAV metadata after rescan", () => {
+      const sampleDataWithMetadata = {
+        filename: "kick.wav",
+        source_path: "/path/to/kick.wav",
+        wav_bit_depth: 16,
+        wav_channels: 2,
+        wav_sample_rate: 44100,
+      };
+
+      // Configure the mock to return the expected tooltip format with metadata
+      (formatTooltip as unknown).mockReturnValue(
+        "kick.wav\n/path/to/kick.wav\n► 44.1kHz • 16-bit • Stereo • Native",
+      );
+
+      const { result } = renderHook(() => useSlotRendering(defaultProps));
+
+      const title = result.current.getSampleSlotTitle(
+        0,
+        sampleDataWithMetadata,
+        false,
+        false,
+        false,
+        "",
+        "kick.wav",
+      );
+
+      expect(title).toBe(
+        "kick.wav\n/path/to/kick.wav\n► 44.1kHz • 16-bit • Stereo • Native",
+      );
+      expect(formatTooltip).toHaveBeenCalledWith(
+        sampleDataWithMetadata,
+        sampleDataWithMetadata.source_path,
+        "kick.wav",
+      );
+    });
   });
 });

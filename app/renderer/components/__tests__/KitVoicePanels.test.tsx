@@ -7,8 +7,9 @@ import {
   waitFor,
 } from "@testing-library/react";
 import React, { useState } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { MAX_SLOTS_PER_VOICE } from "../hooks/voice-panels/useVoicePanelSlots";
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
@@ -291,5 +292,135 @@ describe("KitVoicePanels", () => {
     });
     await screen.findByText("snare.wav");
     expect(screen.getByText("snare.wav")).toBeInTheDocument();
+  });
+});
+
+describe("Sample Metadata Tooltip Integration", () => {
+  beforeEach(() => {
+    // Use centralized mock with metadata
+    setupElectronAPIMock({
+      getAllSamplesForKit: vi.fn().mockResolvedValue({
+        data: [
+          {
+            filename: "kick.wav",
+            source_path: "/path/to/kick.wav",
+            wav_bit_depth: 16,
+            wav_channels: 2,
+            wav_sample_rate: 44100,
+          },
+          {
+            filename: "snare.wav",
+            source_path: "/path/to/snare.wav",
+            wav_bit_depth: 16,
+            wav_channels: 1,
+            wav_sample_rate: 44100,
+          },
+        ],
+        success: true,
+      }),
+    });
+  });
+
+  afterEach(() => {
+    delete window.electronAPI;
+    vi.clearAllMocks();
+    cleanup();
+  });
+
+  it("should load and display sample metadata in tooltips after kit loads", async () => {
+    render(<MultiVoicePanelsTestWrapper />);
+
+    // Wait for sample metadata to load
+    await waitFor(() => {
+      expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
+        "Kit1",
+      );
+    });
+
+    // Find the sample elements
+    const kickElement = screen.getByText("kick.wav");
+    const snareElement = screen.getByText("snare.wav");
+
+    // Check that the parent li elements have titles with metadata
+    const kickParent = kickElement.closest("li");
+    const snareParent = snareElement.closest("li");
+
+    expect(kickParent).toHaveAttribute("title");
+    expect(snareParent).toHaveAttribute("title");
+
+    // The title should contain more than just the filename (indicating metadata is present)
+    const kickTitle = kickParent?.getAttribute("title") || "";
+    const snareTitle = snareParent?.getAttribute("title") || "";
+
+    expect(kickTitle).toContain("kick.wav");
+    expect(kickTitle).toContain("/path/to/kick.wav");
+    expect(snareTitle).toContain("snare.wav");
+    expect(snareTitle).toContain("/path/to/snare.wav");
+  });
+
+  it("should not have duplicate tooltips on sample name spans", async () => {
+    render(<MultiVoicePanelsTestWrapper />);
+
+    // Wait for component to render
+    await waitFor(() => {
+      expect(screen.getByText("kick.wav")).toBeInTheDocument();
+    });
+
+    // Find the sample name span
+    const kickSpan = screen.getByText("kick.wav");
+
+    // The span should NOT have a title attribute (to avoid duplicate tooltips)
+    expect(kickSpan).not.toHaveAttribute("title");
+
+    // But the parent li should have the title with metadata
+    const kickParent = kickSpan.closest("li");
+    expect(kickParent).toHaveAttribute("title");
+  });
+
+  it("should refresh metadata when samples are updated", async () => {
+    const { rerender } = render(<MultiVoicePanelsTestWrapper />);
+
+    // Wait for initial load
+    await waitFor(() => {
+      expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
+        "Kit1",
+      );
+    });
+
+    // Mock updated metadata response (simulating a rescan)
+    const mockGetAllSamplesForKit = vi.mocked(
+      window.electronAPI.getAllSamplesForKit,
+    );
+    mockGetAllSamplesForKit.mockResolvedValue({
+      data: [
+        {
+          filename: "kick.wav",
+          source_path: "/path/to/kick.wav",
+          wav_bit_depth: 24, // Changed bit depth
+          wav_channels: 2,
+          wav_sample_rate: 48000, // Changed sample rate
+        },
+      ],
+      success: true,
+    });
+
+    // Force a kit name change to trigger metadata reload
+    rerender(<MultiVoicePanelsTestWrapper kitName="Kit1-Updated" />);
+
+    // Wait for new metadata to load
+    await waitFor(() => {
+      expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
+        "Kit1-Updated",
+      );
+    });
+
+    // Verify that new metadata is reflected in the tooltip
+    const kickElement = screen.getByText("kick.wav");
+    const kickParent = kickElement.closest("li");
+    const kickTitle = kickParent?.getAttribute("title") || "";
+
+    // Should contain the new metadata values
+    expect(kickTitle).toContain("kick.wav");
+    expect(kickTitle).toContain("/path/to/kick.wav");
   });
 });

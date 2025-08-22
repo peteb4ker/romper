@@ -230,6 +230,13 @@ export interface ElectronAPI {
   rescanKit: (
     kitName: string,
   ) => Promise<DbResult<{ scannedSamples: number; updatedVoices: number }>>;
+  rescanKitsMissingMetadata: () => Promise<
+    DbResult<{
+      kitsNeedingRescan: string[];
+      kitsRescanned: string[];
+      totalSamplesUpdated: number;
+    }>
+  >;
   scanBanks?: () => Promise<
     DbResult<{ scannedAt: Date; scannedFiles: number; updatedBanks: number }>
   >;

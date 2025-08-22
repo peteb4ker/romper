@@ -155,6 +155,60 @@ const KitsView: React.FC = () => {
     needsLocalStoreSetup: needsLocalStoreSetup || hasInvalidLocalStore,
   });
 
+  // Migrate kits with missing metadata on startup (one-time migration)
+  useEffect(() => {
+    const migrateMetadata = async () => {
+      if (
+        !isInitialized ||
+        !localStorePath ||
+        needsLocalStoreSetup ||
+        hasInvalidLocalStore
+      ) {
+        return;
+      }
+
+      // Check if migration has already been done in this session
+      const migrationKey = "metadata-migration-completed";
+      if (sessionStorage.getItem(migrationKey)) {
+        return;
+      }
+
+      try {
+        const result = await window.electronAPI.rescanKitsMissingMetadata();
+        if (result.success && result.data) {
+          const { kitsRescanned, totalSamplesUpdated } = result.data;
+
+          if (kitsRescanned.length > 0) {
+            console.info(
+              `Metadata migration completed: ${kitsRescanned.length} kits rescanned, ${totalSamplesUpdated} samples updated`,
+            );
+            showMessage(
+              `Updated metadata for ${kitsRescanned.length} kit${kitsRescanned.length === 1 ? "" : "s"}`,
+              "success",
+            );
+
+            // Refresh the current view to show the new metadata
+            await refreshAllKitsAndSamples();
+          }
+
+          // Mark migration as complete for this session
+          sessionStorage.setItem(migrationKey, "true");
+        }
+      } catch (error) {
+        console.error("Failed to migrate metadata:", error);
+      }
+    };
+
+    migrateMetadata();
+  }, [
+    isInitialized,
+    localStorePath,
+    needsLocalStoreSetup,
+    hasInvalidLocalStore,
+    showMessage,
+    refreshAllKitsAndSamples,
+  ]);
+
   // Auto-trigger wizard on startup if local store is not configured
   useEffect(() => {
     if (needsLocalStoreSetup && !wizardJustCompleted) {

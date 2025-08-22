@@ -193,6 +193,10 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     return scanService.rescanKit(inMemorySettings, kitName);
   });
 
+  ipcMain.handle("rescan-kits-missing-metadata", async () => {
+    return scanService.rescanKitsWithMissingMetadata(inMemorySettings);
+  });
+
   ipcMain.handle(
     "delete-all-samples-for-kit",
     async (_event, dbDir: string, kitName: string) => {

@@ -26,14 +26,30 @@ interface KitDetailsAllProps extends KitDetailsProps {
 }
 
 const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
-  // Note: All props are used via useKitDetailsLogic hook
-  // SonarQube doesn't detect indirect prop usage through hooks
-  const logic = useKitDetailsLogic(props);
+  const { onRequestSamplesReload } = props;
   const [dismissedUnscannedPrompt, setDismissedUnscannedPrompt] =
     React.useState(false);
 
   // Ref for KitVoicePanels to refresh sample metadata
   const kitVoicePanelsRef = React.useRef<KitVoicePanelsRef>(null);
+
+  // Wrapper for onRequestSamplesReload that also refreshes metadata
+  const handleRequestSamplesReload = React.useCallback(async () => {
+    if (onRequestSamplesReload) {
+      await onRequestSamplesReload();
+      // After samples are reloaded, refresh the metadata cache
+      if (kitVoicePanelsRef.current) {
+        await kitVoicePanelsRef.current.refreshSampleMetadata();
+      }
+    }
+  }, [onRequestSamplesReload]);
+
+  // Note: All props are used via useKitDetailsLogic hook
+  // SonarQube doesn't detect indirect prop usage through hooks
+  const logic = useKitDetailsLogic({
+    ...props,
+    onRequestSamplesReload: handleRequestSamplesReload,
+  });
 
   // Kit alias editing state
   const [editingKitAlias, setEditingKitAlias] = React.useState(false);

@@ -14,13 +14,26 @@ import tseslint from "typescript-eslint";
 
 export default defineConfig([
   {
-    ignores: ["node_modules", "dist", "out", "coverage", "build"],
+    ignores: [
+      "node_modules",
+      "dist",
+      "out",
+      "coverage",
+      "build",
+      "app/node_modules",
+      "**/node_modules",
+    ],
   },
 
   // JS files (browser environment) - excluding Node.js files
   {
     files: ["**/*.js"],
-    ignores: ["scripts/**/*.js", "tailwind.config.js"],
+    ignores: [
+      "scripts/**/*.js",
+      "tailwind.config.js",
+      "docs/**/*.js",
+      "app/node_modules/**/*",
+    ],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",

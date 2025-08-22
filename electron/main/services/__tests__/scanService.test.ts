@@ -24,7 +24,13 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
   addSample: vi.fn(),
   deleteSamples: vi.fn(),
   updateBank: vi.fn(),
+  updateSampleMetadata: vi.fn(),
   updateVoiceAlias: vi.fn(),
+}));
+
+// Mock audio utilities
+vi.mock("../../audioUtils.js", () => ({
+  getAudioMetadata: vi.fn(),
 }));
 
 import {
@@ -32,10 +38,12 @@ import {
   inferVoiceTypeFromFilename,
 } from "@romper/shared/kitUtilsShared.js";
 
+import { getAudioMetadata } from "../../audioUtils.js";
 import {
   addSample,
   deleteSamples,
   updateBank,
+  updateSampleMetadata,
   updateVoiceAlias,
 } from "../../db/romperDbCoreORM.js";
 import { ScanService } from "../scanService.js";
@@ -45,9 +53,11 @@ const mockPath = vi.mocked(path);
 const mockAddSample = vi.mocked(addSample);
 const mockDeleteSamples = vi.mocked(deleteSamples);
 const mockUpdateBank = vi.mocked(updateBank);
+const mockUpdateSampleMetadata = vi.mocked(updateSampleMetadata);
 const mockUpdateVoiceAlias = vi.mocked(updateVoiceAlias);
 const mockGroupSamplesByVoice = vi.mocked(groupSamplesByVoice);
 const mockInferVoiceTypeFromFilename = vi.mocked(inferVoiceTypeFromFilename);
+const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 
 describe("ScanService", () => {
   let scanService: ScanService;
@@ -62,9 +72,18 @@ describe("ScanService", () => {
     mockPath.join.mockImplementation((...args) => args.join("/"));
     mockFs.existsSync.mockReturnValue(true);
     mockDeleteSamples.mockReturnValue({ success: true });
-    mockAddSample.mockReturnValue({ success: true });
+    mockAddSample.mockReturnValue({ data: { sampleId: 1 }, success: true });
+    mockUpdateSampleMetadata.mockReturnValue({ success: true });
     mockUpdateVoiceAlias.mockReturnValue({ success: true });
     mockUpdateBank.mockReturnValue({ success: true });
+    mockGetAudioMetadata.mockReturnValue({
+      data: {
+        bitDepth: 16,
+        channels: 2,
+        sampleRate: 44100,
+      },
+      success: true,
+    });
   });
 
   describe("rescanKit", () => {
@@ -134,6 +153,34 @@ describe("ScanService", () => {
         "TestKit",
         2,
         "HIHAT",
+      );
+
+      // Should extract and save WAV metadata for each sample
+      expect(mockGetAudioMetadata).toHaveBeenCalledTimes(4);
+      expect(mockGetAudioMetadata).toHaveBeenCalledWith(
+        "/test/path/TestKit/1_kick.wav",
+      );
+      expect(mockGetAudioMetadata).toHaveBeenCalledWith(
+        "/test/path/TestKit/1_snare.wav",
+      );
+      expect(mockGetAudioMetadata).toHaveBeenCalledWith(
+        "/test/path/TestKit/2_hihat.wav",
+      );
+      expect(mockGetAudioMetadata).toHaveBeenCalledWith(
+        "/test/path/TestKit/2_openhat.wav",
+      );
+
+      // Should update sample metadata for each sample
+      expect(mockUpdateSampleMetadata).toHaveBeenCalledTimes(4);
+      expect(mockUpdateSampleMetadata).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        1,
+        {
+          wav_bit_depth: 16,
+          wav_bitrate: 44100 * 2 * 16, // sampleRate * channels * bitDepth
+          wav_channels: 2,
+          wav_sample_rate: 44100,
+        },
       );
     });
 
@@ -232,6 +279,95 @@ describe("ScanService", () => {
       expect(result.error).toContain(
         "Failed to scan kit directory: Permission denied",
       );
+    });
+
+    it("handles WAV metadata extraction failure gracefully", async () => {
+      mockGetAudioMetadata.mockReturnValue({
+        error: "Invalid WAV format",
+        success: false,
+      });
+
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data?.scannedSamples).toBe(4);
+      // Should still add samples even if metadata extraction fails
+      expect(mockAddSample).toHaveBeenCalledTimes(4);
+      // Should not attempt to update metadata for failed extractions
+      expect(mockUpdateSampleMetadata).not.toHaveBeenCalled();
+    });
+
+    it("handles incomplete WAV metadata gracefully", async () => {
+      mockGetAudioMetadata.mockReturnValue({
+        data: {
+          bitDepth: 16,
+          // Missing channels and sampleRate
+        },
+        success: true,
+      });
+
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockUpdateSampleMetadata).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        1,
+        {
+          wav_bit_depth: 16,
+          wav_bitrate: null, // Should be null when calculation fails
+          wav_channels: null,
+          wav_sample_rate: null,
+        },
+      );
+    });
+
+    it("calculates bitrate correctly for different audio formats", async () => {
+      mockGetAudioMetadata.mockReturnValue({
+        data: {
+          bitDepth: 24,
+          channels: 1,
+          sampleRate: 48000,
+        },
+        success: true,
+      });
+
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockUpdateSampleMetadata).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        1,
+        {
+          wav_bit_depth: 24,
+          wav_bitrate: 48000 * 1 * 24, // 1,152,000 bps
+          wav_channels: 1,
+          wav_sample_rate: 48000,
+        },
+      );
+    });
+
+    it("handles missing sample metadata when addSample fails", async () => {
+      mockAddSample.mockReturnValue({ error: "Add failed", success: false });
+
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Add failed");
+      // Should not attempt metadata extraction if sample insertion fails
+      expect(mockGetAudioMetadata).not.toHaveBeenCalled();
+      expect(mockUpdateSampleMetadata).not.toHaveBeenCalled();
     });
   });
 

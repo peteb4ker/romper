@@ -56,7 +56,9 @@ export const samples = sqliteTable(
     slot_number: integer("slot_number").notNull(), // 0-11 ZERO-BASED, slot within voice (slot 1 = slot_number 0)
     source_path: text("source_path").notNull(), // NEW: Absolute path to original sample file for reference-only management
     voice_number: integer("voice_number").notNull(), // 1-4, explicit voice assignment
+    wav_bit_depth: integer("wav_bit_depth"), // Optional WAV metadata - bit depth (8, 16, 24, 32)
     wav_bitrate: integer("wav_bitrate"), // Optional WAV metadata
+    wav_channels: integer("wav_channels"), // Optional WAV metadata - channel count (1=mono, 2=stereo)
     wav_sample_rate: integer("wav_sample_rate"), // Optional WAV metadata
   },
   (table) => [

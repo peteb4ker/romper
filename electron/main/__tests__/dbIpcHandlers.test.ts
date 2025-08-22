@@ -21,6 +21,7 @@ vi.mock("../db/romperDbCoreORM", () => ({
   getKitSamples: vi.fn(),
   toggleKitFavorite: vi.fn(),
   updateKit: vi.fn(),
+  updateSampleMetadata: vi.fn(),
   updateVoiceAlias: vi.fn(),
 }));
 
@@ -41,8 +42,14 @@ vi.mock("../services/scanService.js", () => ({
   },
 }));
 
+// Mock audio utilities
+vi.mock("../audioUtils.js", () => ({
+  getAudioMetadata: vi.fn(),
+}));
+
 import { ipcMain } from "electron";
 
+import { getAudioMetadata } from "../audioUtils.js";
 import * as romperDbCore from "../db/romperDbCoreORM";
 import { registerDbIpcHandlers } from "../dbIpcHandlers";
 import { sampleService } from "../services/sampleService.js";
@@ -51,6 +58,7 @@ import { scanService } from "../services/scanService.js";
 const mockIpcMain = vi.mocked(ipcMain);
 const mockSampleService = vi.mocked(sampleService);
 const mockScanService = vi.mocked(scanService);
+const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 
 describe("dbIpcHandlers - Routing Tests", () => {
   let handlerRegistry: Record<string, Function> = {};
@@ -107,6 +115,9 @@ describe("dbIpcHandlers - Routing Tests", () => {
       data: [],
       success: true,
     });
+    vi.mocked(romperDbCore.updateSampleMetadata).mockReturnValue({
+      success: true,
+    });
 
     registerDbIpcHandlers(mockInMemorySettings);
   });
@@ -121,6 +132,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         "update-kit-metadata",
         "get-all-kits",
         "update-voice-alias",
+        "update-sample-metadata",
         "update-step-pattern",
         "validate-local-store",
         "validate-local-store-basic",
@@ -164,6 +176,23 @@ describe("dbIpcHandlers - Routing Tests", () => {
       await handler({});
 
       expect(romperDbCore.getKits).toHaveBeenCalledWith("/test/path/.romperdb");
+    });
+
+    it("update-sample-metadata routes to updateSampleMetadata", async () => {
+      const handler = handlerRegistry["update-sample-metadata"];
+      const metadata = {
+        wav_bit_depth: 16,
+        wav_bitrate: 1411200,
+        wav_channels: 2,
+        wav_sample_rate: 44100,
+      };
+      await handler({}, 123, metadata);
+
+      expect(romperDbCore.updateSampleMetadata).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        123,
+        metadata,
+      );
     });
   });
 
@@ -303,6 +332,77 @@ describe("dbIpcHandlers - Routing Tests", () => {
         "/test/path/.romperdb",
         "A5",
       );
+    });
+  });
+
+  describe("Audio Metadata Handler", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      registerDbIpcHandlers(mockInMemorySettings);
+
+      // Set up handler registry
+      mockIpcMain.handle.mockClear();
+      registerDbIpcHandlers(mockInMemorySettings);
+
+      // Capture all handler registrations
+      mockIpcMain.handle.mock.calls.forEach(([channel, handler]) => {
+        handlerRegistry[channel] = handler;
+      });
+    });
+
+    it("get-audio-metadata routes to getAudioMetadata", async () => {
+      mockGetAudioMetadata.mockReturnValue({
+        data: {
+          bitDepth: 16,
+          channels: 2,
+          sampleRate: 44100,
+        },
+        success: true,
+      });
+
+      const handler = handlerRegistry["get-audio-metadata"];
+      const result = await handler({}, "/path/to/test.wav");
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        bitDepth: 16,
+        channels: 2,
+        sampleRate: 44100,
+      });
+      expect(mockGetAudioMetadata).toHaveBeenCalledWith("/path/to/test.wav");
+    });
+
+    it("get-audio-metadata handles errors gracefully", async () => {
+      mockGetAudioMetadata.mockReturnValue({
+        error: "Invalid audio file format",
+        success: false,
+      });
+
+      const handler = handlerRegistry["get-audio-metadata"];
+      const result = await handler({}, "/path/to/invalid.wav");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Invalid audio file format");
+      expect(mockGetAudioMetadata).toHaveBeenCalledWith("/path/to/invalid.wav");
+    });
+
+    it("get-audio-metadata handles partial metadata", async () => {
+      mockGetAudioMetadata.mockReturnValue({
+        data: {
+          bitDepth: 24,
+          // Missing channels and sampleRate
+        },
+        success: true,
+      });
+
+      const handler = handlerRegistry["get-audio-metadata"];
+      const result = await handler({}, "/path/to/partial.wav");
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        bitDepth: 24,
+      });
+      expect(mockGetAudioMetadata).toHaveBeenCalledWith("/path/to/partial.wav");
     });
   });
 });

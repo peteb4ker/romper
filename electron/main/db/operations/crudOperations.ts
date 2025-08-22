@@ -494,6 +494,32 @@ export function updateKit(
 }
 
 /**
+ * Update sample WAV metadata
+ */
+export function updateSampleMetadata(
+  dbDir: string,
+  sampleId: number,
+  metadata: {
+    wav_bit_depth?: null | number;
+    wav_bitrate?: null | number;
+    wav_channels?: null | number;
+    wav_sample_rate?: null | number;
+  },
+): DbResult<void> {
+  return withDb(dbDir, (db) => {
+    const result = db
+      .update(samples)
+      .set(metadata)
+      .where(eq(samples.id, sampleId))
+      .run();
+
+    if (result.changes === 0) {
+      throw new Error(`Sample with ID ${sampleId} not found`);
+    }
+  });
+}
+
+/**
  * Update voice alias
  */
 export function updateVoiceAlias(

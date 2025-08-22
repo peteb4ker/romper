@@ -29,6 +29,10 @@ export interface SampleData {
   filename: string;
   is_stereo?: boolean;
   source_path: string;
+  wav_bit_depth?: number;
+  wav_bitrate?: number;
+  wav_channels?: number;
+  wav_sample_rate?: number;
 }
 
 export interface VoiceSamples {

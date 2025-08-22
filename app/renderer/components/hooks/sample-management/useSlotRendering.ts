@@ -2,6 +2,8 @@ import type { SampleData } from "@romper/app/renderer/components/kitTypes";
 
 import { useCallback } from "react";
 
+import { formatTooltip } from "../../../utils/wavMetadataFormatter";
+
 export interface UseSlotRenderingOptions {
   defaultToMonoSamples: boolean;
   dragOverSlot: null | number;
@@ -162,16 +164,19 @@ export function useSlotRendering({
       isStereoHighlight: boolean,
       isDropZone: boolean,
       dropHintTitle: string,
+      filename?: string,
     ) => {
       if (isDragOver || isStereoHighlight || isDropZone) {
         return dropHintTitle;
       }
 
-      const baseTitle = `Slot ${slotNumber}`;
-      const sourceInfo = sampleData?.source_path
-        ? `\nSource: ${sampleData.source_path}`
-        : "";
-      return baseTitle + sourceInfo;
+      // Show complete tooltip with filename, path, and WAV metadata if available
+      if (!sampleData?.source_path || !filename) {
+        // Fallback to basic filename tooltip for backward compatibility
+        return filename || `Slot ${slotNumber + 1}`;
+      }
+
+      return formatTooltip(sampleData, sampleData.source_path, filename);
     },
     [],
   );

@@ -8,10 +8,12 @@ import {
 import * as fs from "fs";
 import * as path from "path";
 
+import { getAudioMetadata } from "../audioUtils.js";
 import {
   addSample,
   deleteSamples,
   updateBank,
+  updateSampleMetadata,
   updateVoiceAlias,
 } from "../db/romperDbCoreORM.js";
 
@@ -225,6 +227,21 @@ export class ScanService {
       const insertResult = addSample(dbDir, sampleRecord);
       if (!insertResult.success) {
         return { error: insertResult.error, success: false };
+      }
+
+      // Extract and save WAV metadata for the newly created sample
+      const metadataResult = getAudioMetadata(samplePath);
+      if (metadataResult.success && metadataResult.data && insertResult.data) {
+        const metadata = metadataResult.data;
+        updateSampleMetadata(dbDir, insertResult.data.sampleId, {
+          wav_bit_depth: metadata.bitDepth ?? null,
+          wav_bitrate:
+            metadata.sampleRate && metadata.channels && metadata.bitDepth
+              ? metadata.sampleRate * metadata.channels * metadata.bitDepth
+              : null,
+          wav_channels: metadata.channels ?? null,
+          wav_sample_rate: metadata.sampleRate ?? null,
+        });
       }
 
       samplesProcessed++;

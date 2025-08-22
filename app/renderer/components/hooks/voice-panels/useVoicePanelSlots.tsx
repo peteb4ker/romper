@@ -69,6 +69,7 @@ export interface UseVoicePanelSlotsOptions {
       isStereoHighlight: boolean,
       isDropZone: boolean,
       dropHintTitle: string,
+      filename?: string,
     ) => string;
     getSlotStyling: (
       slotNumber: number,
@@ -188,6 +189,7 @@ export function useVoicePanelSlots({
         isStereoHighlight,
         isDropZone,
         dropHintTitle,
+        sampleName,
       );
       const dragHandlers = dragAndDropHook.getSampleDragHandlers(
         slotNumber,
@@ -255,16 +257,14 @@ export function useVoicePanelSlots({
           {...combinedDragHandlers}
         >
           {renderPlayButton(isPlaying, sampleName)}
-          <span
-            className="truncate text-xs font-mono font-medium text-gray-700 dark:text-gray-200 flex-1"
-            title={
-              sampleData?.source_path
-                ? `${sampleName}\nSource: ${sampleData.source_path}`
-                : sampleName
-            }
-          >
-            {sampleName}
-          </span>
+          <div className="flex-1 min-w-0">
+            <span
+              className="truncate text-xs font-mono font-medium text-gray-700 dark:text-gray-200"
+              title={sampleName}
+            >
+              {sampleName}
+            </span>
+          </div>
           {isEditable && renderDeleteButton(slotNumber)}
           <SampleWaveform
             key={`${kitName}-${voice}-${uiSlotNumber}-${sampleName}`}

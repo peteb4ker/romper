@@ -34,6 +34,7 @@ export {
   toggleKitFavorite,
   updateBank,
   updateKit,
+  updateSampleMetadata,
   updateVoiceAlias,
 } from "./operations/crudOperations.js";
 // Import and re-export sample management operations

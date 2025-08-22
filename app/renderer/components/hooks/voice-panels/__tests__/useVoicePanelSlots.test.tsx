@@ -238,16 +238,16 @@ describe("useVoicePanelSlots", () => {
 
     // Test click selection
     firstSample?.click();
-    expect(defaultProps.onSampleSelect).toHaveBeenCalledWith(1, 1);
+    expect(defaultProps.onSampleSelect).toHaveBeenCalledWith(1, 0);
 
     // Test keyboard selection (Enter key)
     firstSample?.focus();
     fireEvent.keyDown(firstSample, { key: "Enter" });
-    expect(defaultProps.onSampleSelect).toHaveBeenCalledWith(1, 1);
+    expect(defaultProps.onSampleSelect).toHaveBeenCalledWith(1, 0);
 
     // Test keyboard selection (Space key)
     fireEvent.keyDown(firstSample, { key: " " });
-    expect(defaultProps.onSampleSelect).toHaveBeenCalledWith(1, 1);
+    expect(defaultProps.onSampleSelect).toHaveBeenCalledWith(1, 0);
   });
 
   it("renders playing state correctly", () => {

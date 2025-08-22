@@ -129,7 +129,7 @@ describe("useKitDuplication", () => {
       expect(result.current.duplicateKitError).toBe("String error");
     });
 
-    it("should call rescanKit after successful duplication", async () => {
+    it("should successfully duplicate kit without rescanning", async () => {
       mockDuplicateKit.mockResolvedValueOnce(undefined);
       const { result } = renderHook(() => useKitDuplication(defaultProps));
 
@@ -143,19 +143,13 @@ describe("useKitDuplication", () => {
       });
 
       expect(mockDuplicateKit).toHaveBeenCalledWith("A0", "B0");
-      expect(window.electronAPI?.rescanKit).toHaveBeenCalledWith("B0");
+      // rescanKit is no longer called for duplicated kits since they use reference-only sample management
+      expect(window.electronAPI?.rescanKit).not.toHaveBeenCalled();
       expect(result.current.duplicateKitError).toBeNull();
     });
 
-    it("should handle rescanKit failure gracefully", async () => {
+    it("should reset state after successful duplication", async () => {
       mockDuplicateKit.mockResolvedValueOnce(undefined);
-      if (window.electronAPI?.rescanKit) {
-        vi.mocked(window.electronAPI.rescanKit).mockRejectedValue(
-          new Error("Rescan failed"),
-        );
-      }
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation();
-
       const { result } = renderHook(() => useKitDuplication(defaultProps));
 
       act(() => {
@@ -168,27 +162,18 @@ describe("useKitDuplication", () => {
       });
 
       expect(mockDuplicateKit).toHaveBeenCalledWith("A0", "B0");
-      expect(window.electronAPI?.rescanKit).toHaveBeenCalledWith("B0");
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to scan newly duplicated kit:",
-        "B0",
-        expect.any(Error),
+      expect(result.current.duplicateKitError).toBeNull();
+      expect(result.current.duplicateKitSource).toBeNull();
+      expect(result.current.duplicateKitDest).toBe("");
+    });
+
+    it("should call onRefreshKits callback after successful duplication", async () => {
+      const mockOnRefreshKits = vi.fn();
+      mockDuplicateKit.mockResolvedValueOnce(undefined);
+
+      const { result } = renderHook(() =>
+        useKitDuplication({ onRefreshKits: mockOnRefreshKits }),
       );
-      // Duplication should still succeed even if rescan fails
-      expect(result.current.duplicateKitError).toBeNull();
-      expect(result.current.duplicateKitSource).toBeNull();
-
-      consoleSpy.mockRestore();
-    });
-
-    it("should work when electronAPI rescanKit is not available", async () => {
-      // Test with a mock that doesn't have rescanKit
-      const originalAPI = window.electronAPI;
-      (window as unknown).electronAPI = { ...window.electronAPI };
-      delete (window as unknown).electronAPI.rescanKit;
-
-      mockDuplicateKit.mockResolvedValueOnce(undefined);
-      const { result } = renderHook(() => useKitDuplication(defaultProps));
 
       act(() => {
         result.current.setDuplicateKitSource("A0");
@@ -200,11 +185,8 @@ describe("useKitDuplication", () => {
       });
 
       expect(mockDuplicateKit).toHaveBeenCalledWith("A0", "B0");
+      expect(mockOnRefreshKits).toHaveBeenCalledWith("B0");
       expect(result.current.duplicateKitError).toBeNull();
-      expect(result.current.duplicateKitSource).toBeNull();
-
-      // Restore
-      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should work when electronAPI is completely unavailable", async () => {

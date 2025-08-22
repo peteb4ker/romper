@@ -114,6 +114,95 @@ export class ScanService {
   }
 
   /**
+   * Rescan all kits that have samples with missing WAV metadata
+   * This is useful for migrating existing kits after the metadata feature was added
+   */
+  async rescanKitsWithMissingMetadata(
+    inMemorySettings: Record<string, unknown>,
+  ): Promise<
+    DbResult<{
+      kitsNeedingRescan: string[];
+      kitsRescanned: string[];
+      totalSamplesUpdated: number;
+    }>
+  > {
+    const localStorePath = this.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { error: "No local store path configured", success: false };
+    }
+
+    const dbDir = this.getDbPath(localStorePath);
+
+    try {
+      // First, find all kits that have samples with missing metadata
+      const kitsNeedingRescan: string[] = [];
+
+      // Import the necessary functions to query the database
+      const { getAllSamples } = await import("../db/romperDbCoreORM.js");
+
+      const samplesResult = getAllSamples(dbDir);
+      if (!samplesResult.success || !samplesResult.data) {
+        return { error: "Failed to query samples", success: false };
+      }
+
+      // Group kits by whether they have missing metadata
+      const kitMetadataStatus = new Map<string, boolean>();
+      for (const sample of samplesResult.data) {
+        if (!kitMetadataStatus.has(sample.kit_name)) {
+          kitMetadataStatus.set(sample.kit_name, false);
+        }
+        // If any sample is missing metadata, mark the kit as needing rescan
+        if (
+          sample.wav_sample_rate === null ||
+          sample.wav_bit_depth === null ||
+          sample.wav_channels === null
+        ) {
+          kitMetadataStatus.set(sample.kit_name, true);
+        }
+      }
+
+      // Get list of kits that need rescanning
+      for (const [kitName, needsRescan] of kitMetadataStatus) {
+        if (needsRescan) {
+          kitsNeedingRescan.push(kitName);
+        }
+      }
+
+      // Rescan each kit that needs metadata
+      const kitsRescanned: string[] = [];
+      let totalSamplesUpdated = 0;
+
+      for (const kitName of kitsNeedingRescan) {
+        const rescanResult = await this.rescanKit(inMemorySettings, kitName);
+        if (rescanResult.success && rescanResult.data) {
+          kitsRescanned.push(kitName);
+          totalSamplesUpdated += rescanResult.data.scannedSamples;
+        } else {
+          console.error(
+            `Failed to rescan kit ${kitName}: ${rescanResult.error}`,
+          );
+        }
+      }
+
+      return {
+        data: {
+          kitsNeedingRescan,
+          kitsRescanned,
+          totalSamplesUpdated,
+        },
+        success: true,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return {
+        error: `Failed to rescan kits with missing metadata: ${errorMessage}`,
+        success: false,
+      };
+    }
+  }
+
+  /**
    * Scan local store for bank RTF files and update database
    * Looks for files matching "A - Artist Name.rtf" pattern
    */

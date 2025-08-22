@@ -447,6 +447,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] rescanKit invoked", kitName);
     return ipcRenderer.invoke("rescan-kit", kitName);
   },
+  rescanKitsMissingMetadata: () => {
+    isDev && console.debug("[IPC] rescanKitsMissingMetadata invoked");
+    return ipcRenderer.invoke("rescan-kits-missing-metadata");
+  },
   scanBanks: () => {
     isDev && console.debug("[IPC] scanBanks invoked");
     return ipcRenderer.invoke("scan-banks");

@@ -1,7 +1,14 @@
 import { renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { useSlotRendering } from "../useSlotRendering";
+
+// Mock the wavMetadataFormatter
+vi.mock("../../../../utils/wavMetadataFormatter", () => ({
+  formatTooltip: vi.fn(),
+}));
+
+import { formatTooltip } from "../../../../utils/wavMetadataFormatter";
 
 describe("useSlotRendering", () => {
   const defaultProps = {
@@ -243,6 +250,7 @@ describe("useSlotRendering", () => {
 
   describe("getSampleSlotTitle", () => {
     const sampleData = {
+      filename: "kick.wav",
       source_path: "/path/to/kick.wav",
     };
 
@@ -262,6 +270,9 @@ describe("useSlotRendering", () => {
     });
 
     it("includes formatted tooltip when sample data and filename are available", () => {
+      // Configure the mock to return the expected tooltip format
+      (formatTooltip as unknown).mockReturnValue("kick.wav\n/path/to/kick.wav");
+
       const { result } = renderHook(() => useSlotRendering(defaultProps));
 
       const title = result.current.getSampleSlotTitle(
@@ -275,6 +286,11 @@ describe("useSlotRendering", () => {
       );
 
       expect(title).toBe("kick.wav\n/path/to/kick.wav");
+      expect(formatTooltip).toHaveBeenCalledWith(
+        sampleData,
+        sampleData.source_path,
+        "kick.wav",
+      );
     });
 
     it("returns drop hint title when dragging over", () => {

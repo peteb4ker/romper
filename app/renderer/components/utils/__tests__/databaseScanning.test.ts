@@ -450,6 +450,243 @@ describe("databaseScanning", () => {
         operation: "wavAnalysis",
       });
     });
+
+    it("handles WAV files with missing metadata gracefully", async () => {
+      vi.mocked(executeWAVAnalysisScan).mockResolvedValue({
+        completedOperations: 1,
+        errors: [],
+        results: {
+          wavAnalysis: [
+            {
+              bitDepth: undefined,
+              bitrate: undefined,
+              channels: undefined,
+              isStereo: false,
+              isValid: true,
+              sampleRate: undefined,
+            },
+          ],
+        },
+        success: true,
+        totalOperations: 1,
+      });
+
+      const result = await scanWavFilesToDatabase("/mock/db", ["partial.wav"]);
+
+      expect(result.success).toBe(true);
+      expect(result.scannedWavFiles).toBe(1);
+      expect(result.errors).toEqual([]);
+    });
+
+    it("handles mixed valid and invalid WAV files", async () => {
+      vi.mocked(executeWAVAnalysisScan).mockResolvedValue({
+        completedOperations: 1,
+        errors: [],
+        results: {
+          wavAnalysis: [
+            {
+              bitDepth: 16,
+              bitrate: 1411200,
+              channels: 2,
+              isStereo: true,
+              isValid: true,
+              sampleRate: 44100,
+            },
+            {
+              bitDepth: undefined,
+              bitrate: undefined,
+              channels: undefined,
+              isStereo: false,
+              isValid: false,
+              sampleRate: undefined,
+            },
+          ],
+        },
+        success: true,
+        totalOperations: 1,
+      });
+
+      const result = await scanWavFilesToDatabase("/mock/db", [
+        "valid.wav",
+        "invalid.wav",
+      ]);
+
+      expect(result.success).toBe(true);
+      expect(result.scannedWavFiles).toBe(2); // Both files are counted in the analysis results
+    });
+
+    it("handles custom file reader for testing", async () => {
+      const mockFileReader = vi.fn().mockResolvedValue(new ArrayBuffer(1024));
+
+      vi.mocked(executeWAVAnalysisScan).mockResolvedValue({
+        completedOperations: 1,
+        errors: [],
+        results: {
+          wavAnalysis: [
+            {
+              bitDepth: 16,
+              bitrate: 1411200,
+              channels: 2,
+              isStereo: true,
+              isValid: true,
+              sampleRate: 44100,
+            },
+          ],
+        },
+        success: true,
+        totalOperations: 1,
+      });
+
+      const result = await scanWavFilesToDatabase(
+        "/mock/db",
+        ["test.wav"],
+        mockFileReader,
+      );
+
+      expect(result.success).toBe(true);
+      expect(executeWAVAnalysisScan).toHaveBeenCalledWith(
+        ["test.wav"],
+        mockFileReader,
+      );
+    });
+  });
+
+  describe("WAV processing integration in scanKitToDatabase", () => {
+    const mockKitData: KitScanData = {
+      kitId: 1,
+      kitName: "Test Kit",
+      kitPath: "/path/to/kit",
+      rtfFiles: [],
+      samples: { 1: ["kick.wav"] },
+      wavFiles: ["kick.wav"],
+    };
+
+    it("processes WAV analysis errors gracefully", async () => {
+      // Mock database operations
+      Object.defineProperty(window, "electronAPI", {
+        value: {
+          getAllSamplesForKit: vi.fn().mockResolvedValue({
+            data: [{ filename: "kick.wav", id: 1, source_path: "kick.wav" }],
+            success: true,
+          }),
+          updateSampleMetadata: vi.fn().mockResolvedValue({
+            error: "Database update failed",
+            success: false,
+          }),
+        },
+        writable: true,
+      });
+
+      vi.mocked(executeFullKitScan).mockResolvedValue({
+        completedOperations: 1,
+        errors: [],
+        results: {
+          wavAnalysis: [
+            {
+              bitDepth: 16,
+              bitrate: 1411200,
+              channels: 2,
+              isStereo: true,
+              isValid: true,
+              sampleRate: 44100,
+            },
+          ],
+        },
+        success: true,
+        totalOperations: 1,
+      });
+
+      const result = await scanKitToDatabase("/mock/db", mockKitData);
+
+      expect(result.success).toBe(true);
+      expect(result.scannedKits).toBe(1);
+      expect(result.errors).toContainEqual({
+        error: "Failed to update metadata for kick.wav: Database update failed",
+        operation: "wav-kick.wav",
+      });
+    });
+
+    it("handles missing sample records during WAV processing", async () => {
+      // Mock database operations with missing sample
+      Object.defineProperty(window, "electronAPI", {
+        value: {
+          getAllSamplesForKit: vi.fn().mockResolvedValue({
+            data: [], // No samples found
+            success: true,
+          }),
+          updateSampleMetadata: vi.fn(),
+        },
+        writable: true,
+      });
+
+      vi.mocked(executeFullKitScan).mockResolvedValue({
+        completedOperations: 1,
+        errors: [],
+        results: {
+          wavAnalysis: [
+            {
+              bitDepth: 16,
+              bitrate: 1411200,
+              channels: 2,
+              isStereo: true,
+              isValid: true,
+              sampleRate: 44100,
+            },
+          ],
+        },
+        success: true,
+        totalOperations: 1,
+      });
+
+      const result = await scanKitToDatabase("/mock/db", mockKitData);
+
+      expect(result.success).toBe(true);
+      expect(result.scannedKits).toBe(1);
+      expect(result.errors).toContainEqual({
+        error: "Could not find sample record for kick.wav",
+        operation: "wav-kick.wav",
+      });
+    });
+
+    it("handles exception during WAV metadata processing", async () => {
+      // Mock database operations that throw
+      Object.defineProperty(window, "electronAPI", {
+        value: {
+          getAllSamplesForKit: vi
+            .fn()
+            .mockRejectedValue(new Error("Database connection error")),
+        },
+        writable: true,
+      });
+
+      vi.mocked(executeFullKitScan).mockResolvedValue({
+        completedOperations: 1,
+        errors: [],
+        results: {
+          wavAnalysis: [
+            {
+              bitDepth: 16,
+              bitrate: 1411200,
+              channels: 2,
+              isStereo: true,
+              isValid: true,
+              sampleRate: 44100,
+            },
+          ],
+        },
+        success: true,
+        totalOperations: 1,
+      });
+
+      const result = await scanKitToDatabase("/mock/db", mockKitData);
+
+      expect(result.success).toBe(true);
+      expect(result.scannedKits).toBe(1);
+      expect(result.errors).toContainEqual({
+        error: "Error processing kick.wav: Database connection error",
+        operation: "wav-kick.wav",
+      });
+    });
   });
 
   // RTF scanning tests removed - functionality moved to bank scanning system

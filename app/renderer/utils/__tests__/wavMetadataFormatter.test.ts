@@ -70,6 +70,42 @@ describe("wavMetadataFormatter", () => {
       const result = formatWavMetadata(metadata);
       expect(result).toBe("6ch");
     });
+
+    it("handles low sample rates under 1000Hz", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_sample_rate: 800,
+      };
+
+      const result = formatWavMetadata(metadata);
+      expect(result).toBe("800Hz");
+    });
+
+    it("handles edge case of exactly 1000Hz sample rate", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_sample_rate: 1000,
+      };
+
+      const result = formatWavMetadata(metadata);
+      expect(result).toBe("1.0kHz");
+    });
+
+    it("handles zero values gracefully", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_bit_depth: 0,
+        wav_channels: 0,
+        wav_sample_rate: 0,
+      };
+
+      const result = formatWavMetadata(metadata);
+      // Zero values are falsy, so they get filtered out, resulting in empty string
+      expect(result).toBe("");
+    });
   });
 
   describe("getCompatibilityStatus", () => {
@@ -120,6 +156,70 @@ describe("wavMetadataFormatter", () => {
 
       const result = getCompatibilityStatus(metadata);
       expect(result).toBe("native");
+    });
+
+    it("returns native for partially missing metadata", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_bit_depth: 16,
+        // Missing channels and sample rate
+      };
+
+      const result = getCompatibilityStatus(metadata);
+      expect(result).toBe("native");
+    });
+
+    it("returns native for edge case of 8-bit mono 44100Hz", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_bit_depth: 8,
+        wav_channels: 1,
+        wav_sample_rate: 44100,
+      };
+
+      const result = getCompatibilityStatus(metadata);
+      expect(result).toBe("native");
+    });
+
+    it("returns convertible for 24-bit stereo format", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_bit_depth: 24,
+        wav_channels: 2,
+        wav_sample_rate: 48000,
+      };
+
+      const result = getCompatibilityStatus(metadata);
+      expect(result).toBe("convertible");
+    });
+
+    it("returns incompatible for 5.1 surround format", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_bit_depth: 16,
+        wav_channels: 6,
+        wav_sample_rate: 44100,
+      };
+
+      const result = getCompatibilityStatus(metadata);
+      expect(result).toBe("incompatible");
+    });
+
+    it("returns incompatible for 3-channel format", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_bit_depth: 16,
+        wav_channels: 3,
+        wav_sample_rate: 44100,
+      };
+
+      const result = getCompatibilityStatus(metadata);
+      expect(result).toBe("incompatible");
     });
   });
 
@@ -190,6 +290,21 @@ describe("wavMetadataFormatter", () => {
       const result = formatTooltip(metadata, "/path/test.wav", "test.wav");
       expect(result).toBe(
         "test.wav\n/path/test.wav\n► 48.0kHz • 24-bit • Mono • 🟡 Convertible",
+      );
+    });
+
+    it("handles incompatible format correctly", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_bit_depth: 16,
+        wav_channels: 6,
+        wav_sample_rate: 44100,
+      };
+
+      const result = formatTooltip(metadata, "/path/test.wav", "test.wav");
+      expect(result).toBe(
+        "test.wav\n/path/test.wav\n► 44.1kHz • 16-bit • 6ch • ❌ Incompatible",
       );
     });
   });

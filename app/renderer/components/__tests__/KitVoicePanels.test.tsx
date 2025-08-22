@@ -369,8 +369,8 @@ describe("Sample Metadata Tooltip Integration", () => {
     // Find the sample name span
     const kickSpan = screen.getByText("kick.wav");
 
-    // The span should NOT have a title attribute (to avoid duplicate tooltips)
-    expect(kickSpan).not.toHaveAttribute("title");
+    // The span should have an empty title attribute (to prevent browser default tooltip)
+    expect(kickSpan).toHaveAttribute("title", "");
 
     // But the parent li should have the title with metadata
     const kickParent = kickSpan.closest("li");

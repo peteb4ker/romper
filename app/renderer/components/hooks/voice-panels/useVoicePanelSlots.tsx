@@ -174,7 +174,7 @@ export function useVoicePanelSlots({
       const isPlaying = samplePlaying[sampleKey];
       const uiSlotNumber = slotNumber + 1;
       const sampleData = sampleMetadata?.[sampleName];
-      const isSelected = selectedIdx === uiSlotNumber && isActive;
+      const isSelected = selectedIdx === slotNumber && isActive;
 
       const className = slotRenderingHook.getSampleSlotClassName(
         slotNumber,
@@ -239,14 +239,14 @@ export function useVoicePanelSlots({
           }
           draggable={isEditable}
           key={`${voice}-${slotNumber}-${sampleName}`}
-          onClick={() => onSampleSelect && onSampleSelect(voice, uiSlotNumber)}
+          onClick={() => onSampleSelect && onSampleSelect(voice, slotNumber)}
           onContextMenu={(e) =>
             sampleActionsHook.handleSampleContextMenu(e, sampleData)
           }
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              onSampleSelect && onSampleSelect(voice, uiSlotNumber);
+              onSampleSelect && onSampleSelect(voice, slotNumber);
             }
           }}
           role="option"

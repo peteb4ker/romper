@@ -38,6 +38,7 @@ vi.mock("../services/sampleService.js", () => ({
 vi.mock("../services/scanService.js", () => ({
   scanService: {
     rescanKit: vi.fn(),
+    rescanKitsWithMissingMetadata: vi.fn(),
     scanBanks: vi.fn(),
   },
 }));
@@ -139,6 +140,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         "get-all-samples",
         "get-all-samples-for-kit",
         "rescan-kit",
+        "rescan-kits-missing-metadata",
         "delete-all-samples-for-kit",
         "get-all-banks",
         "scan-banks",
@@ -262,6 +264,26 @@ describe("dbIpcHandlers - Routing Tests", () => {
         mockInMemorySettings,
         "TestKit",
       );
+    });
+
+    it("rescan-kits-missing-metadata routes to scanService.rescanKitsWithMissingMetadata", async () => {
+      mockScanService.rescanKitsWithMissingMetadata.mockResolvedValue({
+        data: {
+          kitsNeedingRescan: ["A1", "A2"],
+          kitsRescanned: ["A1", "A2"],
+          totalSamplesUpdated: 50,
+        },
+        success: true,
+      });
+
+      const handler = handlerRegistry["rescan-kits-missing-metadata"];
+      const result = await handler({});
+
+      expect(result.success).toBe(true);
+      expect(result.data?.totalSamplesUpdated).toBe(50);
+      expect(
+        mockScanService.rescanKitsWithMissingMetadata,
+      ).toHaveBeenCalledWith(mockInMemorySettings);
     });
 
     it("scan-banks routes to scanService.scanBanks", async () => {

@@ -174,8 +174,8 @@ const KitsView: React.FC = () => {
       }
 
       try {
-        const result = await window.electronAPI?.rescanKitsMissingMetadata?.();
-        if (result?.success && result.data) {
+        const result = await window.electronAPI.rescanKitsMissingMetadata();
+        if (result.success && result.data) {
           const { kitsRescanned, totalSamplesUpdated } = result.data;
 
           if (kitsRescanned.length > 0) {

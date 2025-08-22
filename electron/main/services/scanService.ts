@@ -12,6 +12,7 @@ import { getAudioMetadata } from "../audioUtils.js";
 import {
   addSample,
   deleteSamples,
+  getAllSamples,
   updateBank,
   updateSampleMetadata,
   updateVoiceAlias,
@@ -136,9 +137,6 @@ export class ScanService {
     try {
       // First, find all kits that have samples with missing metadata
       const kitsNeedingRescan: string[] = [];
-
-      // Import the necessary functions to query the database
-      const { getAllSamples } = await import("../db/romperDbCoreORM.js");
 
       const samplesResult = getAllSamples(dbDir);
       if (!samplesResult.success || !samplesResult.data) {

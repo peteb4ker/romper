@@ -34,7 +34,9 @@ export async function insertSample(
     slot_number: number;
     source_path?: string;
     voice_number: number;
+    wav_bit_depth?: number;
     wav_bitrate?: number;
+    wav_channels?: number;
     wav_sample_rate?: number;
   },
 ) {
@@ -44,7 +46,9 @@ export async function insertSample(
   const sampleWithDefaults = {
     ...sample,
     source_path: sample.source_path || "",
+    wav_bit_depth: sample.wav_bit_depth || null,
     wav_bitrate: sample.wav_bitrate || null,
+    wav_channels: sample.wav_channels || null,
     wav_sample_rate: sample.wav_sample_rate || null,
   };
 

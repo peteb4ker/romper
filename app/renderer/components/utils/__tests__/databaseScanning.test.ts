@@ -34,6 +34,21 @@ describe("databaseScanning", () => {
     vi.clearAllMocks();
     // Set up mock database operations
     setDatabaseOperations(mockDbOps);
+
+    // Mock window.electronAPI for WAV metadata processing
+    Object.defineProperty(window, "electronAPI", {
+      value: {
+        getAllSamplesForKit: vi.fn().mockResolvedValue({
+          data: [
+            { filename: "kick.wav", id: 1, source_path: "kick.wav" },
+            { filename: "snare.wav", id: 2, source_path: "snare.wav" },
+          ],
+          success: true,
+        }),
+        updateSampleMetadata: vi.fn().mockResolvedValue({ success: true }),
+      },
+      writable: true,
+    });
   });
 
   describe("scanKitToDatabase", () => {

@@ -246,7 +246,7 @@ describe("useSlotRendering", () => {
       source_path: "/path/to/kick.wav",
     };
 
-    it("returns basic slot title without sample data", () => {
+    it("returns empty string without sample data", () => {
       const { result } = renderHook(() => useSlotRendering(defaultProps));
 
       const title = result.current.getSampleSlotTitle(
@@ -258,10 +258,10 @@ describe("useSlotRendering", () => {
         "",
       );
 
-      expect(title).toBe("Slot 1");
+      expect(title).toBe("");
     });
 
-    it("includes source path in title when sample data is available", () => {
+    it("includes formatted tooltip when sample data and filename are available", () => {
       const { result } = renderHook(() => useSlotRendering(defaultProps));
 
       const title = result.current.getSampleSlotTitle(
@@ -271,9 +271,10 @@ describe("useSlotRendering", () => {
         false,
         false,
         "",
+        "kick.wav",
       );
 
-      expect(title).toBe("Slot 1\nSource: /path/to/kick.wav");
+      expect(title).toBe("kick.wav\n/path/to/kick.wav");
     });
 
     it("returns drop hint title when dragging over", () => {

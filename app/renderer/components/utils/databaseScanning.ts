@@ -92,7 +92,9 @@ export async function scanKitToDatabase(
     }
 
     if (scanResult.results.wavAnalysis) {
-      processWAVAnalysisResults(
+      await processWAVAnalysisResults(
+        dbDir,
+        kitScanData.kitName,
         scanResult.results.wavAnalysis,
         kitScanData.wavFiles,
         result,
@@ -328,17 +330,68 @@ async function processVoiceInferenceResults(
 }
 
 // Helper function to process WAV analysis results
-function processWAVAnalysisResults(
+async function processWAVAnalysisResults(
+  dbDir: string,
+  kitName: string,
   wavAnalyses: WAVAnalysisOutput[],
   wavFiles: string[],
   result: DatabaseScanResult,
-): void {
+): Promise<void> {
   for (let i = 0; i < wavAnalyses.length; i++) {
     const analysis = wavAnalyses[i];
     const filePath = wavFiles[i];
 
     if (analysis.isValid) {
-      result.scannedWavFiles++;
+      try {
+        // Find the sample record by matching the file path
+        const samples =
+          await window.electronAPI?.getAllSamplesForKit?.(kitName);
+        if (!samples?.success || !samples.data) {
+          result.errors.push({
+            error: `Could not retrieve samples for kit ${kitName}`,
+            operation: `wav-${filePath}`,
+          });
+          continue;
+        }
+
+        // Find the sample that matches this file path
+        const matchingSample = samples.data.find(
+          (sample) => sample.source_path === filePath,
+        );
+
+        if (!matchingSample) {
+          result.errors.push({
+            error: `Could not find sample record for ${filePath}`,
+            operation: `wav-${filePath}`,
+          });
+          continue;
+        }
+
+        // Update the sample with WAV metadata
+        const updateResult = await window.electronAPI?.updateSampleMetadata?.(
+          matchingSample.id,
+          {
+            wav_bit_depth: analysis.bitDepth,
+            wav_bitrate: analysis.bitrate,
+            wav_channels: analysis.channels,
+            wav_sample_rate: analysis.sampleRate,
+          },
+        );
+
+        if (!updateResult?.success) {
+          result.errors.push({
+            error: `Failed to update metadata for ${filePath}: ${updateResult?.error}`,
+            operation: `wav-${filePath}`,
+          });
+        } else {
+          result.scannedWavFiles++;
+        }
+      } catch (error) {
+        result.errors.push({
+          error: `Error processing ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+          operation: `wav-${filePath}`,
+        });
+      }
     } else {
       result.errors.push({
         error: "Invalid WAV format",

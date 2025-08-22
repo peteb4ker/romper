@@ -70,7 +70,9 @@ describe("romperDb", () => {
       kit_id: 1,
       slot_number: 100,
       source_path: "",
+      wav_bit_depth: null,
       wav_bitrate: null,
+      wav_channels: null,
       wav_sample_rate: null,
     });
     expect(sampleId).toBe(99);

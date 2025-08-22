@@ -8,7 +8,7 @@ import { useKitDetailsLogic } from "./hooks/kit-management/useKitDetailsLogic";
 import KitForm from "./KitForm";
 import KitHeader from "./KitHeader";
 import KitStepSequencer from "./KitStepSequencer";
-import KitVoicePanels from "./KitVoicePanels";
+import KitVoicePanels, { type KitVoicePanelsRef } from "./KitVoicePanels";
 import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitDetailsAllProps extends KitDetailsProps {
@@ -31,6 +31,9 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   const logic = useKitDetailsLogic(props);
   const [dismissedUnscannedPrompt, setDismissedUnscannedPrompt] =
     React.useState(false);
+
+  // Ref for KitVoicePanels to refresh sample metadata
+  const kitVoicePanelsRef = React.useRef<KitVoicePanelsRef>(null);
 
   // Kit alias editing state
   const [editingKitAlias, setEditingKitAlias] = React.useState(false);
@@ -120,6 +123,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
           onStop={logic.playback.handleStop}
           onWaveformPlayingChange={logic.playback.handleWaveformPlayingChange}
           playTriggers={logic.playback.playTriggers}
+          ref={kitVoicePanelsRef}
           samplePlaying={logic.playback.samplePlaying}
           samples={logic.samples}
           selectedSampleIdx={logic.selectedSampleIdx}

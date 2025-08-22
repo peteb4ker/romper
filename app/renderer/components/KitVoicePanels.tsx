@@ -8,6 +8,10 @@ import type { SampleData, VoiceSamples } from "./kitTypes";
 import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
 import KitVoicePanel from "./KitVoicePanel";
 
+export interface KitVoicePanelsRef {
+  refreshSampleMetadata: () => Promise<void>;
+}
+
 interface KitVoicePanelsProps {
   isEditable?: boolean; // Used directly in KitVoicePanel
   kit: KitWithRelations | null; // Used by useKitVoicePanels hook
@@ -55,36 +59,36 @@ interface KitVoicePanelsProps {
   stopTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
 }
 
-const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
-  const hookProps = useKitVoicePanels({
-    ...props,
-    sequencerOpen: props.sequencerOpen,
-    setSelectedSampleIdx: props.setSelectedSampleIdx,
-    setSelectedVoice: props.setSelectedVoice,
-  });
+const KitVoicePanels = React.forwardRef<KitVoicePanelsRef, KitVoicePanelsProps>(
+  (props, ref) => {
+    const hookProps = useKitVoicePanels({
+      ...props,
+      sequencerOpen: props.sequencerOpen,
+      setSelectedSampleIdx: props.setSelectedSampleIdx,
+      setSelectedVoice: props.setSelectedVoice,
+    });
 
-  // State for sample metadata lookup
-  const [sampleMetadata, setSampleMetadata] = useState<{
-    [filename: string]: SampleData;
-  }>({});
+    // State for sample metadata lookup
+    const [sampleMetadata, setSampleMetadata] = useState<{
+      [filename: string]: SampleData;
+    }>({});
 
-  // Task 7.1.3: State to track stereo drop targets
-  const [stereoDragInfo, setStereoDragInfo] = useState<{
-    nextVoice: number;
-    slotNumber: number;
-    targetVoice: number;
-  } | null>(null);
+    // Task 7.1.3: State to track stereo drop targets
+    const [stereoDragInfo, setStereoDragInfo] = useState<{
+      nextVoice: number;
+      slotNumber: number;
+      targetVoice: number;
+    } | null>(null);
 
-  // State to track internal drag operations across all voices
-  const [internalDraggedSample, setInternalDraggedSample] = useState<{
-    sampleName: string;
-    slot: number;
-    voice: number;
-  } | null>(null);
+    // State to track internal drag operations across all voices
+    const [internalDraggedSample, setInternalDraggedSample] = useState<{
+      sampleName: string;
+      slot: number;
+      voice: number;
+    } | null>(null);
 
-  // Load sample metadata when kit changes
-  React.useEffect(() => {
-    const loadSampleMetadata = async () => {
+    // Load sample metadata function (extracted for reuse)
+    const loadSampleMetadata = React.useCallback(async () => {
       if (!hookProps.kitName || !window.electronAPI?.getAllSamplesForKit) {
         setSampleMetadata({});
         return;
@@ -113,130 +117,150 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         console.error("Failed to load sample metadata:", error);
         setSampleMetadata({});
       }
+    }, [hookProps.kitName]);
+
+    // Helper to generate a hash of sample filenames for change detection
+    const samplesHash = React.useMemo(() => {
+      const allSamples = Object.values(props.samples).flat().filter(Boolean);
+      return allSamples.sort().join("|");
+    }, [props.samples]);
+
+    // Load sample metadata when kit changes or samples change
+    React.useEffect(() => {
+      loadSampleMetadata();
+    }, [loadSampleMetadata, samplesHash]);
+
+    // Expose refresh function via ref
+    React.useImperativeHandle(
+      ref,
+      () => ({
+        refreshSampleMetadata: loadSampleMetadata,
+      }),
+      [loadSampleMetadata],
+    );
+
+    // Callback for voice panels to notify about stereo drops
+    const handleStereoDragOver = (
+      voice: number,
+      slotNumber: number,
+      isStereo: boolean,
+    ) => {
+      const canHandleStereo = isStereo && voice < 4;
+      const shouldSetDragInfo = canHandleStereo;
+
+      if (shouldSetDragInfo) {
+        setStereoDragInfo({
+          nextVoice: voice + 1,
+          slotNumber,
+          targetVoice: voice,
+        });
+      } else {
+        setStereoDragInfo(null);
+      }
     };
 
-    loadSampleMetadata();
-  }, [hookProps.kitName]);
-
-  // Callback for voice panels to notify about stereo drops
-  const handleStereoDragOver = (
-    voice: number,
-    slotNumber: number,
-    isStereo: boolean,
-  ) => {
-    const canHandleStereo = isStereo && voice < 4;
-    const shouldSetDragInfo = canHandleStereo;
-
-    if (shouldSetDragInfo) {
-      setStereoDragInfo({
-        nextVoice: voice + 1,
-        slotNumber,
-        targetVoice: voice,
-      });
-    } else {
+    const handleStereoDragLeave = () => {
       setStereoDragInfo(null);
-    }
-  };
+    };
 
-  const handleStereoDragLeave = () => {
-    setStereoDragInfo(null);
-  };
-
-  return (
-    <div className="flex w-full relative" data-testid="voice-panels-row">
-      {/* Global slot numbers column */}
-      <div className="flex flex-col justify-start pt-8 pr-3">
-        {[...Array(12)].map((_, i) => (
-          <div
-            className="min-h-[28px] flex items-center justify-end"
-            key={`global-slot-${i}`}
-            style={{ marginBottom: 4 }}
-          >
-            <span
-              className="text-xs font-mono text-gray-500 dark:text-gray-400 select-none bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
-              data-testid={`global-slot-number-${i}`}
-              style={{ display: "inline-block", width: "32px" }}
+    return (
+      <div className="flex w-full relative" data-testid="voice-panels-row">
+        {/* Global slot numbers column */}
+        <div className="flex flex-col justify-start pt-8 pr-3">
+          {[...Array(12)].map((_, i) => (
+            <div
+              className="min-h-[28px] flex items-center justify-end"
+              key={`global-slot-${i}`}
+              style={{ marginBottom: 4 }}
             >
-              {i + 1}
-            </span>
-          </div>
-        ))}
-      </div>
+              <span
+                className="text-xs font-mono text-gray-500 dark:text-gray-400 select-none bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
+                data-testid={`global-slot-number-${i}`}
+                style={{ display: "inline-block", width: "32px" }}
+              >
+                {i + 1}
+              </span>
+            </div>
+          ))}
+        </div>
 
-      {/* Voice panels grid */}
-      <div className="grid grid-cols-4 gap-4 flex-1">
-        {[1, 2, 3, 4].map((voice) => (
-          <React.Fragment key={`${hookProps.kitName}-voicepanel-${voice}`}>
-            <div className="relative" data-testid={`voice-panel-${voice}`}>
-              <KitVoicePanel
-                dataTestIdVoiceName={`voice-name-${voice}`}
-                isActive={voice === hookProps.selectedVoice}
-                isEditable={props.isEditable ?? false}
-                isStereoDragTarget={
-                  stereoDragInfo?.targetVoice === voice ||
-                  stereoDragInfo?.nextVoice === voice
-                }
-                kitName={hookProps.kitName}
-                onPlay={hookProps.onPlay}
-                onRescanVoiceName={() =>
-                  hookProps.onRescanVoiceName(voice, hookProps.samples)
-                }
-                onSampleAdd={props.onSampleAdd}
-                onSampleDelete={props.onSampleDelete}
-                onSampleKeyNav={hookProps.onSampleKeyNav}
-                onSampleMove={props.onSampleMove}
-                onSampleReplace={props.onSampleReplace}
-                onSampleSelect={hookProps.onSampleSelect}
-                onSaveVoiceName={hookProps.onSaveVoiceName}
-                onStereoDragLeave={handleStereoDragLeave}
-                onStereoDragOver={handleStereoDragOver}
-                onStop={hookProps.onStop}
-                onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
-                playTriggers={hookProps.playTriggers}
-                sampleMetadata={sampleMetadata}
-                samplePlaying={hookProps.samplePlaying}
-                samples={hookProps.samples[voice] || []}
-                selectedIdx={
-                  voice === hookProps.selectedVoice
-                    ? hookProps.selectedSampleIdx
-                    : -1
-                }
-                setSharedDraggedSample={setInternalDraggedSample}
-                sharedDraggedSample={internalDraggedSample}
-                stereoDragSlotNumber={
-                  stereoDragInfo?.targetVoice === voice ||
-                  stereoDragInfo?.nextVoice === voice
-                    ? stereoDragInfo.slotNumber
-                    : undefined
-                }
-                stopTriggers={hookProps.stopTriggers}
-                voice={voice}
-                voiceName={
-                  hookProps.kit?.voices?.find((v) => v.voice_number === voice)
-                    ?.voice_alias || null
-                }
-              />
-              {/* Task 7.1.3: Show link icon between voices for stereo drops */}
-              {stereoDragInfo?.targetVoice === voice && (
-                <div
-                  className="absolute -right-6 top-1/2 transform -translate-y-1/2 z-10
+        {/* Voice panels grid */}
+        <div className="grid grid-cols-4 gap-4 flex-1">
+          {[1, 2, 3, 4].map((voice) => (
+            <React.Fragment key={`${hookProps.kitName}-voicepanel-${voice}`}>
+              <div className="relative" data-testid={`voice-panel-${voice}`}>
+                <KitVoicePanel
+                  dataTestIdVoiceName={`voice-name-${voice}`}
+                  isActive={voice === hookProps.selectedVoice}
+                  isEditable={props.isEditable ?? false}
+                  isStereoDragTarget={
+                    stereoDragInfo?.targetVoice === voice ||
+                    stereoDragInfo?.nextVoice === voice
+                  }
+                  kitName={hookProps.kitName}
+                  onPlay={hookProps.onPlay}
+                  onRescanVoiceName={() =>
+                    hookProps.onRescanVoiceName(voice, hookProps.samples)
+                  }
+                  onSampleAdd={props.onSampleAdd}
+                  onSampleDelete={props.onSampleDelete}
+                  onSampleKeyNav={hookProps.onSampleKeyNav}
+                  onSampleMove={props.onSampleMove}
+                  onSampleReplace={props.onSampleReplace}
+                  onSampleSelect={hookProps.onSampleSelect}
+                  onSaveVoiceName={hookProps.onSaveVoiceName}
+                  onStereoDragLeave={handleStereoDragLeave}
+                  onStereoDragOver={handleStereoDragOver}
+                  onStop={hookProps.onStop}
+                  onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
+                  playTriggers={hookProps.playTriggers}
+                  sampleMetadata={sampleMetadata}
+                  samplePlaying={hookProps.samplePlaying}
+                  samples={hookProps.samples[voice] || []}
+                  selectedIdx={
+                    voice === hookProps.selectedVoice
+                      ? hookProps.selectedSampleIdx
+                      : -1
+                  }
+                  setSharedDraggedSample={setInternalDraggedSample}
+                  sharedDraggedSample={internalDraggedSample}
+                  stereoDragSlotNumber={
+                    stereoDragInfo?.targetVoice === voice ||
+                    stereoDragInfo?.nextVoice === voice
+                      ? stereoDragInfo.slotNumber
+                      : undefined
+                  }
+                  stopTriggers={hookProps.stopTriggers}
+                  voice={voice}
+                  voiceName={
+                    hookProps.kit?.voices?.find((v) => v.voice_number === voice)
+                      ?.voice_alias || null
+                  }
+                />
+                {/* Task 7.1.3: Show link icon between voices for stereo drops */}
+                {stereoDragInfo?.targetVoice === voice && (
+                  <div
+                    className="absolute -right-6 top-1/2 transform -translate-y-1/2 z-10
                           bg-purple-500 text-white rounded-full p-2 shadow-lg
                           animate-pulse"
-                  style={{
-                    // Position at the specific slot
-                    top: `calc(50px + ${stereoDragInfo.slotNumber * 32}px)`,
-                  }}
-                  title="Stereo link"
-                >
-                  <FiLink className="w-4 h-4" />
-                </div>
-              )}
-            </div>
-          </React.Fragment>
-        ))}
+                    style={{
+                      // Position at the specific slot
+                      top: `calc(50px + ${stereoDragInfo.slotNumber * 32}px)`,
+                    }}
+                    title="Stereo link"
+                  >
+                    <FiLink className="w-4 h-4" />
+                  </div>
+                )}
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  },
+);
+
+KitVoicePanels.displayName = "KitVoicePanels";
 
 export default KitVoicePanels;

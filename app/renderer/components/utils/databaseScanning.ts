@@ -92,7 +92,7 @@ export async function scanKitToDatabase(
     }
 
     if (scanResult.results.wavAnalysis) {
-      await processWAVAnalysisResults(
+      await processWAVAnalysisResultsAsync(
         dbDir,
         kitScanData.kitName,
         scanResult.results.wavAnalysis,
@@ -329,8 +329,8 @@ async function processVoiceInferenceResults(
   }
 }
 
-// Helper function to process WAV analysis results
-async function processWAVAnalysisResults(
+// Helper function to process WAV analysis results asynchronously
+async function processWAVAnalysisResultsAsync(
   dbDir: string,
   kitName: string,
   wavAnalyses: WAVAnalysisOutput[],

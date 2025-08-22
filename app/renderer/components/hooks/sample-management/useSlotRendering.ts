@@ -172,7 +172,8 @@ export function useSlotRendering({
 
       // Show complete tooltip with filename, path, and WAV metadata if available
       if (!sampleData?.source_path || !filename) {
-        return "";
+        // Fallback to basic filename tooltip for backward compatibility
+        return filename || `Slot ${slotNumber + 1}`;
       }
 
       return formatTooltip(sampleData, sampleData.source_path, filename);

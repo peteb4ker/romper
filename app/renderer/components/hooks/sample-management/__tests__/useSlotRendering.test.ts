@@ -246,7 +246,7 @@ describe("useSlotRendering", () => {
       source_path: "/path/to/kick.wav",
     };
 
-    it("returns empty string without sample data", () => {
+    it("returns fallback slot title without sample data", () => {
       const { result } = renderHook(() => useSlotRendering(defaultProps));
 
       const title = result.current.getSampleSlotTitle(
@@ -258,7 +258,7 @@ describe("useSlotRendering", () => {
         "",
       );
 
-      expect(title).toBe("");
+      expect(title).toBe("Slot 2");
     });
 
     it("includes formatted tooltip when sample data and filename are available", () => {

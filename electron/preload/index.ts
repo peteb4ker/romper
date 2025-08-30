@@ -455,6 +455,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] scanBanks invoked");
     return ipcRenderer.invoke("scan-banks");
   },
+  // Search operations
+  searchKits: (params: { limit?: number; query: string }) => {
+    isDev && console.debug("[IPC] searchKits invoked", params);
+    return ipcRenderer.invoke("search-kits", params);
+  },
   selectExistingLocalStore: () => {
     isDev && console.debug("[IPC] selectExistingLocalStore invoked");
     return ipcRenderer.invoke("select-existing-local-store");
@@ -474,6 +479,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] showItemInFolder invoked", path);
     return ipcRenderer.invoke("show-item-in-folder", path);
   },
+
   startKitSync: (syncData: {
     filesToConvert: Array<{
       destinationPath: string;
@@ -515,11 +521,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] updateKit invoked", kitName, updates);
     return ipcRenderer.invoke("update-kit-metadata", kitName, updates);
   },
-
   updateKitBpm: (kitName: string, bpm: number) => {
     isDev && console.debug("[IPC] updateKitBpm invoked", kitName, bpm);
     return ipcRenderer.invoke("update-kit-bpm", kitName, bpm);
   },
+
   updateStepPattern: (kitName: string, stepPattern: number[][]) => {
     isDev &&
       console.debug("[IPC] updateStepPattern invoked", kitName, stepPattern);

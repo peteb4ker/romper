@@ -353,16 +353,22 @@ const KitsView: React.FC = () => {
           handleToggleFavorite={kitFilters.handleToggleFavorite}
           handleToggleFavoritesFilter={kitFilters.handleToggleFavoritesFilter}
           handleToggleModifiedFilter={kitFilters.handleToggleModifiedFilter}
+          isSearching={kitFilters.search.isSearching}
           // Other props
           kits={kitFilters.filteredKits}
           localStorePath={localStorePath}
           modifiedCount={kitFilters.modifiedCount}
           onMessage={showMessage}
           onRefreshKits={refreshAllKitsAndSamples}
+          onSearchChange={kitFilters.search.setSearchQuery}
+          onSearchClear={kitFilters.search.clearSearch}
           onSelectKit={navigation.handleSelectKit}
           onShowSettings={dialogState.openPreferences}
           ref={kitBrowserRef}
           sampleCounts={sampleCounts}
+          // Search props
+          searchQuery={kitFilters.search.searchQuery}
+          searchResultCount={kitFilters.search.searchResults.length}
           setLocalStorePath={setLocalStorePath}
           showFavoritesOnly={kitFilters.showFavoritesOnly}
           showModifiedOnly={kitFilters.showModifiedOnly}

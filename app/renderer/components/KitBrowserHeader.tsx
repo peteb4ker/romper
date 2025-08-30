@@ -3,18 +3,26 @@ import { FaStar } from "react-icons/fa";
 import { FiCheckCircle, FiDownload, FiEdit3, FiSettings } from "react-icons/fi";
 
 import { useKitBrowserHeader } from "./hooks/kit-management/useKitBrowserHeader";
+import SearchInput from "./SearchInput";
 
 interface KitBrowserHeaderProps {
   bankNav?: React.ReactNode;
   favoritesCount?: number;
+  isSearching?: boolean;
   modifiedCount?: number;
+  onSearchChange?: (query: string) => void;
+  onSearchClear?: () => void;
   onShowLocalStoreWizard: () => void;
   onShowNewKit: () => void; // Used by useKitBrowserHeader hook
   onShowSettings: () => void;
   onSyncToSdCard?: () => void;
   onToggleFavoritesFilter?: () => void;
   onToggleModifiedFilter?: () => void;
+
   onValidateLocalStore: () => void;
+  // Search props
+  searchQuery?: string;
+  searchResultCount?: number;
   // Task 20.1.4: Favorites filter props
   showFavoritesOnly?: boolean;
   // Task 20.2.2: Additional filter props
@@ -27,7 +35,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
 
   return (
     <div className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800 pt-2 pr-2 pl-2 pb-0 flex flex-col gap-2 items-stretch justify-between shadow-sm border-b border-gray-200 dark:border-slate-700 mt-0">
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full gap-4">
         {/* Left: Sync and New Kit */}
         <div className="flex items-center gap-3">
           {props.onSyncToSdCard && (
@@ -49,7 +57,24 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           </button>
         </div>
 
-        {/* Center: Filters */}
+        {/* Center: Search Input */}
+        {props.onSearchChange && (
+          <div className="flex-1 flex justify-center">
+            <SearchInput
+              actions={{
+                onChange: props.onSearchChange,
+                onClear: props.onSearchClear || (() => {}),
+              }}
+              state={{
+                isSearching: props.isSearching || false,
+                resultCount: props.searchResultCount || 0,
+                value: props.searchQuery || "",
+              }}
+            />
+          </div>
+        )}
+
+        {/* Right: Filters and Settings */}
         <div className="flex items-center gap-2">
           {props.onToggleFavoritesFilter && (
             <button

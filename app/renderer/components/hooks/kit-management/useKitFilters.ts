@@ -3,19 +3,24 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useKitSearch } from "./useKitSearch";
+
 export interface UseKitFiltersOptions {
   kits?: KitWithRelations[];
   onMessage?: (text: string, type?: string, duration?: number) => void;
 }
 
 /**
- * Hook for managing kit filtering functionality including favorites and modified filters
+ * Hook for managing kit filtering functionality including favorites, modified filters, and search
  * Extracted from KitBrowser to reduce component complexity
  */
 export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
   // Task 20.1.4: Favorites filter state
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);
+
+  // Search functionality
+  const search = useKitSearch({ onMessage });
 
   // Track individual kit favorite states independently
   const [kitFavoriteStates, setKitFavoriteStates] = useState<
@@ -34,10 +39,18 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
   const [showModifiedOnly, setShowModifiedOnly] = useState(false);
   const [modifiedCount, setModifiedCount] = useState(0);
 
-  // Task 20.1.4 & 20.2.2: Filter kits based on active filters and maintain sorted order
+  // Filter kits based on active filters and maintain sorted order
   const filteredKits = useMemo(() => {
-    let filteredList = kits ?? [];
+    let filteredList: KitWithRelations[];
 
+    // Start with search results if active, otherwise use all kits
+    if (search.hasActiveSearch) {
+      filteredList = search.searchResults;
+    } else {
+      filteredList = kits ?? [];
+    }
+
+    // Apply existing filters on top of search results
     if (showFavoritesOnly) {
       filteredList = filteredList.filter((kit) => {
         // Check local state first (for immediate updates), then database state
@@ -56,6 +69,8 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
     return filteredList.sort((a, b) => compareKitSlots(a.name, b.name));
   }, [
     kits,
+    search.searchResults,
+    search.hasActiveSearch,
     showFavoritesOnly,
     showModifiedOnly,
     kitFavoriteStates, // Direct dependency ensures immediate re-filtering when local state changes
@@ -161,7 +176,10 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
     handleToggleFavoritesFilter,
     handleToggleModifiedFilter,
     modifiedCount,
+    // Search functionality
+    search,
     showFavoritesOnly,
+
     showModifiedOnly,
   };
 }

@@ -25,21 +25,31 @@ export interface KitBrowserHandle {
 }
 
 interface KitBrowserProps {
-  // Favorites filter functionality
+  // Filter functionality
   favoritesCount?: number;
   getKitFavoriteState?: (kitName: string) => boolean;
   handleToggleFavorite?: (kitName: string) => void;
+
   handleToggleFavoritesFilter?: () => void;
   handleToggleModifiedFilter?: () => void;
-  // Other props
+  isSearching?: boolean;
+  // Core data
   kits?: KitWithRelations[];
   localStorePath: null | string;
   modifiedCount?: number;
+  // Core actions
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: () => Promise<void>;
+
+  onSearchChange?: (query: string) => void;
+  onSearchClear?: () => void;
   onSelectKit: (kitName: string) => void;
   onShowSettings: () => void;
   sampleCounts?: Record<string, [number, number, number, number]>;
+
+  // Search functionality
+  searchQuery?: string;
+  searchResultCount?: number;
   setLocalStorePath?: (path: string) => void;
   showFavoritesOnly?: boolean;
   showModifiedOnly?: boolean;
@@ -214,7 +224,10 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             />
           }
           favoritesCount={favoritesCount}
+          isSearching={props.isSearching}
           modifiedCount={modifiedCount}
+          onSearchChange={props.onSearchChange}
+          onSearchClear={props.onSearchClear}
           onShowLocalStoreWizard={handleShowLocalStoreWizard}
           onShowNewKit={() => setShowNewKit(true)}
           onShowSettings={props.onShowSettings}
@@ -222,6 +235,9 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           onToggleFavoritesFilter={handleToggleFavoritesFilter}
           onToggleModifiedFilter={handleToggleModifiedFilter}
           onValidateLocalStore={handleShowValidationDialog}
+          // Search props
+          searchQuery={props.searchQuery}
+          searchResultCount={props.searchResultCount}
           showFavoritesOnly={showFavoritesOnly}
           showModifiedOnly={showModifiedOnly}
         />

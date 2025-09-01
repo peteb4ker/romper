@@ -16,12 +16,11 @@ export interface SearchInputProps {
 
 export interface SearchState {
   isSearching: boolean;
-  resultCount: number;
   value: string;
 }
 
 /**
- * Search input component with loading states, clear button, and result counter
+ * Search input component with loading states and clear button
  * Designed to match existing UI patterns in KitBrowserHeader
  */
 const SearchInput: React.FC<SearchInputProps> = ({
@@ -31,7 +30,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
   placeholder = "Search kits, samples, artists...",
   state,
 }) => {
-  const { isSearching, resultCount, value } = state;
+  const { isSearching, value } = state;
   const { onChange, onClear } = actions;
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -67,9 +66,6 @@ const SearchInput: React.FC<SearchInputProps> = ({
 
         {/* Input Field */}
         <input
-          aria-describedby={
-            value.length >= 2 ? "search-results-count" : undefined
-          }
           aria-label="Search kits"
           className={`
             pl-10 pr-10 py-2 text-sm border border-gray-300 dark:border-gray-600 
@@ -77,7 +73,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
             placeholder-gray-500 dark:placeholder-gray-400
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
             transition-all duration-200
-            ${value ? "w-80" : "w-56 focus:w-80"}
+            ${value ? "w-64" : "w-48 focus:w-64"}
           `}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -107,20 +103,6 @@ const SearchInput: React.FC<SearchInputProps> = ({
           ) : null}
         </div>
       </div>
-
-      {/* Result Counter */}
-      {value.length >= 2 && !isSearching && (
-        <div
-          aria-live="polite"
-          className="absolute top-full left-0 mt-1 text-xs text-gray-500 dark:text-gray-400"
-          id="search-results-count"
-          role="status"
-        >
-          {resultCount > 0
-            ? `${resultCount} kit${resultCount === 1 ? "" : "s"} found`
-            : "No kits found"}
-        </div>
-      )}
     </div>
   );
 };

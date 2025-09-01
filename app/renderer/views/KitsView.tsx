@@ -1,3 +1,5 @@
+import type { KitWithRelations } from "@romper/shared/db/types";
+
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 interface ImportMeta {
@@ -7,11 +9,24 @@ interface ImportMeta {
   };
 }
 
+interface KitWithSearchMatch extends KitWithRelations {
+  searchMatch?: SearchMatchDetails;
+}
+
+interface SearchMatchDetails {
+  matchedAlias?: string;
+  matchedArtist?: string;
+  matchedOn: string[]; // ['name', 'artist', 'voice:KICK', 'sample:kick_001.wav']
+  matchedSamples: string[];
+  matchedVoices: string[];
+}
+
 import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
 import InvalidLocalStoreDialog from "../components/dialogs/InvalidLocalStoreDialog";
 import { useKitDataManager } from "../components/hooks/kit-management/useKitDataManager";
 import { useKitFilters } from "../components/hooks/kit-management/useKitFilters";
 import { useKitNavigation } from "../components/hooks/kit-management/useKitNavigation";
+// useKitSearch replaced with isolated search state
 import { useKitViewMenuHandlers } from "../components/hooks/kit-management/useKitViewMenuHandlers";
 import { useDialogState } from "../components/hooks/shared/useDialogState";
 import { useGlobalKeyboardShortcuts } from "../components/hooks/shared/useGlobalKeyboardShortcuts";
@@ -28,10 +43,131 @@ import {
 import { useSettings } from "../utils/SettingsContext";
 
 /**
+ * Client-side search filter utility
+ * Filters kits based on query string and tracks match details for UI indicators
+ */
+function checkKitBasicFields(
+  kit: KitWithRelations,
+  searchTerm: string,
+  matchDetails: SearchMatchDetails,
+): void {
+  // Check kit name
+  if (kit.name?.toLowerCase().includes(searchTerm)) {
+    matchDetails.matchedOn.push("name");
+  }
+
+  // Check kit alias
+  if (kit.alias && kit.alias.toLowerCase().includes(searchTerm)) {
+    matchDetails.matchedOn.push("alias");
+    matchDetails.matchedAlias = kit.alias;
+  }
+
+  // Check artist (from bank)
+  if (kit.bank?.artist && kit.bank.artist.toLowerCase().includes(searchTerm)) {
+    matchDetails.matchedOn.push("artist");
+    matchDetails.matchedArtist = kit.bank.artist;
+  }
+}
+
+function checkKitSamples(
+  kit: KitWithRelations,
+  searchTerm: string,
+  matchDetails: SearchMatchDetails,
+  allKitSamples: { [kit: string]: unknown },
+): void {
+  // Check sample filenames using allKitSamples data
+  const kitSamples = allKitSamples[kit.name];
+  if (kitSamples && typeof kitSamples === "object" && kitSamples !== null) {
+    for (const voiceKey of Object.keys(kitSamples)) {
+      const voiceSamples = (kitSamples as Record<string, unknown>)[voiceKey];
+      if (Array.isArray(voiceSamples)) {
+        for (const sample of voiceSamples) {
+          if (
+            sample?.filename &&
+            sample.filename.toLowerCase().includes(searchTerm)
+          ) {
+            matchDetails.matchedOn.push(`sample:${sample.filename}`);
+            matchDetails.matchedSamples.push(sample.filename);
+          }
+        }
+      }
+    }
+  }
+
+  // Also check kit.samples if available (for backward compatibility)
+  if (kit.samples) {
+    for (const sample of kit.samples) {
+      if (
+        sample.filename &&
+        sample.filename.toLowerCase().includes(searchTerm)
+      ) {
+        matchDetails.matchedOn.push(`sample:${sample.filename}`);
+        matchDetails.matchedSamples.push(sample.filename);
+      }
+    }
+  }
+}
+
+function checkKitVoices(
+  kit: KitWithRelations,
+  searchTerm: string,
+  matchDetails: SearchMatchDetails,
+): void {
+  if (!kit.voices) return;
+
+  for (const voice of kit.voices) {
+    if (
+      voice.voice_alias &&
+      voice.voice_alias.toLowerCase().includes(searchTerm)
+    ) {
+      matchDetails.matchedOn.push(`voice:${voice.voice_alias}`);
+      matchDetails.matchedVoices.push(voice.voice_alias);
+    }
+  }
+}
+
+function filterKitsWithSearch(
+  kits: KitWithRelations[],
+  query: string,
+  allKitSamples: { [kit: string]: unknown } = {},
+): KitWithSearchMatch[] {
+  if (!query || query.length < 2) {
+    return kits.map((kit) => ({ ...kit })); // Return all kits without search matches
+  }
+
+  const searchTerm = query.toLowerCase().trim();
+  const results: KitWithSearchMatch[] = [];
+
+  for (const kit of kits) {
+    const matchDetails: SearchMatchDetails = {
+      matchedOn: [],
+      matchedSamples: [],
+      matchedVoices: [],
+    };
+
+    checkKitBasicFields(kit, searchTerm, matchDetails);
+    checkKitVoices(kit, searchTerm, matchDetails);
+    checkKitSamples(kit, searchTerm, matchDetails, allKitSamples);
+
+    // If any matches found, add to results
+    if (matchDetails.matchedOn.length > 0) {
+      results.push({
+        ...kit,
+        searchMatch: matchDetails,
+      });
+    }
+  }
+
+  // Sort by kit name for consistent ordering
+  return results.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
  * Main view component for kit management
  * Orchestrates kit browsing, selection, and editing functionality
  */
 const KitsView: React.FC = () => {
+  console.log("[SEARCH DEBUG] KitsView render");
   const {
     isInitialized,
     localStorePath,
@@ -116,10 +252,59 @@ const KitsView: React.FC = () => {
     refreshAllKitsAndSamples,
   });
 
-  // Kit filters management for favorites functionality
+  // Simple search state for client-side filtering
+  const [searchState, setSearchState] = useState({
+    hasActiveSearch: false,
+    query: "",
+    results: [] as KitWithSearchMatch[],
+  });
+
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      console.log(
+        "[SEARCH DEBUG] handleSearchChange called with query:",
+        query,
+      );
+      setSearchState((prev) => ({ ...prev, query }));
+
+      if (query.length < 2) {
+        setSearchState((prev) => ({
+          ...prev,
+          hasActiveSearch: false,
+          results: [],
+        }));
+        return;
+      }
+
+      // Perform client-side filtering with allKitSamples for sample searching
+      const filteredResults = filterKitsWithSearch(kits, query, allKitSamples);
+      console.log(
+        `[SEARCH DEBUG] Client-side filter found ${filteredResults.length} results for query: "${query}"`,
+      );
+
+      setSearchState((prev) => ({
+        ...prev,
+        hasActiveSearch: true,
+        results: filteredResults,
+      }));
+    },
+    [kits, allKitSamples],
+  );
+
+  const handleSearchClear = useCallback(() => {
+    setSearchState({ hasActiveSearch: false, query: "", results: [] });
+  }, []);
+
+  // Use search results if active, otherwise use all kits
+  const kitsToFilter = searchState.hasActiveSearch ? searchState.results : kits;
+
+  // No-op message function for filters
+  const noOpMessage = useCallback(() => {}, []);
+
+  // Kit filters management for favorites functionality (without search dependency)
   const kitFilters = useKitFilters({
-    kits,
-    onMessage: showMessage,
+    kits: kitsToFilter,
+    onMessage: noOpMessage,
   });
 
   // Get current kit from shared data for keyboard shortcuts
@@ -353,22 +538,21 @@ const KitsView: React.FC = () => {
           handleToggleFavorite={kitFilters.handleToggleFavorite}
           handleToggleFavoritesFilter={kitFilters.handleToggleFavoritesFilter}
           handleToggleModifiedFilter={kitFilters.handleToggleModifiedFilter}
-          isSearching={kitFilters.search.isSearching}
           // Other props
           kits={kitFilters.filteredKits}
           localStorePath={localStorePath}
           modifiedCount={kitFilters.modifiedCount}
           onMessage={showMessage}
           onRefreshKits={refreshAllKitsAndSamples}
-          onSearchChange={kitFilters.search.setSearchQuery}
-          onSearchClear={kitFilters.search.clearSearch}
+          onSearchChange={handleSearchChange}
+          onSearchClear={handleSearchClear}
           onSelectKit={navigation.handleSelectKit}
           onShowSettings={dialogState.openPreferences}
           ref={kitBrowserRef}
           sampleCounts={sampleCounts}
           // Search props
-          searchQuery={kitFilters.search.searchQuery}
-          searchResultCount={kitFilters.search.searchResults.length}
+          searchQuery={searchState.query}
+          searchResultCount={searchState.results.length}
           setLocalStorePath={setLocalStorePath}
           showFavoritesOnly={kitFilters.showFavoritesOnly}
           showModifiedOnly={kitFilters.showModifiedOnly}

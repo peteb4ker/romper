@@ -1,6 +1,6 @@
 import "./styles/index.css";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom/client";
 import {
   Navigate,
@@ -27,6 +27,7 @@ declare global {
 }
 
 const AppContent = () => {
+  console.log("[SEARCH DEBUG] AppContent render");
   const messageDisplay = useMessageDisplay();
   const [showAboutModal, setShowAboutModal] = useState(false);
 
@@ -38,8 +39,11 @@ const AppContent = () => {
     setShowAboutModal(false);
   };
 
+  // Memoize the context value to prevent re-renders
+  const contextValue = useMemo(() => messageDisplay, [messageDisplay]);
+
   return (
-    <MessageDisplayContext.Provider value={messageDisplay}>
+    <MessageDisplayContext.Provider value={contextValue}>
       <div className="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
         <MessageDisplay />
         <div className="flex flex-1 min-h-0">

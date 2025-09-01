@@ -1,25 +1,8 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
-
-export interface SearchCacheEntry {
-  count: number;
-  results: KitWithRelations[];
-  time: number;
-}
-
-export interface SearchParams {
-  limit?: number;
-  query: string;
-}
-
-export interface SearchResult {
-  data?: {
-    kits: KitWithRelations[];
-    queryTime: number;
-    totalCount: number;
-  };
-  error?: string;
-  success: boolean;
-}
+import type {
+  SearchCacheEntry,
+  SearchParams,
+  SearchResult,
+} from "@romper/shared/db/types";
 
 /**
  * Manage search result cache with size limits and TTL
@@ -69,10 +52,17 @@ export class SearchCache {
 export async function performKitSearch(
   params: SearchParams,
 ): Promise<SearchResult> {
+  console.log("[SEARCH DEBUG] performKitSearch called with params:", params);
   try {
+    console.log("[SEARCH DEBUG] Calling window.electronAPI.searchKits...");
     const result = await window.electronAPI.searchKits?.(params);
+    console.log(
+      "[SEARCH DEBUG] window.electronAPI.searchKits returned:",
+      result,
+    );
     return result || { error: "Search API not available", success: false };
   } catch (error) {
+    console.log("[SEARCH DEBUG] performKitSearch error:", error);
     return {
       error: error instanceof Error ? error.message : String(error),
       success: false,

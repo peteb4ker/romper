@@ -455,11 +455,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] scanBanks invoked");
     return ipcRenderer.invoke("scan-banks");
   },
-  // Search operations
-  searchKits: (params: { limit?: number; query: string }) => {
-    isDev && console.debug("[IPC] searchKits invoked", params);
-    return ipcRenderer.invoke("search-kits", params);
-  },
+  // Search operations removed - now handled client-side
   selectExistingLocalStore: () => {
     isDev && console.debug("[IPC] selectExistingLocalStore invoked");
     return ipcRenderer.invoke("select-existing-local-store");

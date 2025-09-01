@@ -7,7 +7,7 @@ export interface BaseKitItemProps {
   isFavorite?: boolean; // Direct boolean value instead of function
   isValid: boolean;
   kit: string;
-  kitData?: KitWithRelations | null;
+  kitData?: KitWithSearchMatch | null;
   onDuplicate: () => void;
   onSelect: () => void;
   onToggleFavorite?: (kitName: string) => void;
@@ -20,6 +20,18 @@ export interface BaseKitItemProps {
 export interface KitItemRenderProps {
   "data-kit"?: string;
   isSelected?: boolean;
+}
+
+interface KitWithSearchMatch extends KitWithRelations {
+  searchMatch?: SearchMatchDetails;
+}
+
+interface SearchMatchDetails {
+  matchedAlias?: string;
+  matchedArtist?: string;
+  matchedOn: string[]; // ['name', 'artist', 'voice:KICK', 'sample:kick_001.wav']
+  matchedSamples: string[];
+  matchedVoices: string[];
 }
 
 /**

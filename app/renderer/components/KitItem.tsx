@@ -163,6 +163,32 @@ const KitItem = React.memo(
                   ))}
                 </div>
               )}
+              {/* Search match indicators - compact badges */}
+              {isValid && kitData?.searchMatch && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {kitData.searchMatch.matchedSamples.length > 0 && (
+                    <span
+                      className="px-1 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded border border-green-300 dark:border-green-700 font-mono truncate cursor-help"
+                      title={`Sample matches:\n${kitData.searchMatch.matchedSamples.join("\n")}`}
+                    >
+                      📄
+                      {kitData.searchMatch.matchedSamples.length > 1
+                        ? ` ${kitData.searchMatch.matchedSamples.length}`
+                        : ""}
+                    </span>
+                  )}
+                  {kitData.searchMatch.matchedArtist && (
+                    <span className="px-1 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded border border-purple-300 dark:border-purple-700 font-mono truncate">
+                      🎵 {kitData.searchMatch.matchedArtist}
+                    </span>
+                  )}
+                  {kitData.searchMatch.matchedAlias && (
+                    <span className="px-1 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded border border-blue-300 dark:border-blue-700 font-mono truncate">
+                      🏷️ {kitData.searchMatch.matchedAlias}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

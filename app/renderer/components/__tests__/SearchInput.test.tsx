@@ -14,7 +14,6 @@ describe("SearchInput", () => {
 
   const mockState: SearchState = {
     isSearching: false,
-    resultCount: 0,
     value: "",
   };
 
@@ -184,94 +183,14 @@ describe("SearchInput", () => {
     });
   });
 
-  describe("result counter", () => {
-    it("should show result count when query is long enough and not searching", () => {
-      const stateWithResults = {
-        isSearching: false,
-        resultCount: 5,
-        value: "test query",
-      };
-
-      render(<SearchInput actions={mockActions} state={stateWithResults} />);
-
-      expect(screen.getByText("5 kits found")).toBeInTheDocument();
-    });
-
-    it("should show singular form for single result", () => {
-      const stateWithOneResult = {
-        isSearching: false,
-        resultCount: 1,
-        value: "test query",
-      };
-
-      render(<SearchInput actions={mockActions} state={stateWithOneResult} />);
-
-      expect(screen.getByText("1 kit found")).toBeInTheDocument();
-    });
-
-    it('should show "No kits found" for zero results', () => {
-      const stateWithNoResults = {
-        isSearching: false,
-        resultCount: 0,
-        value: "test query",
-      };
-
-      render(<SearchInput actions={mockActions} state={stateWithNoResults} />);
-
-      expect(screen.getByText("No kits found")).toBeInTheDocument();
-    });
-
-    it("should not show result count for short queries", () => {
-      const stateWithShortQuery = {
-        isSearching: false,
-        resultCount: 5,
-        value: "a",
-      };
-
-      render(<SearchInput actions={mockActions} state={stateWithShortQuery} />);
-
-      expect(screen.queryByText("5 kits found")).not.toBeInTheDocument();
-    });
-
-    it("should not show result count while searching", () => {
-      const searchingState = {
-        isSearching: true,
-        resultCount: 5,
-        value: "test query",
-      };
-
-      render(<SearchInput actions={mockActions} state={searchingState} />);
-
-      expect(screen.queryByText("5 kits found")).not.toBeInTheDocument();
-    });
-  });
-
   describe("accessibility", () => {
     it("should have proper ARIA attributes", () => {
-      const stateWithResults = {
-        isSearching: false,
-        resultCount: 5,
-        value: "test query",
-      };
+      const stateWithValue = { ...mockState, value: "test query" };
 
-      render(<SearchInput actions={mockActions} state={stateWithResults} />);
+      render(<SearchInput actions={mockActions} state={stateWithValue} />);
 
       const input = screen.getByRole("textbox");
       expect(input).toHaveAttribute("aria-label", "Search kits");
-      expect(input).toHaveAttribute("aria-describedby", "search-results-count");
-
-      const resultsCount = screen.getByRole("status");
-      expect(resultsCount).toHaveAttribute("aria-live", "polite");
-      expect(resultsCount).toHaveAttribute("id", "search-results-count");
-    });
-
-    it("should not have aria-describedby for short queries", () => {
-      const stateWithShortQuery = { ...mockState, value: "a" };
-
-      render(<SearchInput actions={mockActions} state={stateWithShortQuery} />);
-
-      const input = screen.getByRole("textbox");
-      expect(input).not.toHaveAttribute("aria-describedby");
     });
   });
 
@@ -284,7 +203,7 @@ describe("SearchInput", () => {
       const input = screen.getByRole("textbox", {
         name: /search kits/i,
       });
-      expect(input).toHaveClass("w-56", "focus:w-80");
+      expect(input).toHaveClass("w-48", "focus:w-64");
 
       const stateWithValue = { ...mockState, value: "test" };
       rerender(<SearchInput actions={mockActions} state={stateWithValue} />);
@@ -292,8 +211,8 @@ describe("SearchInput", () => {
       const updatedInput = screen.getByRole("textbox", {
         name: /search kits/i,
       });
-      expect(updatedInput).toHaveClass("w-80");
-      expect(updatedInput).not.toHaveClass("focus:w-80");
+      expect(updatedInput).toHaveClass("w-64");
+      expect(updatedInput).not.toHaveClass("focus:w-64");
     });
   });
 });

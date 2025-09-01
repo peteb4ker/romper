@@ -1,9 +1,9 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { KitWithRelations } from "@romper/shared/db/types";
 
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { useKitSearch } from "./useKitSearch";
+// useKitSearch is now handled at parent level
 
 export interface UseKitFiltersOptions {
   kits?: KitWithRelations[];
@@ -15,12 +15,12 @@ export interface UseKitFiltersOptions {
  * Extracted from KitBrowser to reduce component complexity
  */
 export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
+  console.log("[SEARCH DEBUG] useKitFilters hook initialized");
   // Task 20.1.4: Favorites filter state
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);
 
-  // Search functionality
-  const search = useKitSearch({ onMessage });
+  // Search is now handled at the parent level to avoid circular dependencies
 
   // Track individual kit favorite states independently
   const [kitFavoriteStates, setKitFavoriteStates] = useState<
@@ -40,17 +40,11 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
   const [modifiedCount, setModifiedCount] = useState(0);
 
   // Filter kits based on active filters and maintain sorted order
+  // Note: Search filtering is now handled at the parent level
   const filteredKits = useMemo(() => {
-    let filteredList: KitWithRelations[];
+    let filteredList = kits ?? [];
 
-    // Start with search results if active, otherwise use all kits
-    if (search.hasActiveSearch) {
-      filteredList = search.searchResults;
-    } else {
-      filteredList = kits ?? [];
-    }
-
-    // Apply existing filters on top of search results
+    // Apply favorites filter
     if (showFavoritesOnly) {
       filteredList = filteredList.filter((kit) => {
         // Check local state first (for immediate updates), then database state
@@ -61,16 +55,16 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
       });
     }
 
+    // Apply modified filter
     if (showModifiedOnly) {
       filteredList = filteredList.filter((kit) => kit.modified_since_sync);
     }
 
     // Sort by kit slot names for consistent order (matches useKitNavigation.sortedKits)
+    // Preserve all kit properties including searchMatch data
     return filteredList.sort((a, b) => compareKitSlots(a.name, b.name));
   }, [
     kits,
-    search.searchResults,
-    search.hasActiveSearch,
     showFavoritesOnly,
     showModifiedOnly,
     kitFavoriteStates, // Direct dependency ensures immediate re-filtering when local state changes
@@ -176,10 +170,7 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
     handleToggleFavoritesFilter,
     handleToggleModifiedFilter,
     modifiedCount,
-    // Search functionality
-    search,
     showFavoritesOnly,
-
     showModifiedOnly,
   };
 }

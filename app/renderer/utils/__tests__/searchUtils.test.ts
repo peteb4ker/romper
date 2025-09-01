@@ -1,4 +1,4 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { KitWithRelations } from "@romper/shared/db/types";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

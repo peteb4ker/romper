@@ -42,6 +42,7 @@ const KitBrowserContainer = React.forwardRef<
   KitBrowserHandle,
   KitBrowserContainerProps
 >((props, ref) => {
+  console.log("[SEARCH DEBUG] KitBrowserContainer render");
   const {
     // Favorites filter props
     favoritesCount,

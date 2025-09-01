@@ -1,4 +1,4 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { KitWithRelations } from "@romper/shared/db/types";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -27,6 +27,7 @@ export interface UseKitSearchReturn {
 export function useKitSearch({
   onMessage,
 }: UseKitSearchOptions): UseKitSearchReturn {
+  console.log("[SEARCH DEBUG] useKitSearch hook initialized");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<KitWithRelations[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
@@ -47,7 +48,9 @@ export function useKitSearch({
    */
   const performSearch = useCallback(
     async (query: string) => {
+      console.log("[SEARCH DEBUG] performSearch called with query:", query);
       if (query.length < 2) {
+        console.log("[SEARCH DEBUG] Query too short, clearing results");
         setSearchResults([]);
         setResultCount(0);
         setQueryTime(0);
@@ -56,10 +59,12 @@ export function useKitSearch({
       }
 
       const normalizedQuery = query.toLowerCase().trim();
+      console.log("[SEARCH DEBUG] Normalized query:", normalizedQuery);
 
       // Check cache first
       const cachedResult = searchCacheRef.current.get(normalizedQuery);
       if (cachedResult) {
+        console.log("[SEARCH DEBUG] Found cached result:", cachedResult);
         setSearchResults(cachedResult.results);
         setResultCount(cachedResult.count);
         setQueryTime(cachedResult.time);
@@ -67,6 +72,7 @@ export function useKitSearch({
         return;
       }
 
+      console.log("[SEARCH DEBUG] No cache, starting search...");
       setIsSearching(true);
 
       const result = await performKitSearch({
@@ -74,9 +80,16 @@ export function useKitSearch({
         query: normalizedQuery,
       });
 
+      console.log("[SEARCH DEBUG] performKitSearch returned:", result);
+
       if (result.success && result.data) {
         const { kits, queryTime: searchTime, totalCount } = result.data;
 
+        console.log(
+          "[SEARCH DEBUG] Search successful, found",
+          totalCount,
+          "kits",
+        );
         setSearchResults(kits);
         setResultCount(totalCount);
         setQueryTime(searchTime);
@@ -88,6 +101,7 @@ export function useKitSearch({
           time: searchTime,
         });
       } else {
+        console.log("[SEARCH DEBUG] Search failed:", result.error);
         setSearchResults([]);
         setResultCount(0);
         setQueryTime(0);
@@ -107,6 +121,10 @@ export function useKitSearch({
    */
   const handleSearchChange = useCallback(
     (query: string) => {
+      console.log(
+        "[SEARCH DEBUG] handleSearchChange called with query:",
+        query,
+      );
       setSearchQuery(query);
 
       // Clear existing timer
@@ -116,6 +134,9 @@ export function useKitSearch({
 
       // Set new timer for debounced search (300ms delay)
       debounceTimerRef.current = setTimeout(() => {
+        console.log(
+          "[SEARCH DEBUG] Debounce timer expired, calling performSearch",
+        );
         performSearch(query);
       }, 300);
     },

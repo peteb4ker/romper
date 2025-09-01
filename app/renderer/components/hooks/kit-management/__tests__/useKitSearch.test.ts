@@ -1,4 +1,4 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { KitWithRelations } from "@romper/shared/db/types";
 
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

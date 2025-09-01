@@ -8,10 +8,7 @@ import type { InMemorySettings } from "./types/settings.js";
 import { getAudioMetadata, validateSampleFormat } from "./audioUtils.js";
 import { registerFavoritesIpcHandlers } from "./db/favoritesIpcHandlers.js";
 import { createDbHandler } from "./db/ipcHandlerUtils.js";
-import {
-  searchKits,
-  searchKitsMultiTerm,
-} from "./db/operations/searchOperations.js";
+// Search operations removed - now handled client-side
 import {
   addKit,
   addSample,
@@ -229,20 +226,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     return validateSampleFormat(filePath);
   });
 
-  // Search operations
-  ipcMain.handle(
-    "search-kits",
-    createDbHandler(
-      inMemorySettings,
-      (dbDir: string, params: { limit?: number; query: string }) => {
-        // Use multi-term search if query contains spaces
-        if (params.query.includes(" ")) {
-          return searchKitsMultiTerm(dbDir, params);
-        }
-        return searchKits(dbDir, params);
-      },
-    ),
-  );
+  // Search operations removed - now handled client-side in KitsView
 
   // Progress events are handled via webContents.send in syncService
   // No IPC handler needed for onSyncProgress as it's a renderer-side event listener

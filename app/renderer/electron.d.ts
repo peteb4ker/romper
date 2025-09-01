@@ -246,9 +246,9 @@ export interface ElectronAPI {
     path: null | string;
     success: boolean;
   }>;
+
   selectLocalStorePath?: () => Promise<string | undefined>;
   selectSdCard: () => Promise<null | string>;
-
   setSetting: (
     key: keyof {
       confirmDestructiveActions?: boolean;
@@ -268,6 +268,7 @@ export interface ElectronAPI {
   }) => Promise<DbResult<{ syncedFiles: number }>>;
 
   stopSample?: () => Promise<unknown>;
+
   // Task 20.1: Favorites system
   toggleKitFavorite?: (
     kitName: string,
@@ -304,10 +305,10 @@ export interface ElectronAPI {
   validateLocalStore: (
     localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
-
   validateLocalStore: (
     localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
+
   validateLocalStoreBasic: (
     localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
@@ -326,7 +327,6 @@ export interface ElectronAPI {
       validSamples: number;
     }>
   >;
-
   writeSettings: (key: string, value: unknown) => Promise<void>;
 }
 

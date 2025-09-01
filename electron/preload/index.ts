@@ -515,6 +515,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] updateKit invoked", kitName, updates);
     return ipcRenderer.invoke("update-kit-metadata", kitName, updates);
   },
+
   updateKitBpm: (kitName: string, bpm: number) => {
     isDev && console.debug("[IPC] updateKitBpm invoked", kitName, bpm);
     return ipcRenderer.invoke("update-kit-bpm", kitName, bpm);

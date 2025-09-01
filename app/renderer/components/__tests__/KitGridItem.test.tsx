@@ -702,4 +702,117 @@ describe("KitGridItem", () => {
       expect(container).toHaveAttribute("aria-label", "Kit A0 - 8 samples");
     });
   });
+
+  describe("Search match indicators", () => {
+    it("renders search match badges when searchMatch data is present", () => {
+      const props = {
+        ...defaultProps,
+        kitData: {
+          ...defaultProps.kitData,
+          searchMatch: {
+            matchedArtist: "Test Artist",
+            matchedOn: ["sample", "artist"],
+            matchedSamples: ["kick_001.wav", "snare_001.wav"],
+            matchedVoices: [],
+          },
+        },
+      };
+      render(<KitGridItem {...props} />);
+
+      // Check for sample match badge
+      const sampleBadge = screen.getByTitle(/Sample matches:/);
+      expect(sampleBadge).toBeInTheDocument();
+      expect(sampleBadge).toHaveTextContent("📄 2");
+
+      // Check for artist match badge
+      const artistBadge = screen.getByText("🎵 Test Artist");
+      expect(artistBadge).toBeInTheDocument();
+    });
+
+    it("renders alias match badge", () => {
+      const props = {
+        ...defaultProps,
+        kitData: {
+          ...defaultProps.kitData,
+          searchMatch: {
+            matchedAlias: "My Custom Kit",
+            matchedOn: ["alias"],
+            matchedSamples: [],
+            matchedVoices: [],
+          },
+        },
+      };
+      render(<KitGridItem {...props} />);
+
+      const aliasBadge = screen.getByText("🏷️ My Custom Kit");
+      expect(aliasBadge).toBeInTheDocument();
+    });
+
+    it("shows single sample without count", () => {
+      const props = {
+        ...defaultProps,
+        kitData: {
+          ...defaultProps.kitData,
+          searchMatch: {
+            matchedOn: ["sample"],
+            matchedSamples: ["single_sample.wav"],
+            matchedVoices: [],
+          },
+        },
+      };
+      render(<KitGridItem {...props} />);
+
+      const sampleBadge = screen.getByTitle(/Sample matches:/);
+      expect(sampleBadge).toHaveTextContent("📄");
+      expect(sampleBadge).not.toHaveTextContent("📄 1");
+    });
+
+    it("does not render search badges when no searchMatch data", () => {
+      render(<KitGridItem {...defaultProps} />);
+
+      expect(screen.queryByTitle(/Sample matches:/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/🎵/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/🏷️/)).not.toBeInTheDocument();
+    });
+
+    it("does not render search badges when kit is invalid", () => {
+      const props = {
+        ...defaultProps,
+        isValid: false,
+        kitData: {
+          ...defaultProps.kitData,
+          searchMatch: {
+            matchedOn: ["sample"],
+            matchedSamples: ["test.wav"],
+            matchedVoices: [],
+          },
+        },
+      };
+      render(<KitGridItem {...props} />);
+
+      expect(screen.queryByTitle(/Sample matches:/)).not.toBeInTheDocument();
+    });
+
+    it("has proper tooltip for sample matches", () => {
+      const props = {
+        ...defaultProps,
+        kitData: {
+          ...defaultProps.kitData,
+          searchMatch: {
+            matchedOn: ["sample"],
+            matchedSamples: ["kick.wav", "snare.wav", "hihat.wav"],
+            matchedVoices: [],
+          },
+        },
+      };
+      render(<KitGridItem {...props} />);
+
+      const sampleBadge = screen.getByTitle(/Sample matches:/);
+      expect(sampleBadge).toBeInTheDocument();
+      expect(sampleBadge).toHaveAttribute(
+        "title",
+        "Sample matches:\nkick.wav\nsnare.wav\nhihat.wav",
+      );
+    });
+  });
 });

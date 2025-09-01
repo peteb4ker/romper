@@ -72,6 +72,108 @@ describe("KitItem", () => {
     expect(screen.getAllByText("3").length).toBeGreaterThan(0);
     expect(screen.getAllByText("4").length).toBeGreaterThan(0);
   });
+
+  describe("search match indicators", () => {
+    const basePropsWithSearchMatch = {
+      ...baseProps,
+      kitData: {
+        ...baseProps.kitData,
+        searchMatch: {
+          matchedArtist: "Test Artist",
+          matchedOn: ["sample", "artist"],
+          matchedSamples: ["kick_001.wav", "snare_001.wav"],
+          matchedVoices: [],
+        },
+      },
+    };
+
+    it("renders search match badges when searchMatch data is present", () => {
+      render(<KitItem {...basePropsWithSearchMatch} />);
+
+      // Check for sample match badge
+      const sampleBadge = screen.getByTitle(/Sample matches:/);
+      expect(sampleBadge).toBeInTheDocument();
+      expect(sampleBadge).toHaveTextContent("📄 2");
+
+      // Check for artist match badge
+      const artistBadge = screen.getByText("🎵 Test Artist");
+      expect(artistBadge).toBeInTheDocument();
+    });
+
+    it("renders alias match badge", () => {
+      const props = {
+        ...baseProps,
+        kitData: {
+          ...baseProps.kitData,
+          searchMatch: {
+            matchedAlias: "My Custom Kit",
+            matchedOn: ["alias"],
+            matchedSamples: [],
+            matchedVoices: [],
+          },
+        },
+      };
+      render(<KitItem {...props} />);
+
+      const aliasBadge = screen.getByText("🏷️ My Custom Kit");
+      expect(aliasBadge).toBeInTheDocument();
+    });
+
+    it("shows single sample without count", () => {
+      const props = {
+        ...baseProps,
+        kitData: {
+          ...baseProps.kitData,
+          searchMatch: {
+            matchedOn: ["sample"],
+            matchedSamples: ["single_sample.wav"],
+            matchedVoices: [],
+          },
+        },
+      };
+      render(<KitItem {...props} />);
+
+      const sampleBadge = screen.getByTitle(/Sample matches:/);
+      expect(sampleBadge).toHaveTextContent("📄");
+      expect(sampleBadge).not.toHaveTextContent("📄 1");
+    });
+
+    it("does not render search badges when no searchMatch data", () => {
+      render(<KitItem {...baseProps} />);
+
+      expect(screen.queryByTitle(/Sample matches:/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/🎵/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/🏷️/)).not.toBeInTheDocument();
+    });
+
+    it("does not render search badges when kit is invalid", () => {
+      const props = {
+        ...basePropsWithSearchMatch,
+        isValid: false,
+      };
+      render(<KitItem {...props} />);
+
+      expect(screen.queryByTitle(/Sample matches:/)).not.toBeInTheDocument();
+    });
+
+    it("has proper tooltip for sample matches", () => {
+      const props = {
+        ...baseProps,
+        kitData: {
+          ...baseProps.kitData,
+          searchMatch: {
+            matchedOn: ["sample"],
+            matchedSamples: ["kick.wav", "snare.wav", "hihat.wav"],
+            matchedVoices: [],
+          },
+        },
+      };
+      render(<KitItem {...props} />);
+
+      const sampleBadge = screen.getByTitle(/Sample matches:/);
+      expect(sampleBadge).toBeInTheDocument();
+    });
+  });
 });
 
 describe("KitItem voice label deduplication", () => {

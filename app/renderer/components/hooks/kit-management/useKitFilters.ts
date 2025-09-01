@@ -1,9 +1,7 @@
-import type { KitWithRelations } from "@romper/shared/db/types";
+import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-// useKitSearch is now handled at parent level
 
 export interface UseKitFiltersOptions {
   kits?: KitWithRelations[];
@@ -11,16 +9,13 @@ export interface UseKitFiltersOptions {
 }
 
 /**
- * Hook for managing kit filtering functionality including favorites, modified filters, and search
+ * Hook for managing kit filtering functionality including favorites and modified filters
  * Extracted from KitBrowser to reduce component complexity
  */
 export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
-  console.log("[SEARCH DEBUG] useKitFilters hook initialized");
   // Task 20.1.4: Favorites filter state
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);
-
-  // Search is now handled at the parent level to avoid circular dependencies
 
   // Track individual kit favorite states independently
   const [kitFavoriteStates, setKitFavoriteStates] = useState<
@@ -39,12 +34,10 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
   const [showModifiedOnly, setShowModifiedOnly] = useState(false);
   const [modifiedCount, setModifiedCount] = useState(0);
 
-  // Filter kits based on active filters and maintain sorted order
-  // Note: Search filtering is now handled at the parent level
+  // Task 20.1.4 & 20.2.2: Filter kits based on active filters and maintain sorted order
   const filteredKits = useMemo(() => {
     let filteredList = kits ?? [];
 
-    // Apply favorites filter
     if (showFavoritesOnly) {
       filteredList = filteredList.filter((kit) => {
         // Check local state first (for immediate updates), then database state
@@ -55,13 +48,11 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
       });
     }
 
-    // Apply modified filter
     if (showModifiedOnly) {
       filteredList = filteredList.filter((kit) => kit.modified_since_sync);
     }
 
     // Sort by kit slot names for consistent order (matches useKitNavigation.sortedKits)
-    // Preserve all kit properties including searchMatch data
     return filteredList.sort((a, b) => compareKitSlots(a.name, b.name));
   }, [
     kits,

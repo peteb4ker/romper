@@ -1,3 +1,3 @@
-import type { Kit, KitWithRelations, NewKit, NewSample } from "./schema.js";
+import type { Kit, NewKit, NewSample } from "./schema.js";
 
-export type { Kit, KitWithRelations, NewKit, NewSample };
+export type { Kit, NewKit, NewSample };

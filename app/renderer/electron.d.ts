@@ -240,15 +240,6 @@ export interface ElectronAPI {
   scanBanks?: () => Promise<
     DbResult<{ scannedAt: Date; scannedFiles: number; updatedBanks: number }>
   >;
-  // Search operations
-  searchKits?: (params: { limit?: number; query: string }) => Promise<
-    DbResult<{
-      kits: KitWithRelations[];
-      queryTime: number;
-      totalCount: number;
-    }>
-  >;
-
   // Existing local store selection
   selectExistingLocalStore?: () => Promise<{
     error: null | string;

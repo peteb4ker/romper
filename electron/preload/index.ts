@@ -455,7 +455,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] scanBanks invoked");
     return ipcRenderer.invoke("scan-banks");
   },
-  // Search operations removed - now handled client-side
   selectExistingLocalStore: () => {
     isDev && console.debug("[IPC] selectExistingLocalStore invoked");
     return ipcRenderer.invoke("select-existing-local-store");
@@ -475,7 +474,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] showItemInFolder invoked", path);
     return ipcRenderer.invoke("show-item-in-folder", path);
   },
-
   startKitSync: (syncData: {
     filesToConvert: Array<{
       destinationPath: string;
@@ -521,7 +519,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] updateKitBpm invoked", kitName, bpm);
     return ipcRenderer.invoke("update-kit-bpm", kitName, bpm);
   },
-
   updateStepPattern: (kitName: string, stepPattern: number[][]) => {
     isDev &&
       console.debug("[IPC] updateStepPattern invoked", kitName, stepPattern);

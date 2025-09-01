@@ -1,56 +1,35 @@
 // Drizzle schema definitions for Romper Database
 import { relations } from "drizzle-orm";
-import {
-  index,
-  integer,
-  sqliteTable,
-  text,
-  unique,
-} from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
 // Using text({ mode: 'json' }) for step patterns - much simpler than custom encoding!
 
 // Banks table - contains artist metadata for each bank (A-Z)
-export const banks = sqliteTable(
-  "banks",
-  {
-    artist: text("artist"), // Artist name extracted from RTF filename
-    letter: text("letter").primaryKey(), // A, B, C, etc.
-    rtf_filename: text("rtf_filename"), // Original RTF filename for reference
-    scanned_at: integer("scanned_at", { mode: "timestamp" }), // When bank was last scanned
-  },
-  (table) => [
-    // Search index for artist names (case insensitive)
-    index("idx_banks_artist_search").on(table.artist),
-  ],
-);
+export const banks = sqliteTable("banks", {
+  artist: text("artist"), // Artist name extracted from RTF filename
+  letter: text("letter").primaryKey(), // A, B, C, etc.
+  rtf_filename: text("rtf_filename"), // Original RTF filename for reference
+  scanned_at: integer("scanned_at", { mode: "timestamp" }), // When bank was last scanned
+});
 
 // Kits table - main table for kit information
-export const kits = sqliteTable(
-  "kits",
-  {
-    alias: text("alias"), // Optional human-readable name
-    artist: text("artist"), // DEPRECATED: Use bank.artist instead, kept for migration
-    bank_letter: text("bank_letter").references(() => banks.letter), // FK to banks.letter (derived from kit name)
-    bpm: integer("bpm").notNull().default(120), // BPM setting for step sequencer (30-180)
-    editable: integer("editable", { mode: "boolean" }).notNull().default(false), // New architecture: editable mode
-    is_favorite: integer("is_favorite", { mode: "boolean" })
-      .notNull()
-      .default(false), // Task 20.1.1: Favorites system
-    locked: integer("locked", { mode: "boolean" }).notNull().default(false), // Kit locking for protection
-    modified_since_sync: integer("modified_since_sync", { mode: "boolean" })
-      .notNull()
-      .default(false), // Task 5.3: Track if kit modified since last sync
-    name: text("name").primaryKey(), // Natural key (A0, B1, etc.)
-    step_pattern: text("step_pattern", { mode: "json" }).$type<
-      null | number[][]
-    >(), // JSON storage for step patterns
-  },
-  (table) => [
-    // Search indexes for kit names and aliases (case insensitive)
-    index("idx_kits_name_search").on(table.name),
-    index("idx_kits_alias_search").on(table.alias),
-  ],
-);
+export const kits = sqliteTable("kits", {
+  alias: text("alias"), // Optional human-readable name
+  artist: text("artist"), // DEPRECATED: Use bank.artist instead, kept for migration
+  bank_letter: text("bank_letter").references(() => banks.letter), // FK to banks.letter (derived from kit name)
+  bpm: integer("bpm").notNull().default(120), // BPM setting for step sequencer (30-180)
+  editable: integer("editable", { mode: "boolean" }).notNull().default(false), // New architecture: editable mode
+  is_favorite: integer("is_favorite", { mode: "boolean" })
+    .notNull()
+    .default(false), // Task 20.1.1: Favorites system
+  locked: integer("locked", { mode: "boolean" }).notNull().default(false), // Kit locking for protection
+  modified_since_sync: integer("modified_since_sync", { mode: "boolean" })
+    .notNull()
+    .default(false), // Task 5.3: Track if kit modified since last sync
+  name: text("name").primaryKey(), // Natural key (A0, B1, etc.)
+  step_pattern: text("step_pattern", { mode: "json" }).$type<
+    null | number[][]
+  >(), // JSON storage for step patterns
+});
 
 // Voices table - each kit has exactly 4 voices
 export const voices = sqliteTable("voices", {
@@ -83,10 +62,6 @@ export const samples = sqliteTable(
     wav_sample_rate: integer("wav_sample_rate"), // Optional WAV metadata
   },
   (table) => [
-    // Search index for sample filenames (case insensitive)
-    index("idx_samples_filename_search").on(table.filename),
-    // Index for kit_name to optimize sample lookups
-    index("idx_samples_kit_name").on(table.kit_name),
     // Unique constraint: only one sample per kit/voice/slot combination
     unique("unique_slot").on(
       table.kit_name,

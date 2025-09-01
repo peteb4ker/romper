@@ -1,24 +1,17 @@
-import type { KitWithRelations } from "@romper/shared/db/types";
+import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+
+import type {
+  KitWithSearchMatch,
+  SearchMatchDetails,
+} from "../components/shared/kitItemUtils";
 
 interface ImportMeta {
   env: {
     MODE?: string;
     VITE_ROMPER_TEST_MODE?: string;
   };
-}
-
-interface KitWithSearchMatch extends KitWithRelations {
-  searchMatch?: SearchMatchDetails;
-}
-
-interface SearchMatchDetails {
-  matchedAlias?: string;
-  matchedArtist?: string;
-  matchedOn: string[]; // ['name', 'artist', 'voice:KICK', 'sample:kick_001.wav']
-  matchedSamples: string[];
-  matchedVoices: string[];
 }
 
 import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
@@ -167,7 +160,6 @@ function filterKitsWithSearch(
  * Orchestrates kit browsing, selection, and editing functionality
  */
 const KitsView: React.FC = () => {
-  console.log("[SEARCH DEBUG] KitsView render");
   const {
     isInitialized,
     localStorePath,
@@ -261,10 +253,6 @@ const KitsView: React.FC = () => {
 
   const handleSearchChange = useCallback(
     (query: string) => {
-      console.log(
-        "[SEARCH DEBUG] handleSearchChange called with query:",
-        query,
-      );
       setSearchState((prev) => ({ ...prev, query }));
 
       if (query.length < 2) {
@@ -278,9 +266,6 @@ const KitsView: React.FC = () => {
 
       // Perform client-side filtering with allKitSamples for sample searching
       const filteredResults = filterKitsWithSearch(kits, query, allKitSamples);
-      console.log(
-        `[SEARCH DEBUG] Client-side filter found ${filteredResults.length} results for query: "${query}"`,
-      );
 
       setSearchState((prev) => ({
         ...prev,
@@ -443,10 +428,6 @@ const KitsView: React.FC = () => {
     const handleRefreshSamples = (event: Event) => {
       const customEvent = event as CustomEvent<{ kitName: string }>;
       if (customEvent.detail.kitName === selectedKitRef.current) {
-        console.log(
-          "[KitsView] Refreshing samples after undo operation for kit:",
-          selectedKitRef.current,
-        );
         reloadCurrentKitSamplesRef.current(selectedKitRef.current);
       }
     };

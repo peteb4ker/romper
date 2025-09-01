@@ -8,7 +8,6 @@ import type { InMemorySettings } from "./types/settings.js";
 import { getAudioMetadata, validateSampleFormat } from "./audioUtils.js";
 import { registerFavoritesIpcHandlers } from "./db/favoritesIpcHandlers.js";
 import { createDbHandler } from "./db/ipcHandlerUtils.js";
-// Search operations removed - now handled client-side
 import {
   addKit,
   addSample,
@@ -225,8 +224,6 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("validate-sample-format", async (_event, filePath: string) => {
     return validateSampleFormat(filePath);
   });
-
-  // Search operations removed - now handled client-side in KitsView
 
   // Progress events are handled via webContents.send in syncService
   // No IPC handler needed for onSyncProgress as it's a renderer-side event listener

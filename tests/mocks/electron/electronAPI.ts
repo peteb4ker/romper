@@ -140,6 +140,10 @@ export const createElectronAPIMock = (
     data: { scannedSamples: 4, updatedVoices: 4 },
     success: true,
   }),
+  rescanKitsMissingMetadata: vi.fn().mockResolvedValue({
+    data: { kitsRescanned: [], totalSamplesUpdated: 0 },
+    success: true,
+  }),
 
   scanBanks: vi.fn().mockResolvedValue({
     data: { scannedAt: new Date(), scannedFiles: 0, updatedBanks: 2 },

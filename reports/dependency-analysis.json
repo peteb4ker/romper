@@ -16,12 +16,27 @@
       "dependencies": 0,
       "directDeps": []
     },
+    "scripts/architecture/analyze-all.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/architecture/analyze-complexity.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
     "scripts/architecture/analyze-dependencies.js": {
       "depth": 1,
       "dependencies": 0,
       "directDeps": []
     },
     "scripts/architecture/analyze-loc.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/architecture/generate-report.js": {
       "depth": 1,
       "dependencies": 0,
       "directDeps": []
@@ -112,14 +127,14 @@
     "violations": [],
     "domainStats": {
       "unknown": {
-        "modules": 19,
+        "modules": 22,
         "dependencies": 3,
         "crossDomainImports": 0
       }
     },
     "totalViolations": 0
   },
-  "timestamp": "2025-09-02T00:18:30.453Z",
+  "timestamp": "2025-09-02T04:29:23.122Z",
   "config": {
     "rootDir": "/Users/pete/workspace/romper/worktrees/architecture-analysis",
     "extensions": [

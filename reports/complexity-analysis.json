@@ -2,9 +2,9 @@
   "healthScore": 0,
   "complexityDistribution": {
     "simple": 76,
-    "moderate": 41,
-    "complex": 35,
-    "excessive": 56
+    "moderate": 42,
+    "complex": 36,
+    "excessive": 57
   },
   "mostComplex": [
     {
@@ -98,8 +98,8 @@
           "complexity": "simple"
         },
         "hooks": {
-          "total": 25,
-          "unique": 13,
+          "total": 27,
+          "unique": 14,
           "complexity": "excessive"
         },
         "conditionals": {
@@ -133,6 +133,33 @@
           "count": 31,
           "ternary": 3,
           "logical": 6,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/KitGridItem.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 10,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 37,
+          "ternary": 13,
+          "logical": 17,
           "complexity": "excessive"
         },
         "returns": {
@@ -249,33 +276,6 @@
         }
       },
       "overallComplexity": "excessive"
-    },
-    {
-      "path": "app/renderer/components/SampleWaveform.tsx",
-      "isComponent": true,
-      "isHook": false,
-      "metrics": {
-        "props": {
-          "count": 7,
-          "complexity": "moderate"
-        },
-        "hooks": {
-          "total": 14,
-          "unique": 3,
-          "complexity": "excessive"
-        },
-        "conditionals": {
-          "count": 29,
-          "ternary": 0,
-          "logical": 3,
-          "complexity": "excessive"
-        },
-        "returns": {
-          "count": 1,
-          "complexity": "simple"
-        }
-      },
-      "overallComplexity": "excessive"
     }
   ],
   "results": [
@@ -375,9 +375,9 @@
           "complexity": "simple"
         },
         "conditionals": {
-          "count": 12,
+          "count": 13,
           "ternary": 6,
-          "logical": 6,
+          "logical": 7,
           "complexity": "complex"
         },
         "returns": {
@@ -510,9 +510,9 @@
           "complexity": "simple"
         },
         "conditionals": {
-          "count": 31,
-          "ternary": 12,
-          "logical": 12,
+          "count": 37,
+          "ternary": 13,
+          "logical": 17,
           "complexity": "excessive"
         },
         "returns": {
@@ -564,10 +564,10 @@
           "complexity": "simple"
         },
         "conditionals": {
-          "count": 17,
-          "ternary": 7,
-          "logical": 7,
-          "complexity": "complex"
+          "count": 23,
+          "ternary": 8,
+          "logical": 12,
+          "complexity": "excessive"
         },
         "returns": {
           "count": 1,
@@ -845,6 +845,33 @@
         }
       },
       "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/SearchInput.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 5,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 2,
+          "unique": 2,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 3,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
     },
     {
       "path": "app/renderer/components/StatusBar.tsx",
@@ -1736,6 +1763,33 @@
         }
       },
       "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitSearch.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 6,
+          "unique": 3,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 1,
+          "logical": 1,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 6,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "moderate"
     },
     {
       "path": "app/renderer/components/hooks/kit-management/useKitStepSequencer.ts",
@@ -3871,6 +3925,33 @@
       "overallComplexity": "excessive"
     },
     {
+      "path": "app/renderer/utils/kitSearchUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 19,
+          "ternary": 0,
+          "logical": 7,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
       "path": "app/renderer/utils/sampleGroupingUtils.ts",
       "isComponent": false,
       "isHook": false,
@@ -3988,8 +4069,8 @@
           "complexity": "simple"
         },
         "hooks": {
-          "total": 25,
-          "unique": 13,
+          "total": 27,
+          "unique": 14,
           "complexity": "excessive"
         },
         "conditionals": {
@@ -5635,7 +5716,7 @@
           "complexity": "simple"
         },
         "hooks": {
-          "total": 9,
+          "total": 10,
           "unique": 3,
           "complexity": "complex"
         },
@@ -5896,7 +5977,7 @@
       "overallComplexity": "simple"
     }
   ],
-  "timestamp": "2025-09-02T00:19:48.828Z",
+  "timestamp": "2025-09-02T04:29:23.780Z",
   "config": {
     "rootDir": "/Users/pete/workspace/romper/worktrees/architecture-analysis",
     "thresholds": {

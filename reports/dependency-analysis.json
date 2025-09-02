@@ -134,9 +134,9 @@
     },
     "totalViolations": 0
   },
-  "timestamp": "2025-09-02T04:29:23.122Z",
+  "timestamp": "2025-09-02T17:45:47.035Z",
   "config": {
-    "rootDir": "/Users/pete/workspace/romper/worktrees/architecture-analysis",
+    "rootDir": "/Users/pete/workspace/romper/worktrees/refactor-sync-service",
     "extensions": [
       ".ts",
       ".tsx"

@@ -4,22 +4,22 @@
     "level": "POOR"
   },
   "codebase": {
-    "totalFiles": 195,
-    "totalLoc": 25354,
-    "avgLoc": 130,
+    "totalFiles": 199,
+    "totalLoc": 25358,
+    "avgLoc": 127,
     "components": 57,
     "hooks": 67
   },
   "criticalIssues": 1,
-  "redFlagFiles": 12,
+  "redFlagFiles": 11,
   "excessiveComplexity": 57,
   "topProblems": [
     {
       "category": "Lines of Code",
       "count": 5,
       "files": [
-        "electron/main/services/syncService.ts (867 LOC)",
-        "electron/main/services/crud/sampleCrudService.ts (467 LOC)"
+        "electron/main/services/crud/sampleCrudService.ts (467 LOC)",
+        "electron/main/db/operations/crudOperations.ts (466 LOC)"
       ]
     },
     {
@@ -27,7 +27,7 @@
       "count": 5,
       "files": [
         "electron/preload/index.ts (Utility)",
-        "electron/main/services/syncService.ts (Utility)"
+        "app/renderer/components/KitHeader.tsx (Component)"
       ]
     },
     {
@@ -43,9 +43,9 @@
     {
       "action": "Refactor oversized files",
       "files": [
-        "electron/main/services/syncService.ts",
         "electron/main/services/crud/sampleCrudService.ts",
-        "electron/main/db/operations/crudOperations.ts"
+        "electron/main/db/operations/crudOperations.ts",
+        "app/renderer/components/dialogs/SyncUpdateDialog.tsx"
       ]
     }
   ],

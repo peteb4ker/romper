@@ -30,7 +30,10 @@ vi.mock("../../formatConverter.js", () => ({
 import { getAudioMetadata, validateSampleFormat } from "../../audioUtils.js";
 import { getKitSamples, markKitsAsSynced } from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
+import { syncProgressManager } from "../syncProgressManager.js";
+import { syncSampleProcessingService } from "../syncSampleProcessing.js";
 import { syncService } from "../syncService.js";
+import { syncValidationService } from "../syncValidationService.js";
 
 const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
@@ -369,8 +372,8 @@ describe("SyncService", () => {
         voice: 1,
       };
 
-      // Access private method through bracket notation for testing
-      const destPath = (syncService as unknown).getDestinationPath(
+      // Test destination path calculation via sample processing service
+      const destPath = syncSampleProcessingService.getDestinationPath(
         "/local/store",
         "A01",
         sample,
@@ -383,7 +386,6 @@ describe("SyncService", () => {
     it("estimates sync time", () => {
       const estimatedTime = (syncService as unknown).estimateSyncTime(
         5, // totalFiles
-        1024 * 1024, // 1MB total size
         2, // conversions
       );
 
@@ -392,21 +394,21 @@ describe("SyncService", () => {
     });
 
     it("categorizes errors correctly", () => {
-      const permissionError = (syncService as unknown).categorizeError(
+      const permissionError = syncValidationService.categorizeError(
         new Error("EACCES: permission denied"),
       );
 
       expect(permissionError.type).toBe("permission");
       expect(permissionError.canRetry).toBe(true);
 
-      const diskSpaceError = (syncService as unknown).categorizeError(
+      const diskSpaceError = syncValidationService.categorizeError(
         new Error("ENOSPC: no space left on device"),
       );
 
       expect(diskSpaceError.type).toBe("disk_space");
       expect(diskSpaceError.canRetry).toBe(false);
 
-      const unknownError = (syncService as unknown).categorizeError(
+      const unknownError = syncValidationService.categorizeError(
         new Error("Unknown error"),
       );
 
@@ -415,16 +417,32 @@ describe("SyncService", () => {
     });
 
     it("calculates time remaining", () => {
-      // Set up a mock sync job
-      (syncService as unknown).currentSyncJob = {
-        bytesTransferred: 1024 * 1024, // 1MB
-        completedFiles: 5,
-        startTime: Date.now() - 10000, // Started 10 seconds ago
-        totalBytes: 2 * 1024 * 1024, // 2MB
-        totalFiles: 10,
-      };
+      // Initialize a mock sync job with sample files
+      const mockFiles = [
+        {
+          destinationPath: "/out1.wav",
+          filename: "test1.wav",
+          kitName: "kit1",
+          operation: "copy" as const,
+          sourcePath: "/test1.wav",
+        },
+        {
+          destinationPath: "/out2.wav",
+          filename: "test2.wav",
+          kitName: "kit1",
+          operation: "convert" as const,
+          sourcePath: "/test2.wav",
+        },
+      ];
+      syncProgressManager.initializeSyncJob(mockFiles);
 
-      const timeRemaining = (syncService as unknown).calculateTimeRemaining();
+      // Simulate some progress by completing files
+      const currentJob = syncProgressManager.getCurrentSyncJob();
+      if (currentJob) {
+        currentJob.completedFiles = 1; // Simulate 1 of 2 files completed
+      }
+
+      const timeRemaining = syncProgressManager.calculateTimeRemaining();
 
       expect(typeof timeRemaining).toBe("number");
       expect(timeRemaining).toBeGreaterThanOrEqual(0);
@@ -432,17 +450,15 @@ describe("SyncService", () => {
 
     it("emits progress correctly", () => {
       const progress = {
-        bytesTransferred: 1024,
         currentFile: "test.wav",
         elapsedTime: 1000,
         estimatedTimeRemaining: 1000,
         filesCompleted: 1,
         status: "copying" as const,
-        totalBytes: 2048,
         totalFiles: 2,
       };
 
-      (syncService as unknown).emitProgress(progress);
+      syncProgressManager.emitProgress(progress);
 
       expect(mockWindow.webContents.send).toHaveBeenCalledWith(
         "sync-progress",

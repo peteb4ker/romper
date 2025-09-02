@@ -56,7 +56,11 @@
     "pre-release": "node scripts/release/validate.js",
     "docs:check": "node scripts/check-docs.mjs",
     "docs:fix": "node scripts/fix-docs.mjs",
-    "docs:audit": "npm run docs:check && npm run docs:fix"
+    "docs:audit": "npm run docs:check && npm run docs:fix",
+    "analyze:architecture": "node scripts/architecture/analyze-all.js",
+    "analyze:loc": "node scripts/architecture/analyze-loc.js",
+    "analyze:dependencies": "node scripts/architecture/analyze-dependencies.js",
+    "analyze:complexity": "node scripts/architecture/analyze-complexity.js"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.3",
@@ -82,11 +86,14 @@
     "@types/react-dom": "^19.1.7",
     "@types/react-window": "^1.8.8",
     "@types/tar": "^6.1.13",
+    "@typescript-eslint/parser": "^8.41.0",
+    "@typescript-eslint/typescript-estree": "^8.41.0",
     "@vitest/coverage-v8": "^3.2.3",
     "archiver": "^7.0.1",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
+    "dependency-cruiser": "^17.0.1",
     "electron": "^36.4.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.1.5",
@@ -101,6 +108,7 @@
     "jsdom": "^26.1.0",
     "lcov": "^1.16.0",
     "lint-staged": "^16.1.2",
+    "madge": "^8.0.0",
     "nyc": "^17.1.0",
     "playwright": "^1.53.0",
     "rollup": "^4.43.0",
@@ -119,7 +127,6 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.10",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
     "@vitejs/plugin-react": "^4.5.2",
     "better-sqlite3": "^11.10.0",
     "drizzle-kit": "^0.31.4",

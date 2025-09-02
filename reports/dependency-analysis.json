@@ -1,0 +1,166 @@
+{
+  "healthScore": 100,
+  "circularResult": {
+    "hasCircularDependencies": false,
+    "circularDependencies": [],
+    "totalModules": 0
+  },
+  "depthAnalysis": {
+    "docs/script.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "eslint.config.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/architecture/analyze-dependencies.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/architecture/analyze-loc.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/check-test-coverage.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/enhanced-commit.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/generate-github-release-notes.js": {
+      "depth": 4,
+      "dependencies": 1,
+      "directDeps": [
+        "scripts/release/generate-notes.js"
+      ]
+    },
+    "scripts/inspect-sample-gaps.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/monitor-app-state.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/release/generate-notes.js": {
+      "depth": 3,
+      "dependencies": 1,
+      "directDeps": [
+        "scripts/release/parse-commits.js"
+      ]
+    },
+    "scripts/release/parse-commits.js": {
+      "depth": 2,
+      "dependencies": 1,
+      "directDeps": [
+        "scripts/release/utils/git.js"
+      ]
+    },
+    "scripts/release/utils/git.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/release/validate.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/start-mcp-server.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/test-mcp-connection.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/worktree-create.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/worktree-current.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "scripts/worktree-remove.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    },
+    "tailwind.config.js": {
+      "depth": 1,
+      "dependencies": 0,
+      "directDeps": []
+    }
+  },
+  "boundaryAnalysis": {
+    "violations": [],
+    "domainStats": {
+      "unknown": {
+        "modules": 19,
+        "dependencies": 3,
+        "crossDomainImports": 0
+      }
+    },
+    "totalViolations": 0
+  },
+  "timestamp": "2025-09-02T00:18:30.453Z",
+  "config": {
+    "rootDir": "/Users/pete/workspace/romper/worktrees/architecture-analysis",
+    "extensions": [
+      ".ts",
+      ".tsx"
+    ],
+    "domains": {
+      "renderer/components": [
+        "hooks",
+        "dialogs",
+        "shared",
+        "utils",
+        "wizard"
+      ],
+      "renderer/hooks": [
+        "kit-management",
+        "sample-management",
+        "shared",
+        "voice-panels"
+      ],
+      "renderer/utils": [],
+      "renderer/views": [],
+      "electron/main": [
+        "db",
+        "services"
+      ],
+      "shared": [
+        "db"
+      ]
+    },
+    "allowedCrossDomainImports": [
+      "shared -> *",
+      "renderer/components -> renderer/hooks",
+      "renderer/components -> renderer/utils",
+      "renderer/components -> shared",
+      "renderer/hooks -> renderer/utils",
+      "renderer/hooks -> shared",
+      "renderer/views -> renderer/components",
+      "renderer/views -> renderer/hooks",
+      "renderer/views -> renderer/utils",
+      "electron/main -> shared"
+    ]
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "archHealth": {
+    "score": 0,
+    "level": "POOR"
+  },
+  "codebase": {
+    "totalFiles": 192,
+    "totalLoc": 24971,
+    "avgLoc": 130,
+    "components": 56,
+    "hooks": 66
+  },
+  "criticalIssues": 1,
+  "redFlagFiles": 13,
+  "excessiveComplexity": 56,
+  "topProblems": [
+    {
+      "category": "Lines of Code",
+      "count": 5,
+      "files": [
+        "electron/main/services/syncService.ts (867 LOC)",
+        "electron/preload/index.ts (544 LOC)"
+      ]
+    },
+    {
+      "category": "Component Complexity",
+      "count": 5,
+      "files": [
+        "electron/preload/index.ts (Utility)",
+        "electron/main/services/syncService.ts (Utility)"
+      ]
+    },
+    {
+      "category": "Hook Architecture",
+      "count": 3,
+      "files": [
+        "app/renderer/components/hooks/kit-management/useKitBrowser.ts (33 returns, 4 hooks)",
+        "app/renderer/components/hooks/kit-management/useKitDetailsLogic.ts (23 returns, 6 hooks)"
+      ]
+    }
+  ],
+  "immediateActions": [
+    {
+      "action": "Refactor oversized files",
+      "files": [
+        "electron/main/services/syncService.ts",
+        "electron/preload/index.ts",
+        "electron/main/services/crud/sampleCrudService.ts"
+      ]
+    }
+  ],
+  "strengths": [
+    "✅ No circular dependencies detected",
+    "✅ Strong hook architecture (66 custom hooks)",
+    "✅ TypeScript with strict mode and Drizzle ORM type safety",
+    "✅ Clear domain separation (components, hooks, utils, shared)"
+  ],
+  "qualityGates": {
+    "locCompliance": false,
+    "complexityCompliance": false,
+    "dependencyHealth": true,
+    "overallPassing": false
+  }
+}

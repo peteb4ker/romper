@@ -1,0 +1,5925 @@
+{
+  "healthScore": 0,
+  "complexityDistribution": {
+    "simple": 76,
+    "moderate": 41,
+    "complex": 35,
+    "excessive": 56
+  },
+  "mostComplex": [
+    {
+      "path": "electron/preload/index.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 65,
+          "ternary": 1,
+          "logical": 58,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/services/syncService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 59,
+          "ternary": 11,
+          "logical": 3,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/KitHeader.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 17,
+          "complexity": "excessive"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 40,
+          "ternary": 23,
+          "logical": 13,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/views/KitsView.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 25,
+          "unique": 13,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 37,
+          "ternary": 5,
+          "logical": 21,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/KitGrid.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 12,
+          "complexity": "complex"
+        },
+        "hooks": {
+          "total": 15,
+          "unique": 9,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 31,
+          "ternary": 3,
+          "logical": 6,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/wizard/useLocalStoreWizard.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 12,
+          "unique": 7,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 36,
+          "ternary": 2,
+          "logical": 19,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/dialogs/SyncUpdateDialog.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 10,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 5,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 35,
+          "ternary": 9,
+          "logical": 18,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/LocalStoreWizardUI.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 12,
+          "unique": 5,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 34,
+          "ternary": 4,
+          "logical": 16,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/services/crud/sampleCrudService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 41,
+          "ternary": 0,
+          "logical": 8,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/SampleWaveform.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 7,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 14,
+          "unique": 3,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 29,
+          "ternary": 0,
+          "logical": 3,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    }
+  ],
+  "results": [
+    {
+      "path": "app/renderer/components/KitBankNav.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 8,
+          "ternary": 2,
+          "logical": 4,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/KitBrowser.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 11,
+          "unique": 9,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 13,
+          "ternary": 0,
+          "logical": 7,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/KitBrowserContainer.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/KitBrowserHeader.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 12,
+          "ternary": 6,
+          "logical": 6,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/KitDetails.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 5,
+          "ternary": 0,
+          "logical": 5,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/KitDetailsContainer.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/KitForm.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 5,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 8,
+          "ternary": 2,
+          "logical": 2,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/KitGrid.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 12,
+          "complexity": "complex"
+        },
+        "hooks": {
+          "total": 15,
+          "unique": 9,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 31,
+          "ternary": 3,
+          "logical": 6,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/KitGridItem.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 10,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 31,
+          "ternary": 12,
+          "logical": 12,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/KitHeader.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 17,
+          "complexity": "excessive"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 40,
+          "ternary": 23,
+          "logical": 13,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/KitItem.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 8,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 17,
+          "ternary": 7,
+          "logical": 7,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/KitList.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 12,
+          "complexity": "complex"
+        },
+        "hooks": {
+          "total": 12,
+          "unique": 6,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 23,
+          "ternary": 3,
+          "logical": 6,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/KitStepSequencer.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 2,
+          "unique": 2,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/KitViewDialogs.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 5,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/KitVoicePanel.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 27,
+          "complexity": "excessive"
+        },
+        "hooks": {
+          "total": 7,
+          "unique": 7,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 1,
+          "logical": 3,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/KitVoicePanels.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 4,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 8,
+          "ternary": 2,
+          "logical": 3,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/LocalStoreWizardModal.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 6,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/LocalStoreWizardUI.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 12,
+          "unique": 5,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 34,
+          "ternary": 4,
+          "logical": 16,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/MessageDisplay.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/MessageDisplayContext.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/SampleWaveform.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 7,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 14,
+          "unique": 3,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 29,
+          "ternary": 0,
+          "logical": 3,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/StatusBar.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 7,
+          "ternary": 1,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/StepSequencerControls.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 8,
+          "ternary": 5,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/StepSequencerDrawer.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 6,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/StepSequencerGrid.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 12,
+          "complexity": "complex"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 3,
+          "logical": 4,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/ThemeToggle.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/UnscannedKitPrompt.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/ValidationResultsDialog.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/dialogs/AboutDialog.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 7,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/dialogs/ChangeLocalStoreDirectoryDialog.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 8,
+          "unique": 4,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 26,
+          "ternary": 7,
+          "logical": 7,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/dialogs/CriticalErrorDialog.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/dialogs/InvalidLocalStoreDialog.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 8,
+          "unique": 4,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 21,
+          "ternary": 4,
+          "logical": 4,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/dialogs/KitDialogs.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 13,
+          "complexity": "complex"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 0,
+          "logical": 4,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/dialogs/PreferencesDialog.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 3,
+          "unique": 3,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 20,
+          "ternary": 6,
+          "logical": 8,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/dialogs/SyncUpdateDialog.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 10,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 5,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 35,
+          "ternary": 9,
+          "logical": 18,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/dialogs/ValidationResultsDialog.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 17,
+          "ternary": 6,
+          "logical": 9,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKit.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 5,
+          "unique": 3,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 13,
+          "ternary": 3,
+          "logical": 1,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 6,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitBankNavigation.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 13,
+          "unique": 4,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 20,
+          "ternary": 1,
+          "logical": 6,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 12,
+          "complexity": "complex"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitBrowser.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 4,
+          "unique": 4,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 33,
+          "complexity": "excessive"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitBrowserHeader.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitCreation.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 5,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 5,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 9,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitDataManager.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 13,
+          "unique": 3,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 19,
+          "ternary": 1,
+          "logical": 3,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 11,
+          "complexity": "complex"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitDetailsLogic.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 6,
+          "unique": 6,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 30,
+          "ternary": 1,
+          "logical": 7,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 23,
+          "complexity": "excessive"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitDialogs.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 7,
+          "unique": 2,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 8,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitDuplication.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 3,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 7,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitErrorHandling.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 2,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 7,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitFilters.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 14,
+          "unique": 5,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 11,
+          "ternary": 1,
+          "logical": 2,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 9,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitItem.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 4,
+          "unique": 1,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 17,
+          "ternary": 1,
+          "logical": 4,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitKeyboardNav.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 2,
+          "unique": 2,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 0,
+          "logical": 2,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitListLogic.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 2,
+          "logical": 1,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 4,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitListNavigation.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 6,
+          "unique": 4,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 0,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitNavigation.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 8,
+          "unique": 4,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 18,
+          "ternary": 1,
+          "logical": 7,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 9,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitPlayback.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 6,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 7,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitScan.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 5,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 15,
+          "ternary": 5,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitStepSequencer.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 4,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 2,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 5,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitStepSequencerLogic.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 20,
+          "ternary": 3,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 13,
+          "complexity": "complex"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitSync.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 10,
+          "unique": 4,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 12,
+          "ternary": 1,
+          "logical": 1,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 12,
+          "complexity": "complex"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitViewMenuHandlers.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 7,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 6,
+          "unique": 5,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitVoicePanel.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitVoicePanels.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 17,
+          "complexity": "excessive"
+        },
+        "hooks": {
+          "total": 4,
+          "unique": 1,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 1,
+          "logical": 2,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 15,
+          "complexity": "complex"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/sample-management/types.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/sample-management/useSampleActions.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 2,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 0,
+          "logical": 1,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/sample-management/useSampleManagement.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 5,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 2,
+          "unique": 2,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 4,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/sample-management/useSampleManagementMoveOps.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 5,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 5,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 19,
+          "ternary": 1,
+          "logical": 7,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/sample-management/useSampleManagementOperations.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 5,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 4,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 19,
+          "ternary": 1,
+          "logical": 6,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/sample-management/useSampleManagementUndoActions.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 7,
+          "unique": 1,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 2,
+          "logical": 4,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 7,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/sample-management/useSampleProcessing.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 5,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 7,
+          "unique": 3,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 21,
+          "ternary": 4,
+          "logical": 5,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 5,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/sample-management/useSlotRendering.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 9,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 5,
+          "unique": 1,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 16,
+          "ternary": 4,
+          "logical": 4,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 6,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/sample-management/useStereoHandling.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 4,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 5,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/stepPatternConstants.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 0,
+          "logical": 3,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useBankScanning.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useBpm.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 0,
+          "logical": 3,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 5,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useDialogState.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 9,
+          "unique": 2,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 12,
+          "complexity": "complex"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useDragAndDrop.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 11,
+          "complexity": "complex"
+        },
+        "hooks": {
+          "total": 4,
+          "unique": 4,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 14,
+          "complexity": "complex"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useExternalDragHandlers.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 7,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 5,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 14,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 5,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useFileValidation.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 3,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useGlobalKeyboardShortcuts.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 6,
+          "unique": 3,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 14,
+          "ternary": 0,
+          "logical": 5,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 5,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useInternalDragHandlers.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 6,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 9,
+          "unique": 2,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 12,
+          "ternary": 1,
+          "logical": 2,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 9,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useKeyboardNavigation.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 5,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useMenuEvents.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useMessageApi.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useMessageDisplay.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 4,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useRedoActionHandlers.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useStartupActions.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useStepPattern.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 3,
+          "unique": 3,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useSyncUpdate.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 7,
+          "unique": 2,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 11,
+          "ternary": 5,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 7,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useUndoActionHandlers.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 13,
+          "ternary": 3,
+          "logical": 4,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useUndoRedo.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 5,
+          "unique": 4,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 8,
+          "ternary": 4,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 13,
+          "complexity": "complex"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useUndoRedoState.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 10,
+          "unique": 3,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 0,
+          "logical": 2,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 17,
+          "complexity": "excessive"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/shared/useValidationResults.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 14,
+          "unique": 2,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 24,
+          "ternary": 4,
+          "logical": 5,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 12,
+          "complexity": "complex"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/useKitBrowser.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/useValidationResults.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/voice-panels/useVoiceAlias.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/voice-panels/useVoiceNameEditor.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 8,
+          "unique": 3,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 7,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/voice-panels/useVoicePanelButtons.tsx",
+      "isComponent": true,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/hooks/voice-panels/useVoicePanelRendering.tsx",
+      "isComponent": true,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 19,
+          "complexity": "excessive"
+        },
+        "hooks": {
+          "total": 3,
+          "unique": 3,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 4,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/voice-panels/useVoicePanelSlots.tsx",
+      "isComponent": true,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 17,
+          "complexity": "excessive"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 28,
+          "ternary": 6,
+          "logical": 9,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/voice-panels/useVoicePanelUI.tsx",
+      "isComponent": true,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 3,
+          "logical": 1,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/hooks/wizard/useLocalStoreWizard.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 12,
+          "unique": 7,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 36,
+          "ternary": 2,
+          "logical": 19,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/wizard/useLocalStoreWizardFileOps.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 5,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 5,
+          "unique": 2,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 17,
+          "ternary": 0,
+          "logical": 2,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/wizard/useLocalStoreWizardScanning.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 2,
+          "unique": 2,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 11,
+          "ternary": 0,
+          "logical": 3,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/hooks/wizard/useLocalStoreWizardState.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 14,
+          "unique": 4,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 7,
+          "ternary": 0,
+          "logical": 5,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/kitTypes.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/shared/KitIconRenderer.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/shared/kitItemUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/utils/FilePickerButton.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 8,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/utils/Spinner.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/utils/bankOperations.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 5,
+          "ternary": 1,
+          "logical": 2,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/utils/databaseScanning.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 22,
+          "ternary": 4,
+          "logical": 2,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/utils/kitOperations.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 9,
+          "ternary": 3,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/utils/romperDb.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/utils/scannerOperations.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/utils/scanners/index.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/utils/scanners/orchestrationFunctions.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 7,
+          "ternary": 2,
+          "logical": 2,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/utils/scanners/orchestrator.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 5,
+          "ternary": 1,
+          "logical": 1,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 5,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/utils/scanners/rtfArtistScanner.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/components/utils/scanners/types.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/utils/scanners/voiceInferenceScanner.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/utils/scanners/wavAnalysisScanner.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 1,
+          "logical": 5,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/utils/scanningOperations.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/wizard/WizardErrorMessage.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/wizard/WizardProgressBar.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 1,
+          "logical": 1,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/wizard/WizardSourceStep.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 6,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 8,
+          "ternary": 2,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/components/wizard/WizardStepNav.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 0,
+          "logical": 1,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/wizard/WizardSummaryStep.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 3,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 0,
+          "logical": 2,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/components/wizard/WizardTargetStep.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 4,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 1,
+          "unique": 1,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "app/renderer/config.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 0,
+          "logical": 2,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/main.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 3,
+          "unique": 3,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/utils/SettingsContext.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 13,
+          "unique": 5,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 9,
+          "ternary": 2,
+          "logical": 3,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 5,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/utils/asyncStateManagement.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 34,
+          "unique": 5,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 16,
+          "ternary": 3,
+          "logical": 2,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 8,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/utils/errorHandling.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 3,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/utils/hmrStateManager.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 11,
+          "ternary": 0,
+          "logical": 4,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/utils/kitDataErrorHandling.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 19,
+          "ternary": 1,
+          "logical": 5,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 4,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/utils/sampleGroupingUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 11,
+          "ternary": 0,
+          "logical": 4,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "app/renderer/utils/settingsManager.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/utils/wavMetadataFormatter.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 21,
+          "ternary": 5,
+          "logical": 2,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/views/AboutView.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 2,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "app/renderer/views/KitsView.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 25,
+          "unique": 13,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 37,
+          "ternary": 5,
+          "logical": 21,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "drizzle.config.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/applicationMenu.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 14,
+          "ternary": 4,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/archiveUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 1,
+          "logical": 2,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/audioUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 19,
+          "ternary": 1,
+          "logical": 3,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 4,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/db/favoritesIpcHandlers.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/db/fileOperations.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 15,
+          "ternary": 2,
+          "logical": 2,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/db/ipcHandlerUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 2,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "electron/main/db/operations/crudOperations.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 15,
+          "ternary": 2,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 4,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/db/operations/sampleManagementOps.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 0,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "electron/main/db/operations/sampleMovement.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 9,
+          "ternary": 0,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "electron/main/db/romperDbCoreORM.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/db/sampleIpcHandlers.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 2,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/db/stepPatternUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/db/syncIpcHandlers.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/db/utils/dbUtilities.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 19,
+          "ternary": 6,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/dbIpcHandlers.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 2,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/formatConverter.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 27,
+          "ternary": 2,
+          "logical": 8,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/index.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 19,
+          "ternary": 4,
+          "logical": 2,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/ipcHandlers.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 2,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/localStoreValidator.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 20,
+          "ternary": 5,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/services/archiveService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 3,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/services/crud/sampleCrudService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 41,
+          "ternary": 0,
+          "logical": 8,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/services/kitService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 13,
+          "ternary": 0,
+          "logical": 2,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/services/localStoreService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 11,
+          "ternary": 3,
+          "logical": 4,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 6,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/services/metadata/sampleMetadataService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 0,
+          "logical": 1,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/services/rampleNamingService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "electron/main/services/sampleService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/services/scanService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 29,
+          "ternary": 5,
+          "logical": 5,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/services/settingsService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/services/slot/sampleSlotService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 0,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "electron/main/services/syncExecutorService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/services/syncPlannerService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 1,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/services/syncProgressService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 7,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "electron/main/services/syncService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 59,
+          "ternary": 11,
+          "logical": 3,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/services/syncServiceRefactored.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 11,
+          "ternary": 4,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/services/validation/sampleValidator.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 20,
+          "ternary": 0,
+          "logical": 4,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "electron/main/types/settings.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/utils/errorCategorizationUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 2,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/utils/fileSystemUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 8,
+          "ternary": 2,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 3,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "electron/main/utils/stereoProcessingUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 5,
+          "ternary": 0,
+          "logical": 1,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "electron/preload/index.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 65,
+          "ternary": 1,
+          "logical": 58,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "playwright.config.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 8,
+          "ternary": 7,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "shared/db/index.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "shared/db/schema.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "shared/db/types.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "shared/errorUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 5,
+          "ternary": 3,
+          "logical": 1,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "shared/kitUtilsShared.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 18,
+          "ternary": 0,
+          "logical": 2,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "shared/slotUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 0,
+          "logical": 2,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "shared/undoTypes.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/factories/kit.factory.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 4,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/factories/sample.factory.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/mocks/browser/audio.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/mocks/browser/dom.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 9,
+          "ternary": 1,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "tests/mocks/browser/window.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/mocks/database/drizzle.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/mocks/electron/electronAPI.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/mocks/electron/electronFileAPI.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 0,
+          "logical": 4,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "tests/mocks/errorHandling.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 5,
+          "ternary": 5,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/mocks/filesystem/fs.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/providers/TestElectronProvider.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 2,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/providers/TestSettingsProvider.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 9,
+          "unique": 3,
+          "complexity": "complex"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "tests/utils/e2e-fixture-extractor.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 4,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "tests/utils/renderWithProviders.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 1,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/utils/test-helpers.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "tests/utils/testUtils.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 1,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "vite.config.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 9,
+          "ternary": 9,
+          "logical": 0,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 10,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "vite.main.config.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 1,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "vite.preload.config.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 0,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    },
+    {
+      "path": "vitest.config.fast.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 3,
+          "ternary": 3,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 10,
+          "complexity": "moderate"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
+      "path": "vitest.setup.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 4,
+          "ternary": 0,
+          "logical": 0,
+          "complexity": "simple"
+        },
+        "returns": {
+          "count": 0,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "simple"
+    }
+  ],
+  "timestamp": "2025-09-02T00:19:48.828Z",
+  "config": {
+    "rootDir": "/Users/pete/workspace/romper/worktrees/architecture-analysis",
+    "thresholds": {
+      "props": {
+        "simple": 5,
+        "moderate": 10,
+        "complex": 15
+      },
+      "hooks": {
+        "simple": 3,
+        "moderate": 6,
+        "complex": 10
+      },
+      "conditionals": {
+        "simple": 5,
+        "moderate": 10,
+        "complex": 20
+      },
+      "returnFields": {
+        "simple": 5,
+        "moderate": 10,
+        "complex": 15
+      }
+    }
+  }
+}

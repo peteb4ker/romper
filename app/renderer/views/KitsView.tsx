@@ -1,3 +1,5 @@
+// Removed unused import
+
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 interface ImportMeta {
@@ -12,6 +14,7 @@ import InvalidLocalStoreDialog from "../components/dialogs/InvalidLocalStoreDial
 import { useKitDataManager } from "../components/hooks/kit-management/useKitDataManager";
 import { useKitFilters } from "../components/hooks/kit-management/useKitFilters";
 import { useKitNavigation } from "../components/hooks/kit-management/useKitNavigation";
+import { useKitSearch } from "../components/hooks/kit-management/useKitSearch";
 import { useKitViewMenuHandlers } from "../components/hooks/kit-management/useKitViewMenuHandlers";
 import { useDialogState } from "../components/hooks/shared/useDialogState";
 import { useGlobalKeyboardShortcuts } from "../components/hooks/shared/useGlobalKeyboardShortcuts";
@@ -116,10 +119,19 @@ const KitsView: React.FC = () => {
     refreshAllKitsAndSamples,
   });
 
-  // Kit filters management for favorites functionality
-  const kitFilters = useKitFilters({
+  // Kit search functionality
+  const search = useKitSearch({
+    allKitSamples,
     kits,
-    onMessage: showMessage,
+  });
+
+  // No-op message function for filters
+  const noOpMessage = useCallback(() => {}, []);
+
+  // Kit filters management for favorites functionality (applied after search)
+  const kitFilters = useKitFilters({
+    kits: search.filteredKits,
+    onMessage: noOpMessage,
   });
 
   // Get current kit from shared data for keyboard shortcuts
@@ -258,10 +270,6 @@ const KitsView: React.FC = () => {
     const handleRefreshSamples = (event: Event) => {
       const customEvent = event as CustomEvent<{ kitName: string }>;
       if (customEvent.detail.kitName === selectedKitRef.current) {
-        console.log(
-          "[KitsView] Refreshing samples after undo operation for kit:",
-          selectedKitRef.current,
-        );
         reloadCurrentKitSamplesRef.current(selectedKitRef.current);
       }
     };
@@ -353,16 +361,22 @@ const KitsView: React.FC = () => {
           handleToggleFavorite={kitFilters.handleToggleFavorite}
           handleToggleFavoritesFilter={kitFilters.handleToggleFavoritesFilter}
           handleToggleModifiedFilter={kitFilters.handleToggleModifiedFilter}
+          isSearching={search.isSearching}
           // Other props
           kits={kitFilters.filteredKits}
           localStorePath={localStorePath}
           modifiedCount={kitFilters.modifiedCount}
           onMessage={showMessage}
           onRefreshKits={refreshAllKitsAndSamples}
+          onSearchChange={search.searchChange}
+          onSearchClear={search.clearSearch}
           onSelectKit={navigation.handleSelectKit}
           onShowSettings={dialogState.openPreferences}
           ref={kitBrowserRef}
           sampleCounts={sampleCounts}
+          // Search props
+          searchQuery={search.searchQuery}
+          searchResultCount={search.searchResultCount}
           setLocalStorePath={setLocalStorePath}
           showFavoritesOnly={kitFilters.showFavoritesOnly}
           showModifiedOnly={kitFilters.showModifiedOnly}

@@ -13,16 +13,22 @@ interface KitBrowserContainerProps {
   handleToggleFavorite?: (kitName: string) => void;
   handleToggleFavoritesFilter?: () => void;
   handleToggleModifiedFilter?: () => void;
+  isSearching?: boolean;
   // Other props
   kits: KitWithRelations[];
   localStorePath: null | string;
   modifiedCount?: number;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onRefreshKits: () => Promise<void>;
+  onSearchChange?: (query: string) => void;
+  onSearchClear?: () => void;
   onSelectKit: (kitName: string) => void;
   onShowSettings: () => void;
   ref?: React.Ref<KitBrowserHandle>;
   sampleCounts: Record<string, [number, number, number, number]>;
+  // Search functionality
+  searchQuery?: string;
+  searchResultCount?: number;
   setLocalStorePath: (path: string) => void;
   showFavoritesOnly?: boolean;
   showModifiedOnly?: boolean;
@@ -43,15 +49,21 @@ const KitBrowserContainer = React.forwardRef<
     handleToggleFavorite,
     handleToggleFavoritesFilter,
     handleToggleModifiedFilter,
+    isSearching,
     // Other props
     kits,
     localStorePath,
     modifiedCount,
     onMessage,
     onRefreshKits,
+    onSearchChange,
+    onSearchClear,
     onSelectKit,
     onShowSettings,
     sampleCounts,
+    // Search props
+    searchQuery,
+    searchResultCount,
     setLocalStorePath,
     showFavoritesOnly,
     showModifiedOnly,
@@ -91,16 +103,22 @@ const KitBrowserContainer = React.forwardRef<
       handleToggleFavorite={handleToggleFavorite}
       handleToggleFavoritesFilter={handleToggleFavoritesFilter}
       handleToggleModifiedFilter={handleToggleModifiedFilter}
+      isSearching={isSearching}
       // Other props
       kits={kits}
       localStorePath={localStorePath}
       modifiedCount={modifiedCount}
       onMessage={handleMessage}
       onRefreshKits={handleRefreshKits}
+      onSearchChange={onSearchChange}
+      onSearchClear={onSearchClear}
       onSelectKit={handleSelectKit}
       onShowSettings={onShowSettings}
       ref={ref}
       sampleCounts={sampleCounts}
+      // Search props
+      searchQuery={searchQuery}
+      searchResultCount={searchResultCount}
       setLocalStorePath={handleSetLocalStorePath}
       showFavoritesOnly={showFavoritesOnly}
       showModifiedOnly={showModifiedOnly}

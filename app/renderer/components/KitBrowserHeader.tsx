@@ -3,18 +3,26 @@ import { FaStar } from "react-icons/fa";
 import { FiCheckCircle, FiDownload, FiEdit3, FiSettings } from "react-icons/fi";
 
 import { useKitBrowserHeader } from "./hooks/kit-management/useKitBrowserHeader";
+import SearchInput from "./SearchInput";
 
 interface KitBrowserHeaderProps {
   bankNav?: React.ReactNode;
   favoritesCount?: number;
+  isSearching?: boolean;
   modifiedCount?: number;
+  onSearchChange?: (query: string) => void;
+  onSearchClear?: () => void;
   onShowLocalStoreWizard: () => void;
   onShowNewKit: () => void; // Used by useKitBrowserHeader hook
   onShowSettings: () => void;
   onSyncToSdCard?: () => void;
   onToggleFavoritesFilter?: () => void;
   onToggleModifiedFilter?: () => void;
+
   onValidateLocalStore: () => void;
+  // Search props
+  searchQuery?: string;
+  searchResultCount?: number;
   // Task 20.1.4: Favorites filter props
   showFavoritesOnly?: boolean;
   // Task 20.2.2: Additional filter props
@@ -27,12 +35,12 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
 
   return (
     <div className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800 pt-2 pr-2 pl-2 pb-0 flex flex-col gap-2 items-stretch justify-between shadow-sm border-b border-gray-200 dark:border-slate-700 mt-0">
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full gap-4">
         {/* Left: Sync and New Kit */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {props.onSyncToSdCard && (
             <button
-              className="px-3 py-1.5 text-xs bg-orange-600 text-white rounded shadow-sm hover:bg-orange-700 transition-colors font-semibold flex items-center gap-1.5"
+              className="px-3 py-2 text-xs bg-orange-600 text-white rounded shadow-sm hover:bg-orange-700 transition-colors font-medium flex items-center gap-1.5"
               data-testid="sync-to-sd-card"
               onClick={props.onSyncToSdCard}
               title="Sync modified kits to SD card"
@@ -42,18 +50,34 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
             </button>
           )}
           <button
-            className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded shadow-sm hover:bg-blue-700 transition-colors font-semibold"
+            className="px-3 py-2 text-xs bg-blue-600 text-white rounded shadow-sm hover:bg-blue-700 transition-colors font-medium"
             onClick={handleShowNewKit}
           >
             + New Kit
           </button>
         </div>
 
-        {/* Center: Filters */}
+        {/* Center: Search Input */}
+        {props.onSearchChange && (
+          <div className="flex-1 flex justify-center">
+            <SearchInput
+              actions={{
+                onChange: props.onSearchChange,
+                onClear: props.onSearchClear || (() => {}),
+              }}
+              state={{
+                isSearching: props.isSearching || false,
+                value: props.searchQuery || "",
+              }}
+            />
+          </div>
+        )}
+
+        {/* Right: Filters and Settings */}
         <div className="flex items-center gap-2">
           {props.onToggleFavoritesFilter && (
             <button
-              className={`px-3 py-1.5 text-xs rounded shadow-sm transition flex items-center gap-1.5 ${
+              className={`px-3 py-2 text-xs rounded shadow-sm transition font-medium flex items-center gap-1.5 ${
                 props.showFavoritesOnly
                   ? "bg-yellow-500 text-white hover:bg-yellow-600"
                   : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
@@ -83,7 +107,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
 
           {props.onToggleModifiedFilter && (
             <button
-              className={`px-3 py-1.5 text-xs rounded shadow-sm transition flex items-center gap-1.5 ${
+              className={`px-3 py-2 text-xs rounded shadow-sm transition font-medium flex items-center gap-1.5 ${
                 props.showModifiedOnly
                   ? "bg-amber-500 text-white hover:bg-amber-600"
                   : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
@@ -115,7 +139,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
         {/* Right: System Actions */}
         <div className="flex items-center gap-2">
           <button
-            className="px-3 py-1.5 text-xs bg-gray-600 text-white rounded shadow-sm hover:bg-gray-700 transition-colors font-medium flex items-center gap-1.5"
+            className="px-3 py-2 text-xs bg-gray-600 text-white rounded shadow-sm hover:bg-gray-700 transition-colors font-medium flex items-center gap-1.5"
             onClick={props.onValidateLocalStore}
             title="Validate local store and database consistency"
           >
@@ -124,7 +148,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           </button>
           <button
             aria-label="Settings"
-            className="px-3 py-1.5 text-xs bg-gray-600 text-white rounded shadow-sm hover:bg-gray-700 transition-colors font-medium flex items-center gap-1.5"
+            className="px-3 py-2 text-xs bg-gray-600 text-white rounded shadow-sm hover:bg-gray-700 transition-colors font-medium flex items-center gap-1.5"
             onClick={props.onShowSettings}
             title="Configure settings and preferences"
           >

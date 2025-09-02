@@ -32,6 +32,10 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     setConfirmDestructiveActions(enabled);
   }, []);
 
+  const refreshLocalStoreStatus = useCallback(async () => {
+    // Mock implementation - no-op for tests
+  }, []);
+
   const contextValue = useMemo(
     () => ({
       confirmDestructiveActions,
@@ -46,6 +50,7 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         isValid: true,
         localStorePath: "/mock/local/store",
       },
+      refreshLocalStoreStatus,
 
       setConfirmDestructiveActions: setConfirmDestructiveActionsFunc,
 
@@ -64,6 +69,7 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       setThemeModeFunc,
       setDefaultToMonoSamplesFunc,
       setConfirmDestructiveActionsFunc,
+      refreshLocalStoreStatus,
     ],
   );
 

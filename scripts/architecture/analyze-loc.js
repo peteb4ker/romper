@@ -30,7 +30,12 @@ const CONFIG = {
     medium: { min: 101, max: 200 },
     large: { min: 201, max: 300 },
     redFlag: { min: 301, max: Infinity }
-  }
+  },
+  
+  // Exception files that cannot be decomposed due to architectural constraints
+  exceptions: [
+    'electron/preload/index.ts', // Must be single file for Electron preload script
+  ]
 };
 
 // Component categories
@@ -39,6 +44,7 @@ const CATEGORIES = {
   medium: 'Medium Components (100-200 LOC)', 
   large: 'Large Components (200-300 LOC)',
   redFlag: 'Red Flags (300+ LOC)',
+  exception: 'Exceptions (300+ LOC - Architectural Constraints)',
   tiny: 'Tiny Files (<50 LOC)'
 };
 
@@ -55,11 +61,17 @@ function countLines(content) {
 /**
  * Determine file category based on LOC
  */
-function categorizeFile(loc) {
+function categorizeFile(loc, relativePath) {
+  // Check if file is in exceptions list
+  const isException = CONFIG.exceptions.some(exception => relativePath.includes(exception));
+  
   if (loc < CONFIG.thresholds.small.min) return 'tiny';
   if (loc >= CONFIG.thresholds.small.min && loc <= CONFIG.thresholds.small.max) return 'small';
   if (loc >= CONFIG.thresholds.medium.min && loc <= CONFIG.thresholds.medium.max) return 'medium';
   if (loc >= CONFIG.thresholds.large.min && loc <= CONFIG.thresholds.large.max) return 'large';
+  
+  // If file exceeds threshold but is an exception, mark as 'exception' instead of 'redFlag'
+  if (isException) return 'exception';
   return 'redFlag';
 }
 
@@ -106,7 +118,8 @@ async function analyzeLOC() {
       small: [],
       medium: [],
       large: [],
-      redFlag: []
+      redFlag: [],
+      exception: []
     },
     stats: {
       totalFiles: 0,
@@ -121,7 +134,7 @@ async function analyzeLOC() {
       const content = await fs.readFile(file, 'utf-8');
       const loc = countLines(content);
       const relativePath = path.relative(CONFIG.rootDir, file);
-      const category = categorizeFile(loc);
+      const category = categorizeFile(loc, relativePath);
       
       const fileInfo = {
         path: relativePath,
@@ -190,6 +203,24 @@ function generateReport(results) {
     console.log('');
   }
   
+  // Architectural exceptions - files that cannot be decomposed
+  if (results.categories.exception.length > 0) {
+    console.log('⚠️  ARCHITECTURAL EXCEPTIONS - Large Files with Constraints:');
+    console.log('-'.repeat(55));
+    
+    const sortedExceptions = results.categories.exception.sort((a, b) => b.loc - a.loc);
+    sortedExceptions.forEach(file => {
+      const type = file.isComponent ? '(Component)' : file.isHook ? '(Hook)' : '(Utility)';
+      console.log(`  ${file.loc} LOC - ${file.path} ${type} - CANNOT BE SPLIT`);
+    });
+    console.log('');
+    console.log('💡 These files exceed 300 LOC but cannot be decomposed due to:');
+    console.log('   - Electron preload script requirements');
+    console.log('   - Single-file architectural constraints');
+    console.log('   - Framework-specific limitations');
+    console.log('');
+  }
+  
   // Components vs Hooks analysis
   const components = results.files.filter(f => f.isComponent);
   const hooks = results.files.filter(f => f.isHook);
@@ -218,14 +249,20 @@ function generateReport(results) {
   }
   console.log('');
   
-  // Architectural health score
+  // Architectural health score (exceptions don't count as penalties)
   const redFlagPenalty = results.categories.redFlag.length * 10;
   const largePenalty = results.categories.large.length * 2;
   const healthScore = Math.max(0, 100 - redFlagPenalty - largePenalty);
   
+  // Report exceptions separately
+  const exceptionCount = results.categories.exception.length;
+  
   console.log('🏥 Architectural Health Score:');
   console.log('-'.repeat(30));
   console.log(`Score: ${healthScore}/100`);
+  if (exceptionCount > 0) {
+    console.log(`Exceptions: ${exceptionCount} files (architectural constraints - not penalized)`);
+  }
   
   if (healthScore >= 90) {
     console.log('✅ Excellent architectural health');

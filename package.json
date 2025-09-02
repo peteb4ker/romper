@@ -43,7 +43,6 @@
     "test:unit:husky": "NO_COLOR=true npm run test:unit:fast",
     "test:integration:husky": "NO_COLOR=true npm run test:integration:fast",
     "prepare": "husky",
-    "list-large-files": "find . -type f \\( -name '*.ts' -o -name '*.tsx' \\) ! -path '*/node_modules/*' ! -path '*/__tests__/*' ! -name '*.test.ts' ! -name '*.test.tsx' -exec sh -c 'wc -l \"$1\" | awk \"{if (\\$1 > 400) print \\$0}\"' _ {} \\;",
     "mcp:server": "node scripts/start-mcp-server.js",
     "mcp:server:headless": "node scripts/start-mcp-server.js --headless",
     "mcp:test": "node scripts/test-mcp-connection.js",

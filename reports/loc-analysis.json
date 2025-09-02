@@ -9,21 +9,21 @@
     },
     {
       "path": "app/renderer/components/KitBrowser.tsx",
-      "loc": 273,
+      "loc": 283,
       "category": "large",
       "isComponent": true,
       "isHook": false
     },
     {
       "path": "app/renderer/components/KitBrowserContainer.tsx",
-      "loc": 94,
-      "category": "small",
+      "loc": 109,
+      "category": "medium",
       "isComponent": true,
       "isHook": false
     },
     {
       "path": "app/renderer/components/KitBrowserHeader.tsx",
-      "loc": 134,
+      "loc": 155,
       "category": "medium",
       "isComponent": true,
       "isHook": false
@@ -58,7 +58,7 @@
     },
     {
       "path": "app/renderer/components/KitGridItem.tsx",
-      "loc": 231,
+      "loc": 257,
       "category": "large",
       "isComponent": true,
       "isHook": false
@@ -72,7 +72,7 @@
     },
     {
       "path": "app/renderer/components/KitItem.tsx",
-      "loc": 162,
+      "loc": 188,
       "category": "medium",
       "isComponent": true,
       "isHook": false
@@ -144,6 +144,13 @@
       "path": "app/renderer/components/SampleWaveform.tsx",
       "loc": 198,
       "category": "medium",
+      "isComponent": true,
+      "isHook": false
+    },
+    {
+      "path": "app/renderer/components/SearchInput.tsx",
+      "loc": 96,
+      "category": "small",
       "isComponent": true,
       "isHook": false
     },
@@ -375,6 +382,13 @@
       "path": "app/renderer/components/hooks/kit-management/useKitScan.ts",
       "loc": 196,
       "category": "medium",
+      "isComponent": false,
+      "isHook": true
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitSearch.ts",
+      "loc": 55,
+      "category": "small",
       "isComponent": false,
       "isHook": true
     },
@@ -730,7 +744,7 @@
     },
     {
       "path": "app/renderer/components/shared/kitItemUtils.ts",
-      "loc": 36,
+      "loc": 46,
       "category": "tiny",
       "isComponent": false,
       "isHook": false
@@ -932,6 +946,13 @@
       "isHook": false
     },
     {
+      "path": "app/renderer/utils/kitSearchUtils.ts",
+      "loc": 117,
+      "category": "medium",
+      "isComponent": false,
+      "isHook": false
+    },
+    {
       "path": "app/renderer/utils/sampleGroupingUtils.ts",
       "loc": 46,
       "category": "tiny",
@@ -961,7 +982,7 @@
     },
     {
       "path": "app/renderer/views/KitsView.tsx",
-      "loc": 329,
+      "loc": 336,
       "category": "redFlag",
       "isComponent": true,
       "isHook": false
@@ -1249,7 +1270,7 @@
     {
       "path": "electron/preload/index.ts",
       "loc": 544,
-      "category": "redFlag",
+      "category": "exception",
       "isComponent": false,
       "isHook": false
     },
@@ -1587,7 +1608,7 @@
       },
       {
         "path": "app/renderer/components/shared/kitItemUtils.ts",
-        "loc": 36,
+        "loc": 46,
         "category": "tiny",
         "isComponent": false,
         "isHook": false
@@ -1749,13 +1770,6 @@
     ],
     "small": [
       {
-        "path": "app/renderer/components/KitBrowserContainer.tsx",
-        "loc": 94,
-        "category": "small",
-        "isComponent": true,
-        "isHook": false
-      },
-      {
         "path": "app/renderer/components/KitDetailsContainer.tsx",
         "loc": 85,
         "category": "small",
@@ -1765,6 +1779,13 @@
       {
         "path": "app/renderer/components/KitStepSequencer.tsx",
         "loc": 54,
+        "category": "small",
+        "isComponent": true,
+        "isHook": false
+      },
+      {
+        "path": "app/renderer/components/SearchInput.tsx",
+        "loc": 96,
         "category": "small",
         "isComponent": true,
         "isHook": false
@@ -1814,6 +1835,13 @@
       {
         "path": "app/renderer/components/hooks/kit-management/useKitPlayback.ts",
         "loc": 79,
+        "category": "small",
+        "isComponent": false,
+        "isHook": true
+      },
+      {
+        "path": "app/renderer/components/hooks/kit-management/useKitSearch.ts",
+        "loc": 55,
         "category": "small",
         "isComponent": false,
         "isHook": true
@@ -2045,8 +2073,15 @@
     ],
     "medium": [
       {
+        "path": "app/renderer/components/KitBrowserContainer.tsx",
+        "loc": 109,
+        "category": "medium",
+        "isComponent": true,
+        "isHook": false
+      },
+      {
         "path": "app/renderer/components/KitBrowserHeader.tsx",
-        "loc": 134,
+        "loc": 155,
         "category": "medium",
         "isComponent": true,
         "isHook": false
@@ -2067,7 +2102,7 @@
       },
       {
         "path": "app/renderer/components/KitItem.tsx",
-        "loc": 162,
+        "loc": 188,
         "category": "medium",
         "isComponent": true,
         "isHook": false
@@ -2290,6 +2325,13 @@
         "isHook": false
       },
       {
+        "path": "app/renderer/utils/kitSearchUtils.ts",
+        "loc": 117,
+        "category": "medium",
+        "isComponent": false,
+        "isHook": false
+      },
+      {
         "path": "app/renderer/utils/wavMetadataFormatter.ts",
         "loc": 179,
         "category": "medium",
@@ -2426,14 +2468,14 @@
     "large": [
       {
         "path": "app/renderer/components/KitBrowser.tsx",
-        "loc": 273,
+        "loc": 283,
         "category": "large",
         "isComponent": true,
         "isHook": false
       },
       {
         "path": "app/renderer/components/KitGridItem.tsx",
-        "loc": 231,
+        "loc": 257,
         "category": "large",
         "isComponent": true,
         "isHook": false
@@ -2616,13 +2658,6 @@
         "isHook": false
       },
       {
-        "path": "electron/preload/index.ts",
-        "loc": 544,
-        "category": "redFlag",
-        "isComponent": false,
-        "isHook": false
-      },
-      {
         "path": "electron/main/services/crud/sampleCrudService.ts",
         "loc": 467,
         "category": "redFlag",
@@ -2673,7 +2708,7 @@
       },
       {
         "path": "app/renderer/views/KitsView.tsx",
-        "loc": 329,
+        "loc": 336,
         "category": "redFlag",
         "isComponent": true,
         "isHook": false
@@ -2699,11 +2734,20 @@
         "isComponent": false,
         "isHook": false
       }
+    ],
+    "exception": [
+      {
+        "path": "electron/preload/index.ts",
+        "loc": 544,
+        "category": "exception",
+        "isComponent": false,
+        "isHook": false
+      }
     ]
   },
   "stats": {
-    "totalFiles": 192,
-    "totalLines": 24971,
+    "totalFiles": 195,
+    "totalLines": 25354,
     "averageLines": 130
   }
 }

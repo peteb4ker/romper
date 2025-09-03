@@ -1,23 +1,24 @@
-import type { Sample } from "@romper/shared/db/schema.js";
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as romperDbCoreORM from "../../../db/romperDbCoreORM.js";
 import * as fileSystemUtils from "../../../utils/fileSystemUtils.js";
 import * as stereoProcessingUtils from "../../../utils/stereoProcessingUtils.js";
-import * as sampleValidator from "../../validation/sampleValidator.js";
+import * as sampleBatchOperations from "../../sampleBatchOperations.js";
+import * as sampleValidation from "../../sampleValidation.js";
 import { SampleCrudService } from "../sampleCrudService";
 
 // Mock dependencies
 vi.mock("../../../db/romperDbCoreORM.js");
 vi.mock("../../../utils/fileSystemUtils.js");
 vi.mock("../../../utils/stereoProcessingUtils.js");
-vi.mock("../../validation/sampleValidator.js");
+vi.mock("../../sampleBatchOperations.js");
+vi.mock("../../sampleValidation.js");
 
 const mockORM = vi.mocked(romperDbCoreORM);
 const mockFileSystem = vi.mocked(fileSystemUtils);
 const mockStereoUtils = vi.mocked(stereoProcessingUtils);
-const mockValidator = vi.mocked(sampleValidator);
+const mockBatchOps = vi.mocked(sampleBatchOperations);
+const mockValidation = vi.mocked(sampleValidation);
 
 describe("SampleCrudService", () => {
   let service: SampleCrudService;
@@ -33,31 +34,48 @@ describe("SampleCrudService", () => {
       "/mock/path",
     );
     mockFileSystem.ServicePathManager.getDbPath.mockReturnValue(mockDbPath);
+
+    // Mock validation service
+    mockValidation.sampleValidationService.validateVoiceAndSlot.mockReturnValue(
+      {
+        isValid: true,
+      },
+    );
+    mockValidation.sampleValidationService.validateSampleFile.mockReturnValue({
+      isValid: true,
+    });
+    mockValidation.sampleValidationService.checkSampleExists.mockReturnValue({
+      exists: false,
+    });
   });
 
   describe("addSampleToSlot", () => {
     it("should successfully add a sample", () => {
-      // Mock validation
-      mockValidator.sampleValidator.validateVoiceAndSlot.mockReturnValue({
-        isValid: true,
-      });
-      mockValidator.sampleValidator.validateSampleFile.mockReturnValue({
-        isValid: true,
-      });
+      // Mock validation (already set in beforeEach, but override for clarity)
+      mockValidation.sampleValidationService.validateVoiceAndSlot.mockReturnValue(
+        {
+          isValid: true,
+        },
+      );
+      mockValidation.sampleValidationService.validateSampleFile.mockReturnValue(
+        {
+          isValid: true,
+        },
+      );
 
       // Mock stereo configuration
       mockStereoUtils.determineStereoConfiguration.mockReturnValue(false);
 
       // Mock database operations
-      mockORM.getKitSamples.mockReturnValue({
-        data: [],
-        success: true,
+      mockValidation.sampleValidationService.checkSampleExists.mockReturnValue({
+        exists: false,
+        sample: undefined,
       });
       mockORM.addSample.mockReturnValue({
         data: { sampleId: 123 },
         success: true,
       });
-      mockORM.markKitAsModified.mockReturnValue(undefined);
+      mockORM.markKitAsModified.mockReturnValue({ success: true });
 
       const result = service.addSampleToSlot(
         mockSettings,
@@ -99,10 +117,12 @@ describe("SampleCrudService", () => {
     });
 
     it("should fail when voice/slot validation fails", () => {
-      mockValidator.sampleValidator.validateVoiceAndSlot.mockReturnValue({
-        error: "Invalid voice number",
-        isValid: false,
-      });
+      mockValidation.sampleValidationService.validateVoiceAndSlot.mockReturnValue(
+        {
+          error: "Invalid voice number",
+          isValid: false,
+        },
+      );
 
       const result = service.addSampleToSlot(
         mockSettings,
@@ -117,13 +137,17 @@ describe("SampleCrudService", () => {
     });
 
     it("should fail when file validation fails", () => {
-      mockValidator.sampleValidator.validateVoiceAndSlot.mockReturnValue({
-        isValid: true,
-      });
-      mockValidator.sampleValidator.validateSampleFile.mockReturnValue({
-        error: "File not found",
-        isValid: false,
-      });
+      mockValidation.sampleValidationService.validateVoiceAndSlot.mockReturnValue(
+        {
+          isValid: true,
+        },
+      );
+      mockValidation.sampleValidationService.validateSampleFile.mockReturnValue(
+        {
+          error: "File not found",
+          isValid: false,
+        },
+      );
 
       const result = service.addSampleToSlot(
         mockSettings,
@@ -139,36 +163,15 @@ describe("SampleCrudService", () => {
   });
 
   describe("deleteSampleFromSlot", () => {
-    it("should successfully delete a sample", () => {
-      // Mock validation
-      mockValidator.sampleValidator.validateVoiceAndSlot.mockReturnValue({
-        isValid: true,
-      });
-
-      const existingSample: Sample = {
-        created_at: "2023-01-01",
-        filename: "sample.wav",
-        id: 1,
-        is_stereo: false,
-        kit_name: "TestKit",
-        slot_number: 0,
-        source_path: "/path/to/sample.wav",
-        voice_number: 1,
+    it("should delegate to batch operations service", () => {
+      const mockResult = {
+        data: { affectedSamples: [], deletedSamples: [] },
+        success: true,
       };
 
-      // Mock database operations
-      mockORM.getKitSamples.mockReturnValue({
-        data: [existingSample],
-        success: true,
-      });
-      mockORM.deleteSamples.mockReturnValue({
-        data: {
-          affectedSamples: [],
-          deletedSamples: [existingSample],
-        },
-        success: true,
-      });
-      mockORM.markKitAsModified.mockReturnValue(undefined);
+      mockBatchOps.sampleBatchOperationsService.deleteSampleFromSlot.mockReturnValue(
+        mockResult,
+      );
 
       const result = service.deleteSampleFromSlot(
         mockSettings,
@@ -177,63 +180,10 @@ describe("SampleCrudService", () => {
         0,
       );
 
-      expect(result.success).toBe(true);
-      expect(mockORM.deleteSamples).toHaveBeenCalledWith(
-        mockDbPath,
-        "TestKit",
-        {
-          slotNumber: 0,
-          voiceNumber: 1,
-        },
-      );
-      expect(mockORM.markKitAsModified).toHaveBeenCalledWith(
-        mockDbPath,
-        "TestKit",
-      );
-    });
-
-    it("should fail when sample does not exist", () => {
-      mockValidator.sampleValidator.validateVoiceAndSlot.mockReturnValue({
-        isValid: true,
-      });
-      mockORM.getKitSamples.mockReturnValue({
-        data: [], // No existing samples
-        success: true,
-      });
-
-      const result = service.deleteSampleFromSlot(
-        mockSettings,
-        "TestKit",
-        1,
-        0,
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("No sample found in voice 1, slot 1 to delete");
-    });
-  });
-
-  describe("validateSampleMovement", () => {
-    it("should validate successful movement parameters", () => {
-      mockValidator.sampleValidator.validateVoiceAndSlot
-        .mockReturnValueOnce({ isValid: true }) // from
-        .mockReturnValueOnce({ isValid: true }); // to
-
-      // Access private method for testing
-      const result = (service as unknown).validateSampleMovement(1, 0, 2, 1);
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should reject movement to same position", () => {
-      mockValidator.sampleValidator.validateVoiceAndSlot
-        .mockReturnValueOnce({ isValid: true })
-        .mockReturnValueOnce({ isValid: true });
-
-      const result = (service as unknown).validateSampleMovement(1, 0, 1, 0);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Cannot move sample to the same position");
+      expect(result).toEqual(mockResult);
+      expect(
+        mockBatchOps.sampleBatchOperationsService.deleteSampleFromSlot,
+      ).toHaveBeenCalledWith(mockSettings, "TestKit", 1, 0);
     });
   });
 });

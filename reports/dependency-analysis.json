@@ -134,9 +134,9 @@
     },
     "totalViolations": 0
   },
-  "timestamp": "2025-09-02T17:45:47.035Z",
+  "timestamp": "2025-09-03T05:39:10.550Z",
   "config": {
-    "rootDir": "/Users/pete/workspace/romper/worktrees/refactor-sync-service",
+    "rootDir": "/Users/pete/workspace/romper/worktrees/refactor-sample-crud",
     "extensions": [
       ".ts",
       ".tsx"

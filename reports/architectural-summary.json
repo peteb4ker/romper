@@ -4,22 +4,22 @@
     "level": "POOR"
   },
   "codebase": {
-    "totalFiles": 199,
-    "totalLoc": 25358,
+    "totalFiles": 201,
+    "totalLoc": 25564,
     "avgLoc": 127,
     "components": 57,
     "hooks": 67
   },
   "criticalIssues": 1,
-  "redFlagFiles": 11,
+  "redFlagFiles": 10,
   "excessiveComplexity": 57,
   "topProblems": [
     {
       "category": "Lines of Code",
       "count": 5,
       "files": [
-        "electron/main/services/crud/sampleCrudService.ts (467 LOC)",
-        "electron/main/db/operations/crudOperations.ts (466 LOC)"
+        "electron/main/db/operations/crudOperations.ts (466 LOC)",
+        "app/renderer/components/dialogs/SyncUpdateDialog.tsx (406 LOC)"
       ]
     },
     {
@@ -43,9 +43,9 @@
     {
       "action": "Refactor oversized files",
       "files": [
-        "electron/main/services/crud/sampleCrudService.ts",
         "electron/main/db/operations/crudOperations.ts",
-        "app/renderer/components/dialogs/SyncUpdateDialog.tsx"
+        "app/renderer/components/dialogs/SyncUpdateDialog.tsx",
+        "app/renderer/components/hooks/voice-panels/useVoicePanelSlots.tsx"
       ]
     }
   ],

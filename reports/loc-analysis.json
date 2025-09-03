@@ -1136,8 +1136,8 @@
     },
     {
       "path": "electron/main/services/crud/sampleCrudService.ts",
-      "loc": 467,
-      "category": "redFlag",
+      "loc": 238,
+      "category": "large",
       "isComponent": false,
       "isHook": false
     },
@@ -1170,9 +1170,23 @@
       "isHook": false
     },
     {
+      "path": "electron/main/services/sampleBatchOperations.ts",
+      "loc": 284,
+      "category": "large",
+      "isComponent": false,
+      "isHook": false
+    },
+    {
       "path": "electron/main/services/sampleService.ts",
       "loc": 236,
       "category": "large",
+      "isComponent": false,
+      "isHook": false
+    },
+    {
+      "path": "electron/main/services/sampleValidation.ts",
+      "loc": 148,
+      "category": "medium",
       "isComponent": false,
       "isHook": false
     },
@@ -1206,7 +1220,7 @@
     },
     {
       "path": "electron/main/services/syncFileOperations.ts",
-      "loc": 220,
+      "loc": 226,
       "category": "large",
       "isComponent": false,
       "isHook": false
@@ -1220,7 +1234,7 @@
     },
     {
       "path": "electron/main/services/syncProgressManager.ts",
-      "loc": 165,
+      "loc": 164,
       "category": "medium",
       "isComponent": false,
       "isHook": false
@@ -1234,14 +1248,14 @@
     },
     {
       "path": "electron/main/services/syncSampleProcessing.ts",
-      "loc": 93,
+      "loc": 96,
       "category": "small",
       "isComponent": false,
       "isHook": false
     },
     {
       "path": "electron/main/services/syncService.ts",
-      "loc": 221,
+      "loc": 215,
       "category": "large",
       "isComponent": false,
       "isHook": false
@@ -1255,7 +1269,7 @@
     },
     {
       "path": "electron/main/services/syncValidationService.ts",
-      "loc": 172,
+      "loc": 173,
       "category": "medium",
       "isComponent": false,
       "isHook": false
@@ -2044,7 +2058,7 @@
       },
       {
         "path": "electron/main/services/syncSampleProcessing.ts",
-        "loc": 93,
+        "loc": 96,
         "category": "small",
         "isComponent": false,
         "isHook": false
@@ -2451,6 +2465,13 @@
         "isHook": false
       },
       {
+        "path": "electron/main/services/sampleValidation.ts",
+        "loc": 148,
+        "category": "medium",
+        "isComponent": false,
+        "isHook": false
+      },
+      {
         "path": "electron/main/services/slot/sampleSlotService.ts",
         "loc": 113,
         "category": "medium",
@@ -2459,7 +2480,7 @@
       },
       {
         "path": "electron/main/services/syncProgressManager.ts",
-        "loc": 165,
+        "loc": 164,
         "category": "medium",
         "isComponent": false,
         "isHook": false
@@ -2480,7 +2501,7 @@
       },
       {
         "path": "electron/main/services/syncValidationService.ts",
-        "loc": 172,
+        "loc": 173,
         "category": "medium",
         "isComponent": false,
         "isHook": false
@@ -2677,8 +2698,22 @@
         "isHook": false
       },
       {
+        "path": "electron/main/services/crud/sampleCrudService.ts",
+        "loc": 238,
+        "category": "large",
+        "isComponent": false,
+        "isHook": false
+      },
+      {
         "path": "electron/main/services/localStoreService.ts",
         "loc": 220,
+        "category": "large",
+        "isComponent": false,
+        "isHook": false
+      },
+      {
+        "path": "electron/main/services/sampleBatchOperations.ts",
+        "loc": 284,
         "category": "large",
         "isComponent": false,
         "isHook": false
@@ -2692,7 +2727,7 @@
       },
       {
         "path": "electron/main/services/syncFileOperations.ts",
-        "loc": 220,
+        "loc": 226,
         "category": "large",
         "isComponent": false,
         "isHook": false
@@ -2706,20 +2741,13 @@
       },
       {
         "path": "electron/main/services/syncService.ts",
-        "loc": 221,
+        "loc": 215,
         "category": "large",
         "isComponent": false,
         "isHook": false
       }
     ],
     "redFlag": [
-      {
-        "path": "electron/main/services/crud/sampleCrudService.ts",
-        "loc": 467,
-        "category": "redFlag",
-        "isComponent": false,
-        "isHook": false
-      },
       {
         "path": "electron/main/db/operations/crudOperations.ts",
         "loc": 466,
@@ -2802,8 +2830,8 @@
     ]
   },
   "stats": {
-    "totalFiles": 199,
-    "totalLines": 25358,
+    "totalFiles": 201,
+    "totalLines": 25564,
     "averageLines": 127
   }
 }

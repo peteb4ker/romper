@@ -1,6 +1,6 @@
 # Romper Architectural Assessment Report
 
-**Generated**: 2025-09-02T17:45:47.757Z
+**Generated**: 2025-09-03T05:39:11.260Z
 **Overall Health Score**: 0/100
 
 ## Executive Summary
@@ -9,8 +9,8 @@
 
 ### Key Metrics
 
-- **Total Files**: 199
-- **Total LOC**: 25,358
+- **Total Files**: 201
+- **Total LOC**: 25,564
 - **Average LOC/File**: 127
 - **Components**: 57
 - **Custom Hooks**: 67
@@ -18,14 +18,14 @@
 ## Critical Issues Requiring Attention
 
 ### CRITICAL: Lines of Code
-11 files exceed 300 LOC limit
+10 files exceed 300 LOC limit
 
 **Top Offenders:**
-- electron/main/services/crud/sampleCrudService.ts (467 LOC)
 - electron/main/db/operations/crudOperations.ts (466 LOC)
 - app/renderer/components/dialogs/SyncUpdateDialog.tsx (406 LOC)
 - app/renderer/components/hooks/voice-panels/useVoicePanelSlots.tsx (374 LOC)
 - app/renderer/components/dialogs/PreferencesDialog.tsx (371 LOC)
+- app/renderer/components/utils/databaseScanning.ts (342 LOC)
 
 ### HIGH: Component Complexity
 57 files with excessive complexity
@@ -51,9 +51,9 @@
 Break down files exceeding 300 LOC
 
 **Priority Files:**
-- electron/main/services/crud/sampleCrudService.ts
 - electron/main/db/operations/crudOperations.ts
 - app/renderer/components/dialogs/SyncUpdateDialog.tsx
+- app/renderer/components/hooks/voice-panels/useVoicePanelSlots.tsx
 **Impact**: Reduces maintenance burden and improves testability
 
 ### NEAR-TERM: Simplify component complexity
@@ -76,7 +76,7 @@ Add pre-commit hooks for LOC limits and complexity checks
 ## Health Score Breakdown
 
 Starting Score: 100
-LOC red flags: -110 (11 files >300 LOC)
+LOC red flags: -100 (10 files >300 LOC)
 Excessive complexity: -285 (57 files)
 
 **Final Score**: 0/100

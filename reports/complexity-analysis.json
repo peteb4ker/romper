@@ -2,8 +2,8 @@
   "healthScore": 0,
   "complexityDistribution": {
     "simple": 76,
-    "moderate": 43,
-    "complex": 39,
+    "moderate": 44,
+    "complex": 40,
     "excessive": 57
   },
   "mostComplex": [
@@ -224,33 +224,6 @@
       "overallComplexity": "excessive"
     },
     {
-      "path": "electron/main/services/crud/sampleCrudService.ts",
-      "isComponent": false,
-      "isHook": false,
-      "metrics": {
-        "props": {
-          "count": 0,
-          "complexity": "simple"
-        },
-        "hooks": {
-          "total": 0,
-          "unique": 0,
-          "complexity": "simple"
-        },
-        "conditionals": {
-          "count": 41,
-          "ternary": 0,
-          "logical": 8,
-          "complexity": "excessive"
-        },
-        "returns": {
-          "count": 2,
-          "complexity": "simple"
-        }
-      },
-      "overallComplexity": "excessive"
-    },
-    {
       "path": "app/renderer/components/SampleWaveform.tsx",
       "isComponent": true,
       "isHook": false,
@@ -273,6 +246,33 @@
         "returns": {
           "count": 1,
           "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/hooks/kit-management/useKitDetailsLogic.ts",
+      "isComponent": false,
+      "isHook": true,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 6,
+          "unique": 6,
+          "complexity": "moderate"
+        },
+        "conditionals": {
+          "count": 30,
+          "ternary": 1,
+          "logical": 7,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 23,
+          "complexity": "excessive"
         }
       },
       "overallComplexity": "excessive"
@@ -4668,17 +4668,17 @@
           "complexity": "simple"
         },
         "conditionals": {
-          "count": 41,
+          "count": 9,
           "ternary": 0,
-          "logical": 8,
-          "complexity": "excessive"
+          "logical": 0,
+          "complexity": "moderate"
         },
         "returns": {
           "count": 2,
           "complexity": "simple"
         }
       },
-      "overallComplexity": "excessive"
+      "overallComplexity": "moderate"
     },
     {
       "path": "electron/main/services/kitService.ts",
@@ -4789,6 +4789,33 @@
       "overallComplexity": "moderate"
     },
     {
+      "path": "electron/main/services/sampleBatchOperations.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 17,
+          "ternary": 0,
+          "logical": 1,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
       "path": "electron/main/services/sampleService.ts",
       "isComponent": false,
       "isHook": false,
@@ -4814,6 +4841,33 @@
         }
       },
       "overallComplexity": "simple"
+    },
+    {
+      "path": "electron/main/services/sampleValidation.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 11,
+          "ternary": 0,
+          "logical": 4,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
     },
     {
       "path": "electron/main/services/scanService.ts",
@@ -6085,9 +6139,9 @@
       "overallComplexity": "simple"
     }
   ],
-  "timestamp": "2025-09-02T17:45:47.712Z",
+  "timestamp": "2025-09-03T05:39:11.221Z",
   "config": {
-    "rootDir": "/Users/pete/workspace/romper/worktrees/refactor-sync-service",
+    "rootDir": "/Users/pete/workspace/romper/worktrees/refactor-sample-crud",
     "thresholds": {
       "props": {
         "simple": 5,

@@ -2,8 +2,8 @@
   "healthScore": 0,
   "complexityDistribution": {
     "simple": 76,
-    "moderate": 42,
-    "complex": 36,
+    "moderate": 43,
+    "complex": 39,
     "excessive": 57
   },
   "mostComplex": [
@@ -29,33 +29,6 @@
         },
         "returns": {
           "count": 1,
-          "complexity": "simple"
-        }
-      },
-      "overallComplexity": "excessive"
-    },
-    {
-      "path": "electron/main/services/syncService.ts",
-      "isComponent": false,
-      "isHook": false,
-      "metrics": {
-        "props": {
-          "count": 0,
-          "complexity": "simple"
-        },
-        "hooks": {
-          "total": 0,
-          "unique": 0,
-          "complexity": "simple"
-        },
-        "conditionals": {
-          "count": 59,
-          "ternary": 11,
-          "logical": 3,
-          "complexity": "excessive"
-        },
-        "returns": {
-          "count": 3,
           "complexity": "simple"
         }
       },
@@ -272,6 +245,33 @@
         },
         "returns": {
           "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "excessive"
+    },
+    {
+      "path": "app/renderer/components/SampleWaveform.tsx",
+      "isComponent": true,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 7,
+          "complexity": "moderate"
+        },
+        "hooks": {
+          "total": 14,
+          "unique": 3,
+          "complexity": "excessive"
+        },
+        "conditionals": {
+          "count": 29,
+          "ternary": 0,
+          "logical": 3,
+          "complexity": "excessive"
+        },
+        "returns": {
+          "count": 1,
           "complexity": "simple"
         }
       },
@@ -4924,6 +4924,33 @@
       "overallComplexity": "simple"
     },
     {
+      "path": "electron/main/services/syncFileOperations.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 10,
+          "ternary": 0,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 1,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
       "path": "electron/main/services/syncPlannerService.ts",
       "isComponent": false,
       "isHook": false,
@@ -4945,6 +4972,33 @@
         },
         "returns": {
           "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/services/syncProgressManager.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 11,
+          "ternary": 2,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 1,
           "complexity": "simple"
         }
       },
@@ -4978,6 +5032,33 @@
       "overallComplexity": "moderate"
     },
     {
+      "path": "electron/main/services/syncSampleProcessing.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 6,
+          "ternary": 1,
+          "logical": 1,
+          "complexity": "moderate"
+        },
+        "returns": {
+          "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "moderate"
+    },
+    {
       "path": "electron/main/services/syncService.ts",
       "isComponent": false,
       "isHook": false,
@@ -4992,13 +5073,13 @@
           "complexity": "simple"
         },
         "conditionals": {
-          "count": 59,
-          "ternary": 11,
-          "logical": 3,
-          "complexity": "excessive"
+          "count": 20,
+          "ternary": 4,
+          "logical": 2,
+          "complexity": "complex"
         },
         "returns": {
-          "count": 3,
+          "count": 2,
           "complexity": "simple"
         }
       },
@@ -5026,6 +5107,33 @@
         },
         "returns": {
           "count": 2,
+          "complexity": "simple"
+        }
+      },
+      "overallComplexity": "complex"
+    },
+    {
+      "path": "electron/main/services/syncValidationService.ts",
+      "isComponent": false,
+      "isHook": false,
+      "metrics": {
+        "props": {
+          "count": 0,
+          "complexity": "simple"
+        },
+        "hooks": {
+          "total": 0,
+          "unique": 0,
+          "complexity": "simple"
+        },
+        "conditionals": {
+          "count": 12,
+          "ternary": 6,
+          "logical": 0,
+          "complexity": "complex"
+        },
+        "returns": {
+          "count": 3,
           "complexity": "simple"
         }
       },
@@ -5977,9 +6085,9 @@
       "overallComplexity": "simple"
     }
   ],
-  "timestamp": "2025-09-02T04:29:23.780Z",
+  "timestamp": "2025-09-02T17:45:47.712Z",
   "config": {
-    "rootDir": "/Users/pete/workspace/romper/worktrees/architecture-analysis",
+    "rootDir": "/Users/pete/workspace/romper/worktrees/refactor-sync-service",
     "thresholds": {
       "props": {
         "simple": 5,

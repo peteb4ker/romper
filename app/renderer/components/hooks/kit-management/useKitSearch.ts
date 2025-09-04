@@ -1,6 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type { KitWithSearchMatch } from "../../shared/kitItemUtils";
 
@@ -44,40 +44,19 @@ export function useKitSearch({
     return searchQuery && searchQuery.length >= 2 ? filteredKits.length : 0;
   }, [filteredKits.length, searchQuery]);
 
-  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-
   const searchChange = useCallback((query: string) => {
     setIsSearching(true);
     setSearchQuery(query);
 
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
     // Simulate brief search state for UI feedback
-    timeoutRef.current = setTimeout(() => {
+    setTimeout(() => {
       setIsSearching(false);
     }, 100);
   }, []);
 
   const clearSearch = useCallback(() => {
-    // Clear any pending timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = undefined;
-    }
     setSearchQuery("");
     setIsSearching(false);
-  }, []);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
   }, []);
 
   return {

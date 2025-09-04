@@ -1570,6 +1570,21 @@ describe("KitsView", () => {
 
   describe("Environment override scenarios", () => {
     it.skip("shows environment banner when override is detected", async () => {
+      // Mock environment variables to simulate non-test environment
+      const originalEnv = (import.meta as unknown).env;
+      (import.meta as unknown).env = {
+        MODE: "development",
+        VITE_ROMPER_TEST_MODE: undefined,
+      };
+
+      // We need to also patch process.env for the test
+      const originalProcessEnv = process.env;
+      process.env = {
+        ...originalProcessEnv,
+        NODE_ENV: "development",
+        VITE_ROMPER_TEST_MODE: undefined,
+      };
+
       const TestSettingsProviderWithEnvOverride: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
@@ -1607,13 +1622,31 @@ describe("KitsView", () => {
         </TestSettingsProviderWithEnvOverride>,
       );
 
-      // Wait for the component to render and check for environment override banner
+      // Give time for the useEffect to set the banner state
       await waitFor(() => {
-        expect(screen.getByTestId("kits-view")).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            "Test Mode: Using ROMPER_LOCAL_PATH environment override",
+          ),
+        ).toBeInTheDocument();
       });
 
-      // Component should render successfully with environment override settings
-      expect(screen.getByTestId("kits-view")).toBeInTheDocument();
+      // Should show dismiss button
+      const dismissButton = screen.getByText("Dismiss");
+      expect(dismissButton).toBeInTheDocument();
+
+      // Click dismiss
+      fireEvent.click(dismissButton);
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText(/Test Mode.*environment override/),
+        ).not.toBeInTheDocument();
+      });
+
+      // Restore original env
+      (import.meta as unknown).env = originalEnv;
+      process.env = originalProcessEnv;
     });
 
     it.skip("shows critical error dialog for invalid environment path", async () => {
@@ -1633,7 +1666,6 @@ describe("KitsView", () => {
             isValid: false,
             localStorePath: "/invalid/path",
           },
-          refreshLocalStoreStatus: vi.fn(),
           setConfirmDestructiveActions: vi.fn(),
           setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
@@ -1654,13 +1686,16 @@ describe("KitsView", () => {
         </TestSettingsProviderCriticalError>,
       );
 
-      // Component should render with critical error state but not crash
       await waitFor(() => {
-        expect(screen.getByTestId("kits-view")).toBeInTheDocument();
+        expect(
+          screen.getByText("Critical Configuration Error"),
+        ).toBeInTheDocument();
       });
 
-      // Component handles critical error state gracefully
-      expect(screen.getByTestId("kits-view")).toBeInTheDocument();
+      // Should show the error dialog with close app option
+      const confirmButton =
+        screen.getByText("OK") || screen.getByText("Close App");
+      expect(confirmButton).toBeInTheDocument();
     });
 
     it.skip("shows invalid local store dialog for invalid configuration", async () => {
@@ -1679,7 +1714,6 @@ describe("KitsView", () => {
             isValid: false,
             localStorePath: "/invalid/store",
           },
-          refreshLocalStoreStatus: vi.fn(),
           setConfirmDestructiveActions: vi.fn(),
           setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
@@ -1700,13 +1734,9 @@ describe("KitsView", () => {
         </TestSettingsProviderInvalidStore>,
       );
 
-      // Component should handle invalid store configuration gracefully
       await waitFor(() => {
-        expect(screen.getByTestId("kits-view")).toBeInTheDocument();
+        expect(screen.getByText("Invalid Local Store")).toBeInTheDocument();
       });
-
-      // Component renders with invalid store state without crashing
-      expect(screen.getByTestId("kits-view")).toBeInTheDocument();
     });
   });
 

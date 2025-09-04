@@ -6,7 +6,7 @@ vi.mock("../../utils/dbUtilities.js", () => ({
 }));
 
 import { withDb } from "../../utils/dbUtilities.js";
-import { updateKit } from "../crudOperations.js";
+import { updateKit } from "../kitCrudOperations.js";
 
 describe("updateKit - Unit Tests", () => {
   const mockDbDir = "/test/db";

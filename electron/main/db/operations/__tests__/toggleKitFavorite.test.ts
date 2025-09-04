@@ -6,7 +6,7 @@ vi.mock("../../utils/dbUtilities.js", () => ({
 }));
 
 import { withDb } from "../../utils/dbUtilities.js";
-import { toggleKitFavorite } from "../crudOperations.js";
+import { toggleKitFavorite } from "../kitCrudOperations.js";
 
 describe("toggleKitFavorite - Unit Tests", () => {
   const mockDbDir = "/test/db";

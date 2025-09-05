@@ -5,7 +5,7 @@ import type { SampleData } from "../../kitTypes";
 import SampleWaveform from "../../SampleWaveform";
 import { MAX_SLOTS_PER_VOICE } from "./constants";
 import { createCombinedDragHandlers } from "./dragUtils";
-import { DragAndDropHook } from "./useVoicePanelDragHandlers";
+import { BaseVoicePanelOptions } from "./types";
 
 // Re-export constant for backward compatibility
 export { MAX_SLOTS_PER_VOICE };
@@ -42,39 +42,12 @@ export interface SlotRenderingHook {
   };
 }
 
-export interface UseVoicePanelSlotRenderingOptions {
-  dragAndDropHook: DragAndDropHook;
+// Extends shared base interface with specific rendering handler requirements
+export interface UseVoicePanelSlotRenderingOptions
+  extends BaseVoicePanelOptions {
   handleCombinedDragLeave: () => void;
   handleCombinedDragOver: (e: React.DragEvent, slotNumber: number) => void;
   handleCombinedDrop: (e: React.DragEvent, slotNumber: number) => void;
-  isActive: boolean;
-  isEditable: boolean;
-  kitName: string;
-  onSampleSelect?: (voice: number, idx: number) => void;
-  onWaveformPlayingChange: (
-    voice: number,
-    sample: string,
-    playing: boolean,
-  ) => void;
-  playTriggers: { [key: string]: number };
-  renderDeleteButton: (slotNumber: number) => React.ReactElement;
-  renderPlayButton: (
-    isPlaying: boolean,
-    sampleName: string,
-  ) => React.ReactElement;
-  sampleActionsHook: {
-    handleSampleContextMenu: (
-      e: React.MouseEvent,
-      sampleData: SampleData | undefined,
-    ) => void;
-  };
-  sampleMetadata?: { [filename: string]: SampleData };
-  samplePlaying: { [key: string]: boolean };
-  samples: string[];
-  selectedIdx: number;
-  slotRenderingHook: SlotRenderingHook;
-  stopTriggers: { [key: string]: number };
-  voice: number;
 }
 
 /**

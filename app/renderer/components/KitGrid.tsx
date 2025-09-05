@@ -10,8 +10,9 @@ import React, {
 } from "react";
 
 import { useKitListLogic } from "./hooks/kit-management/useKitListLogic";
+import { useKitGridKeyboard } from "./hooks/useKitGridKeyboard";
 import { useKitListNavigation } from "./hooks/kit-management/useKitListNavigation";
-import KitGridItem from "./KitGridItem";
+import { KitGridCard } from "./KitGridCard";
 
 // Bank header component for grid layout
 interface BankHeaderProps {
@@ -174,57 +175,24 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       }
     }, [navFocusedKit, kitsToDisplay, setFocus]);
 
-    // Convert flat index to grid coordinates
-    const getGridCoords = useCallback(
-      (index: number) => {
-        const rowIndex = Math.floor(index / columnCount);
-        const columnIndex = index % columnCount;
-        return { columnIndex, rowIndex };
-      },
-      [columnCount],
-    );
-
-    // Convert grid coordinates to flat index
-    const getFlatIndex = useCallback(
-      (rowIndex: number, columnIndex: number) => {
-        return rowIndex * columnCount + columnIndex;
-      },
-      [columnCount],
-    );
-
-    // Scroll and focus logic for CSS grid
-    const scrollAndFocusKitByIndex = useCallback(
-      (idx: number) => {
-        if (idx < 0 || idx >= kitsToDisplay.length) return;
-
-        const kit = kitsToDisplay[idx];
-        const kitElement = containerRef.current?.querySelector(
-          `[data-kit="${kit.name}"]`,
-        );
-
-        if (kitElement && containerRef.current) {
-          kitElement.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }
-
-        setFocus(idx);
-        if (onFocusKit) onFocusKit(kitsToDisplay[idx].name);
-      },
-      [kitsToDisplay, setFocus, onFocusKit, containerRef],
-    );
-
-    // Helper function to scroll to a kit by name
-    const scrollToKit = useCallback(
-      (kitName: string) => {
-        const index = kitsToDisplay.findIndex((kit) => kit.name === kitName);
-        if (index !== -1) {
-          scrollAndFocusKitByIndex(index);
-        }
-      },
-      [kitsToDisplay, scrollAndFocusKitByIndex],
-    );
+    // Use keyboard navigation hook
+    const {
+      getGridCoords,
+      getFlatIndex,
+      handleKeyDown,
+      scrollAndFocusKitByIndex,
+      scrollToKit,
+    } = useKitGridKeyboard({
+      columnCount,
+      containerRef,
+      focusedIdx,
+      kitsToDisplay,
+      onBankFocus,
+      onFocusKit,
+      onSelectKit,
+      rowCount,
+      setFocus,
+    });
 
     useImperativeHandle(
       ref,
@@ -235,85 +203,6 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       [scrollAndFocusKitByIndex, scrollToKit],
     );
 
-    // Helper function to handle bank selection via A-Z keys
-    const handleBankSelection = (e: React.KeyboardEvent) => {
-      const bank = e.key.toUpperCase();
-      const idx = kitsToDisplay.findIndex(
-        (k) => k?.name?.[0]?.toUpperCase() === bank,
-      );
-      if (idx !== -1) {
-        if (typeof onBankFocus === "function") onBankFocus(bank);
-        scrollAndFocusKitByIndex(idx);
-        e.preventDefault();
-      }
-    };
-
-    // Helper function to handle kit selection (Enter/Space)
-    const handleKitSelection = (e: React.KeyboardEvent) => {
-      if (focusedIdx && focusedIdx < kitsToDisplay.length) {
-        const kit = kitsToDisplay[focusedIdx];
-        if (isValidKit(kit)) {
-          onSelectKit(kit.name);
-        }
-      }
-      e.preventDefault();
-    };
-
-    // Helper function to handle arrow key navigation
-    const handleArrowNavigation = (e: React.KeyboardEvent) => {
-      if (!focusedIdx) return;
-
-      const { columnIndex, rowIndex } = getGridCoords(focusedIdx);
-      let newRowIndex = rowIndex;
-      let newColumnIndex = columnIndex;
-
-      switch (e.key) {
-        case "ArrowDown":
-          newRowIndex = Math.min(rowCount - 1, rowIndex + 1);
-          break;
-        case "ArrowLeft":
-          newColumnIndex = Math.max(0, columnIndex - 1);
-          break;
-        case "ArrowRight":
-          newColumnIndex = Math.min(columnCount - 1, columnIndex + 1);
-          break;
-        case "ArrowUp":
-          newRowIndex = Math.max(0, rowIndex - 1);
-          break;
-      }
-
-      const newIndex = getFlatIndex(newRowIndex, newColumnIndex);
-      if (newIndex < kitsToDisplay.length) {
-        scrollAndFocusKitByIndex(newIndex);
-      }
-      e.preventDefault();
-    };
-
-    // Grid keyboard navigation
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      )
-        return;
-
-      // A-Z hotkey: select first kit in bank
-      if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {
-        handleBankSelection(e);
-        return;
-      }
-
-      // Enter/Space: select focused kit
-      if (e.key === "Enter" || e.key === " ") {
-        handleKitSelection(e);
-        return;
-      }
-
-      // Arrow key navigation for grid
-      if (["ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp"].includes(e.key)) {
-        handleArrowNavigation(e);
-      }
-    };
 
     // Group kits by bank for rendering with headers
     const kitsByBank = kitsToDisplay.reduce(
@@ -353,48 +242,22 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                 onBankVisible={onVisibleBankChange}
               />
               {/* Kit cards for this bank */}
-              {bankKits.map((kit) => {
-                const globalIndex = kitsToDisplay.findIndex(
-                  (k) => k.name === kit.name,
-                );
-                const isValid = isValidKit(kit);
-                const isSelected = focusedIdx === globalIndex;
-                const kitDataItem =
-                  kitData?.find((k) => k.name === kit.name) ?? null;
-
-                // Compute the favorite state for this kit
-                const isFavorite = getKitFavoriteState
-                  ? getKitFavoriteState(kit.name)
-                  : kitDataItem?.is_favorite;
-
-                const handleSelectKit = () => {
-                  if (isValid) {
-                    onSelectKit(kit.name);
-                    if (onFocusKit) onFocusKit(kit.name);
-                    setFocus(globalIndex);
-                  }
-                };
-
-                return (
-                  <div key={kit.name} style={{ height: CARD_HEIGHT }}>
-                    <KitGridItem
-                      data-kit={kit.name}
-                      data-testid={`kit-item-${kit.name}`}
-                      isFavorite={isFavorite}
-                      isSelected={isSelected}
-                      isValid={isValid}
-                      kit={kit.name}
-                      kitData={kitDataItem}
-                      onDuplicate={() => isValid && onDuplicate(kit.name)}
-                      onSelect={handleSelectKit}
-                      onToggleFavorite={onToggleFavorite}
-                      sampleCounts={
-                        sampleCounts ? sampleCounts[kit.name] : undefined
-                      }
-                    />
-                  </div>
-                );
-              })}
+              {bankKits.map((kit) => (
+                <KitGridCard
+                  key={kit.name}
+                  focusedIdx={focusedIdx}
+                  getKitFavoriteState={getKitFavoriteState}
+                  kit={kit}
+                  kitData={kitData}
+                  kitsToDisplay={kitsToDisplay}
+                  onDuplicate={onDuplicate}
+                  onFocusKit={onFocusKit}
+                  onSelectKit={onSelectKit}
+                  onToggleFavorite={onToggleFavorite}
+                  sampleCounts={sampleCounts}
+                  setFocus={setFocus}
+                />
+              ))}
             </React.Fragment>
           ))}
         </div>

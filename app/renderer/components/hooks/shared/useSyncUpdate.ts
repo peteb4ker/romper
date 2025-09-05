@@ -1,4 +1,4 @@
-import type { SyncChangeSummary } from "@romper/app/renderer/components/dialogs/SyncUpdateDialog";
+import type { SyncChangeSummary } from "@romper/app/renderer/components/dialogs/SyncUpdateDialog.types";
 
 import { useCallback, useState } from "react";
 

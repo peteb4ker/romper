@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { SyncChangeSummary } from "../../dialogs/SyncUpdateDialog";
+import type { SyncChangeSummary } from "../../dialogs/SyncUpdateDialog.types";
 
 import { useSyncUpdate } from "../shared/useSyncUpdate";
 

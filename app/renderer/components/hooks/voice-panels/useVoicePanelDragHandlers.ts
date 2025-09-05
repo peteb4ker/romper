@@ -1,5 +1,7 @@
 import React from "react";
 
+import { isInternalSampleDrag } from "./dragUtils";
+
 export interface DragAndDropHook {
   getSampleDragHandlers: (
     slotNumber: number,
@@ -36,12 +38,7 @@ export function useVoicePanelDragHandlers({
     (e: React.DragEvent, slotNumber: number) => {
       if (!isEditable) return;
 
-      // Check if this is an internal sample drag
-      const isInternalDrag = e.dataTransfer.types.includes(
-        "application/x-romper-sample",
-      );
-
-      if (isInternalDrag) {
+      if (isInternalSampleDrag(e)) {
         // Internal drag: only call internal handler
         dragAndDropHook.handleInternalDragOver(e, slotNumber);
       } else {
@@ -64,12 +61,7 @@ export function useVoicePanelDragHandlers({
     (e: React.DragEvent, slotNumber: number) => {
       if (!isEditable) return;
 
-      // Check if this is an internal sample drag
-      const isInternalDrag = e.dataTransfer.types.includes(
-        "application/x-romper-sample",
-      );
-
-      if (isInternalDrag) {
+      if (isInternalSampleDrag(e)) {
         // Internal drag: only call internal handler
         dragAndDropHook.handleInternalDrop(e, slotNumber);
       } else {

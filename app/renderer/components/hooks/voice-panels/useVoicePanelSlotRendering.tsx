@@ -3,6 +3,7 @@ import React from "react";
 import type { SampleData } from "../../kitTypes";
 
 import SampleWaveform from "../../SampleWaveform";
+import { createCombinedDragHandlers } from "./dragUtils";
 import { DragAndDropHook } from "./useVoicePanelDragHandlers";
 
 // Maximum number of sample slots per voice (Squarp Rample limit)
@@ -142,34 +143,14 @@ export function useVoicePanelSlotRendering({
       const combinedDragHandlers = isEditable
         ? {
             ...dragHandlers,
-            onDragOver: (e: React.DragEvent) => {
-              // Check if this is an internal sample drag
-              const isInternalDrag = e.dataTransfer.types.includes(
-                "application/x-romper-sample",
-              );
-
-              if (isInternalDrag && dragHandlers.onDragOver) {
-                // Internal drag: only call the original internal handler
-                dragHandlers.onDragOver(e);
-              } else {
-                // External drag: call the combined handler for external drags
-                handleCombinedDragOver(e, slotNumber);
-              }
-            },
-            onDrop: (e: React.DragEvent) => {
-              // Check if this is an internal sample drag
-              const isInternalDrag = e.dataTransfer.types.includes(
-                "application/x-romper-sample",
-              );
-
-              if (isInternalDrag && dragHandlers.onDrop) {
-                // Internal drag: only call the original internal handler
-                dragHandlers.onDrop(e);
-              } else {
-                // External drag: call the combined handler for external drops
-                handleCombinedDrop(e, slotNumber);
-              }
-            },
+            ...createCombinedDragHandlers(
+              dragHandlers,
+              {
+                onDragOver: handleCombinedDragOver,
+                onDrop: handleCombinedDrop,
+              },
+              slotNumber,
+            ),
           }
         : dragHandlers;
 

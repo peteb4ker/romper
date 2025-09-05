@@ -20,13 +20,6 @@ export interface SyncFileOperation {
   targetFormat?: string;
 }
 
-export interface SyncValidationError {
-  error: string;
-  filename: string;
-  sourcePath: string;
-  type: "access_denied" | "invalid_format" | "missing_file" | "other";
-}
-
 export interface SyncProgress {
   bytesCompleted: number;
   currentFile: string;
@@ -60,4 +53,11 @@ export interface SyncUpdateDialogProps {
   onSdCardPathChange?: (path: null | string) => void;
   sdCardPath?: null | string;
   syncProgress?: null | SyncProgress;
+}
+
+export interface SyncValidationError {
+  error: string;
+  filename: string;
+  sourcePath: string;
+  type: "access_denied" | "invalid_format" | "missing_file" | "other";
 }

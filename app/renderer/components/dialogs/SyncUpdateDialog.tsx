@@ -10,10 +10,8 @@ import {
 
 import type {
   SyncChangeSummary,
-  SyncProgress,
   SyncUpdateDialogProps,
 } from "./SyncUpdateDialog.types.js";
-
 
 const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   isLoading = false,

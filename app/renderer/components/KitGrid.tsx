@@ -2,7 +2,6 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React, {
   forwardRef,
-  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -10,8 +9,8 @@ import React, {
 } from "react";
 
 import { useKitListLogic } from "./hooks/kit-management/useKitListLogic";
-import { useKitGridKeyboard } from "./hooks/useKitGridKeyboard";
 import { useKitListNavigation } from "./hooks/kit-management/useKitListNavigation";
+import { useKitGridKeyboard } from "./hooks/useKitGridKeyboard";
 import { KitGridCard } from "./KitGridCard";
 
 // Bank header component for grid layout
@@ -88,7 +87,6 @@ interface KitGridProps {
 
 // Grid layout constants
 const CARD_WIDTH = 300; // Optimal card width from UX analysis
-const CARD_HEIGHT = 90; // optimized vertical spacing
 const GAP = 12; // Gap between cards
 const MIN_COLUMNS = 2;
 const MAX_COLUMNS = 6;
@@ -157,7 +155,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     },
     ref,
   ) => {
-    const { isValidKit, kitsToDisplay } = useKitListLogic(kits);
+    const { kitsToDisplay } = useKitListLogic(kits);
     const { containerRef, size } = useContainerSize();
     const columnCount = useResponsiveColumns(size.width);
     const rowCount = Math.ceil(kitsToDisplay.length / columnCount);
@@ -176,23 +174,18 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     }, [navFocusedKit, kitsToDisplay, setFocus]);
 
     // Use keyboard navigation hook
-    const {
-      getGridCoords,
-      getFlatIndex,
-      handleKeyDown,
-      scrollAndFocusKitByIndex,
-      scrollToKit,
-    } = useKitGridKeyboard({
-      columnCount,
-      containerRef,
-      focusedIdx,
-      kitsToDisplay,
-      onBankFocus,
-      onFocusKit,
-      onSelectKit,
-      rowCount,
-      setFocus,
-    });
+    const { handleKeyDown, scrollAndFocusKitByIndex, scrollToKit } =
+      useKitGridKeyboard({
+        columnCount,
+        containerRef,
+        focusedIdx,
+        kitsToDisplay,
+        onBankFocus,
+        onFocusKit,
+        onSelectKit,
+        rowCount,
+        setFocus,
+      });
 
     useImperativeHandle(
       ref,
@@ -202,7 +195,6 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       }),
       [scrollAndFocusKitByIndex, scrollToKit],
     );
-
 
     // Group kits by bank for rendering with headers
     const kitsByBank = kitsToDisplay.reduce(
@@ -244,9 +236,9 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
               {/* Kit cards for this bank */}
               {bankKits.map((kit) => (
                 <KitGridCard
-                  key={kit.name}
                   focusedIdx={focusedIdx}
                   getKitFavoriteState={getKitFavoriteState}
+                  key={kit.name}
                   kit={kit}
                   kitData={kitData}
                   kitsToDisplay={kitsToDisplay}

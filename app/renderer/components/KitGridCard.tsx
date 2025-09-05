@@ -1,15 +1,15 @@
+import type { Kit, KitWithRelations } from "@romper/shared/db/schema.js";
+
+import { isValidKit } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
-import type { Kit } from "@romper/shared/db/schema.js";
-
 import KitGridItem from "./KitGridItem";
-import { isValidKit } from "@romper/shared/kitUtilsShared";
 
 interface KitGridCardProps {
-  focusedIdx: number | null;
+  focusedIdx: null | number;
   getKitFavoriteState?: (kitName: string) => boolean;
   kit: Kit;
-  kitData?: { is_favorite?: boolean; name: string }[] | null;
+  kitData?: KitWithRelations[] | null;
   kitsToDisplay: Kit[];
   onDuplicate: (kitName: string) => void;
   onFocusKit?: (kitName: string) => void;
@@ -35,7 +35,7 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
   setFocus,
 }) => {
   const globalIndex = kitsToDisplay.findIndex((k) => k.name === kit.name);
-  const isValid = isValidKit(kit);
+  const isValid = isValidKit(kit.name);
   const isSelected = focusedIdx === globalIndex;
   const kitDataItem = kitData?.find((k) => k.name === kit.name) ?? null;
 

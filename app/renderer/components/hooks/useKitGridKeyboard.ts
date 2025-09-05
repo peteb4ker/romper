@@ -1,13 +1,12 @@
-import { useCallback, RefObject } from "react";
-
 import type { Kit } from "@romper/shared/db/schema.js";
 
 import { isValidKit } from "@romper/shared/kitUtilsShared";
+import { RefObject, useCallback } from "react";
 
 interface UseKitGridKeyboardProps {
   columnCount: number;
-  containerRef: RefObject<HTMLDivElement>;
-  focusedIdx: number | null;
+  containerRef: RefObject<HTMLDivElement | null>;
+  focusedIdx: null | number;
   kitsToDisplay: Kit[];
   onBankFocus?: (bank: string) => void;
   onFocusKit?: (kitName: string) => void;
@@ -100,7 +99,7 @@ export function useKitGridKeyboard({
     (e: React.KeyboardEvent) => {
       if (focusedIdx && focusedIdx < kitsToDisplay.length) {
         const kit = kitsToDisplay[focusedIdx];
-        if (isValidKit(kit)) {
+        if (isValidKit(kit.name)) {
           onSelectKit(kit.name);
         }
       }
@@ -180,8 +179,8 @@ export function useKitGridKeyboard({
   );
 
   return {
-    getGridCoords,
     getFlatIndex,
+    getGridCoords,
     handleKeyDown,
     scrollAndFocusKitByIndex,
     scrollToKit,

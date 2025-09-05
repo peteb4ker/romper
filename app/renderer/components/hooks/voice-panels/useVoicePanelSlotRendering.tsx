@@ -110,6 +110,31 @@ export function useVoicePanelSlotRendering({
     },
     [slotRenderingHook],
   );
+
+  // Helper to generate sample key (eliminates duplication)
+  const getSampleKey = React.useCallback(
+    (sampleName: string) => `${voice}:${sampleName}`,
+    [voice],
+  );
+
+  // Helper for conditional drag handlers (eliminates duplication)
+  const getConditionalDragHandlers = React.useCallback(
+    (slotNumber: number) => ({
+      onDragLeave: isEditable ? handleCombinedDragLeave : undefined,
+      onDragOver: isEditable
+        ? (e: React.DragEvent) => handleCombinedDragOver(e, slotNumber)
+        : undefined,
+      onDrop: isEditable
+        ? (e: React.DragEvent) => handleCombinedDrop(e, slotNumber)
+        : undefined,
+    }),
+    [
+      isEditable,
+      handleCombinedDragLeave,
+      handleCombinedDragOver,
+      handleCombinedDrop,
+    ],
+  );
   // Helper function to render a filled sample slot
   const renderSampleSlot = React.useCallback(
     (slotNumber: number, sample: string) => {
@@ -122,7 +147,7 @@ export function useVoicePanelSlotRendering({
         slotBaseClass,
       } = getSlotStylingProps(slotNumber, sample);
       const sampleName = sample;
-      const sampleKey = voice + ":" + sampleName;
+      const sampleKey = getSampleKey(sampleName);
       const isPlaying = samplePlaying[sampleKey];
       const uiSlotNumber = slotNumber + 1;
       const sampleData = sampleMetadata?.[sampleName];
@@ -220,6 +245,7 @@ export function useVoicePanelSlotRendering({
     },
     [
       getSlotStylingProps,
+      getSampleKey,
       voice,
       samplePlaying,
       sampleMetadata,
@@ -266,17 +292,7 @@ export function useVoicePanelSlotRendering({
         className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass} border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500 min-h-[28px] mb-1`}
         data-testid={`drop-zone-voice-${voice}`}
         key={`${voice}-drop-zone`}
-        onDragLeave={isEditable ? handleCombinedDragLeave : undefined}
-        onDragOver={
-          isEditable
-            ? (e) => handleCombinedDragOver(e, nextAvailableSlot)
-            : undefined
-        }
-        onDrop={
-          isEditable
-            ? (e) => handleCombinedDrop(e, nextAvailableSlot)
-            : undefined
-        }
+        {...getConditionalDragHandlers(nextAvailableSlot)}
         title={
           isDragOver || isStereoHighlight || isDropZone
             ? dropHintTitle
@@ -292,12 +308,10 @@ export function useVoicePanelSlotRendering({
     );
   }, [
     getSlotStylingProps,
+    getConditionalDragHandlers,
     samples,
     voice,
     isEditable,
-    handleCombinedDragOver,
-    handleCombinedDragLeave,
-    handleCombinedDrop,
     slotRenderingHook,
   ]);
 

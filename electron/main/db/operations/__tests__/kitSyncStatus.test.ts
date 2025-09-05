@@ -10,7 +10,7 @@ import {
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
-} from "../crudOperations.js";
+} from "../kitCrudOperations.js";
 
 describe("Kit Sync Status Operations - Unit Tests", () => {
   const mockDbDir = "/test/db";

@@ -1038,8 +1038,22 @@
     },
     {
       "path": "electron/main/db/operations/crudOperations.ts",
-      "loc": 466,
+      "loc": 66,
+      "category": "small",
+      "isComponent": false,
+      "isHook": false
+    },
+    {
+      "path": "electron/main/db/operations/kitCrudOperations.ts",
+      "loc": 344,
       "category": "redFlag",
+      "isComponent": false,
+      "isHook": false
+    },
+    {
+      "path": "electron/main/db/operations/sampleCrudOperations.ts",
+      "loc": 160,
+      "category": "medium",
       "isComponent": false,
       "isHook": false
     },
@@ -1054,6 +1068,13 @@
       "path": "electron/main/db/operations/sampleMovement.ts",
       "loc": 299,
       "category": "large",
+      "isComponent": false,
+      "isHook": false
+    },
+    {
+      "path": "electron/main/db/operations/voiceCrudOperations.ts",
+      "loc": 23,
+      "category": "tiny",
       "isComponent": false,
       "isHook": false
     },
@@ -1747,6 +1768,13 @@
         "isHook": false
       },
       {
+        "path": "electron/main/db/operations/voiceCrudOperations.ts",
+        "loc": 23,
+        "category": "tiny",
+        "isComponent": false,
+        "isHook": false
+      },
+      {
         "path": "electron/main/db/romperDbCoreORM.ts",
         "loc": 40,
         "category": "tiny",
@@ -2033,6 +2061,13 @@
         "loc": 97,
         "category": "small",
         "isComponent": true,
+        "isHook": false
+      },
+      {
+        "path": "electron/main/db/operations/crudOperations.ts",
+        "loc": 66,
+        "category": "small",
+        "isComponent": false,
         "isHook": false
       },
       {
@@ -2416,6 +2451,13 @@
         "isHook": false
       },
       {
+        "path": "electron/main/db/operations/sampleCrudOperations.ts",
+        "loc": 160,
+        "category": "medium",
+        "isComponent": false,
+        "isHook": false
+      },
+      {
         "path": "electron/main/db/operations/sampleManagementOps.ts",
         "loc": 162,
         "category": "medium",
@@ -2749,13 +2791,6 @@
     ],
     "redFlag": [
       {
-        "path": "electron/main/db/operations/crudOperations.ts",
-        "loc": 466,
-        "category": "redFlag",
-        "isComponent": false,
-        "isHook": false
-      },
-      {
         "path": "app/renderer/components/dialogs/SyncUpdateDialog.tsx",
         "loc": 406,
         "category": "redFlag",
@@ -2774,6 +2809,13 @@
         "loc": 371,
         "category": "redFlag",
         "isComponent": true,
+        "isHook": false
+      },
+      {
+        "path": "electron/main/db/operations/kitCrudOperations.ts",
+        "loc": 344,
+        "category": "redFlag",
+        "isComponent": false,
         "isHook": false
       },
       {
@@ -2830,8 +2872,8 @@
     ]
   },
   "stats": {
-    "totalFiles": 201,
-    "totalLines": 25564,
-    "averageLines": 127
+    "totalFiles": 204,
+    "totalLines": 25691,
+    "averageLines": 126
   }
 }

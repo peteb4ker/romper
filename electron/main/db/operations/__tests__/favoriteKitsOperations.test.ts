@@ -7,6 +7,11 @@ vi.mock("../../utils/dbUtilities.js", () => ({
 
 import { withDb } from "../../utils/dbUtilities.js";
 import { getFavoriteKits, getFavoriteKitsCount } from "../crudOperations.js";
+import {
+  createBatchQueryMock,
+  createSingleQueryMock,
+  createWithDbMock,
+} from "./testUtils.js";
 
 describe("Favorite Kits Operations - Unit Tests", () => {
   const mockDbDir = "/test/db";
@@ -17,20 +22,8 @@ describe("Favorite Kits Operations - Unit Tests", () => {
 
   describe("getFavoriteKits", () => {
     test("should return empty array when no favorite kits exist", () => {
-      const mockSelect = vi.fn().mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            all: vi.fn().mockReturnValue([]),
-          }),
-        }),
-      });
-
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: mockSelect,
-        };
-        return fn(mockDb);
-      });
+      const mockSelect = createSingleQueryMock([]);
+      vi.mocked(withDb).mockImplementation(createWithDbMock(mockSelect));
 
       const result = getFavoriteKits(mockDbDir);
 
@@ -56,47 +49,9 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         },
       ];
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: vi
-            .fn()
-            // First call: Get favorite kits
-            .mockReturnValueOnce({
-              from: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue({
-                  all: vi.fn().mockReturnValue(mockKits),
-                }),
-              }),
-            })
-            // Second call: Get all banks
-            .mockReturnValueOnce({
-              from: vi.fn().mockReturnValue({
-                all: vi.fn().mockReturnValue([]),
-              }),
-            })
-            // Third call: Get voices for these kits
-            .mockReturnValueOnce({
-              from: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockReturnValue({
-                    all: vi.fn().mockReturnValue([]),
-                  }),
-                }),
-              }),
-            })
-            // Fourth call: Get samples for these kits
-            .mockReturnValueOnce({
-              from: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockReturnValue({
-                    all: vi.fn().mockReturnValue([]),
-                  }),
-                }),
-              }),
-            }),
-        };
-        return fn(mockDb);
-      });
+      // Setup batch query mock: [favorite kits, all banks, voices, samples]
+      const mockSelect = createBatchQueryMock([mockKits, [], [], []]);
+      vi.mocked(withDb).mockImplementation(createWithDbMock(mockSelect));
 
       const result = getFavoriteKits(mockDbDir);
 
@@ -160,18 +115,8 @@ describe("Favorite Kits Operations - Unit Tests", () => {
     });
 
     test("should call withDb with correct parameters", () => {
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                all: vi.fn().mockReturnValue([]),
-              }),
-            }),
-          }),
-        };
-        return fn(mockDb);
-      });
+      const mockSelect = createSingleQueryMock([]);
+      vi.mocked(withDb).mockImplementation(createWithDbMock(mockSelect));
 
       getFavoriteKits(mockDbDir);
 

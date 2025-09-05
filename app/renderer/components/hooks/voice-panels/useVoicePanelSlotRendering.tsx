@@ -3,11 +3,12 @@ import React from "react";
 import type { SampleData } from "../../kitTypes";
 
 import SampleWaveform from "../../SampleWaveform";
+import { MAX_SLOTS_PER_VOICE } from "./constants";
 import { createCombinedDragHandlers } from "./dragUtils";
 import { DragAndDropHook } from "./useVoicePanelDragHandlers";
 
-// Maximum number of sample slots per voice (Squarp Rample limit)
-export const MAX_SLOTS_PER_VOICE = 12;
+// Re-export constant for backward compatibility
+export { MAX_SLOTS_PER_VOICE };
 
 export interface SlotRenderingHook {
   calculateRenderSlots: () => {
@@ -102,6 +103,13 @@ export function useVoicePanelSlotRendering({
   stopTriggers,
   voice,
 }: UseVoicePanelSlotRenderingOptions) {
+  // Helper to get slot styling properties (eliminates duplication)
+  const getSlotStylingProps = React.useCallback(
+    (slotNumber: number, sample?: string) => {
+      return slotRenderingHook.getSlotStyling(slotNumber, sample);
+    },
+    [slotRenderingHook],
+  );
   // Helper function to render a filled sample slot
   const renderSampleSlot = React.useCallback(
     (slotNumber: number, sample: string) => {
@@ -112,7 +120,7 @@ export function useVoicePanelSlotRendering({
         isDropZone,
         isStereoHighlight,
         slotBaseClass,
-      } = slotRenderingHook.getSlotStyling(slotNumber, sample);
+      } = getSlotStylingProps(slotNumber, sample);
       const sampleName = sample;
       const sampleKey = voice + ":" + sampleName;
       const isPlaying = samplePlaying[sampleKey];
@@ -211,7 +219,7 @@ export function useVoicePanelSlotRendering({
       );
     },
     [
-      slotRenderingHook,
+      getSlotStylingProps,
       voice,
       samplePlaying,
       sampleMetadata,
@@ -229,6 +237,7 @@ export function useVoicePanelSlotRendering({
       stopTriggers,
       handleCombinedDragOver,
       handleCombinedDrop,
+      slotRenderingHook,
     ],
   );
 
@@ -249,7 +258,7 @@ export function useVoicePanelSlotRendering({
       isDropZone,
       isStereoHighlight,
       slotBaseClass,
-    } = slotRenderingHook.getSlotStyling(nextAvailableSlot, undefined);
+    } = getSlotStylingProps(nextAvailableSlot, undefined);
 
     return (
       <li
@@ -282,13 +291,14 @@ export function useVoicePanelSlotRendering({
       </li>
     );
   }, [
-    slotRenderingHook,
+    getSlotStylingProps,
     samples,
     voice,
     isEditable,
     handleCombinedDragOver,
     handleCombinedDragLeave,
     handleCombinedDrop,
+    slotRenderingHook,
   ]);
 
   // Helper function to render an empty slot placeholder (non-interactive)

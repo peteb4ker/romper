@@ -2,12 +2,12 @@ import React from "react";
 
 import type { SampleData } from "../../kitTypes";
 
+import { MAX_SLOTS_PER_VOICE } from "./constants";
 import {
   type DragAndDropHook,
   useVoicePanelDragHandlers,
 } from "./useVoicePanelDragHandlers";
 import {
-  MAX_SLOTS_PER_VOICE,
   type SlotRenderingHook,
   useVoicePanelSlotRendering,
 } from "./useVoicePanelSlotRendering";

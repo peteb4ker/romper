@@ -25,14 +25,17 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
           <div>
             <label
               className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
-              htmlFor="local-store-path"
+              id="local-store-path-label"
             >
               Local Store Path
             </label>
             <div className="flex items-center gap-2">
               <div
+                aria-labelledby="local-store-path-label"
                 className="flex-1 p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 font-mono text-sm text-gray-700 dark:text-gray-300"
                 id="local-store-path"
+                role="textbox"
+                aria-readonly="true"
               >
                 {localStorePath || "No local store configured"}
               </div>
@@ -52,13 +55,16 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
           <div>
             <label
               className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
-              htmlFor="local-store-status"
+              id="local-store-status-label"
             >
               Status
             </label>
             <div
+              aria-labelledby="local-store-status-label"
               className="p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 text-sm"
               id="local-store-status"
+              role="status"
+              aria-live="polite"
             >
               {localStoreStatus?.isValid ? (
                 <span className="text-green-600 dark:text-green-400">

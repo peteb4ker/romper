@@ -64,3 +64,6 @@ Thumbs.db
 
 # Documentation audit reports (generated files)
 docs/audits/
+
+# Architecture analysis reports (generated files)
+reports/

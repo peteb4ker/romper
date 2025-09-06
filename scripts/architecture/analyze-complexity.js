@@ -380,7 +380,7 @@ async function findFiles(dir, files = []) {
     const relativePath = path.relative(CONFIG.rootDir, fullPath);
     
     if (entry.isDirectory()) {
-      if (!['node_modules', 'dist', '.git', 'coverage', '__tests__'].some(exclude => 
+      if (!['node_modules', 'dist', '.git', 'coverage', '__tests__', 'worktrees'].some(exclude => 
         entry.name === exclude || relativePath.includes(exclude))) {
         await findFiles(fullPath, files);
       }

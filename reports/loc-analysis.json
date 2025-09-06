@@ -51,8 +51,15 @@
     },
     {
       "path": "app/renderer/components/KitGrid.tsx",
-      "loc": 338,
-      "category": "redFlag",
+      "loc": 223,
+      "category": "large",
+      "isComponent": true,
+      "isHook": false
+    },
+    {
+      "path": "app/renderer/components/KitGridCard.tsx",
+      "loc": 63,
+      "category": "small",
       "isComponent": true,
       "isHook": false
     },
@@ -247,9 +254,16 @@
     },
     {
       "path": "app/renderer/components/dialogs/SyncUpdateDialog.tsx",
-      "loc": 406,
+      "loc": 352,
       "category": "redFlag",
       "isComponent": true,
+      "isHook": false
+    },
+    {
+      "path": "app/renderer/components/dialogs/SyncUpdateDialog.types.ts",
+      "loc": 58,
+      "category": "small",
+      "isComponent": false,
       "isHook": false
     },
     {
@@ -652,8 +666,36 @@
       "isHook": true
     },
     {
+      "path": "app/renderer/components/hooks/useKitGridKeyboard.ts",
+      "loc": 157,
+      "category": "medium",
+      "isComponent": false,
+      "isHook": true
+    },
+    {
       "path": "app/renderer/components/hooks/useValidationResults.ts",
       "loc": 0,
+      "category": "tiny",
+      "isComponent": false,
+      "isHook": true
+    },
+    {
+      "path": "app/renderer/components/hooks/voice-panels/constants.ts",
+      "loc": 4,
+      "category": "tiny",
+      "isComponent": false,
+      "isHook": true
+    },
+    {
+      "path": "app/renderer/components/hooks/voice-panels/dragUtils.ts",
+      "loc": 48,
+      "category": "tiny",
+      "isComponent": false,
+      "isHook": true
+    },
+    {
+      "path": "app/renderer/components/hooks/voice-panels/types.ts",
+      "loc": 39,
       "category": "tiny",
       "isComponent": false,
       "isHook": true
@@ -680,6 +722,13 @@
       "isHook": true
     },
     {
+      "path": "app/renderer/components/hooks/voice-panels/useVoicePanelDragHandlers.ts",
+      "loc": 63,
+      "category": "small",
+      "isComponent": false,
+      "isHook": true
+    },
+    {
       "path": "app/renderer/components/hooks/voice-panels/useVoicePanelRendering.tsx",
       "loc": 148,
       "category": "medium",
@@ -687,9 +736,16 @@
       "isHook": true
     },
     {
-      "path": "app/renderer/components/hooks/voice-panels/useVoicePanelSlots.tsx",
-      "loc": 374,
+      "path": "app/renderer/components/hooks/voice-panels/useVoicePanelSlotRendering.tsx",
+      "loc": 315,
       "category": "redFlag",
+      "isComponent": true,
+      "isHook": true
+    },
+    {
+      "path": "app/renderer/components/hooks/voice-panels/useVoicePanelSlots.tsx",
+      "loc": 72,
+      "category": "small",
       "isComponent": true,
       "isHook": true
     },
@@ -1038,21 +1094,42 @@
     },
     {
       "path": "electron/main/db/operations/crudOperations.ts",
-      "loc": 66,
+      "loc": 65,
       "category": "small",
       "isComponent": false,
       "isHook": false
     },
     {
       "path": "electron/main/db/operations/kitCrudOperations.ts",
-      "loc": 344,
-      "category": "redFlag",
+      "loc": 144,
+      "category": "medium",
+      "isComponent": false,
+      "isHook": false
+    },
+    {
+      "path": "electron/main/db/operations/kitFavoritesOperations.ts",
+      "loc": 70,
+      "category": "small",
+      "isComponent": false,
+      "isHook": false
+    },
+    {
+      "path": "electron/main/db/operations/kitRelationalHelpers.ts",
+      "loc": 91,
+      "category": "small",
+      "isComponent": false,
+      "isHook": false
+    },
+    {
+      "path": "electron/main/db/operations/kitSyncOperations.ts",
+      "loc": 75,
+      "category": "small",
       "isComponent": false,
       "isHook": false
     },
     {
       "path": "electron/main/db/operations/sampleCrudOperations.ts",
-      "loc": 160,
+      "loc": 149,
       "category": "medium",
       "isComponent": false,
       "isHook": false
@@ -1395,7 +1472,7 @@
     },
     {
       "path": "vite.config.ts",
-      "loc": 92,
+      "loc": 94,
       "category": "small",
       "isComponent": false,
       "isHook": false
@@ -1416,7 +1493,7 @@
     },
     {
       "path": "vitest.config.fast.ts",
-      "loc": 70,
+      "loc": 72,
       "category": "small",
       "isComponent": false,
       "isHook": false
@@ -1656,6 +1733,27 @@
         "isHook": true
       },
       {
+        "path": "app/renderer/components/hooks/voice-panels/constants.ts",
+        "loc": 4,
+        "category": "tiny",
+        "isComponent": false,
+        "isHook": true
+      },
+      {
+        "path": "app/renderer/components/hooks/voice-panels/dragUtils.ts",
+        "loc": 48,
+        "category": "tiny",
+        "isComponent": false,
+        "isHook": true
+      },
+      {
+        "path": "app/renderer/components/hooks/voice-panels/types.ts",
+        "loc": 39,
+        "category": "tiny",
+        "isComponent": false,
+        "isHook": true
+      },
+      {
         "path": "app/renderer/components/hooks/voice-panels/useVoiceAlias.ts",
         "loc": 33,
         "category": "tiny",
@@ -1847,6 +1945,13 @@
         "isHook": false
       },
       {
+        "path": "app/renderer/components/KitGridCard.tsx",
+        "loc": 63,
+        "category": "small",
+        "isComponent": true,
+        "isHook": false
+      },
+      {
         "path": "app/renderer/components/KitStepSequencer.tsx",
         "loc": 54,
         "category": "small",
@@ -1879,6 +1984,13 @@
         "loc": 59,
         "category": "small",
         "isComponent": true,
+        "isHook": false
+      },
+      {
+        "path": "app/renderer/components/dialogs/SyncUpdateDialog.types.ts",
+        "loc": 58,
+        "category": "small",
+        "isComponent": false,
         "isHook": false
       },
       {
@@ -1954,6 +2066,20 @@
       {
         "path": "app/renderer/components/hooks/voice-panels/useVoicePanelButtons.tsx",
         "loc": 82,
+        "category": "small",
+        "isComponent": true,
+        "isHook": true
+      },
+      {
+        "path": "app/renderer/components/hooks/voice-panels/useVoicePanelDragHandlers.ts",
+        "loc": 63,
+        "category": "small",
+        "isComponent": false,
+        "isHook": true
+      },
+      {
+        "path": "app/renderer/components/hooks/voice-panels/useVoicePanelSlots.tsx",
+        "loc": 72,
         "category": "small",
         "isComponent": true,
         "isHook": true
@@ -2065,7 +2191,28 @@
       },
       {
         "path": "electron/main/db/operations/crudOperations.ts",
-        "loc": 66,
+        "loc": 65,
+        "category": "small",
+        "isComponent": false,
+        "isHook": false
+      },
+      {
+        "path": "electron/main/db/operations/kitFavoritesOperations.ts",
+        "loc": 70,
+        "category": "small",
+        "isComponent": false,
+        "isHook": false
+      },
+      {
+        "path": "electron/main/db/operations/kitRelationalHelpers.ts",
+        "loc": 91,
+        "category": "small",
+        "isComponent": false,
+        "isHook": false
+      },
+      {
+        "path": "electron/main/db/operations/kitSyncOperations.ts",
+        "loc": 75,
         "category": "small",
         "isComponent": false,
         "isHook": false
@@ -2135,7 +2282,7 @@
       },
       {
         "path": "vite.config.ts",
-        "loc": 92,
+        "loc": 94,
         "category": "small",
         "isComponent": false,
         "isHook": false
@@ -2149,7 +2296,7 @@
       },
       {
         "path": "vitest.config.fast.ts",
-        "loc": 70,
+        "loc": 72,
         "category": "small",
         "isComponent": false,
         "isHook": false
@@ -2360,6 +2507,13 @@
         "isHook": true
       },
       {
+        "path": "app/renderer/components/hooks/useKitGridKeyboard.ts",
+        "loc": 157,
+        "category": "medium",
+        "isComponent": false,
+        "isHook": true
+      },
+      {
         "path": "app/renderer/components/hooks/voice-panels/useVoicePanelRendering.tsx",
         "loc": 148,
         "category": "medium",
@@ -2451,8 +2605,15 @@
         "isHook": false
       },
       {
+        "path": "electron/main/db/operations/kitCrudOperations.ts",
+        "loc": 144,
+        "category": "medium",
+        "isComponent": false,
+        "isHook": false
+      },
+      {
         "path": "electron/main/db/operations/sampleCrudOperations.ts",
-        "loc": 160,
+        "loc": 149,
         "category": "medium",
         "isComponent": false,
         "isHook": false
@@ -2581,6 +2742,13 @@
       {
         "path": "app/renderer/components/KitBrowser.tsx",
         "loc": 283,
+        "category": "large",
+        "isComponent": true,
+        "isHook": false
+      },
+      {
+        "path": "app/renderer/components/KitGrid.tsx",
+        "loc": 223,
         "category": "large",
         "isComponent": true,
         "isHook": false
@@ -2791,20 +2959,6 @@
     ],
     "redFlag": [
       {
-        "path": "app/renderer/components/dialogs/SyncUpdateDialog.tsx",
-        "loc": 406,
-        "category": "redFlag",
-        "isComponent": true,
-        "isHook": false
-      },
-      {
-        "path": "app/renderer/components/hooks/voice-panels/useVoicePanelSlots.tsx",
-        "loc": 374,
-        "category": "redFlag",
-        "isComponent": true,
-        "isHook": true
-      },
-      {
         "path": "app/renderer/components/dialogs/PreferencesDialog.tsx",
         "loc": 371,
         "category": "redFlag",
@@ -2812,10 +2966,10 @@
         "isHook": false
       },
       {
-        "path": "electron/main/db/operations/kitCrudOperations.ts",
-        "loc": 344,
+        "path": "app/renderer/components/dialogs/SyncUpdateDialog.tsx",
+        "loc": 352,
         "category": "redFlag",
-        "isComponent": false,
+        "isComponent": true,
         "isHook": false
       },
       {
@@ -2823,13 +2977,6 @@
         "loc": 342,
         "category": "redFlag",
         "isComponent": false,
-        "isHook": false
-      },
-      {
-        "path": "app/renderer/components/KitGrid.tsx",
-        "loc": 338,
-        "category": "redFlag",
-        "isComponent": true,
         "isHook": false
       },
       {
@@ -2854,6 +3001,13 @@
         "isHook": false
       },
       {
+        "path": "app/renderer/components/hooks/voice-panels/useVoicePanelSlotRendering.tsx",
+        "loc": 315,
+        "category": "redFlag",
+        "isComponent": true,
+        "isHook": true
+      },
+      {
         "path": "electron/main/services/scanService.ts",
         "loc": 312,
         "category": "redFlag",
@@ -2872,8 +3026,8 @@
     ]
   },
   "stats": {
-    "totalFiles": 204,
-    "totalLines": 25691,
-    "averageLines": 126
+    "totalFiles": 215,
+    "totalLines": 25995,
+    "averageLines": 121
   }
 }

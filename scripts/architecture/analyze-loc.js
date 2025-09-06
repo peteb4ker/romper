@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 const CONFIG = {
   rootDir: path.resolve(__dirname, '../..'),
   extensions: ['.tsx', '.ts'],
-  excludeDirs: ['node_modules', 'dist', '.git', 'coverage', '__tests__', 'test'],
+  excludeDirs: ['node_modules', 'dist', '.git', 'coverage', '__tests__', 'test', 'worktrees'],
   excludeFiles: ['.test.', '.spec.', '.d.ts'],
   
   // LOC thresholds based on updated standards

@@ -19,7 +19,7 @@ interface KitGridCardProps {
   setFocus: (index: number) => void;
 }
 
-const CARD_HEIGHT = 180;
+const CARD_HEIGHT = 90;
 
 export const KitGridCard: React.FC<KitGridCardProps> = ({
   focusedIdx,

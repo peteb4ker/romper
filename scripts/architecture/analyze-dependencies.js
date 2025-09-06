@@ -53,7 +53,7 @@ async function analyzeCircularDependencies() {
   try {
     const result = await madge(CONFIG.rootDir, {
       extensions: CONFIG.extensions,
-      excludePattern: /(__tests__|\.test\.|\.spec\.|node_modules|dist|coverage|worktrees)/,
+      excludePattern: /(__tests__|\.test\.|\.spec\.|node_modules|dist|coverage|\/worktrees\/|^worktrees\/)/,
       tsConfig: path.join(CONFIG.rootDir, 'tsconfig.json')
     });
     
@@ -84,7 +84,7 @@ async function analyzeDependencyDepth() {
   try {
     const result = await madge(CONFIG.rootDir, {
       extensions: CONFIG.extensions,
-      excludePattern: /(__tests__|\.test\.|\.spec\.|node_modules|dist|coverage|worktrees)/,
+      excludePattern: /(__tests__|\.test\.|\.spec\.|node_modules|dist|coverage|\/worktrees\/|^worktrees\/)/,
       tsConfig: path.join(CONFIG.rootDir, 'tsconfig.json')
     });
     
@@ -135,7 +135,7 @@ async function analyzeArchitecturalBoundaries() {
   try {
     const result = await madge(CONFIG.rootDir, {
       extensions: CONFIG.extensions,
-      excludePattern: /(__tests__|\.test\.|\.spec\.|node_modules|dist|coverage|worktrees)/,
+      excludePattern: /(__tests__|\.test\.|\.spec\.|node_modules|dist|coverage|\/worktrees\/|^worktrees\/)/,
       tsConfig: path.join(CONFIG.rootDir, 'tsconfig.json')
     });
     

@@ -134,9 +134,9 @@
     },
     "totalViolations": 0
   },
-  "timestamp": "2025-09-03T05:39:10.550Z",
+  "timestamp": "2025-09-06T02:50:02.382Z",
   "config": {
-    "rootDir": "/Users/pete/workspace/romper/worktrees/refactor-sample-crud",
+    "rootDir": "/Users/pete/workspace/romper/worktrees/fix-dependency-analyzer-worktree-exclusion",
     "extensions": [
       ".ts",
       ".tsx"

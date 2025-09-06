@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from "react";
-import {
-  FiFolder,
-  FiMonitor,
-  FiMoon,
-  FiSettings,
-  FiSun,
-  FiX,
-} from "react-icons/fi";
+import { FiSettings, FiX } from "react-icons/fi";
 
-import { type ThemeMode, useSettings } from "../../utils/SettingsContext";
+import { useSettings } from "../../utils/SettingsContext";
+import AdvancedTab from "../preferences/AdvancedTab";
+import AppearanceTab from "../preferences/AppearanceTab";
+import SampleManagementTab from "../preferences/SampleManagementTab";
 
 interface PreferencesDialogProps {
   isOpen: boolean;
@@ -69,19 +65,6 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
     }
   };
 
-  const themeOptions: Array<{
-    icon: React.ReactNode;
-    label: string;
-    value: ThemeMode;
-  }> = [
-    { icon: <FiSun className="w-4 h-4" />, label: "Light", value: "light" },
-    {
-      icon: <FiMonitor className="w-4 h-4" />,
-      label: "System",
-      value: "system",
-    },
-    { icon: <FiMoon className="w-4 h-4" />, label: "Dark", value: "dark" },
-  ];
 
   return (
     <div
@@ -156,227 +139,28 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
 
           {/* Content Area */}
           <div className="flex-1 p-6 overflow-y-auto">
-            {/* Sample Management Tab */}
             {activeTab === "samples" && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                    Sample Assignment
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <label
-                          className="text-sm font-medium text-gray-900 dark:text-gray-100"
-                          htmlFor="default-mono-checkbox"
-                        >
-                          Default to mono samples
-                        </label>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          Automatically assign stereo samples as mono to a
-                          single voice.
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          When enabled, stereo samples will take 1 mono slot and
-                          will be converted to mono by averaging the left and
-                          right channel.
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          When disabled, stereo samples will be assigned to
-                          adjacent voices, taking the same sample slot on both
-                          voices.
-                        </p>
-                      </div>
-                      <div className="flex items-center ml-4">
-                        <input
-                          checked={defaultToMonoSamples}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
-                          id="default-mono-checkbox"
-                          onChange={(e) =>
-                            setDefaultToMonoSamples(e.target.checked)
-                          }
-                          type="checkbox"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <label
-                          className="text-sm font-medium text-gray-900 dark:text-gray-100"
-                          htmlFor="confirm-destructive-checkbox"
-                        >
-                          Confirm destructive actions
-                        </label>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          Show confirmation prompts before replacing or deleting
-                          samples
-                        </p>
-                      </div>
-                      <div className="flex items-center ml-4">
-                        <input
-                          checked={confirmDestructiveActions}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
-                          id="confirm-destructive-checkbox"
-                          onChange={(e) =>
-                            setConfirmDestructiveActions(e.target.checked)
-                          }
-                          type="checkbox"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <SampleManagementTab
+                confirmDestructiveActions={confirmDestructiveActions}
+                defaultToMonoSamples={defaultToMonoSamples}
+                onConfirmDestructiveActionsChange={setConfirmDestructiveActions}
+                onDefaultToMonoSamplesChange={setDefaultToMonoSamples}
+              />
             )}
 
-            {/* Appearance Tab */}
             {activeTab === "appearance" && (
-              <div className="space-y-6">
-                <div>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                        Appearance
-                      </h3>
-                      <div className="grid grid-cols-3 gap-4">
-                        {themeOptions.map((option) => {
-                          const isSelected = themeMode === option.value;
-
-                          return (
-                            <div
-                              className="flex flex-col items-center gap-2"
-                              key={option.value}
-                            >
-                              <button
-                                className={`relative w-16 h-16 rounded-xl border-2 transition-all duration-200 overflow-hidden ${
-                                  isSelected
-                                    ? "border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800"
-                                    : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
-                                }`}
-                                onClick={() => setThemeMode(option.value)}
-                              >
-                                {option.value === "light" && (
-                                  <div className="w-full h-full bg-white flex items-center justify-center">
-                                    <FiSun className="w-6 h-6 text-yellow-500" />
-                                  </div>
-                                )}
-
-                                {option.value === "dark" && (
-                                  <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-                                    <FiMoon className="w-6 h-6 text-blue-400" />
-                                  </div>
-                                )}
-
-                                {option.value === "system" && (
-                                  <>
-                                    {/* Split background - light left, dark right */}
-                                    <div className="absolute inset-0 flex">
-                                      <div className="w-1/2 bg-white"></div>
-                                      <div className="w-1/2 bg-gray-900"></div>
-                                    </div>
-                                    {/* Split monitor icon using two overlapping icons with clipping */}
-                                    <div className="relative w-full h-full flex items-center justify-center">
-                                      <div className="relative w-6 h-6">
-                                        {/* Left half - dark icon on light background */}
-                                        <div className="absolute inset-0 w-1/2 overflow-hidden">
-                                          <FiMonitor className="w-6 h-6 text-gray-800" />
-                                        </div>
-                                        {/* Right half - light icon on dark background */}
-                                        <div className="absolute inset-0 w-1/2 left-1/2 overflow-hidden">
-                                          <FiMonitor className="w-6 h-6 text-gray-100 -ml-3" />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </>
-                                )}
-                              </button>
-
-                              <span
-                                className={`text-sm font-medium ${
-                                  isSelected
-                                    ? "text-blue-700 dark:text-blue-300"
-                                    : "text-gray-700 dark:text-gray-300"
-                                }`}
-                              >
-                                {option.label}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                        Choose how Romper looks. System matches your operating
-                        system's appearance.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <AppearanceTab
+                themeMode={themeMode}
+                onThemeModeChange={setThemeMode}
+              />
             )}
 
-            {/* Advanced Tab */}
             {activeTab === "advanced" && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                    Local Store
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
-                        htmlFor="local-store-path"
-                      >
-                        Local Store Path
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="flex-1 p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 font-mono text-sm text-gray-700 dark:text-gray-300"
-                          id="local-store-path"
-                        >
-                          {localStorePath || "No local store configured"}
-                        </div>
-                        <button
-                          className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center gap-2"
-                          onClick={handleChangeLocalStore}
-                        >
-                          <FiFolder className="text-sm" />
-                          Change...
-                        </button>
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Location of your sample database and kit storage
-                      </p>
-                    </div>
-
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
-                        htmlFor="local-store-status"
-                      >
-                        Status
-                      </label>
-                      <div
-                        className="p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 text-sm"
-                        id="local-store-status"
-                      >
-                        {localStoreStatus?.isValid ? (
-                          <span className="text-green-600 dark:text-green-400">
-                            ✓ Valid local store
-                          </span>
-                        ) : (
-                          <span className="text-red-600 dark:text-red-400">
-                            ✗ {localStoreStatus?.error || "Invalid local store"}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <AdvancedTab
+                localStorePath={localStorePath}
+                localStoreStatus={localStoreStatus}
+                onChangeLocalStore={handleChangeLocalStore}
+              />
             )}
           </div>
         </div>

@@ -4,13 +4,13 @@ import { FiMonitor, FiMoon, FiSun } from "react-icons/fi";
 import { type ThemeMode } from "../../utils/SettingsContext";
 
 interface AppearanceTabProps {
-  themeMode: ThemeMode;
   onThemeModeChange: (themeMode: ThemeMode) => void;
+  themeMode: ThemeMode;
 }
 
 const AppearanceTab: React.FC<AppearanceTabProps> = ({
-  themeMode,
   onThemeModeChange,
+  themeMode,
 }) => {
   const themeOptions: Array<{
     icon: React.ReactNode;

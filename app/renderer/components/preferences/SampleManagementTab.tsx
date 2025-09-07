@@ -69,7 +69,9 @@ const SampleManagementTab: React.FC<SampleManagementTabProps> = ({
                 checked={confirmDestructiveActions}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
                 id="confirm-destructive-checkbox"
-                onChange={(e) => onConfirmDestructiveActionsChange(e.target.checked)}
+                onChange={(e) =>
+                  onConfirmDestructiveActionsChange(e.target.checked)
+                }
                 type="checkbox"
               />
             </div>

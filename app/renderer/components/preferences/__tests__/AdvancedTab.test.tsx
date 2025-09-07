@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,20 +9,20 @@ describe("AdvancedTab", () => {
   const mockOnChangeLocalStore = vi.fn();
 
   const validStatus: LocalStoreValidationDetailedResult = {
-    isValid: true,
     hasLocalStore: true,
+    isValid: true,
     localStorePath: "/test/path",
   };
 
   const invalidStatusWithError: LocalStoreValidationDetailedResult = {
-    isValid: false,
     error: "Database not found",
     hasLocalStore: false,
+    isValid: false,
   };
 
   const invalidStatusWithoutError: LocalStoreValidationDetailedResult = {
-    isValid: false,
     hasLocalStore: false,
+    isValid: false,
   };
 
   beforeEach(() => {
@@ -63,16 +63,24 @@ describe("AdvancedTab", () => {
       // Check proper ARIA label associations
       const pathElement = document.getElementById("local-store-path");
       expect(pathElement).toHaveAttribute("role", "textbox");
-      expect(pathElement).toHaveAttribute("aria-labelledby", "local-store-path-label");
+      expect(pathElement).toHaveAttribute(
+        "aria-labelledby",
+        "local-store-path-label",
+      );
       expect(pathElement).toHaveAttribute("aria-readonly", "true");
 
       const statusElement = document.getElementById("local-store-status");
       expect(statusElement).toHaveAttribute("role", "status");
-      expect(statusElement).toHaveAttribute("aria-labelledby", "local-store-status-label");
+      expect(statusElement).toHaveAttribute(
+        "aria-labelledby",
+        "local-store-status-label",
+      );
       expect(statusElement).toHaveAttribute("aria-live", "polite");
 
       // Check button accessibility
-      const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+      const changeButtons = screen.getAllByRole("button", {
+        name: "Change...",
+      });
       expect(changeButtons.length).toBeGreaterThanOrEqual(1);
       expect(changeButtons[0]).toBeInTheDocument();
     });
@@ -132,7 +140,10 @@ describe("AdvancedTab", () => {
 
       const statusElements = screen.getAllByText("✓ Valid local store");
       expect(statusElements.length).toBeGreaterThanOrEqual(1);
-      expect(statusElements[0]).toHaveClass("text-green-600", "dark:text-green-400");
+      expect(statusElements[0]).toHaveClass(
+        "text-green-600",
+        "dark:text-green-400",
+      );
     });
 
     it("displays invalid status with error message when error is provided", () => {
@@ -146,7 +157,10 @@ describe("AdvancedTab", () => {
 
       const statusElements = screen.getAllByText("✗ Database not found");
       expect(statusElements.length).toBeGreaterThanOrEqual(1);
-      expect(statusElements[0]).toHaveClass("text-red-600", "dark:text-red-400");
+      expect(statusElements[0]).toHaveClass(
+        "text-red-600",
+        "dark:text-red-400",
+      );
     });
 
     it("displays generic invalid status when no specific error is provided", () => {
@@ -160,7 +174,10 @@ describe("AdvancedTab", () => {
 
       const statusElements = screen.getAllByText("✗ Invalid local store");
       expect(statusElements.length).toBeGreaterThanOrEqual(1);
-      expect(statusElements[0]).toHaveClass("text-red-600", "dark:text-red-400");
+      expect(statusElements[0]).toHaveClass(
+        "text-red-600",
+        "dark:text-red-400",
+      );
     });
 
     it("displays generic invalid status when localStoreStatus is null", () => {
@@ -174,15 +191,18 @@ describe("AdvancedTab", () => {
 
       const statusElements = screen.getAllByText("✗ Invalid local store");
       expect(statusElements.length).toBeGreaterThanOrEqual(1);
-      expect(statusElements[0]).toHaveClass("text-red-600", "dark:text-red-400");
+      expect(statusElements[0]).toHaveClass(
+        "text-red-600",
+        "dark:text-red-400",
+      );
     });
 
     it("handles complex error messages correctly", () => {
       const complexErrorStatus: LocalStoreValidationDetailedResult = {
-        isValid: false,
         error: "Permission denied: /restricted/path/samples",
         hasLocalStore: false,
         isCriticalEnvironmentError: true,
+        isValid: false,
       };
 
       render(
@@ -193,7 +213,9 @@ describe("AdvancedTab", () => {
         />,
       );
 
-      const errorElements = screen.getAllByText("✗ Permission denied: /restricted/path/samples");
+      const errorElements = screen.getAllByText(
+        "✗ Permission denied: /restricted/path/samples",
+      );
       expect(errorElements.length).toBeGreaterThanOrEqual(1);
     });
   });
@@ -208,7 +230,9 @@ describe("AdvancedTab", () => {
         />,
       );
 
-      const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+      const changeButtons = screen.getAllByRole("button", {
+        name: "Change...",
+      });
       fireEvent.click(changeButtons[0]);
 
       expect(mockOnChangeLocalStore).toHaveBeenCalledOnce();
@@ -223,16 +247,18 @@ describe("AdvancedTab", () => {
         />,
       );
 
-      const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+      const changeButtons = screen.getAllByRole("button", {
+        name: "Change...",
+      });
       const changeButton = changeButtons[0];
       changeButton.focus();
-      
+
       expect(document.activeElement).toBe(changeButton);
-      
+
       // Simulate Enter key press
       fireEvent.keyDown(changeButton, { key: "Enter" });
       fireEvent.click(changeButton); // Click is still needed as keyDown doesn't trigger button click
-      
+
       expect(mockOnChangeLocalStore).toHaveBeenCalledOnce();
     });
 
@@ -245,9 +271,11 @@ describe("AdvancedTab", () => {
         />,
       );
 
-      const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+      const changeButtons = screen.getAllByRole("button", {
+        name: "Change...",
+      });
       const changeButton = changeButtons[0];
-      
+
       // Check initial styling
       expect(changeButton).toHaveClass(
         "px-3",
@@ -256,7 +284,7 @@ describe("AdvancedTab", () => {
         "text-white",
         "rounded",
         "hover:bg-blue-700",
-        "transition-colors"
+        "transition-colors",
       );
 
       // Check that it contains the folder icon and text
@@ -272,9 +300,11 @@ describe("AdvancedTab", () => {
         />,
       );
 
-      const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+      const changeButtons = screen.getAllByRole("button", {
+        name: "Change...",
+      });
       const changeButton = changeButtons[0];
-      
+
       fireEvent.click(changeButton);
       fireEvent.click(changeButton);
       fireEvent.click(changeButton);
@@ -310,7 +340,7 @@ describe("AdvancedTab", () => {
         "border-gray-300",
         "dark:border-gray-600",
         "font-mono",
-        "text-sm"
+        "text-sm",
       );
     });
 
@@ -335,7 +365,7 @@ describe("AdvancedTab", () => {
       render(
         <AdvancedTab
           localStorePath="/test/path"
-          localStoreStatus={undefined as any}
+          localStoreStatus={undefined as unknown}
           onChangeLocalStore={mockOnChangeLocalStore}
         />,
       );
@@ -344,7 +374,8 @@ describe("AdvancedTab", () => {
     });
 
     it("handles very long path names", () => {
-      const longPath = "/very/very/very/very/very/very/very/very/very/very/long/path/to/samples/directory/that/might/overflow";
+      const longPath =
+        "/very/very/very/very/very/very/very/very/very/very/long/path/to/samples/directory/that/might/overflow";
       render(
         <AdvancedTab
           localStorePath={longPath}
@@ -358,11 +389,12 @@ describe("AdvancedTab", () => {
     });
 
     it("handles very long error messages", () => {
-      const longError = "This is a very long error message that might occur when there are multiple validation issues with the local store path configuration and database connection problems that need to be handled gracefully";
+      const longError =
+        "This is a very long error message that might occur when there are multiple validation issues with the local store path configuration and database connection problems that need to be handled gracefully";
       const longErrorStatus: LocalStoreValidationDetailedResult = {
-        isValid: false,
         error: longError,
         hasLocalStore: false,
+        isValid: false,
       };
 
       render(
@@ -379,13 +411,13 @@ describe("AdvancedTab", () => {
 
     it("handles status object with all optional fields", () => {
       const fullStatus: LocalStoreValidationDetailedResult = {
-        isValid: true,
-        hasLocalStore: true,
-        localStorePath: "/full/test/path",
         error: undefined,
         errorSummary: "No errors",
+        hasLocalStore: true,
         isCriticalEnvironmentError: false,
         isEnvironmentOverride: false,
+        isValid: true,
+        localStorePath: "/full/test/path",
         romperDbPath: "/full/test/path/romper.db",
       };
 
@@ -412,7 +444,9 @@ describe("AdvancedTab", () => {
         />,
       );
 
-      const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+      const changeButtons = screen.getAllByRole("button", {
+        name: "Change...",
+      });
       const changeButton = changeButtons[0];
       const icon = changeButton.querySelector("svg");
       expect(icon).toBeInTheDocument();

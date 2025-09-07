@@ -65,7 +65,6 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
     }
   };
 
-
   return (
     <div
       aria-labelledby="preferences-title"
@@ -150,8 +149,8 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
 
             {activeTab === "appearance" && (
               <AppearanceTab
-                themeMode={themeMode}
                 onThemeModeChange={setThemeMode}
+                themeMode={themeMode}
               />
             )}
 

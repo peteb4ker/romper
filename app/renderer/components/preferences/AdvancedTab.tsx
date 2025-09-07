@@ -4,7 +4,7 @@ import { FiFolder } from "react-icons/fi";
 import { type LocalStoreValidationDetailedResult } from "../../utils/SettingsContext";
 
 interface AdvancedTabProps {
-  localStorePath: string | null;
+  localStorePath: null | string;
   localStoreStatus: LocalStoreValidationDetailedResult | null;
   onChangeLocalStore: () => void;
 }
@@ -32,10 +32,10 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
             <div className="flex items-center gap-2">
               <div
                 aria-labelledby="local-store-path-label"
+                aria-readonly="true"
                 className="flex-1 p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 font-mono text-sm text-gray-700 dark:text-gray-300"
                 id="local-store-path"
                 role="textbox"
-                aria-readonly="true"
               >
                 {localStorePath || "No local store configured"}
               </div>
@@ -61,10 +61,10 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
             </label>
             <div
               aria-labelledby="local-store-status-label"
+              aria-live="polite"
               className="p-2 bg-gray-50 dark:bg-slate-700 rounded border border-gray-300 dark:border-gray-600 text-sm"
               id="local-store-status"
               role="status"
-              aria-live="polite"
             >
               {localStoreStatus?.isValid ? (
                 <span className="text-green-600 dark:text-green-400">

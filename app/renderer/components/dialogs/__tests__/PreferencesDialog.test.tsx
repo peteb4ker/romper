@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setupElectronAPIMock } from "../../../../../tests/mocks/electron/electronAPI";
 import { useSettings } from "../../../utils/SettingsContext";
 import PreferencesDialog from "../PreferencesDialog";
 
@@ -9,15 +10,6 @@ import PreferencesDialog from "../PreferencesDialog";
 vi.mock("../../../utils/SettingsContext", () => ({
   useSettings: vi.fn(),
 }));
-
-// Mock window.electronAPI
-const mockElectronAPI = {
-  selectExistingLocalStore: vi.fn(),
-};
-Object.defineProperty(window, "electronAPI", {
-  value: mockElectronAPI,
-  writable: true,
-});
 
 const mockUseSettings = vi.mocked(useSettings);
 
@@ -49,7 +41,7 @@ describe("PreferencesDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseSettings.mockReturnValue(defaultSettingsContext);
-    mockElectronAPI.selectExistingLocalStore.mockClear();
+    setupElectronAPIMock();
   });
 
   afterEach(() => {
@@ -304,7 +296,9 @@ describe("PreferencesDialog", () => {
       render(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
 
       // Navigate to Advanced tab
-      const advancedTab = screen.getAllByRole("button", { name: "Advanced" })[0];
+      const advancedTab = screen.getAllByRole("button", {
+        name: "Advanced",
+      })[0];
       fireEvent.click(advancedTab);
 
       // Check that advanced tab content is visible (Local Store section)
@@ -313,130 +307,168 @@ describe("PreferencesDialog", () => {
     });
 
     it("handles successful local store path selection", async () => {
-      mockElectronAPI.selectExistingLocalStore.mockResolvedValue({
-        success: true,
+      // Override the centralized mock for this test
+      vi.mocked(window.electronAPI.selectExistingLocalStore).mockResolvedValue({
         path: "/new/test/path",
+        success: true,
       });
 
       render(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
 
       // Navigate to Advanced tab
-      const advancedTab = screen.getAllByRole("button", { name: "Advanced" })[0];
+      const advancedTab = screen.getAllByRole("button", {
+        name: "Advanced",
+      })[0];
       fireEvent.click(advancedTab);
 
       // Wait for the advanced tab content to render and find Change button
       await waitFor(() => {
-        const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+        const changeButtons = screen.getAllByRole("button", {
+          name: "Change...",
+        });
         expect(changeButtons.length).toBeGreaterThan(0);
       });
-      
-      const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+
+      const changeButtons = screen.getAllByRole("button", {
+        name: "Change...",
+      });
       const changeButton = changeButtons[0];
       fireEvent.click(changeButton);
 
       // Wait for async operation to complete
       await waitFor(() => {
-        expect(mockElectronAPI.selectExistingLocalStore).toHaveBeenCalled();
+        expect(window.electronAPI.selectExistingLocalStore).toHaveBeenCalled();
       });
-      
+
       expect(mockSetLocalStorePath).toHaveBeenCalledWith("/new/test/path");
     });
 
     it("handles failed local store path selection", async () => {
-      mockElectronAPI.selectExistingLocalStore.mockResolvedValue({
+      // Override the centralized mock for this test
+      vi.mocked(window.electronAPI.selectExistingLocalStore).mockResolvedValue({
         success: false,
       });
 
       render(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
 
       // Navigate to Advanced tab
-      const advancedTab = screen.getAllByRole("button", { name: "Advanced" })[0];
+      const advancedTab = screen.getAllByRole("button", {
+        name: "Advanced",
+      })[0];
       fireEvent.click(advancedTab);
 
       // Wait for the advanced tab content to render and find Change button
       await waitFor(() => {
-        const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+        const changeButtons = screen.getAllByRole("button", {
+          name: "Change...",
+        });
         expect(changeButtons.length).toBeGreaterThan(0);
       });
-      
-      const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+
+      const changeButtons = screen.getAllByRole("button", {
+        name: "Change...",
+      });
       const changeButton = changeButtons[0];
       fireEvent.click(changeButton);
 
       // Wait for async operation to complete
       await waitFor(() => {
-        expect(mockElectronAPI.selectExistingLocalStore).toHaveBeenCalled();
+        expect(window.electronAPI.selectExistingLocalStore).toHaveBeenCalled();
       });
-      
+
       expect(mockSetLocalStorePath).not.toHaveBeenCalled();
     });
 
     it("handles electron API error gracefully", async () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      mockElectronAPI.selectExistingLocalStore.mockRejectedValue(new Error("Permission denied"));
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      // Override the centralized mock for this test
+      vi.mocked(window.electronAPI.selectExistingLocalStore).mockRejectedValue(
+        new Error("Permission denied"),
+      );
 
       render(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
 
       // Navigate to Advanced tab
-      const advancedTab = screen.getAllByRole("button", { name: "Advanced" })[0];
+      const advancedTab = screen.getAllByRole("button", {
+        name: "Advanced",
+      })[0];
       fireEvent.click(advancedTab);
 
       // Wait for the advanced tab content to render and find Change button
       await waitFor(() => {
-        const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+        const changeButtons = screen.getAllByRole("button", {
+          name: "Change...",
+        });
         expect(changeButtons.length).toBeGreaterThan(0);
       });
-      
-      const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+
+      const changeButtons = screen.getAllByRole("button", {
+        name: "Change...",
+      });
       const changeButton = changeButtons[0];
       fireEvent.click(changeButton);
 
       // Wait for async operation and error logging
       await waitFor(() => {
-        expect(mockElectronAPI.selectExistingLocalStore).toHaveBeenCalled();
+        expect(window.electronAPI.selectExistingLocalStore).toHaveBeenCalled();
       });
-      
+
       await waitFor(() => {
-        expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to change local store:", expect.any(Error));
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "Failed to change local store:",
+          expect.any(Error),
+        );
       });
-      
+
       expect(mockSetLocalStorePath).not.toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();
     });
 
     it("handles missing electron API gracefully", async () => {
-      // Temporarily remove the electron API
-      const originalAPI = window.electronAPI;
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      // @ts-ignore - testing runtime scenario
-      window.electronAPI = undefined;
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      // Override the centralized mock to simulate missing API method
+      vi.mocked(window.electronAPI.selectExistingLocalStore).mockRejectedValue(
+        new Error("selectExistingLocalStore is not a function"),
+      );
 
       render(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
 
       // Navigate to Advanced tab
-      const advancedTab = screen.getAllByRole("button", { name: "Advanced" })[0];
+      const advancedTab = screen.getAllByRole("button", {
+        name: "Advanced",
+      })[0];
       fireEvent.click(advancedTab);
 
       // Wait for the advanced tab content to render and find Change button
       await waitFor(() => {
-        const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+        const changeButtons = screen.getAllByRole("button", {
+          name: "Change...",
+        });
         expect(changeButtons.length).toBeGreaterThan(0);
       });
-      
-      const changeButtons = screen.getAllByRole("button", { name: "Change..." });
+
+      const changeButtons = screen.getAllByRole("button", {
+        name: "Change...",
+      });
       const changeButton = changeButtons[0];
       fireEvent.click(changeButton);
 
-      // Wait for error to be logged due to missing API
+      // Wait for error to be logged due to missing API method
       await waitFor(() => {
-        expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to change local store:", expect.any(Error));
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "Failed to change local store:",
+          expect.any(Error),
+        );
       });
 
       expect(mockSetLocalStorePath).not.toHaveBeenCalled();
 
-      // Restore original API
-      window.electronAPI = originalAPI;
       consoleErrorSpy.mockRestore();
     });
   });

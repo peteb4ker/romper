@@ -45,6 +45,11 @@ export function checkMigrationState(sqlite: BetterSqlite3.Database): void {
   }
 }
 
+// Export function to clear migration cache (for tests)
+export function clearMigrationCache(): void {
+  migrationCheckedDbs.clear();
+}
+
 /**
  * Initialize database with schema using Drizzle migrations
  */

@@ -35,17 +35,22 @@ const { banks, kits, samples, voices } = schema;
  */
 export function addKit(dbDir: string, kit: NewKit): DbResult<void> {
   return withDb(dbDir, (db) => {
-    // Insert kit directly
-    db.insert(kits).values(kit).run();
+    try {
+      // Insert kit directly
+      db.insert(kits).values(kit).run();
 
-    // Create the 4 voices
-    const voiceData = Array.from({ length: 4 }, (_, i) => ({
-      kit_name: kit.name,
-      voice_alias: null,
-      voice_number: i + 1,
-    }));
+      // Create the 4 voices
+      const voiceData = Array.from({ length: 4 }, (_, i) => ({
+        kit_name: kit.name,
+        stereo_mode: false, // Default to mono mode
+        voice_alias: null,
+        voice_number: i + 1,
+      }));
 
-    db.insert(voices).values(voiceData).run();
+      db.insert(voices).values(voiceData).run();
+    } catch (error) {
+      throw error;
+    }
   });
 }
 

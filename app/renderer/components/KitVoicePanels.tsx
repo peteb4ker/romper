@@ -102,7 +102,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       Object.entries(sampleMetadata).forEach(([filename, data]) => {
         samples.push({
           filename,
-          id: Date.now() + Math.random(), // Generate unique ID
+          id: Date.now() + Math.random(), // Safe: UI-only ID generation for React keys, not cryptographic
           is_stereo: data.is_stereo || data.wav_channels === 2,
           kit_name: hookProps.kitName || "",
           slot_number: 0, // Default slot since SampleData doesn't have slot

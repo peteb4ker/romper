@@ -4,13 +4,16 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
   getKitSamples: vi.fn(),
 }));
 
-vi.mock("./syncValidationService.js", () => ({
+vi.mock("../syncValidationService.js", () => ({
   syncValidationService: {
-    validateSyncSourceFile: vi.fn(),
+    validateSyncSourceFile: vi.fn().mockReturnValue({
+      fileSize: 1024,
+      isValid: true,
+    }),
   },
 }));
 
-vi.mock("./syncFileOperations.js", () => ({
+vi.mock("../syncFileOperations.js", () => ({
   syncFileOperationsService: {
     categorizeSyncFileOperation: vi.fn(),
   },
@@ -22,8 +25,12 @@ import { syncSampleProcessingService } from "../syncSampleProcessing.js";
 import { syncValidationService } from "../syncValidationService.js";
 
 const mockGetKitSamples = vi.mocked(getKitSamples);
-const _mockSyncValidationService = vi.mocked(syncValidationService);
-const _mockSyncFileOperationsService = vi.mocked(syncFileOperationsService);
+const mockValidateSyncSourceFile = vi.mocked(
+  syncValidationService.validateSyncSourceFile,
+);
+const mockCategorizeSyncFileOperation = vi.mocked(
+  syncFileOperationsService.categorizeSyncFileOperation,
+);
 
 describe("SyncSampleProcessingService", () => {
   beforeEach(() => {
@@ -173,10 +180,22 @@ describe("SyncSampleProcessingService", () => {
   });
 
   describe("processSampleForSync", () => {
-    const sample = {
+    const monoSample = {
       filename: "kick.wav",
+      is_stereo: false,
       kit_name: "TestKit",
+      slot_number: 0,
       source_path: "/source/kick.wav",
+      voice_number: 1,
+    } as unknown;
+
+    const stereoSample = {
+      filename: "stereo_kick.wav",
+      is_stereo: true,
+      kit_name: "TestKit",
+      slot_number: 0,
+      source_path: "/source/stereo_kick.wav",
+      voice_number: 1,
     } as unknown;
 
     const results = {
@@ -187,40 +206,188 @@ describe("SyncSampleProcessingService", () => {
       warnings: [],
     } as unknown;
 
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockValidateSyncSourceFile.mockReturnValue({
+        fileSize: 1024,
+        isValid: true,
+      });
+      // Reset arrays
+      results.warnings = [];
+      results.validationErrors = [];
+      results.filesToCopy = [];
+      results.filesToConvert = [];
+    });
+
     it("should handle sample without source path", () => {
-      const sampleNoSource = { ...sample, source_path: undefined };
+      const sampleNoSource = { ...monoSample, source_path: undefined };
 
-      // Should not throw error when processing sample without source path
-      expect(() => {
-        syncSampleProcessingService.processSampleForSync(
-          sampleNoSource,
-          "/local/store",
-          results,
-        );
-      }).not.toThrow();
+      syncSampleProcessingService.processSampleForSync(
+        sampleNoSource,
+        "/local/store",
+        results,
+      );
+
+      expect(mockValidateSyncSourceFile).not.toHaveBeenCalled();
+      expect(mockCategorizeSyncFileOperation).not.toHaveBeenCalled();
     });
 
-    it("should handle sample processing without error", () => {
-      // Test that the method can be called successfully
-      expect(() => {
-        syncSampleProcessingService.processSampleForSync(
-          sample,
-          "/local/store",
-          results,
-          "/sdcard",
-        );
-      }).not.toThrow();
+    it("should process mono sample correctly", () => {
+      syncSampleProcessingService.processSampleForSync(
+        monoSample,
+        "/local/store",
+        results,
+      );
+
+      expect(mockValidateSyncSourceFile).toHaveBeenCalledWith(
+        "kick.wav",
+        "/source/kick.wav",
+        results.validationErrors,
+      );
+      expect(mockCategorizeSyncFileOperation).toHaveBeenCalledWith(
+        monoSample,
+        "kick.wav",
+        "/source/kick.wav",
+        "/local/store/sync_output/TestKit/1/kick.wav",
+        results,
+      );
     });
 
-    it("should handle sample processing without SD card", () => {
-      // Test that the method handles non-SD card paths
-      expect(() => {
-        syncSampleProcessingService.processSampleForSync(
-          sample,
-          "/local/store",
-          results,
-        );
-      }).not.toThrow();
+    it("should process stereo sample from voice 1", () => {
+      syncSampleProcessingService.processSampleForSync(
+        stereoSample,
+        "/local/store",
+        results,
+      );
+
+      expect(mockCategorizeSyncFileOperation).toHaveBeenCalledTimes(1);
+      expect(results.warnings).toContain(
+        'Stereo sample "stereo_kick.wav" on voice 1 will play across voices 1 and 2',
+      );
+    });
+
+    it("should process stereo sample from voice 4 without warning", () => {
+      const voice4Stereo = { ...stereoSample, voice_number: 4 };
+
+      syncSampleProcessingService.processSampleForSync(
+        voice4Stereo,
+        "/local/store",
+        results,
+      );
+
+      // Should process normally but without cross-voice warning (no voice 5)
+      expect(mockCategorizeSyncFileOperation).toHaveBeenCalledTimes(1);
+      expect(
+        results.warnings.filter((w) => w.includes("will play across")),
+      ).toHaveLength(0);
+    });
+
+    it("should handle invalid source file", () => {
+      mockValidateSyncSourceFile.mockReturnValue({
+        fileSize: 0,
+        isValid: false,
+      });
+
+      syncSampleProcessingService.processSampleForSync(
+        monoSample,
+        "/local/store",
+        results,
+      );
+
+      expect(mockCategorizeSyncFileOperation).not.toHaveBeenCalled();
+    });
+
+    it("should use SD card path when provided", () => {
+      syncSampleProcessingService.processSampleForSync(
+        monoSample,
+        "/local/store",
+        results,
+        "/sdcard",
+      );
+
+      expect(mockCategorizeSyncFileOperation).toHaveBeenCalledWith(
+        monoSample,
+        "kick.wav",
+        "/source/kick.wav",
+        "/sdcard/TestKit/1/kick.wav",
+        results,
+      );
+    });
+  });
+
+  describe("stereo sample processing", () => {
+    const testStereoSample = {
+      filename: "stereo_kick.wav",
+      is_stereo: true,
+      kit_name: "TestKit",
+      slot_number: 0,
+      source_path: "/source/stereo_kick.wav",
+      voice_number: 1,
+    } as unknown;
+
+    const testMonoSample = {
+      filename: "kick.wav",
+      is_stereo: false,
+      kit_name: "TestKit",
+      slot_number: 0,
+      source_path: "/source/kick.wav",
+      voice_number: 1,
+    } as unknown;
+
+    const testResults = {
+      filesToConvert: [],
+      filesToCopy: [],
+      hasFormatWarnings: false,
+      validationErrors: [],
+      warnings: [],
+    } as unknown;
+
+    beforeEach(() => {
+      mockValidateSyncSourceFile.mockReturnValue({
+        fileSize: 1024,
+        isValid: true,
+      });
+      testResults.warnings = [];
+    });
+
+    it("should add warning for stereo samples on voices 1-3", () => {
+      const voice2Stereo = { ...testStereoSample, voice_number: 2 };
+
+      syncSampleProcessingService.processSampleForSync(
+        voice2Stereo,
+        "/local/store",
+        testResults,
+      );
+
+      expect(testResults.warnings).toContain(
+        'Stereo sample "stereo_kick.wav" on voice 2 will play across voices 2 and 3',
+      );
+    });
+
+    it("should not add cross-voice warning for stereo sample on voice 4", () => {
+      const voice4Stereo = { ...testStereoSample, voice_number: 4 };
+
+      syncSampleProcessingService.processSampleForSync(
+        voice4Stereo,
+        "/local/store",
+        testResults,
+      );
+
+      expect(
+        testResults.warnings.filter((w) => w.includes("will play across")),
+      ).toHaveLength(0);
+    });
+
+    it("should not add warning for mono samples", () => {
+      syncSampleProcessingService.processSampleForSync(
+        testMonoSample,
+        "/local/store",
+        testResults,
+      );
+
+      expect(
+        testResults.warnings.filter((w) => w.includes("will play across")),
+      ).toHaveLength(0);
     });
   });
 });

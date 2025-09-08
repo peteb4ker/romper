@@ -417,5 +417,249 @@ describe("useStereoHandling", () => {
       expect(status.isPrimary).toBe(false);
       expect(status.linkedWith).toBe(1);
     });
+
+    it("should handle voice 1 correctly (no previous voice)", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const status = result.current.getVoiceLinkingStatus(1, mockVoices);
+
+      expect(status.isLinked).toBe(false);
+      expect(status.isPrimary).toBe(false);
+    });
+  });
+
+  describe("Error handling and edge cases", () => {
+    it("should handle linkVoicesForStereo errors gracefully", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const mockOnVoiceUpdate = vi
+        .fn()
+        .mockRejectedValue(new Error("Update failed"));
+
+      const success = await result.current.linkVoicesForStereo(
+        1,
+        mockVoices,
+        [],
+        mockOnVoiceUpdate,
+      );
+
+      expect(success).toBe(false);
+      expect(mockToast.error).toHaveBeenCalledWith("Voice linking failed", {
+        description: "Failed to link voices. Please try again.",
+        duration: 5000,
+      });
+    });
+
+    it("should handle unlinkVoices errors gracefully", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+      const mockOnVoiceUpdate = vi
+        .fn()
+        .mockRejectedValue(new Error("Update failed"));
+
+      const success = await result.current.unlinkVoices(
+        1,
+        stereoVoices,
+        [],
+        mockOnVoiceUpdate,
+      );
+
+      expect(success).toBe(false);
+      expect(mockToast.error).toHaveBeenCalledWith("Voice unlinking failed", {
+        description: "Failed to unlink voices. Please try again.",
+        duration: 5000,
+      });
+    });
+
+    it("should handle missing voice data in validateVoiceAssignment", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const validation = result.current.validateVoiceAssignment(
+        99, // Non-existent voice
+        1,
+        mockVoices,
+        [],
+      );
+
+      expect(validation.canAccept).toBe(false);
+      expect(validation.reason).toBe("Voice not found");
+      expect(validation.voiceMode).toBe("mono");
+    });
+
+    it("should handle missing voice data in canLinkVoices", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const incompleteVoices = [mockVoices[0]]; // Missing voice 2
+
+      const linkingResult = result.current.canLinkVoices(
+        1,
+        incompleteVoices,
+        [],
+      );
+
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toBe("Voice data not found");
+    });
+  });
+
+  describe("Complex sample assignment scenarios", () => {
+    it("should prevent mixing mono and stereo samples in validateVoiceAssignment", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const mixedSamples = [
+        { ...mockSamples[0], is_stereo: false, voice_number: 1 }, // Existing mono sample
+      ];
+
+      const validation = result.current.validateVoiceAssignment(
+        1,
+        2, // Trying to add stereo sample
+        mockVoices,
+        mixedSamples,
+      );
+
+      expect(validation.canAccept).toBe(false);
+      expect(validation.reason).toBe(
+        "Cannot mix mono and stereo samples in same voice",
+      );
+      expect(validation.requiresConversion).toBe("mono");
+      expect(validation.voiceMode).toBe("mono");
+    });
+
+    it("should allow stereo sample assignment with userLinkedVoices flag", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const assignment = result.current.analyzeSampleAssignment(
+        1,
+        2, // Stereo sample
+        mockVoices,
+        [],
+        true, // User manually linked voices
+      );
+
+      expect(assignment.canAssign).toBe(true);
+      expect(assignment.assignAsMono).toBe(false);
+      expect(assignment.requiresWarning).toBe(false);
+    });
+
+    it("should handle stereo sample to already stereo voice", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+
+      const assignment = result.current.analyzeSampleAssignment(
+        1,
+        2, // Stereo sample
+        stereoVoices,
+        [],
+      );
+
+      expect(assignment.canAssign).toBe(true);
+      expect(assignment.assignAsMono).toBe(false);
+      expect(assignment.requiresWarning).toBe(false);
+    });
+
+    it("should handle conversion recommendation when linking impossible", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const conflictedVoices = [
+        mockVoices[0],
+        { ...mockVoices[1], stereo_mode: true }, // Voice 2 already in stereo mode
+        ...mockVoices.slice(2),
+      ];
+
+      const validation = result.current.validateVoiceAssignment(
+        1,
+        2, // Stereo sample to voice that can't link (voice 2 busy)
+        conflictedVoices,
+        [],
+      );
+
+      expect(validation.canAccept).toBe(true);
+      expect(validation.requiresConversion).toBe("mono");
+      expect(validation.reason).toContain(
+        "already linked or has stereo samples",
+      );
+    });
+  });
+
+  describe("Voice linking with existing samples", () => {
+    it("should prevent linking when target voice has stereo samples", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const samplesWithStereoInTarget = [
+        { ...mockSamples[0], is_stereo: true, voice_number: 2 }, // Voice 2 has stereo sample
+      ];
+
+      const linkingResult = result.current.canLinkVoices(
+        1,
+        mockVoices,
+        samplesWithStereoInTarget,
+      );
+
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toBe(
+        "Voice 2 is already linked or has stereo samples",
+      );
+    });
+
+    it("should prevent linking when target voice is in stereo mode", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const voicesWithStereoTarget = [
+        mockVoices[0],
+        { ...mockVoices[1], stereo_mode: true }, // Voice 2 in stereo mode
+        ...mockVoices.slice(2),
+      ];
+
+      const linkingResult = result.current.canLinkVoices(
+        1,
+        voicesWithStereoTarget,
+        [],
+      );
+
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toBe(
+        "Voice 2 is already linked or has stereo samples",
+      );
+    });
+  });
+
+  describe("Functions without onVoiceUpdate callback", () => {
+    it("should handle linkVoicesForStereo without onVoiceUpdate", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const success = await result.current.linkVoicesForStereo(
+        1,
+        mockVoices,
+        [],
+        undefined, // No callback
+      );
+
+      expect(success).toBe(true);
+      expect(mockToast.success).toHaveBeenCalledWith("Voices linked", {
+        description: "Voice 1 and 2 are now linked for stereo",
+        duration: 5000,
+      });
+    });
+
+    it("should handle unlinkVoices without onVoiceUpdate", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+
+      const success = await result.current.unlinkVoices(
+        1,
+        stereoVoices,
+        [],
+        undefined, // No callback
+      );
+
+      expect(success).toBe(true);
+      expect(mockToast.success).toHaveBeenCalledWith("Voices unlinked", {
+        description: "Voice 1 converted back to mono mode",
+        duration: 5000,
+      });
+    });
   });
 });

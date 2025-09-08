@@ -7,8 +7,9 @@ import {
   waitFor,
 } from "@testing-library/react";
 import React, { useState } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { MAX_SLOTS_PER_VOICE } from "../hooks/voice-panels/useVoicePanelSlots";
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
@@ -127,6 +128,11 @@ function voicesToProps(voices) {
 }
 
 describe("KitVoicePanels", () => {
+  beforeEach(() => {
+    setupElectronAPIMock();
+    vi.clearAllMocks();
+  });
+
   it("renders all voices and samples", () => {
     render(<MultiVoicePanelsTestWrapper />);
     expect(screen.getByText("kick.wav")).toBeInTheDocument();
@@ -291,5 +297,217 @@ describe("KitVoicePanels", () => {
     });
     await screen.findByText("snare.wav");
     expect(screen.getByText("snare.wav")).toBeInTheDocument();
+  });
+
+  describe("Sample metadata handling", () => {
+    it("handles missing electronAPI gracefully", () => {
+      // Temporarily remove electronAPI
+      delete window.electronAPI;
+
+      expect(() => {
+        render(<MultiVoicePanelsTestWrapper />);
+      }).not.toThrow();
+
+      // Restore electronAPI
+      setupElectronAPIMock();
+    });
+
+    it("handles empty sample metadata", () => {
+      const mockGetAllSamplesForKit = vi.fn().mockResolvedValue({
+        data: [],
+        success: true,
+      });
+
+      // Use centralized mock
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockImplementation(
+        mockGetAllSamplesForKit,
+      );
+
+      render(<MultiVoicePanelsTestWrapper />);
+      expect(mockGetAllSamplesForKit).toHaveBeenCalledWith("Kit1");
+    });
+
+    it("handles sample metadata loading error", async () => {
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      const mockGetAllSamplesForKit = vi
+        .fn()
+        .mockRejectedValue(new Error("API Error"));
+
+      // Use centralized mock with override
+      setupElectronAPIMock({
+        getAllSamplesForKit: mockGetAllSamplesForKit,
+      });
+
+      render(<MultiVoicePanelsTestWrapper />);
+
+      // Wait for effect to run
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalledWith(
+          "Failed to load sample metadata:",
+          expect.any(Error),
+        );
+      });
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe("Voice panel rendering with different kit configurations", () => {
+    it("renders with null kit (fallback voice data)", () => {
+      const { samples } = voicesToProps(baseProps.voices);
+      render(
+        <MockSettingsProvider>
+          <MockMessageDisplayProvider>
+            <KitVoicePanels
+              kit={null}
+              kitName="TestKit"
+              onPlay={vi.fn()}
+              onRescanVoiceName={vi.fn()}
+              onSampleKeyNav={vi.fn()}
+              onSampleSelect={vi.fn()}
+              onSaveVoiceName={vi.fn()}
+              onStop={vi.fn()}
+              onWaveformPlayingChange={vi.fn()}
+              playTriggers={{}}
+              samplePlaying={{}}
+              samples={samples}
+              selectedSampleIdx={0}
+              selectedVoice={1}
+              sequencerOpen={false}
+              setSelectedSampleIdx={() => {}}
+              setSelectedVoice={() => {}}
+              stopTriggers={{}}
+            />
+          </MockMessageDisplayProvider>
+        </MockSettingsProvider>,
+      );
+
+      expect(screen.getByTestId("voice-panel-1")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-panel-2")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-panel-3")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-panel-4")).toBeInTheDocument();
+    });
+
+    it("renders with kit that has no voices", () => {
+      const kit = {
+        alias: "TestKit",
+        name: "TestKit",
+        voices: [],
+      };
+      const samples = {};
+
+      render(
+        <MockSettingsProvider>
+          <MockMessageDisplayProvider>
+            <KitVoicePanels
+              kit={kit}
+              kitName="TestKit"
+              onPlay={vi.fn()}
+              onRescanVoiceName={vi.fn()}
+              onSampleKeyNav={vi.fn()}
+              onSampleSelect={vi.fn()}
+              onSaveVoiceName={vi.fn()}
+              onStop={vi.fn()}
+              onWaveformPlayingChange={vi.fn()}
+              playTriggers={{}}
+              samplePlaying={{}}
+              samples={samples}
+              selectedSampleIdx={0}
+              selectedVoice={1}
+              sequencerOpen={false}
+              setSelectedSampleIdx={() => {}}
+              setSelectedVoice={() => {}}
+              stopTriggers={{}}
+            />
+          </MockMessageDisplayProvider>
+        </MockSettingsProvider>,
+      );
+
+      expect(screen.getByTestId("voice-panel-1")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-panel-2")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-panel-3")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-panel-4")).toBeInTheDocument();
+    });
+  });
+
+  describe("Stereo drag handling", () => {
+    it("renders with stereo drag info", () => {
+      render(<MultiVoicePanelsTestWrapper isEditable={true} />);
+
+      // Component should render successfully with stereo drag handling
+      expect(screen.getByTestId("voice-panels-row")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-panel-1")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-panel-2")).toBeInTheDocument();
+    });
+  });
+
+  describe("Props edge cases", () => {
+    it("renders with missing optional props", () => {
+      const minimalProps = {
+        kit: { alias: "TestKit", name: "TestKit", voices: [] },
+        kitName: "TestKit",
+        onPlay: vi.fn(),
+        onRescanVoiceName: vi.fn(),
+        onSampleKeyNav: vi.fn(),
+        onSampleSelect: vi.fn(),
+        onSaveVoiceName: vi.fn(),
+        onStop: vi.fn(),
+        onWaveformPlayingChange: vi.fn(),
+        playTriggers: {},
+        samplePlaying: {},
+        samples: {},
+        selectedSampleIdx: 0,
+        selectedVoice: 1,
+        sequencerOpen: false,
+        setSelectedSampleIdx: vi.fn(),
+        setSelectedVoice: vi.fn(),
+        stopTriggers: {},
+      };
+
+      expect(() => {
+        render(
+          <MockSettingsProvider>
+            <MockMessageDisplayProvider>
+              <KitVoicePanels {...minimalProps} />
+            </MockMessageDisplayProvider>
+          </MockSettingsProvider>,
+        );
+      }).not.toThrow();
+    });
+
+    it("handles undefined isEditable prop (defaults to false)", () => {
+      const { kit, samples } = voicesToProps(baseProps.voices);
+      render(
+        <MockSettingsProvider>
+          <MockMessageDisplayProvider>
+            <KitVoicePanels
+              kit={kit}
+              kitName="TestKit"
+              onPlay={vi.fn()}
+              onRescanVoiceName={vi.fn()}
+              onSampleKeyNav={vi.fn()}
+              onSampleSelect={vi.fn()}
+              onSaveVoiceName={vi.fn()}
+              onStop={vi.fn()}
+              onWaveformPlayingChange={vi.fn()}
+              playTriggers={{}}
+              samplePlaying={{}}
+              samples={samples}
+              selectedSampleIdx={0}
+              selectedVoice={1}
+              sequencerOpen={false}
+              setSelectedSampleIdx={() => {}}
+              setSelectedVoice={() => {}}
+              stopTriggers={{}}
+            />
+          </MockMessageDisplayProvider>
+        </MockSettingsProvider>,
+      );
+
+      // Should not have drop zones when isEditable is undefined (defaults to false)
+      expect(screen.queryByTestId("drop-zone-voice-1")).not.toBeInTheDocument();
+    });
   });
 });

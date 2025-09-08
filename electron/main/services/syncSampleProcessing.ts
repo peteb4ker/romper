@@ -3,6 +3,7 @@ import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 import * as path from "path";
 
 import { getKitSamples } from "../db/romperDbCoreORM.js";
+import { rampleNamingService } from "./rampleNamingService.js";
 import {
   syncFileOperationsService,
   type SyncResults,
@@ -68,6 +69,7 @@ export class SyncSampleProcessingService {
 
   /**
    * Process a single sample for sync operation
+   * Enhanced with stereo voice linking support (Task STEREO.4.1)
    */
   processSampleForSync(
     sample: Sample,
@@ -77,6 +79,12 @@ export class SyncSampleProcessingService {
   ): void {
     if (!sample.source_path) {
       return; // Skip samples without source path
+    }
+
+    // Check if this is a stereo sample that requires special handling
+    if (sample.is_stereo && this.shouldProcessStereoSample(sample)) {
+      this.processStereoSample(sample, localStorePath, results, sdCardPath);
+      return;
     }
 
     const { filename, kit_name: kitName, source_path: sourcePath } = sample;
@@ -107,6 +115,110 @@ export class SyncSampleProcessingService {
       destinationPath,
       results,
     );
+  }
+
+  /**
+   * Get destination path for stereo voice files using Rample naming conventions
+   */
+  private getStereoDestinationPath(
+    localStorePath: string,
+    kitName: string,
+    sample: Sample,
+    channel: "left" | "right",
+    sdCardPath?: string,
+  ): string {
+    const baseDir = sdCardPath || path.join(localStorePath, "sync_output");
+
+    // Left channel uses primary voice, right channel uses linked voice (+1)
+    const voiceNumber =
+      channel === "left" ? sample.voice_number : sample.voice_number + 1;
+
+    // Use Rample naming service for proper file naming
+    return rampleNamingService.generateSampleDestinationPath(
+      baseDir,
+      kitName,
+      voiceNumber,
+      sample.slot_number,
+    );
+  }
+
+  /**
+   * Process stereo sample with voice linking
+   * Generates files for both left (primary) and right (linked) voices
+   */
+  private processStereoSample(
+    sample: Sample,
+    localStorePath: string,
+    results: SyncResults,
+    sdCardPath?: string,
+  ): void {
+    const { filename, kit_name: kitName, source_path: sourcePath } = sample;
+
+    // Validate source file
+    const fileValidation = syncValidationService.validateSyncSourceFile(
+      filename,
+      sourcePath,
+      results.validationErrors,
+    );
+
+    if (!fileValidation.isValid) {
+      return;
+    }
+
+    // Generate left channel file (primary voice)
+    const leftDestination = this.getStereoDestinationPath(
+      localStorePath,
+      kitName,
+      sample,
+      "left",
+      sdCardPath,
+    );
+
+    // Generate right channel file (linked voice)
+    const rightDestination = this.getStereoDestinationPath(
+      localStorePath,
+      kitName,
+      sample,
+      "right",
+      sdCardPath,
+    );
+
+    // Process left channel file
+    syncFileOperationsService.categorizeSyncFileOperation(
+      sample,
+      path.basename(leftDestination),
+      sourcePath,
+      leftDestination,
+      results,
+    );
+
+    // Process right channel file (same source, different destination)
+    syncFileOperationsService.categorizeSyncFileOperation(
+      { ...sample, voice_number: sample.voice_number + 1 }, // Linked voice
+      path.basename(rightDestination),
+      sourcePath,
+      rightDestination,
+      results,
+    );
+
+    // Add informational message
+    results.warnings.push(
+      `Stereo sample "${filename}" generates files for voice ${sample.voice_number} (L) and voice ${sample.voice_number + 1} (R)`,
+    );
+  }
+
+  /**
+   * Check if stereo sample should be processed with voice linking
+   * Task STEREO.4.1: Voice-level stereo file generation
+   */
+  private shouldProcessStereoSample(sample: Sample): boolean {
+    // Voice 4 cannot be stereo (no voice 5 to link to)
+    if (sample.voice_number === 4) {
+      return false;
+    }
+
+    // Only process stereo samples from voices 1-3 that can link
+    return sample.voice_number >= 1 && sample.voice_number <= 3;
   }
 }
 

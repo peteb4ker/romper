@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { markKitsAsSynced } from "../db/romperDbCoreORM.js";
+// import { stereoSyncProcessor } from "./stereoSyncProcessor.js"; // TODO: Integrate stereo processing
 import {
   type SyncFileOperation,
   syncFileOperationsService,

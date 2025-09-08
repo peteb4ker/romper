@@ -2,225 +2,385 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 
 import { ErrorPatterns } from "../../../utils/errorHandling";
-import { useSettings } from "../../../utils/SettingsContext";
 
-export interface StereoAssignmentOptions {
-  cancel: boolean;
-  forceMono: boolean;
-  replaceExisting: boolean;
+// Sample data structure
+export interface Sample {
+  filename: string;
+  id: number;
+  is_stereo: boolean;
+  kit_name: string;
+  slot_number: number;
+  source_path: string;
+  voice_number: number;
 }
 
-export interface StereoConflictInfo {
-  existingSamples: {
-    samples: string[];
-    voice: number;
-  }[];
-  nextVoice: number;
-  targetVoice: number;
-}
-
-export interface StereoHandlingResult {
+// Sample assignment result
+export interface SampleAssignmentResult {
   assignAsMono: boolean;
   canAssign: boolean;
-  conflictInfo?: StereoConflictInfo;
-  requiresConfirmation: boolean;
+  requiresWarning: boolean;
   targetVoice: number;
+  warningMessage?: string;
+}
+
+// Voice data structure with stereo mode
+export interface Voice {
+  id: number;
+  kit_name: string;
+  stereo_mode: boolean; // NEW: Voice-level stereo mode tracking
+  voice_alias?: string;
+  voice_number: number; // 1-4
+}
+
+// Voice linking result
+export interface VoiceLinkingResult {
+  canLink: boolean;
+  linkedVoice?: number; // The voice that will be linked
+  reason?: string;
+}
+
+// Voice validation result
+export interface VoiceValidation {
+  canAccept: boolean;
+  reason?: string;
+  requiresConversion?: "mono" | "stereo";
+  voiceMode: "linked" | "mono" | "stereo";
 }
 
 /**
- * Hook for stereo sample assignment logic, conflict detection, and settings integration
- * Implements Task 7.0 Stereo Sample Handling requirements
+ * Hook for voice linking and stereo sample handling
+ * Implements corrected Rample stereo behavior where stereo voices link adjacent voices
  */
 export function useStereoHandling() {
-  const { defaultToMonoSamples } = useSettings();
-
   /**
-   * Task 7.2.1: Auto-assign as mono when global setting ON
-   * Task 7.2.2: Dual-slot assignment: left→voice N, right→voice N+1 when OFF
-   * Task 7.1.3: Allow per-sample override for mono/stereo
+   * Check if two voices can be linked for stereo operation
+   * Voice linking rules: 1→2, 2→3, 3→4 (voice 4 cannot be primary stereo voice)
    */
-  const analyzeStereoAssignment = useCallback(
+  const canLinkVoices = useCallback(
     (
-      targetVoice: number,
-      channels: number,
-      allSamples: Array<{ filename: string; voice_number: number }>,
-      overrideSetting?: { forceMono?: boolean; forceStereo?: boolean },
-    ): StereoHandlingResult => {
-      // Task 7.1.3: Check for per-sample override first
-      let effectiveDefaultToMono = defaultToMonoSamples;
-      if (overrideSetting) {
-        if (overrideSetting.forceMono) {
-          effectiveDefaultToMono = true;
-        } else if (overrideSetting.forceStereo) {
-          effectiveDefaultToMono = false;
-        }
-      }
-
-      // If mono sample or effective setting is ON, always assign as mono
-      if (channels === 1 || effectiveDefaultToMono) {
+      primaryVoice: number,
+      voices: Voice[],
+      samples: Sample[],
+    ): VoiceLinkingResult => {
+      // Voice 4 cannot be primary stereo voice (no voice 5 to link to)
+      if (primaryVoice === 4) {
         return {
-          assignAsMono: true,
-          canAssign: true,
-          requiresConfirmation: false,
-          targetVoice,
+          canLink: false,
+          reason: "Voice 4 cannot be linked - no voice 5 available",
         };
       }
 
-      // Stereo sample with defaultToMonoSamples OFF
-      const nextVoice = targetVoice + 1;
-
-      // Task 7.2.4: Handle edge case: stereo to voice 4 (no voice 5 available)
-      if (targetVoice === 4) {
-        return {
-          assignAsMono: false,
-          canAssign: false,
-          conflictInfo: {
-            existingSamples: [],
-            nextVoice: 5, // Doesn't exist
-            targetVoice,
-          },
-          requiresConfirmation: true,
-          targetVoice,
-        };
-      }
-
-      // Task 7.2.3: Handle conflicts when target voices have existing samples
-      // For stereo: check if voice N has samples AND if voice N+1 has samples (it needs to be empty)
-      const targetVoiceSamples = allSamples.filter(
-        (s) => s.voice_number === targetVoice,
+      const linkedVoice = primaryVoice + 1;
+      const primaryVoiceData = voices.find(
+        (v) => v.voice_number === primaryVoice,
       );
-      const nextVoiceSamples = allSamples.filter(
-        (s) => s.voice_number === nextVoice,
+      const linkedVoiceData = voices.find(
+        (v) => v.voice_number === linkedVoice,
       );
 
-      // Conflict if either voice has samples (voice N+1 must be empty for stereo)
-      const hasConflicts =
-        targetVoiceSamples.length > 0 || nextVoiceSamples.length > 0;
-
-      if (hasConflicts) {
-        const conflictInfo: StereoConflictInfo = {
-          existingSamples: [
-            {
-              samples: targetVoiceSamples.map((s) => s.filename),
-              voice: targetVoice,
-            },
-            {
-              samples: nextVoiceSamples.map((s) => s.filename),
-              voice: nextVoice,
-            },
-          ].filter((v) => v.samples.length > 0),
-          nextVoice,
-          targetVoice,
-        };
-
+      if (!primaryVoiceData || !linkedVoiceData) {
         return {
-          assignAsMono: false,
-          canAssign: false,
-          conflictInfo,
-          requiresConfirmation: true,
-          targetVoice,
+          canLink: false,
+          reason: "Voice data not found",
         };
       }
 
-      // No conflicts - can assign stereo across both voices
+      // Check if primary voice already in stereo mode
+      if (primaryVoiceData.stereo_mode) {
+        return {
+          canLink: false,
+          reason: `Voice ${primaryVoice} is already in stereo mode`,
+        };
+      }
+
+      // Check if linked voice is already linked to another voice
+      const linkedVoiceHasStereoSamples = samples.some(
+        (s) => s.voice_number === linkedVoice && s.is_stereo,
+      );
+
+      if (linkedVoiceData.stereo_mode || linkedVoiceHasStereoSamples) {
+        return {
+          canLink: false,
+          reason: `Voice ${linkedVoice} is already linked or has stereo samples`,
+        };
+      }
+
       return {
-        assignAsMono: false,
-        canAssign: true,
-        requiresConfirmation: false,
-        targetVoice,
+        canLink: true,
+        linkedVoice,
       };
-    },
-    [defaultToMonoSamples],
-  );
-
-  /**
-   * Task 7.3.1: Show dialog with options: force mono, replace existing, cancel
-   * This would typically trigger a dialog component - for now we'll use toast
-   */
-  const handleStereoConflict = useCallback(
-    (conflictInfo: StereoConflictInfo): Promise<StereoAssignmentOptions> => {
-      return new Promise((resolve) => {
-        // In a real implementation, this would show a dialog
-        // For now, we'll auto-resolve based on the conflict type
-
-        if (conflictInfo.nextVoice > 4) {
-          // Voice 4 edge case - force mono
-          toast.warning("Stereo assignment to voice 4", {
-            description:
-              "Voice 5 doesn't exist. Sample will be assigned as mono to voice 4.",
-            duration: 5000,
-          });
-          resolve({ cancel: false, forceMono: true, replaceExisting: false });
-          return;
-        }
-
-        // Has existing samples in target voices
-        const existingVoices = conflictInfo.existingSamples
-          .map((v) => `voice ${v.voice}`)
-          .join(" and ");
-
-        toast.warning("Stereo assignment conflict", {
-          description: `${existingVoices} already have samples. Sample will be assigned as mono to voice ${conflictInfo.targetVoice}.`,
-          duration: 7000,
-        });
-
-        // For now, default to mono assignment
-        resolve({ cancel: false, forceMono: true, replaceExisting: false });
-      });
     },
     [],
   );
 
   /**
-   * Task 7.3.2: Apply choice and update kit with proper voice_number tracking
+   * Check if voice can accept a sample (mono/stereo compatibility)
    */
-  const applyStereoAssignment = useCallback(
-    async (
-      filePath: string,
-      result: StereoHandlingResult,
-      options: StereoAssignmentOptions,
-      onSampleAdd?: (
-        voice: number,
-        slotNumber: number,
-        filePath: string,
-        options?: { forceMono?: boolean; forceStereo?: boolean },
-      ) => Promise<void>,
-    ): Promise<boolean> => {
-      if (options.cancel) {
-        return false;
+  const validateVoiceAssignment = useCallback(
+    (
+      targetVoice: number,
+      sampleChannels: number,
+      voices: Voice[],
+      samples: Sample[],
+    ): VoiceValidation => {
+      const voiceData = voices.find((v) => v.voice_number === targetVoice);
+
+      if (!voiceData) {
+        return {
+          canAccept: false,
+          reason: "Voice not found",
+          voiceMode: "mono",
+        };
       }
 
-      if (!onSampleAdd) {
-        console.error("No sample add handler provided");
+      // Get existing samples in this voice
+      const voiceSamples = samples.filter(
+        (s) => s.voice_number === targetVoice,
+      );
+      const hasExistingSamples = voiceSamples.length > 0;
+
+      // Determine if this voice is linked (secondary voice in a stereo pair)
+      const isPreviousVoiceStereo =
+        targetVoice > 1 &&
+        voices.find((v) => v.voice_number === targetVoice - 1)?.stereo_mode;
+
+      if (isPreviousVoiceStereo) {
+        return {
+          canAccept: false,
+          reason: `Voice ${targetVoice} is linked to stereo voice ${targetVoice - 1}`,
+          voiceMode: "linked",
+        };
+      }
+
+      // If voice is in stereo mode
+      if (voiceData.stereo_mode) {
+        if (sampleChannels === 1) {
+          return {
+            canAccept: false,
+            reason: "Voice is in stereo mode - all samples must be stereo",
+            requiresConversion: "stereo",
+            voiceMode: "stereo",
+          };
+        }
+        return {
+          canAccept: true,
+          voiceMode: "stereo",
+        };
+      }
+
+      // Voice is in mono mode
+      if (sampleChannels === 2) {
+        // Stereo sample to mono voice
+        if (hasExistingSamples && voiceSamples.some((s) => !s.is_stereo)) {
+          return {
+            canAccept: false,
+            reason: "Cannot mix mono and stereo samples in same voice",
+            requiresConversion: "mono",
+            voiceMode: "mono",
+          };
+        }
+
+        // Check if we can link this voice for stereo
+        const linkingResult = canLinkVoices(targetVoice, voices, samples);
+        if (!linkingResult.canLink) {
+          return {
+            canAccept: true, // Accept but convert to mono
+            reason: linkingResult.reason,
+            requiresConversion: "mono",
+            voiceMode: "mono",
+          };
+        }
+
+        return {
+          canAccept: true,
+          voiceMode: "mono", // Will be converted to stereo if user confirms
+        };
+      }
+
+      // Mono sample to mono voice - always OK
+      return {
+        canAccept: true,
+        voiceMode: "mono",
+      };
+    },
+    [canLinkVoices],
+  );
+
+  /**
+   * Analyze sample assignment and determine handling strategy
+   */
+  const analyzeSampleAssignment = useCallback(
+    (
+      targetVoice: number,
+      sampleChannels: number,
+      voices: Voice[],
+      samples: Sample[],
+      userLinkedVoices: boolean = false, // User manually linked voices
+    ): SampleAssignmentResult => {
+      const validation = validateVoiceAssignment(
+        targetVoice,
+        sampleChannels,
+        voices,
+        samples,
+      );
+
+      if (!validation.canAccept) {
+        return {
+          assignAsMono: false,
+          canAssign: false,
+          requiresWarning: true,
+          targetVoice,
+          warningMessage: validation.reason,
+        };
+      }
+
+      // Handle mono sample assignment
+      if (sampleChannels === 1) {
+        return {
+          assignAsMono: true,
+          canAssign: true,
+          requiresWarning: false,
+          targetVoice,
+        };
+      }
+
+      // Handle stereo sample assignment
+      const voiceData = voices.find((v) => v.voice_number === targetVoice);
+
+      // If voice is already in stereo mode or user has linked voices
+      if (voiceData?.stereo_mode || userLinkedVoices) {
+        return {
+          assignAsMono: false,
+          canAssign: true,
+          requiresWarning: false,
+          targetVoice,
+        };
+      }
+
+      // Stereo sample to non-linked voice - check if linking is possible
+      const linkingResult = canLinkVoices(targetVoice, voices, samples);
+
+      if (linkingResult.canLink) {
+        return {
+          assignAsMono: false,
+          canAssign: true,
+          requiresWarning: true,
+          targetVoice,
+          warningMessage: `Stereo sample will link voices ${targetVoice} and ${targetVoice + 1}`,
+        };
+      }
+
+      // Cannot link - convert to mono
+      return {
+        assignAsMono: true,
+        canAssign: true,
+        requiresWarning: true,
+        targetVoice,
+        warningMessage: `Stereo sample added to mono voice - will be converted to mono on sync`,
+      };
+    },
+    [validateVoiceAssignment, canLinkVoices],
+  );
+
+  /**
+   * Link two voices for stereo operation
+   */
+  const linkVoicesForStereo = useCallback(
+    async (
+      primaryVoice: number,
+      voices: Voice[],
+      samples: Sample[],
+      onVoiceUpdate?: (
+        voiceNumber: number,
+        updates: Partial<Voice>,
+      ) => Promise<void>,
+    ): Promise<boolean> => {
+      const linkingResult = canLinkVoices(primaryVoice, voices, samples);
+
+      if (!linkingResult.canLink) {
+        toast.error("Voice linking failed", {
+          description: linkingResult.reason,
+          duration: 5000,
+        });
         return false;
       }
 
       try {
-        if (options.forceMono || result.assignAsMono) {
-          // Assign as mono to the target voice
-          await onSampleAdd(result.targetVoice, -1, filePath, {
-            forceMono: true,
-          }); // -1 means find next available slot
-          return true;
+        // Set primary voice to stereo mode
+        if (onVoiceUpdate) {
+          await onVoiceUpdate(primaryVoice, { stereo_mode: true });
         }
 
-        // Task 7.2.2: Stereo assignment: sample goes to voice N, voice N+1 is consumed
-        // Only add to the left voice - hardware will automatically use voice N+1 for right channel
-        await onSampleAdd(result.targetVoice, -1, filePath, {
-          forceStereo: true,
-        }); // Sample added to left voice only with stereo flag
-        // Voice N+1 is consumed by the stereo pair but no sample entry is created
-
-        toast.success("Stereo assignment", {
-          description: `Stereo sample assigned to voices ${result.targetVoice} (left) and ${result.targetVoice + 1} (right).`,
+        toast.success("Voices linked", {
+          description: `Voice ${primaryVoice} and ${linkingResult.linkedVoice} are now linked for stereo`,
           duration: 5000,
         });
 
         return true;
       } catch (error) {
-        ErrorPatterns.sampleOperation(error, "apply stereo assignment");
-        toast.error("Assignment failed", {
-          description: "Failed to assign sample. Please try again.",
+        ErrorPatterns.sampleOperation(error, "link voices for stereo");
+        toast.error("Voice linking failed", {
+          description: "Failed to link voices. Please try again.",
+          duration: 5000,
+        });
+        return false;
+      }
+    },
+    [canLinkVoices],
+  );
+
+  /**
+   * Unlink voices (convert stereo voice back to mono)
+   */
+  const unlinkVoices = useCallback(
+    async (
+      primaryVoice: number,
+      voices: Voice[],
+      samples: Sample[],
+      onVoiceUpdate?: (
+        voiceNumber: number,
+        updates: Partial<Voice>,
+      ) => Promise<void>,
+    ): Promise<boolean> => {
+      const voiceData = voices.find((v) => v.voice_number === primaryVoice);
+
+      if (!voiceData?.stereo_mode) {
+        toast.warning("Voice not linked", {
+          description: `Voice ${primaryVoice} is not in stereo mode`,
+          duration: 5000,
+        });
+        return false;
+      }
+
+      // Check if voice has stereo samples
+      const stereoSamples = samples.filter(
+        (s) => s.voice_number === primaryVoice && s.is_stereo,
+      );
+
+      if (stereoSamples.length > 0) {
+        toast.warning("Cannot unlink voice with stereo samples", {
+          description: `Remove stereo samples from voice ${primaryVoice} first, or convert them to mono`,
+          duration: 7000,
+        });
+        return false;
+      }
+
+      try {
+        // Set voice back to mono mode
+        if (onVoiceUpdate) {
+          await onVoiceUpdate(primaryVoice, { stereo_mode: false });
+        }
+
+        toast.success("Voices unlinked", {
+          description: `Voice ${primaryVoice} converted back to mono mode`,
+          duration: 5000,
+        });
+
+        return true;
+      } catch (error) {
+        ErrorPatterns.sampleOperation(error, "unlink voices");
+        toast.error("Voice unlinking failed", {
+          description: "Failed to unlink voices. Please try again.",
           duration: 5000,
         });
         return false;
@@ -229,10 +389,51 @@ export function useStereoHandling() {
     [],
   );
 
+  /**
+   * Get voice linking status for UI display
+   */
+  const getVoiceLinkingStatus = useCallback(
+    (
+      voiceNumber: number,
+      voices: Voice[],
+    ): { isLinked: boolean; isPrimary: boolean; linkedWith?: number } => {
+      const voiceData = voices.find((v) => v.voice_number === voiceNumber);
+
+      if (voiceData?.stereo_mode) {
+        return {
+          isLinked: true,
+          isPrimary: true,
+          linkedWith: voiceNumber + 1,
+        };
+      }
+
+      // Check if this voice is linked to the previous voice
+      if (voiceNumber > 1) {
+        const previousVoice = voices.find(
+          (v) => v.voice_number === voiceNumber - 1,
+        );
+        if (previousVoice?.stereo_mode) {
+          return {
+            isLinked: true,
+            isPrimary: false,
+            linkedWith: voiceNumber - 1,
+          };
+        }
+      }
+
+      return { isLinked: false, isPrimary: false };
+    },
+    [],
+  );
+
   return {
-    analyzeStereoAssignment,
-    applyStereoAssignment,
-    defaultToMonoSamples,
-    handleStereoConflict,
+    analyzeSampleAssignment,
+    // Voice linking functions
+    canLinkVoices,
+    getVoiceLinkingStatus,
+    linkVoicesForStereo,
+    unlinkVoices,
+    // Sample assignment functions
+    validateVoiceAssignment,
   };
 }

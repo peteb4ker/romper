@@ -1,18 +1,9 @@
+import type { Sample, Voice } from "@romper/shared/db/schema";
+
 import { useCallback } from "react";
 import { toast } from "sonner";
 
 import { ErrorPatterns } from "../../../utils/errorHandling";
-
-// Sample data structure
-export interface Sample {
-  filename: string;
-  id: number;
-  is_stereo: boolean;
-  kit_name: string;
-  slot_number: number;
-  source_path: string;
-  voice_number: number;
-}
 
 // Sample assignment result
 export interface SampleAssignmentResult {
@@ -21,15 +12,6 @@ export interface SampleAssignmentResult {
   requiresWarning: boolean;
   targetVoice: number;
   warningMessage?: string;
-}
-
-// Voice data structure with stereo mode
-export interface Voice {
-  id: number;
-  kit_name: string;
-  stereo_mode: boolean; // NEW: Voice-level stereo mode tracking
-  voice_alias?: string;
-  voice_number: number; // 1-4
 }
 
 // Voice linking result

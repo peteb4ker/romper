@@ -72,33 +72,28 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     [filename: string]: SampleData;
   }>({});
 
-  // Mock voice data for stereo handling (in real implementation, this would come from database)
-  const [voiceData] = useState([
-    {
-      id: 1,
-      kit_name: hookProps.kitName || "",
-      stereo_mode: false,
-      voice_number: 1,
-    },
-    {
-      id: 2,
-      kit_name: hookProps.kitName || "",
-      stereo_mode: false,
-      voice_number: 2,
-    },
-    {
-      id: 3,
-      kit_name: hookProps.kitName || "",
-      stereo_mode: false,
-      voice_number: 3,
-    },
-    {
-      id: 4,
-      kit_name: hookProps.kitName || "",
-      stereo_mode: false,
-      voice_number: 4,
-    },
-  ]);
+  // Get voice data from kit with fallback defaults
+  const voiceData = React.useMemo(() => {
+    if (!props.kit?.voices) {
+      // Fallback to default voice structure if no voices in kit
+      return [1, 2, 3, 4].map((voice_number) => ({
+        id: voice_number,
+        kit_name: hookProps.kitName || "",
+        stereo_mode: false,
+        voice_alias: null,
+        voice_number,
+      }));
+    }
+
+    // Use actual voice data from database
+    return props.kit.voices.map((voice) => ({
+      id: voice.id,
+      kit_name: voice.kit_name,
+      stereo_mode: voice.stereo_mode || false,
+      voice_alias: voice.voice_alias,
+      voice_number: voice.voice_number,
+    }));
+  }, [props.kit?.voices, hookProps.kitName]);
 
   // Convert sample data for stereo handling
   const sampleData = React.useMemo(() => {

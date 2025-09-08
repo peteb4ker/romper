@@ -68,6 +68,25 @@ export class StereoSyncProcessor {
 
   /**
    * Get destination path for stereo voice files
+   *
+   * For stereo samples, the Rample sampler expects two separate files:
+   * - Left channel: goes to the primary voice number (e.g., voice 1)
+   * - Right channel: goes to the next voice number (e.g., voice 2)
+   *
+   * This method calculates the correct voice number for each channel:
+   * - Left channel always uses the sample's assigned voice_number
+   * - Right channel uses voice_number + 1 (the "linked" voice)
+   *
+   * Example: Stereo sample on voice 1 generates:
+   * - Left channel → voice 1 destination path
+   * - Right channel → voice 2 destination path
+   *
+   * @param localStorePath Base path for local storage
+   * @param kitName Name of the kit (affects path structure)
+   * @param sample Sample containing voice_number and slot_number
+   * @param channel Which channel ("left" or "right") to generate path for
+   * @param sdCardPath Optional custom SD card path (overrides local storage)
+   * @returns Full path where this channel's file should be written
    */
   private getStereoDestinationPath(
     localStorePath: string,

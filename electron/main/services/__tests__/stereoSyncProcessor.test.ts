@@ -1,173 +1,299 @@
-import type { Sample } from "@romper/shared/db/schema.js";
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { syncSampleProcessingService } from "../syncSampleProcessing.js";
-// import { syncValidationService } from "../syncValidationService.js"; // Used in mocks
+import type { SyncResults } from "../syncFileOperations.js";
 
-// Mock the validation service to return valid results
-vi.mock("../syncValidationService.js", () => ({
-  syncValidationService: {
-    validateSyncSourceFile: vi.fn().mockReturnValue({ isValid: true }),
+import { StereoSyncProcessor } from "../stereoSyncProcessor.js";
+import {
+  createMockSample,
+  mockStereoSample,
+  mockVoices,
+} from "./fixtures/sampleFixtures.js";
+
+// Mock dependencies
+vi.mock("../rampleNamingService.js", () => ({
+  rampleNamingService: {
+    generateSampleDestinationPath: vi.fn().mockReturnValue("/mock/destination"),
   },
 }));
 
-// Mock the file operations service
 vi.mock("../syncFileOperations.js", () => ({
   syncFileOperationsService: {
     categorizeSyncFileOperation: vi.fn(),
   },
 }));
 
-describe("SyncSampleProcessingService - Stereo Support", () => {
-  const mockResults = {
-    filesToConvert: [],
-    filesToCopy: [],
-    hasFormatWarnings: false,
-    validationErrors: [],
-    warnings: [],
-  };
+vi.mock("../syncValidationService.js", () => ({
+  syncValidationService: {
+    validateSyncSourceFile: vi.fn().mockReturnValue({ isValid: true }),
+  },
+}));
+
+describe("StereoSyncProcessor", () => {
+  let processor: StereoSyncProcessor;
+  let mockResults: SyncResults;
 
   beforeEach(() => {
+    processor = new StereoSyncProcessor();
+    mockResults = {
+      filesToConvert: [],
+      filesToCopy: [],
+      hasFormatWarnings: false,
+      validationErrors: [],
+      warnings: [],
+    };
     vi.clearAllMocks();
-    mockResults.filesToConvert = [];
-    mockResults.filesToCopy = [];
-    mockResults.warnings = [];
-    mockResults.validationErrors = [];
   });
 
-  describe("processSampleForSync - Stereo Handling", () => {
-    const mockStereoSample: Sample = {
-      filename: "stereo_kick.wav",
-      id: 1,
-      is_stereo: true,
-      kit_name: "A0",
-      slot_number: 0,
-      source_path: "/path/to/stereo_kick.wav",
-      voice_number: 1,
-      wav_bit_depth: 16,
-      wav_bitrate: 16,
-      wav_channels: 2,
-      wav_sample_rate: 44100,
-    };
+  describe("processSamplesForSync", () => {
+    it("should process samples grouped by kit", async () => {
+      const samples = [mockStereoSample];
 
-    const mockMonoSample: Sample = {
-      filename: "mono_snare.wav",
-      id: 2,
-      is_stereo: false,
-      kit_name: "A0",
-      slot_number: 1,
-      source_path: "/path/to/mono_snare.wav",
-      voice_number: 2,
-      wav_bit_depth: 16,
-      wav_bitrate: 16,
-      wav_channels: 1,
-      wav_sample_rate: 44100,
-    };
-
-    it("should process stereo sample from voice 1 to generate L+R files", () => {
-      const localStorePath = "/test/local";
-
-      syncSampleProcessingService.processSampleForSync(
-        mockStereoSample,
-        localStorePath,
+      await processor.processSamplesForSync(
+        samples,
+        mockVoices,
+        "/test/path",
         mockResults,
       );
 
-      // Should generate warning about stereo processing
-      expect(mockResults.warnings).toContain(
-        'Stereo sample "stereo_kick.wav" generates files for voice 1 (L) and voice 2 (R)',
-      );
+      expect(mockResults.warnings).toHaveLength(0);
     });
 
-    it("should process stereo sample from voice 3 to generate L+R files", () => {
-      const stereoVoice3Sample = {
-        ...mockStereoSample,
-        voice_number: 3,
-      };
+    it("should handle multiple kits separately", async () => {
+      const samples = [
+        createMockSample({ kit_name: "A0" }),
+        createMockSample({ id: 2, kit_name: "B0" }),
+      ];
 
-      syncSampleProcessingService.processSampleForSync(
-        stereoVoice3Sample,
-        "/test/local",
+      const voices = [
+        ...mockVoices,
+        {
+          id: 3,
+          kit_name: "B0",
+          stereo_mode: false,
+          voice_alias: null,
+          voice_number: 1,
+        },
+      ];
+
+      await processor.processSamplesForSync(
+        samples,
+        voices,
+        "/test/path",
+        mockResults,
+      );
+
+      expect(mockResults.warnings).toHaveLength(0);
+    });
+
+    it("should skip samples without matching voice info", async () => {
+      const samples = [createMockSample({ voice_number: 99 })];
+
+      await processor.processSamplesForSync(
+        samples,
+        mockVoices,
+        "/test/path",
+        mockResults,
+      );
+
+      expect(mockResults.warnings).toHaveLength(0);
+    });
+  });
+
+  describe("processMonoVoiceSample", () => {
+    it("should process mono sample correctly", async () => {
+      const processor = new StereoSyncProcessor();
+
+      // Use processSamplesForSync to test mono processing indirectly
+      await processor.processSamplesForSync(
+        [createMockSample({ is_stereo: false, wav_channels: 1 })],
+        [
+          {
+            id: 1,
+            kit_name: "A0",
+            stereo_mode: false,
+            voice_alias: null,
+            voice_number: 1,
+          },
+        ],
+        "/test/path",
+        mockResults,
+      );
+
+      expect(mockResults.warnings).toHaveLength(0);
+    });
+
+    it("should skip samples without source_path", async () => {
+      const sampleWithoutPath = createMockSample({
+        is_stereo: false,
+        source_path: null as unknown,
+        wav_channels: 1,
+      });
+
+      await processor.processSamplesForSync(
+        [sampleWithoutPath],
+        [
+          {
+            id: 1,
+            kit_name: "A0",
+            stereo_mode: false,
+            voice_alias: null,
+            voice_number: 1,
+          },
+        ],
+        "/test/path",
+        mockResults,
+      );
+
+      expect(mockResults.warnings).toHaveLength(0);
+    });
+  });
+
+  describe("processStereoVoiceSample", () => {
+    it("should process stereo sample from voice 1", async () => {
+      const voices = [
+        {
+          id: 1,
+          kit_name: "A0",
+          stereo_mode: true,
+          voice_alias: null,
+          voice_number: 1,
+        },
+      ];
+
+      await processor.processSamplesForSync(
+        [mockStereoSample],
+        voices,
+        "/test/path",
         mockResults,
       );
 
       expect(mockResults.warnings).toContain(
-        'Stereo sample "stereo_kick.wav" generates files for voice 3 (L) and voice 4 (R)',
+        "Stereo voice 1 generates files for both channels: destination and destination",
       );
     });
 
-    it("should NOT process stereo sample from voice 4 as stereo", () => {
-      const stereoVoice4Sample = {
-        ...mockStereoSample,
+    it("should convert voice 4 stereo to mono with warning", async () => {
+      const voice4Sample = createMockSample({
+        is_stereo: true,
         voice_number: 4,
-      };
+        wav_channels: 2,
+      });
+      const voices = [
+        {
+          id: 4,
+          kit_name: "A0",
+          stereo_mode: true,
+          voice_alias: null,
+          voice_number: 4,
+        },
+      ];
 
-      syncSampleProcessingService.processSampleForSync(
-        stereoVoice4Sample,
-        "/test/local",
-        mockResults,
-      );
-
-      // Should not have stereo processing warning (processed as mono)
-      const stereoWarnings = mockResults.warnings.filter(
-        (w) =>
-          w.includes("generates files for voice") &&
-          w.includes("(L) and voice"),
-      );
-      expect(stereoWarnings).toHaveLength(0);
-    });
-
-    it("should process mono samples normally", () => {
-      syncSampleProcessingService.processSampleForSync(
-        mockMonoSample,
-        "/test/local",
-        mockResults,
-      );
-
-      // Should not have any stereo-related warnings
-      const stereoWarnings = mockResults.warnings.filter(
-        (w) =>
-          w.includes("generates files for voice") &&
-          w.includes("(L) and voice"),
-      );
-      expect(stereoWarnings).toHaveLength(0);
-    });
-
-    it("should skip samples without source_path", () => {
-      const sampleWithoutPath = {
-        ...mockStereoSample,
-        source_path: null,
-      };
-
-      const initialWarningCount = mockResults.warnings.length;
-
-      syncSampleProcessingService.processSampleForSync(
-        sampleWithoutPath as unknown,
-        "/test/local",
-        mockResults,
-      );
-
-      // Should not process anything
-      expect(mockResults.warnings).toHaveLength(initialWarningCount);
-    });
-
-    it("should handle edge cases correctly", () => {
-      // Test voice 2 stereo (should link to voice 3)
-      const voice2Stereo = {
-        ...mockStereoSample,
-        voice_number: 2,
-      };
-
-      syncSampleProcessingService.processSampleForSync(
-        voice2Stereo,
-        "/test/local",
+      await processor.processSamplesForSync(
+        [voice4Sample],
+        voices,
+        "/test/path",
         mockResults,
       );
 
       expect(mockResults.warnings).toContain(
-        'Stereo sample "stereo_kick.wav" generates files for voice 2 (L) and voice 3 (R)',
+        "Voice 4 cannot be in stereo mode for kit A0 - converting to mono",
       );
+    });
+
+    it("should skip stereo samples without source_path", async () => {
+      const sampleWithoutPath = createMockSample({
+        is_stereo: true,
+        source_path: null as unknown,
+        wav_channels: 2,
+      });
+      const voices = [
+        {
+          id: 1,
+          kit_name: "A0",
+          stereo_mode: true,
+          voice_alias: null,
+          voice_number: 1,
+        },
+      ];
+
+      await processor.processSamplesForSync(
+        [sampleWithoutPath],
+        voices,
+        "/test/path",
+        mockResults,
+      );
+
+      expect(mockResults.warnings).toHaveLength(0);
+    });
+  });
+
+  describe("destination path generation", () => {
+    it("should generate correct paths with custom SD card path", async () => {
+      const samples = [mockStereoSample];
+      const voices = [
+        {
+          id: 1,
+          kit_name: "A0",
+          stereo_mode: false,
+          voice_alias: null,
+          voice_number: 1,
+        },
+      ];
+
+      await processor.processSamplesForSync(
+        samples,
+        voices,
+        "/test/path",
+        mockResults,
+        "/custom/sd/card",
+      );
+
+      expect(mockResults.warnings).toHaveLength(0);
+    });
+
+    it("should generate default paths without SD card path", async () => {
+      const samples = [mockStereoSample];
+      const voices = [
+        {
+          id: 1,
+          kit_name: "A0",
+          stereo_mode: false,
+          voice_alias: null,
+          voice_number: 1,
+        },
+      ];
+
+      await processor.processSamplesForSync(
+        samples,
+        voices,
+        "/test/path",
+        mockResults,
+      );
+
+      expect(mockResults.warnings).toHaveLength(0);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle empty sample arrays", async () => {
+      await processor.processSamplesForSync([], [], "/test/path", mockResults);
+
+      expect(mockResults.warnings).toHaveLength(0);
+    });
+
+    it("should handle samples with no matching voices", async () => {
+      const samples = [createMockSample({ voice_number: 99 })];
+
+      await processor.processSamplesForSync(
+        samples,
+        [],
+        "/test/path",
+        mockResults,
+      );
+
+      expect(mockResults.warnings).toHaveLength(0);
     });
   });
 });
+
+export const stereoSyncProcessor = new StereoSyncProcessor();

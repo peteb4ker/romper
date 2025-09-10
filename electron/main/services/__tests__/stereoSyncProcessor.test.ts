@@ -172,7 +172,7 @@ describe("StereoSyncProcessor", () => {
       );
 
       expect(mockResults.warnings).toContain(
-        "Stereo voice 1 generates files for both channels: destination and destination",
+        "Stereo sample on voice 1 will play across voices 1 and 2 (hardware feature)",
       );
     });
 
@@ -445,9 +445,9 @@ describe("StereoSyncProcessor", () => {
         "/sd/card", // Test with SD card path
       );
 
-      // Should generate warning about stereo files
+      // Should generate warning about stereo hardware behavior
       expect(mockResults.warnings).toContain(
-        "Stereo voice 2 generates files for both channels: destination and destination",
+        "Stereo sample on voice 2 will play across voices 2 and 3 (hardware feature)",
       );
     });
   });

@@ -69,24 +69,21 @@ export class StereoSyncProcessor {
   /**
    * Get destination path for stereo voice files
    *
-   * For stereo samples, the Rample sampler expects two separate files:
-   * - Left channel: goes to the primary voice number (e.g., voice 1)
-   * - Right channel: goes to the next voice number (e.g., voice 2)
+   * For stereo samples, the Rample hardware expects ONE stereo file placed on the primary voice,
+   * and automatically plays it across both the primary voice (N) and the next voice (N+1).
+   * This is a hardware feature - no file splitting is required or desired.
    *
-   * This method calculates the correct voice number for each channel:
-   * - Left channel always uses the sample's assigned voice_number
-   * - Right channel uses voice_number + 1 (the "linked" voice)
-   *
-   * Example: Stereo sample on voice 1 generates:
-   * - Left channel → voice 1 destination path
-   * - Right channel → voice 2 destination path
+   * Example: Stereo sample placed on voice 1:
+   * - Single stereo file goes to voice 1 directory
+   * - Hardware automatically plays left channel on voice 1, right channel on voice 2
+   * - Only triggering voice 1 is needed to play the full stereo sample
    *
    * @param localStorePath Base path for local storage
    * @param kitName Name of the kit (affects path structure)
    * @param sample Sample containing voice_number and slot_number
-   * @param channel Which channel ("left" or "right") to generate path for
+   * @param channel Channel parameter (maintained for API compatibility)
    * @param sdCardPath Optional custom SD card path (overrides local storage)
-   * @returns Full path where this channel's file should be written
+   * @returns Full path where the stereo file should be written (always to primary voice)
    */
   private getStereoDestinationPath(
     localStorePath: string,
@@ -97,11 +94,11 @@ export class StereoSyncProcessor {
   ): string {
     const baseDir = sdCardPath || path.join(localStorePath, "sync_output");
 
-    // For stereo: left channel uses primary voice, right channel uses linked voice
-    const voiceNumber =
-      channel === "left" ? sample.voice_number : sample.voice_number + 1;
+    // For stereo samples: always use primary voice directory (hardware handles both channels)
+    // Channel parameter is ignored as Rample expects single stereo file, not split channels
+    const voiceNumber = sample.voice_number;
 
-    // Generate destination path for the appropriate voice
+    // Generate destination path for the primary voice only
     return rampleNamingService.generateSampleDestinationPath(
       baseDir,
       kitName,
@@ -221,7 +218,8 @@ export class StereoSyncProcessor {
   }
 
   /**
-   * Process stereo voice sample - generates files for both L and R channels
+   * Process stereo voice sample - places single stereo file on primary voice
+   * Hardware automatically plays it across primary voice (N) and next voice (N+1)
    */
   private async processStereoVoiceSample(
     sample: Sample,
@@ -262,45 +260,26 @@ export class StereoSyncProcessor {
       return;
     }
 
-    // Generate stereo file for left channel (primary voice)
-    const leftDestination = this.getStereoDestinationPath(
+    // Generate single destination path for stereo file (always primary voice)
+    const destinationPath = this.getDestinationPath(
       localStorePath,
       kitName,
       sample,
-      "left",
       sdCardPath,
     );
 
-    // Generate stereo file for right channel (linked voice)
-    const rightDestination = this.getStereoDestinationPath(
-      localStorePath,
-      kitName,
-      sample,
-      "right",
-      sdCardPath,
-    );
-
-    // Process left channel
+    // Process single stereo file - hardware handles both channels automatically
     syncFileOperationsService.categorizeSyncFileOperation(
       sample,
-      `${filename}_L`,
+      filename,
       sourcePath,
-      leftDestination,
+      destinationPath,
       results,
     );
 
-    // Process right channel (same source, different destination)
-    syncFileOperationsService.categorizeSyncFileOperation(
-      sample,
-      `${filename}_R`,
-      sourcePath,
-      rightDestination,
-      results,
-    );
-
-    // Add informational message
+    // Add informational message about hardware behavior
     results.warnings.push(
-      `Stereo voice ${voiceInfo.voice_number} generates files for both channels: ${path.basename(leftDestination)} and ${path.basename(rightDestination)}`,
+      `Stereo sample on voice ${voiceInfo.voice_number} will play across voices ${voiceInfo.voice_number} and ${voiceInfo.voice_number + 1} (hardware feature)`,
     );
   }
 }

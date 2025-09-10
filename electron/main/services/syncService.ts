@@ -4,7 +4,6 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { markKitsAsSynced } from "../db/romperDbCoreORM.js";
-// import { stereoSyncProcessor } from "./stereoSyncProcessor.js"; // TODO: Integrate stereo processing
 import {
   type SyncFileOperation,
   syncFileOperationsService,
@@ -119,6 +118,8 @@ class SyncService {
       };
 
       const samples = samplesResult.data || [];
+
+      // Process samples with standard sync logic - stereo behavior is now corrected in core processor
       for (const sample of samples) {
         syncSampleProcessingService.processSampleForSync(
           sample,

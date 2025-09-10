@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useStereoHandling } from "../useStereoHandling";
+import { Sample, useStereoHandling, Voice } from "../useStereoHandling";
 
 // Mock dependencies
 vi.mock("sonner", () => ({
@@ -12,578 +12,654 @@ vi.mock("sonner", () => ({
   },
 }));
 
-vi.mock("../../../../utils/SettingsContext", () => ({
-  useSettings: vi.fn(),
-}));
-
-import * as SettingsContext from "../../../../utils/SettingsContext";
-const mockUseSettings = vi.mocked(SettingsContext.useSettings);
-
 import { toast } from "sonner";
 const mockToast = vi.mocked(toast);
 
 describe("useStereoHandling", () => {
-  const mockSamples = [
-    { filename: "sample1.wav", voice_number: 1 },
-    { filename: "sample2.wav", voice_number: 2 },
-    { filename: "sample3.wav", voice_number: 3 },
+  // Mock voice data
+  const mockVoices: Voice[] = [
+    { id: 1, kit_name: "A0", stereo_mode: false, voice_number: 1 },
+    { id: 2, kit_name: "A0", stereo_mode: false, voice_number: 2 },
+    { id: 3, kit_name: "A0", stereo_mode: false, voice_number: 3 },
+    { id: 4, kit_name: "A0", stereo_mode: false, voice_number: 4 },
+  ];
+
+  // Mock sample data
+  const mockSamples: Sample[] = [
+    {
+      filename: "kick.wav",
+      id: 1,
+      is_stereo: false,
+      kit_name: "A0",
+      slot_number: 0,
+      source_path: "/path/kick.wav",
+      voice_number: 1,
+    },
   ];
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetAllMocks();
-    mockUseSettings.mockReturnValue({
-      defaultToMonoSamples: true,
-    } as unknown);
   });
 
-  describe("analyzeStereoAssignment", () => {
-    describe("with defaultToMonoSamples: true", () => {
-      beforeEach(() => {
-        mockUseSettings.mockReturnValue({
-          defaultToMonoSamples: true,
-        } as unknown);
-      });
-
-      it("should assign mono sample as mono", () => {
-        const { result } = renderHook(() => useStereoHandling());
-
-        const analysis = result.current.analyzeStereoAssignment(
-          1,
-          1, // mono
-          mockSamples,
-        );
-
-        expect(analysis).toEqual({
-          assignAsMono: true,
-          canAssign: true,
-          requiresConfirmation: false,
-          targetVoice: 1,
-        });
-      });
-
-      it("should assign stereo sample as mono when defaultToMonoSamples is true", () => {
-        const { result } = renderHook(() => useStereoHandling());
-
-        const analysis = result.current.analyzeStereoAssignment(
-          1,
-          2, // stereo
-          mockSamples,
-        );
-
-        expect(analysis).toEqual({
-          assignAsMono: true,
-          canAssign: true,
-          requiresConfirmation: false,
-          targetVoice: 1,
-        });
-      });
-
-      it("should respect forceStereo override", () => {
-        const { result } = renderHook(() => useStereoHandling());
-
-        const analysis = result.current.analyzeStereoAssignment(
-          1,
-          2, // stereo
-          [], // no existing samples
-          { forceStereo: true },
-        );
-
-        expect(analysis).toEqual({
-          assignAsMono: false,
-          canAssign: true,
-          requiresConfirmation: false,
-          targetVoice: 1,
-        });
-      });
-
-      it("should respect forceMono override for stereo file", () => {
-        const { result } = renderHook(() => useStereoHandling());
-
-        const analysis = result.current.analyzeStereoAssignment(
-          1,
-          2, // stereo
-          mockSamples,
-          { forceMono: true },
-        );
-
-        expect(analysis).toEqual({
-          assignAsMono: true,
-          canAssign: true,
-          requiresConfirmation: false,
-          targetVoice: 1,
-        });
-      });
-    });
-
-    describe("with defaultToMonoSamples: false", () => {
-      beforeEach(() => {
-        mockUseSettings.mockReturnValue({
-          defaultToMonoSamples: false,
-        } as unknown);
-      });
-
-      it("should assign mono sample as mono even when defaultToMonoSamples is false", () => {
-        const { result } = renderHook(() => useStereoHandling());
-
-        const analysis = result.current.analyzeStereoAssignment(
-          1,
-          1, // mono
-          mockSamples,
-        );
-
-        expect(analysis).toEqual({
-          assignAsMono: true,
-          canAssign: true,
-          requiresConfirmation: false,
-          targetVoice: 1,
-        });
-      });
-
-      it("should assign stereo sample to dual voices when no conflicts", () => {
-        const { result } = renderHook(() => useStereoHandling());
-
-        const analysis = result.current.analyzeStereoAssignment(
-          4,
-          2, // stereo
-          [], // no existing samples
-        );
-
-        expect(analysis).toEqual({
-          assignAsMono: false,
-          canAssign: false,
-          conflictInfo: {
-            existingSamples: [],
-            nextVoice: 5,
-            targetVoice: 4,
-          },
-          requiresConfirmation: true,
-          targetVoice: 4,
-        });
-      });
-
-      it("should detect conflict when target voice has samples", () => {
-        const { result } = renderHook(() => useStereoHandling());
-
-        const analysis = result.current.analyzeStereoAssignment(
-          1,
-          2, // stereo
-          mockSamples, // voice 1 has samples
-        );
-
-        expect(analysis).toEqual({
-          assignAsMono: false,
-          canAssign: false,
-          conflictInfo: {
-            existingSamples: [
-              {
-                samples: ["sample1.wav"],
-                voice: 1,
-              },
-              {
-                samples: ["sample2.wav"],
-                voice: 2,
-              },
-            ],
-            nextVoice: 2,
-            targetVoice: 1,
-          },
-          requiresConfirmation: true,
-          targetVoice: 1,
-        });
-      });
-
-      it("should detect conflict when next voice has samples", () => {
-        const { result } = renderHook(() => useStereoHandling());
-
-        const analysis = result.current.analyzeStereoAssignment(
-          1,
-          2, // stereo
-          [{ filename: "sample2.wav", voice_number: 2 }], // voice 2 has samples
-        );
-
-        expect(analysis).toEqual({
-          assignAsMono: false,
-          canAssign: false,
-          conflictInfo: {
-            existingSamples: [
-              {
-                samples: ["sample2.wav"],
-                voice: 2,
-              },
-            ],
-            nextVoice: 2,
-            targetVoice: 1,
-          },
-          requiresConfirmation: true,
-          targetVoice: 1,
-        });
-      });
-
-      it("should detect conflict when both target and next voice have samples", () => {
-        const { result } = renderHook(() => useStereoHandling());
-
-        const analysis = result.current.analyzeStereoAssignment(
-          2,
-          2, // stereo
-          mockSamples, // voices 2 and 3 have samples
-        );
-
-        expect(analysis).toEqual({
-          assignAsMono: false,
-          canAssign: false,
-          conflictInfo: {
-            existingSamples: [
-              {
-                samples: ["sample2.wav"],
-                voice: 2,
-              },
-              {
-                samples: ["sample3.wav"],
-                voice: 3,
-              },
-            ],
-            nextVoice: 3,
-            targetVoice: 2,
-          },
-          requiresConfirmation: true,
-          targetVoice: 2,
-        });
-      });
-
-      it("should handle voice 4 edge case (no voice 5 available)", () => {
-        const { result } = renderHook(() => useStereoHandling());
-
-        const analysis = result.current.analyzeStereoAssignment(
-          4,
-          2, // stereo
-          [], // no existing samples
-        );
-
-        expect(analysis).toEqual({
-          assignAsMono: false,
-          canAssign: false,
-          conflictInfo: {
-            existingSamples: [],
-            nextVoice: 5,
-            targetVoice: 4,
-          },
-          requiresConfirmation: true,
-          targetVoice: 4,
-        });
-      });
-    });
-  });
-
-  describe("handleStereoConflict", () => {
-    it("should handle voice 4 edge case with toast and force mono", async () => {
+  describe("canLinkVoices", () => {
+    it("should allow linking voice 1 to voice 2", () => {
       const { result } = renderHook(() => useStereoHandling());
 
-      const conflictInfo = {
-        existingSamples: [],
-        nextVoice: 5,
-        targetVoice: 4,
-      };
+      const linkingResult = result.current.canLinkVoices(1, mockVoices, []);
 
-      const options = await result.current.handleStereoConflict(conflictInfo);
+      expect(linkingResult.canLink).toBe(true);
+      expect(linkingResult.linkedVoice).toBe(2);
+    });
 
-      expect(options).toEqual({
-        cancel: false,
-        forceMono: true,
-        replaceExisting: false,
-      });
-      expect(mockToast.warning).toHaveBeenCalledWith(
-        "Stereo assignment to voice 4",
-        {
-          description:
-            "Voice 5 doesn't exist. Sample will be assigned as mono to voice 4.",
-          duration: 5000,
-        },
+    it("should allow linking voice 2 to voice 3", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const linkingResult = result.current.canLinkVoices(2, mockVoices, []);
+
+      expect(linkingResult.canLink).toBe(true);
+      expect(linkingResult.linkedVoice).toBe(3);
+    });
+
+    it("should allow linking voice 3 to voice 4", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const linkingResult = result.current.canLinkVoices(3, mockVoices, []);
+
+      expect(linkingResult.canLink).toBe(true);
+      expect(linkingResult.linkedVoice).toBe(4);
+    });
+
+    it("should prevent linking voice 4 (no voice 5)", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const linkingResult = result.current.canLinkVoices(4, mockVoices, []);
+
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toBe(
+        "Voice 4 cannot be linked - no voice 5 available",
       );
     });
 
-    it("should handle existing samples conflict with toast and force mono", async () => {
+    it("should prevent linking already stereo voice", () => {
       const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        mockVoices[0],
+        { ...mockVoices[1], stereo_mode: true }, // Voice 2 in stereo mode
+        ...mockVoices.slice(2),
+      ];
 
-      const conflictInfo = {
-        existingSamples: [
-          { samples: ["sample1.wav"], voice: 1 },
-          { samples: ["sample2.wav"], voice: 2 },
-        ],
-        nextVoice: 2,
-        targetVoice: 1,
-      };
+      const linkingResult = result.current.canLinkVoices(2, stereoVoices, []);
 
-      const options = await result.current.handleStereoConflict(conflictInfo);
-
-      expect(options).toEqual({
-        cancel: false,
-        forceMono: true,
-        replaceExisting: false,
-      });
-      expect(mockToast.warning).toHaveBeenCalledWith(
-        "Stereo assignment conflict",
-        {
-          description:
-            "voice 1 and voice 2 already have samples. Sample will be assigned as mono to voice 1.",
-          duration: 7000,
-        },
-      );
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toContain("already in stereo mode");
     });
 
-    it("should handle single voice conflict", async () => {
+    it("should prevent linking when target voice has stereo samples", () => {
       const { result } = renderHook(() => useStereoHandling());
+      const samplesWithStereo = [
+        { ...mockSamples[0], is_stereo: true, voice_number: 3 }, // Voice 3 has stereo samples
+      ];
 
-      const conflictInfo = {
-        existingSamples: [{ samples: ["sample1.wav"], voice: 1 }],
-        nextVoice: 2,
-        targetVoice: 1,
-      };
+      const linkingResult = result.current.canLinkVoices(
+        2,
+        mockVoices,
+        samplesWithStereo,
+      );
 
-      const options = await result.current.handleStereoConflict(conflictInfo);
-
-      expect(options).toEqual({
-        cancel: false,
-        forceMono: true,
-        replaceExisting: false,
-      });
-      expect(mockToast.warning).toHaveBeenCalledWith(
-        "Stereo assignment conflict",
-        {
-          description:
-            "voice 1 already have samples. Sample will be assigned as mono to voice 1.",
-          duration: 7000,
-        },
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toContain(
+        "already linked or has stereo samples",
       );
     });
   });
 
-  describe("applyStereoAssignment", () => {
-    const mockOnSampleAdd = vi.fn();
-    const testFilePath = "/path/to/sample.wav";
-
-    beforeEach(() => {
-      mockOnSampleAdd.mockReset();
-    });
-
-    it("should return false when options.cancel is true", async () => {
+  describe("validateVoiceAssignment", () => {
+    it("should accept mono sample to mono voice", () => {
       const { result } = renderHook(() => useStereoHandling());
 
-      const stereoResult = {
-        assignAsMono: false,
-        canAssign: true,
-        requiresConfirmation: false,
-        targetVoice: 1,
-      };
-
-      const options = {
-        cancel: true,
-        forceMono: false,
-        replaceExisting: false,
-      };
-
-      const success = await result.current.applyStereoAssignment(
-        testFilePath,
-        stereoResult,
-        options,
-        mockOnSampleAdd,
+      const validation = result.current.validateVoiceAssignment(
+        1,
+        1,
+        mockVoices,
+        [],
       );
 
-      expect(success).toBe(false);
-      expect(mockOnSampleAdd).not.toHaveBeenCalled();
+      expect(validation.canAccept).toBe(true);
+      expect(validation.voiceMode).toBe("mono");
     });
 
-    it("should return false when no onSampleAdd handler provided", async () => {
+    it("should accept stereo sample to mono voice (with warning)", () => {
       const { result } = renderHook(() => useStereoHandling());
 
-      const stereoResult = {
-        assignAsMono: true,
-        canAssign: true,
-        requiresConfirmation: false,
-        targetVoice: 1,
-      };
-
-      const options = {
-        cancel: false,
-        forceMono: true,
-        replaceExisting: false,
-      };
-
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
-
-      const success = await result.current.applyStereoAssignment(
-        testFilePath,
-        stereoResult,
-        options,
+      const validation = result.current.validateVoiceAssignment(
+        1,
+        2,
+        mockVoices,
+        [],
       );
 
-      expect(success).toBe(false);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "No sample add handler provided",
-      );
-
-      consoleErrorSpy.mockRestore();
+      expect(validation.canAccept).toBe(true);
+      expect(validation.voiceMode).toBe("mono");
     });
 
-    it("should assign as mono when options.forceMono is true", async () => {
+    it("should reject sample to linked voice", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const linkedVoices = [
+        { ...mockVoices[0], stereo_mode: true }, // Voice 1 links to voice 2
+        ...mockVoices.slice(1),
+      ];
+
+      const validation = result.current.validateVoiceAssignment(
+        2,
+        1,
+        linkedVoices,
+        [],
+      );
+
+      expect(validation.canAccept).toBe(false);
+      expect(validation.voiceMode).toBe("linked");
+      expect(validation.reason).toContain("linked to stereo voice 1");
+    });
+
+    it("should accept stereo sample to stereo voice", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+
+      const validation = result.current.validateVoiceAssignment(
+        1,
+        2,
+        stereoVoices,
+        [],
+      );
+
+      expect(validation.canAccept).toBe(true);
+      expect(validation.voiceMode).toBe("stereo");
+    });
+
+    it("should reject mono sample to stereo voice", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+
+      const validation = result.current.validateVoiceAssignment(
+        1,
+        1,
+        stereoVoices,
+        [],
+      );
+
+      expect(validation.canAccept).toBe(false);
+      expect(validation.voiceMode).toBe("stereo");
+      expect(validation.requiresConversion).toBe("stereo");
+    });
+  });
+
+  describe("analyzeSampleAssignment", () => {
+    it("should assign mono sample without warning", () => {
       const { result } = renderHook(() => useStereoHandling());
 
-      const stereoResult = {
-        assignAsMono: false,
-        canAssign: true,
-        requiresConfirmation: false,
-        targetVoice: 2,
-      };
+      const assignment = result.current.analyzeSampleAssignment(
+        1,
+        1,
+        mockVoices,
+        [],
+      );
 
-      const options = {
-        cancel: false,
-        forceMono: true,
-        replaceExisting: false,
-      };
+      expect(assignment.canAssign).toBe(true);
+      expect(assignment.assignAsMono).toBe(true);
+      expect(assignment.requiresWarning).toBe(false);
+    });
 
-      mockOnSampleAdd.mockResolvedValue(undefined);
+    it("should assign stereo sample with linking warning", () => {
+      const { result } = renderHook(() => useStereoHandling());
 
-      const success = await result.current.applyStereoAssignment(
-        testFilePath,
-        stereoResult,
-        options,
-        mockOnSampleAdd,
+      const assignment = result.current.analyzeSampleAssignment(
+        1,
+        2,
+        mockVoices,
+        [],
+      );
+
+      expect(assignment.canAssign).toBe(true);
+      expect(assignment.assignAsMono).toBe(false);
+      expect(assignment.requiresWarning).toBe(true);
+      expect(assignment.warningMessage).toContain("will link voices 1 and 2");
+    });
+
+    it("should convert stereo to mono for voice 4", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const assignment = result.current.analyzeSampleAssignment(
+        4,
+        2,
+        mockVoices,
+        [],
+      );
+
+      expect(assignment.canAssign).toBe(true);
+      expect(assignment.assignAsMono).toBe(true);
+      expect(assignment.requiresWarning).toBe(true);
+      expect(assignment.warningMessage).toContain("will be converted to mono");
+    });
+
+    it("should reject assignment to linked voice", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const linkedVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+
+      const assignment = result.current.analyzeSampleAssignment(
+        2,
+        1,
+        linkedVoices,
+        [],
+      );
+
+      expect(assignment.canAssign).toBe(false);
+      expect(assignment.requiresWarning).toBe(true);
+    });
+  });
+
+  describe("linkVoicesForStereo", () => {
+    it("should link voices successfully", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const mockOnVoiceUpdate = vi.fn().mockResolvedValue(undefined);
+
+      const success = await result.current.linkVoicesForStereo(
+        1,
+        mockVoices,
+        [],
+        mockOnVoiceUpdate,
       );
 
       expect(success).toBe(true);
-      expect(mockOnSampleAdd).toHaveBeenCalledWith(2, -1, testFilePath, {
-        forceMono: true,
-      });
-    });
-
-    it("should assign as mono when result.assignAsMono is true", async () => {
-      const { result } = renderHook(() => useStereoHandling());
-
-      const stereoResult = {
-        assignAsMono: true,
-        canAssign: true,
-        requiresConfirmation: false,
-        targetVoice: 3,
-      };
-
-      const options = {
-        cancel: false,
-        forceMono: false,
-        replaceExisting: false,
-      };
-
-      mockOnSampleAdd.mockResolvedValue(undefined);
-
-      const success = await result.current.applyStereoAssignment(
-        testFilePath,
-        stereoResult,
-        options,
-        mockOnSampleAdd,
-      );
-
-      expect(success).toBe(true);
-      expect(mockOnSampleAdd).toHaveBeenCalledWith(3, -1, testFilePath, {
-        forceMono: true,
-      });
-    });
-
-    it("should assign as stereo and show success toast", async () => {
-      const { result } = renderHook(() => useStereoHandling());
-
-      const stereoResult = {
-        assignAsMono: false,
-        canAssign: true,
-        requiresConfirmation: false,
-        targetVoice: 2,
-      };
-
-      const options = {
-        cancel: false,
-        forceMono: false,
-        replaceExisting: false,
-      };
-
-      mockOnSampleAdd.mockResolvedValue(undefined);
-
-      const success = await result.current.applyStereoAssignment(
-        testFilePath,
-        stereoResult,
-        options,
-        mockOnSampleAdd,
-      );
-
-      expect(success).toBe(true);
-      expect(mockOnSampleAdd).toHaveBeenCalledWith(2, -1, testFilePath, {
-        forceStereo: true,
-      });
-      expect(mockToast.success).toHaveBeenCalledWith("Stereo assignment", {
-        description: "Stereo sample assigned to voices 2 (left) and 3 (right).",
+      expect(mockOnVoiceUpdate).toHaveBeenCalledWith(1, { stereo_mode: true });
+      expect(mockToast.success).toHaveBeenCalledWith("Voices linked", {
+        description: "Voice 1 and 2 are now linked for stereo",
         duration: 5000,
       });
     });
 
-    it("should handle onSampleAdd errors and show error toast", async () => {
+    it("should fail to link invalid voices", async () => {
       const { result } = renderHook(() => useStereoHandling());
+      const mockOnVoiceUpdate = vi.fn();
 
-      const stereoResult = {
-        assignAsMono: true,
-        canAssign: true,
-        requiresConfirmation: false,
-        targetVoice: 1,
-      };
-
-      const options = {
-        cancel: false,
-        forceMono: true,
-        replaceExisting: false,
-      };
-
-      const testError = new Error("Sample add failed");
-      mockOnSampleAdd.mockRejectedValue(testError);
-
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
-
-      const success = await result.current.applyStereoAssignment(
-        testFilePath,
-        stereoResult,
-        options,
-        mockOnSampleAdd,
+      const success = await result.current.linkVoicesForStereo(
+        4,
+        mockVoices,
+        [],
+        mockOnVoiceUpdate,
       );
 
       expect(success).toBe(false);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Failed to apply stereo assignment:",
-        "Sample add failed",
-      );
-      expect(mockToast.error).toHaveBeenCalledWith("Assignment failed", {
-        description: "Failed to assign sample. Please try again.",
+      expect(mockOnVoiceUpdate).not.toHaveBeenCalled();
+      expect(mockToast.error).toHaveBeenCalledWith("Voice linking failed", {
+        description: "Voice 4 cannot be linked - no voice 5 available",
         duration: 5000,
       });
-
-      consoleErrorSpy.mockRestore();
     });
   });
 
-  describe("return values", () => {
-    it("should return all expected functions and values", () => {
+  describe("unlinkVoices", () => {
+    it("should unlink voices successfully", async () => {
       const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+      const mockOnVoiceUpdate = vi.fn().mockResolvedValue(undefined);
 
-      expect(result.current).toEqual({
-        analyzeStereoAssignment: expect.any(Function),
-        applyStereoAssignment: expect.any(Function),
-        defaultToMonoSamples: true,
-        handleStereoConflict: expect.any(Function),
+      const success = await result.current.unlinkVoices(
+        1,
+        stereoVoices,
+        [],
+        mockOnVoiceUpdate,
+      );
+
+      expect(success).toBe(true);
+      expect(mockOnVoiceUpdate).toHaveBeenCalledWith(1, { stereo_mode: false });
+      expect(mockToast.success).toHaveBeenCalledWith("Voices unlinked", {
+        description: "Voice 1 converted back to mono mode",
+        duration: 5000,
       });
     });
 
-    it("should reflect settings changes", () => {
-      mockUseSettings.mockReturnValue({
-        defaultToMonoSamples: false,
-      } as unknown);
+    it("should fail to unlink voice not in stereo mode", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const mockOnVoiceUpdate = vi.fn();
 
+      const success = await result.current.unlinkVoices(
+        1,
+        mockVoices,
+        [],
+        mockOnVoiceUpdate,
+      );
+
+      expect(success).toBe(false);
+      expect(mockOnVoiceUpdate).not.toHaveBeenCalled();
+      expect(mockToast.warning).toHaveBeenCalledWith("Voice not linked", {
+        description: "Voice 1 is not in stereo mode",
+        duration: 5000,
+      });
+    });
+
+    it("should prevent unlinking voice with stereo samples", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+      const stereoSamples = [{ ...mockSamples[0], is_stereo: true }];
+      const mockOnVoiceUpdate = vi.fn();
+
+      const success = await result.current.unlinkVoices(
+        1,
+        stereoVoices,
+        stereoSamples,
+        mockOnVoiceUpdate,
+      );
+
+      expect(success).toBe(false);
+      expect(mockOnVoiceUpdate).not.toHaveBeenCalled();
+      expect(mockToast.warning).toHaveBeenCalledWith(
+        "Cannot unlink voice with stereo samples",
+        {
+          description:
+            "Remove stereo samples from voice 1 first, or convert them to mono",
+          duration: 7000,
+        },
+      );
+    });
+  });
+
+  describe("getVoiceLinkingStatus", () => {
+    it("should return not linked for mono voice", () => {
       const { result } = renderHook(() => useStereoHandling());
 
-      expect(result.current.defaultToMonoSamples).toBe(false);
+      const status = result.current.getVoiceLinkingStatus(1, mockVoices);
+
+      expect(status.isLinked).toBe(false);
+      expect(status.isPrimary).toBe(false);
+      expect(status.linkedWith).toBeUndefined();
+    });
+
+    it("should return primary link status for stereo voice", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+
+      const status = result.current.getVoiceLinkingStatus(1, stereoVoices);
+
+      expect(status.isLinked).toBe(true);
+      expect(status.isPrimary).toBe(true);
+      expect(status.linkedWith).toBe(2);
+    });
+
+    it("should return secondary link status for linked voice", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+
+      const status = result.current.getVoiceLinkingStatus(2, stereoVoices);
+
+      expect(status.isLinked).toBe(true);
+      expect(status.isPrimary).toBe(false);
+      expect(status.linkedWith).toBe(1);
+    });
+
+    it("should handle voice 1 correctly (no previous voice)", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const status = result.current.getVoiceLinkingStatus(1, mockVoices);
+
+      expect(status.isLinked).toBe(false);
+      expect(status.isPrimary).toBe(false);
+    });
+  });
+
+  describe("Error handling and edge cases", () => {
+    it("should handle linkVoicesForStereo errors gracefully", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const mockOnVoiceUpdate = vi
+        .fn()
+        .mockRejectedValue(new Error("Update failed"));
+
+      const success = await result.current.linkVoicesForStereo(
+        1,
+        mockVoices,
+        [],
+        mockOnVoiceUpdate,
+      );
+
+      expect(success).toBe(false);
+      expect(mockToast.error).toHaveBeenCalledWith("Voice linking failed", {
+        description: "Failed to link voices. Please try again.",
+        duration: 5000,
+      });
+    });
+
+    it("should handle unlinkVoices errors gracefully", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+      const mockOnVoiceUpdate = vi
+        .fn()
+        .mockRejectedValue(new Error("Update failed"));
+
+      const success = await result.current.unlinkVoices(
+        1,
+        stereoVoices,
+        [],
+        mockOnVoiceUpdate,
+      );
+
+      expect(success).toBe(false);
+      expect(mockToast.error).toHaveBeenCalledWith("Voice unlinking failed", {
+        description: "Failed to unlink voices. Please try again.",
+        duration: 5000,
+      });
+    });
+
+    it("should handle missing voice data in validateVoiceAssignment", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const validation = result.current.validateVoiceAssignment(
+        99, // Non-existent voice
+        1,
+        mockVoices,
+        [],
+      );
+
+      expect(validation.canAccept).toBe(false);
+      expect(validation.reason).toBe("Voice not found");
+      expect(validation.voiceMode).toBe("mono");
+    });
+
+    it("should handle missing voice data in canLinkVoices", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const incompleteVoices = [mockVoices[0]]; // Missing voice 2
+
+      const linkingResult = result.current.canLinkVoices(
+        1,
+        incompleteVoices,
+        [],
+      );
+
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toBe("Voice data not found");
+    });
+  });
+
+  describe("Complex sample assignment scenarios", () => {
+    it("should prevent mixing mono and stereo samples in validateVoiceAssignment", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const mixedSamples = [
+        { ...mockSamples[0], is_stereo: false, voice_number: 1 }, // Existing mono sample
+      ];
+
+      const validation = result.current.validateVoiceAssignment(
+        1,
+        2, // Trying to add stereo sample
+        mockVoices,
+        mixedSamples,
+      );
+
+      expect(validation.canAccept).toBe(false);
+      expect(validation.reason).toBe(
+        "Cannot mix mono and stereo samples in same voice",
+      );
+      expect(validation.requiresConversion).toBe("mono");
+      expect(validation.voiceMode).toBe("mono");
+    });
+
+    it("should allow stereo sample assignment with userLinkedVoices flag", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const assignment = result.current.analyzeSampleAssignment(
+        1,
+        2, // Stereo sample
+        mockVoices,
+        [],
+        true, // User manually linked voices
+      );
+
+      expect(assignment.canAssign).toBe(true);
+      expect(assignment.assignAsMono).toBe(false);
+      expect(assignment.requiresWarning).toBe(false);
+    });
+
+    it("should handle stereo sample to already stereo voice", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+
+      const assignment = result.current.analyzeSampleAssignment(
+        1,
+        2, // Stereo sample
+        stereoVoices,
+        [],
+      );
+
+      expect(assignment.canAssign).toBe(true);
+      expect(assignment.assignAsMono).toBe(false);
+      expect(assignment.requiresWarning).toBe(false);
+    });
+
+    it("should handle conversion recommendation when linking impossible", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const conflictedVoices = [
+        mockVoices[0],
+        { ...mockVoices[1], stereo_mode: true }, // Voice 2 already in stereo mode
+        ...mockVoices.slice(2),
+      ];
+
+      const validation = result.current.validateVoiceAssignment(
+        1,
+        2, // Stereo sample to voice that can't link (voice 2 busy)
+        conflictedVoices,
+        [],
+      );
+
+      expect(validation.canAccept).toBe(true);
+      expect(validation.requiresConversion).toBe("mono");
+      expect(validation.reason).toContain(
+        "already linked or has stereo samples",
+      );
+    });
+  });
+
+  describe("Voice linking with existing samples", () => {
+    it("should prevent linking when target voice has stereo samples", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const samplesWithStereoInTarget = [
+        { ...mockSamples[0], is_stereo: true, voice_number: 2 }, // Voice 2 has stereo sample
+      ];
+
+      const linkingResult = result.current.canLinkVoices(
+        1,
+        mockVoices,
+        samplesWithStereoInTarget,
+      );
+
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toBe(
+        "Voice 2 is already linked or has stereo samples",
+      );
+    });
+
+    it("should prevent linking when target voice is in stereo mode", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const voicesWithStereoTarget = [
+        mockVoices[0],
+        { ...mockVoices[1], stereo_mode: true }, // Voice 2 in stereo mode
+        ...mockVoices.slice(2),
+      ];
+
+      const linkingResult = result.current.canLinkVoices(
+        1,
+        voicesWithStereoTarget,
+        [],
+      );
+
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toBe(
+        "Voice 2 is already linked or has stereo samples",
+      );
+    });
+  });
+
+  describe("Functions without onVoiceUpdate callback", () => {
+    it("should handle linkVoicesForStereo without onVoiceUpdate", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const success = await result.current.linkVoicesForStereo(
+        1,
+        mockVoices,
+        [],
+        undefined, // No callback
+      );
+
+      expect(success).toBe(true);
+      expect(mockToast.success).toHaveBeenCalledWith("Voices linked", {
+        description: "Voice 1 and 2 are now linked for stereo",
+        duration: 5000,
+      });
+    });
+
+    it("should handle unlinkVoices without onVoiceUpdate", async () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const stereoVoices = [
+        { ...mockVoices[0], stereo_mode: true },
+        ...mockVoices.slice(1),
+      ];
+
+      const success = await result.current.unlinkVoices(
+        1,
+        stereoVoices,
+        [],
+        undefined, // No callback
+      );
+
+      expect(success).toBe(true);
+      expect(mockToast.success).toHaveBeenCalledWith("Voices unlinked", {
+        description: "Voice 1 converted back to mono mode",
+        duration: 5000,
+      });
     });
   });
 });

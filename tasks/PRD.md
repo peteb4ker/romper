@@ -377,8 +377,8 @@ The three main user journeys are:
 - Global "default to mono samples" setting (enabled by default) with persistent storage
 - Per-sample stereo/mono toggle overrides when global setting is disabled
 - Format conversion warnings and user prompts for conflicting stereo sample placement
-- Handle stereo sample assignment across voices (left → voice N, right → voice N+1) when enabled
-- User prompts when stereo samples conflict with existing samples in next voice
+- Handle stereo sample placement as single files on primary voice (hardware automatically plays across voice N and N+1)
+- User prompts when stereo samples would affect adjacent voice behavior
 - Auto-convert stereo samples to mono with warning when added to voice 4 (no next voice available)
 
 **Administrative: Change Local Store Directory**
@@ -872,10 +872,11 @@ The Romper DB is a SQLite database with the following schema:
   - If the sample is mono, it is linked to the voice and slot it was added to
   - If the sample is stereo and "default to mono" setting is ON: treat the stereo sample as mono
   - If the sample is stereo and "default to mono" setting is OFF:
-    - Left channel is attributed to the voice and slot it was added to
-    - Right channel is attributed to the same slot in the next voice (e.g., left: voice 1 slot 5; right: voice 2 slot 5)
-    - If the same slot in the next voice already has a sample, prompt user to choose: convert to mono OR replace the existing sample in next voice
+    - The complete stereo file is placed on the primary voice (N) as a single file
+    - Rample hardware automatically plays left channel on voice N and right channel on voice N+1
+    - Only the primary voice (N) needs to be triggered to play the complete stereo sample
     - If stereo sample is added to voice 4 (no next voice available), auto-convert to mono with warning about mono status
+    - No file splitting occurs - stereo samples remain as single stereo files
 - **Channel merging behavior**: When previewing a stereo sample that is to be treated as mono, the two channels are merged on playback using an averaging method
 - **Conversion timing**: Sample format conversion only occurs on commit/sync to SD card, not during preview
 

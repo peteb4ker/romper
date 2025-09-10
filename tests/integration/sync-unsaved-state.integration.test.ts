@@ -12,6 +12,7 @@ import { deleteDbFileWithRetry } from "../../electron/main/db/fileOperations";
 import {
   addKit,
   addSample,
+  clearMigrationCache,
   createRomperDbFile,
   getKit,
   markKitAsModified,
@@ -40,13 +41,18 @@ describe("Sync Unsaved State Integration", () => {
   }
 
   beforeEach(() => {
+    // Clear migration cache to ensure fresh database setup
+    clearMigrationCache();
     // Ensure the test directory exists
     if (!fs.existsSync(TEST_DB_DIR)) {
       fs.mkdirSync(TEST_DB_DIR, { recursive: true });
     }
 
     // Create a fresh database
-    createRomperDbFile(TEST_DB_DIR);
+    const dbResult = createRomperDbFile(TEST_DB_DIR);
+    if (!dbResult.success) {
+      throw new Error("Database setup failed: " + dbResult.error);
+    }
   });
 
   afterEach(async () => {
@@ -70,6 +76,9 @@ describe("Sync Unsaved State Integration", () => {
     };
 
     const addResult = addKit(TEST_DB_DIR, testKit);
+    if (!addResult.success) {
+      throw new Error("addKit failed: " + addResult.error);
+    }
     expect(addResult.success).toBe(true);
 
     // Verify kit starts as not modified

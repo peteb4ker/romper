@@ -13,9 +13,13 @@ import { useVoicePanelRendering } from "./hooks/voice-panels/useVoicePanelRender
 interface KitVoicePanelProps {
   isActive?: boolean;
   isEditable?: boolean;
+  // Voice linking props for stereo handling
+  isLinked?: boolean;
+  isPrimaryVoice?: boolean;
   // Task 7.1.3: Props for coordinated stereo drop highlighting
   isStereoDragTarget?: boolean;
   kitName: string;
+  linkedWith?: number;
   onPlay: (voice: number, sample: string) => void;
   onRescanVoiceName: (voice: number) => void;
   // New props for drag-and-drop sample assignment (Task 5.2.2)
@@ -40,14 +44,16 @@ interface KitVoicePanelProps {
   ) => Promise<void>;
   onSampleSelect?: (voice: number, idx: number) => void;
   onSaveVoiceName: (voice: number, newName: string) => void;
-
   onStereoDragLeave?: () => void;
   onStereoDragOver?: (
     voice: number,
     slotNumber: number,
     isStereo: boolean,
   ) => void;
+
   onStop: (voice: number, sample: string) => void;
+  onVoiceLink?: (primaryVoice: number) => void;
+  onVoiceUnlink?: (primaryVoice: number) => void;
   onWaveformPlayingChange: (
     voice: number,
     sample: string,
@@ -87,8 +93,11 @@ const KitVoicePanel: React.FC<
   dataTestIdVoiceName,
   isActive = false,
   isEditable = true,
+  isLinked = false,
+  isPrimaryVoice = false,
   isStereoDragTarget = false,
   kitName,
+  linkedWith,
   onPlay,
   onSampleAdd,
   onSampleDelete,
@@ -100,6 +109,8 @@ const KitVoicePanel: React.FC<
   onStereoDragLeave,
   onStereoDragOver,
   onStop,
+  onVoiceLink,
+  onVoiceUnlink,
   onWaveformPlayingChange,
   playTriggers,
   sampleMetadata,
@@ -207,11 +218,81 @@ const KitVoicePanel: React.FC<
     }
   }, [selectedIdx, isActive]);
 
+  // Voice linking styles
+  const voicePanelClasses = [
+    "flex-1 p-3 rounded-lg shadow text-gray-900 dark:text-gray-100 min-h-[80px]",
+    // Default background
+    "bg-gray-100 dark:bg-slate-800",
+    // Linked voice styling
+    isLinked &&
+      isPrimaryVoice &&
+      "bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-600",
+    isLinked &&
+      !isPrimaryVoice &&
+      "bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-600",
+    // Stereo drag target
+    isStereoDragTarget && "bg-yellow-100 dark:bg-yellow-900/30",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const renderVoiceLinkingControls = () => {
+    if (!isEditable) return null;
+
+    return (
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {/* Voice linking status indicator */}
+          {isLinked && (
+            <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+              {isPrimaryVoice ? (
+                <>
+                  <span>🔗</span>
+                  <span>Stereo (L→{linkedWith})</span>
+                </>
+              ) : (
+                <>
+                  <span>🔗</span>
+                  <span>Linked ({linkedWith}→R)</span>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Voice linking controls for voices 1-3 */}
+          {voice <= 3 && !isLinked && (
+            <button
+              className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+              onClick={() => onVoiceLink?.(voice)}
+              title={`Link voice ${voice} to voice ${voice + 1} for stereo`}
+              type="button"
+            >
+              Link Stereo
+            </button>
+          )}
+
+          {/* Voice unlinking control */}
+          {isLinked && isPrimaryVoice && (
+            <button
+              className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              onClick={() => onVoiceUnlink?.(voice)}
+              title={`Unlink voice ${voice} from stereo mode`}
+              type="button"
+            >
+              Unlink
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div aria-label={`Voice ${voice} panel`} className="flex flex-col">
       {rendering.renderVoiceName(dataTestIdVoiceName)}
       {/* Voice panel content */}
-      <div className="flex-1 p-3 rounded-lg shadow bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 min-h-[80px]">
+      <div className={voicePanelClasses}>
+        {renderVoiceLinkingControls()}
         <ul
           aria-label={`Sample slots for voice ${voice}`}
           className="list-none ml-0 text-sm flex flex-col"

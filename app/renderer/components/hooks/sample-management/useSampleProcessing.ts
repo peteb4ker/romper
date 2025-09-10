@@ -21,7 +21,6 @@ export interface UseSampleProcessingOptions {
   voice: number;
 }
 import { useSettings } from "../../../utils/SettingsContext";
-import { useStereoHandling } from "./useStereoHandling";
 
 interface FormatValidation {
   metadata?: {
@@ -41,11 +40,6 @@ export function useSampleProcessing({
   voice,
 }: UseSampleProcessingOptions) {
   const { defaultToMonoSamples } = useSettings();
-  const {
-    analyzeStereoAssignment,
-    applyStereoAssignment,
-    handleStereoConflict,
-  } = useStereoHandling();
 
   const getCurrentKitSamples = useCallback(async () => {
     if (!window.electronAPI?.getAllSamplesForKit) {
@@ -161,61 +155,17 @@ export function useSampleProcessing({
         );
       }
 
-      const stereoResult = analyzeStereoAssignment(
-        voice,
-        channels,
-        samples,
-        modifierKeys.forceMonoDrop || modifierKeys.forceStereoDrop
-          ? {
-              forceMono: modifierKeys.forceMonoDrop,
-              forceStereo: modifierKeys.forceStereoDrop,
-            }
-          : undefined,
-      );
+      // For now, simple assignment logic - stereo handling will be managed at voice level
+      const assignAsMono = defaultToMonoSamples || modifierKeys.forceMonoDrop;
 
-      let assignmentOptions = {
-        cancel: false,
-        forceMono: stereoResult.assignAsMono,
+      await executeAssignment(filePath, samples, droppedSlotNumber, {
+        forceMono: assignAsMono,
         replaceExisting: false,
-      };
-
-      if (stereoResult.requiresConfirmation && stereoResult.conflictInfo) {
-        assignmentOptions = await handleStereoConflict(
-          stereoResult.conflictInfo,
-        );
-        if (assignmentOptions.cancel) {
-          return false;
-        }
-      }
-
-      await executeAssignment(
-        filePath,
-        samples,
-        droppedSlotNumber,
-        assignmentOptions,
-      );
-
-      // Apply stereo assignment if sample has multiple channels and isn't forced mono
-      if (channels > 1 && !assignmentOptions.forceMono) {
-        await applyStereoAssignment(
-          filePath,
-          stereoResult,
-          assignmentOptions,
-          onSampleAdd,
-        );
-      }
+      });
 
       return true;
     },
-    [
-      defaultToMonoSamples,
-      analyzeStereoAssignment,
-      handleStereoConflict,
-      applyStereoAssignment,
-      voice,
-      executeAssignment,
-      onSampleAdd,
-    ],
+    [defaultToMonoSamples, executeAssignment],
   );
 
   return {

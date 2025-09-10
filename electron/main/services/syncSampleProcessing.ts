@@ -68,6 +68,8 @@ export class SyncSampleProcessingService {
 
   /**
    * Process a single sample for sync operation
+   * Stereo files are written as complete stereo files to voice N,
+   * hardware automatically plays them on voices N and N+1
    */
   processSampleForSync(
     sample: Sample,
@@ -107,6 +109,13 @@ export class SyncSampleProcessingService {
       destinationPath,
       results,
     );
+
+    // Add informational message for stereo samples
+    if (sample.is_stereo && sample.voice_number < 4) {
+      results.warnings.push(
+        `Stereo sample "${filename}" on voice ${sample.voice_number} will play across voices ${sample.voice_number} and ${sample.voice_number + 1}`,
+      );
+    }
   }
 }
 

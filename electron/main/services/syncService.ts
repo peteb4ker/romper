@@ -118,6 +118,8 @@ class SyncService {
       };
 
       const samples = samplesResult.data || [];
+
+      // Process samples with standard sync logic - stereo behavior is now corrected in core processor
       for (const sample of samples) {
         syncSampleProcessingService.processSampleForSync(
           sample,

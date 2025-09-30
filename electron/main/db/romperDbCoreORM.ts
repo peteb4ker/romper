@@ -44,6 +44,7 @@ export { moveSample } from "./operations/sampleManagementOps.js";
 export { DB_FILENAME } from "./utils/dbUtilities.js";
 
 export {
+  clearMigrationCache,
   createRomperDbFile,
   ensureDatabaseMigrations,
   validateDatabaseSchema,

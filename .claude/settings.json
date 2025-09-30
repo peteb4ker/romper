@@ -27,10 +27,6 @@
       "Bash(npx vitest run:*)",
       "Bash(npx vitest:*)",
       "Bash(sqlite3:*)",
-      "Bash(sed:*)",
-      "Bash(for:*)",
-      "Bash(*xargs*)",
-      "Bash(*|*)",
       "WebFetch(domain:tailwindcss.com)"
     ],
     "deny": []

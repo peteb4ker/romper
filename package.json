@@ -114,7 +114,7 @@
     "semantic-release": "^25.0.2",
     "sonarqube-scanner": "^4.3.0",
     "tailwindcss": "^4.1.8",
-    "tar": "^7.5.3",
+    "tar": "^7.5.4",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.34.1",
     "vite": "^6.4.1",

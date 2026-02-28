@@ -83,9 +83,9 @@ export default defineConfig({
       pool: "threads",
       poolOptions: {
         threads: {
-          // Use more threads in CI for faster execution
-          maxThreads: isCI ? 4 : 2,
+          maxThreads: isCI ? 8 : 2,
           minThreads: isCI ? 2 : 1,
+          useAtomics: true,
         },
       },
       // Optimized reporters for CI

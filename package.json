@@ -8,7 +8,7 @@
   "type": "module",
   "main": "dist/electron/main/index.js",
   "scripts": {
-    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
+    "build": "concurrently -n main,preload,renderer \"npm run build:main\" \"npm run build:preload\" \"npm run build:renderer\"",
     "build:main": "vite build --config vite.main.config.ts",
     "build:preload": "tsc -p electron/preload/tsconfig.preload.json && mv dist/electron/preload/index.js dist/electron/preload/index.cjs",
     "build:renderer": "vite build --config vite.config.ts",
@@ -38,7 +38,7 @@
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
     "check-test-coverage": "node scripts/check-test-coverage.js",
-    "pre-commit": "npm run typecheck && npm run lint:check && npm run test:husky && npm run build",
+    "pre-commit": "concurrently --kill-others-on-fail -n tsc,lint,test,build \"npm run typecheck\" \"npm run lint:check\" \"npm run test:husky\" \"npm run build\"",
     "test:husky": "npm run test:unit:husky && npm run test:integration:husky",
     "test:unit:husky": "NO_COLOR=true npm run test:unit:fast",
     "test:integration:husky": "NO_COLOR=true npm run test:integration:fast",

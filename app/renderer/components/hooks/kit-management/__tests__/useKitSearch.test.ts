@@ -1,7 +1,7 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useKitSearch } from "../useKitSearch";
 
@@ -26,6 +26,14 @@ vi.mock("../../../../utils/kitSearchUtils", () => ({
 }));
 
 describe("useKitSearch", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   const mockKits: KitWithRelations[] = [
     {
       alias: null,
@@ -113,7 +121,7 @@ describe("useKitSearch", () => {
     expect(result.current.searchResultCount).toBe(0);
   });
 
-  it("should handle search state transitions", async () => {
+  it("should handle search state transitions", () => {
     const { result } = renderHook(() =>
       useKitSearch({ allKitSamples: {}, kits: mockKits }),
     );
@@ -125,9 +133,9 @@ describe("useKitSearch", () => {
     // Should briefly set isSearching to true
     expect(result.current.isSearching).toBe(true);
 
-    // Wait for the timeout to complete
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 150));
+    // Advance fake timers past the 100ms debounce
+    act(() => {
+      vi.advanceTimersByTime(100);
     });
 
     expect(result.current.isSearching).toBe(false);

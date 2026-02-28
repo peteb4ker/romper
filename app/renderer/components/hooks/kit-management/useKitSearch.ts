@@ -1,6 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { KitWithSearchMatch } from "../../shared/kitItemUtils";
 
@@ -30,6 +30,16 @@ export function useKitSearch({
 }: UseKitSearchOptions = {}): UseKitSearchResult {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const searchTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current !== null) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+  }, []);
 
   // Filter kits based on search query
   const filteredKits = useMemo(() => {
@@ -48,9 +58,15 @@ export function useKitSearch({
     setIsSearching(true);
     setSearchQuery(query);
 
-    // Simulate brief search state for UI feedback
-    setTimeout(() => {
+    // Clear any pending timer before setting a new one
+    if (searchTimerRef.current !== null) {
+      clearTimeout(searchTimerRef.current);
+    }
+
+    // Brief search state for UI feedback
+    searchTimerRef.current = setTimeout(() => {
       setIsSearching(false);
+      searchTimerRef.current = null;
     }, 100);
   }, []);
 

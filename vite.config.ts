@@ -64,6 +64,12 @@ export default defineConfig({
         reportsDirectory: isIntegration
           ? "./coverage/integration"
           : "./coverage/unit",
+        thresholds: {
+          branches: 85,
+          functions: 80,
+          lines: 85,
+          statements: 85,
+        },
       },
       environment: isIntegration ? "node" : "jsdom",
       exclude: [

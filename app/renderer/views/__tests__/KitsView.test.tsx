@@ -105,9 +105,10 @@ vi.mock("../../components/hooks/shared/useValidationResults", () => ({
   })),
 }));
 
+const mockShowMessage = vi.fn();
 vi.mock("../../components/hooks/shared/useMessageDisplay", () => ({
   useMessageDisplay: vi.fn(() => ({
-    showMessage: vi.fn(),
+    showMessage: mockShowMessage,
   })),
 }));
 
@@ -154,6 +155,7 @@ vi.mock("../../components/LocalStoreWizardUI", () => ({
 describe("KitsView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
 
     // Re-setup electronAPI mock after clearAllMocks
     setupElectronAPIMock();
@@ -1569,95 +1571,25 @@ describe("KitsView", () => {
   });
 
   describe("Environment override scenarios", () => {
-    it.skip("shows environment banner when override is detected", async () => {
-      // Mock environment variables to simulate non-test environment
-      const originalEnv = (import.meta as unknown).env;
-      (import.meta as unknown).env = {
-        MODE: "development",
-        VITE_ROMPER_TEST_MODE: undefined,
-      };
+    // NOTE: The environment banner test cannot run in Vitest because
+    // import.meta.env.MODE is always "test" in the test environment,
+    // and the banner rendering condition includes !isTestEnvironment.
+    // Vite statically replaces import.meta.env.MODE at compile time,
+    // so vi.stubEnv cannot override it at runtime.
+    // This behavior is covered by manual/E2E testing in development mode.
 
-      // We need to also patch process.env for the test
-      const originalProcessEnv = process.env;
-      process.env = {
-        ...originalProcessEnv,
-        NODE_ENV: "development",
-        VITE_ROMPER_TEST_MODE: undefined,
-      };
-
-      const TestSettingsProviderWithEnvOverride: React.FC<{
-        children: React.ReactNode;
-      }> = ({ children }) => {
-        const contextValue = {
-          confirmDestructiveActions: true,
-          defaultToMonoSamples: true,
-          isDarkMode: false,
-          isInitialized: true,
-          localStorePath: "/env/override/path",
-          localStoreStatus: {
-            hasLocalStore: true,
-            isCriticalEnvironmentError: false,
-            isEnvironmentOverride: true,
-            isValid: true,
-            localStorePath: "/env/override/path",
-          },
-          refreshLocalStoreStatus: vi.fn(),
-          setConfirmDestructiveActions: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
-          setLocalStorePath: vi.fn(),
-          setThemeMode: vi.fn(),
-          themeMode: "light" as const,
-        };
-
-        return (
-          <SettingsContext.Provider value={contextValue}>
-            {children}
-          </SettingsContext.Provider>
-        );
-      };
-
-      render(
-        <TestSettingsProviderWithEnvOverride>
-          <KitsView />
-        </TestSettingsProviderWithEnvOverride>,
-      );
-
-      // Give time for the useEffect to set the banner state
-      await waitFor(() => {
-        expect(
-          screen.getByText(
-            "Test Mode: Using ROMPER_LOCAL_PATH environment override",
-          ),
-        ).toBeInTheDocument();
-      });
-
-      // Should show dismiss button
-      const dismissButton = screen.getByText("Dismiss");
-      expect(dismissButton).toBeInTheDocument();
-
-      // Click dismiss
-      fireEvent.click(dismissButton);
-
-      await waitFor(() => {
-        expect(
-          screen.queryByText(/Test Mode.*environment override/),
-        ).not.toBeInTheDocument();
-      });
-
-      // Restore original env
-      (import.meta as unknown).env = originalEnv;
-      process.env = originalProcessEnv;
-    });
-
-    it.skip("shows critical error dialog for invalid environment path", async () => {
+    it("shows critical error dialog for invalid environment path", async () => {
       const TestSettingsProviderCriticalError: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
         const contextValue = {
+          clearError: vi.fn(),
           confirmDestructiveActions: true,
           defaultToMonoSamples: true,
+          error: null,
           isDarkMode: false,
           isInitialized: true,
+          isLoading: false,
           localStorePath: "/invalid/path",
           localStoreStatus: {
             error: "Path does not exist",
@@ -1666,6 +1598,7 @@ describe("KitsView", () => {
             isValid: false,
             localStorePath: "/invalid/path",
           },
+          refreshLocalStoreStatus: vi.fn(),
           setConfirmDestructiveActions: vi.fn(),
           setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
@@ -1692,21 +1625,22 @@ describe("KitsView", () => {
         ).toBeInTheDocument();
       });
 
-      // Should show the error dialog with close app option
-      const confirmButton =
-        screen.getByText("OK") || screen.getByText("Close App");
-      expect(confirmButton).toBeInTheDocument();
+      // Should show the error dialog with exit button
+      expect(screen.getByText("OK - Exit Application")).toBeInTheDocument();
     });
 
-    it.skip("shows invalid local store dialog for invalid configuration", async () => {
+    it("shows invalid local store dialog for invalid configuration", async () => {
       const TestSettingsProviderInvalidStore: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
         const contextValue = {
+          clearError: vi.fn(),
           confirmDestructiveActions: true,
           defaultToMonoSamples: true,
+          error: null,
           isDarkMode: false,
           isInitialized: true,
+          isLoading: false,
           localStorePath: "/invalid/store",
           localStoreStatus: {
             error: "Invalid local store configuration",
@@ -1714,6 +1648,7 @@ describe("KitsView", () => {
             isValid: false,
             localStorePath: "/invalid/store",
           },
+          refreshLocalStoreStatus: vi.fn(),
           setConfirmDestructiveActions: vi.fn(),
           setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
@@ -1741,7 +1676,7 @@ describe("KitsView", () => {
   });
 
   describe("Metadata migration functionality", () => {
-    it.skip("handles successful metadata migration", async () => {
+    it("handles successful metadata migration", async () => {
       vi.mocked(window.electronAPI.rescanKitsMissingMetadata).mockResolvedValue(
         {
           data: {
@@ -1762,15 +1697,16 @@ describe("KitsView", () => {
         expect(window.electronAPI.rescanKitsMissingMetadata).toHaveBeenCalled();
       });
 
-      // Should show success message about metadata update
+      // Should call showMessage with the success text
       await waitFor(() => {
-        expect(
-          screen.getByText("Updated metadata for 2 kits"),
-        ).toBeInTheDocument();
+        expect(mockShowMessage).toHaveBeenCalledWith(
+          "Updated metadata for 2 kits",
+          "success",
+        );
       });
     });
 
-    it.skip("handles metadata migration failure", async () => {
+    it("handles metadata migration failure", async () => {
       vi.mocked(window.electronAPI.rescanKitsMissingMetadata).mockRejectedValue(
         new Error("Migration failed"),
       );

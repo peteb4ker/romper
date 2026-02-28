@@ -110,7 +110,7 @@
     "madge": "^8.0.0",
     "nyc": "^17.1.0",
     "playwright": "^1.56.1",
-    "rollup": "^4.43.0",
+    "rollup": "^4.59.0",
     "semantic-release": "^25.0.2",
     "sonarqube-scanner": "^4.3.0",
     "tailwindcss": "^4.1.8",

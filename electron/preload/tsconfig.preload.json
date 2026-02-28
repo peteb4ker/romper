@@ -12,6 +12,7 @@
     "module": "CommonJS",
     "outDir": "../../dist/",
     "target": "ES2020",
+    "incremental": false,
     "typeRoots": ["../../electron/types", "../../node_modules/@types"]
   }
 }

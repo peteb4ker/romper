@@ -8,6 +8,8 @@
     "rootDir": ".",
     "esModuleInterop": true,
     "strict": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",

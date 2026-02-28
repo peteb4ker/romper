@@ -13,6 +13,7 @@ logs/
 dist/
 build/
 out/
+*.tsbuildinfo
 
 # Dependency directories
 .DS_Store

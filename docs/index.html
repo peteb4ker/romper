@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Romper Sample Manager - Essential desktop app for your Squarp Rample</title>
-    <meta name="description" content="Organize, preview, and sync your sample kits for the Squarp Rample with this cross-platform desktop application.">
-    <meta property="og:title" content="Romper Sample Manager">
-    <meta property="og:description" content="The essential desktop app for your Squarp Rample">
+    <title>Romper - Sample Kit Manager for the Squarp Rample</title>
+    <meta name="description" content="Desktop app for managing sample kits on the Squarp Rample eurorack sampler. Browse 26 banks, audition 4 voices, drag in samples, sync to SD card.">
+    <meta property="og:title" content="Romper - Sample Kit Manager for the Squarp Rample">
+    <meta property="og:description" content="Browse 26 banks. Audition 4 voices. Drag in samples. Sync to SD card. Done.">
     <meta property="og:type" content="website">
+    <meta property="og:image" content="images/app-screenshot.png">
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="images/app-icon.png">
     <link rel="apple-touch-icon" href="images/app-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <noscript><style>.fade-in { opacity: 1 !important; transform: none !important; }</style></noscript>
 </head>
 <body>
     <header class="header">
@@ -37,13 +39,13 @@
             <div class="container">
                 <div class="hero-content">
                     <h1 class="hero-title">
-                        <span class="title-main">Romper Sample Manager</span>
+                        <span class="title-main">Romper</span>
                     </h1>
-                    <p class="hero-subtitle">The essential desktop app for your Squarp Rample</p>
+                    <p class="hero-subtitle">Sample kit manager for the Squarp Rample</p>
                     <p class="hero-description">
-                        Organize, preview, and sync your sample kits
+                        Browse 26 banks of kits. Audition all 4 voices. Drag in new samples. Sync to SD card. Done.
                     </p>
-                    
+
                     <div class="hero-cta">
                         <a href="https://github.com/peteb4ker/romper/releases" class="cta-button primary" id="download-btn">
                             Download for <span id="platform">Your Platform</span>
@@ -53,12 +55,21 @@
                         </a>
                     </div>
                 </div>
-                
+
                 <div class="hero-visual">
                     <div class="app-screenshot">
-                        <img src="images/app-screenshot.png" alt="Romper Sample Manager Application" class="screenshot-main">
+                        <img src="images/app-screenshot.png" alt="Romper showing the kit browser with 26 banks of sample kits" class="screenshot-main">
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- Rample Context -->
+        <section class="rample-context">
+            <div class="container">
+                <p class="context-text">
+                    The <a href="https://squarp.net/rample" class="context-link">Squarp Rample</a> is a 4-voice eurorack sample player with 26 kit banks on an SD card. Managing the folder structure by hand is tedious and error-prone &mdash; Romper gives you a proper desktop interface for it.
+                </p>
             </div>
         </section>
 
@@ -66,64 +77,116 @@
         <section class="features">
             <div class="container">
                 <div class="features-grid">
-                    <div class="feature">
-                        <div class="feature-icon">🎵</div>
-                        <h3 class="feature-title">Smart Kit Management</h3>
+                    <div class="feature fade-in">
+                        <div class="feature-icon">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="4" y="4" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                                <rect x="27" y="4" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                                <rect x="4" y="27" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                                <rect x="27" y="27" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                                <circle cx="12.5" cy="12.5" r="3" fill="currentColor"/>
+                                <circle cx="35.5" cy="12.5" r="3" fill="currentColor"/>
+                                <circle cx="12.5" cy="35.5" r="3" fill="currentColor"/>
+                                <circle cx="35.5" cy="35.5" r="3" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">All 26 Banks at a Glance</h3>
                         <p class="feature-description">
-                            Browse and organize your Rample kits with visual previews and custom labels for easy organization.
+                            See every kit across banks A&ndash;Z with 4 voice slots per card. Color-coded sync status shows you what's changed at a glance.
                         </p>
                     </div>
-                    
-                    <div class="feature">
-                        <div class="feature-icon">🔊</div>
-                        <h3 class="feature-title">Built-in Sample Preview</h3>
+
+                    <div class="feature fade-in">
+                        <div class="feature-icon">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 36V12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <path d="M16 30V18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <path d="M24 38V10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <path d="M32 32V16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <path d="M40 28V20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <circle cx="8" cy="12" r="3" fill="currentColor"/>
+                                <circle cx="16" cy="18" r="3" fill="currentColor"/>
+                                <circle cx="24" cy="10" r="3" fill="currentColor"/>
+                                <circle cx="32" cy="16" r="3" fill="currentColor"/>
+                                <circle cx="40" cy="20" r="3" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Audition Before You Sync</h3>
                         <p class="feature-description">
-                            Audition samples before committing changes with built-in XOX sequencer for full kit previews.
+                            Play samples directly in the app. Use the built-in XOX step sequencer to hear all 4 voices together before committing to your SD card.
                         </p>
                     </div>
-                    
-                    <div class="feature">
-                        <div class="feature-icon">💾</div>
-                        <h3 class="feature-title">Safe SD Card Operations</h3>
+
+                    <div class="feature fade-in">
+                        <div class="feature-icon">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="8" y="6" width="32" height="10" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                                <rect x="8" y="32" width="32" height="10" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                                <path d="M24 16V32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 4"/>
+                                <path d="M18 28L24 32L30 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="14" cy="11" r="2" fill="currentColor"/>
+                                <circle cx="14" cy="37" r="2" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Drag, Drop, Done</h3>
                         <p class="feature-description">
-                            Non-destructive editing that preserves original SD card state. Restore from factory samples anytime.
+                            Drag .wav files onto voice slots. Romper handles folder naming, supports up to 12 layers per voice, and works with mono and stereo samples.
+                        </p>
+                    </div>
+
+                    <div class="feature fade-in">
+                        <div class="feature-icon">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="12" y="6" width="24" height="32" rx="4" stroke="currentColor" stroke-width="2.5"/>
+                                <rect x="18" y="12" width="12" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
+                                <line x1="18" y1="26" x2="30" y2="26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="18" y1="30" x2="26" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M20 42L24 38L28 42" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Safe SD Card Sync</h3>
+                        <p class="feature-description">
+                            Non-destructive reference-based editing. Samples only copy on sync. Automatic backup and validation keep your card safe.
                         </p>
                     </div>
                 </div>
             </div>
         </section>
+
+        <!-- Section Separator -->
+        <div class="section-separator"></div>
 
         <!-- How It Works Section -->
         <section class="how-it-works">
             <div class="container">
                 <h2 class="section-title">How It Works</h2>
                 <div class="steps">
-                    <div class="step">
+                    <div class="step fade-in">
                         <div class="step-number">1</div>
                         <div class="step-content">
-                            <h3 class="step-title">Bootstrap Your Library</h3>
+                            <h3 class="step-title">Point Romper at Your SD Card</h3>
                             <p class="step-description">
-                                Bootstrap the app from SD card, factory samples or a blank folder
+                                Romper reads the existing Rample folder structure and imports your kits automatically. Start from your current SD card, factory samples, or a blank library.
                             </p>
                         </div>
                     </div>
-                    
-                    <div class="step">
+
+                    <div class="step fade-in">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <h3 class="step-title">Organize and Preview</h3>
+                            <h3 class="step-title">Build and Audition Kits</h3>
                             <p class="step-description">
-                                Organize and preview your samples using the built-in browser and sequencer
+                                Each kit has the familiar 4-voice layout with up to 12 sample slots per voice. Drag samples in, rearrange, and preview with the built-in step sequencer.
                             </p>
                         </div>
                     </div>
-                    
-                    <div class="step">
+
+                    <div class="step fade-in">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h3 class="step-title">Sync Safely</h3>
+                            <h3 class="step-title">Sync and Play</h3>
                             <p class="step-description">
-                                Sync changes safely to your device with automatic validation and backup
+                                Sync validates your kits, converts formats if needed, creates a backup, and writes to the SD card. Eject, slot it into your Rample, and go.
                             </p>
                         </div>
                     </div>
@@ -131,19 +194,39 @@
             </div>
         </section>
 
+        <!-- Section Separator -->
+        <div class="section-separator reverse"></div>
+
         <!-- Screenshots Section -->
         <section class="screenshots">
             <div class="container">
                 <h2 class="section-title">See It In Action</h2>
-                <div class="screenshot-grid">
-                    <div class="screenshot-item">
-                        <img src="images/app-screenshot.png" alt="Romper Sample Manager Main Interface" class="screenshot">
-                        <p class="screenshot-caption">Main Kit Browser and Sample Management</p>
+                <div class="screenshot-gallery">
+                    <div class="screenshot-item fade-in">
+                        <img src="images/app-screenshot.png" alt="Kit browser showing all 26 banks with color-coded sync status" class="screenshot">
+                        <p class="screenshot-caption">Kit browser &mdash; all 26 banks with sync status at a glance</p>
                     </div>
-                    <div class="screenshot-item">
-                        <img src="images/kit-details.png" alt="Kit Details View" class="screenshot">
-                        <p class="screenshot-caption">Kit Details and Voice Panel Editing</p>
+                    <div class="screenshot-item fade-in">
+                        <img src="images/kit-details.png" alt="Kit detail view showing 4 voice slots with sample layers" class="screenshot">
+                        <p class="screenshot-caption">Kit detail &mdash; 4 voice slots, sample layers, and built-in sequencer</p>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Latest Features Section -->
+        <section class="latest-features">
+            <div class="container">
+                <h2 class="section-title">Latest Features</h2>
+                <div class="feature-pills">
+                    <span class="pill">Stereo Samples</span>
+                    <span class="pill">XOX Step Sequencer</span>
+                    <span class="pill">Kit Editing</span>
+                    <span class="pill">Keyboard Shortcuts</span>
+                    <span class="pill">Dark &amp; Light Themes</span>
+                    <span class="pill">Non-Destructive Editing</span>
+                    <span class="pill">Factory Sample Import</span>
+                    <span class="pill">Cross-Platform</span>
                 </div>
             </div>
         </section>
@@ -154,19 +237,28 @@
                 <div class="download-content">
                     <h2 class="section-title">Download Romper</h2>
                     <p class="download-description">
-                        Cross-platform support for Windows, macOS, and Linux
+                        Free and open source. Available for macOS, Windows, and Linux.
                     </p>
-                    
+
                     <div class="download-buttons">
                         <a href="https://github.com/peteb4ker/romper/releases" class="download-btn">
                             <span class="download-platform">Latest Release</span>
                             <span class="download-note">All Platforms</span>
                         </a>
                     </div>
-                    
+
+                    <div class="user-docs">
+                        <h3 class="user-docs-title">User Guide</h3>
+                        <div class="user-docs-links">
+                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/getting-started.md" class="doc-link">Getting Started</a>
+                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/kit-browser.md" class="doc-link">Kit Browser</a>
+                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/kit-details.md" class="doc-link">Kit Details</a>
+                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/syncing.md" class="doc-link">Syncing</a>
+                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/keyboard-shortcuts.md" class="doc-link">Keyboard Shortcuts</a>
+                        </div>
+                    </div>
+
                     <div class="download-links">
-                        <a href="https://github.com/peteb4ker/romper#-getting-started" class="download-link">Developer Guide</a>
-                        <span class="separator">•</span>
                         <a href="https://github.com/peteb4ker/romper" class="download-link">Source Code</a>
                         <span class="separator">•</span>
                         <a href="https://squarp.net/rample" class="download-link">About Squarp Rample</a>
@@ -185,7 +277,7 @@
                 <p class="footer-text">
                     <a href="https://github.com/peteb4ker/romper" class="footer-link">Open Source</a> • MIT License
                 </p>
-                <p class="footer-text" style="font-size: 0.85em; opacity: 0.8; margin-top: 0.5rem;">
+                <p class="footer-text footer-disclaimer">
                     Not affiliated with Squarp. This is an open source community project.
                 </p>
             </div>

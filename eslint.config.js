@@ -22,6 +22,7 @@ export default defineConfig([
       "build",
       "app/node_modules",
       "**/node_modules",
+      "worktrees",
     ],
   },
 

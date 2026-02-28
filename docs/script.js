@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
   // Platform detection
-  const platformSpan = document.getElementById("platform");
+  var platformSpan = document.getElementById("platform");
   if (platformSpan) {
     platformSpan.textContent = detectPlatform();
   }
@@ -16,7 +16,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Fade-in animations via IntersectionObserver
+  // Progressive enhancement fade-in:
+  // 1. Set up the IntersectionObserver first
+  // 2. Then add js-ready to <html> so elements hide
+  // This ensures the observer is already watching before anything becomes invisible
   var observer = new IntersectionObserver(
     function (entries) {
       entries.forEach(function (entry) {
@@ -32,6 +35,9 @@ document.addEventListener("DOMContentLoaded", function () {
   document.querySelectorAll(".fade-in").forEach(function (el) {
     observer.observe(el);
   });
+
+  // Now that the observer is watching, hide elements for animation
+  document.documentElement.classList.add("js-ready");
 });
 
 function detectPlatform() {

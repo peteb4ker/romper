@@ -15,9 +15,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <noscript><style>.fade-in { opacity: 1 !important; transform: none !important; }</style></noscript>
 </head>
 <body>
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
+
     <header class="header">
         <div class="container">
             <div class="nav">
@@ -28,14 +29,37 @@
                 <nav class="nav-links">
                     <a href="https://github.com/peteb4ker/romper" class="nav-link">GitHub</a>
                     <a href="https://github.com/peteb4ker/romper/releases" class="nav-link">Releases</a>
+                    <a href="https://github.com/peteb4ker/romper" class="github-stars" aria-label="GitHub stars">
+                        <img src="https://img.shields.io/github/stars/peteb4ker/romper?style=flat&logo=github&color=3b82f6&labelColor=1e293b" alt="GitHub stars">
+                    </a>
                 </nav>
             </div>
         </div>
     </header>
 
-    <main>
+    <main id="main-content">
         <!-- Hero Section -->
         <section class="hero">
+            <!-- Decorative dot grid (4-quadrant, app-icon inspired) -->
+            <svg class="hero-dot-grid" width="280" height="280" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <!-- Top-left quadrant -->
+                <circle cx="20" cy="20" r="3" fill="#ef4444"/><circle cx="50" cy="20" r="3" fill="#ef4444"/><circle cx="80" cy="20" r="3" fill="#ef4444"/>
+                <circle cx="20" cy="50" r="3" fill="#ef4444"/><circle cx="50" cy="50" r="3" fill="#ef4444"/><circle cx="80" cy="50" r="3" fill="#ef4444"/>
+                <circle cx="20" cy="80" r="3" fill="#ef4444"/><circle cx="50" cy="80" r="3" fill="#ef4444"/><circle cx="80" cy="80" r="3" fill="#ef4444"/>
+                <!-- Top-right quadrant -->
+                <circle cx="200" cy="20" r="3" fill="#ef4444"/><circle cx="230" cy="20" r="3" fill="#ef4444"/><circle cx="260" cy="20" r="3" fill="#ef4444"/>
+                <circle cx="200" cy="50" r="3" fill="#ef4444"/><circle cx="230" cy="50" r="3" fill="#ef4444"/><circle cx="260" cy="50" r="3" fill="#ef4444"/>
+                <circle cx="200" cy="80" r="3" fill="#ef4444"/><circle cx="230" cy="80" r="3" fill="#ef4444"/><circle cx="260" cy="80" r="3" fill="#ef4444"/>
+                <!-- Bottom-left quadrant -->
+                <circle cx="20" cy="200" r="3" fill="#ef4444"/><circle cx="50" cy="200" r="3" fill="#ef4444"/><circle cx="80" cy="200" r="3" fill="#ef4444"/>
+                <circle cx="20" cy="230" r="3" fill="#ef4444"/><circle cx="50" cy="230" r="3" fill="#ef4444"/><circle cx="80" cy="230" r="3" fill="#ef4444"/>
+                <circle cx="20" cy="260" r="3" fill="#ef4444"/><circle cx="50" cy="260" r="3" fill="#ef4444"/><circle cx="80" cy="260" r="3" fill="#ef4444"/>
+                <!-- Bottom-right quadrant -->
+                <circle cx="200" cy="200" r="3" fill="#ef4444"/><circle cx="230" cy="200" r="3" fill="#ef4444"/><circle cx="260" cy="200" r="3" fill="#ef4444"/>
+                <circle cx="200" cy="230" r="3" fill="#ef4444"/><circle cx="230" cy="230" r="3" fill="#ef4444"/><circle cx="260" cy="230" r="3" fill="#ef4444"/>
+                <circle cx="200" cy="260" r="3" fill="#ef4444"/><circle cx="230" cy="260" r="3" fill="#ef4444"/><circle cx="260" cy="260" r="3" fill="#ef4444"/>
+            </svg>
+
             <div class="container">
                 <div class="hero-content">
                     <h1 class="hero-title">
@@ -60,6 +84,35 @@
                     <div class="app-screenshot">
                         <img src="images/app-screenshot.png" alt="Romper showing the kit browser with 26 banks of sample kits" class="screenshot-main">
                     </div>
+                    <!-- Decorative waveform -->
+                    <svg class="hero-waveform" width="320" height="32" viewBox="0 0 320 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="10" y="10" width="4" height="12" rx="2" fill="#3b82f6"/>
+                        <rect x="22" y="6" width="4" height="20" rx="2" fill="#3b82f6"/>
+                        <rect x="34" y="2" width="4" height="28" rx="2" fill="#3b82f6"/>
+                        <rect x="46" y="8" width="4" height="16" rx="2" fill="#3b82f6"/>
+                        <rect x="58" y="4" width="4" height="24" rx="2" fill="#3b82f6"/>
+                        <rect x="70" y="11" width="4" height="10" rx="2" fill="#3b82f6"/>
+                        <rect x="82" y="6" width="4" height="20" rx="2" fill="#3b82f6"/>
+                        <rect x="94" y="3" width="4" height="26" rx="2" fill="#3b82f6"/>
+                        <rect x="106" y="9" width="4" height="14" rx="2" fill="#3b82f6"/>
+                        <rect x="118" y="5" width="4" height="22" rx="2" fill="#3b82f6"/>
+                        <rect x="130" y="12" width="4" height="8" rx="2" fill="#3b82f6"/>
+                        <rect x="142" y="7" width="4" height="18" rx="2" fill="#3b82f6"/>
+                        <rect x="154" y="1" width="4" height="30" rx="2" fill="#3b82f6"/>
+                        <rect x="166" y="8" width="4" height="16" rx="2" fill="#3b82f6"/>
+                        <rect x="178" y="4" width="4" height="24" rx="2" fill="#3b82f6"/>
+                        <rect x="190" y="10" width="4" height="12" rx="2" fill="#3b82f6"/>
+                        <rect x="202" y="6" width="4" height="20" rx="2" fill="#3b82f6"/>
+                        <rect x="214" y="3" width="4" height="26" rx="2" fill="#3b82f6"/>
+                        <rect x="226" y="9" width="4" height="14" rx="2" fill="#3b82f6"/>
+                        <rect x="238" y="5" width="4" height="22" rx="2" fill="#3b82f6"/>
+                        <rect x="250" y="11" width="4" height="10" rx="2" fill="#3b82f6"/>
+                        <rect x="262" y="7" width="4" height="18" rx="2" fill="#3b82f6"/>
+                        <rect x="274" y="2" width="4" height="28" rx="2" fill="#3b82f6"/>
+                        <rect x="286" y="8" width="4" height="16" rx="2" fill="#3b82f6"/>
+                        <rect x="298" y="10" width="4" height="12" rx="2" fill="#3b82f6"/>
+                        <rect x="310" y="12" width="4" height="8" rx="2" fill="#3b82f6"/>
+                    </svg>
                 </div>
             </div>
         </section>
@@ -79,7 +132,7 @@
                 <div class="features-grid">
                     <div class="feature fade-in">
                         <div class="feature-icon">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <rect x="4" y="4" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
                                 <rect x="27" y="4" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
                                 <rect x="4" y="27" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
@@ -98,7 +151,7 @@
 
                     <div class="feature fade-in">
                         <div class="feature-icon">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <path d="M8 36V12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                                 <path d="M16 30V18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                                 <path d="M24 38V10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
@@ -119,7 +172,7 @@
 
                     <div class="feature fade-in">
                         <div class="feature-icon">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <rect x="8" y="6" width="32" height="10" rx="3" stroke="currentColor" stroke-width="2.5"/>
                                 <rect x="8" y="32" width="32" height="10" rx="3" stroke="currentColor" stroke-width="2.5"/>
                                 <path d="M24 16V32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 4"/>
@@ -136,7 +189,7 @@
 
                     <div class="feature fade-in">
                         <div class="feature-icon">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <rect x="12" y="6" width="24" height="32" rx="4" stroke="currentColor" stroke-width="2.5"/>
                                 <rect x="18" y="12" width="12" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
                                 <line x1="18" y1="26" x2="30" y2="26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -153,8 +206,13 @@
             </div>
         </section>
 
-        <!-- Section Separator -->
-        <div class="section-separator"></div>
+        <!-- Sequencer Divider -->
+        <div class="sequencer-divider" aria-hidden="true">
+            <span class="seq-dot seq-dot--red"></span>
+            <span class="seq-dot seq-dot--green"></span>
+            <span class="seq-dot seq-dot--yellow"></span>
+            <span class="seq-dot seq-dot--purple"></span>
+        </div>
 
         <!-- How It Works Section -->
         <section class="how-it-works">
@@ -194,39 +252,98 @@
             </div>
         </section>
 
-        <!-- Section Separator -->
-        <div class="section-separator reverse"></div>
+        <!-- Sequencer Divider -->
+        <div class="sequencer-divider" aria-hidden="true">
+            <span class="seq-dot seq-dot--red"></span>
+            <span class="seq-dot seq-dot--green"></span>
+            <span class="seq-dot seq-dot--yellow"></span>
+            <span class="seq-dot seq-dot--purple"></span>
+        </div>
 
-        <!-- Screenshots Section -->
+        <!-- Screenshots Section — Two Views -->
         <section class="screenshots">
             <div class="container">
-                <h2 class="section-title">See It In Action</h2>
+                <h2 class="section-title">Two Views, Full Control</h2>
                 <div class="screenshot-gallery">
-                    <div class="screenshot-item fade-in">
-                        <img src="images/app-screenshot.png" alt="Kit browser showing all 26 banks with color-coded sync status" class="screenshot">
-                        <p class="screenshot-caption">Kit browser &mdash; all 26 banks with sync status at a glance</p>
+                    <div class="screenshot-card fade-in">
+                        <img src="images/app-screenshot.png" alt="Kit browser showing all 26 banks with color-coded sync status">
+                        <div class="screenshot-card-body">
+                            <h3 class="screenshot-card-title">Kit Browser</h3>
+                            <p class="screenshot-card-caption">All 26 banks at a glance with color-coded sync status and 4-voice previews per card.</p>
+                        </div>
                     </div>
-                    <div class="screenshot-item fade-in">
-                        <img src="images/kit-details.png" alt="Kit detail view showing 4 voice slots with sample layers" class="screenshot">
-                        <p class="screenshot-caption">Kit detail &mdash; 4 voice slots, sample layers, and built-in sequencer</p>
+                    <div class="screenshot-card fade-in">
+                        <img src="images/kit-details.png" alt="Kit detail view showing 4 voice slots with sample layers">
+                        <div class="screenshot-card-body">
+                            <h3 class="screenshot-card-title">Kit Details</h3>
+                            <p class="screenshot-card-caption">4 voice slots, sample layers, and a built-in XOX step sequencer to audition kits.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Latest Features Section -->
-        <section class="latest-features">
+        <!-- Capabilities Section (replaces feature pills) -->
+        <section class="capabilities">
             <div class="container">
-                <h2 class="section-title">Latest Features</h2>
-                <div class="feature-pills">
-                    <span class="pill">Stereo Samples</span>
-                    <span class="pill">XOX Step Sequencer</span>
-                    <span class="pill">Kit Editing</span>
-                    <span class="pill">Keyboard Shortcuts</span>
-                    <span class="pill">Dark &amp; Light Themes</span>
-                    <span class="pill">Non-Destructive Editing</span>
-                    <span class="pill">Factory Sample Import</span>
-                    <span class="pill">Cross-Platform</span>
+                <h2 class="section-title">Built for the Rample</h2>
+                <div class="capabilities-grid">
+                    <div class="capability">
+                        <div class="capability-dot capability-dot--red"></div>
+                        <div>
+                            <div class="capability-label">Cross-platform</div>
+                            <div class="capability-desc">macOS, Windows, Linux</div>
+                        </div>
+                    </div>
+                    <div class="capability">
+                        <div class="capability-dot capability-dot--green"></div>
+                        <div>
+                            <div class="capability-label">XOX Sequencer</div>
+                            <div class="capability-desc">Audition all 4 voices</div>
+                        </div>
+                    </div>
+                    <div class="capability">
+                        <div class="capability-dot capability-dot--yellow"></div>
+                        <div>
+                            <div class="capability-label">Non-destructive</div>
+                            <div class="capability-desc">Reference-only editing</div>
+                        </div>
+                    </div>
+                    <div class="capability">
+                        <div class="capability-dot capability-dot--purple"></div>
+                        <div>
+                            <div class="capability-label">Stereo Samples</div>
+                            <div class="capability-desc">Mono &amp; stereo .wav</div>
+                        </div>
+                    </div>
+                    <div class="capability">
+                        <div class="capability-dot capability-dot--red"></div>
+                        <div>
+                            <div class="capability-label">Keyboard Shortcuts</div>
+                            <div class="capability-desc">Fast workflow navigation</div>
+                        </div>
+                    </div>
+                    <div class="capability">
+                        <div class="capability-dot capability-dot--green"></div>
+                        <div>
+                            <div class="capability-label">Dark &amp; Light</div>
+                            <div class="capability-desc">System-matched themes</div>
+                        </div>
+                    </div>
+                    <div class="capability">
+                        <div class="capability-dot capability-dot--yellow"></div>
+                        <div>
+                            <div class="capability-label">Factory Import</div>
+                            <div class="capability-desc">Start from stock kits</div>
+                        </div>
+                    </div>
+                    <div class="capability">
+                        <div class="capability-dot capability-dot--purple"></div>
+                        <div>
+                            <div class="capability-label">Open Source</div>
+                            <div class="capability-desc">MIT licensed, free forever</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -248,19 +365,28 @@
                     </div>
 
                     <div class="user-docs">
-                        <h3 class="user-docs-title">User Guide</h3>
+                        <div class="user-docs-header">
+                            <svg class="user-docs-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path d="M3 2.5A1.5 1.5 0 014.5 1h9A1.5 1.5 0 0115 2.5v13a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 013 15.5v-13z" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M6 5h6M6 8h6M6 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            <h3 class="user-docs-title">User Guide</h3>
+                            <a href="https://github.com/peteb4ker/romper/tree/main/docs/user" class="github-badge" target="_blank" rel="noopener" aria-label="View on GitHub">
+                                <img src="https://img.shields.io/badge/on-GitHub-1e293b?logo=github&color=334155&labelColor=1e293b" alt="on GitHub">
+                            </a>
+                        </div>
                         <div class="user-docs-links">
-                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/getting-started.md" class="doc-link">Getting Started</a>
-                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/kit-browser.md" class="doc-link">Kit Browser</a>
-                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/kit-details.md" class="doc-link">Kit Details</a>
-                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/syncing.md" class="doc-link">Syncing</a>
-                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/keyboard-shortcuts.md" class="doc-link">Keyboard Shortcuts</a>
+                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/getting-started.md" class="doc-link" target="_blank" rel="noopener">Getting Started</a>
+                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/kit-browser.md" class="doc-link" target="_blank" rel="noopener">Kit Browser</a>
+                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/kit-details.md" class="doc-link" target="_blank" rel="noopener">Kit Details</a>
+                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/syncing.md" class="doc-link" target="_blank" rel="noopener">Syncing</a>
+                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/keyboard-shortcuts.md" class="doc-link" target="_blank" rel="noopener">Keyboard Shortcuts</a>
                         </div>
                     </div>
 
                     <div class="download-links">
                         <a href="https://github.com/peteb4ker/romper" class="download-link">Source Code</a>
-                        <span class="separator">•</span>
+                        <span class="separator">&bull;</span>
                         <a href="https://squarp.net/rample" class="download-link">About Squarp Rample</a>
                     </div>
                 </div>
@@ -275,7 +401,7 @@
                     Built for <a href="https://squarp.net/rample" class="footer-link">Squarp Rample</a> users
                 </p>
                 <p class="footer-text">
-                    <a href="https://github.com/peteb4ker/romper" class="footer-link">Open Source</a> • MIT License
+                    <a href="https://github.com/peteb4ker/romper" class="footer-link">Open Source</a> &bull; MIT License
                 </p>
                 <p class="footer-text footer-disclaimer">
                     Not affiliated with Squarp. This is an open source community project.

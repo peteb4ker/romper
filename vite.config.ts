@@ -64,12 +64,16 @@ export default defineConfig({
         reportsDirectory: isIntegration
           ? "./coverage/integration"
           : "./coverage/unit",
-        thresholds: {
-          branches: 85,
-          functions: 80,
-          lines: 85,
-          statements: 85,
-        },
+        // Only enforce thresholds for unit tests; integration tests cover
+        // a small subset of files and will naturally have lower percentages
+        thresholds: isIntegration
+          ? undefined
+          : {
+              branches: 85,
+              functions: 80,
+              lines: 85,
+              statements: 85,
+            },
       },
       environment: isIntegration ? "node" : "jsdom",
       exclude: [

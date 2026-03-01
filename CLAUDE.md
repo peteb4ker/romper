@@ -136,6 +136,7 @@ Agents MUST ensure ALL CI/CD checks pass on created PRs:
 - Monitor PR status after creation
 - Fix failing checks: TypeScript, linting, tests, build, SonarCloud
 - Use `gh pr checks <pr-number>` to monitor status
+- **NEVER dismiss or excuse failing checks** — always investigate and fix the root cause, even if the failure appears unrelated to your changes (flaky tests, infra issues, SonarCloud config). If a check fails, it is your responsibility to make it green.
 - **Review ALL comments systematically** - address every comment individually
 - **Follow exact suggestions** - when reviewers provide specific code, use it exactly (don't "improve")
 - **Test exact code first** - use reviewer's solution before trying alternatives

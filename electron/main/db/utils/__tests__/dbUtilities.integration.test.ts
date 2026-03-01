@@ -5,10 +5,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { deleteDbFileWithRetry } from "../../fileOperations.js";
 import {
   checkMigrationState,
+  clearMigrationCache,
   createRomperDbFile,
   DB_FILENAME,
   ensureDatabaseMigrations,
   getMigrationsPath,
+  repairMigrationHistory,
   validateDatabaseSchema,
   withDb,
 } from "../dbUtilities";
@@ -222,6 +224,90 @@ describe("Database Utilities Integration Tests", () => {
       } catch {
         // Skip if chmod is not supported (e.g., Windows)
         console.log("Skipping permission test - chmod not supported");
+      }
+    });
+  });
+
+  describe("repairMigrationHistory", () => {
+    it("should record 0009 as applied when columns already exist from deleted 0008", () => {
+      // Create a fresh DB (all migrations applied, including 0009)
+      const result = createRomperDbFile(TEST_DB_DIR);
+      expect(result.success).toBe(true);
+
+      const BetterSqlite3 = require("better-sqlite3");
+      const dbPath = path.join(TEST_DB_DIR, DB_FILENAME);
+      const sqlite = new BetterSqlite3(dbPath);
+
+      try {
+        // Verify wav_bit_depth column exists (from 0009)
+        const columns = sqlite.prepare("PRAGMA table_info(samples)").all() as {
+          name: string;
+        }[];
+        expect(
+          columns.some((c: { name: string }) => c.name === "wav_bit_depth"),
+        ).toBe(true);
+
+        // Get the hash for 0009 before we delete it
+        const migrations = sqlite
+          .prepare(
+            "SELECT hash, created_at FROM __drizzle_migrations ORDER BY created_at",
+          )
+          .all() as { created_at: number; hash: string }[];
+        const lastMigration = migrations[migrations.length - 1];
+
+        // Delete the last migration record to simulate a DB that had 0008 but not 0009
+        const deleteResult = sqlite
+          .prepare("DELETE FROM __drizzle_migrations WHERE hash = ?")
+          .run(lastMigration.hash);
+        expect(deleteResult.changes).toBe(1);
+
+        // Verify it's gone
+        const countAfterDelete = sqlite
+          .prepare("SELECT COUNT(*) as count FROM __drizzle_migrations")
+          .get() as { count: number };
+        expect(countAfterDelete.count).toBe(migrations.length - 1);
+
+        // Run repair
+        repairMigrationHistory(sqlite);
+
+        // Verify 0009 is re-recorded
+        const countAfterRepair = sqlite
+          .prepare("SELECT COUNT(*) as count FROM __drizzle_migrations")
+          .get() as { count: number };
+        expect(countAfterRepair.count).toBe(migrations.length);
+
+        // Verify ensureDatabaseMigrations now succeeds without error
+        clearMigrationCache();
+        const migrationResult = ensureDatabaseMigrations(TEST_DB_DIR);
+        expect(migrationResult.success).toBe(true);
+      } finally {
+        sqlite.close();
+      }
+    });
+
+    it("should be a no-op on a fresh database with all migrations applied", () => {
+      const result = createRomperDbFile(TEST_DB_DIR);
+      expect(result.success).toBe(true);
+
+      const BetterSqlite3 = require("better-sqlite3");
+      const dbPath = path.join(TEST_DB_DIR, DB_FILENAME);
+      const sqlite = new BetterSqlite3(dbPath);
+
+      try {
+        const countBefore = sqlite
+          .prepare("SELECT COUNT(*) as count FROM __drizzle_migrations")
+          .get() as { count: number };
+
+        repairMigrationHistory(sqlite);
+
+        const countAfter = sqlite
+          .prepare("SELECT COUNT(*) as count FROM __drizzle_migrations")
+          .get() as { count: number };
+
+        // No new records should be inserted
+        expect(countAfter.count).toBe(countBefore.count);
+      } finally {
+        sqlite.close();
       }
     });
   });

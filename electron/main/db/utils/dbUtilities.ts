@@ -3,6 +3,7 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import * as schema from "@romper/shared/db/schema.js";
 // Database utility functions for connection, migration, and validation
 import BetterSqlite3 from "better-sqlite3";
+import crypto from "crypto";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as fs from "fs";
@@ -124,6 +125,7 @@ export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
     const db = drizzle(sqlite, { schema });
 
     checkMigrationState(sqlite);
+    repairMigrationHistory(sqlite);
     executeMigrations(db, dbPath, dbDir);
 
     sqlite.close();
@@ -217,6 +219,99 @@ export function logMigrationError(
     } catch (statError) {
       console.error(`[Main] Could not get database stats:`, statError);
     }
+  }
+}
+
+/**
+ * Repair migration history for databases affected by the 0008→0009 consolidation.
+ *
+ * Commit 24f89f4 deleted migration 0008_ordinary_mastermind (which added
+ * wav_bit_depth and wav_channels to samples) and consolidated those changes
+ * plus a new stereo_mode column into 0009_purple_zaladane. Databases that
+ * already applied 0008 have some columns but not all, and lack a record for
+ * 0009 — causing Drizzle to re-run it and fail on "duplicate column".
+ *
+ * This function detects that state, applies any missing columns individually,
+ * and records 0009 as applied so Drizzle skips it.
+ */
+export function repairMigrationHistory(sqlite: BetterSqlite3.Database): void {
+  // Check which columns from 0009 already exist
+  const sampleCols = sqlite.prepare("PRAGMA table_info(samples)").all() as {
+    name: string;
+  }[];
+  const voiceCols = sqlite.prepare("PRAGMA table_info(voices)").all() as {
+    name: string;
+  }[];
+
+  const hasWavBitDepth = sampleCols.some((c) => c.name === "wav_bit_depth");
+  const hasWavChannels = sampleCols.some((c) => c.name === "wav_channels");
+  const hasStereoMode = voiceCols.some((c) => c.name === "stereo_mode");
+
+  // If none of the 0009 columns exist, this is a fresh DB — no repair needed
+  if (!hasWavBitDepth && !hasWavChannels && !hasStereoMode) {
+    return;
+  }
+
+  // Check if __drizzle_migrations table exists
+  const tables = sqlite
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'",
+    )
+    .all();
+  if (tables.length === 0) {
+    return;
+  }
+
+  const migrationsPath = getMigrationsPath();
+  if (!migrationsPath) return;
+
+  const migrationTag = "0009_purple_zaladane";
+  const sqlPath = path.join(migrationsPath, `${migrationTag}.sql`);
+  if (!fs.existsSync(sqlPath)) return;
+
+  // Compute the hash the same way Drizzle does (SHA-256 of raw SQL content)
+  const migrationSql = fs.readFileSync(sqlPath).toString();
+  const hash = crypto.createHash("sha256").update(migrationSql).digest("hex");
+
+  // Check if this migration is already recorded
+  const existing = sqlite
+    .prepare("SELECT id FROM __drizzle_migrations WHERE hash = ?")
+    .all(hash);
+  if (existing.length > 0) {
+    return; // Already applied
+  }
+
+  // Apply any missing columns individually
+  if (!hasWavBitDepth) {
+    sqlite.exec("ALTER TABLE `samples` ADD `wav_bit_depth` integer");
+  }
+  if (!hasWavChannels) {
+    sqlite.exec("ALTER TABLE `samples` ADD `wav_channels` integer");
+  }
+  if (!hasStereoMode) {
+    sqlite.exec(
+      "ALTER TABLE `voices` ADD `stereo_mode` integer DEFAULT false NOT NULL",
+    );
+  }
+
+  // Read the journal to get the timestamp for 0009
+  const journalStr = fs
+    .readFileSync(path.join(migrationsPath, "meta", "_journal.json"))
+    .toString();
+  const journal = JSON.parse(journalStr);
+  const entry = journal.entries.find(
+    (e: { tag: string }) => e.tag === migrationTag,
+  );
+
+  if (entry) {
+    console.log(
+      `[Main] Repairing migration history: applied missing columns and recorded ${migrationTag} (partially applied from deleted 0008)`,
+    );
+    sqlite
+      .prepare(
+        'INSERT INTO __drizzle_migrations ("hash", "created_at") VALUES (?, ?)',
+      )
+      .run(hash, entry.when);
   }
 }
 

@@ -183,6 +183,7 @@ jobs:
 
       # SonarCloud analysis
       - name: SonarCloud Scan
+        if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: .

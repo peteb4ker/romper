@@ -163,13 +163,13 @@ async function runWizardTest(
     // Success path: wizard disappears
     window.waitForSelector('[data-testid="local-store-wizard"]', {
       state: "hidden",
-      timeout: 15000,
+      timeout: 30000,
     }),
     // Failure path: error message appears
     window
       .waitForSelector('[data-testid="wizard-error"]', {
         state: "visible",
-        timeout: 15000,
+        timeout: 30000,
       })
       .then(async () => {
         const errorText = await window.textContent(

@@ -75,6 +75,7 @@ describe("useKitBankNavigation", () => {
     Object.defineProperty(global.document, "getElementById", {
       value: vi.fn(() => ({
         getBoundingClientRect: () => ({ top: 100 }),
+        scrollIntoView: vi.fn(),
       })),
       writable: true,
     });
@@ -487,7 +488,7 @@ describe("useKitBankNavigation", () => {
       vi.useRealTimers();
     });
 
-    it("should reset flag after smooth scroll via 500ms timeout", () => {
+    it("should reset flag after smooth scroll via 1000ms timeout", () => {
       vi.useFakeTimers();
 
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));
@@ -496,9 +497,9 @@ describe("useKitBankNavigation", () => {
         result.current.focusBankInKitList("B");
       });
 
-      // Advance past 500ms timeout
+      // Advance past 1000ms timeout
       act(() => {
-        vi.advanceTimersByTime(600);
+        vi.advanceTimersByTime(1100);
       });
 
       // handleVisibleBankChange should work again
@@ -548,6 +549,25 @@ describe("useKitBankNavigation", () => {
       });
 
       expect(result.current.selectedBank).toBe("B");
+    });
+
+    it("should restore target bank after smooth scroll timeout clears", () => {
+      vi.useFakeTimers();
+
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      act(() => {
+        result.current.focusBankInKitList("B");
+      });
+
+      // After timeout, selectedBank should be restored to target "B"
+      act(() => {
+        vi.advanceTimersByTime(1100);
+      });
+
+      expect(result.current.selectedBank).toBe("B");
+
+      vi.useRealTimers();
     });
   });
 

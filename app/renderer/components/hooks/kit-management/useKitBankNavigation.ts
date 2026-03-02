@@ -26,6 +26,7 @@ export function useKitBankNavigation({
   const [bankNames, setBankNames] = useState<BankNames>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const isProgrammaticScrollRef = useRef(false);
+  const scrollTargetBankRef = useRef<null | string>(null);
 
   // Generate bank names from kit data
   useEffect(() => {
@@ -144,12 +145,24 @@ export function useKitBankNavigation({
         typeof kitListRef.current.scrollAndFocusKitByIndex === "function"
       ) {
         isProgrammaticScrollRef.current = true;
+        scrollTargetBankRef.current = bank;
         setSelectedBank(bank);
+        // Call for focus side-effects (setFocus + onFocusKit)
         kitListRef.current.scrollAndFocusKitByIndex(idx);
         setFocusedKit(kits[idx].name);
+        // Override scroll: bank header to top so IO detects the correct bank
+        const bankHeader = document.getElementById(`bank-${bank}`);
+        if (bankHeader) {
+          bankHeader.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
         setTimeout(() => {
           isProgrammaticScrollRef.current = false;
-        }, 500);
+          // Restore correct bank in case IO fired during scroll
+          if (scrollTargetBankRef.current) {
+            setSelectedBank(scrollTargetBankRef.current);
+            scrollTargetBankRef.current = null;
+          }
+        }, 1000);
       }
       // If no kit in that bank, do not update selectedBank or focusedKit
     },

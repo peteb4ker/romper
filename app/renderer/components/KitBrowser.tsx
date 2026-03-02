@@ -215,14 +215,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         ref={scrollContainerRef}
       >
         <KitBrowserHeader
-          bankNav={
-            <KitBankNav
-              bankNames={bankNames}
-              kits={kits}
-              onBankClick={onBankClickWithScroll}
-              selectedBank={selectedBank}
-            />
-          }
           favoritesCount={favoritesCount}
           isSearching={props.isSearching}
           modifiedCount={modifiedCount}
@@ -265,7 +257,13 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           showDuplicateKit={!!duplicateKitSource}
           showNewKit={showNewKit}
         />
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-row">
+          <KitBankNav
+            bankNames={bankNames}
+            kits={kits}
+            onBankClick={onBankClickWithScroll}
+            selectedBank={selectedBank}
+          />
           <KitGrid
             bankNames={bankNames}
             focusedKit={focusedKit}

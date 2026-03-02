@@ -210,6 +210,25 @@ describe("useKitBankNavigation", () => {
       expect(mockEvent.preventDefault).toHaveBeenCalled();
     });
 
+    it("should scroll grid via scrollAndFocusKitByIndex on hotkey press", () => {
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      const mockEvent = {
+        key: "B",
+        preventDefault: vi.fn(),
+        target: { tagName: "DIV" },
+      } as unknown;
+
+      act(() => {
+        result.current.globalBankHotkeyHandler(mockEvent);
+      });
+
+      // The hotkey must trigger the same scroll path as a sidebar click
+      expect(
+        mockKitListRef.current.scrollAndFocusKitByIndex,
+      ).toHaveBeenCalledWith(2); // B0 is at index 2
+    });
+
     it("should ignore hotkeys when typing in inputs", () => {
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));
       const initialBank = result.current.selectedBank;

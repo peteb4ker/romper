@@ -58,13 +58,8 @@ describe("KitBrowserHeader", () => {
     expect(onShowSettings).toHaveBeenCalled();
   });
 
-  it("renders bankNav if provided", () => {
-    render(
-      <KitBrowserHeader
-        {...defaultProps}
-        bankNav={<div data-testid="bank-nav">BANKS</div>}
-      />,
-    );
-    expect(screen.getByTestId("bank-nav")).toBeInTheDocument();
+  it("does not render bank nav in header", () => {
+    render(<KitBrowserHeader {...defaultProps} />);
+    expect(screen.queryByLabelText("Bank index")).not.toBeInTheDocument();
   });
 });

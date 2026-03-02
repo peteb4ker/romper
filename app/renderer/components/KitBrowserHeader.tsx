@@ -11,7 +11,6 @@ import { useKitBrowserHeader } from "./hooks/kit-management/useKitBrowserHeader"
 import SearchInput from "./SearchInput";
 
 interface KitBrowserHeaderProps {
-  bankNav?: React.ReactNode;
   favoritesCount?: number;
   isSearching?: boolean;
   modifiedCount?: number;
@@ -36,10 +35,9 @@ interface KitBrowserHeaderProps {
 
 const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
   const { handleShowNewKit } = useKitBrowserHeader(props);
-  const { bankNav } = props;
 
   return (
-    <div className="sticky top-0 z-10 bg-surface-2 pt-2 pr-2 pl-2 pb-0 flex flex-col gap-2 items-stretch justify-between shadow-sm border-b border-border-subtle mt-0">
+    <div className="sticky top-0 z-10 bg-surface-2 p-2 flex flex-col gap-2 items-stretch justify-between shadow-sm border-b border-border-subtle">
       <div className="flex items-center justify-between w-full gap-4">
         {/* Left: Sync and New Kit */}
         <div className="flex items-center gap-2">
@@ -162,11 +160,6 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           </button>
         </div>
       </div>
-
-      {/* BankNav row (A-Z buttons) */}
-      {bankNav && (
-        <div className="w-full flex justify-center mt-1">{bankNav}</div>
-      )}
     </div>
   );
 };

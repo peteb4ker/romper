@@ -105,36 +105,6 @@ export function useKitBankNavigation({
     [kits, handleBankClick],
   );
 
-  // Global A-Z hotkey handler: select bank and focus first kit in that bank
-  const globalBankHotkeyHandler = useCallback(
-    (e: KeyboardEvent) => {
-      // Don't handle hotkeys when typing in inputs
-      const target = e.target as Element;
-      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") {
-        return;
-      }
-
-      if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {
-        const bank = e.key.toUpperCase();
-
-        // Only handle if bank has kits
-        if (!bankHasKits(kits, bank)) return;
-
-        setSelectedBank(bank);
-        handleBankClick(bank);
-
-        // Focus first kit in that bank
-        const firstKit = getFirstKitInBank(kits, bank);
-        if (firstKit) {
-          setFocusedKit(firstKit);
-        }
-
-        e.preventDefault();
-      }
-    },
-    [kits, setSelectedBank, handleBankClick],
-  );
-
   // Virtualization-based bank focus/scroll logic
   const focusBankInKitList = useCallback(
     (bank: string) => {
@@ -167,6 +137,30 @@ export function useKitBankNavigation({
       // If no kit in that bank, do not update selectedBank or focusedKit
     },
     [kits, kitListRef],
+  );
+
+  // Global A-Z hotkey handler: select bank and scroll/focus first kit
+  const globalBankHotkeyHandler = useCallback(
+    (e: KeyboardEvent) => {
+      // Don't handle hotkeys when typing in inputs
+      const target = e.target as Element;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") {
+        return;
+      }
+
+      if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {
+        const bank = e.key.toUpperCase();
+
+        // Only handle if bank has kits
+        if (!bankHasKits(kits, bank)) return;
+
+        // Use the same scroll path as sidebar clicks
+        focusBankInKitList(bank);
+
+        e.preventDefault();
+      }
+    },
+    [kits, focusBankInKitList],
   );
 
   // Handler for visible bank change during scroll

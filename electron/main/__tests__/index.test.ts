@@ -39,9 +39,13 @@ vi.mock("electron", () => {
   };
   const BrowserWindow = vi.fn().mockImplementation(() => ({
     getAllWindows: vi.fn().mockReturnValue([]),
+    getBounds: vi.fn(() => ({ height: 800, width: 1200, x: 0, y: 0 })),
     getFocusedWindow: vi.fn(),
+    isMaximized: vi.fn(() => false),
     loadFile: vi.fn(() => Promise.resolve()),
     loadURL: vi.fn(() => Promise.resolve()),
+    maximize: vi.fn(),
+    on: vi.fn(),
     webContents: {
       on: vi.fn(),
       send: vi.fn(),
@@ -344,8 +348,12 @@ describe.sequential("main/index.ts", () => {
 
     const { BrowserWindow } = await import("electron");
     const mockWindow = {
+      getBounds: vi.fn(() => ({ height: 800, width: 1200, x: 0, y: 0 })),
+      isMaximized: vi.fn(() => false),
       loadFile: vi.fn().mockResolvedValue(undefined),
       loadURL: vi.fn().mockRejectedValue(new Error("Load URL failed")),
+      maximize: vi.fn(),
+      on: vi.fn(),
     };
     vi.mocked(BrowserWindow).mockReturnValue(mockWindow as unknown);
 
@@ -367,8 +375,12 @@ describe.sequential("main/index.ts", () => {
 
     const { BrowserWindow } = await import("electron");
     const mockWindow = {
+      getBounds: vi.fn(() => ({ height: 800, width: 1200, x: 0, y: 0 })),
+      isMaximized: vi.fn(() => false),
       loadFile: vi.fn().mockRejectedValue(new Error("Load file failed")),
       loadURL: vi.fn().mockResolvedValue(undefined),
+      maximize: vi.fn(),
+      on: vi.fn(),
     };
     vi.mocked(BrowserWindow).mockReturnValue(mockWindow as unknown);
 

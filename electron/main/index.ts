@@ -27,6 +27,14 @@ const isDev = process.env.NODE_ENV === "development";
 const preloadPath = path.resolve(__dirname, "../preload/index.mjs");
 console.log(" Electron will use preload:", preloadPath);
 
+interface WindowState {
+  height: number;
+  isMaximized?: boolean;
+  width: number;
+  x?: number;
+  y?: number;
+}
+
 function createWindow() {
   console.log("[Electron Main] Environment variables check:");
   console.log(
@@ -48,15 +56,43 @@ function createWindow() {
     );
   }
 
+  const windowState = loadWindowState();
+
   const win: BrowserWindow = new BrowserWindow({
-    height: 800,
-    icon: path.resolve(__dirname, "../resources/app-icon.icns"), // Set app icon for built app
+    height: windowState.height,
+    icon: path.resolve(__dirname, "../resources/app-icon.icns"),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.resolve(__dirname, "../preload/index.cjs"),
     },
-    width: 1200,
+    width: windowState.width,
+    x: windowState.x,
+    y: windowState.y,
+  });
+
+  if (windowState.isMaximized) {
+    win.maximize();
+  }
+
+  win.on("close", () => {
+    if (!win.isMaximized()) {
+      saveWindowState(win);
+    } else {
+      // Save maximized flag but keep previous bounds for restore
+      try {
+        const statePath = getWindowStatePath();
+        const existing = fs.existsSync(statePath)
+          ? JSON.parse(fs.readFileSync(statePath, "utf-8"))
+          : {};
+        fs.writeFileSync(
+          statePath,
+          JSON.stringify({ ...existing, isMaximized: true }),
+        );
+      } catch {
+        // Ignore
+      }
+    }
   });
 
   if (isDev) {
@@ -82,6 +118,10 @@ function createWindow() {
       );
     });
   }
+}
+
+function getWindowStatePath(): string {
+  return path.join(app.getPath("userData"), "window-state.json");
 }
 
 function loadSettings(): InMemorySettings {
@@ -136,9 +176,39 @@ function loadSettings(): InMemorySettings {
   return settings;
 }
 
+function loadWindowState(): WindowState {
+  const defaults: WindowState = { height: 800, width: 1200 };
+  try {
+    const statePath = getWindowStatePath();
+    if (fs.existsSync(statePath)) {
+      const data = JSON.parse(fs.readFileSync(statePath, "utf-8"));
+      return { ...defaults, ...data };
+    }
+  } catch {
+    // Ignore corrupt state file
+  }
+  return defaults;
+}
+
 function registerAllIpcHandlers(settings: InMemorySettings) {
   registerIpcHandlers(settings);
   registerDbIpcHandlers(settings);
+}
+
+function saveWindowState(win: BrowserWindow): void {
+  try {
+    const bounds = win.getBounds();
+    const state: WindowState = {
+      height: bounds.height,
+      isMaximized: win.isMaximized(),
+      width: bounds.width,
+      x: bounds.x,
+      y: bounds.y,
+    };
+    fs.writeFileSync(getWindowStatePath(), JSON.stringify(state));
+  } catch {
+    // Ignore write errors
+  }
 }
 
 function validateAndFixLocalStore(

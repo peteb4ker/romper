@@ -54,13 +54,11 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
   const renderErrorList = (errors: KitValidationError[], title: string) => (
     <div className="mb-6">
       <h3 className="font-bold text-lg mb-2">{title}</h3>
-      <ul className="max-h-60 overflow-y-auto border border-gray-300 dark:border-slate-600 rounded">
+      <ul className="max-h-60 overflow-y-auto border border-border-default rounded">
         {errors.map((error) => (
           <li
-            className={`p-2 border-b border-gray-300 dark:border-slate-600 last:border-b-0 hover:bg-gray-100 dark:hover:bg-slate-700 ${
-              selectedKits.includes(error.kitName)
-                ? "bg-blue-100 dark:bg-blue-900"
-                : ""
+            className={`p-2 border-b border-border-default last:border-b-0 hover:bg-surface-3 ${
+              selectedKits.includes(error.kitName) ? "bg-accent-primary/15" : ""
             }`}
             key={error.kitName}
           >
@@ -74,13 +72,13 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
               <div className="flex-grow">
                 <div className="font-bold">{error.kitName}</div>
                 {error.missingFiles.length > 0 && (
-                  <div className="text-sm text-red-600 dark:text-red-400">
+                  <div className="text-sm text-accent-danger">
                     <span className="font-semibold">Missing files:</span>{" "}
                     {error.missingFiles.join(", ")}
                   </div>
                 )}
                 {error.extraFiles.length > 0 && (
-                  <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                  <div className="text-sm text-accent-warning">
                     <span className="font-semibold">Extra files:</span>{" "}
                     {error.extraFiles.join(", ")}
                   </div>
@@ -94,20 +92,20 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-3xl max-h-[80vh] overflow-y-auto rounded-lg shadow-xl p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="bg-surface-2 border border-border-subtle w-full max-w-3xl max-h-[80vh] overflow-y-auto rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
             {validationResult?.isValid ? (
-              <FiCheckCircle className="text-green-500" size={24} />
+              <FiCheckCircle className="text-accent-success" size={24} />
             ) : (
-              <FiAlertTriangle className="text-yellow-500" size={24} />
+              <FiAlertTriangle className="text-accent-warning" size={24} />
             )}
             Local Store Validation Results
           </h2>
           <button
             aria-label="Close"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-text-tertiary hover:text-text-primary"
             onClick={onClose}
           >
             <FiX size={24} />
@@ -116,19 +114,19 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
 
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary"></div>
           </div>
         ) : (
           <>
-            <div className="mb-4 p-3 rounded border border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-700">
+            <div className="mb-4 p-3 rounded border border-border-default bg-surface-3">
               <p className="font-medium">
                 {validationResult?.isValid ? (
-                  <span className="text-green-600 dark:text-green-400">
+                  <span className="text-accent-success">
                     No validation errors found. The database matches the file
                     system.
                   </span>
                 ) : (
-                  <span className="text-yellow-600 dark:text-yellow-400">
+                  <span className="text-accent-warning/80">
                     {validationResult?.errorSummary ||
                       "Validation errors found in the local store."}
                   </span>
@@ -162,7 +160,7 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
                     "Kits with both missing and extra files",
                   )}
 
-                <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-300 dark:border-slate-600">
+                <div className="flex justify-between items-center mt-4 pt-4 border-t border-border-default">
                   <div className="flex items-center">
                     <input
                       checked={allSelected}
@@ -181,7 +179,7 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
                   </div>
                   <div className="flex gap-3">
                     <button
-                      className="px-4 py-2 bg-gray-300 dark:bg-slate-700 rounded hover:bg-gray-400 dark:hover:bg-slate-600 transition-colors"
+                      className="px-4 py-2 bg-surface-3 text-text-secondary rounded hover:bg-surface-4 transition-colors"
                       disabled={isRescanning}
                       onClick={onClose}
                     >
@@ -190,8 +188,8 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
                     <button
                       className={`px-4 py-2 rounded flex items-center gap-2 ${
                         selectedKits.length === 0
-                          ? "bg-blue-300 dark:bg-blue-900 cursor-not-allowed opacity-60"
-                          : "bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-600"
+                          ? "bg-accent-primary/50 cursor-not-allowed opacity-60"
+                          : "bg-accent-primary hover:bg-accent-primary/80"
                       } text-white transition-colors`}
                       disabled={selectedKits.length === 0 || isRescanning}
                       onClick={rescanSelectedKits}

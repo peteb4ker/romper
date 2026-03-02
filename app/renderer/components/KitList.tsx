@@ -55,13 +55,11 @@ const BankHeader: React.FC<BankHeaderProps> = ({
       id={`bank-${bank}`}
       ref={headerRef}
     >
-      <span className="font-bold text-xs tracking-widest text-blue-700 dark:text-blue-300">
+      <span className="font-bold text-xs tracking-widest text-accent-primary font-mono">
         Bank {bank}
       </span>
       {bankName && (
-        <span className="text-xs text-gray-600 dark:text-gray-300 italic">
-          {bankName}
-        </span>
+        <span className="text-xs text-text-secondary italic">{bankName}</span>
       )}
     </div>
   );
@@ -294,7 +292,7 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
     return (
       <div
         aria-label="Kit list"
-        className="h-full min-h-0 flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800 rounded pt-0 pb-2 pl-2 pr-2"
+        className="h-full min-h-0 flex-1 overflow-y-auto bg-surface-1 rounded pt-0 pb-2 pl-2 pr-2"
         data-testid="kit-list"
         onKeyDown={handleKeyDown}
         role="listbox"

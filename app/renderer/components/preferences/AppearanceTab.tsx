@@ -31,7 +31,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
       <div>
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            <h3 className="text-lg font-medium text-text-primary mb-4">
               Appearance
             </h3>
             <div className="grid grid-cols-3 gap-4">
@@ -46,20 +46,20 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
                     <button
                       className={`relative w-16 h-16 rounded-xl border-2 transition-all duration-200 overflow-hidden ${
                         isSelected
-                          ? "border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800"
-                          : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
+                          ? "border-accent-primary ring-2 ring-accent-primary/30"
+                          : "border-border-subtle hover:border-border-default"
                       }`}
                       onClick={() => onThemeModeChange(option.value)}
                     >
                       {option.value === "light" && (
-                        <div className="w-full h-full bg-white flex items-center justify-center">
-                          <FiSun className="w-6 h-6 text-yellow-500" />
+                        <div className="w-full h-full bg-surface-1 flex items-center justify-center">
+                          <FiSun className="w-6 h-6 text-accent-warning" />
                         </div>
                       )}
 
                       {option.value === "dark" && (
                         <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-                          <FiMoon className="w-6 h-6 text-blue-400" />
+                          <FiMoon className="w-6 h-6 text-accent-primary" />
                         </div>
                       )}
 
@@ -67,7 +67,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
                         <>
                           {/* Split background - light left, dark right */}
                           <div className="absolute inset-0 flex">
-                            <div className="w-1/2 bg-white"></div>
+                            <div className="w-1/2 bg-surface-1"></div>
                             <div className="w-1/2 bg-gray-900"></div>
                           </div>
                           {/* Split monitor icon using two overlapping icons with clipping */}
@@ -75,11 +75,11 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
                             <div className="relative w-6 h-6">
                               {/* Left half - dark icon on light background */}
                               <div className="absolute inset-0 w-1/2 overflow-hidden">
-                                <FiMonitor className="w-6 h-6 text-gray-800" />
+                                <FiMonitor className="w-6 h-6 text-text-primary" />
                               </div>
                               {/* Right half - light icon on dark background */}
                               <div className="absolute inset-0 w-1/2 left-1/2 overflow-hidden">
-                                <FiMonitor className="w-6 h-6 text-gray-100 -ml-3" />
+                                <FiMonitor className="w-6 h-6 text-white -ml-3" />
                               </div>
                             </div>
                           </div>
@@ -90,8 +90,8 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
                     <span
                       className={`text-sm font-medium ${
                         isSelected
-                          ? "text-blue-700 dark:text-blue-300"
-                          : "text-gray-700 dark:text-gray-300"
+                          ? "text-accent-primary"
+                          : "text-text-secondary"
                       }`}
                     >
                       {option.label}
@@ -100,7 +100,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
                 );
               })}
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-sm text-text-tertiary mt-2">
               Choose how Romper looks. System matches your operating system's
               appearance.
             </p>

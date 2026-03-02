@@ -48,7 +48,7 @@ const WizardTargetStep: React.FC<WizardTargetStepProps> = ({
       <div className="flex gap-2 items-center">
         <input
           aria-label="Local store path"
-          className="border rounded px-2 py-1 w-full mb-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+          className="border border-border-default rounded px-2 py-1 w-full mb-2 bg-surface-1 text-text-primary"
           id="local-store-path-input"
           onChange={(e) => setTargetPath(e.target.value)}
           placeholder={defaultPath}
@@ -56,7 +56,7 @@ const WizardTargetStep: React.FC<WizardTargetStepProps> = ({
           value={stateTargetPath}
         />
         <FilePickerButton
-          className="bg-gray-200 dark:bg-slate-700 text-gray-900 dark:text-gray-100 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-surface-3 text-text-primary px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-accent-primary"
           icon={<FaFolderOpen size={14} />}
           isSelecting={isSelecting}
           onClick={handleChooseFolder}
@@ -65,7 +65,7 @@ const WizardTargetStep: React.FC<WizardTargetStepProps> = ({
         </FilePickerButton>
         <button
           aria-label="Use default folder"
-          className="bg-gray-200 dark:bg-slate-700 text-gray-900 dark:text-gray-100 px-2 py-1 rounded ml-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-surface-3 text-text-primary px-2 py-1 rounded ml-2 focus:outline-none focus:ring-2 focus:ring-accent-primary"
           onClick={() => setTargetPath(defaultPath)}
           type="button"
         >

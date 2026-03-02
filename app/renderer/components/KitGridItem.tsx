@@ -46,31 +46,31 @@ const KitGridItem = React.memo(
       const getKitTypeStyles = () => {
         if (!isValid) {
           return {
-            background: "bg-red-50 dark:bg-red-950",
-            border: "border-l-4 border-l-red-500",
+            background: "bg-accent-danger/5",
+            border: "border-l-4 border-l-accent-danger",
           };
         }
 
         // Check if kit has unsaved changes (modified since sync)
         if (kitData?.modified_since_sync) {
           return {
-            background: "bg-amber-50 dark:bg-amber-950",
-            border: "border-l-4 border-l-amber-500",
+            background: "bg-accent-warning/5",
+            border: "border-l-4 border-l-accent-warning",
           };
         }
 
         // Check if kit is editable (user-created)
         if (kitData?.editable) {
           return {
-            background: "bg-green-50 dark:bg-green-950",
-            border: "border-l-4 border-l-green-500",
+            background: "bg-accent-success/5",
+            border: "border-l-4 border-l-accent-success",
           };
         }
 
         // Factory kits (read-only baseline)
         return {
-          background: "bg-gray-50 dark:bg-gray-900",
-          border: "border-l-4 border-l-gray-400",
+          background: "bg-surface-2",
+          border: "border-l-4 border-l-border-strong",
         };
       };
 
@@ -93,7 +93,7 @@ const KitGridItem = React.memo(
 
       // Selection highlighting
       const selectedHighlight = isSelected
-        ? "ring-2 ring-blue-400 dark:ring-blue-300 border-blue-400 dark:border-blue-300 bg-blue-50 dark:bg-blue-900"
+        ? "ring-2 ring-accent-primary border-accent-primary bg-accent-primary/10"
         : "";
 
       // Calculate sample count for aria-label
@@ -112,9 +112,9 @@ const KitGridItem = React.memo(
           aria-selected={isSelected ? "true" : "false"}
           className={`relative flex flex-col justify-between p-2 rounded border text-sm h-full w-full ${kitTypeStyles.border} ${kitTypeStyles.background} ${
             isValid
-              ? "border-gray-300 dark:border-slate-700 hover:brightness-95 dark:hover:brightness-110"
-              : "border-red-500"
-          } cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-300 ${selectedHighlight}`}
+              ? "border-border-subtle hover:brightness-95 dark:hover:brightness-110"
+              : "border-accent-danger"
+          } cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${selectedHighlight}`}
           data-kit={kit}
           data-testid={`kit-item-${kit}`}
           onClick={onSelect}
@@ -132,7 +132,7 @@ const KitGridItem = React.memo(
           {/* Task 20.2.1: High priority indicator */}
           {isHighPriority() && (
             <div
-              className="absolute top-1 left-1 w-2 h-2 bg-orange-500 rounded-full shadow-sm border border-orange-600"
+              className="absolute top-1 left-1 w-2 h-2 bg-accent-warning rounded-full shadow-sm border border-accent-warning/80"
               title="High priority kit (favorite, modified, or well-loaded)"
             />
           )}
@@ -143,16 +143,14 @@ const KitGridItem = React.memo(
               <div className="flex flex-col flex-1 min-w-0">
                 <span
                   className={`font-mono text-sm truncate ${
-                    isValid
-                      ? "text-gray-900 dark:text-gray-100"
-                      : "text-red-500"
+                    isValid ? "text-text-primary" : "text-accent-danger"
                   }`}
                 >
                   {kit}
                 </span>
                 {kitData?.alias && (
                   <span
-                    className="text-xs text-gray-600 dark:text-gray-400 truncate italic"
+                    className="text-xs text-text-secondary truncate italic"
                     title={`Kit alias: ${kitData.alias}`}
                   >
                     {kitData.alias}
@@ -166,7 +164,7 @@ const KitGridItem = React.memo(
               <div className="flex flex-wrap gap-1 mt-1">
                 {kitData.searchMatch.matchedSamples.length > 0 && (
                   <span
-                    className="px-1 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded border border-green-300 dark:border-green-700 font-mono truncate max-w-full cursor-help"
+                    className="px-1 py-0.5 text-xs bg-accent-success/15 text-accent-success rounded border border-accent-success/30 font-mono truncate max-w-full cursor-help"
                     title={`Sample matches:\n${kitData.searchMatch.matchedSamples.join("\n")}`}
                   >
                     📄
@@ -176,12 +174,12 @@ const KitGridItem = React.memo(
                   </span>
                 )}
                 {kitData.searchMatch.matchedArtist && (
-                  <span className="px-1 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded border border-purple-300 dark:border-purple-700 font-mono truncate">
+                  <span className="px-1 py-0.5 text-xs bg-voice-3-muted text-voice-3 rounded border border-voice-3/30 font-mono truncate">
                     🎵 {kitData.searchMatch.matchedArtist}
                   </span>
                 )}
                 {kitData.searchMatch.matchedAlias && (
-                  <span className="px-1 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded border border-blue-300 dark:border-blue-700 font-mono truncate">
+                  <span className="px-1 py-0.5 text-xs bg-accent-primary/15 text-accent-primary rounded border border-accent-primary/30 font-mono truncate">
                     🏷️ {kitData.searchMatch.matchedAlias}
                   </span>
                 )}
@@ -191,24 +189,24 @@ const KitGridItem = React.memo(
             {/* Enhanced Status indicators */}
             <div className="flex items-center gap-1">
               {isValid && kitData?.modified_since_sync && (
-                <span className="px-1.5 py-0.5 text-xs font-medium bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded border border-amber-300 dark:border-amber-700">
+                <span className="px-1.5 py-0.5 text-xs font-medium bg-accent-warning/15 text-accent-warning rounded border border-accent-warning/30">
                   Unsaved
                 </span>
               )}
               {isValid &&
                 kitData?.editable &&
                 !kitData?.modified_since_sync && (
-                  <span className="px-1.5 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded border border-green-300 dark:border-green-700">
+                  <span className="px-1.5 py-0.5 text-xs font-medium bg-accent-success/15 text-accent-success rounded border border-accent-success/30">
                     Editable
                   </span>
                 )}
               {/* Favorite toggle button */}
               {onToggleFavorite && (
                 <button
-                  className={`p-1 text-xs ml-1 transition-colors ${
+                  className={`p-1 text-xs ml-1 transition-colors duration-150 ${
                     isFavorite
-                      ? "text-yellow-500 hover:text-yellow-600"
-                      : "text-gray-400 hover:text-yellow-500"
+                      ? "text-accent-warning hover:brightness-110"
+                      : "text-text-tertiary hover:text-accent-warning"
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -226,7 +224,7 @@ const KitGridItem = React.memo(
               )}
               {isValid && (
                 <button
-                  className="p-1 text-xs text-gray-500 hover:text-green-600 ml-1"
+                  className="p-1 text-xs text-text-tertiary hover:text-accent-success ml-1"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDuplicate();
@@ -251,14 +249,14 @@ const KitGridItem = React.memo(
                 let fontWeight = "";
                 if (count === 0) {
                   color =
-                    "bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800";
+                    "bg-accent-danger/20 text-accent-danger border border-accent-danger/30";
                 } else if (count === 12) {
                   color =
-                    "bg-lime-300 dark:bg-lime-700 text-lime-900 dark:text-lime-100 border border-lime-400 dark:border-lime-600";
+                    "bg-accent-success/30 text-accent-success border border-accent-success/40";
                   fontWeight = "font-bold";
                 } else {
                   color =
-                    "bg-teal-300 dark:bg-teal-800 text-teal-900 dark:text-teal-100 border border-teal-400 dark:border-teal-700";
+                    "bg-accent-primary/20 text-accent-primary border border-accent-primary/30";
                 }
 
                 // Unified label: voice name + count, or just count

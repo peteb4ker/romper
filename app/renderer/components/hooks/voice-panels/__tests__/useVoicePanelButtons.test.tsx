@@ -81,8 +81,7 @@ describe("useVoicePanelButtons", () => {
       expect(button).toHaveClass(
         "p-1",
         "rounded",
-        "hover:bg-blue-100",
-        "dark:hover:bg-slate-700",
+        "hover:bg-surface-3",
         "text-xs",
       );
     });
@@ -98,11 +97,9 @@ describe("useVoicePanelButtons", () => {
       expect(button).toHaveClass(
         "p-1",
         "rounded",
-        "hover:bg-blue-100",
-        "dark:hover:bg-slate-700",
+        "hover:bg-surface-3",
         "text-xs",
-        "text-red-600",
-        "dark:text-red-400",
+        "text-accent-danger",
       );
     });
 
@@ -252,11 +249,9 @@ describe("useVoicePanelButtons", () => {
       expect(button).toHaveClass(
         "p-1",
         "rounded",
-        "hover:bg-red-100",
-        "dark:hover:bg-red-800",
+        "hover:bg-accent-danger/15",
         "text-xs",
-        "text-red-600",
-        "dark:text-red-400",
+        "text-accent-danger",
         "ml-2",
       );
     });

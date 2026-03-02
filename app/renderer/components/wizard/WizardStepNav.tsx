@@ -16,7 +16,7 @@ const WizardStepNav: React.FC<WizardStepNavProps> = ({
     if (isComplete) {
       return (
         <div className="group flex items-center w-full">
-          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 group-hover:bg-blue-800 p-2 text-sm">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-accent-primary group-hover:bg-accent-primary/80 p-2 text-sm">
             <svg
               className="w-5 h-5 text-white"
               fill="currentColor"
@@ -29,7 +29,7 @@ const WizardStepNav: React.FC<WizardStepNavProps> = ({
               />
             </svg>
           </span>
-          <span className="ml-2 text-blue-600 group-hover:text-blue-800 py-1">
+          <span className="ml-2 text-accent-primary group-hover:text-accent-primary/80 py-1">
             {label}
           </span>
         </div>
@@ -39,26 +39,24 @@ const WizardStepNav: React.FC<WizardStepNavProps> = ({
     if (isCurrent) {
       return (
         <div aria-current="step" className="flex items-center w-full">
-          <span className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-blue-600 p-2 text-sm">
-            <span className="text-blue-600">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-accent-primary p-2 text-sm">
+            <span className="text-accent-primary">
               {String(idx + 1).padStart(2, "0")}
             </span>
           </span>
-          <span className="ml-2 text-blue-600 py-1">{label}</span>
+          <span className="ml-2 text-accent-primary py-1">{label}</span>
         </div>
       );
     }
 
     return (
       <div className="flex items-center w-full">
-        <span className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-300 dark:border-slate-700 p-2 text-sm">
-          <span className="text-gray-400 dark:text-slate-500">
+        <span className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-border-default p-2 text-sm">
+          <span className="text-text-tertiary">
             {String(idx + 1).padStart(2, "0")}
           </span>
         </span>
-        <span className="ml-2 text-gray-400 dark:text-slate-500 py-1">
-          {label}
-        </span>
+        <span className="ml-2 text-text-tertiary py-1">{label}</span>
       </div>
     );
   };
@@ -66,7 +64,7 @@ const WizardStepNav: React.FC<WizardStepNavProps> = ({
   return (
     <nav
       aria-label="Progress"
-      className="mb-6 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900"
+      className="mb-6 border border-border-default rounded-xl bg-surface-1"
     >
       <ol className="flex items-center relative text-sm">
         {stepLabels.map((label, idx) => (
@@ -79,7 +77,7 @@ const WizardStepNav: React.FC<WizardStepNavProps> = ({
                 style={{ minWidth: 0 }}
               >
                 <svg
-                  className="w-4 h-12 text-gray-300 dark:text-slate-700"
+                  className="w-4 h-12 text-border-default"
                   fill="none"
                   height={48}
                   preserveAspectRatio="none"

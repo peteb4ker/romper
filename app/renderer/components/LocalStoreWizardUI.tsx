@@ -173,10 +173,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     }, [isDev, validateElectronAPI, handleStoreSelectionSuccess]);
 
     return (
-      <div
-        className="p-0 bg-white dark:bg-slate-900"
-        data-testid="local-store-wizard"
-      >
+      <div className="p-0 bg-surface-1" data-testid="local-store-wizard">
         {!showExistingStoreSelector && (
           <>
             <WizardStepNav currentStep={currentStep} stepLabels={stepLabels} />
@@ -201,20 +198,20 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
             >
               Choose Existing Local Store
             </label>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+            <p className="text-text-tertiary text-sm mb-3">
               Select a folder that contains an existing Romper database
               (.romperdb directory).
             </p>
 
             {existingStoreError && (
-              <div className="bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
+              <div className="bg-accent-danger/15 border border-accent-danger text-accent-danger px-4 py-3 rounded mb-4">
                 {existingStoreError}
               </div>
             )}
 
             <div className="flex gap-2">
               <FilePickerButton
-                className="bg-blue-600 text-white px-4 py-2 rounded"
+                className="bg-accent-primary text-white px-4 py-2 rounded"
                 data-testid="browse-existing-store-btn"
                 icon={<FaSearch size={14} />}
                 isSelecting={isSelectingExisting}
@@ -224,7 +221,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
               </FilePickerButton>
 
               <button
-                className="bg-gray-400 text-white px-4 py-2 rounded"
+                className="bg-surface-4 text-text-primary px-4 py-2 rounded"
                 onClick={() => {
                   setShowExistingStoreSelector(false);
                   setExistingStoreError(null);
@@ -285,7 +282,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
             <div className="flex justify-between items-end mt-4">
               <div className="flex gap-2">
                 <button
-                  className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="bg-accent-primary text-white px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2"
                   data-testid="wizard-initialize-btn"
                   disabled={!canInitialize || state.isInitializing}
                   onClick={handleInitialize}
@@ -299,7 +296,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
                   )}
                 </button>
                 <button
-                  className="bg-gray-400 text-white px-4 py-2 rounded"
+                  className="bg-surface-4 text-text-primary px-4 py-2 rounded"
                   onClick={onClose}
                 >
                   Cancel
@@ -308,7 +305,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
 
               {/* Choose Existing Local Store button - bottom right */}
               <button
-                className="bg-green-600 text-white px-4 py-2 rounded text-sm flex items-center gap-2 hover:bg-green-700"
+                className="bg-accent-success text-white px-4 py-2 rounded text-sm flex items-center gap-2 hover:bg-accent-success/80"
                 data-testid="choose-existing-store-btn"
                 onClick={() => setShowExistingStoreSelector(true)}
               >

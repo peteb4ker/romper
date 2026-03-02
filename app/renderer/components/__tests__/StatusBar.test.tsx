@@ -75,28 +75,28 @@ describe("StatusBar", () => {
     it("should display correct progress width", () => {
       render(<StatusBar progress={75} />);
       const progressBar = screen.getByTestId("progress-bar");
-      const progressFill = progressBar.querySelector(".bg-blue-500");
+      const progressFill = progressBar.querySelector(".bg-accent-primary");
       expect(progressFill).toHaveStyle({ width: "75%" });
     });
 
     it("should handle progress greater than 100", () => {
       render(<StatusBar progress={150} />);
       const progressBar = screen.getByTestId("progress-bar");
-      const progressFill = progressBar.querySelector(".bg-blue-500");
+      const progressFill = progressBar.querySelector(".bg-accent-primary");
       expect(progressFill).toHaveStyle({ width: "100%" });
     });
 
     it("should handle negative progress", () => {
       render(<StatusBar progress={-10} />);
       const progressBar = screen.getByTestId("progress-bar");
-      const progressFill = progressBar.querySelector(".bg-blue-500");
+      const progressFill = progressBar.querySelector(".bg-accent-primary");
       expect(progressFill).toHaveStyle({ width: "0%" });
     });
 
     it("should handle zero progress", () => {
       render(<StatusBar progress={0} />);
       const progressBar = screen.getByTestId("progress-bar");
-      const progressFill = progressBar.querySelector(".bg-blue-500");
+      const progressFill = progressBar.querySelector(".bg-accent-primary");
       expect(progressFill).toHaveStyle({ width: "0%" });
     });
   });
@@ -232,8 +232,7 @@ describe("StatusBar", () => {
       expect(statusBar).toHaveClass("bottom-0");
       expect(statusBar).toHaveClass("left-0");
       expect(statusBar).toHaveClass("w-full");
-      expect(statusBar).toHaveClass("bg-gray-200");
-      expect(statusBar).toHaveClass("dark:bg-slate-800");
+      expect(statusBar).toHaveClass("bg-surface-1");
     });
 
     it("should have database icon", () => {

@@ -9,35 +9,35 @@ describe("KitIconRenderer", () => {
       const { container } = render(<KitIconRenderer iconType="mic" />);
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument();
-      expect(icon).toHaveClass("text-pink-600", "dark:text-pink-300");
+      expect(icon).toHaveClass("text-voice-1");
     });
 
     it("should render loop icon", () => {
       const { container } = render(<KitIconRenderer iconType="loop" />);
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument();
-      expect(icon).toHaveClass("text-amber-600", "dark:text-amber-300");
+      expect(icon).toHaveClass("text-voice-4");
     });
 
     it("should render fx icon", () => {
       const { container } = render(<KitIconRenderer iconType="fx" />);
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument();
-      expect(icon).toHaveClass("text-indigo-600", "dark:text-indigo-300");
+      expect(icon).toHaveClass("text-voice-3");
     });
 
     it("should render piano icon", () => {
       const { container } = render(<KitIconRenderer iconType="piano" />);
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument();
-      expect(icon).toHaveClass("text-blue-700", "dark:text-blue-300");
+      expect(icon).toHaveClass("text-accent-primary");
     });
 
     it("should render drumkit icon", () => {
       const { container } = render(<KitIconRenderer iconType="drumkit" />);
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument();
-      expect(icon).toHaveClass("text-yellow-700", "dark:text-yellow-300");
+      expect(icon).toHaveClass("text-accent-warning");
     });
 
     it("should render folder icon by default for unknown types", () => {
@@ -144,34 +144,34 @@ describe("KitIconRenderer", () => {
   });
 
   describe("Color Theme Classes", () => {
-    it("should include dark mode classes for mic icon", () => {
+    it("should include token-based classes for mic icon", () => {
       const { container } = render(<KitIconRenderer iconType="mic" />);
       const icon = container.querySelector("svg");
-      expect(icon).toHaveClass("dark:text-pink-300");
+      expect(icon).toHaveClass("text-voice-1");
     });
 
-    it("should include dark mode classes for loop icon", () => {
+    it("should include token-based classes for loop icon", () => {
       const { container } = render(<KitIconRenderer iconType="loop" />);
       const icon = container.querySelector("svg");
-      expect(icon).toHaveClass("dark:text-amber-300");
+      expect(icon).toHaveClass("text-voice-4");
     });
 
-    it("should include dark mode classes for fx icon", () => {
+    it("should include token-based classes for fx icon", () => {
       const { container } = render(<KitIconRenderer iconType="fx" />);
       const icon = container.querySelector("svg");
-      expect(icon).toHaveClass("dark:text-indigo-300");
+      expect(icon).toHaveClass("text-voice-3");
     });
 
-    it("should include dark mode classes for piano icon", () => {
+    it("should include token-based classes for piano icon", () => {
       const { container } = render(<KitIconRenderer iconType="piano" />);
       const icon = container.querySelector("svg");
-      expect(icon).toHaveClass("dark:text-blue-300");
+      expect(icon).toHaveClass("text-accent-primary");
     });
 
-    it("should include dark mode classes for drumkit icon", () => {
+    it("should include token-based classes for drumkit icon", () => {
       const { container } = render(<KitIconRenderer iconType="drumkit" />);
       const icon = container.querySelector("svg");
-      expect(icon).toHaveClass("dark:text-yellow-300");
+      expect(icon).toHaveClass("text-accent-warning");
     });
   });
 });

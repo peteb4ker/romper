@@ -220,18 +220,18 @@ const KitVoicePanel: React.FC<
 
   // Voice linking styles
   const voicePanelClasses = [
-    "flex-1 p-3 rounded-lg shadow text-gray-900 dark:text-gray-100 min-h-[80px]",
+    "flex-1 p-3 rounded-lg shadow text-text-primary min-h-[80px]",
     // Default background
-    "bg-gray-100 dark:bg-slate-800",
+    "bg-surface-2",
     // Linked voice styling
     isLinked &&
       isPrimaryVoice &&
-      "bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-600",
+      "bg-accent-primary/10 border-2 border-accent-primary/40",
     isLinked &&
       !isPrimaryVoice &&
-      "bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-600",
+      "bg-accent-primary/10 border-2 border-accent-primary/40",
     // Stereo drag target
-    isStereoDragTarget && "bg-yellow-100 dark:bg-yellow-900/30",
+    isStereoDragTarget && "bg-accent-warning/15",
   ]
     .filter(Boolean)
     .join(" ");
@@ -244,7 +244,7 @@ const KitVoicePanel: React.FC<
         <div className="flex items-center gap-2">
           {/* Voice linking status indicator */}
           {isLinked && (
-            <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+            <div className="flex items-center gap-1 text-xs text-accent-primary">
               {isPrimaryVoice ? (
                 <>
                   <span>🔗</span>
@@ -262,7 +262,7 @@ const KitVoicePanel: React.FC<
           {/* Voice linking controls for voices 1-3 */}
           {voice <= 3 && !isLinked && (
             <button
-              className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+              className="text-xs px-2 py-1 bg-accent-primary/15 text-accent-primary rounded hover:bg-accent-primary/25 transition-colors"
               onClick={() => onVoiceLink?.(voice)}
               title={`Link voice ${voice} to voice ${voice + 1} for stereo`}
               type="button"
@@ -274,7 +274,7 @@ const KitVoicePanel: React.FC<
           {/* Voice unlinking control */}
           {isLinked && isPrimaryVoice && (
             <button
-              className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="text-xs px-2 py-1 bg-surface-3 text-text-secondary rounded hover:bg-surface-4 transition-colors"
               onClick={() => onVoiceUnlink?.(voice)}
               title={`Unlink voice ${voice} from stereo mode`}
               type="button"

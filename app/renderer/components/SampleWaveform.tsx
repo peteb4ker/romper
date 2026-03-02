@@ -221,7 +221,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   return (
     <div style={{ alignItems: "center", display: "flex" }}>
       <canvas
-        className="rounded bg-slate-100 dark:bg-slate-800 shadow align-middle"
+        className="rounded bg-surface-3 shadow align-middle"
         height={18}
         ref={canvasRef}
         style={{ display: "inline-block", verticalAlign: "middle" }}

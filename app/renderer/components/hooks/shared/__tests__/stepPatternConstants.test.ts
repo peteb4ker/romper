@@ -22,18 +22,18 @@ describe("stepPatternConstants", () => {
 
     it("should have ROW_COLORS with correct length", () => {
       expect(ROW_COLORS).toHaveLength(NUM_VOICES);
-      expect(ROW_COLORS[0]).toBe("bg-red-500 border-red-700");
-      expect(ROW_COLORS[1]).toBe("bg-green-500 border-green-700");
-      expect(ROW_COLORS[2]).toBe("bg-yellow-400 border-yellow-600");
-      expect(ROW_COLORS[3]).toBe("bg-purple-500 border-purple-700");
+      expect(ROW_COLORS[0]).toBe("bg-voice-1 border-voice-1");
+      expect(ROW_COLORS[1]).toBe("bg-voice-2 border-voice-2");
+      expect(ROW_COLORS[2]).toBe("bg-voice-3 border-voice-3");
+      expect(ROW_COLORS[3]).toBe("bg-voice-4 border-voice-4");
     });
 
     it("should have LED_GLOWS with correct length", () => {
       expect(LED_GLOWS).toHaveLength(NUM_VOICES);
-      expect(LED_GLOWS[0]).toBe("shadow-[0_0_12px_3px_rgba(239,68,68,0.7)]");
-      expect(LED_GLOWS[1]).toBe("shadow-[0_0_12px_3px_rgba(34,197,94,0.7)]");
-      expect(LED_GLOWS[2]).toBe("shadow-[0_0_12px_3px_rgba(234,179,8,0.7)]");
-      expect(LED_GLOWS[3]).toBe("shadow-[0_0_12px_3px_rgba(168,85,247,0.7)]");
+      expect(LED_GLOWS[0]).toBe("shadow-[0_0_12px_3px_rgba(224,90,96,0.7)]");
+      expect(LED_GLOWS[1]).toBe("shadow-[0_0_12px_3px_rgba(61,170,120,0.7)]");
+      expect(LED_GLOWS[2]).toBe("shadow-[0_0_12px_3px_rgba(58,159,212,0.7)]");
+      expect(LED_GLOWS[3]).toBe("shadow-[0_0_12px_3px_rgba(232,200,70,0.7)]");
     });
   });
 

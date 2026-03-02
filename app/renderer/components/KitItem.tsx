@@ -37,7 +37,7 @@ const KitItem = React.memo(
       const icon = <KitIconRenderer iconType={iconType} size="lg" />;
       // Add persistent selection highlight (independent of focus)
       const selectedHighlight = isSelected
-        ? "ring-2 ring-blue-400 dark:ring-blue-300 border-blue-400 dark:border-blue-300 bg-blue-50 dark:bg-blue-900"
+        ? "ring-2 ring-accent-primary border-accent-primary bg-accent-primary/10"
         : "";
       // Calculate sample count for aria-label
       const totalSamples =
@@ -55,9 +55,9 @@ const KitItem = React.memo(
           aria-selected={isSelected ? "true" : "false"}
           className={`flex flex-col p-2 rounded border text-sm ${
             isValid
-              ? "border-gray-300 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-800"
-              : "border-red-500 bg-red-100 dark:bg-red-900"
-          } cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-300 ${selectedHighlight}`}
+              ? "border-border-subtle hover:bg-surface-3"
+              : "border-accent-danger bg-accent-danger/10"
+          } cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${selectedHighlight}`}
           data-kit={kit}
           data-testid={`kit-item-${kit}`}
           onClick={onSelect}
@@ -91,9 +91,7 @@ const KitItem = React.memo(
               <div className="flex items-center w-full gap-2">
                 <span
                   className={`font-mono truncate ${
-                    isValid
-                      ? "text-gray-900 dark:text-gray-100"
-                      : "text-red-500"
+                    isValid ? "text-text-primary" : "text-accent-danger"
                   }`}
                   style={{ flex: 1 }}
                 >
@@ -101,8 +99,8 @@ const KitItem = React.memo(
                 </span>
                 {isValid && kitData?.modified_since_sync && (
                   <div className="flex items-center gap-1 ml-2">
-                    <FiCircle className="w-3 h-3 text-yellow-500 fill-current" />
-                    <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                    <FiCircle className="w-3 h-3 text-accent-warning fill-current" />
+                    <span className="text-xs font-medium text-accent-warning">
                       Modified
                     </span>
                   </div>
@@ -114,14 +112,14 @@ const KitItem = React.memo(
                       let fontWeight = "";
                       if (count === 0) {
                         color =
-                          "bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800";
+                          "bg-accent-danger/20 text-accent-danger border border-accent-danger/30";
                       } else if (count === 12) {
                         color =
-                          "bg-lime-300 dark:bg-lime-700 text-lime-900 dark:text-lime-100 border border-lime-400 dark:border-lime-600";
+                          "bg-accent-success/30 text-accent-success border border-accent-success/40";
                         fontWeight = "font-bold";
                       } else {
                         color =
-                          "bg-teal-300 dark:bg-teal-800 text-teal-900 dark:text-teal-100 border border-teal-400 dark:border-teal-700";
+                          "bg-accent-primary/20 text-accent-primary border border-accent-primary/30";
                       }
                       return (
                         <span
@@ -137,7 +135,7 @@ const KitItem = React.memo(
                 )}
                 {isValid && (
                   <button
-                    className="ml-2 p-1 text-xs text-gray-500 hover:text-green-600"
+                    className="ml-2 p-1 text-xs text-text-tertiary hover:text-accent-success"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDuplicate();
@@ -155,7 +153,7 @@ const KitItem = React.memo(
                     new Set(Object.values(voiceNames).filter(Boolean)),
                   ).map((label, i) => (
                     <span
-                      className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-1 py-0.5 rounded-sm text-[10px] font-mono"
+                      className="bg-accent-primary/15 text-accent-primary px-1 py-0.5 rounded-sm text-[10px] font-mono"
                       key={`voice-label-${label}-${i}`}
                     >
                       {typeof label === "string" ? toCapitalCase(label) : label}
@@ -168,7 +166,7 @@ const KitItem = React.memo(
                 <div className="flex flex-wrap gap-1 mt-1">
                   {kitData.searchMatch.matchedSamples.length > 0 && (
                     <span
-                      className="px-1 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded border border-green-300 dark:border-green-700 font-mono truncate cursor-help"
+                      className="px-1 py-0.5 text-xs bg-accent-success/15 text-accent-success rounded border border-accent-success/30 font-mono truncate cursor-help"
                       title={`Sample matches:\n${kitData.searchMatch.matchedSamples.join("\n")}`}
                     >
                       📄
@@ -178,12 +176,12 @@ const KitItem = React.memo(
                     </span>
                   )}
                   {kitData.searchMatch.matchedArtist && (
-                    <span className="px-1 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded border border-purple-300 dark:border-purple-700 font-mono truncate">
+                    <span className="px-1 py-0.5 text-xs bg-voice-3-muted text-voice-3 rounded border border-voice-3/30 font-mono truncate">
                       🎵 {kitData.searchMatch.matchedArtist}
                     </span>
                   )}
                   {kitData.searchMatch.matchedAlias && (
-                    <span className="px-1 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded border border-blue-300 dark:border-blue-700 font-mono truncate">
+                    <span className="px-1 py-0.5 text-xs bg-accent-primary/15 text-accent-primary rounded border border-accent-primary/30 font-mono truncate">
                       🏷️ {kitData.searchMatch.matchedAlias}
                     </span>
                   )}

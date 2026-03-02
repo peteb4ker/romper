@@ -12,14 +12,14 @@ const WizardSummaryStep: React.FC<WizardSummaryStepProps> = ({
   targetUrl,
 }) => (
   <div className="mb-4">
-    <div className="mb-2 text-xs text-gray-700 dark:text-gray-300">
+    <div className="mb-2 text-xs text-text-secondary">
       Source:{" "}
       <span className="font-semibold" data-testid="wizard-source-name">
         {sourceName}
       </span>
     </div>
     {sourceUrl && (
-      <div className="mb-2 text-xs text-gray-700 dark:text-gray-300">
+      <div className="mb-2 text-xs text-text-secondary">
         Source URL:{" "}
         <span className="font-mono" data-testid="wizard-source-url">
           {sourceUrl}
@@ -27,7 +27,7 @@ const WizardSummaryStep: React.FC<WizardSummaryStepProps> = ({
       </div>
     )}
     {targetUrl && (
-      <div className="mb-2 text-xs text-gray-700 dark:text-gray-300">
+      <div className="mb-2 text-xs text-text-secondary">
         Target:{" "}
         <span className="font-semibold" data-testid="wizard-target-url">
           {targetUrl}

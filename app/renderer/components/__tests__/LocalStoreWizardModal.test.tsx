@@ -76,15 +76,12 @@ describe("LocalStoreWizardModal", () => {
       const { container } = render(<LocalStoreWizardModal {...defaultProps} />);
 
       // Check for modal backdrop
-      const backdrop = container.querySelector(
-        ".fixed.inset-0.bg-black.bg-opacity-50",
-      );
+      const backdrop = container.querySelector(".fixed.inset-0.bg-black\\/60");
       expect(backdrop).toBeInTheDocument();
       expect(backdrop).toHaveClass(
         "fixed",
         "inset-0",
-        "bg-black",
-        "bg-opacity-50",
+        "bg-black/60",
         "flex",
         "items-center",
         "justify-center",
@@ -92,13 +89,10 @@ describe("LocalStoreWizardModal", () => {
       );
 
       // Check for modal content container
-      const contentContainer = container.querySelector(
-        ".bg-white.dark\\:bg-slate-800",
-      );
+      const contentContainer = container.querySelector(".bg-surface-1");
       expect(contentContainer).toBeInTheDocument();
       expect(contentContainer).toHaveClass(
-        "bg-white",
-        "dark:bg-slate-800",
+        "bg-surface-1",
         "rounded-lg",
         "p-6",
         "max-w-2xl",
@@ -114,12 +108,7 @@ describe("LocalStoreWizardModal", () => {
 
       const title = screen.getByRole("heading", { level: 2 });
       expect(title).toHaveTextContent("Local Store Setup Required");
-      expect(title).toHaveClass(
-        "text-xl",
-        "font-bold",
-        "text-gray-900",
-        "dark:text-gray-100",
-      );
+      expect(title).toHaveClass("text-xl", "font-bold", "text-text-primary");
     });
 
     it("displays the correct description text", () => {
@@ -129,11 +118,7 @@ describe("LocalStoreWizardModal", () => {
         /The local store must be set up before the app can be used/,
       );
       expect(description).toBeInTheDocument();
-      expect(description).toHaveClass(
-        "text-gray-600",
-        "dark:text-gray-300",
-        "mt-2",
-      );
+      expect(description).toHaveClass("text-text-secondary", "mt-2");
     });
 
     it("renders LocalStoreWizardUI with correct props", () => {

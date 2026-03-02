@@ -342,7 +342,7 @@ describe("KitDetails", () => {
         name: /enable editable mode/i,
       });
       expect(toggleButton).toBeInTheDocument();
-      expect(toggleButton).toHaveClass("bg-gray-300");
+      expect(toggleButton).toHaveClass("bg-surface-3");
     });
 
     it("handles null kit gracefully", async () => {

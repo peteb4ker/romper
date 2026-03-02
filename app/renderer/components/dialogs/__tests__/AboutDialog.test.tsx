@@ -242,8 +242,7 @@ describe("AboutDialog", () => {
       expect(dialog).toHaveClass(
         "fixed",
         "inset-0",
-        "bg-black",
-        "bg-opacity-50",
+        "bg-black/60",
         "flex",
         "items-center",
         "justify-center",
@@ -256,10 +255,8 @@ describe("AboutDialog", () => {
 
       const content = screen.getByRole("dialog").firstChild as HTMLElement;
       expect(content).toHaveClass(
-        "bg-white",
-        "dark:bg-slate-800",
+        "bg-surface-2",
         "rounded-lg",
-        "shadow-xl",
         "w-full",
         "max-w-lg",
         "max-h-[80vh]",

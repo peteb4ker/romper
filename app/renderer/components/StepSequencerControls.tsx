@@ -57,7 +57,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
     >
       <button
         aria-label={isSeqPlaying ? "Stop sequencer" : "Play sequencer"}
-        className="rounded p-2 border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+        className="rounded p-2 border border-border-default bg-surface-2 hover:bg-surface-3 focus:outline-none focus:ring-2 focus:ring-accent-primary mb-2"
         data-testid={
           isSeqPlaying ? "stop-step-sequencer" : "play-step-sequencer"
         }
@@ -71,7 +71,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
       <div className="flex flex-col items-center">
         <div className="flex items-center gap-1">
           <input
-            className="text-xs text-center w-12 px-1 py-0.5 border border-gray-400 dark:border-gray-600 rounded bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="text-xs text-center w-12 px-1 py-0.5 border border-border-default rounded bg-surface-2 focus:outline-none focus:ring-1 focus:ring-accent-primary"
             data-testid="bpm-input"
             max={180}
             min={30}
@@ -80,9 +80,9 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
             type="number"
             value={inputValue}
           />
-          <span className="text-xs text-gray-300">BPM</span>
+          <span className="text-xs text-text-secondary">BPM</span>
         </div>
-        <span className="text-xs text-gray-500 mt-0.5">30-180</span>
+        <span className="text-xs text-text-tertiary mt-0.5">30-180</span>
       </div>
     </div>
   );

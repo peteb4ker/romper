@@ -146,16 +146,16 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-lg shadow-xl p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="bg-surface-2 border border-border-subtle w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <FiFolder className="text-blue-500" size={24} />
+            <FiFolder className="text-accent-primary" size={24} />
             Change Local Store Directory
           </h2>
           <button
             aria-label="Close"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-text-tertiary hover:text-text-primary"
             onClick={handleClose}
           >
             <FiX size={24} />
@@ -166,15 +166,13 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
         <div className="space-y-6 mb-6">
           {/* Current Directory */}
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="text-lg font-semibold text-text-primary">
               Current Directory
             </h3>
-            <div className="p-4 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700">
-              <p className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all">
+            <div className="p-4 rounded-lg border border-border-default bg-surface-3">
+              <p className="font-mono text-sm text-text-primary break-all">
                 {localStorePath || (
-                  <span className="text-gray-500 dark:text-gray-400 italic">
-                    Not set
-                  </span>
+                  <span className="text-text-tertiary italic">Not set</span>
                 )}
               </p>
             </div>
@@ -182,7 +180,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
 
           {/* New Directory Selection */}
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="text-lg font-semibold text-text-primary">
               Select New Directory
             </h3>
 
@@ -194,17 +192,17 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
                     className={`p-3 rounded-lg border ${
                       validationResult?.isValid &&
                       selectedPath !== localStorePath
-                        ? "border-green-300 bg-green-50 dark:border-green-500 dark:bg-green-900/20"
-                        : "border-gray-200 bg-gray-50 dark:border-slate-600 dark:bg-slate-700"
+                        ? "border-accent-success/50 bg-accent-success/10"
+                        : "border-border-default bg-surface-3"
                     }`}
                   >
-                    <p className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all">
+                    <p className="font-mono text-sm text-text-primary break-all">
                       {selectedPath}
                     </p>
                   </div>
                 ) : (
-                  <div className="p-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center">
+                  <div className="p-3 rounded-lg border-2 border-dashed border-border-default bg-surface-3">
+                    <p className="text-sm text-text-tertiary italic text-center">
                       No directory selected
                     </p>
                   </div>
@@ -212,7 +210,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
               </div>
 
               <FilePickerButton
-                className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 font-medium whitespace-nowrap"
+                className="px-4 py-3 bg-accent-primary text-white rounded-lg hover:bg-accent-primary/80 flex items-center gap-2 font-medium whitespace-nowrap"
                 disabled={isValidating || isUpdating}
                 icon={<FiFolder size={18} />}
                 isSelecting={isSelecting}
@@ -224,12 +222,12 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
 
             {/* Validation Messages - Only show warnings/errors */}
             {validationResult && selectedPath === localStorePath && (
-              <div className="flex items-center gap-2 p-3 rounded-lg border border-yellow-300 bg-yellow-50 dark:border-yellow-500 dark:bg-yellow-900/20">
+              <div className="flex items-center gap-2 p-3 rounded-lg border border-accent-warning/30 bg-accent-warning/10">
                 <FiAlertTriangle
-                  className="text-yellow-600 dark:text-yellow-400 flex-shrink-0"
+                  className="text-accent-warning flex-shrink-0"
                   size={16}
                 />
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                <p className="text-sm text-accent-warning">
                   This is the same as your current directory. Choose a different
                   directory to make changes.
                 </p>
@@ -239,12 +237,12 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
             {validationResult &&
               selectedPath !== localStorePath &&
               !validationResult.isValid && (
-                <div className="flex items-center gap-2 p-3 rounded-lg border border-red-300 bg-red-50 dark:border-red-500 dark:bg-red-900/20">
+                <div className="flex items-center gap-2 p-3 rounded-lg border border-accent-danger/30 bg-accent-danger/10">
                   <FiAlertTriangle
-                    className="text-red-600 dark:text-red-400 flex-shrink-0"
+                    className="text-accent-danger flex-shrink-0"
                     size={16}
                   />
-                  <p className="text-sm text-red-700 dark:text-red-300">
+                  <p className="text-sm text-accent-danger">
                     {validationResult.error ||
                       "This directory does not contain a valid Romper database."}
                   </p>
@@ -254,9 +252,9 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-600">
+        <div className="flex justify-end gap-3 pt-6 border-t border-border-subtle">
           <button
-            className="px-6 py-2.5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 font-medium transition-colors"
+            className="px-6 py-2.5 text-text-secondary hover:text-text-primary border border-border-default rounded-lg hover:bg-surface-3 font-medium transition-colors"
             disabled={isUpdating}
             onClick={handleClose}
           >
@@ -264,7 +262,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
           </button>
 
           <button
-            className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-colors"
+            className="px-6 py-2.5 bg-accent-primary text-white rounded-lg hover:bg-accent-primary/80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-colors"
             disabled={
               !selectedPath ||
               !validationResult?.isValid ||

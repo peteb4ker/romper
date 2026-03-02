@@ -62,7 +62,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
 
   return (
     <div
-      className="flex flex-col flex-1 min-h-0 h-full p-2 pb-0 bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-sm shadow"
+      className="flex flex-col flex-1 min-h-0 h-full p-2 pb-0 bg-surface-0 text-text-primary rounded-sm shadow"
       data-testid="kit-details"
     >
       <KitHeader

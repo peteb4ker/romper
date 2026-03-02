@@ -61,7 +61,7 @@ describe("KitItem", () => {
     // At least one kit name span should have the invalid class
     const kitNameEls = screen.getAllByText("A1");
     expect(
-      kitNameEls.some((el) => el.className.includes("text-red")),
+      kitNameEls.some((el) => el.className.includes("text-accent-danger")),
     ).toBeTruthy();
   });
 

@@ -1,8 +1,214 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ───────────────────────────────────────────────────────────
+   Font Faces — Bundled variable fonts (CSP: font-src 'self')
+   ─────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../fonts/Inter-Variable.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../fonts/Inter-Variable-Italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("../fonts/JetBrainsMono-Variable.woff2") format("woff2");
+}
+
+/* ───────────────────────────────────────────────────────────
+   Design Tokens — CSS Custom Properties
+   Light mode (:root) and Dark mode (.dark)
+   ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* Surfaces */
+  --surface-0: #f0f1f3;
+  --surface-1: #f7f8f9;
+  --surface-2: #ffffff;
+  --surface-3: #ebedf0;
+  --surface-4: #dfe2e6;
+
+  /* Text */
+  --text-primary: #1a1d23;
+  --text-secondary: #4b5563;
+  --text-tertiary: #9ca3af;
+  --text-inverse: #ffffff;
+
+  /* Borders */
+  --border-subtle: #e5e7eb;
+  --border-default: #d1d5db;
+  --border-strong: #9ca3af;
+
+  /* 4-Voice Colors */
+  --voice-1: #d44950;
+  --voice-2: #2d9668;
+  --voice-3: #2889be;
+  --voice-4: #d4b63c;
+
+  /* Voice muted backgrounds */
+  --voice-1-muted: rgba(212, 73, 80, 0.08);
+  --voice-2-muted: rgba(45, 150, 104, 0.08);
+  --voice-3-muted: rgba(40, 137, 190, 0.08);
+  --voice-4-muted: rgba(212, 182, 60, 0.08);
+
+  /* Accent Colors (mapped from voices) */
+  --accent-primary: #2889be;
+  --accent-sync: #d44950;
+  --accent-success: #2d9668;
+  --accent-warning: #d4b63c;
+  --accent-danger: #c93c42;
+
+  /* Interactive */
+  --focus-ring: #2889be;
+  --hover-overlay: rgba(0, 0, 0, 0.04);
+}
+
+.dark {
+  /* Surfaces */
+  --surface-0: #0d0f11;
+  --surface-1: #151719;
+  --surface-2: #1c1f23;
+  --surface-3: #252830;
+  --surface-4: #2e323a;
+
+  /* Text */
+  --text-primary: #e8eaed;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --text-inverse: #0d0f11;
+
+  /* Borders */
+  --border-subtle: #2e323a;
+  --border-default: #3a3f4a;
+  --border-strong: #4b5563;
+
+  /* 4-Voice Colors */
+  --voice-1: #e05a60;
+  --voice-2: #3daa78;
+  --voice-3: #3a9fd4;
+  --voice-4: #e8c846;
+
+  /* Voice muted backgrounds */
+  --voice-1-muted: rgba(224, 90, 96, 0.12);
+  --voice-2-muted: rgba(61, 170, 120, 0.12);
+  --voice-3-muted: rgba(58, 159, 212, 0.12);
+  --voice-4-muted: rgba(232, 200, 70, 0.12);
+
+  /* Accent Colors */
+  --accent-primary: #3a9fd4;
+  --accent-sync: #e05a60;
+  --accent-success: #3daa78;
+  --accent-warning: #e8c846;
+  --accent-danger: #e05a60;
+
+  /* Interactive */
+  --focus-ring: #3a9fd4;
+  --hover-overlay: rgba(255, 255, 255, 0.04);
+}
+
+/* ───────────────────────────────────────────────────────────
+   Tailwind v4 @theme — Maps CSS vars to utility classes
+   Usage: bg-surface-1, text-voice-1, border-border-subtle, etc.
+   ─────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Font families */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
+
+  /* Surface colors */
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+
+  /* Text colors */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+
+  /* Border colors */
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+
+  /* Voice colors */
+  --color-voice-1: var(--voice-1);
+  --color-voice-2: var(--voice-2);
+  --color-voice-3: var(--voice-3);
+  --color-voice-4: var(--voice-4);
+
+  /* Voice muted backgrounds */
+  --color-voice-1-muted: var(--voice-1-muted);
+  --color-voice-2-muted: var(--voice-2-muted);
+  --color-voice-3-muted: var(--voice-3-muted);
+  --color-voice-4-muted: var(--voice-4-muted);
+
+  /* Accent colors */
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-sync: var(--accent-sync);
+  --color-accent-success: var(--accent-success);
+  --color-accent-warning: var(--accent-warning);
+  --color-accent-danger: var(--accent-danger);
+
+  /* Focus ring */
+  --color-focus-ring: var(--focus-ring);
+
+  /* Hover overlay */
+  --color-hover-overlay: var(--hover-overlay);
+}
+
+/* ───────────────────────────────────────────────────────────
+   Base Styles
+   ─────────────────────────────────────────────────────────── */
+
 html,
 body {
   height: 100%;
   overflow: hidden;
+}
+
+html {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ───────────────────────────────────────────────────────────
+   Custom Scrollbar
+   ─────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
 }

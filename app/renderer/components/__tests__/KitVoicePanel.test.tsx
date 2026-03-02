@@ -172,7 +172,9 @@ describe("KitVoicePanel", () => {
   describe("Stereo drag target styling", () => {
     it("applies stereo drag target styling when isStereoDragTarget is true", () => {
       const { container } = renderKitVoicePanel({ isStereoDragTarget: true });
-      const voicePanel = container.querySelector('[class*="bg-yellow-100"]');
+      const voicePanel = container.querySelector(
+        '[class*="bg-accent-warning"]',
+      );
       expect(voicePanel).toBeInTheDocument();
     });
   });
@@ -183,7 +185,9 @@ describe("KitVoicePanel", () => {
         isLinked: true,
         isPrimaryVoice: true,
       });
-      const voicePanel = container.querySelector('[class*="border-blue-300"]');
+      const voicePanel = container.querySelector(
+        '[class*="border-accent-primary"]',
+      );
       expect(voicePanel).toBeInTheDocument();
     });
 
@@ -192,7 +196,9 @@ describe("KitVoicePanel", () => {
         isLinked: true,
         isPrimaryVoice: false,
       });
-      const voicePanel = container.querySelector('[class*="border-blue-300"]');
+      const voicePanel = container.querySelector(
+        '[class*="border-accent-primary"]',
+      );
       expect(voicePanel).toBeInTheDocument();
     });
   });

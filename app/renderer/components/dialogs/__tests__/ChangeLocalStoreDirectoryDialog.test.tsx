@@ -305,7 +305,10 @@ describe("ChangeLocalStoreDirectoryDialog", () => {
 
       await waitFor(() => {
         const pathContainer = screen.getByText(newPath).closest("div");
-        expect(pathContainer).toHaveClass("border-green-300", "bg-green-50");
+        expect(pathContainer).toHaveClass(
+          "border-accent-success/50",
+          "bg-accent-success/10",
+        );
       });
     });
 

@@ -35,7 +35,7 @@ export function useVoicePanelButtons({
         return (
           <button
             aria-label="Stop"
-            className="p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs text-red-600 dark:text-red-400"
+            className="p-1 rounded hover:bg-surface-3 text-xs text-accent-danger"
             onClick={() => onStop(voice, sampleName)}
             style={buttonStyle}
           >
@@ -47,7 +47,7 @@ export function useVoicePanelButtons({
       return (
         <button
           aria-label="Play"
-          className="p-1 rounded hover:bg-blue-100 dark:hover:bg-slate-700 text-xs"
+          className="p-1 rounded hover:bg-surface-3 text-xs"
           onClick={() => onPlay(voice, sampleName)}
           style={buttonStyle}
         >
@@ -63,7 +63,7 @@ export function useVoicePanelButtons({
     (slotNumber: number) => (
       <button
         aria-label="Delete sample"
-        className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-800 text-xs text-red-600 dark:text-red-400 ml-2"
+        className="p-1 rounded hover:bg-accent-danger/15 text-xs text-accent-danger ml-2"
         onClick={(e) => {
           e.stopPropagation();
           sampleActionsHook.handleDeleteSample(slotNumber);

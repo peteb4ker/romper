@@ -23,14 +23,14 @@ interface PathDisplayProps {
 const PathDisplay: React.FC<PathDisplayProps> = ({ label, path, variant }) => {
   const styles = {
     current: {
-      container: "rounded bg-gray-50 p-2",
-      label: "text-xs text-gray-600 mb-1",
-      path: "text-sm font-mono text-gray-800 break-all",
+      container: "rounded bg-surface-3 p-2",
+      label: "text-xs text-text-tertiary mb-1",
+      path: "text-sm font-mono text-text-primary break-all",
     },
     selected: {
-      container: "rounded bg-blue-50 p-3",
-      label: "text-xs text-blue-600 mb-1",
-      path: "text-sm font-mono text-blue-800 break-all",
+      container: "rounded bg-accent-primary/10 p-3",
+      label: "text-xs text-accent-primary mb-1",
+      path: "text-sm font-mono text-accent-primary break-all",
     },
   };
 
@@ -167,7 +167,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   const renderValidationStatus = () => {
     if (isValidating) {
       return (
-        <div className="flex items-center space-x-2 text-blue-600">
+        <div className="flex items-center space-x-2 text-accent-primary">
           <FiRefreshCw className="h-4 w-4 animate-spin" />
           <span className="text-sm">Validating directory...</span>
         </div>
@@ -176,8 +176,8 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
 
     if (validationResult?.isValid) {
       return (
-        <div className="rounded bg-green-50 p-2">
-          <p className="text-sm text-green-700">
+        <div className="rounded bg-accent-success/10 p-2">
+          <p className="text-sm text-accent-success">
             ✓ Valid local store directory
           </p>
         </div>
@@ -185,8 +185,8 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
     }
 
     return (
-      <div className="rounded bg-red-50 p-2">
-        <p className="text-sm text-red-700">
+      <div className="rounded bg-accent-danger/10 p-2">
+        <p className="text-sm text-accent-danger">
           ✗ {validationResult?.error || "Invalid directory"}
         </p>
       </div>
@@ -196,17 +196,17 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
-      <div className="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75">
+      <div className="mx-4 w-full max-w-md rounded-lg bg-surface-2 border border-border-subtle p-6 shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
         <div className="mb-4 flex items-center space-x-3">
-          <FiAlertTriangle className="h-6 w-6 text-red-500" />
-          <h2 className="text-lg font-semibold text-gray-900">
+          <FiAlertTriangle className="h-6 w-6 text-accent-danger" />
+          <h2 className="text-lg font-semibold text-text-primary">
             Invalid Local Store
           </h2>
         </div>
 
         <div className="mb-4">
-          <p className="text-sm text-gray-700 mb-3">{errorMessage}</p>
+          <p className="text-sm text-text-secondary mb-3">{errorMessage}</p>
 
           {localStorePath && (
             <div className="mb-3">
@@ -218,7 +218,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
             </div>
           )}
 
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-text-tertiary">
             Please select a new local store directory or exit the application.
             The app cannot function without a valid local store.
           </p>
@@ -255,7 +255,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
         {/* Action Buttons */}
         <div className="flex space-x-3">
           <button
-            className="flex-1 rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:bg-gray-300"
+            className="flex-1 rounded bg-accent-primary px-4 py-2 text-white hover:bg-accent-primary/80 disabled:opacity-50"
             disabled={
               !selectedPath ||
               !validationResult?.isValid ||
@@ -267,7 +267,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
             {isUpdating ? "Updating..." : "Use This Directory"}
           </button>
           <button
-            className="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600 disabled:bg-gray-300"
+            className="rounded bg-accent-danger px-4 py-2 text-white hover:bg-accent-danger/80 disabled:opacity-50"
             disabled={isUpdating || isSelecting}
             onClick={handleExitApp}
           >

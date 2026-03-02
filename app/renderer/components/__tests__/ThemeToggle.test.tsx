@@ -123,8 +123,8 @@ describe("ThemeToggle", () => {
 
       expect(button).toHaveClass("px-4");
       expect(button).toHaveClass("py-2");
-      expect(button).toHaveClass("bg-gray-200");
-      expect(button).toHaveClass("dark:bg-gray-800");
+      expect(button).toHaveClass("bg-surface-3");
+      expect(button).toHaveClass("text-text-primary");
       expect(button).toHaveClass("rounded-md");
       expect(button).toHaveClass("shadow");
       expect(button).toHaveClass("transition");

@@ -111,7 +111,7 @@ describe("A-Z hotkey navigation and bank highlighting", () => {
       (btn) => btn.getAttribute("aria-current") === "true",
     );
     expect(selectedBButton).toBeDefined();
-    expect(selectedBButton!.className).toContain("bg-blue-800");
+    expect(selectedBButton!.className).toContain("bg-accent-primary");
     expect(selectedBButton!.getAttribute("aria-current")).toBe("true");
   });
 

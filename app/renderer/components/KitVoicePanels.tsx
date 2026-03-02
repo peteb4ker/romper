@@ -238,7 +238,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
             style={{ marginBottom: 4 }}
           >
             <span
-              className="text-xs font-mono text-gray-500 dark:text-gray-400 select-none bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
+              className="text-xs font-mono text-text-tertiary select-none bg-surface-3 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
               data-testid={`global-slot-number-${i}`}
               style={{ display: "inline-block", width: "32px" }}
             >

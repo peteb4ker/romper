@@ -83,22 +83,22 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const fileCount = changeSummary?.fileCount || 0;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
       <div
-        className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden"
+        className="bg-surface-2 rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] border border-border-subtle w-full max-w-2xl max-h-[80vh] overflow-hidden"
         data-testid="sync-dialog"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-border-subtle">
           <div className="flex items-center gap-2">
-            <FiDownload className="text-lg text-blue-600 dark:text-blue-400" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <FiDownload className="text-lg text-accent-primary" />
+            <h2 className="text-lg font-semibold text-text-primary">
               Sync All Kits to SD Card
             </h2>
           </div>
           <button
             aria-label="Close sync dialog"
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 disabled:opacity-50"
+            className="p-1 rounded hover:bg-surface-3 text-text-tertiary disabled:opacity-50"
             disabled={isLoading}
             onClick={onClose}
           >
@@ -113,13 +113,13 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
         >
           {/* Error Section - Prioritized at top when present */}
           {syncProgress && syncProgress.status === "error" && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-700">
-              <div className="mb-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded">
+            <div className="p-4 bg-accent-danger/10 border-b border-accent-danger/30">
+              <div className="mb-3 p-3 bg-accent-danger/15 border border-accent-danger/30 rounded">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-red-800 dark:text-red-200">
+                  <div className="text-sm font-medium text-accent-danger">
                     Sync Failed
                   </div>
-                  <div className="text-xs text-red-600 dark:text-red-400">
+                  <div className="text-xs text-accent-danger/80">
                     Failed: 1 of {syncProgress.totalFiles} files
                   </div>
                 </div>
@@ -127,29 +127,29 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 {/* Use structured error details if available, otherwise fallback to generic error */}
                 {syncProgress.errorDetails ? (
                   <>
-                    <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                    <div className="text-sm text-accent-danger mb-2">
                       <strong>Operation:</strong>{" "}
                       {syncProgress.errorDetails.operation === "copy"
                         ? "Copying"
                         : "Converting"}{" "}
                       file
                     </div>
-                    <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                    <div className="text-sm text-accent-danger mb-2">
                       <strong>File:</strong>{" "}
-                      <code className="bg-red-200 dark:bg-red-800 px-1 rounded text-xs">
+                      <code className="bg-accent-danger/20 px-1 rounded text-xs">
                         {syncProgress.errorDetails.fileName}
                       </code>
                     </div>
-                    <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                    <div className="text-sm text-accent-danger mb-2">
                       <strong>Error:</strong> {syncProgress.errorDetails.error}
                     </div>
 
                     {/* Actionable guidance */}
-                    <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/50 border border-red-300 dark:border-red-600 rounded">
-                      <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">
+                    <div className="mt-2 p-2 bg-accent-danger/10 border border-accent-danger/30 rounded">
+                      <div className="text-xs font-medium text-accent-danger mb-1">
                         💡 What to do:
                       </div>
-                      <div className="text-xs text-red-700 dark:text-red-300">
+                      <div className="text-xs text-accent-danger/80">
                         {syncProgress.errorDetails.canRetry
                           ? "This error might be temporary. You can try syncing again, or check if the SD card has enough space and proper permissions."
                           : "This error requires attention. Check that the source file exists and isn't corrupted, or verify the SD card is properly connected."}
@@ -158,20 +158,20 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                   </>
                 ) : (
                   <>
-                    <div className="text-sm text-red-700 dark:text-red-300 mb-2">
+                    <div className="text-sm text-accent-danger mb-2">
                       {syncProgress.error ||
                         "An unexpected error occurred during sync."}
                     </div>
                     {syncProgress.currentFile && (
-                      <div className="text-xs text-red-600 dark:text-red-400 mb-2">
+                      <div className="text-xs text-accent-danger/80 mb-2">
                         Failed on file:{" "}
-                        <code className="bg-red-200 dark:bg-red-800 px-1 rounded text-xs">
+                        <code className="bg-accent-danger/20 px-1 rounded text-xs">
                           {syncProgress.currentFile}
                         </code>
                       </div>
                     )}
-                    <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/50 border border-red-300 dark:border-red-600 rounded">
-                      <div className="text-xs text-red-700 dark:text-red-300">
+                    <div className="mt-2 p-2 bg-accent-danger/10 border border-accent-danger/30 rounded">
+                      <div className="text-xs text-accent-danger/80">
                         Try checking your SD card connection, available space,
                         and file permissions before retrying.
                       </div>
@@ -185,39 +185,37 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           <div className="p-4 space-y-4">
             {/* Compact Sync Summary */}
             {changeSummary && (
-              <div className="flex items-center gap-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
-                <FiDatabase className="text-blue-600 dark:text-blue-400" />
+              <div className="flex items-center gap-3 p-2 bg-accent-primary/10 rounded">
+                <FiDatabase className="text-accent-primary" />
                 <div className="text-sm">
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <span className="font-medium text-text-primary">
                     {kitCount} kits, {fileCount} samples
                   </span>
-                  <span className="text-gray-600 dark:text-gray-400 ml-2">
-                    Ready to sync
-                  </span>
+                  <span className="text-text-tertiary ml-2">Ready to sync</span>
                 </div>
               </div>
             )}
 
             {/* Compact SD Card Selection */}
             <div className="space-y-2">
-              <div className="flex items-center gap-3 p-2 border border-gray-200 dark:border-gray-600 rounded">
-                <FiHardDrive className="text-gray-600 dark:text-gray-400" />
+              <div className="flex items-center gap-3 p-2 border border-border-default rounded">
+                <FiHardDrive className="text-text-tertiary" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <div className="text-sm font-medium text-text-primary">
                     SD Card
                   </div>
                   {localSdCardPath ? (
-                    <div className="text-xs text-gray-600 dark:text-gray-400 font-mono truncate">
+                    <div className="text-xs text-text-tertiary font-mono truncate">
                       <span data-testid="sd-card-path">{localSdCardPath}</span>
                     </div>
                   ) : (
-                    <div className="text-xs text-gray-500 dark:text-gray-500 italic">
+                    <div className="text-xs text-text-tertiary italic">
                       No SD card selected
                     </div>
                   )}
                 </div>
                 <button
-                  className="px-2 py-1 text-xs bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-1"
+                  className="px-2 py-1 text-xs bg-surface-3 text-text-secondary rounded hover:bg-surface-4 transition-colors flex items-center gap-1"
                   data-testid="select-sd-card"
                   disabled={isLoading}
                   onClick={handleSdCardSelect}
@@ -228,10 +226,10 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               </div>
 
               {/* Compact Wipe Option */}
-              <div className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
+              <div className="flex items-center gap-2 p-2 bg-accent-warning/10 border border-accent-warning/30 rounded">
                 <input
                   checked={wipeSdCard}
-                  className="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 rounded focus:ring-yellow-500 dark:focus:ring-yellow-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  className="w-4 h-4 text-accent-warning bg-surface-3 border-border-default rounded focus:ring-accent-warning focus:ring-2"
                   data-testid="wipe-sd-card-checkbox"
                   disabled={isLoading}
                   id="wipeSdCard"
@@ -239,7 +237,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                   type="checkbox"
                 />
                 <label className="flex-1 text-sm" htmlFor="wipeSdCard">
-                  <span className="font-medium text-yellow-800 dark:text-yellow-200">
+                  <span className="font-medium text-accent-warning">
                     Clear SD card before sync
                   </span>
                 </label>
@@ -252,9 +250,9 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             syncProgress.status !== "completed" &&
             syncProgress.status !== "error" && (
               <div className="p-4">
-                <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded">
+                <div className="bg-surface-3 p-3 rounded">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="font-medium text-gray-900 dark:text-gray-100">
+                    <div className="font-medium text-text-primary">
                       {syncProgress.status === "preparing" &&
                         "Preparing sync..."}
                       {syncProgress.status === "copying" && "Copying files..."}
@@ -262,16 +260,16 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                         "Converting files..."}
                       {syncProgress.status === "finalizing" && "Finalizing..."}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-text-tertiary">
                       {syncProgress.filesCompleted} / {syncProgress.totalFiles}{" "}
                       files
                     </div>
                   </div>
 
                   {/* Progress bar */}
-                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                  <div className="w-full bg-surface-3 rounded-full h-2">
                     <div
-                      className="h-2 rounded-full transition-all duration-300 bg-blue-600"
+                      className="h-2 rounded-full transition-all duration-300 bg-accent-primary"
                       style={{
                         width: `${syncProgress.totalFiles > 0 ? (syncProgress.filesCompleted / syncProgress.totalFiles) * 100 : 0}%`,
                       }}
@@ -280,7 +278,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 
                   {/* Current file */}
                   {syncProgress.currentFile && (
-                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
+                    <div className="mt-2 text-xs text-text-tertiary truncate">
                       {syncProgress.currentFile}
                     </div>
                   )}
@@ -291,14 +289,14 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           {/* Success notification */}
           {syncProgress && syncProgress.status === "completed" && (
             <div className="p-4">
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
+              <div className="p-3 bg-accent-success/10 border border-accent-success/30 rounded">
                 <div className="flex items-center gap-3">
-                  <FiCheckCircle className="text-green-600 dark:text-green-400 text-xl" />
+                  <FiCheckCircle className="text-accent-success text-xl" />
                   <div>
-                    <div className="font-medium text-green-800 dark:text-green-200">
+                    <div className="font-medium text-accent-success">
                       Sync Complete!
                     </div>
-                    <div className="text-sm text-green-700 dark:text-green-300">
+                    <div className="text-sm text-accent-success/80">
                       Successfully synced {syncProgress.filesCompleted} files to
                       SD card
                     </div>
@@ -310,10 +308,10 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end items-center p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end items-center p-4 border-t border-border-subtle">
           <div className="flex gap-2">
             <button
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-text-secondary border border-border-default rounded hover:bg-surface-3 transition-colors disabled:opacity-50"
               data-testid="cancel-sync"
               disabled={isLoading}
               onClick={onClose}
@@ -325,7 +323,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             {syncProgress?.status === "error" &&
               syncProgress?.errorDetails?.canRetry && (
                 <button
-                  className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-accent-warning text-white rounded hover:bg-accent-warning/80 transition-colors disabled:opacity-50 flex items-center gap-2"
                   data-testid="retry-sync"
                   disabled={isLoading}
                   onClick={handleConfirm}
@@ -340,7 +338,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               syncProgress.status !== "error" ||
               !syncProgress.errorDetails?.canRetry) && (
               <button
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-accent-primary text-white rounded hover:bg-accent-primary/80 transition-colors disabled:opacity-50 flex items-center gap-2"
                 data-testid="confirm-sync"
                 disabled={
                   isLoading ||

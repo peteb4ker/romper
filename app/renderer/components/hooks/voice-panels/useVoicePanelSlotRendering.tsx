@@ -188,7 +188,7 @@ export function useVoicePanelSlotRendering({
           {renderPlayButton(isPlaying, sampleName)}
           <div className="flex-1 min-w-0">
             <span
-              className="truncate text-xs font-mono font-medium text-gray-700 dark:text-gray-200"
+              className="truncate text-xs font-mono font-medium text-text-primary"
               title={sampleName}
             >
               {sampleName}
@@ -262,7 +262,7 @@ export function useVoicePanelSlotRendering({
     return (
       <li
         aria-label={`Drop zone for voice ${voice}`}
-        className={`${slotBaseClass} text-gray-400 dark:text-gray-600 italic${dragOverClass} border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500 min-h-[28px] mb-1`}
+        className={`${slotBaseClass} text-text-tertiary italic${dragOverClass} border-2 border-dashed border-border-default hover:border-accent-sync min-h-[28px] mb-1`}
         data-testid={`drop-zone-voice-${voice}`}
         key={`${voice}-drop-zone`}
         {...getConditionalDragHandlers(nextAvailableSlot)}
@@ -273,7 +273,7 @@ export function useVoicePanelSlotRendering({
         }
       >
         <div className="flex-1 flex items-center justify-center">
-          <span className="text-sm text-gray-400 dark:text-gray-500 text-center">
+          <span className="text-sm text-text-tertiary text-center">
             Drop WAV files here
           </span>
         </div>
@@ -293,7 +293,7 @@ export function useVoicePanelSlotRendering({
     (slotNumber: number) => {
       return (
         <li
-          className="min-h-[28px] mb-1 flex items-center text-gray-400 dark:text-gray-600"
+          className="min-h-[28px] mb-1 flex items-center text-text-tertiary"
           key={`${voice}-empty-${slotNumber}`}
         >
           {/* Empty slot - maintains height */}

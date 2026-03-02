@@ -412,9 +412,10 @@ describe("useStepPattern", () => {
       });
 
       const onSaved = vi.fn();
+      const initialPattern = [[1, 0]];
       const { result } = renderHook(() =>
         useStepPattern({
-          initialPattern: [[1, 0]],
+          initialPattern,
           kitName: "A0",
           onSaved,
         }),
@@ -433,9 +434,10 @@ describe("useStepPattern", () => {
       );
 
       const onSaved = vi.fn();
+      const initialPattern = [[1, 0]];
       const { result } = renderHook(() =>
         useStepPattern({
-          initialPattern: [[1, 0]],
+          initialPattern,
           kitName: "A0",
           onSaved,
         }),

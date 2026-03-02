@@ -63,7 +63,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
         aria-label={isSeqPlaying ? "Stop sequencer" : "Play sequencer"}
         className={`flex items-center justify-center w-10 h-10 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all ${
           isSeqPlaying
-            ? "bg-voice-1/30 border-voice-1 text-voice-1 shadow-[0_0_10px_rgba(224,90,96,0.4)]"
+            ? "bg-transport-play/30 border-transport-play text-transport-play shadow-[0_0_10px_rgba(217,119,6,0.4)]"
             : "bg-surface-2 border-border-default hover:bg-surface-3 text-text-primary"
         }`}
         data-testid={

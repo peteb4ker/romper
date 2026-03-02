@@ -1,5 +1,5 @@
+import { Warning } from "@phosphor-icons/react";
 import React from "react";
-import { FiAlertTriangle } from "react-icons/fi";
 
 interface CriticalErrorDialogProps {
   isOpen: boolean;
@@ -24,7 +24,7 @@ const CriticalErrorDialog: React.FC<CriticalErrorDialogProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
       <div className="mx-4 w-full max-w-md rounded-lg bg-surface-2 p-6 shadow-lg border-2 border-accent-danger">
         <div className="mb-4 flex items-center space-x-3">
-          <FiAlertTriangle className="h-8 w-8 text-accent-danger" />
+          <Warning className="text-accent-danger" size={32} />
           <h2 className="text-xl font-bold text-accent-danger">{title}</h2>
         </div>
 

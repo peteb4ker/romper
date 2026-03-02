@@ -1,10 +1,3 @@
-// Ensures @testing-library/react cleanup runs after each test for test isolation
-import { cleanup } from "@testing-library/react";
-import { afterEach } from "vitest";
-afterEach(() => {
-  cleanup();
-});
-
 import {
   cleanup,
   fireEvent,
@@ -13,7 +6,12 @@ import {
   within,
 } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 import KitList from "../KitList";
 
@@ -101,8 +99,9 @@ describe("KitList", () => {
     kits.forEach((kit) => {
       expect(getKitItem(kit.name)).toBeDefined();
     });
-    expect(screen.getByText("Bank A")).toBeDefined();
-    expect(screen.getByText("Bank B")).toBeDefined();
+    // Bank headers now show just the letter, not "Bank A"
+    expect(screen.getAllByText("A").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("B").length).toBeGreaterThan(0);
     expect(screen.getByText("Drums")).toBeDefined();
     expect(screen.getByText("Perc")).toBeDefined();
   });
@@ -345,11 +344,4 @@ describe("KitList", () => {
     expect(within(kitB1).queryByText("Snare")).toBeNull();
     expect(within(kitB1).queryByText("Hat")).toBeNull();
   });
-});
-
-import { cleanup } from "@testing-library/react";
-import { afterEach } from "vitest";
-afterEach(() => {
-  cleanup();
-  vi.restoreAllMocks();
 });

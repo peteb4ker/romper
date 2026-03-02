@@ -1,5 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
+import { VinylRecord } from "@phosphor-icons/react";
 import React, {
   forwardRef,
   useEffect,
@@ -48,16 +49,30 @@ const BankHeader: React.FC<BankHeaderProps> = ({
 
   return (
     <div
-      className="col-span-full mt-4 mb-2 flex items-center gap-2 px-2"
+      className="col-span-full mt-5 first:mt-1"
       id={`bank-${bank}`}
       ref={headerRef}
     >
-      <span className="font-bold text-sm tracking-widest text-accent-primary font-mono">
-        Bank {bank}
-      </span>
-      {bankName && (
-        <span className="text-sm text-text-secondary italic">{bankName}</span>
-      )}
+      <div className="flex items-center gap-3 px-3 py-1.5 rounded bg-surface-3 border-l-4 border-l-accent-primary">
+        <VinylRecord
+          className="text-accent-primary/50 shrink-0"
+          size={16}
+          weight="duotone"
+        />
+        <span className="font-mono font-bold text-lg text-accent-primary leading-none">
+          {bank}
+        </span>
+        {bankName && (
+          <>
+            <span className="text-border-strong text-xs leading-none">
+              &#x2022;
+            </span>
+            <span className="text-sm text-text-secondary tracking-wide truncate">
+              {bankName}
+            </span>
+          </>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,9 +1,12 @@
+import {
+  ArrowsCounterClockwise,
+  Folder,
+  Microphone,
+  PianoKeys,
+  Sparkle,
+  Waveform,
+} from "@phosphor-icons/react";
 import React from "react";
-import { BiSolidPiano } from "react-icons/bi";
-import { FiFolder } from "react-icons/fi";
-import { GiDrumKit } from "react-icons/gi";
-import { MdAutoAwesome, MdMic } from "react-icons/md";
-import { TiArrowLoop } from "react-icons/ti";
 
 export type KnownKitIconType =
   | "drumkit"
@@ -28,54 +31,56 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
   iconType,
   size = "md",
 }) => {
-  // Size classes mapping
-  const sizeClasses = {
-    lg: "text-3xl",
-    md: "text-2xl",
-    sm: "text-xl",
+  // Size mapping (px)
+  const sizeMap = {
+    lg: 30,
+    md: 24,
+    sm: 20,
   };
 
-  const sizeClass = sizeClasses[size];
-  const baseClassName = `${sizeClass} ${className}`;
-
-  const iconProps = {
-    className: baseClassName,
-  };
+  const iconSize = sizeMap[size];
 
   switch (iconType) {
     case "drumkit":
       return (
-        <GiDrumKit
-          {...iconProps}
-          className={`${baseClassName} text-accent-warning`}
+        <Waveform
+          className={`text-accent-warning ${className}`}
+          size={iconSize}
+          weight="bold"
         />
       );
     case "fx":
       return (
-        <MdAutoAwesome
-          {...iconProps}
-          className={`${baseClassName} text-voice-3`}
+        <Sparkle
+          className={`text-voice-3 ${className}`}
+          size={iconSize}
+          weight="fill"
         />
       );
     case "loop":
       return (
-        <TiArrowLoop
-          {...iconProps}
-          className={`${baseClassName} text-voice-4`}
+        <ArrowsCounterClockwise
+          className={`text-voice-4 ${className}`}
+          size={iconSize}
         />
       );
     case "mic":
       return (
-        <MdMic {...iconProps} className={`${baseClassName} text-voice-1`} />
+        <Microphone
+          className={`text-voice-1 ${className}`}
+          size={iconSize}
+          weight="fill"
+        />
       );
     case "piano":
       return (
-        <BiSolidPiano
-          {...iconProps}
-          className={`${baseClassName} text-accent-primary`}
+        <PianoKeys
+          className={`text-accent-primary ${className}`}
+          size={iconSize}
+          weight="fill"
         />
       );
     default:
-      return <FiFolder {...iconProps} className={baseClassName} />;
+      return <Folder className={className} size={iconSize} />;
   }
 };

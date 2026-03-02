@@ -1,6 +1,6 @@
+import { Circle, Copy } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
-import { FiCircle, FiCopy } from "react-icons/fi";
 
 import { useKitItem } from "./hooks/kit-management/useKitItem";
 import { KitIconRenderer } from "./shared/KitIconRenderer";
@@ -99,7 +99,11 @@ const KitItem = React.memo(
                 </span>
                 {isValid && kitData?.modified_since_sync && (
                   <div className="flex items-center gap-1 ml-2">
-                    <FiCircle className="w-3 h-3 text-accent-warning fill-current" />
+                    <Circle
+                      className="text-accent-warning"
+                      size={12}
+                      weight="fill"
+                    />
                     <span className="text-xs font-medium text-accent-warning">
                       Modified
                     </span>
@@ -142,7 +146,7 @@ const KitItem = React.memo(
                     }}
                     title="Duplicate kit"
                   >
-                    <FiCopy />
+                    <Copy size={14} />
                   </button>
                 )}
               </div>

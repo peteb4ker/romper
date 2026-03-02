@@ -1,5 +1,10 @@
+import {
+  Archive,
+  FolderOpen,
+  HardDrive,
+  MagnifyingGlass,
+} from "@phosphor-icons/react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FaArchive, FaFolderOpen, FaSdCard, FaSearch } from "react-icons/fa";
 
 import { config } from "../config";
 import { useLocalStoreWizard } from "./hooks/wizard/useLocalStoreWizard";
@@ -68,17 +73,17 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
 
     const sourceOptions = [
       {
-        icon: <FaSdCard className="text-3xl mx-auto mb-2" />,
+        icon: <HardDrive className="mx-auto mb-2" size={30} />,
         label: "Rample SD Card",
         value: "sdcard",
       },
       {
-        icon: <FaArchive className="text-3xl mx-auto mb-2" />,
+        icon: <Archive className="mx-auto mb-2" size={30} />,
         label: "Squarp.net Factory Samples",
         value: "squarp",
       },
       {
-        icon: <FaFolderOpen className="text-3xl mx-auto mb-2" />,
+        icon: <FolderOpen className="mx-auto mb-2" size={30} />,
         label: "Blank Folder",
         value: "blank",
       },
@@ -213,7 +218,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
               <FilePickerButton
                 className="bg-accent-primary text-white px-4 py-2 rounded"
                 data-testid="browse-existing-store-btn"
-                icon={<FaSearch size={14} />}
+                icon={<MagnifyingGlass size={14} />}
                 isSelecting={isSelectingExisting}
                 onClick={handleChooseExistingStore}
               >
@@ -309,7 +314,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
                 data-testid="choose-existing-store-btn"
                 onClick={() => setShowExistingStoreSelector(true)}
               >
-                <FaSearch size={14} /> Choose Existing Store
+                <MagnifyingGlass size={14} /> Choose Existing Store
               </button>
             </div>
           </>

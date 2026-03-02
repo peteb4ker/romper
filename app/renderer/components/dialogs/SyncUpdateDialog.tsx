@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
 import {
-  FiCheckCircle,
-  FiDatabase,
-  FiDownload,
-  FiFolder,
-  FiHardDrive,
-  FiX,
-} from "react-icons/fi";
+  CheckCircle,
+  Database,
+  DownloadSimple,
+  Folder,
+  HardDrive,
+  X,
+} from "@phosphor-icons/react";
+import React, { useEffect, useState } from "react";
 
 import type {
   SyncChangeSummary,
@@ -91,7 +91,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-subtle">
           <div className="flex items-center gap-2">
-            <FiDownload className="text-lg text-accent-primary" />
+            <DownloadSimple className="text-accent-primary" size={18} />
             <h2 className="text-lg font-semibold text-text-primary">
               Sync All Kits to SD Card
             </h2>
@@ -102,7 +102,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             disabled={isLoading}
             onClick={onClose}
           >
-            <FiX />
+            <X size={18} />
           </button>
         </div>
 
@@ -186,7 +186,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             {/* Compact Sync Summary */}
             {changeSummary && (
               <div className="flex items-center gap-3 p-2 bg-accent-primary/10 rounded">
-                <FiDatabase className="text-accent-primary" />
+                <Database className="text-accent-primary" size={16} />
                 <div className="text-sm">
                   <span className="font-medium text-text-primary">
                     {kitCount} kits, {fileCount} samples
@@ -199,7 +199,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             {/* Compact SD Card Selection */}
             <div className="space-y-2">
               <div className="flex items-center gap-3 p-2 border border-border-default rounded">
-                <FiHardDrive className="text-text-tertiary" />
+                <HardDrive className="text-text-tertiary" size={16} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-text-primary">
                     SD Card
@@ -220,7 +220,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                   disabled={isLoading}
                   onClick={handleSdCardSelect}
                 >
-                  <FiFolder className="w-3 h-3" />
+                  <Folder size={12} />
                   {localSdCardPath ? "Change" : "Select"}
                 </button>
               </div>
@@ -291,7 +291,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             <div className="p-4">
               <div className="p-3 bg-accent-success/10 border border-accent-success/30 rounded">
                 <div className="flex items-center gap-3">
-                  <FiCheckCircle className="text-accent-success text-xl" />
+                  <CheckCircle className="text-accent-success" size={20} />
                   <div>
                     <div className="font-medium text-accent-success">
                       Sync Complete!
@@ -328,7 +328,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                   disabled={isLoading}
                   onClick={handleConfirm}
                 >
-                  <FiCheckCircle />
+                  <CheckCircle size={16} />
                   Retry Sync
                 </button>
               )}
@@ -358,7 +358,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                   </>
                 ) : (
                   <>
-                    <FiCheckCircle />
+                    <CheckCircle size={16} />
                     {syncProgress?.status === "error"
                       ? "Start New Sync"
                       : "Start Sync"}

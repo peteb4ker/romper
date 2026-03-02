@@ -1,5 +1,5 @@
+import { Database, Monitor, Moon, Sun } from "@phosphor-icons/react";
 import React from "react";
-import { FiDatabase, FiMonitor, FiMoon, FiSun } from "react-icons/fi";
 
 import { useSettings } from "../utils/SettingsContext";
 
@@ -25,18 +25,18 @@ const StatusBar: React.FC<StatusBarProps> = ({
 
   const getThemeIcon = () => {
     if (themeMode === "system") {
-      return <FiMonitor size={16} />;
+      return <Monitor size={16} />;
     }
     if (isDarkMode) {
-      return <FiSun size={16} />;
+      return <Sun size={16} />;
     }
-    return <FiMoon size={16} />;
+    return <Moon size={16} />;
   };
   return (
     <div className="fixed bottom-0 left-0 w-full flex items-center justify-between px-4 py-1.5 bg-surface-1 text-xs text-text-secondary border-t border-border-subtle z-20">
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1">
-          <FiDatabase size={16} /> Local Store:{" "}
+          <Database size={16} /> Local Store:{" "}
           <span className="font-mono">
             {localStorePath || "Not configured"}
           </span>

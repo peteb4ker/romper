@@ -1,5 +1,5 @@
+import { X } from "@phosphor-icons/react";
 import React, { useEffect } from "react";
-import { FiX } from "react-icons/fi";
 
 const openExternal = (url: string) => {
   if (window.electronAPI?.openExternal) window.electronAPI.openExternal(url);
@@ -88,7 +88,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
             onClick={onClose}
             type="button"
           >
-            <FiX size={20} />
+            <X size={20} />
           </button>
         </div>
 

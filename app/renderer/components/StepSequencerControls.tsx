@@ -1,5 +1,5 @@
+import { Play, Stop } from "@phosphor-icons/react";
 import React from "react";
-import { FiPlay, FiSquare } from "react-icons/fi";
 
 interface BpmLogic {
   bpm: number;
@@ -65,7 +65,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
         title={isSeqPlaying ? "Stop sequencer" : "Play sequencer"}
         type="button"
       >
-        {isSeqPlaying ? <FiSquare /> : <FiPlay />}
+        {isSeqPlaying ? <Stop size={16} /> : <Play size={16} />}
       </button>
 
       <div className="flex flex-col items-center">

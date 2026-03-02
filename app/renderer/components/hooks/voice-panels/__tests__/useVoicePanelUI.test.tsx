@@ -5,11 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useVoicePanelUI } from "../useVoicePanelUI";
 
-// Mock react-icons
-vi.mock("react-icons/fi", () => ({
-  FiCheck: () => <span data-testid="check-icon">Check</span>,
-  FiEdit2: () => <span data-testid="edit-icon">Edit</span>,
-  FiX: () => <span data-testid="x-icon">X</span>,
+// Mock @phosphor-icons/react
+vi.mock("@phosphor-icons/react", () => ({
+  Check: () => <span data-testid="check-icon">Check</span>,
+  PencilSimple: () => <span data-testid="edit-icon">Edit</span>,
+  X: () => <span data-testid="x-icon">X</span>,
 }));
 
 // Mock the shared utility

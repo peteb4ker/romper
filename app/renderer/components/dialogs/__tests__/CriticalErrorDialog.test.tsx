@@ -4,9 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CriticalErrorDialog from "../CriticalErrorDialog";
 
-// Mock react-icons
-vi.mock("react-icons/fi", () => ({
-  FiAlertTriangle: vi.fn(() => <div data-testid="alert-triangle">Alert</div>),
+// Mock @phosphor-icons/react
+vi.mock("@phosphor-icons/react", () => ({
+  Warning: vi.fn(() => <div data-testid="alert-triangle">Alert</div>),
 }));
 
 describe("CriticalErrorDialog", () => {

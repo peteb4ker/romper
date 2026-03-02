@@ -1,7 +1,6 @@
+import { Copy, Star } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
-import { FaStar } from "react-icons/fa";
-import { FiCopy } from "react-icons/fi";
 
 import { useKitItem } from "./hooks/kit-management/useKitItem";
 import { KitIconRenderer } from "./shared/KitIconRenderer";
@@ -217,8 +216,10 @@ const KitGridItem = React.memo(
                     isFavorite ? "Remove from favorites" : "Add to favorites"
                   }
                 >
-                  <FaStar
-                    className={`w-4 h-4 ${isFavorite ? "" : "opacity-30"}`}
+                  <Star
+                    className={isFavorite ? "" : "opacity-30"}
+                    size={16}
+                    weight="fill"
                   />
                 </button>
               )}
@@ -231,7 +232,7 @@ const KitGridItem = React.memo(
                   }}
                   title="Duplicate kit"
                 >
-                  <FiCopy />
+                  <Copy size={14} />
                 </button>
               )}
             </div>

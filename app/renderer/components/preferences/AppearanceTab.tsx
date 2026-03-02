@@ -1,5 +1,5 @@
+import { Monitor, Moon, Sun } from "@phosphor-icons/react";
 import React from "react";
-import { FiMonitor, FiMoon, FiSun } from "react-icons/fi";
 
 import { type ThemeMode } from "../../utils/SettingsContext";
 
@@ -17,13 +17,13 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
     label: string;
     value: ThemeMode;
   }> = [
-    { icon: <FiSun className="w-4 h-4" />, label: "Light", value: "light" },
+    { icon: <Sun size={16} />, label: "Light", value: "light" },
     {
-      icon: <FiMonitor className="w-4 h-4" />,
+      icon: <Monitor size={16} />,
       label: "System",
       value: "system",
     },
-    { icon: <FiMoon className="w-4 h-4" />, label: "Dark", value: "dark" },
+    { icon: <Moon size={16} />, label: "Dark", value: "dark" },
   ];
 
   return (
@@ -53,13 +53,13 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
                     >
                       {option.value === "light" && (
                         <div className="w-full h-full bg-surface-1 flex items-center justify-center">
-                          <FiSun className="w-6 h-6 text-accent-warning" />
+                          <Sun className="text-accent-warning" size={24} />
                         </div>
                       )}
 
                       {option.value === "dark" && (
                         <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-                          <FiMoon className="w-6 h-6 text-accent-primary" />
+                          <Moon className="text-accent-primary" size={24} />
                         </div>
                       )}
 
@@ -75,11 +75,17 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
                             <div className="relative w-6 h-6">
                               {/* Left half - dark icon on light background */}
                               <div className="absolute inset-0 w-1/2 overflow-hidden">
-                                <FiMonitor className="w-6 h-6 text-text-primary" />
+                                <Monitor
+                                  className="text-text-primary"
+                                  size={24}
+                                />
                               </div>
                               {/* Right half - light icon on dark background */}
                               <div className="absolute inset-0 w-1/2 left-1/2 overflow-hidden">
-                                <FiMonitor className="w-6 h-6 text-white -ml-3" />
+                                <Monitor
+                                  className="text-white -ml-3"
+                                  size={24}
+                                />
                               </div>
                             </div>
                           </div>

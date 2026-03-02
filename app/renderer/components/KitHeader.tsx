@@ -1,16 +1,16 @@
 import type { Kit, KitWithRelations } from "@romper/shared/db/schema";
 
-import React, { useCallback } from "react";
-import { FaStar } from "react-icons/fa";
 import {
-  FiArrowLeft,
-  FiChevronLeft,
-  FiChevronRight,
-  FiCircle,
-  FiEdit3,
-  FiLock,
-  FiRefreshCw,
-} from "react-icons/fi";
+  ArrowLeft,
+  ArrowsClockwise,
+  CaretLeft,
+  CaretRight,
+  Circle,
+  Lock,
+  PencilSimple,
+  Star,
+} from "@phosphor-icons/react";
+import React, { useCallback } from "react";
 
 interface KitHeaderProps {
   editingKitAlias: boolean;
@@ -37,7 +37,7 @@ const renderNavigationButtonContent = (
   isNext: boolean,
   kitIndex: number,
   kits: KitWithRelations[],
-  Icon: React.ComponentType<{ className?: string }>,
+  Icon: React.ComponentType<{ className?: string; size?: number }>,
 ) => {
   const targetIndex = isNext ? kitIndex + 1 : kitIndex - 1;
   const hasTargetKit = isNext ? kitIndex < kits.length - 1 : kitIndex > 0;
@@ -167,7 +167,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             onClick={handleBack}
             title="Back"
           >
-            <FiArrowLeft className="inline-block mr-1" /> Back
+            <ArrowLeft className="inline-block mr-1" size={14} /> Back
           </button>
         )}
         {onPrevKit && prevButtonState && (
@@ -178,12 +178,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             style={prevButtonState.style}
             title={prevButtonState.title}
           >
-            {renderNavigationButtonContent(
-              false,
-              kitIndex!,
-              kits!,
-              FiChevronLeft,
-            )}
+            {renderNavigationButtonContent(false, kitIndex!, kits!, CaretLeft)}
           </button>
         )}
         {onNextKit && nextButtonState && (
@@ -194,12 +189,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             style={nextButtonState.style}
             title={nextButtonState.title}
           >
-            {renderNavigationButtonContent(
-              true,
-              kitIndex!,
-              kits!,
-              FiChevronRight,
-            )}
+            {renderNavigationButtonContent(true, kitIndex!, kits!, CaretRight)}
           </button>
         )}
       </div>
@@ -239,8 +229,10 @@ const KitHeader: React.FC<KitHeaderProps> = ({
               kit?.is_favorite ? "Remove from favorites" : "Add to favorites"
             }
           >
-            <FaStar
-              className={`w-6 h-6 ${kit?.is_favorite ? "" : "opacity-40"}`}
+            <Star
+              className={kit?.is_favorite ? "" : "opacity-40"}
+              size={24}
+              weight="fill"
             />
           </button>
         )}
@@ -255,7 +247,11 @@ const KitHeader: React.FC<KitHeaderProps> = ({
           <div className="flex items-center gap-2">
             {kit?.modified_since_sync && (
               <div className="flex items-center gap-1 mr-2">
-                <FiCircle className="w-3 h-3 text-accent-warning fill-current" />
+                <Circle
+                  className="text-accent-warning"
+                  size={12}
+                  weight="fill"
+                />
                 <span className="text-xs font-medium text-accent-warning">
                   Modified
                 </span>
@@ -281,9 +277,9 @@ const KitHeader: React.FC<KitHeaderProps> = ({
               </span>
             </button>
             {isEditable ? (
-              <FiEdit3 className="w-4 h-4 text-accent-sync" />
+              <PencilSimple className="text-accent-sync" size={16} />
             ) : (
-              <FiLock className="w-4 h-4 text-text-tertiary" />
+              <Lock className="text-text-tertiary" size={16} />
             )}
           </div>
         )}
@@ -294,7 +290,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             onClick={onScanKit}
             title="Perform comprehensive kit scan (voice names, WAV analysis, artist metadata)"
           >
-            <FiRefreshCw className="inline-block mr-1" />
+            <ArrowsClockwise className="inline-block mr-1" size={14} />
             Scan Kit
           </button>
         )}

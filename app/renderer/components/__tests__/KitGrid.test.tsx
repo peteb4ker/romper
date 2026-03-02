@@ -65,11 +65,11 @@ describe("KitGrid", () => {
   it("renders bank headers", () => {
     render(<KitGrid {...baseProps} />);
 
-    // Use getAllByText since there might be multiple "Bank A" elements
-    const bankAElements = screen.getAllByText("Bank A");
+    // Bank headers now show just the letter, not "Bank A"
+    const bankAElements = screen.getAllByText("A");
     expect(bankAElements.length).toBeGreaterThan(0);
 
-    const bankBElements = screen.getAllByText("Bank B");
+    const bankBElements = screen.getAllByText("B");
     expect(bankBElements.length).toBeGreaterThan(0);
   });
 

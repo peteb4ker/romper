@@ -4,11 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useVoicePanelButtons } from "../useVoicePanelButtons";
 
-// Mock react-icons
-vi.mock("react-icons/fi", () => ({
-  FiPlay: () => <span data-testid="play-icon">Play</span>,
-  FiSquare: () => <span data-testid="square-icon">Square</span>,
-  FiTrash2: () => <span data-testid="trash-icon">Trash</span>,
+// Mock @phosphor-icons/react
+vi.mock("@phosphor-icons/react", () => ({
+  Play: () => <span data-testid="play-icon">Play</span>,
+  Stop: () => <span data-testid="square-icon">Square</span>,
+  Trash: () => <span data-testid="trash-icon">Trash</span>,
 }));
 
 describe("useVoicePanelButtons", () => {

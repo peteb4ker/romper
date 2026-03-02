@@ -1,5 +1,5 @@
+import { Play, Stop, Trash } from "@phosphor-icons/react";
 import React from "react";
-import { FiPlay, FiSquare, FiTrash2 } from "react-icons/fi";
 
 export interface UseVoicePanelButtonsOptions {
   onPlay: (voice: number, sample: string) => void;
@@ -39,7 +39,7 @@ export function useVoicePanelButtons({
             onClick={() => onStop(voice, sampleName)}
             style={buttonStyle}
           >
-            <FiSquare />
+            <Stop size={14} />
           </button>
         );
       }
@@ -51,7 +51,7 @@ export function useVoicePanelButtons({
           onClick={() => onPlay(voice, sampleName)}
           style={buttonStyle}
         >
-          <FiPlay />
+          <Play size={14} />
         </button>
       );
     },
@@ -77,7 +77,7 @@ export function useVoicePanelButtons({
         }}
         title="Delete sample"
       >
-        <FiTrash2 />
+        <Trash size={14} />
       </button>
     ),
     [sampleActionsHook],

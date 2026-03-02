@@ -1,5 +1,5 @@
+import { Folder } from "@phosphor-icons/react";
 import React from "react";
-import { FiFolder } from "react-icons/fi";
 
 import { type LocalStoreValidationDetailedResult } from "../../utils/SettingsContext";
 
@@ -43,7 +43,7 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
                 className="px-3 py-2 bg-accent-primary text-white rounded hover:bg-accent-primary/80 transition-colors flex items-center gap-2"
                 onClick={onChangeLocalStore}
               >
-                <FiFolder className="text-sm" />
+                <Folder size={14} />
                 Change...
               </button>
             </div>

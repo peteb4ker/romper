@@ -1,7 +1,7 @@
 import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
 
+import { Link } from "@phosphor-icons/react";
 import React, { useState } from "react";
-import { FiLink } from "react-icons/fi";
 
 import type { SampleData, VoiceSamples } from "./kitTypes";
 
@@ -325,7 +325,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     }}
                     title="Stereo link"
                   >
-                    <FiLink className="w-4 h-4" />
+                    <Link size={16} />
                   </div>
                 )}
               </div>

@@ -1,6 +1,6 @@
+import { Check, PencilSimple, X } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
-import { FiCheck, FiEdit2, FiX } from "react-icons/fi";
 
 export interface UseVoicePanelUIOptions {
   isEditable: boolean;
@@ -46,14 +46,14 @@ export function useVoicePanelUI({
               onClick={voiceNameEditorHook.handleSave}
               title="Save"
             >
-              <FiCheck />
+              <Check size={16} />
             </button>
             <button
               className="ml-1 text-accent-danger"
               onClick={voiceNameEditorHook.handleCancel}
               title="Cancel"
             >
-              <FiX />
+              <X size={16} />
             </button>
           </>
         ) : (
@@ -74,7 +74,7 @@ export function useVoicePanelUI({
                 onClick={voiceNameEditorHook.startEditing}
                 title="Edit voice name"
               >
-                <FiEdit2 />
+                <PencilSimple size={16} />
               </button>
             )}
           </>

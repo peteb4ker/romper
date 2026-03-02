@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
 import {
-  FiAlertTriangle,
-  FiCheckCircle,
-  FiFolder,
-  FiRefreshCw,
-  FiX,
-} from "react-icons/fi";
+  ArrowsClockwise,
+  CheckCircle,
+  Folder,
+  Warning,
+  X,
+} from "@phosphor-icons/react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
 import FilePickerButton from "../utils/FilePickerButton";
@@ -150,7 +150,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
       <div className="bg-surface-2 border border-border-subtle w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <FiFolder className="text-accent-primary" size={24} />
+            <Folder className="text-accent-primary" size={24} />
             Change Local Store Directory
           </h2>
           <button
@@ -158,7 +158,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
             className="text-text-tertiary hover:text-text-primary"
             onClick={handleClose}
           >
-            <FiX size={24} />
+            <X size={24} />
           </button>
         </div>
 
@@ -212,7 +212,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
               <FilePickerButton
                 className="px-4 py-3 bg-accent-primary text-white rounded-lg hover:bg-accent-primary/80 flex items-center gap-2 font-medium whitespace-nowrap"
                 disabled={isValidating || isUpdating}
-                icon={<FiFolder size={18} />}
+                icon={<Folder size={18} />}
                 isSelecting={isSelecting}
                 onClick={handleSelectDirectory}
               >
@@ -223,7 +223,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
             {/* Validation Messages - Only show warnings/errors */}
             {validationResult && selectedPath === localStorePath && (
               <div className="flex items-center gap-2 p-3 rounded-lg border border-accent-warning/30 bg-accent-warning/10">
-                <FiAlertTriangle
+                <Warning
                   className="text-accent-warning flex-shrink-0"
                   size={16}
                 />
@@ -238,7 +238,7 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
               selectedPath !== localStorePath &&
               !validationResult.isValid && (
                 <div className="flex items-center gap-2 p-3 rounded-lg border border-accent-danger/30 bg-accent-danger/10">
-                  <FiAlertTriangle
+                  <Warning
                     className="text-accent-danger flex-shrink-0"
                     size={16}
                   />
@@ -272,9 +272,9 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
             onClick={handleUpdateDirectory}
           >
             {isUpdating ? (
-              <FiRefreshCw className="animate-spin" size={16} />
+              <ArrowsClockwise className="animate-spin" size={16} />
             ) : (
-              <FiCheckCircle size={16} />
+              <CheckCircle size={16} />
             )}
             {isUpdating ? "Updating..." : "Update Directory"}
           </button>

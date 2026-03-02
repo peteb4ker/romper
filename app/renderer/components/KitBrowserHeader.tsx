@@ -1,6 +1,11 @@
+import {
+  CheckCircle,
+  DownloadSimple,
+  GearSix,
+  PencilSimple,
+  Star,
+} from "@phosphor-icons/react";
 import React from "react";
-import { FaStar } from "react-icons/fa";
-import { FiCheckCircle, FiDownload, FiEdit3, FiSettings } from "react-icons/fi";
 
 import { useKitBrowserHeader } from "./hooks/kit-management/useKitBrowserHeader";
 import SearchInput from "./SearchInput";
@@ -45,7 +50,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
               onClick={props.onSyncToSdCard}
               title="Sync modified kits to SD card"
             >
-              <FiDownload className="w-3.5 h-3.5" />
+              <DownloadSimple size={14} />
               Sync to SD Card
             </button>
           )}
@@ -89,7 +94,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
                   : "Show only favorite kits"
               }
             >
-              <FaStar className="w-3 h-3" />
+              <Star size={12} weight="fill" />
               <span>Favorites</span>
               {typeof props.favoritesCount === "number" && (
                 <span
@@ -119,7 +124,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
                   : "Show only modified kits with unsaved changes"
               }
             >
-              <FiEdit3 className="w-3 h-3" />
+              <PencilSimple size={12} />
               <span>Modified</span>
               {typeof props.modifiedCount === "number" && (
                 <span
@@ -143,7 +148,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
             onClick={props.onValidateLocalStore}
             title="Validate local store and database consistency"
           >
-            <FiCheckCircle className="w-3.5 h-3.5" />
+            <CheckCircle size={14} />
             Validate Store
           </button>
           <button
@@ -152,7 +157,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
             onClick={props.onShowSettings}
             title="Configure settings and preferences"
           >
-            <FiSettings className="w-3.5 h-3.5" />
+            <GearSix size={14} />
             Settings
           </button>
         </div>

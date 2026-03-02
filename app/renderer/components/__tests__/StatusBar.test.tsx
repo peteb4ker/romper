@@ -17,12 +17,12 @@ vi.mock("../../utils/SettingsContext", () => ({
   useSettings: () => mockSettings,
 }));
 
-// Mock react-icons
-vi.mock("react-icons/fi", () => ({
-  FiDatabase: () => <div data-testid="database-icon" />,
-  FiMonitor: () => <div data-testid="monitor-icon" />,
-  FiMoon: () => <div data-testid="moon-icon" />,
-  FiSun: () => <div data-testid="sun-icon" />,
+// Mock @phosphor-icons/react
+vi.mock("@phosphor-icons/react", () => ({
+  Database: () => <div data-testid="database-icon" />,
+  Monitor: () => <div data-testid="monitor-icon" />,
+  Moon: () => <div data-testid="moon-icon" />,
+  Sun: () => <div data-testid="sun-icon" />,
 }));
 
 describe("StatusBar", () => {

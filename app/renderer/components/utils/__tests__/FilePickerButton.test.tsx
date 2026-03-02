@@ -1,6 +1,6 @@
+import { Folder } from "@phosphor-icons/react";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { FaFolder } from "react-icons/fa";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import FilePickerButton from "../FilePickerButton";
@@ -62,7 +62,7 @@ describe("FilePickerButton", () => {
     render(
       <FilePickerButton
         data-testid="file-picker-with-icon"
-        icon={<FaFolder data-testid="folder-icon" />}
+        icon={<Folder data-testid="folder-icon" size={16} />}
         isSelecting={false}
         onClick={() => {}}
       >
@@ -77,7 +77,7 @@ describe("FilePickerButton", () => {
     render(
       <FilePickerButton
         data-testid="file-picker-selecting-no-icon"
-        icon={<FaFolder data-testid="folder-icon" />}
+        icon={<Folder data-testid="folder-icon" size={16} />}
         isSelecting={true}
         onClick={() => {}}
       >

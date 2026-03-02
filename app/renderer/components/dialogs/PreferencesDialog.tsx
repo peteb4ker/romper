@@ -1,5 +1,5 @@
+import { GearSix, X } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
-import { FiSettings, FiX } from "react-icons/fi";
 
 import { useSettings } from "../../utils/SettingsContext";
 import AdvancedTab from "../preferences/AdvancedTab";
@@ -82,7 +82,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-subtle">
           <div className="flex items-center gap-2">
-            <FiSettings className="text-lg" />
+            <GearSix size={18} />
             <h2
               className="text-lg font-semibold text-text-primary"
               id="preferences-title"
@@ -95,7 +95,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
             className="p-1 rounded hover:bg-surface-3 text-text-tertiary"
             onClick={onClose}
           >
-            <FiX />
+            <X size={18} />
           </button>
         </div>
 

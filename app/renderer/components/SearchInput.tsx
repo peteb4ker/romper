@@ -1,5 +1,5 @@
+import { CircleNotch, MagnifyingGlass, X } from "@phosphor-icons/react";
 import React, { useEffect, useRef } from "react";
-import { FiLoader, FiSearch, FiX } from "react-icons/fi";
 
 export interface SearchActions {
   onChange: (value: string) => void;
@@ -59,9 +59,10 @@ const SearchInput: React.FC<SearchInputProps> = ({
     <div className={`relative ${className}`}>
       <div className="relative flex items-center">
         {/* Search Icon */}
-        <FiSearch
+        <MagnifyingGlass
           aria-hidden="true"
-          className="absolute left-3 w-4 h-4 text-text-tertiary pointer-events-none z-10"
+          className="absolute left-3 text-text-tertiary pointer-events-none z-10"
+          size={16}
         />
 
         {/* Input Field */}
@@ -86,9 +87,10 @@ const SearchInput: React.FC<SearchInputProps> = ({
         {/* Loading Spinner or Clear Button */}
         <div className="absolute right-3 flex items-center">
           {isSearching ? (
-            <FiLoader
+            <CircleNotch
               aria-label="Searching..."
-              className="w-4 h-4 text-accent-primary animate-spin"
+              className="text-accent-primary animate-spin"
+              size={16}
             />
           ) : value ? (
             <button
@@ -98,7 +100,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
               title="Clear search (Esc)"
               type="button"
             >
-              <FiX className="w-4 h-4" />
+              <X size={16} />
             </button>
           ) : null}
         </div>

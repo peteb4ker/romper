@@ -25,6 +25,7 @@ export function useKitBankNavigation({
   const [focusedKit, setFocusedKit] = useState<null | string>(null);
   const [bankNames, setBankNames] = useState<BankNames>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const isProgrammaticScrollRef = useRef(false);
 
   // Generate bank names from kit data
   useEffect(() => {
@@ -70,9 +71,15 @@ export function useKitBankNavigation({
       const elRect = el.getBoundingClientRect();
       const offset = elRect.top - containerRect.top - headerHeight - 8;
 
+      isProgrammaticScrollRef.current = true;
       scrollContainerRef.current.scrollTo({
         behavior: "auto",
         top: scrollContainerRef.current.scrollTop + offset,
+      });
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          isProgrammaticScrollRef.current = false;
+        });
       });
     },
     [scrollContainerRef],
@@ -136,9 +143,13 @@ export function useKitBankNavigation({
         kitListRef?.current &&
         typeof kitListRef.current.scrollAndFocusKitByIndex === "function"
       ) {
+        isProgrammaticScrollRef.current = true;
         setSelectedBank(bank);
         kitListRef.current.scrollAndFocusKitByIndex(idx);
         setFocusedKit(kits[idx].name);
+        setTimeout(() => {
+          isProgrammaticScrollRef.current = false;
+        }, 500);
       }
       // If no kit in that bank, do not update selectedBank or focusedKit
     },
@@ -147,6 +158,7 @@ export function useKitBankNavigation({
 
   // Handler for visible bank change during scroll
   const handleVisibleBankChange = useCallback((bank: string) => {
+    if (isProgrammaticScrollRef.current) return;
     setSelectedBank(bank);
   }, []);
 

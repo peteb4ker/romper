@@ -389,6 +389,168 @@ describe("useKitBankNavigation", () => {
     });
   });
 
+  describe("programmatic scroll suppression", () => {
+    it("should suppress handleVisibleBankChange during bank click", () => {
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      const mockScrollContainer = {
+        getBoundingClientRect: () => ({ top: 0 }),
+        scrollTo: vi.fn(),
+        scrollTop: 0,
+      };
+      result.current.scrollContainerRef.current = mockScrollContainer;
+
+      act(() => {
+        result.current.handleBankClickWithScroll("B");
+        // Simulate intermediate IntersectionObserver callback
+        result.current.handleVisibleBankChange("A");
+      });
+
+      expect(result.current.selectedBank).toBe("B");
+    });
+
+    it("should suppress handleVisibleBankChange during hotkey navigation", () => {
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      const mockScrollContainer = {
+        getBoundingClientRect: () => ({ top: 0 }),
+        scrollTo: vi.fn(),
+        scrollTop: 0,
+      };
+      result.current.scrollContainerRef.current = mockScrollContainer;
+
+      const mockEvent = {
+        key: "B",
+        preventDefault: vi.fn(),
+        target: { tagName: "DIV" },
+      } as unknown;
+
+      act(() => {
+        result.current.globalBankHotkeyHandler(mockEvent);
+        // Simulate intermediate IntersectionObserver callback
+        result.current.handleVisibleBankChange("A");
+      });
+
+      expect(result.current.selectedBank).toBe("B");
+    });
+
+    it("should suppress handleVisibleBankChange during focusBankInKitList", () => {
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      act(() => {
+        result.current.focusBankInKitList("B");
+        // Simulate intermediate IntersectionObserver callback
+        result.current.handleVisibleBankChange("A");
+      });
+
+      expect(result.current.selectedBank).toBe("B");
+    });
+
+    it("should allow handleVisibleBankChange during manual scroll", () => {
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      act(() => {
+        result.current.handleVisibleBankChange("B");
+      });
+
+      expect(result.current.selectedBank).toBe("B");
+    });
+
+    it("should reset flag after instant scroll via double-rAF", () => {
+      vi.useFakeTimers();
+
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      const mockScrollContainer = {
+        getBoundingClientRect: () => ({ top: 0 }),
+        scrollTo: vi.fn(),
+        scrollTop: 0,
+      };
+      result.current.scrollContainerRef.current = mockScrollContainer;
+
+      act(() => {
+        result.current.handleBankClickWithScroll("B");
+      });
+
+      // Simulate double-rAF completing
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      // handleVisibleBankChange should work again
+      act(() => {
+        result.current.handleVisibleBankChange("A");
+      });
+
+      expect(result.current.selectedBank).toBe("A");
+
+      vi.useRealTimers();
+    });
+
+    it("should reset flag after smooth scroll via 500ms timeout", () => {
+      vi.useFakeTimers();
+
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      act(() => {
+        result.current.focusBankInKitList("B");
+      });
+
+      // Advance past 500ms timeout
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+
+      // handleVisibleBankChange should work again
+      act(() => {
+        result.current.handleVisibleBankChange("A");
+      });
+
+      expect(result.current.selectedBank).toBe("A");
+
+      vi.useRealTimers();
+    });
+
+    it("should resolve to last target on rapid successive clicks", () => {
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      const mockScrollContainer = {
+        getBoundingClientRect: () => ({ top: 0 }),
+        scrollTo: vi.fn(),
+        scrollTop: 0,
+      };
+      result.current.scrollContainerRef.current = mockScrollContainer;
+
+      act(() => {
+        result.current.handleBankClickWithScroll("B");
+        result.current.handleBankClickWithScroll("A");
+      });
+
+      expect(result.current.selectedBank).toBe("A");
+    });
+
+    it("should suppress multiple intermediate header changes", () => {
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      const mockScrollContainer = {
+        getBoundingClientRect: () => ({ top: 0 }),
+        scrollTo: vi.fn(),
+        scrollTop: 0,
+      };
+      result.current.scrollContainerRef.current = mockScrollContainer;
+
+      act(() => {
+        result.current.handleBankClickWithScroll("B");
+        // Simulate 3 intermediate IntersectionObserver callbacks
+        result.current.handleVisibleBankChange("A");
+        result.current.handleVisibleBankChange("C");
+        result.current.handleVisibleBankChange("D");
+      });
+
+      expect(result.current.selectedBank).toBe("B");
+    });
+  });
+
   describe("state setters", () => {
     it("should allow manual state updates", () => {
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));

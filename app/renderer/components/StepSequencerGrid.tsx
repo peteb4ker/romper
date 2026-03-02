@@ -33,10 +33,10 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
 }) => {
   // Voice background colors mapping
   const VOICE_BG_COLORS = {
-    0: "bg-blue-900/60",
-    1: "bg-green-900/60",
-    2: "bg-yellow-900/60",
-    3: "bg-pink-900/60",
+    0: "bg-voice-1/40",
+    1: "bg-voice-2/40",
+    2: "bg-voice-3/40",
+    3: "bg-voice-4/40",
   } as const;
 
   return (
@@ -59,7 +59,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
             style={{ minWidth: 0 }}
           >
             <span
-              className={`flex items-center justify-center w-8 text-center font-bold rounded w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 ${VOICE_BG_COLORS[voiceNumber as keyof typeof VOICE_BG_COLORS] || "bg-gray-900/60"} text-gray-200 border border-gray-900 dark:border-slate-900`}
+              className={`flex items-center justify-center w-8 text-center font-bold rounded w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 ${VOICE_BG_COLORS[voiceNumber as keyof typeof VOICE_BG_COLORS] || "bg-surface-3"} text-text-primary border border-border-strong`}
               data-testid={`seq-voice-label-${voiceNumber}`}
             >
               {voiceNumber + 1}
@@ -74,7 +74,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
               // Per-row color for 'on' steps
               const onColor = isOn
                 ? ROW_COLORS[voiceNumber]
-                : "bg-gray-300 dark:bg-slate-700 border-gray-400 dark:border-slate-600";
+                : "bg-surface-3 border-border-default";
 
               // LED glow for 'on' steps
               const ledGlow = isOn ? LED_GLOWS[voiceNumber] : "";
@@ -82,13 +82,13 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
               // Extract box shadow logic
               const getBoxShadow = () => {
                 if (isPlayhead && isFocused) {
-                  return "0 0 0 2px #fff, 0 0 0 2.5px #3b82f6";
+                  return "0 0 0 2px #fff, 0 0 0 2.5px var(--color-accent-primary)";
                 }
                 if (isPlayhead) {
                   return "0 0 0 2px #fff";
                 }
                 if (isFocused) {
-                  return "0 0 0 2.5px #60a5fa";
+                  return "0 0 0 2.5px var(--color-accent-primary)";
                 }
                 return undefined;
               };

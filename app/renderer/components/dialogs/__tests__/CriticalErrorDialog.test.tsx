@@ -71,10 +71,13 @@ describe("CriticalErrorDialog", () => {
     const dialogContainer = screen
       .getByText("Critical Configuration Error")
       .closest(".rounded-lg");
-    expect(dialogContainer).toHaveClass("border-2", "border-red-500");
+    expect(dialogContainer).toHaveClass("border-2", "border-accent-danger");
 
     const okButton = screen.getByText("OK - Exit Application");
-    expect(okButton).toHaveClass("bg-red-600", "hover:bg-red-700");
+    expect(okButton).toHaveClass(
+      "bg-accent-danger",
+      "hover:bg-accent-danger/80",
+    );
   });
 
   it("should render with custom title and message", () => {
@@ -99,7 +102,7 @@ describe("CriticalErrorDialog", () => {
     expect(okButton).toHaveClass(
       "focus:outline-none",
       "focus:ring-2",
-      "focus:ring-red-500",
+      "focus:ring-accent-danger",
     );
   });
 
@@ -110,6 +113,6 @@ describe("CriticalErrorDialog", () => {
       .getByText("Critical Configuration Error")
       .closest(".fixed");
     expect(backdrop).toHaveClass("z-50");
-    expect(backdrop).toHaveClass("bg-black", "bg-opacity-90"); // More opaque than regular modals
+    expect(backdrop).toHaveClass("bg-black/90"); // More opaque than regular modals
   });
 });

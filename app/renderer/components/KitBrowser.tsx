@@ -211,7 +211,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
 
     return (
       <div
-        className="h-full min-h-0 flex-1 flex flex-col bg-gray-50 dark:bg-slate-800 rounded"
+        className="h-full min-h-0 flex-1 flex flex-col bg-surface-1 rounded"
         ref={scrollContainerRef}
       >
         <KitBrowserHeader
@@ -288,9 +288,9 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         </div>
         {/* Local Store Wizard Modal */}
         {showLocalStoreWizard && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white dark:bg-slate-900 rounded shadow-lg p-6 w-full max-w-lg">
-              <h2 className="text-xl font-bold mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+            <div className="bg-surface-2 rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] border border-border-subtle p-6 w-full max-w-lg">
+              <h2 className="text-xl font-bold mb-4 text-text-primary">
                 Romper Local Store Setup
               </h2>
               <LocalStoreWizardUI {...localStoreWizardProps} />

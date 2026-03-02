@@ -40,7 +40,7 @@ const AppContent = () => {
 
   return (
     <MessageDisplayContext.Provider value={messageDisplay}>
-      <div className="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+      <div className="flex flex-col h-screen bg-surface-0 text-text-primary">
         <MessageDisplay />
         <div className="flex flex-1 min-h-0">
           <main className="flex-1 min-h-0 flex flex-col h-full pb-10">

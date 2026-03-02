@@ -33,7 +33,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
     return <FiMoon size={16} />;
   };
   return (
-    <div className="fixed bottom-0 left-0 w-full flex items-center justify-between px-4 py-2 bg-gray-200 dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 border-t border-gray-300 dark:border-slate-700 z-20">
+    <div className="fixed bottom-0 left-0 w-full flex items-center justify-between px-4 py-1.5 bg-surface-1 text-xs text-text-secondary border-t border-border-subtle z-20">
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1">
           <FiDatabase size={16} /> Local Store:{" "}
@@ -43,11 +43,11 @@ const StatusBar: React.FC<StatusBarProps> = ({
         </span>
         {progress !== null && (
           <div
-            className="ml-4 w-32 h-2 bg-gray-300 dark:bg-slate-700 rounded overflow-hidden"
+            className="ml-4 w-32 h-2 bg-surface-3 rounded overflow-hidden"
             data-testid="progress-bar"
           >
             <div
-              className="h-2 bg-blue-500 dark:bg-blue-400 transition-all"
+              className="h-2 bg-accent-primary transition-all"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </div>
@@ -55,7 +55,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
       </div>
       <div className="flex items-center gap-4">
         <a
-          className="underline hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+          className="underline hover:text-accent-primary transition-colors"
           href="https://squarp.net/rample/manual/"
           rel="noopener noreferrer"
           target="_blank"
@@ -63,7 +63,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
           Rample Manual
         </a>
         <button
-          className="underline hover:text-blue-600 dark:hover:text-blue-300 transition-colors bg-transparent border-none p-0 cursor-pointer"
+          className="underline hover:text-accent-primary transition-colors bg-transparent border-none p-0 cursor-pointer"
           onClick={onAboutClick}
           type="button"
         >
@@ -71,7 +71,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
         </button>
         <button
           aria-label="Toggle theme mode"
-          className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-gray-300 dark:bg-slate-700 hover:bg-gray-400 dark:hover:bg-slate-600 transition"
+          className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-surface-3 hover:bg-surface-4 transition duration-150"
           onClick={() => {
             // Cycle through: light -> dark -> system
             if (themeMode === "light") {

@@ -83,7 +83,7 @@ const renderKitAliasInput = (
 ) => (
   <input
     autoFocus
-    className="border-b border-blue-500 bg-transparent text-base font-semibold text-gray-800 dark:text-gray-100 focus:outline-none px-1 w-48 text-center"
+    className="border-b border-accent-primary bg-transparent text-base font-semibold text-text-primary focus:outline-none px-1 w-48 text-center"
     onBlur={() => {
       setEditingKitAlias(false);
       handleSaveKitAlias(kitAliasInput.trim());
@@ -109,7 +109,7 @@ const renderKitAliasButton = (
   kit: Kit | null,
 ) => (
   <button
-    className="font-semibold text-base text-blue-700 dark:text-blue-300 cursor-pointer hover:underline bg-transparent border-none p-0 text-center"
+    className="font-semibold text-base text-accent-primary cursor-pointer hover:underline bg-transparent border-none p-0 text-center"
     onClick={() => setEditingKitAlias(true)}
     onKeyDown={(e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -118,7 +118,7 @@ const renderKitAliasButton = (
     }}
     title="Edit kit name"
   >
-    {kit?.alias || <span className="italic text-gray-400">(no name)</span>}
+    {kit?.alias || <span className="italic text-text-tertiary">(no name)</span>}
   </button>
 );
 
@@ -163,7 +163,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
       <div className="flex items-center gap-2">
         {onBack && (
           <button
-            className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded hover:bg-gray-400 dark:hover:bg-slate-600"
+            className="px-2 py-1 text-xs bg-surface-3 text-text-primary rounded hover:bg-surface-4 transition duration-150"
             onClick={handleBack}
             title="Back"
           >
@@ -172,7 +172,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         )}
         {onPrevKit && prevButtonState && (
           <button
-            className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded w-16"
+            className="px-2 py-1 text-xs bg-surface-3 text-text-primary rounded w-16 transition duration-150"
             disabled={prevButtonState.isDisabled}
             onClick={onPrevKit}
             style={prevButtonState.style}
@@ -188,7 +188,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         )}
         {onNextKit && nextButtonState && (
           <button
-            className="px-2 py-1 text-xs bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded w-16"
+            className="px-2 py-1 text-xs bg-surface-3 text-text-primary rounded w-16 transition duration-150"
             disabled={nextButtonState.isDisabled}
             onClick={onNextKit}
             style={nextButtonState.style}
@@ -209,12 +209,10 @@ const KitHeader: React.FC<KitHeaderProps> = ({
 
       {/* Center: Kit name */}
       <div className="flex items-center justify-center gap-2 min-w-0 flex-1">
-        <span className="font-sans text-lg font-bold text-gray-900 dark:text-gray-50">
+        <span className="font-mono text-lg font-bold text-text-primary">
           {kitName}
         </span>
-        <span className="text-lg font-bold text-gray-900 dark:text-gray-50">
-          :
-        </span>
+        <span className="text-lg font-bold text-text-primary">:</span>
         <div className="min-w-[8rem] flex justify-center">
           {editingKitAlias
             ? renderKitAliasInput(
@@ -231,10 +229,10 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         {/* Favorite star button */}
         {onToggleFavorite && (
           <button
-            className={`ml-3 p-2 transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 ${
+            className={`ml-3 p-2 transition-colors duration-150 rounded-full hover:bg-surface-3 ${
               kit?.is_favorite
-                ? "text-yellow-500 hover:text-yellow-600"
-                : "text-gray-400 hover:text-yellow-500"
+                ? "text-accent-warning hover:brightness-110"
+                : "text-text-tertiary hover:text-accent-warning"
             }`}
             onClick={() => onToggleFavorite(kitName)}
             title={
@@ -257,18 +255,18 @@ const KitHeader: React.FC<KitHeaderProps> = ({
           <div className="flex items-center gap-2">
             {kit?.modified_since_sync && (
               <div className="flex items-center gap-1 mr-2">
-                <FiCircle className="w-3 h-3 text-yellow-500 fill-current" />
-                <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                <FiCircle className="w-3 h-3 text-accent-warning fill-current" />
+                <span className="text-xs font-medium text-accent-warning">
                   Modified
                 </span>
               </div>
             )}
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-12">
+            <span className="text-xs font-medium text-text-secondary w-12">
               {isEditable ? "Editable" : "Locked"}
             </span>
             <button
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
-                isEditable ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent-sync focus:ring-offset-2 ${
+                isEditable ? "bg-accent-sync" : "bg-surface-3"
               }`}
               onClick={onToggleEditableMode}
               title={`${isEditable ? "Disable" : "Enable"} editable mode`}
@@ -283,16 +281,16 @@ const KitHeader: React.FC<KitHeaderProps> = ({
               </span>
             </button>
             {isEditable ? (
-              <FiEdit3 className="w-4 h-4 text-orange-500" />
+              <FiEdit3 className="w-4 h-4 text-accent-sync" />
             ) : (
-              <FiLock className="w-4 h-4 text-gray-500" />
+              <FiLock className="w-4 h-4 text-text-tertiary" />
             )}
           </div>
         )}
 
         {onScanKit && (
           <button
-            className="ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded shadow hover:bg-green-700 font-semibold flex items-center"
+            className="ml-2 px-2 py-1 text-xs bg-accent-success text-text-inverse rounded shadow hover:brightness-110 font-semibold flex items-center transition duration-150"
             onClick={onScanKit}
             title="Perform comprehensive kit scan (voice names, WAV analysis, artist metadata)"
           >

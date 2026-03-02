@@ -140,10 +140,7 @@ describe("AdvancedTab", () => {
 
       const statusElements = screen.getAllByText("✓ Valid local store");
       expect(statusElements.length).toBeGreaterThanOrEqual(1);
-      expect(statusElements[0]).toHaveClass(
-        "text-green-600",
-        "dark:text-green-400",
-      );
+      expect(statusElements[0]).toHaveClass("text-accent-success");
     });
 
     it("displays invalid status with error message when error is provided", () => {
@@ -157,10 +154,7 @@ describe("AdvancedTab", () => {
 
       const statusElements = screen.getAllByText("✗ Database not found");
       expect(statusElements.length).toBeGreaterThanOrEqual(1);
-      expect(statusElements[0]).toHaveClass(
-        "text-red-600",
-        "dark:text-red-400",
-      );
+      expect(statusElements[0]).toHaveClass("text-accent-danger");
     });
 
     it("displays generic invalid status when no specific error is provided", () => {
@@ -174,10 +168,7 @@ describe("AdvancedTab", () => {
 
       const statusElements = screen.getAllByText("✗ Invalid local store");
       expect(statusElements.length).toBeGreaterThanOrEqual(1);
-      expect(statusElements[0]).toHaveClass(
-        "text-red-600",
-        "dark:text-red-400",
-      );
+      expect(statusElements[0]).toHaveClass("text-accent-danger");
     });
 
     it("displays generic invalid status when localStoreStatus is null", () => {
@@ -191,10 +182,7 @@ describe("AdvancedTab", () => {
 
       const statusElements = screen.getAllByText("✗ Invalid local store");
       expect(statusElements.length).toBeGreaterThanOrEqual(1);
-      expect(statusElements[0]).toHaveClass(
-        "text-red-600",
-        "dark:text-red-400",
-      );
+      expect(statusElements[0]).toHaveClass("text-accent-danger");
     });
 
     it("handles complex error messages correctly", () => {
@@ -280,10 +268,10 @@ describe("AdvancedTab", () => {
       expect(changeButton).toHaveClass(
         "px-3",
         "py-2",
-        "bg-blue-600",
+        "bg-accent-primary",
         "text-white",
         "rounded",
-        "hover:bg-blue-700",
+        "hover:bg-accent-primary/80",
         "transition-colors",
       );
 
@@ -333,12 +321,10 @@ describe("AdvancedTab", () => {
       expect(pathDisplay).toHaveClass(
         "flex-1",
         "p-2",
-        "bg-gray-50",
-        "dark:bg-slate-700",
+        "bg-surface-2",
         "rounded",
         "border",
-        "border-gray-300",
-        "dark:border-gray-600",
+        "border-border-default",
         "font-mono",
         "text-sm",
       );

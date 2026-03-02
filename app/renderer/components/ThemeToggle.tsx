@@ -31,7 +31,7 @@ const ThemeToggle: React.FC = () => {
 
   return (
     <button
-      className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-md shadow hover:bg-gray-300 dark:hover:bg-gray-700 transition"
+      className="px-4 py-2 bg-surface-3 text-text-primary rounded-md shadow hover:bg-surface-4 transition duration-150"
       onClick={toggleDarkMode}
     >
       {getButtonText()}

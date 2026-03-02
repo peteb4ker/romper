@@ -22,12 +22,7 @@ describe("StepSequencerGrid", () => {
       ],
       NUM_STEPS: 16,
       NUM_VOICES: 4,
-      ROW_COLORS: [
-        "bg-red-400",
-        "bg-yellow-400",
-        "bg-green-400",
-        "bg-blue-400",
-      ],
+      ROW_COLORS: ["bg-voice-1", "bg-voice-2", "bg-voice-3", "bg-voice-4"],
       safeStepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
       setFocusedStep: vi.fn(),
       toggleStep: vi.fn(),

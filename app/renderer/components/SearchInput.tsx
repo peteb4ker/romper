@@ -61,18 +61,18 @@ const SearchInput: React.FC<SearchInputProps> = ({
         {/* Search Icon */}
         <FiSearch
           aria-hidden="true"
-          className="absolute left-3 w-4 h-4 text-gray-400 pointer-events-none z-10"
+          className="absolute left-3 w-4 h-4 text-text-tertiary pointer-events-none z-10"
         />
 
         {/* Input Field */}
         <input
           aria-label="Search kits"
           className={`
-            pl-10 pr-10 py-2 text-sm border border-gray-300 dark:border-gray-600 
-            rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-            placeholder-gray-500 dark:placeholder-gray-400
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-            transition-all duration-200
+            pl-10 pr-10 py-2 text-sm border border-border-default
+            rounded-md bg-surface-3 text-text-primary
+            placeholder-text-tertiary
+            focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-accent-primary
+            transition-all duration-150
             ${value ? "w-64" : "w-48 focus:w-64"}
           `}
           onChange={handleInputChange}
@@ -88,12 +88,12 @@ const SearchInput: React.FC<SearchInputProps> = ({
           {isSearching ? (
             <FiLoader
               aria-label="Searching..."
-              className="w-4 h-4 text-gray-400 animate-spin"
+              className="w-4 h-4 text-accent-primary animate-spin"
             />
           ) : value ? (
             <button
               aria-label="Clear search"
-              className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              className="w-4 h-4 text-text-tertiary hover:text-text-primary transition-colors duration-150"
               onClick={onClear}
               title="Clear search (Esc)"
               type="button"

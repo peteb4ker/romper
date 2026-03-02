@@ -69,6 +69,8 @@
     "@electron-forge/maker-squirrel": "^7.8.3",
     "@electron-forge/maker-zip": "^7.8.3",
     "@electron/rebuild": "^4.0.1",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@playwright/mcp": "^0.0.43",
     "@playwright/test": "^1.56.1",
     "@semantic-release/changelog": "^6.0.3",

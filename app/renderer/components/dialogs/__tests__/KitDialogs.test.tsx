@@ -96,7 +96,7 @@ describe("KitDialogs", () => {
       // Check for modal overlay by finding the fixed positioned container
       const modalContainer = document.querySelector(".fixed.inset-0.z-50");
       expect(modalContainer).toBeInTheDocument();
-      expect(modalContainer).toHaveClass("bg-black", "bg-opacity-50");
+      expect(modalContainer).toHaveClass("bg-black/60");
     });
 
     it("renders modal dialog with proper heading", () => {
@@ -128,8 +128,12 @@ describe("KitDialogs", () => {
       );
 
       const errorMessage = screen.getByText("Test error message");
-      expect(errorMessage).toHaveClass("text-sm", "text-red-600");
-      expect(errorMessage).toHaveClass("bg-red-50", "p-3", "rounded-md");
+      expect(errorMessage).toHaveClass("text-sm", "text-accent-danger");
+      expect(errorMessage).toHaveClass(
+        "bg-accent-danger/10",
+        "p-3",
+        "rounded-md",
+      );
     });
 
     it("handles accessibility with proper label association", () => {

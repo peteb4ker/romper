@@ -263,7 +263,7 @@ describe("PreferencesDialog", () => {
 
       // Click inside the dialog content area
       const dialogContent = document.querySelector(
-        ".bg-white.dark\\:bg-slate-800",
+        ".bg-surface-2",
       ) as HTMLElement;
       fireEvent.click(dialogContent);
 

@@ -653,10 +653,10 @@ describe("useKitStepSequencerLogic", () => {
         useKitStepSequencerLogic(getDefaultParams()),
       );
 
-      expect(result.current.ROW_COLORS[0]).toContain("bg-red-500");
-      expect(result.current.ROW_COLORS[1]).toContain("bg-green-500");
-      expect(result.current.ROW_COLORS[2]).toContain("bg-yellow-400");
-      expect(result.current.ROW_COLORS[3]).toContain("bg-purple-500");
+      expect(result.current.ROW_COLORS[0]).toContain("bg-voice-1");
+      expect(result.current.ROW_COLORS[1]).toContain("bg-voice-2");
+      expect(result.current.ROW_COLORS[2]).toContain("bg-voice-3");
+      expect(result.current.ROW_COLORS[3]).toContain("bg-voice-4");
     });
 
     it("should return proper LED glow effects", () => {
@@ -664,10 +664,10 @@ describe("useKitStepSequencerLogic", () => {
         useKitStepSequencerLogic(getDefaultParams()),
       );
 
-      expect(result.current.LED_GLOWS[0]).toContain("rgba(239,68,68,0.7)");
-      expect(result.current.LED_GLOWS[1]).toContain("rgba(34,197,94,0.7)");
-      expect(result.current.LED_GLOWS[2]).toContain("rgba(234,179,8,0.7)");
-      expect(result.current.LED_GLOWS[3]).toContain("rgba(168,85,247,0.7)");
+      expect(result.current.LED_GLOWS[0]).toContain("rgba(224,90,96,0.7)");
+      expect(result.current.LED_GLOWS[1]).toContain("rgba(61,170,120,0.7)");
+      expect(result.current.LED_GLOWS[2]).toContain("rgba(58,159,212,0.7)");
+      expect(result.current.LED_GLOWS[3]).toContain("rgba(232,200,70,0.7)");
     });
   });
 

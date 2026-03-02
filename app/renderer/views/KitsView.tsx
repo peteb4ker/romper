@@ -315,18 +315,18 @@ const KitsView: React.FC = () => {
         isEnvironmentOverride &&
         !hasCriticalEnvironmentError &&
         !isTestEnvironment && (
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 p-3 mb-2">
+          <div className="bg-accent-warning/10 border-l-4 border-accent-warning p-3 mb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <span className="text-yellow-700 text-sm font-medium">
+                <span className="text-accent-warning text-sm font-medium">
                   🧪 Test Mode: Using ROMPER_LOCAL_PATH environment override
                 </span>
-                <span className="ml-2 text-yellow-600 text-xs font-mono">
+                <span className="ml-2 text-accent-warning/70 text-xs font-mono">
                   {localStoreStatus?.localStorePath}
                 </span>
               </div>
               <button
-                className="text-yellow-600 hover:text-yellow-800 text-sm"
+                className="text-accent-warning/70 hover:text-accent-warning text-sm"
                 onClick={() => setShowEnvironmentBanner(false)}
               >
                 Dismiss

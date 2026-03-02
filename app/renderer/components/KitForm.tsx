@@ -26,8 +26,10 @@ const KitForm: React.FC<KitFormProps> = ({
   }, [kit]);
 
   if (loading)
-    return <div className="text-xs text-gray-400">Loading kit metadata...</div>;
-  if (error) return <div className="text-xs text-red-500">{error}</div>;
+    return (
+      <div className="text-xs text-text-tertiary">Loading kit metadata...</div>
+    );
+  if (error) return <div className="text-xs text-accent-danger">{error}</div>;
 
   // Only show tags UI
   return (
@@ -38,12 +40,12 @@ const KitForm: React.FC<KitFormProps> = ({
             <>
               {tags.map((tag, idx) => (
                 <span
-                  className="bg-blue-200 dark:bg-blue-700 text-blue-900 dark:text-blue-100 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"
+                  className="bg-accent-primary/20 text-accent-primary px-2 py-0.5 rounded-full text-xs flex items-center gap-1"
                   key={tag}
                 >
                   {tag}
                   <button
-                    className="ml-1 text-xs text-red-500 hover:text-red-700"
+                    className="ml-1 text-xs text-accent-danger hover:text-accent-danger/80"
                     onClick={() => setTags(tags.filter((_, i) => i !== idx))}
                     title="Remove tag"
                     type="button"
@@ -54,7 +56,7 @@ const KitForm: React.FC<KitFormProps> = ({
               ))}
               <input
                 autoFocus
-                className="border-b border-blue-500 bg-transparent text-xs text-blue-900 dark:text-blue-100 focus:outline-none px-1 w-20"
+                className="border-b border-accent-primary bg-transparent text-xs text-accent-primary focus:outline-none px-1 w-20"
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && tagInput.trim()) {
@@ -69,7 +71,7 @@ const KitForm: React.FC<KitFormProps> = ({
                 value={tagInput}
               />
               <button
-                className="ml-2 px-2 py-0.5 bg-blue-600 text-white rounded text-xs"
+                className="ml-2 px-2 py-0.5 bg-accent-primary text-white rounded text-xs"
                 onClick={() => {
                   setEditingTags(false);
                   onSave(kit?.alias || "", "", tags);
@@ -79,7 +81,7 @@ const KitForm: React.FC<KitFormProps> = ({
                 Save
               </button>
               <button
-                className="ml-1 px-2 py-0.5 bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded text-xs"
+                className="ml-1 px-2 py-0.5 bg-surface-3 text-text-primary rounded text-xs"
                 onClick={() => {
                   setEditingTags(false);
                   setTags([]); // Tags not currently in schema
@@ -95,17 +97,19 @@ const KitForm: React.FC<KitFormProps> = ({
               {tags.length > 0 ? (
                 tags.map((tag) => (
                   <span
-                    className="bg-blue-200 dark:bg-blue-700 text-blue-900 dark:text-blue-100 px-2 py-0.5 rounded-full text-xs"
+                    className="bg-accent-primary/20 text-accent-primary px-2 py-0.5 rounded-full text-xs"
                     key={tag}
                   >
                     {tag}
                   </span>
                 ))
               ) : (
-                <span className="italic text-gray-400 text-xs">No tags</span>
+                <span className="italic text-text-tertiary text-xs">
+                  No tags
+                </span>
               )}
               <button
-                className="ml-2 px-2 py-0.5 bg-blue-600 text-white rounded text-xs"
+                className="ml-2 px-2 py-0.5 bg-accent-primary text-white rounded text-xs"
                 onClick={() => setEditingTags(true)}
                 type="button"
               >

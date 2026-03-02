@@ -27,20 +27,19 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
 
       let buttonClasses: string;
       if (isSelected) {
-        buttonClasses = "bg-blue-800 text-white shadow border border-blue-900";
+        buttonClasses =
+          "bg-accent-primary text-text-inverse shadow border border-accent-primary";
       } else if (enabled) {
-        buttonClasses =
-          "bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-slate-600";
+        buttonClasses = "bg-surface-3 text-text-primary hover:bg-surface-4";
       } else {
-        buttonClasses =
-          "bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-500 cursor-not-allowed";
+        buttonClasses = "bg-surface-1 text-text-tertiary cursor-not-allowed";
       }
 
       return (
         <button
           aria-current={isSelected ? "true" : undefined}
           aria-label={`Jump to bank ${bank}`}
-          className={`px-2 py-1 rounded text-xs font-mono font-bold transition ${buttonClasses}`}
+          className={`px-2 py-1 rounded text-xs font-mono font-bold transition duration-150 ${buttonClasses}`}
           disabled={!enabled}
           key={bank}
           onClick={() => onBankClick(bank)}

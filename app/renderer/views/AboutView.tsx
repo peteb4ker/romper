@@ -36,32 +36,32 @@ const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
     }
   };
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-cyan-900 via-slate-900 to-gray-900 text-gray-100 px-4 py-8 overflow-hidden">
-      <div className="relative z-10 w-full max-w-xl bg-white/10 dark:bg-slate-900/80 rounded-2xl shadow-2xl border border-cyan-800/30 backdrop-blur-md p-8 flex flex-col items-center">
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-surface-0 text-text-primary px-4 py-8 overflow-hidden">
+      <div className="relative z-10 w-full max-w-xl bg-surface-2 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.4)] border border-border-subtle p-8 flex flex-col items-center">
         <button
-          className="absolute left-4 top-4 px-3 py-1 bg-cyan-700/80 text-white rounded-full text-xs font-semibold shadow hover:bg-cyan-600/90 transition z-20"
+          className="absolute left-4 top-4 px-3 py-1 bg-accent-primary text-white rounded-full text-xs font-semibold shadow hover:bg-accent-primary/80 transition z-20"
           onClick={navigateBack}
         >
           ← Back
         </button>
-        <h2 className="text-4xl font-extrabold mb-2 tracking-tight bg-gradient-to-r from-cyan-400 to-amber-300 bg-clip-text text-transparent drop-shadow-lg">
+        <h2 className="text-4xl font-extrabold mb-2 tracking-tight text-accent-primary drop-shadow-lg">
           Romper
         </h2>
-        <p className="text-lg font-semibold mb-6 text-cyan-200 tracking-wide">
+        <p className="text-lg font-semibold mb-6 text-text-secondary tracking-wide">
           Rample SD Card Manager
         </p>
-        <div className="text-base leading-relaxed space-y-3 mb-6 text-center">
+        <div className="text-base leading-relaxed space-y-3 mb-6 text-center text-text-secondary">
           <p>&copy; Pete Baker {currentYear}</p>
           <p className="mb-2">
             This application is{" "}
-            <span className="font-semibold">
+            <span className="font-semibold text-text-primary">
               not affiliated with Squarp SAS
             </span>
           </p>
           <p className="mb-2">
             Licensed under the{" "}
             <a
-              className="underline text-blue-200 hover:text-amber-300 transition"
+              className="underline text-accent-primary hover:text-accent-primary/80 transition"
               href="https://opensource.org/licenses/MIT"
               rel="noopener noreferrer"
               target="_blank"
@@ -70,7 +70,7 @@ const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
             </a>
           </p>
           <button
-            className="inline-flex items-center gap-2 px-4 py-2 mt-2 bg-gradient-to-r from-cyan-600 to-amber-400 text-gray-900 font-bold rounded-full shadow-lg hover:scale-105 hover:from-cyan-400 hover:to-amber-200 transition-transform focus:outline-none focus:ring-2 focus:ring-cyan-400"
+            className="inline-flex items-center gap-2 px-4 py-2 mt-2 bg-accent-primary text-white font-bold rounded-full shadow-lg hover:bg-accent-primary/80 transition focus:outline-none focus:ring-2 focus:ring-accent-primary"
             onClick={() => openExternal("https://github.com/peteb4ker/romper/")}
           >
             <svg
@@ -84,16 +84,17 @@ const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
             github.com/peteb4ker/romper
           </button>
         </div>
-        <hr className="w-full border-gray-300 dark:border-gray-700 mb-4 opacity-30" />
-        <div className="text-sm text-gray-200 text-center space-y-2">
+        <hr className="w-full border-border-subtle mb-4 opacity-30" />
+        <div className="text-sm text-text-secondary text-center space-y-2">
           <p>
             Romper is an{" "}
-            <span className="font-bold text-amber-200">open-source</span>{" "}
+            <span className="font-bold text-accent-warning">open-source</span>{" "}
             Electron app for managing Squarp Rample SD cards.
           </p>
           <p>Feedback, bug reports, and contributions are welcome!</p>
           <p className="mt-2">
-            Version: <span className="font-mono text-cyan-200">{version}</span>
+            Version:{" "}
+            <span className="font-mono text-accent-primary">{version}</span>
           </p>
         </div>
       </div>

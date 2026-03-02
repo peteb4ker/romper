@@ -88,8 +88,8 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...defaultProps} isValid={false} />);
 
       const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveClass("border-l-4", "border-l-red-500");
-      expect(container).toHaveClass("border-red-500");
+      expect(container).toHaveClass("border-l-4", "border-l-accent-danger");
+      expect(container).toHaveClass("border-accent-danger");
     });
 
     it("applies unsaved changes styling when modified_since_sync is true", () => {
@@ -103,7 +103,7 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...props} />);
 
       const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveClass("border-l-4", "border-l-amber-500");
+      expect(container).toHaveClass("border-l-4", "border-l-accent-warning");
     });
 
     it("applies editable kit styling when editable is true", () => {
@@ -117,14 +117,14 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...props} />);
 
       const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveClass("border-l-4", "border-l-green-500");
+      expect(container).toHaveClass("border-l-4", "border-l-accent-success");
     });
 
     it("applies factory kit styling for read-only kits", () => {
       render(<KitGridItem {...defaultProps} />);
 
       const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveClass("border-l-4", "border-l-gray-400");
+      expect(container).toHaveClass("border-l-4", "border-l-border-strong");
     });
   });
 
@@ -133,7 +133,7 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...defaultProps} isSelected={true} />);
 
       const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveClass("ring-2", "ring-blue-400");
+      expect(container).toHaveClass("ring-2", "ring-accent-primary");
       expect(container).toHaveAttribute("aria-selected", "true");
       expect(container).toHaveAttribute("tabindex", "0");
     });
@@ -142,7 +142,7 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...defaultProps} isSelected={false} />);
 
       const container = screen.getByTestId("kit-item-A0");
-      expect(container).not.toHaveClass("ring-2", "ring-blue-400");
+      expect(container).not.toHaveClass("ring-2", "ring-accent-primary");
       expect(container).toHaveAttribute("aria-selected", "false");
       expect(container).toHaveAttribute("tabindex", "-1");
     });
@@ -163,7 +163,7 @@ describe("KitGridItem", () => {
         "High priority kit (favorite, modified, or well-loaded)",
       );
       expect(indicator).toBeInTheDocument();
-      expect(indicator).toHaveClass("bg-orange-500");
+      expect(indicator).toHaveClass("bg-accent-warning");
     });
 
     it("shows high priority indicator for modified kits", () => {
@@ -347,7 +347,7 @@ describe("KitGridItem", () => {
 
       const favoriteButton = screen.getByTitle("Remove from favorites");
       expect(favoriteButton).toBeInTheDocument();
-      expect(favoriteButton).toHaveClass("text-yellow-500");
+      expect(favoriteButton).toHaveClass("text-accent-warning");
     });
 
     it("does not render favorite button when onToggleFavorite is not provided", () => {
@@ -388,7 +388,7 @@ describe("KitGridItem", () => {
       // Should show as favorited (using prop value)
       const favoriteButton = screen.getByTitle("Remove from favorites");
       expect(favoriteButton).toBeInTheDocument();
-      expect(favoriteButton).toHaveClass("text-yellow-500");
+      expect(favoriteButton).toHaveClass("text-accent-warning");
     });
 
     it("falls back to kitData.is_favorite when isFavorite prop is undefined", () => {
@@ -407,7 +407,7 @@ describe("KitGridItem", () => {
       // Should fall back to kitData value
       const favoriteButton = screen.getByTitle("Remove from favorites");
       expect(favoriteButton).toBeInTheDocument();
-      expect(favoriteButton).toHaveClass("text-yellow-500");
+      expect(favoriteButton).toHaveClass("text-accent-warning");
     });
 
     it("uses false as default when both isFavorite prop and kitData.is_favorite are undefined", () => {
@@ -423,7 +423,7 @@ describe("KitGridItem", () => {
       // Should default to not favorited
       const favoriteButton = screen.getByTitle("Add to favorites");
       expect(favoriteButton).toBeInTheDocument();
-      expect(favoriteButton).not.toHaveClass("text-yellow-500");
+      expect(favoriteButton).not.toHaveClass("text-accent-warning");
     });
 
     it("handles explicit false isFavorite prop correctly", () => {
@@ -442,7 +442,7 @@ describe("KitGridItem", () => {
       // Should use prop value (not favorited)
       const favoriteButton = screen.getByTitle("Add to favorites");
       expect(favoriteButton).toBeInTheDocument();
-      expect(favoriteButton).not.toHaveClass("text-yellow-500");
+      expect(favoriteButton).not.toHaveClass("text-accent-warning");
     });
   });
 
@@ -514,7 +514,10 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...props} />);
 
       const voiceWithZero = screen.getByText("Kick 0");
-      expect(voiceWithZero).toHaveClass("bg-rose-200", "text-rose-800");
+      expect(voiceWithZero).toHaveClass(
+        "bg-accent-danger/20",
+        "text-accent-danger",
+      );
     });
 
     it("applies correct styling for full voices (12 samples)", () => {
@@ -525,14 +528,14 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...props} />);
 
       const fullVoice = screen.getByText("Kick 12");
-      expect(fullVoice).toHaveClass("bg-lime-300", "font-bold");
+      expect(fullVoice).toHaveClass("bg-accent-success/30", "font-bold");
     });
 
     it("applies correct styling for partial voices", () => {
       render(<KitGridItem {...defaultProps} />);
 
       const partialVoice = screen.getByText("Snare 3");
-      expect(partialVoice).toHaveClass("bg-teal-300");
+      expect(partialVoice).toHaveClass("bg-accent-primary/20");
     });
 
     it("does not render voice indicators for invalid kits", () => {

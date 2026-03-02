@@ -15,6 +15,6 @@ describe("WizardStepNav", () => {
     expect(screen.getByText("Target")).toBeInTheDocument();
     expect(screen.getByText("Initialize")).toBeInTheDocument();
     // Current step should be highlighted
-    expect(screen.getByText("Target").className).toMatch(/blue/);
+    expect(screen.getByText("Target").className).toMatch(/accent-primary/);
   });
 });

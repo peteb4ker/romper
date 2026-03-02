@@ -273,9 +273,9 @@ describe("SampleManagementTab", () => {
       });
       expect(monoCheckbox).toHaveClass(
         "rounded",
-        "border-gray-300",
-        "text-blue-600",
-        "focus:ring-blue-500",
+        "border-border-default",
+        "text-accent-primary",
+        "focus:ring-accent-primary",
       );
     });
   });

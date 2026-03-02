@@ -59,10 +59,10 @@ const WizardSourceStep: React.FC<WizardSourceStepProps> = ({
           return (
             <button
               aria-pressed={isSelected}
-              className={`flex flex-col items-center border rounded-lg px-4 py-3 flex-1 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`flex flex-col items-center border rounded-lg px-4 py-3 flex-1 transition-colors focus:outline-none focus:ring-2 focus:ring-accent-primary ${
                 isSelected
-                  ? "border-blue-600 bg-blue-50 dark:bg-blue-900"
-                  : "border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  ? "border-accent-primary bg-accent-primary/15"
+                  : "border-border-default bg-surface-1"
               }`}
               data-testid={`wizard-source-${opt.value}`}
               key={opt.value}

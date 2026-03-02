@@ -146,7 +146,7 @@ describe("KitHeader", () => {
       const toggleButton = screen.getByRole("button", {
         name: /enable editable mode/i,
       });
-      expect(toggleButton).toHaveClass("bg-gray-300");
+      expect(toggleButton).toHaveClass("bg-surface-3");
     });
 
     it("shows correct visual state when editable mode is on", () => {
@@ -163,7 +163,7 @@ describe("KitHeader", () => {
       const toggleButton = screen.getByRole("button", {
         name: /disable editable mode/i,
       });
-      expect(toggleButton).toHaveClass("bg-orange-500");
+      expect(toggleButton).toHaveClass("bg-accent-sync");
     });
 
     it("calls onToggleEditableMode when toggle button is clicked", () => {
@@ -250,7 +250,7 @@ describe("KitHeader", () => {
       render(<KitHeader {...baseProps} kit={kit} onToggleFavorite={vi.fn()} />);
 
       const favoriteButton = screen.getByTitle("Add to favorites");
-      expect(favoriteButton).toHaveClass("text-gray-400");
+      expect(favoriteButton).toHaveClass("text-text-tertiary");
       const star = favoriteButton.querySelector("svg");
       expect(star).toHaveClass("opacity-40");
     });
@@ -260,7 +260,7 @@ describe("KitHeader", () => {
       render(<KitHeader {...baseProps} kit={kit} onToggleFavorite={vi.fn()} />);
 
       const favoriteButton = screen.getByTitle("Remove from favorites");
-      expect(favoriteButton).toHaveClass("text-yellow-500");
+      expect(favoriteButton).toHaveClass("text-accent-warning");
       const star = favoriteButton.querySelector("svg");
       expect(star).not.toHaveClass("opacity-40");
     });

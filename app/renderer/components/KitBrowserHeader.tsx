@@ -34,13 +34,13 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
   const { bankNav } = props;
 
   return (
-    <div className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800 pt-2 pr-2 pl-2 pb-0 flex flex-col gap-2 items-stretch justify-between shadow-sm border-b border-gray-200 dark:border-slate-700 mt-0">
+    <div className="sticky top-0 z-10 bg-surface-2 pt-2 pr-2 pl-2 pb-0 flex flex-col gap-2 items-stretch justify-between shadow-sm border-b border-border-subtle mt-0">
       <div className="flex items-center justify-between w-full gap-4">
         {/* Left: Sync and New Kit */}
         <div className="flex items-center gap-2">
           {props.onSyncToSdCard && (
             <button
-              className="px-3 py-2 text-xs bg-orange-600 text-white rounded shadow-sm hover:bg-orange-700 transition-colors font-medium flex items-center gap-1.5"
+              className="px-3 py-2 text-xs bg-accent-sync text-text-inverse rounded shadow-sm hover:brightness-110 transition-colors duration-150 font-medium flex items-center gap-1.5"
               data-testid="sync-to-sd-card"
               onClick={props.onSyncToSdCard}
               title="Sync modified kits to SD card"
@@ -50,7 +50,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
             </button>
           )}
           <button
-            className="px-3 py-2 text-xs bg-blue-600 text-white rounded shadow-sm hover:bg-blue-700 transition-colors font-medium"
+            className="px-3 py-2 text-xs bg-accent-primary text-text-inverse rounded shadow-sm hover:brightness-110 transition-colors duration-150 font-medium"
             onClick={handleShowNewKit}
           >
             + New Kit
@@ -77,10 +77,10 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
         <div className="flex items-center gap-2">
           {props.onToggleFavoritesFilter && (
             <button
-              className={`px-3 py-2 text-xs rounded shadow-sm transition font-medium flex items-center gap-1.5 ${
+              className={`px-3 py-2 text-xs rounded shadow-sm transition duration-150 font-medium flex items-center gap-1.5 ${
                 props.showFavoritesOnly
-                  ? "bg-yellow-500 text-white hover:bg-yellow-600"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                  ? "bg-accent-warning text-text-inverse hover:brightness-110"
+                  : "bg-surface-3 text-text-secondary hover:bg-surface-4"
               }`}
               onClick={props.onToggleFavoritesFilter}
               title={
@@ -95,8 +95,8 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
                 <span
                   className={`px-1.5 py-0.5 text-xs rounded-full font-bold ${
                     props.showFavoritesOnly
-                      ? "bg-yellow-600 text-yellow-100"
-                      : "bg-gray-400 dark:bg-gray-600 text-white"
+                      ? "bg-accent-warning/80 text-text-inverse"
+                      : "bg-surface-4 text-text-secondary"
                   }`}
                 >
                   {props.favoritesCount}
@@ -107,10 +107,10 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
 
           {props.onToggleModifiedFilter && (
             <button
-              className={`px-3 py-2 text-xs rounded shadow-sm transition font-medium flex items-center gap-1.5 ${
+              className={`px-3 py-2 text-xs rounded shadow-sm transition duration-150 font-medium flex items-center gap-1.5 ${
                 props.showModifiedOnly
-                  ? "bg-amber-500 text-white hover:bg-amber-600"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                  ? "bg-accent-warning text-text-inverse hover:brightness-110"
+                  : "bg-surface-3 text-text-secondary hover:bg-surface-4"
               }`}
               onClick={props.onToggleModifiedFilter}
               title={
@@ -125,8 +125,8 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
                 <span
                   className={`px-1.5 py-0.5 text-xs rounded-full font-bold ${
                     props.showModifiedOnly
-                      ? "bg-amber-600 text-amber-100"
-                      : "bg-gray-400 dark:bg-gray-600 text-white"
+                      ? "bg-accent-warning/80 text-text-inverse"
+                      : "bg-surface-4 text-text-secondary"
                   }`}
                 >
                   {props.modifiedCount}
@@ -139,7 +139,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
         {/* Right: System Actions */}
         <div className="flex items-center gap-2">
           <button
-            className="px-3 py-2 text-xs bg-gray-600 text-white rounded shadow-sm hover:bg-gray-700 transition-colors font-medium flex items-center gap-1.5"
+            className="px-3 py-2 text-xs bg-surface-3 text-text-primary rounded shadow-sm hover:bg-surface-4 transition-colors duration-150 font-medium flex items-center gap-1.5"
             onClick={props.onValidateLocalStore}
             title="Validate local store and database consistency"
           >
@@ -148,7 +148,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           </button>
           <button
             aria-label="Settings"
-            className="px-3 py-2 text-xs bg-gray-600 text-white rounded shadow-sm hover:bg-gray-700 transition-colors font-medium flex items-center gap-1.5"
+            className="px-3 py-2 text-xs bg-surface-3 text-text-primary rounded shadow-sm hover:bg-surface-4 transition-colors duration-150 font-medium flex items-center gap-1.5"
             onClick={props.onShowSettings}
             title="Configure settings and preferences"
           >

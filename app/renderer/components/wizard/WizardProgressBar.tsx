@@ -11,22 +11,22 @@ const WizardProgressBar: React.FC<WizardProgressBarProps> = ({ progress }) => {
       <label className="block font-semibold mb-1">
         {progress.phase || "Working..."}
       </label>
-      <div className="relative h-3 w-full rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+      <div className="relative h-3 w-full rounded-full bg-surface-3 overflow-hidden">
         <div
-          className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300"
+          className="absolute left-0 top-0 h-full bg-accent-primary transition-all duration-300"
           data-complete={progress.percent === 100 ? "true" : undefined}
           data-testid="wizard-progress-bar"
           style={{ width: `${progress.percent}%` }}
         />
         <div className="absolute left-0 top-0 h-full w-full flex items-center justify-center">
-          <span className="text-xs font-medium text-blue-900 dark:text-blue-100 drop-shadow-sm">
+          <span className="text-xs font-medium text-text-primary drop-shadow-sm">
             {progress.percent}%
           </span>
         </div>
       </div>
       {progress.file && (
         <div
-          className="text-xs mt-1 text-gray-700 dark:text-gray-300 truncate"
+          className="text-xs mt-1 text-text-secondary truncate"
           data-testid="wizard-progress-file"
         >
           {progress.file}

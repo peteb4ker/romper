@@ -29,13 +29,13 @@ const LocalStoreWizardModal: React.FC<LocalStoreWizardModalProps> = ({
   const handleClose = onCloseApp || onClose;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-2xl w-full mx-4">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="bg-surface-1 rounded-lg p-6 max-w-2xl w-full mx-4">
         <div className="mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          <h2 className="text-xl font-bold text-text-primary">
             Local Store Setup Required
           </h2>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">
+          <p className="text-text-secondary mt-2">
             The local store must be set up before the app can be used. Please
             complete the setup wizard to continue.
           </p>

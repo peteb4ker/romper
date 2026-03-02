@@ -52,13 +52,11 @@ const BankHeader: React.FC<BankHeaderProps> = ({
       id={`bank-${bank}`}
       ref={headerRef}
     >
-      <span className="font-bold text-sm tracking-widest text-blue-700 dark:text-blue-300">
+      <span className="font-bold text-sm tracking-widest text-accent-primary font-mono">
         Bank {bank}
       </span>
       {bankName && (
-        <span className="text-sm text-gray-600 dark:text-gray-300 italic">
-          {bankName}
-        </span>
+        <span className="text-sm text-text-secondary italic">{bankName}</span>
       )}
     </div>
   );
@@ -210,7 +208,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     return (
       <div
         aria-label="Kit grid"
-        className="h-full w-full bg-gray-50 dark:bg-slate-800 rounded pt-2 pb-2 pl-2 pr-2 overflow-y-auto"
+        className="h-full w-full bg-surface-1 rounded pt-2 pb-2 pl-2 pr-2 overflow-y-auto"
         data-testid="kit-grid"
         onKeyDown={handleKeyDown}
         ref={containerRef}

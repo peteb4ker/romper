@@ -33,22 +33,22 @@ const KitDialogs: React.FC<KitDialogsProps> = ({
 }) => (
   <>
     {showNewKit && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+        <div className="bg-surface-2 border border-border-subtle rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] p-6 w-full max-w-md mx-4">
+          <h2 className="text-lg font-semibold mb-4 text-text-primary">
             Create New Kit
           </h2>
           <div className="space-y-4">
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                className="block text-sm font-medium text-text-secondary mb-2"
                 htmlFor="new-kit-slot"
               >
                 Kit Slot (A0-Z99)
               </label>
               <input
                 autoFocus
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-border-default rounded-md shadow-sm bg-surface-3 text-text-primary focus:ring-2 focus:ring-accent-primary focus:border-accent-primary"
                 id="new-kit-slot"
                 maxLength={3}
                 onChange={(e) =>
@@ -59,19 +59,19 @@ const KitDialogs: React.FC<KitDialogsProps> = ({
               />
             </div>
             {newKitError && (
-              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+              <div className="text-sm text-accent-danger bg-accent-danger/10 p-3 rounded-md">
                 {newKitError}
               </div>
             )}
             <div className="flex gap-3 pt-2">
               <button
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors"
+                className="flex-1 px-4 py-2 bg-accent-primary text-white rounded-md hover:bg-accent-primary/80 focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 font-medium transition-colors"
                 onClick={onCreateKit}
               >
                 Create Kit
               </button>
               <button
-                className="flex-1 px-4 py-2 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-400 dark:hover:bg-slate-500 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors"
+                className="flex-1 px-4 py-2 bg-surface-3 text-text-secondary rounded-md hover:bg-surface-4 focus:ring-2 focus:ring-border-default focus:ring-offset-2 font-medium transition-colors"
                 onClick={onCancelNewKit}
               >
                 Cancel
@@ -82,12 +82,12 @@ const KitDialogs: React.FC<KitDialogsProps> = ({
       </div>
     )}
     {showDuplicateKit && (
-      <div className="mb-2 flex flex-col gap-2 bg-slate-200 dark:bg-slate-800 p-2 rounded">
+      <div className="mb-2 flex flex-col gap-2 bg-surface-3 p-2 rounded">
         <label className="text-xs font-semibold">
           Duplicate {duplicateKitSource} to:
           <input
             autoFocus
-            className="ml-2 px-2 py-1 rounded border border-gray-300 dark:border-slate-700 text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100"
+            className="ml-2 px-2 py-1 rounded border border-border-default text-sm bg-surface-2 text-text-primary"
             maxLength={3}
             onChange={(e) =>
               onDuplicateKitDestChange(e.target.value.toUpperCase())
@@ -96,17 +96,17 @@ const KitDialogs: React.FC<KitDialogsProps> = ({
           />
         </label>
         {duplicateKitError && (
-          <div className="text-xs text-red-500">{duplicateKitError}</div>
+          <div className="text-xs text-accent-danger">{duplicateKitError}</div>
         )}
         <div className="flex gap-2">
           <button
-            className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 font-semibold"
+            className="px-2 py-1 text-xs bg-accent-success text-white rounded hover:bg-accent-success/80 font-semibold"
             onClick={onDuplicateKit}
           >
             Duplicate
           </button>
           <button
-            className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500 font-semibold"
+            className="px-2 py-1 text-xs bg-surface-4 text-text-secondary rounded hover:bg-surface-3 font-semibold"
             onClick={onCancelDuplicateKit}
           >
             Cancel

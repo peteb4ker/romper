@@ -47,35 +47,32 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
       return (
         <GiDrumKit
           {...iconProps}
-          className={`${baseClassName} text-yellow-700 dark:text-yellow-300`}
+          className={`${baseClassName} text-accent-warning`}
         />
       );
     case "fx":
       return (
         <MdAutoAwesome
           {...iconProps}
-          className={`${baseClassName} text-indigo-600 dark:text-indigo-300`}
+          className={`${baseClassName} text-voice-3`}
         />
       );
     case "loop":
       return (
         <TiArrowLoop
           {...iconProps}
-          className={`${baseClassName} text-amber-600 dark:text-amber-300`}
+          className={`${baseClassName} text-voice-4`}
         />
       );
     case "mic":
       return (
-        <MdMic
-          {...iconProps}
-          className={`${baseClassName} text-pink-600 dark:text-pink-300`}
-        />
+        <MdMic {...iconProps} className={`${baseClassName} text-voice-1`} />
       );
     case "piano":
       return (
         <BiSolidPiano
           {...iconProps}
-          className={`${baseClassName} text-blue-700 dark:text-blue-300`}
+          className={`${baseClassName} text-accent-primary`}
         />
       );
     default:

@@ -9,10 +9,7 @@ const WizardErrorMessage: React.FC<WizardErrorMessageProps> = ({
 }) => {
   if (!errorMessage) return null;
   return (
-    <div
-      className="mb-2 text-red-600 dark:text-red-400"
-      data-testid="wizard-error"
-    >
+    <div className="mb-2 text-accent-danger" data-testid="wizard-error">
       {errorMessage}
     </div>
   );

@@ -82,7 +82,7 @@ describe("SampleWaveform", () => {
     expect(canvas).toBeInTheDocument();
     expect(canvas).toHaveAttribute("width", "80");
     expect(canvas).toHaveAttribute("height", "18");
-    expect(canvas).toHaveClass("rounded", "bg-slate-100", "dark:bg-slate-800");
+    expect(canvas).toHaveClass("rounded", "bg-surface-3");
   });
 
   it("loads and decodes audio buffer on mount", async () => {

@@ -59,9 +59,9 @@ describe("AppearanceTab", () => {
 
       const buttons = screen.getAllByRole("button");
       // Light is the first button
-      expect(buttons[0]).toHaveClass("border-blue-500", "ring-2");
-      expect(buttons[1]).not.toHaveClass("border-blue-500");
-      expect(buttons[2]).not.toHaveClass("border-blue-500");
+      expect(buttons[0]).toHaveClass("border-accent-primary", "ring-2");
+      expect(buttons[1]).not.toHaveClass("border-accent-primary");
+      expect(buttons[2]).not.toHaveClass("border-accent-primary");
     });
 
     it("highlights the System button when themeMode is system", () => {
@@ -69,9 +69,9 @@ describe("AppearanceTab", () => {
 
       const buttons = screen.getAllByRole("button");
       // System is the second button
-      expect(buttons[0]).not.toHaveClass("border-blue-500");
-      expect(buttons[1]).toHaveClass("border-blue-500", "ring-2");
-      expect(buttons[2]).not.toHaveClass("border-blue-500");
+      expect(buttons[0]).not.toHaveClass("border-accent-primary");
+      expect(buttons[1]).toHaveClass("border-accent-primary", "ring-2");
+      expect(buttons[2]).not.toHaveClass("border-accent-primary");
     });
 
     it("highlights the Dark button when themeMode is dark", () => {
@@ -79,9 +79,9 @@ describe("AppearanceTab", () => {
 
       const buttons = screen.getAllByRole("button");
       // Dark is the third button
-      expect(buttons[0]).not.toHaveClass("border-blue-500");
-      expect(buttons[1]).not.toHaveClass("border-blue-500");
-      expect(buttons[2]).toHaveClass("border-blue-500", "ring-2");
+      expect(buttons[0]).not.toHaveClass("border-accent-primary");
+      expect(buttons[1]).not.toHaveClass("border-accent-primary");
+      expect(buttons[2]).toHaveClass("border-accent-primary", "ring-2");
     });
 
     it("applies selected label styling to the active theme", () => {
@@ -91,9 +91,9 @@ describe("AppearanceTab", () => {
       const systemLabel = screen.getByText("System");
       const darkLabel = screen.getByText("Dark");
 
-      expect(lightLabel).toHaveClass("text-blue-700");
-      expect(systemLabel).not.toHaveClass("text-blue-700");
-      expect(darkLabel).not.toHaveClass("text-blue-700");
+      expect(lightLabel).toHaveClass("text-accent-primary");
+      expect(systemLabel).not.toHaveClass("text-accent-primary");
+      expect(darkLabel).not.toHaveClass("text-accent-primary");
     });
 
     it("applies unselected label styling to inactive themes", () => {
@@ -102,8 +102,8 @@ describe("AppearanceTab", () => {
       const lightLabel = screen.getByText("Light");
       const systemLabel = screen.getByText("System");
 
-      expect(lightLabel).toHaveClass("text-gray-700");
-      expect(systemLabel).toHaveClass("text-gray-700");
+      expect(lightLabel).toHaveClass("text-text-secondary");
+      expect(systemLabel).toHaveClass("text-text-secondary");
     });
   });
 
@@ -185,8 +185,8 @@ describe("AppearanceTab", () => {
 
       const buttons = screen.getAllByRole("button");
       // System and Dark should have unselected styling
-      expect(buttons[1]).toHaveClass("border-gray-200");
-      expect(buttons[2]).toHaveClass("border-gray-200");
+      expect(buttons[1]).toHaveClass("border-border-subtle");
+      expect(buttons[2]).toHaveClass("border-border-subtle");
     });
 
     it("applies transition styling to all buttons", () => {

@@ -10,17 +10,17 @@ export interface FocusedStep {
 
 // UI styling constants for sequencer
 export const ROW_COLORS = [
-  "bg-red-500 border-red-700", // Row 0 (Voice 1)
-  "bg-green-500 border-green-700", // Row 1 (Voice 2)
-  "bg-yellow-400 border-yellow-600", // Row 2 (Voice 3)
-  "bg-purple-500 border-purple-700", // Row 3 (Voice 4)
+  "bg-voice-1 border-voice-1", // Row 0 (Voice 1)
+  "bg-voice-2 border-voice-2", // Row 1 (Voice 2)
+  "bg-voice-3 border-voice-3", // Row 2 (Voice 3)
+  "bg-voice-4 border-voice-4", // Row 3 (Voice 4)
 ];
 
 export const LED_GLOWS = [
-  "shadow-[0_0_12px_3px_rgba(239,68,68,0.7)]", // red
-  "shadow-[0_0_12px_3px_rgba(34,197,94,0.7)]", // green
-  "shadow-[0_0_12px_3px_rgba(234,179,8,0.7)]", // yellow
-  "shadow-[0_0_12px_3px_rgba(168,85,247,0.7)]", // purple
+  "shadow-[0_0_12px_3px_rgba(224,90,96,0.7)]", // voice-1 coral-red
+  "shadow-[0_0_12px_3px_rgba(61,170,120,0.7)]", // voice-2 green
+  "shadow-[0_0_12px_3px_rgba(58,159,212,0.7)]", // voice-3 blue
+  "shadow-[0_0_12px_3px_rgba(232,200,70,0.7)]", // voice-4 golden-yellow
 ];
 
 /**

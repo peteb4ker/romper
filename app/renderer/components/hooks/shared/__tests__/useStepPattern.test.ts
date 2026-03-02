@@ -382,6 +382,73 @@ describe("useStepPattern", () => {
     });
   });
 
+  describe("onSaved callback", () => {
+    it("calls onSaved after successful save", async () => {
+      const onSaved = vi.fn();
+      const { result } = renderHook(() =>
+        useStepPattern({ kitName: "A0", onSaved }),
+      );
+
+      const newPattern = [
+        [1, 1, 1, 1],
+        [0, 0, 0, 0],
+      ];
+
+      await act(async () => {
+        await result.current.setStepPattern(newPattern);
+      });
+
+      expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
+        "A0",
+        newPattern,
+      );
+      expect(onSaved).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not call onSaved when API returns failure", async () => {
+      vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
+        error: "Database error",
+        success: false,
+      });
+
+      const onSaved = vi.fn();
+      const { result } = renderHook(() =>
+        useStepPattern({
+          initialPattern: [[1, 0]],
+          kitName: "A0",
+          onSaved,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.setStepPattern([[0, 1]]);
+      });
+
+      expect(onSaved).not.toHaveBeenCalled();
+    });
+
+    it("does not call onSaved when API throws exception", async () => {
+      vi.mocked(window.electronAPI.updateStepPattern).mockRejectedValue(
+        new Error("Network error"),
+      );
+
+      const onSaved = vi.fn();
+      const { result } = renderHook(() =>
+        useStepPattern({
+          initialPattern: [[1, 0]],
+          kitName: "A0",
+          onSaved,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.setStepPattern([[0, 1]]);
+      });
+
+      expect(onSaved).not.toHaveBeenCalled();
+    });
+  });
+
   describe("hook return interface", () => {
     it("returns correct interface structure", () => {
       const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));

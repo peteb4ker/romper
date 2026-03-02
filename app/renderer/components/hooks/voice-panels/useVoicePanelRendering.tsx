@@ -33,6 +33,7 @@ export interface UseVoicePanelRenderingOptions {
     playing: boolean,
   ) => void;
   playTriggers: { [key: string]: number };
+  playVolumes?: { [key: string]: number };
   sampleActionsHook: {
     handleDeleteSample: (slotNumber: number) => Promise<void>;
     handleSampleContextMenu: (
@@ -103,6 +104,7 @@ export function useVoicePanelRendering({
   onStop,
   onWaveformPlayingChange,
   playTriggers,
+  playVolumes,
   sampleActionsHook,
   sampleMetadata,
   samplePlaying,
@@ -131,6 +133,7 @@ export function useVoicePanelRendering({
     onSampleSelect,
     onWaveformPlayingChange,
     playTriggers,
+    playVolumes,
     renderDeleteButton: buttons.renderDeleteButton,
     renderPlayButton: buttons.renderPlayButton,
     sampleActionsHook,

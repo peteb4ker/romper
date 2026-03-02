@@ -31,7 +31,11 @@ export {
   updateSampleMetadata,
 } from "./sampleCrudOperations.js";
 
-export { updateVoiceAlias } from "./voiceCrudOperations.js";
+export {
+  updateVoiceAlias,
+  updateVoiceSampleMode,
+  updateVoiceVolume,
+} from "./voiceCrudOperations.js";
 
 const { banks } = schema;
 

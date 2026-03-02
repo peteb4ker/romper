@@ -40,13 +40,30 @@ describe("StepSequencerGrid", () => {
     const grid = screen.getByTestId("kit-step-sequencer-grid");
     expect(grid).toBeInTheDocument();
 
-    // Check voice labels instead (since we don't have row test IDs)
+    // Check voice labels
     const voiceLabels = screen.getAllByTestId(/seq-voice-label-\d/);
     expect(voiceLabels).toHaveLength(4);
 
-    // Check the total number of step cells (4 voices × 16 steps)
+    // Check the total number of step cells (4 voices x 16 steps)
     const stepCells = screen.getAllByTestId(/seq-step-\d+-\d+/);
     expect(stepCells).toHaveLength(4 * 16);
+  });
+
+  it("renders 3 beat-group dividers per voice row", () => {
+    render(<StepSequencerGrid {...defaultProps} />);
+
+    // Each voice row should have 3 dividers (between groups)
+    for (let voice = 0; voice < 4; voice++) {
+      for (let group = 1; group <= 3; group++) {
+        expect(
+          screen.getByTestId(`beat-divider-${voice}-${group}`),
+        ).toBeInTheDocument();
+      }
+    }
+
+    // Total of 12 dividers (4 voices x 3 dividers)
+    const allDividers = screen.getAllByTestId(/beat-divider-/);
+    expect(allDividers).toHaveLength(12);
   });
 
   it("highlights the focused step", () => {
@@ -56,12 +73,7 @@ describe("StepSequencerGrid", () => {
       <StepSequencerGrid {...defaultProps} focusedStep={customFocusedStep} />,
     );
 
-    // Check that focus ring is displayed at the correct position
     const focusRing = screen.getByTestId("seq-step-focus-ring");
-    expect(focusRing).toBeInTheDocument();
-
-    // Focus ring is applied to the element at the focused position
-    // rather than having positioned elements, so we just check that it exists
     expect(focusRing).toBeInTheDocument();
   });
 
@@ -74,8 +86,6 @@ describe("StepSequencerGrid", () => {
       />,
     );
 
-    // Just verify the steps at column 3 are rendered - playhead state
-    // is managed internally by the component and may not be reflected in a class
     for (let voice = 0; voice < 4; voice++) {
       const step = screen.getByTestId(`seq-step-${voice}-3`);
       expect(step).toBeInTheDocument();
@@ -85,14 +95,10 @@ describe("StepSequencerGrid", () => {
   it("calls toggleStep when a step is clicked", () => {
     render(<StepSequencerGrid {...defaultProps} />);
 
-    // Click on a specific step
     const stepToClick = screen.getByTestId("seq-step-1-4");
     fireEvent.click(stepToClick);
 
-    // Check that toggleStep was called with correct args
     expect(defaultProps.toggleStep).toHaveBeenCalledWith(1, 4);
-
-    // It should also update the focused step
     expect(defaultProps.setFocusedStep).toHaveBeenCalledWith({
       step: 4,
       voice: 1,
@@ -100,27 +106,17 @@ describe("StepSequencerGrid", () => {
   });
 
   it("shows active steps with LED glow effect", () => {
-    // Create pattern with some active steps
     const activePattern = Array.from({ length: 4 }, () => Array(16).fill(0));
-    activePattern[0][1] = 1; // Voice 0, Step 1 is active
-    activePattern[2][3] = 1; // Voice 2, Step 3 is active
+    activePattern[0][1] = 1;
+    activePattern[2][3] = 1;
 
     render(
       <StepSequencerGrid {...defaultProps} safeStepPattern={activePattern} />,
     );
 
-    // Check active steps have the LED glow class
-    const activeStep1 = screen.getByTestId("seq-step-0-1");
-    const activeStep2 = screen.getByTestId("seq-step-2-3");
-
-    // Just check that the active steps are rendered - we'll trust that the component
-    // applies the appropriate styling internally
-    expect(activeStep1).toBeInTheDocument();
-    expect(activeStep2).toBeInTheDocument();
-
-    // Check inactive step is there too
-    const inactiveStep = screen.getByTestId("seq-step-1-1");
-    expect(inactiveStep).toBeInTheDocument();
+    expect(screen.getByTestId("seq-step-0-1")).toBeInTheDocument();
+    expect(screen.getByTestId("seq-step-2-3")).toBeInTheDocument();
+    expect(screen.getByTestId("seq-step-1-1")).toBeInTheDocument();
   });
 
   it("handles keyboard events through the handleStepGridKeyDown prop", () => {
@@ -130,5 +126,154 @@ describe("StepSequencerGrid", () => {
     fireEvent.keyDown(grid, { key: "ArrowRight" });
 
     expect(defaultProps.handleStepGridKeyDown).toHaveBeenCalled();
+  });
+
+  describe("Per-voice controls", () => {
+    it("renders volume sliders for all 4 voices", () => {
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          voiceVolumes={{ 1: 100, 2: 80, 3: 100, 4: 60 }}
+        />,
+      );
+
+      for (let i = 0; i < 4; i++) {
+        const slider = screen.getByTestId(`voice-volume-${i}`);
+        expect(slider).toBeInTheDocument();
+        expect(slider).toHaveAttribute("type", "range");
+      }
+    });
+
+    it("displays correct volume values in slider title", () => {
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          voiceVolumes={{ 1: 100, 2: 80, 3: 50, 4: 0 }}
+        />,
+      );
+
+      expect(screen.getByTestId("voice-volume-0")).toHaveAttribute(
+        "title",
+        "Volume: 100",
+      );
+      expect(screen.getByTestId("voice-volume-1")).toHaveAttribute(
+        "title",
+        "Volume: 80",
+      );
+      expect(screen.getByTestId("voice-volume-2")).toHaveAttribute(
+        "title",
+        "Volume: 50",
+      );
+      expect(screen.getByTestId("voice-volume-3")).toHaveAttribute(
+        "title",
+        "Volume: 0",
+      );
+    });
+
+    it("calls onVolumeChange when slider is changed", () => {
+      const mockOnVolumeChange = vi.fn();
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          onVolumeChange={mockOnVolumeChange}
+          voiceVolumes={{ 1: 100, 2: 80, 3: 100, 4: 60 }}
+        />,
+      );
+
+      const slider = screen.getByTestId("voice-volume-0");
+      fireEvent.change(slider, { target: { value: "75" } });
+
+      expect(mockOnVolumeChange).toHaveBeenCalledWith(1, 75);
+    });
+
+    it("defaults to volume 100 when no voiceVolumes provided", () => {
+      render(<StepSequencerGrid {...defaultProps} />);
+
+      for (let i = 0; i < 4; i++) {
+        expect(screen.getByTestId(`voice-volume-${i}`)).toHaveAttribute(
+          "title",
+          "Volume: 100",
+        );
+      }
+    });
+
+    it("renders sample mode buttons for all 4 voices", () => {
+      render(<StepSequencerGrid {...defaultProps} />);
+
+      for (let i = 0; i < 4; i++) {
+        const modeButton = screen.getByTestId(`sample-mode-${i}`);
+        expect(modeButton).toBeInTheDocument();
+      }
+    });
+
+    it("displays correct mode labels", () => {
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          sampleModes={{
+            1: "first",
+            2: "random",
+            3: "round-robin",
+            4: "first",
+          }}
+        />,
+      );
+
+      expect(screen.getByTestId("sample-mode-0")).toHaveAttribute(
+        "title",
+        "Sample mode: 1st",
+      );
+      expect(screen.getByTestId("sample-mode-1")).toHaveAttribute(
+        "title",
+        "Sample mode: Rnd",
+      );
+      expect(screen.getByTestId("sample-mode-2")).toHaveAttribute(
+        "title",
+        "Sample mode: R-R",
+      );
+      expect(screen.getByTestId("sample-mode-3")).toHaveAttribute(
+        "title",
+        "Sample mode: 1st",
+      );
+    });
+
+    it("cycles through sample modes on click", () => {
+      const mockOnSampleModeChange = vi.fn();
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          onSampleModeChange={mockOnSampleModeChange}
+          sampleModes={{ 1: "first", 2: "first", 3: "first", 4: "first" }}
+        />,
+      );
+
+      const modeButton = screen.getByTestId("sample-mode-0");
+      fireEvent.click(modeButton);
+
+      // first -> random
+      expect(mockOnSampleModeChange).toHaveBeenCalledWith(1, "random");
+    });
+
+    it("cycles from round-robin back to first", () => {
+      const mockOnSampleModeChange = vi.fn();
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          onSampleModeChange={mockOnSampleModeChange}
+          sampleModes={{
+            1: "round-robin",
+            2: "first",
+            3: "first",
+            4: "first",
+          }}
+        />,
+      );
+
+      const modeButton = screen.getByTestId("sample-mode-0");
+      fireEvent.click(modeButton);
+
+      // round-robin -> first
+      expect(mockOnSampleModeChange).toHaveBeenCalledWith(1, "first");
+    });
   });
 });

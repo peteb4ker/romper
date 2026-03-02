@@ -10,6 +10,7 @@ interface SampleWaveformProps {
   slotNumber: number;
   stopTrigger?: number; // increment to trigger stop externally
   voiceNumber: number;
+  volume?: number; // 0-100, applied via GainNode
 }
 
 const SampleWaveform: React.FC<SampleWaveformProps> = ({
@@ -20,6 +21,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   slotNumber,
   stopTrigger,
   voiceNumber,
+  volume,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
@@ -29,6 +31,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const animationRef = useRef<null | number>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
 
   // Load audio file and decode
   useEffect(() => {
@@ -145,7 +148,16 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     const ctx = audioCtxRef.current;
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
-    source.connect(ctx.destination);
+    // Route through GainNode for volume control
+    if (!gainNodeRef.current) {
+      gainNodeRef.current = ctx.createGain();
+      gainNodeRef.current.connect(ctx.destination);
+    }
+    // Logarithmic volume curve: x^2 approximates perceived loudness
+    const linear = volume != null ? volume / 100 : 1;
+    const gain = linear * linear;
+    gainNodeRef.current.gain.setValueAtTime(gain, ctx.currentTime);
+    source.connect(gainNodeRef.current);
     source.start();
     sourceRef.current = source;
     setIsPlaying(true);

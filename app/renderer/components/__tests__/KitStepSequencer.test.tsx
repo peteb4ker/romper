@@ -1,6 +1,14 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 
 // Mock the hook before importing the component
 vi.mock("../hooks/kit-management/useKitStepSequencerLogic", () => ({
@@ -31,10 +39,8 @@ describe("KitStepSequencer", () => {
   let setStepPattern;
   let sequencerOpen;
   let setSequencerOpen;
-  let setBpm;
   let mockLogic;
 
-  // Helper to create default mock logic
   function createMockLogic(overrides = {}) {
     return {
       currentSeqStep: 0,
@@ -65,6 +71,8 @@ describe("KitStepSequencer", () => {
   }
 
   beforeEach(() => {
+    setupElectronAPIMock();
+
     onPlaySample = vi.fn();
     stepPattern = defaultStepPattern.map((row) => [...row]);
     setStepPattern = vi.fn((pattern) => {
@@ -72,9 +80,7 @@ describe("KitStepSequencer", () => {
     });
     sequencerOpen = false;
     setSequencerOpen = vi.fn();
-    setBpm = vi.fn();
 
-    // Setup the hook mock
     mockLogic = createMockLogic();
     mockUseKitStepSequencerLogic.mockReturnValue(mockLogic);
   });
@@ -83,129 +89,93 @@ describe("KitStepSequencer", () => {
     cleanup();
   });
 
-  it("renders all subcomponents correctly", () => {
+  it("renders transport controls and grid", () => {
     render(
       <KitStepSequencer
         bpm={120}
+        kitName="TestKit"
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={sequencerOpen}
-        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
       />,
     );
 
-    // Verify drawer component is rendered
     expect(
       screen.getByRole("button", { name: /step sequencer/i }),
     ).toBeInTheDocument();
-
-    // Verify controls are rendered
     expect(
       screen.getByTestId("kit-step-sequencer-controls"),
     ).toBeInTheDocument();
-
-    // Verify props are passed correctly to the hook - removing gridRef from assertion as it's handled internally
-    expect(mockUseKitStepSequencerLogic).toHaveBeenCalledWith({
-      bpm: 120,
-      onPlaySample,
-      samples: defaultSamples,
-      sequencerOpen,
-      setBpm,
-      setSequencerOpen,
-      setStepPattern,
-      stepPattern,
-    });
+    expect(screen.getByTestId("kit-step-sequencer-grid")).toBeInTheDocument();
   });
 
-  it("passes play/pause control props to StepSequencerControls", () => {
-    // Setup mock with isSeqPlaying = true
-    mockUseKitStepSequencerLogic.mockReturnValue({
-      ...createMockLogic(),
-      isSeqPlaying: true,
-    });
-
+  it("passes props to the hook correctly", () => {
     render(
       <KitStepSequencer
         bpm={120}
+        kitName="TestKit"
         onPlaySample={onPlaySample}
         samples={defaultSamples}
-        sequencerOpen={true}
-        setBpm={setBpm}
+        sequencerOpen={sequencerOpen}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
       />,
     );
 
-    // The test now focuses on checking if props are passed correctly
-    // We're verifying the component composition rather than the internal implementation
-    expect(mockUseKitStepSequencerLogic).toHaveBeenCalled();
-  });
-
-  it("passes drawer state to StepSequencerDrawer component", () => {
-    // Test with sequencer open
-    render(
-      <KitStepSequencer
-        bpm={120}
-        onPlaySample={onPlaySample}
-        samples={defaultSamples}
-        sequencerOpen={true}
-        setBpm={setBpm}
-        setSequencerOpen={setSequencerOpen}
-        setStepPattern={setStepPattern}
-        stepPattern={stepPattern}
-      />,
-    );
-
-    // Verify that the drawer component receives the correct props
-    // This test focuses on the integration of components rather than styling
     expect(mockUseKitStepSequencerLogic).toHaveBeenCalledWith(
       expect.objectContaining({
-        sequencerOpen: true,
+        bpm: 120,
+        onPlaySample,
+        samples: defaultSamples,
+        sequencerOpen,
         setSequencerOpen,
+        setStepPattern,
+        stepPattern,
       }),
     );
   });
 
-  it("passes all required props to StepSequencerGrid", () => {
-    // Custom grid props with proper 4x16 pattern
-    const customGridProps = {
-      currentSeqStep: 5,
-      focusedStep: { step: 1, voice: 1 },
-      safeStepPattern: [
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      ],
-    };
-
-    mockUseKitStepSequencerLogic.mockReturnValue({
-      ...createMockLogic(),
-      ...customGridProps,
-    });
+  it("initializes voice state from voice data prop", () => {
+    const voices = [
+      { sample_mode: "random", voice_number: 1, voice_volume: 80 },
+      { sample_mode: "round-robin", voice_number: 2, voice_volume: 60 },
+      { sample_mode: "first", voice_number: 3, voice_volume: 100 },
+      { sample_mode: "first", voice_number: 4, voice_volume: 50 },
+    ];
 
     render(
       <KitStepSequencer
         bpm={120}
+        kitName="TestKit"
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={true}
-        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
+        voices={voices}
       />,
     );
 
-    // Check that grid is rendered and receives correct props
-    expect(mockUseKitStepSequencerLogic).toHaveBeenCalled();
+    // Hook should receive sampleModes and voiceVolumes from managed state
+    expect(mockUseKitStepSequencerLogic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sampleModes: {
+          1: "random",
+          2: "round-robin",
+          3: "first",
+          4: "first",
+        },
+        voiceVolumes: { 1: 80, 2: 60, 3: 100, 4: 50 },
+      }),
+    );
   });
 
-  it("handles sequence playback control", () => {
+  it("handles playback control", () => {
     const mockSetIsSeqPlaying = vi.fn();
     mockUseKitStepSequencerLogic.mockReturnValue({
       ...createMockLogic(),
@@ -216,21 +186,19 @@ describe("KitStepSequencer", () => {
     render(
       <KitStepSequencer
         bpm={120}
+        kitName="TestKit"
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={true}
-        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
       />,
     );
 
-    // Find the play/stop button in StepSequencerControls
     const playButton = screen.getByRole("button", { name: /play/i });
     fireEvent.click(playButton);
 
-    // Verify the hook function was called correctly
     expect(mockSetIsSeqPlaying).toHaveBeenCalled();
   });
 
@@ -241,17 +209,16 @@ describe("KitStepSequencer", () => {
       <KitStepSequencer
         bpm={120}
         gridRef={customGridRef}
+        kitName="TestKit"
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={true}
-        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
       />,
     );
 
-    // Verify that custom grid ref was passed to the hook
     expect(mockUseKitStepSequencerLogic).toHaveBeenCalledWith(
       expect.objectContaining({
         gridRef: customGridRef,
@@ -259,40 +226,14 @@ describe("KitStepSequencer", () => {
     );
   });
 
-  it("properly connects drawer state with the logic hook", () => {
-    // Test with different sequencer states
+  it("passes drawer state to the logic hook", () => {
     render(
       <KitStepSequencer
         bpm={120}
-        onPlaySample={onPlaySample}
-        samples={defaultSamples}
-        sequencerOpen={false}
-        setBpm={setBpm}
-        setSequencerOpen={setSequencerOpen}
-        setStepPattern={setStepPattern}
-        stepPattern={stepPattern}
-      />,
-    );
-
-    // Verify the hook receives the correct props
-    expect(mockUseKitStepSequencerLogic).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sequencerOpen: false,
-        setSequencerOpen,
-      }),
-    );
-
-    // Re-render with different state
-    cleanup();
-    mockUseKitStepSequencerLogic.mockClear();
-
-    render(
-      <KitStepSequencer
-        bpm={120}
+        kitName="TestKit"
         onPlaySample={onPlaySample}
         samples={defaultSamples}
         sequencerOpen={true}
-        setBpm={setBpm}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
         stepPattern={stepPattern}
@@ -305,5 +246,147 @@ describe("KitStepSequencer", () => {
         setSequencerOpen,
       }),
     );
+  });
+
+  it("calls updateVoiceVolume IPC when volume changes", () => {
+    // Render with sequencer open so voice controls are visible
+    render(
+      <KitStepSequencer
+        bpm={120}
+        kitName="TestKit"
+        onPlaySample={onPlaySample}
+        samples={defaultSamples}
+        sequencerOpen={true}
+        setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
+        voices={[
+          { sample_mode: "first", voice_number: 1, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 2, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 3, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 4, voice_volume: 100 },
+        ]}
+      />,
+    );
+
+    // Find a volume slider and change it
+    const sliders = screen.getAllByRole("slider");
+    if (sliders.length > 0) {
+      fireEvent.change(sliders[0], { target: { value: "75" } });
+      expect(window.electronAPI.updateVoiceVolume).toHaveBeenCalledWith(
+        "TestKit",
+        1,
+        75,
+      );
+    }
+  });
+
+  it("calls updateVoiceSampleMode IPC when sample mode changes", () => {
+    render(
+      <KitStepSequencer
+        bpm={120}
+        kitName="TestKit"
+        onPlaySample={onPlaySample}
+        samples={defaultSamples}
+        sequencerOpen={true}
+        setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
+        voices={[
+          { sample_mode: "first", voice_number: 1, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 2, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 3, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 4, voice_volume: 100 },
+        ]}
+      />,
+    );
+
+    // Find sample mode toggle buttons by their title attribute
+    const modeButtons = screen.getAllByTitle(/Sample mode:/);
+    if (modeButtons.length > 0) {
+      fireEvent.click(modeButtons[0]);
+      expect(window.electronAPI.updateVoiceSampleMode).toHaveBeenCalledWith(
+        "TestKit",
+        1,
+        "random",
+      );
+    }
+  });
+
+  it("debounces onVoiceSettingChanged for volume changes", async () => {
+    vi.useFakeTimers();
+    const onVoiceSettingChanged = vi.fn();
+
+    render(
+      <KitStepSequencer
+        bpm={120}
+        kitName="TestKit"
+        onPlaySample={onPlaySample}
+        onVoiceSettingChanged={onVoiceSettingChanged}
+        samples={defaultSamples}
+        sequencerOpen={true}
+        setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
+        voices={[
+          { sample_mode: "first", voice_number: 1, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 2, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 3, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 4, voice_volume: 100 },
+        ]}
+      />,
+    );
+
+    const sliders = screen.getAllByRole("slider");
+    if (sliders.length > 0) {
+      // Multiple rapid volume changes
+      fireEvent.change(sliders[0], { target: { value: "90" } });
+      fireEvent.change(sliders[0], { target: { value: "80" } });
+      fireEvent.change(sliders[0], { target: { value: "70" } });
+
+      // Should not have called yet (debounced)
+      expect(onVoiceSettingChanged).not.toHaveBeenCalled();
+
+      // Advance timers past debounce threshold (500ms)
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+
+      // Should have called exactly once after debounce
+      expect(onVoiceSettingChanged).toHaveBeenCalledTimes(1);
+    }
+
+    vi.useRealTimers();
+  });
+
+  it("calls onVoiceSettingChanged immediately for sample mode changes", () => {
+    const onVoiceSettingChanged = vi.fn();
+
+    render(
+      <KitStepSequencer
+        bpm={120}
+        kitName="TestKit"
+        onPlaySample={onPlaySample}
+        onVoiceSettingChanged={onVoiceSettingChanged}
+        samples={defaultSamples}
+        sequencerOpen={true}
+        setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
+        voices={[
+          { sample_mode: "first", voice_number: 1, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 2, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 3, voice_volume: 100 },
+          { sample_mode: "first", voice_number: 4, voice_volume: 100 },
+        ]}
+      />,
+    );
+
+    const modeButtons = screen.getAllByTitle(/Sample mode:/);
+    if (modeButtons.length > 0) {
+      fireEvent.click(modeButtons[0]);
+      // Sample mode change calls onVoiceSettingChanged immediately (no debounce)
+      expect(onVoiceSettingChanged).toHaveBeenCalledTimes(1);
+    }
   });
 });

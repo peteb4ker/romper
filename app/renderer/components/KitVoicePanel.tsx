@@ -60,6 +60,7 @@ interface KitVoicePanelProps {
     playing: boolean,
   ) => void;
   playTriggers: { [key: string]: number };
+  playVolumes?: { [key: string]: number };
   sampleMetadata?: { [filename: string]: SampleData }; // Optional metadata lookup
   samplePlaying: { [key: string]: boolean };
 
@@ -113,6 +114,7 @@ const KitVoicePanel: React.FC<
   onVoiceUnlink,
   onWaveformPlayingChange,
   playTriggers,
+  playVolumes,
   sampleMetadata,
   // onRescanVoiceName, // Legacy - voice rescanning now handled by kit-level scanning
   samplePlaying,
@@ -190,6 +192,7 @@ const KitVoicePanel: React.FC<
     onStop,
     onWaveformPlayingChange,
     playTriggers,
+    playVolumes,
     sampleActionsHook: sampleActions,
     sampleMetadata,
     samplePlaying,

@@ -302,6 +302,16 @@ export interface ElectronAPI {
     voiceNumber: number,
     voiceAlias: string,
   ) => Promise<DbResult>;
+  updateVoiceSampleMode?: (
+    kitName: string,
+    voiceNumber: number,
+    sampleMode: string,
+  ) => Promise<DbResult>;
+  updateVoiceVolume?: (
+    kitName: string,
+    voiceNumber: number,
+    volume: number,
+  ) => Promise<DbResult>;
   validateLocalStore: (
     localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;

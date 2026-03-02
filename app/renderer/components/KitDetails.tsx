@@ -120,6 +120,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
           onStop={logic.playback.handleStop}
           onWaveformPlayingChange={logic.playback.handleWaveformPlayingChange}
           playTriggers={logic.playback.playTriggers}
+          playVolumes={logic.playback.playVolumes}
           samplePlaying={logic.playback.samplePlaying}
           samples={logic.samples}
           selectedSampleIdx={logic.selectedSampleIdx}
@@ -135,11 +136,13 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         gridRef={logic.sequencerGridRef as React.RefObject<HTMLDivElement>}
         kitName={props.kitName}
         onPlaySample={logic.playback.handlePlay}
+        onVoiceSettingChanged={logic.reloadKit}
         samples={logic.samples}
         sequencerOpen={logic.sequencerOpen}
         setSequencerOpen={logic.setSequencerOpen}
         setStepPattern={logic.setStepPattern}
         stepPattern={logic.stepPattern}
+        voices={logic.kit?.voices}
       />
     </div>
   );

@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "bead9248-39a2-4844-8115-921692873005",
-  "prevId": "a8d83451-39d7-4f17-89e6-75fe092b812b",
+  "id": "7feef9d4-4073-4d7e-8c99-ae1426da6073",
+  "prevId": "bead9248-39a2-4844-8115-921692873005",
   "tables": {
     "banks": {
       "name": "banks",
@@ -279,6 +279,14 @@
           "notNull": true,
           "autoincrement": false
         },
+        "sample_mode": {
+          "name": "sample_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'first'"
+        },
         "stereo_mode": {
           "name": "stereo_mode",
           "type": "integer",
@@ -300,6 +308,14 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "voice_volume": {
+          "name": "voice_volume",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 100
         }
       },
       "indexes": {},

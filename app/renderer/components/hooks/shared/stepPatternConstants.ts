@@ -2,6 +2,14 @@
 export const NUM_VOICES = 4;
 export const NUM_STEPS = 16;
 
+// Sample selection modes for voices with multiple samples
+export type SampleMode = "first" | "random" | "round-robin";
+export const SAMPLE_MODE_LABELS: Record<SampleMode, string> = {
+  first: "1st",
+  random: "Rnd",
+  "round-robin": "R-R",
+};
+
 // Shared interface for step focus
 export interface FocusedStep {
   step: number;

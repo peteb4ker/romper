@@ -5,6 +5,7 @@ import { ensureValidStepPattern } from "./stepPatternConstants";
 export interface UseStepPatternParams {
   initialPattern?: null | number[][];
   kitName: string;
+  onSaved?: () => void;
 }
 
 /**
@@ -13,6 +14,7 @@ export interface UseStepPatternParams {
 export function useStepPattern({
   initialPattern,
   kitName,
+  onSaved,
 }: UseStepPatternParams) {
   const [stepPattern, setStepPatternState] = useState<null | number[][]>(null);
 
@@ -36,6 +38,8 @@ export function useStepPattern({
           console.error("Failed to save step pattern:", result.error);
           // Revert UI state on failure
           setStepPatternState(ensureValidStepPattern(initialPattern));
+        } else {
+          onSaved?.();
         }
       } catch (e) {
         console.error("Exception saving step pattern:", e);

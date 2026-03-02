@@ -56,6 +56,40 @@ describe("useKitPlayback", () => {
     expect(result.current.samplePlaying["3:hat.wav"]).toBe(false);
   });
 
+  it("sets playVolumes when volume is provided", () => {
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    act(() => {
+      result.current.handlePlay(1, "kick.wav", 75);
+    });
+    expect(result.current.playVolumes["1:kick.wav"]).toBe(75);
+  });
+
+  it("does not set playVolumes when volume is omitted", () => {
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    act(() => {
+      result.current.handlePlay(1, "kick.wav");
+    });
+    expect(result.current.playVolumes["1:kick.wav"]).toBeUndefined();
+  });
+
+  it("updates playVolumes on subsequent calls with different volumes", () => {
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    act(() => {
+      result.current.handlePlay(1, "kick.wav", 100);
+    });
+    expect(result.current.playVolumes["1:kick.wav"]).toBe(100);
+    act(() => {
+      result.current.handlePlay(1, "kick.wav", 50);
+    });
+    expect(result.current.playVolumes["1:kick.wav"]).toBe(50);
+  });
+
+  it("returns playVolumes in hook interface", () => {
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    expect(result.current).toHaveProperty("playVolumes");
+    expect(result.current.playVolumes).toEqual({});
+  });
+
   it("sets playbackError on error event", () => {
     let errorHandler: unknown;
     vi.mocked(window.electronAPI.onSamplePlaybackError).mockImplementation(

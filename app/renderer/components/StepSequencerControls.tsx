@@ -16,6 +16,10 @@ interface StepSequencerControlsProps {
   setIsSeqPlaying: (playing: boolean) => void;
 }
 
+/**
+ * Transport column: Play/Stop + BPM input.
+ * Rendered as a vertical column to the left of the step grid.
+ */
 const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
   bpmLogic,
   isSeqPlaying,
@@ -32,14 +36,13 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
     const newValue = e.target.value;
     setInputValue(newValue);
 
-    // Update BPM immediately if valid
     const newBpm = parseInt(newValue, 10);
     if (bpmLogic.validateBpm(newBpm)) {
       bpmLogic.setBpm(newBpm);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleBpmKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowUp" || e.key === "ArrowDown") {
       e.preventDefault();
       const currentBpm = bpmLogic.bpm;
@@ -50,14 +53,19 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
       }
     }
   };
+
   return (
     <div
-      className="flex flex-col items-center justify-start pt-2"
+      className="flex flex-col items-center justify-center gap-2 px-3 self-stretch"
       data-testid="kit-step-sequencer-controls"
     >
       <button
         aria-label={isSeqPlaying ? "Stop sequencer" : "Play sequencer"}
-        className="rounded p-2 border border-border-default bg-surface-2 hover:bg-surface-3 focus:outline-none focus:ring-2 focus:ring-accent-primary mb-2"
+        className={`flex items-center justify-center w-10 h-10 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all ${
+          isSeqPlaying
+            ? "bg-voice-1/30 border-voice-1 text-voice-1 shadow-[0_0_10px_rgba(224,90,96,0.4)]"
+            : "bg-surface-2 border-border-default hover:bg-surface-3 text-text-primary"
+        }`}
         data-testid={
           isSeqPlaying ? "stop-step-sequencer" : "play-step-sequencer"
         }
@@ -65,24 +73,25 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
         title={isSeqPlaying ? "Stop sequencer" : "Play sequencer"}
         type="button"
       >
-        {isSeqPlaying ? <Stop size={16} /> : <Play size={16} />}
+        {isSeqPlaying ? (
+          <Stop size={20} weight="fill" />
+        ) : (
+          <Play size={20} weight="fill" />
+        )}
       </button>
 
       <div className="flex flex-col items-center">
-        <div className="flex items-center gap-1">
-          <input
-            className="text-xs text-center w-12 px-1 py-0.5 border border-border-default rounded bg-surface-2 focus:outline-none focus:ring-1 focus:ring-accent-primary"
-            data-testid="bpm-input"
-            max={180}
-            min={30}
-            onChange={handleBpmChange}
-            onKeyDown={handleKeyDown}
-            type="number"
-            value={inputValue}
-          />
-          <span className="text-xs text-text-secondary">BPM</span>
-        </div>
-        <span className="text-xs text-text-tertiary mt-0.5">30-180</span>
+        <input
+          className="text-xs text-center w-12 px-1 py-1 border border-border-default rounded-md bg-surface-2 focus:outline-none focus:ring-1 focus:ring-accent-primary"
+          data-testid="bpm-input"
+          max={180}
+          min={30}
+          onChange={handleBpmChange}
+          onKeyDown={handleBpmKeyDown}
+          type="number"
+          value={inputValue}
+        />
+        <span className="text-[10px] text-text-tertiary mt-0.5">BPM</span>
       </div>
     </div>
   );

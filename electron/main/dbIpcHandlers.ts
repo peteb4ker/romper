@@ -22,6 +22,8 @@ import {
   updateKit,
   updateSampleMetadata,
   updateVoiceAlias,
+  updateVoiceSampleMode,
+  updateVoiceVolume,
 } from "./db/romperDbCoreORM.js";
 import { registerSampleIpcHandlers } from "./db/sampleIpcHandlers.js";
 import { registerSyncIpcHandlers } from "./db/syncIpcHandlers.js";
@@ -120,6 +122,31 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         voiceAlias: string,
       ) => {
         return updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias);
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    "update-voice-volume",
+    createDbHandler(
+      inMemorySettings,
+      (dbDir: string, kitName: string, voiceNumber: number, volume: number) => {
+        return updateVoiceVolume(dbDir, kitName, voiceNumber, volume);
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    "update-voice-sample-mode",
+    createDbHandler(
+      inMemorySettings,
+      (
+        dbDir: string,
+        kitName: string,
+        voiceNumber: number,
+        sampleMode: string,
+      ) => {
+        return updateVoiceSampleMode(dbDir, kitName, voiceNumber, sampleMode);
       },
     ),
   );

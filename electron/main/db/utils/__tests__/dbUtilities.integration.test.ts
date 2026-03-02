@@ -247,34 +247,46 @@ describe("Database Utilities Integration Tests", () => {
           columns.some((c: { name: string }) => c.name === "wav_bit_depth"),
         ).toBe(true);
 
-        // Get the hash for 0009 before we delete it
+        // Get total migration count and find the 0009_purple_zaladane migration
         const migrations = sqlite
           .prepare(
             "SELECT hash, created_at FROM __drizzle_migrations ORDER BY created_at",
           )
           .all() as { created_at: number; hash: string }[];
-        const lastMigration = migrations[migrations.length - 1];
+        const totalMigrations = migrations.length;
 
-        // Delete the last migration record to simulate a DB that had 0008 but not 0009
+        // Compute the hash for 0009_purple_zaladane (the migration the repair function targets)
+        const crypto = require("crypto");
+        const fs = require("fs");
+        const migrationsDir = path.resolve(__dirname, "../../../db/migrations");
+        const migrationSql = fs
+          .readFileSync(path.join(migrationsDir, "0009_purple_zaladane.sql"))
+          .toString();
+        const targetHash = crypto
+          .createHash("sha256")
+          .update(migrationSql)
+          .digest("hex");
+
+        // Delete the 0009_purple_zaladane migration record to simulate a DB that had 0008 but not 0009
         const deleteResult = sqlite
           .prepare("DELETE FROM __drizzle_migrations WHERE hash = ?")
-          .run(lastMigration.hash);
+          .run(targetHash);
         expect(deleteResult.changes).toBe(1);
 
         // Verify it's gone
         const countAfterDelete = sqlite
           .prepare("SELECT COUNT(*) as count FROM __drizzle_migrations")
           .get() as { count: number };
-        expect(countAfterDelete.count).toBe(migrations.length - 1);
+        expect(countAfterDelete.count).toBe(totalMigrations - 1);
 
         // Run repair
         repairMigrationHistory(sqlite);
 
-        // Verify 0009 is re-recorded
+        // Verify 0009_purple_zaladane is re-recorded
         const countAfterRepair = sqlite
           .prepare("SELECT COUNT(*) as count FROM __drizzle_migrations")
           .get() as { count: number };
-        expect(countAfterRepair.count).toBe(migrations.length);
+        expect(countAfterRepair.count).toBe(totalMigrations);
 
         // Verify ensureDatabaseMigrations now succeeds without error
         clearMigrationCache();

@@ -37,11 +37,13 @@ export const voices = sqliteTable("voices", {
   kit_name: text("kit_name")
     .notNull()
     .references(() => kits.name), // FK to kits.name
+  sample_mode: text("sample_mode").notNull().default("first"), // "first" | "random" | "round-robin"
   stereo_mode: integer("stereo_mode", { mode: "boolean" })
     .notNull()
     .default(false), // Voice-level stereo mode: if true, all samples in voice must be stereo
   voice_alias: text("voice_alias"), // Optional user-defined voice name
   voice_number: integer("voice_number").notNull(), // 1-4, explicit voice tracking
+  voice_volume: integer("voice_volume").notNull().default(100), // 0-100 volume level
 });
 
 // Samples table - sample files assigned to voice slots

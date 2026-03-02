@@ -546,6 +546,42 @@ contextBridge.exposeInMainWorld("electronAPI", {
     );
   },
 
+  updateVoiceSampleMode: (
+    kitName: string,
+    voiceNumber: number,
+    sampleMode: string,
+  ) => {
+    isDev &&
+      console.debug(
+        "[IPC] updateVoiceSampleMode invoked",
+        kitName,
+        voiceNumber,
+        sampleMode,
+      );
+    return ipcRenderer.invoke(
+      "update-voice-sample-mode",
+      kitName,
+      voiceNumber,
+      sampleMode,
+    );
+  },
+
+  updateVoiceVolume: (kitName: string, voiceNumber: number, volume: number) => {
+    isDev &&
+      console.debug(
+        "[IPC] updateVoiceVolume invoked",
+        kitName,
+        voiceNumber,
+        volume,
+      );
+    return ipcRenderer.invoke(
+      "update-voice-volume",
+      kitName,
+      voiceNumber,
+      volume,
+    );
+  },
+
   validateLocalStore: (localStorePath?: string) => {
     isDev && console.debug("[IPC] validateLocalStore invoked", localStorePath);
     return ipcRenderer.invoke("validate-local-store", localStorePath);

@@ -44,6 +44,7 @@ interface KitVoicePanelsProps {
     playing: boolean,
   ) => void; // Used by useKitVoicePanels hook
   playTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
+  playVolumes?: { [key: string]: number }; // Volume per sample key, set by sequencer
   samplePlaying: { [key: string]: boolean }; // Used by useKitVoicePanels hook
   samples: VoiceSamples; // Used by useKitVoicePanels hook
   selectedSampleIdx: number; // Used by useKitVoicePanels hook
@@ -79,9 +80,11 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       return [1, 2, 3, 4].map((voice_number) => ({
         id: voice_number,
         kit_name: hookProps.kitName || "",
+        sample_mode: "first",
         stereo_mode: false,
         voice_alias: null,
         voice_number,
+        voice_volume: 100,
       }));
     }
 
@@ -89,9 +92,11 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     return props.kit.voices.map((voice) => ({
       id: voice.id,
       kit_name: voice.kit_name,
+      sample_mode: voice.sample_mode || "first",
       stereo_mode: voice.stereo_mode || false,
       voice_alias: voice.voice_alias,
       voice_number: voice.voice_number,
+      voice_volume: voice.voice_volume ?? 100,
     }));
   }, [props.kit?.voices, hookProps.kitName]);
 
@@ -290,6 +295,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   onVoiceUnlink={handleVoiceUnlink}
                   onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
                   playTriggers={hookProps.playTriggers}
+                  playVolumes={hookProps.playVolumes}
                   sampleMetadata={sampleMetadata}
                   samplePlaying={hookProps.samplePlaying}
                   samples={hookProps.samples[voice] || []}

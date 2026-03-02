@@ -190,7 +190,7 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav");
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
     });
 
     it("should not trigger samples when not playing", () => {
@@ -289,9 +289,163 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav");
-      expect(mockOnPlaySample).toHaveBeenCalledWith(2, "snare.wav");
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(2, "snare.wav", 100);
       expect(mockOnPlaySample).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("Sample Selection Modes", () => {
+    it("should use first sample in 'first' mode (default)", () => {
+      const params = {
+        ...getDefaultParams(),
+        sampleModes: { 1: "first" as const },
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 0 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+    });
+
+    it("should use random sample in 'random' mode", () => {
+      // Mock Math.random to return predictable value
+      const mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(0.9);
+
+      const params = {
+        ...getDefaultParams(),
+        sampleModes: { 1: "random" as const },
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 0 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      // With Math.random() returning 0.9, floor(0.9 * 2) = 1, so second sample
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick2.wav", 100);
+
+      mathRandomSpy.mockRestore();
+    });
+
+    it("should cycle through samples in 'round-robin' mode", () => {
+      const params = {
+        ...getDefaultParams(),
+        sampleModes: { 1: "round-robin" as const },
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      // First trigger — should play kick.wav (index 0)
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 0 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+
+      // Second trigger — should play kick2.wav (index 1)
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 4 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick2.wav", 100);
+
+      // Third trigger — should wrap back to kick.wav (index 0)
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 8 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      expect(mockOnPlaySample).toHaveBeenNthCalledWith(3, 1, "kick.wav", 100);
+    });
+
+    it("should pass custom voiceVolumes to onPlaySample", () => {
+      const params = {
+        ...getDefaultParams(),
+        voiceVolumes: { 1: 75, 2: 50 },
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 0 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      // Voice 1 should be called with volume 75
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 75);
+    });
+
+    it("should use default volume 100 when voiceVolumes not specified for a voice", () => {
+      const params = {
+        ...getDefaultParams(),
+        voiceVolumes: { 1: 60 }, // Only voice 1 has a custom volume
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      // Voice 2 is on step 1
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 1 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      // Voice 2 should use default volume 100
+      expect(mockOnPlaySample).toHaveBeenCalledWith(2, "snare.wav", 100);
+    });
+
+    it("should default to first mode when no sampleModes provided", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic(getDefaultParams()),
+      );
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 0 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      // Should default to first sample
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
     });
   });
 
@@ -741,7 +895,7 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav");
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
 
       // Test step 3 (velocity 1)
       act(() => {
@@ -750,7 +904,7 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav");
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
     });
   });
 });

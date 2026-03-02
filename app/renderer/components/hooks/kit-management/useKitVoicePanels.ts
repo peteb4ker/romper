@@ -13,6 +13,7 @@ export function useKitVoicePanels({
   onStop,
   onWaveformPlayingChange,
   playTriggers,
+  playVolumes,
   samplePlaying,
   samples,
   selectedSampleIdx,
@@ -35,6 +36,7 @@ export function useKitVoicePanels({
     playing: boolean,
   ) => void;
   playTriggers: { [key: string]: number };
+  playVolumes?: { [key: string]: number };
   samplePlaying: { [key: string]: boolean };
   samples: VoiceSamples;
   selectedSampleIdx: number;
@@ -110,6 +112,7 @@ export function useKitVoicePanels({
     onStop,
     onWaveformPlayingChange,
     playTriggers,
+    playVolumes,
     samplePlaying,
     samples,
     selectedSampleIdx,

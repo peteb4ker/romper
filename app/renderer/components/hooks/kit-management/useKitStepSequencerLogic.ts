@@ -7,18 +7,21 @@ import {
   NUM_STEPS,
   NUM_VOICES,
   ROW_COLORS,
+  type SampleMode,
 } from "../shared/stepPatternConstants";
 
 interface UseKitStepSequencerLogicParams {
   bpm?: number;
   gridRef?: React.RefObject<HTMLDivElement>;
   kitName?: string; // Add kit name for secure playback
-  onPlaySample: (voice: number, sample: string) => void;
+  onPlaySample: (voice: number, sample: string, volume?: number) => void;
+  sampleModes?: Record<number, SampleMode>;
   samples: { [voice: number]: string[] };
   sequencerOpen: boolean;
   setSequencerOpen: (open: boolean) => void;
   setStepPattern: (pattern: number[][]) => void;
   stepPattern: null | number[][];
+  voiceVolumes?: Record<number, number>;
 }
 
 /**
@@ -32,10 +35,12 @@ export function useKitStepSequencerLogic(
     bpm = 120,
     gridRef,
     onPlaySample,
+    sampleModes = {},
     samples,
     sequencerOpen,
     setStepPattern,
     stepPattern,
+    voiceVolumes = {},
   } = params;
 
   // Worker management
@@ -140,6 +145,34 @@ export function useKitStepSequencerLogic(
 
   // Sample triggering on step advance
   const lastStepRef = React.useRef<null | number>(null);
+  const roundRobinIndexRef = React.useRef<Record<number, number>>({});
+
+  /**
+   * Select a sample based on the voice's sample mode
+   */
+  const selectSample = React.useCallback(
+    (voiceNumber: number, voiceSamples: string[]): string | undefined => {
+      if (!voiceSamples || voiceSamples.length === 0) return undefined;
+
+      const mode = sampleModes[voiceNumber] || "first";
+
+      switch (mode) {
+        case "random":
+          return voiceSamples[Math.floor(Math.random() * voiceSamples.length)];
+        case "round-robin": {
+          const currentIndex = roundRobinIndexRef.current[voiceNumber] ?? 0;
+          const sample = voiceSamples[currentIndex % voiceSamples.length];
+          roundRobinIndexRef.current[voiceNumber] =
+            (currentIndex + 1) % voiceSamples.length;
+          return sample;
+        }
+        case "first":
+        default:
+          return voiceSamples[0];
+      }
+    },
+    [sampleModes],
+  );
 
   React.useEffect(() => {
     if (!isSeqPlaying || !stepPattern) return;
@@ -152,16 +185,16 @@ export function useKitStepSequencerLogic(
       const voiceNumber = voiceIdx + 1; // Convert 0-based index to 1-based voice number
       const isStepActive = stepPattern[voiceIdx][currentSeqStep] > 0; // Check if velocity > 0
       const voiceSamples = samples[voiceNumber];
-      const sample = voiceSamples?.[0]; // Use first sample from the voice
 
-      // Debug logging to help diagnose issues
       if (isStepActive) {
+        const sample = selectSample(voiceNumber, voiceSamples);
         console.log(
           `[Sequencer] Step ${currentSeqStep} voice ${voiceNumber}: active=${isStepActive}, sample=${sample}, voiceSamples=`,
           voiceSamples,
         );
         if (sample) {
-          onPlaySample(voiceNumber, sample);
+          const vol = voiceVolumes[voiceNumber] ?? 100;
+          onPlaySample(voiceNumber, sample, vol);
         } else {
           console.log(
             `[Sequencer] No sample available for voice ${voiceNumber}`,
@@ -169,7 +202,15 @@ export function useKitStepSequencerLogic(
         }
       }
     }
-  }, [isSeqPlaying, currentSeqStep, stepPattern, samples, onPlaySample]);
+  }, [
+    isSeqPlaying,
+    currentSeqStep,
+    stepPattern,
+    samples,
+    onPlaySample,
+    selectSample,
+    voiceVolumes,
+  ]);
 
   // Step pattern management
   const safeStepPattern = React.useMemo(() => {

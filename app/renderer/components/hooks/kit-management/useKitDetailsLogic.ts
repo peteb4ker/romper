@@ -97,6 +97,7 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   const { setStepPattern, stepPattern } = useStepPattern({
     initialPattern: kit?.step_pattern,
     kitName,
+    onSaved: reloadKit,
   });
 
   // BPM management

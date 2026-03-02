@@ -102,7 +102,6 @@ describe("StepSequencerControls", () => {
     expect(bpmInput).toBeInTheDocument();
     expect(bpmInput).toHaveValue(140);
     expect(screen.getByText("BPM")).toBeInTheDocument();
-    expect(screen.getByText("30-180")).toBeInTheDocument();
   });
 
   it("displays BPM input field with correct attributes", () => {

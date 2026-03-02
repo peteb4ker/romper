@@ -40,11 +40,17 @@ export function useKitPlayback(samples: null | undefined | VoiceSamples) {
     setSamplePlaying(newSamplePlaying);
   }, [samples]);
 
-  const handlePlay = (voice: number, sample: string) => {
+  const [playVolumes, setPlayVolumes] = useState<{ [key: string]: number }>({});
+
+  const handlePlay = (voice: number, sample: string, volume?: number) => {
+    const key = voice + ":" + sample;
     setPlayTriggers((triggers) => ({
       ...triggers,
-      [voice + ":" + sample]: (triggers[voice + ":" + sample] || 0) + 1,
+      [key]: (triggers[key] || 0) + 1,
     }));
+    if (volume != null) {
+      setPlayVolumes((prev) => ({ ...prev, [key]: volume }));
+    }
     setPlaybackError(null);
   };
   const handleStop = (voice: number, sample: string) => {
@@ -90,6 +96,7 @@ export function useKitPlayback(samples: null | undefined | VoiceSamples) {
     handleWaveformPlayingChange,
     playbackError,
     playTriggers,
+    playVolumes,
     samplePlaying,
     stopTriggers,
   };

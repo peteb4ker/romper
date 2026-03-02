@@ -5,7 +5,11 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { createRomperDbFile } from "../../utils/dbUtilities.js";
 import { addKit, getKit } from "../kitCrudOperations.js";
-import { updateVoiceAlias } from "../voiceCrudOperations.js";
+import {
+  updateVoiceAlias,
+  updateVoiceSampleMode,
+  updateVoiceVolume,
+} from "../voiceCrudOperations.js";
 
 describe("Voice CRUD Operations - Integration Tests", () => {
   let tempDir: string;
@@ -76,6 +80,89 @@ describe("Voice CRUD Operations - Integration Tests", () => {
       const otherKit = getKit(dbDir, "OtherKit");
       const voice1 = otherKit.data!.voices!.find((v) => v.voice_number === 1);
       expect(voice1!.voice_alias).toBeNull();
+    });
+  });
+
+  describe("updateVoiceVolume", () => {
+    test("sets voice volume for a specific voice", () => {
+      const result = updateVoiceVolume(dbDir, testKitName, 1, 75);
+      expect(result.success).toBe(true);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
+      expect(voice1!.voice_volume).toBe(75);
+    });
+
+    test("creates voice row if it does not exist (ensureVoiceRow)", () => {
+      // Kit has no voice rows yet — updateVoiceVolume should create one
+      const result = updateVoiceVolume(dbDir, testKitName, 3, 50);
+      expect(result.success).toBe(true);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice3 = kit.data!.voices!.find((v) => v.voice_number === 3);
+      expect(voice3).toBeDefined();
+      expect(voice3!.voice_volume).toBe(50);
+    });
+
+    test("updates volume on existing voice row without creating duplicates", () => {
+      // Create voice row first via alias
+      updateVoiceAlias(dbDir, testKitName, 1, "Kick");
+
+      // Now update volume on the same voice
+      const result = updateVoiceVolume(dbDir, testKitName, 1, 80);
+      expect(result.success).toBe(true);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice1Rows = kit.data!.voices!.filter((v) => v.voice_number === 1);
+      // Should be exactly one row, not a duplicate
+      expect(voice1Rows).toHaveLength(1);
+      expect(voice1Rows[0].voice_volume).toBe(80);
+      expect(voice1Rows[0].voice_alias).toBe("Kick"); // Alias preserved
+    });
+  });
+
+  describe("updateVoiceSampleMode", () => {
+    test("sets sample mode for a specific voice", () => {
+      const result = updateVoiceSampleMode(dbDir, testKitName, 2, "random");
+      expect(result.success).toBe(true);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice2 = kit.data!.voices!.find((v) => v.voice_number === 2);
+      expect(voice2!.sample_mode).toBe("random");
+    });
+
+    test("creates voice row if it does not exist (ensureVoiceRow)", () => {
+      const result = updateVoiceSampleMode(
+        dbDir,
+        testKitName,
+        4,
+        "round-robin",
+      );
+      expect(result.success).toBe(true);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice4 = kit.data!.voices!.find((v) => v.voice_number === 4);
+      expect(voice4).toBeDefined();
+      expect(voice4!.sample_mode).toBe("round-robin");
+    });
+
+    test("updates sample mode on existing voice row", () => {
+      updateVoiceSampleMode(dbDir, testKitName, 1, "random");
+      updateVoiceSampleMode(dbDir, testKitName, 1, "round-robin");
+
+      const kit = getKit(dbDir, testKitName);
+      const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
+      expect(voice1!.sample_mode).toBe("round-robin");
+    });
+
+    test("does not affect other voice settings", () => {
+      updateVoiceVolume(dbDir, testKitName, 1, 60);
+      updateVoiceSampleMode(dbDir, testKitName, 1, "random");
+
+      const kit = getKit(dbDir, testKitName);
+      const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
+      expect(voice1!.voice_volume).toBe(60); // Volume preserved
+      expect(voice1!.sample_mode).toBe("random");
     });
   });
 });

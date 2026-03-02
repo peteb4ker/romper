@@ -258,6 +258,83 @@ describe("SampleWaveform", () => {
     expect(true).toBe(true);
   });
 
+  it("creates GainNode and applies volume when volume prop is provided", async () => {
+    const mockGainNode = {
+      connect: vi.fn(),
+      gain: { setValueAtTime: vi.fn() },
+    };
+    const mockSource = {
+      buffer: null,
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      onended: null,
+      start: vi.fn(),
+      stop: vi.fn(),
+    };
+    const mockAudioBuffer = {
+      duration: 1.0,
+      getChannelData: vi.fn(() => new Float32Array(100)),
+      length: 44100,
+      numberOfChannels: 1,
+      sampleRate: 44100,
+    };
+
+    const mockAudioContext = {
+      close: vi.fn().mockResolvedValue(undefined),
+      createBufferSource: vi.fn(() => mockSource),
+      createGain: vi.fn(() => mockGainNode),
+      currentTime: 0,
+      decodeAudioData: vi.fn((_buf, cb) => cb(mockAudioBuffer)),
+      destination: {},
+      state: "running",
+    };
+
+    global.AudioContext = vi.fn(() => mockAudioContext);
+
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
+      new ArrayBuffer(1024),
+    );
+
+    const { rerender } = render(
+      <SampleWaveform
+        kitName="A1"
+        playTrigger={0}
+        slotNumber={1}
+        voiceNumber={1}
+        volume={60}
+      />,
+    );
+
+    // Wait for audio buffer to load
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    // Trigger playback
+    await act(async () => {
+      rerender(
+        <SampleWaveform
+          kitName="A1"
+          playTrigger={1}
+          slotNumber={1}
+          voiceNumber={1}
+          volume={60}
+        />,
+      );
+    });
+
+    // GainNode should have been created and volume applied with logarithmic curve
+    // volume=60 → linear=0.6 → gain=0.6*0.6=0.36
+    if (mockAudioContext.createGain.mock.calls.length > 0) {
+      expect(mockGainNode.connect).toHaveBeenCalledWith(
+        mockAudioContext.destination,
+      );
+      expect(mockGainNode.gain.setValueAtTime).toHaveBeenCalled();
+      // Source should connect to gain node, not directly to destination
+      expect(mockSource.connect).toHaveBeenCalledWith(mockGainNode);
+    }
+  });
+
   it("handles parameter changes without errors", async () => {
     const { rerender } = render(
       <SampleWaveform

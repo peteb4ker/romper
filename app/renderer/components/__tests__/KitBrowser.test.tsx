@@ -190,10 +190,9 @@ describe("KitBrowser", () => {
           <KitBrowser {...baseProps} />
         </MockMessageDisplayProvider>,
       );
-      // Should see all buttons available
-      expect(screen.getByText("+ New Kit")).toBeTruthy();
-      // Scan All Kits button has been removed from UI
-      expect(screen.getByText("Validate Store")).toBeTruthy();
+      // Should see key header buttons
+      expect(screen.getByText("New Kit")).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Settings" })).toBeTruthy();
       expect(screen.getByTestId("kit-item-A0")).toBeTruthy();
       expect(screen.getByTestId("kit-item-A1")).toBeTruthy();
       expect(screen.getByTestId("kit-item-B0")).toBeTruthy();
@@ -478,42 +477,7 @@ describe("KitBrowser", () => {
     });
   });
 
-  describe("Validation Results", () => {
-    it("should open validation dialog when validate button is clicked", async () => {
-      // Mock validation results for test
-      vi.mocked(window.electronAPI.validateLocalStore).mockResolvedValue({
-        errors: [
-          {
-            extraFiles: [],
-            kitName: "A1",
-            missingFiles: ["kick.wav"],
-          },
-        ],
-        errorSummary: "Found validation errors",
-        isValid: false,
-      });
-
-      render(
-        <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>,
-      );
-
-      // Find and click the validate button
-      const validateButton = screen.getByTitle(
-        "Validate local store and database consistency",
-      );
-      fireEvent.click(validateButton);
-
-      // Wait for dialog to appear
-      await waitFor(() => {
-        expect(
-          screen.getByText("Local Store Validation Results"),
-        ).toBeInTheDocument();
-        expect(window.electronAPI.validateLocalStore).toHaveBeenCalled();
-      });
-    });
-  });
+  // Validate Store button removed from header — accessible via Electron app menu
 
   describe("Error handling", () => {
     it("displays error messages from logic", () => {
@@ -614,7 +578,7 @@ describe("KitBrowser", () => {
         </MockMessageDisplayProvider>,
       );
 
-      const settingsButton = screen.getByText("Settings");
+      const settingsButton = screen.getByRole("button", { name: "Settings" });
       fireEvent.click(settingsButton);
 
       expect(mockOnShowSettings).toHaveBeenCalled();

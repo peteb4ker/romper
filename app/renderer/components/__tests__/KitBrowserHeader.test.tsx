@@ -17,49 +17,56 @@ describe("KitBrowserHeader", () => {
     onShowLocalStoreWizard: vi.fn(),
     onShowNewKit: vi.fn(),
     onShowSettings: vi.fn(),
-    onValidateLocalStore: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("calls onShowNewKit when + New Kit button is clicked", () => {
+  it("calls onShowNewKit when New Kit button is clicked", () => {
     const onShowNewKit = vi.fn();
     render(<KitBrowserHeader {...defaultProps} onShowNewKit={onShowNewKit} />);
-    fireEvent.click(screen.getByText("+ New Kit"));
+    fireEvent.click(screen.getByText("New Kit"));
     expect(onShowNewKit).toHaveBeenCalled();
   });
-
-  // Scan All Kits button has been removed from UI (still available in menu)
-
-  it("calls onValidateLocalStore when Validate Store button is clicked", () => {
-    const onValidateLocalStore = vi.fn();
-    render(
-      <KitBrowserHeader
-        {...defaultProps}
-        onValidateLocalStore={onValidateLocalStore}
-      />,
-    );
-    fireEvent.click(screen.getByText("Validate Store"));
-    expect(onValidateLocalStore).toHaveBeenCalled();
-  });
-
-  // No separate tests for scan options dropdown as it's been removed
-
-  // Next Kit button has been removed from the interface
 
   it("calls onShowSettings when Settings button is clicked", () => {
     const onShowSettings = vi.fn();
     render(
       <KitBrowserHeader {...defaultProps} onShowSettings={onShowSettings} />,
     );
-    fireEvent.click(screen.getByText("Settings"));
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(onShowSettings).toHaveBeenCalled();
   });
 
   it("does not render bank nav in header", () => {
     render(<KitBrowserHeader {...defaultProps} />);
     expect(screen.queryByLabelText("Bank index")).not.toBeInTheDocument();
+  });
+
+  it("renders favorites toggle when handler provided", () => {
+    render(
+      <KitBrowserHeader
+        {...defaultProps}
+        favoritesCount={3}
+        onToggleFavoritesFilter={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Show only favorite kits" }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders modified toggle when handler provided", () => {
+    render(
+      <KitBrowserHeader
+        {...defaultProps}
+        modifiedCount={2}
+        onToggleModifiedFilter={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Show only modified kits" }),
+    ).toBeInTheDocument();
   });
 });

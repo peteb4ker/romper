@@ -195,7 +195,7 @@ describe("SearchInput", () => {
   });
 
   describe("input width behavior", () => {
-    it("should have different widths based on whether there is a value", () => {
+    it("should use full width regardless of value", () => {
       const { rerender } = render(
         <SearchInput actions={mockActions} state={mockState} />,
       );
@@ -203,7 +203,7 @@ describe("SearchInput", () => {
       const input = screen.getByRole("textbox", {
         name: /search kits/i,
       });
-      expect(input).toHaveClass("w-48", "focus:w-64");
+      expect(input).toHaveClass("w-full");
 
       const stateWithValue = { ...mockState, value: "test" };
       rerender(<SearchInput actions={mockActions} state={stateWithValue} />);
@@ -211,8 +211,7 @@ describe("SearchInput", () => {
       const updatedInput = screen.getByRole("textbox", {
         name: /search kits/i,
       });
-      expect(updatedInput).toHaveClass("w-64");
-      expect(updatedInput).not.toHaveClass("focus:w-64");
+      expect(updatedInput).toHaveClass("w-full");
     });
   });
 });

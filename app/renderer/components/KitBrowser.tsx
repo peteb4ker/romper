@@ -141,7 +141,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     const {
       handleCloseValidationDialog,
       handleShowLocalStoreWizard,
-      handleShowValidationDialog,
       localStoreWizardProps,
       showLocalStoreWizard,
       showValidationDialog,
@@ -226,7 +225,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           onSyncToSdCard={handleSyncToSdCard}
           onToggleFavoritesFilter={handleToggleFavoritesFilter}
           onToggleModifiedFilter={handleToggleModifiedFilter}
-          onValidateLocalStore={handleShowValidationDialog}
           // Search props
           searchQuery={props.searchQuery}
           searchResultCount={props.searchResultCount}

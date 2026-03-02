@@ -74,7 +74,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
             placeholder-text-tertiary
             focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-accent-primary
             transition-all duration-150
-            ${value ? "w-64" : "w-48 focus:w-64"}
+            w-full
           `}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}

@@ -13,10 +13,14 @@ const LedPixelGrid: React.FC = React.memo(() => {
       const grid = gridRef.current;
       if (!grid) return null;
       const rect = grid.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
-      const col = (x / rect.width) * LED_COLS;
-      const row = (y / rect.height) * LED_ROWS;
+      // Account for padding (4px) to map within the content area
+      const padding = 4;
+      const x = clientX - rect.left - padding;
+      const y = clientY - rect.top - padding;
+      const contentWidth = rect.width - padding * 2;
+      const contentHeight = rect.height - padding * 2;
+      const col = (x / contentWidth) * LED_COLS;
+      const row = (y / contentHeight) * LED_ROWS;
       return { col, row };
     },
     [],

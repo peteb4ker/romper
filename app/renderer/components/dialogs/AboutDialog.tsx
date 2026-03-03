@@ -81,13 +81,8 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
           {/* Subtitle */}
           <p className="mt-2 text-sm text-white/70">Rample SD Card Manager</p>
 
-          {/* Silkscreen label */}
-          <p className="mt-4 text-[10px] font-mono tracking-[0.2em] text-white/40 uppercase">
-            Rample Waves System
-          </p>
-
           {/* Info section */}
-          <div className="mt-8 space-y-2 text-xs text-white/60">
+          <div className="mt-6 space-y-2 text-xs text-white/60">
             <p>&copy; Pete Baker {currentYear}</p>
             <p>
               This application is{" "}
@@ -137,7 +132,18 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
               Romper is an <span className="font-semibold">open-source</span>{" "}
               Electron app for managing Squarp Rample SD cards.
             </p>
-            <p>Feedback, bug reports, and contributions are welcome.</p>
+            <p>
+              <button
+                className="underline text-white/50 hover:text-white/80 transition-colors pointer-events-auto"
+                onClick={() =>
+                  openExternal("https://github.com/peteb4ker/romper/issues")
+                }
+                type="button"
+              >
+                Feedback, bug reports
+              </button>
+              , and contributions are welcome.
+            </p>
             <p className="font-mono">
               Version: <span className="font-medium">{version}</span>
             </p>

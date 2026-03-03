@@ -116,10 +116,10 @@ describe("AboutDialog", () => {
       expect(screen.getByText("dev")).toBeInTheDocument();
     });
 
-    it("displays the silkscreen label", () => {
+    it("displays feedback link", () => {
       render(<AboutDialog {...defaultProps} />);
 
-      expect(screen.getByText("Rample Waves System")).toBeInTheDocument();
+      expect(screen.getByText("Feedback, bug reports")).toBeInTheDocument();
     });
 
     it("renders the LED pixel grid", () => {
@@ -206,6 +206,21 @@ describe("AboutDialog", () => {
 
       expect(vi.mocked(window.electronAPI.openExternal)).toHaveBeenCalledWith(
         "https://opensource.org/licenses/MIT",
+      );
+    });
+
+    it("opens feedback/issues page when link is clicked", async () => {
+      const user = userEvent.setup();
+
+      render(<AboutDialog {...defaultProps} />);
+
+      const feedbackButton = screen.getByRole("button", {
+        name: /Feedback, bug reports/i,
+      });
+      await user.click(feedbackButton);
+
+      expect(vi.mocked(window.electronAPI.openExternal)).toHaveBeenCalledWith(
+        "https://github.com/peteb4ker/romper/issues",
       );
     });
 

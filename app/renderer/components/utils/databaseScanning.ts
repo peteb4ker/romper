@@ -280,6 +280,53 @@ export function setDatabaseOperations(operations: DatabaseOperations): void {
   dbOps = operations;
 }
 
+// Handle a single valid WAV analysis: find matching sample and update metadata
+async function processSingleWAVAnalysis(
+  analysis: WAVAnalysisOutput,
+  filePath: string,
+  kitName: string,
+  result: DatabaseScanResult,
+): Promise<void> {
+  const samples = await window.electronAPI?.getAllSamplesForKit?.(kitName);
+  if (!samples?.success || !samples.data) {
+    result.errors.push({
+      error: `Could not retrieve samples for kit ${kitName}`,
+      operation: `wav-${filePath}`,
+    });
+    return;
+  }
+
+  const matchingSample = samples.data.find(
+    (sample) => sample.source_path === filePath,
+  );
+  if (!matchingSample) {
+    result.errors.push({
+      error: `Could not find sample record for ${filePath}`,
+      operation: `wav-${filePath}`,
+    });
+    return;
+  }
+
+  const updateResult = await window.electronAPI?.updateSampleMetadata?.(
+    matchingSample.id,
+    {
+      wav_bit_depth: analysis.bitDepth,
+      wav_bitrate: analysis.bitrate,
+      wav_channels: analysis.channels,
+      wav_sample_rate: analysis.sampleRate,
+    },
+  );
+
+  if (!updateResult?.success) {
+    result.errors.push({
+      error: `Failed to update metadata for ${filePath}: ${updateResult?.error}`,
+      operation: `wav-${filePath}`,
+    });
+  } else {
+    result.scannedWavFiles++;
+  }
+}
+
 /**
  * Scan a single kit and store all results in the database
  *
@@ -341,60 +388,19 @@ async function processWAVAnalysisResultsAsync(
     const analysis = wavAnalyses[i];
     const filePath = wavFiles[i];
 
-    if (analysis.isValid) {
-      try {
-        // Find the sample record by matching the file path
-        const samples =
-          await window.electronAPI?.getAllSamplesForKit?.(kitName);
-        if (!samples?.success || !samples.data) {
-          result.errors.push({
-            error: `Could not retrieve samples for kit ${kitName}`,
-            operation: `wav-${filePath}`,
-          });
-          continue;
-        }
-
-        // Find the sample that matches this file path
-        const matchingSample = samples.data.find(
-          (sample) => sample.source_path === filePath,
-        );
-
-        if (!matchingSample) {
-          result.errors.push({
-            error: `Could not find sample record for ${filePath}`,
-            operation: `wav-${filePath}`,
-          });
-          continue;
-        }
-
-        // Update the sample with WAV metadata
-        const updateResult = await window.electronAPI?.updateSampleMetadata?.(
-          matchingSample.id,
-          {
-            wav_bit_depth: analysis.bitDepth,
-            wav_bitrate: analysis.bitrate,
-            wav_channels: analysis.channels,
-            wav_sample_rate: analysis.sampleRate,
-          },
-        );
-
-        if (!updateResult?.success) {
-          result.errors.push({
-            error: `Failed to update metadata for ${filePath}: ${updateResult?.error}`,
-            operation: `wav-${filePath}`,
-          });
-        } else {
-          result.scannedWavFiles++;
-        }
-      } catch (error) {
-        result.errors.push({
-          error: `Error processing ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
-          operation: `wav-${filePath}`,
-        });
-      }
-    } else {
+    if (!analysis.isValid) {
       result.errors.push({
         error: "Invalid WAV format",
+        operation: `wav-${filePath}`,
+      });
+      continue;
+    }
+
+    try {
+      await processSingleWAVAnalysis(analysis, filePath, kitName, result);
+    } catch (error) {
+      result.errors.push({
+        error: `Error processing ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
         operation: `wav-${filePath}`,
       });
     }

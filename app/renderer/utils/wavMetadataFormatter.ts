@@ -36,34 +36,18 @@ export function formatEnhancedTooltip(
   ) {
     const techSpecs: string[] = [];
 
-    // Add sample rate with icon
     if (metadata.wav_sample_rate) {
-      const rate =
-        metadata.wav_sample_rate >= 1000
-          ? `${(metadata.wav_sample_rate / 1000).toFixed(1)}kHz`
-          : `${metadata.wav_sample_rate}Hz`;
-      techSpecs.push(`⚡ ${rate}`);
+      techSpecs.push(`⚡ ${formatSampleRate(metadata.wav_sample_rate)}`);
     }
-
-    // Add bit depth with icon
     if (metadata.wav_bit_depth) {
       techSpecs.push(`🔢 ${metadata.wav_bit_depth}-bit`);
     }
-
-    // Add channels with icon
     if (metadata.wav_channels) {
-      const channels =
-        metadata.wav_channels === 1
-          ? "Mono"
-          : metadata.wav_channels === 2
-            ? "Stereo"
-            : `${metadata.wav_channels}ch`;
-      techSpecs.push(`🎛️ ${channels}`);
+      techSpecs.push(`🎛️ ${formatChannels(metadata.wav_channels)}`);
     }
 
     parts.push(techSpecs.join(" • "));
 
-    // Compatibility status on separate line for emphasis
     const compatibility = getCompatibilityStatus(metadata);
     const display = getCompatibilityDisplay(compatibility);
     const statusText = display.emoji
@@ -113,30 +97,14 @@ export function formatTooltip(
 export function formatWavMetadata(metadata: SampleData): string {
   const parts: string[] = [];
 
-  // Sample rate
   if (metadata.wav_sample_rate) {
-    const sampleRate = metadata.wav_sample_rate;
-    if (sampleRate >= 1000) {
-      parts.push(`${(sampleRate / 1000).toFixed(1)}kHz`);
-    } else {
-      parts.push(`${sampleRate}Hz`);
-    }
+    parts.push(formatSampleRate(metadata.wav_sample_rate));
   }
-
-  // Bit depth
   if (metadata.wav_bit_depth) {
     parts.push(`${metadata.wav_bit_depth}-bit`);
   }
-
-  // Channels
   if (metadata.wav_channels) {
-    if (metadata.wav_channels === 1) {
-      parts.push("Mono");
-    } else if (metadata.wav_channels === 2) {
-      parts.push("Stereo");
-    } else {
-      parts.push(`${metadata.wav_channels}ch`);
-    }
+    parts.push(formatChannels(metadata.wav_channels));
   }
 
   return parts.join(" • ");
@@ -215,4 +183,22 @@ export function getCompatibilityStatus(
   }
 
   return "incompatible";
+}
+
+/**
+ * Format channel count for display
+ */
+function formatChannels(channels: number): string {
+  if (channels === 1) return "Mono";
+  if (channels === 2) return "Stereo";
+  return `${channels}ch`;
+}
+
+/**
+ * Format sample rate value for display
+ */
+function formatSampleRate(sampleRate: number): string {
+  return sampleRate >= 1000
+    ? `${(sampleRate / 1000).toFixed(1)}kHz`
+    : `${sampleRate}Hz`;
 }

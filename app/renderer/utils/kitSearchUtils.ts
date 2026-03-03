@@ -45,35 +45,15 @@ export function checkKitSamples(
   matchDetails: SearchMatchDetails,
   allKitSamples: { [kit: string]: unknown },
 ): void {
-  // Check sample filenames using allKitSamples data
-  const kitSamples = allKitSamples[kit.name];
-  if (kitSamples && typeof kitSamples === "object" && kitSamples !== null) {
-    for (const voiceKey of Object.keys(kitSamples)) {
-      const voiceSamples = (kitSamples as Record<string, unknown>)[voiceKey];
-      if (Array.isArray(voiceSamples)) {
-        for (const sample of voiceSamples) {
-          if (
-            sample?.filename &&
-            sample.filename.toLowerCase().includes(searchTerm)
-          ) {
-            matchDetails.matchedOn.push(`sample:${sample.filename}`);
-            matchDetails.matchedSamples.push(sample.filename);
-          }
-        }
-      }
-    }
-  }
+  const filenames = [
+    ...getSamplesFromAllKitSamples(kit, allKitSamples),
+    ...getSamplesFromKitRelation(kit),
+  ];
 
-  // Also check kit.samples if available (for backward compatibility)
-  if (kit.samples) {
-    for (const sample of kit.samples) {
-      if (
-        sample.filename &&
-        sample.filename.toLowerCase().includes(searchTerm)
-      ) {
-        matchDetails.matchedOn.push(`sample:${sample.filename}`);
-        matchDetails.matchedSamples.push(sample.filename);
-      }
+  for (const filename of filenames) {
+    if (filename.toLowerCase().includes(searchTerm)) {
+      matchDetails.matchedOn.push(`sample:${filename}`);
+      matchDetails.matchedSamples.push(filename);
     }
   }
 }
@@ -136,4 +116,35 @@ export function filterKitsWithSearch(
 
   // Sort by kit name for consistent ordering
   return results.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Extract sample filenames from allKitSamples object structure
+ */
+function getSamplesFromAllKitSamples(
+  kit: KitWithRelations,
+  allKitSamples: { [kit: string]: unknown },
+): string[] {
+  const kitSamples = allKitSamples[kit.name];
+  if (!kitSamples || typeof kitSamples !== "object") return [];
+
+  const filenames: string[] = [];
+  for (const voiceKey of Object.keys(kitSamples)) {
+    const voiceSamples = (kitSamples as Record<string, unknown>)[voiceKey];
+    if (!Array.isArray(voiceSamples)) continue;
+    for (const sample of voiceSamples) {
+      if (sample?.filename) filenames.push(sample.filename);
+    }
+  }
+  return filenames;
+}
+
+/**
+ * Extract sample filenames from kit.samples relation
+ */
+function getSamplesFromKitRelation(kit: KitWithRelations): string[] {
+  if (!kit.samples) return [];
+  return kit.samples
+    .map((sample) => sample.filename)
+    .filter((f): f is string => !!f);
 }

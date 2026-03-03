@@ -47,9 +47,15 @@ const LedPixelGrid: React.FC = React.memo(() => {
       className="absolute inset-0"
       data-testid="led-pixel-grid"
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          addRipple(LED_COLS / 2, LED_ROWS / 2);
+        }
+      }}
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
       ref={gridRef}
+      role="presentation"
       style={{
         display: "grid",
         gap: "2px",

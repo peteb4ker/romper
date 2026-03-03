@@ -31,9 +31,9 @@ describe("stepPatternConstants", () => {
     it("should have LED_GLOWS with correct length", () => {
       expect(LED_GLOWS).toHaveLength(NUM_VOICES);
       expect(LED_GLOWS[0]).toBe("shadow-[0_0_12px_3px_rgba(224,90,96,0.7)]");
-      expect(LED_GLOWS[1]).toBe("shadow-[0_0_12px_3px_rgba(61,170,120,0.7)]");
-      expect(LED_GLOWS[2]).toBe("shadow-[0_0_12px_3px_rgba(58,159,212,0.7)]");
-      expect(LED_GLOWS[3]).toBe("shadow-[0_0_12px_3px_rgba(232,200,70,0.7)]");
+      expect(LED_GLOWS[1]).toBe("shadow-[0_0_12px_3px_rgba(232,200,70,0.7)]");
+      expect(LED_GLOWS[2]).toBe("shadow-[0_0_12px_3px_rgba(61,170,120,0.7)]");
+      expect(LED_GLOWS[3]).toBe("shadow-[0_0_12px_3px_rgba(58,159,212,0.7)]");
     });
   });
 

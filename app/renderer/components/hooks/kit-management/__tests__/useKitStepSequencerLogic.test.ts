@@ -819,9 +819,9 @@ describe("useKitStepSequencerLogic", () => {
       );
 
       expect(result.current.LED_GLOWS[0]).toContain("rgba(224,90,96,0.7)");
-      expect(result.current.LED_GLOWS[1]).toContain("rgba(61,170,120,0.7)");
-      expect(result.current.LED_GLOWS[2]).toContain("rgba(58,159,212,0.7)");
-      expect(result.current.LED_GLOWS[3]).toContain("rgba(232,200,70,0.7)");
+      expect(result.current.LED_GLOWS[1]).toContain("rgba(232,200,70,0.7)");
+      expect(result.current.LED_GLOWS[2]).toContain("rgba(61,170,120,0.7)");
+      expect(result.current.LED_GLOWS[3]).toContain("rgba(58,159,212,0.7)");
     });
   });
 

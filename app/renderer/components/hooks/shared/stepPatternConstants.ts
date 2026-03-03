@@ -25,10 +25,10 @@ export const ROW_COLORS = [
 ];
 
 export const LED_GLOWS = [
-  "shadow-[0_0_12px_3px_rgba(224,90,96,0.7)]", // voice-1 coral-red
-  "shadow-[0_0_12px_3px_rgba(61,170,120,0.7)]", // voice-2 green
-  "shadow-[0_0_12px_3px_rgba(58,159,212,0.7)]", // voice-3 blue
-  "shadow-[0_0_12px_3px_rgba(232,200,70,0.7)]", // voice-4 golden-yellow
+  "shadow-[0_0_12px_3px_rgba(224,90,96,0.7)]", // voice-1 red
+  "shadow-[0_0_12px_3px_rgba(232,200,70,0.7)]", // voice-2 yellow
+  "shadow-[0_0_12px_3px_rgba(61,170,120,0.7)]", // voice-3 green
+  "shadow-[0_0_12px_3px_rgba(58,159,212,0.7)]", // voice-4 blue
 ];
 
 /**

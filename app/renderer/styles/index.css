@@ -53,17 +53,17 @@
   --border-default: #d1d5db;
   --border-strong: #9ca3af;
 
-  /* 4-Voice Colors */
+  /* 4-Voice Colors (Rample Turbo livery: Red, Yellow, Green, Blue) */
   --voice-1: #d44950;
-  --voice-2: #2d9668;
-  --voice-3: #2889be;
-  --voice-4: #d4b63c;
+  --voice-2: #d4b63c;
+  --voice-3: #2d9668;
+  --voice-4: #2889be;
 
   /* Voice muted backgrounds */
   --voice-1-muted: rgba(212, 73, 80, 0.08);
-  --voice-2-muted: rgba(45, 150, 104, 0.08);
-  --voice-3-muted: rgba(40, 137, 190, 0.08);
-  --voice-4-muted: rgba(212, 182, 60, 0.08);
+  --voice-2-muted: rgba(212, 182, 60, 0.08);
+  --voice-3-muted: rgba(45, 150, 104, 0.08);
+  --voice-4-muted: rgba(40, 137, 190, 0.08);
 
   /* Accent Colors (mapped from voices) */
   --accent-primary: #2889be;
@@ -71,6 +71,9 @@
   --accent-success: #2d9668;
   --accent-warning: #d4b63c;
   --accent-danger: #c93c42;
+
+  /* Transport */
+  --transport-play: #d97706;
 
   /* Interactive */
   --focus-ring: #2889be;
@@ -96,17 +99,17 @@
   --border-default: #3a3f4a;
   --border-strong: #4b5563;
 
-  /* 4-Voice Colors */
+  /* 4-Voice Colors (Rample Turbo livery: Red, Yellow, Green, Blue) */
   --voice-1: #e05a60;
-  --voice-2: #3daa78;
-  --voice-3: #3a9fd4;
-  --voice-4: #e8c846;
+  --voice-2: #e8c846;
+  --voice-3: #3daa78;
+  --voice-4: #3a9fd4;
 
   /* Voice muted backgrounds */
   --voice-1-muted: rgba(224, 90, 96, 0.12);
-  --voice-2-muted: rgba(61, 170, 120, 0.12);
-  --voice-3-muted: rgba(58, 159, 212, 0.12);
-  --voice-4-muted: rgba(232, 200, 70, 0.12);
+  --voice-2-muted: rgba(232, 200, 70, 0.12);
+  --voice-3-muted: rgba(61, 170, 120, 0.12);
+  --voice-4-muted: rgba(58, 159, 212, 0.12);
 
   /* Accent Colors */
   --accent-primary: #3a9fd4;
@@ -114,6 +117,9 @@
   --accent-success: #3daa78;
   --accent-warning: #e8c846;
   --accent-danger: #e05a60;
+
+  /* Transport */
+  --transport-play: #f59e0b;
 
   /* Interactive */
   --focus-ring: #3a9fd4;
@@ -169,6 +175,9 @@
 
   /* Focus ring */
   --color-focus-ring: var(--focus-ring);
+
+  /* Transport */
+  --color-transport-play: var(--transport-play);
 
   /* Hover overlay */
   --color-hover-overlay: var(--hover-overlay);

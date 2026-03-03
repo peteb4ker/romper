@@ -5,7 +5,7 @@ import { ensureValidStepPattern } from "./stepPatternConstants";
 export interface UseStepPatternParams {
   initialPattern?: null | number[][];
   kitName: string;
-  onSaved?: () => void;
+  onSaved?: () => Promise<void> | void;
 }
 
 /**
@@ -47,7 +47,7 @@ export function useStepPattern({
         setStepPatternState(ensureValidStepPattern(initialPattern));
       }
     },
-    [kitName, initialPattern],
+    [kitName, initialPattern, onSaved],
   );
 
   return {

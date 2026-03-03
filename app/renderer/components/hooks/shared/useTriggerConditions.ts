@@ -8,7 +8,7 @@ import {
 export interface UseTriggerConditionsParams {
   initialConditions?: (null | string)[][] | null;
   kitName: string;
-  onSaved?: () => void;
+  onSaved?: () => Promise<void> | void;
 }
 
 /**

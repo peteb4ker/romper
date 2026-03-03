@@ -29,7 +29,7 @@ export function useGlobalKeyboardShortcuts({
       // Safely check for dialog elements (handle test environments where closest may not exist)
       const isInDialog = Boolean(
         target.closest &&
-        (target.closest('[role="dialog"]') || target.closest(".fixed")),
+          (target.closest('[role="dialog"]') || target.closest(".fixed")),
       );
 
       return isInInput || isInDialog;

@@ -276,4 +276,117 @@ describe("StepSequencerGrid", () => {
       expect(mockOnSampleModeChange).toHaveBeenCalledWith(1, "first");
     });
   });
+
+  describe("Trigger conditions", () => {
+    it("renders condition indicator on active step with condition set", () => {
+      const triggerConditions = Array.from({ length: 4 }, () =>
+        Array(16).fill(null),
+      );
+      triggerConditions[0][0] = "1:2";
+
+      const activePattern = Array.from({ length: 4 }, () => Array(16).fill(0));
+      activePattern[0][0] = 127;
+
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          safeStepPattern={activePattern}
+          triggerConditions={triggerConditions}
+        />,
+      );
+
+      const indicator = screen.getByTestId("seq-condition-0-0");
+      expect(indicator).toBeInTheDocument();
+      expect(indicator).toHaveTextContent("1:2");
+    });
+
+    it("renders dot indicator on inactive step with condition set", () => {
+      const triggerConditions = Array.from({ length: 4 }, () =>
+        Array(16).fill(null),
+      );
+      triggerConditions[1][3] = "2:4";
+
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          triggerConditions={triggerConditions}
+        />,
+      );
+
+      const indicator = screen.getByTestId("seq-condition-1-3");
+      expect(indicator).toBeInTheDocument();
+      // Should contain the dot span, not text
+      expect(indicator).not.toHaveTextContent("2:4");
+    });
+
+    it("shows no condition indicator when condition is null", () => {
+      const triggerConditions = Array.from({ length: 4 }, () =>
+        Array(16).fill(null),
+      );
+
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          triggerConditions={triggerConditions}
+        />,
+      );
+
+      expect(screen.queryByTestId("seq-condition-0-0")).not.toBeInTheDocument();
+    });
+
+    it("right-click on step opens condition popover", () => {
+      render(<StepSequencerGrid {...defaultProps} />);
+
+      const step = screen.getByTestId("seq-step-0-0");
+      fireEvent.contextMenu(step);
+
+      const popover = document.querySelector(
+        '[data-testid="condition-popover"]',
+      );
+      expect(popover).toBeInTheDocument();
+    });
+
+    it("selecting a condition calls onConditionChange", () => {
+      const mockOnConditionChange = vi.fn();
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          onConditionChange={mockOnConditionChange}
+        />,
+      );
+
+      // Right-click to open popover
+      const step = screen.getByTestId("seq-step-2-5");
+      fireEvent.contextMenu(step);
+
+      // Select a condition from the popover
+      const option = document.querySelector(
+        '[data-testid="condition-option-1:2"]',
+      ) as HTMLElement;
+      expect(option).toBeInTheDocument();
+      fireEvent.click(option);
+
+      expect(mockOnConditionChange).toHaveBeenCalledWith(2, 5, "1:2");
+    });
+
+    it("condition text appears in step aria-label", () => {
+      const triggerConditions = Array.from({ length: 4 }, () =>
+        Array(16).fill(null),
+      );
+      triggerConditions[0][2] = "3:4";
+
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          triggerConditions={triggerConditions}
+        />,
+      );
+
+      const step = screen.getByTestId("seq-step-0-2");
+      expect(step).toHaveAttribute(
+        "aria-label",
+        "Toggle step 3 for voice 1 (3:4)",
+      );
+    });
+  });
 });

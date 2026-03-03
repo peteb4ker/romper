@@ -43,7 +43,8 @@ export interface SlotRenderingHook {
 }
 
 // Extends shared base interface with specific rendering handler requirements
-export interface UseVoicePanelSlotRenderingOptions extends BaseVoicePanelOptions {
+export interface UseVoicePanelSlotRenderingOptions
+  extends BaseVoicePanelOptions {
   handleCombinedDragLeave: () => void;
   handleCombinedDragOver: (e: React.DragEvent, slotNumber: number) => void;
   handleCombinedDrop: (e: React.DragEvent, slotNumber: number) => void;

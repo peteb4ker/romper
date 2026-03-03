@@ -13,6 +13,25 @@ Object.defineProperty(import.meta, "env", {
   writable: true,
 });
 
+// Mock useLedAnimation to avoid RAF in dialog-level tests
+vi.mock("../led-grid/useLedAnimation", () => ({
+  useLedAnimation: () => ({
+    addRipple: vi.fn(),
+    clearMousePosition: vi.fn(),
+    ledRefs: { current: [] },
+    setMousePosition: vi.fn(),
+  }),
+}));
+
+// Mock RAF
+beforeEach(() => {
+  global.requestAnimationFrame = vi.fn((cb) => {
+    setTimeout(cb, 16);
+    return 1;
+  });
+  global.cancelAnimationFrame = vi.fn();
+});
+
 describe("AboutDialog", () => {
   const defaultProps = {
     isOpen: true,
@@ -34,7 +53,7 @@ describe("AboutDialog", () => {
 
       expect(screen.getByText("About Romper")).toBeInTheDocument();
       expect(screen.getByText("Rample SD Card Manager")).toBeInTheDocument();
-      expect(screen.getByText("Romper")).toBeInTheDocument();
+      expect(screen.getByText("R O M P E R")).toBeInTheDocument();
     });
 
     it("does not render when isOpen is false", () => {
@@ -47,7 +66,6 @@ describe("AboutDialog", () => {
       render(<AboutDialog {...defaultProps} />);
 
       expect(screen.getByText(/Version:/)).toBeInTheDocument();
-      // The component uses fallback "dev" when no version is set
       expect(screen.getByText("dev")).toBeInTheDocument();
     });
 
@@ -56,7 +74,7 @@ describe("AboutDialog", () => {
       render(<AboutDialog {...defaultProps} />);
 
       expect(
-        screen.getByText(`© Pete Baker ${currentYear}`),
+        screen.getByText(`\u00A9 Pete Baker ${currentYear}`),
       ).toBeInTheDocument();
     });
 
@@ -95,8 +113,19 @@ describe("AboutDialog", () => {
     it("displays fallback version when VITE_APP_VERSION is not available", () => {
       render(<AboutDialog {...defaultProps} />);
 
-      // Component should show "dev" as fallback when no version is set
       expect(screen.getByText("dev")).toBeInTheDocument();
+    });
+
+    it("displays the silkscreen label", () => {
+      render(<AboutDialog {...defaultProps} />);
+
+      expect(screen.getByText("Rample Waves System")).toBeInTheDocument();
+    });
+
+    it("renders the LED pixel grid", () => {
+      render(<AboutDialog {...defaultProps} />);
+
+      expect(screen.getByTestId("led-pixel-grid")).toBeInTheDocument();
     });
   });
 
@@ -142,7 +171,7 @@ describe("AboutDialog", () => {
 
       render(<AboutDialog {...defaultProps} onClose={onClose} />);
 
-      const title = screen.getByText("About Romper");
+      const title = screen.getByText("R O M P E R");
       await user.click(title);
 
       expect(onClose).not.toHaveBeenCalled();
@@ -183,14 +212,12 @@ describe("AboutDialog", () => {
     it("falls back to window.open when electronAPI.openExternal is not available", async () => {
       const user = userEvent.setup();
 
-      // Mock window.open
       const mockWindowOpen = vi.fn();
       Object.defineProperty(window, "open", {
         value: mockWindowOpen,
         writable: true,
       });
 
-      // Set up electronAPI mock without openExternal method
       setupElectronAPIMock({ openExternal: undefined });
 
       render(<AboutDialog {...defaultProps} />);
@@ -221,9 +248,13 @@ describe("AboutDialog", () => {
       const mainHeading = screen.getByRole("heading", { level: 2 });
       expect(mainHeading).toHaveTextContent("About Romper");
       expect(mainHeading).toHaveAttribute("id", "about-title");
+    });
 
-      const appNameHeading = screen.getByRole("heading", { level: 3 });
-      expect(appNameHeading).toHaveTextContent("Romper");
+    it("has screen reader text for About Romper", () => {
+      render(<AboutDialog {...defaultProps} />);
+
+      const srText = screen.getByText("About Romper");
+      expect(srText).toHaveClass("sr-only");
     });
 
     it("close button has proper aria-label", () => {
@@ -255,12 +286,12 @@ describe("AboutDialog", () => {
 
       const content = screen.getByRole("dialog").firstChild as HTMLElement;
       expect(content).toHaveClass(
-        "bg-surface-2",
+        "relative",
         "rounded-lg",
         "w-full",
         "max-w-lg",
-        "max-h-[80vh]",
         "overflow-hidden",
+        "bg-black",
       );
     });
   });
@@ -272,7 +303,6 @@ describe("AboutDialog", () => {
 
       render(<AboutDialog {...defaultProps} onClose={onClose} />);
 
-      // Escape should close the dialog
       await user.keyboard("{Escape}");
       expect(onClose).toHaveBeenCalledOnce();
     });
@@ -284,7 +314,6 @@ describe("AboutDialog", () => {
         <AboutDialog {...defaultProps} isOpen={false} onClose={onClose} />,
       );
 
-      // Dialog should not be in DOM, so escape handler should not be attached
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });

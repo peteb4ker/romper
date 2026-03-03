@@ -907,4 +907,23 @@ describe("useKitStepSequencerLogic", () => {
       expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
     });
   });
+
+  describe("Trigger Conditions", () => {
+    it("should return cycleCount in hook output with initial value 0", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic(getDefaultParams()),
+      );
+
+      expect(result.current.cycleCount).toBe(0);
+    });
+
+    it("should include cycleCount in the return interface", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic(getDefaultParams()),
+      );
+
+      expect("cycleCount" in result.current).toBe(true);
+      expect(typeof result.current.cycleCount).toBe("number");
+    });
+  });
 });

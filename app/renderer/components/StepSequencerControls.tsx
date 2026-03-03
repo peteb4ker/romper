@@ -11,6 +11,7 @@ interface BpmLogic {
 
 interface StepSequencerControlsProps {
   bpmLogic: BpmLogic;
+  cycleCount?: number;
   isSeqPlaying: boolean;
   kitName: string;
   setIsSeqPlaying: (playing: boolean) => void;
@@ -22,6 +23,7 @@ interface StepSequencerControlsProps {
  */
 const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
   bpmLogic,
+  cycleCount = 0,
   isSeqPlaying,
   kitName: _kitName,
   setIsSeqPlaying,
@@ -56,7 +58,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
 
   return (
     <div
-      className="flex flex-col items-center justify-center gap-2 px-3 self-stretch"
+      className="flex flex-col items-center justify-start gap-2 px-3 self-stretch"
       data-testid="kit-step-sequencer-controls"
     >
       <button
@@ -93,6 +95,19 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
         />
         <span className="text-[10px] text-text-tertiary mt-0.5">BPM</span>
       </div>
+
+      {/* Cycle counter — visible during playback */}
+      {isSeqPlaying && (
+        <span
+          className="text-[10px] text-text-tertiary whitespace-nowrap"
+          data-testid="cycle-counter"
+        >
+          <span className="font-mono font-bold text-text-primary tabular-nums">
+            {cycleCount + 1}
+          </span>
+          {" cycle"}
+        </span>
+      )}
     </div>
   );
 };

@@ -161,4 +161,51 @@ describe("StepSequencerControls", () => {
     fireEvent.keyDown(bpmInput, { key: "ArrowUp" });
     expect(mockBpmLogic.setBpm).not.toHaveBeenCalled();
   });
+
+  describe("Cycle counter", () => {
+    it("shows cycle counter during playback", () => {
+      render(
+        <StepSequencerControls
+          bpmLogic={mockBpmLogic}
+          cycleCount={0}
+          isSeqPlaying={true}
+          kitName="TestKit"
+          setIsSeqPlaying={setIsSeqPlaying}
+        />,
+      );
+
+      const counter = screen.getByTestId("cycle-counter");
+      expect(counter).toBeInTheDocument();
+    });
+
+    it("hides cycle counter when not playing", () => {
+      render(
+        <StepSequencerControls
+          bpmLogic={mockBpmLogic}
+          cycleCount={3}
+          isSeqPlaying={false}
+          kitName="TestKit"
+          setIsSeqPlaying={setIsSeqPlaying}
+        />,
+      );
+
+      expect(screen.queryByTestId("cycle-counter")).not.toBeInTheDocument();
+    });
+
+    it("displays correct cycle number (cycleCount + 1)", () => {
+      render(
+        <StepSequencerControls
+          bpmLogic={mockBpmLogic}
+          cycleCount={4}
+          isSeqPlaying={true}
+          kitName="TestKit"
+          setIsSeqPlaying={setIsSeqPlaying}
+        />,
+      );
+
+      const counter = screen.getByTestId("cycle-counter");
+      expect(counter).toHaveTextContent("5");
+      expect(counter).toHaveTextContent("cycle");
+    });
+  });
 });

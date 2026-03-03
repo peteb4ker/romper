@@ -6,12 +6,15 @@ import {
   SpeakerSimpleNone,
 } from "@phosphor-icons/react";
 import React from "react";
+import ReactDOM from "react-dom";
 
 import type { SampleMode } from "./hooks/shared/stepPatternConstants";
 
 import {
   type FocusedStep,
   SAMPLE_MODE_LABELS,
+  TRIGGER_CONDITIONS,
+  type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
 
 const SAMPLE_MODE_ICONS: Record<SampleMode, React.ReactNode> = {
@@ -31,24 +34,28 @@ const VOICE_BG_COLORS: Record<number, string> = {
 };
 
 interface StepButtonProps {
+  condition: TriggerCondition;
   isFocused: boolean;
   isOn: boolean;
   isPlayhead: boolean;
   ledGlow: string;
   onClick: () => void;
   onColor: string;
+  onContextMenu: (e: React.MouseEvent) => void;
   stepIdx: number;
   voiceIdx: number;
   voiceNumber: number;
 }
 
 const StepButton: React.FC<StepButtonProps> = ({
+  condition,
   isFocused,
   isOn,
   isPlayhead,
   ledGlow,
   onClick,
   onColor,
+  onContextMenu,
   stepIdx,
   voiceIdx,
   voiceNumber,
@@ -68,14 +75,34 @@ const StepButton: React.FC<StepButtonProps> = ({
 
   return (
     <button
-      aria-label={`Toggle step ${stepIdx + 1} for voice ${voiceNumber}`}
+      aria-label={`Toggle step ${stepIdx + 1} for voice ${voiceNumber}${condition ? ` (${condition})` : ""}`}
       aria-pressed={isOn}
       className={`relative w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 rounded-md border-2 mx-0.5 focus:outline-none transition-colors ${onColor} ${ledGlow}`}
       data-testid={`seq-step-${voiceIdx}-${stepIdx}`}
       onClick={onClick}
+      onContextMenu={onContextMenu}
       role="gridcell"
       type="button"
     >
+      {/* Trigger condition indicator */}
+      {condition && isOn && (
+        <span
+          className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white/90 pointer-events-none select-none"
+          data-testid={`seq-condition-${voiceIdx}-${stepIdx}`}
+          style={{ textShadow: "0 0 3px rgba(0,0,0,0.6)", zIndex: 1 }}
+        >
+          {condition}
+        </span>
+      )}
+      {condition && !isOn && (
+        <span
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+          data-testid={`seq-condition-${voiceIdx}-${stepIdx}`}
+          style={{ zIndex: 1 }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-text-tertiary/50" />
+        </span>
+      )}
       {(isPlayhead || isFocused) && (
         <span
           className="absolute inset-0 rounded-md pointer-events-none"
@@ -90,6 +117,78 @@ const StepButton: React.FC<StepButtonProps> = ({
   );
 };
 
+// Condition popover for right-click
+interface ConditionPopoverProps {
+  currentCondition: TriggerCondition;
+  onClose: () => void;
+  onSelect: (condition: TriggerCondition) => void;
+  position: { x: number; y: number };
+}
+
+const ConditionPopover: React.FC<ConditionPopoverProps> = ({
+  currentCondition,
+  onClose,
+  onSelect,
+  position,
+}) => {
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node)
+      ) {
+        onClose();
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    // Defer listener registration so the opening right-click's mousedown
+    // doesn't immediately dismiss the popover
+    const rafId = requestAnimationFrame(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+    });
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      cancelAnimationFrame(rafId);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed z-50 bg-surface-2 border border-border-strong rounded-lg shadow-lg py-1 min-w-[80px]"
+      data-testid="condition-popover"
+      ref={popoverRef}
+      style={{ left: position.x, top: position.y }}
+    >
+      {TRIGGER_CONDITIONS.map((cond) => {
+        const isActive =
+          cond === currentCondition ||
+          (cond === null && currentCondition === null);
+        const label = cond === null ? "Always" : cond;
+        return (
+          <button
+            className={`block w-full text-left px-3 py-1 text-xs hover:bg-surface-3 transition-colors ${isActive ? "text-accent-primary font-bold" : "text-text-primary"}`}
+            data-testid={`condition-option-${cond ?? "always"}`}
+            key={cond ?? "always"}
+            onClick={() => {
+              onSelect(cond);
+              onClose();
+            }}
+            type="button"
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 interface StepSequencerGridProps {
   currentSeqStep: number;
   focusedStep: FocusedStep;
@@ -99,6 +198,11 @@ interface StepSequencerGridProps {
   LED_GLOWS: string[];
   NUM_STEPS: number;
   NUM_VOICES: number;
+  onConditionChange?: (
+    voiceIdx: number,
+    stepIdx: number,
+    condition: TriggerCondition,
+  ) => void;
   onSampleModeChange?: (voiceNumber: number, mode: SampleMode) => void;
   onVolumeChange?: (voiceNumber: number, volume: number) => void;
   ROW_COLORS: string[];
@@ -106,6 +210,7 @@ interface StepSequencerGridProps {
   sampleModes?: Record<number, SampleMode>;
   setFocusedStep: (step: FocusedStep) => void;
   toggleStep: (voiceIdx: number, stepIdx: number) => void;
+  triggerConditions?: (null | string)[][];
   voiceVolumes?: Record<number, number>;
 }
 
@@ -118,6 +223,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   LED_GLOWS,
   NUM_STEPS: _NUM_STEPS,
   NUM_VOICES,
+  onConditionChange,
   onSampleModeChange,
   onVolumeChange,
   ROW_COLORS,
@@ -125,8 +231,16 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   sampleModes = {},
   setFocusedStep,
   toggleStep,
+  triggerConditions,
   voiceVolumes = {},
 }) => {
+  const [popover, setPopover] = React.useState<{
+    stepIdx: number;
+    voiceIdx: number;
+    x: number;
+    y: number;
+  } | null>(null);
+
   const cycleSampleMode = (voiceIdx: number) => {
     const voiceNumber = voiceIdx + 1;
     const current = sampleModes[voiceNumber] || "first";
@@ -139,6 +253,16 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   const handleStepClick = (voiceIdx: number, stepIdx: number) => {
     setFocusedStep({ step: stepIdx, voice: voiceIdx });
     toggleStep(voiceIdx, stepIdx);
+  };
+
+  const handleStepContextMenu = (
+    e: React.MouseEvent,
+    voiceIdx: number,
+    stepIdx: number,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPopover({ stepIdx, voiceIdx, x: e.clientX, y: e.clientY });
   };
 
   return (
@@ -177,6 +301,8 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                 const isOn = safeStepPattern[voiceIdx][stepIdx] > 0;
                 const groupIdx = Math.floor(stepIdx / 4);
                 const showDivider = stepIdx > 0 && stepIdx % 4 === 0;
+                const condition = (triggerConditions?.[voiceIdx]?.[stepIdx] ??
+                  null) as TriggerCondition;
 
                 return (
                   <React.Fragment
@@ -189,6 +315,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                       />
                     )}
                     <StepButton
+                      condition={condition}
                       isFocused={
                         focusedStep.voice === voiceIdx &&
                         focusedStep.step === stepIdx
@@ -201,6 +328,9 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                         isOn
                           ? ROW_COLORS[voiceIdx]
                           : "bg-surface-3 border-border-default"
+                      }
+                      onContextMenu={(e) =>
+                        handleStepContextMenu(e, voiceIdx, stepIdx)
                       }
                       stepIdx={stepIdx}
                       voiceIdx={voiceIdx}
@@ -255,6 +385,23 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
           );
         },
       )}
+
+      {/* Condition popover — portal to body to escape overflow:hidden + transform */}
+      {popover &&
+        ReactDOM.createPortal(
+          <ConditionPopover
+            currentCondition={
+              (triggerConditions?.[popover.voiceIdx]?.[popover.stepIdx] ??
+                null) as TriggerCondition
+            }
+            onClose={() => setPopover(null)}
+            onSelect={(condition) => {
+              onConditionChange?.(popover.voiceIdx, popover.stepIdx, condition);
+            }}
+            position={{ x: popover.x, y: popover.y }}
+          />,
+          document.body,
+        )}
     </div>
   );
 };

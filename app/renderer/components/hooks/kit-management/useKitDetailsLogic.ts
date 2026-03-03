@@ -8,6 +8,7 @@ import { ErrorPatterns } from "../../../utils/errorHandling";
 import { useSampleManagement } from "../sample-management/useSampleManagement";
 import { useBpm } from "../shared/useBpm";
 import { useStepPattern } from "../shared/useStepPattern";
+import { useTriggerConditions } from "../shared/useTriggerConditions";
 import { useVoiceAlias } from "../voice-panels/useVoiceAlias";
 import { useKitPlayback } from "./useKitPlayback";
 import { useKitVoicePanels } from "./useKitVoicePanels";
@@ -96,6 +97,13 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
   // Step pattern management
   const { setStepPattern, stepPattern } = useStepPattern({
     initialPattern: kit?.step_pattern,
+    kitName,
+    onSaved: reloadKit,
+  });
+
+  // Trigger conditions management
+  const { setTriggerConditions, triggerConditions } = useTriggerConditions({
+    initialConditions: kit?.trigger_conditions,
     kitName,
     onSaved: reloadKit,
   });
@@ -346,9 +354,10 @@ export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
     setSequencerOpen,
 
     setStepPattern,
+    setTriggerConditions,
     stepPattern,
-
     toggleEditableMode,
+    triggerConditions,
     updateKitAlias,
 
     updateVoiceAlias,

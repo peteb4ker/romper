@@ -3,7 +3,10 @@ import React from "react";
 import type { SampleMode } from "./hooks/shared/stepPatternConstants";
 
 import { useKitStepSequencerLogic } from "./hooks/kit-management/useKitStepSequencerLogic";
-import { NUM_VOICES } from "./hooks/shared/stepPatternConstants";
+import {
+  NUM_VOICES,
+  type TriggerCondition,
+} from "./hooks/shared/stepPatternConstants";
 import { useBpm } from "./hooks/shared/useBpm";
 import StepSequencerControls from "./StepSequencerControls";
 import StepSequencerDrawer from "./StepSequencerDrawer";
@@ -19,7 +22,9 @@ interface KitStepSequencerProps {
   sequencerOpen: boolean;
   setSequencerOpen: (open: boolean) => void;
   setStepPattern: (pattern: number[][]) => void;
+  setTriggerConditions: (conditions: (null | string)[][]) => void;
   stepPattern: null | number[][];
+  triggerConditions: (null | string)[][];
   voices?: VoiceData[];
 }
 
@@ -108,11 +113,25 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     [props.kitName, props.onVoiceSettingChanged],
   );
 
+  // Handle trigger condition change — update local state + persist
+  const handleConditionChange = React.useCallback(
+    (voiceIdx: number, stepIdx: number, condition: TriggerCondition) => {
+      const newConditions = props.triggerConditions.map((row, v) =>
+        v === voiceIdx
+          ? row.map((c, s) => (s === stepIdx ? condition : c))
+          : row,
+      );
+      props.setTriggerConditions(newConditions);
+    },
+    [props.triggerConditions, props.setTriggerConditions],
+  );
+
   // Pass the current BPM from bpmLogic to sequencer logic for live updates
   const logic = useKitStepSequencerLogic({
     ...props,
     bpm: bpmLogic.bpm,
     sampleModes,
+    triggerConditions: props.triggerConditions,
     voiceVolumes,
   });
 
@@ -125,6 +144,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
         {/* Transport column — left */}
         <StepSequencerControls
           bpmLogic={bpmLogic}
+          cycleCount={logic.cycleCount}
           isSeqPlaying={logic.isSeqPlaying}
           kitName={props.kitName}
           setIsSeqPlaying={logic.setIsSeqPlaying}
@@ -139,6 +159,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
           LED_GLOWS={logic.LED_GLOWS}
           NUM_STEPS={logic.NUM_STEPS}
           NUM_VOICES={logic.NUM_VOICES}
+          onConditionChange={handleConditionChange}
           onSampleModeChange={handleSampleModeChange}
           onVolumeChange={handleVolumeChange}
           ROW_COLORS={logic.ROW_COLORS}
@@ -146,6 +167,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
           sampleModes={sampleModes}
           setFocusedStep={logic.setFocusedStep}
           toggleStep={logic.toggleStep}
+          triggerConditions={props.triggerConditions}
           voiceVolumes={voiceVolumes}
         />
       </div>

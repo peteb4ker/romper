@@ -44,6 +44,25 @@ export function useKitPlayback(samples: null | undefined | VoiceSamples) {
 
   const handlePlay = (voice: number, sample: string, volume?: number) => {
     const key = voice + ":" + sample;
+
+    // Voice choke: stop any other sample currently playing on this voice
+    const voicePrefix = voice + ":";
+    setSamplePlaying((state) => {
+      const chokeKeys = Object.keys(state).filter(
+        (k) => k.startsWith(voicePrefix) && k !== key && state[k],
+      );
+      if (chokeKeys.length > 0) {
+        setStopTriggers((triggers) => {
+          const updates: { [key: string]: number } = {};
+          for (const k of chokeKeys) {
+            updates[k] = (triggers[k] || 0) + 1;
+          }
+          return { ...triggers, ...updates };
+        });
+      }
+      return state;
+    });
+
     setPlayTriggers((triggers) => ({
       ...triggers,
       [key]: (triggers[key] || 0) + 1,

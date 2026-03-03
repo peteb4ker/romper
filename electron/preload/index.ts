@@ -526,6 +526,23 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("update-step-pattern", kitName, stepPattern);
   },
 
+  updateTriggerConditions: (
+    kitName: string,
+    triggerConditions: (null | string)[][],
+  ) => {
+    isDev &&
+      console.debug(
+        "[IPC] updateTriggerConditions invoked",
+        kitName,
+        triggerConditions,
+      );
+    return ipcRenderer.invoke(
+      "update-trigger-conditions",
+      kitName,
+      triggerConditions,
+    );
+  },
+
   updateVoiceAlias: (
     kitName: string,
     voiceNumber: number,

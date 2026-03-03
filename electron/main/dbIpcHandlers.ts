@@ -172,6 +172,22 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   );
 
   ipcMain.handle(
+    "update-trigger-conditions",
+    createDbHandler(
+      inMemorySettings,
+      (
+        dbDir: string,
+        kitName: string,
+        triggerConditions: (null | string)[][],
+      ) => {
+        return updateKit(dbDir, kitName, {
+          trigger_conditions: triggerConditions,
+        });
+      },
+    ),
+  );
+
+  ipcMain.handle(
     "validate-local-store",
     async (_event, localStorePath?: string) => {
       // Check environment override first, then provided path, then settings

@@ -71,6 +71,13 @@
       "when": 1772473345732,
       "tag": "0009_foamy_hardball",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1772498264156,
+      "tag": "0010_real_thunderbolts",
+      "breakpoints": true
     }
   ]
 }

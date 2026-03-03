@@ -8,6 +8,8 @@ import {
   NUM_VOICES,
   ROW_COLORS,
   type SampleMode,
+  shouldTrigger,
+  type TriggerCondition,
 } from "../shared/stepPatternConstants";
 
 interface UseKitStepSequencerLogicParams {
@@ -21,6 +23,7 @@ interface UseKitStepSequencerLogicParams {
   setSequencerOpen: (open: boolean) => void;
   setStepPattern: (pattern: number[][]) => void;
   stepPattern: null | number[][];
+  triggerConditions?: (null | string)[][];
   voiceVolumes?: Record<number, number>;
 }
 
@@ -40,6 +43,7 @@ export function useKitStepSequencerLogic(
     sequencerOpen,
     setStepPattern,
     stepPattern,
+    triggerConditions,
     voiceVolumes = {},
   } = params;
 
@@ -56,6 +60,7 @@ export function useKitStepSequencerLogic(
     const workerScript = `
       let isPlaying = false;
       let currentStep = 0;
+      let cycleCount = 0;
       let numSteps = 16;
       let interval = null;
       let stepDuration = 125; // Default, will be overridden by START message
@@ -74,15 +79,20 @@ export function useKitStepSequencerLogic(
           if (interval) clearInterval(interval);
           interval = setInterval(() => {
             if (!isPlaying) return;
+            const prevStep = currentStep;
             currentStep = (currentStep + 1) % numSteps;
-            self.postMessage({ payload: { currentStep }, type: "STEP" });
+            if (prevStep === numSteps - 1 && currentStep === 0) {
+              cycleCount++;
+            }
+            self.postMessage({ payload: { currentStep, cycleCount }, type: "STEP" });
           }, stepDuration);
         } else if (type === "STOP") {
           isPlaying = false;
           if (interval) clearInterval(interval);
           interval = null;
           currentStep = 0;
-          self.postMessage({ payload: { currentStep }, type: "STEP" });
+          cycleCount = 0;
+          self.postMessage({ payload: { currentStep, cycleCount }, type: "STEP" });
         } else if (type === "SET_STEP") {
           currentStep = payload.currentStep ?? 0;
         }
@@ -99,6 +109,7 @@ export function useKitStepSequencerLogic(
   // Playback state
   const [isSeqPlaying, setIsSeqPlaying] = React.useState(false);
   const [currentSeqStep, setCurrentSeqStep] = React.useState<number>(0);
+  const [cycleCount, setCycleCount] = React.useState<number>(0);
 
   // Focus management for keyboard navigation
   const [focusedStep, setFocusedStep] = React.useState<FocusedStep>({
@@ -118,6 +129,7 @@ export function useKitStepSequencerLogic(
     worker.onmessage = (e: MessageEvent) => {
       if (e.data.type === "STEP") {
         setCurrentSeqStep(e.data.payload.currentStep);
+        setCycleCount(e.data.payload.cycleCount ?? 0);
       }
     };
 
@@ -184,13 +196,14 @@ export function useKitStepSequencerLogic(
     for (let voiceIdx = 0; voiceIdx < NUM_VOICES; voiceIdx++) {
       const voiceNumber = voiceIdx + 1; // Convert 0-based index to 1-based voice number
       const isStepActive = stepPattern[voiceIdx][currentSeqStep] > 0; // Check if velocity > 0
-      const voiceSamples = samples[voiceNumber];
+      const condition = (triggerConditions?.[voiceIdx]?.[currentSeqStep] ??
+        null) as TriggerCondition;
 
-      if (isStepActive) {
+      if (isStepActive && shouldTrigger(condition, cycleCount)) {
+        const voiceSamples = samples[voiceNumber];
         const sample = selectSample(voiceNumber, voiceSamples);
         console.log(
-          `[Sequencer] Step ${currentSeqStep} voice ${voiceNumber}: active=${isStepActive}, sample=${sample}, voiceSamples=`,
-          voiceSamples,
+          `[Sequencer] Step ${currentSeqStep} voice ${voiceNumber}: active=${isStepActive}, condition=${condition}, cycle=${cycleCount}, sample=${sample}`,
         );
         if (sample) {
           const vol = voiceVolumes[voiceNumber] ?? 100;
@@ -205,7 +218,9 @@ export function useKitStepSequencerLogic(
   }, [
     isSeqPlaying,
     currentSeqStep,
+    cycleCount,
     stepPattern,
+    triggerConditions,
     samples,
     onPlaySample,
     selectSample,
@@ -312,6 +327,7 @@ export function useKitStepSequencerLogic(
 
   return {
     currentSeqStep,
+    cycleCount,
     focusedStep,
     gridRefInternal,
     handleStepGridKeyDown,

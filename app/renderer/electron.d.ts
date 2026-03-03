@@ -297,6 +297,10 @@ export interface ElectronAPI {
     kitName: string,
     stepPattern: number[][],
   ) => Promise<DbResult>;
+  updateTriggerConditions?: (
+    kitName: string,
+    triggerConditions: (null | string)[][],
+  ) => Promise<DbResult>;
   updateVoiceAlias?: (
     kitName: string,
     voiceNumber: number,

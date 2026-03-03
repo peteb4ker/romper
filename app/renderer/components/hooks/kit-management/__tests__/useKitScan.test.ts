@@ -15,9 +15,8 @@ describe("scanSingleKit", () => {
   const fileReaderImpl = vi.fn();
 
   it("calls executeVoiceInferenceScan for voiceInference", async () => {
-    const { executeVoiceInferenceScan } = await import(
-      "../../../utils/scanners/orchestrationFunctions"
-    );
+    const { executeVoiceInferenceScan } =
+      await import("../../../utils/scanners/orchestrationFunctions");
     vi.mocked(executeVoiceInferenceScan).mockResolvedValue({ success: true });
 
     const result = await scanSingleKit({
@@ -32,9 +31,8 @@ describe("scanSingleKit", () => {
   });
 
   it("calls executeWAVAnalysisScan for wavAnalysis", async () => {
-    const { executeWAVAnalysisScan } = await import(
-      "../../../utils/scanners/orchestrationFunctions"
-    );
+    const { executeWAVAnalysisScan } =
+      await import("../../../utils/scanners/orchestrationFunctions");
     vi.mocked(executeWAVAnalysisScan).mockResolvedValue({ success: true });
 
     const result = await scanSingleKit({
@@ -49,9 +47,8 @@ describe("scanSingleKit", () => {
   });
 
   it("calls executeFullKitScan for full scan", async () => {
-    const { executeFullKitScan } = await import(
-      "../../../utils/scanners/orchestrationFunctions"
-    );
+    const { executeFullKitScan } =
+      await import("../../../utils/scanners/orchestrationFunctions");
     vi.mocked(executeFullKitScan).mockResolvedValue({ success: true });
 
     const result = await scanSingleKit({

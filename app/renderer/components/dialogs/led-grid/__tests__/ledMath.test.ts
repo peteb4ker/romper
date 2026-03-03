@@ -1,12 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RowLfoConfig } from "../ledConstants";
 import type { Ripple } from "../ledMath";
 
 import {
+  applyLedStyle,
   computeBaseLfo,
   computeProximityBoost,
   computeRippleBoost,
+  readGlowColor,
   saw,
   sine,
   triangle,
@@ -268,6 +270,55 @@ describe("ledMath", () => {
         duration,
       );
       expect(boost).toBeGreaterThanOrEqual(single);
+    });
+  });
+
+  describe("applyLedStyle", () => {
+    it("sets opacity on element", () => {
+      const el = document.createElement("div");
+      applyLedStyle(el, 0.3, "224, 90, 96");
+      expect(el.style.opacity).toBe("0.3");
+    });
+
+    it("clamps brightness to 0..1", () => {
+      const el = document.createElement("div");
+      applyLedStyle(el, 1.5, "224, 90, 96");
+      expect(el.style.opacity).toBe("1");
+    });
+
+    it("adds glow box-shadow for bright LEDs", () => {
+      const el = document.createElement("div");
+      applyLedStyle(el, 0.8, "224, 90, 96");
+      expect(el.style.boxShadow).toContain("rgba(224, 90, 96");
+    });
+
+    it("sets box-shadow to none for dim LEDs", () => {
+      const el = document.createElement("div");
+      applyLedStyle(el, 0.3, "224, 90, 96");
+      expect(el.style.boxShadow).toBe("none");
+    });
+  });
+
+  describe("readGlowColor", () => {
+    beforeEach(() => {
+      vi.spyOn(window, "getComputedStyle").mockReturnValue({
+        getPropertyValue: () => "#e05a60",
+      } as unknown as CSSStyleDeclaration);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("parses hex CSS variable to RGB string", () => {
+      expect(readGlowColor()).toBe("224, 90, 96");
+    });
+
+    it("returns default when CSS variable is empty", () => {
+      vi.spyOn(window, "getComputedStyle").mockReturnValue({
+        getPropertyValue: () => "",
+      } as unknown as CSSStyleDeclaration);
+      expect(readGlowColor()).toBe("224, 90, 96");
     });
   });
 });

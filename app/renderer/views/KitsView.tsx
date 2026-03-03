@@ -312,6 +312,9 @@ const KitsView: React.FC = () => {
           kits={kitFilters.filteredKits}
           localStorePath={localStorePath}
           modifiedCount={kitFilters.modifiedCount}
+          onAboutClick={() =>
+            window.dispatchEvent(new CustomEvent("menu-about"))
+          }
           onMessage={showMessage}
           onRefreshKits={refreshAllKitsAndSamples}
           onSearchChange={search.searchChange}

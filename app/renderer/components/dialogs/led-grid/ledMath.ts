@@ -9,6 +9,26 @@ export interface Ripple {
 }
 
 /**
+ * Apply brightness to an LED element via direct DOM mutation.
+ * Sets opacity and adds glow box-shadow for bright LEDs.
+ */
+export function applyLedStyle(
+  el: HTMLElement,
+  brightness: number,
+  glowColor: string,
+): void {
+  const clamped = Math.min(1, Math.max(0, brightness));
+  el.style.opacity = String(clamped);
+  if (clamped > 0.5) {
+    const glowIntensity = (clamped - 0.5) * 2;
+    const spread = Math.round(glowIntensity * 4);
+    el.style.boxShadow = `0 0 ${spread}px ${Math.round(spread * 0.5)}px rgba(${glowColor}, ${(glowIntensity * 0.6).toFixed(2)})`;
+  } else {
+    el.style.boxShadow = "none";
+  }
+}
+
+/**
  * Compute base LFO brightness for a single LED.
  * Returns 0..1 (before min/max scaling).
  */
@@ -77,6 +97,26 @@ export function computeRippleBoost(
     }
   }
   return boost;
+}
+
+/**
+ * Read the --voice-1 CSS variable and return as "R, G, B" string for box-shadow.
+ * Falls back to default warm red if not found.
+ */
+export function readGlowColor(): string {
+  const root = document.documentElement;
+  const style = getComputedStyle(root);
+  const voice1 = style.getPropertyValue("--voice-1").trim();
+  if (voice1) {
+    const hex = voice1.replace("#", "");
+    if (hex.length === 6) {
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      return `${r}, ${g}, ${b}`;
+    }
+  }
+  return "224, 90, 96";
 }
 
 /** Sawtooth wave: 0..1 */

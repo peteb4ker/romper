@@ -18,6 +18,7 @@ interface KitBrowserContainerProps {
   kits: KitWithRelations[];
   localStorePath: null | string;
   modifiedCount?: number;
+  onAboutClick?: () => void;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onRefreshKits: () => Promise<void>;
   onSearchChange?: (query: string) => void;
@@ -54,6 +55,7 @@ const KitBrowserContainer = React.forwardRef<
     kits,
     localStorePath,
     modifiedCount,
+    onAboutClick,
     onMessage,
     onRefreshKits,
     onSearchChange,
@@ -108,6 +110,7 @@ const KitBrowserContainer = React.forwardRef<
       kits={kits}
       localStorePath={localStorePath}
       modifiedCount={modifiedCount}
+      onAboutClick={onAboutClick}
       onMessage={handleMessage}
       onRefreshKits={handleRefreshKits}
       onSearchChange={onSearchChange}

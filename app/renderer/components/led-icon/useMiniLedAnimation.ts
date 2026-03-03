@@ -1,43 +1,49 @@
 import { useCallback, useEffect, useRef } from "react";
 
-import type { Ripple } from "./ledMath";
+import type { Ripple } from "../dialogs/led-grid/ledMath";
 
-import {
-  BASE_MIN,
-  BASE_SCALE,
-  LED_COLS,
-  LED_COUNT,
-  MAX_RIPPLES,
-  PROXIMITY_INTENSITY,
-  PROXIMITY_RADIUS_SQ,
-  RIPPLE_DURATION,
-  RIPPLE_SPEED,
-  RIPPLE_WIDTH,
-  ROW_LFO_CONFIGS,
-} from "./ledConstants";
 import {
   applyLedStyle,
   computeBaseLfo,
   computeProximityBoost,
   computeRippleBoost,
   readGlowColor,
-} from "./ledMath";
+} from "../dialogs/led-grid/ledMath";
+import {
+  ICON_BASE_MIN,
+  ICON_BASE_SCALE,
+  ICON_COLS,
+  ICON_LED_COUNT,
+  ICON_MAX_RIPPLES,
+  ICON_PROXIMITY_INTENSITY,
+  ICON_PROXIMITY_RADIUS_SQ,
+  ICON_RIPPLE_DURATION,
+  ICON_RIPPLE_SPEED,
+  ICON_RIPPLE_WIDTH,
+  ICON_ROW_LFO_CONFIGS,
+  ICON_TIME_HOVER,
+  ICON_TIME_IDLE,
+} from "./ledIconConstants";
 
-interface UseLedAnimationReturn {
+interface UseMiniLedAnimationReturn {
   addRipple: (col: number, row: number) => void;
   clearMousePosition: () => void;
   ledRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
   setMousePosition: (col: number, row: number) => void;
 }
 
-export function useLedAnimation(): UseLedAnimationReturn {
+export function useMiniLedAnimation(
+  isHoveredRef: React.MutableRefObject<boolean>,
+): UseMiniLedAnimationReturn {
   const ledRefs = useRef<(HTMLDivElement | null)[]>([]);
   const mouseRef = useRef<{ col: number; row: number } | null>(null);
   const ripplesRef = useRef<Ripple[]>([]);
   const rafRef = useRef<null | number>(null);
   const glowColorRef = useRef<string>("224, 90, 96");
+  // Accumulated "animation time" that runs at different speeds
+  const animTimeRef = useRef<number>(0);
+  const lastRawTimeRef = useRef<null | number>(null);
 
-  // Read the --voice-1 CSS color once on mount
   useEffect(() => {
     glowColorRef.current = readGlowColor();
   }, []);
@@ -45,49 +51,62 @@ export function useLedAnimation(): UseLedAnimationReturn {
   // Animation loop
   useEffect(() => {
     const animate = () => {
-      const time = performance.now() / 1000;
+      const rawTime = performance.now() / 1000;
       const mouse = mouseRef.current;
 
-      // Prune expired ripples
+      // Compute delta and accumulate with time multiplier
+      if (lastRawTimeRef.current === null) {
+        lastRawTimeRef.current = rawTime;
+      }
+      const delta = rawTime - lastRawTimeRef.current;
+      lastRawTimeRef.current = rawTime;
+      const multiplier = isHoveredRef.current
+        ? ICON_TIME_HOVER
+        : ICON_TIME_IDLE;
+      animTimeRef.current += delta * multiplier;
+      const time = animTimeRef.current;
+
+      // Prune expired ripples (use raw time for ripple timing)
       ripplesRef.current = ripplesRef.current.filter(
-        (r) => time - r.startTime < RIPPLE_DURATION,
+        (r) => rawTime - r.startTime < ICON_RIPPLE_DURATION,
       );
 
-      for (let i = 0; i < LED_COUNT; i++) {
+      for (let i = 0; i < ICON_LED_COUNT; i++) {
         const el = ledRefs.current[i];
         if (!el) continue;
 
-        const col = i % LED_COLS;
-        const row = Math.floor(i / LED_COLS);
-        const config = ROW_LFO_CONFIGS[row];
+        const col = i % ICON_COLS;
+        const row = Math.floor(i / ICON_COLS);
+        const config = ICON_ROW_LFO_CONFIGS[row];
 
         // Base LFO brightness
         let brightness =
-          BASE_MIN +
-          computeBaseLfo(col, row, time, config, BASE_SCALE) * BASE_SCALE;
+          ICON_BASE_MIN +
+          computeBaseLfo(col, row, time, config, ICON_BASE_SCALE) *
+            ICON_BASE_SCALE;
 
-        // Mouse proximity boost
-        if (mouse) {
+        // Mouse proximity boost (only when hovered)
+        if (isHoveredRef.current && mouse) {
           brightness += computeProximityBoost(
             col,
             row,
             mouse.col,
             mouse.row,
-            PROXIMITY_RADIUS_SQ,
-            PROXIMITY_INTENSITY,
+            ICON_PROXIMITY_RADIUS_SQ,
+            ICON_PROXIMITY_INTENSITY,
           );
         }
 
-        // Ripple boost
+        // Ripple boost (always, for click feedback)
         if (ripplesRef.current.length > 0) {
           brightness += computeRippleBoost(
             col,
             row,
-            time,
+            rawTime,
             ripplesRef.current,
-            RIPPLE_SPEED,
-            RIPPLE_WIDTH,
-            RIPPLE_DURATION,
+            ICON_RIPPLE_SPEED,
+            ICON_RIPPLE_WIDTH,
+            ICON_RIPPLE_DURATION,
           );
         }
 
@@ -105,7 +124,7 @@ export function useLedAnimation(): UseLedAnimationReturn {
         rafRef.current = null;
       }
     };
-  }, []);
+  }, [isHoveredRef]);
 
   const setMousePosition = useCallback((col: number, row: number) => {
     mouseRef.current = { col, row };
@@ -118,7 +137,7 @@ export function useLedAnimation(): UseLedAnimationReturn {
   const addRipple = useCallback((col: number, row: number) => {
     const time = performance.now() / 1000;
     ripplesRef.current = [
-      ...ripplesRef.current.slice(-(MAX_RIPPLES - 1)),
+      ...ripplesRef.current.slice(-(ICON_MAX_RIPPLES - 1)),
       { col, row, startTime: time },
     ];
   }, []);

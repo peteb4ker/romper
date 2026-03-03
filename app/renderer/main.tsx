@@ -30,13 +30,16 @@ const AppContent = () => {
   const messageDisplay = useMessageDisplay();
   const [showAboutModal, setShowAboutModal] = useState(false);
 
-  const handleAboutClick = () => {
-    setShowAboutModal(true);
-  };
-
   const handleCloseAbout = () => {
     setShowAboutModal(false);
   };
+
+  // Listen for menu-about custom event (from LED icon click and native menu)
+  useEffect(() => {
+    const handler = () => setShowAboutModal(true);
+    window.addEventListener("menu-about", handler);
+    return () => window.removeEventListener("menu-about", handler);
+  }, []);
 
   return (
     <MessageDisplayContext.Provider value={messageDisplay}>
@@ -51,7 +54,7 @@ const AppContent = () => {
             </Routes>
           </main>
         </div>
-        <StatusBar onAboutClick={handleAboutClick} />
+        <StatusBar />
         <AboutDialog isOpen={showAboutModal} onClose={handleCloseAbout} />
       </div>
     </MessageDisplayContext.Provider>

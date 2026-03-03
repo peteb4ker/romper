@@ -49,8 +49,9 @@ describe("LocalStoreWizardUI", () => {
     vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () => getMockUseLocalStoreWizard(),
     }));
-    const { default: LocalStoreWizardUI } =
-      await import("../LocalStoreWizardUI");
+    const { default: LocalStoreWizardUI } = await import(
+      "../LocalStoreWizardUI"
+    );
     render(<LocalStoreWizardUI onClose={() => {}} />);
     expect(screen.queryByTestId("wizard-progress-bar")).toBeNull();
   });
@@ -65,8 +66,9 @@ describe("LocalStoreWizardUI", () => {
     vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () => mockHook,
     }));
-    const { default: LocalStoreWizardUI } =
-      await import("../LocalStoreWizardUI");
+    const { default: LocalStoreWizardUI } = await import(
+      "../LocalStoreWizardUI"
+    );
     render(<LocalStoreWizardUI onClose={() => {}} />);
     expect(screen.getByTestId("wizard-error")).toHaveTextContent("fail");
   });
@@ -80,8 +82,9 @@ describe("LocalStoreWizardUI", () => {
           state: { error: null, isInitializing: true },
         }),
     }));
-    const { default: LocalStoreWizardUI } =
-      await import("../LocalStoreWizardUI");
+    const { default: LocalStoreWizardUI } = await import(
+      "../LocalStoreWizardUI"
+    );
     render(<LocalStoreWizardUI onClose={() => {}} />);
     expect(screen.getByTestId("wizard-progress-bar")).toBeInTheDocument();
     expect(screen.getByText("Downloading")).toBeInTheDocument();
@@ -104,8 +107,9 @@ describe("LocalStoreWizardUI", () => {
           },
         }),
     }));
-    const { default: LocalStoreWizardUI } =
-      await import("../LocalStoreWizardUI");
+    const { default: LocalStoreWizardUI } = await import(
+      "../LocalStoreWizardUI"
+    );
     render(<LocalStoreWizardUI onClose={() => {}} />);
     expect(screen.getAllByText(/choose source/i).length).toBeGreaterThan(0);
     expect(screen.queryByLabelText(/local store path/i)).toBeNull();
@@ -126,8 +130,9 @@ describe("LocalStoreWizardUI", () => {
           },
         }),
     }));
-    const { default: LocalStoreWizardUI } =
-      await import("../LocalStoreWizardUI");
+    const { default: LocalStoreWizardUI } = await import(
+      "../LocalStoreWizardUI"
+    );
     render(<LocalStoreWizardUI onClose={() => {}} />);
     // The input should be present in step 2 (target selection)
     expect(screen.getByLabelText(/local store path/i)).toBeInTheDocument();
@@ -151,8 +156,9 @@ describe("LocalStoreWizardUI", () => {
           },
         }),
     }));
-    const { default: LocalStoreWizardUI } =
-      await import("../LocalStoreWizardUI");
+    const { default: LocalStoreWizardUI } = await import(
+      "../LocalStoreWizardUI"
+    );
     render(<LocalStoreWizardUI onClose={() => {}} />);
     // Should NOT show the SD card path display during the source step
     expect(screen.queryByTestId("wizard-sdcard-path-env")).toBeNull();

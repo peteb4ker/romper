@@ -7,14 +7,15 @@ import {
 } from "@phosphor-icons/react";
 import React from "react";
 
-import appIcon from "../assets/app-icon.png";
 import { useKitBrowserHeader } from "./hooks/kit-management/useKitBrowserHeader";
+import LedIconGrid from "./led-icon/LedIconGrid";
 import SearchInput from "./SearchInput";
 
 interface KitBrowserHeaderProps {
   favoritesCount?: number;
   isSearching?: boolean;
   modifiedCount?: number;
+  onAboutClick?: () => void;
   onSearchChange?: (query: string) => void;
   onSearchClear?: () => void;
   onShowLocalStoreWizard: () => void;
@@ -35,11 +36,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
   return (
     <div className="sticky top-0 z-10 bg-surface-2 px-3 py-2 flex items-center gap-2 border-b border-border-subtle">
       {/* App Icon */}
-      <img
-        alt="Romper"
-        className="w-10 h-10 rounded-lg flex-shrink-0"
-        src={appIcon}
-      />
+      <LedIconGrid onClick={props.onAboutClick} />
 
       {/* Search — fills available space */}
       {props.onSearchChange && (

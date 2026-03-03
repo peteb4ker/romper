@@ -4,14 +4,10 @@ import React from "react";
 import { useSettings } from "../utils/SettingsContext";
 
 interface StatusBarProps {
-  onAboutClick?: () => void;
   progress?: null | number; // 0-100, or null for none
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({
-  onAboutClick,
-  progress = null,
-}) => {
+const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
   const { isDarkMode, localStorePath, setThemeMode, themeMode } = useSettings();
 
   // Extract nested ternary operations into independent statements
@@ -62,13 +58,6 @@ const StatusBar: React.FC<StatusBarProps> = ({
         >
           Rample Manual
         </a>
-        <button
-          className="underline hover:text-accent-primary transition-colors bg-transparent border-none p-0 cursor-pointer"
-          onClick={onAboutClick}
-          type="button"
-        >
-          About
-        </button>
         <button
           aria-label="Toggle theme mode"
           className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-surface-3 hover:bg-surface-4 transition duration-150"

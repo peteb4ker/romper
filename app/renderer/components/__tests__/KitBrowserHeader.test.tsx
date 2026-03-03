@@ -3,6 +3,15 @@ import { cleanup, fireEvent, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Mock LedIconGrid to avoid RAF/animation complexity in tests
+vi.mock("../led-icon/LedIconGrid", () => ({
+  default: ({ onClick }: { onClick?: () => void }) => (
+    <button data-testid="led-icon-grid" onClick={onClick}>
+      LED Icon
+    </button>
+  ),
+}));
+
 import { render } from "../../../../tests/utils/renderWithProviders";
 import KitBrowserHeader from "../KitBrowserHeader";
 
@@ -68,5 +77,20 @@ describe("KitBrowserHeader", () => {
     expect(
       screen.getByRole("button", { name: "Show only modified kits" }),
     ).toBeInTheDocument();
+  });
+
+  it("renders LedIconGrid instead of static image", () => {
+    render(<KitBrowserHeader {...defaultProps} />);
+    expect(screen.getByTestId("led-icon-grid")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "Romper" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("calls onAboutClick when LED icon is clicked", () => {
+    const onAboutClick = vi.fn();
+    render(<KitBrowserHeader {...defaultProps} onAboutClick={onAboutClick} />);
+    fireEvent.click(screen.getByTestId("led-icon-grid"));
+    expect(onAboutClick).toHaveBeenCalled();
   });
 });

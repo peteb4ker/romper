@@ -206,21 +206,11 @@ describe("StatusBar", () => {
       expect(manualLink).toHaveAttribute("rel", "noopener noreferrer");
     });
 
-    it("should render About button", () => {
+    it("should not render About button (moved to LED icon)", () => {
       render(<StatusBar />);
-      const aboutButton = screen.getByRole("button", { name: "About" });
-      expect(aboutButton).toBeInTheDocument();
-      expect(aboutButton).toHaveAttribute("type", "button");
-    });
-
-    it("should call onAboutClick when About button is clicked", () => {
-      const mockOnAboutClick = vi.fn();
-      render(<StatusBar onAboutClick={mockOnAboutClick} />);
-      const aboutButton = screen.getByRole("button", { name: "About" });
-
-      fireEvent.click(aboutButton);
-
-      expect(mockOnAboutClick).toHaveBeenCalledOnce();
+      expect(
+        screen.queryByRole("button", { name: "About" }),
+      ).not.toBeInTheDocument();
     });
   });
 

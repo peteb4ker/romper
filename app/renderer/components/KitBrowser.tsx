@@ -37,6 +37,7 @@ interface KitBrowserProps {
   kits?: KitWithRelations[];
   localStorePath: null | string;
   modifiedCount?: number;
+  onAboutClick?: () => void;
   // Core actions
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: () => Promise<void>;
@@ -217,6 +218,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           favoritesCount={favoritesCount}
           isSearching={props.isSearching}
           modifiedCount={modifiedCount}
+          onAboutClick={props.onAboutClick}
           onSearchChange={props.onSearchChange}
           onSearchClear={props.onSearchClear}
           onShowLocalStoreWizard={handleShowLocalStoreWizard}

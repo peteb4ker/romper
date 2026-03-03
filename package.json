@@ -73,8 +73,6 @@
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@playwright/mcp": "^0.0.43",
     "@playwright/test": "^1.56.1",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -113,7 +111,6 @@
     "nyc": "^17.1.0",
     "playwright": "^1.56.1",
     "rollup": "^4.59.0",
-    "semantic-release": "^25.0.2",
     "sonarqube-scanner": "^4.3.0",
     "tailwindcss": "^4.1.8",
     "tar": "^7.5.8",
@@ -123,7 +120,10 @@
     "vitest": "^3.2.3"
   },
   "overrides": {
-    "eslint": "^9.0.0"
+    "eslint": "^9.0.0",
+    "serialize-javascript": "^7.0.4",
+    "minimatch@>=10.0.0": "10.2.4",
+    "tar": "^7.5.8"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

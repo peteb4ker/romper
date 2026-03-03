@@ -1,4 +1,4 @@
-import { Play, Stop } from "@phosphor-icons/react";
+import { PlayIcon, StopIcon } from "@phosphor-icons/react";
 import React from "react";
 
 interface BpmLogic {
@@ -74,9 +74,9 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
         type="button"
       >
         {isSeqPlaying ? (
-          <Stop size={20} weight="fill" />
+          <StopIcon size={20} weight="fill" />
         ) : (
-          <Play size={20} weight="fill" />
+          <PlayIcon size={20} weight="fill" />
         )}
       </button>
 

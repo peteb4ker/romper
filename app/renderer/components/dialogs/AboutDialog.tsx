@@ -1,6 +1,8 @@
 import { X } from "@phosphor-icons/react";
 import React, { useEffect } from "react";
 
+import LedPixelGrid from "./led-grid/LedPixelGrid";
+
 const openExternal = (url: string) => {
   if (window.electronAPI?.openExternal) window.electronAPI.openExternal(url);
   else window.open(url, "_blank", "noopener,noreferrer");
@@ -15,12 +17,6 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
   const version =
     (import.meta.env ? import.meta.env.VITE_APP_VERSION : undefined) ?? "dev";
   const currentYear = new Date().getFullYear();
-
-  // Shared classes
-  const headingStyles = "text-text-primary";
-  const borderStyles = "border-border-subtle";
-  const linkBtn =
-    "underline text-accent-primary hover:text-accent-primary/80 transition-colors";
 
   // Escape to close
   useEffect(() => {
@@ -39,25 +35,6 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
     if (e.target === e.currentTarget) onClose();
   };
 
-  // Data-driven content to avoid repeated <p> blocks
-  const infoLines: React.ReactNode[] = [
-    <p key="c1">&copy; Pete Baker {currentYear}</p>,
-    <p key="c2">
-      This application is{" "}
-      <span className="font-semibold">not affiliated with Squarp SAS</span>
-    </p>,
-    <p key="c3">
-      Licensed under the{" "}
-      <button
-        className={linkBtn}
-        onClick={() => openExternal("https://opensource.org/licenses/MIT")}
-        type="button"
-      >
-        MIT license
-      </button>
-    </p>,
-  ];
-
   return (
     <div
       aria-labelledby="about-title"
@@ -71,45 +48,66 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
       role="dialog"
       tabIndex={-1}
     >
-      <div className="bg-surface-2 rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] border border-border-subtle w-full max-w-lg max-h-[80vh] overflow-hidden">
-        {/* Header */}
-        <div
-          className={`flex items-center justify-between p-6 border-b ${borderStyles}`}
+      <div className="relative rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.6)] border border-white/10 w-full max-w-lg overflow-hidden bg-black">
+        {/* LED Grid Background */}
+        <LedPixelGrid />
+
+        {/* Dark gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/70 to-black/40 pointer-events-none" />
+
+        {/* Close button */}
+        <button
+          aria-label="Close dialog"
+          className="absolute top-3 right-3 z-10 text-white/60 hover:text-white transition-colors"
+          onClick={onClose}
+          type="button"
         >
-          <h2
-            className={`text-xl font-semibold ${headingStyles}`}
-            id="about-title"
-          >
-            About Romper
+          <X size={20} />
+        </button>
+
+        {/* Content overlay */}
+        <div className="relative z-10 px-8 py-10 text-center pointer-events-none">
+          {/* Title */}
+          <h2 id="about-title">
+            <span className="sr-only">About Romper</span>
+            <span
+              aria-hidden="true"
+              className="block text-3xl font-bold text-white tracking-[0.35em] uppercase"
+            >
+              R O M P E R
+            </span>
           </h2>
-          <button
-            aria-label="Close dialog"
-            className="text-text-tertiary hover:text-text-primary transition-colors"
-            onClick={onClose}
-            type="button"
-          >
-            <X size={20} />
-          </button>
-        </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto">
-          <div className="text-center space-y-4">
-            <div className="space-y-2">
-              <h3 className={`text-2xl font-bold ${headingStyles}`}>Romper</h3>
-              <p className="text-lg text-text-secondary">
-                Rample SD Card Manager
-              </p>
-            </div>
+          {/* Subtitle */}
+          <p className="mt-2 text-sm text-white/70">Rample SD Card Manager</p>
 
-            {/* Info lines rendered from array to avoid duplication */}
-            <div className="space-y-3 text-sm text-text-secondary">
-              {infoLines}
-            </div>
+          {/* Info section */}
+          <div className="mt-6 space-y-2 text-xs text-white/60">
+            <p>&copy; Pete Baker {currentYear}</p>
+            <p>
+              This application is{" "}
+              <span className="font-semibold text-white/70">
+                not affiliated with Squarp SAS
+              </span>
+            </p>
+            <p>
+              Licensed under the{" "}
+              <button
+                className="underline text-white/80 hover:text-white transition-colors pointer-events-auto"
+                onClick={() =>
+                  openExternal("https://opensource.org/licenses/MIT")
+                }
+                type="button"
+              >
+                MIT license
+              </button>
+            </p>
+          </div>
 
-            {/* Single external action button */}
+          {/* GitHub button */}
+          <div className="mt-6">
             <button
-              className="inline-flex items-center gap-2 px-4 py-2 bg-accent-primary hover:bg-accent-primary/80 text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-accent-primary"
+              className="pointer-events-auto inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-sm rounded-md border border-white/20 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/40"
               onClick={() =>
                 openExternal("https://github.com/peteb4ker/romper/")
               }
@@ -126,25 +124,29 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
               </svg>
               GitHub Repository
             </button>
+          </div>
 
-            <hr className={borderStyles} />
-
-            {/* Footer text minimized and structured to reduce repeats */}
-            <div className="text-xs text-text-tertiary space-y-2">
-              {[
-                <p key="f1">
-                  Romper is an{" "}
-                  <span className="font-semibold">open-source</span> Electron
-                  app for managing Squarp Rample SD cards.
-                </p>,
-                <p key="f2">
-                  Feedback, bug reports, and contributions are welcome.
-                </p>,
-                <p className="font-mono" key="f3">
-                  Version: <span className="font-medium">{version}</span>
-                </p>,
-              ]}
-            </div>
+          {/* Footer */}
+          <div className="mt-8 text-[10px] text-white/30 space-y-1">
+            <p>
+              Romper is an <span className="font-semibold">open-source</span>{" "}
+              Electron app for managing Squarp Rample SD cards.
+            </p>
+            <p>
+              <button
+                className="underline text-white/50 hover:text-white/80 transition-colors pointer-events-auto"
+                onClick={() =>
+                  openExternal("https://github.com/peteb4ker/romper/issues")
+                }
+                type="button"
+              >
+                Feedback, bug reports
+              </button>
+              , and contributions are welcome.
+            </p>
+            <p className="font-mono">
+              Version: <span className="font-medium">{version}</span>
+            </p>
           </div>
         </div>
       </div>

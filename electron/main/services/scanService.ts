@@ -135,36 +135,14 @@ export class ScanService {
     const dbDir = this.getDbPath(localStorePath);
 
     try {
-      // First, find all kits that have samples with missing metadata
-      const kitsNeedingRescan: string[] = [];
-
       const samplesResult = getAllSamples(dbDir);
       if (!samplesResult.success || !samplesResult.data) {
         return { error: "Failed to query samples", success: false };
       }
 
-      // Group kits by whether they have missing metadata
-      const kitMetadataStatus = new Map<string, boolean>();
-      for (const sample of samplesResult.data) {
-        if (!kitMetadataStatus.has(sample.kit_name)) {
-          kitMetadataStatus.set(sample.kit_name, false);
-        }
-        // If any sample is missing metadata, mark the kit as needing rescan
-        if (
-          sample.wav_sample_rate === null ||
-          sample.wav_bit_depth === null ||
-          sample.wav_channels === null
-        ) {
-          kitMetadataStatus.set(sample.kit_name, true);
-        }
-      }
-
-      // Get list of kits that need rescanning
-      for (const [kitName, needsRescan] of kitMetadataStatus) {
-        if (needsRescan) {
-          kitsNeedingRescan.push(kitName);
-        }
-      }
+      const kitsNeedingRescan = this.identifyKitsNeedingRescan(
+        samplesResult.data,
+      );
 
       // Rescan each kit that needs metadata
       const kitsRescanned: string[] = [];
@@ -283,6 +261,43 @@ export class ScanService {
     return typeof inMemorySettings.localStorePath === "string"
       ? inMemorySettings.localStorePath
       : null;
+  }
+
+  private hasMissingMetadata(sample: {
+    wav_bit_depth: null | number;
+    wav_channels: null | number;
+    wav_sample_rate: null | number;
+  }): boolean {
+    return (
+      sample.wav_sample_rate === null ||
+      sample.wav_bit_depth === null ||
+      sample.wav_channels === null
+    );
+  }
+
+  private identifyKitsNeedingRescan(
+    samples: Array<{
+      kit_name: string;
+      wav_bit_depth: null | number;
+      wav_channels: null | number;
+      wav_sample_rate: null | number;
+    }>,
+  ): string[] {
+    const kitMetadataStatus = new Map<string, boolean>();
+    for (const sample of samples) {
+      if (!kitMetadataStatus.has(sample.kit_name)) {
+        kitMetadataStatus.set(sample.kit_name, false);
+      }
+      if (this.hasMissingMetadata(sample)) {
+        kitMetadataStatus.set(sample.kit_name, true);
+      }
+    }
+
+    const result: string[] = [];
+    for (const [kitName, needsRescan] of kitMetadataStatus) {
+      if (needsRescan) result.push(kitName);
+    }
+    return result;
   }
 
   /**

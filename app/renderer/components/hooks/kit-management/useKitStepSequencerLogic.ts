@@ -170,7 +170,7 @@ export function useKitStepSequencerLogic(
 
       switch (mode) {
         case "random":
-          return voiceSamples[Math.floor(Math.random() * voiceSamples.length)];
+          return voiceSamples[Math.floor(Math.random() * voiceSamples.length)]; // NOSONAR - not cryptographic, used for musical randomization
         case "round-robin": {
           const currentIndex = roundRobinIndexRef.current[voiceNumber] ?? 0;
           const sample = voiceSamples[currentIndex % voiceSamples.length];

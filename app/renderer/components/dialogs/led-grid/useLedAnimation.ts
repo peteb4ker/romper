@@ -16,9 +16,11 @@ import {
   ROW_LFO_CONFIGS,
 } from "./ledConstants";
 import {
+  applyLedStyle,
   computeBaseLfo,
   computeProximityBoost,
   computeRippleBoost,
+  readGlowColor,
 } from "./ledMath";
 
 interface UseLedAnimationReturn {
@@ -37,19 +39,7 @@ export function useLedAnimation(): UseLedAnimationReturn {
 
   // Read the --voice-1 CSS color once on mount
   useEffect(() => {
-    const root = document.documentElement;
-    const style = getComputedStyle(root);
-    const voice1 = style.getPropertyValue("--voice-1").trim();
-    if (voice1) {
-      // Parse hex color to RGB for box-shadow
-      const hex = voice1.replace("#", "");
-      if (hex.length === 6) {
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-        glowColorRef.current = `${r}, ${g}, ${b}`;
-      }
-    }
+    glowColorRef.current = readGlowColor();
   }, []);
 
   // Animation loop
@@ -57,10 +47,9 @@ export function useLedAnimation(): UseLedAnimationReturn {
     const animate = () => {
       const time = performance.now() / 1000;
       const mouse = mouseRef.current;
-      const ripples = ripplesRef.current;
 
       // Prune expired ripples
-      ripplesRef.current = ripples.filter(
+      ripplesRef.current = ripplesRef.current.filter(
         (r) => time - r.startTime < RIPPLE_DURATION,
       );
 
@@ -102,20 +91,7 @@ export function useLedAnimation(): UseLedAnimationReturn {
           );
         }
 
-        // Clamp to 0..1
-        brightness = Math.min(1, Math.max(0, brightness));
-
-        // Update DOM directly (no React re-render)
-        el.style.opacity = String(brightness);
-
-        // Add glow for bright LEDs
-        if (brightness > 0.5) {
-          const glowIntensity = (brightness - 0.5) * 2;
-          const spread = Math.round(glowIntensity * 4);
-          el.style.boxShadow = `0 0 ${spread}px ${Math.round(spread * 0.5)}px rgba(${glowColorRef.current}, ${(glowIntensity * 0.6).toFixed(2)})`;
-        } else {
-          el.style.boxShadow = "none";
-        }
+        applyLedStyle(el, brightness, glowColorRef.current);
       }
 
       rafRef.current = requestAnimationFrame(animate);

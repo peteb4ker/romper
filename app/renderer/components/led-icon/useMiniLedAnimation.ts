@@ -3,9 +3,11 @@ import { useCallback, useEffect, useRef } from "react";
 import type { Ripple } from "../dialogs/led-grid/ledMath";
 
 import {
+  applyLedStyle,
   computeBaseLfo,
   computeProximityBoost,
   computeRippleBoost,
+  readGlowColor,
 } from "../dialogs/led-grid/ledMath";
 import {
   ICON_BASE_MIN,
@@ -42,20 +44,8 @@ export function useMiniLedAnimation(
   const animTimeRef = useRef<number>(0);
   const lastRawTimeRef = useRef<null | number>(null);
 
-  // Read the --voice-1 CSS color once on mount
   useEffect(() => {
-    const root = document.documentElement;
-    const style = getComputedStyle(root);
-    const voice1 = style.getPropertyValue("--voice-1").trim();
-    if (voice1) {
-      const hex = voice1.replace("#", "");
-      if (hex.length === 6) {
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-        glowColorRef.current = `${r}, ${g}, ${b}`;
-      }
-    }
+    glowColorRef.current = readGlowColor();
   }, []);
 
   // Animation loop
@@ -120,20 +110,7 @@ export function useMiniLedAnimation(
           );
         }
 
-        // Clamp to 0..1
-        brightness = Math.min(1, Math.max(0, brightness));
-
-        // Update DOM directly (no React re-render)
-        el.style.opacity = String(brightness);
-
-        // Add glow for bright LEDs
-        if (brightness > 0.5) {
-          const glowIntensity = (brightness - 0.5) * 2;
-          const spread = Math.round(glowIntensity * 4);
-          el.style.boxShadow = `0 0 ${spread}px ${Math.round(spread * 0.5)}px rgba(${glowColorRef.current}, ${(glowIntensity * 0.6).toFixed(2)})`;
-        } else {
-          el.style.boxShadow = "none";
-        }
+        applyLedStyle(el, brightness, glowColorRef.current);
       }
 
       rafRef.current = requestAnimationFrame(animate);

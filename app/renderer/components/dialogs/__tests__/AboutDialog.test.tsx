@@ -304,7 +304,7 @@ describe("AboutDialog", () => {
         "relative",
         "rounded-lg",
         "w-full",
-        "max-w-lg",
+        "max-w-xl",
         "overflow-hidden",
         "bg-black",
       );

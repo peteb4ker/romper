@@ -48,7 +48,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
       role="dialog"
       tabIndex={-1}
     >
-      <div className="relative rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.6)] border border-white/10 w-full max-w-lg overflow-hidden bg-black">
+      <div className="relative rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.6)] border border-white/10 w-full max-w-xl overflow-hidden bg-black">
         {/* LED Grid Background */}
         <LedPixelGrid />
 
@@ -66,23 +66,23 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
         </button>
 
         {/* Content overlay */}
-        <div className="relative z-10 px-8 py-10 text-center pointer-events-none">
+        <div className="relative z-10 px-10 py-12 text-center pointer-events-none">
           {/* Title */}
           <h2 id="about-title">
             <span className="sr-only">About Romper</span>
             <span
               aria-hidden="true"
-              className="block text-3xl font-bold text-white tracking-[0.35em] uppercase"
+              className="block text-4xl font-bold text-white tracking-[0.35em] uppercase"
             >
               R O M P E R
             </span>
           </h2>
 
           {/* Subtitle */}
-          <p className="mt-2 text-sm text-white/70">Rample SD Card Manager</p>
+          <p className="mt-3 text-base text-white/70">Rample SD Card Manager</p>
 
           {/* Info section */}
-          <div className="mt-6 space-y-2 text-xs text-white/60">
+          <div className="mt-6 space-y-2 text-sm text-white/60">
             <p>&copy; Pete Baker {currentYear}</p>
             <p>
               This application is{" "}
@@ -127,7 +127,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Footer */}
-          <div className="mt-8 text-[10px] text-white/30 space-y-1">
+          <div className="mt-8 text-xs text-white/30 space-y-1">
             <p>
               Romper is an <span className="font-semibold">open-source</span>{" "}
               Electron app for managing Squarp Rample SD cards.

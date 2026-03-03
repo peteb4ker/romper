@@ -10,20 +10,22 @@ const LedPixelGrid: React.FC = React.memo(() => {
 
   const translateCoords = useCallback(
     (clientX: number, clientY: number): { col: number; row: number } | null => {
-      const grid = gridRef.current;
-      if (!grid) return null;
-      const rect = grid.getBoundingClientRect();
-      // Account for padding (4px) to map within the content area
-      const padding = 4;
-      const x = clientX - rect.left - padding;
-      const y = clientY - rect.top - padding;
-      const contentWidth = rect.width - padding * 2;
-      const contentHeight = rect.height - padding * 2;
-      const col = (x / contentWidth) * LED_COLS;
-      const row = (y / contentHeight) * LED_ROWS;
+      // Use actual LED element positions to map mouse to grid coordinates.
+      // This accounts for padding, gaps, and any CSS layout effects.
+      const firstLed = ledRefs.current[0];
+      const lastLed = ledRefs.current[LED_COUNT - 1];
+      if (!firstLed || !lastLed) return null;
+      const first = firstLed.getBoundingClientRect();
+      const last = lastLed.getBoundingClientRect();
+      const firstCx = first.left + first.width / 2;
+      const firstCy = first.top + first.height / 2;
+      const lastCx = last.left + last.width / 2;
+      const lastCy = last.top + last.height / 2;
+      const col = ((clientX - firstCx) / (lastCx - firstCx)) * (LED_COLS - 1);
+      const row = ((clientY - firstCy) / (lastCy - firstCy)) * (LED_ROWS - 1);
       return { col, row };
     },
-    [],
+    [ledRefs],
   );
 
   const handleMouseMove = useCallback(

@@ -158,6 +158,7 @@ export function updateKit(
     modified?: boolean;
     name?: string;
     step_pattern?: null | number[][];
+    trigger_conditions?: (null | string)[][] | null;
   },
 ): DbResult<void> {
   return withDb(dbDir, (db) => {

@@ -29,6 +29,9 @@ export const kits = sqliteTable("kits", {
   step_pattern: text("step_pattern", { mode: "json" }).$type<
     null | number[][]
   >(), // JSON storage for step patterns
+  trigger_conditions: text("trigger_conditions", { mode: "json" }).$type<
+    (null | string)[][] | null
+  >(), // JSON storage for A:B trigger conditions (4 voices x 16 steps)
 });
 
 // Voices table - each kit has exactly 4 voices

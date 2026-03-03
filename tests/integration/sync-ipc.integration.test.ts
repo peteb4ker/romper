@@ -46,8 +46,9 @@ describe("Sync IPC Integration Tests", () => {
 
     // Import modules after clearing mocks
     ({ dialog, ipcMain } = await import("electron"));
-    ({ registerSyncIpcHandlers } =
-      await import("../../electron/main/db/syncIpcHandlers"));
+    ({ registerSyncIpcHandlers } = await import(
+      "../../electron/main/db/syncIpcHandlers"
+    ));
 
     // Reset mock implementations
     mockSyncService.generateChangeSummary.mockResolvedValue({

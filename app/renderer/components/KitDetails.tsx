@@ -141,7 +141,9 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
         sequencerOpen={logic.sequencerOpen}
         setSequencerOpen={logic.setSequencerOpen}
         setStepPattern={logic.setStepPattern}
+        setTriggerConditions={logic.setTriggerConditions}
         stepPattern={logic.stepPattern}
+        triggerConditions={logic.triggerConditions}
         voices={logic.kit?.voices}
       />
     </div>

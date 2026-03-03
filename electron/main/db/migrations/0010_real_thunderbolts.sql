@@ -1,0 +1,1 @@
+ALTER TABLE `kits` ADD `trigger_conditions` text;

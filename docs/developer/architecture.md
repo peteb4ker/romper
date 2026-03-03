@@ -71,6 +71,13 @@ User-added samples are **referenced by absolute path** rather than copied locall
 - **Voice-based organization**: 4 voices per kit, 12 slots per voice
 - **Undo/redo system**: Action history stored in database for full operation tracking
 
+### Sample Playback Architecture
+
+- **Voice choke (monophonic)**: When a sample triggers on any voice, it MUST stop the previous sample playing on that voice. Each voice is monophonic — only one sample sounds at a time per voice.
+- **Web Audio API**: Playback uses `AudioBufferSourceNode` routed through a `GainNode` for volume control.
+- **Secure sample loading**: Audio buffers loaded via IPC using kit/voice/slot identifiers (never raw file paths).
+- **Sample modes**: Each voice selects samples via `first`, `random`, or `round-robin` mode.
+
 ### Database Schema Architecture
 
 - **Human-readable keys**: kit_name as foreign key (not kit_id) for readable references

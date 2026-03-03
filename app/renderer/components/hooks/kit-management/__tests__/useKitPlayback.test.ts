@@ -90,6 +90,59 @@ describe("useKitPlayback", () => {
     expect(result.current.playVolumes).toEqual({});
   });
 
+  it("chokes other playing samples on the same voice", () => {
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    // Mark sample A on voice 1 as playing
+    act(() => {
+      result.current.handleWaveformPlayingChange(1, "kick.wav", true);
+    });
+    expect(result.current.samplePlaying["1:kick.wav"]).toBe(true);
+
+    // Play sample B on voice 1 — should stop sample A
+    const prevStopTrigger = result.current.stopTriggers["1:kick.wav"] || 0;
+    act(() => {
+      result.current.handlePlay(1, "snare.wav");
+    });
+    expect(result.current.stopTriggers["1:kick.wav"]).toBeGreaterThan(
+      prevStopTrigger,
+    );
+    // New sample should have its play trigger incremented
+    expect(result.current.playTriggers["1:snare.wav"]).toBe(1);
+  });
+
+  it("does not choke samples on other voices", () => {
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    // Mark samples playing on voice 1 and voice 2
+    act(() => {
+      result.current.handleWaveformPlayingChange(1, "kick.wav", true);
+      result.current.handleWaveformPlayingChange(2, "snare.wav", true);
+    });
+
+    // Play a new sample on voice 1 — should NOT stop voice 2
+    const voice2StopBefore = result.current.stopTriggers["2:snare.wav"] || 0;
+    act(() => {
+      result.current.handlePlay(1, "hat.wav");
+    });
+    expect(result.current.stopTriggers["2:snare.wav"] || 0).toBe(
+      voice2StopBefore,
+    );
+  });
+
+  it("does not choke the same sample being replayed", () => {
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    act(() => {
+      result.current.handleWaveformPlayingChange(1, "kick.wav", true);
+    });
+
+    // Replay same sample — SampleWaveform handles its own restart,
+    // no extra stop trigger needed for the same key
+    const stopBefore = result.current.stopTriggers["1:kick.wav"] || 0;
+    act(() => {
+      result.current.handlePlay(1, "kick.wav");
+    });
+    expect(result.current.stopTriggers["1:kick.wav"] || 0).toBe(stopBefore);
+  });
+
   it("sets playbackError on error event", () => {
     let errorHandler: unknown;
     vi.mocked(window.electronAPI.onSamplePlaybackError).mockImplementation(

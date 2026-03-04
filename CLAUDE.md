@@ -9,6 +9,10 @@ tags: documentation
 
 > **Auto-Loading Context**: Additional file-specific instructions are automatically loaded based on the current working file. See `.agent/context.md` for pattern matching rules.
 
+## Tool Restrictions
+
+- **NEVER use chrome-devtools MCP tools** — this is an Electron desktop app, not a webapp. Chrome DevTools MCP cannot connect to it.
+
 ## Project Overview
 
 Cross-platform desktop app for managing sample kits for the **Squarp Rample** Eurorack sampler. Built with Electron, React, TypeScript, and Drizzle ORM using reference-only sample management.

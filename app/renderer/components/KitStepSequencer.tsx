@@ -38,6 +38,21 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   // Manage BPM state at this level to ensure sequencer logic gets live updates
   const bpmLogic = useBpm({ initialBpm: props.bpm, kitName: props.kitName });
 
+  // Voice mute state — session only, not persisted
+  const [voiceMutes, setVoiceMutes] = React.useState<Record<number, boolean>>(
+    () => {
+      const mutes: Record<number, boolean> = {};
+      for (let i = 1; i <= NUM_VOICES; i++) {
+        mutes[i] = false;
+      }
+      return mutes;
+    },
+  );
+
+  const handleMuteToggle = React.useCallback((voiceNumber: number) => {
+    setVoiceMutes((prev) => ({ ...prev, [voiceNumber]: !prev[voiceNumber] }));
+  }, []);
+
   // Voice volume state — initialized from voice data, managed locally
   const [voiceVolumes, setVoiceVolumes] = React.useState<
     Record<number, number>
@@ -132,6 +147,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     bpm: bpmLogic.bpm,
     sampleModes,
     triggerConditions: props.triggerConditions,
+    voiceMutes,
     voiceVolumes,
   });
 
@@ -160,6 +176,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
           NUM_STEPS={logic.NUM_STEPS}
           NUM_VOICES={logic.NUM_VOICES}
           onConditionChange={handleConditionChange}
+          onMuteToggle={handleMuteToggle}
           onSampleModeChange={handleSampleModeChange}
           onVolumeChange={handleVolumeChange}
           ROW_COLORS={logic.ROW_COLORS}
@@ -168,6 +185,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
           setFocusedStep={logic.setFocusedStep}
           toggleStep={logic.toggleStep}
           triggerConditions={props.triggerConditions}
+          voiceMutes={voiceMutes}
           voiceVolumes={voiceVolumes}
         />
       </div>

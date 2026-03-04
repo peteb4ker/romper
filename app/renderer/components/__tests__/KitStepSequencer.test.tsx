@@ -359,6 +359,65 @@ describe("KitStepSequencer", () => {
     vi.useRealTimers();
   });
 
+  it("passes voiceMutes to the logic hook", () => {
+    render(
+      <KitStepSequencer
+        bpm={120}
+        kitName="TestKit"
+        onPlaySample={onPlaySample}
+        samples={defaultSamples}
+        sequencerOpen={true}
+        setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        setTriggerConditions={vi.fn()}
+        stepPattern={stepPattern}
+        triggerConditions={Array.from({ length: 4 }, () =>
+          Array(16).fill(null),
+        )}
+      />,
+    );
+
+    // Hook should receive voiceMutes initialized to all false
+    expect(mockUseKitStepSequencerLogic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        voiceMutes: { 1: false, 2: false, 3: false, 4: false },
+      }),
+    );
+  });
+
+  it("renders mute buttons and toggles mute state on click", () => {
+    render(
+      <KitStepSequencer
+        bpm={120}
+        kitName="TestKit"
+        onPlaySample={onPlaySample}
+        samples={defaultSamples}
+        sequencerOpen={true}
+        setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        setTriggerConditions={vi.fn()}
+        stepPattern={stepPattern}
+        triggerConditions={Array.from({ length: 4 }, () =>
+          Array(16).fill(null),
+        )}
+      />,
+    );
+
+    // Mute buttons should be rendered
+    const muteButton = screen.getByTestId("voice-mute-0");
+    expect(muteButton).toBeInTheDocument();
+
+    // Click to mute voice 1
+    fireEvent.click(muteButton);
+
+    // After click, hook should be re-called with voice 1 muted
+    const lastCall =
+      mockUseKitStepSequencerLogic.mock.calls[
+        mockUseKitStepSequencerLogic.mock.calls.length - 1
+      ];
+    expect(lastCall[0].voiceMutes[1]).toBe(true);
+  });
+
   it("calls onVoiceSettingChanged immediately for sample mode changes", () => {
     const onVoiceSettingChanged = vi.fn();
 

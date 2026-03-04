@@ -370,8 +370,9 @@ describe("useKitNavigation", () => {
     });
 
     it("should mark explicit navigation when going back", async () => {
-      const { markExplicitNavigation } =
-        await import("../../../../utils/hmrStateManager");
+      const { markExplicitNavigation } = await import(
+        "../../../../utils/hmrStateManager"
+      );
 
       const { result } = renderHook(() =>
         useKitNavigation({

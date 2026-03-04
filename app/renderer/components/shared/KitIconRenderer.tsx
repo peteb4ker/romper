@@ -1,12 +1,13 @@
 import {
   ArrowsCounterClockwise,
   Folder,
-  Microphone,
+  MicrophoneStage,
   PianoKeys,
   Sparkle,
-  Waveform,
 } from "@phosphor-icons/react";
 import React from "react";
+
+import { DrumKit } from "../icons";
 
 export type KnownKitIconType =
   | "drumkit"
@@ -34,7 +35,7 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
   // Size mapping (px)
   const sizeMap = {
     lg: 30,
-    md: 24,
+    md: 25,
     sm: 20,
   };
 
@@ -43,16 +44,15 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
   switch (iconType) {
     case "drumkit":
       return (
-        <Waveform
-          className={`text-accent-warning ${className}`}
-          size={iconSize}
-          weight="bold"
+        <DrumKit
+          className={`text-text-secondary ${className}`}
+          size={iconSize + 2}
         />
       );
     case "fx":
       return (
         <Sparkle
-          className={`text-voice-3 ${className}`}
+          className={`text-text-secondary ${className}`}
           size={iconSize}
           weight="fill"
         />
@@ -60,14 +60,14 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
     case "loop":
       return (
         <ArrowsCounterClockwise
-          className={`text-voice-4 ${className}`}
+          className={`text-text-secondary ${className}`}
           size={iconSize}
         />
       );
     case "mic":
       return (
-        <Microphone
-          className={`text-voice-1 ${className}`}
+        <MicrophoneStage
+          className={`text-text-secondary ${className}`}
           size={iconSize}
           weight="fill"
         />
@@ -75,12 +75,17 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
     case "piano":
       return (
         <PianoKeys
-          className={`text-accent-primary ${className}`}
+          className={`text-text-secondary ${className}`}
           size={iconSize}
           weight="fill"
         />
       );
     default:
-      return <Folder className={className} size={iconSize} />;
+      return (
+        <Folder
+          className={`text-text-secondary ${className}`}
+          size={iconSize}
+        />
+      );
   }
 };

@@ -1,4 +1,5 @@
 import {
+  BookmarkSimple,
   DownloadSimple,
   GearSix,
   PencilSimple,
@@ -57,10 +58,10 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
               ? "Show all kits"
               : "Show only favorite kits"
           }
-          className={`flex-shrink-0 px-2.5 py-1.5 text-xs rounded-md transition duration-150 font-medium flex items-center gap-1.5 ${
+          className={`flex-shrink-0 px-2.5 py-1.5 text-xs rounded-md transition duration-150 font-medium flex items-center gap-1.5 border ${
             props.showFavoritesOnly
-              ? "bg-accent-warning text-text-inverse hover:brightness-110"
-              : "text-text-secondary hover:bg-surface-3"
+              ? "bg-accent-favorite text-text-inverse border-accent-favorite hover:brightness-110"
+              : "border-accent-favorite/40 bg-accent-favorite/5 text-accent-favorite hover:bg-accent-favorite/10"
           }`}
           onClick={props.onToggleFavoritesFilter}
           title={
@@ -69,15 +70,15 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
               : "Show only favorite kits"
           }
         >
-          <Star size={14} weight="fill" />
+          <BookmarkSimple size={14} weight="fill" />
           Favorites
           {typeof props.favoritesCount === "number" &&
             props.favoritesCount > 0 && (
               <span
                 className={`min-w-[18px] h-[18px] px-1 text-[10px] leading-[18px] rounded-full font-bold text-center ${
                   props.showFavoritesOnly
-                    ? "bg-accent-warning/80 text-text-inverse"
-                    : "bg-surface-4 text-text-secondary"
+                    ? "bg-accent-favorite/80 text-text-inverse"
+                    : "bg-accent-favorite/20 text-accent-favorite"
                 }`}
               >
                 {props.favoritesCount}
@@ -92,10 +93,10 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           aria-label={
             props.showModifiedOnly ? "Show all kits" : "Show only modified kits"
           }
-          className={`flex-shrink-0 px-2.5 py-1.5 text-xs rounded-md transition duration-150 font-medium flex items-center gap-1.5 ${
+          className={`flex-shrink-0 px-2.5 py-1.5 text-xs rounded-md transition duration-150 font-medium flex items-center gap-1.5 border ${
             props.showModifiedOnly
-              ? "bg-accent-warning text-text-inverse hover:brightness-110"
-              : "text-text-secondary hover:bg-surface-3"
+              ? "bg-accent-warning text-text-inverse border-accent-warning hover:brightness-110"
+              : "border-accent-warning/40 bg-accent-warning/5 text-accent-warning hover:bg-accent-warning/10"
           }`}
           onClick={props.onToggleModifiedFilter}
           title={
@@ -104,7 +105,6 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
               : "Show only modified kits with unsaved changes"
           }
         >
-          <PencilSimple size={14} />
           Modified
           {typeof props.modifiedCount === "number" &&
             props.modifiedCount > 0 && (
@@ -112,7 +112,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
                 className={`min-w-[18px] h-[18px] px-1 text-[10px] leading-[18px] rounded-full font-bold text-center ${
                   props.showModifiedOnly
                     ? "bg-accent-warning/80 text-text-inverse"
-                    : "bg-surface-4 text-text-secondary"
+                    : "bg-accent-warning/20 text-accent-warning"
                 }`}
               >
                 {props.modifiedCount}

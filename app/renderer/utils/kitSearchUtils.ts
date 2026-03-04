@@ -10,6 +10,11 @@ import type {
  * Provides functions for filtering kits based on query strings and tracking match details for UI indicators
  */
 
+interface SampleWithVoice {
+  filename: string;
+  voiceNumber: null | number;
+}
+
 /**
  * Check kit basic fields (name, alias, artist) for search matches
  */
@@ -45,15 +50,24 @@ export function checkKitSamples(
   matchDetails: SearchMatchDetails,
   allKitSamples: { [kit: string]: unknown },
 ): void {
-  const filenames = [
+  const samples = [
     ...getSamplesFromAllKitSamples(kit, allKitSamples),
     ...getSamplesFromKitRelation(kit),
   ];
 
-  for (const filename of filenames) {
+  for (const { filename, voiceNumber } of samples) {
     if (filename.toLowerCase().includes(searchTerm)) {
       matchDetails.matchedOn.push(`sample:${filename}`);
       matchDetails.matchedSamples.push(filename);
+      if (voiceNumber != null) {
+        if (!matchDetails.matchedSamplesByVoice) {
+          matchDetails.matchedSamplesByVoice = {};
+        }
+        if (!matchDetails.matchedSamplesByVoice[voiceNumber]) {
+          matchDetails.matchedSamplesByVoice[voiceNumber] = [];
+        }
+        matchDetails.matchedSamplesByVoice[voiceNumber].push(filename);
+      }
     }
   }
 }
@@ -99,6 +113,7 @@ export function filterKitsWithSearch(
       matchedOn: [],
       matchedSamples: [],
       matchedVoices: [],
+      searchTerm,
     };
 
     checkKitBasicFields(kit, searchTerm, matchDetails);
@@ -124,27 +139,36 @@ export function filterKitsWithSearch(
 function getSamplesFromAllKitSamples(
   kit: KitWithRelations,
   allKitSamples: { [kit: string]: unknown },
-): string[] {
+): SampleWithVoice[] {
   const kitSamples = allKitSamples[kit.name];
   if (!kitSamples || typeof kitSamples !== "object") return [];
 
-  const filenames: string[] = [];
+  const results: SampleWithVoice[] = [];
   for (const voiceKey of Object.keys(kitSamples)) {
+    const voiceNumber = parseInt(voiceKey, 10);
     const voiceSamples = (kitSamples as Record<string, unknown>)[voiceKey];
     if (!Array.isArray(voiceSamples)) continue;
     for (const sample of voiceSamples) {
-      if (sample?.filename) filenames.push(sample.filename);
+      if (sample?.filename) {
+        results.push({
+          filename: sample.filename,
+          voiceNumber: isNaN(voiceNumber) ? null : voiceNumber,
+        });
+      }
     }
   }
-  return filenames;
+  return results;
 }
 
 /**
  * Extract sample filenames from kit.samples relation
  */
-function getSamplesFromKitRelation(kit: KitWithRelations): string[] {
+function getSamplesFromKitRelation(kit: KitWithRelations): SampleWithVoice[] {
   if (!kit.samples) return [];
   return kit.samples
-    .map((sample) => sample.filename)
-    .filter((f): f is string => !!f);
+    .filter((sample) => !!sample.filename)
+    .map((sample) => ({
+      filename: sample.filename!,
+      voiceNumber: sample.voice_number,
+    }));
 }

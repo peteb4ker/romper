@@ -182,10 +182,39 @@ describe("kitSearchUtils", () => {
       expect(matchDetails.matchedSamples).toContain("kick_001.wav");
     });
 
+    it("should populate matchedSamplesByVoice from kit.samples", () => {
+      const matchDetails: SearchMatchDetails = {
+        matchedOn: [],
+        matchedSamples: [],
+        matchedVoices: [],
+      };
+
+      checkKitSamples(mockKit, "kick", matchDetails, {});
+
+      expect(matchDetails.matchedSamplesByVoice).toEqual({
+        1: ["kick_001.wav"],
+      });
+    });
+
+    it("should populate matchedSamplesByVoice across multiple voices", () => {
+      const matchDetails: SearchMatchDetails = {
+        matchedOn: [],
+        matchedSamples: [],
+        matchedVoices: [],
+      };
+
+      checkKitSamples(mockKit, "00", matchDetails, {});
+
+      expect(matchDetails.matchedSamplesByVoice).toEqual({
+        1: ["kick_001.wav"],
+        2: ["snare_002.wav"],
+      });
+    });
+
     it("should match sample filenames from allKitSamples data", () => {
       const allKitSamples = {
         A0: {
-          voice1: [{ filename: "hihat_003.wav" }],
+          1: [{ filename: "hihat_003.wav" }],
         },
       };
       const matchDetails: SearchMatchDetails = {
@@ -198,6 +227,9 @@ describe("kitSearchUtils", () => {
 
       expect(matchDetails.matchedOn).toContain("sample:hihat_003.wav");
       expect(matchDetails.matchedSamples).toContain("hihat_003.wav");
+      expect(matchDetails.matchedSamplesByVoice).toEqual({
+        1: ["hihat_003.wav"],
+      });
     });
 
     it("should match lowercase search terms", () => {

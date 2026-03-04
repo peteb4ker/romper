@@ -429,6 +429,301 @@ describe("SampleWaveform", () => {
     expect(mockAudioContext.close).toHaveBeenCalled();
   });
 
+  it("clears onended on previous source when replaying to prevent stale callback", async () => {
+    const mockSource1 = {
+      buffer: null,
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      onended: null as (() => void) | null,
+      start: vi.fn(),
+      stop: vi.fn(),
+    };
+    const mockSource2 = {
+      buffer: null,
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      onended: null as (() => void) | null,
+      start: vi.fn(),
+      stop: vi.fn(),
+    };
+    const mockGainNode = {
+      connect: vi.fn(),
+      gain: { setValueAtTime: vi.fn() },
+    };
+    const mockAudioBuffer = {
+      duration: 1.0,
+      getChannelData: vi.fn(() => new Float32Array(100)),
+      length: 44100,
+      numberOfChannels: 1,
+      sampleRate: 44100,
+    };
+
+    let sourceCallCount = 0;
+    const mockAudioContext = {
+      close: vi.fn().mockResolvedValue(undefined),
+      createBufferSource: vi.fn(() => {
+        sourceCallCount++;
+        return sourceCallCount === 1 ? mockSource1 : mockSource2;
+      }),
+      createGain: vi.fn(() => mockGainNode),
+      currentTime: 0,
+      decodeAudioData: vi.fn(
+        (_buf: ArrayBuffer, cb: (buf: AudioBuffer) => void) =>
+          cb(mockAudioBuffer as unknown as AudioBuffer),
+      ),
+      destination: {},
+      state: "running",
+    };
+
+    global.AudioContext = vi.fn(() => mockAudioContext);
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
+      new ArrayBuffer(1024),
+    );
+
+    const { rerender } = render(
+      <SampleWaveform
+        kitName="A1"
+        playTrigger={0}
+        slotNumber={1}
+        voiceNumber={1}
+      />,
+    );
+
+    // Wait for audio buffer to load
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    // First play — source1 gets an onended handler
+    await act(async () => {
+      rerender(
+        <SampleWaveform
+          kitName="A1"
+          playTrigger={1}
+          slotNumber={1}
+          voiceNumber={1}
+        />,
+      );
+    });
+
+    expect(mockSource1.start).toHaveBeenCalled();
+    // source1 should have an onended handler set by the play effect
+    expect(mockSource1.onended).not.toBeNull();
+
+    // Second play — stopPlayback() should clear source1.onended before stopping
+    await act(async () => {
+      rerender(
+        <SampleWaveform
+          kitName="A1"
+          playTrigger={2}
+          slotNumber={1}
+          voiceNumber={1}
+        />,
+      );
+    });
+
+    // source1's onended should have been cleared to prevent stale callback
+    expect(mockSource1.onended).toBeNull();
+    expect(mockSource1.stop).toHaveBeenCalled();
+    expect(mockSource1.disconnect).toHaveBeenCalled();
+    // source2 should be the new active source
+    expect(mockSource2.start).toHaveBeenCalled();
+  });
+
+  it("does not stop freshly started playback when stopTrigger and playTrigger change in same batch", async () => {
+    const mockSource = {
+      buffer: null,
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      onended: null as (() => void) | null,
+      start: vi.fn(),
+      stop: vi.fn(),
+    };
+    const mockGainNode = {
+      connect: vi.fn(),
+      gain: { setValueAtTime: vi.fn() },
+    };
+    const mockAudioBuffer = {
+      duration: 1.0,
+      getChannelData: vi.fn(() => new Float32Array(100)),
+      length: 44100,
+      numberOfChannels: 1,
+      sampleRate: 44100,
+    };
+
+    const mockAudioContext = {
+      close: vi.fn().mockResolvedValue(undefined),
+      createBufferSource: vi.fn(() => mockSource),
+      createGain: vi.fn(() => mockGainNode),
+      currentTime: 0,
+      decodeAudioData: vi.fn(
+        (_buf: ArrayBuffer, cb: (buf: AudioBuffer) => void) =>
+          cb(mockAudioBuffer as unknown as AudioBuffer),
+      ),
+      destination: {},
+      state: "running",
+    };
+
+    global.AudioContext = vi.fn(() => mockAudioContext);
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
+      new ArrayBuffer(1024),
+    );
+    const onPlayingChange = vi.fn();
+
+    const { rerender } = render(
+      <SampleWaveform
+        kitName="A1"
+        onPlayingChange={onPlayingChange}
+        playTrigger={0}
+        slotNumber={1}
+        stopTrigger={0}
+        voiceNumber={1}
+      />,
+    );
+
+    // Wait for audio buffer to load
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    // First play to establish playing state
+    await act(async () => {
+      rerender(
+        <SampleWaveform
+          kitName="A1"
+          onPlayingChange={onPlayingChange}
+          playTrigger={1}
+          slotNumber={1}
+          stopTrigger={0}
+          voiceNumber={1}
+        />,
+      );
+    });
+
+    expect(mockSource.start).toHaveBeenCalledTimes(1);
+
+    // Simulate the race condition: both stopTrigger and playTrigger change
+    // in the same render (voice choke + new play in same batch).
+    // The stop effect should NOT kill the freshly started source.
+    mockSource.start.mockClear();
+    mockSource.stop.mockClear();
+
+    await act(async () => {
+      rerender(
+        <SampleWaveform
+          kitName="A1"
+          onPlayingChange={onPlayingChange}
+          playTrigger={2}
+          slotNumber={1}
+          stopTrigger={1}
+          voiceNumber={1}
+        />,
+      );
+    });
+
+    // Play effect should have started a new source
+    expect(mockSource.start).toHaveBeenCalledTimes(1);
+    // Stop should have been called once (by stopPlayback in the play effect),
+    // NOT twice (which would mean the stop effect also fired and killed the new source)
+    expect(mockSource.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it("stop effect calls stopPlayback for proper cleanup when stopTrigger fires independently", async () => {
+    const mockSource = {
+      buffer: null,
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      onended: null as (() => void) | null,
+      start: vi.fn(),
+      stop: vi.fn(),
+    };
+    const mockGainNode = {
+      connect: vi.fn(),
+      gain: { setValueAtTime: vi.fn() },
+    };
+    const mockAudioBuffer = {
+      duration: 1.0,
+      getChannelData: vi.fn(() => new Float32Array(100)),
+      length: 44100,
+      numberOfChannels: 1,
+      sampleRate: 44100,
+    };
+
+    const mockAudioContext = {
+      close: vi.fn().mockResolvedValue(undefined),
+      createBufferSource: vi.fn(() => mockSource),
+      createGain: vi.fn(() => mockGainNode),
+      currentTime: 0,
+      decodeAudioData: vi.fn(
+        (_buf: ArrayBuffer, cb: (buf: AudioBuffer) => void) =>
+          cb(mockAudioBuffer as unknown as AudioBuffer),
+      ),
+      destination: {},
+      state: "running",
+    };
+
+    global.AudioContext = vi.fn(() => mockAudioContext);
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
+      new ArrayBuffer(1024),
+    );
+    const onPlayingChange = vi.fn();
+
+    const { rerender } = render(
+      <SampleWaveform
+        kitName="A1"
+        onPlayingChange={onPlayingChange}
+        playTrigger={0}
+        slotNumber={1}
+        stopTrigger={0}
+        voiceNumber={1}
+      />,
+    );
+
+    // Wait for audio buffer to load
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    // Start playback
+    await act(async () => {
+      rerender(
+        <SampleWaveform
+          kitName="A1"
+          onPlayingChange={onPlayingChange}
+          playTrigger={1}
+          slotNumber={1}
+          stopTrigger={0}
+          voiceNumber={1}
+        />,
+      );
+    });
+
+    expect(mockSource.start).toHaveBeenCalled();
+    mockSource.stop.mockClear();
+    mockSource.disconnect.mockClear();
+
+    // Now trigger stop independently (voice choke from another voice)
+    await act(async () => {
+      rerender(
+        <SampleWaveform
+          kitName="A1"
+          onPlayingChange={onPlayingChange}
+          playTrigger={1}
+          slotNumber={1}
+          stopTrigger={1}
+          voiceNumber={1}
+        />,
+      );
+    });
+
+    // stopPlayback should have been called: onended cleared, source stopped and disconnected
+    expect(mockSource.onended).toBeNull();
+    expect(mockSource.stop).toHaveBeenCalled();
+    expect(mockSource.disconnect).toHaveBeenCalled();
+    // cancelAnimationFrame should have been called for cleanup
+    expect(global.cancelAnimationFrame).toHaveBeenCalled();
+  });
+
   it("handles synchronous AudioContext close errors gracefully", async () => {
     // Mock AudioContext.close to return a rejected Promise
     const mockAudioContext = {

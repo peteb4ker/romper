@@ -32,6 +32,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const animationRef = useRef<null | number>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  // Track stopTrigger value at the time of last play to prevent a batched
+  // stop from killing a freshly started source in the same render cycle.
+  const stopTriggerAtPlayRef = useRef(0);
 
   // Load audio file and decode
   useEffect(() => {
@@ -125,6 +128,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const stopPlayback = () => {
     if (sourceRef.current) {
       try {
+        // Clear onended BEFORE stop() to prevent the stale callback from
+        // firing asynchronously and corrupting state for a newly started source.
+        sourceRef.current.onended = null;
         sourceRef.current.stop();
       } catch {
         // Ignore stop errors
@@ -144,7 +150,10 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   useEffect(() => {
     if (!audioBuffer || !audioCtxRef.current) return;
     if (playTrigger === 0) return; // don't auto-play on mount
-    stopPlayback(); // Stop any previous playback
+    stopPlayback(); // Stop any previous playback (clears stale onended)
+    // Snapshot current stopTrigger so the stop effect won't kill this
+    // freshly started source if both triggers changed in the same batch.
+    stopTriggerAtPlayRef.current = stopTrigger ?? 0;
     const ctx = audioCtxRef.current;
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
@@ -179,18 +188,16 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       setPlayhead(0);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [playTrigger, audioBuffer]);
+  }, [playTrigger, audioBuffer]); // eslint-disable-line react-hooks/exhaustive-deps -- stopTrigger read for snapshot only, not as a dependency
 
-  // Stop playback when stopTrigger changes
+  // Stop playback when stopTrigger changes (voice choke or manual stop)
   useEffect(() => {
     if (!isPlaying) return;
     if (!stopTrigger) return;
-    // Stop playback
-    if (sourceRef.current) {
-      sourceRef.current.stop();
-    }
-    setIsPlaying(false);
-    setPlayhead(0);
+    // If the play effect just ran in this render cycle, it already recorded
+    // the current stopTrigger value. Skip to avoid killing the new source.
+    if (stopTrigger === stopTriggerAtPlayRef.current) return;
+    stopPlayback();
   }, [stopTrigger, isPlaying]);
 
   // Notify parent about playing state changes

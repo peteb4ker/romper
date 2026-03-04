@@ -31,7 +31,7 @@ export function useVoicePanelUI({
   const renderVoiceName = React.useCallback(
     (dataTestIdVoiceName?: string) => (
       <div className="font-semibold mb-1 text-text-primary pl-1 flex items-center gap-2">
-        <span>{voice}:</span>
+        <span>{voice}</span>
         {voiceNameEditorHook.editing ? (
           <>
             <input
@@ -61,8 +61,8 @@ export function useVoicePanelUI({
             <span
               className={
                 voiceName
-                  ? "ml-1 px-2 py-0.5 rounded-full bg-accent-primary/15 text-accent-primary text-sm font-semibold tracking-wide"
-                  : "ml-1 px-2 py-0.5 rounded-full bg-surface-3 text-text-tertiary text-sm font-semibold tracking-wide italic"
+                  ? "text-sm text-text-secondary font-medium tracking-wide"
+                  : "text-sm text-text-tertiary italic"
               }
               data-testid={dataTestIdVoiceName || `voice-name-${voice}`}
             >

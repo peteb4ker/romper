@@ -9,8 +9,26 @@ interface SampleWaveformProps {
   playTrigger: number; // increment to trigger play externally
   slotNumber: number;
   stopTrigger?: number; // increment to trigger stop externally
+  voiceColor?: string; // CSS color or var(--voice-N) reference
   voiceNumber: number;
   volume?: number; // 0-100, applied via GainNode
+}
+
+// Resolve a color value that may be a CSS var() reference into a raw color
+// string usable by canvas APIs. Falls back to accent-primary or a default blue.
+function resolveWaveformColor(voiceColor?: string): string {
+  if (voiceColor) {
+    const varMatch = voiceColor.match(/^var\((.+)\)$/);
+    if (varMatch) {
+      const resolved = getComputedStyle(document.documentElement)
+        .getPropertyValue(varMatch[1])
+        .trim();
+      if (resolved) return resolved;
+    }
+    return voiceColor;
+  }
+  const style = getComputedStyle(document.documentElement);
+  return style.getPropertyValue("--accent-primary").trim() || "#2889be";
 }
 
 const SampleWaveform: React.FC<SampleWaveformProps> = ({
@@ -20,6 +38,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   playTrigger,
   slotNumber,
   stopTrigger,
+  voiceColor,
   voiceNumber,
   volume,
 }) => {
@@ -97,20 +116,25 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     };
   }, [kitName, voiceNumber, slotNumber]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
 
-  // Draw waveform
+  // Draw waveform using an envelope (top/bottom outline with fill)
   function drawWaveform(buffer: AudioBuffer) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#0ea5e9"; // teal-500
-    ctx.lineWidth = 1;
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const color = resolveWaveformColor(voiceColor);
     const data = buffer.getChannelData(0);
-    const step = Math.ceil(data.length / canvas.width);
-    const amp = canvas.height / 2;
-    ctx.beginPath();
-    for (let i = 0; i < canvas.width; i++) {
+    const step = Math.ceil(data.length / w);
+    const amp = h / 2;
+
+    // Build envelope arrays
+    const tops = new Float32Array(w);
+    const bottoms = new Float32Array(w);
+    for (let i = 0; i < w; i++) {
       let max = -1.0,
         min = 1.0;
       for (let j = 0; j < step; j++) {
@@ -118,10 +142,44 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         if (datum < min) min = datum;
         if (datum > max) max = datum;
       }
-      ctx.moveTo(i, (1 + min) * amp);
-      ctx.lineTo(i, (1 + max) * amp);
+      tops[i] = (1 + max) * amp;
+      bottoms[i] = (1 + min) * amp;
+    }
+
+    // Draw filled envelope
+    ctx.beginPath();
+    for (let i = 0; i < w; i++) {
+      if (i === 0) ctx.moveTo(i, tops[i]);
+      else ctx.lineTo(i, tops[i]);
+    }
+    for (let i = w - 1; i >= 0; i--) {
+      ctx.lineTo(i, bottoms[i]);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.12;
+    ctx.fill();
+
+    // Draw top edge stroke
+    ctx.beginPath();
+    for (let i = 0; i < w; i++) {
+      if (i === 0) ctx.moveTo(i, tops[i]);
+      else ctx.lineTo(i, tops[i]);
+    }
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.6;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Draw bottom edge stroke
+    ctx.beginPath();
+    for (let i = 0; i < w; i++) {
+      if (i === 0) ctx.moveTo(i, bottoms[i]);
+      else ctx.lineTo(i, bottoms[i]);
     }
     ctx.stroke();
+
+    ctx.globalAlpha = 1.0;
   }
 
   // Stop playback logic

@@ -11,6 +11,10 @@ import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 const mockCanvasContext = {
   beginPath: vi.fn(),
   clearRect: vi.fn(),
+  closePath: vi.fn(),
+  fill: vi.fn(),
+  fillStyle: "",
+  globalAlpha: 1,
   lineTo: vi.fn(),
   lineWidth: 1,
   moveTo: vi.fn(),

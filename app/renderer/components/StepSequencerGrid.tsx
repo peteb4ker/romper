@@ -3,7 +3,7 @@ import {
   Repeat,
   Shuffle,
   SpeakerSimpleHigh,
-  SpeakerSimpleNone,
+  SpeakerSimpleSlash,
 } from "@phosphor-icons/react";
 import React from "react";
 import ReactDOM from "react-dom";
@@ -203,6 +203,7 @@ interface StepSequencerGridProps {
     stepIdx: number,
     condition: TriggerCondition,
   ) => void;
+  onMuteToggle?: (voiceNumber: number) => void;
   onSampleModeChange?: (voiceNumber: number, mode: SampleMode) => void;
   onVolumeChange?: (voiceNumber: number, volume: number) => void;
   ROW_COLORS: string[];
@@ -211,6 +212,7 @@ interface StepSequencerGridProps {
   setFocusedStep: (step: FocusedStep) => void;
   toggleStep: (voiceIdx: number, stepIdx: number) => void;
   triggerConditions?: (null | string)[][];
+  voiceMutes?: Record<number, boolean>;
   voiceVolumes?: Record<number, number>;
 }
 
@@ -224,6 +226,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   NUM_STEPS: _NUM_STEPS,
   NUM_VOICES,
   onConditionChange,
+  onMuteToggle,
   onSampleModeChange,
   onVolumeChange,
   ROW_COLORS,
@@ -232,6 +235,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   setFocusedStep,
   toggleStep,
   triggerConditions,
+  voiceMutes = {},
   voiceVolumes = {},
 }) => {
   const [popover, setPopover] = React.useState<{
@@ -281,10 +285,12 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
           const voiceNumber = voiceIdx + 1;
           const volume = voiceVolumes[voiceNumber] ?? 100;
           const mode = sampleModes[voiceNumber] || "first";
+          const isMuted = voiceMutes[voiceNumber] ?? false;
 
           return (
             <div
-              className="flex flex-row items-center"
+              className={`flex flex-row items-center${isMuted ? " opacity-40" : ""}`}
+              data-testid={`seq-row-${voiceIdx}`}
               key={`seq-row-voice-${voiceIdx}`}
               role="row"
             >
@@ -355,18 +361,25 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                 {SAMPLE_MODE_ICONS[mode]}
               </button>
 
-              {/* Volume icon + slider */}
-              {volume === 0 ? (
-                <SpeakerSimpleNone
-                  className="text-text-tertiary mr-0.5 shrink-0"
-                  size={14}
-                />
-              ) : (
-                <SpeakerSimpleHigh
-                  className="text-text-tertiary mr-0.5 shrink-0"
-                  size={14}
-                />
-              )}
+              {/* Mute toggle + volume slider */}
+              <button
+                aria-label={`${isMuted ? "Unmute" : "Mute"} voice ${voiceNumber}`}
+                className="flex items-center justify-center w-5 h-5 rounded hover:bg-surface-3 focus:outline-none focus:ring-1 focus:ring-accent-primary transition-colors mr-0.5 shrink-0"
+                data-testid={`voice-mute-${voiceIdx}`}
+                onClick={() => onMuteToggle?.(voiceNumber)}
+                title={isMuted ? "Unmute" : "Mute"}
+                type="button"
+              >
+                {isMuted ? (
+                  <SpeakerSimpleSlash
+                    className="text-amber-500"
+                    size={14}
+                    weight="bold"
+                  />
+                ) : (
+                  <SpeakerSimpleHigh className="text-text-tertiary" size={14} />
+                )}
+              </button>
               <input
                 aria-label={`Volume for voice ${voiceNumber}`}
                 className="w-14 h-1 cursor-pointer"

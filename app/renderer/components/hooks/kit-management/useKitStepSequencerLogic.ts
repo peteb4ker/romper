@@ -24,6 +24,7 @@ interface UseKitStepSequencerLogicParams {
   setStepPattern: (pattern: number[][]) => void;
   stepPattern: null | number[][];
   triggerConditions?: (null | string)[][];
+  voiceMutes?: Record<number, boolean>;
   voiceVolumes?: Record<number, number>;
 }
 
@@ -44,6 +45,7 @@ export function useKitStepSequencerLogic(
     setStepPattern,
     stepPattern,
     triggerConditions,
+    voiceMutes = {},
     voiceVolumes = {},
   } = params;
 
@@ -199,6 +201,8 @@ export function useKitStepSequencerLogic(
       const condition = (triggerConditions?.[voiceIdx]?.[currentSeqStep] ??
         null) as TriggerCondition;
 
+      if (voiceMutes[voiceNumber]) continue;
+
       if (isStepActive && shouldTrigger(condition, cycleCount)) {
         const voiceSamples = samples[voiceNumber];
         const sample = selectSample(voiceNumber, voiceSamples);
@@ -224,6 +228,7 @@ export function useKitStepSequencerLogic(
     samples,
     onPlaySample,
     selectSample,
+    voiceMutes,
     voiceVolumes,
   ]);
 

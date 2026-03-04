@@ -908,6 +908,73 @@ describe("useKitStepSequencerLogic", () => {
     });
   });
 
+  describe("Voice Muting", () => {
+    it("should skip muted voices during playback", () => {
+      const params = {
+        ...getDefaultParams(),
+        voiceMutes: { 1: true, 2: false, 3: false, 4: false },
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      // Step 0 has voice 1 active — but voice 1 is muted
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 0 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      expect(mockOnPlaySample).not.toHaveBeenCalled();
+    });
+
+    it("should play unmuted voices normally", () => {
+      const params = {
+        ...getDefaultParams(),
+        voiceMutes: { 1: true, 2: false, 3: false, 4: false },
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      // Step 1 has voice 2 active — voice 2 is not muted
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 1 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      expect(mockOnPlaySample).toHaveBeenCalledWith(2, "snare.wav", 100);
+    });
+
+    it("should not skip voices when voiceMutes is empty", () => {
+      const params = {
+        ...getDefaultParams(),
+        voiceMutes: {},
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 0 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+    });
+  });
+
   describe("Trigger Conditions", () => {
     it("should return cycleCount in hook output with initial value 0", () => {
       const { result } = renderHook(() =>

@@ -277,6 +277,84 @@ describe("StepSequencerGrid", () => {
     });
   });
 
+  describe("Mute toggle", () => {
+    it("renders mute buttons for all 4 voices", () => {
+      render(<StepSequencerGrid {...defaultProps} />);
+
+      for (let i = 0; i < 4; i++) {
+        const muteButton = screen.getByTestId(`voice-mute-${i}`);
+        expect(muteButton).toBeInTheDocument();
+      }
+    });
+
+    it("shows SpeakerSimpleHigh icon when unmuted", () => {
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          voiceMutes={{ 1: false, 2: false, 3: false, 4: false }}
+        />,
+      );
+
+      const muteButton = screen.getByTestId("voice-mute-0");
+      expect(muteButton).toHaveAttribute("title", "Mute");
+      expect(muteButton).toHaveAttribute("aria-label", "Mute voice 1");
+    });
+
+    it("shows SpeakerSimpleSlash icon when muted", () => {
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          voiceMutes={{ 1: true, 2: false, 3: false, 4: false }}
+        />,
+      );
+
+      const muteButton = screen.getByTestId("voice-mute-0");
+      expect(muteButton).toHaveAttribute("title", "Unmute");
+      expect(muteButton).toHaveAttribute("aria-label", "Unmute voice 1");
+    });
+
+    it("calls onMuteToggle when mute button is clicked", () => {
+      const mockOnMuteToggle = vi.fn();
+      render(
+        <StepSequencerGrid {...defaultProps} onMuteToggle={mockOnMuteToggle} />,
+      );
+
+      const muteButton = screen.getByTestId("voice-mute-1");
+      fireEvent.click(muteButton);
+
+      expect(mockOnMuteToggle).toHaveBeenCalledWith(2);
+    });
+
+    it("applies opacity dimming to muted voice row", () => {
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          voiceMutes={{ 1: false, 2: true, 3: false, 4: false }}
+        />,
+      );
+
+      const mutedRow = screen.getByTestId("seq-row-1");
+      expect(mutedRow.className).toContain("opacity-40");
+
+      const unmutedRow = screen.getByTestId("seq-row-0");
+      expect(unmutedRow.className).not.toContain("opacity-40");
+    });
+
+    it("does not dim unmuted rows", () => {
+      render(
+        <StepSequencerGrid
+          {...defaultProps}
+          voiceMutes={{ 1: false, 2: false, 3: false, 4: false }}
+        />,
+      );
+
+      for (let i = 0; i < 4; i++) {
+        const row = screen.getByTestId(`seq-row-${i}`);
+        expect(row.className).not.toContain("opacity-40");
+      }
+    });
+  });
+
   describe("Trigger conditions", () => {
     it("renders condition indicator on active step with condition set", () => {
       const triggerConditions = Array.from({ length: 4 }, () =>

@@ -28,12 +28,12 @@ const checks = [
     name: "Required icon files exist",
     check: () => {
       const iconsPath = path.join(projectRoot, "electron", "resources");
-      const requiredIcons = ["app-icon.icns", "app-icon.png"];
+      const requiredIcons = ["app-icon.icns", "app-icon.png", "app-icon.ico"];
       return requiredIcons.every((icon) =>
         fs.existsSync(path.join(iconsPath, icon)),
       );
     },
-    fix: "Ensure app-icon.icns and app-icon.png exist in electron/resources/",
+    fix: "Ensure app-icon.icns, app-icon.png, and app-icon.ico exist in electron/resources/. Run: npm run icons:generate",
   },
   {
     name: "Electron in devDependencies",

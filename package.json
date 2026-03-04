@@ -59,7 +59,8 @@
     "analyze:architecture": "node scripts/architecture/analyze-all.js",
     "analyze:loc": "node scripts/architecture/analyze-loc.js",
     "analyze:dependencies": "node scripts/architecture/analyze-dependencies.js",
-    "analyze:complexity": "node scripts/architecture/analyze-complexity.js"
+    "analyze:complexity": "node scripts/architecture/analyze-complexity.js",
+    "icons:generate": "node scripts/generate-app-icons.mjs"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.11.1",
@@ -111,6 +112,7 @@
     "nyc": "^17.1.0",
     "playwright": "^1.56.1",
     "rollup": "^4.59.0",
+    "sharp": "^0.34.5",
     "sonarqube-scanner": "^4.3.0",
     "tailwindcss": "^4.1.8",
     "tar": "^7.5.8",

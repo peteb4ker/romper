@@ -221,3 +221,12 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
 }
+
+/* ───────────────────────────────────────────────────────────
+   LED Pulse Animation — Kit card modified state indicator
+   ─────────────────────────────────────────────────────────── */
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

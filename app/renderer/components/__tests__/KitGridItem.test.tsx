@@ -83,16 +83,31 @@ describe("KitGridItem", () => {
     });
   });
 
-  describe("Kit type styling", () => {
-    it("applies invalid kit styling when isValid is false", () => {
+  describe("Kit state LED indicators", () => {
+    it("renders state LED dot", () => {
+      render(<KitGridItem {...defaultProps} />);
+
+      expect(screen.getByTestId("state-led")).toBeInTheDocument();
+    });
+
+    it("applies factory state styling for read-only kits", () => {
+      render(<KitGridItem {...defaultProps} />);
+
+      const container = screen.getByTestId("kit-item-A0");
+      expect(container).toHaveClass("border-border-subtle", "bg-surface-1");
+      expect(container).not.toHaveClass("border-accent-warning/40");
+    });
+
+    it("applies invalid state styling when isValid is false", () => {
       render(<KitGridItem {...defaultProps} isValid={false} />);
 
       const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveClass("border-l-4", "border-l-accent-danger");
-      expect(container).toHaveClass("border-accent-danger");
+      expect(container).toHaveClass("border-accent-danger/40", "opacity-70");
+      const led = screen.getByTestId("state-led");
+      expect(led).toHaveClass("bg-accent-danger");
     });
 
-    it("applies unsaved changes styling when modified_since_sync is true", () => {
+    it("applies modified state styling when modified_since_sync is true", () => {
       const props = {
         ...defaultProps,
         kitData: {
@@ -103,10 +118,12 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...props} />);
 
       const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveClass("border-l-4", "border-l-accent-warning");
+      expect(container).toHaveClass("border-accent-warning/40");
+      const led = screen.getByTestId("state-led");
+      expect(led).toHaveClass("bg-accent-warning");
     });
 
-    it("applies editable kit styling when editable is true", () => {
+    it("applies editable state styling when editable is true", () => {
       const props = {
         ...defaultProps,
         kitData: {
@@ -117,14 +134,9 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...props} />);
 
       const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveClass("border-l-4", "border-l-accent-success");
-    });
-
-    it("applies factory kit styling for read-only kits", () => {
-      render(<KitGridItem {...defaultProps} />);
-
-      const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveClass("border-l-4", "border-l-border-strong");
+      expect(container).toHaveClass("border-border-subtle");
+      const led = screen.getByTestId("state-led");
+      expect(led).toHaveClass("bg-accent-success");
     });
   });
 
@@ -148,86 +160,8 @@ describe("KitGridItem", () => {
     });
   });
 
-  describe("High priority indicator", () => {
-    it("shows high priority indicator for favorite kits", () => {
-      const props = {
-        ...defaultProps,
-        kitData: {
-          ...defaultProps.kitData,
-          is_favorite: true,
-        },
-      };
-      render(<KitGridItem {...props} />);
-
-      const indicator = screen.getByTitle(
-        "High priority kit (favorite, modified, or well-loaded)",
-      );
-      expect(indicator).toBeInTheDocument();
-      expect(indicator).toHaveClass("bg-accent-warning");
-    });
-
-    it("shows high priority indicator for modified kits", () => {
-      const props = {
-        ...defaultProps,
-        kitData: {
-          ...defaultProps.kitData,
-          modified_since_sync: true,
-        },
-      };
-      render(<KitGridItem {...props} />);
-
-      expect(
-        screen.getByTitle(
-          "High priority kit (favorite, modified, or well-loaded)",
-        ),
-      ).toBeInTheDocument();
-    });
-
-    it("shows high priority indicator for well-loaded kits", () => {
-      const props = {
-        ...defaultProps,
-        sampleCounts: [8, 9, 10, 12], // Two voices with >= 8 samples
-      };
-      render(<KitGridItem {...props} />);
-
-      expect(
-        screen.getByTitle(
-          "High priority kit (favorite, modified, or well-loaded)",
-        ),
-      ).toBeInTheDocument();
-    });
-
-    it("does not show high priority indicator for regular kits", () => {
-      render(<KitGridItem {...defaultProps} />);
-
-      expect(
-        screen.queryByTitle(
-          "High priority kit (favorite, modified, or well-loaded)",
-        ),
-      ).not.toBeInTheDocument();
-    });
-
-    it("does not show high priority indicator for invalid kits", () => {
-      const props = {
-        ...defaultProps,
-        isValid: false,
-        kitData: {
-          ...defaultProps.kitData,
-          is_favorite: true, // Should be ignored for invalid kits
-        },
-      };
-      render(<KitGridItem {...props} />);
-
-      expect(
-        screen.queryByTitle(
-          "High priority kit (favorite, modified, or well-loaded)",
-        ),
-      ).not.toBeInTheDocument();
-    });
-  });
-
   describe("Status badges", () => {
-    it("shows unsaved badge when modified_since_sync is true", () => {
+    it("shows MOD badge when modified_since_sync is true", () => {
       const props = {
         ...defaultProps,
         kitData: {
@@ -237,10 +171,11 @@ describe("KitGridItem", () => {
       };
       render(<KitGridItem {...props} />);
 
-      expect(screen.getByText("Unsaved")).toBeInTheDocument();
+      expect(screen.getByTestId("mod-badge")).toBeInTheDocument();
+      expect(screen.getByText("MOD")).toBeInTheDocument();
     });
 
-    it("shows editable badge when editable and not modified", () => {
+    it("does not show MOD badge for editable kits without modifications", () => {
       const props = {
         ...defaultProps,
         kitData: {
@@ -251,25 +186,16 @@ describe("KitGridItem", () => {
       };
       render(<KitGridItem {...props} />);
 
-      expect(screen.getByText("Editable")).toBeInTheDocument();
+      expect(screen.queryByTestId("mod-badge")).not.toBeInTheDocument();
     });
 
-    it("prioritizes unsaved badge over editable badge", () => {
-      const props = {
-        ...defaultProps,
-        kitData: {
-          ...defaultProps.kitData,
-          editable: true,
-          modified_since_sync: true,
-        },
-      };
-      render(<KitGridItem {...props} />);
+    it("does not show MOD badge for factory kits", () => {
+      render(<KitGridItem {...defaultProps} />);
 
-      expect(screen.getByText("Unsaved")).toBeInTheDocument();
-      expect(screen.queryByText("Editable")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("mod-badge")).not.toBeInTheDocument();
     });
 
-    it("does not show badges for invalid kits", () => {
+    it("does not show MOD badge for invalid kits", () => {
       const props = {
         ...defaultProps,
         isValid: false,
@@ -281,8 +207,7 @@ describe("KitGridItem", () => {
       };
       render(<KitGridItem {...props} />);
 
-      expect(screen.queryByText("Unsaved")).not.toBeInTheDocument();
-      expect(screen.queryByText("Editable")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("mod-badge")).not.toBeInTheDocument();
     });
   });
 
@@ -376,16 +301,15 @@ describe("KitGridItem", () => {
       const mockOnToggleFavorite = vi.fn();
       const props = {
         ...defaultProps,
-        isFavorite: true, // but prop says it is favorite
+        isFavorite: true,
         kitData: {
           ...defaultProps.kitData,
-          is_favorite: false, // kitData says not favorite
+          is_favorite: false,
         },
         onToggleFavorite: mockOnToggleFavorite,
       };
       render(<KitGridItem {...props} />);
 
-      // Should show as favorited (using prop value)
       const favoriteButton = screen.getByTitle("Remove from favorites");
       expect(favoriteButton).toBeInTheDocument();
       expect(favoriteButton).toHaveClass("text-accent-warning");
@@ -395,7 +319,7 @@ describe("KitGridItem", () => {
       const mockOnToggleFavorite = vi.fn();
       const props = {
         ...defaultProps,
-        isFavorite: undefined, // No prop value provided
+        isFavorite: undefined,
         kitData: {
           ...defaultProps.kitData,
           is_favorite: true,
@@ -404,7 +328,6 @@ describe("KitGridItem", () => {
       };
       render(<KitGridItem {...props} />);
 
-      // Should fall back to kitData value
       const favoriteButton = screen.getByTitle("Remove from favorites");
       expect(favoriteButton).toBeInTheDocument();
       expect(favoriteButton).toHaveClass("text-accent-warning");
@@ -414,13 +337,12 @@ describe("KitGridItem", () => {
       const mockOnToggleFavorite = vi.fn();
       const props = {
         ...defaultProps,
-        isFavorite: undefined, // No prop value
-        kitData: undefined, // No kitData
+        isFavorite: undefined,
+        kitData: undefined,
         onToggleFavorite: mockOnToggleFavorite,
       };
       render(<KitGridItem {...props} />);
 
-      // Should default to not favorited
       const favoriteButton = screen.getByTitle("Add to favorites");
       expect(favoriteButton).toBeInTheDocument();
       expect(favoriteButton).not.toHaveClass("text-accent-warning");
@@ -430,16 +352,15 @@ describe("KitGridItem", () => {
       const mockOnToggleFavorite = vi.fn();
       const props = {
         ...defaultProps,
-        isFavorite: false, // but prop explicitly says not favorite
+        isFavorite: false,
         kitData: {
           ...defaultProps.kitData,
-          is_favorite: true, // kitData says favorite
+          is_favorite: true,
         },
         onToggleFavorite: mockOnToggleFavorite,
       };
       render(<KitGridItem {...props} />);
 
-      // Should use prop value (not favorited)
       const favoriteButton = screen.getByTitle("Add to favorites");
       expect(favoriteButton).toBeInTheDocument();
       expect(favoriteButton).not.toHaveClass("text-accent-warning");
@@ -489,70 +410,70 @@ describe("KitGridItem", () => {
     });
   });
 
-  describe("Voice indicators", () => {
-    it("renders voice indicators with sample counts", () => {
+  describe("Voice channel strip", () => {
+    it("renders voice LED dots with sample counts", () => {
       render(<KitGridItem {...defaultProps} />);
 
-      // Should render 4 voice indicators
-      const voiceIndicators = screen.getAllByText(
-        /Kick|Snare|Hihat|Percussion/,
-      );
-      expect(voiceIndicators).toHaveLength(4);
+      // Check LED dots exist
+      expect(screen.getByTestId("voice-led-1")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-led-2")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-led-3")).toBeInTheDocument();
+      expect(screen.getByTestId("voice-led-4")).toBeInTheDocument();
 
-      // Check sample count display
-      expect(screen.getByText("Kick 4")).toBeInTheDocument();
-      expect(screen.getByText("Snare 3")).toBeInTheDocument();
-      expect(screen.getByText("Hihat 2")).toBeInTheDocument();
-      expect(screen.getByText("Percussion 1")).toBeInTheDocument();
+      // Check voice alias names are rendered
+      expect(screen.getByText("Kick")).toBeInTheDocument();
+      expect(screen.getByText("Snare")).toBeInTheDocument();
+      expect(screen.getByText("Hihat")).toBeInTheDocument();
+      expect(screen.getByText("Percussion")).toBeInTheDocument();
+
+      // Check counts are rendered separately
+      expect(screen.getByText("4")).toBeInTheDocument();
+      expect(screen.getByText("3")).toBeInTheDocument();
+      expect(screen.getByText("2")).toBeInTheDocument();
+      expect(screen.getByText("1")).toBeInTheDocument();
     });
 
-    it("applies correct styling for empty voices", () => {
+    it("applies correct LED styling for empty voices (0 samples)", () => {
       const props = {
         ...defaultProps,
         sampleCounts: [0, 3, 2, 1],
       };
       render(<KitGridItem {...props} />);
 
-      const voiceWithZero = screen.getByText("Kick 0");
-      expect(voiceWithZero).toHaveClass(
-        "bg-accent-danger/20",
-        "text-accent-danger",
-      );
+      const led = screen.getByTestId("voice-led-1");
+      expect(led).toHaveClass("bg-accent-danger");
     });
 
-    it("applies correct styling for full voices (12 samples)", () => {
+    it("applies correct LED styling for full voices (12 samples)", () => {
       const props = {
         ...defaultProps,
         sampleCounts: [12, 3, 2, 1],
       };
       render(<KitGridItem {...props} />);
 
-      const fullVoice = screen.getByText("Kick 12");
-      expect(fullVoice).toHaveClass("bg-accent-success/30", "font-bold");
+      const led = screen.getByTestId("voice-led-1");
+      expect(led).toHaveClass("bg-accent-success");
     });
 
-    it("applies correct styling for partial voices", () => {
+    it("applies correct LED styling for partial voices", () => {
       render(<KitGridItem {...defaultProps} />);
 
-      const partialVoice = screen.getByText("Snare 3");
-      expect(partialVoice).toHaveClass("bg-accent-primary/20");
+      const led = screen.getByTestId("voice-led-2");
+      expect(led).toHaveClass("bg-accent-primary");
     });
 
-    it("does not render voice indicators for invalid kits", () => {
+    it("does not render voice strip for invalid kits", () => {
       render(<KitGridItem {...defaultProps} isValid={false} />);
 
-      expect(
-        screen.queryByText(/Kick|Snare|Hihat|Percussion/),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("voice-led-1")).not.toBeInTheDocument();
     });
 
     it("handles missing voice names gracefully", () => {
-      // Mock extractVoiceNames to return undefined voice names
       mockExtractVoiceNames.mockReturnValue({});
 
       render(<KitGridItem {...defaultProps} />);
 
-      // Should still render counts without voice names, and tooltips should be without voice names
+      // Should still render counts without voice names
       expect(screen.getByText("4")).toBeInTheDocument();
       expect(screen.getByText("3")).toBeInTheDocument();
       expect(screen.getByText("2")).toBeInTheDocument();
@@ -636,7 +557,6 @@ describe("KitGridItem", () => {
     });
 
     it("has proper voice tooltips with voice names", () => {
-      // Reset the mock to return voice names for this test
       mockExtractVoiceNames.mockReturnValue({
         1: "kick",
         2: "snare",
@@ -646,18 +566,18 @@ describe("KitGridItem", () => {
 
       render(<KitGridItem {...defaultProps} />);
 
-      // The tooltips should include voice names
-      const voiceElement1 = screen.getByTitle("Voice 1: 4 samples (kick)");
-      const voiceElement2 = screen.getByTitle("Voice 2: 3 samples (snare)");
-      const voiceElement3 = screen.getByTitle("Voice 3: 2 samples (hihat)");
-      const voiceElement4 = screen.getByTitle(
-        "Voice 4: 1 samples (percussion)",
-      );
-
-      expect(voiceElement1).toBeInTheDocument();
-      expect(voiceElement2).toBeInTheDocument();
-      expect(voiceElement3).toBeInTheDocument();
-      expect(voiceElement4).toBeInTheDocument();
+      expect(
+        screen.getByTitle("Voice 1: 4 samples (kick)"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTitle("Voice 2: 3 samples (snare)"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTitle("Voice 3: 2 samples (hihat)"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTitle("Voice 4: 1 samples (percussion)"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -697,7 +617,7 @@ describe("KitGridItem", () => {
     it("handles partial sample counts array", () => {
       const props = {
         ...defaultProps,
-        sampleCounts: [5, 3], // Only 2 elements instead of 4
+        sampleCounts: [5, 3],
       };
       render(<KitGridItem {...props} />);
 
@@ -707,7 +627,7 @@ describe("KitGridItem", () => {
   });
 
   describe("Search match indicators", () => {
-    it("renders search match badges when searchMatch data is present", () => {
+    it("renders search match badges with Phosphor icons when searchMatch data is present", () => {
       const props = {
         ...defaultProps,
         kitData: {
@@ -722,17 +642,19 @@ describe("KitGridItem", () => {
       };
       render(<KitGridItem {...props} />);
 
-      // Check for sample match badge
-      const sampleBadge = screen.getByTitle(/Sample matches:/);
-      expect(sampleBadge).toBeInTheDocument();
-      expect(sampleBadge).toHaveTextContent("📄 2");
+      // Check for Phosphor FileAudio icon
+      expect(screen.getByTestId("icon-file-audio")).toBeInTheDocument();
 
-      // Check for artist match badge
-      const artistBadge = screen.getByText("🎵 Test Artist");
-      expect(artistBadge).toBeInTheDocument();
+      // Check for sample count
+      const sampleBadge = screen.getByTitle(/Sample matches:/);
+      expect(sampleBadge).toHaveTextContent("2");
+
+      // Check for Phosphor MusicNote icon and artist text
+      expect(screen.getByTestId("icon-music-note")).toBeInTheDocument();
+      expect(screen.getByText(/Test Artist/)).toBeInTheDocument();
     });
 
-    it("renders alias match badge", () => {
+    it("renders alias match badge with Tag icon", () => {
       const props = {
         ...defaultProps,
         kitData: {
@@ -747,8 +669,8 @@ describe("KitGridItem", () => {
       };
       render(<KitGridItem {...props} />);
 
-      const aliasBadge = screen.getByText("🏷️ My Custom Kit");
-      expect(aliasBadge).toBeInTheDocument();
+      expect(screen.getByTestId("icon-tag")).toBeInTheDocument();
+      expect(screen.getByText(/My Custom Kit/)).toBeInTheDocument();
     });
 
     it("shows single sample without count", () => {
@@ -766,16 +688,18 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...props} />);
 
       const sampleBadge = screen.getByTitle(/Sample matches:/);
-      expect(sampleBadge).toHaveTextContent("📄");
-      expect(sampleBadge).not.toHaveTextContent("📄 1");
+      expect(screen.getByTestId("icon-file-audio")).toBeInTheDocument();
+      // Should not show count "1"
+      expect(sampleBadge).not.toHaveTextContent("1");
     });
 
     it("does not render search badges when no searchMatch data", () => {
       render(<KitGridItem {...defaultProps} />);
 
       expect(screen.queryByTitle(/Sample matches:/)).not.toBeInTheDocument();
-      expect(screen.queryByText(/🎵/)).not.toBeInTheDocument();
-      expect(screen.queryByText(/🏷️/)).not.toBeInTheDocument();
+      expect(screen.queryByTestId("icon-file-audio")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("icon-music-note")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("icon-tag")).not.toBeInTheDocument();
     });
 
     it("does not render search badges when kit is invalid", () => {

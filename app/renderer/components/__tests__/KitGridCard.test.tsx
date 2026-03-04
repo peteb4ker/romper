@@ -84,7 +84,7 @@ describe("KitGridCard", () => {
       const wrapper = container.firstChild as HTMLElement;
       expect(wrapper).toBeInTheDocument();
       expect(wrapper.tagName).toBe("DIV");
-      expect(wrapper.style.height).toBe("90px");
+      expect(wrapper.style.height).toBe("104px");
     });
 
     it("renders the KitGridItem child", () => {

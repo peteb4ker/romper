@@ -133,10 +133,10 @@ export function useLocalStoreWizardState({
   const errorMessage = state.error || state.kitFolderValidationError || null;
   const canInitialize = Boolean(
     state.targetPath &&
-    state.source &&
-    (!isSdCardSource ||
-      (state.sdCardSourcePath && !state.kitFolderValidationError)) &&
-    !state.isInitializing,
+      state.source &&
+      (!isSdCardSource ||
+        (state.sdCardSourcePath && !state.kitFolderValidationError)) &&
+      !state.isInitializing,
   );
 
   return useMemo(

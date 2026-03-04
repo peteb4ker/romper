@@ -208,8 +208,9 @@ describe.sequential("main/index.ts", () => {
     const readFileSyncSpy = vi
       .spyOn(fs, "readFileSync")
       .mockReturnValue('{"localStorePath": "/mock/store/path"}');
-    const { validateLocalStoreAndDb } =
-      await import("../localStoreValidator.js");
+    const { validateLocalStoreAndDb } = await import(
+      "../localStoreValidator.js"
+    );
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     await import("../index");
@@ -229,8 +230,9 @@ describe.sequential("main/index.ts", () => {
     const writeFileSyncSpy = vi
       .spyOn(fs, "writeFileSync")
       .mockImplementation(() => {});
-    const { validateLocalStoreAndDb } =
-      await import("../localStoreValidator.js");
+    const { validateLocalStoreAndDb } = await import(
+      "../localStoreValidator.js"
+    );
     vi.mocked(validateLocalStoreAndDb).mockReturnValue({
       error: "Path does not exist",
       errorSummary: "Invalid path",
@@ -258,8 +260,9 @@ describe.sequential("main/index.ts", () => {
       .mockImplementation(() => {
         throw new Error("Write failed");
       });
-    const { validateLocalStoreAndDb } =
-      await import("../localStoreValidator.js");
+    const { validateLocalStoreAndDb } = await import(
+      "../localStoreValidator.js"
+    );
     vi.mocked(validateLocalStoreAndDb).mockReturnValue({
       error: "Path does not exist",
       isValid: false,

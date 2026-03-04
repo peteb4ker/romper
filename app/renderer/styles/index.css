@@ -71,6 +71,7 @@
   --accent-success: #2d9668;
   --accent-warning: #d4b63c;
   --accent-danger: #c93c42;
+  --accent-favorite: #e8714a;
 
   /* Transport */
   --transport-play: #d97706;
@@ -117,6 +118,7 @@
   --accent-success: #3daa78;
   --accent-warning: #e8c846;
   --accent-danger: #e05a60;
+  --accent-favorite: #f08c6a;
 
   /* Transport */
   --transport-play: #f59e0b;
@@ -172,6 +174,7 @@
   --color-accent-success: var(--accent-success);
   --color-accent-warning: var(--accent-warning);
   --color-accent-danger: var(--accent-danger);
+  --color-accent-favorite: var(--accent-favorite);
 
   /* Focus ring */
   --color-focus-ring: var(--focus-ring);
@@ -201,6 +204,20 @@ html {
 }
 
 /* ───────────────────────────────────────────────────────────
+   Card Grain Texture — Subtle noise overlay for kit cards
+   ─────────────────────────────────────────────────────────── */
+
+.card-grain {
+  background-color: var(--surface-2);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Ccircle cx='2' cy='2' r='0.5' fill='%23000' opacity='0.07'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+.dark .card-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Ccircle cx='2' cy='2' r='0.5' fill='%23fff' opacity='0.07'/%3E%3C/svg%3E");
+}
+
+/* ───────────────────────────────────────────────────────────
    Custom Scrollbar
    ─────────────────────────────────────────────────────────── */
 
@@ -222,11 +239,3 @@ html {
   background: var(--text-tertiary);
 }
 
-/* ───────────────────────────────────────────────────────────
-   LED Pulse Animation — Kit card modified state indicator
-   ─────────────────────────────────────────────────────────── */
-
-@keyframes led-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}

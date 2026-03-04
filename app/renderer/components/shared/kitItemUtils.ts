@@ -31,7 +31,9 @@ export interface SearchMatchDetails {
   matchedArtist?: string;
   matchedOn: string[]; // ['name', 'artist', 'voice:KICK', 'sample:kick_001.wav']
   matchedSamples: string[];
+  matchedSamplesByVoice?: Record<number, string[]>;
   matchedVoices: string[];
+  searchTerm?: string;
 }
 
 /**

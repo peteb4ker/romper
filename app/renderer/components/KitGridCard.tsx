@@ -3,6 +3,8 @@ import type { Kit, KitWithRelations } from "@romper/shared/db/schema.js";
 import { isValidKit } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
+import type { KitWithSearchMatch } from "./shared/kitItemUtils";
+
 import KitGridItem from "./KitGridItem";
 
 interface KitGridCardProps {
@@ -20,6 +22,12 @@ interface KitGridCardProps {
 }
 
 const CARD_HEIGHT = 104;
+
+function hasSearchSampleMatches(kitDataItem: KitWithRelations | null): boolean {
+  const k = kitDataItem as KitWithSearchMatch | null;
+  const byVoice = k?.searchMatch?.matchedSamplesByVoice;
+  return !!byVoice && Object.keys(byVoice).length > 0;
+}
 
 export const KitGridCard: React.FC<KitGridCardProps> = ({
   focusedIdx,
@@ -52,8 +60,13 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
     }
   };
 
+  const expanded = hasSearchSampleMatches(kitDataItem);
+
   return (
-    <div key={kit.name} style={{ height: CARD_HEIGHT }}>
+    <div
+      key={kit.name}
+      style={expanded ? { minHeight: CARD_HEIGHT } : { height: CARD_HEIGHT }}
+    >
       <KitGridItem
         data-kit={kit.name}
         data-testid={`kit-item-${kit.name}`}

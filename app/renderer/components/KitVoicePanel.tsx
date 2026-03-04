@@ -223,9 +223,9 @@ const KitVoicePanel: React.FC<
 
   // Voice linking styles
   const voicePanelClasses = [
-    "flex-1 p-3 rounded-lg shadow text-text-primary min-h-[80px]",
-    // Default background
-    "bg-surface-2",
+    "flex-1 p-3 rounded-lg shadow text-text-primary min-h-[80px] border border-border-subtle",
+    // Default background with grain texture
+    "card-grain",
     // Linked voice styling
     isLinked &&
       isPrimaryVoice &&

@@ -3,14 +3,16 @@ import type { Kit, KitWithRelations } from "@romper/shared/db/schema";
 import {
   ArrowLeft,
   ArrowsClockwise,
+  BookmarkSimple,
   CaretLeft,
   CaretRight,
   Circle,
   Lock,
   PencilSimple,
-  Star,
 } from "@phosphor-icons/react";
 import React, { useCallback } from "react";
+
+import LedIconGrid from "./led-icon/LedIconGrid";
 
 interface KitHeaderProps {
   editingKitAlias: boolean;
@@ -158,7 +160,10 @@ const KitHeader: React.FC<KitHeaderProps> = ({
       : null;
 
   return (
-    <div className="flex items-center mb-2 gap-2">
+    <div className="sticky top-0 z-10 bg-surface-2 px-3 py-2 flex items-center gap-2 border-b border-border-subtle">
+      {/* App Icon */}
+      <LedIconGrid />
+
       {/* Left side: Navigation buttons */}
       <div className="flex items-center gap-2">
         {onBack && (
@@ -216,22 +221,22 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             : renderKitAliasButton(setEditingKitAlias, kit)}
         </div>
 
-        {/* Favorite star button */}
+        {/* Favorite bookmark button */}
         {onToggleFavorite && (
           <button
             className={`ml-3 p-2 transition-colors duration-150 rounded-full hover:bg-surface-3 ${
               kit?.is_favorite
-                ? "text-accent-warning hover:brightness-110"
-                : "text-text-tertiary hover:text-accent-warning"
+                ? "text-accent-favorite hover:brightness-110"
+                : "text-text-tertiary hover:text-accent-favorite"
             }`}
             onClick={() => onToggleFavorite(kitName)}
             title={
               kit?.is_favorite ? "Remove from favorites" : "Add to favorites"
             }
           >
-            <Star
-              className={kit?.is_favorite ? "" : "opacity-40"}
-              size={24}
+            <BookmarkSimple
+              className={kit?.is_favorite ? "" : "opacity-30"}
+              size={20}
               weight="fill"
             />
           </button>

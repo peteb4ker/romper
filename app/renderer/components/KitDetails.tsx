@@ -62,7 +62,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
 
   return (
     <div
-      className="flex flex-col flex-1 min-h-0 h-full p-2 pb-0 bg-surface-0 text-text-primary rounded-sm shadow"
+      className="flex flex-col flex-1 min-h-0 h-full bg-surface-0 text-text-primary rounded-sm shadow"
       data-testid="kit-details"
     >
       <KitHeader
@@ -86,21 +86,25 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
       />
 
       {needsScanning && (
-        <UnscannedKitPrompt
-          kitName={props.kitName}
-          onDismiss={() => setDismissedUnscannedPrompt(true)}
-          onScan={() => logic.handleScanKit()}
-        />
+        <div className="px-2">
+          <UnscannedKitPrompt
+            kitName={props.kitName}
+            onDismiss={() => setDismissedUnscannedPrompt(true)}
+            onScan={() => logic.handleScanKit()}
+          />
+        </div>
       )}
 
-      <KitForm
-        error={null} // error now handled by centralized message display
-        kit={logic.kit}
-        loading={logic.kitLoading}
-        onSave={logic.updateKitAlias}
-        tagsEditable={false} // Remove tag editing
-      />
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="px-2">
+        <KitForm
+          error={null} // error now handled by centralized message display
+          kit={logic.kit}
+          loading={logic.kitLoading}
+          onSave={logic.updateKitAlias}
+          tagsEditable={false} // Remove tag editing
+        />
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto px-2">
         <KitVoicePanels
           isEditable={logic.kit?.editable ?? false}
           kit={logic.kit}

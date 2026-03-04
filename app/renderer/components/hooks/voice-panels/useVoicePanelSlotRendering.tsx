@@ -211,6 +211,7 @@ export function useVoicePanelSlotRendering({
             playTrigger={playTriggers[sampleKey] || 0}
             slotNumber={slotNumber}
             stopTrigger={stopTriggers[sampleKey] || 0}
+            voiceColor={`var(--voice-${voice})`}
             voiceNumber={voice}
             volume={playVolumes?.[sampleKey]}
           />

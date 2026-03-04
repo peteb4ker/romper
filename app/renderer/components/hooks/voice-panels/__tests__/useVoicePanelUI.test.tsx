@@ -65,7 +65,7 @@ describe("useVoicePanelUI", () => {
 
       const { container } = render(result.current.renderVoiceName());
 
-      expect(container.textContent).toContain("2:");
+      expect(container.textContent).toContain("2");
       expect(container.textContent).toContain("Drums");
       expect(kitUtilsShared.toCapitalCase).toHaveBeenCalledWith("Drums");
     });
@@ -272,14 +272,9 @@ describe("useVoicePanelUI", () => {
         '[data-testid="voice-name-2"]',
       );
       expect(voiceNameSpan).toHaveClass(
-        "ml-1",
-        "px-2",
-        "py-0.5",
-        "rounded-full",
-        "bg-accent-primary/15",
-        "text-accent-primary",
         "text-sm",
-        "font-semibold",
+        "text-text-secondary",
+        "font-medium",
         "tracking-wide",
       );
     });
@@ -295,15 +290,8 @@ describe("useVoicePanelUI", () => {
         '[data-testid="voice-name-2"]',
       );
       expect(voiceNameSpan).toHaveClass(
-        "ml-1",
-        "px-2",
-        "py-0.5",
-        "rounded-full",
-        "bg-surface-3",
-        "text-text-tertiary",
         "text-sm",
-        "font-semibold",
-        "tracking-wide",
+        "text-text-tertiary",
         "italic",
       );
     });
@@ -353,7 +341,7 @@ describe("useVoicePanelUI", () => {
 
       const { container } = render(result.current.renderVoiceName());
 
-      expect(container.textContent).toContain("0:");
+      expect(container.textContent).toContain("0");
     });
 
     it("handles voice number 16", () => {
@@ -363,7 +351,7 @@ describe("useVoicePanelUI", () => {
 
       const { container } = render(result.current.renderVoiceName());
 
-      expect(container.textContent).toContain("16:");
+      expect(container.textContent).toContain("16");
     });
 
     it("handles undefined voiceName", () => {

@@ -236,7 +236,7 @@ describe("KitHeader", () => {
   });
 
   describe("Favorite Toggle - Task 17.2", () => {
-    it("shows favorite star button when onToggleFavorite is provided", () => {
+    it("shows favorite bookmark button when onToggleFavorite is provided", () => {
       const kit = { alias: "My Kit", is_favorite: false } as Kit;
       render(<KitHeader {...baseProps} kit={kit} onToggleFavorite={vi.fn()} />);
 
@@ -251,8 +251,8 @@ describe("KitHeader", () => {
 
       const favoriteButton = screen.getByTitle("Add to favorites");
       expect(favoriteButton).toHaveClass("text-text-tertiary");
-      const star = favoriteButton.querySelector("svg");
-      expect(star).toHaveClass("opacity-40");
+      const icon = favoriteButton.querySelector("svg");
+      expect(icon).toHaveClass("opacity-30");
     });
 
     it("shows correct visual state when kit is favorited", () => {
@@ -260,9 +260,9 @@ describe("KitHeader", () => {
       render(<KitHeader {...baseProps} kit={kit} onToggleFavorite={vi.fn()} />);
 
       const favoriteButton = screen.getByTitle("Remove from favorites");
-      expect(favoriteButton).toHaveClass("text-accent-warning");
-      const star = favoriteButton.querySelector("svg");
-      expect(star).not.toHaveClass("opacity-40");
+      expect(favoriteButton).toHaveClass("text-accent-favorite");
+      const icon = favoriteButton.querySelector("svg");
+      expect(icon).not.toHaveClass("opacity-30");
     });
 
     it("calls onToggleFavorite with kit name when clicked", () => {

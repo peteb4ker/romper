@@ -1,17 +1,15 @@
 echo "🚀 Running pre-commit checks..."
 echo "🔍 TypeScript → 🧹 Linting → 🧪 Testing → 🏗️ Building → 📊 SonarQube"
 
-# Check current branch and warn about main branch commits (local protection)
+# Block commits on main branch (hard block)
 CURRENT_BRANCH=$(git branch --show-current)
 if [ "$CURRENT_BRANCH" = "main" ]; then
-  echo "⚠️  WARNING: Committing directly to main branch!"
-  echo "🔄 Consider using the worktree workflow:"
+  echo "BLOCKED: Direct commits to main branch are not allowed!"
+  echo "Use the worktree workflow:"
   echo "   npm run worktree:create <task-name>"
   echo "   cd worktrees/<task-name>"
   echo "   npm run commit \"your message\""
-  echo ""
-  echo "⏸️  Proceeding anyway in 3 seconds... (Ctrl+C to cancel)"
-  sleep 3
+  exit 1
 fi
 
 # Check for unstaged changes before running any checks

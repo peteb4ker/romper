@@ -61,6 +61,7 @@ const config = {
         name: "Romper",
         authors: "Romper Development Team",
         description: "Sample manager for Squarp Rample Eurorack sampler",
+        setupIcon: "./electron/resources/app-icon.ico",
       },
     },
     {

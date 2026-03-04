@@ -20,15 +20,8 @@ vi.mock("../useKitErrorHandling", () => ({
 
 vi.mock("../useKitCreation", () => ({
   useKitCreation: vi.fn(() => ({
-    handleCreateKit: vi.fn(),
-    handleCreateNextKit: vi.fn(),
-    newKitError: null,
-    newKitSlot: "",
-    nextKitSlot: "A0",
-    setNewKitError: vi.fn(),
-    setNewKitSlot: vi.fn(),
-    setShowNewKit: vi.fn(),
-    showNewKit: false,
+    handleCreateKitInBank: vi.fn(),
+    isCreatingKit: false,
   })),
 }));
 
@@ -94,15 +87,8 @@ describe("useKitBrowser", () => {
     expect(result.current.setSdCardWarning).toBeDefined();
 
     // From kitCreation
-    expect(result.current.showNewKit).toBeDefined();
-    expect(result.current.newKitSlot).toBeDefined();
-    expect(result.current.newKitError).toBeDefined();
-    expect(result.current.nextKitSlot).toBeDefined();
-    expect(result.current.setShowNewKit).toBeDefined();
-    expect(result.current.setNewKitSlot).toBeDefined();
-    expect(result.current.setNewKitError).toBeDefined();
-    expect(result.current.handleCreateKit).toBeDefined();
-    expect(result.current.handleCreateNextKit).toBeDefined();
+    expect(result.current.handleCreateKitInBank).toBeDefined();
+    expect(result.current.isCreatingKit).toBeDefined();
 
     // From kitDuplication
     expect(result.current.duplicateKitSource).toBeDefined();

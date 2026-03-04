@@ -21,10 +21,7 @@ afterEach(() => {
 
 describe("KitBrowserHeader", () => {
   const defaultProps = {
-    nextKitSlot: null,
-    onCreateNextKit: vi.fn(),
     onShowLocalStoreWizard: vi.fn(),
-    onShowNewKit: vi.fn(),
     onShowSettings: vi.fn(),
   };
 
@@ -32,11 +29,9 @@ describe("KitBrowserHeader", () => {
     vi.clearAllMocks();
   });
 
-  it("calls onShowNewKit when New Kit button is clicked", () => {
-    const onShowNewKit = vi.fn();
-    render(<KitBrowserHeader {...defaultProps} onShowNewKit={onShowNewKit} />);
-    fireEvent.click(screen.getByText("New Kit"));
-    expect(onShowNewKit).toHaveBeenCalled();
+  it("does not render a New Kit button", () => {
+    render(<KitBrowserHeader {...defaultProps} />);
+    expect(screen.queryByText("New Kit")).not.toBeInTheDocument();
   });
 
   it("calls onShowSettings when Settings button is clicked", () => {

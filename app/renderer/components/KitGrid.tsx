@@ -1,5 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
+import { getNextSlotInBank } from "@romper/shared/kitUtilsShared";
 import React, {
   forwardRef,
   useEffect,
@@ -8,6 +9,7 @@ import React, {
   useState,
 } from "react";
 
+import AddKitCard from "./AddKitCard";
 import { useKitListLogic } from "./hooks/kit-management/useKitListLogic";
 import { useKitListNavigation } from "./hooks/kit-management/useKitListNavigation";
 import { useKitGridKeyboard } from "./hooks/useKitGridKeyboard";
@@ -76,9 +78,12 @@ interface KitGridProps {
   bankNames: Record<string, string>;
   focusedKit?: null | string; // externally controlled focus
   getKitFavoriteState?: (kitName: string) => boolean; // Still needed for computing state
+  isCreatingKit?: boolean;
+  isFiltered?: boolean;
   kitData?: KitWithRelations[]; // Kit data from database
   kits: KitWithRelations[];
   onBankFocus?: (bank: string) => void;
+  onCreateKitInBank?: (bankLetter: string) => void;
   onDuplicate: (kit: string) => void;
   onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
   onSelectKit: (kit: string) => void;
@@ -145,9 +150,12 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       bankNames,
       focusedKit,
       getKitFavoriteState,
+      isCreatingKit,
+      isFiltered,
       kitData,
       kits,
       onBankFocus,
+      onCreateKitInBank,
       onDuplicate,
       onFocusKit,
       onSelectKit,
@@ -227,33 +235,46 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
             justifyContent: "center",
           }}
         >
-          {Object.entries(kitsByBank).map(([bank, bankKits]) => (
-            <React.Fragment key={bank}>
-              {/* Bank header spans all columns */}
-              <BankHeader
-                bank={bank}
-                bankName={bankNames[bank]}
-                onBankVisible={onVisibleBankChange}
-              />
-              {/* Kit cards for this bank */}
-              {bankKits.map((kit) => (
-                <KitGridCard
-                  focusedIdx={focusedIdx}
-                  getKitFavoriteState={getKitFavoriteState}
-                  key={kit.name}
-                  kit={kit}
-                  kitData={kitData}
-                  kitsToDisplay={kitsToDisplay}
-                  onDuplicate={onDuplicate}
-                  onFocusKit={onFocusKit}
-                  onSelectKit={onSelectKit}
-                  onToggleFavorite={onToggleFavorite}
-                  sampleCounts={sampleCounts}
-                  setFocus={setFocus}
+          {Object.entries(kitsByBank).map(([bank, bankKits]) => {
+            const existingNames = kitsToDisplay.map((k) => k.name);
+            const bankHasRoom = getNextSlotInBank(bank, existingNames) !== null;
+
+            return (
+              <React.Fragment key={bank}>
+                {/* Bank header spans all columns */}
+                <BankHeader
+                  bank={bank}
+                  bankName={bankNames[bank]}
+                  onBankVisible={onVisibleBankChange}
                 />
-              ))}
-            </React.Fragment>
-          ))}
+                {/* Kit cards for this bank */}
+                {bankKits.map((kit) => (
+                  <KitGridCard
+                    focusedIdx={focusedIdx}
+                    getKitFavoriteState={getKitFavoriteState}
+                    key={kit.name}
+                    kit={kit}
+                    kitData={kitData}
+                    kitsToDisplay={kitsToDisplay}
+                    onDuplicate={onDuplicate}
+                    onFocusKit={onFocusKit}
+                    onSelectKit={onSelectKit}
+                    onToggleFavorite={onToggleFavorite}
+                    sampleCounts={sampleCounts}
+                    setFocus={setFocus}
+                  />
+                ))}
+                {/* Add kit card at end of bank */}
+                {!isFiltered && bankHasRoom && onCreateKitInBank && (
+                  <AddKitCard
+                    bankLetter={bank}
+                    isCreating={!!isCreatingKit}
+                    onClick={onCreateKitInBank}
+                  />
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
       </div>
     );

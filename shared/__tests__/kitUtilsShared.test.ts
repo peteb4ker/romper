@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   compareKitSlots,
   getNextKitSlot,
+  getNextSlotInBank,
   inferVoiceTypeFromFilename,
   isValidKit,
   showBankAnchor,
@@ -112,6 +113,36 @@ describe("getNextKitSlot", () => {
   });
   it("handles non-sequential kits", () => {
     expect(getNextKitSlot(["A0", "A2", "A3"])).toBe("A1"); // implementation returns 'A1', not 'A4'
+  });
+});
+
+// getNextSlotInBank tests
+
+describe("getNextSlotInBank", () => {
+  it("returns bank letter + 0 if no kits exist in that bank", () => {
+    expect(getNextSlotInBank("A", [])).toBe("A0");
+    expect(getNextSlotInBank("B", [])).toBe("B0");
+  });
+
+  it("returns next number in same bank", () => {
+    expect(getNextSlotInBank("A", ["A0", "A1", "A2"])).toBe("A3");
+  });
+
+  it("fills gaps in the bank", () => {
+    expect(getNextSlotInBank("A", ["A0", "A2", "A3"])).toBe("A1");
+  });
+
+  it("ignores kits from other banks", () => {
+    expect(getNextSlotInBank("B", ["A0", "A1", "B0"])).toBe("B1");
+  });
+
+  it("returns null if all 100 slots are taken", () => {
+    const allSlots = Array.from({ length: 100 }, (_, i) => `A${i}`);
+    expect(getNextSlotInBank("A", allSlots)).toBeNull();
+  });
+
+  it("works with mixed bank kits", () => {
+    expect(getNextSlotInBank("A", ["A0", "B0", "A1", "C5"])).toBe("A2");
   });
 });
 

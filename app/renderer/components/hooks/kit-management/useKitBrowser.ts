@@ -47,16 +47,14 @@ export function useKitBrowser({
     handleBankClick: bankNavigation.handleBankClick,
     handleBankClickWithScroll: bankNavigation.handleBankClickWithScroll,
     // From kitCreation
-    handleCreateKit: kitCreation.handleCreateKit,
-    handleCreateNextKit: kitCreation.handleCreateNextKit,
+    handleCreateKitInBank: kitCreation.handleCreateKitInBank,
 
     handleDuplicateKit: kitDuplication.handleDuplicateKit,
     handleVisibleBankChange: bankNavigation.handleVisibleBankChange,
+    // From kitCreation
+    isCreatingKit: kitCreation.isCreatingKit,
     // Pass through for backward compatibility
     kits,
-    newKitError: kitCreation.newKitError,
-    newKitSlot: kitCreation.newKitSlot,
-    nextKitSlot: kitCreation.nextKitSlot,
     scrollContainerRef: bankNavigation.scrollContainerRef,
     sdCardWarning: errorHandling.sdCardWarning,
     selectedBank: bankNavigation.selectedBank,
@@ -67,13 +65,7 @@ export function useKitBrowser({
     setDuplicateKitSource: kitDuplication.setDuplicateKitSource,
     setError: errorHandling.setError,
     setFocusedKit: bankNavigation.setFocusedKit,
-    setNewKitError: kitCreation.setNewKitError,
-
-    setNewKitSlot: kitCreation.setNewKitSlot,
     setSdCardWarning: errorHandling.setSdCardWarning,
     setSelectedBank: bankNavigation.setSelectedBank,
-    setShowNewKit: kitCreation.setShowNewKit,
-
-    showNewKit: kitCreation.showNewKit,
   };
 }

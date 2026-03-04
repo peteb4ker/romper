@@ -2,12 +2,10 @@ import {
   DownloadSimple,
   GearSix,
   PencilSimple,
-  Plus,
   Star,
 } from "@phosphor-icons/react";
 import React from "react";
 
-import { useKitBrowserHeader } from "./hooks/kit-management/useKitBrowserHeader";
 import LedIconGrid from "./led-icon/LedIconGrid";
 import SearchInput from "./SearchInput";
 
@@ -19,7 +17,6 @@ interface KitBrowserHeaderProps {
   onSearchChange?: (query: string) => void;
   onSearchClear?: () => void;
   onShowLocalStoreWizard: () => void;
-  onShowNewKit: () => void;
   onShowSettings: () => void;
   onSyncToSdCard?: () => void;
   onToggleFavoritesFilter?: () => void;
@@ -31,8 +28,6 @@ interface KitBrowserHeaderProps {
 }
 
 const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
-  const { handleShowNewKit } = useKitBrowserHeader(props);
-
   return (
     <div className="sticky top-0 z-10 bg-surface-2 px-3 py-2 flex items-center gap-2 border-b border-border-subtle">
       {/* App Icon */}
@@ -128,15 +123,6 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
 
       {/* Divider */}
       <div className="h-5 border-l border-border-subtle flex-shrink-0" />
-
-      {/* + New Kit */}
-      <button
-        className="flex-shrink-0 px-2.5 py-1.5 text-xs bg-accent-primary text-text-inverse rounded-md hover:brightness-110 transition-colors duration-150 font-medium flex items-center gap-1"
-        onClick={handleShowNewKit}
-      >
-        <Plus size={12} weight="bold" />
-        New Kit
-      </button>
 
       {/* Sync */}
       {props.onSyncToSdCard && (

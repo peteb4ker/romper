@@ -138,39 +138,36 @@ const baseProps = {
   sampleCounts: { A0: [1, 1, 1, 1], A1: [1, 1, 1, 1], B0: [1, 1, 1, 1] },
 };
 
+const createMockReturnValue = (overrides = {}) => ({
+  bankNames: {},
+  duplicateKitDest: "",
+  duplicateKitError: null,
+  duplicateKitSource: null,
+  error: null,
+  focusBankInKitList: vi.fn(),
+  focusedKit: "A0",
+  globalBankHotkeyHandler: vi.fn(),
+  handleBankClick: vi.fn(),
+  handleCreateKitInBank: vi.fn(),
+  handleDuplicateKit: vi.fn(),
+  isCreatingKit: false,
+  kits: baseProps.kits,
+  scrollContainerRef: { current: null },
+  sdCardWarning: null,
+  selectedBank: "A",
+  setDuplicateKitDest: vi.fn(),
+  setDuplicateKitError: vi.fn(),
+  setDuplicateKitSource: vi.fn(),
+  setSelectedBank: vi.fn(),
+  ...overrides,
+});
+
 describe("KitBrowser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     // Set up default mock behavior
-    mockUseKitBrowser.mockReturnValue({
-      bankNames: {},
-      duplicateKitDest: "",
-      duplicateKitError: null,
-      duplicateKitSource: null,
-      error: null,
-      focusBankInKitList: vi.fn(),
-      focusedKit: "A0",
-      globalBankHotkeyHandler: vi.fn(),
-      handleBankClick: vi.fn(),
-      handleCreateKit: vi.fn(),
-      handleDuplicateKit: vi.fn(),
-      kits: baseProps.kits,
-      newKitError: null,
-      newKitSlot: "",
-      nextKitSlot: "A2",
-      scrollContainerRef: { current: null },
-      sdCardWarning: null,
-      selectedBank: "A",
-      setDuplicateKitDest: vi.fn(),
-      setDuplicateKitError: vi.fn(),
-      setDuplicateKitSource: vi.fn(),
-      setNewKitError: vi.fn(),
-      setNewKitSlot: vi.fn(),
-      setSelectedBank: vi.fn(),
-      setShowNewKit: vi.fn(),
-      showNewKit: false,
-    });
+    mockUseKitBrowser.mockReturnValue(createMockReturnValue());
 
     // Mock scrollTo for jsdom
     Object.defineProperty(HTMLElement.prototype, "scrollTo", {
@@ -184,18 +181,59 @@ describe("KitBrowser", () => {
   });
 
   describe("rendering", () => {
-    it("renders kit list and header", async () => {
+    it("renders kit list and header without New Kit button", async () => {
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
         </MockMessageDisplayProvider>,
       );
-      // Should see key header buttons
-      expect(screen.getByText("New Kit")).toBeTruthy();
+      // New Kit button should no longer exist
+      expect(screen.queryByText("New Kit")).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Settings" })).toBeTruthy();
       expect(screen.getByTestId("kit-item-A0")).toBeTruthy();
       expect(screen.getByTestId("kit-item-A1")).toBeTruthy();
       expect(screen.getByTestId("kit-item-B0")).toBeTruthy();
+    });
+
+    it("renders add kit cards when not filtered", () => {
+      render(
+        <MockMessageDisplayProvider>
+          <KitBrowser {...baseProps} />
+        </MockMessageDisplayProvider>,
+      );
+      // Add kit cards should appear for each bank
+      expect(screen.getByTestId("add-kit-A")).toBeInTheDocument();
+      expect(screen.getByTestId("add-kit-B")).toBeInTheDocument();
+    });
+
+    it("hides add kit cards when search is active", () => {
+      render(
+        <MockMessageDisplayProvider>
+          <KitBrowser {...baseProps} searchQuery="test" />
+        </MockMessageDisplayProvider>,
+      );
+      expect(screen.queryByTestId("add-kit-A")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("add-kit-B")).not.toBeInTheDocument();
+    });
+
+    it("hides add kit cards when favorites filter is active", () => {
+      render(
+        <MockMessageDisplayProvider>
+          <KitBrowser {...baseProps} showFavoritesOnly={true} />
+        </MockMessageDisplayProvider>,
+      );
+      expect(screen.queryByTestId("add-kit-A")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("add-kit-B")).not.toBeInTheDocument();
+    });
+
+    it("hides add kit cards when modified filter is active", () => {
+      render(
+        <MockMessageDisplayProvider>
+          <KitBrowser {...baseProps} showModifiedOnly={true} />
+        </MockMessageDisplayProvider>,
+      );
+      expect(screen.queryByTestId("add-kit-A")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("add-kit-B")).not.toBeInTheDocument();
     });
   });
 
@@ -210,36 +248,14 @@ describe("KitBrowser", () => {
       fireEvent.click(kit);
       expect(baseProps.onSelectKit).toHaveBeenCalledWith("A0");
     });
-    it("shows new kit dialog when + New Kit is clicked", () => {
-      // Mock the hook to show the dialog after the button is clicked
-      mockUseKitBrowser.mockReturnValue({
-        bankNames: {},
-        duplicateKitDest: "",
-        duplicateKitError: null,
-        duplicateKitSource: null,
-        error: null,
-        focusBankInKitList: vi.fn(),
-        focusedKit: "A0",
-        globalBankHotkeyHandler: vi.fn(),
-        handleBankClick: vi.fn(),
-        handleCreateKit: vi.fn(),
-        handleDuplicateKit: vi.fn(),
-        kits: baseProps.kits,
-        newKitError: null,
-        newKitSlot: "",
-        nextKitSlot: "A2",
-        scrollContainerRef: { current: null },
-        sdCardWarning: null,
-        selectedBank: "A",
-        setDuplicateKitDest: vi.fn(),
-        setDuplicateKitError: vi.fn(),
-        setDuplicateKitSource: vi.fn(),
-        setNewKitError: vi.fn(),
-        setNewKitSlot: vi.fn(),
-        setSelectedBank: vi.fn(),
-        setShowNewKit: vi.fn(),
-        showNewKit: true, // Dialog should be shown
-      });
+
+    it("calls handleCreateKitInBank when add kit card is clicked", () => {
+      const mockHandleCreateKitInBank = vi.fn();
+      mockUseKitBrowser.mockReturnValue(
+        createMockReturnValue({
+          handleCreateKitInBank: mockHandleCreateKitInBank,
+        }),
+      );
 
       render(
         <MockMessageDisplayProvider>
@@ -247,9 +263,9 @@ describe("KitBrowser", () => {
         </MockMessageDisplayProvider>,
       );
 
-      // Now we should see the New Kit dialog content
-      expect(screen.getByText("Create New Kit")).toBeTruthy();
-      expect(screen.getByText("Create Kit")).toBeTruthy();
+      const addKitCard = screen.getByTestId("add-kit-A");
+      fireEvent.click(addKitCard);
+      expect(mockHandleCreateKitInBank).toHaveBeenCalledWith("A");
     });
   });
 
@@ -351,35 +367,13 @@ describe("KitBrowser", () => {
       };
 
       it("should highlight/select the first kit in a bank when a bank button is clicked", async () => {
-        // Set up mock with B1 as focused kit to simulate the bank click behavior
-        mockUseKitBrowser.mockReturnValue({
-          bankNames: {},
-          duplicateKitDest: "",
-          duplicateKitError: null,
-          duplicateKitSource: null,
-          error: null,
-          focusBankInKitList: vi.fn(),
-          focusedKit: "B1", // Focus should be on B1 after clicking bank B
-          globalBankHotkeyHandler: vi.fn(),
-          handleBankClick: vi.fn(),
-          handleCreateKit: vi.fn(),
-          handleDuplicateKit: vi.fn(),
-          kits: navProps.kits,
-          newKitError: null,
-          newKitSlot: "",
-          nextKitSlot: "A2",
-          scrollContainerRef: { current: null },
-          sdCardWarning: null,
-          selectedBank: "B",
-          setDuplicateKitDest: vi.fn(),
-          setDuplicateKitError: vi.fn(),
-          setDuplicateKitSource: vi.fn(),
-          setNewKitError: vi.fn(),
-          setNewKitSlot: vi.fn(),
-          setSelectedBank: vi.fn(),
-          setShowNewKit: vi.fn(),
-          showNewKit: false,
-        });
+        mockUseKitBrowser.mockReturnValue(
+          createMockReturnValue({
+            focusedKit: "B1",
+            kits: navProps.kits,
+            selectedBank: "B",
+          }),
+        );
 
         render(
           <MockMessageDisplayProvider>
@@ -394,12 +388,6 @@ describe("KitBrowser", () => {
             const selected = kitB1s.filter(
               (el) => el.getAttribute("aria-selected") === "true",
             );
-            if (selected.length !== 1) {
-              console.log(
-                "kitB1s:",
-                kitB1s.map((el) => el.outerHTML),
-              );
-            }
             expect(selected.length).toBe(1);
             expect(selected[0].getAttribute("tabindex")).toBe("0");
             kitB1s.forEach((el) => {
@@ -412,36 +400,15 @@ describe("KitBrowser", () => {
           { timeout: 2000 },
         );
       });
+
       it("should highlight/select the first kit in a bank when A-Z hotkey is pressed", async () => {
-        // Set up mock with B1 as focused kit to simulate the hotkey behavior
-        mockUseKitBrowser.mockReturnValue({
-          bankNames: {},
-          duplicateKitDest: "",
-          duplicateKitError: null,
-          duplicateKitSource: null,
-          error: null,
-          focusBankInKitList: vi.fn(),
-          focusedKit: "B1", // Focus should be on B1 after pressing B hotkey
-          globalBankHotkeyHandler: vi.fn(),
-          handleBankClick: vi.fn(),
-          handleCreateKit: vi.fn(),
-          handleDuplicateKit: vi.fn(),
-          kits: navProps.kits,
-          newKitError: null,
-          newKitSlot: "",
-          nextKitSlot: "A2",
-          scrollContainerRef: { current: null },
-          sdCardWarning: null,
-          selectedBank: "B",
-          setDuplicateKitDest: vi.fn(),
-          setDuplicateKitError: vi.fn(),
-          setDuplicateKitSource: vi.fn(),
-          setNewKitError: vi.fn(),
-          setNewKitSlot: vi.fn(),
-          setSelectedBank: vi.fn(),
-          setShowNewKit: vi.fn(),
-          showNewKit: false,
-        });
+        mockUseKitBrowser.mockReturnValue(
+          createMockReturnValue({
+            focusedKit: "B1",
+            kits: navProps.kits,
+            selectedBank: "B",
+          }),
+        );
 
         render(
           <MockMessageDisplayProvider>
@@ -456,12 +423,6 @@ describe("KitBrowser", () => {
             const selected = kitB1s.filter(
               (el) => el.getAttribute("aria-selected") === "true",
             );
-            if (selected.length !== 1) {
-              console.log(
-                "kitB1s:",
-                kitB1s.map((el) => el.outerHTML),
-              );
-            }
             expect(selected.length).toBe(1);
             expect(selected[0].getAttribute("tabindex")).toBe("0");
             kitB1s.forEach((el) => {
@@ -477,39 +438,14 @@ describe("KitBrowser", () => {
     });
   });
 
-  // Validate Store button removed from header — accessible via Electron app menu
-
   describe("Error handling", () => {
     it("displays error messages from logic", () => {
       const mockOnMessage = vi.fn();
-      mockUseKitBrowser.mockReturnValue({
-        bankNames: {},
-        duplicateKitDest: "",
-        duplicateKitError: null,
-        duplicateKitSource: null,
-        error: "Test error message",
-        focusBankInKitList: vi.fn(),
-        focusedKit: "A0",
-        globalBankHotkeyHandler: vi.fn(),
-        handleBankClick: vi.fn(),
-        handleCreateKit: vi.fn(),
-        handleDuplicateKit: vi.fn(),
-        kits: baseProps.kits,
-        newKitError: null,
-        newKitSlot: "",
-        nextKitSlot: "A2",
-        scrollContainerRef: { current: null },
-        sdCardWarning: null,
-        selectedBank: "A",
-        setDuplicateKitDest: vi.fn(),
-        setDuplicateKitError: vi.fn(),
-        setDuplicateKitSource: vi.fn(),
-        setNewKitError: vi.fn(),
-        setNewKitSlot: vi.fn(),
-        setSelectedBank: vi.fn(),
-        setShowNewKit: vi.fn(),
-        showNewKit: false,
-      });
+      mockUseKitBrowser.mockReturnValue(
+        createMockReturnValue({
+          error: "Test error message",
+        }),
+      );
 
       render(
         <MockMessageDisplayProvider>
@@ -526,34 +462,11 @@ describe("KitBrowser", () => {
 
     it("displays SD card warnings", () => {
       const mockOnMessage = vi.fn();
-      mockUseKitBrowser.mockReturnValue({
-        bankNames: {},
-        duplicateKitDest: "",
-        duplicateKitError: null,
-        duplicateKitSource: null,
-        error: null,
-        focusBankInKitList: vi.fn(),
-        focusedKit: "A0",
-        globalBankHotkeyHandler: vi.fn(),
-        handleBankClick: vi.fn(),
-        handleCreateKit: vi.fn(),
-        handleDuplicateKit: vi.fn(),
-        kits: baseProps.kits,
-        newKitError: null,
-        newKitSlot: "",
-        nextKitSlot: "A2",
-        scrollContainerRef: { current: null },
-        sdCardWarning: "SD card warning message",
-        selectedBank: "A",
-        setDuplicateKitDest: vi.fn(),
-        setDuplicateKitError: vi.fn(),
-        setDuplicateKitSource: vi.fn(),
-        setNewKitError: vi.fn(),
-        setNewKitSlot: vi.fn(),
-        setSelectedBank: vi.fn(),
-        setShowNewKit: vi.fn(),
-        showNewKit: false,
-      });
+      mockUseKitBrowser.mockReturnValue(
+        createMockReturnValue({
+          sdCardWarning: "SD card warning message",
+        }),
+      );
 
       render(
         <MockMessageDisplayProvider>
@@ -591,34 +504,13 @@ describe("KitBrowser", () => {
       const mockSetDuplicateKitDest = vi.fn();
       const mockSetDuplicateKitError = vi.fn();
 
-      mockUseKitBrowser.mockReturnValue({
-        bankNames: {},
-        duplicateKitDest: "",
-        duplicateKitError: null,
-        duplicateKitSource: null,
-        error: null,
-        focusBankInKitList: vi.fn(),
-        focusedKit: "A0",
-        globalBankHotkeyHandler: vi.fn(),
-        handleBankClick: vi.fn(),
-        handleCreateKit: vi.fn(),
-        handleDuplicateKit: vi.fn(),
-        kits: baseProps.kits,
-        newKitError: null,
-        newKitSlot: "",
-        nextKitSlot: "A2",
-        scrollContainerRef: { current: null },
-        sdCardWarning: null,
-        selectedBank: "A",
-        setDuplicateKitDest: mockSetDuplicateKitDest,
-        setDuplicateKitError: mockSetDuplicateKitError,
-        setDuplicateKitSource: mockSetDuplicateKitSource,
-        setNewKitError: vi.fn(),
-        setNewKitSlot: vi.fn(),
-        setSelectedBank: vi.fn(),
-        setShowNewKit: vi.fn(),
-        showNewKit: false,
-      });
+      mockUseKitBrowser.mockReturnValue(
+        createMockReturnValue({
+          setDuplicateKitDest: mockSetDuplicateKitDest,
+          setDuplicateKitError: mockSetDuplicateKitError,
+          setDuplicateKitSource: mockSetDuplicateKitSource,
+        }),
+      );
 
       render(
         <MockMessageDisplayProvider>
@@ -626,40 +518,16 @@ describe("KitBrowser", () => {
         </MockMessageDisplayProvider>,
       );
 
-      // Skip this test - duplicate functionality might be in a different component or context menu
-      // The functionality is tested elsewhere in the codebase
       expect(mockSetDuplicateKitSource).not.toHaveBeenCalled();
     });
 
     it("shows duplicate kit dialog when source is set", () => {
-      mockUseKitBrowser.mockReturnValue({
-        bankNames: {},
-        duplicateKitDest: "B0",
-        duplicateKitError: null,
-        duplicateKitSource: "A0", // Source is set
-        error: null,
-        focusBankInKitList: vi.fn(),
-        focusedKit: "A0",
-        globalBankHotkeyHandler: vi.fn(),
-        handleBankClick: vi.fn(),
-        handleCreateKit: vi.fn(),
-        handleDuplicateKit: vi.fn(),
-        kits: baseProps.kits,
-        newKitError: null,
-        newKitSlot: "",
-        nextKitSlot: "A2",
-        scrollContainerRef: { current: null },
-        sdCardWarning: null,
-        selectedBank: "A",
-        setDuplicateKitDest: vi.fn(),
-        setDuplicateKitError: vi.fn(),
-        setDuplicateKitSource: vi.fn(),
-        setNewKitError: vi.fn(),
-        setNewKitSlot: vi.fn(),
-        setSelectedBank: vi.fn(),
-        setShowNewKit: vi.fn(),
-        showNewKit: false,
-      });
+      mockUseKitBrowser.mockReturnValue(
+        createMockReturnValue({
+          duplicateKitDest: "B0",
+          duplicateKitSource: "A0",
+        }),
+      );
 
       render(
         <MockMessageDisplayProvider>
@@ -676,34 +544,12 @@ describe("KitBrowser", () => {
     it("handles bank click and focuses bank in kit list", () => {
       const mockFocusBankInKitList = vi.fn();
 
-      mockUseKitBrowser.mockReturnValue({
-        bankNames: { A: "A", B: "B" },
-        duplicateKitDest: "",
-        duplicateKitError: null,
-        duplicateKitSource: null,
-        error: null,
-        focusBankInKitList: mockFocusBankInKitList,
-        focusedKit: "A0",
-        globalBankHotkeyHandler: vi.fn(),
-        handleBankClick: vi.fn(),
-        handleCreateKit: vi.fn(),
-        handleDuplicateKit: vi.fn(),
-        kits: baseProps.kits,
-        newKitError: null,
-        newKitSlot: "",
-        nextKitSlot: "A2",
-        scrollContainerRef: { current: null },
-        sdCardWarning: null,
-        selectedBank: "A",
-        setDuplicateKitDest: vi.fn(),
-        setDuplicateKitError: vi.fn(),
-        setDuplicateKitSource: vi.fn(),
-        setNewKitError: vi.fn(),
-        setNewKitSlot: vi.fn(),
-        setSelectedBank: vi.fn(),
-        setShowNewKit: vi.fn(),
-        showNewKit: false,
-      });
+      mockUseKitBrowser.mockReturnValue(
+        createMockReturnValue({
+          bankNames: { A: "A", B: "B" },
+          focusBankInKitList: mockFocusBankInKitList,
+        }),
+      );
 
       render(
         <MockMessageDisplayProvider>
@@ -723,34 +569,11 @@ describe("KitBrowser", () => {
       const removeEventListenerSpy = vi.spyOn(window, "removeEventListener");
       const mockGlobalBankHotkeyHandler = vi.fn();
 
-      mockUseKitBrowser.mockReturnValue({
-        bankNames: {},
-        duplicateKitDest: "",
-        duplicateKitError: null,
-        duplicateKitSource: null,
-        error: null,
-        focusBankInKitList: vi.fn(),
-        focusedKit: "A0",
-        globalBankHotkeyHandler: mockGlobalBankHotkeyHandler,
-        handleBankClick: vi.fn(),
-        handleCreateKit: vi.fn(),
-        handleDuplicateKit: vi.fn(),
-        kits: baseProps.kits,
-        newKitError: null,
-        newKitSlot: "",
-        nextKitSlot: "A2",
-        scrollContainerRef: { current: null },
-        sdCardWarning: null,
-        selectedBank: "A",
-        setDuplicateKitDest: vi.fn(),
-        setDuplicateKitError: vi.fn(),
-        setDuplicateKitSource: vi.fn(),
-        setNewKitError: vi.fn(),
-        setNewKitSlot: vi.fn(),
-        setSelectedBank: vi.fn(),
-        setShowNewKit: vi.fn(),
-        showNewKit: false,
-      });
+      mockUseKitBrowser.mockReturnValue(
+        createMockReturnValue({
+          globalBankHotkeyHandler: mockGlobalBankHotkeyHandler,
+        }),
+      );
 
       const { unmount } = render(
         <MockMessageDisplayProvider>
@@ -787,88 +610,21 @@ describe("KitBrowser", () => {
     });
   });
 
-  describe("Kit creation", () => {
-    it("handles new kit cancellation correctly", () => {
-      const mockSetShowNewKit = vi.fn();
-      const mockSetNewKitSlot = vi.fn();
-      const mockSetNewKitError = vi.fn();
-
-      mockUseKitBrowser.mockReturnValue({
-        bankNames: {},
-        duplicateKitDest: "",
-        duplicateKitError: null,
-        duplicateKitSource: null,
-        error: null,
-        focusBankInKitList: vi.fn(),
-        focusedKit: "A0",
-        globalBankHotkeyHandler: vi.fn(),
-        handleBankClick: vi.fn(),
-        handleCreateKit: vi.fn(),
-        handleDuplicateKit: vi.fn(),
-        kits: baseProps.kits,
-        newKitError: null,
-        newKitSlot: "C1",
-        nextKitSlot: "A2",
-        scrollContainerRef: { current: null },
-        sdCardWarning: null,
-        selectedBank: "A",
-        setDuplicateKitDest: vi.fn(),
-        setDuplicateKitError: vi.fn(),
-        setDuplicateKitSource: vi.fn(),
-        setNewKitError: mockSetNewKitError,
-        setNewKitSlot: mockSetNewKitSlot,
-        setSelectedBank: vi.fn(),
-        setShowNewKit: mockSetShowNewKit,
-        showNewKit: true,
-      });
-
-      render(
-        <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} />
-        </MockMessageDisplayProvider>,
-      );
-
-      const cancelButton = screen.getByText("Cancel");
-      fireEvent.click(cancelButton);
-
-      expect(mockSetShowNewKit).toHaveBeenCalledWith(false);
-      expect(mockSetNewKitSlot).toHaveBeenCalledWith("");
-      expect(mockSetNewKitError).toHaveBeenCalledWith(null);
-    });
-
+  describe("Kit duplication cancellation", () => {
     it("handles duplicate kit cancellation correctly", () => {
       const mockSetDuplicateKitSource = vi.fn();
       const mockSetDuplicateKitDest = vi.fn();
       const mockSetDuplicateKitError = vi.fn();
 
-      mockUseKitBrowser.mockReturnValue({
-        bankNames: {},
-        duplicateKitDest: "C1",
-        duplicateKitError: null,
-        duplicateKitSource: "A0",
-        error: null,
-        focusBankInKitList: vi.fn(),
-        focusedKit: "A0",
-        globalBankHotkeyHandler: vi.fn(),
-        handleBankClick: vi.fn(),
-        handleCreateKit: vi.fn(),
-        handleDuplicateKit: vi.fn(),
-        kits: baseProps.kits,
-        newKitError: null,
-        newKitSlot: "",
-        nextKitSlot: "A2",
-        scrollContainerRef: { current: null },
-        sdCardWarning: null,
-        selectedBank: "A",
-        setDuplicateKitDest: mockSetDuplicateKitDest,
-        setDuplicateKitError: mockSetDuplicateKitError,
-        setDuplicateKitSource: mockSetDuplicateKitSource,
-        setNewKitError: vi.fn(),
-        setNewKitSlot: vi.fn(),
-        setSelectedBank: vi.fn(),
-        setShowNewKit: vi.fn(),
-        showNewKit: false,
-      });
+      mockUseKitBrowser.mockReturnValue(
+        createMockReturnValue({
+          duplicateKitDest: "C1",
+          duplicateKitSource: "A0",
+          setDuplicateKitDest: mockSetDuplicateKitDest,
+          setDuplicateKitError: mockSetDuplicateKitError,
+          setDuplicateKitSource: mockSetDuplicateKitSource,
+        }),
+      );
 
       render(
         <MockMessageDisplayProvider>
@@ -882,9 +638,6 @@ describe("KitBrowser", () => {
         expect(mockSetDuplicateKitSource).toHaveBeenCalledWith(null);
         expect(mockSetDuplicateKitDest).toHaveBeenCalledWith("");
         expect(mockSetDuplicateKitError).toHaveBeenCalledWith(null);
-      } else {
-        // Test that the duplicate functionality is available
-        expect(screen.queryByText("Create New Kit")).toBeInTheDocument();
       }
     });
   });

@@ -800,7 +800,9 @@ describe("KitsView", () => {
       });
 
       // Component should still render without crashing
-      expect(screen.getByText("New Kit")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Settings" }),
+      ).toBeInTheDocument();
     });
 
     it("handles sample loading exceptions", async () => {
@@ -819,7 +821,9 @@ describe("KitsView", () => {
       });
 
       // Component should still render without crashing
-      expect(screen.getByText("New Kit")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Settings" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -1222,7 +1226,9 @@ describe("KitsView", () => {
       // Component should not crash and should show empty state
       await waitFor(() => {
         // The component should handle the error gracefully by updating state
-        expect(screen.getByText("New Kit")).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: "Settings" }),
+        ).toBeInTheDocument();
       });
     });
   });

@@ -222,7 +222,7 @@ The `npm run pre-release` command validates:
 - **Access Control**: Only maintainers can push to main branch and create tags
 - **Branch Protection**: Main branch requires PR reviews and passing CI
 - **Artifact Verification**: All artifacts are built in isolated GitHub runners
-- **Code Signing**: Consider adding certificates for Windows/macOS distribution in the future
+- **Code Signing**: See [Code Signing Strategy](./code-signing.md) for Windows and macOS signing setup
 
 ## Summary
 

@@ -101,6 +101,18 @@ export function getNextKitSlot(existing: string[]): null | string {
   return null;
 }
 
+// Get the next available slot within a specific bank letter (e.g. 'A0', 'A1', ...)
+export function getNextSlotInBank(
+  bankLetter: string,
+  existing: string[],
+): null | string {
+  for (let num = 0; num <= 99; num++) {
+    const slot = `${bankLetter}${num}`;
+    if (!existing.includes(slot)) return slot;
+  }
+  return null;
+}
+
 export function inferVoiceTypeFromFilename(filename: string): null | string {
   const name = filename.replace(/\.[^.]+$/, "").toLowerCase();
 

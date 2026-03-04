@@ -121,21 +121,21 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       duplicateKitSource,
       focusedKit,
       globalBankHotkeyHandler,
-      handleCreateKit,
+      handleCreateKitInBank,
       handleDuplicateKit,
       handleVisibleBankChange,
+      isCreatingKit,
       kits,
-      newKitError,
-      newKitSlot,
       scrollContainerRef,
       selectedBank,
       setDuplicateKitDest,
       setDuplicateKitSource,
       setFocusedKit,
-      setNewKitSlot,
-      setShowNewKit,
-      showNewKit,
     } = logic;
+
+    // Compute whether filters are active (hide add-kit cards when filtered)
+    const isFiltered =
+      !!props.searchQuery?.trim() || !!showFavoritesOnly || !!showModifiedOnly;
 
     // Dialog management hook
     const dialogs = useKitDialogs({ onMessage, setLocalStorePath });
@@ -222,7 +222,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           onSearchChange={props.onSearchChange}
           onSearchClear={props.onSearchClear}
           onShowLocalStoreWizard={handleShowLocalStoreWizard}
-          onShowNewKit={() => setShowNewKit(true)}
           onShowSettings={props.onShowSettings}
           onSyncToSdCard={handleSyncToSdCard}
           onToggleFavoritesFilter={handleToggleFavoritesFilter}
@@ -237,25 +236,14 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           duplicateKitDest={duplicateKitDest}
           duplicateKitError={duplicateKitError}
           duplicateKitSource={duplicateKitSource}
-          newKitError={newKitError}
-          newKitSlot={newKitSlot}
           onCancelDuplicateKit={() => {
             setDuplicateKitSource(null);
             setDuplicateKitDest("");
             logic.setDuplicateKitError(null);
           }}
-          onCancelNewKit={() => {
-            setShowNewKit(false);
-            setNewKitSlot("");
-            // Fix: setNewKitError and setDuplicateKitError should be called from logic, not as standalone names
-            logic.setNewKitError(null);
-          }}
-          onCreateKit={handleCreateKit}
           onDuplicateKit={handleDuplicateKit}
           onDuplicateKitDestChange={setDuplicateKitDest}
-          onNewKitSlotChange={setNewKitSlot}
           showDuplicateKit={!!duplicateKitSource}
-          showNewKit={showNewKit}
         />
         <div className="flex-1 min-h-0 overflow-hidden flex flex-row">
           <KitBankNav
@@ -268,9 +256,12 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             bankNames={bankNames}
             focusedKit={focusedKit}
             getKitFavoriteState={props.getKitFavoriteState}
+            isCreatingKit={isCreatingKit}
+            isFiltered={isFiltered}
             kitData={kits}
             kits={kits}
             onBankFocus={handleBankFocus}
+            onCreateKitInBank={handleCreateKitInBank}
             onDuplicate={(kit) => {
               setDuplicateKitSource(kit);
               setDuplicateKitDest("");

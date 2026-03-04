@@ -1,14 +1,10 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { getNextKitSlot } from "@romper/shared/kitUtilsShared";
-import { useEffect, useState } from "react";
+import { getNextSlotInBank } from "@romper/shared/kitUtilsShared";
+import { useState } from "react";
 
 import { markExplicitNavigation } from "../../../utils/hmrStateManager";
-import {
-  createKit,
-  formatKitError,
-  validateKitSlot,
-} from "../../utils/kitOperations";
+import { createKit, formatKitError } from "../../utils/kitOperations";
 
 interface UseKitCreationProps {
   kits: KitWithRelations[];
@@ -21,78 +17,36 @@ export function useKitCreation({
   onMessage,
   onRefreshKits,
 }: UseKitCreationProps) {
-  // New kit dialog state
-  const [showNewKit, setShowNewKit] = useState(false);
-  const [newKitSlot, setNewKitSlot] = useState("");
-  const [newKitError, setNewKitError] = useState<null | string>(null);
+  const [isCreatingKit, setIsCreatingKit] = useState(false);
 
-  // Next kit slot calculation
-  const [nextKitSlot, setNextKitSlot] = useState<null | string>(null);
+  const handleCreateKitInBank = async (bankLetter: string) => {
+    const existingNames = kits.map((kit) => kit.name);
+    const nextSlot = getNextSlotInBank(bankLetter, existingNames);
 
-  // Calculate next available kit slot when kits change
-  useEffect(() => {
-    const kitNames = kits.map((kit) => kit.name);
-    setNextKitSlot(getNextKitSlot(kitNames));
-  }, [kits]);
-
-  const handleCreateKit = async () => {
-    setNewKitError(null);
-    if (!validateKitSlot(newKitSlot)) {
-      setNewKitError("Invalid kit slot. Use format A0-Z99.");
+    if (!nextSlot) {
+      if (onMessage) onMessage(`Bank ${bankLetter} is full`, "warning", 4000);
       return;
     }
 
+    setIsCreatingKit(true);
     try {
-      await createKit(newKitSlot);
-      const kitNameToScrollTo = newKitSlot;
-      setShowNewKit(false);
-      setNewKitSlot("");
+      await createKit(nextSlot);
 
       // Mark as explicit navigation to prevent HMR from restoring previous kit
       markExplicitNavigation();
 
-      if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
+      if (onRefreshKits) onRefreshKits(nextSlot);
       if (onMessage)
-        onMessage(`Kit ${newKitSlot} created successfully!`, "info", 4000);
+        onMessage(`Kit ${nextSlot} created successfully!`, "info", 4000);
     } catch (err) {
-      setNewKitError(formatKitError(err));
-    }
-  };
-
-  const handleCreateNextKit = async () => {
-    setNewKitError(null);
-    if (!nextKitSlot || !validateKitSlot(nextKitSlot)) {
-      setNewKitError("No next kit slot available.");
-      return;
-    }
-
-    try {
-      await createKit(nextKitSlot);
-      const kitNameToScrollTo = nextKitSlot;
-
-      // Mark as explicit navigation to prevent HMR from restoring previous kit
-      markExplicitNavigation();
-
-      if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
-    } catch (err) {
-      setNewKitError(formatKitError(err));
+      if (onMessage) onMessage(formatKitError(err), "error", 5000);
+    } finally {
+      setIsCreatingKit(false);
     }
   };
 
   return {
-    // Actions
-    handleCreateKit,
-    handleCreateNextKit,
-    newKitError,
-    newKitSlot,
-
-    nextKitSlot,
-    setNewKitError,
-
-    setNewKitSlot,
-    // Setters (for external control)
-    setShowNewKit,
-    // State
-    showNewKit,
+    handleCreateKitInBank,
+    isCreatingKit,
   };
 }

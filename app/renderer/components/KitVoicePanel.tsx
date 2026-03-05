@@ -1,4 +1,3 @@
-import { Link as LinkIcon } from "@phosphor-icons/react";
 import React from "react";
 
 import type { SampleData } from "./kitTypes";
@@ -86,14 +85,6 @@ interface KitVoicePanelProps {
   voice: number;
   voiceName: null | string;
 }
-
-// Voice color classes mapping
-const voiceColorClass: Record<number, string> = {
-  1: "text-voice-1",
-  2: "text-voice-2",
-  3: "text-voice-3",
-  4: "text-voice-4",
-};
 
 const KitVoicePanel: React.FC<
   { dataTestIdVoiceName?: string } & KitVoicePanelProps

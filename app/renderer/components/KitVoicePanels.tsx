@@ -375,7 +375,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
               {/* Chain icon between voice panels */}
               {voice < 4 && (
                 <div
-                  className="flex flex-col items-center justify-start pt-8 px-1"
+                  className="flex flex-col items-center justify-start pt-8 px-1.5 flex-shrink-0"
                   data-testid={`chain-icon-${voice}-${voice + 1}`}
                 >
                   {props.isEditable ? (
@@ -387,8 +387,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                       }
                       className={
                         isVoicePairLinked(voice)
-                          ? `${VOICE_COLOR_CLASSES[voice]} opacity-80 hover:opacity-100 transition-opacity`
-                          : "text-text-tertiary opacity-40 hover:opacity-70 transition-opacity"
+                          ? `${VOICE_COLOR_CLASSES[voice]} opacity-90 hover:opacity-100 transition-opacity`
+                          : "text-text-secondary opacity-60 hover:opacity-90 transition-opacity"
                       }
                       onClick={() =>
                         isVoicePairLinked(voice)
@@ -405,13 +405,13 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                       {isVoicePairLinked(voice) ? (
                         <Link
                           data-testid={`link-icon-${voice}`}
-                          size={16}
+                          size={20}
                           weight="fill"
                         />
                       ) : (
                         <LinkBreak
                           data-testid={`link-break-icon-${voice}`}
-                          size={16}
+                          size={20}
                         />
                       )}
                     </button>
@@ -419,20 +419,20 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     <span
                       className={
                         isVoicePairLinked(voice)
-                          ? `${VOICE_COLOR_CLASSES[voice]} opacity-80`
-                          : "text-text-tertiary opacity-40"
+                          ? `${VOICE_COLOR_CLASSES[voice]} opacity-90`
+                          : "text-text-secondary opacity-50"
                       }
                     >
                       {isVoicePairLinked(voice) ? (
                         <Link
                           data-testid={`link-icon-${voice}`}
-                          size={16}
+                          size={20}
                           weight="fill"
                         />
                       ) : (
                         <LinkBreak
                           data-testid={`link-break-icon-${voice}`}
-                          size={16}
+                          size={20}
                         />
                       )}
                     </span>

@@ -118,54 +118,23 @@ describe("KitVoicePanel", () => {
     expect(screen.queryByTestId("drop-zone-voice-1")).not.toBeInTheDocument();
   });
 
-  describe("Voice linking functionality", () => {
-    it("renders Link Stereo button for voice 1-3 when not linked and editable", () => {
+  describe("Voice linking props accepted", () => {
+    it("renders without linking controls (now handled by parent KitVoicePanels)", () => {
       renderKitVoicePanel({ isLinked: false, onVoiceLink: vi.fn(), voice: 1 });
-      expect(screen.getByText("Link Stereo")).toBeInTheDocument();
-    });
-
-    it("does not render Link Stereo button for voice 4", () => {
-      renderKitVoicePanel({ isLinked: false, onVoiceLink: vi.fn(), voice: 4 });
+      // Linking controls are now chain icons between panels in KitVoicePanels
       expect(screen.queryByText("Link Stereo")).not.toBeInTheDocument();
+      expect(screen.queryByText("Unlink")).not.toBeInTheDocument();
     });
 
-    it("renders stereo status when linked as primary voice", () => {
+    it("does not render linking emoji or text when linked", () => {
       renderKitVoicePanel({
         isLinked: true,
         isPrimaryVoice: true,
         linkedWith: 2,
         voice: 1,
       });
-      expect(screen.getByText("Stereo (L→2)")).toBeInTheDocument();
-    });
-
-    it("renders linked status when linked as secondary voice", () => {
-      renderKitVoicePanel({
-        isLinked: true,
-        isPrimaryVoice: false,
-        linkedWith: 1,
-        voice: 2,
-      });
-      expect(screen.getByText("Linked (1→R)")).toBeInTheDocument();
-    });
-
-    it("renders Unlink button when linked as primary voice", () => {
-      renderKitVoicePanel({
-        isLinked: true,
-        isPrimaryVoice: true,
-        onVoiceUnlink: vi.fn(),
-        voice: 1,
-      });
-      expect(screen.getByText("Unlink")).toBeInTheDocument();
-    });
-
-    it("does not render voice linking controls when not editable", () => {
-      renderKitVoicePanel({
-        isEditable: false,
-        onVoiceLink: vi.fn(),
-        voice: 1,
-      });
-      expect(screen.queryByText("Link Stereo")).not.toBeInTheDocument();
+      expect(screen.queryByText(/Stereo/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Linked/)).not.toBeInTheDocument();
     });
   });
 
@@ -180,7 +149,7 @@ describe("KitVoicePanel", () => {
   });
 
   describe("Voice panel styling based on linking status", () => {
-    it("applies primary voice styling when linked and isPrimaryVoice", () => {
+    it("does not apply accent border when linked (visual grouping removed)", () => {
       const { container } = renderKitVoicePanel({
         isLinked: true,
         isPrimaryVoice: true,
@@ -188,18 +157,7 @@ describe("KitVoicePanel", () => {
       const voicePanel = container.querySelector(
         '[class*="border-accent-primary"]',
       );
-      expect(voicePanel).toBeInTheDocument();
-    });
-
-    it("applies secondary voice styling when linked but not primary", () => {
-      const { container } = renderKitVoicePanel({
-        isLinked: true,
-        isPrimaryVoice: false,
-      });
-      const voicePanel = container.querySelector(
-        '[class*="border-accent-primary"]',
-      );
-      expect(voicePanel).toBeInTheDocument();
+      expect(voicePanel).not.toBeInTheDocument();
     });
   });
 

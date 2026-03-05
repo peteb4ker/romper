@@ -23,6 +23,7 @@ import {
   updateSampleMetadata,
   updateVoiceAlias,
   updateVoiceSampleMode,
+  updateVoiceStereoMode,
   updateVoiceVolume,
 } from "./db/romperDbCoreORM.js";
 import { registerSampleIpcHandlers } from "./db/sampleIpcHandlers.js";
@@ -147,6 +148,21 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         sampleMode: string,
       ) => {
         return updateVoiceSampleMode(dbDir, kitName, voiceNumber, sampleMode);
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    "update-voice-stereo-mode",
+    createDbHandler(
+      inMemorySettings,
+      (
+        dbDir: string,
+        kitName: string,
+        voiceNumber: number,
+        stereoMode: boolean,
+      ) => {
+        return updateVoiceStereoMode(dbDir, kitName, voiceNumber, stereoMode);
       },
     ),
   );

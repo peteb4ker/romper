@@ -11,6 +11,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { MAX_SLOTS_PER_VOICE } from "../hooks/voice-panels/useVoicePanelSlots";
+
+vi.mock("sonner", () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 import { MockSettingsProvider } from "./MockSettingsProvider";
@@ -440,6 +448,98 @@ describe("KitVoicePanels", () => {
       expect(screen.getByTestId("voice-panels-row")).toBeInTheDocument();
       expect(screen.getByTestId("voice-panel-1")).toBeInTheDocument();
       expect(screen.getByTestId("voice-panel-2")).toBeInTheDocument();
+    });
+  });
+
+  describe("Chain icons between voice panels", () => {
+    it("renders 3 chain icon containers between 4 voice panels", () => {
+      render(<MultiVoicePanelsTestWrapper isEditable={true} />);
+
+      expect(screen.getByTestId("chain-icon-1-2")).toBeInTheDocument();
+      expect(screen.getByTestId("chain-icon-2-3")).toBeInTheDocument();
+      expect(screen.getByTestId("chain-icon-3-4")).toBeInTheDocument();
+    });
+
+    it("does not render chain icon after voice 4", () => {
+      render(<MultiVoicePanelsTestWrapper isEditable={true} />);
+
+      expect(screen.queryByTestId("chain-icon-4-5")).not.toBeInTheDocument();
+    });
+
+    it("renders LinkBreak icons when voices are not linked", () => {
+      render(<MultiVoicePanelsTestWrapper isEditable={true} />);
+
+      // All voices unlinked by default — should show LinkBreak icons
+      expect(screen.getByTestId("link-break-icon-1")).toBeInTheDocument();
+      expect(screen.getByTestId("link-break-icon-2")).toBeInTheDocument();
+      expect(screen.getByTestId("link-break-icon-3")).toBeInTheDocument();
+    });
+
+    it("renders Link icon when voices are linked (stereo_mode=true)", () => {
+      const voices = [
+        { samples: ["kick.wav"], voice: 1, voiceName: "Kick" },
+        { samples: ["hat.wav"], voice: 2, voiceName: "Hat" },
+        { samples: [], voice: 3, voiceName: "Voice3" },
+        { samples: [], voice: 4, voiceName: "Voice4" },
+      ];
+
+      // Create kit with stereo_mode=true on voice 1
+      const { kit, samples } = voicesToProps(voices);
+      kit.voices[0].stereo_mode = true;
+
+      render(
+        <MockSettingsProvider>
+          <MockMessageDisplayProvider>
+            <KitVoicePanels
+              isEditable={true}
+              kit={kit}
+              kitName="Kit1"
+              onPlay={vi.fn()}
+              onRescanVoiceName={vi.fn()}
+              onSampleKeyNav={vi.fn()}
+              onSampleSelect={vi.fn()}
+              onSaveVoiceName={vi.fn()}
+              onStop={vi.fn()}
+              onWaveformPlayingChange={vi.fn()}
+              playTriggers={{}}
+              samplePlaying={{}}
+              samples={samples}
+              selectedSampleIdx={0}
+              selectedVoice={1}
+              sequencerOpen={false}
+              setSelectedSampleIdx={() => {}}
+              setSelectedVoice={() => {}}
+              stopTriggers={{}}
+            />
+          </MockMessageDisplayProvider>
+        </MockSettingsProvider>,
+      );
+
+      // Voice 1-2 linked: should show Link icon
+      expect(screen.getByTestId("link-icon-1")).toBeInTheDocument();
+      // Voice 2-3 and 3-4 not linked: should show LinkBreak
+      expect(screen.getByTestId("link-break-icon-2")).toBeInTheDocument();
+      expect(screen.getByTestId("link-break-icon-3")).toBeInTheDocument();
+    });
+
+    it("renders chain icons as read-only when not editable", () => {
+      render(<MultiVoicePanelsTestWrapper isEditable={false} />);
+
+      // Chain icons should still be visible but not as buttons
+      expect(screen.getByTestId("chain-icon-1-2")).toBeInTheDocument();
+      expect(screen.getByTestId("chain-icon-2-3")).toBeInTheDocument();
+      expect(screen.getByTestId("chain-icon-3-4")).toBeInTheDocument();
+
+      // Should not have clickable buttons
+      const chainContainer = screen.getByTestId("chain-icon-1-2");
+      expect(chainContainer.querySelector("button")).not.toBeInTheDocument();
+    });
+
+    it("renders chain icons as buttons when editable", () => {
+      render(<MultiVoicePanelsTestWrapper isEditable={true} />);
+
+      const chainContainer = screen.getByTestId("chain-icon-1-2");
+      expect(chainContainer.querySelector("button")).toBeInTheDocument();
     });
   });
 

@@ -1,13 +1,22 @@
 import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
 
-import { Link } from "@phosphor-icons/react";
+import { Link, LinkBreak } from "@phosphor-icons/react";
 import React, { useState } from "react";
+import { toast } from "sonner";
 
 import type { SampleData, VoiceSamples } from "./kitTypes";
 
 import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
 import { useStereoHandling } from "./hooks/sample-management/useStereoHandling";
 import KitVoicePanel from "./KitVoicePanel";
+
+// Voice color classes matching the Squarp Rample turbo livery
+const VOICE_COLOR_CLASSES: Record<number, string> = {
+  1: "text-voice-1",
+  2: "text-voice-2",
+  3: "text-voice-3",
+  4: "text-voice-4",
+};
 
 interface KitVoicePanelsProps {
   isEditable?: boolean; // Used directly in KitVoicePanel
@@ -38,6 +47,7 @@ interface KitVoicePanelsProps {
   onSampleSelect: (voice: number, idx: number) => void; // Used by useKitVoicePanels hook
   onSaveVoiceName: (voice: number, newName: string) => void; // Used by useKitVoicePanels hook
   onStop: (voice: number, sample: string) => void; // Used by useKitVoicePanels hook
+  onVoiceSettingChanged?: () => void; // Callback to reload kit after voice setting changes
   onWaveformPlayingChange: (
     voice: number,
     sample: string,
@@ -58,6 +68,8 @@ interface KitVoicePanelsProps {
 }
 
 const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
+  const { onVoiceSettingChanged } = props;
+
   const hookProps = useKitVoicePanels({
     ...props,
     sequencerOpen: props.sequencerOpen,
@@ -127,6 +139,20 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     return samples;
   }, [sampleMetadata, hookProps.kitName]);
 
+  // DB persistence callback for voice updates
+  const handleVoiceUpdate = React.useCallback(
+    async (voiceNumber: number, updates: { stereo_mode?: boolean }) => {
+      if (updates.stereo_mode !== undefined) {
+        await window.electronAPI?.updateVoiceStereoMode?.(
+          hookProps.kitName,
+          voiceNumber,
+          updates.stereo_mode,
+        );
+      }
+    },
+    [hookProps.kitName],
+  );
+
   // Voice linking handlers
   const handleVoiceLink = React.useCallback(
     async (primaryVoice: number) => {
@@ -134,13 +160,20 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         primaryVoice,
         voiceData,
         sampleData,
-        async (voiceNumber, updates) => {
-          // In real implementation, this would update the database
-          console.log(`Updating voice ${voiceNumber} with:`, updates);
-        },
+        handleVoiceUpdate,
       );
+      toast.success(
+        `Linked voices ${primaryVoice} and ${primaryVoice + 1} for stereo`,
+      );
+      onVoiceSettingChanged?.();
     },
-    [stereoHandling, voiceData, sampleData],
+    [
+      stereoHandling,
+      voiceData,
+      sampleData,
+      handleVoiceUpdate,
+      onVoiceSettingChanged,
+    ],
   );
 
   const handleVoiceUnlink = React.useCallback(
@@ -149,13 +182,18 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         primaryVoice,
         voiceData,
         sampleData,
-        async (voiceNumber, updates) => {
-          // In real implementation, this would update the database
-          console.log(`Updating voice ${voiceNumber} with:`, updates);
-        },
+        handleVoiceUpdate,
       );
+      toast.success(`Unlinked voices ${primaryVoice} and ${primaryVoice + 1}`);
+      onVoiceSettingChanged?.();
     },
-    [stereoHandling, voiceData, sampleData],
+    [
+      stereoHandling,
+      voiceData,
+      sampleData,
+      handleVoiceUpdate,
+      onVoiceSettingChanged,
+    ],
   );
 
   // Task 7.1.3: State to track stereo drop targets
@@ -215,9 +253,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     isStereo: boolean,
   ) => {
     const canHandleStereo = isStereo && voice < 4;
-    const shouldSetDragInfo = canHandleStereo;
 
-    if (shouldSetDragInfo) {
+    if (canHandleStereo) {
       setStereoDragInfo({
         nextVoice: voice + 1,
         slotNumber,
@@ -231,6 +268,18 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const handleStereoDragLeave = () => {
     setStereoDragInfo(null);
   };
+
+  // Check if a pair of voices is linked (primary voice has stereo_mode true)
+  const isVoicePairLinked = React.useCallback(
+    (primaryVoice: number): boolean => {
+      const linkingStatus = stereoHandling.getVoiceLinkingStatus(
+        primaryVoice,
+        voiceData,
+      );
+      return linkingStatus.isLinked && linkingStatus.isPrimary;
+    },
+    [stereoHandling, voiceData],
+  );
 
   return (
     <div className="flex w-full relative" data-testid="voice-panels-row">
@@ -253,8 +302,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         ))}
       </div>
 
-      {/* Voice panels grid */}
-      <div className="grid grid-cols-4 gap-4 flex-1">
+      {/* Voice panels with chain icons between them */}
+      <div className="flex gap-0 flex-1">
         {[1, 2, 3, 4].map((voice) => {
           // Get voice linking status
           const linkingStatus = stereoHandling.getVoiceLinkingStatus(
@@ -264,7 +313,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
 
           return (
             <React.Fragment key={`${hookProps.kitName}-voicepanel-${voice}`}>
-              <div className="relative" data-testid={`voice-panel-${voice}`}>
+              <div
+                className="flex-1 relative min-w-0"
+                data-testid={`voice-panel-${voice}`}
+              >
                 <KitVoicePanel
                   dataTestIdVoiceName={`voice-name-${voice}`}
                   isActive={voice === hookProps.selectedVoice}
@@ -319,22 +371,74 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                       ?.voice_alias || null
                   }
                 />
-                {/* Task 7.1.3: Show link icon between voices for stereo drops */}
-                {stereoDragInfo?.targetVoice === voice && (
-                  <div
-                    className="absolute -right-6 top-1/2 transform -translate-y-1/2 z-10
-                          bg-purple-500 text-white rounded-full p-2 shadow-lg
-                          animate-pulse"
-                    style={{
-                      // Position at the specific slot
-                      top: `calc(50px + ${stereoDragInfo.slotNumber * 32}px)`,
-                    }}
-                    title="Stereo link"
-                  >
-                    <Link size={16} />
-                  </div>
-                )}
               </div>
+              {/* Chain icon between voice panels */}
+              {voice < 4 && (
+                <div
+                  className="flex flex-col items-center justify-start pt-8 px-1"
+                  data-testid={`chain-icon-${voice}-${voice + 1}`}
+                >
+                  {props.isEditable ? (
+                    <button
+                      aria-label={
+                        isVoicePairLinked(voice)
+                          ? `Unlink voices ${voice} and ${voice + 1}`
+                          : `Link voices ${voice} and ${voice + 1}`
+                      }
+                      className={
+                        isVoicePairLinked(voice)
+                          ? `${VOICE_COLOR_CLASSES[voice]} opacity-80 hover:opacity-100 transition-opacity`
+                          : "text-text-tertiary opacity-40 hover:opacity-70 transition-opacity"
+                      }
+                      onClick={() =>
+                        isVoicePairLinked(voice)
+                          ? handleVoiceUnlink(voice)
+                          : handleVoiceLink(voice)
+                      }
+                      title={
+                        isVoicePairLinked(voice)
+                          ? `Unlink voices ${voice} and ${voice + 1}`
+                          : `Link voices ${voice} and ${voice + 1} for stereo`
+                      }
+                      type="button"
+                    >
+                      {isVoicePairLinked(voice) ? (
+                        <Link
+                          data-testid={`link-icon-${voice}`}
+                          size={16}
+                          weight="fill"
+                        />
+                      ) : (
+                        <LinkBreak
+                          data-testid={`link-break-icon-${voice}`}
+                          size={16}
+                        />
+                      )}
+                    </button>
+                  ) : (
+                    <span
+                      className={
+                        isVoicePairLinked(voice)
+                          ? `${VOICE_COLOR_CLASSES[voice]} opacity-80`
+                          : "text-text-tertiary opacity-40"
+                      }
+                    >
+                      {isVoicePairLinked(voice) ? (
+                        <Link
+                          data-testid={`link-icon-${voice}`}
+                          size={16}
+                          weight="fill"
+                        />
+                      ) : (
+                        <LinkBreak
+                          data-testid={`link-break-icon-${voice}`}
+                          size={16}
+                        />
+                      )}
+                    </span>
+                  )}
+                </div>
+              )}
             </React.Fragment>
           );
         })}

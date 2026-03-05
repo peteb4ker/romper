@@ -8,6 +8,7 @@ import { addKit, getKit } from "../kitCrudOperations.js";
 import {
   updateVoiceAlias,
   updateVoiceSampleMode,
+  updateVoiceStereoMode,
   updateVoiceVolume,
 } from "../voiceCrudOperations.js";
 
@@ -163,6 +164,56 @@ describe("Voice CRUD Operations - Integration Tests", () => {
       const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
       expect(voice1!.voice_volume).toBe(60); // Volume preserved
       expect(voice1!.sample_mode).toBe("random");
+    });
+  });
+
+  describe("updateVoiceStereoMode", () => {
+    test("sets stereo mode to true for a specific voice", () => {
+      const result = updateVoiceStereoMode(dbDir, testKitName, 1, true);
+      expect(result.success).toBe(true);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
+      expect(voice1!.stereo_mode).toBe(true);
+    });
+
+    test("sets stereo mode back to false", () => {
+      updateVoiceStereoMode(dbDir, testKitName, 1, true);
+      updateVoiceStereoMode(dbDir, testKitName, 1, false);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
+      expect(voice1!.stereo_mode).toBe(false);
+    });
+
+    test("creates voice row if it does not exist (ensureVoiceRow)", () => {
+      const result = updateVoiceStereoMode(dbDir, testKitName, 3, true);
+      expect(result.success).toBe(true);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice3 = kit.data!.voices!.find((v) => v.voice_number === 3);
+      expect(voice3).toBeDefined();
+      expect(voice3!.stereo_mode).toBe(true);
+    });
+
+    test("does not affect other voice settings", () => {
+      updateVoiceVolume(dbDir, testKitName, 1, 80);
+      updateVoiceAlias(dbDir, testKitName, 1, "Kick");
+      updateVoiceStereoMode(dbDir, testKitName, 1, true);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
+      expect(voice1!.voice_volume).toBe(80); // Volume preserved
+      expect(voice1!.voice_alias).toBe("Kick"); // Alias preserved
+      expect(voice1!.stereo_mode).toBe(true);
+    });
+
+    test("does not affect other voices", () => {
+      updateVoiceStereoMode(dbDir, testKitName, 1, true);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice2 = kit.data!.voices!.find((v) => v.voice_number === 2);
+      expect(voice2!.stereo_mode).toBe(false);
     });
   });
 });

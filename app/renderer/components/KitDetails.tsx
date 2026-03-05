@@ -122,6 +122,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
           }}
           onSaveVoiceName={logic.updateVoiceAlias}
           onStop={logic.playback.handleStop}
+          onVoiceSettingChanged={logic.reloadKit}
           onWaveformPlayingChange={logic.playback.handleWaveformPlayingChange}
           playTriggers={logic.playback.playTriggers}
           playVolumes={logic.playback.playVolumes}

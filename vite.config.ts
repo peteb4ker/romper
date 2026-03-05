@@ -32,7 +32,8 @@ export default defineConfig({
         "**/node_modules/**",
         "**/dist/**",
         "**/out/**",
-        "**/worktrees/**",
+        // Only ignore the local worktrees/ subdirectory, not ancestor worktree paths
+        path.resolve(__dirname, "worktrees") + "/**",
       ],
     },
   },

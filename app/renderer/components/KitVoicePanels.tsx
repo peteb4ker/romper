@@ -2,6 +2,7 @@ import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
 
 import { Link } from "@phosphor-icons/react";
 import React, { useState } from "react";
+import { toast } from "sonner";
 
 import type { SampleData, VoiceSamples } from "./kitTypes";
 
@@ -13,6 +14,7 @@ interface KitVoicePanelsProps {
   isEditable?: boolean; // Used directly in KitVoicePanel
   kit: KitWithRelations | null; // Used by useKitVoicePanels hook
   kitName: string; // Used by useKitVoicePanels hook
+  onKitUpdated?: () => Promise<void>; // Called after voice stereo mode changes to reload kit data
   onPlay: (voice: number, sample: string) => void; // Used by useKitVoicePanels hook
   onRescanVoiceName: (voice: number, samples: VoiceSamples) => void; // Used by useKitVoicePanels hook
   // New props for drag-and-drop sample management (Task 5.2.2 & 5.2.3)
@@ -48,8 +50,8 @@ interface KitVoicePanelsProps {
   samplePlaying: { [key: string]: boolean }; // Used by useKitVoicePanels hook
   samples: VoiceSamples; // Used by useKitVoicePanels hook
   selectedSampleIdx: number; // Used by useKitVoicePanels hook
-  selectedVoice: number; // Used by useKitVoicePanels hook
 
+  selectedVoice: number; // Used by useKitVoicePanels hook
   sequencerOpen: boolean; // Used by useKitVoicePanels hook
   setSelectedSampleIdx: (i: number) => void; // Used by useKitVoicePanels hook
   setSelectedVoice: (v: number) => void; // Used by useKitVoicePanels hook
@@ -130,17 +132,55 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // Voice linking handlers
   const handleVoiceLink = React.useCallback(
     async (primaryVoice: number) => {
+      const secondaryVoice = primaryVoice + 1;
+
+      // Block if either voice is already linked
+      const primaryStatus = stereoHandling.getVoiceLinkingStatus(
+        primaryVoice,
+        voiceData,
+      );
+      const secondaryStatus = stereoHandling.getVoiceLinkingStatus(
+        secondaryVoice,
+        voiceData,
+      );
+      if (primaryStatus.isLinked || secondaryStatus.isLinked) {
+        toast.error("One of these voices is already linked");
+        return;
+      }
+
+      // Block if secondary voice has samples
+      const secondarySamples = hookProps.samples[secondaryVoice] || [];
+      if (secondarySamples.some((s) => s?.trim())) {
+        toast.error(
+          `Voice ${secondaryVoice} has samples — remove them before linking`,
+        );
+        return;
+      }
+
       await stereoHandling.linkVoicesForStereo(
         primaryVoice,
         voiceData,
         sampleData,
         async (voiceNumber, updates) => {
-          // In real implementation, this would update the database
-          console.log(`Updating voice ${voiceNumber} with:`, updates);
+          if (window.electronAPI?.updateVoiceStereoMode) {
+            await window.electronAPI.updateVoiceStereoMode(
+              hookProps.kitName,
+              voiceNumber,
+              updates.stereo_mode ?? false,
+            );
+          }
         },
       );
+      await props.onKitUpdated?.();
     },
-    [stereoHandling, voiceData, sampleData],
+    [
+      stereoHandling,
+      voiceData,
+      sampleData,
+      hookProps.samples,
+      hookProps.kitName,
+      props,
+    ],
   );
 
   const handleVoiceUnlink = React.useCallback(
@@ -150,12 +190,18 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         voiceData,
         sampleData,
         async (voiceNumber, updates) => {
-          // In real implementation, this would update the database
-          console.log(`Updating voice ${voiceNumber} with:`, updates);
+          if (window.electronAPI?.updateVoiceStereoMode) {
+            await window.electronAPI.updateVoiceStereoMode(
+              hookProps.kitName,
+              voiceNumber,
+              updates.stereo_mode ?? false,
+            );
+          }
         },
       );
+      await props.onKitUpdated?.();
     },
-    [stereoHandling, voiceData, sampleData],
+    [stereoHandling, voiceData, sampleData, hookProps.kitName, props],
   );
 
   // Task 7.1.3: State to track stereo drop targets
@@ -253,24 +299,40 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         ))}
       </div>
 
-      {/* Voice panels grid */}
-      <div className="grid grid-cols-4 gap-4 flex-1">
+      {/* Voice panels flex layout */}
+      <div className="flex gap-1.5 flex-1" data-testid="voice-panels-flex">
         {[1, 2, 3, 4].map((voice) => {
           // Get voice linking status
           const linkingStatus = stereoHandling.getVoiceLinkingStatus(
             voice,
             voiceData,
           );
+          const isSecondary =
+            linkingStatus.isLinked && !linkingStatus.isPrimary;
+          const isPrimary = linkingStatus.isLinked && linkingStatus.isPrimary;
+          const nextVoiceLinked =
+            voice < 4 &&
+            stereoHandling.getVoiceLinkingStatus(voice + 1, voiceData).isLinked;
+          const showChainIcon =
+            voice < 4 && !isPrimary && !isSecondary && !nextVoiceLinked;
 
           return (
-            <React.Fragment key={`${hookProps.kitName}-voicepanel-${voice}`}>
-              <div className="relative" data-testid={`voice-panel-${voice}`}>
+            <div
+              className={[
+                "group/panel relative min-w-0",
+                isSecondary ? "hidden" : "flex-1",
+              ].join(" ")}
+              data-testid={`voice-panel-${voice}`}
+              key={`${hookProps.kitName}-voicepanel-${voice}`}
+              style={isPrimary && !isSecondary ? { flex: 2 } : undefined}
+            >
+              {!isSecondary && (
                 <KitVoicePanel
                   dataTestIdVoiceName={`voice-name-${voice}`}
                   isActive={voice === hookProps.selectedVoice}
+                  isDisabled={isSecondary}
                   isEditable={props.isEditable ?? false}
-                  isLinked={linkingStatus.isLinked}
-                  isPrimaryVoice={linkingStatus.isPrimary}
+                  isLinkedPrimary={isPrimary}
                   isStereoDragTarget={
                     stereoDragInfo?.targetVoice === voice ||
                     stereoDragInfo?.nextVoice === voice
@@ -291,7 +353,6 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   onStereoDragLeave={handleStereoDragLeave}
                   onStereoDragOver={handleStereoDragOver}
                   onStop={hookProps.onStop}
-                  onVoiceLink={handleVoiceLink}
                   onVoiceUnlink={handleVoiceUnlink}
                   onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
                   playTriggers={hookProps.playTriggers}
@@ -319,23 +380,37 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                       ?.voice_alias || null
                   }
                 />
-                {/* Task 7.1.3: Show link icon between voices for stereo drops */}
-                {stereoDragInfo?.targetVoice === voice && (
-                  <div
-                    className="absolute -right-6 top-1/2 transform -translate-y-1/2 z-10
-                          bg-purple-500 text-white rounded-full p-2 shadow-lg
-                          animate-pulse"
-                    style={{
-                      // Position at the specific slot
-                      top: `calc(50px + ${stereoDragInfo.slotNumber * 32}px)`,
-                    }}
-                    title="Stereo link"
+              )}
+              {/* Stereo drag indicator between voices */}
+              {!isSecondary && stereoDragInfo?.targetVoice === voice && (
+                <div
+                  className="absolute -right-3 z-10 bg-purple-500 text-white rounded-full p-1.5 shadow-lg animate-pulse"
+                  style={{
+                    top: `calc(50px + ${stereoDragInfo.slotNumber * 32}px)`,
+                  }}
+                  title="Stereo link"
+                >
+                  <Link size={14} />
+                </div>
+              )}
+              {/* Chain icon — right edge of panel, always visible */}
+              {showChainIcon && (
+                <div
+                  className="absolute right-0 top-0 z-10"
+                  data-testid={`chain-icon-${voice}-${voice + 1}`}
+                >
+                  <button
+                    className="opacity-80 hover:opacity-100 transition-opacity text-text-secondary"
+                    data-testid={`link-button-${voice}-${voice + 1}`}
+                    onClick={() => handleVoiceLink(voice)}
+                    title="Click to link stereo channels"
+                    type="button"
                   >
-                    <Link size={16} />
-                  </div>
-                )}
-              </div>
-            </React.Fragment>
+                    <Link size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

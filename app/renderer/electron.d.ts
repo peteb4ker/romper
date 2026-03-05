@@ -311,6 +311,11 @@ export interface ElectronAPI {
     voiceNumber: number,
     sampleMode: string,
   ) => Promise<DbResult>;
+  updateVoiceStereoMode?: (
+    kitName: string,
+    voiceNumber: number,
+    stereoMode: boolean,
+  ) => Promise<DbResult>;
   updateVoiceVolume?: (
     kitName: string,
     voiceNumber: number,

@@ -8,6 +8,7 @@ import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
 import { useKitItem } from "./hooks/kit-management/useKitItem";
+import StereoIcon from "./icons/StereoIcon";
 import { KitIconRenderer } from "./shared/KitIconRenderer";
 import {
   BaseKitItemProps,
@@ -124,10 +125,19 @@ const KitGridItem = React.memo(
                     title="Factory kit (read-only)"
                   >
                     <LockSimple
-                      className="text-text-tertiary"
+                      className="text-text-secondary"
                       size={15}
                       weight="bold"
                     />
+                  </span>
+                )}
+                {kitData?.voices?.some((v) => v.stereo_mode) && (
+                  <span
+                    className={`flex-shrink-0 ${kitData?.searchMatch?.matchedOn?.includes("stereo") ? "text-accent-primary" : "text-text-tertiary"}`}
+                    data-testid="stereo-indicator"
+                    title="Has stereo-linked voices"
+                  >
+                    <StereoIcon size={15} />
                   </span>
                 )}
                 {kitData?.alias && (
@@ -291,6 +301,26 @@ const KitGridItem = React.memo(
                 </>
               );
             })()}
+
+          {/* Voice names row — shown when voices have names but no samples to display them in */}
+          {isValid &&
+            (!sampleCounts || totalSamples === 0) &&
+            voiceNames &&
+            Object.keys(voiceNames).length > 0 && (
+              <>
+                <div className="border-t border-border-subtle mt-1.5 mb-1" />
+                <div className="flex items-center gap-1 flex-wrap">
+                  {Object.entries(voiceNames).map(([voiceNum, name]) => (
+                    <span
+                      className="text-[11px] text-text-secondary font-mono truncate"
+                      key={`voice-name-${voiceNum}`}
+                    >
+                      {typeof name === "string" ? toCapitalCase(name) : name}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
         </div>
       );
     },

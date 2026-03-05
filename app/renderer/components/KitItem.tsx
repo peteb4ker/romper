@@ -3,6 +3,7 @@ import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
 import { useKitItem } from "./hooks/kit-management/useKitItem";
+import StereoIcon from "./icons/StereoIcon";
 import { KitIconRenderer } from "./shared/KitIconRenderer";
 import {
   BaseKitItemProps,
@@ -97,6 +98,15 @@ const KitItem = React.memo(
                 >
                   {kit}
                 </span>
+                {isValid && kitData?.voices?.some((v) => v.stereo_mode) && (
+                  <span
+                    className={`ml-1 ${kitData?.searchMatch?.matchedOn?.includes("stereo") ? "text-accent-primary" : "text-text-tertiary"}`}
+                    data-testid="stereo-indicator"
+                    title="Has stereo-linked voices"
+                  >
+                    <StereoIcon size={14} />
+                  </span>
+                )}
                 {isValid && kitData?.modified_since_sync && (
                   <div className="flex items-center gap-1 ml-2">
                     <Circle

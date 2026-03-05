@@ -91,6 +91,14 @@ export function checkKitVoices(
       matchDetails.matchedVoices.push(voice.voice_alias);
     }
   }
+
+  // Match "stereo" against kits with stereo-linked voices
+  if ("stereo".includes(searchTerm) || searchTerm.includes("stereo")) {
+    const hasStereo = kit.voices.some((v) => v.stereo_mode);
+    if (hasStereo && !matchDetails.matchedOn.includes("stereo")) {
+      matchDetails.matchedOn.push("stereo");
+    }
+  }
 }
 
 /**

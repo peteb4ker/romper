@@ -583,6 +583,26 @@ contextBridge.exposeInMainWorld("electronAPI", {
     );
   },
 
+  updateVoiceStereoMode: (
+    kitName: string,
+    voiceNumber: number,
+    stereoMode: boolean,
+  ) => {
+    isDev &&
+      console.debug(
+        "[IPC] updateVoiceStereoMode invoked",
+        kitName,
+        voiceNumber,
+        stereoMode,
+      );
+    return ipcRenderer.invoke(
+      "update-voice-stereo-mode",
+      kitName,
+      voiceNumber,
+      stereoMode,
+    );
+  },
+
   updateVoiceVolume: (kitName: string, voiceNumber: number, volume: number) => {
     isDev &&
       console.debug(

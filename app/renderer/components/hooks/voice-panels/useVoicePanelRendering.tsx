@@ -23,10 +23,13 @@ export interface UseVoicePanelRenderingOptions {
   };
   isActive: boolean;
   isEditable: boolean;
+  isLinkedPrimary?: boolean;
   kitName: string;
+  linkedWith?: number;
   onPlay: (voice: number, sample: string) => void;
   onSampleSelect?: (voice: number, idx: number) => void;
   onStop: (voice: number, sample: string) => void;
+  onVoiceUnlink?: (primaryVoice: number) => void;
   onWaveformPlayingChange: (
     voice: number,
     sample: string,
@@ -98,10 +101,13 @@ export function useVoicePanelRendering({
   dragAndDropHook,
   isActive,
   isEditable,
+  isLinkedPrimary,
   kitName,
+  linkedWith,
   onPlay,
   onSampleSelect,
   onStop,
+  onVoiceUnlink,
   onWaveformPlayingChange,
   playTriggers,
   playVolumes,
@@ -129,7 +135,9 @@ export function useVoicePanelRendering({
     dragAndDropHook,
     isActive,
     isEditable,
+    isLinkedPrimary,
     kitName,
+    linkedWith,
     onSampleSelect,
     onWaveformPlayingChange,
     playTriggers,
@@ -149,6 +157,9 @@ export function useVoicePanelRendering({
   // UI element rendering functions hook
   const ui = useVoicePanelUI({
     isEditable,
+    isLinkedPrimary,
+    linkedWith,
+    onVoiceUnlink,
     voice,
     voiceName,
     voiceNameEditorHook,

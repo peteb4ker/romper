@@ -47,6 +47,26 @@ export function updateVoiceSampleMode(
 }
 
 /**
+ * Update voice stereo mode
+ */
+export function updateVoiceStereoMode(
+  dbDir: string,
+  kitName: string,
+  voiceNumber: number,
+  stereoMode: boolean,
+): DbResult<void> {
+  return withDb(dbDir, (db) => {
+    ensureVoiceRow(db, kitName, voiceNumber);
+    db.update(voices)
+      .set({ stereo_mode: stereoMode })
+      .where(
+        and(eq(voices.kit_name, kitName), eq(voices.voice_number, voiceNumber)),
+      )
+      .run();
+  });
+}
+
+/**
  * Update voice volume (0-100)
  */
 export function updateVoiceVolume(

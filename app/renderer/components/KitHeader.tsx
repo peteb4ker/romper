@@ -177,7 +177,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         )}
         {onPrevKit && prevButtonState && (
           <button
-            className="px-2 py-1 text-xs bg-surface-3 text-text-primary rounded w-16 transition duration-150"
+            className="px-2 py-1 text-xs bg-accent-primary/15 text-accent-primary rounded w-16 transition duration-150 hover:bg-accent-primary/25"
             disabled={prevButtonState.isDisabled}
             onClick={onPrevKit}
             style={prevButtonState.style}
@@ -188,7 +188,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         )}
         {onNextKit && nextButtonState && (
           <button
-            className="px-2 py-1 text-xs bg-surface-3 text-text-primary rounded w-16 transition duration-150"
+            className="px-2 py-1 text-xs bg-accent-primary/15 text-accent-primary rounded w-16 transition duration-150 hover:bg-accent-primary/25"
             disabled={nextButtonState.isDisabled}
             onClick={onNextKit}
             style={nextButtonState.style}

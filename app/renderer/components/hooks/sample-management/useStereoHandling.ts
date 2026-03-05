@@ -75,15 +75,23 @@ export function useStereoHandling() {
         };
       }
 
-      // Check if linked voice is already linked to another voice
-      const linkedVoiceHasStereoSamples = samples.some(
-        (s) => s.voice_number === linkedVoice && s.is_stereo,
-      );
-
-      if (linkedVoiceData.stereo_mode || linkedVoiceHasStereoSamples) {
+      // Check if linked voice is already in stereo mode
+      if (linkedVoiceData.stereo_mode) {
         return {
           canLink: false,
-          reason: `Voice ${linkedVoice} is already linked or has stereo samples`,
+          reason: `Voice ${linkedVoice} is already in stereo mode`,
+        };
+      }
+
+      // Check if linked voice has any samples (must be empty to link)
+      const secondaryVoiceHasAnySamples = samples.some(
+        (s) => s.voice_number === linkedVoice,
+      );
+
+      if (secondaryVoiceHasAnySamples) {
+        return {
+          canLink: false,
+          reason: `Voice ${linkedVoice} has samples — remove them before linking`,
         };
       }
 
@@ -293,11 +301,6 @@ export function useStereoHandling() {
           await onVoiceUpdate(primaryVoice, { stereo_mode: true });
         }
 
-        toast.success("Voices linked", {
-          description: `Voice ${primaryVoice} and ${linkingResult.linkedVoice} are now linked for stereo`,
-          duration: 5000,
-        });
-
         return true;
       } catch (error) {
         ErrorPatterns.sampleOperation(error, "link voices for stereo");
@@ -352,11 +355,6 @@ export function useStereoHandling() {
         if (onVoiceUpdate) {
           await onVoiceUpdate(primaryVoice, { stereo_mode: false });
         }
-
-        toast.success("Voices unlinked", {
-          description: `Voice ${primaryVoice} converted back to mono mode`,
-          duration: 5000,
-        });
 
         return true;
       } catch (error) {

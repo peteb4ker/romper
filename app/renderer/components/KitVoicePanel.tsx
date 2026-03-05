@@ -1,3 +1,4 @@
+import { Link as LinkIcon } from "@phosphor-icons/react";
 import React from "react";
 
 import type { SampleData } from "./kitTypes";
@@ -12,10 +13,9 @@ import { useVoicePanelRendering } from "./hooks/voice-panels/useVoicePanelRender
 
 interface KitVoicePanelProps {
   isActive?: boolean;
+  isDisabled?: boolean;
   isEditable?: boolean;
-  // Voice linking props for stereo handling
-  isLinked?: boolean;
-  isPrimaryVoice?: boolean;
+  isLinkedPrimary?: boolean;
   // Task 7.1.3: Props for coordinated stereo drop highlighting
   isStereoDragTarget?: boolean;
   kitName: string;
@@ -52,7 +52,6 @@ interface KitVoicePanelProps {
   ) => void;
 
   onStop: (voice: number, sample: string) => void;
-  onVoiceLink?: (primaryVoice: number) => void;
   onVoiceUnlink?: (primaryVoice: number) => void;
   onWaveformPlayingChange: (
     voice: number,
@@ -88,14 +87,22 @@ interface KitVoicePanelProps {
   voiceName: null | string;
 }
 
+// Voice color classes mapping
+const voiceColorClass: Record<number, string> = {
+  1: "text-voice-1",
+  2: "text-voice-2",
+  3: "text-voice-3",
+  4: "text-voice-4",
+};
+
 const KitVoicePanel: React.FC<
   { dataTestIdVoiceName?: string } & KitVoicePanelProps
 > = ({
   dataTestIdVoiceName,
   isActive = false,
+  isDisabled = false,
   isEditable = true,
-  isLinked = false,
-  isPrimaryVoice = false,
+  isLinkedPrimary = false,
   isStereoDragTarget = false,
   kitName,
   linkedWith,
@@ -110,7 +117,6 @@ const KitVoicePanel: React.FC<
   onStereoDragLeave,
   onStereoDragOver,
   onStop,
-  onVoiceLink,
   onVoiceUnlink,
   onWaveformPlayingChange,
   playTriggers,
@@ -130,6 +136,9 @@ const KitVoicePanel: React.FC<
   // Task 7.1.2: Get defaultToMonoSamples setting
   const { defaultToMonoSamples } = useSettings();
 
+  // Effective editable state considers disabled
+  const effectiveEditable = isEditable && !isDisabled;
+
   // Voice name editing functionality
   const voiceNameEditor = useVoiceNameEditor({
     onSaveVoiceName,
@@ -139,14 +148,16 @@ const KitVoicePanel: React.FC<
 
   // Sample actions (delete, context menu)
   const sampleActions = useSampleActions({
-    isEditable,
+    isDisabled,
+    isEditable: effectiveEditable,
     onSampleDelete,
     voice,
   });
 
   // Drag and drop functionality
   const dragAndDrop = useDragAndDrop({
-    isEditable,
+    isDisabled,
+    isEditable: effectiveEditable,
     kitName,
     onSampleAdd,
     onSampleMove,
@@ -185,11 +196,14 @@ const KitVoicePanel: React.FC<
   const rendering = useVoicePanelRendering({
     dragAndDropHook: dragAndDrop,
     isActive,
-    isEditable,
+    isEditable: effectiveEditable,
+    isLinkedPrimary,
     kitName,
+    linkedWith,
     onPlay,
     onSampleSelect,
     onStop,
+    onVoiceUnlink,
     onWaveformPlayingChange,
     playTriggers,
     playVolumes,
@@ -221,81 +235,22 @@ const KitVoicePanel: React.FC<
     }
   }, [selectedIdx, isActive]);
 
-  // Voice linking styles
+  // Voice panel styles
   const voicePanelClasses = [
     "flex-1 p-3 rounded-lg shadow text-text-primary min-h-[80px] border border-border-subtle",
     // Default background with grain texture
     "card-grain",
-    // Linked voice styling
-    isLinked &&
-      isPrimaryVoice &&
-      "bg-accent-primary/10 border-2 border-accent-primary/40",
-    isLinked &&
-      !isPrimaryVoice &&
-      "bg-accent-primary/10 border-2 border-accent-primary/40",
     // Stereo drag target
     isStereoDragTarget && "bg-accent-warning/15",
   ]
     .filter(Boolean)
     .join(" ");
 
-  const renderVoiceLinkingControls = () => {
-    if (!isEditable) return null;
-
-    return (
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          {/* Voice linking status indicator */}
-          {isLinked && (
-            <div className="flex items-center gap-1 text-xs text-accent-primary">
-              {isPrimaryVoice ? (
-                <>
-                  <span>🔗</span>
-                  <span>Stereo (L→{linkedWith})</span>
-                </>
-              ) : (
-                <>
-                  <span>🔗</span>
-                  <span>Linked ({linkedWith}→R)</span>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Voice linking controls for voices 1-3 */}
-          {voice <= 3 && !isLinked && (
-            <button
-              className="text-xs px-2 py-1 bg-accent-primary/15 text-accent-primary rounded hover:bg-accent-primary/25 transition-colors"
-              onClick={() => onVoiceLink?.(voice)}
-              title={`Link voice ${voice} to voice ${voice + 1} for stereo`}
-              type="button"
-            >
-              Link Stereo
-            </button>
-          )}
-
-          {/* Voice unlinking control */}
-          {isLinked && isPrimaryVoice && (
-            <button
-              className="text-xs px-2 py-1 bg-surface-3 text-text-secondary rounded hover:bg-surface-4 transition-colors"
-              onClick={() => onVoiceUnlink?.(voice)}
-              title={`Unlink voice ${voice} from stereo mode`}
-              type="button"
-            >
-              Unlink
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div aria-label={`Voice ${voice} panel`} className="flex flex-col">
       {rendering.renderVoiceName(dataTestIdVoiceName)}
       {/* Voice panel content */}
       <div className={voicePanelClasses}>
-        {renderVoiceLinkingControls()}
         <ul
           aria-label={`Sample slots for voice ${voice}`}
           className="list-none ml-0 text-sm flex flex-col"

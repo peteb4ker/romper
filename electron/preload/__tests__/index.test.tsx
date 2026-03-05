@@ -106,6 +106,7 @@ describe("preload/index.tsx", () => {
         updateKit: expect.any(Function),
         updateStepPattern: expect.any(Function),
         updateVoiceAlias: expect.any(Function),
+        updateVoiceStereoMode: expect.any(Function),
         validateLocalStore: expect.any(Function),
         validateLocalStoreBasic: expect.any(Function),
         validateSampleFormat: expect.any(Function),
@@ -656,6 +657,11 @@ describe("preload/index.tsx", () => {
         args: ["TestKit", 1, "Voice Alias"],
         ipcChannel: "update-voice-alias",
         method: "updateVoiceAlias",
+      },
+      {
+        args: ["TestKit", 1, true],
+        ipcChannel: "update-voice-stereo-mode",
+        method: "updateVoiceStereoMode",
       },
       {
         args: ["TestKit", 1, 0],

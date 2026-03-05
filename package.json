@@ -30,7 +30,7 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
     "dev": "npm run build && concurrently \"vite dev --config vite.config.ts\" \"sleep 2 && npm run electron:dev\"",
-    "electron:dev": "NODE_ENV=development electron --inspect=5858 dist/electron/main/index.js",
+    "electron:dev": "NODE_ENV=development electron --inspect=5858 --remote-debugging-port=9229 dist/electron/main/index.js",
     "postinstall": "npx electron-rebuild -f -w better-sqlite3",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

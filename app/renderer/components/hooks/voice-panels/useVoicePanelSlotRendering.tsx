@@ -47,6 +47,8 @@ export interface UseVoicePanelSlotRenderingOptions extends BaseVoicePanelOptions
   handleCombinedDragLeave: () => void;
   handleCombinedDragOver: (e: React.DragEvent, slotNumber: number) => void;
   handleCombinedDrop: (e: React.DragEvent, slotNumber: number) => void;
+  isLinkedPrimary?: boolean;
+  linkedWith?: number;
 }
 
 /**
@@ -60,7 +62,9 @@ export function useVoicePanelSlotRendering({
   handleCombinedDrop,
   isActive,
   isEditable,
+  isLinkedPrimary,
   kitName,
+  linkedWith,
   onSampleSelect,
   onWaveformPlayingChange,
   playTriggers,
@@ -272,12 +276,16 @@ export function useVoicePanelSlotRendering({
         title={
           isDragOver || isStereoHighlight || isDropZone
             ? dropHintTitle
-            : `Drop WAV files here to add to voice ${voice}`
+            : isLinkedPrimary && linkedWith
+              ? `Drop stereo WAV files here for voices ${voice} and ${linkedWith}`
+              : `Drop WAV files here to add to voice ${voice}`
         }
       >
         <div className="flex-1 flex items-center justify-center">
           <span className="text-sm text-text-tertiary text-center">
-            Drop WAV files here
+            {isLinkedPrimary && linkedWith
+              ? `Drop WAV files here (stereo · voices ${voice} + ${linkedWith})`
+              : "Drop WAV files here"}
           </span>
         </div>
       </li>
@@ -288,6 +296,8 @@ export function useVoicePanelSlotRendering({
     samples,
     voice,
     isEditable,
+    isLinkedPrimary,
+    linkedWith,
     slotRenderingHook,
   ]);
 

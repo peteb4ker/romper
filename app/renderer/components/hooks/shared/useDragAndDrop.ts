@@ -4,6 +4,7 @@ import { useFileValidation } from "./useFileValidation";
 import { useInternalDragHandlers } from "./useInternalDragHandlers";
 
 export interface UseDragAndDropOptions {
+  isDisabled?: boolean;
   isEditable: boolean;
   kitName: string;
   onSampleAdd?: (
@@ -51,6 +52,7 @@ export interface UseDragAndDropOptions {
  * Refactored to use extracted sub-hooks for better organization
  */
 export function useDragAndDrop({
+  isDisabled = false,
   isEditable,
   kitName,
   onSampleAdd,
@@ -75,10 +77,13 @@ export function useDragAndDrop({
     voice,
   });
 
+  // Effective editable: disabled panels cannot be interacted with
+  const effectiveEditable = isEditable && !isDisabled;
+
   // External drag handlers hook
   const externalDragHandlers = useExternalDragHandlers({
     fileValidation,
-    isEditable,
+    isEditable: effectiveEditable,
     onStereoDragLeave,
     onStereoDragOver,
     sampleProcessing,
@@ -88,7 +93,7 @@ export function useDragAndDrop({
 
   // Internal drag handlers hook
   const internalDragHandlers = useInternalDragHandlers({
-    isEditable,
+    isEditable: effectiveEditable,
     onSampleMove,
     samples,
     setSharedDraggedSample,

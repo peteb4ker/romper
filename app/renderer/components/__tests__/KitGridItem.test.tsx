@@ -814,4 +814,140 @@ describe("KitGridItem", () => {
       expect(screen.getByText("Voice 4")).toBeInTheDocument();
     });
   });
+
+  describe("Stereo indicator", () => {
+    it("should show stereo icon when kit has stereo-linked voices", () => {
+      render(
+        <KitGridItem
+          {...defaultProps}
+          kitData={
+            {
+              ...defaultProps.kitData,
+              voices: [
+                {
+                  id: 1,
+                  kit_name: "A0",
+                  sample_mode: "first",
+                  stereo_mode: true,
+                  voice_alias: null,
+                  voice_number: 1,
+                  voice_volume: 100,
+                },
+                {
+                  id: 2,
+                  kit_name: "A0",
+                  sample_mode: "first",
+                  stereo_mode: false,
+                  voice_alias: null,
+                  voice_number: 2,
+                  voice_volume: 100,
+                },
+              ],
+            } as never
+          }
+        />,
+      );
+
+      expect(screen.getByTestId("stereo-indicator")).toBeInTheDocument();
+    });
+
+    it("should highlight stereo icon when search matches stereo", () => {
+      render(
+        <KitGridItem
+          {...defaultProps}
+          kitData={
+            {
+              ...defaultProps.kitData,
+              searchMatch: {
+                matchedOn: ["stereo"],
+                matchedSamples: [],
+                matchedVoices: [],
+                searchTerm: "stereo",
+              },
+              voices: [
+                {
+                  id: 1,
+                  kit_name: "A0",
+                  sample_mode: "first",
+                  stereo_mode: true,
+                  voice_alias: null,
+                  voice_number: 1,
+                  voice_volume: 100,
+                },
+              ],
+            } as never
+          }
+        />,
+      );
+
+      const indicator = screen.getByTestId("stereo-indicator");
+      expect(indicator.className).toContain("text-accent-primary");
+    });
+
+    it("should not show stereo icon when no voices have stereo_mode", () => {
+      render(
+        <KitGridItem
+          {...defaultProps}
+          kitData={
+            {
+              ...defaultProps.kitData,
+              voices: [
+                {
+                  id: 1,
+                  kit_name: "A0",
+                  sample_mode: "first",
+                  stereo_mode: false,
+                  voice_alias: null,
+                  voice_number: 1,
+                  voice_volume: 100,
+                },
+              ],
+            } as never
+          }
+        />,
+      );
+
+      expect(screen.queryByTestId("stereo-indicator")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Voice names on empty kits", () => {
+    it("should show voice names when kit has no samples", () => {
+      mockExtractVoiceNames.mockReturnValue({ 1: "kick", 2: "snare" });
+      render(
+        <KitGridItem
+          {...defaultProps}
+          kitData={
+            {
+              ...defaultProps.kitData,
+              voices: [
+                {
+                  id: 1,
+                  kit_name: "A0",
+                  sample_mode: "first",
+                  stereo_mode: false,
+                  voice_alias: "kick",
+                  voice_number: 1,
+                  voice_volume: 100,
+                },
+                {
+                  id: 2,
+                  kit_name: "A0",
+                  sample_mode: "first",
+                  stereo_mode: false,
+                  voice_alias: "snare",
+                  voice_number: 2,
+                  voice_volume: 100,
+                },
+              ],
+            } as never
+          }
+          sampleCounts={undefined as never}
+        />,
+      );
+
+      expect(screen.getByText("Kick")).toBeInTheDocument();
+      expect(screen.getByText("Snare")).toBeInTheDocument();
+    });
+  });
 });

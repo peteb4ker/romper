@@ -108,11 +108,12 @@ function MultiVoicePanelsTestWrapper({
 function voicesToProps(voices) {
   const samples = {};
   const kitVoices = [];
-  voices.forEach(({ samples: s, voice, voiceName }) => {
+  voices.forEach(({ samples: s, stereo_mode, voice, voiceName }) => {
     samples[voice] = s;
     kitVoices.push({
       id: voice,
       kit_name: "Kit1",
+      stereo_mode: stereo_mode || false,
       voice_alias: voiceName,
       voice_number: voice,
     });
@@ -508,6 +509,203 @@ describe("KitVoicePanels", () => {
 
       // Should not have drop zones when isEditable is undefined (defaults to false)
       expect(screen.queryByTestId("drop-zone-voice-1")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Voice linking layout", () => {
+    it("should hide secondary voice panel when linked", () => {
+      const voices = [
+        {
+          samples: ["kick.wav"],
+          stereo_mode: true,
+          voice: 1,
+          voiceName: "Kick",
+        },
+        { samples: [], voice: 2, voiceName: "Hat" },
+        { samples: ["tom.wav"], voice: 3, voiceName: "Tom" },
+        { samples: [], voice: 4, voiceName: "Perc" },
+      ];
+
+      render(<MultiVoicePanelsTestWrapper isEditable={true} voices={voices} />);
+
+      const panel1 = screen.getByTestId("voice-panel-1");
+      const panel2 = screen.getByTestId("voice-panel-2");
+      expect(panel1.className).toContain("flex-1");
+      expect(panel2.className).toContain("hidden");
+    });
+
+    it("should not render chain icon between merged pair", () => {
+      const voices = [
+        {
+          samples: ["kick.wav"],
+          stereo_mode: true,
+          voice: 1,
+          voiceName: "Kick",
+        },
+        { samples: [], voice: 2, voiceName: "Hat" },
+        { samples: ["tom.wav"], voice: 3, voiceName: "Tom" },
+        { samples: [], voice: 4, voiceName: "Perc" },
+      ];
+
+      render(<MultiVoicePanelsTestWrapper isEditable={true} voices={voices} />);
+
+      // Chain icon between voices 1-2 should not exist (voice 1 is primary)
+      expect(screen.queryByTestId("chain-icon-1-2")).not.toBeInTheDocument();
+      // Chain icon between 2-3 should not exist (voice 2 is secondary in linked pair)
+      expect(screen.queryByTestId("chain-icon-2-3")).not.toBeInTheDocument();
+      // Chain icon between 3-4 should still exist (neither is linked)
+      expect(screen.getByTestId("chain-icon-3-4")).toBeInTheDocument();
+    });
+
+    it("should show chain icons when unlinked", () => {
+      render(<MultiVoicePanelsTestWrapper isEditable={true} />);
+
+      // Chain icons should exist between all adjacent unlinked voices and be visible
+      const linkButton = screen.getByTestId("link-button-1-2");
+      expect(linkButton.className).toContain("opacity-80");
+      expect(linkButton.className).toContain("hover:opacity-100");
+    });
+
+    it("should render stereo badge in header when linked", () => {
+      const voices = [
+        {
+          samples: ["kick.wav"],
+          stereo_mode: true,
+          voice: 1,
+          voiceName: "Kick",
+        },
+        { samples: [], voice: 2, voiceName: "Hat" },
+        { samples: ["tom.wav"], voice: 3, voiceName: "Tom" },
+        { samples: [], voice: 4, voiceName: "Perc" },
+      ];
+
+      render(<MultiVoicePanelsTestWrapper isEditable={true} voices={voices} />);
+
+      expect(screen.getByTestId("stereo-badge-1")).toBeInTheDocument();
+      expect(screen.getByText("Stereo")).toBeInTheDocument();
+    });
+
+    it("should render unlinked voices with flex-1", () => {
+      render(<MultiVoicePanelsTestWrapper isEditable={true} />);
+
+      const panel1 = screen.getByTestId("voice-panel-1");
+      const panel2 = screen.getByTestId("voice-panel-2");
+      expect(panel1.className).toContain("flex-1");
+      expect(panel2.className).toContain("flex-1");
+    });
+
+    it("should call link handler when chain icon clicked with empty secondary voice", async () => {
+      const onKitUpdated = vi.fn().mockResolvedValue(undefined);
+
+      const voices = [
+        { samples: ["kick.wav"], voice: 1, voiceName: "Kick" },
+        { samples: [], voice: 2, voiceName: "Hat" },
+        { samples: ["tom.wav"], voice: 3, voiceName: "Tom" },
+        { samples: [], voice: 4, voiceName: "Perc" },
+      ];
+
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={onKitUpdated}
+          voices={voices}
+        />,
+      );
+
+      const linkButton = screen.getByTestId("link-button-1-2");
+      await act(async () => {
+        fireEvent.click(linkButton);
+      });
+
+      await waitFor(() => {
+        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalled();
+      });
+    });
+
+    it("should block linking when secondary voice has samples", async () => {
+      const voices = [
+        { samples: ["kick.wav"], voice: 1, voiceName: "Kick" },
+        { samples: ["hat.wav"], voice: 2, voiceName: "Hat" },
+        { samples: ["tom.wav"], voice: 3, voiceName: "Tom" },
+        { samples: [], voice: 4, voiceName: "Perc" },
+      ];
+
+      render(<MultiVoicePanelsTestWrapper isEditable={true} voices={voices} />);
+
+      const linkButton = screen.getByTestId("link-button-1-2");
+      await act(async () => {
+        fireEvent.click(linkButton);
+      });
+
+      // Should not call updateVoiceStereoMode since secondary has samples
+      expect(window.electronAPI.updateVoiceStereoMode).not.toHaveBeenCalled();
+    });
+
+    it("should link unlinked voices 3-4 when chain icon clicked", async () => {
+      const onKitUpdated = vi.fn().mockResolvedValue(undefined);
+      const voices = [
+        {
+          samples: ["kick.wav"],
+          stereo_mode: true,
+          voice: 1,
+          voiceName: "Kick",
+        },
+        { samples: [], voice: 2, voiceName: "Hat" },
+        { samples: ["tom.wav"], voice: 3, voiceName: "Tom" },
+        { samples: [], voice: 4, voiceName: "Perc" },
+      ];
+
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={onKitUpdated}
+          voices={voices}
+        />,
+      );
+
+      // Chain icon between 3-4 should exist
+      const linkButton = screen.getByTestId("link-button-3-4");
+      await act(async () => {
+        fireEvent.click(linkButton);
+      });
+
+      // Should call updateVoiceStereoMode for voice 3 since it's not linked
+      await waitFor(() => {
+        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalled();
+      });
+    });
+
+    it("should call unlink handler when stereo badge clicked", async () => {
+      const onKitUpdated = vi.fn().mockResolvedValue(undefined);
+
+      const voices = [
+        {
+          samples: ["kick.wav"],
+          stereo_mode: true,
+          voice: 1,
+          voiceName: "Kick",
+        },
+        { samples: [], voice: 2, voiceName: "Hat" },
+        { samples: ["tom.wav"], voice: 3, voiceName: "Tom" },
+        { samples: [], voice: 4, voiceName: "Perc" },
+      ];
+
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={onKitUpdated}
+          voices={voices}
+        />,
+      );
+
+      const stereoBadge = screen.getByTestId("stereo-badge-1");
+      await act(async () => {
+        fireEvent.click(stereoBadge);
+      });
+
+      await waitFor(() => {
+        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalled();
+      });
     });
   });
 });

@@ -166,6 +166,36 @@ describe("kitSearchUtils", () => {
       expect(matchDetails.matchedOn).toHaveLength(0);
       expect(matchDetails.matchedVoices).toHaveLength(0);
     });
+
+    it("should match 'stereo' when kit has stereo-linked voices", () => {
+      const stereoKit = {
+        ...mockKit,
+        voices: mockKit.voices?.map((v) =>
+          v.voice_number === 1 ? { ...v, stereo_mode: true } : v,
+        ),
+      };
+      const matchDetails: SearchMatchDetails = {
+        matchedOn: [],
+        matchedSamples: [],
+        matchedVoices: [],
+      };
+
+      checkKitVoices(stereoKit, "stereo", matchDetails);
+
+      expect(matchDetails.matchedOn).toContain("stereo");
+    });
+
+    it("should not match 'stereo' when no voices have stereo_mode", () => {
+      const matchDetails: SearchMatchDetails = {
+        matchedOn: [],
+        matchedSamples: [],
+        matchedVoices: [],
+      };
+
+      checkKitVoices(mockKit, "stereo", matchDetails);
+
+      expect(matchDetails.matchedOn).not.toContain("stereo");
+    });
   });
 
   describe("checkKitSamples", () => {

@@ -37,6 +37,7 @@ export {
   updateSampleMetadata,
   updateVoiceAlias,
   updateVoiceSampleMode,
+  updateVoiceStereoMode,
   updateVoiceVolume,
 } from "./operations/crudOperations.js";
 // Import and re-export sample management operations

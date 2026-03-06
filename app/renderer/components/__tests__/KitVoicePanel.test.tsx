@@ -119,53 +119,41 @@ describe("KitVoicePanel", () => {
   });
 
   describe("Voice linking functionality", () => {
-    it("renders Link Stereo button for voice 1-3 when not linked and editable", () => {
-      renderKitVoicePanel({ isLinked: false, onVoiceLink: vi.fn(), voice: 1 });
-      expect(screen.getByText("Link Stereo")).toBeInTheDocument();
-    });
-
-    it("does not render Link Stereo button for voice 4", () => {
-      renderKitVoicePanel({ isLinked: false, onVoiceLink: vi.fn(), voice: 4 });
-      expect(screen.queryByText("Link Stereo")).not.toBeInTheDocument();
-    });
-
-    it("renders stereo status when linked as primary voice", () => {
+    it("renders Stereo badge when isLinkedPrimary", () => {
       renderKitVoicePanel({
-        isLinked: true,
-        isPrimaryVoice: true,
+        isLinkedPrimary: true,
         linkedWith: 2,
-        voice: 1,
-      });
-      expect(screen.getByText("Stereo (L→2)")).toBeInTheDocument();
-    });
-
-    it("renders linked status when linked as secondary voice", () => {
-      renderKitVoicePanel({
-        isLinked: true,
-        isPrimaryVoice: false,
-        linkedWith: 1,
-        voice: 2,
-      });
-      expect(screen.getByText("Linked (1→R)")).toBeInTheDocument();
-    });
-
-    it("renders Unlink button when linked as primary voice", () => {
-      renderKitVoicePanel({
-        isLinked: true,
-        isPrimaryVoice: true,
         onVoiceUnlink: vi.fn(),
         voice: 1,
       });
-      expect(screen.getByText("Unlink")).toBeInTheDocument();
+      expect(screen.getByTestId("stereo-badge-1")).toBeInTheDocument();
+      expect(screen.getByText("Stereo")).toBeInTheDocument();
     });
 
-    it("does not render voice linking controls when not editable", () => {
+    it("calls onVoiceUnlink when Stereo badge clicked", async () => {
+      const onVoiceUnlink = vi.fn();
       renderKitVoicePanel({
-        isEditable: false,
-        onVoiceLink: vi.fn(),
+        isLinkedPrimary: true,
+        linkedWith: 2,
+        onVoiceUnlink,
         voice: 1,
       });
-      expect(screen.queryByText("Link Stereo")).not.toBeInTheDocument();
+      const badge = screen.getByTestId("stereo-badge-1");
+      badge.click();
+      expect(onVoiceUnlink).toHaveBeenCalledWith(1);
+    });
+
+    it("does not render Stereo badge when not linked", () => {
+      renderKitVoicePanel({
+        isLinkedPrimary: false,
+        voice: 1,
+      });
+      expect(screen.queryByTestId("stereo-badge-1")).not.toBeInTheDocument();
+    });
+
+    it("does not render Stereo badge when isLinkedPrimary is not set", () => {
+      renderKitVoicePanel({ voice: 2 });
+      expect(screen.queryByTestId("stereo-badge-2")).not.toBeInTheDocument();
     });
   });
 
@@ -180,25 +168,22 @@ describe("KitVoicePanel", () => {
   });
 
   describe("Voice panel styling based on linking status", () => {
-    it("applies primary voice styling when linked and isPrimaryVoice", () => {
+    it("applies standard styling for linked primary voice", () => {
       const { container } = renderKitVoicePanel({
-        isLinked: true,
-        isPrimaryVoice: true,
+        isLinkedPrimary: true,
+        linkedWith: 2,
+        onVoiceUnlink: vi.fn(),
       });
-      const voicePanel = container.querySelector(
-        '[class*="border-accent-primary"]',
-      );
+      // Panel should render with card-grain class
+      const voicePanel = container.querySelector('[class*="card-grain"]');
       expect(voicePanel).toBeInTheDocument();
     });
 
-    it("applies secondary voice styling when linked but not primary", () => {
+    it("renders panel content when not linked", () => {
       const { container } = renderKitVoicePanel({
-        isLinked: true,
-        isPrimaryVoice: false,
+        isLinkedPrimary: false,
       });
-      const voicePanel = container.querySelector(
-        '[class*="border-accent-primary"]',
-      );
+      const voicePanel = container.querySelector('[class*="card-grain"]');
       expect(voicePanel).toBeInTheDocument();
     });
   });

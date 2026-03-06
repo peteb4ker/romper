@@ -2,8 +2,13 @@ import { Check, PencilSimple, X } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
+import StereoIcon from "../../icons/StereoIcon";
+
 export interface UseVoicePanelUIOptions {
   isEditable: boolean;
+  isLinkedPrimary?: boolean;
+  linkedWith?: number;
+  onVoiceUnlink?: (primaryVoice: number) => void;
   voice: number;
   voiceName: null | string;
   voiceNameEditorHook: {
@@ -23,6 +28,9 @@ export interface UseVoicePanelUIOptions {
  */
 export function useVoicePanelUI({
   isEditable,
+  isLinkedPrimary,
+  linkedWith,
+  onVoiceUnlink,
   voice,
   voiceName,
   voiceNameEditorHook,
@@ -31,7 +39,9 @@ export function useVoicePanelUI({
   const renderVoiceName = React.useCallback(
     (dataTestIdVoiceName?: string) => (
       <div className="font-semibold mb-1 text-text-primary pl-1 flex items-center gap-2">
-        <span>{voice}</span>
+        <span>
+          {isLinkedPrimary && linkedWith ? `${voice}+${linkedWith}` : voice}
+        </span>
         {voiceNameEditorHook.editing ? (
           <>
             <input
@@ -79,9 +89,31 @@ export function useVoicePanelUI({
             )}
           </>
         )}
+        {/* Stereo badge — always visible regardless of editing state */}
+        {isLinkedPrimary && <span className="flex-1" />}
+        {isLinkedPrimary && (
+          <button
+            className="flex items-center gap-1 text-xs text-text-secondary opacity-80 hover:opacity-100 transition-opacity flex-shrink-0"
+            data-testid={`stereo-badge-${voice}`}
+            onClick={() => onVoiceUnlink?.(voice)}
+            title="Click to unlink stereo channels"
+            type="button"
+          >
+            Stereo
+            <StereoIcon size={18} />
+          </button>
+        )}
       </div>
     ),
-    [voice, voiceNameEditorHook, voiceName, isEditable],
+    [
+      voice,
+      voiceNameEditorHook,
+      voiceName,
+      isEditable,
+      isLinkedPrimary,
+      linkedWith,
+      onVoiceUnlink,
+    ],
   );
 
   return {

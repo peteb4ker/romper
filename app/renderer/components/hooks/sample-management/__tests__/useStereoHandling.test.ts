@@ -95,10 +95,10 @@ describe("useStereoHandling", () => {
       expect(linkingResult.reason).toContain("already in stereo mode");
     });
 
-    it("should prevent linking when target voice has stereo samples", () => {
+    it("should prevent linking when target voice has any samples", () => {
       const { result } = renderHook(() => useStereoHandling());
       const samplesWithStereo = [
-        { ...mockSamples[0], is_stereo: true, voice_number: 3 }, // Voice 3 has stereo samples
+        { ...mockSamples[0], is_stereo: true, voice_number: 3 }, // Voice 3 has samples
       ];
 
       const linkingResult = result.current.canLinkVoices(
@@ -109,7 +109,7 @@ describe("useStereoHandling", () => {
 
       expect(linkingResult.canLink).toBe(false);
       expect(linkingResult.reason).toContain(
-        "already linked or has stereo samples",
+        "has samples — remove them before linking",
       );
     });
   });
@@ -281,10 +281,6 @@ describe("useStereoHandling", () => {
 
       expect(success).toBe(true);
       expect(mockOnVoiceUpdate).toHaveBeenCalledWith(1, { stereo_mode: true });
-      expect(mockToast.success).toHaveBeenCalledWith("Voices linked", {
-        description: "Voice 1 and 2 are now linked for stereo",
-        duration: 5000,
-      });
     });
 
     it("should fail to link invalid voices", async () => {
@@ -325,10 +321,6 @@ describe("useStereoHandling", () => {
 
       expect(success).toBe(true);
       expect(mockOnVoiceUpdate).toHaveBeenCalledWith(1, { stereo_mode: false });
-      expect(mockToast.success).toHaveBeenCalledWith("Voices unlinked", {
-        description: "Voice 1 converted back to mono mode",
-        duration: 5000,
-      });
     });
 
     it("should fail to unlink voice not in stereo mode", async () => {
@@ -577,17 +569,15 @@ describe("useStereoHandling", () => {
 
       expect(validation.canAccept).toBe(true);
       expect(validation.requiresConversion).toBe("mono");
-      expect(validation.reason).toContain(
-        "already linked or has stereo samples",
-      );
+      expect(validation.reason).toContain("already in stereo mode");
     });
   });
 
   describe("Voice linking with existing samples", () => {
-    it("should prevent linking when target voice has stereo samples", () => {
+    it("should prevent linking when target voice has any samples", () => {
       const { result } = renderHook(() => useStereoHandling());
       const samplesWithStereoInTarget = [
-        { ...mockSamples[0], is_stereo: true, voice_number: 2 }, // Voice 2 has stereo sample
+        { ...mockSamples[0], is_stereo: true, voice_number: 2 }, // Voice 2 has a sample
       ];
 
       const linkingResult = result.current.canLinkVoices(
@@ -598,8 +588,39 @@ describe("useStereoHandling", () => {
 
       expect(linkingResult.canLink).toBe(false);
       expect(linkingResult.reason).toBe(
-        "Voice 2 is already linked or has stereo samples",
+        "Voice 2 has samples — remove them before linking",
       );
+    });
+
+    it("should prevent linking when target voice has mono samples", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const samplesWithMonoInTarget = [
+        { ...mockSamples[0], is_stereo: false, voice_number: 2 }, // Voice 2 has mono sample
+      ];
+
+      const linkingResult = result.current.canLinkVoices(
+        1,
+        mockVoices,
+        samplesWithMonoInTarget,
+      );
+
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toBe(
+        "Voice 2 has samples — remove them before linking",
+      );
+    });
+
+    it("should allow linking when secondary voice is empty", () => {
+      const { result } = renderHook(() => useStereoHandling());
+
+      const linkingResult = result.current.canLinkVoices(
+        1,
+        mockVoices,
+        [], // No samples anywhere
+      );
+
+      expect(linkingResult.canLink).toBe(true);
+      expect(linkingResult.linkedVoice).toBe(2);
     });
 
     it("should prevent linking when target voice is in stereo mode", () => {
@@ -617,9 +638,7 @@ describe("useStereoHandling", () => {
       );
 
       expect(linkingResult.canLink).toBe(false);
-      expect(linkingResult.reason).toBe(
-        "Voice 2 is already linked or has stereo samples",
-      );
+      expect(linkingResult.reason).toBe("Voice 2 is already in stereo mode");
     });
   });
 
@@ -635,10 +654,6 @@ describe("useStereoHandling", () => {
       );
 
       expect(success).toBe(true);
-      expect(mockToast.success).toHaveBeenCalledWith("Voices linked", {
-        description: "Voice 1 and 2 are now linked for stereo",
-        duration: 5000,
-      });
     });
 
     it("should handle unlinkVoices without onVoiceUpdate", async () => {
@@ -656,10 +671,6 @@ describe("useStereoHandling", () => {
       );
 
       expect(success).toBe(true);
-      expect(mockToast.success).toHaveBeenCalledWith("Voices unlinked", {
-        description: "Voice 1 converted back to mono mode",
-        duration: 5000,
-      });
     });
   });
 });

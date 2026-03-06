@@ -5,6 +5,7 @@ import { useCallback } from "react";
 import { ErrorPatterns } from "../../../utils/errorHandling";
 
 export interface UseSampleActionsOptions {
+  isDisabled?: boolean;
   isEditable: boolean;
   onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
   voice: number;
@@ -15,13 +16,14 @@ export interface UseSampleActionsOptions {
  * Extracted from KitVoicePanel to reduce component complexity
  */
 export function useSampleActions({
+  isDisabled = false,
   isEditable,
   onSampleDelete,
   voice,
 }: UseSampleActionsOptions) {
   const handleDeleteSample = useCallback(
     async (slotNumber: number) => {
-      if (!isEditable || !onSampleDelete) return;
+      if (!isEditable || isDisabled || !onSampleDelete) return;
 
       try {
         await onSampleDelete(voice, slotNumber);
@@ -29,7 +31,7 @@ export function useSampleActions({
         ErrorPatterns.sampleOperation(error, "delete sample");
       }
     },
-    [isEditable, onSampleDelete, voice],
+    [isEditable, isDisabled, onSampleDelete, voice],
   );
 
   const handleSampleContextMenu = useCallback(

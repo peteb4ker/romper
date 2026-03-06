@@ -169,6 +169,7 @@ export const createElectronAPIMock = (
   updateTriggerConditions: vi.fn().mockResolvedValue({ success: true }),
   updateVoiceAlias: vi.fn().mockResolvedValue({ success: true }),
   updateVoiceSampleMode: vi.fn().mockResolvedValue({ success: true }),
+  updateVoiceStereoMode: vi.fn().mockResolvedValue({ success: true }),
   updateVoiceVolume: vi.fn().mockResolvedValue({ success: true }),
   validateLocalStore: vi.fn().mockResolvedValue({
     errors: [],

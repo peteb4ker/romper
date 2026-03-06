@@ -109,6 +109,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
           isEditable={logic.kit?.editable ?? false}
           kit={logic.kit}
           kitName={props.kitName}
+          onKitUpdated={logic.reloadKit}
           onPlay={logic.playback.handlePlay}
           onRescanVoiceName={() => {}}
           onSampleAdd={logic.sampleManagement.handleSampleAdd}

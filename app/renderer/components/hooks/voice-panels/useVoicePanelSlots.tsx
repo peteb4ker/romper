@@ -17,7 +17,10 @@ export interface DragHandlers {
 }
 
 // Use shared base interface to eliminate duplication
-export interface UseVoicePanelSlotsOptions extends BaseVoicePanelOptions {}
+export interface UseVoicePanelSlotsOptions extends BaseVoicePanelOptions {
+  isLinkedPrimary?: boolean;
+  linkedWith?: number;
+}
 
 /**
  * Hook for rendering voice panel slot components
@@ -27,7 +30,9 @@ export function useVoicePanelSlots({
   dragAndDropHook,
   isActive,
   isEditable,
+  isLinkedPrimary,
   kitName,
+  linkedWith,
   onSampleSelect,
   onWaveformPlayingChange,
   playTriggers,
@@ -61,7 +66,9 @@ export function useVoicePanelSlots({
     handleCombinedDrop,
     isActive,
     isEditable,
+    isLinkedPrimary,
     kitName,
+    linkedWith,
     onSampleSelect,
     onWaveformPlayingChange,
     playTriggers,

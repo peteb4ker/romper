@@ -97,7 +97,8 @@ function createWindow() {
 
   if (isDev) {
     // Type-safe error handling for loadURL
-    win.loadURL("http://localhost:5173").catch((err: unknown) => {
+    const vitePort = process.env.VITE_DEV_SERVER_PORT || "5173";
+    win.loadURL(`http://localhost:${vitePort}`).catch((err: unknown) => {
       console.error(
         "Failed to load URL:",
         err instanceof Error ? err.message : String(err),

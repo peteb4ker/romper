@@ -26,6 +26,7 @@ export default defineConfig({
   },
   root: ".",
   server: {
+    strictPort: true,
     watch: {
       ignored: [
         "**/coverage/**",

@@ -7,6 +7,40 @@ import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronA
 import SampleWaveform from "../SampleWaveform";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 
+function createMockAnalyser() {
+  return {
+    connect: vi.fn(),
+    fftSize: 2048,
+    frequencyBinCount: 128,
+    getByteTimeDomainData: vi.fn(),
+  };
+}
+
+function createMockAudioContext(overrides?: Record<string, unknown>) {
+  return {
+    close: vi.fn().mockResolvedValue(undefined),
+    createAnalyser: vi.fn(() => createMockAnalyser()),
+    createBufferSource: vi.fn(() => ({
+      buffer: null,
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      onended: null,
+      start: vi.fn(),
+      stop: vi.fn(),
+    })),
+    createChannelSplitter: vi.fn(() => ({ connect: vi.fn() })),
+    createGain: vi.fn(() => ({
+      connect: vi.fn(),
+      gain: { setValueAtTime: vi.fn() },
+    })),
+    currentTime: 0,
+    decodeAudioData: vi.fn(),
+    destination: {},
+    state: "running",
+    ...overrides,
+  };
+}
+
 // Mock canvas for testing
 const mockCanvasContext = {
   beginPath: vi.fn(),
@@ -44,21 +78,7 @@ beforeEach(() => {
   });
 
   // Mock AudioContext and related APIs
-  global.AudioContext = vi.fn(() => ({
-    close: vi.fn().mockResolvedValue(undefined),
-    createBufferSource: vi.fn(() => ({
-      buffer: null,
-      connect: vi.fn(),
-      disconnect: vi.fn(),
-      onended: null,
-      start: vi.fn(),
-      stop: vi.fn(),
-    })),
-    currentTime: 0,
-    decodeAudioData: vi.fn(),
-    destination: {},
-    state: "running",
-  }));
+  global.AudioContext = vi.fn(() => createMockAudioContext());
 
   // Mock animation frame functions
   global.requestAnimationFrame = vi.fn((cb) => {
@@ -283,15 +303,11 @@ describe("SampleWaveform", () => {
       sampleRate: 44100,
     };
 
-    const mockAudioContext = {
-      close: vi.fn().mockResolvedValue(undefined),
+    const mockAudioContext = createMockAudioContext({
       createBufferSource: vi.fn(() => mockSource),
       createGain: vi.fn(() => mockGainNode),
-      currentTime: 0,
       decodeAudioData: vi.fn((_buf, cb) => cb(mockAudioBuffer)),
-      destination: {},
-      state: "running",
-    };
+    });
 
     global.AudioContext = vi.fn(() => mockAudioContext);
 
@@ -463,21 +479,17 @@ describe("SampleWaveform", () => {
     };
 
     let sourceCallCount = 0;
-    const mockAudioContext = {
-      close: vi.fn().mockResolvedValue(undefined),
+    const mockAudioContext = createMockAudioContext({
       createBufferSource: vi.fn(() => {
         sourceCallCount++;
         return sourceCallCount === 1 ? mockSource1 : mockSource2;
       }),
       createGain: vi.fn(() => mockGainNode),
-      currentTime: 0,
       decodeAudioData: vi.fn(
         (_buf: ArrayBuffer, cb: (buf: AudioBuffer) => void) =>
           cb(mockAudioBuffer as unknown as AudioBuffer),
       ),
-      destination: {},
-      state: "running",
-    };
+    });
 
     global.AudioContext = vi.fn(() => mockAudioContext);
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
@@ -555,18 +567,14 @@ describe("SampleWaveform", () => {
       sampleRate: 44100,
     };
 
-    const mockAudioContext = {
-      close: vi.fn().mockResolvedValue(undefined),
+    const mockAudioContext = createMockAudioContext({
       createBufferSource: vi.fn(() => mockSource),
       createGain: vi.fn(() => mockGainNode),
-      currentTime: 0,
       decodeAudioData: vi.fn(
         (_buf: ArrayBuffer, cb: (buf: AudioBuffer) => void) =>
           cb(mockAudioBuffer as unknown as AudioBuffer),
       ),
-      destination: {},
-      state: "running",
-    };
+    });
 
     global.AudioContext = vi.fn(() => mockAudioContext);
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
@@ -653,18 +661,14 @@ describe("SampleWaveform", () => {
       sampleRate: 44100,
     };
 
-    const mockAudioContext = {
-      close: vi.fn().mockResolvedValue(undefined),
+    const mockAudioContext = createMockAudioContext({
       createBufferSource: vi.fn(() => mockSource),
       createGain: vi.fn(() => mockGainNode),
-      currentTime: 0,
       decodeAudioData: vi.fn(
         (_buf: ArrayBuffer, cb: (buf: AudioBuffer) => void) =>
           cb(mockAudioBuffer as unknown as AudioBuffer),
       ),
-      destination: {},
-      state: "running",
-    };
+    });
 
     global.AudioContext = vi.fn(() => mockAudioContext);
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(

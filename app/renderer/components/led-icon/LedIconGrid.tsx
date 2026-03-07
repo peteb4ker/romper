@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from "react";
 
 import { ICON_COLS, ICON_LED_COUNT, ICON_ROWS } from "./ledIconConstants";
-import { useMiniLedAnimation } from "./useMiniLedAnimation";
+import { useLedVisualization } from "./useLedVisualization";
 
 interface LedIconGridProps {
   onClick?: () => void;
@@ -10,7 +10,7 @@ interface LedIconGridProps {
 const LedIconGrid: React.FC<LedIconGridProps> = React.memo(({ onClick }) => {
   const isHoveredRef = useRef(false);
   const { addRipple, clearMousePosition, ledRefs, setMousePosition } =
-    useMiniLedAnimation(isHoveredRef);
+    useLedVisualization(isHoveredRef);
   const gridRef = useRef<HTMLDivElement>(null);
 
   const translateCoords = useCallback(

@@ -307,7 +307,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     }
 
     setDeferredSecondaries(currentSecondaries);
-  }, [voiceData, stereoHandling]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [voiceData, stereoHandling.getVoiceLinkingStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex w-full relative" data-testid="voice-panels-row">

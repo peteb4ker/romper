@@ -1,8 +1,13 @@
 /**
  * Screenshot Capture Script for Romper Documentation
  *
- * Launches the Electron app with e2e fixtures and captures screenshots
- * of specified views/elements for use in the website and manual.
+ * Launches the Electron app using the local Romper instance (your real
+ * local store with actual kits) and captures screenshots of specified
+ * views/elements for use in the website and manual.
+ *
+ * Prerequisites:
+ *   - A configured Romper local store with kits (the app must have been
+ *     set up at least once so romper-settings.json exists)
  *
  * Usage:
  *   npx tsx scripts/capture-screenshots.ts [--target <name>] [--all] [--list]
@@ -22,11 +27,6 @@
 import path from "path";
 import { _electron as electron } from "playwright";
 import { fileURLToPath } from "url";
-
-import {
-  cleanupE2EFixture,
-  extractE2EFixture,
-} from "../tests/utils/e2e-fixture-extractor.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -275,10 +275,6 @@ async function main() {
   const { mkdirSync } = await import("fs");
   mkdirSync(path.join(DOCS_IMAGES, "manual"), { recursive: true });
 
-  // Extract e2e fixtures
-  console.log("Setting up test fixtures...");
-  const testEnv = await extractE2EFixture();
-
   let electronApp;
   try {
     // Build the app first
@@ -286,13 +282,12 @@ async function main() {
     const { execSync } = await import("child_process");
     execSync("npm run build", { cwd: ROOT, stdio: "inherit" });
 
-    // Launch Electron
-    console.log("Launching Electron...");
+    // Launch Electron using the local Romper instance (real local store)
+    console.log("Launching Electron with local store...");
     electronApp = await electron.launch({
       args: [path.join(ROOT, "dist/electron/main/index.js")],
       env: {
         ...process.env,
-        ...testEnv.environment,
       },
       timeout: 30000,
     });
@@ -371,7 +366,6 @@ async function main() {
     console.log("\nDone.\n");
   } finally {
     if (electronApp) await electronApp.close();
-    await cleanupE2EFixture(testEnv);
   }
 }
 

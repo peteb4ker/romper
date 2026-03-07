@@ -6,7 +6,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 
 Capture screenshots of the Romper app for the website and user manual. This command:
 
-1. Builds the app and launches it with e2e fixtures via Playwright
+1. Builds the app and launches it with the local Romper instance via Playwright
 2. Navigates to each view and captures screenshots
 3. Saves them to `docs/images/` (website) and `docs/images/manual/` (manual)
 4. Optionally updates the manual markdown files to reference new screenshots
@@ -64,7 +64,8 @@ When adding new screenshots that need hover states, use `captureOverride` with `
 ## Important Notes
 
 - The app must be buildable (`npm run build` must succeed)
-- E2E fixtures must be generated (`npm run fixtures:e2e` if missing)
+- The script uses the local Romper instance (your real local store with actual kits) -- no e2e fixtures
+- Romper must have been set up at least once so `romper-settings.json` exists in the Electron userData directory
 - Screenshots use a fixed 1280x800 viewport for consistency
 - The script resets to the Kit Browser between captures
 - If a `data-testid` selector is missing from a component, add it to the React component before capturing

@@ -1,416 +1,350 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Romper - Sample Kit Manager for the Squarp Rample</title>
-    <meta name="description" content="Desktop app for managing sample kits on the Squarp Rample eurorack sampler. Browse 26 banks, audition 4 voices, drag in samples, sync to SD card.">
-    <meta property="og:title" content="Romper - Sample Kit Manager for the Squarp Rample">
-    <meta property="og:description" content="Browse 26 banks. Audition 4 voices. Drag in samples. Sync to SD card. Done.">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="images/app-screenshot.png">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <a href="#main-content" class="skip-to-content">Skip to content</a>
+---
+layout: default
+title: Home
+---
 
-    <header class="header">
-        <div class="container">
-            <div class="nav">
-                <div class="logo">
-                    <img src="images/app-icon.png" alt="" class="logo-icon">
-                    <span class="logo-text">Romper</span>
-                </div>
-                <nav class="nav-links">
-                    <a href="https://github.com/peteb4ker/romper" class="nav-link">GitHub</a>
-                    <a href="https://github.com/peteb4ker/romper/releases" class="nav-link">Releases</a>
-                    <a href="https://github.com/peteb4ker/romper" class="github-stars" aria-label="GitHub stars">
-                        <img src="https://img.shields.io/github/stars/peteb4ker/romper?style=flat&logo=github&color=3b82f6&labelColor=1e293b" alt="GitHub stars">
-                    </a>
-                </nav>
+<!-- Hero Section -->
+<section class="hero">
+    <!-- Decorative dot grid (4-quadrant, voice colors) -->
+    <svg class="hero-dot-grid" width="280" height="280" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- Top-left quadrant: Voice 1 Red -->
+        <circle cx="20" cy="20" r="3" class="dot-voice-1"/><circle cx="50" cy="20" r="3" class="dot-voice-1"/><circle cx="80" cy="20" r="3" class="dot-voice-1"/>
+        <circle cx="20" cy="50" r="3" class="dot-voice-1"/><circle cx="50" cy="50" r="3" class="dot-voice-1"/><circle cx="80" cy="50" r="3" class="dot-voice-1"/>
+        <circle cx="20" cy="80" r="3" class="dot-voice-1"/><circle cx="50" cy="80" r="3" class="dot-voice-1"/><circle cx="80" cy="80" r="3" class="dot-voice-1"/>
+        <!-- Top-right quadrant: Voice 2 Yellow -->
+        <circle cx="200" cy="20" r="3" class="dot-voice-2"/><circle cx="230" cy="20" r="3" class="dot-voice-2"/><circle cx="260" cy="20" r="3" class="dot-voice-2"/>
+        <circle cx="200" cy="50" r="3" class="dot-voice-2"/><circle cx="230" cy="50" r="3" class="dot-voice-2"/><circle cx="260" cy="50" r="3" class="dot-voice-2"/>
+        <circle cx="200" cy="80" r="3" class="dot-voice-2"/><circle cx="230" cy="80" r="3" class="dot-voice-2"/><circle cx="260" cy="80" r="3" class="dot-voice-2"/>
+        <!-- Bottom-left quadrant: Voice 3 Green -->
+        <circle cx="20" cy="200" r="3" class="dot-voice-3"/><circle cx="50" cy="200" r="3" class="dot-voice-3"/><circle cx="80" cy="200" r="3" class="dot-voice-3"/>
+        <circle cx="20" cy="230" r="3" class="dot-voice-3"/><circle cx="50" cy="230" r="3" class="dot-voice-3"/><circle cx="80" cy="230" r="3" class="dot-voice-3"/>
+        <circle cx="20" cy="260" r="3" class="dot-voice-3"/><circle cx="50" cy="260" r="3" class="dot-voice-3"/><circle cx="80" cy="260" r="3" class="dot-voice-3"/>
+        <!-- Bottom-right quadrant: Voice 4 Blue -->
+        <circle cx="200" cy="200" r="3" class="dot-voice-4"/><circle cx="230" cy="200" r="3" class="dot-voice-4"/><circle cx="260" cy="200" r="3" class="dot-voice-4"/>
+        <circle cx="200" cy="230" r="3" class="dot-voice-4"/><circle cx="230" cy="230" r="3" class="dot-voice-4"/><circle cx="260" cy="230" r="3" class="dot-voice-4"/>
+        <circle cx="200" cy="260" r="3" class="dot-voice-4"/><circle cx="230" cy="260" r="3" class="dot-voice-4"/><circle cx="260" cy="260" r="3" class="dot-voice-4"/>
+    </svg>
+
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="title-main">Romper</span>
+            </h1>
+            <p class="hero-subtitle">Sample kit manager for the Squarp Rample</p>
+            <p class="hero-description">
+                Browse 26 banks of kits. Audition all 4 voices. Drag in new samples. Sync to SD card. Done.
+            </p>
+
+            <div class="hero-cta">
+                <a href="https://github.com/peteb4ker/romper/releases" class="cta-button primary" id="download-btn">
+                    Download for <span id="platform">Your Platform</span>
+                </a>
+                <a href="https://github.com/peteb4ker/romper" class="cta-button secondary">
+                    View on GitHub
+                </a>
             </div>
         </div>
-    </header>
 
-    <main id="main-content">
-        <!-- Hero Section -->
-        <section class="hero">
-            <!-- Decorative dot grid (4-quadrant, app-icon inspired) -->
-            <svg class="hero-dot-grid" width="280" height="280" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <!-- Top-left quadrant -->
-                <circle cx="20" cy="20" r="3" fill="#ef4444"/><circle cx="50" cy="20" r="3" fill="#ef4444"/><circle cx="80" cy="20" r="3" fill="#ef4444"/>
-                <circle cx="20" cy="50" r="3" fill="#ef4444"/><circle cx="50" cy="50" r="3" fill="#ef4444"/><circle cx="80" cy="50" r="3" fill="#ef4444"/>
-                <circle cx="20" cy="80" r="3" fill="#ef4444"/><circle cx="50" cy="80" r="3" fill="#ef4444"/><circle cx="80" cy="80" r="3" fill="#ef4444"/>
-                <!-- Top-right quadrant -->
-                <circle cx="200" cy="20" r="3" fill="#ef4444"/><circle cx="230" cy="20" r="3" fill="#ef4444"/><circle cx="260" cy="20" r="3" fill="#ef4444"/>
-                <circle cx="200" cy="50" r="3" fill="#ef4444"/><circle cx="230" cy="50" r="3" fill="#ef4444"/><circle cx="260" cy="50" r="3" fill="#ef4444"/>
-                <circle cx="200" cy="80" r="3" fill="#ef4444"/><circle cx="230" cy="80" r="3" fill="#ef4444"/><circle cx="260" cy="80" r="3" fill="#ef4444"/>
-                <!-- Bottom-left quadrant -->
-                <circle cx="20" cy="200" r="3" fill="#ef4444"/><circle cx="50" cy="200" r="3" fill="#ef4444"/><circle cx="80" cy="200" r="3" fill="#ef4444"/>
-                <circle cx="20" cy="230" r="3" fill="#ef4444"/><circle cx="50" cy="230" r="3" fill="#ef4444"/><circle cx="80" cy="230" r="3" fill="#ef4444"/>
-                <circle cx="20" cy="260" r="3" fill="#ef4444"/><circle cx="50" cy="260" r="3" fill="#ef4444"/><circle cx="80" cy="260" r="3" fill="#ef4444"/>
-                <!-- Bottom-right quadrant -->
-                <circle cx="200" cy="200" r="3" fill="#ef4444"/><circle cx="230" cy="200" r="3" fill="#ef4444"/><circle cx="260" cy="200" r="3" fill="#ef4444"/>
-                <circle cx="200" cy="230" r="3" fill="#ef4444"/><circle cx="230" cy="230" r="3" fill="#ef4444"/><circle cx="260" cy="230" r="3" fill="#ef4444"/>
-                <circle cx="200" cy="260" r="3" fill="#ef4444"/><circle cx="230" cy="260" r="3" fill="#ef4444"/><circle cx="260" cy="260" r="3" fill="#ef4444"/>
+        <div class="hero-visual">
+            <div class="app-screenshot">
+                <img src="{{ site.baseurl }}/images/app-screenshot.png" alt="Romper showing the kit browser with 26 banks of sample kits" class="screenshot-main">
+            </div>
+            <!-- Decorative waveform using voice-4 blue -->
+            <svg class="hero-waveform" width="320" height="32" viewBox="0 0 320 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect x="10" y="10" width="4" height="12" rx="2" class="bar-voice-4"/>
+                <rect x="22" y="6" width="4" height="20" rx="2" class="bar-voice-4"/>
+                <rect x="34" y="2" width="4" height="28" rx="2" class="bar-voice-4"/>
+                <rect x="46" y="8" width="4" height="16" rx="2" class="bar-voice-4"/>
+                <rect x="58" y="4" width="4" height="24" rx="2" class="bar-voice-4"/>
+                <rect x="70" y="11" width="4" height="10" rx="2" class="bar-voice-4"/>
+                <rect x="82" y="6" width="4" height="20" rx="2" class="bar-voice-4"/>
+                <rect x="94" y="3" width="4" height="26" rx="2" class="bar-voice-4"/>
+                <rect x="106" y="9" width="4" height="14" rx="2" class="bar-voice-4"/>
+                <rect x="118" y="5" width="4" height="22" rx="2" class="bar-voice-4"/>
+                <rect x="130" y="12" width="4" height="8" rx="2" class="bar-voice-4"/>
+                <rect x="142" y="7" width="4" height="18" rx="2" class="bar-voice-4"/>
+                <rect x="154" y="1" width="4" height="30" rx="2" class="bar-voice-4"/>
+                <rect x="166" y="8" width="4" height="16" rx="2" class="bar-voice-4"/>
+                <rect x="178" y="4" width="4" height="24" rx="2" class="bar-voice-4"/>
+                <rect x="190" y="10" width="4" height="12" rx="2" class="bar-voice-4"/>
+                <rect x="202" y="6" width="4" height="20" rx="2" class="bar-voice-4"/>
+                <rect x="214" y="3" width="4" height="26" rx="2" class="bar-voice-4"/>
+                <rect x="226" y="9" width="4" height="14" rx="2" class="bar-voice-4"/>
+                <rect x="238" y="5" width="4" height="22" rx="2" class="bar-voice-4"/>
+                <rect x="250" y="11" width="4" height="10" rx="2" class="bar-voice-4"/>
+                <rect x="262" y="7" width="4" height="18" rx="2" class="bar-voice-4"/>
+                <rect x="274" y="2" width="4" height="28" rx="2" class="bar-voice-4"/>
+                <rect x="286" y="8" width="4" height="16" rx="2" class="bar-voice-4"/>
+                <rect x="298" y="10" width="4" height="12" rx="2" class="bar-voice-4"/>
+                <rect x="310" y="12" width="4" height="8" rx="2" class="bar-voice-4"/>
             </svg>
+        </div>
+    </div>
+</section>
 
-            <div class="container">
-                <div class="hero-content">
-                    <h1 class="hero-title">
-                        <span class="title-main">Romper</span>
-                    </h1>
-                    <p class="hero-subtitle">Sample kit manager for the Squarp Rample</p>
-                    <p class="hero-description">
-                        Browse 26 banks of kits. Audition all 4 voices. Drag in new samples. Sync to SD card. Done.
-                    </p>
+<!-- Rample Context -->
+<section class="rample-context">
+    <div class="container">
+        <p class="context-text">
+            The <a href="https://squarp.net/rample" class="context-link">Squarp Rample</a> is a 4-voice eurorack sample player with 26 kit banks on an SD card. Romper gives you a visual desktop interface to manage that folder structure for you.
+        </p>
+    </div>
+</section>
 
-                    <div class="hero-cta">
-                        <a href="https://github.com/peteb4ker/romper/releases" class="cta-button primary" id="download-btn">
-                            Download for <span id="platform">Your Platform</span>
-                        </a>
-                        <a href="https://github.com/peteb4ker/romper" class="cta-button secondary">
-                            View on GitHub
-                        </a>
-                    </div>
-                </div>
-
-                <div class="hero-visual">
-                    <div class="app-screenshot">
-                        <img src="images/app-screenshot.png" alt="Romper showing the kit browser with 26 banks of sample kits" class="screenshot-main">
-                    </div>
-                    <!-- Decorative waveform -->
-                    <svg class="hero-waveform" width="320" height="32" viewBox="0 0 320 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <rect x="10" y="10" width="4" height="12" rx="2" fill="#3b82f6"/>
-                        <rect x="22" y="6" width="4" height="20" rx="2" fill="#3b82f6"/>
-                        <rect x="34" y="2" width="4" height="28" rx="2" fill="#3b82f6"/>
-                        <rect x="46" y="8" width="4" height="16" rx="2" fill="#3b82f6"/>
-                        <rect x="58" y="4" width="4" height="24" rx="2" fill="#3b82f6"/>
-                        <rect x="70" y="11" width="4" height="10" rx="2" fill="#3b82f6"/>
-                        <rect x="82" y="6" width="4" height="20" rx="2" fill="#3b82f6"/>
-                        <rect x="94" y="3" width="4" height="26" rx="2" fill="#3b82f6"/>
-                        <rect x="106" y="9" width="4" height="14" rx="2" fill="#3b82f6"/>
-                        <rect x="118" y="5" width="4" height="22" rx="2" fill="#3b82f6"/>
-                        <rect x="130" y="12" width="4" height="8" rx="2" fill="#3b82f6"/>
-                        <rect x="142" y="7" width="4" height="18" rx="2" fill="#3b82f6"/>
-                        <rect x="154" y="1" width="4" height="30" rx="2" fill="#3b82f6"/>
-                        <rect x="166" y="8" width="4" height="16" rx="2" fill="#3b82f6"/>
-                        <rect x="178" y="4" width="4" height="24" rx="2" fill="#3b82f6"/>
-                        <rect x="190" y="10" width="4" height="12" rx="2" fill="#3b82f6"/>
-                        <rect x="202" y="6" width="4" height="20" rx="2" fill="#3b82f6"/>
-                        <rect x="214" y="3" width="4" height="26" rx="2" fill="#3b82f6"/>
-                        <rect x="226" y="9" width="4" height="14" rx="2" fill="#3b82f6"/>
-                        <rect x="238" y="5" width="4" height="22" rx="2" fill="#3b82f6"/>
-                        <rect x="250" y="11" width="4" height="10" rx="2" fill="#3b82f6"/>
-                        <rect x="262" y="7" width="4" height="18" rx="2" fill="#3b82f6"/>
-                        <rect x="274" y="2" width="4" height="28" rx="2" fill="#3b82f6"/>
-                        <rect x="286" y="8" width="4" height="16" rx="2" fill="#3b82f6"/>
-                        <rect x="298" y="10" width="4" height="12" rx="2" fill="#3b82f6"/>
-                        <rect x="310" y="12" width="4" height="8" rx="2" fill="#3b82f6"/>
+<!-- Features Section -->
+<section class="features">
+    <div class="container">
+        <div class="features-grid">
+            <div class="feature fade-in">
+                <div class="feature-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="4" y="4" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                        <rect x="27" y="4" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                        <rect x="4" y="27" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                        <rect x="27" y="27" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                        <circle cx="12.5" cy="12.5" r="3" fill="currentColor"/>
+                        <circle cx="35.5" cy="12.5" r="3" fill="currentColor"/>
+                        <circle cx="12.5" cy="35.5" r="3" fill="currentColor"/>
+                        <circle cx="35.5" cy="35.5" r="3" fill="currentColor"/>
                     </svg>
                 </div>
-            </div>
-        </section>
-
-        <!-- Rample Context -->
-        <section class="rample-context">
-            <div class="container">
-                <p class="context-text">
-                    The <a href="https://squarp.net/rample" class="context-link">Squarp Rample</a> is a 4-voice eurorack sample player with 26 kit banks on an SD card. Managing the folder structure by hand is tedious and error-prone &mdash; Romper gives you a proper desktop interface for it.
+                <h3 class="feature-title">All 26 Banks at a Glance</h3>
+                <p class="feature-description">
+                    See every kit across banks A&ndash;Z with 4 voice slots per card. Color-coded sync status shows you what's changed at a glance.
                 </p>
             </div>
-        </section>
 
-        <!-- Features Section -->
-        <section class="features">
-            <div class="container">
-                <div class="features-grid">
-                    <div class="feature fade-in">
-                        <div class="feature-icon">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <rect x="4" y="4" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
-                                <rect x="27" y="4" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
-                                <rect x="4" y="27" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
-                                <rect x="27" y="27" width="17" height="17" rx="3" stroke="currentColor" stroke-width="2.5"/>
-                                <circle cx="12.5" cy="12.5" r="3" fill="currentColor"/>
-                                <circle cx="35.5" cy="12.5" r="3" fill="currentColor"/>
-                                <circle cx="12.5" cy="35.5" r="3" fill="currentColor"/>
-                                <circle cx="35.5" cy="35.5" r="3" fill="currentColor"/>
-                            </svg>
-                        </div>
-                        <h3 class="feature-title">All 26 Banks at a Glance</h3>
-                        <p class="feature-description">
-                            See every kit across banks A&ndash;Z with 4 voice slots per card. Color-coded sync status shows you what's changed at a glance.
-                        </p>
-                    </div>
-
-                    <div class="feature fade-in">
-                        <div class="feature-icon">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <path d="M8 36V12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <path d="M16 30V18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <path d="M24 38V10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <path d="M32 32V16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <path d="M40 28V20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <circle cx="8" cy="12" r="3" fill="currentColor"/>
-                                <circle cx="16" cy="18" r="3" fill="currentColor"/>
-                                <circle cx="24" cy="10" r="3" fill="currentColor"/>
-                                <circle cx="32" cy="16" r="3" fill="currentColor"/>
-                                <circle cx="40" cy="20" r="3" fill="currentColor"/>
-                            </svg>
-                        </div>
-                        <h3 class="feature-title">Audition Before You Sync</h3>
-                        <p class="feature-description">
-                            Play samples directly in the app. Use the built-in XOX step sequencer to hear all 4 voices together before committing to your SD card.
-                        </p>
-                    </div>
-
-                    <div class="feature fade-in">
-                        <div class="feature-icon">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <rect x="8" y="6" width="32" height="10" rx="3" stroke="currentColor" stroke-width="2.5"/>
-                                <rect x="8" y="32" width="32" height="10" rx="3" stroke="currentColor" stroke-width="2.5"/>
-                                <path d="M24 16V32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 4"/>
-                                <path d="M18 28L24 32L30 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                <circle cx="14" cy="11" r="2" fill="currentColor"/>
-                                <circle cx="14" cy="37" r="2" fill="currentColor"/>
-                            </svg>
-                        </div>
-                        <h3 class="feature-title">Drag, Drop, Done</h3>
-                        <p class="feature-description">
-                            Drag .wav files onto voice slots. Romper handles folder naming, supports up to 12 layers per voice, and works with mono and stereo samples.
-                        </p>
-                    </div>
-
-                    <div class="feature fade-in">
-                        <div class="feature-icon">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <rect x="12" y="6" width="24" height="32" rx="4" stroke="currentColor" stroke-width="2.5"/>
-                                <rect x="18" y="12" width="12" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
-                                <line x1="18" y1="26" x2="30" y2="26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <line x1="18" y1="30" x2="26" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M20 42L24 38L28 42" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <h3 class="feature-title">Safe SD Card Sync</h3>
-                        <p class="feature-description">
-                            Non-destructive reference-based editing. Samples only copy on sync. Automatic backup and validation keep your card safe.
-                        </p>
-                    </div>
+            <div class="feature fade-in">
+                <div class="feature-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M8 36V12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M16 30V18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M24 38V10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M32 32V16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M40 28V20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <circle cx="8" cy="12" r="3" fill="currentColor"/>
+                        <circle cx="16" cy="18" r="3" fill="currentColor"/>
+                        <circle cx="24" cy="10" r="3" fill="currentColor"/>
+                        <circle cx="32" cy="16" r="3" fill="currentColor"/>
+                        <circle cx="40" cy="20" r="3" fill="currentColor"/>
+                    </svg>
                 </div>
+                <h3 class="feature-title">Audition Before You Sync</h3>
+                <p class="feature-description">
+                    Play samples directly in the app. Use the built-in XOX step sequencer to hear all 4 voices together before committing to your SD card.
+                </p>
             </div>
-        </section>
 
-        <!-- Sequencer Divider -->
-        <div class="sequencer-divider" aria-hidden="true">
-            <span class="seq-dot seq-dot--red"></span>
-            <span class="seq-dot seq-dot--green"></span>
-            <span class="seq-dot seq-dot--yellow"></span>
-            <span class="seq-dot seq-dot--purple"></span>
+            <div class="feature fade-in">
+                <div class="feature-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="8" y="6" width="32" height="10" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                        <rect x="8" y="32" width="32" height="10" rx="3" stroke="currentColor" stroke-width="2.5"/>
+                        <path d="M24 16V32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 4"/>
+                        <path d="M18 28L24 32L30 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="14" cy="11" r="2" fill="currentColor"/>
+                        <circle cx="14" cy="37" r="2" fill="currentColor"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Drag, Drop, Done</h3>
+                <p class="feature-description">
+                    Drag .wav files onto voice slots. Romper handles folder naming, supports up to 12 layers per voice, and works with mono and stereo samples.
+                </p>
+            </div>
+
+            <div class="feature fade-in">
+                <div class="feature-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="12" y="6" width="24" height="32" rx="4" stroke="currentColor" stroke-width="2.5"/>
+                        <rect x="18" y="12" width="12" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <line x1="18" y1="26" x2="30" y2="26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="18" y1="30" x2="26" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M20 42L24 38L28 42" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Safe SD Card Sync</h3>
+                <p class="feature-description">
+                    Non-destructive reference-based editing. Samples only copy on sync. Automatic backup and validation keep your card safe.
+                </p>
+            </div>
         </div>
+    </div>
+</section>
 
-        <!-- How It Works Section -->
-        <section class="how-it-works">
-            <div class="container">
-                <h2 class="section-title">How It Works</h2>
-                <div class="steps">
-                    <div class="step fade-in">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <h3 class="step-title">Point Romper at Your SD Card</h3>
-                            <p class="step-description">
-                                Romper reads the existing Rample folder structure and imports your kits automatically. Start from your current SD card, factory samples, or a blank library.
-                            </p>
-                        </div>
-                    </div>
+<!-- Sequencer Divider -->
+<div class="sequencer-divider" aria-hidden="true">
+    <span class="seq-dot seq-dot--voice-1"></span>
+    <span class="seq-dot seq-dot--voice-2"></span>
+    <span class="seq-dot seq-dot--voice-3"></span>
+    <span class="seq-dot seq-dot--voice-4"></span>
+</div>
 
-                    <div class="step fade-in">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h3 class="step-title">Build and Audition Kits</h3>
-                            <p class="step-description">
-                                Each kit has the familiar 4-voice layout with up to 12 sample slots per voice. Drag samples in, rearrange, and preview with the built-in step sequencer.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="step fade-in">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h3 class="step-title">Sync and Play</h3>
-                            <p class="step-description">
-                                Sync validates your kits, converts formats if needed, creates a backup, and writes to the SD card. Eject, slot it into your Rample, and go.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Sequencer Divider -->
-        <div class="sequencer-divider" aria-hidden="true">
-            <span class="seq-dot seq-dot--red"></span>
-            <span class="seq-dot seq-dot--green"></span>
-            <span class="seq-dot seq-dot--yellow"></span>
-            <span class="seq-dot seq-dot--purple"></span>
-        </div>
-
-        <!-- Screenshots Section — Two Views -->
-        <section class="screenshots">
-            <div class="container">
-                <h2 class="section-title">Two Views, Full Control</h2>
-                <div class="screenshot-gallery">
-                    <div class="screenshot-card fade-in">
-                        <img src="images/app-screenshot.png" alt="Kit browser showing all 26 banks with color-coded sync status">
-                        <div class="screenshot-card-body">
-                            <h3 class="screenshot-card-title">Kit Browser</h3>
-                            <p class="screenshot-card-caption">All 26 banks at a glance with color-coded sync status and 4-voice previews per card.</p>
-                        </div>
-                    </div>
-                    <div class="screenshot-card fade-in">
-                        <img src="images/kit-details.png" alt="Kit detail view showing 4 voice slots with sample layers">
-                        <div class="screenshot-card-body">
-                            <h3 class="screenshot-card-title">Kit Details</h3>
-                            <p class="screenshot-card-caption">4 voice slots, sample layers, and a built-in XOX step sequencer to audition kits.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Capabilities Section (replaces feature pills) -->
-        <section class="capabilities">
-            <div class="container">
-                <h2 class="section-title">Built for the Rample</h2>
-                <div class="capabilities-grid">
-                    <div class="capability">
-                        <div class="capability-dot capability-dot--red"></div>
-                        <div>
-                            <div class="capability-label">Cross-platform</div>
-                            <div class="capability-desc">macOS, Windows, Linux</div>
-                        </div>
-                    </div>
-                    <div class="capability">
-                        <div class="capability-dot capability-dot--green"></div>
-                        <div>
-                            <div class="capability-label">XOX Sequencer</div>
-                            <div class="capability-desc">Audition all 4 voices</div>
-                        </div>
-                    </div>
-                    <div class="capability">
-                        <div class="capability-dot capability-dot--yellow"></div>
-                        <div>
-                            <div class="capability-label">Non-destructive</div>
-                            <div class="capability-desc">Reference-only editing</div>
-                        </div>
-                    </div>
-                    <div class="capability">
-                        <div class="capability-dot capability-dot--purple"></div>
-                        <div>
-                            <div class="capability-label">Stereo Samples</div>
-                            <div class="capability-desc">Mono &amp; stereo .wav</div>
-                        </div>
-                    </div>
-                    <div class="capability">
-                        <div class="capability-dot capability-dot--red"></div>
-                        <div>
-                            <div class="capability-label">Keyboard Shortcuts</div>
-                            <div class="capability-desc">Fast workflow navigation</div>
-                        </div>
-                    </div>
-                    <div class="capability">
-                        <div class="capability-dot capability-dot--green"></div>
-                        <div>
-                            <div class="capability-label">Dark &amp; Light</div>
-                            <div class="capability-desc">System-matched themes</div>
-                        </div>
-                    </div>
-                    <div class="capability">
-                        <div class="capability-dot capability-dot--yellow"></div>
-                        <div>
-                            <div class="capability-label">Factory Import</div>
-                            <div class="capability-desc">Start from stock kits</div>
-                        </div>
-                    </div>
-                    <div class="capability">
-                        <div class="capability-dot capability-dot--purple"></div>
-                        <div>
-                            <div class="capability-label">Open Source</div>
-                            <div class="capability-desc">MIT licensed, free forever</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Download Section -->
-        <section class="download">
-            <div class="container">
-                <div class="download-content">
-                    <h2 class="section-title">Download Romper</h2>
-                    <p class="download-description">
-                        Free and open source. Available for macOS, Windows, and Linux.
+<!-- How It Works Section -->
+<section class="how-it-works">
+    <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <div class="steps">
+            <div class="step fade-in">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3 class="step-title">Point Romper at Your SD Card</h3>
+                    <p class="step-description">
+                        Romper reads the existing Rample folder structure and imports your kits automatically. Start from your current SD card, factory samples, or a blank library.
                     </p>
-
-                    <div class="download-buttons">
-                        <a href="https://github.com/peteb4ker/romper/releases" class="download-btn">
-                            <span class="download-platform">Latest Release</span>
-                            <span class="download-note">All Platforms</span>
-                        </a>
-                    </div>
-
-                    <div class="user-docs">
-                        <div class="user-docs-header">
-                            <svg class="user-docs-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <path d="M3 2.5A1.5 1.5 0 014.5 1h9A1.5 1.5 0 0115 2.5v13a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 013 15.5v-13z" stroke="currentColor" stroke-width="1.5"/>
-                                <path d="M6 5h6M6 8h6M6 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                            <h3 class="user-docs-title">User Guide</h3>
-                            <a href="https://github.com/peteb4ker/romper/tree/main/docs/user" class="github-badge" target="_blank" rel="noopener" aria-label="View on GitHub">
-                                <img src="https://img.shields.io/badge/on-GitHub-1e293b?logo=github&color=334155&labelColor=1e293b" alt="on GitHub">
-                            </a>
-                        </div>
-                        <div class="user-docs-links">
-                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/getting-started.md" class="doc-link" target="_blank" rel="noopener">Getting Started</a>
-                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/kit-browser.md" class="doc-link" target="_blank" rel="noopener">Kit Browser</a>
-                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/kit-details.md" class="doc-link" target="_blank" rel="noopener">Kit Details</a>
-                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/syncing.md" class="doc-link" target="_blank" rel="noopener">Syncing</a>
-                            <a href="https://github.com/peteb4ker/romper/blob/main/docs/user/keyboard-shortcuts.md" class="doc-link" target="_blank" rel="noopener">Keyboard Shortcuts</a>
-                        </div>
-                    </div>
-
-                    <div class="download-links">
-                        <a href="https://github.com/peteb4ker/romper" class="download-link">Source Code</a>
-                        <span class="separator">&bull;</span>
-                        <a href="https://squarp.net/rample" class="download-link">About Squarp Rample</a>
-                    </div>
                 </div>
             </div>
-        </section>
-    </main>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <p class="footer-text">
-                    Built for <a href="https://squarp.net/rample" class="footer-link">Squarp Rample</a> users
-                </p>
-                <p class="footer-text">
-                    <a href="https://github.com/peteb4ker/romper" class="footer-link">Open Source</a> &bull; MIT License
-                </p>
-                <p class="footer-text footer-disclaimer">
-                    Not affiliated with Squarp. This is an open source community project.
-                </p>
+            <div class="step fade-in">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3 class="step-title">Build and Audition Kits</h3>
+                    <p class="step-description">
+                        Each kit has the familiar 4-voice layout with up to 12 sample slots per voice. Drag samples in, rearrange, and preview with the built-in step sequencer.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step fade-in">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3 class="step-title">Sync and Play</h3>
+                    <p class="step-description">
+                        Sync validates your kits, converts formats if needed, creates a backup, and writes to the SD card. Eject, slot it into your Rample, and go.
+                    </p>
+                </div>
             </div>
         </div>
-    </footer>
+    </div>
+</section>
 
-    <script src="script.js"></script>
-</body>
-</html>
+<!-- Sequencer Divider -->
+<div class="sequencer-divider" aria-hidden="true">
+    <span class="seq-dot seq-dot--voice-1"></span>
+    <span class="seq-dot seq-dot--voice-2"></span>
+    <span class="seq-dot seq-dot--voice-3"></span>
+    <span class="seq-dot seq-dot--voice-4"></span>
+</div>
+
+<!-- Screenshots Section -->
+<section class="screenshots">
+    <div class="container">
+        <h2 class="section-title">Two Views, Full Control</h2>
+        <div class="screenshot-gallery">
+            <div class="screenshot-card fade-in">
+                <img src="{{ site.baseurl }}/images/app-screenshot.png" alt="Kit browser showing all 26 banks with color-coded sync status">
+                <div class="screenshot-card-body">
+                    <h3 class="screenshot-card-title">Kit Browser</h3>
+                    <p class="screenshot-card-caption">All 26 banks at a glance with color-coded sync status and 4-voice previews per card.</p>
+                </div>
+            </div>
+            <div class="screenshot-card fade-in">
+                <img src="{{ site.baseurl }}/images/kit-details.png" alt="Kit detail view showing 4 voice slots with sample layers">
+                <div class="screenshot-card-body">
+                    <h3 class="screenshot-card-title">Kit Details</h3>
+                    <p class="screenshot-card-caption">4 voice slots, sample layers, and a built-in XOX step sequencer to audition kits.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Capabilities Section -->
+<section class="capabilities">
+    <div class="container">
+        <h2 class="section-title">Built for the Rample</h2>
+        <div class="capabilities-grid">
+            <div class="capability">
+                <div class="capability-dot capability-dot--voice-1"></div>
+                <div>
+                    <div class="capability-label">Cross-platform</div>
+                    <div class="capability-desc">macOS, Windows, Linux</div>
+                </div>
+            </div>
+            <div class="capability">
+                <div class="capability-dot capability-dot--voice-2"></div>
+                <div>
+                    <div class="capability-label">XOX Sequencer</div>
+                    <div class="capability-desc">Audition all 4 voices</div>
+                </div>
+            </div>
+            <div class="capability">
+                <div class="capability-dot capability-dot--voice-3"></div>
+                <div>
+                    <div class="capability-label">Non-destructive</div>
+                    <div class="capability-desc">Reference-only editing</div>
+                </div>
+            </div>
+            <div class="capability">
+                <div class="capability-dot capability-dot--voice-4"></div>
+                <div>
+                    <div class="capability-label">Stereo Samples</div>
+                    <div class="capability-desc">Mono &amp; stereo .wav</div>
+                </div>
+            </div>
+            <div class="capability">
+                <div class="capability-dot capability-dot--voice-1"></div>
+                <div>
+                    <div class="capability-label">Keyboard Shortcuts</div>
+                    <div class="capability-desc">Fast workflow navigation</div>
+                </div>
+            </div>
+            <div class="capability">
+                <div class="capability-dot capability-dot--voice-2"></div>
+                <div>
+                    <div class="capability-label">Dark &amp; Light</div>
+                    <div class="capability-desc">System-matched themes</div>
+                </div>
+            </div>
+            <div class="capability">
+                <div class="capability-dot capability-dot--voice-3"></div>
+                <div>
+                    <div class="capability-label">Factory Import</div>
+                    <div class="capability-desc">Start from stock kits</div>
+                </div>
+            </div>
+            <div class="capability">
+                <div class="capability-dot capability-dot--voice-4"></div>
+                <div>
+                    <div class="capability-label">Open Source</div>
+                    <div class="capability-desc">MIT licensed, free forever</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Download Section -->
+<section class="download">
+    <div class="container">
+        <div class="download-content">
+            <h2 class="section-title">Download Romper</h2>
+            <p class="download-description">
+                Free and open source. Available for macOS, Windows, and Linux.
+            </p>
+
+            <div class="download-buttons">
+                <a href="https://github.com/peteb4ker/romper/releases" class="download-btn">
+                    <span class="download-platform">Latest Release</span>
+                    <span class="download-note">All Platforms</span>
+                </a>
+            </div>
+
+            <div class="user-docs">
+                <div class="user-docs-header">
+                    <svg class="user-docs-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M3 2.5A1.5 1.5 0 014.5 1h9A1.5 1.5 0 0115 2.5v13a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 013 15.5v-13z" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M6 5h6M6 8h6M6 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <h3 class="user-docs-title">User Guide</h3>
+                    <a href="{{ site.baseurl }}/manual/" class="doc-link">Read the Manual</a>
+                </div>
+            </div>
+
+            <div class="download-links">
+                <a href="https://github.com/peteb4ker/romper" class="download-link">Source Code</a>
+                <span class="separator">&bull;</span>
+                <a href="https://squarp.net/rample" class="download-link">About Squarp Rample</a>
+            </div>
+        </div>
+    </div>
+</section>

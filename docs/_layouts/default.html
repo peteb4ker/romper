@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if page.title and page.title != "Home" %}{{ page.title }} - {% endif %}{{ site.title }}</title>
+    <meta name="description" content="{{ page.description | default: site.description }}">
+    <meta property="og:title" content="{% if page.title %}{{ page.title }} - {% endif %}{{ site.title }}">
+    <meta property="og:description" content="{{ page.description | default: site.description }}">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{{ site.baseurl }}/images/app-screenshot.png">
+    <link rel="stylesheet" href="{{ site.baseurl }}/styles.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ site.baseurl }}/images/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ site.baseurl }}/images/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ site.baseurl }}/images/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
+
+    <header class="header">
+        <div class="container">
+            <div class="nav">
+                <a href="{{ site.baseurl }}/" class="logo">
+                    <img src="{{ site.baseurl }}/images/app-icon.png" alt="" class="logo-icon">
+                    <span class="logo-text">Romper</span>
+                </a>
+                <nav class="nav-links">
+                    <a href="{{ site.baseurl }}/manual/" class="nav-link{% if page.layout == 'manual' %} nav-link--active{% endif %}">Manual</a>
+                    <a href="https://github.com/peteb4ker/romper" class="nav-link">GitHub</a>
+                    <a href="https://github.com/peteb4ker/romper/releases" class="nav-link">Releases</a>
+                    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
+                        <svg class="theme-toggle-icon theme-toggle-icon--light" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <circle cx="9" cy="9" r="4" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M9 1.5V3M9 15v1.5M1.5 9H3M15 9h1.5M3.7 3.7l1.06 1.06M13.24 13.24l1.06 1.06M3.7 14.3l1.06-1.06M13.24 4.76l1.06-1.06" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        <svg class="theme-toggle-icon theme-toggle-icon--dark" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M15.5 10.4A6.5 6.5 0 017.6 2.5a7 7 0 107.9 7.9z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content">
+        {{ content }}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p class="footer-text">
+                    Built for <a href="https://squarp.net/rample" class="footer-link">Squarp Rample</a> users
+                </p>
+                <p class="footer-text">
+                    <a href="https://github.com/peteb4ker/romper" class="footer-link">Open Source</a> &bull; MIT License
+                </p>
+                <p class="footer-text footer-disclaimer">
+                    Not affiliated with Squarp. This is an open source community project.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ site.baseurl }}/script.js"></script>
+</body>
+</html>

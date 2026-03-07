@@ -160,7 +160,10 @@ const KitHeader: React.FC<KitHeaderProps> = ({
       : null;
 
   return (
-    <div className="sticky top-0 z-10 bg-surface-2 px-3 py-2 flex items-center gap-2 border-b border-border-subtle">
+    <div
+      className="sticky top-0 z-10 bg-surface-2 px-3 py-2 flex items-center gap-2 border-b border-border-subtle"
+      data-testid="kit-header"
+    >
       {/* App Icon */}
       <LedIconGrid />
 

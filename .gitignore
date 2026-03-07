@@ -14,6 +14,10 @@ dist/
 build/
 out/
 *.tsbuildinfo
+_site/
+_site_preview/
+docs/_site/
+docs/.jekyll-cache/
 
 # Dependency directories
 .DS_Store

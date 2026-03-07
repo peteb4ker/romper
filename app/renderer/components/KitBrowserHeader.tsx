@@ -30,7 +30,10 @@ interface KitBrowserHeaderProps {
 
 const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
   return (
-    <div className="sticky top-0 z-10 bg-surface-2 px-3 py-2 flex items-center gap-2 border-b border-border-subtle">
+    <div
+      className="sticky top-0 z-10 bg-surface-2 px-3 py-2 flex items-center gap-2 border-b border-border-subtle"
+      data-testid="kit-browser-header"
+    >
       {/* App Icon */}
       <LedIconGrid onClick={props.onAboutClick} />
 

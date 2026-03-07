@@ -9,6 +9,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 
 import type { SampleMode } from "./hooks/shared/stepPatternConstants";
+import type { StereoLinks } from "./KitStepSequencer";
 
 import {
   type FocusedStep,
@@ -210,6 +211,7 @@ interface StepSequencerGridProps {
   safeStepPattern: number[][];
   sampleModes?: Record<number, SampleMode>;
   setFocusedStep: (step: FocusedStep) => void;
+  stereoLinks?: StereoLinks;
   toggleStep: (voiceIdx: number, stepIdx: number) => void;
   triggerConditions?: (null | string)[][];
   voiceMutes?: Record<number, boolean>;
@@ -233,6 +235,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   safeStepPattern,
   sampleModes = {},
   setFocusedStep,
+  stereoLinks,
   toggleStep,
   triggerConditions,
   voiceMutes = {},
@@ -269,6 +272,9 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
     setPopover({ stepIdx, voiceIdx, x: e.clientX, y: e.clientY });
   };
 
+  // Fixed height: 4 rows * 32px (h-8) + 3 gaps * 8px (gap-2) = 152px
+  const GRID_HEIGHT = 152;
+
   return (
     <div
       aria-label="Step sequencer grid"
@@ -277,29 +283,42 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
       onKeyDown={handleStepGridKeyDown}
       ref={gridRef}
       role="grid"
-      style={{ outline: "none" }}
+      style={{ height: GRID_HEIGHT, outline: "none" }}
       tabIndex={0}
     >
       {Array.from({ length: NUM_VOICES }, (_, index) => index).map(
         (voiceIdx) => {
           const voiceNumber = voiceIdx + 1;
+          const isLinkedSecondary =
+            stereoLinks?.linkedSecondaries.has(voiceNumber) ?? false;
+
           const volume = voiceVolumes[voiceNumber] ?? 100;
           const mode = sampleModes[voiceNumber] || "first";
           const isMuted = voiceMutes[voiceNumber] ?? false;
+          const voiceLabel =
+            stereoLinks?.primaryLabels[voiceNumber] ?? voiceNumber;
 
           return (
             <div
-              className={`flex flex-row items-center${isMuted ? " opacity-40" : ""}`}
-              data-testid={`seq-row-${voiceIdx}`}
+              aria-hidden={isLinkedSecondary || undefined}
+              className={`flex flex-row items-center transition-all duration-300 ease-in-out overflow-hidden${isMuted && !isLinkedSecondary ? " opacity-40" : ""}`}
+              data-testid={
+                isLinkedSecondary ? undefined : `seq-row-${voiceIdx}`
+              }
               key={`seq-row-voice-${voiceIdx}`}
-              role="row"
+              role={isLinkedSecondary ? undefined : "row"}
+              style={
+                isLinkedSecondary
+                  ? { height: 0, marginTop: -8, opacity: 0 }
+                  : { height: 32 }
+              }
             >
               {/* Voice label */}
               <span
                 className={`flex items-center justify-center w-7 h-7 min-w-7 text-center text-xs font-bold rounded ${VOICE_BG_COLORS[voiceIdx] || "bg-surface-3"} text-text-primary border border-border-strong mr-1.5`}
                 data-testid={`seq-voice-label-${voiceIdx}`}
               >
-                {voiceNumber}
+                {voiceLabel}
               </span>
 
               {/* Step buttons with beat-group dividers every 4 steps */}

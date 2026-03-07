@@ -448,4 +448,130 @@ describe("KitStepSequencer", () => {
       expect(onVoiceSettingChanged).toHaveBeenCalledTimes(1);
     }
   });
+
+  describe("Stereo linking", () => {
+    it("hides secondary voice row when voices are stereo-linked", () => {
+      render(
+        <KitStepSequencer
+          bpm={120}
+          kitName="TestKit"
+          onPlaySample={onPlaySample}
+          samples={defaultSamples}
+          sequencerOpen={true}
+          setSequencerOpen={setSequencerOpen}
+          setStepPattern={setStepPattern}
+          setTriggerConditions={vi.fn()}
+          stepPattern={stepPattern}
+          triggerConditions={Array.from({ length: 4 }, () =>
+            Array(16).fill(null),
+          )}
+          voices={[
+            { stereo_mode: true, voice_number: 1, voice_volume: 100 },
+            { voice_number: 2, voice_volume: 100 },
+            { voice_number: 3, voice_volume: 100 },
+            { voice_number: 4, voice_volume: 100 },
+          ]}
+        />,
+      );
+
+      // Voice 1 (primary) row should be visible
+      expect(screen.getByTestId("seq-row-0")).toBeInTheDocument();
+      // Voice 2 (secondary) row should be hidden
+      expect(screen.queryByTestId("seq-row-1")).not.toBeInTheDocument();
+      // Voices 3 and 4 should still be visible
+      expect(screen.getByTestId("seq-row-2")).toBeInTheDocument();
+      expect(screen.getByTestId("seq-row-3")).toBeInTheDocument();
+    });
+
+    it("shows stereo label '1+2' on primary row when linked", () => {
+      render(
+        <KitStepSequencer
+          bpm={120}
+          kitName="TestKit"
+          onPlaySample={onPlaySample}
+          samples={defaultSamples}
+          sequencerOpen={true}
+          setSequencerOpen={setSequencerOpen}
+          setStepPattern={setStepPattern}
+          setTriggerConditions={vi.fn()}
+          stepPattern={stepPattern}
+          triggerConditions={Array.from({ length: 4 }, () =>
+            Array(16).fill(null),
+          )}
+          voices={[
+            { stereo_mode: true, voice_number: 1, voice_volume: 100 },
+            { voice_number: 2, voice_volume: 100 },
+            { voice_number: 3, voice_volume: 100 },
+            { voice_number: 4, voice_volume: 100 },
+          ]}
+        />,
+      );
+
+      const label = screen.getByTestId("seq-voice-label-0");
+      expect(label.textContent).toBe("1+2");
+    });
+
+    it("shows all 4 rows when no voices are linked", () => {
+      render(
+        <KitStepSequencer
+          bpm={120}
+          kitName="TestKit"
+          onPlaySample={onPlaySample}
+          samples={defaultSamples}
+          sequencerOpen={true}
+          setSequencerOpen={setSequencerOpen}
+          setStepPattern={setStepPattern}
+          setTriggerConditions={vi.fn()}
+          stepPattern={stepPattern}
+          triggerConditions={Array.from({ length: 4 }, () =>
+            Array(16).fill(null),
+          )}
+          voices={[
+            { voice_number: 1, voice_volume: 100 },
+            { voice_number: 2, voice_volume: 100 },
+            { voice_number: 3, voice_volume: 100 },
+            { voice_number: 4, voice_volume: 100 },
+          ]}
+        />,
+      );
+
+      expect(screen.getByTestId("seq-row-0")).toBeInTheDocument();
+      expect(screen.getByTestId("seq-row-1")).toBeInTheDocument();
+      expect(screen.getByTestId("seq-row-2")).toBeInTheDocument();
+      expect(screen.getByTestId("seq-row-3")).toBeInTheDocument();
+    });
+
+    it("passes stereoLinks to the logic hook", () => {
+      render(
+        <KitStepSequencer
+          bpm={120}
+          kitName="TestKit"
+          onPlaySample={onPlaySample}
+          samples={defaultSamples}
+          sequencerOpen={true}
+          setSequencerOpen={setSequencerOpen}
+          setStepPattern={setStepPattern}
+          setTriggerConditions={vi.fn()}
+          stepPattern={stepPattern}
+          triggerConditions={Array.from({ length: 4 }, () =>
+            Array(16).fill(null),
+          )}
+          voices={[
+            { stereo_mode: true, voice_number: 1, voice_volume: 100 },
+            { voice_number: 2, voice_volume: 100 },
+            { voice_number: 3, voice_volume: 100 },
+            { voice_number: 4, voice_volume: 100 },
+          ]}
+        />,
+      );
+
+      const lastCall =
+        mockUseKitStepSequencerLogic.mock.calls[
+          mockUseKitStepSequencerLogic.mock.calls.length - 1
+        ];
+      const stereoLinks = lastCall[0].stereoLinks;
+      expect(stereoLinks.linkedSecondaries.has(2)).toBe(true);
+      expect(stereoLinks.primaryLabels[1]).toBe("1+2");
+    });
+  });
 });

@@ -25,6 +25,25 @@ export async function createKit(kitSlot: string): Promise<void> {
 }
 
 /**
+ * Deletes a kit and all its child records (samples, voices) from the database
+ */
+export async function deleteKit(kitName: string): Promise<void> {
+  if (!window.electronAPI?.deleteKit) {
+    throw new Error("Electron API not available");
+  }
+
+  try {
+    await window.electronAPI.deleteKit(kitName);
+  } catch (err) {
+    let msg = String(err instanceof Error ? err.message : err);
+    msg = msg
+      .replace(/^Error invoking remote method 'delete-kit':\s*/, "")
+      .replace(/^Error:\s*/, "");
+    throw new Error(msg);
+  }
+}
+
+/**
  * Duplicates/copies a kit from source to destination slot
  */
 export async function duplicateKit(
@@ -83,6 +102,30 @@ export function formatKitOperationError(
  */
 export function getFilledSampleCount(samples: string[]): number {
   return samples.filter((s) => s?.trim()).length;
+}
+
+/**
+ * Gets the delete summary for a kit (counts of voices and samples)
+ */
+export async function getKitDeleteSummary(kitName: string): Promise<{
+  kitName: string;
+  locked: boolean;
+  sampleCount: number;
+  voiceCount: number;
+}> {
+  if (!window.electronAPI?.getKitDeleteSummary) {
+    throw new Error("Electron API not available");
+  }
+
+  try {
+    return await window.electronAPI.getKitDeleteSummary(kitName);
+  } catch (err) {
+    let msg = String(err instanceof Error ? err.message : err);
+    msg = msg
+      .replace(/^Error invoking remote method 'get-kit-delete-summary':\s*/, "")
+      .replace(/^Error:\s*/, "");
+    throw new Error(msg);
+  }
 }
 
 /**

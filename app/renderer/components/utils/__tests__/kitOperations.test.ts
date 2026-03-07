@@ -4,9 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   createKit,
+  deleteKit,
   duplicateKit,
   formatKitError,
   formatKitOperationError,
+  getKitDeleteSummary,
   validateKitSlot,
 } from "../kitOperations";
 
@@ -14,6 +16,8 @@ import {
 const mockElectronAPI = {
   copyKit: vi.fn(),
   createKit: vi.fn(),
+  deleteKit: vi.fn(),
+  getKitDeleteSummary: vi.fn(),
 };
 
 beforeEach(() => {
@@ -122,6 +126,79 @@ describe("duplicateKit", () => {
     await expect(duplicateKit("A1", "B2")).rejects.toThrow(
       "Kit already exists",
     );
+  });
+});
+
+describe("deleteKit", () => {
+  it("successfully deletes a kit", async () => {
+    mockElectronAPI.deleteKit.mockResolvedValue(undefined);
+
+    await deleteKit("A5");
+
+    expect(mockElectronAPI.deleteKit).toHaveBeenCalledWith("A5");
+  });
+
+  it("throws error when Electron API is not available", async () => {
+    global.window = { electronAPI: {} } as unknown;
+
+    await expect(deleteKit("A5")).rejects.toThrow("Electron API not available");
+  });
+
+  it("cleans up error messages from Electron API", async () => {
+    mockElectronAPI.deleteKit.mockRejectedValue(
+      new Error(
+        "Error invoking remote method 'delete-kit': Error: Kit not found",
+      ),
+    );
+
+    await expect(deleteKit("A5")).rejects.toThrow("Kit not found");
+  });
+
+  it("handles non-Error rejection values", async () => {
+    mockElectronAPI.deleteKit.mockRejectedValue("string error");
+
+    await expect(deleteKit("A5")).rejects.toThrow("string error");
+  });
+});
+
+describe("getKitDeleteSummary", () => {
+  it("returns delete summary from Electron API", async () => {
+    const summary = {
+      kitName: "A5",
+      locked: false,
+      sampleCount: 3,
+      voiceCount: 4,
+    };
+    mockElectronAPI.getKitDeleteSummary.mockResolvedValue(summary);
+
+    const result = await getKitDeleteSummary("A5");
+
+    expect(result).toEqual(summary);
+    expect(mockElectronAPI.getKitDeleteSummary).toHaveBeenCalledWith("A5");
+  });
+
+  it("throws error when Electron API is not available", async () => {
+    global.window = { electronAPI: {} } as unknown;
+
+    await expect(getKitDeleteSummary("A5")).rejects.toThrow(
+      "Electron API not available",
+    );
+  });
+
+  it("cleans up error messages from Electron API", async () => {
+    mockElectronAPI.getKitDeleteSummary.mockRejectedValue(
+      new Error(
+        "Error invoking remote method 'get-kit-delete-summary': Error: Kit not found",
+      ),
+    );
+
+    await expect(getKitDeleteSummary("A5")).rejects.toThrow("Kit not found");
+  });
+
+  it("handles non-Error rejection values", async () => {
+    mockElectronAPI.getKitDeleteSummary.mockRejectedValue("db failure");
+
+    await expect(getKitDeleteSummary("A5")).rejects.toThrow("db failure");
   });
 });
 

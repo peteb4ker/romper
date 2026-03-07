@@ -7,7 +7,9 @@ import type { InMemorySettings } from "../types/settings.js";
 import {
   addKit,
   addSample,
+  deleteKit as deleteKitDb,
   getKit,
+  getKitDeleteSummary as getKitDeleteSummaryDb,
   getKitSamples,
 } from "../db/romperDbCoreORM.js";
 
@@ -141,6 +143,61 @@ export class KitService {
     }
 
     return { success: true };
+  }
+
+  /**
+   * Delete a kit and all its child records (samples, voices)
+   * DB-only operation - no filesystem changes
+   */
+  deleteKit(
+    inMemorySettings: InMemorySettings,
+    kitName: string,
+  ): DbResult<void> {
+    const localStorePath = this.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { error: "No local store path configured", success: false };
+    }
+
+    this.validateKitSlot(kitName);
+    const dbPath = this.getDbPath(localStorePath);
+
+    // Check kit exists and is not locked
+    const kitResult = getKit(dbPath, kitName);
+    if (!kitResult.success || !kitResult.data) {
+      return { error: "Kit not found.", success: false };
+    }
+
+    if (kitResult.data.locked) {
+      return {
+        error: "Kit is locked. Unlock it before deleting.",
+        success: false,
+      };
+    }
+
+    return deleteKitDb(dbPath, kitName);
+  }
+
+  /**
+   * Get summary of what would be deleted (for confirmation dialog)
+   */
+  getKitDeleteSummary(
+    inMemorySettings: InMemorySettings,
+    kitName: string,
+  ): DbResult<{
+    kitName: string;
+    locked: boolean;
+    sampleCount: number;
+    voiceCount: number;
+  }> {
+    const localStorePath = this.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { error: "No local store path configured", success: false };
+    }
+
+    this.validateKitSlot(kitName);
+    const dbPath = this.getDbPath(localStorePath);
+
+    return getKitDeleteSummaryDb(dbPath, kitName);
   }
 
   private getDbPath(localStorePath: string): string {

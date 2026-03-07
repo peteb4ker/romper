@@ -3,6 +3,7 @@ import {
   Copy,
   LockSimple,
   MusicNote,
+  Trash,
 } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
@@ -60,6 +61,7 @@ const KitGridItem = React.memo(
         isValid,
         kit,
         kitData,
+        onDelete,
         onDuplicate,
         onSelect,
         onToggleFavorite,
@@ -208,6 +210,19 @@ const KitGridItem = React.memo(
                   title="Duplicate kit"
                 >
                   <Copy size={15} />
+                </button>
+              )}
+              {isValid && onDelete && kitData?.editable && !kitData?.locked && (
+                <button
+                  className="p-1 text-xs text-text-tertiary hover:text-accent-danger"
+                  data-testid="delete-kit-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  title="Delete kit"
+                >
+                  <Trash size={15} />
                 </button>
               )}
             </div>

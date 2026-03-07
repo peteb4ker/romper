@@ -182,6 +182,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] createRomperDb invoked", dbDir);
     return ipcRenderer.invoke("create-romper-db", dbDir);
   },
+  deleteKit: (kitName: string): Promise<void> => {
+    isDev && console.debug("[IPC] deleteKit invoked", kitName);
+    return ipcRenderer.invoke("delete-kit", kitName);
+  },
   deleteSampleFromSlot: (
     kitName: string,
     voiceNumber: number,
@@ -281,6 +285,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getKit: (kitName: string) => {
     isDev && console.debug("[IPC] getKit invoked", kitName);
     return ipcRenderer.invoke("get-kit", kitName);
+  },
+  getKitDeleteSummary: (kitName: string) => {
+    isDev && console.debug("[IPC] getKitDeleteSummary invoked", kitName);
+    return ipcRenderer.invoke("get-kit-delete-summary", kitName);
   },
   getKits: () => {
     isDev && console.debug("[IPC] getKits invoked");

@@ -10,14 +10,18 @@ vi.mock("path", () => ({
 vi.mock("../../db/romperDbCoreORM.js", () => ({
   addKit: vi.fn(),
   addSample: vi.fn(),
+  deleteKit: vi.fn(),
   getKit: vi.fn(),
+  getKitDeleteSummary: vi.fn(),
   getKitSamples: vi.fn(),
 }));
 
 import {
   addKit,
   addSample,
+  deleteKit,
   getKit,
+  getKitDeleteSummary,
   getKitSamples,
 } from "../../db/romperDbCoreORM.js";
 import { KitService } from "../kitService.js";
@@ -25,7 +29,9 @@ import { KitService } from "../kitService.js";
 const mockPath = vi.mocked(path);
 const mockAddKit = vi.mocked(addKit);
 const mockAddSample = vi.mocked(addSample);
+const mockDeleteKit = vi.mocked(deleteKit);
 const mockGetKit = vi.mocked(getKit);
+const mockGetKitDeleteSummary = vi.mocked(getKitDeleteSummary);
 const mockGetKitSamples = vi.mocked(getKitSamples);
 
 describe("KitService", () => {
@@ -354,6 +360,83 @@ describe("KitService", () => {
       expect(result.error).toBe(
         "Failed to duplicate kit: Database connection failed",
       );
+    });
+  });
+
+  describe("deleteKit", () => {
+    it("successfully deletes an unlocked kit", () => {
+      mockGetKit.mockReturnValue({
+        data: { locked: false, name: "A0" },
+        success: true,
+      });
+      mockDeleteKit.mockReturnValue({ success: true });
+
+      const result = kitService.deleteKit(mockInMemorySettings, "A0");
+
+      expect(result.success).toBe(true);
+      expect(mockDeleteKit).toHaveBeenCalledWith("/test/path/.romperdb", "A0");
+    });
+
+    it("rejects deletion of locked kit", () => {
+      mockGetKit.mockReturnValue({
+        data: { locked: true, name: "A0" },
+        success: true,
+      });
+
+      const result = kitService.deleteKit(mockInMemorySettings, "A0");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Kit is locked. Unlock it before deleting.");
+      expect(mockDeleteKit).not.toHaveBeenCalled();
+    });
+
+    it("returns error for non-existent kit", () => {
+      mockGetKit.mockReturnValue({ success: false });
+
+      const result = kitService.deleteKit(mockInMemorySettings, "A0");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Kit not found.");
+      expect(mockDeleteKit).not.toHaveBeenCalled();
+    });
+
+    it("returns error when no local store path configured", () => {
+      const result = kitService.deleteKit({}, "A0");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("No local store path configured");
+    });
+
+    it("rejects invalid kit slot format", () => {
+      expect(() => {
+        kitService.deleteKit(mockInMemorySettings, "invalid");
+      }).toThrow("Invalid kit slot. Use format A0-Z99.");
+    });
+  });
+
+  describe("getKitDeleteSummary", () => {
+    it("returns summary from database layer", () => {
+      mockGetKitDeleteSummary.mockReturnValue({
+        data: { kitName: "A0", locked: false, sampleCount: 5, voiceCount: 4 },
+        success: true,
+      });
+
+      const result = kitService.getKitDeleteSummary(mockInMemorySettings, "A0");
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        kitName: "A0",
+        locked: false,
+        sampleCount: 5,
+        voiceCount: 4,
+      });
+    });
+
+    it("returns error when no local store path configured", () => {
+      const result = kitService.getKitDeleteSummary({}, "A0");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("No local store path configured");
     });
   });
 });

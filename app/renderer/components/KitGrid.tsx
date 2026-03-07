@@ -84,6 +84,7 @@ interface KitGridProps {
   kits: KitWithRelations[];
   onBankFocus?: (bank: string) => void;
   onCreateKitInBank?: (bankLetter: string) => void;
+  onDelete?: (kit: string) => void;
   onDuplicate: (kit: string) => void;
   onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
   onSelectKit: (kit: string) => void;
@@ -156,6 +157,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       kits,
       onBankFocus,
       onCreateKitInBank,
+      onDelete,
       onDuplicate,
       onFocusKit,
       onSelectKit,
@@ -256,6 +258,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                     kit={kit}
                     kitData={kitData}
                     kitsToDisplay={kitsToDisplay}
+                    onDelete={onDelete}
                     onDuplicate={onDuplicate}
                     onFocusKit={onFocusKit}
                     onSelectKit={onSelectKit}

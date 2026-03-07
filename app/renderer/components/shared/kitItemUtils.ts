@@ -8,6 +8,7 @@ export interface BaseKitItemProps {
   isValid: boolean;
   kit: string;
   kitData?: KitWithSearchMatch | null;
+  onDelete?: () => void;
   onDuplicate: () => void;
   onSelect: () => void;
   onToggleFavorite?: (kitName: string) => void;

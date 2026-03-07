@@ -57,6 +57,33 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("show-item-in-folder", async (_event, path: string) => {
     shell.showItemInFolder(path);
   });
+  ipcMain.handle("get-kit-delete-summary", async (_event, kitName: string) => {
+    const effectiveSettings: InMemorySettings = {
+      ...inMemorySettings,
+      localStorePath:
+        process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
+    };
+
+    const result = kitService.getKitDeleteSummary(effectiveSettings, kitName);
+    if (!result.success) {
+      throw new Error(result.error || "Failed to get kit delete summary");
+    }
+    return result.data;
+  });
+
+  ipcMain.handle("delete-kit", async (_event, kitName: string) => {
+    const effectiveSettings: InMemorySettings = {
+      ...inMemorySettings,
+      localStorePath:
+        process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
+    };
+
+    const result = kitService.deleteKit(effectiveSettings, kitName);
+    if (!result.success) {
+      throw new Error(result.error || "Failed to delete kit");
+    }
+  });
+
   ipcMain.handle("create-kit", async (_event, kitSlot: string) => {
     // Add environment override to settings for this operation
     const effectiveSettings: InMemorySettings = {

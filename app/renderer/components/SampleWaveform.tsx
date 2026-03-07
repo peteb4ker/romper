@@ -9,9 +9,12 @@ interface SampleWaveformProps {
   playTrigger: number; // increment to trigger play externally
   slotNumber: number;
   stopTrigger?: number; // increment to trigger stop externally
+  voiceColor?: string; // CSS color for waveform, falls back to accent-primary
   voiceNumber: number;
   volume?: number; // 0-100, applied via GainNode
 }
+
+const CANVAS_HEIGHT = 28;
 
 const SampleWaveform: React.FC<SampleWaveformProps> = ({
   kitName,
@@ -20,14 +23,17 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   playTrigger,
   slotNumber,
   stopTrigger,
+  voiceColor,
   voiceNumber,
   volume,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
   const [, setError] = useState<null | string>(null);
+  const [canvasWidth, setCanvasWidth] = useState(120);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const animationRef = useRef<null | number>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -35,6 +41,21 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   // Track stopTrigger value at the time of last play to prevent a batched
   // stop from killing a freshly started source in the same render cycle.
   const stopTriggerAtPlayRef = useRef(0);
+
+  // Measure container width with ResizeObserver
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = Math.floor(entry.contentRect.width);
+        if (width > 0) setCanvasWidth(width);
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   // Load audio file and decode
   useEffect(() => {
@@ -72,7 +93,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         audioCtxRef.current = ctx;
         ctx.decodeAudioData(arrayBuffer.slice(0), (buf) => {
           setAudioBuffer(buf);
-          drawWaveform(buf);
         });
       })
       .catch((err) => {
@@ -97,31 +117,96 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     };
   }, [kitName, voiceNumber, slotNumber]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
 
-  // Draw waveform
-  function drawWaveform(buffer: AudioBuffer) {
+  // Resolve the waveform color from prop or CSS variable
+  function resolveWaveformColor(): string {
+    if (voiceColor) return voiceColor;
+    const style = getComputedStyle(document.documentElement);
+    return style.getPropertyValue("--accent-primary").trim() || "#2889be";
+  }
+
+  // Resolve the playhead color from CSS variable
+  function resolvePlayheadColor(): string {
+    const style = getComputedStyle(document.documentElement);
+    return style.getPropertyValue("--transport-play").trim() || "#d97706";
+  }
+
+  // Draw waveform using RMS envelope with retina scaling
+  function drawWaveform(buffer: AudioBuffer, width: number) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#0ea5e9"; // teal-500
-    ctx.lineWidth = 1;
+
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = width;
+    const cssHeight = CANVAS_HEIGHT;
+
+    // Set backing store dimensions for retina
+    canvas.width = cssWidth * dpr;
+    canvas.height = cssHeight * dpr;
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+    const waveColor = resolveWaveformColor();
+    ctx.strokeStyle = waveColor;
+    ctx.lineWidth = 1.2;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+
     const data = buffer.getChannelData(0);
-    const step = Math.ceil(data.length / canvas.width);
-    const amp = canvas.height / 2;
-    ctx.beginPath();
-    for (let i = 0; i < canvas.width; i++) {
-      let max = -1.0,
-        min = 1.0;
-      for (let j = 0; j < step; j++) {
-        const datum = data[i * step + j] || 0;
-        if (datum < min) min = datum;
-        if (datum > max) max = datum;
+    const step = Math.ceil(data.length / cssWidth);
+    const mid = cssHeight / 2;
+
+    // Compute RMS per column
+    const rmsValues: number[] = [];
+    let maxRms = 0;
+    for (let i = 0; i < cssWidth; i++) {
+      let sumSq = 0;
+      const start = i * step;
+      const end = Math.min(start + step, data.length);
+      for (let j = start; j < end; j++) {
+        const d = data[j] || 0;
+        sumSq += d * d;
       }
-      ctx.moveTo(i, (1 + min) * amp);
-      ctx.lineTo(i, (1 + max) * amp);
+      const rms = Math.sqrt(sumSq / (end - start));
+      rmsValues.push(rms);
+      if (rms > maxRms) maxRms = rms;
+    }
+
+    // Normalize and draw mirrored envelope
+    const scale = maxRms > 0 ? (mid - 1) / maxRms : 0;
+
+    // Draw top half
+    ctx.beginPath();
+    ctx.moveTo(0, mid - rmsValues[0] * scale);
+    for (let i = 1; i < cssWidth; i++) {
+      ctx.lineTo(i, mid - rmsValues[i] * scale);
     }
     ctx.stroke();
+
+    // Draw bottom half (mirror)
+    ctx.beginPath();
+    ctx.moveTo(0, mid + rmsValues[0] * scale);
+    for (let i = 1; i < cssWidth; i++) {
+      ctx.lineTo(i, mid + rmsValues[i] * scale);
+    }
+    ctx.stroke();
+
+    // Fill between the two lines with a subtle wash
+    ctx.fillStyle = waveColor;
+    ctx.globalAlpha = 0.08;
+    ctx.beginPath();
+    ctx.moveTo(0, mid - rmsValues[0] * scale);
+    for (let i = 1; i < cssWidth; i++) {
+      ctx.lineTo(i, mid - rmsValues[i] * scale);
+    }
+    for (let i = cssWidth - 1; i >= 0; i--) {
+      ctx.lineTo(i, mid + rmsValues[i] * scale);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
   }
 
   // Stop playback logic
@@ -205,24 +290,30 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     if (onPlayingChange) onPlayingChange(isPlaying);
   }, [isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps -- onPlayingChange intentionally excluded to prevent infinite loops
 
-  // Draw playhead
+  // Draw waveform and playhead whenever buffer, size, or playhead changes
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !audioBuffer) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    // Redraw waveform
-    drawWaveform(audioBuffer);
-    // Draw playhead
+    if (!audioBuffer) return;
+    drawWaveform(audioBuffer, canvasWidth);
+
+    // Draw playhead overlay
     if (isPlaying) {
-      ctx.strokeStyle = "#f59e42"; // orange-400
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const dpr = window.devicePixelRatio || 1;
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.strokeStyle = resolvePlayheadColor();
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      const x = Math.floor(playhead * canvas.width);
+      const x = Math.floor(playhead * canvasWidth);
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
+      ctx.lineTo(x, CANVAS_HEIGHT);
       ctx.stroke();
+      ctx.restore();
     }
-  }, [playhead, isPlaying, audioBuffer]);
+  }, [playhead, isPlaying, audioBuffer, canvasWidth, voiceColor]); // eslint-disable-line react-hooks/exhaustive-deps -- resolve* functions are stable
 
   // Clean up on unmount
   useEffect(() => {
@@ -238,15 +329,26 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   }, []);
 
   return (
-    <div style={{ alignItems: "center", display: "flex" }}>
+    <div
+      ref={containerRef}
+      style={{
+        alignItems: "center",
+        display: "flex",
+        flex: "1 1 0",
+        minWidth: 0,
+      }}
+    >
       <canvas
-        className="rounded bg-surface-3 shadow align-middle"
-        height={18}
+        className="rounded"
+        height={CANVAS_HEIGHT}
         ref={canvasRef}
-        style={{ display: "inline-block", verticalAlign: "middle" }}
-        width={80}
+        style={{
+          display: "block",
+          height: `${CANVAS_HEIGHT}px`,
+          width: "100%",
+        }}
+        width={canvasWidth}
       />
-      {/* Remove inline error message, error is now shown via MessageDisplay */}
     </div>
   );
 };

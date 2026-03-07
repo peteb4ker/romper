@@ -43,12 +43,19 @@ export interface SlotRenderingHook {
 }
 
 // Extends shared base interface with specific rendering handler requirements
-export interface UseVoicePanelSlotRenderingOptions
-  extends BaseVoicePanelOptions {
+export interface UseVoicePanelSlotRenderingOptions extends BaseVoicePanelOptions {
   handleCombinedDragLeave: () => void;
   handleCombinedDragOver: (e: React.DragEvent, slotNumber: number) => void;
   handleCombinedDrop: (e: React.DragEvent, slotNumber: number) => void;
 }
+
+// Map voice number to CSS variable name for waveform color
+const VOICE_COLOR_VARS: Record<number, string> = {
+  1: "var(--voice-1)",
+  2: "var(--voice-2)",
+  3: "var(--voice-3)",
+  4: "var(--voice-4)",
+};
 
 /**
  * Hook for rendering voice panel slot components
@@ -212,6 +219,7 @@ export function useVoicePanelSlotRendering({
             playTrigger={playTriggers[sampleKey] || 0}
             slotNumber={slotNumber}
             stopTrigger={stopTriggers[sampleKey] || 0}
+            voiceColor={VOICE_COLOR_VARS[voice]}
             voiceNumber={voice}
             volume={playVolumes?.[sampleKey]}
           />

@@ -65,7 +65,7 @@ describe("useVoicePanelUI", () => {
 
       const { container } = render(result.current.renderVoiceName());
 
-      expect(container.textContent).toContain("2:");
+      expect(container.textContent).toContain("2");
       expect(container.textContent).toContain("Drums");
       expect(kitUtilsShared.toCapitalCase).toHaveBeenCalledWith("Drums");
     });
@@ -276,8 +276,8 @@ describe("useVoicePanelUI", () => {
         "px-2",
         "py-0.5",
         "rounded-full",
-        "bg-accent-primary/15",
-        "text-accent-primary",
+        "bg-voice-2-muted",
+        "text-voice-2",
         "text-sm",
         "font-semibold",
         "tracking-wide",
@@ -353,7 +353,7 @@ describe("useVoicePanelUI", () => {
 
       const { container } = render(result.current.renderVoiceName());
 
-      expect(container.textContent).toContain("0:");
+      expect(container.textContent).toContain("0");
     });
 
     it("handles voice number 16", () => {
@@ -363,7 +363,7 @@ describe("useVoicePanelUI", () => {
 
       const { container } = render(result.current.renderVoiceName());
 
-      expect(container.textContent).toContain("16:");
+      expect(container.textContent).toContain("16");
     });
 
     it("handles undefined voiceName", () => {

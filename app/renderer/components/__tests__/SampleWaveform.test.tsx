@@ -11,32 +11,79 @@ import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 const mockCanvasContext = {
   beginPath: vi.fn(),
   clearRect: vi.fn(),
+  closePath: vi.fn(),
+  fill: vi.fn(),
+  fillStyle: "",
+  globalAlpha: 1,
+  lineCap: "butt",
+  lineJoin: "miter",
   lineTo: vi.fn(),
   lineWidth: 1,
   moveTo: vi.fn(),
+  restore: vi.fn(),
+  save: vi.fn(),
+  scale: vi.fn(),
+  setTransform: vi.fn(),
   stroke: vi.fn(),
   strokeStyle: "",
 };
 
 const _mockCanvas = {
   getContext: vi.fn(() => mockCanvasContext),
-  height: 18,
-  width: 80,
+  height: 28,
+  width: 120,
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
   setupElectronAPIMock();
 
+  // Mock ResizeObserver
+  global.ResizeObserver = vi.fn((callback) => ({
+    disconnect: vi.fn(),
+    observe: vi.fn(() => {
+      // Simulate initial resize callback
+      callback([{ contentRect: { height: 28, width: 120 } }]);
+    }),
+    unobserve: vi.fn(),
+  }));
+
+  // Mock getComputedStyle for CSS variable resolution
+  const originalGetComputedStyle = window.getComputedStyle;
+  vi.spyOn(window, "getComputedStyle").mockImplementation((...args) => {
+    const result = originalGetComputedStyle.apply(window, args);
+    return new Proxy(result, {
+      get(target, prop) {
+        if (prop === "getPropertyValue") {
+          return (varName: string) => {
+            if (varName === "--accent-primary") return "#2889be";
+            if (varName === "--transport-play") return "#d97706";
+            return "";
+          };
+        }
+        return Reflect.get(target, prop);
+      },
+    });
+  });
+
+  // Mock devicePixelRatio
+  Object.defineProperty(window, "devicePixelRatio", {
+    configurable: true,
+    value: 1,
+    writable: true,
+  });
+
   // Mock canvas methods
   HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCanvasContext);
   Object.defineProperty(HTMLCanvasElement.prototype, "width", {
     configurable: true,
-    get: () => 80,
+    get: () => 120,
+    set: () => {},
   });
   Object.defineProperty(HTMLCanvasElement.prototype, "height", {
     configurable: true,
-    get: () => 18,
+    get: () => 28,
+    set: () => {},
   });
 
   // Mock AudioContext and related APIs
@@ -80,9 +127,9 @@ describe("SampleWaveform", () => {
     });
     const canvas = document.querySelector("canvas");
     expect(canvas).toBeInTheDocument();
-    expect(canvas).toHaveAttribute("width", "80");
-    expect(canvas).toHaveAttribute("height", "18");
-    expect(canvas).toHaveClass("rounded", "bg-surface-3");
+    expect(canvas).toHaveAttribute("width", "120");
+    expect(canvas).toHaveAttribute("height", "28");
+    expect(canvas).toHaveClass("rounded");
   });
 
   it("loads and decodes audio buffer on mount", async () => {

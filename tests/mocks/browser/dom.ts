@@ -107,6 +107,17 @@ export const createWorkerMock = () => {
 };
 
 /**
+ * Mock ResizeObserver API
+ */
+export const createResizeObserverMock = () => {
+  return vi.fn().mockImplementation(() => ({
+    disconnect: vi.fn(),
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+  }));
+};
+
+/**
  * Setup all DOM mocks globally
  */
 export const setupDOMMocks = () => {

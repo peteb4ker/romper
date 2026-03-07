@@ -221,11 +221,20 @@ const KitVoicePanel: React.FC<
     }
   }, [selectedIdx, isActive]);
 
+  // Voice-specific top border classes
+  const voiceTopBorderClass: Record<number, string> = {
+    1: "border-t-2 border-t-voice-1",
+    2: "border-t-2 border-t-voice-2",
+    3: "border-t-2 border-t-voice-3",
+    4: "border-t-2 border-t-voice-4",
+  };
+
   // Voice linking styles
   const voicePanelClasses = [
     "flex-1 p-3 rounded-lg shadow text-text-primary min-h-[80px]",
-    // Default background
-    "bg-surface-2",
+    // Card grain texture and voice-colored top border
+    "card-grain",
+    voiceTopBorderClass[voice] || "",
     // Linked voice styling
     isLinked &&
       isPrimaryVoice &&

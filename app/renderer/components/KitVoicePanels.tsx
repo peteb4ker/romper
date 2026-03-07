@@ -235,7 +235,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   return (
     <div className="flex w-full relative" data-testid="voice-panels-row">
       {/* Global slot numbers column */}
-      <div className="flex flex-col justify-start pt-8 pr-3">
+      <div className="flex flex-col justify-start pt-8 pr-2">
         {[...Array(12)].map((_, i) => (
           <div
             className="min-h-[28px] flex items-center justify-end"
@@ -243,9 +243,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
             style={{ marginBottom: 4 }}
           >
             <span
-              className="text-xs font-mono text-text-tertiary select-none bg-surface-3 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
+              className="text-xs font-mono text-text-tertiary select-none px-1.5 py-0.5 text-center w-6 h-5 flex items-center justify-center"
               data-testid={`global-slot-number-${i}`}
-              style={{ display: "inline-block", width: "32px" }}
             >
               {i + 1}
             </span>
@@ -254,7 +253,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       </div>
 
       {/* Voice panels grid */}
-      <div className="grid grid-cols-4 gap-4 flex-1">
+      <div className="grid grid-cols-4 gap-3 flex-1">
         {[1, 2, 3, 4].map((voice) => {
           // Get voice linking status
           const linkingStatus = stereoHandling.getVoiceLinkingStatus(

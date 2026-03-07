@@ -8,7 +8,7 @@ import type {
 import * as schema from "@romper/shared/db/schema.js";
 import { eq } from "drizzle-orm";
 
-import { withDb } from "../utils/dbUtilities.js";
+import { withDb, withDbTransaction } from "../utils/dbUtilities.js";
 import {
   combineKitWithRelations,
   createKitLookups,
@@ -47,6 +47,22 @@ export function addKit(dbDir: string, kit: NewKit): DbResult<void> {
     }));
 
     db.insert(voices).values(voiceData).run();
+  });
+}
+
+/**
+ * Delete a kit and all its child records (samples, voices) atomically
+ */
+export function deleteKit(dbDir: string, kitName: string): DbResult<void> {
+  return withDbTransaction(dbDir, (db) => {
+    // Delete children first (no CASCADE rules)
+    db.delete(samples).where(eq(samples.kit_name, kitName)).run();
+    db.delete(voices).where(eq(voices.kit_name, kitName)).run();
+
+    const result = db.delete(kits).where(eq(kits.name, kitName)).run();
+    if (result.changes === 0) {
+      throw new Error(`Kit '${kitName}' not found`);
+    }
   });
 }
 
@@ -98,6 +114,48 @@ export function getKit(
 }
 
 /**
+ * Update kit properties
+ */
+/**
+ * Get summary of what would be deleted for a kit (for confirmation dialog)
+ */
+export function getKitDeleteSummary(
+  dbDir: string,
+  kitName: string,
+): DbResult<{
+  kitName: string;
+  locked: boolean;
+  sampleCount: number;
+  voiceCount: number;
+}> {
+  return withDb(dbDir, (db) => {
+    const kit = db.select().from(kits).where(eq(kits.name, kitName)).get();
+    if (!kit) {
+      throw new Error(`Kit '${kitName}' not found`);
+    }
+
+    const voiceCount = db
+      .select()
+      .from(voices)
+      .where(eq(voices.kit_name, kitName))
+      .all().length;
+
+    const sampleCount = db
+      .select()
+      .from(samples)
+      .where(eq(samples.kit_name, kitName))
+      .all().length;
+
+    return {
+      kitName: kit.name,
+      locked: kit.locked,
+      sampleCount,
+      voiceCount,
+    };
+  });
+}
+
+/**
  * Get all kits with their samples and voices
  * Uses efficient manual batch queries to eliminate N+1 problem
  */
@@ -143,9 +201,6 @@ export function getKitsMetadata(dbDir: string): DbResult<Partial<Kit>[]> {
   });
 }
 
-/**
- * Update kit properties
- */
 export function updateKit(
   dbDir: string,
   kitName: string,

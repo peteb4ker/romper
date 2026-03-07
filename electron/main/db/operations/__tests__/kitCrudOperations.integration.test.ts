@@ -6,7 +6,9 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { createRomperDbFile } from "../../utils/dbUtilities.js";
 import {
   addKit,
+  deleteKit,
   getKit,
+  getKitDeleteSummary,
   getKits,
   getKitsMetadata,
   updateKit,
@@ -248,6 +250,118 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       const result = updateKit(dbDir, "NonExistent", { bpm: 120 });
       expect(result.success).toBe(false);
       expect(result.error).toContain("not found");
+    });
+  });
+
+  describe("getKitDeleteSummary", () => {
+    test("returns correct counts for a kit with samples", () => {
+      addKit(dbDir, { bank_letter: "A", name: "A0" });
+      addSample(dbDir, {
+        filename: "kick.wav",
+        is_stereo: false,
+        kit_name: "A0",
+        slot_number: 0,
+        source_path: "/samples/kick.wav",
+        voice_number: 1,
+      });
+      addSample(dbDir, {
+        filename: "snare.wav",
+        is_stereo: false,
+        kit_name: "A0",
+        slot_number: 0,
+        source_path: "/samples/snare.wav",
+        voice_number: 2,
+      });
+
+      const result = getKitDeleteSummary(dbDir, "A0");
+      expect(result.success).toBe(true);
+      expect(result.data!.kitName).toBe("A0");
+      expect(result.data!.voiceCount).toBe(4);
+      expect(result.data!.sampleCount).toBe(2);
+      expect(result.data!.locked).toBe(false);
+    });
+
+    test("returns locked status for locked kit", () => {
+      addKit(dbDir, { bank_letter: "A", locked: true, name: "A0" });
+
+      const result = getKitDeleteSummary(dbDir, "A0");
+      expect(result.success).toBe(true);
+      expect(result.data!.locked).toBe(true);
+    });
+
+    test("fails for non-existent kit", () => {
+      const result = getKitDeleteSummary(dbDir, "Z9");
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("not found");
+    });
+  });
+
+  describe("deleteKit", () => {
+    test("deletes kit and all child records", () => {
+      addKit(dbDir, { bank_letter: "A", name: "A0" });
+      addSample(dbDir, {
+        filename: "kick.wav",
+        is_stereo: false,
+        kit_name: "A0",
+        slot_number: 0,
+        source_path: "/samples/kick.wav",
+        voice_number: 1,
+      });
+
+      const result = deleteKit(dbDir, "A0");
+      expect(result.success).toBe(true);
+
+      // Verify kit is gone
+      const kit = getKit(dbDir, "A0");
+      expect(kit.data).toBeNull();
+
+      // Verify other kits are not affected
+      const allKits = getKits(dbDir);
+      expect(allKits.data).toHaveLength(0);
+    });
+
+    test("does not affect other kits", () => {
+      addKit(dbDir, { bank_letter: "A", name: "A0" });
+      addKit(dbDir, { bank_letter: "B", name: "B0" });
+      addSample(dbDir, {
+        filename: "kick.wav",
+        is_stereo: false,
+        kit_name: "A0",
+        slot_number: 0,
+        source_path: "/samples/kick.wav",
+        voice_number: 1,
+      });
+      addSample(dbDir, {
+        filename: "bass.wav",
+        is_stereo: false,
+        kit_name: "B0",
+        slot_number: 0,
+        source_path: "/samples/bass.wav",
+        voice_number: 1,
+      });
+
+      deleteKit(dbDir, "A0");
+
+      const kitB = getKit(dbDir, "B0");
+      expect(kitB.data).not.toBeNull();
+      expect(kitB.data!.voices).toHaveLength(4);
+      expect(kitB.data!.samples).toHaveLength(1);
+    });
+
+    test("fails for non-existent kit", () => {
+      const result = deleteKit(dbDir, "Z9");
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("not found");
+    });
+
+    test("deletes kit with no samples", () => {
+      addKit(dbDir, { bank_letter: "A", name: "A0" });
+
+      const result = deleteKit(dbDir, "A0");
+      expect(result.success).toBe(true);
+
+      const kit = getKit(dbDir, "A0");
+      expect(kit.data).toBeNull();
     });
   });
 });

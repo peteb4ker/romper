@@ -43,6 +43,7 @@ export interface ElectronAPI {
   createKit?: (kitSlot: string) => Promise<void>;
   // Missing methods causing errors
   createRomperDb?: (dbDir: string) => Promise<RomperDbResult>;
+  deleteKit?: (kitName: string) => Promise<void>;
   deleteSampleFromSlot?: (
     kitName: string,
     voiceNumber: number,
@@ -105,6 +106,12 @@ export interface ElectronAPI {
   getFavoriteKitsCount?: () => Promise<DbResult<number>>;
   // Database methods for kit metadata (replacing JSON file dependency)
   getKit?: (kitName: string) => Promise<DbResult<KitWithRelations>>;
+  getKitDeleteSummary?: (kitName: string) => Promise<{
+    kitName: string;
+    locked: boolean;
+    sampleCount: number;
+    voiceCount: number;
+  }>;
   getKits?: () => Promise<
     DbResult<
       Array<{

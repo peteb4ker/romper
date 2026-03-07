@@ -7,10 +7,12 @@ import React, {
   useRef,
 } from "react";
 
+import DeleteKitDialog from "./dialogs/DeleteKitDialog";
 import KitDialogs from "./dialogs/KitDialogs";
 import SyncUpdateDialog from "./dialogs/SyncUpdateDialog";
 import ValidationResultsDialog from "./dialogs/ValidationResultsDialog";
 import { useKitBrowser } from "./hooks/kit-management/useKitBrowser";
+import { useKitDeletion } from "./hooks/kit-management/useKitDeletion";
 import { useKitDialogs } from "./hooks/kit-management/useKitDialogs";
 import { useKitKeyboardNav } from "./hooks/kit-management/useKitKeyboardNav";
 import { useKitScan } from "./hooks/kit-management/useKitScan";
@@ -147,6 +149,12 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       showValidationDialog,
     } = dialogs;
 
+    // Kit deletion hook
+    const deletion = useKitDeletion({
+      onMessage,
+      onRefreshKits: handleRefreshKits,
+    });
+
     // Sync functionality hook
     const sync = useKitSync({ onMessage, onRefreshKits });
     const {
@@ -245,6 +253,15 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           onDuplicateKitDestChange={setDuplicateKitDest}
           showDuplicateKit={!!duplicateKitSource}
         />
+        {deletion.kitToDelete && deletion.deleteSummary && (
+          <DeleteKitDialog
+            isDeleting={deletion.isDeleting}
+            kitName={deletion.kitToDelete}
+            onCancel={deletion.handleCancelDelete}
+            onConfirm={deletion.handleConfirmDelete}
+            sampleCount={deletion.deleteSummary.sampleCount}
+          />
+        )}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-row">
           <KitBankNav
             bankNames={bankNames}
@@ -262,6 +279,9 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             kits={kits}
             onBankFocus={handleBankFocus}
             onCreateKitInBank={handleCreateKitInBank}
+            onDelete={(kit) => {
+              deletion.handleRequestDelete(kit);
+            }}
             onDuplicate={(kit) => {
               setDuplicateKitSource(kit);
               setDuplicateKitDest("");

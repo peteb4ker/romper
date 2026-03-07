@@ -13,6 +13,7 @@ interface KitGridCardProps {
   kit: Kit;
   kitData?: KitWithRelations[] | null;
   kitsToDisplay: Kit[];
+  onDelete?: (kitName: string) => void;
   onDuplicate: (kitName: string) => void;
   onFocusKit?: (kitName: string) => void;
   onSelectKit: (kitName: string) => void;
@@ -35,6 +36,7 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
   kit,
   kitData,
   kitsToDisplay,
+  onDelete,
   onDuplicate,
   onFocusKit,
   onSelectKit,
@@ -75,6 +77,7 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
         isValid={isValid}
         kit={kit.name}
         kitData={kitDataItem}
+        onDelete={onDelete ? () => isValid && onDelete(kit.name) : undefined}
         onDuplicate={() => isValid && onDuplicate(kit.name)}
         onSelect={handleSelectKit}
         onToggleFavorite={onToggleFavorite}

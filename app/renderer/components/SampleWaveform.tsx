@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 
+import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
+
 interface SampleWaveformProps {
   // Secure API - uses kit/voice/slot identifiers
   kitName: string;
@@ -12,6 +14,19 @@ interface SampleWaveformProps {
   voiceColor?: string; // CSS color or var(--voice-N) reference
   voiceNumber: number;
   volume?: number; // 0-100, applied via GainNode
+}
+
+function computeRms(
+  analyser: AnalyserNode,
+  dataArray: Uint8Array<ArrayBuffer>,
+): number {
+  analyser.getByteTimeDomainData(dataArray);
+  let sum = 0;
+  for (let i = 0; i < dataArray.length; i++) {
+    const sample = (dataArray[i] - 128) / 128;
+    sum += sample * sample;
+  }
+  return Math.sqrt(sum / dataArray.length);
 }
 
 // Resolve a color value that may be a CSS var() reference into a raw color
@@ -51,6 +66,10 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const animationRef = useRef<null | number>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const analyserLRef = useRef<AnalyserNode | null>(null);
+  const analyserRRef = useRef<AnalyserNode | null>(null);
+  const analyserDataLRef = useRef<null | Uint8Array<ArrayBuffer>>(null);
+  const analyserDataRRef = useRef<null | Uint8Array<ArrayBuffer>>(null);
   // Track stopTrigger value at the time of last play to prevent a batched
   // stop from killing a freshly started source in the same render cycle.
   const stopTriggerAtPlayRef = useRef(0);
@@ -198,6 +217,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     }
     setIsPlaying(false);
     setPlayhead(0);
+    clearVoiceLevel(voiceNumber);
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
@@ -225,6 +245,30 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     const gain = linear * linear;
     gainNodeRef.current.gain.setValueAtTime(gain, ctx.currentTime);
     source.connect(gainNodeRef.current);
+
+    // Set up AnalyserNodes for VU meter
+    const isStereo = audioBuffer.numberOfChannels >= 2;
+    const analyserL = ctx.createAnalyser();
+    analyserL.fftSize = 256;
+    analyserLRef.current = analyserL;
+    analyserDataLRef.current = new Uint8Array(analyserL.frequencyBinCount);
+
+    if (isStereo) {
+      const analyserR = ctx.createAnalyser();
+      analyserR.fftSize = 256;
+      analyserRRef.current = analyserR;
+      analyserDataRRef.current = new Uint8Array(analyserR.frequencyBinCount);
+
+      const splitter = ctx.createChannelSplitter(2);
+      gainNodeRef.current.connect(splitter);
+      splitter.connect(analyserL, 0);
+      splitter.connect(analyserR, 1);
+    } else {
+      gainNodeRef.current.connect(analyserL);
+      analyserRRef.current = null;
+      analyserDataRRef.current = null;
+    }
+
     source.start();
     sourceRef.current = source;
     setIsPlaying(true);
@@ -233,17 +277,35 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       if (!audioBuffer) return;
       const elapsed = ctx.currentTime - startTime;
       setPlayhead(Math.min(elapsed / audioBuffer.duration, 1));
+
+      // Report RMS levels for VU meter
+      const leftRms =
+        analyserLRef.current && analyserDataLRef.current
+          ? computeRms(analyserLRef.current, analyserDataLRef.current)
+          : 0;
+      const rightRms =
+        analyserRRef.current && analyserDataRRef.current
+          ? computeRms(analyserRRef.current, analyserDataRRef.current)
+          : leftRms;
+      setVoiceLevel(voiceNumber, {
+        isStereo,
+        left: leftRms,
+        right: rightRms,
+      });
+
       if (elapsed < audioBuffer.duration) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
         setIsPlaying(false);
         setPlayhead(0);
+        clearVoiceLevel(voiceNumber);
       }
     }
     animate();
     source.onended = () => {
       setIsPlaying(false);
       setPlayhead(0);
+      clearVoiceLevel(voiceNumber);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [playTrigger, audioBuffer]); // eslint-disable-line react-hooks/exhaustive-deps -- stopTrigger read for snapshot only, not as a dependency

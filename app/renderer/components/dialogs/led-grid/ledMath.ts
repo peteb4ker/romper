@@ -108,15 +108,46 @@ export function readGlowColor(): string {
   const style = getComputedStyle(root);
   const voice1 = style.getPropertyValue("--voice-1").trim();
   if (voice1) {
-    const hex = voice1.replace("#", "");
-    if (hex.length === 6) {
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
-      return `${r}, ${g}, ${b}`;
-    }
+    const rgb = hexToRgbString(voice1);
+    if (rgb) return rgb;
   }
   return "224, 90, 96";
+}
+
+/**
+ * Parse a hex color string (with or without #) into an "R, G, B" string.
+ * Returns null if the input is not a valid 6-digit hex color.
+ */
+function hexToRgbString(hex: string): null | string {
+  const cleaned = hex.replace("#", "");
+  if (cleaned.length !== 6) return null;
+  const r = parseInt(cleaned.substring(0, 2), 16);
+  const g = parseInt(cleaned.substring(2, 4), 16);
+  const b = parseInt(cleaned.substring(4, 6), 16);
+  return `${r}, ${g}, ${b}`;
+}
+
+// Default voice colors (Squarp Rample Turbo livery)
+const VOICE_COLOR_DEFAULTS: Record<number, string> = {
+  1: "224, 90, 96", // red
+  2: "224, 196, 64", // yellow
+  3: "80, 200, 120", // green
+  4: "96, 160, 224", // blue
+};
+
+/**
+ * Read the --voice-N CSS variable and return as "R, G, B" string.
+ * Falls back to default voice color if not found.
+ */
+export function readVoiceGlowColor(voiceNumber: number): string {
+  const root = document.documentElement;
+  const style = getComputedStyle(root);
+  const value = style.getPropertyValue(`--voice-${voiceNumber}`).trim();
+  if (value) {
+    const rgb = hexToRgbString(value);
+    if (rgb) return rgb;
+  }
+  return VOICE_COLOR_DEFAULTS[voiceNumber] ?? "224, 90, 96";
 }
 
 /** Sawtooth wave: 0..1 */

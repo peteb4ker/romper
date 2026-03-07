@@ -9,8 +9,8 @@ const mockSetMousePosition = vi.fn();
 const mockClearMousePosition = vi.fn();
 const mockAddRipple = vi.fn();
 
-vi.mock("../useMiniLedAnimation", () => ({
-  useMiniLedAnimation: () => ({
+vi.mock("../useLedVisualization", () => ({
+  useLedVisualization: () => ({
     addRipple: mockAddRipple,
     clearMousePosition: mockClearMousePosition,
     ledRefs: { current: [] },

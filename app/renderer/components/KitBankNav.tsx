@@ -58,6 +58,7 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
     <nav
       aria-label="Bank index"
       className="relative flex flex-col items-start py-2 select-none pl-1"
+      data-testid="bank-nav"
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
       ref={navRef}

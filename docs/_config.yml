@@ -1,0 +1,13 @@
+title: Romper
+description: Sample kit manager for the Squarp Rample
+url: "https://peteb4ker.github.io"
+baseurl: "/romper"
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+permalink: pretty
+exclude:
+  - developer/
+  - templates/
+  - audits/

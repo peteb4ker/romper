@@ -1,11 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Platform detection
+  // --- Theme Toggle ---
+  initTheme();
+
+  // --- Platform detection ---
   var platformSpan = document.getElementById("platform");
   if (platformSpan) {
     platformSpan.textContent = detectPlatform();
   }
 
-  // Smooth scrolling for anchor links
+  // --- Smooth scrolling for anchor links ---
   document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
     anchor.addEventListener("click", function (e) {
       e.preventDefault();
@@ -16,10 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Progressive enhancement fade-in:
-  // 1. Set up the IntersectionObserver first
-  // 2. Then add js-ready to <html> so elements hide
-  // This ensures the observer is already watching before anything becomes invisible
+  // --- Progressive enhancement fade-in ---
   var observer = new IntersectionObserver(
     function (entries) {
       entries.forEach(function (entry) {
@@ -36,9 +36,44 @@ document.addEventListener("DOMContentLoaded", function () {
     observer.observe(el);
   });
 
-  // Now that the observer is watching, hide elements for animation
   document.documentElement.classList.add("js-ready");
+
+  // --- Manual sidebar toggle (mobile) ---
+  var sidebarToggle = document.getElementById("sidebar-toggle");
+  var manualNav = document.getElementById("manual-nav");
+  if (sidebarToggle && manualNav) {
+    sidebarToggle.addEventListener("click", function () {
+      var isOpen = manualNav.classList.toggle("is-open");
+      sidebarToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
+  }
+
+  // --- Manual TOC generation ---
+  buildTableOfContents();
 });
+
+// --- Theme ---
+
+function initTheme() {
+  var saved = localStorage.getItem("romper-theme");
+  var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+  if (saved === "dark" || (!saved && prefersDark)) {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+
+  var toggle = document.getElementById("theme-toggle");
+  if (toggle) {
+    toggle.addEventListener("click", function () {
+      var isDark = document.documentElement.classList.toggle("dark");
+      localStorage.setItem("romper-theme", isDark ? "dark" : "light");
+    });
+  }
+}
+
+// --- Platform detection ---
 
 function detectPlatform() {
   var ua = navigator.userAgent.toLowerCase();
@@ -47,4 +82,44 @@ function detectPlatform() {
   if (ua.includes("win") || p.includes("win")) return "Windows";
   if (ua.includes("linux") || p.includes("linux")) return "Linux";
   return "Your Platform";
+}
+
+// --- Manual TOC ---
+
+function buildTableOfContents() {
+  var tocContainer = document.getElementById("manual-toc");
+  if (!tocContainer) return;
+
+  var manualBody = document.querySelector(".manual-body");
+  if (!manualBody) return;
+
+  var headings = manualBody.querySelectorAll("h2, h3");
+  if (headings.length === 0) {
+    tocContainer.style.display = "none";
+    return;
+  }
+
+  var nav = tocContainer.querySelector("nav");
+  if (!nav) return;
+
+  headings.forEach(function (heading, index) {
+    if (!heading.id) {
+      heading.id = "section-" + index;
+    }
+
+    var link = document.createElement("a");
+    link.href = "#" + heading.id;
+    link.textContent = heading.textContent;
+
+    if (heading.tagName === "H3") {
+      link.classList.add("toc-h3");
+    }
+
+    link.addEventListener("click", function (e) {
+      e.preventDefault();
+      heading.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    nav.appendChild(link);
+  });
 }

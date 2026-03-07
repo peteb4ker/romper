@@ -29,7 +29,10 @@ const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
     return <Moon size={16} />;
   };
   return (
-    <div className="fixed bottom-0 left-0 w-full flex items-center justify-between px-4 py-1.5 bg-surface-1 text-xs text-text-secondary border-t border-border-subtle z-20">
+    <div
+      className="fixed bottom-0 left-0 w-full flex items-center justify-between px-4 py-1.5 bg-surface-1 text-xs text-text-secondary border-t border-border-subtle z-20"
+      data-testid="status-bar"
+    >
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1">
           <Database size={16} /> Local Store:{" "}

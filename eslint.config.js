@@ -23,6 +23,10 @@ export default defineConfig([
       "app/node_modules",
       "**/node_modules",
       "worktrees",
+      "_site",
+      "_site_preview",
+      "docs/_site",
+      "docs/.jekyll-cache",
     ],
   },
 

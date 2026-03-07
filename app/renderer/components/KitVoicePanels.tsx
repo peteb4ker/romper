@@ -278,6 +278,37 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     setStereoDragInfo(null);
   };
 
+  // Track which voices were recently visible so content stays rendered during collapse animation
+  const [deferredSecondaries, setDeferredSecondaries] = useState<Set<number>>(
+    new Set(),
+  );
+
+  React.useEffect(() => {
+    const currentSecondaries = new Set<number>();
+    for (const voice of voiceData) {
+      const status = stereoHandling.getVoiceLinkingStatus(
+        voice.voice_number,
+        voiceData,
+      );
+      if (status.isLinked && !status.isPrimary) {
+        currentSecondaries.add(voice.voice_number);
+      }
+    }
+
+    // If a voice just became secondary, delay hiding its content until animation completes
+    const newlyHidden = [...currentSecondaries].filter(
+      (v) => !deferredSecondaries.has(v),
+    );
+    if (newlyHidden.length > 0) {
+      const timer = setTimeout(() => {
+        setDeferredSecondaries(currentSecondaries);
+      }, 300); // Match transition duration
+      return () => clearTimeout(timer);
+    }
+
+    setDeferredSecondaries(currentSecondaries);
+  }, [voiceData, stereoHandling.getVoiceLinkingStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="flex w-full relative" data-testid="voice-panels-row">
       {/* Global slot numbers column */}
@@ -319,14 +350,20 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           return (
             <div
               className={[
-                "group/panel relative min-w-0",
-                isSecondary ? "hidden" : "flex-1",
+                "group/panel relative transition-all duration-300 ease-in-out overflow-hidden",
+                isSecondary ? "opacity-0" : "flex-1 opacity-100",
               ].join(" ")}
               data-testid={`voice-panel-${voice}`}
               key={`${hookProps.kitName}-voicepanel-${voice}`}
-              style={isPrimary && !isSecondary ? { flex: 2 } : undefined}
+              style={
+                isSecondary
+                  ? { flex: 0, gap: 0, minWidth: 0, padding: 0 }
+                  : isPrimary
+                    ? { flex: 2 }
+                    : undefined
+              }
             >
-              {!isSecondary && (
+              {!deferredSecondaries.has(voice) && (
                 <KitVoicePanel
                   dataTestIdVoiceName={`voice-name-${voice}`}
                   isActive={voice === hookProps.selectedVoice}
@@ -382,17 +419,18 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                 />
               )}
               {/* Stereo drag indicator between voices */}
-              {!isSecondary && stereoDragInfo?.targetVoice === voice && (
-                <div
-                  className="absolute -right-3 z-10 bg-purple-500 text-white rounded-full p-1.5 shadow-lg animate-pulse"
-                  style={{
-                    top: `calc(50px + ${stereoDragInfo.slotNumber * 32}px)`,
-                  }}
-                  title="Stereo link"
-                >
-                  <Link size={14} />
-                </div>
-              )}
+              {!deferredSecondaries.has(voice) &&
+                stereoDragInfo?.targetVoice === voice && (
+                  <div
+                    className="absolute -right-3 z-10 bg-purple-500 text-white rounded-full p-1.5 shadow-lg animate-pulse"
+                    style={{
+                      top: `calc(50px + ${stereoDragInfo.slotNumber * 32}px)`,
+                    }}
+                    title="Stereo link"
+                  >
+                    <Link size={14} />
+                  </div>
+                )}
               {/* Chain icon — right edge of panel, always visible */}
               {showChainIcon && (
                 <div

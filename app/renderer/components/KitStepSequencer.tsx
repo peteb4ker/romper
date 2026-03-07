@@ -12,6 +12,11 @@ import StepSequencerControls from "./StepSequencerControls";
 import StepSequencerDrawer from "./StepSequencerDrawer";
 import StepSequencerGrid from "./StepSequencerGrid";
 
+export interface StereoLinks {
+  linkedSecondaries: Set<number>;
+  primaryLabels: Record<number, string>;
+}
+
 interface KitStepSequencerProps {
   bpm?: number;
   gridRef?: React.RefObject<HTMLDivElement>;
@@ -30,6 +35,7 @@ interface KitStepSequencerProps {
 
 interface VoiceData {
   sample_mode?: string;
+  stereo_mode?: boolean;
   voice_number: number;
   voice_volume?: number;
 }
@@ -141,11 +147,31 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     [props.triggerConditions, props.setTriggerConditions],
   );
 
+  // Compute stereo-linked voice pairs from voice data
+  const stereoLinks = React.useMemo<StereoLinks>(() => {
+    const linkedSecondaries = new Set<number>();
+    const primaryLabels: Record<number, string> = {};
+
+    if (props.voices) {
+      for (const voice of props.voices) {
+        if (voice.stereo_mode && voice.voice_number < NUM_VOICES) {
+          const secondary = voice.voice_number + 1;
+          linkedSecondaries.add(secondary);
+          primaryLabels[voice.voice_number] =
+            `${voice.voice_number}+${secondary}`;
+        }
+      }
+    }
+
+    return { linkedSecondaries, primaryLabels };
+  }, [props.voices]);
+
   // Pass the current BPM from bpmLogic to sequencer logic for live updates
   const logic = useKitStepSequencerLogic({
     ...props,
     bpm: bpmLogic.bpm,
     sampleModes,
+    stereoLinks,
     triggerConditions: props.triggerConditions,
     voiceMutes,
     voiceVolumes,
@@ -183,6 +209,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
           safeStepPattern={logic.safeStepPattern}
           sampleModes={sampleModes}
           setFocusedStep={logic.setFocusedStep}
+          stereoLinks={stereoLinks}
           toggleStep={logic.toggleStep}
           triggerConditions={props.triggerConditions}
           voiceMutes={voiceMutes}

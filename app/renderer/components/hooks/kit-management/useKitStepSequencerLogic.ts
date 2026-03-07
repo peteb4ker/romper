@@ -1,5 +1,7 @@
 import React from "react";
 
+import type { StereoLinks } from "../../KitStepSequencer";
+
 import {
   ensureValidStepPattern,
   type FocusedStep,
@@ -23,6 +25,7 @@ interface UseKitStepSequencerLogicParams {
   setSequencerOpen: (open: boolean) => void;
   setStepPattern: (pattern: number[][]) => void;
   stepPattern: null | number[][];
+  stereoLinks?: StereoLinks;
   triggerConditions?: (null | string)[][];
   voiceMutes?: Record<number, boolean>;
   voiceVolumes?: Record<number, number>;
@@ -44,6 +47,7 @@ export function useKitStepSequencerLogic(
     sequencerOpen,
     setStepPattern,
     stepPattern,
+    stereoLinks,
     triggerConditions,
     voiceMutes = {},
     voiceVolumes = {},
@@ -197,6 +201,10 @@ export function useKitStepSequencerLogic(
     // Use explicit voice numbers 1-4 to match the voice_number field architecture
     for (let voiceIdx = 0; voiceIdx < NUM_VOICES; voiceIdx++) {
       const voiceNumber = voiceIdx + 1; // Convert 0-based index to 1-based voice number
+
+      // Skip secondary voices that are stereo-linked to a primary
+      if (stereoLinks?.linkedSecondaries.has(voiceNumber)) continue;
+
       const isStepActive = stepPattern[voiceIdx][currentSeqStep] > 0; // Check if velocity > 0
       const condition = (triggerConditions?.[voiceIdx]?.[currentSeqStep] ??
         null) as TriggerCondition;
@@ -224,6 +232,7 @@ export function useKitStepSequencerLogic(
     currentSeqStep,
     cycleCount,
     stepPattern,
+    stereoLinks,
     triggerConditions,
     samples,
     onPlaySample,
@@ -263,7 +272,7 @@ export function useKitStepSequencerLogic(
     [stepPattern, setStepPattern],
   );
 
-  // Focus navigation
+  // Focus navigation — skips stereo-linked secondary voices
   const moveFocus = React.useCallback(
     (direction: "down" | "left" | "right" | "up") => {
       setFocusedStep((prev) => {
@@ -271,24 +280,40 @@ export function useKitStepSequencerLogic(
         let newStep = prev.step;
 
         switch (direction) {
-          case "down":
-            newVoice = Math.min(NUM_VOICES - 1, prev.voice + 1);
+          case "down": {
+            let candidate = prev.voice + 1;
+            while (
+              candidate < NUM_VOICES &&
+              stereoLinks?.linkedSecondaries.has(candidate + 1)
+            ) {
+              candidate++;
+            }
+            newVoice = Math.min(NUM_VOICES - 1, candidate);
             break;
+          }
           case "left":
             newStep = Math.max(0, prev.step - 1);
             break;
           case "right":
             newStep = Math.min(NUM_STEPS - 1, prev.step + 1);
             break;
-          case "up":
-            newVoice = Math.max(0, prev.voice - 1);
+          case "up": {
+            let candidate = prev.voice - 1;
+            while (
+              candidate >= 0 &&
+              stereoLinks?.linkedSecondaries.has(candidate + 1)
+            ) {
+              candidate--;
+            }
+            newVoice = Math.max(0, candidate);
             break;
+          }
         }
 
         return { step: newStep, voice: newVoice };
       });
     },
-    [],
+    [stereoLinks],
   );
 
   // Keyboard navigation

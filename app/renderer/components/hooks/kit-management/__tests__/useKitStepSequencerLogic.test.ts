@@ -993,4 +993,108 @@ describe("useKitStepSequencerLogic", () => {
       expect(typeof result.current.cycleCount).toBe("number");
     });
   });
+
+  describe("Stereo Linking", () => {
+    const stereoLinksV1V2 = {
+      linkedSecondaries: new Set([2]),
+      primaryLabels: { 1: "1+2" },
+    };
+
+    it("should not trigger samples on linked secondary voice", () => {
+      // Use a pattern where only voice 2 is active at step 5 (no other voices)
+      const onlyVoice2Pattern = [
+        Array(16).fill(0),
+        [0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // Voice 2 on step 5
+        Array(16).fill(0),
+        Array(16).fill(0),
+      ];
+
+      const params = {
+        ...getDefaultParams(),
+        stepPattern: onlyVoice2Pattern,
+        stereoLinks: stereoLinksV1V2,
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      // Advance to step 5 where only voice 2 is active — but voice 2 is linked secondary
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 5 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      expect(mockOnPlaySample).not.toHaveBeenCalled();
+    });
+
+    it("should trigger samples normally on primary stereo voice", () => {
+      const params = {
+        ...getDefaultParams(),
+        stereoLinks: stereoLinksV1V2,
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+
+      // Step 0 has voice 1 active — voice 1 is the primary, should trigger
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 0 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+    });
+
+    it("should skip linked secondary voice in keyboard navigation down", () => {
+      const params = {
+        ...getDefaultParams(),
+        sequencerOpen: true,
+        stereoLinks: stereoLinksV1V2,
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      // Start at voice 0 (voice 1), navigate down — should skip voice 1 (voice 2) to voice 2 (voice 3)
+      act(() => {
+        result.current.handleStepGridKeyDown({
+          key: "ArrowDown",
+          preventDefault: vi.fn(),
+        } as unknown);
+      });
+
+      expect(result.current.focusedStep).toEqual({ step: 0, voice: 2 });
+    });
+
+    it("should skip linked secondary voice in keyboard navigation up", () => {
+      const params = {
+        ...getDefaultParams(),
+        sequencerOpen: true,
+        stereoLinks: stereoLinksV1V2,
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+
+      // Start at voice 2 (voice 3), navigate up — should skip voice 1 (voice 2) to voice 0 (voice 1)
+      act(() => {
+        result.current.setFocusedStep({ step: 0, voice: 2 });
+      });
+
+      act(() => {
+        result.current.handleStepGridKeyDown({
+          key: "ArrowUp",
+          preventDefault: vi.fn(),
+        } as unknown);
+      });
+
+      expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 });
+    });
+  });
 });

@@ -6,12 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { VoiceSamples } from "../kitTypes";
 
-import KitDetailsContainer from "../KitDetailsContainer";
+import KitEditorContainer from "../KitEditorContainer";
 
-// Mock KitDetails component
-vi.mock("../KitDetails", () => ({
+// Mock KitEditor component
+vi.mock("../KitEditor", () => ({
   default: vi.fn(({ onBack, onMessage, onRequestSamplesReload }) => (
-    <div data-testid="kit-details">
+    <div data-testid="kit-editor">
       <button onClick={() => onBack("test-kit")}>Back</button>
       <button onClick={() => onMessage("Test message", "info", 5000)}>
         Message
@@ -21,7 +21,7 @@ vi.mock("../KitDetails", () => ({
   )),
 }));
 
-describe("KitDetailsContainer", () => {
+describe("KitEditorContainer", () => {
   const mockKit: KitWithRelations = {
     alias: null,
     artist: null,
@@ -62,14 +62,14 @@ describe("KitDetailsContainer", () => {
 
   describe("rendering", () => {
     it("should render without crashing", () => {
-      render(<KitDetailsContainer {...defaultProps} />);
-      expect(screen.getByTestId("kit-details")).toBeInTheDocument();
+      render(<KitEditorContainer {...defaultProps} />);
+      expect(screen.getByTestId("kit-editor")).toBeInTheDocument();
     });
 
-    it("should render KitDetails with all buttons functional", () => {
-      render(<KitDetailsContainer {...defaultProps} />);
+    it("should render KitEditor with all buttons functional", () => {
+      render(<KitEditorContainer {...defaultProps} />);
 
-      expect(screen.getByTestId("kit-details")).toBeInTheDocument();
+      expect(screen.getByTestId("kit-editor")).toBeInTheDocument();
       expect(screen.getByText("Back")).toBeInTheDocument();
       expect(screen.getByText("Message")).toBeInTheDocument();
       expect(screen.getByText("Reload")).toBeInTheDocument();
@@ -78,7 +78,7 @@ describe("KitDetailsContainer", () => {
 
   describe("callback handling", () => {
     it("should handle onBack callback with parameters", async () => {
-      render(<KitDetailsContainer {...defaultProps} />);
+      render(<KitEditorContainer {...defaultProps} />);
 
       const backButton = screen.getByText("Back");
       backButton.click();
@@ -87,7 +87,7 @@ describe("KitDetailsContainer", () => {
     });
 
     it("should handle onMessage callback", () => {
-      render(<KitDetailsContainer {...defaultProps} />);
+      render(<KitEditorContainer {...defaultProps} />);
 
       const messageButton = screen.getByText("Message");
       messageButton.click();
@@ -100,7 +100,7 @@ describe("KitDetailsContainer", () => {
     });
 
     it("should handle onRequestSamplesReload callback", () => {
-      render(<KitDetailsContainer {...defaultProps} />);
+      render(<KitEditorContainer {...defaultProps} />);
 
       const reloadButton = screen.getByText("Reload");
       reloadButton.click();
@@ -111,23 +111,23 @@ describe("KitDetailsContainer", () => {
 
   describe("component behavior", () => {
     it("should handle prop changes gracefully", () => {
-      const { rerender } = render(<KitDetailsContainer {...defaultProps} />);
+      const { rerender } = render(<KitEditorContainer {...defaultProps} />);
 
       // Rerender with different props
-      rerender(<KitDetailsContainer {...defaultProps} kitName="NewKit" />);
+      rerender(<KitEditorContainer {...defaultProps} kitName="NewKit" />);
 
-      expect(screen.getByTestId("kit-details")).toBeInTheDocument();
+      expect(screen.getByTestId("kit-editor")).toBeInTheDocument();
     });
 
     it("should maintain callback functionality across renders", () => {
-      const { rerender } = render(<KitDetailsContainer {...defaultProps} />);
+      const { rerender } = render(<KitEditorContainer {...defaultProps} />);
 
       const messageButton = screen.getByText("Message");
       messageButton.click();
       expect(defaultProps.onMessage).toHaveBeenCalledTimes(1);
 
       // Rerender and test again
-      rerender(<KitDetailsContainer {...defaultProps} />);
+      rerender(<KitEditorContainer {...defaultProps} />);
       messageButton.click();
       expect(defaultProps.onMessage).toHaveBeenCalledTimes(2);
     });
@@ -135,18 +135,18 @@ describe("KitDetailsContainer", () => {
 
   describe("edge cases", () => {
     it("should handle empty kits array", () => {
-      render(<KitDetailsContainer {...defaultProps} kits={[]} />);
-      expect(screen.getByTestId("kit-details")).toBeInTheDocument();
+      render(<KitEditorContainer {...defaultProps} kits={[]} />);
+      expect(screen.getByTestId("kit-editor")).toBeInTheDocument();
     });
 
     it("should handle empty samples object", () => {
-      render(<KitDetailsContainer {...defaultProps} samples={{}} />);
-      expect(screen.getByTestId("kit-details")).toBeInTheDocument();
+      render(<KitEditorContainer {...defaultProps} samples={{}} />);
+      expect(screen.getByTestId("kit-editor")).toBeInTheDocument();
     });
 
     it("should handle null kit name", () => {
-      render(<KitDetailsContainer {...defaultProps} kitName="" />);
-      expect(screen.getByTestId("kit-details")).toBeInTheDocument();
+      render(<KitEditorContainer {...defaultProps} kitName="" />);
+      expect(screen.getByTestId("kit-editor")).toBeInTheDocument();
     });
   });
 });

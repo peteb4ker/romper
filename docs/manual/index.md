@@ -46,6 +46,6 @@ Romper keeps its database and metadata in a local store directory (a `.romperdb`
 
 - [Getting Started](getting-started) -- Installation, first-time setup, and connecting your SD card
 - [Kit Browser](kit-browser) -- Navigating banks, filtering kits, and managing your library
-- [Kit Details](kit-details) -- Editing voices, assigning samples, and using the step sequencer
+- [Kit Editor](kit-editor) -- Editing voices, assigning samples, and using the step sequencer
 - [Syncing](syncing) -- Writing kits to your SD card and managing factory samples
 - [Keyboard Shortcuts](keyboard-shortcuts) -- Complete shortcut reference for fast workflow

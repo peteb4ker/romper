@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import type {
-  KitDetailsProps,
+  KitEditorProps,
   KitSamplePlanSlot,
   SampleData,
   VoiceSamples,
 } from "../kitTypes";
 
 describe("kitTypes", () => {
-  describe("KitDetailsProps interface", () => {
-    it("should allow valid KitDetailsProps objects", () => {
-      const props: KitDetailsProps = {
+  describe("KitEditorProps interface", () => {
+    it("should allow valid KitEditorProps objects", () => {
+      const props: KitEditorProps = {
         kitName: "Test Kit",
         onBack: () => {},
       };
@@ -19,7 +19,7 @@ describe("kitTypes", () => {
     });
 
     it("should allow optional properties", () => {
-      const props: KitDetailsProps = {
+      const props: KitEditorProps = {
         kitIndex: 5,
         kitName: "Test Kit",
         kits: [],

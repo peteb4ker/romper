@@ -90,4 +90,4 @@ For full details on the sync process, see [Syncing](syncing).
 
 ## What's Next
 
-Now that Romper is set up, explore the [Kit Browser](kit-browser) to see how to navigate your library, or jump to [Kit Details](kit-details) to learn about editing kits and assigning samples.
+Now that Romper is set up, explore the [Kit Browser](kit-browser) to see how to navigate your library, or jump to [Kit Editor](kit-editor) to learn about editing kits and assigning samples.

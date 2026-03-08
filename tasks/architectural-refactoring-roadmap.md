@@ -126,7 +126,7 @@ The architectural analysis identified **12 red flag files** exceeding 300 LOC th
 
 **Top Priority Hooks**:
 - [ ] `useKitBrowser.ts` (33 returns) → Split into multiple focused hooks
-- [ ] `useKitDetailsLogic.ts` (23 returns) → Extract validation and state hooks
+- [ ] `useKitEditorLogic.ts` (23 returns) → Extract validation and state hooks
 - [ ] `useKitBankNavigation.ts` (12 returns) → Split navigation concerns
 
 ---

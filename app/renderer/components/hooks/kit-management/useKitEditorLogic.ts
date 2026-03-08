@@ -1,4 +1,4 @@
-import type { KitDetailsProps } from "@romper/app/renderer/components/kitTypes";
+import type { KitEditorProps } from "@romper/app/renderer/components/kitTypes";
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React from "react";
@@ -13,7 +13,7 @@ import { useVoiceAlias } from "../voice-panels/useVoiceAlias";
 import { useKitPlayback } from "./useKitPlayback";
 import { useKitVoicePanels } from "./useKitVoicePanels";
 
-interface UseKitDetailsLogicParams extends KitDetailsProps {
+interface UseKitEditorLogicParams extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent
   kitError?: null | string; // Error from parent kit loading
   onCreateKit?: () => void;
@@ -28,10 +28,10 @@ interface UseKitDetailsLogicParams extends KitDetailsProps {
 }
 
 /**
- * Main business logic hook for KitDetails component
+ * Main business logic hook for KitEditor component
  * Orchestrates all kit detail operations including playback, metadata, scanning, and navigation
  */
-export function useKitDetailsLogic(props: UseKitDetailsLogicParams) {
+export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   // Destructure props for useEffect dependencies
   const {
     kitName,

@@ -198,7 +198,7 @@ For existing code with over-defensive IPC handling:
 
 - `app/renderer/components/hooks/useKit.ts`
 - `app/renderer/components/utils/bankOperations.ts`
-- `app/renderer/components/hooks/useKitDetailsLogic.ts`
+- `app/renderer/components/hooks/kit-management/useKitEditorLogic.ts`
 
 **Good Examples to Follow:**
 

@@ -44,7 +44,7 @@ test.describe("Back Navigation E2E Tests", () => {
     }
   });
 
-  test("should navigate from kit grid to kit details and back successfully", async () => {
+  test("should navigate from kit grid to kit editor and back successfully", async () => {
     // Wait for kit grid to load
     await window.waitForSelector('[data-testid="kit-grid"]', {
       timeout: 10000,
@@ -64,16 +64,16 @@ test.describe("Back Navigation E2E Tests", () => {
 
     await firstKit.click();
 
-    // Wait for navigation to kit details (should appear)
-    await window.waitForSelector('[data-testid="kit-details"]', {
+    // Wait for navigation to kit editor (should appear)
+    await window.waitForSelector('[data-testid="kit-editor"]', {
       timeout: 15000,
     });
 
-    // Verify we're on the kit details page
-    const kitDetailsVisible = await window.isVisible(
-      '[data-testid="kit-details"]',
+    // Verify we're on the kit editor page
+    const kitEditorVisible = await window.isVisible(
+      '[data-testid="kit-editor"]',
     );
-    expect(kitDetailsVisible).toBe(true);
+    expect(kitEditorVisible).toBe(true);
 
     // Find and click the back button (using title attribute)
     const backButton = await window.locator('button[title="Back"]');
@@ -87,11 +87,9 @@ test.describe("Back Navigation E2E Tests", () => {
     const backToKitGrid = await window.isVisible('[data-testid="kit-grid"]');
     expect(backToKitGrid).toBe(true);
 
-    // Verify kit details page is no longer visible
-    const kitDetailsGone = await window.isVisible(
-      '[data-testid="kit-details"]',
-    );
-    expect(kitDetailsGone).toBe(false);
+    // Verify kit editor page is no longer visible
+    const kitEditorGone = await window.isVisible('[data-testid="kit-editor"]');
+    expect(kitEditorGone).toBe(false);
   });
 
   test("should preserve kit grid state after back navigation", async () => {
@@ -112,8 +110,8 @@ test.describe("Back Navigation E2E Tests", () => {
     const kitName = kitTestId?.replace("kit-item-", "");
     await firstKit.click();
 
-    // Wait for kit details
-    await window.waitForSelector('[data-testid="kit-details"]', {
+    // Wait for kit editor
+    await window.waitForSelector('[data-testid="kit-editor"]', {
       timeout: 5000,
     });
 
@@ -150,8 +148,8 @@ test.describe("Back Navigation E2E Tests", () => {
     const firstKit = await window.locator('[data-testid^="kit-item-"]').first();
     await firstKit.click();
 
-    // Wait for kit details
-    await window.waitForSelector('[data-testid="kit-details"]', {
+    // Wait for kit editor
+    await window.waitForSelector('[data-testid="kit-editor"]', {
       timeout: 5000,
     });
 
@@ -190,16 +188,16 @@ test.describe("Back Navigation E2E Tests", () => {
     const targetKit = await window.locator('[data-testid^="kit-item-"]').nth(1); // Second kit
     await targetKit.click();
 
-    // Wait for kit details
-    await window.waitForSelector('[data-testid="kit-details"]', {
+    // Wait for kit editor
+    await window.waitForSelector('[data-testid="kit-editor"]', {
       timeout: 5000,
     });
 
-    // Verify we're on the kit details page
-    const kitDetailsVisible = await window.isVisible(
-      '[data-testid="kit-details"]',
+    // Verify we're on the kit editor page
+    const kitEditorVisible = await window.isVisible(
+      '[data-testid="kit-editor"]',
     );
-    expect(kitDetailsVisible).toBe(true);
+    expect(kitEditorVisible).toBe(true);
 
     // Navigate back using back button (explicit navigation)
     const backButton = await window.locator('button[title="Back"]');
@@ -214,17 +212,17 @@ test.describe("Back Navigation E2E Tests", () => {
       timeout: 10000,
     });
 
-    // Verify we stay on the kit grid and don't auto-navigate back to kit details
+    // Verify we stay on the kit grid and don't auto-navigate back to kit editor
     // (This would happen if HMR restoration wasn't properly blocked)
     const kitGridStillVisible = await window.isVisible(
       '[data-testid="kit-grid"]',
     );
     expect(kitGridStillVisible).toBe(true);
 
-    const kitDetailsNotVisible = await window.isVisible(
-      '[data-testid="kit-details"]',
+    const kitEditorNotVisible = await window.isVisible(
+      '[data-testid="kit-editor"]',
     );
-    expect(kitDetailsNotVisible).toBe(false);
+    expect(kitEditorNotVisible).toBe(false);
   });
 
   test("should handle keyboard navigation (Escape key for back)", async () => {
@@ -237,8 +235,8 @@ test.describe("Back Navigation E2E Tests", () => {
     const firstKit = await window.locator('[data-testid^="kit-item-"]').first();
     await firstKit.click();
 
-    // Wait for kit details
-    await window.waitForSelector('[data-testid="kit-details"]', {
+    // Wait for kit editor
+    await window.waitForSelector('[data-testid="kit-editor"]', {
       timeout: 5000,
     });
 
@@ -265,8 +263,8 @@ test.describe("Back Navigation E2E Tests", () => {
     const kitName = kitTestId?.replace("kit-item-", "");
     await firstKit.click();
 
-    // Wait for kit details
-    await window.waitForSelector('[data-testid="kit-details"]', {
+    // Wait for kit editor
+    await window.waitForSelector('[data-testid="kit-editor"]', {
       timeout: 5000,
     });
 
@@ -285,16 +283,16 @@ test.describe("Back Navigation E2E Tests", () => {
     const sameKit = await window.locator(`[data-testid="kit-item-${kitName}"]`);
     await sameKit.click();
 
-    // Wait for kit details again
-    await window.waitForSelector('[data-testid="kit-details"]', {
+    // Wait for kit editor again
+    await window.waitForSelector('[data-testid="kit-editor"]', {
       timeout: 5000,
     });
 
-    // Verify we're back on kit details page
-    const kitDetailsVisible = await window.isVisible(
-      '[data-testid="kit-details"]',
+    // Verify we're back on kit editor page
+    const kitEditorVisible = await window.isVisible(
+      '[data-testid="kit-editor"]',
     );
-    expect(kitDetailsVisible).toBe(true);
+    expect(kitEditorVisible).toBe(true);
   });
 
   test("should show proper navigation state with available kits", async () => {
@@ -326,8 +324,8 @@ test.describe("Back Navigation E2E Tests", () => {
     const firstKit = await window.locator('[data-testid^="kit-item-"]').first();
     await firstKit.click();
 
-    // Wait for kit details
-    await window.waitForSelector('[data-testid="kit-details"]', {
+    // Wait for kit editor
+    await window.waitForSelector('[data-testid="kit-editor"]', {
       timeout: 5000,
     });
 
@@ -350,19 +348,19 @@ test.describe("Back Navigation E2E Tests", () => {
     if (kitName) {
       // Test multiple navigation cycles to ensure stability
       for (let i = 0; i < 3; i++) {
-        // Navigate to kit details
+        // Navigate to kit editor
         await firstKit.click();
 
-        // Wait for kit details to load
-        await window.waitForSelector('[data-testid="kit-details"]', {
+        // Wait for kit editor to load
+        await window.waitForSelector('[data-testid="kit-editor"]', {
           timeout: 5000,
         });
 
-        // Verify we're on the kit details page
-        const kitDetailsVisible = await window.isVisible(
-          '[data-testid="kit-details"]',
+        // Verify we're on the kit editor page
+        const kitEditorVisible = await window.isVisible(
+          '[data-testid="kit-editor"]',
         );
-        expect(kitDetailsVisible).toBe(true);
+        expect(kitEditorVisible).toBe(true);
 
         // Navigate back
         const backButton = await window.locator('button[title="Back"]');

@@ -5,9 +5,9 @@ import React from "react";
 
 import type { VoiceSamples } from "./kitTypes";
 
-import KitDetails from "./KitDetails";
+import KitEditor from "./KitEditor";
 
-interface KitDetailsContainerProps {
+interface KitEditorContainerProps {
   kit: KitWithRelations;
   kitError?: null | string;
   kitIndex: number;
@@ -29,10 +29,10 @@ interface KitDetailsContainerProps {
 }
 
 /**
- * Container component for KitDetails
+ * Container component for KitEditor
  * Provides memoization and prop optimization
  */
-const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
+const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
   const {
     kit,
     kitError,
@@ -72,7 +72,7 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
   }, [onRequestSamplesReload]);
 
   return (
-    <KitDetails
+    <KitEditor
       kit={kit}
       kitError={kitError}
       kitIndex={kitIndex}
@@ -93,4 +93,4 @@ const KitDetailsContainer: React.FC<KitDetailsContainerProps> = (props) => {
   );
 };
 
-export default React.memo(KitDetailsContainer);
+export default React.memo(KitEditorContainer);

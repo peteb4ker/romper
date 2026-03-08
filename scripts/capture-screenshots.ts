@@ -20,7 +20,7 @@
  * Examples:
  *   npx tsx scripts/capture-screenshots.ts --all          # capture everything
  *   npx tsx scripts/capture-screenshots.ts --target kit-browser
- *   npx tsx scripts/capture-screenshots.ts --target kit-details
+ *   npx tsx scripts/capture-screenshots.ts --target kit-editor
  *   npx tsx scripts/capture-screenshots.ts --list          # print available targets
  */
 
@@ -62,8 +62,8 @@ const SCREENSHOT_TARGETS = [
     output: "app-screenshot.png",
   },
   {
-    description: "Kit Details view - full window (website screenshots section)",
-    name: "kit-details",
+    description: "Kit Editor view - full window (website screenshots section)",
+    name: "kit-editor",
     navigate: async (window) => {
       await window.waitForSelector('[data-testid="kit-grid"]', {
         timeout: 10000,
@@ -72,12 +72,12 @@ const SCREENSHOT_TARGETS = [
       const firstKit = window.locator('[data-testid^="kit-item-"]').first();
       await firstKit.waitFor({ state: "visible", timeout: 5000 });
       await firstKit.click();
-      await window.waitForSelector('[data-testid="kit-details"]', {
+      await window.waitForSelector('[data-testid="kit-editor"]', {
         timeout: 10000,
       });
       await window.waitForTimeout(500);
     },
-    output: "kit-details.png",
+    output: "kit-editor.png",
   },
 
   // -- Manual inline screenshots --
@@ -159,8 +159,8 @@ const SCREENSHOT_TARGETS = [
     output: "manual/bank-nav.png",
   },
   {
-    description: "Kit Details header with navigation, name, lock, favorite",
-    name: "manual-kit-details-header",
+    description: "Kit Editor header with navigation, name, lock, favorite",
+    name: "manual-kit-editor-header",
     navigate: async (window) => {
       await window.waitForSelector('[data-testid="kit-grid"]', {
         timeout: 10000,
@@ -168,12 +168,12 @@ const SCREENSHOT_TARGETS = [
       const firstKit = window.locator('[data-testid^="kit-item-"]').first();
       await firstKit.waitFor({ state: "visible", timeout: 5000 });
       await firstKit.click();
-      await window.waitForSelector('[data-testid="kit-details"]', {
+      await window.waitForSelector('[data-testid="kit-editor"]', {
         timeout: 10000,
       });
       await window.waitForTimeout(300);
     },
-    output: "manual/kit-details-header.png",
+    output: "manual/kit-editor-header.png",
     selector: '[data-testid="kit-header"]',
   },
   {
@@ -186,7 +186,7 @@ const SCREENSHOT_TARGETS = [
       const firstKit = window.locator('[data-testid^="kit-item-"]').first();
       await firstKit.waitFor({ state: "visible", timeout: 5000 });
       await firstKit.click();
-      await window.waitForSelector('[data-testid="kit-details"]', {
+      await window.waitForSelector('[data-testid="kit-editor"]', {
         timeout: 10000,
       });
       await window.waitForTimeout(500);
@@ -204,7 +204,7 @@ const SCREENSHOT_TARGETS = [
       const firstKit = window.locator('[data-testid^="kit-item-"]').first();
       await firstKit.waitFor({ state: "visible", timeout: 5000 });
       await firstKit.click();
-      await window.waitForSelector('[data-testid="kit-details"]', {
+      await window.waitForSelector('[data-testid="kit-editor"]', {
         timeout: 10000,
       });
       // Show the sequencer
@@ -248,7 +248,7 @@ const SCREENSHOT_TARGETS = [
       const firstKit = window.locator('[data-testid^="kit-item-"]').first();
       await firstKit.waitFor({ state: "visible", timeout: 5000 });
       await firstKit.click();
-      await window.waitForSelector('[data-testid="kit-details"]', {
+      await window.waitForSelector('[data-testid="kit-editor"]', {
         timeout: 10000,
       });
       // Show the sequencer
@@ -295,7 +295,7 @@ const SCREENSHOT_TARGETS = [
       const firstKit = window.locator('[data-testid^="kit-item-"]').first();
       await firstKit.waitFor({ state: "visible", timeout: 5000 });
       await firstKit.click();
-      await window.waitForSelector('[data-testid="kit-details"]', {
+      await window.waitForSelector('[data-testid="kit-editor"]', {
         timeout: 10000,
       });
       // Show the sequencer
@@ -327,7 +327,7 @@ const SCREENSHOT_TARGETS = [
       const firstKit = window.locator('[data-testid^="kit-item-"]').first();
       await firstKit.waitFor({ state: "visible", timeout: 5000 });
       await firstKit.click();
-      await window.waitForSelector('[data-testid="kit-details"]', {
+      await window.waitForSelector('[data-testid="kit-editor"]', {
         timeout: 10000,
       });
       // Show the sequencer
@@ -456,7 +456,7 @@ async function main() {
         // (reset state between captures)
         try {
           const isOnDetails = await window
-            .locator('[data-testid="kit-details"]')
+            .locator('[data-testid="kit-editor"]')
             .isVisible({ timeout: 500 })
             .catch(() => false);
           if (isOnDetails) {

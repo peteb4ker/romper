@@ -2,12 +2,12 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
-import { useKitDetailsLogic } from "../useKitDetailsLogic";
+import { useKitEditorLogic } from "../useKitEditorLogic";
 import { useKitPlayback } from "../useKitPlayback";
 import { useKitVoicePanels } from "../useKitVoicePanels";
 
-// Mock all the hooks that useKitDetailsLogic depends on
-// Note: useKit is no longer used by useKitDetailsLogic
+// Mock all the hooks that useKitEditorLogic depends on
+// Note: useKit is no longer used by useKitEditorLogic
 
 vi.mock("../useVoiceAlias", () => ({
   useVoiceAlias: vi.fn(() => ({
@@ -63,7 +63,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-describe("useKitDetailsLogic", () => {
+describe("useKitEditorLogic", () => {
   const mockKit = {
     alias: "Test Kit",
     artist: "Test Artist",
@@ -110,7 +110,7 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("initializes with default state", () => {
-    const { result } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
     expect(result.current).toBeDefined();
     expect(result.current.kit).toEqual(mockKit);
@@ -119,7 +119,7 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("exposes all required functionality", () => {
-    const { result } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
     // Check that all expected functions are available
     expect(typeof result.current.reloadKit).toBe("function");
@@ -134,7 +134,7 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("exposes all required state", () => {
-    const { result } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
     // Check that all expected state is available
     expect(result.current.kit).toBeDefined();
@@ -152,7 +152,7 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("handles kit scanning successfully", async () => {
-    const { result } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
     await result.current.handleScanKit();
 
@@ -166,7 +166,7 @@ describe("useKitDetailsLogic", () => {
       success: false,
     });
 
-    const { result } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
     await result.current.handleScanKit();
 
@@ -179,7 +179,7 @@ describe("useKitDetailsLogic", () => {
     // Remove the rescanKit method to simulate missing API
     delete (window.electronAPI as unknown).rescanKit;
 
-    const { result } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
     await result.current.handleScanKit();
 
@@ -188,7 +188,7 @@ describe("useKitDetailsLogic", () => {
 
   it("handles kit scanning without kit name", async () => {
     const propsWithoutKit = { ...mockProps, kitName: "" };
-    const { result } = renderHook(() => useKitDetailsLogic(propsWithoutKit));
+    const { result } = renderHook(() => useKitEditorLogic(propsWithoutKit));
 
     await result.current.handleScanKit();
 
@@ -197,15 +197,13 @@ describe("useKitDetailsLogic", () => {
 
   it("initializes with default samples when not provided", () => {
     const propsWithoutSamples = { ...mockProps, samples: undefined };
-    const { result } = renderHook(() =>
-      useKitDetailsLogic(propsWithoutSamples),
-    );
+    const { result } = renderHook(() => useKitEditorLogic(propsWithoutSamples));
 
     expect(result.current.samples).toEqual({ 1: [], 2: [], 3: [], 4: [] });
   });
 
   it("exposes sequencer controls", () => {
-    const { result } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
     expect(result.current.sequencerOpen).toBe(false);
     expect(typeof result.current.setSequencerOpen).toBe("function");
@@ -213,7 +211,7 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("manages voice selection", () => {
-    const { result } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
     expect(result.current.selectedVoice).toBe(1);
     expect(result.current.selectedSampleIdx).toBe(0);
@@ -233,7 +231,7 @@ describe("useKitDetailsLogic", () => {
       stopTriggers: {},
     });
 
-    renderHook(() => useKitDetailsLogic(mockProps));
+    renderHook(() => useKitEditorLogic(mockProps));
 
     expect(mockProps.onMessage).toHaveBeenCalledWith(
       "Playback failed",
@@ -248,7 +246,7 @@ describe("useKitDetailsLogic", () => {
     const addEventListenerSpy = vi.spyOn(window, "addEventListener");
     const removeEventListenerSpy = vi.spyOn(window, "removeEventListener");
 
-    const { unmount } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { unmount } = renderHook(() => useKitEditorLogic(mockProps));
 
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       "SampleWaveformError",
@@ -264,7 +262,7 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("handles SampleWaveformError events", () => {
-    renderHook(() => useKitDetailsLogic(mockProps));
+    renderHook(() => useKitEditorLogic(mockProps));
 
     // Simulate a SampleWaveformError event
     const errorEvent = new CustomEvent("SampleWaveformError", {
@@ -279,7 +277,7 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("manages sequencer focus when sequencer opens", async () => {
-    const { result } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
     // Mock the sequencer grid ref
     const mockGridElement = {
@@ -303,7 +301,7 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("handles global keyboard navigation for kit navigation", () => {
-    renderHook(() => useKitDetailsLogic(mockProps));
+    renderHook(() => useKitEditorLogic(mockProps));
 
     // Test previous kit navigation (comma key)
     const prevEvent = new KeyboardEvent("keydown", { key: "," });
@@ -323,7 +321,7 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("handles global keyboard navigation for kit scanning", async () => {
-    renderHook(() => useKitDetailsLogic(mockProps));
+    renderHook(() => useKitEditorLogic(mockProps));
 
     // Test kit scan (slash key)
     const scanEvent = new KeyboardEvent("keydown", { key: "/" });
@@ -336,9 +334,7 @@ describe("useKitDetailsLogic", () => {
   });
 
   it("handles global keyboard navigation for sequencer toggle", () => {
-    const { rerender, result } = renderHook(() =>
-      useKitDetailsLogic(mockProps),
-    );
+    const { rerender, result } = renderHook(() => useKitEditorLogic(mockProps));
     expect(result.current.sequencerOpen).toBe(false);
 
     // Test sequencer toggle (s key)
@@ -375,7 +371,7 @@ describe("useKitDetailsLogic", () => {
       setSelectedVoice: vi.fn(),
     });
 
-    renderHook(() => useKitDetailsLogic(mockProps));
+    renderHook(() => useKitEditorLogic(mockProps));
 
     // Test arrow down navigation
     const downEvent = new KeyboardEvent("keydown", { key: "ArrowDown" });
@@ -425,7 +421,7 @@ describe("useKitDetailsLogic", () => {
       },
     };
 
-    renderHook(() => useKitDetailsLogic(sampleProps));
+    renderHook(() => useKitEditorLogic(sampleProps));
 
     // Test spacebar playback
     const spaceEvent = new KeyboardEvent("keydown", { key: " " });
@@ -457,9 +453,7 @@ describe("useKitDetailsLogic", () => {
       setSelectedVoice: vi.fn(),
     });
 
-    const { rerender, result } = renderHook(() =>
-      useKitDetailsLogic(mockProps),
-    );
+    const { rerender, result } = renderHook(() => useKitEditorLogic(mockProps));
 
     // Open sequencer first
     result.current.setSequencerOpen(true);
@@ -487,7 +481,7 @@ describe("useKitDetailsLogic", () => {
       setSelectedVoice: vi.fn(),
     });
 
-    renderHook(() => useKitDetailsLogic(mockProps));
+    renderHook(() => useKitEditorLogic(mockProps));
 
     // Create and focus an input element
     const inputElement = document.createElement("input");
@@ -517,7 +511,7 @@ describe("useKitDetailsLogic", () => {
       setSelectedVoice: vi.fn(),
     });
 
-    renderHook(() => useKitDetailsLogic(mockProps));
+    renderHook(() => useKitEditorLogic(mockProps));
 
     // Create and focus a textarea element
     const textareaElement = document.createElement("textarea");
@@ -546,7 +540,7 @@ describe("useKitDetailsLogic", () => {
       setSelectedVoice: vi.fn(),
     });
 
-    renderHook(() => useKitDetailsLogic(mockProps));
+    renderHook(() => useKitEditorLogic(mockProps));
 
     // Create and focus a checkbox input element
     const checkboxElement = document.createElement("input");
@@ -568,7 +562,7 @@ describe("useKitDetailsLogic", () => {
   it("cleans up keyboard event listener on unmount", () => {
     const removeEventListenerSpy = vi.spyOn(window, "removeEventListener");
 
-    const { unmount } = renderHook(() => useKitDetailsLogic(mockProps));
+    const { unmount } = renderHook(() => useKitEditorLogic(mockProps));
 
     unmount();
 

@@ -193,7 +193,7 @@ test.describe("Debug Navigation Logic", () => {
       const selectedKit = kitName;
       const selectedKitSamples = voiceSamples;
 
-      const shouldShowKitDetails = !!(selectedKit && selectedKitSamples);
+      const shouldShowKitEditor = !!(selectedKit && selectedKitSamples);
 
       return {
         condition1: !!selectedKit,
@@ -202,7 +202,7 @@ test.describe("Debug Navigation Logic", () => {
         samplesType: typeof selectedKitSamples,
         selectedKit,
         selectedKitSamples,
-        shouldShowKitDetails,
+        shouldShowKitEditor,
         voice1HasSamples: selectedKitSamples?.[1]?.length > 0,
         voice2HasSamples: selectedKitSamples?.[2]?.length > 0,
       };
@@ -211,7 +211,7 @@ test.describe("Debug Navigation Logic", () => {
     console.log("Navigation test result:", navigationTest);
 
     // Verify our expectations
-    expect(navigationTest.shouldShowKitDetails).toBe(true);
+    expect(navigationTest.shouldShowKitEditor).toBe(true);
     expect(navigationTest.selectedKit).toBe("A0");
     expect(navigationTest.selectedKitSamples).toBeTruthy();
   });

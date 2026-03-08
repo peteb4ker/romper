@@ -5,8 +5,8 @@ prev_page:
   url: /manual/getting-started
   title: Getting Started
 next_page:
-  url: /manual/kit-details
-  title: Kit Details
+  url: /manual/kit-editor
+  title: Kit Editor
 ---
 
 The Kit Browser is Romper's main view. It shows all your kits in a visual grid organized by bank, letting you quickly find, filter, and manage your sample library.
@@ -41,7 +41,7 @@ Each kit appears as a card in the grid showing:
 - **Status badges** -- Shows if a kit is Editable, Unsaved, or locked
 - **Favorite bookmark** -- Click to bookmark frequently used kits
 
-Click any kit card to open it in the [Kit Details](kit-details) view.
+Click any kit card to open it in the [Kit Editor](kit-editor) view.
 
 ## Creating Kits
 

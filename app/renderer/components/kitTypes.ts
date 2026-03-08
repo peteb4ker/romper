@@ -4,7 +4,7 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
-export interface KitDetailsProps {
+export interface KitEditorProps {
   kitIndex?: number;
   kitName: string;
   kits?: KitWithRelations[];

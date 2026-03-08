@@ -12,18 +12,18 @@ import {
 
 import { TestSettingsProvider } from "../../../../tests/providers/TestSettingsProvider";
 import { render } from "../../../../tests/utils/renderWithProviders";
-import KitDetails from "../KitDetails";
+import KitEditor from "../KitEditor";
 
 // Mock modules before importing them
-vi.mock("../hooks/kit-management/useKitDetailsLogic", () => ({
-  useKitDetailsLogic: vi.fn(),
+vi.mock("../hooks/kit-management/useKitEditorLogic", () => ({
+  useKitEditorLogic: vi.fn(),
 }));
 
 // UnscannedKitPrompt feature was removed during database migration
 
 // Import after mocking and access the mocked function
-import { useKitDetailsLogic } from "../hooks/kit-management/useKitDetailsLogic";
-const mockUseKitDetailsLogic = useKitDetailsLogic as ReturnType<typeof vi.fn>;
+import { useKitEditorLogic } from "../hooks/kit-management/useKitEditorLogic";
+const mockUseKitEditorLogic = useKitEditorLogic as ReturnType<typeof vi.fn>;
 
 // Add Mock type for TypeScript
 type Mock = ReturnType<typeof vi.fn>;
@@ -32,7 +32,7 @@ type Mock = ReturnType<typeof vi.fn>;
 function createMockLogic(overrides = {}) {
   return {
     handleScanKit: vi.fn(),
-    // Kit data from useKitDetailsLogic
+    // Kit data from useKitEditorLogic
     kit: {
       alias: null,
       artist: null,
@@ -105,7 +105,7 @@ function setupElectronAPIMocks() {
   });
 }
 
-describe("KitDetails", () => {
+describe("KitEditor", () => {
   beforeAll(() => {
     HTMLCanvasElement.prototype.getContext = function () {
       return null;
@@ -115,8 +115,8 @@ describe("KitDetails", () => {
   beforeEach(() => {
     setupElectronAPIMocks();
     // Reset mock implementation to default
-    mockUseKitDetailsLogic.mockClear();
-    mockUseKitDetailsLogic.mockReturnValue(createMockLogic());
+    mockUseKitEditorLogic.mockClear();
+    mockUseKitEditorLogic.mockReturnValue(createMockLogic());
   });
 
   afterEach(() => {
@@ -128,7 +128,7 @@ describe("KitDetails", () => {
     it("shows no-name indicator when no voice name is set", async () => {
       // Default mocks already have empty voice names
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -148,10 +148,10 @@ describe("KitDetails", () => {
         ...createMockLogic(),
         kit: { ...createMockLogic().kit, editable: true },
       };
-      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -202,10 +202,10 @@ describe("KitDetails", () => {
       console.log("Mock kit:", mockLogic.kit);
 
       // Clear previous calls and set return value
-      mockUseKitDetailsLogic.mockImplementation(() => mockLogic);
+      mockUseKitEditorLogic.mockImplementation(() => mockLogic);
 
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -228,7 +228,7 @@ describe("KitDetails", () => {
     it("always shows all four voices, even if no names", async () => {
       // Default mocks already have empty voice names
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -250,10 +250,10 @@ describe("KitDetails", () => {
         kit: { ...createMockLogic().kit, editable: true },
         toggleEditableMode: mockToggleEditableMode,
       };
-      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -278,10 +278,10 @@ describe("KitDetails", () => {
         ...createMockLogic(),
         kit: { ...createMockLogic().kit, editable: true },
       };
-      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -303,10 +303,10 @@ describe("KitDetails", () => {
         ...createMockLogic(),
         kit: { ...createMockLogic().kit, editable: false },
       };
-      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -326,10 +326,10 @@ describe("KitDetails", () => {
         ...createMockLogic(),
         kit: { ...createMockLogic().kit, editable: false },
       };
-      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -350,10 +350,10 @@ describe("KitDetails", () => {
         ...createMockLogic(),
         kit: null,
       };
-      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -370,12 +370,12 @@ describe("KitDetails", () => {
         ...createMockLogic(),
         kit: { ...createMockLogic().kit, editable: false },
       };
-      const mockUseKitDetailsLogicInstance = (
-        useKitDetailsLogic as Mock
+      const mockUseKitEditorLogicInstance = (
+        useKitEditorLogic as Mock
       ).mockReturnValue(mockLogic);
 
       const { rerender } = renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -391,11 +391,11 @@ describe("KitDetails", () => {
         ...mockLogic,
         kit: { ...mockLogic.kit, editable: true },
       };
-      mockUseKitDetailsLogicInstance.mockReturnValue(updatedMockLogic);
+      mockUseKitEditorLogicInstance.mockReturnValue(updatedMockLogic);
 
       rerender(
         <TestSettingsProvider>
-          <KitDetails
+          <KitEditor
             kitName="TestKit"
             onBack={() => {}}
             onMessage={vi.fn()}
@@ -419,10 +419,10 @@ describe("KitDetails", () => {
         },
         samples: { 1: [], 2: [], 3: [], 4: [] }, // No samples
       };
-      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -453,10 +453,10 @@ describe("KitDetails", () => {
         },
         samples: { 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }, // Has samples
       };
-      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}
@@ -497,10 +497,10 @@ describe("KitDetails", () => {
         },
         samples: { 1: ["sample1.wav"], 2: ["sample2.wav"], 3: [], 4: [] }, // Has samples
       };
-      (useKitDetailsLogic as Mock).mockReturnValue(mockLogic);
+      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
 
       renderWithSettings(
-        <KitDetails
+        <KitEditor
           kitName="TestKit"
           onBack={() => {}}
           onMessage={vi.fn()}

@@ -40,7 +40,7 @@ The slash key triggers a rescan of the current kit, re-analyzing sample filename
 | Action | Shortcut |
 |--------|----------|
 | Show / hide sequencer | `S` |
-| Toggle current step | `Space` |
+| Toggle current step | `Space` or `Enter` |
 | Navigate between steps | Arrow keys |
 
 When the sequencer is focused, the arrow keys move between steps in the 4x16 grid. Space toggles the step under the cursor on or off.

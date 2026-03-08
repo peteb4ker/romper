@@ -173,7 +173,7 @@ export class SyncPlannerService {
 
     for (const fileOp of allFiles) {
       const pathParts = fileOp.destinationPath.split("/");
-      const voiceNumberStr = pathParts[pathParts.length - 2];
+      const voiceNumberStr = pathParts.at(-2) ?? "";
       const voiceNumber = Number.parseInt(voiceNumberStr, 10);
 
       if (Number.isNaN(voiceNumber)) {

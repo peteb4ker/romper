@@ -247,7 +247,7 @@ class SyncService {
    */
   private extractVoiceNumber(destinationPath: string): number | undefined {
     const pathParts = destinationPath.split("/");
-    const voiceNumberStr = pathParts[pathParts.length - 2];
+    const voiceNumberStr = pathParts.at(-2) ?? "";
     const voiceNumber = Number.parseInt(voiceNumberStr, 10);
     return Number.isNaN(voiceNumber) ? undefined : voiceNumber;
   }

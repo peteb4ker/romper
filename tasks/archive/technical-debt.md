@@ -30,7 +30,7 @@ This file contains completed technical debt items that were archived to reduce c
   - Created `createRendererErrorHandler()` function for components requiring custom error handling
   - Extended `shared/errorUtils.ts` with `SampleError`, `KitError`, `ValidationError` classes
   - Centralized error handling mock in `tests/mocks/errorHandling.ts`
-  - **Files Updated**: `useSampleProcessing.ts`, `useStereoHandling.ts`, `useSampleActions.ts`, `useInternalDragHandlers.ts`, `useKitDetailsLogic.ts`
+  - **Files Updated**: `useSampleProcessing.ts`, `useStereoHandling.ts`, `useSampleActions.ts`, `useInternalDragHandlers.ts`, `useKitEditorLogic.ts`
   - **Results**: Reduced code duplication, standardized console.error + toast.error patterns across renderer hooks
   - **Approach**: Lightweight solution without heavyweight frameworks, maintains existing test structure
 

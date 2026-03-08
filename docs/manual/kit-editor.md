@@ -1,6 +1,6 @@
 ---
 layout: manual
-title: Kit Details
+title: Kit Editor
 prev_page:
   url: /manual/kit-browser
   title: Kit Browser
@@ -9,13 +9,13 @@ next_page:
   title: Syncing
 ---
 
-The Kit Details view is where you build and audition your kits. It shows all four voices with their sample slots, playback controls, and the step sequencer.
+The Kit Editor view is where you build and audition your kits. It shows all four voices with their sample slots, playback controls, and the step sequencer.
 
 ## Opening a Kit
 
 Click any kit card in the Kit Browser to open it. The header shows:
 
-![Kit Details header]({{ site.baseurl }}/images/manual/kit-details-header.png)
+![Kit Details header]({{ site.baseurl }}/images/manual/kit-editor-header.png)
 
 - **Back button** -- Returns to the Kit Browser
 - **Kit navigation** -- Previous/Next arrows to step through kits sequentially (or use `,` and `.` keys)

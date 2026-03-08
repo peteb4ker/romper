@@ -222,7 +222,7 @@ describe("KitsView", () => {
       expect(kitA1s.length).toBeGreaterThan(0);
     });
 
-    it("renders KitDetails when a kit is selected", async () => {
+    it("renders KitEditor when a kit is selected", async () => {
       render(
         <TestSettingsProvider>
           <KitsView />
@@ -236,7 +236,7 @@ describe("KitsView", () => {
 
       fireEvent.click(screen.getByText("A0"));
 
-      // Should show KitDetails view
+      // Should show KitEditor view
       await waitFor(() => {
         expect(screen.getByText("Back")).toBeInTheDocument();
       });
@@ -263,7 +263,7 @@ describe("KitsView", () => {
       });
     });
 
-    it("handles back navigation from kit details", async () => {
+    it("handles back navigation from kit editor", async () => {
       render(
         <TestSettingsProvider>
           <KitsView />
@@ -561,7 +561,7 @@ describe("KitsView", () => {
         expect(screen.getByText("Back")).toBeInTheDocument();
       });
 
-      // Find next kit button and click it (mocked in KitDetails)
+      // Find next kit button and click it (mocked in KitEditor)
       const nextButton = screen.queryByText("Next");
       if (nextButton) {
         fireEvent.click(nextButton);
@@ -586,7 +586,7 @@ describe("KitsView", () => {
         expect(screen.getByText("Back")).toBeInTheDocument();
       });
 
-      // Find previous kit button and click it (mocked in KitDetails)
+      // Find previous kit button and click it (mocked in KitEditor)
       const prevButton = screen.queryByText("Previous");
       if (prevButton) {
         fireEvent.click(prevButton);
@@ -774,7 +774,7 @@ describe("KitsView", () => {
         success: true,
       });
 
-      // Trigger sample reload (this would normally be triggered by KitDetails)
+      // Trigger sample reload (this would normally be triggered by KitEditor)
       // We can't easily test this without exposing the callback, but the function is covered
     });
   });
@@ -843,7 +843,7 @@ describe("KitsView", () => {
       });
 
       // Test navigation beyond boundary - should stay at last kit
-      // This would normally be handled by KitDetails component
+      // This would normally be handled by KitEditor component
     });
 
     it("handles previous kit navigation at boundary", async () => {
@@ -865,7 +865,7 @@ describe("KitsView", () => {
       });
 
       // Test navigation beyond boundary - should stay at first kit
-      // This would normally be handled by KitDetails component
+      // This would normally be handled by KitEditor component
     });
   });
 
@@ -907,7 +907,7 @@ describe("KitsView", () => {
         success: true,
       });
 
-      // This would normally be triggered by the KitDetails component
+      // This would normally be triggered by the KitEditor component
       // But we're testing the reload functionality exists
       expect(window.electronAPI.getAllSamplesForKit).toBeDefined();
     });
@@ -974,7 +974,7 @@ describe("KitsView", () => {
         success: true,
       });
 
-      // This would normally be triggered by KitDetails with refresh parameter
+      // This would normally be triggered by KitEditor with refresh parameter
       // We're testing that the refresh functionality exists
       expect(window.electronAPI.getKits).toBeDefined();
     });

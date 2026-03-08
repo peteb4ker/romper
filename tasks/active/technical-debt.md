@@ -213,8 +213,8 @@ Successfully consolidated the dual kit data loading systems into a single source
 
 2. **Refactored data flow**:
    - KitsView uses single `useKitDataManager` instance
-   - Passes kit object as prop to KitDetailsContainer
-   - KitDetailsLogic uses kit prop instead of loading independently
+   - Passes kit object as prop to KitEditorContainer
+   - KitEditorLogic uses kit prop instead of loading independently
    - All mutations go through parent callbacks to shared state
 
 3. **Deprecated useKit hook** with migration guidance
@@ -229,8 +229,8 @@ Successfully consolidated the dual kit data loading systems into a single source
 ### Files Modified
 - `useKitDataManager.ts` - Added kit mutation methods
 - `KitsView.tsx` - Removed duplicate useKit, passes kit object
-- `KitDetailsContainer.tsx` - Accepts kit object prop
-- `useKitDetailsLogic.ts` - Uses kit prop instead of loading
+- `KitEditorContainer.tsx` - Accepts kit object prop
+- `useKitEditorLogic.ts` - Uses kit prop instead of loading
 - `useKit.ts` - Added deprecation notice
 
 ---

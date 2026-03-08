@@ -185,7 +185,7 @@ describe("HMR State Manager Integration Tests", () => {
 
   describe("Navigation state interaction scenarios", () => {
     it("should simulate back navigation blocking kit restoration", () => {
-      // Simulate user navigating to kit details
+      // Simulate user navigating to kit editor
       const kitName = "Kit A05";
       const kits = [{ name: "Kit A05" }, { name: "Kit A06" }];
       const mockSetSelectedKit = vi.fn();

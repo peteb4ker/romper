@@ -653,7 +653,7 @@ Optimized layout addresses whitespace and scanning efficiency:
 - Individual sample and kit preview capabilities are easily accessible.
 - Waveform visualization provides clear visual feedback for all samples.
 - Audio playback accurately represents how samples will sound on the Rample hardware.
-- The XOX sequencer appears at the bottom of the KitDetails view, sliding up from the status bar area.
+- The XOX sequencer appears at the bottom of the KitEditor view, sliding up from the status bar area.
 - Each sequencer row uses a distinct color, matching the voice panel for visual consistency.
 - Step buttons use a modern, backlit look for clear state indication.
 - Keyboard navigation is custom (not browser focus-based).

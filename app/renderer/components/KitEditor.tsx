@@ -2,33 +2,33 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React from "react";
 
-import type { KitDetailsProps } from "./kitTypes";
+import type { KitEditorProps } from "./kitTypes";
 
-import { useKitDetailsLogic } from "./hooks/kit-management/useKitDetailsLogic";
+import { useKitEditorLogic } from "./hooks/kit-management/useKitEditorLogic";
 import KitForm from "./KitForm";
 import KitHeader from "./KitHeader";
 import KitStepSequencer from "./KitStepSequencer";
 import KitVoicePanels from "./KitVoicePanels";
 import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
-interface KitDetailsAllProps extends KitDetailsProps {
-  kit?: KitWithRelations; // Kit data passed from parent - used via useKitDetailsLogic hook
-  kitError?: null | string; // Error from parent kit loading - used via useKitDetailsLogic hook
-  onCreateKit?: () => void; // Used by useKitDetailsLogic hook
+interface KitEditorAllProps extends KitEditorProps {
+  kit?: KitWithRelations; // Kit data passed from parent - used via useKitEditorLogic hook
+  kitError?: null | string; // Error from parent kit loading - used via useKitEditorLogic hook
+  onCreateKit?: () => void; // Used by useKitEditorLogic hook
   onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
-  onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitDetailsLogic hook
+  onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitEditorLogic hook
   onRequestSamplesReload?: () => Promise<void>;
-  onToggleEditableMode?: (kitName: string) => Promise<void>; // Toggle editable mode - used via useKitDetailsLogic hook
+  onToggleEditableMode?: (kitName: string) => Promise<void>; // Toggle editable mode - used via useKitEditorLogic hook
   onToggleFavorite?: (
     kitName: string,
   ) => Promise<{ isFavorite?: boolean; success: boolean }>; // For favorite star button
-  onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>; // Update kit alias - used via useKitDetailsLogic hook
+  onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>; // Update kit alias - used via useKitEditorLogic hook
 }
 
-const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
-  // Note: All props are used via useKitDetailsLogic hook
+const KitEditor: React.FC<KitEditorAllProps> = (props) => {
+  // Note: All props are used via useKitEditorLogic hook
   // SonarQube doesn't detect indirect prop usage through hooks
-  const logic = useKitDetailsLogic(props);
+  const logic = useKitEditorLogic(props);
   const [dismissedUnscannedPrompt, setDismissedUnscannedPrompt] =
     React.useState(false);
 
@@ -63,7 +63,7 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   return (
     <div
       className="flex flex-col flex-1 min-h-0 h-full bg-surface-0 text-text-primary rounded-sm shadow"
-      data-testid="kit-details"
+      data-testid="kit-editor"
     >
       <KitHeader
         editingKitAlias={editingKitAlias}
@@ -155,4 +155,4 @@ const KitDetails: React.FC<KitDetailsAllProps> = (props) => {
   );
 };
 
-export default KitDetails;
+export default KitEditor;

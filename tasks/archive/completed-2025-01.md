@@ -74,7 +74,7 @@ This file contains all completed tasks that were archived from the main task fil
   - [x] 4.5.4.3 Keep kit.artist field for backwards compatibility during transition
 - [x] 4.5.5 Update UI to use bank-based artist display
   - [x] 4.5.5.1 Kit browser shows artist from bank relationship
-  - [x] 4.5.5.2 Kit details page shows artist from bank (not needed - KitDetails won't show artist)
+  - [x] 4.5.5.2 Kit editor page shows artist from bank (not needed - KitEditor won't show artist)
   - [x] 4.5.5.3 Remove old RTF scanning UI references
 
 ### ✅ 5.0 Kit Editing and Slot Management (Complete)

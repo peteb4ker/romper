@@ -21,7 +21,7 @@ import { useGlobalKeyboardShortcuts } from "../components/hooks/shared/useGlobal
 import { useMessageDisplay } from "../components/hooks/shared/useMessageDisplay";
 import { useStartupActions } from "../components/hooks/shared/useStartupActions";
 import KitBrowserContainer from "../components/KitBrowserContainer";
-import KitDetailsContainer from "../components/KitDetailsContainer";
+import KitEditorContainer from "../components/KitEditorContainer";
 import KitViewDialogs from "../components/KitViewDialogs";
 import LocalStoreWizardModal from "../components/LocalStoreWizardModal";
 import {
@@ -282,7 +282,7 @@ const KitsView: React.FC = () => {
         )}
 
       {navigation.selectedKit && navigation.selectedKitSamples && currentKit ? (
-        <KitDetailsContainer
+        <KitEditorContainer
           kit={currentKit}
           kitIndex={navigation.currentKitIndex}
           kitName={navigation.selectedKit}

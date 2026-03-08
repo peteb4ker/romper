@@ -220,6 +220,128 @@ const SCREENSHOT_TARGETS = [
     selector: '[data-testid="kit-step-sequencer"]',
   },
   {
+    captureOverride: async (window, outputPath) => {
+      // Right-click on the first active step to show the condition popover
+      // First find any active step (velocity > 0)
+      const activeStep = window.locator('button[aria-pressed="true"]').first();
+      if (await activeStep.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await activeStep.click({ button: "right" });
+      } else {
+        // Fallback: right-click step 0-0 even if inactive
+        const step = window.locator('[data-testid="seq-step-0-0"]');
+        await step.click({ button: "right" });
+      }
+      await window.waitForTimeout(300);
+
+      // Wait for the condition popover to appear
+      const popover = window.locator('[data-testid="condition-popover"]');
+      await popover.waitFor({ state: "visible", timeout: 3000 });
+      await popover.screenshot({ path: outputPath });
+    },
+    description:
+      "Trigger condition popover showing A:B options (right-click menu)",
+    name: "manual-condition-popover",
+    navigate: async (window) => {
+      await window.waitForSelector('[data-testid="kit-grid"]', {
+        timeout: 10000,
+      });
+      const firstKit = window.locator('[data-testid^="kit-item-"]').first();
+      await firstKit.waitFor({ state: "visible", timeout: 5000 });
+      await firstKit.click();
+      await window.waitForSelector('[data-testid="kit-details"]', {
+        timeout: 10000,
+      });
+      // Show the sequencer
+      const showBtn = window.locator(
+        '[data-testid="kit-step-sequencer-handle"]',
+      );
+      if (await showBtn.isVisible()) {
+        await showBtn.click();
+        await window.waitForTimeout(500);
+      }
+    },
+    output: "manual/condition-popover.png",
+  },
+  {
+    captureOverride: async (window, outputPath) => {
+      // Capture the right-side controls area of voice row 0 (sample mode + mute + volume)
+      const sampleMode = window.locator('[data-testid="sample-mode-0"]');
+      const volumeSlider = window.locator('[data-testid="voice-volume-0"]');
+      await sampleMode.waitFor({ state: "visible", timeout: 3000 });
+      await volumeSlider.waitFor({ state: "visible", timeout: 3000 });
+
+      const modeBox = await sampleMode.boundingBox();
+      const volBox = await volumeSlider.boundingBox();
+      if (!modeBox || !volBox) throw new Error("Controls not visible");
+
+      // Clip from sample mode button to end of volume slider with padding
+      const pad = 4;
+      const x = modeBox.x - pad;
+      const y = modeBox.y - pad;
+      const width = volBox.x + volBox.width - modeBox.x + pad * 2;
+      const height = Math.max(modeBox.height, volBox.height) + pad * 2;
+
+      await window.screenshot({
+        clip: { height, width, x, y },
+        path: outputPath,
+      });
+    },
+    description: "Voice controls: sample mode, mute toggle, volume slider",
+    name: "manual-voice-controls",
+    navigate: async (window) => {
+      await window.waitForSelector('[data-testid="kit-grid"]', {
+        timeout: 10000,
+      });
+      const firstKit = window.locator('[data-testid^="kit-item-"]').first();
+      await firstKit.waitFor({ state: "visible", timeout: 5000 });
+      await firstKit.click();
+      await window.waitForSelector('[data-testid="kit-details"]', {
+        timeout: 10000,
+      });
+      // Show the sequencer
+      const showBtn = window.locator(
+        '[data-testid="kit-step-sequencer-handle"]',
+      );
+      if (await showBtn.isVisible()) {
+        await showBtn.click();
+        await window.waitForTimeout(500);
+      }
+    },
+    output: "manual/voice-controls.png",
+  },
+  {
+    captureOverride: async (window, outputPath) => {
+      // Capture the transport controls (play button + BPM + cycle counter area)
+      const controls = window.locator(
+        '[data-testid="kit-step-sequencer-controls"]',
+      );
+      await controls.waitFor({ state: "visible", timeout: 3000 });
+      await controls.screenshot({ path: outputPath });
+    },
+    description: "Sequencer transport controls: play/stop, BPM, cycle counter",
+    name: "manual-transport-controls",
+    navigate: async (window) => {
+      await window.waitForSelector('[data-testid="kit-grid"]', {
+        timeout: 10000,
+      });
+      const firstKit = window.locator('[data-testid^="kit-item-"]').first();
+      await firstKit.waitFor({ state: "visible", timeout: 5000 });
+      await firstKit.click();
+      await window.waitForSelector('[data-testid="kit-details"]', {
+        timeout: 10000,
+      });
+      // Show the sequencer
+      const showBtn = window.locator(
+        '[data-testid="kit-step-sequencer-handle"]',
+      );
+      if (await showBtn.isVisible()) {
+        await showBtn.click();
+        await window.waitForTimeout(500);
+      }
+    },
+    output: "manual/transport-controls.png",
+  },
+  {
     description: "Status bar at bottom of window",
     name: "manual-status-bar",
     navigate: async (window) => {

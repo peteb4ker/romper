@@ -1033,6 +1033,12 @@ html.js-ready .fade-in.visible {
     max-width: none;
 }
 
+.manual-body img.img-right {
+    float: right;
+    margin: 0 0 1rem 1.5rem;
+    max-width: none;
+}
+
 .manual-body strong {
     color: var(--text-primary);
     font-weight: 600;

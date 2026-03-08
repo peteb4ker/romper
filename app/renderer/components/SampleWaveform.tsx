@@ -16,6 +16,29 @@ interface SampleWaveformProps {
   volume?: number; // 0-100, applied via GainNode
 }
 
+// Build min/max envelope arrays for waveform rendering
+function buildEnvelope(
+  data: Float32Array,
+  width: number,
+  step: number,
+  amp: number,
+): { bottoms: Float32Array; tops: Float32Array } {
+  const tops = new Float32Array(width);
+  const bottoms = new Float32Array(width);
+  for (let i = 0; i < width; i++) {
+    let max = -1.0,
+      min = 1.0;
+    for (let j = 0; j < step; j++) {
+      const datum = data[i * step + j] || 0;
+      if (datum < min) min = datum;
+      if (datum > max) max = datum;
+    }
+    tops[i] = (1 + max) * amp;
+    bottoms[i] = (1 + min) * amp;
+  }
+  return { bottoms, tops };
+}
+
 function computeRms(
   analyser: AnalyserNode,
   dataArray: Uint8Array<ArrayBuffer>,
@@ -44,6 +67,14 @@ function resolveWaveformColor(voiceColor?: string): string {
   }
   const style = getComputedStyle(document.documentElement);
   return style.getPropertyValue("--accent-primary").trim() || "#2889be";
+}
+
+// Trace a canvas path through an array of y-values
+function tracePath(ctx: CanvasRenderingContext2D, values: Float32Array): void {
+  for (let i = 0; i < values.length; i++) {
+    if (i === 0) ctx.moveTo(i, values[i]);
+    else ctx.lineTo(i, values[i]);
+  }
 }
 
 const SampleWaveform: React.FC<SampleWaveformProps> = ({
@@ -150,27 +181,11 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     const step = Math.ceil(data.length / w);
     const amp = h / 2;
 
-    // Build envelope arrays
-    const tops = new Float32Array(w);
-    const bottoms = new Float32Array(w);
-    for (let i = 0; i < w; i++) {
-      let max = -1.0,
-        min = 1.0;
-      for (let j = 0; j < step; j++) {
-        const datum = data[i * step + j] || 0;
-        if (datum < min) min = datum;
-        if (datum > max) max = datum;
-      }
-      tops[i] = (1 + max) * amp;
-      bottoms[i] = (1 + min) * amp;
-    }
+    const { bottoms, tops } = buildEnvelope(data, w, step, amp);
 
     // Draw filled envelope
     ctx.beginPath();
-    for (let i = 0; i < w; i++) {
-      if (i === 0) ctx.moveTo(i, tops[i]);
-      else ctx.lineTo(i, tops[i]);
-    }
+    tracePath(ctx, tops);
     for (let i = w - 1; i >= 0; i--) {
       ctx.lineTo(i, bottoms[i]);
     }
@@ -179,23 +194,15 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     ctx.globalAlpha = 0.12;
     ctx.fill();
 
-    // Draw top edge stroke
-    ctx.beginPath();
-    for (let i = 0; i < w; i++) {
-      if (i === 0) ctx.moveTo(i, tops[i]);
-      else ctx.lineTo(i, tops[i]);
-    }
+    // Draw edge strokes
     ctx.strokeStyle = color;
     ctx.globalAlpha = 0.6;
     ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Draw bottom edge stroke
     ctx.beginPath();
-    for (let i = 0; i < w; i++) {
-      if (i === 0) ctx.moveTo(i, bottoms[i]);
-      else ctx.lineTo(i, bottoms[i]);
-    }
+    tracePath(ctx, tops);
+    ctx.stroke();
+    ctx.beginPath();
+    tracePath(ctx, bottoms);
     ctx.stroke();
 
     ctx.globalAlpha = 1.0;

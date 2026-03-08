@@ -331,6 +331,55 @@ describe("KitBankNav fisheye hover behavior", () => {
     expect(bButton.style.zIndex).toBe("auto");
   });
 
+  it("highlights Z correctly when nav is flex-stretched taller than content", () => {
+    const mockKits = Array.from({ length: 26 }, (_, i) => {
+      const letter = String.fromCharCode(65 + i);
+      return createMockKitWithRelations({
+        bank_letter: letter,
+        name: `${letter}1`,
+      });
+    });
+    render(
+      <KitBankNav
+        bankNames={{ Z: "Zulu" }}
+        kits={mockKits}
+        onBankClick={() => {}}
+      />,
+    );
+
+    const nav = screen.getByTestId("bank-nav");
+
+    // Simulate flex-stretched nav: 800px tall instead of natural 640px
+    // This is the root cause — extra height below buttons skews the fraction
+    vi.spyOn(nav, "getBoundingClientRect").mockReturnValue({
+      bottom: 900,
+      height: 800,
+      left: 0,
+      right: 28,
+      top: 100,
+      width: 28,
+      x: 0,
+      y: 100,
+    });
+    window.getComputedStyle = ((el: Element, ...rest: unknown[]) => {
+      if (el === nav) {
+        return {
+          ...originalGetComputedStyle(el),
+          paddingBottom: "8px",
+          paddingTop: "8px",
+        } as CSSStyleDeclaration;
+      }
+      return originalGetComputedStyle(el, ...(rest as [string | undefined]));
+    }) as typeof window.getComputedStyle;
+
+    // Mouse at Z's position: top(100) + pad(8) + 25.5*24 = 100 + 8 + 612 = 720
+    fireEvent.mouseMove(nav, { clientY: 720 });
+
+    // With the old code this would highlight W because fraction = 612/784 ≈ 0.78 → index 19.5
+    // With the fix it correctly maps to Z because we use banks.length * BASE_HEIGHT
+    expect(getBankButton("Z").className).toContain("text-accent-primary");
+  });
+
   it("calls cancelAnimationFrame on mouse leave", () => {
     const mockKits = [
       createMockKitWithRelations({ bank_letter: "A", name: "A1" }),

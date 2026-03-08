@@ -80,7 +80,6 @@ vi.mock("../applicationMenu.js", () => ({
   createApplicationMenu: vi.fn(),
   registerMenuIpcHandlers: vi.fn(),
 }));
-
 vi.mock("../localStoreValidator.js", () => ({
   validateLocalStoreAndDb: vi.fn(() => ({ isValid: true })),
 }));
@@ -104,23 +103,17 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  // Clean up process listeners after each test
   process.removeAllListeners("unhandledRejection");
 });
 
+// Orchestration tests for the thin index.ts shell.
+// Pure logic tests (settings, validation, window state) are in mainProcessSetup.test.ts.
 describe.sequential("main/index.ts", () => {
-  it("calls createWindow and loads settings on app ready (settings file exists)", async () => {
+  it("calls app.whenReady on import", async () => {
     const { app } = await import("electron");
     await import("../index");
     expect(app.whenReady).toHaveBeenCalled();
-    // Skipping this assertion for now due to test isolation issues:
-    // expect(registerIpcHandlers).toHaveBeenCalled();
   });
-
-  // Removed two valueless tests that had no assertions and were flagged by SonarQube:
-  // - "falls back to empty settings if file is missing"
-  // - "falls back to empty settings if file is invalid JSON"
-  // These scenarios are implicitly tested by other tests that successfully import the module.
 
   it("registers unhandledRejection handler and logs error", async () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -137,144 +130,6 @@ describe.sequential("main/index.ts", () => {
       process.emit("unhandledRejection", undefined, Promise.resolve()),
     ).not.toThrow();
     spy.mockRestore();
-  });
-
-  it("logs error if settings file is invalid JSON", async () => {
-    const readFileSyncSpy = vi
-      .spyOn(fs, "readFileSync")
-      .mockReturnValue("not json");
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-    await import("../index");
-    expect(spy).toHaveBeenCalledWith(
-      "[Settings] Failed to parse settings file:",
-      expect.any(Error),
-    );
-    spy.mockRestore();
-    readFileSyncSpy.mockRestore();
-  });
-
-  it("does not log warning when settings file is missing (new behavior)", async () => {
-    const existsSyncSpy = vi.spyOn(fs, "existsSync").mockReturnValue(false);
-    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    await import("../index");
-    // Verify no warning is logged for missing settings file (simplified logging)
-    expect(spy).not.toHaveBeenCalledWith(
-      expect.stringContaining("Settings file not found"),
-    );
-    spy.mockRestore();
-    existsSyncSpy.mockRestore();
-  });
-
-  it("logs info only when no local store is configured", async () => {
-    const readFileSyncSpy = vi
-      .spyOn(fs, "readFileSync")
-      .mockReturnValue('{"foo": "bar"}');
-    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
-    await import("../index");
-    // Logs settings when loaded
-    expect(spy).toHaveBeenCalledWith(
-      "[Settings] Loaded settings:",
-      expect.any(String),
-    );
-    spy.mockRestore();
-    readFileSyncSpy.mockRestore();
-  });
-
-  it("handles empty settings file", async () => {
-    const readFileSyncSpy = vi.spyOn(fs, "readFileSync").mockReturnValue("");
-    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
-    await import("../index");
-    expect(spy).toHaveBeenCalledWith(
-      "[Settings] Settings file is empty - using empty settings",
-    );
-    spy.mockRestore();
-    readFileSyncSpy.mockRestore();
-  });
-
-  it("handles settings file with invalid object type", async () => {
-    const readFileSyncSpy = vi
-      .spyOn(fs, "readFileSync")
-      .mockReturnValue('["array", "instead", "of", "object"]');
-    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    await import("../index");
-    expect(spy).toHaveBeenCalledWith(
-      "[Settings] Settings file did not contain an object. Using empty settings.",
-    );
-    spy.mockRestore();
-    readFileSyncSpy.mockRestore();
-  });
-
-  it("validates local store path when present in settings", async () => {
-    const readFileSyncSpy = vi
-      .spyOn(fs, "readFileSync")
-      .mockReturnValue('{"localStorePath": "/mock/store/path"}');
-    const { validateLocalStoreAndDb } =
-      await import("../localStoreValidator.js");
-    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
-
-    await import("../index");
-
-    expect(validateLocalStoreAndDb).toHaveBeenCalledWith("/mock/store/path");
-    expect(spy).toHaveBeenCalledWith(
-      "[Validation] ✓ Local store path is valid",
-    );
-    spy.mockRestore();
-    readFileSyncSpy.mockRestore();
-  });
-
-  it("removes invalid local store path from settings", async () => {
-    const readFileSyncSpy = vi
-      .spyOn(fs, "readFileSync")
-      .mockReturnValue('{"localStorePath": "/invalid/path"}');
-    const writeFileSyncSpy = vi
-      .spyOn(fs, "writeFileSync")
-      .mockImplementation(() => {});
-    const { validateLocalStoreAndDb } =
-      await import("../localStoreValidator.js");
-    vi.mocked(validateLocalStoreAndDb).mockReturnValue({
-      error: "Path does not exist",
-      errorSummary: "Invalid path",
-      isValid: false,
-    });
-
-    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    await import("../index");
-
-    expect(spy).toHaveBeenCalledWith(
-      "[Startup] ✗ Saved local store path is invalid",
-    );
-    expect(writeFileSyncSpy).toHaveBeenCalled();
-    spy.mockRestore();
-    readFileSyncSpy.mockRestore();
-    writeFileSyncSpy.mockRestore();
-  });
-
-  it("handles write error when removing invalid local store path", async () => {
-    const readFileSyncSpy = vi
-      .spyOn(fs, "readFileSync")
-      .mockReturnValue('{"localStorePath": "/invalid/path"}');
-    const writeFileSyncSpy = vi
-      .spyOn(fs, "writeFileSync")
-      .mockImplementation(() => {
-        throw new Error("Write failed");
-      });
-    const { validateLocalStoreAndDb } =
-      await import("../localStoreValidator.js");
-    vi.mocked(validateLocalStoreAndDb).mockReturnValue({
-      error: "Path does not exist",
-      isValid: false,
-    });
-
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-    await import("../index");
-
-    expect(spy).toHaveBeenCalledWith(
-      "[Startup] Failed to update settings file:",
-      expect.any(Error),
-    );
-    spy.mockRestore();
-    readFileSyncSpy.mockRestore();
-    writeFileSyncSpy.mockRestore();
   });
 
   it("logs environment variables on window creation", async () => {
@@ -357,7 +212,6 @@ describe.sequential("main/index.ts", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     await import("../index");
 
-    // Wait for async error handling
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(spy).toHaveBeenCalledWith("Failed to load URL:", "Load URL failed");
@@ -384,7 +238,6 @@ describe.sequential("main/index.ts", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     await import("../index");
 
-    // Wait for async error handling
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(spy).toHaveBeenCalledWith(

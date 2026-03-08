@@ -14,26 +14,22 @@ import {
   registerMenuIpcHandlers,
 } from "./applicationMenu.js";
 import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
-// Import IPC handlers
 import { registerIpcHandlers } from "./ipcHandlers.js";
-import { validateLocalStoreAndDb } from "./localStoreValidator.js";
+import {
+  loadSettings,
+  loadWindowState,
+  saveWindowState,
+  validateAndFixLocalStore,
+} from "./mainProcessSetup.js";
 
 let inMemorySettings: InMemorySettings = {
   localStorePath: null,
-}; // Store settings in memory
+};
 
 const isDev = process.env.NODE_ENV === "development";
 
 const preloadPath = path.resolve(__dirname, "../preload/index.mjs");
 console.log(" Electron will use preload:", preloadPath);
-
-interface WindowState {
-  height: number;
-  isMaximized?: boolean;
-  width: number;
-  x?: number;
-  y?: number;
-}
 
 function createWindow() {
   console.log("[Electron Main] Environment variables check:");
@@ -56,7 +52,8 @@ function createWindow() {
     );
   }
 
-  const windowState = loadWindowState();
+  const statePath = getWindowStatePath();
+  const windowState = loadWindowState(statePath);
 
   const win: BrowserWindow = new BrowserWindow({
     height: windowState.height,
@@ -76,17 +73,17 @@ function createWindow() {
   }
 
   win.on("close", () => {
+    const windowStatePath = getWindowStatePath();
     if (!win.isMaximized()) {
-      saveWindowState(win);
+      saveWindowState(win.getBounds(), win.isMaximized(), windowStatePath);
     } else {
       // Save maximized flag but keep previous bounds for restore
       try {
-        const statePath = getWindowStatePath();
-        const existing = fs.existsSync(statePath)
-          ? JSON.parse(fs.readFileSync(statePath, "utf-8"))
+        const existing = fs.existsSync(windowStatePath)
+          ? JSON.parse(fs.readFileSync(windowStatePath, "utf-8"))
           : {};
         fs.writeFileSync(
-          statePath,
+          windowStatePath,
           JSON.stringify({ ...existing, isMaximized: true }),
         );
       } catch {
@@ -96,7 +93,6 @@ function createWindow() {
   });
 
   if (isDev) {
-    // Type-safe error handling for loadURL
     const vitePort = process.env.VITE_DEV_SERVER_PORT || "5173";
     win.loadURL(`http://localhost:${vitePort}`).catch((err: unknown) => {
       console.error(
@@ -121,172 +117,17 @@ function createWindow() {
   }
 }
 
+function getSettingsPath(): string {
+  return path.join(app.getPath("userData"), "romper-settings.json");
+}
+
 function getWindowStatePath(): string {
   return path.join(app.getPath("userData"), "window-state.json");
-}
-
-function loadSettings(): InMemorySettings {
-  const userDataPath = app.getPath("userData");
-  const settingsPath = path.join(userDataPath, "romper-settings.json");
-
-  console.log("[Settings] Loading settings from:", settingsPath);
-  console.log("[Settings] User data path:", userDataPath);
-
-  if (!fs.existsSync(settingsPath)) {
-    console.log("[Settings] Settings file not found - will use empty settings");
-    return { localStorePath: null };
-  }
-
-  let settings: InMemorySettings = { localStorePath: null };
-  try {
-    const fileContent = fs.readFileSync(settingsPath, "utf-8");
-
-    if (fileContent.length === 0) {
-      console.log("[Settings] Settings file is empty - using empty settings");
-      return { localStorePath: null };
-    }
-
-    const parsed = JSON.parse(fileContent);
-
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      settings = {
-        defaultToMonoSamples: parsed.defaultToMonoSamples,
-        localStorePath: parsed.localStorePath || null,
-        sdCardPath: parsed.sdCardPath,
-      };
-      console.log(
-        "[Settings] Loaded settings:",
-        JSON.stringify(settings, null, 2),
-      );
-    } else {
-      console.warn(
-        "[Settings] Settings file did not contain an object. Using empty settings.",
-      );
-      console.warn(
-        "[Settings] Parsed type:",
-        typeof parsed,
-        "Is array:",
-        Array.isArray(parsed),
-      );
-    }
-  } catch (error) {
-    console.error("[Settings] Failed to parse settings file:", error);
-    console.error("[Settings] Using empty settings");
-  }
-
-  return settings;
-}
-
-function loadWindowState(): WindowState {
-  const defaults: WindowState = { height: 800, width: 1200 };
-  try {
-    const statePath = getWindowStatePath();
-    if (fs.existsSync(statePath)) {
-      const data = JSON.parse(fs.readFileSync(statePath, "utf-8"));
-      return { ...defaults, ...data };
-    }
-  } catch {
-    // Ignore corrupt state file
-  }
-  return defaults;
 }
 
 function registerAllIpcHandlers(settings: InMemorySettings) {
   registerIpcHandlers(settings);
   registerDbIpcHandlers(settings);
-}
-
-function saveWindowState(win: BrowserWindow): void {
-  try {
-    const bounds = win.getBounds();
-    const state: WindowState = {
-      height: bounds.height,
-      isMaximized: win.isMaximized(),
-      width: bounds.width,
-      x: bounds.x,
-      y: bounds.y,
-    };
-    fs.writeFileSync(getWindowStatePath(), JSON.stringify(state));
-  } catch {
-    // Ignore write errors
-  }
-}
-
-function validateAndFixLocalStore(
-  settings: InMemorySettings,
-): InMemorySettings {
-  const userDataPath = app.getPath("userData");
-  const settingsPath = path.join(userDataPath, "romper-settings.json");
-
-  console.log("[Validation] Starting local store validation");
-
-  // Check if we have an environment override first
-  const envOverridePath = process.env.ROMPER_LOCAL_PATH;
-  if (envOverridePath) {
-    console.log("[Validation] Environment override detected:", envOverridePath);
-    const envValidation = validateLocalStoreAndDb(envOverridePath);
-    console.log("[Validation] Environment override validation result:", {
-      error: envValidation.error,
-      errorSummary: envValidation.errorSummary,
-      isValid: envValidation.isValid,
-    });
-
-    if (envValidation.isValid) {
-      console.log("[Validation] ✓ Environment override path is valid");
-      // Don't modify settings - environment override is temporary
-      return settings;
-    } else {
-      console.warn("[Validation] ✗ Environment override path is invalid");
-      console.warn("  - Path:", envOverridePath);
-      console.warn("  - Error:", envValidation.error);
-      // Continue to check settings path as fallback
-    }
-  }
-
-  console.log(
-    "[Validation] Settings have localStorePath:",
-    !!settings.localStorePath,
-  );
-
-  if (settings.localStorePath) {
-    console.log(
-      "[Validation] Validating local store path:",
-      settings.localStorePath,
-    );
-    const validation = validateLocalStoreAndDb(settings.localStorePath);
-    console.log("[Validation] Validation result:", {
-      error: validation.error,
-      errorSummary: validation.errorSummary,
-      isValid: validation.isValid,
-    });
-
-    if (!validation.isValid) {
-      console.warn("[Startup] ✗ Saved local store path is invalid");
-      console.warn("  - Path:", settings.localStorePath);
-      console.warn("  - Error:", validation.error);
-      console.warn("[Startup] Removing invalid path from settings...");
-
-      settings.localStorePath = null;
-      try {
-        fs.writeFileSync(
-          settingsPath,
-          JSON.stringify(settings, null, 2),
-          "utf-8",
-        );
-        console.log(
-          "[Startup] Invalid local store path removed from settings file",
-        );
-      } catch (writeError) {
-        console.error("[Startup] Failed to update settings file:", writeError);
-      }
-    } else {
-      console.log("[Validation] ✓ Local store path is valid");
-    }
-  } else {
-    console.log("[Validation] No local store path to validate");
-  }
-
-  return settings;
 }
 
 app.whenReady().then(async () => {
@@ -298,8 +139,13 @@ app.whenReady().then(async () => {
     registerMenuIpcHandlers();
 
     // Load and validate settings
-    inMemorySettings = loadSettings();
-    inMemorySettings = validateAndFixLocalStore(inMemorySettings);
+    const settingsPath = getSettingsPath();
+    inMemorySettings = loadSettings(settingsPath);
+    inMemorySettings = validateAndFixLocalStore(
+      inMemorySettings,
+      settingsPath,
+      process.env.ROMPER_LOCAL_PATH,
+    );
 
     // Final summary of local store configuration
     console.log("[Startup] Final local store configuration:");
@@ -328,7 +174,6 @@ app.whenReady().then(async () => {
   }
 });
 
-// Add helper function to validate local store and DB
 process.on("unhandledRejection", (reason: unknown) => {
   console.error(
     "Unhandled Promise Rejection:",

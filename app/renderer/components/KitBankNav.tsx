@@ -128,6 +128,7 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
                 : "transform 200ms ease-out",
               width: `${BASE_WIDTH}px`,
               willChange: isHovering ? "transform" : "auto",
+              zIndex: isNearest && isHovering ? 50 : "auto",
             }}
             title={!isHovering ? bankNames[bank] || undefined : undefined}
           >

@@ -301,6 +301,36 @@ describe("KitBankNav fisheye hover behavior", () => {
     expect(getBankButton("A").style.transform).toBe("scale(1)");
   });
 
+  it("hovered button has elevated z-index so floating label renders in front", () => {
+    const mockKits = Array.from({ length: 26 }, (_, i) => {
+      const letter = String.fromCharCode(65 + i);
+      return createMockKitWithRelations({
+        bank_letter: letter,
+        name: `${letter}1`,
+      });
+    });
+    render(
+      <KitBankNav
+        bankNames={{ A: "Alpha" }}
+        kits={mockKits}
+        onBankClick={() => {}}
+      />,
+    );
+
+    const nav = screen.getByTestId("bank-nav");
+    mockNavGeometry(nav);
+
+    // Hover over A
+    fireEvent.mouseMove(nav, { clientY: 108 });
+
+    const aButton = getBankButton("A");
+    const bButton = getBankButton("B");
+
+    // Hovered button should have elevated z-index; non-hovered should not
+    expect(Number(aButton.style.zIndex)).toBeGreaterThan(0);
+    expect(bButton.style.zIndex).toBe("auto");
+  });
+
   it("calls cancelAnimationFrame on mouse leave", () => {
     const mockKits = [
       createMockKitWithRelations({ bank_letter: "A", name: "A1" }),

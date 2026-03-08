@@ -1,6 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 interface KitBankNavProps {
   bankNames?: Record<string, string>;
@@ -15,6 +15,10 @@ const banks = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
 const BASE_SCALE = 1;
 const MAX_SCALE = 1.8;
 const RADIUS = 2.5;
+
+const BASE_FONT_SIZE = 12;
+const BASE_HEIGHT = 24;
+const BASE_WIDTH = 28;
 
 function getScale(index: number, hoverIndex: number): number {
   const dist = Math.abs(index - hoverIndex);
@@ -32,18 +36,36 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
   selectedBank,
 }) => {
   const navRef = useRef<HTMLElement>(null);
+  const rafRef = useRef<number>(0);
   const [hoverIndex, setHoverIndex] = useState(-1);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
     const nav = navRef.current;
     if (!nav) return;
-    const rect = nav.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const fraction = y / rect.height;
-    setHoverIndex(fraction * banks.length);
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+    const clientY = e.clientY;
+    rafRef.current = requestAnimationFrame(() => {
+      const rect = nav.getBoundingClientRect();
+      const style = getComputedStyle(nav);
+      const padTop = parseFloat(style.paddingTop);
+      const padBottom = parseFloat(style.paddingBottom);
+      const contentHeight = rect.height - padTop - padBottom;
+      const y = clientY - rect.top - padTop;
+      const fraction = Math.max(0, Math.min(1, y / contentHeight));
+      setHoverIndex(fraction * (banks.length - 1));
+    });
   }, []);
 
   const handleMouseLeave = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
     setHoverIndex(-1);
   }, []);
 
@@ -97,12 +119,15 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
             key={bank}
             onClick={() => onBankClick(bank)}
             style={{
-              fontSize: `${scale * 12}px`,
-              height: `${scale * 24}px`,
+              fontSize: `${BASE_FONT_SIZE}px`,
+              height: `${BASE_HEIGHT}px`,
+              transform: `scale(${scale})`,
+              transformOrigin: "left center",
               transition: isHovering
-                ? "font-size 60ms ease-out, height 60ms ease-out"
-                : "font-size 200ms ease-out, height 200ms ease-out",
-              width: `${scale * 28}px`,
+                ? "transform 60ms ease-out"
+                : "transform 200ms ease-out",
+              width: `${BASE_WIDTH}px`,
+              willChange: isHovering ? "transform" : "auto",
             }}
             title={!isHovering ? bankNames[bank] || undefined : undefined}
           >

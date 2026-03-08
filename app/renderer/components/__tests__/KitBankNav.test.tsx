@@ -152,3 +152,167 @@ describe("A-Z hotkey navigation and bank highlighting", () => {
     expect(onBankClick).toHaveBeenCalledWith("A");
   });
 });
+
+describe("KitBankNav fisheye hover behavior", () => {
+  const originalGetComputedStyle = window.getComputedStyle;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+      cb(0);
+      return 1;
+    });
+    vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    cleanup();
+    window.getComputedStyle = originalGetComputedStyle;
+    vi.restoreAllMocks();
+  });
+
+  function mockNavGeometry(nav: HTMLElement) {
+    // Simulate a nav with py-2 (8px top/bottom padding) and 26 buttons of 24px each = 624px content
+    // Total height = 624 + 16 = 640px
+    vi.spyOn(nav, "getBoundingClientRect").mockReturnValue({
+      bottom: 740,
+      height: 640,
+      left: 0,
+      right: 28,
+      top: 100,
+      width: 28,
+      x: 0,
+      y: 100,
+    });
+    // Only intercept getComputedStyle for the nav element; delegate all others to real implementation
+    window.getComputedStyle = ((el: Element, ...rest: unknown[]) => {
+      if (el === nav) {
+        return {
+          ...originalGetComputedStyle(el),
+          paddingBottom: "8px",
+          paddingTop: "8px",
+        } as CSSStyleDeclaration;
+      }
+      return originalGetComputedStyle(el, ...(rest as [string | undefined]));
+    }) as typeof window.getComputedStyle;
+  }
+
+  function getBankButton(letter: string) {
+    const nav = screen.getByTestId("bank-nav");
+    return nav.querySelector(
+      `button[aria-label="Jump to bank ${letter}"]`,
+    ) as HTMLButtonElement;
+  }
+
+  it("hovering at the top of content area highlights letter A (not B)", () => {
+    const mockKits = Array.from({ length: 26 }, (_, i) => {
+      const letter = String.fromCharCode(65 + i);
+      return createMockKitWithRelations({
+        bank_letter: letter,
+        name: `${letter}1`,
+      });
+    });
+    render(
+      <KitBankNav
+        bankNames={{ A: "Alpha", B: "Bravo" }}
+        kits={mockKits}
+        onBankClick={() => {}}
+      />,
+    );
+
+    const nav = screen.getByTestId("bank-nav");
+    mockNavGeometry(nav);
+
+    // Mouse at very top of content area: clientY = rect.top + padTop = 100 + 8 = 108
+    fireEvent.mouseMove(nav, { clientY: 108 });
+
+    // Letter A should be highlighted (text-accent-primary), not B
+    expect(getBankButton("A").className).toContain("text-accent-primary");
+    expect(getBankButton("B").className).not.toContain("text-accent-primary");
+  });
+
+  it("hovering at the bottom of content area highlights letter Z", () => {
+    const mockKits = Array.from({ length: 26 }, (_, i) => {
+      const letter = String.fromCharCode(65 + i);
+      return createMockKitWithRelations({
+        bank_letter: letter,
+        name: `${letter}1`,
+      });
+    });
+    render(
+      <KitBankNav
+        bankNames={{ Z: "Zulu" }}
+        kits={mockKits}
+        onBankClick={() => {}}
+      />,
+    );
+
+    const nav = screen.getByTestId("bank-nav");
+    mockNavGeometry(nav);
+
+    // Mouse at bottom of content area: clientY = rect.top + padTop + contentHeight = 100 + 8 + 624 = 732
+    fireEvent.mouseMove(nav, { clientY: 732 });
+
+    expect(getBankButton("Z").className).toContain("text-accent-primary");
+  });
+
+  it("uses CSS transform for scaling instead of fontSize/height", () => {
+    const mockKits = Array.from({ length: 26 }, (_, i) => {
+      const letter = String.fromCharCode(65 + i);
+      return createMockKitWithRelations({
+        bank_letter: letter,
+        name: `${letter}1`,
+      });
+    });
+    render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
+
+    const nav = screen.getByTestId("bank-nav");
+    mockNavGeometry(nav);
+
+    // Trigger hover to activate fisheye
+    fireEvent.mouseMove(nav, { clientY: 108 });
+
+    const aButton = getBankButton("A");
+
+    // Should use fixed fontSize (not scaled)
+    expect(aButton.style.fontSize).toBe("12px");
+    // Should use transform for scaling
+    expect(aButton.style.transform).toMatch(/^scale\(/);
+    // Should have transform transition, not fontSize transition
+    expect(aButton.style.transition).toContain("transform");
+    expect(aButton.style.transition).not.toContain("font-size");
+  });
+
+  it("resets hover state on mouse leave", () => {
+    const mockKits = [
+      createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
+    ];
+    render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
+
+    const nav = screen.getByTestId("bank-nav");
+    mockNavGeometry(nav);
+
+    // Hover to activate
+    fireEvent.mouseMove(nav, { clientY: 108 });
+    // Then leave
+    fireEvent.mouseLeave(nav);
+
+    // All buttons should have scale(1) — no fisheye
+    expect(getBankButton("A").style.transform).toBe("scale(1)");
+  });
+
+  it("calls cancelAnimationFrame on mouse leave", () => {
+    const mockKits = [
+      createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
+    ];
+    render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
+
+    const nav = screen.getByTestId("bank-nav");
+    mockNavGeometry(nav);
+
+    fireEvent.mouseMove(nav, { clientY: 108 });
+    fireEvent.mouseLeave(nav);
+
+    expect(window.cancelAnimationFrame).toHaveBeenCalled();
+  });
+});

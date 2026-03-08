@@ -169,60 +169,24 @@ class SyncService {
 
   /**
    * Annotate file operations with per-file forceMonoConversion based on voice stereo_mode.
-   * For mono voices: stereo samples need conversion to mono (forceMonoConversion = true).
-   * For stereo voices: samples pass through as-is.
+   * Stereo samples on mono voices get forceMonoConversion=true; stereo voices pass through.
    */
   private annotateMonoConversion(
     allFiles: SyncFileOperation[],
     dbDir: string,
   ): void {
-    // Build a lookup of voice stereo_mode by kit_name + voice_number
-    const voiceStereoModeCache = new Map<string, boolean>();
+    const cache = this.buildVoiceStereoModeCache(allFiles, dbDir);
 
     for (const fileOp of allFiles) {
-      const cacheKey = fileOp.kitName;
-
-      // Lazily load kit voices into cache
-      if (!voiceStereoModeCache.has(cacheKey + ":loaded")) {
-        try {
-          const kitResult = getKit(dbDir, fileOp.kitName);
-          if (kitResult.success && kitResult.data?.voices) {
-            for (const voice of kitResult.data.voices) {
-              voiceStereoModeCache.set(
-                `${fileOp.kitName}:${voice.voice_number}`,
-                voice.stereo_mode,
-              );
-            }
-          }
-        } catch {
-          // If kit lookup fails, skip annotation for this kit
-        }
-        voiceStereoModeCache.set(cacheKey + ":loaded", true);
-      }
-    }
-
-    // Annotate each file operation based on voice stereo_mode.
-    // For mono voices, stereo samples must be converted to mono.
-    // This may promote "copy" operations to "convert" if mono conversion is needed.
-    for (const fileOp of allFiles) {
-      // Extract voice number from destination path (e.g., .../kitName/1/filename.wav)
-      const pathParts = fileOp.destinationPath.split("/");
-      const voiceDirIndex = pathParts.length - 2; // voice dir is parent of filename
-      const voiceNumberStr = pathParts[voiceDirIndex];
-      const voiceNumber = parseInt(voiceNumberStr, 10);
-
-      if (isNaN(voiceNumber)) {
+      const voiceNumber = this.extractVoiceNumber(fileOp.destinationPath);
+      if (voiceNumber === undefined) {
         continue;
       }
 
-      const cacheKey = `${fileOp.kitName}:${voiceNumber}`;
-      const voiceStereoMode = voiceStereoModeCache.get(cacheKey);
+      const voiceStereoMode = cache.get(`${fileOp.kitName}:${voiceNumber}`);
 
-      // Only force mono conversion for stereo samples on explicitly mono voices
       if (voiceStereoMode === false && fileOp.isStereo) {
         fileOp.forceMonoConversion = true;
-
-        // Promote copy to convert — stereo file needs channel conversion for mono voice
         if (fileOp.operation === "copy") {
           fileOp.operation = "convert";
           fileOp.reason =
@@ -230,6 +194,38 @@ class SyncService {
         }
       }
     }
+  }
+
+  /**
+   * Build a cache of voice stereo_mode from the database for all kits referenced in file operations.
+   */
+  private buildVoiceStereoModeCache(
+    allFiles: SyncFileOperation[],
+    dbDir: string,
+  ): Map<string, boolean> {
+    const cache = new Map<string, boolean>();
+
+    for (const fileOp of allFiles) {
+      if (cache.has(fileOp.kitName + ":loaded")) {
+        continue;
+      }
+      try {
+        const kitResult = getKit(dbDir, fileOp.kitName);
+        if (kitResult.success && kitResult.data?.voices) {
+          for (const voice of kitResult.data.voices) {
+            cache.set(
+              `${fileOp.kitName}:${voice.voice_number}`,
+              voice.stereo_mode,
+            );
+          }
+        }
+      } catch {
+        // If kit lookup fails, skip annotation for this kit
+      }
+      cache.set(fileOp.kitName + ":loaded", true);
+    }
+
+    return cache;
   }
 
   /**
@@ -244,6 +240,16 @@ class SyncService {
     return Math.ceil(
       totalFiles * baseTimePerFile + conversions * timePerConversion,
     );
+  }
+
+  /**
+   * Extract voice number from a sync destination path (e.g., .../kitName/1/filename.wav).
+   */
+  private extractVoiceNumber(destinationPath: string): number | undefined {
+    const pathParts = destinationPath.split("/");
+    const voiceNumberStr = pathParts[pathParts.length - 2];
+    const voiceNumber = Number.parseInt(voiceNumberStr, 10);
+    return Number.isNaN(voiceNumber) ? undefined : voiceNumber;
   }
 
   /**

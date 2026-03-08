@@ -92,7 +92,7 @@ export function useSlotRendering({
       } else {
         dragOverClass =
           " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300";
-        dropHintTitle = "Drop to assign sample";
+        // dropHintTitle keeps its initial value "Drop to assign sample"
       }
 
       return { dragOverClass, dropHintTitle };

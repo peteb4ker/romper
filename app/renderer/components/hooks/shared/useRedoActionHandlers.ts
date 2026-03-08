@@ -20,7 +20,6 @@ export function useRedoActionHandlers({
           action.data.voice,
           action.data.slot,
           action.data.addedSample.source_path,
-          { forceMono: !action.data.addedSample.is_stereo },
         );
       case "DELETE_SAMPLE":
         return window.electronAPI?.deleteSampleFromSlot?.(
@@ -58,7 +57,6 @@ export function useRedoActionHandlers({
           action.data.voice,
           action.data.slot,
           action.data.newSample.source_path,
-          { forceMono: !action.data.newSample.is_stereo },
         );
       default:
         throw new Error(

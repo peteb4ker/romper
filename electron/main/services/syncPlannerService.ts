@@ -11,7 +11,7 @@ import {
   getAudioMetadata,
   validateSampleFormat,
 } from "../audioUtils.js";
-import { getKitSamples } from "../db/romperDbCoreORM.js";
+import { getKit, getKitSamples } from "../db/romperDbCoreORM.js";
 import { rampleNamingService } from "./rampleNamingService.js";
 
 export interface SyncChangeSummary {
@@ -26,6 +26,8 @@ export interface SyncChangeSummary {
 export interface SyncFileOperation {
   destinationPath: string;
   filename: string;
+  forceMonoConversion?: boolean;
+  isStereo?: boolean;
   kitName: string;
   operation: "convert" | "copy";
   originalFormat?: string;
@@ -81,6 +83,10 @@ export class SyncPlannerService {
         this.processSampleForSync(sample, localStorePath, results);
       }
 
+      // Annotate per-file mono conversion based on voice stereo_mode
+      const allFiles = [...results.filesToConvert, ...results.filesToCopy];
+      this.annotateMonoConversion(allFiles, dbDir);
+
       const summary: SyncChangeSummary = {
         filesToConvert: results.filesToConvert,
         filesToCopy: results.filesToCopy,
@@ -117,6 +123,7 @@ export class SyncPlannerService {
     results.filesToConvert.push({
       destinationPath,
       filename, // Now using the Rample-generated filename passed as parameter
+      isStereo: sample.is_stereo,
       kitName: sample.kit_name,
       operation: "convert",
       originalFormat: metadataResult.success
@@ -141,15 +148,77 @@ export class SyncPlannerService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
+    isStereo: boolean,
     results: SyncChangeSummary,
   ): void {
     results.filesToCopy.push({
       destinationPath,
       filename, // Now using the Rample-generated filename passed as parameter
+      isStereo,
       kitName,
       operation: "copy",
       sourcePath,
     });
+  }
+
+  /**
+   * Annotate file operations with per-file forceMonoConversion based on voice stereo_mode.
+   * For mono voices: stereo samples need conversion to mono (forceMonoConversion = true).
+   * For stereo voices: samples pass through as-is.
+   */
+  private annotateMonoConversion(
+    allFiles: SyncFileOperation[],
+    dbDir: string,
+  ): void {
+    // Build a lookup of voice stereo_mode by kit_name + voice_number
+    const voiceStereoModeCache = new Map<string, boolean>();
+
+    for (const fileOp of allFiles) {
+      const cacheKey = fileOp.kitName;
+
+      // Lazily load kit voices into cache
+      if (!voiceStereoModeCache.has(cacheKey + ":loaded")) {
+        const kitResult = getKit(dbDir, fileOp.kitName);
+        if (kitResult.success && kitResult.data?.voices) {
+          for (const voice of kitResult.data.voices) {
+            voiceStereoModeCache.set(
+              `${fileOp.kitName}:${voice.voice_number}`,
+              voice.stereo_mode,
+            );
+          }
+        }
+        voiceStereoModeCache.set(cacheKey + ":loaded", true);
+      }
+    }
+
+    // Annotate each file operation based on voice stereo_mode.
+    for (const fileOp of allFiles) {
+      // Extract voice number from destination path (e.g., .../kitName/1/filename.wav)
+      const pathParts = fileOp.destinationPath.split("/");
+      const voiceDirIndex = pathParts.length - 2;
+      const voiceNumberStr = pathParts[voiceDirIndex];
+      const voiceNumber = parseInt(voiceNumberStr, 10);
+
+      if (isNaN(voiceNumber)) {
+        continue;
+      }
+
+      const voiceStereoMode = voiceStereoModeCache.get(
+        `${fileOp.kitName}:${voiceNumber}`,
+      );
+
+      // Only force mono conversion for stereo samples on explicitly mono voices
+      if (voiceStereoMode === false && fileOp.isStereo) {
+        fileOp.forceMonoConversion = true;
+
+        // Promote copy to convert — stereo file needs channel conversion for mono voice
+        if (fileOp.operation === "copy") {
+          fileOp.operation = "convert";
+          fileOp.reason =
+            "Stereo sample on mono voice requires mono conversion";
+        }
+      }
+    }
   }
 
   /**
@@ -184,6 +253,7 @@ export class SyncPlannerService {
         sourcePath,
         destinationPath,
         sample.kit_name,
+        sample.is_stereo,
         results,
       );
     }

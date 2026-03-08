@@ -602,7 +602,6 @@ describe("KitsView", () => {
       }> = ({ children }) => {
         const contextValue = {
           confirmDestructiveActions: true,
-          defaultToMonoSamples: true,
           isDarkMode: false,
           isInitialized: true,
           localStorePath: null,
@@ -612,7 +611,6 @@ describe("KitsView", () => {
             localStorePath: null,
           },
           setConfirmDestructiveActions: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
           themeMode: "light" as const,
@@ -656,7 +654,6 @@ describe("KitsView", () => {
       }> = ({ children }) => {
         const contextValue = {
           confirmDestructiveActions: true,
-          defaultToMonoSamples: true,
           isDarkMode: false,
           isInitialized: true,
           localStorePath: null,
@@ -666,7 +663,6 @@ describe("KitsView", () => {
             localStorePath: null,
           },
           setConfirmDestructiveActions: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
           themeMode: "light" as const,
@@ -1025,7 +1021,6 @@ describe("KitsView", () => {
       }> = ({ children }) => {
         const contextValue = {
           confirmDestructiveActions: true,
-          defaultToMonoSamples: true,
           isDarkMode: false,
           isInitialized: true,
           localStorePath: null,
@@ -1036,7 +1031,6 @@ describe("KitsView", () => {
           },
           refreshLocalStoreStatus: mockRefreshLocalStoreStatus,
           setConfirmDestructiveActions: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
           themeMode: "light" as const,
@@ -1240,7 +1234,6 @@ describe("KitsView", () => {
       }> = ({ children }) => {
         const contextValue = {
           confirmDestructiveActions: true,
-          defaultToMonoSamples: true,
           isDarkMode: false,
           isInitialized: false, // Not initialized
           localStorePath: "/mock/path",
@@ -1250,7 +1243,6 @@ describe("KitsView", () => {
             localStorePath: "/mock/path",
           },
           setConfirmDestructiveActions: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
           themeMode: "light" as const,
@@ -1279,7 +1271,6 @@ describe("KitsView", () => {
       }> = ({ children }) => {
         const contextValue = {
           confirmDestructiveActions: true,
-          defaultToMonoSamples: true,
           isDarkMode: false,
           isInitialized: true,
           localStorePath: null, // No path
@@ -1289,7 +1280,6 @@ describe("KitsView", () => {
             localStorePath: null,
           },
           setConfirmDestructiveActions: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
           themeMode: "light" as const,
@@ -1591,7 +1581,6 @@ describe("KitsView", () => {
         const contextValue = {
           clearError: vi.fn(),
           confirmDestructiveActions: true,
-          defaultToMonoSamples: true,
           error: null,
           isDarkMode: false,
           isInitialized: true,
@@ -1606,7 +1595,6 @@ describe("KitsView", () => {
           },
           refreshLocalStoreStatus: vi.fn(),
           setConfirmDestructiveActions: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
           themeMode: "light" as const,
@@ -1642,7 +1630,6 @@ describe("KitsView", () => {
         const contextValue = {
           clearError: vi.fn(),
           confirmDestructiveActions: true,
-          defaultToMonoSamples: true,
           error: null,
           isDarkMode: false,
           isInitialized: true,
@@ -1656,7 +1643,6 @@ describe("KitsView", () => {
           },
           refreshLocalStoreStatus: vi.fn(),
           setConfirmDestructiveActions: vi.fn(),
-          setDefaultToMonoSamples: vi.fn(),
           setLocalStorePath: vi.fn(),
           setThemeMode: vi.fn(),
           themeMode: "light" as const,

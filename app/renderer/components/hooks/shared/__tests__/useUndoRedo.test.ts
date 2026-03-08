@@ -493,7 +493,6 @@ describe("useUndoRedo - Basic Tests", () => {
         1,
         0,
         "/path/to/test.wav",
-        { forceMono: true },
       );
       expect(result.current.canRedo).toBe(false);
       expect(result.current.canUndo).toBe(true);
@@ -597,7 +596,6 @@ describe("useUndoRedo - Basic Tests", () => {
         2,
         3,
         "/path/to/deleted.wav",
-        { forceMono: false }, // stereo sample
       );
     });
   });
@@ -635,7 +633,6 @@ describe("useUndoRedo - Basic Tests", () => {
         1,
         1,
         "/path/to/old.wav",
-        { forceMono: true }, // old sample was mono
       );
     });
   });

@@ -211,21 +211,6 @@ describe("useSampleManagementUndoActions", () => {
         type: "ADD_SAMPLE",
       });
     });
-
-    it("should handle force stereo option", () => {
-      const { result } = renderHook(() =>
-        useSampleManagementUndoActions(mockOptions),
-      );
-
-      const action = result.current.createAddSampleAction(
-        1,
-        0,
-        "/path/to/stereo.wav",
-        { forceStereo: true },
-      );
-
-      expect(action.data.addedSample.is_stereo).toBe(true);
-    });
   });
 
   describe("createReplaceSampleAction", () => {

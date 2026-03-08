@@ -48,11 +48,10 @@ describe("loadSettings", () => {
 
   it("parses valid settings object", () => {
     vi.spyOn(fs, "readFileSync").mockReturnValue(
-      '{"localStorePath": "/store", "sdCardPath": "/sd", "defaultToMonoSamples": true}',
+      '{"localStorePath": "/store", "sdCardPath": "/sd"}',
     );
     const result = loadSettings("/mock/settings.json");
     expect(result).toEqual({
-      defaultToMonoSamples: true,
       localStorePath: "/store",
       sdCardPath: "/sd",
     });

@@ -2,16 +2,12 @@ import React from "react";
 
 interface SampleManagementTabProps {
   confirmDestructiveActions: boolean;
-  defaultToMonoSamples: boolean;
   onConfirmDestructiveActionsChange: (checked: boolean) => void;
-  onDefaultToMonoSamplesChange: (checked: boolean) => void;
 }
 
 const SampleManagementTab: React.FC<SampleManagementTabProps> = ({
   confirmDestructiveActions,
-  defaultToMonoSamples,
   onConfirmDestructiveActionsChange,
-  onDefaultToMonoSamplesChange,
 }) => {
   return (
     <div className="space-y-6">
@@ -21,37 +17,6 @@ const SampleManagementTab: React.FC<SampleManagementTabProps> = ({
         </h3>
 
         <div className="space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <label
-                className="text-sm font-medium text-text-primary"
-                htmlFor="default-mono-checkbox"
-              >
-                Default to mono samples
-              </label>
-              <p className="text-sm text-text-tertiary mt-1">
-                Automatically assign stereo samples as mono to a single voice.
-              </p>
-              <p className="text-sm text-text-tertiary mt-1">
-                When enabled, stereo samples will take 1 mono slot and will be
-                converted to mono by averaging the left and right channel.
-              </p>
-              <p className="text-sm text-text-tertiary mt-1">
-                When disabled, stereo samples will be assigned to adjacent
-                voices, taking the same sample slot on both voices.
-              </p>
-            </div>
-            <div className="flex items-center ml-4">
-              <input
-                checked={defaultToMonoSamples}
-                className="rounded border-border-default text-accent-primary focus:ring-accent-primary"
-                id="default-mono-checkbox"
-                onChange={(e) => onDefaultToMonoSamplesChange(e.target.checked)}
-                type="checkbox"
-              />
-            </div>
-          </div>
-
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <label

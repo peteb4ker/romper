@@ -754,12 +754,12 @@ describe("preload/index.tsx", () => {
         method: "playSample",
       },
       {
-        args: ["TestKit", 1, 0, "/path/to/sample.wav", { forceMono: true }],
+        args: ["TestKit", 1, 0, "/path/to/sample.wav"],
         ipcChannel: "add-sample-to-slot",
         method: "addSampleToSlot",
       },
       {
-        args: ["TestKit", 1, 0, "/path/to/sample.wav", { forceStereo: true }],
+        args: ["TestKit", 1, 0, "/path/to/sample.wav"],
         ipcChannel: "replace-sample-in-slot",
         method: "replaceSampleInSlot",
       },
@@ -877,16 +877,13 @@ describe("preload/index.tsx", () => {
 
       mockElectron.ipcRenderer.invoke.mockResolvedValue("success");
 
-      await api.addSampleToSlot("testKit", 1, 0, "/path/to/sample.wav", {
-        forceMono: true,
-      });
+      await api.addSampleToSlot("testKit", 1, 0, "/path/to/sample.wav");
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "add-sample-to-slot",
         "testKit",
         1,
         0,
         "/path/to/sample.wav",
-        { forceMono: true },
       );
 
       await api.replaceSampleInSlot("testKit", 1, 0, "/path/to/sample.wav");
@@ -896,7 +893,6 @@ describe("preload/index.tsx", () => {
         1,
         0,
         "/path/to/sample.wav",
-        undefined,
       );
 
       await api.deleteSampleFromSlot("testKit", 1, 0);

@@ -5,10 +5,7 @@ import * as path from "path";
 
 import { addSample, markKitAsModified } from "../../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../../utils/fileSystemUtils.js";
-import {
-  determineStereoConfiguration,
-  type StereoOptions,
-} from "../../utils/stereoProcessingUtils.js";
+import { determineStereoConfiguration } from "../../utils/stereoProcessingUtils.js";
 import { sampleBatchOperationsService } from "../sampleBatchOperations.js";
 import { sampleValidationService } from "../sampleValidation.js";
 
@@ -26,7 +23,6 @@ export class SampleCrudService {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: StereoOptions,
   ): DbResult<{ sampleId: number }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -54,12 +50,8 @@ export class SampleCrudService {
       // Create sample record
       const filename = path.basename(filePath);
 
-      // Task 7.1.2 & 7.1.3: Apply 'default to mono samples' setting with per-sample override
-      const isStereo = determineStereoConfiguration(
-        filePath,
-        inMemorySettings,
-        options,
-      );
+      // Detect true stereo/mono from file metadata
+      const isStereo = determineStereoConfiguration(filePath);
 
       const sampleRecord: NewSample = {
         filename,

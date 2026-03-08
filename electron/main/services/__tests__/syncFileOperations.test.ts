@@ -122,12 +122,15 @@ describe("SyncFileOperationsService", () => {
       );
     });
 
-    it("should use mono conversion when requested", async () => {
-      const convertOp = { ...fileOp, operation: "convert" as const };
-      const settings = { defaultToMonoSamples: true };
+    it("should use mono conversion when forceMonoConversion is set on file operation", async () => {
+      const convertOp = {
+        ...fileOp,
+        forceMonoConversion: true,
+        operation: "convert" as const,
+      };
       mockConvertToRampleDefault.mockResolvedValue({ success: true });
 
-      await syncFileOperationsService.executeFileOperation(convertOp, settings);
+      await syncFileOperationsService.executeFileOperation(convertOp, {});
 
       expect(mockConvertToRampleDefault).toHaveBeenCalledWith(
         "/source/file.wav",

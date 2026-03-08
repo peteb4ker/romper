@@ -33,7 +33,6 @@ export function createSampleOperationHandler(
     voiceNumber: number,
     slotNumber: number,
     filePath?: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
     try {
       let result: DbResult<unknown>;
@@ -52,7 +51,6 @@ export function createSampleOperationHandler(
             voiceNumber,
             slotNumber,
             filePath,
-            options,
           );
           break;
 
@@ -78,7 +76,6 @@ export function createSampleOperationHandler(
             voiceNumber,
             slotNumber,
             filePath,
-            options,
           );
           break;
 

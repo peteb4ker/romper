@@ -80,7 +80,6 @@ describe("SampleService", () => {
         1,
         0,
         "/path/to/sample.wav",
-        undefined,
       );
       expect(result.success).toBe(true);
       expect(result.data?.sampleId).toBe(123);

@@ -165,7 +165,7 @@ interface VoiceValidation {
 2. How should we handle voice mode transitions when user has existing samples?
  -  Provide a warning with the expectation they fix it.
 3. Should voice-level stereo mode be user-controllable or automatically determined by sample types?
- - User controllable - stereo samples are only handled when channels are linked. Otherwise they are treated as mono (and a warning is given to the user: 'stereo sample added to mono track - will be converted to mono on sync')
+ - Automatic based on voice type. Mono voices convert stereo samples to mono on sync. Stereo (linked) voices pass stereo samples through unchanged. No user setting is needed.
 4. What's the UX for showing linked voices in the interface?
  - The UX agent will determine this. Use linked and unlinked chain icons.  Potentially between the voices at the top.   Warnings and messages to be given via the centralized toast system.  once voices are linked, they should incicate as such as they have a border around both of them.  maybe they become one double-wide voice with 12 slots.  and the color should be subtly diffferent.  play on these concepts.
 

@@ -2,7 +2,6 @@ import React from "react";
 
 import type { SampleData } from "./kitTypes";
 
-import { useSettings } from "../utils/SettingsContext";
 import { useSampleActions } from "./hooks/sample-management/useSampleActions";
 import { useSlotRendering } from "./hooks/sample-management/useSlotRendering";
 import { useDragAndDrop } from "./hooks/shared/useDragAndDrop";
@@ -124,9 +123,6 @@ const KitVoicePanel: React.FC<
   voice,
   voiceName,
 }) => {
-  // Task 7.1.2: Get defaultToMonoSamples setting
-  const { defaultToMonoSamples } = useSettings();
-
   // Effective editable state considers disabled
   const effectiveEditable = isEditable && !isDisabled;
 
@@ -172,7 +168,6 @@ const KitVoicePanel: React.FC<
 
   // Slot rendering calculations
   const slotRendering = useSlotRendering({
-    defaultToMonoSamples,
     dragOverSlot: dragAndDrop.dragOverSlot,
     dropZone: dragAndDrop.dropZone,
     isActive,

@@ -142,7 +142,6 @@ describe("SyncService", () => {
       mockMarkKitsAsSynced.mockReturnValue({ success: true });
 
       const settings = {
-        defaultToMonoSamples: true,
         localStorePath: "/test/path",
       };
 
@@ -162,11 +161,11 @@ describe("SyncService", () => {
       expect(mockExecutorService.executeFileOperation).toHaveBeenCalledTimes(2);
       expect(mockExecutorService.executeFileOperation).toHaveBeenCalledWith(
         mockSyncData.filesToCopy[0],
-        true, // forceMonoConversion from settings
+        false, // forceMonoConversion is per-file, not global
       );
       expect(mockExecutorService.executeFileOperation).toHaveBeenCalledWith(
         mockSyncData.filesToConvert[0],
-        true,
+        false,
       );
 
       // Verify progress updates
@@ -225,30 +224,6 @@ describe("SyncService", () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe("Sync operation was cancelled");
       expect(mockExecutorService.executeFileOperation).not.toHaveBeenCalled();
-    });
-
-    it("should handle mono conversion setting", async () => {
-      mockExecutorService.executeFileOperation = vi.fn().mockResolvedValue({
-        data: { bytesTransferred: 1024 },
-        success: true,
-      });
-
-      mockMarkKitsAsSynced.mockReturnValue({ success: true });
-
-      const settings = {
-        defaultToMonoSamples: false,
-        localStorePath: "/test/path",
-      };
-
-      await service.startKitSync(settings, {
-        filesToConvert: [],
-        filesToCopy: mockSyncData.filesToCopy,
-      });
-
-      expect(mockExecutorService.executeFileOperation).toHaveBeenCalledWith(
-        mockSyncData.filesToCopy[0],
-        false, // forceMonoConversion should be false
-      );
     });
 
     it("should warn but not fail when marking kits as synced fails", async () => {

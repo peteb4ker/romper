@@ -41,14 +41,12 @@ describe("preload index", () => {
 
       const mockSettingsData = {
         confirmDestructiveActions: true,
-        defaultToMonoSamples: false,
         localStorePath: "/path/to/local/store",
         theme: "dark",
         themeMode: "system" as const,
       };
 
       expect(typeof mockSettingsData.confirmDestructiveActions).toBe("boolean");
-      expect(typeof mockSettingsData.defaultToMonoSamples).toBe("boolean");
       expect(typeof mockSettingsData.localStorePath).toBe("string");
       expect(typeof mockSettingsData.theme).toBe("string");
       expect(["dark", "light", "system"]).toContain(mockSettingsData.themeMode);
@@ -109,7 +107,6 @@ describe("preload index", () => {
       // Test that SettingsKey type works as expected
       const validKeys = [
         "confirmDestructiveActions",
-        "defaultToMonoSamples",
         "localStorePath",
         "theme",
         "themeMode",

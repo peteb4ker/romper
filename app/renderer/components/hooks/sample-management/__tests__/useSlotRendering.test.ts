@@ -12,7 +12,6 @@ import { formatTooltip } from "../../../../utils/wavMetadataFormatter";
 
 describe("useSlotRendering", () => {
   const defaultProps = {
-    defaultToMonoSamples: false,
     dragOverSlot: null,
     dropZone: null,
     isActive: true,

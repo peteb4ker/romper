@@ -12,7 +12,6 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Provide default settings for tests
   const [localStorePath, setLocalStorePath] = useState("/mock/local/store");
   const [themeMode, setThemeMode] = useState<ThemeMode>("light");
-  const [defaultToMonoSamples, setDefaultToMonoSamples] = useState(true);
   const [confirmDestructiveActions, setConfirmDestructiveActions] =
     useState(true);
 
@@ -22,10 +21,6 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const setThemeModeFunc = useCallback((mode: ThemeMode) => {
     setThemeMode(mode);
-  }, []);
-
-  const setDefaultToMonoSamplesFunc = useCallback((enabled: boolean) => {
-    setDefaultToMonoSamples(enabled);
   }, []);
 
   const setConfirmDestructiveActionsFunc = useCallback((enabled: boolean) => {
@@ -39,7 +34,6 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const contextValue = useMemo(
     () => ({
       confirmDestructiveActions,
-      defaultToMonoSamples,
       isDarkMode: themeMode === "dark",
       // State
       isInitialized: true,
@@ -54,7 +48,6 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setConfirmDestructiveActions: setConfirmDestructiveActionsFunc,
 
-      setDefaultToMonoSamples: setDefaultToMonoSamplesFunc,
       // Actions
       setLocalStorePath: setLocalStorePathAsync,
       setThemeMode: setThemeModeFunc,
@@ -63,11 +56,9 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     [
       localStorePath,
       themeMode,
-      defaultToMonoSamples,
       confirmDestructiveActions,
       setLocalStorePathAsync,
       setThemeModeFunc,
-      setDefaultToMonoSamplesFunc,
       setConfirmDestructiveActionsFunc,
       refreshLocalStoreStatus,
     ],

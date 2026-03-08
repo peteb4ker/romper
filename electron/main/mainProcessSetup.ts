@@ -33,7 +33,6 @@ export function loadSettings(settingsPath: string): InMemorySettings {
 
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       settings = {
-        defaultToMonoSamples: parsed.defaultToMonoSamples,
         localStorePath: parsed.localStorePath || null,
         sdCardPath: parsed.sdCardPath,
       };

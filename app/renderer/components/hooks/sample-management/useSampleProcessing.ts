@@ -20,13 +20,6 @@ export interface UseSampleProcessingOptions {
   samples: string[];
   voice: number;
 }
-import { useSettings } from "../../../utils/SettingsContext";
-
-interface FormatValidation {
-  metadata?: {
-    channels?: number;
-  };
-}
 
 /**
  * Hook for processing sample assignments and replacements
@@ -39,8 +32,6 @@ export function useSampleProcessing({
   samples,
   voice,
 }: UseSampleProcessingOptions) {
-  const { defaultToMonoSamples } = useSettings();
-
   const getCurrentKitSamples = useCallback(async () => {
     if (!window.electronAPI?.getAllSamplesForKit) {
       console.error("Sample management not available");
@@ -102,7 +93,7 @@ export function useSampleProcessing({
       filePath: string,
       allSamples: unknown[],
       droppedSlotNumber: number,
-      options: { forceMono: boolean; replaceExisting: boolean },
+      options: { replaceExisting: boolean },
     ) => {
       const existingSample = samples[droppedSlotNumber];
       const targetSlot = calculateTargetSlot(filePath, -1, droppedSlotNumber);
@@ -137,35 +128,17 @@ export function useSampleProcessing({
       filePath: string,
       formatValidation: unknown,
       allSamples: unknown[],
-      modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
       droppedSlotNumber: number,
     ): Promise<boolean> => {
-      const validation = formatValidation as FormatValidation;
       const samples = allSamples as Sample[];
-      const channels = validation.metadata?.channels || 1;
-
-      if (modifierKeys.forceMonoDrop || modifierKeys.forceStereoDrop) {
-        console.log(
-          `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}, ` +
-            `override: ${modifierKeys.forceMonoDrop ? "force mono" : "force stereo"}`,
-        );
-      } else {
-        console.log(
-          `Sample has ${channels} channel(s), defaultToMonoSamples: ${defaultToMonoSamples}`,
-        );
-      }
-
-      // For now, simple assignment logic - stereo handling will be managed at voice level
-      const assignAsMono = defaultToMonoSamples || modifierKeys.forceMonoDrop;
 
       await executeAssignment(filePath, samples, droppedSlotNumber, {
-        forceMono: assignAsMono,
         replaceExisting: false,
       });
 
       return true;
     },
-    [defaultToMonoSamples, executeAssignment],
+    [executeAssignment],
   );
 
   return {

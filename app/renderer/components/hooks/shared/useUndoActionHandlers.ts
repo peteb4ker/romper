@@ -73,7 +73,6 @@ export function useUndoActionHandlers({
         voice,
         apiSlotNumber,
         sample.source_path,
-        { forceMono: !sample.is_stereo },
       );
     }
   };
@@ -117,7 +116,6 @@ export function useUndoActionHandlers({
         voice,
         slot,
         sample.source_path,
-        { forceMono: !sample.is_stereo },
       );
     }
   };
@@ -130,7 +128,6 @@ export function useUndoActionHandlers({
       action.data.voice,
       action.data.slot,
       action.data.deletedSample.source_path,
-      { forceMono: !action.data.deletedSample.is_stereo },
     );
     console.log("[UNDO] DELETE_SAMPLE undo result:", result);
     return result;
@@ -154,7 +151,6 @@ export function useUndoActionHandlers({
       action.data.voice,
       action.data.slot,
       action.data.oldSample.source_path,
-      { forceMono: !action.data.oldSample.is_stereo },
     );
     console.log("[UNDO] REPLACE_SAMPLE undo result:", result);
     return result;
@@ -263,7 +259,6 @@ export function useUndoActionHandlers({
           action.data.toVoice,
           action.data.toSlot,
           action.data.replacedSample.source_path,
-          { forceMono: !action.data.replacedSample.is_stereo },
         );
       }
 
@@ -284,7 +279,6 @@ export function useUndoActionHandlers({
       actionData.voice,
       actionData.deletedSlot,
       actionData.deletedSample.source_path,
-      { forceMono: !actionData.deletedSample.is_stereo },
     );
   };
 
@@ -297,7 +291,6 @@ export function useUndoActionHandlers({
         affectedSample.voice,
         affectedSample.newSlot,
         affectedSample.sample.source_path,
-        { forceMono: !affectedSample.sample.is_stereo },
       );
     }
   };

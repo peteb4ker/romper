@@ -31,12 +31,7 @@ export function useSampleManagementOperations({
   });
 
   const handleSampleAdd = useCallback(
-    async (
-      voice: number,
-      slotNumber: number,
-      filePath: string,
-      options?: { forceMono?: boolean; forceStereo?: boolean },
-    ) => {
+    async (voice: number, slotNumber: number, filePath: string) => {
       if (!window.electronAPI?.addSampleToSlot) {
         onMessage?.("Sample management not available", "error");
         return;
@@ -48,7 +43,6 @@ export function useSampleManagementOperations({
           voice,
           slotNumber,
           filePath,
-          options,
         );
 
         if (result.success) {
@@ -64,7 +58,6 @@ export function useSampleManagementOperations({
               voice,
               slotNumber,
               filePath,
-              options,
             );
             onAddUndoAction(addAction);
           } else {
@@ -103,12 +96,7 @@ export function useSampleManagementOperations({
   );
 
   const handleSampleReplace = useCallback(
-    async (
-      voice: number,
-      slotNumber: number,
-      filePath: string,
-      options?: { forceMono?: boolean; forceStereo?: boolean },
-    ) => {
+    async (voice: number, slotNumber: number, filePath: string) => {
       if (!window.electronAPI?.replaceSampleInSlot) {
         onMessage?.("Sample management not available", "error");
         return;
@@ -125,7 +113,6 @@ export function useSampleManagementOperations({
           voice,
           slotNumber,
           filePath,
-          options,
         );
 
         if (result.success) {
@@ -142,7 +129,6 @@ export function useSampleManagementOperations({
               slotNumber,
               oldSample,
               filePath,
-              options,
             );
             onAddUndoAction(replaceAction);
           }

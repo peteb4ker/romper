@@ -3,7 +3,7 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import * as fs from "fs";
 import * as path from "path";
 
-import { markKitsAsSynced } from "../db/romperDbCoreORM.js";
+import { getKit, markKitsAsSynced } from "../db/romperDbCoreORM.js";
 import {
   type SyncFileOperation,
   syncFileOperationsService,
@@ -131,6 +131,10 @@ class SyncService {
 
       const allFiles = [...results.filesToCopy, ...results.filesToConvert];
 
+      // Set per-file forceMonoConversion based on voice stereo_mode
+      // Mono voices need stereo samples converted to mono; stereo voices pass through
+      this.annotateMonoConversion(allFiles, dbDir);
+
       // Handle SD card wiping if requested
       if (options.wipeSdCard && options.sdCardPath) {
         await this.wipeSdCard(options.sdCardPath);
@@ -160,6 +164,71 @@ class SyncService {
         error: `Failed to sync kit: ${error instanceof Error ? error.message : String(error)}`,
         success: false,
       };
+    }
+  }
+
+  /**
+   * Annotate file operations with per-file forceMonoConversion based on voice stereo_mode.
+   * For mono voices: stereo samples need conversion to mono (forceMonoConversion = true).
+   * For stereo voices: samples pass through as-is.
+   */
+  private annotateMonoConversion(
+    allFiles: SyncFileOperation[],
+    dbDir: string,
+  ): void {
+    // Build a lookup of voice stereo_mode by kit_name + voice_number
+    const voiceStereoModeCache = new Map<string, boolean>();
+
+    for (const fileOp of allFiles) {
+      const cacheKey = fileOp.kitName;
+
+      // Lazily load kit voices into cache
+      if (!voiceStereoModeCache.has(cacheKey + ":loaded")) {
+        try {
+          const kitResult = getKit(dbDir, fileOp.kitName);
+          if (kitResult.success && kitResult.data?.voices) {
+            for (const voice of kitResult.data.voices) {
+              voiceStereoModeCache.set(
+                `${fileOp.kitName}:${voice.voice_number}`,
+                voice.stereo_mode,
+              );
+            }
+          }
+        } catch {
+          // If kit lookup fails, skip annotation for this kit
+        }
+        voiceStereoModeCache.set(cacheKey + ":loaded", true);
+      }
+    }
+
+    // Annotate each file operation based on voice stereo_mode.
+    // For mono voices, stereo samples must be converted to mono.
+    // This may promote "copy" operations to "convert" if mono conversion is needed.
+    for (const fileOp of allFiles) {
+      // Extract voice number from destination path (e.g., .../kitName/1/filename.wav)
+      const pathParts = fileOp.destinationPath.split("/");
+      const voiceDirIndex = pathParts.length - 2; // voice dir is parent of filename
+      const voiceNumberStr = pathParts[voiceDirIndex];
+      const voiceNumber = parseInt(voiceNumberStr, 10);
+
+      if (isNaN(voiceNumber)) {
+        continue;
+      }
+
+      const cacheKey = `${fileOp.kitName}:${voiceNumber}`;
+      const voiceStereoMode = voiceStereoModeCache.get(cacheKey);
+
+      // Only force mono conversion for stereo samples on explicitly mono voices
+      if (voiceStereoMode === false && fileOp.isStereo) {
+        fileOp.forceMonoConversion = true;
+
+        // Promote copy to convert — stereo file needs channel conversion for mono voice
+        if (fileOp.operation === "copy") {
+          fileOp.operation = "convert";
+          fileOp.reason =
+            "Stereo sample on mono voice requires mono conversion";
+        }
+      }
     }
   }
 

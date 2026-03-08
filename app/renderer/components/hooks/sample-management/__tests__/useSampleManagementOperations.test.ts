@@ -62,16 +62,13 @@ describe("useSampleManagementOperations", () => {
         useSampleManagementOperations(mockOptions),
       );
 
-      await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav", {
-        forceMono: true,
-      });
+      await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
 
       expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledWith(
         "Test Kit",
         1,
         0,
         "/path/to/sample.wav",
-        { forceMono: true },
       );
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample added to voice 1, slot 1",
@@ -181,9 +178,7 @@ describe("useSampleManagementOperations", () => {
         useSampleManagementOperations(mockOptions),
       );
 
-      await result.current.handleSampleReplace(1, 0, "/path/to/new.wav", {
-        forceStereo: true,
-      });
+      await result.current.handleSampleReplace(1, 0, "/path/to/new.wav");
 
       expect(mockUndoActions.getOldSampleForUndo).toHaveBeenCalledWith(1, 0);
       expect(mockElectronAPI.replaceSampleInSlot).toHaveBeenCalledWith(
@@ -191,7 +186,6 @@ describe("useSampleManagementOperations", () => {
         1,
         0,
         "/path/to/new.wav",
-        { forceStereo: true },
       );
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample replaced in voice 1, slot 1",

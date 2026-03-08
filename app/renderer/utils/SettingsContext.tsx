@@ -10,14 +10,12 @@ import React, {
 
 interface Settings {
   confirmDestructiveActions: boolean;
-  defaultToMonoSamples: boolean;
   localStorePath: null | string;
   themeMode: ThemeMode;
 }
 
 type SettingsAction =
   | { payload: boolean; type: "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS" }
-  | { payload: boolean; type: "UPDATE_DEFAULT_TO_MONO_SAMPLES" }
   | {
       payload: LocalStoreValidationDetailedResult | null;
       type: "UPDATE_LOCAL_STORE_STATUS";
@@ -32,7 +30,6 @@ type SettingsAction =
 interface SettingsContextProps {
   clearError: () => void;
   confirmDestructiveActions: boolean;
-  defaultToMonoSamples: boolean;
   error: null | string;
   isDarkMode: boolean; // Computed property for backwards compatibility
   isInitialized: boolean;
@@ -45,7 +42,6 @@ interface SettingsContextProps {
 
   refreshLocalStoreStatus: () => Promise<void>;
   setConfirmDestructiveActions: (enabled: boolean) => Promise<void>;
-  setDefaultToMonoSamples: (enabled: boolean) => Promise<void>;
   // Actions
   setLocalStorePath: (path: string) => Promise<void>;
   setThemeMode: (mode: ThemeMode) => Promise<void>;
@@ -69,7 +65,6 @@ const initialState: SettingsState = {
   localStoreStatus: null,
   settings: {
     confirmDestructiveActions: true, // Task 12.1.2: Default to true
-    defaultToMonoSamples: true, // Task 7.1.1: Default to true
     localStorePath: null,
     themeMode: "system", // Default to system preference
   },
@@ -118,12 +113,6 @@ function settingsReducer(
           ...state.settings,
           confirmDestructiveActions: action.payload,
         },
-      };
-
-    case "UPDATE_DEFAULT_TO_MONO_SAMPLES":
-      return {
-        ...state,
-        settings: { ...state.settings, defaultToMonoSamples: action.payload },
       };
 
     case "UPDATE_LOCAL_STORE_PATH":
@@ -198,7 +187,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       const settings: Settings = {
         confirmDestructiveActions:
           loadedSettings.confirmDestructiveActions ?? true, // Task 12.1.2: Default to true
-        defaultToMonoSamples: loadedSettings.defaultToMonoSamples ?? true, // Task 7.1.1: Default to true
         // Use environment override if available, otherwise use settings
         localStorePath:
           config.localStorePath || loadedSettings.localStorePath || null,
@@ -246,16 +234,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     [applyTheme],
   );
-
-  // Update default to mono samples setting
-  const setDefaultToMonoSamples = useCallback(async (enabled: boolean) => {
-    try {
-      await window.electronAPI.setSetting("defaultToMonoSamples", enabled);
-      dispatch({ payload: enabled, type: "UPDATE_DEFAULT_TO_MONO_SAMPLES" });
-    } catch (error) {
-      console.error("Failed to update defaultToMonoSamples setting:", error);
-    }
-  }, []);
 
   // Update confirm destructive actions setting
   const setConfirmDestructiveActions = useCallback(async (enabled: boolean) => {
@@ -310,7 +288,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     () => ({
       clearError,
       confirmDestructiveActions: state.settings.confirmDestructiveActions,
-      defaultToMonoSamples: state.settings.defaultToMonoSamples,
       error: state.error,
       isDarkMode: shouldUseDarkMode(state.settings.themeMode), // Computed property
       isInitialized: state.isInitialized,
@@ -323,7 +300,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
       refreshLocalStoreStatus,
       setConfirmDestructiveActions,
-      setDefaultToMonoSamples,
       // Actions
       setLocalStorePath,
       setThemeMode,
@@ -332,7 +308,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     [
       clearError,
       state.settings.confirmDestructiveActions,
-      state.settings.defaultToMonoSamples,
       state.error,
       state.settings.themeMode,
       state.isInitialized,
@@ -341,7 +316,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       state.localStoreStatus,
       refreshLocalStoreStatus,
       setConfirmDestructiveActions,
-      setDefaultToMonoSamples,
       setLocalStorePath,
       setThemeMode,
     ],

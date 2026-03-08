@@ -134,7 +134,6 @@ describe("useUndoActionHandlers", () => {
           1,
           0,
           "/path/to/test.wav",
-          { forceMono: true },
         );
 
         consoleSpy.mockRestore();
@@ -175,7 +174,6 @@ describe("useUndoActionHandlers", () => {
           1,
           0,
           "/path/to/old.wav",
-          { forceMono: false }, // stereo sample
         );
 
         consoleSpy.mockRestore();
@@ -394,7 +392,6 @@ describe("useUndoActionHandlers", () => {
           2,
           1,
           "/path/to/replaced.wav",
-          { forceMono: false },
         );
       });
 
@@ -481,7 +478,6 @@ describe("useUndoActionHandlers", () => {
           1,
           0,
           "/path/to/deleted.wav",
-          { forceMono: true },
         );
 
         // Should restore affected samples
@@ -490,7 +486,6 @@ describe("useUndoActionHandlers", () => {
           1,
           0, // newSlot from action data
           "/path/to/affected.wav",
-          { forceMono: false },
         );
 
         consoleSpy.mockRestore();

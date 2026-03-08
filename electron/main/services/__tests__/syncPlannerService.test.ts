@@ -16,6 +16,7 @@ vi.mock("path", () => ({
 
 // Mock database operations
 vi.mock("../../db/romperDbCoreORM.js", () => ({
+  getKit: vi.fn(),
   getKits: vi.fn(),
   getKitSamples: vi.fn(),
 }));
@@ -35,7 +36,7 @@ vi.mock("../rampleNamingService.js", () => ({
 }));
 
 import { getAudioMetadata, validateSampleFormat } from "../../audioUtils.js";
-import { getKits, getKitSamples } from "../../db/romperDbCoreORM.js";
+import { getKit, getKits, getKitSamples } from "../../db/romperDbCoreORM.js";
 import { rampleNamingService } from "../rampleNamingService.js";
 import { SyncPlannerService } from "../syncPlannerService.js";
 import {
@@ -45,6 +46,7 @@ import {
 
 const mockFs = vi.mocked(fs);
 const _mockPath = vi.mocked(path);
+const mockGetKit = vi.mocked(getKit);
 const mockGetKits = vi.mocked(getKits);
 const mockGetKitSamples = vi.mocked(getKitSamples);
 const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
@@ -58,8 +60,15 @@ describe("SyncPlannerService", () => {
     vi.clearAllMocks();
     service = new SyncPlannerService();
 
+    // Default mock for getKit (used by annotateMonoConversion)
+    mockGetKit.mockReturnValue({
+      data: { voices: [] },
+      success: true,
+    });
+
     // Mock the dynamic import
     vi.doMock("../../db/romperDbCoreORM.js", () => ({
+      getKit: mockGetKit,
       getKits: mockGetKits,
       getKitSamples: mockGetKitSamples,
     }));

@@ -199,7 +199,7 @@ export class SyncService {
 
   private async processFile(
     fileOp: SyncFileOperation,
-    inMemorySettings: Record<string, unknown>,
+    _inMemorySettings: Record<string, unknown>,
   ): Promise<number> {
     // Emit progress update at start of file processing
     this.progressService.updateProgress(
@@ -209,8 +209,8 @@ export class SyncService {
       0,
     );
 
-    // Execute the file operation
-    const forceMonoConversion = Boolean(inMemorySettings.defaultToMonoSamples);
+    // Execute the file operation - mono conversion is determined per-file based on voice type
+    const forceMonoConversion = Boolean(fileOp.forceMonoConversion);
     const result = await this.executorService.executeFileOperation(
       fileOp,
       forceMonoConversion,

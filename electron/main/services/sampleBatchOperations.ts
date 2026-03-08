@@ -141,7 +141,6 @@ export class SampleBatchOperationsService {
       toVoice: number,
       toSlot: number,
       sourcePath: string,
-      options?: { forceMono?: boolean; forceStereo?: boolean },
     ) => DbResult<{ sampleId: number }>,
     inMemorySettings: Record<string, unknown>,
     sampleToMove: Sample,
@@ -164,10 +163,6 @@ export class SampleBatchOperationsService {
         toVoice,
         toSlot,
         sampleToMove.source_path,
-        {
-          forceMono: !sampleToMove.is_stereo,
-          forceStereo: sampleToMove.is_stereo,
-        },
       );
 
       if (!addResult.success) {

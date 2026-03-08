@@ -11,10 +11,6 @@ vi.mock("sonner", () => ({
   },
 }));
 
-vi.mock("../../../../utils/SettingsContext", () => ({
-  useSettings: vi.fn(),
-}));
-
 vi.mock("../useStereoHandling", () => ({
   useStereoHandling: vi.fn(),
 }));
@@ -52,12 +48,7 @@ describe("useSampleProcessing", () => {
     vi.resetAllMocks();
 
     // Import and mock the modules
-    const { useSettings } = await import("../../../../utils/SettingsContext");
     const { useStereoHandling } = await import("../useStereoHandling");
-
-    vi.mocked(useSettings).mockReturnValue({
-      defaultToMonoSamples: true,
-    } as unknown);
 
     vi.mocked(useStereoHandling).mockReturnValue(mockStereoHandling);
     vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
@@ -275,7 +266,6 @@ describe("useSampleProcessing", () => {
       const { toast } = await import("sonner");
 
       await result.current.executeAssignment("/external/sample.wav", [], 0, {
-        forceMono: false,
         replaceExisting: false,
       });
 
@@ -295,7 +285,7 @@ describe("useSampleProcessing", () => {
         "/path/Test Kit/new.wav",
         [],
         0, // Slot with existing sample
-        { forceMono: false, replaceExisting: true },
+        { replaceExisting: true },
       );
 
       expect(mockOptions.onSampleReplace).toHaveBeenCalledWith(
@@ -313,7 +303,7 @@ describe("useSampleProcessing", () => {
         "/path/new.wav",
         [],
         1, // Empty slot
-        { forceMono: false, replaceExisting: false },
+        { replaceExisting: false },
       );
 
       expect(mockOptions.onSampleAdd).toHaveBeenCalledWith(
@@ -333,7 +323,6 @@ describe("useSampleProcessing", () => {
       const { toast } = await import("sonner");
 
       await result.current.executeAssignment("/path/new.wav", [], 1, {
-        forceMono: false,
         replaceExisting: false,
       });
 
@@ -361,7 +350,6 @@ describe("useSampleProcessing", () => {
       const { toast } = await import("sonner");
 
       await result.current.executeAssignment("/path/new.wav", [], 1, {
-        forceMono: false,
         replaceExisting: false,
       });
 
@@ -387,11 +375,6 @@ describe("useSampleProcessing", () => {
       { source_path: "/path/sample1.wav", voice_number: 1 },
     ];
 
-    const mockModifierKeys = {
-      forceMonoDrop: false,
-      forceStereoDrop: false,
-    };
-
     beforeEach(() => {
       mockStereoHandling.analyzeStereoAssignment.mockReturnValue({
         assignAsMono: true,
@@ -409,120 +392,13 @@ describe("useSampleProcessing", () => {
       mockStereoHandling.applyStereoAssignment.mockResolvedValue(true);
     });
 
-    it("should log sample information without modifiers", async () => {
-      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation();
-
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      await result.current.processAssignment(
-        "/path/sample.wav",
-        mockFormatValidation,
-        mockAllSamples,
-        mockModifierKeys,
-        1,
-      );
-
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Sample has 2 channel(s), defaultToMonoSamples: true",
-      );
-
-      consoleLogSpy.mockRestore();
-    });
-
-    it("should log sample information with force mono modifier", async () => {
-      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation();
-
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      await result.current.processAssignment(
-        "/path/sample.wav",
-        mockFormatValidation,
-        mockAllSamples,
-        { forceMonoDrop: true, forceStereoDrop: false },
-        1,
-      );
-
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Sample has 2 channel(s), defaultToMonoSamples: true, override: force mono",
-      );
-
-      consoleLogSpy.mockRestore();
-    });
-
-    it("should log sample information with force stereo modifier", async () => {
-      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation();
-
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      await result.current.processAssignment(
-        "/path/sample.wav",
-        mockFormatValidation,
-        mockAllSamples,
-        { forceMonoDrop: false, forceStereoDrop: true },
-        1,
-      );
-
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Sample has 2 channel(s), defaultToMonoSamples: true, override: force stereo",
-      );
-
-      consoleLogSpy.mockRestore();
-    });
-
-    it("should execute assignment with correct parameters when force mono is used", async () => {
+    it("should execute assignment successfully", async () => {
       const { result } = renderHook(() => useSampleProcessing(mockOptions));
 
       const success = await result.current.processAssignment(
         "/path/sample.wav",
         mockFormatValidation,
         mockAllSamples,
-        { forceMonoDrop: true, forceStereoDrop: false },
-        1,
-      );
-
-      expect(success).toBe(true);
-      // Verify that executeAssignment was called with forceMono: true
-      expect(mockOptions.onSampleAdd).toHaveBeenCalled();
-    });
-
-    it("should execute assignment with default settings", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const success = await result.current.processAssignment(
-        "/path/sample.wav",
-        mockFormatValidation,
-        mockAllSamples,
-        mockModifierKeys,
-        1,
-      );
-
-      expect(success).toBe(true);
-      expect(mockOptions.onSampleAdd).toHaveBeenCalled();
-    });
-
-    it("should execute assignment with force mono setting", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const success = await result.current.processAssignment(
-        "/path/sample.wav",
-        mockFormatValidation,
-        mockAllSamples,
-        { forceMonoDrop: true, forceStereoDrop: false },
-        1,
-      );
-
-      expect(success).toBe(true);
-      expect(mockOptions.onSampleAdd).toHaveBeenCalled();
-    });
-
-    it("should execute assignment with force stereo setting", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const success = await result.current.processAssignment(
-        "/path/sample.wav",
-        mockFormatValidation,
-        mockAllSamples,
-        { forceMonoDrop: false, forceStereoDrop: true },
         1,
       );
 
@@ -541,7 +417,6 @@ describe("useSampleProcessing", () => {
         "/path/sample.wav",
         monoFormatValidation,
         mockAllSamples,
-        mockModifierKeys,
         1,
       );
 
@@ -555,7 +430,6 @@ describe("useSampleProcessing", () => {
         "/path/sample.wav",
         mockFormatValidation,
         mockAllSamples,
-        mockModifierKeys,
         1,
       );
 
@@ -563,12 +437,10 @@ describe("useSampleProcessing", () => {
       expect(mockStereoHandling.applyStereoAssignment).not.toHaveBeenCalled();
     });
 
-    it("should handle missing metadata channels and default to 1 channel", async () => {
+    it("should handle missing metadata channels", async () => {
       const noChannelsValidation = {
         metadata: {},
       };
-
-      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation();
 
       const { result } = renderHook(() => useSampleProcessing(mockOptions));
 
@@ -576,17 +448,11 @@ describe("useSampleProcessing", () => {
         "/path/sample.wav",
         noChannelsValidation,
         mockAllSamples,
-        mockModifierKeys,
         1,
       );
 
       expect(success).toBe(true);
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Sample has 1 channel(s), defaultToMonoSamples: true",
-      );
       expect(mockOptions.onSampleAdd).toHaveBeenCalled();
-
-      consoleLogSpy.mockRestore();
     });
   });
 

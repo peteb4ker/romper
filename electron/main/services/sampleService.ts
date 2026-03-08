@@ -1,7 +1,5 @@
 import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 
-import type { StereoOptions } from "../utils/stereoProcessingUtils.js";
-
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { sampleCrudService } from "./crud/sampleCrudService.js";
 import { sampleMetadataService } from "./metadata/sampleMetadataService.js";
@@ -22,7 +20,6 @@ export class SampleService {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: StereoOptions,
   ): DbResult<{ sampleId: number }> {
     return sampleCrudService.addSampleToSlot(
       inMemorySettings,
@@ -30,7 +27,6 @@ export class SampleService {
       voiceNumber,
       slotNumber,
       filePath,
-      options,
     );
   }
 
@@ -159,7 +155,6 @@ export class SampleService {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: StereoOptions,
   ): DbResult<{ sampleId: number }> {
     // Delegate to CRUD service - first delete then add
     const deleteResult = this.deleteSampleFromSlotWithoutReindexing(
@@ -179,7 +174,6 @@ export class SampleService {
       voiceNumber,
       slotNumber,
       filePath,
-      options,
     );
   }
 

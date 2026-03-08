@@ -25,7 +25,6 @@ export interface UseExternalDragHandlersOptions {
       filePath: string,
       formatValidation: unknown,
       allSamples: unknown[],
-      modifierKeys: { forceMonoDrop: boolean; forceStereoDrop: boolean },
       droppedSlotNumber: number,
     ) => Promise<boolean>;
   };
@@ -127,11 +126,6 @@ export function useExternalDragHandlers({
       const files = Array.from(e.dataTransfer.files);
       if (files.length === 0) return;
 
-      const modifierKeys = {
-        forceMonoDrop: e.altKey,
-        forceStereoDrop: e.shiftKey,
-      };
-
       try {
         const allSamples = await sampleProcessing.getCurrentKitSamples();
         if (!allSamples) return;
@@ -154,7 +148,6 @@ export function useExternalDragHandlers({
             filePath,
             formatValidation,
             allSamples,
-            modifierKeys,
             slotNumber,
           );
         }

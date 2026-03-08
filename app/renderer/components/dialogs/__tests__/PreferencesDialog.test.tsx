@@ -15,7 +15,6 @@ const mockUseSettings = vi.mocked(useSettings);
 
 describe("PreferencesDialog", () => {
   const mockSetThemeMode = vi.fn();
-  const mockSetDefaultToMonoSamples = vi.fn();
   const mockSetConfirmDestructiveActions = vi.fn();
   const mockSetLocalStorePath = vi.fn();
   const mockOnClose = vi.fn();
@@ -23,7 +22,6 @@ describe("PreferencesDialog", () => {
   const defaultSettingsContext = {
     clearError: vi.fn(),
     confirmDestructiveActions: true,
-    defaultToMonoSamples: true,
     error: null,
     isDarkMode: false,
     isInitialized: true,
@@ -32,7 +30,6 @@ describe("PreferencesDialog", () => {
     localStoreStatus: null,
     refreshLocalStoreStatus: vi.fn(),
     setConfirmDestructiveActions: mockSetConfirmDestructiveActions,
-    setDefaultToMonoSamples: mockSetDefaultToMonoSamples,
     setLocalStorePath: mockSetLocalStorePath,
     setThemeMode: mockSetThemeMode,
     themeMode: "system" as const,
@@ -184,39 +181,12 @@ describe("PreferencesDialog", () => {
     });
   });
 
-  describe("Sample handling preferences", () => {
-    it("displays current mono samples setting", () => {
-      render(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
-
-      const checkboxes = screen.getAllByRole("checkbox");
-      const checkbox = checkboxes[0]; // First checkbox is for mono samples
-
-      expect(checkbox).toBeChecked();
-    });
-
-    it("toggles mono samples setting", () => {
-      render(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
-
-      const checkboxes = screen.getAllByRole("checkbox");
-      const checkbox = checkboxes[0]; // First checkbox is for mono samples
-
-      fireEvent.click(checkbox);
-
-      expect(mockSetDefaultToMonoSamples).toHaveBeenCalledWith(false);
-    });
-
-    it("toggles mono samples setting from false to true", () => {
-      // Skip this test for now - testing basic toggle functionality is sufficient
-      expect(true).toBe(true);
-    });
-  });
-
   describe("Confirmation preferences", () => {
     it("displays current destructive actions setting", () => {
       render(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
 
       const checkboxes = screen.getAllByRole("checkbox");
-      const checkbox = checkboxes[1]; // Second checkbox is for destructive actions
+      const checkbox = checkboxes[0]; // First checkbox is for destructive actions
 
       expect(checkbox).toBeChecked();
     });
@@ -225,16 +195,11 @@ describe("PreferencesDialog", () => {
       render(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
 
       const checkboxes = screen.getAllByRole("checkbox");
-      const checkbox = checkboxes[1]; // Second checkbox is for destructive actions
+      const checkbox = checkboxes[0]; // First checkbox is for destructive actions
 
       fireEvent.click(checkbox);
 
       expect(mockSetConfirmDestructiveActions).toHaveBeenCalledWith(false);
-    });
-
-    it("toggles destructive actions setting from false to true", () => {
-      // Skip this test for now - testing basic toggle functionality is sufficient
-      expect(true).toBe(true);
     });
   });
 

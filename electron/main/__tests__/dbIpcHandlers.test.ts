@@ -210,7 +210,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
         1,
         0,
         "/test/file.wav",
-        undefined,
       );
     });
 
@@ -225,7 +224,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
         2,
         5,
         "/test/new.wav",
-        undefined,
       );
     });
 
@@ -342,7 +340,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
         4,
         11,
         "/path/to/sample.wav",
-        undefined,
       );
     });
 

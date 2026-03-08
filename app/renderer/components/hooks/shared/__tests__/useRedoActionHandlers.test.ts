@@ -43,7 +43,6 @@ describe("useRedoActionHandlers", () => {
         1,
         0,
         "/path/to/sample.wav",
-        { forceMono: true },
       );
       expect(redoResult).toEqual({ success: true });
     });
@@ -76,7 +75,6 @@ describe("useRedoActionHandlers", () => {
         2,
         1,
         "/path/to/stereo.wav",
-        { forceMono: false },
       );
     });
 
@@ -230,7 +228,6 @@ describe("useRedoActionHandlers", () => {
         1,
         0,
         "/path/to/new.wav",
-        { forceMono: false },
       );
       expect(redoResult).toEqual({ success: true });
     });

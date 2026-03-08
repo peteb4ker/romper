@@ -13,6 +13,7 @@ import {
 } from "../audioUtils.js";
 import { getKitSamples } from "../db/romperDbCoreORM.js";
 import { rampleNamingService } from "./rampleNamingService.js";
+import { annotateMonoConversion } from "./syncMonoAnnotation.js";
 
 export interface SyncChangeSummary {
   filesToConvert: SyncFileOperation[];
@@ -26,6 +27,8 @@ export interface SyncChangeSummary {
 export interface SyncFileOperation {
   destinationPath: string;
   filename: string;
+  forceMonoConversion?: boolean;
+  isStereo?: boolean;
   kitName: string;
   operation: "convert" | "copy";
   originalFormat?: string;
@@ -81,6 +84,10 @@ export class SyncPlannerService {
         this.processSampleForSync(sample, localStorePath, results);
       }
 
+      // Annotate per-file mono conversion based on voice stereo_mode
+      const allFiles = [...results.filesToConvert, ...results.filesToCopy];
+      annotateMonoConversion(allFiles, dbDir);
+
       const summary: SyncChangeSummary = {
         filesToConvert: results.filesToConvert,
         filesToCopy: results.filesToCopy,
@@ -117,6 +124,7 @@ export class SyncPlannerService {
     results.filesToConvert.push({
       destinationPath,
       filename, // Now using the Rample-generated filename passed as parameter
+      isStereo: sample.is_stereo,
       kitName: sample.kit_name,
       operation: "convert",
       originalFormat: metadataResult.success
@@ -141,11 +149,13 @@ export class SyncPlannerService {
     sourcePath: string,
     destinationPath: string,
     kitName: string,
+    isStereo: boolean,
     results: SyncChangeSummary,
   ): void {
     results.filesToCopy.push({
       destinationPath,
       filename, // Now using the Rample-generated filename passed as parameter
+      isStereo,
       kitName,
       operation: "copy",
       sourcePath,
@@ -184,6 +194,7 @@ export class SyncPlannerService {
         sourcePath,
         destinationPath,
         sample.kit_name,
+        sample.is_stereo,
         results,
       );
     }

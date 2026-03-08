@@ -91,16 +91,11 @@ export function useSampleManagementUndoActions({
 
   // Helper function to create add sample undo action
   const createAddSampleAction = useCallback(
-    (
-      voice: number,
-      slotNumber: number,
-      filePath: string,
-      options?: { forceMono?: boolean; forceStereo?: boolean },
-    ): AddSampleAction => ({
+    (voice: number, slotNumber: number, filePath: string): AddSampleAction => ({
       data: {
         addedSample: {
           filename: filePath.split("/").pop() || "",
-          is_stereo: options?.forceStereo || false,
+          is_stereo: false,
           source_path: filePath,
         },
         slot: slotNumber,
@@ -121,12 +116,11 @@ export function useSampleManagementUndoActions({
       slotNumber: number,
       oldSample: Sample,
       filePath: string,
-      options?: { forceMono?: boolean; forceStereo?: boolean },
     ): ReplaceSampleAction => ({
       data: {
         newSample: {
           filename: filePath.split("/").pop() || "",
-          is_stereo: options?.forceStereo || false,
+          is_stereo: false,
           source_path: filePath,
         },
         oldSample: {

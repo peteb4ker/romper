@@ -435,7 +435,6 @@ describe("SampleBatchOperationsService", () => {
         2,
         0,
         mockSample.source_path,
-        { forceMono: true, forceStereo: false },
       );
       expect(deleteSpy).toHaveBeenCalledWith(mockSettings, "SourceKit", 1, 2);
 
@@ -541,7 +540,6 @@ describe("SampleBatchOperationsService", () => {
         2,
         0,
         stereoSample.source_path,
-        { forceMono: false, forceStereo: true }, // Should force stereo for stereo sample
       );
 
       deleteSpy.mockRestore();

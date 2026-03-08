@@ -142,7 +142,6 @@ describe("ipcHandlerUtils", () => {
     const voiceNumber = 1;
     const slotNumber = 0;
     const filePath = "/test/sample.wav";
-    const options = { forceMono: true };
 
     describe("add operation", () => {
       it("should handle successful add operation", async () => {
@@ -159,7 +158,6 @@ describe("ipcHandlerUtils", () => {
           voiceNumber,
           slotNumber,
           filePath,
-          options,
         );
 
         expect(result).toEqual(mockResult);
@@ -169,7 +167,6 @@ describe("ipcHandlerUtils", () => {
           voiceNumber,
           slotNumber,
           filePath,
-          options,
         );
       });
 
@@ -283,7 +280,6 @@ describe("ipcHandlerUtils", () => {
           voiceNumber,
           slotNumber,
           filePath,
-          options,
         );
 
         expect(result).toEqual(mockResult);
@@ -293,7 +289,6 @@ describe("ipcHandlerUtils", () => {
           voiceNumber,
           slotNumber,
           filePath,
-          options,
         );
       });
 

@@ -17,11 +17,9 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
 }) => {
   const {
     confirmDestructiveActions,
-    defaultToMonoSamples,
     localStorePath,
     localStoreStatus,
     setConfirmDestructiveActions,
-    setDefaultToMonoSamples,
     setLocalStorePath,
     setThemeMode,
     themeMode,
@@ -141,9 +139,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
             {activeTab === "samples" && (
               <SampleManagementTab
                 confirmDestructiveActions={confirmDestructiveActions}
-                defaultToMonoSamples={defaultToMonoSamples}
                 onConfirmDestructiveActionsChange={setConfirmDestructiveActions}
-                onDefaultToMonoSamplesChange={setDefaultToMonoSamples}
               />
             )}
 

@@ -41,7 +41,6 @@ describe("SettingsContext", () => {
     mockElectronAPI.readSettings.mockResolvedValue({
       confirmDestructiveActions: true,
       darkMode: false,
-      defaultToMonoSamples: true,
       localStorePath: "/test/path",
       sdCardPath: "/test/sd/card",
       themeMode: "light",
@@ -79,7 +78,6 @@ describe("SettingsContext", () => {
       expect(result.current.localStorePath).toBe("/test/path");
       expect(result.current.themeMode).toBe("light");
       expect(result.current.isDarkMode).toBe(false);
-      expect(result.current.defaultToMonoSamples).toBe(true);
       expect(result.current.confirmDestructiveActions).toBe(true);
     });
 
@@ -117,7 +115,6 @@ describe("SettingsContext", () => {
       expect(result.current).not.toBe(null);
       expect(result.current.localStorePath).toBe(null);
       expect(result.current.themeMode).toBe("system");
-      expect(result.current.defaultToMonoSamples).toBe(true);
       expect(result.current.confirmDestructiveActions).toBe(true);
     });
   });
@@ -211,12 +208,12 @@ describe("SettingsContext", () => {
       });
 
       await act(async () => {
-        await result.current.setDefaultToMonoSamples(false);
+        await result.current.setConfirmDestructiveActions(false);
       });
 
       expect(result.current).not.toBe(null);
       expect(console.error).toHaveBeenCalledWith(
-        "Failed to update defaultToMonoSamples setting:",
+        "Failed to update confirmDestructiveActions setting:",
         expect.any(Error),
       );
     });

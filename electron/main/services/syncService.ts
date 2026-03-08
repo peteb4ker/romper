@@ -8,6 +8,7 @@ import {
   type SyncFileOperation,
   syncFileOperationsService,
 } from "./syncFileOperations.js";
+import { annotateMonoConversion } from "./syncMonoAnnotation.js";
 import { syncProgressManager } from "./syncProgressManager.js";
 import { syncSampleProcessingService } from "./syncSampleProcessing.js";
 import { type SyncValidationError } from "./syncValidationService.js";
@@ -130,6 +131,10 @@ class SyncService {
       }
 
       const allFiles = [...results.filesToCopy, ...results.filesToConvert];
+
+      // Set per-file forceMonoConversion based on voice stereo_mode
+      // Mono voices need stereo samples converted to mono; stereo voices pass through
+      annotateMonoConversion(allFiles, dbDir);
 
       // Handle SD card wiping if requested
       if (options.wipeSdCard && options.sdCardPath) {

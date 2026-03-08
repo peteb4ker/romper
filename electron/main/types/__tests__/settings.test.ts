@@ -5,24 +5,20 @@ import type { InMemorySettings } from "../settings.js";
 describe("InMemorySettings Interface", () => {
   test("should accept valid settings configuration", () => {
     const validSettings: InMemorySettings = {
-      defaultToMonoSamples: true,
       localStorePath: "/path/to/store",
       sdCardPath: "/path/to/sdcard",
     };
 
     expect(validSettings.localStorePath).toBe("/path/to/store");
-    expect(validSettings.defaultToMonoSamples).toBe(true);
     expect(validSettings.sdCardPath).toBe("/path/to/sdcard");
   });
 
   test("should accept null localStorePath", () => {
     const settingsWithNullPath: InMemorySettings = {
-      defaultToMonoSamples: false,
       localStorePath: null,
     };
 
     expect(settingsWithNullPath.localStorePath).toBe(null);
-    expect(settingsWithNullPath.defaultToMonoSamples).toBe(false);
   });
 
   test("should accept minimal configuration with only required fields", () => {
@@ -31,19 +27,16 @@ describe("InMemorySettings Interface", () => {
     };
 
     expect(minimalSettings.localStorePath).toBe(null);
-    expect(minimalSettings.defaultToMonoSamples).toBeUndefined();
     expect(minimalSettings.sdCardPath).toBeUndefined();
   });
 
   test("should accept all optional fields as undefined", () => {
     const settingsWithUndefined: InMemorySettings = {
-      defaultToMonoSamples: undefined,
       localStorePath: "/test/path",
       sdCardPath: undefined,
     };
 
     expect(settingsWithUndefined.localStorePath).toBe("/test/path");
-    expect(settingsWithUndefined.defaultToMonoSamples).toBeUndefined();
     expect(settingsWithUndefined.sdCardPath).toBeUndefined();
   });
 
@@ -64,7 +57,6 @@ describe("InMemorySettings Interface", () => {
 
   test("should work with type assertions in settings service patterns", () => {
     const unknownData: Record<string, unknown> = {
-      defaultToMonoSamples: true,
       localStorePath: "/test/path",
       randomField: "should be preserved",
     };
@@ -72,20 +64,17 @@ describe("InMemorySettings Interface", () => {
     const typedSettings = unknownData as InMemorySettings;
 
     expect(typedSettings.localStorePath).toBe("/test/path");
-    expect(typedSettings.defaultToMonoSamples).toBe(true);
     expect((typedSettings as unknown).randomField).toBe("should be preserved");
   });
 
-  test("should handle boolean values correctly", () => {
-    const booleanTests: InMemorySettings[] = [
-      { defaultToMonoSamples: true, localStorePath: null },
-      { defaultToMonoSamples: false, localStorePath: null },
-      { defaultToMonoSamples: undefined, localStorePath: null },
-    ];
+  test("should handle additional properties via Record extension", () => {
+    const extendedSettings: InMemorySettings = {
+      customFlag: true,
+      localStorePath: null,
+    };
 
-    expect(booleanTests[0].defaultToMonoSamples).toBe(true);
-    expect(booleanTests[1].defaultToMonoSamples).toBe(false);
-    expect(booleanTests[2].defaultToMonoSamples).toBeUndefined();
+    expect(extendedSettings.customFlag).toBe(true);
+    expect(extendedSettings.localStorePath).toBe(null);
   });
 
   test("should handle string path values correctly", () => {

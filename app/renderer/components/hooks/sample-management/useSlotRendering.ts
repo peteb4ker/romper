@@ -5,7 +5,6 @@ import { useCallback } from "react";
 import { formatTooltip } from "../../../utils/wavMetadataFormatter";
 
 export interface UseSlotRenderingOptions {
-  defaultToMonoSamples: boolean;
   dragOverSlot: null | number;
   dropZone: { mode: "append" | "blocked" | "insert"; slot: number } | null;
   isActive: boolean;
@@ -21,7 +20,6 @@ export interface UseSlotRenderingOptions {
  * Extracted from KitVoicePanel to reduce component complexity
  */
 export function useSlotRendering({
-  defaultToMonoSamples,
   dragOverSlot,
   dropZone,
   isActive,
@@ -47,7 +45,6 @@ export function useSlotRendering({
 
   const calculateDragStyling = useCallback(
     (params: {
-      defaultToMonoSamples: boolean;
       dropMode?: string;
       isDragOver: boolean;
       isDropZone: boolean;
@@ -95,7 +92,7 @@ export function useSlotRendering({
       } else {
         dragOverClass =
           " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300";
-        dropHintTitle = `Drop to assign sample (default: ${params.defaultToMonoSamples ? "mono" : "stereo"})`;
+        // dropHintTitle keeps its initial value "Drop to assign sample"
       }
 
       return { dragOverClass, dropHintTitle };
@@ -114,7 +111,6 @@ export function useSlotRendering({
         isStereoDragTarget && stereoDragSlotNumber === slotNumber;
 
       const dragStyling = calculateDragStyling({
-        defaultToMonoSamples,
         dropMode: dropZone?.mode,
         isDragOver,
         isDropZone,
@@ -138,7 +134,6 @@ export function useSlotRendering({
       isStereoDragTarget,
       stereoDragSlotNumber,
       calculateDragStyling,
-      defaultToMonoSamples,
       voice,
     ],
   );

@@ -15,6 +15,8 @@ import {
 export interface SyncFileOperation {
   destinationPath: string;
   filename: string;
+  forceMonoConversion?: boolean;
+  isStereo?: boolean;
   kitName: string;
   operation: "convert" | "copy";
   originalFormat?: string;
@@ -183,6 +185,7 @@ export class SyncFileOperationsService {
     results.filesToConvert.push({
       destinationPath,
       filename: sample.filename,
+      isStereo: sample.is_stereo,
       kitName: sample.kit_name,
       operation: "convert",
       originalFormat: "Audio file (needs conversion)",
@@ -206,6 +209,7 @@ export class SyncFileOperationsService {
     results.filesToCopy.push({
       destinationPath,
       filename: sample.filename,
+      isStereo: sample.is_stereo,
       kitName: sample.kit_name,
       operation: "copy",
       originalFormat: "Compatible audio file",
@@ -218,9 +222,9 @@ export class SyncFileOperationsService {
    */
   private async handleFileConversion(
     fileOp: SyncFileOperation,
-    inMemorySettings: Record<string, unknown>,
+    _inMemorySettings: Record<string, unknown>,
   ): Promise<void> {
-    const forceMonoConversion = Boolean(inMemorySettings.defaultToMonoSamples);
+    const forceMonoConversion = Boolean(fileOp.forceMonoConversion);
     const conversionResult = await convertToRampleDefault(
       fileOp.sourcePath,
       fileOp.destinationPath,

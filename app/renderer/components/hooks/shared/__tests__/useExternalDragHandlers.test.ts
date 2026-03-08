@@ -388,7 +388,6 @@ describe("useExternalDragHandlers", () => {
         "/path/to/file.wav",
         { valid: true },
         [],
-        { forceMonoDrop: false, forceStereoDrop: false },
         3,
       );
     });
@@ -412,28 +411,6 @@ describe("useExternalDragHandlers", () => {
 
       expect(mockFileValidation.getFilePathFromDrop).toHaveBeenCalledTimes(2);
       expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(2);
-    });
-
-    it("detects modifier keys", async () => {
-      const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
-      );
-
-      const mockEvent = {
-        ...createMockEvent([createMockFile("test.wav")]),
-        altKey: true,
-        shiftKey: true,
-      };
-
-      await result.current.handleDrop(mockEvent, 1);
-
-      expect(mockSampleProcessing.processAssignment).toHaveBeenCalledWith(
-        "/path/to/file.wav",
-        { valid: true },
-        [],
-        { forceMonoDrop: true, forceStereoDrop: true },
-        1,
-      );
     });
 
     it("skips duplicate files", async () => {

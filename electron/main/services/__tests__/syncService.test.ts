@@ -27,6 +27,10 @@ vi.mock("../../formatConverter.js", () => ({
   convertToRampleDefault: vi.fn(),
 }));
 
+vi.mock("../syncMonoAnnotation.js", () => ({
+  annotateMonoConversion: vi.fn(),
+}));
+
 import { getAudioMetadata, validateSampleFormat } from "../../audioUtils.js";
 import { getKitSamples, markKitsAsSynced } from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";

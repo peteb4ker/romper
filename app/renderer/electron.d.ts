@@ -34,7 +34,6 @@ export interface ElectronAPI {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => Promise<DbResult<{ sampleId: number }>>;
   cancelKitSync?: () => void;
   closeApp?: () => Promise<void>;
@@ -149,7 +148,6 @@ export interface ElectronAPI {
   getSetting: (
     key: keyof {
       confirmDestructiveActions?: boolean;
-      defaultToMonoSamples?: boolean;
       localStorePath?: string;
       theme?: string;
       themeMode?: "dark" | "light" | "system";
@@ -221,7 +219,6 @@ export interface ElectronAPI {
   readFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // Returns file content as ArrayBuffer
   readSettings: () => Promise<{
     confirmDestructiveActions?: boolean;
-    defaultToMonoSamples?: boolean;
     localStorePath?: string;
     sdCardPath?: string;
     theme?: string;
@@ -232,7 +229,6 @@ export interface ElectronAPI {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => Promise<DbResult<{ sampleId: number }>>;
   rescanKit: (
     kitName: string,
@@ -259,7 +255,6 @@ export interface ElectronAPI {
   setSetting: (
     key: keyof {
       confirmDestructiveActions?: boolean;
-      defaultToMonoSamples?: boolean;
       localStorePath?: string;
       theme?: string;
       themeMode?: "dark" | "light" | "system";

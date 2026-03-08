@@ -8,7 +8,6 @@ const isDev = process.env.NODE_ENV === "development";
 // ===== SETTINGS MANAGER =====
 interface SettingsData {
   confirmDestructiveActions?: boolean;
-  defaultToMonoSamples?: boolean;
   localStorePath?: string;
   theme?: string;
   themeMode?: "dark" | "light" | "system";
@@ -138,7 +137,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
     isDev &&
       console.debug(
@@ -147,7 +145,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
         voiceNumber,
         slotNumber,
         filePath,
-        options,
       );
     return ipcRenderer.invoke(
       "add-sample-to-slot",
@@ -155,7 +152,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
       voiceNumber,
       slotNumber,
       filePath,
-      options,
     );
   },
   cancelKitSync: () => {
@@ -431,7 +427,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-    options?: { forceMono?: boolean; forceStereo?: boolean },
   ) => {
     isDev &&
       console.debug(
@@ -440,7 +435,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
         voiceNumber,
         slotNumber,
         filePath,
-        options,
       );
     return ipcRenderer.invoke(
       "replace-sample-in-slot",
@@ -448,7 +442,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
       voiceNumber,
       slotNumber,
       filePath,
-      options,
     );
   },
   rescanKit: (kitName: string) => {

@@ -894,6 +894,18 @@ html.js-ready .fade-in.visible {
     font-weight: 600;
 }
 
+.manual-nav-sublist {
+    list-style: none;
+    padding-left: 0.75rem;
+    margin-top: 0.125rem;
+}
+
+.manual-nav-sublink {
+    font-size: 0.85rem;
+    font-weight: 400;
+    padding: 0.35rem 0.75rem;
+}
+
 /* Manual Content */
 .manual-content {
     max-width: 800px;

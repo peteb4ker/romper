@@ -5,14 +5,12 @@ import {
   HardDrive,
   Spinner,
   Trash,
-  Warning,
   X,
 } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
 
 import type {
   SyncChangeSummary,
-  SyncKitSummary,
   SyncUpdateDialogProps,
 } from "./SyncUpdateDialog.types.js";
 
@@ -31,7 +29,6 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   syncProgress,
 }) => {
   const [wipeSdCard, setWipeSdCard] = useState(false);
-  const [showWipeOption, setShowWipeOption] = useState(false);
   const [localSdCardPath, setLocalSdCardPath] = useState<null | string>(
     sdCardPath || null,
   );
@@ -94,21 +91,8 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 
   const kitCount = changeSummary?.kitCount || 0;
   const fileCount = changeSummary?.fileCount || 0;
-  const kits = changeSummary?.kits || [];
-  const currentKitName = syncProgress?.currentKitName;
-  const errorKitName = syncProgress?.errorDetails?.kitName;
-
-  const getKitStatus = (
-    kit: SyncKitSummary,
-  ): "completed" | "error" | "idle" | "syncing" => {
-    if (!syncProgress) return "idle";
-    if (syncProgress.status === "error" && errorKitName === kit.kitName)
-      return "error";
-    if (syncProgress.status === "completed") return "completed";
-    if (currentKitName === kit.kitName) return "syncing";
-    if (currentKitName && kit.kitName < currentKitName) return "completed";
-    return "idle";
-  };
+  const banks = changeSummary?.banks || [];
+  const conversionsNeeded = banks.some((b) => b.hasConversions);
 
   return (
     <div
@@ -126,7 +110,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             weight="bold"
           />
           <h2 className="text-sm font-semibold text-text-primary">
-            Sync to SD Card
+            Write to SD Card
           </h2>
         </div>
         <button
@@ -141,7 +125,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
-        {/* Summary Badge */}
+        {/* Summary */}
         {changeSummary && (
           <div className="px-4 pt-3 pb-1">
             <div className="flex items-center gap-2 text-xs text-text-tertiary">
@@ -152,6 +136,14 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               <span>
                 {fileCount} {fileCount === 1 ? "sample" : "samples"}
               </span>
+              {conversionsNeeded && !syncProgress && (
+                <>
+                  <span>&middot;</span>
+                  <span className="text-accent-warning font-medium">
+                    conversions needed
+                  </span>
+                </>
+              )}
               {syncProgress?.status === "completed" && (
                 <>
                   <span>&middot;</span>
@@ -170,75 +162,30 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           </div>
         )}
 
-        {/* Kit List */}
-        {kits.length > 0 && (
-          <div className="px-3 py-2 space-y-0.5" data-testid="kit-list">
-            {kits.map((kit) => {
-              const status = getKitStatus(kit);
-              return (
+        {/* Bank Summary — compact row per bank (max 26) */}
+        {banks.length > 0 && !syncProgress && (
+          <div className="px-4 py-2" data-testid="bank-summary">
+            <div className="flex flex-wrap gap-1.5">
+              {banks.map((bank) => (
                 <div
-                  className={`flex items-center justify-between px-2 py-1.5 rounded text-xs transition-colors ${
-                    status === "syncing"
-                      ? "bg-accent-sync/10 border border-accent-sync/20"
-                      : status === "error"
-                        ? "bg-accent-danger/10 border border-accent-danger/20"
-                        : status === "completed"
-                          ? "bg-accent-success/5"
-                          : "hover:bg-surface-3"
-                  }`}
-                  data-testid={`kit-row-${kit.kitName}`}
-                  key={kit.kitName}
+                  className="flex items-center gap-1 px-2 py-1 rounded bg-surface-3 text-xs"
+                  data-testid={`bank-${bank.bank}`}
+                  key={bank.bank}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    {status === "completed" && (
-                      <CheckCircle
-                        className="text-accent-success shrink-0"
-                        size={14}
-                        weight="fill"
-                      />
-                    )}
-                    {status === "syncing" && (
-                      <Spinner
-                        className="text-accent-sync animate-spin shrink-0"
-                        size={14}
-                      />
-                    )}
-                    {status === "error" && (
-                      <Warning
-                        className="text-accent-danger shrink-0"
-                        size={14}
-                        weight="fill"
-                      />
-                    )}
-                    {status === "idle" && <div className="w-3.5 shrink-0" />}
-                    <span
-                      className={`font-mono truncate ${
-                        status === "syncing"
-                          ? "text-accent-sync font-semibold"
-                          : status === "completed"
-                            ? "text-text-tertiary"
-                            : "text-text-primary"
-                      }`}
-                    >
-                      {kit.kitName}
+                  <span className="font-mono font-semibold text-text-primary">
+                    {bank.bank}
+                  </span>
+                  <span className="text-text-tertiary tabular-nums">
+                    {bank.kitCount}k/{bank.fileCount}f
+                  </span>
+                  {bank.hasConversions && (
+                    <span className="text-[9px] px-1 rounded bg-accent-warning/15 text-accent-warning font-medium">
+                      CVT
                     </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                    {kit.hasConversions && (
-                      <span
-                        className="text-[10px] px-1 py-0.5 rounded bg-accent-warning/15 text-accent-warning font-medium"
-                        title="Contains files that need format conversion"
-                      >
-                        CVT
-                      </span>
-                    )}
-                    <span className="text-text-tertiary tabular-nums">
-                      {kit.fileCount}
-                    </span>
-                  </div>
+                  )}
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         )}
 
@@ -248,6 +195,12 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             <div className="p-2.5 bg-accent-danger/10 border border-accent-danger/20 rounded text-xs">
               <div className="font-medium text-accent-danger mb-1">
                 Sync Failed
+                {syncProgress.errorDetails?.kitName && (
+                  <span className="font-normal text-accent-danger/70">
+                    {" "}
+                    &middot; {syncProgress.errorDetails.kitName}
+                  </span>
+                )}
               </div>
               {syncProgress.errorDetails ? (
                 <>
@@ -303,6 +256,20 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                     {syncProgress.filesCompleted}/{syncProgress.totalFiles}
                   </span>
                 </div>
+                {syncProgress.currentKitName && (
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <Spinner
+                      className="text-accent-sync animate-spin shrink-0"
+                      size={11}
+                    />
+                    <span
+                      className="text-accent-sync font-mono font-medium"
+                      data-testid="current-kit-name"
+                    >
+                      {syncProgress.currentKitName}
+                    </span>
+                  </div>
+                )}
                 <div className="w-full bg-surface-3 rounded-full h-1.5">
                   <div
                     className="h-1.5 rounded-full transition-all duration-300 bg-accent-sync"
@@ -381,36 +348,27 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             </button>
           </div>
 
-          {/* Wipe Option - Disclosure */}
-          {!showWipeOption && !wipeSdCard && (
-            <button
-              className="text-[11px] text-text-tertiary hover:text-accent-danger transition-colors"
-              data-testid="show-wipe-option"
+          {/* Wipe SD Card — always visible checkbox */}
+          <div className="flex items-center gap-2 px-2 py-1.5">
+            <input
+              checked={wipeSdCard}
+              className="w-3.5 h-3.5 text-accent-danger bg-surface-3 border-border-default rounded focus:ring-accent-danger focus:ring-1"
+              data-testid="wipe-sd-card-checkbox"
               disabled={isLoading}
-              onClick={() => setShowWipeOption(true)}
+              id="wipeSdCard"
+              onChange={(e) => setWipeSdCard(e.target.checked)}
+              type="checkbox"
+            />
+            <label
+              className="text-[11px] text-text-tertiary"
+              htmlFor="wipeSdCard"
             >
-              Clear SD card before sync...
-            </button>
-          )}
-          {(showWipeOption || wipeSdCard) && (
-            <div className="flex items-center gap-2 p-2 bg-accent-danger/5 border border-accent-danger/15 rounded">
-              <input
-                checked={wipeSdCard}
-                className="w-3.5 h-3.5 text-accent-danger bg-surface-3 border-border-default rounded focus:ring-accent-danger focus:ring-1"
-                data-testid="wipe-sd-card-checkbox"
-                disabled={isLoading}
-                id="wipeSdCard"
-                onChange={(e) => setWipeSdCard(e.target.checked)}
-                type="checkbox"
-              />
-              <label className="text-[11px]" htmlFor="wipeSdCard">
-                <span className="font-medium text-accent-danger flex items-center gap-1">
-                  <Trash size={11} />
-                  Clear SD card before sync
-                </span>
-              </label>
-            </div>
-          )}
+              <span className="flex items-center gap-1">
+                <Trash className="text-text-tertiary" size={11} />
+                Clear SD card before sync
+              </span>
+            </label>
+          </div>
         </div>
       </div>
 

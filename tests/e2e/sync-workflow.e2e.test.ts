@@ -102,8 +102,8 @@ test.describe("Sync Workflow E2E Tests", () => {
       const syncDialog = await window.isVisible('[data-testid="sync-dialog"]');
       expect(syncDialog).toBe(true);
 
-      // Verify dialog shows "All Kits" in the header
-      const dialogTitle = await window.locator("text=Sync All Kits to SD Card");
+      // Verify dialog shows the header title
+      const dialogTitle = await window.locator("text=Write to SD Card");
       await expect(dialogTitle).toBeVisible();
 
       // Verify SD card path is loaded from environment
@@ -117,12 +117,8 @@ test.describe("Sync Workflow E2E Tests", () => {
       await window.waitForTimeout(3000);
 
       // Verify the sync dialog shows summary with kit/file counts
-      const summarySection = await window.locator("text=kits,");
+      const summarySection = await window.locator("text=kits");
       await expect(summarySection).toBeVisible();
-
-      // Test fixtures have no sample files, so expect 0 files
-      const readyToSyncText = await window.locator("text=Ready to sync");
-      await expect(readyToSyncText).toBeVisible();
 
       // For now, just verify the workflow gets this far
       // The button might be disabled if there are no files to sync (which is fine for test fixtures)
@@ -142,10 +138,10 @@ test.describe("Sync Workflow E2E Tests", () => {
       const cancelButton = await window.locator('[data-testid="cancel-sync"]');
       await cancelButton.click();
 
-      // Wait for dialog to be removed from DOM
+      // Wait for dialog close animation and removal from DOM
       await window.waitForSelector('[data-testid="sync-dialog"]', {
         state: "detached",
-        timeout: 2000,
+        timeout: 3000,
       });
 
       // Verify dialog closes
@@ -178,10 +174,10 @@ test.describe("Sync Workflow E2E Tests", () => {
       const cancelButton = await window.locator('[data-testid="cancel-sync"]');
       await cancelButton.click();
 
-      // Wait for dialog to be removed from DOM
+      // Wait for dialog close animation and removal from DOM
       await window.waitForSelector('[data-testid="sync-dialog"]', {
         state: "detached",
-        timeout: 2000,
+        timeout: 3000,
       });
 
       // Verify dialog is closed
@@ -234,21 +230,17 @@ test.describe("Sync Workflow E2E Tests", () => {
       await window.waitForTimeout(3000);
 
       // Verify the sync dialog shows summary with kit/file counts
-      const summarySection = await window.locator("text=kits,");
+      const summarySection = await window.locator("text=kits");
       await expect(summarySection).toBeVisible();
-
-      // Test fixtures have no sample files, so expect 0 files
-      const readyToSyncText = await window.locator("text=Ready to sync");
-      await expect(readyToSyncText).toBeVisible();
 
       // Test cancellation instead of actual sync (since test fixtures may have no files)
       const cancelButton = await window.locator('[data-testid="cancel-sync"]');
       await cancelButton.click();
 
-      // Wait for dialog to be removed from DOM
+      // Wait for dialog close animation and removal from DOM
       await window.waitForSelector('[data-testid="sync-dialog"]', {
         state: "detached",
-        timeout: 2000,
+        timeout: 3000,
       });
 
       // Verify dialog is closed first

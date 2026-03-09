@@ -10,12 +10,12 @@ describe("SyncUpdateDialog", () => {
   const mockOnConfirm = vi.fn();
 
   const mockChangeSummary: SyncChangeSummary = {
-    fileCount: 15,
-    kitCount: 2,
-    kits: [
-      { fileCount: 8, hasConversions: false, kitName: "A0" },
-      { fileCount: 7, hasConversions: true, kitName: "B1" },
+    banks: [
+      { bank: "A", fileCount: 8, hasConversions: false, kitCount: 5 },
+      { bank: "B", fileCount: 7, hasConversions: true, kitCount: 3 },
     ],
+    fileCount: 15,
+    kitCount: 8,
   };
 
   beforeEach(() => {
@@ -40,7 +40,7 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.queryByText("Sync to SD Card")).not.toBeInTheDocument();
+      expect(screen.queryByText("Write to SD Card")).not.toBeInTheDocument();
     });
   });
 
@@ -56,12 +56,12 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getByText("Sync to SD Card")).toBeInTheDocument();
-      expect(screen.getByText("2 kits")).toBeInTheDocument();
+      expect(screen.getByText("Write to SD Card")).toBeInTheDocument();
+      expect(screen.getByText("8 kits")).toBeInTheDocument();
       expect(screen.getByText("15 samples")).toBeInTheDocument();
     });
 
-    it("should render per-kit rows", () => {
+    it("should render bank summary chips", () => {
       render(
         <SyncUpdateDialog
           isOpen={true}
@@ -72,14 +72,14 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getByTestId("kit-list")).toBeInTheDocument();
-      expect(screen.getByTestId("kit-row-A0")).toBeInTheDocument();
-      expect(screen.getByTestId("kit-row-B1")).toBeInTheDocument();
-      expect(screen.getByText("8")).toBeInTheDocument();
-      expect(screen.getByText("7")).toBeInTheDocument();
+      expect(screen.getByTestId("bank-summary")).toBeInTheDocument();
+      expect(screen.getByTestId("bank-A")).toBeInTheDocument();
+      expect(screen.getByTestId("bank-B")).toBeInTheDocument();
+      expect(screen.getByText("5k/8f")).toBeInTheDocument();
+      expect(screen.getByText("3k/7f")).toBeInTheDocument();
     });
 
-    it("should show CVT badge for kits needing conversion", () => {
+    it("should show CVT badge for banks needing conversion", () => {
       render(
         <SyncUpdateDialog
           isOpen={true}
@@ -91,11 +91,10 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(screen.getByText("CVT")).toBeInTheDocument();
+      expect(screen.getByText("conversions needed")).toBeInTheDocument();
     });
 
-    it("should show wipe option behind disclosure", async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-
+    it("should display wipe SD card option", () => {
       render(
         <SyncUpdateDialog
           isOpen={true}
@@ -106,17 +105,8 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      // Wipe checkbox should not be visible initially
-      expect(
-        screen.queryByTestId("wipe-sd-card-checkbox"),
-      ).not.toBeInTheDocument();
-      // Disclosure link should be visible
-      expect(screen.getByTestId("show-wipe-option")).toBeInTheDocument();
-
-      // Click disclosure to reveal wipe option
-      await user.click(screen.getByTestId("show-wipe-option"));
-      expect(screen.getByTestId("wipe-sd-card-checkbox")).toBeInTheDocument();
       expect(screen.getByText("Clear SD card before sync")).toBeInTheDocument();
+      expect(screen.getByTestId("wipe-sd-card-checkbox")).toBeInTheDocument();
     });
 
     it("should require SD card selection before sync", () => {
@@ -132,7 +122,6 @@ describe("SyncUpdateDialog", () => {
 
       const startSyncButton = screen.getByText("Start Sync");
       expect(startSyncButton).toBeDisabled();
-
       expect(screen.getByText("No SD card selected")).toBeInTheDocument();
     });
 
@@ -174,7 +163,6 @@ describe("SyncUpdateDialog", () => {
       );
 
       await user.click(screen.getByText("Cancel"));
-      // Close has animation delay
       vi.advanceTimersByTime(250);
       await waitFor(() => {
         expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -195,8 +183,6 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      // Reveal wipe option first
-      await user.click(screen.getByTestId("show-wipe-option"));
       const wipeCheckbox = screen.getByTestId("wipe-sd-card-checkbox");
       await user.click(wipeCheckbox);
 
@@ -228,9 +214,9 @@ describe("SyncUpdateDialog", () => {
 
     it("should disable Start Sync when no files to sync", () => {
       const emptyChangeSummary: SyncChangeSummary = {
+        banks: [],
         fileCount: 0,
         kitCount: 0,
-        kits: [],
       };
 
       render(
@@ -275,6 +261,7 @@ describe("SyncUpdateDialog", () => {
       expect(screen.getByText("Copying files...")).toBeInTheDocument();
       expect(screen.getByText("1/2")).toBeInTheDocument();
       expect(screen.getByText("kick.wav")).toBeInTheDocument();
+      expect(screen.getByTestId("current-kit-name")).toHaveTextContent("A0");
     });
 
     it("should show success message when sync completes", () => {
@@ -337,9 +324,7 @@ describe("SyncUpdateDialog", () => {
       );
     });
 
-    it("should reset wipe option when dialog opens", async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-
+    it("should reset wipe option when dialog opens", () => {
       const { rerender } = render(
         <SyncUpdateDialog
           isOpen={false}
@@ -360,8 +345,6 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      // Reveal wipe option first
-      await user.click(screen.getByTestId("show-wipe-option"));
       const wipeCheckbox = screen.getByTestId(
         "wipe-sd-card-checkbox",
       ) as HTMLInputElement;
@@ -457,7 +440,6 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(screen.getAllByText("Sync Failed")).toHaveLength(1);
-      // Generic error text is in the same element with inline content
       expect(
         screen.getByText(/Generic sync error occurred/),
       ).toBeInTheDocument();

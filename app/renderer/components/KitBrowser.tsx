@@ -251,10 +251,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             onBankFocus={handleBankFocus}
             onCreateKitInBank={handleCreateKitInBank}
             onDeleteKit={deletion.deleteKitDirect}
-            onDuplicate={(kit) => {
-              // Legacy fallback — not used when onDuplicateKit is provided
-              void kit;
-            }}
+            onDuplicate={() => {}}
             onDuplicateKit={duplicateKitDirect}
             onFocusKit={setFocusedKit}
             onRequestDeleteSummary={deletion.requestDeleteSummary}

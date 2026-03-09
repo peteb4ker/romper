@@ -3,8 +3,8 @@ import {
   Copy,
   LockSimple,
   MusicNote,
-  Trash,
-  Warning,
+  TrashIcon,
+  WarningIcon,
 } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React, { useRef, useState } from "react";
@@ -59,6 +59,133 @@ const getVoiceCountStyle = (count: number) => {
   }
   return { text: "text-accent-primary", weight: "" };
 };
+
+interface DeletePopoverContentProps {
+  isDeleting: boolean;
+  kitName: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  sampleCount: number;
+}
+
+const DeletePopoverContent: React.FC<DeletePopoverContentProps> = ({
+  isDeleting,
+  kitName,
+  onCancel,
+  onConfirm,
+  sampleCount,
+}) => (
+  <div className="flex flex-col gap-2">
+    <div className="flex items-center gap-1.5">
+      {sampleCount > 0 ? (
+        <WarningIcon
+          className="text-accent-warning flex-shrink-0"
+          size={14}
+          weight="bold"
+        />
+      ) : null}
+      <span className="text-sm font-semibold text-text-primary">
+        Delete kit {kitName}?
+      </span>
+    </div>
+    {sampleCount > 0 && (
+      <p className="text-xs text-text-secondary">
+        {sampleCount} sample {sampleCount === 1 ? "reference" : "references"}{" "}
+        will be removed. Files on disk are not affected.
+      </p>
+    )}
+    {sampleCount === 0 && (
+      <p className="text-xs text-text-tertiary">No samples. Safe to remove.</p>
+    )}
+    <div className="flex gap-2">
+      <button
+        className={`px-2 py-1 text-xs text-white rounded font-semibold inline-flex items-center gap-1 disabled:opacity-50 ${sampleCount > 0 ? "bg-accent-danger hover:bg-accent-danger/80" : "bg-accent-primary hover:bg-accent-primary/80"}`}
+        data-testid="confirm-delete-button"
+        disabled={isDeleting}
+        onClick={(e) => {
+          e.stopPropagation();
+          onConfirm();
+        }}
+      >
+        <TrashIcon size={13} />
+        {isDeleting ? "Deleting..." : "Delete"}
+      </button>
+      <button
+        className="px-2 py-1 text-xs bg-surface-4 text-text-secondary rounded hover:bg-surface-3 font-semibold"
+        disabled={isDeleting}
+        onClick={(e) => {
+          e.stopPropagation();
+          onCancel();
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+);
+
+interface DuplicatePopoverContentProps {
+  duplicateDest: string;
+  duplicateError: null | string;
+  kitName: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  onDestChange: (value: string) => void;
+}
+
+const DuplicatePopoverContent: React.FC<DuplicatePopoverContentProps> = ({
+  duplicateDest,
+  duplicateError,
+  kitName,
+  onCancel,
+  onConfirm,
+  onDestChange,
+}) => (
+  <div className="flex flex-col gap-2">
+    <label className="text-xs font-semibold text-text-primary">
+      Duplicate {kitName} to:
+      <input
+        autoFocus
+        className="ml-2 px-2 py-1 rounded border border-border-default text-sm bg-surface-2 text-text-primary w-16"
+        data-testid="duplicate-dest-input"
+        maxLength={3}
+        onChange={(e) => onDestChange(e.target.value.toUpperCase())}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onConfirm();
+          }
+        }}
+        value={duplicateDest}
+      />
+    </label>
+    {duplicateError && (
+      <div className="text-xs text-accent-danger">{duplicateError}</div>
+    )}
+    <div className="flex gap-2">
+      <button
+        className="px-2 py-1 text-xs bg-accent-success text-white rounded hover:bg-accent-success/80 font-semibold"
+        data-testid="confirm-duplicate-button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onConfirm();
+        }}
+      >
+        Duplicate
+      </button>
+      <button
+        className="px-2 py-1 text-xs bg-surface-4 text-text-secondary rounded hover:bg-surface-3 font-semibold"
+        onClick={(e) => {
+          e.stopPropagation();
+          onCancel();
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+);
 
 const KitGridItem = React.memo(
   React.forwardRef<HTMLDivElement, KitGridItemProps & KitItemRenderProps>(
@@ -290,7 +417,7 @@ const KitGridItem = React.memo(
                   ref={deleteButtonRef}
                   title="Delete kit"
                 >
-                  <Trash size={15} />
+                  <TrashIcon size={15} />
                 </button>
               )}
               {/* Legacy: support old onDelete without popover */}
@@ -308,7 +435,7 @@ const KitGridItem = React.memo(
                     }}
                     title="Delete kit"
                   >
-                    <Trash size={15} />
+                    <TrashIcon size={15} />
                   </button>
                 )}
             </div>
@@ -320,56 +447,13 @@ const KitGridItem = React.memo(
             isOpen={showDeletePopover}
             onClose={() => setShowDeletePopover(false)}
           >
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1.5">
-                {deleteSampleCount > 0 ? (
-                  <Warning
-                    className="text-accent-warning flex-shrink-0"
-                    size={14}
-                    weight="bold"
-                  />
-                ) : null}
-                <span className="text-sm font-semibold text-text-primary">
-                  Delete kit {kit}?
-                </span>
-              </div>
-              {deleteSampleCount > 0 && (
-                <p className="text-xs text-text-secondary">
-                  {deleteSampleCount} sample{" "}
-                  {deleteSampleCount === 1 ? "reference" : "references"} will be
-                  removed. Files on disk are not affected.
-                </p>
-              )}
-              {deleteSampleCount === 0 && (
-                <p className="text-xs text-text-tertiary">
-                  No samples. Safe to remove.
-                </p>
-              )}
-              <div className="flex gap-2">
-                <button
-                  className={`px-2 py-1 text-xs text-white rounded font-semibold inline-flex items-center gap-1 disabled:opacity-50 ${deleteSampleCount > 0 ? "bg-accent-danger hover:bg-accent-danger/80" : "bg-accent-primary hover:bg-accent-primary/80"}`}
-                  data-testid="confirm-delete-button"
-                  disabled={isDeleting}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleConfirmDelete();
-                  }}
-                >
-                  <Trash size={13} />
-                  {isDeleting ? "Deleting..." : "Delete"}
-                </button>
-                <button
-                  className="px-2 py-1 text-xs bg-surface-4 text-text-secondary rounded hover:bg-surface-3 font-semibold"
-                  disabled={isDeleting}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDeletePopover(false);
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+            <DeletePopoverContent
+              isDeleting={isDeleting}
+              kitName={kit}
+              onCancel={() => setShowDeletePopover(false)}
+              onConfirm={handleConfirmDelete}
+              sampleCount={deleteSampleCount}
+            />
           </ActionPopover>
 
           {/* Duplicate popover */}
@@ -381,55 +465,17 @@ const KitGridItem = React.memo(
               setDuplicateError(null);
             }}
           >
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-text-primary">
-                Duplicate {kit} to:
-                <input
-                  autoFocus
-                  className="ml-2 px-2 py-1 rounded border border-border-default text-sm bg-surface-2 text-text-primary w-16"
-                  data-testid="duplicate-dest-input"
-                  maxLength={3}
-                  onChange={(e) =>
-                    setDuplicateDest(e.target.value.toUpperCase())
-                  }
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleConfirmDuplicate();
-                    }
-                  }}
-                  value={duplicateDest}
-                />
-              </label>
-              {duplicateError && (
-                <div className="text-xs text-accent-danger">
-                  {duplicateError}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <button
-                  className="px-2 py-1 text-xs bg-accent-success text-white rounded hover:bg-accent-success/80 font-semibold"
-                  data-testid="confirm-duplicate-button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleConfirmDuplicate();
-                  }}
-                >
-                  Duplicate
-                </button>
-                <button
-                  className="px-2 py-1 text-xs bg-surface-4 text-text-secondary rounded hover:bg-surface-3 font-semibold"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDuplicatePopover(false);
-                    setDuplicateError(null);
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+            <DuplicatePopoverContent
+              duplicateDest={duplicateDest}
+              duplicateError={duplicateError}
+              kitName={kit}
+              onCancel={() => {
+                setShowDuplicatePopover(false);
+                setDuplicateError(null);
+              }}
+              onConfirm={handleConfirmDuplicate}
+              onDestChange={setDuplicateDest}
+            />
           </ActionPopover>
 
           {/* Voice channel strip */}

@@ -17,6 +17,7 @@ import {
   TRIGGER_CONDITIONS,
   type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
+import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
 
 const SAMPLE_MODE_ICONS: Record<SampleMode, React.ReactNode> = {
   first: <NumberCircleOne size={14} weight="bold" />,
@@ -134,30 +135,7 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
 }) => {
   const popoverRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(e.target as Node)
-      ) {
-        onClose();
-      }
-    };
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    // Defer listener registration so the opening right-click's mousedown
-    // doesn't immediately dismiss the popover
-    const rafId = requestAnimationFrame(() => {
-      document.addEventListener("mousedown", handleClickOutside);
-    });
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      cancelAnimationFrame(rafId);
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [onClose]);
+  usePopoverDismiss(popoverRef, onClose);
 
   return (
     <div

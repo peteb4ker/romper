@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { usePopoverDismiss } from "../hooks/shared/usePopoverDismiss";
+
 interface ActionPopoverProps {
   anchorRef: React.RefObject<HTMLElement | null>;
   children: React.ReactNode;
@@ -30,29 +32,7 @@ const ActionPopover: React.FC<ActionPopoverProps> = ({
     setPosition({ x, y });
   }, [isOpen, anchorRef]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(e.target as Node)
-      ) {
-        onClose();
-      }
-    };
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    const rafId = requestAnimationFrame(() => {
-      document.addEventListener("mousedown", handleClickOutside);
-    });
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      cancelAnimationFrame(rafId);
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, onClose]);
+  usePopoverDismiss(popoverRef, onClose, isOpen);
 
   if (!isOpen) return null;
 

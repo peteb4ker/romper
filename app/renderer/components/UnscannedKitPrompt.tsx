@@ -1,4 +1,4 @@
-import { X } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 import React from "react";
 
 interface UnscannedKitPromptProps {
@@ -32,7 +32,7 @@ const UnscannedKitPrompt: React.FC<UnscannedKitPromptProps> = ({
         onClick={onDismiss}
         title="Dismiss"
       >
-        <X size={14} />
+        <XIcon size={14} />
       </button>
     </div>
   );

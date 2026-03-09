@@ -215,6 +215,48 @@ describe("useKitDuplication", () => {
     });
   });
 
+  describe("duplicateKitDirect", () => {
+    it("success returns empty object", async () => {
+      mockDuplicateKit.mockResolvedValueOnce(undefined);
+      const { result } = renderHook(() => useKitDuplication(defaultProps));
+
+      let response: { error?: string } = {};
+      await act(async () => {
+        response = await result.current.duplicateKitDirect("A0", "B0");
+      });
+
+      expect(response).toEqual({});
+      expect(mockDuplicateKit).toHaveBeenCalledWith("A0", "B0");
+      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("B0");
+    });
+
+    it("invalid dest returns error", async () => {
+      const { result } = renderHook(() => useKitDuplication(defaultProps));
+
+      let response: { error?: string } = {};
+      await act(async () => {
+        response = await result.current.duplicateKitDirect("A0", "INVALID");
+      });
+
+      expect(response).toEqual({
+        error: "Invalid destination slot. Use format A0-Z99.",
+      });
+      expect(mockDuplicateKit).not.toHaveBeenCalled();
+    });
+
+    it("handles API error", async () => {
+      mockDuplicateKit.mockRejectedValueOnce(new Error("Copy failed"));
+      const { result } = renderHook(() => useKitDuplication(defaultProps));
+
+      let response: { error?: string } = {};
+      await act(async () => {
+        response = await result.current.duplicateKitDirect("A0", "B0");
+      });
+
+      expect(response).toEqual({ error: "Copy failed" });
+    });
+  });
+
   describe("state management", () => {
     it("should allow setting source kit", () => {
       const { result } = renderHook(() => useKitDuplication(defaultProps));

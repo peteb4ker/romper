@@ -1,12 +1,14 @@
 export interface SyncChangeSummary {
   fileCount: number;
   kitCount: number;
+  kits?: SyncKitSummary[];
 }
 
 export interface SyncErrorDetails {
   canRetry: boolean;
   error: string;
   fileName: string;
+  kitName?: string;
   operation: "convert" | "copy";
 }
 
@@ -20,9 +22,16 @@ export interface SyncFileOperation {
   targetFormat?: string;
 }
 
+export interface SyncKitSummary {
+  fileCount: number;
+  hasConversions: boolean;
+  kitName: string;
+}
+
 export interface SyncProgress {
   bytesCompleted: number;
   currentFile: string;
+  currentKitName?: string;
   error?: string;
   errorDetails?: SyncErrorDetails;
   filesCompleted: number;

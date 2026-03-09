@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,13 +12,19 @@ describe("SyncUpdateDialog", () => {
   const mockChangeSummary: SyncChangeSummary = {
     fileCount: 15,
     kitCount: 2,
+    kits: [
+      { fileCount: 8, hasConversions: false, kitName: "A0" },
+      { fileCount: 7, hasConversions: true, kitName: "B1" },
+    ],
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     cleanup();
   });
 
@@ -34,14 +40,12 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(
-        screen.queryByText("Sync All Kits to SD Card"),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText("Sync to SD Card")).not.toBeInTheDocument();
     });
   });
 
   describe("when dialog is open", () => {
-    it("should render dialog with kit name and summary stats", () => {
+    it("should render panel with summary stats", () => {
       render(
         <SyncUpdateDialog
           isOpen={true}
@@ -52,12 +56,12 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getByText("Sync All Kits to SD Card")).toBeInTheDocument();
-      expect(screen.getByText("2 kits, 15 samples")).toBeInTheDocument();
-      expect(screen.getByText("Ready to sync")).toBeInTheDocument();
+      expect(screen.getByText("Sync to SD Card")).toBeInTheDocument();
+      expect(screen.getByText("2 kits")).toBeInTheDocument();
+      expect(screen.getByText("15 samples")).toBeInTheDocument();
     });
 
-    it("should display clear SD card option", () => {
+    it("should render per-kit rows", () => {
       render(
         <SyncUpdateDialog
           isOpen={true}
@@ -68,8 +72,51 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getByText("Clear SD card before sync")).toBeInTheDocument();
+      expect(screen.getByTestId("kit-list")).toBeInTheDocument();
+      expect(screen.getByTestId("kit-row-A0")).toBeInTheDocument();
+      expect(screen.getByTestId("kit-row-B1")).toBeInTheDocument();
+      expect(screen.getByText("8")).toBeInTheDocument();
+      expect(screen.getByText("7")).toBeInTheDocument();
+    });
+
+    it("should show CVT badge for kits needing conversion", () => {
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+        />,
+      );
+
+      expect(screen.getByText("CVT")).toBeInTheDocument();
+    });
+
+    it("should show wipe option behind disclosure", async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+        />,
+      );
+
+      // Wipe checkbox should not be visible initially
+      expect(
+        screen.queryByTestId("wipe-sd-card-checkbox"),
+      ).not.toBeInTheDocument();
+      // Disclosure link should be visible
+      expect(screen.getByTestId("show-wipe-option")).toBeInTheDocument();
+
+      // Click disclosure to reveal wipe option
+      await user.click(screen.getByTestId("show-wipe-option"));
       expect(screen.getByTestId("wipe-sd-card-checkbox")).toBeInTheDocument();
+      expect(screen.getByText("Clear SD card before sync")).toBeInTheDocument();
     });
 
     it("should require SD card selection before sync", () => {
@@ -90,7 +137,7 @@ describe("SyncUpdateDialog", () => {
     });
 
     it("should enable sync when SD card is selected", async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
       render(
         <SyncUpdateDialog
@@ -114,7 +161,7 @@ describe("SyncUpdateDialog", () => {
     });
 
     it("should call onClose when Cancel button is clicked", async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
       render(
         <SyncUpdateDialog
@@ -127,11 +174,15 @@ describe("SyncUpdateDialog", () => {
       );
 
       await user.click(screen.getByText("Cancel"));
-      expect(mockOnClose).toHaveBeenCalledTimes(1);
+      // Close has animation delay
+      vi.advanceTimersByTime(250);
+      await waitFor(() => {
+        expect(mockOnClose).toHaveBeenCalledTimes(1);
+      });
     });
 
     it("should handle wipe SD card option", async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
       render(
         <SyncUpdateDialog
@@ -144,6 +195,8 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
+      // Reveal wipe option first
+      await user.click(screen.getByTestId("show-wipe-option"));
       const wipeCheckbox = screen.getByTestId("wipe-sd-card-checkbox");
       await user.click(wipeCheckbox);
 
@@ -177,6 +230,7 @@ describe("SyncUpdateDialog", () => {
       const emptyChangeSummary: SyncChangeSummary = {
         fileCount: 0,
         kitCount: 0,
+        kits: [],
       };
 
       render(
@@ -191,13 +245,15 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(screen.getByText("Start Sync")).toBeDisabled();
-      expect(screen.getByText("0 kits, 0 samples")).toBeInTheDocument();
+      expect(screen.getByText("0 kits")).toBeInTheDocument();
+      expect(screen.getByText("0 samples")).toBeInTheDocument();
     });
 
     it("should show progress during sync", () => {
       const mockSyncProgress = {
         bytesCompleted: 1024,
         currentFile: "kick.wav",
+        currentKitName: "A0",
         filesCompleted: 1,
         status: "copying" as const,
         totalBytes: 2048,
@@ -217,7 +273,7 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(screen.getByText("Copying files...")).toBeInTheDocument();
-      expect(screen.getByText("1 / 2 files")).toBeInTheDocument();
+      expect(screen.getByText("1/2")).toBeInTheDocument();
       expect(screen.getByText("kick.wav")).toBeInTheDocument();
     });
 
@@ -243,10 +299,7 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getByText("Sync Complete!")).toBeInTheDocument();
-      expect(
-        screen.getByText("Successfully synced 15 files to SD card"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Sync Complete")).toBeInTheDocument();
     });
 
     it("should show SD card selection button", () => {
@@ -284,7 +337,9 @@ describe("SyncUpdateDialog", () => {
       );
     });
 
-    it("should reset wipe option when dialog opens", () => {
+    it("should reset wipe option when dialog opens", async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
       const { rerender } = render(
         <SyncUpdateDialog
           isOpen={false}
@@ -295,7 +350,6 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      // Open dialog
       rerender(
         <SyncUpdateDialog
           isOpen={true}
@@ -306,7 +360,8 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      // Wipe option should be unchecked initially
+      // Reveal wipe option first
+      await user.click(screen.getByTestId("show-wipe-option"));
       const wipeCheckbox = screen.getByTestId(
         "wipe-sd-card-checkbox",
       ) as HTMLInputElement;
@@ -342,11 +397,9 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getAllByText("Sync Failed")).toHaveLength(1); // Only error section now
+      expect(screen.getAllByText("Sync Failed")).toHaveLength(1);
       expect(screen.getByText("Permission denied")).toBeInTheDocument();
       expect(screen.getByText("problematic_file.wav")).toBeInTheDocument();
-      expect(screen.getByText("Copying file")).toBeInTheDocument();
-      expect(screen.getByText("💡 What to do:")).toBeInTheDocument();
     });
 
     it("should show retry button for retryable errors", () => {
@@ -377,8 +430,8 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(screen.getByTestId("retry-sync")).toBeInTheDocument();
-      expect(screen.getByText("Retry Sync")).toBeInTheDocument();
-      expect(screen.getByText("Close")).toBeInTheDocument(); // Cancel becomes "Close"
+      expect(screen.getByText("Retry")).toBeInTheDocument();
+      expect(screen.getByText("Close")).toBeInTheDocument();
     });
 
     it("should show generic error message when no error details", () => {
@@ -403,12 +456,11 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getAllByText("Sync Failed")).toHaveLength(1); // Only error section now
+      expect(screen.getAllByText("Sync Failed")).toHaveLength(1);
+      // Generic error text is in the same element with inline content
       expect(
-        screen.getByText("Generic sync error occurred"),
+        screen.getByText(/Generic sync error occurred/),
       ).toBeInTheDocument();
-      expect(screen.getByText("Failed on file:")).toBeInTheDocument();
-      expect(screen.getByText("test.wav")).toBeInTheDocument();
     });
 
     it("should disable start sync for non-retryable errors", () => {
@@ -442,9 +494,6 @@ describe("SyncUpdateDialog", () => {
       expect(screen.queryByTestId("retry-sync")).not.toBeInTheDocument();
       const startButton = screen.getByTestId("confirm-sync");
       expect(startButton).toBeDisabled();
-      expect(
-        screen.getByText(/This error requires attention/),
-      ).toBeInTheDocument();
     });
   });
 

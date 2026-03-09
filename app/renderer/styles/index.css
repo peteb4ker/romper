@@ -190,6 +190,10 @@
   --animate-kit-exit: kit-exit 250ms ease-out both;
   --animate-border-flash: border-flash 600ms ease-out 300ms both;
   --animate-favorite-pulse: favorite-pulse 200ms ease-out;
+
+  /* Sync panel animations */
+  --animate-sync-panel-enter: sync-panel-enter 250ms ease-out both;
+  --animate-sync-panel-exit: sync-panel-exit 200ms ease-in both;
 }
 
 /* ───────────────────────────────────────────────────────────
@@ -269,6 +273,28 @@ html {
   }
   100% {
     transform: scale(1);
+  }
+}
+
+@keyframes sync-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes sync-panel-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
   }
 }
 

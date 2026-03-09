@@ -5,11 +5,13 @@ import type { SyncFileOperation } from "./syncFileOperations.js";
 export interface SyncProgress {
   currentFile: string;
   currentFileProgress?: number; // 0-100 percentage for current file
+  currentKitName?: string;
   elapsedTime: number;
   errorDetails?: {
     canRetry: boolean;
     error: string;
     fileName: string;
+    kitName?: string;
     operation: "convert" | "copy";
   };
   estimatedTimeRemaining: number;
@@ -95,11 +97,13 @@ export class SyncProgressManager {
 
     this.emitProgress({
       currentFile: fileOp.filename,
+      currentKitName: fileOp.kitName,
       elapsedTime: Date.now() - this.currentSyncJob.startTime,
       errorDetails: {
         canRetry: errorDetails.canRetry,
         error: errorDetails.error,
         fileName: fileOp.filename,
+        kitName: fileOp.kitName,
         operation: fileOp.operation,
       },
       estimatedTimeRemaining: 0,
@@ -120,6 +124,7 @@ export class SyncProgressManager {
     this.emitProgress({
       currentFile: fileOp.filename,
       currentFileProgress: 100,
+      currentKitName: fileOp.kitName,
       elapsedTime: Date.now() - this.currentSyncJob.startTime,
       estimatedTimeRemaining: this.calculateTimeRemaining(),
       filesCompleted: this.currentSyncJob.completedFiles,
@@ -137,6 +142,7 @@ export class SyncProgressManager {
     this.emitProgress({
       currentFile: fileOp.filename,
       currentFileProgress: 0,
+      currentKitName: fileOp.kitName,
       elapsedTime: Date.now() - this.currentSyncJob.startTime,
       estimatedTimeRemaining: this.calculateTimeRemaining(),
       filesCompleted: this.currentSyncJob.completedFiles,

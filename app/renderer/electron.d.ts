@@ -197,7 +197,15 @@ export interface ElectronAPI {
     callback: (progress: {
       bytesCompleted: number;
       currentFile: string;
+      currentKitName?: string;
       error?: string;
+      errorDetails?: {
+        canRetry: boolean;
+        error: string;
+        fileName: string;
+        kitName?: string;
+        operation: "convert" | "copy";
+      };
       filesCompleted: number;
       status:
         | "completed"

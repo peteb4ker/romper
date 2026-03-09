@@ -3,20 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useFileValidation } from "../useFileValidation";
 
-// Mock dependencies
-vi.mock("sonner", () => ({
-  toast: {
-    error: vi.fn(),
-    warning: vi.fn(),
-  },
-}));
-
-import { toast } from "sonner";
-const mockToast = vi.mocked(toast);
-
-// Use centralized mocks - these are already set up in vitest.setup.ts
-// We'll access them through window.electronAPI and window.electronFileAPI
-
 describe("useFileValidation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -140,10 +126,6 @@ describe("useFileValidation", () => {
         "Cannot assign sample due to critical format issues:",
         "Unsupported extension, File access denied",
       );
-      expect(mockToast.error).toHaveBeenCalledWith("Cannot assign sample", {
-        description: "Unsupported extension, File access denied",
-        duration: 5000,
-      });
 
       consoleErrorSpy.mockRestore();
     });
@@ -168,11 +150,6 @@ describe("useFileValidation", () => {
         "Sample has format issues that will require conversion during SD card sync:",
         "High bitrate, Unsupported sample rate",
       );
-      expect(mockToast.warning).toHaveBeenCalledWith("Sample format warning", {
-        description:
-          "High bitrate, Unsupported sample rate The sample will be converted during SD card sync.",
-        duration: 7000,
-      });
 
       consoleWarnSpy.mockRestore();
     });
@@ -190,10 +167,6 @@ describe("useFileValidation", () => {
         await result.current.handleValidationIssues(validation);
 
       expect(canContinue).toBe(false);
-      expect(mockToast.error).toHaveBeenCalledWith("Cannot assign sample", {
-        description: "Invalid audio format",
-        duration: 5000,
-      });
 
       consoleErrorSpy.mockRestore();
     });
@@ -215,10 +188,6 @@ describe("useFileValidation", () => {
         "Sample has format issues that will require conversion during SD card sync:",
         "",
       );
-      expect(mockToast.warning).toHaveBeenCalledWith("Sample format warning", {
-        description: " The sample will be converted during SD card sync.",
-        duration: 7000,
-      });
 
       consoleWarnSpy.mockRestore();
     });
@@ -240,11 +209,6 @@ describe("useFileValidation", () => {
         await result.current.handleValidationIssues(validation);
 
       expect(canContinue).toBe(false);
-      expect(mockToast.error).toHaveBeenCalledWith("Cannot assign sample", {
-        description: "Unsupported extension, File access denied",
-        duration: 5000,
-      });
-      // Should not show warning toast when there are critical issues
 
       consoleErrorSpy.mockRestore();
     });
@@ -294,7 +258,6 @@ describe("useFileValidation", () => {
       const validation = await result.current.validateDroppedFile(testFilePath);
 
       expect(validation).toEqual(mockValidation);
-      expect(mockToast.warning).toHaveBeenCalled();
 
       consoleWarnSpy.mockRestore();
     });
@@ -318,7 +281,6 @@ describe("useFileValidation", () => {
       const validation = await result.current.validateDroppedFile(testFilePath);
 
       expect(validation).toBeNull();
-      expect(mockToast.error).toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();
     });

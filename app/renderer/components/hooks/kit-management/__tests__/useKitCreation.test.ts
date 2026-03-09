@@ -91,11 +91,8 @@ describe("useKitCreation", () => {
       expect(mockCreateKit).toHaveBeenCalledWith("A2");
       expect(mockMarkExplicitNavigation).toHaveBeenCalled();
       expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("A2");
-      expect(defaultProps.onMessage).toHaveBeenCalledWith(
-        "Kit A2 created successfully!",
-        "info",
-        4000,
-      );
+      // Success feedback is now handled by entrance animation, not toast
+      expect(result.current.newlyCreatedKit).toBe("A2");
       expect(result.current.isCreatingKit).toBe(false);
     });
 

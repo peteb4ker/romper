@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { duplicateKit, validateKitSlot } from "../../utils/kitOperations";
 
 interface UseKitDuplicationProps {
   onRefreshKits?: (scrollToKit?: string) => void;
 }
+
+const ANIMATION_CLEAR_MS = 1000;
 
 export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
   const [duplicateKitSource, setDuplicateKitSource] = useState<null | string>(
@@ -14,6 +16,26 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
   const [duplicateKitError, setDuplicateKitError] = useState<null | string>(
     null,
   );
+  const [newlyDuplicatedKit, setNewlyDuplicatedKit] = useState<null | string>(
+    null,
+  );
+  const clearTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    };
+  }, []);
+
+  const trackNewKit = (kitName: string) => {
+    setNewlyDuplicatedKit(kitName);
+    if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    clearTimerRef.current = setTimeout(
+      () => setNewlyDuplicatedKit(null),
+      ANIMATION_CLEAR_MS,
+    );
+  };
 
   const handleDuplicateKit = async () => {
     setDuplicateKitError(null);
@@ -26,6 +48,7 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
       await duplicateKit(duplicateKitSource, duplicateKitDest);
 
       const kitNameToScrollTo = duplicateKitDest;
+      trackNewKit(kitNameToScrollTo);
       setDuplicateKitSource(null);
       setDuplicateKitDest("");
       if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
@@ -43,6 +66,7 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
     }
     try {
       await duplicateKit(source, dest);
+      trackNewKit(dest);
       if (onRefreshKits) onRefreshKits(dest);
       return {};
     } catch (err) {
@@ -56,6 +80,7 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
     duplicateKitError,
     duplicateKitSource,
     handleDuplicateKit,
+    newlyDuplicatedKit,
     setDuplicateKitDest,
     setDuplicateKitError,
     setDuplicateKitSource,

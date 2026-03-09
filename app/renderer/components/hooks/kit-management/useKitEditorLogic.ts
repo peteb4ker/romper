@@ -2,9 +2,7 @@ import type { KitEditorProps } from "@romper/app/renderer/components/kitTypes";
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React from "react";
-import { toast } from "sonner";
 
-import { ErrorPatterns } from "../../../utils/errorHandling";
 import { useSampleManagement } from "../sample-management/useSampleManagement";
 import { useBpm } from "../shared/useBpm";
 import { useStepPattern } from "../shared/useStepPattern";
@@ -12,6 +10,12 @@ import { useTriggerConditions } from "../shared/useTriggerConditions";
 import { useVoiceAlias } from "../voice-panels/useVoiceAlias";
 import { useKitPlayback } from "./useKitPlayback";
 import { useKitVoicePanels } from "./useKitVoicePanels";
+
+export type ScanStatus =
+  | { message: string; status: "error" }
+  | { sampleCount: number; status: "success" }
+  | { status: "idle" }
+  | { status: "scanning" };
 
 interface UseKitEditorLogicParams extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent
@@ -26,6 +30,8 @@ interface UseKitEditorLogicParams extends KitEditorProps {
   ) => Promise<{ isFavorite?: boolean; success: boolean }>;
   onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>;
 }
+
+const SCAN_SUCCESS_CLEAR_MS = 3000;
 
 /**
  * Main business logic hook for KitEditor component
@@ -47,6 +53,19 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   const kit = props.kit ?? null; // Convert undefined to null for compatibility
   const kitError = props.kitError ?? null; // Accept error from parent if provided
   const kitLoading = false; // Data is passed from parent
+
+  // Scan status state (replaces toast-based feedback)
+  const [scanStatus, setScanStatus] = React.useState<ScanStatus>({
+    status: "idle",
+  });
+  const scanTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(null);
+
+  // Clean up scan timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+    };
+  }, []);
 
   // Reload kit function - now just triggers parent refresh
   const reloadKit = React.useCallback(async () => {
@@ -125,20 +144,11 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
 
   // Handler for kit rescanning (database-first approach)
   const handleScanKit = React.useCallback(async () => {
-    if (!kitName) {
-      toast.error("Kit name is required for scanning");
-      return;
-    }
+    if (!kitName) return;
 
-    const toastId = toast.loading("Rescanning kit from local store...", {
-      duration: Infinity,
-    });
+    setScanStatus({ status: "scanning" });
 
     try {
-      // Use the rescanKit IPC method which:
-      // 1. Clears existing samples from database
-      // 2. Scans the kit folder for current WAV files
-      // 3. Updates database with found samples
       if (!window.electronAPI?.rescanKit) {
         throw new Error("Rescan API not available");
       }
@@ -146,9 +156,14 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
       const result = await window.electronAPI.rescanKit(kitName);
 
       if (result.success) {
-        toast.success(
-          `Kit rescanned successfully! Found ${result.data?.scannedSamples || 0} samples.`,
-          { duration: 5000, id: toastId },
+        const sampleCount = result.data?.scannedSamples || 0;
+        setScanStatus({ sampleCount, status: "success" });
+
+        // Auto-clear success status after delay
+        if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+        scanTimerRef.current = setTimeout(
+          () => setScanStatus({ status: "idle" }),
+          SCAN_SUCCESS_CLEAR_MS,
         );
 
         // Trigger sample reload in parent component
@@ -158,21 +173,18 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
 
         // Reload kit to show updated voice names from rescan
         await reloadKit();
-
-        // Note: Voice inference is now handled automatically by rescanKit
-        // No need to call handleRescanAllVoiceNames separately
       } else {
-        toast.error(`Kit rescan failed: ${result.error}`, {
-          duration: 8000,
-          id: toastId,
+        setScanStatus({
+          message: result.error || "Rescan failed",
+          status: "error",
         });
       }
     } catch (error) {
-      ErrorPatterns.kitOperation(error, "rescan");
-      toast.error(
-        `Kit scan error: ${error instanceof Error ? error.message : String(error)}`,
-        { duration: 8000, id: toastId },
-      );
+      console.error("Kit scan error:", error);
+      setScanStatus({
+        message: error instanceof Error ? error.message : String(error),
+        status: "error",
+      });
     }
   }, [kitName, onRequestSamplesReload, reloadKit]);
 
@@ -343,6 +355,8 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
 
     // State
     samples,
+    // Scan status (inline progress feedback)
+    scanStatus,
     selectedSampleIdx,
     selectedVoice,
     sequencerGridRef,

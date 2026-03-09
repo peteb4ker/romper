@@ -1,15 +1,5 @@
-import { Toaster } from "sonner";
-
-// Sonner handles notification display globally. This component just renders the Toaster.
-const MessageDisplay = () => (
-  <Toaster
-    closeButton
-    position="top-center"
-    richColors
-    toastOptions={{
-      className: "!bg-surface-2 !text-text-primary !border-border-subtle",
-    }}
-  />
-);
+// Sonner toast notifications have been replaced by inline feedback.
+// This component is kept as a no-op to avoid breaking the component tree.
+const MessageDisplay = () => null;
 
 export default MessageDisplay;

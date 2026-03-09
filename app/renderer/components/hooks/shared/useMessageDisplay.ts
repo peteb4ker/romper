@@ -1,24 +1,25 @@
-import { toast } from "sonner";
-
 export function useMessageDisplay() {
-  // Sonner handles all state internally; just expose a compatible API
   const showMessage = (
     text: string,
-    _type: string = "info",
-    duration?: number,
+    type: string = "info",
+    _duration?: number,
   ) => {
-    // Only pass supported options to toast
-    return toast(text, { duration });
+    // Route to console — all user-facing feedback is now handled inline
+    if (type === "error") {
+      console.error(`[message] ${text}`);
+    } else if (type === "warning") {
+      console.warn(`[message] ${text}`);
+    } else {
+      console.log(`[message] ${text}`);
+    }
   };
 
-  // Dismiss and clearMessages are no-ops since Sonner does not export 'dismiss' API
   const dismissMessage = () => {};
   const clearMessages = () => {};
 
   return {
     clearMessages,
     dismissMessage,
-    // Sonner does not expose a messages array; UI is handled by <Toaster />
     messages: [],
     showMessage,
   };

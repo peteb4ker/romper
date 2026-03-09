@@ -18,7 +18,7 @@ const AddKitCard: React.FC<AddKitCardProps> = ({
     <div style={{ height: CARD_HEIGHT }}>
       <button
         aria-label={`Add kit to bank ${bankLetter}`}
-        className="w-full h-full rounded-lg border-2 border-dashed border-border-subtle flex flex-col items-center justify-center gap-1.5 text-text-tertiary transition-colors duration-150 hover:border-accent-primary hover:text-accent-primary hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border-subtle disabled:hover:text-text-tertiary disabled:hover:bg-transparent"
+        className="w-full h-full rounded-lg border-2 border-dashed border-border-subtle flex flex-col items-center justify-center gap-1.5 text-text-tertiary transition-all duration-150 hover:border-accent-primary hover:text-accent-primary hover:bg-surface-2 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border-subtle disabled:hover:text-text-tertiary disabled:hover:bg-transparent"
         data-testid={`add-kit-${bankLetter}`}
         disabled={isCreating}
         onClick={() => onClick(bankLetter)}

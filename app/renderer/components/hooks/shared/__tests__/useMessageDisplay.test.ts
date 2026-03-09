@@ -3,11 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 
 import { useMessageDisplay } from "../useMessageDisplay";
 
-// Mock sonner
-vi.mock("sonner", () => ({
-  toast: vi.fn(() => "toast-id"),
-}));
-
 describe("useMessageDisplay", () => {
   it("should return the expected API", () => {
     const { result } = renderHook(() => useMessageDisplay());
@@ -44,31 +39,24 @@ describe("useMessageDisplay", () => {
     expect(result.current.messages).toEqual([]);
   });
 
-  it("should call toast when showMessage is called", async () => {
-    const { toast } = await import("sonner");
+  it("should log info messages to console.log", () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation();
     const { result } = renderHook(() => useMessageDisplay());
 
     result.current.showMessage("Test message", "info", 5000);
 
-    expect(toast).toHaveBeenCalledWith("Test message", { duration: 5000 });
+    expect(consoleSpy).toHaveBeenCalledWith("[message] Test message");
+    consoleSpy.mockRestore();
   });
 
-  it("should call toast with default parameters", async () => {
-    const { toast } = await import("sonner");
-    const { result } = renderHook(() => useMessageDisplay());
-
-    result.current.showMessage("Test message");
-
-    expect(toast).toHaveBeenCalledWith("Test message", { duration: undefined });
-  });
-
-  it("should ignore type parameter since sonner handles styling differently", async () => {
-    const { toast } = await import("sonner");
+  it("should log error messages to console.error", () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
     const { result } = renderHook(() => useMessageDisplay());
 
     result.current.showMessage("Test message", "error", 3000);
 
-    expect(toast).toHaveBeenCalledWith("Test message", { duration: 3000 });
+    expect(consoleErrorSpy).toHaveBeenCalledWith("[message] Test message");
+    consoleErrorSpy.mockRestore();
   });
 
   it("should handle dismissMessage as no-op", () => {

@@ -184,6 +184,12 @@
 
   /* Hover overlay */
   --color-hover-overlay: var(--hover-overlay);
+
+  /* Action feedback animations */
+  --animate-kit-enter: kit-enter 300ms ease-out both;
+  --animate-kit-exit: kit-exit 250ms ease-out both;
+  --animate-border-flash: border-flash 600ms ease-out 300ms both;
+  --animate-favorite-pulse: favorite-pulse 200ms ease-out;
 }
 
 /* ───────────────────────────────────────────────────────────
@@ -215,6 +221,55 @@ html {
 
 .dark .card-grain {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Ccircle cx='2' cy='2' r='0.5' fill='%23fff' opacity='0.07'/%3E%3C/svg%3E");
+}
+
+/* ───────────────────────────────────────────────────────────
+   Action Feedback Animations — Kit CRUD + Favorites
+   ─────────────────────────────────────────────────────────── */
+
+@keyframes kit-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes kit-exit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+}
+
+@keyframes border-flash {
+  from {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 15%, transparent);
+  }
+  to {
+    border-color: var(--border-subtle);
+    box-shadow: none;
+  }
+}
+
+@keyframes favorite-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* ───────────────────────────────────────────────────────────

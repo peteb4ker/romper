@@ -82,6 +82,7 @@ interface KitGridProps {
   isFiltered?: boolean;
   kitData?: KitWithRelations[]; // Kit data from database
   kits: KitWithRelations[];
+  newlyAnimatedKit?: null | string; // Kit name that should play entrance animation
   onBankFocus?: (bank: string) => void;
   onCreateKitInBank?: (bankLetter: string) => void;
   onDelete?: (kit: string) => void;
@@ -163,6 +164,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       isFiltered,
       kitData,
       kits,
+      newlyAnimatedKit,
       onBankFocus,
       onCreateKitInBank,
       onDelete,
@@ -265,6 +267,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                   <KitGridCard
                     focusedIdx={focusedIdx}
                     getKitFavoriteState={getKitFavoriteState}
+                    isNew={kit.name === newlyAnimatedKit}
                     key={kit.name}
                     kit={kit}
                     kitData={kitData}

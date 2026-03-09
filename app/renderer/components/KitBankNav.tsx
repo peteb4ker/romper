@@ -56,10 +56,12 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
       const rect = nav.getBoundingClientRect();
       const style = getComputedStyle(nav);
       const padTop = parseFloat(style.paddingTop);
-      const padBottom = parseFloat(style.paddingBottom);
-      const contentHeight = rect.height - padTop - padBottom;
       const y = clientY - rect.top - padTop;
-      const fraction = Math.max(0, Math.min(1, y / contentHeight));
+      // Use fixed button height instead of nav content height.
+      // The nav may be flex-stretched taller than its button content,
+      // which skews the fraction and offsets the hover target.
+      const buttonsHeight = banks.length * BASE_HEIGHT;
+      const fraction = Math.max(0, Math.min(1, y / buttonsHeight));
       setHoverIndex(fraction * (banks.length - 1));
     });
   }, []);

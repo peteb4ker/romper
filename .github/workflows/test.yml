@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - "**"
+  merge_group:
 
 env:
   NODE_VERSION: "22"
@@ -37,14 +38,15 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
 
-      # Run unit tests with coverage
-      - name: Run unit tests with coverage
-        run: npm run test:unit
+      # Run unit tests (fast on PRs, coverage on main)
+      - name: Run unit tests
+        run: ${{ github.event_name == 'push' && 'npm run test:unit' || 'npm run test:unit:fast' }}
         env:
           CI: true
 
-      # Upload unit test coverage artifacts
+      # Upload unit test coverage artifacts (main only, for SonarCloud)
       - name: Upload unit coverage artifacts
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: unit-coverage
@@ -55,7 +57,7 @@ jobs:
   integration-tests:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: ${{ github.event_name == 'push' && fromJSON('["ubuntu-latest","windows-latest","macos-latest"]') || fromJSON('["ubuntu-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
 
@@ -104,16 +106,16 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           sleep 2
 
-      # Run integration tests with coverage
+      # Run integration tests (fast on PRs, coverage on main)
       - name: Run integration tests
-        run: npm run test:integration
+        run: ${{ github.event_name == 'push' && 'npm run test:integration' || 'npm run test:integration:fast' }}
         env:
           CI: true
           DISPLAY: ${{ matrix.os == 'ubuntu-latest' && ':99' || '' }}
 
-      # Upload integration coverage artifacts (Ubuntu only to avoid duplicates)
+      # Upload integration coverage artifacts (main only, Ubuntu only)
       - name: Upload integration coverage artifacts
-        if: matrix.os == 'ubuntu-latest'
+        if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
           name: integration-coverage
@@ -123,6 +125,7 @@ jobs:
   # Analysis and reporting - downloads coverage artifacts and runs analysis
   analysis:
     needs: [unit-tests, integration-tests]
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 8
 
@@ -192,3 +195,50 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_ORGANIZATION: peteb4ker
           SONAR_HOST_URL: https://sonarcloud.io
+
+      # Check for quality issues and auto-create GitHub issue
+      - name: Check for quality issues and raise GitHub issue
+        if: always() && github.event_name == 'push'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          GATE=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=peteb4ker_romper")
+          STATUS=$(echo "$GATE" | jq -r '.projectStatus.status')
+
+          ISSUES_RESP=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/issues/search?projectKeys=peteb4ker_romper&severities=CRITICAL,BLOCKER,MAJOR&statuses=OPEN,CONFIRMED&ps=1")
+          CRITICAL=$(echo "$ISSUES_RESP" | jq -r '.total')
+
+          HOTSPOTS_RESP=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/hotspots/search?projectKey=peteb4ker_romper&status=TO_REVIEW&ps=1")
+          HOTSPOTS=$(echo "$HOTSPOTS_RESP" | jq -r '.paging.total')
+
+          FAILED_CONDITIONS=$(echo "$GATE" | jq -r \
+            '.projectStatus.conditions[] | select(.status == "ERROR") | "- **\(.metricKey)**: \(.actualValue) (required: \(.errorThreshold))"')
+
+          if [ "$STATUS" != "OK" ] || [ "$CRITICAL" -gt 0 ] || [ "$HOTSPOTS" -gt 0 ]; then
+            gh issue create \
+              --title "SonarCloud: quality gate failure on main" \
+              --label "bug,priority:high" \
+              --body "## SonarCloud Quality Gate Failed
+
+          **Commit:** ${{ github.sha }}
+          **Quality Gate:** $STATUS
+          **Critical/Blocker/Major Issues:** $CRITICAL
+          **Security Hotspots to Review:** $HOTSPOTS
+
+          ### Failed Conditions
+          $FAILED_CONDITIONS
+
+          ### Links
+          - [Issues](https://sonarcloud.io/project/issues?id=peteb4ker_romper&severities=CRITICAL,BLOCKER,MAJOR)
+          - [Security Hotspots](https://sonarcloud.io/project/security_hotspots?id=peteb4ker_romper)
+          - [Quality Gate](https://sonarcloud.io/summary/overall?id=peteb4ker_romper)
+
+          _Auto-created by CI on main branch push._"
+            echo "::warning::SonarCloud quality issues detected — GitHub issue created"
+          else
+            echo "SonarCloud quality gate passed"
+          fi

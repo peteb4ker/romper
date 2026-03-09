@@ -7,9 +7,56 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check SonarCloud Quality Gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          STATUS=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=peteb4ker_romper" \
+            | jq -r '.projectStatus.status')
+
+          ISSUES=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/issues/search?projectKeys=peteb4ker_romper&severities=CRITICAL,BLOCKER&statuses=OPEN,CONFIRMED&ps=1" \
+            | jq -r '.total')
+
+          HOTSPOTS=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/hotspots/search?projectKey=peteb4ker_romper&status=TO_REVIEW&ps=1" \
+            | jq -r '.paging.total')
+
+          echo "Quality Gate: $STATUS | Critical/Blocker: $ISSUES | Hotspots: $HOTSPOTS"
+
+          if [ "$ISSUES" -gt 0 ] || [ "$HOTSPOTS" -gt 0 ]; then
+            echo "::error::Release blocked: $ISSUES critical/blocker issues, $HOTSPOTS security hotspots"
+            exit 1
+          fi
+
+      - name: Create GitHub issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo ${{ github.repository }} \
+            --title "Release ${{ github.ref_name }} blocked: SonarCloud quality gate" \
+            --label "bug,priority:high" \
+            --body "Release **${{ github.ref_name }}** blocked by SonarCloud issues. Fix issues and re-tag.
+          - [Issues](https://sonarcloud.io/project/issues?id=peteb4ker_romper&severities=CRITICAL,BLOCKER)
+          - [Hotspots](https://sonarcloud.io/project/security_hotspots?id=peteb4ker_romper)
+
+          _Auto-created by release workflow._"
+
   build:
+    needs: quality-gate
     strategy:
       fail-fast: false
       matrix:

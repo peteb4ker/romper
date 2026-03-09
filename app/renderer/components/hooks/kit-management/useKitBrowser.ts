@@ -37,6 +37,7 @@ export function useKitBrowser({
     bankNames: bankNavigation.bankNames,
     // From kitDuplication
     duplicateKitDest: kitDuplication.duplicateKitDest,
+    duplicateKitDirect: kitDuplication.duplicateKitDirect,
     duplicateKitError: kitDuplication.duplicateKitError,
     duplicateKitSource: kitDuplication.duplicateKitSource,
     // From errorHandling

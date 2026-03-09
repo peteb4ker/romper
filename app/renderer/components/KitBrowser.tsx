@@ -7,8 +7,6 @@ import React, {
   useRef,
 } from "react";
 
-import DeleteKitDialog from "./dialogs/DeleteKitDialog";
-import KitDialogs from "./dialogs/KitDialogs";
 import SyncUpdateDialog from "./dialogs/SyncUpdateDialog";
 import ValidationResultsDialog from "./dialogs/ValidationResultsDialog";
 import { useKitBrowser } from "./hooks/kit-management/useKitBrowser";
@@ -118,20 +116,15 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     });
     const {
       bankNames,
-      duplicateKitDest,
-      duplicateKitError,
-      duplicateKitSource,
+      duplicateKitDirect,
       focusedKit,
       globalBankHotkeyHandler,
       handleCreateKitInBank,
-      handleDuplicateKit,
       handleVisibleBankChange,
       isCreatingKit,
       kits,
       scrollContainerRef,
       selectedBank,
-      setDuplicateKitDest,
-      setDuplicateKitSource,
       setFocusedKit,
     } = logic;
 
@@ -240,28 +233,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
           showFavoritesOnly={showFavoritesOnly}
           showModifiedOnly={showModifiedOnly}
         />
-        <KitDialogs
-          duplicateKitDest={duplicateKitDest}
-          duplicateKitError={duplicateKitError}
-          duplicateKitSource={duplicateKitSource}
-          onCancelDuplicateKit={() => {
-            setDuplicateKitSource(null);
-            setDuplicateKitDest("");
-            logic.setDuplicateKitError(null);
-          }}
-          onDuplicateKit={handleDuplicateKit}
-          onDuplicateKitDestChange={setDuplicateKitDest}
-          showDuplicateKit={!!duplicateKitSource}
-        />
-        {deletion.kitToDelete && deletion.deleteSummary && (
-          <DeleteKitDialog
-            isDeleting={deletion.isDeleting}
-            kitName={deletion.kitToDelete}
-            onCancel={deletion.handleCancelDelete}
-            onConfirm={deletion.handleConfirmDelete}
-            sampleCount={deletion.deleteSummary.sampleCount}
-          />
-        )}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-row">
           <KitBankNav
             bankNames={bankNames}
@@ -279,18 +250,17 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             kits={kits}
             onBankFocus={handleBankFocus}
             onCreateKitInBank={handleCreateKitInBank}
-            onDelete={(kit) => {
-              deletion.handleRequestDelete(kit);
-            }}
+            onDeleteKit={deletion.deleteKitDirect}
             onDuplicate={(kit) => {
-              setDuplicateKitSource(kit);
-              setDuplicateKitDest("");
-              logic.setDuplicateKitError(null);
+              // Legacy fallback — not used when onDuplicateKit is provided
+              void kit;
             }}
-            onFocusKit={setFocusedKit} // NEW: keep parent in sync
+            onDuplicateKit={duplicateKitDirect}
+            onFocusKit={setFocusedKit}
+            onRequestDeleteSummary={deletion.requestDeleteSummary}
             onSelectKit={props.onSelectKit}
-            onToggleFavorite={handleToggleFavorite} // Task 20.1.2: Favorites toggle functionality
-            onVisibleBankChange={handleVisibleBankChange} // NEW: update selected bank on scroll
+            onToggleFavorite={handleToggleFavorite}
+            onVisibleBankChange={handleVisibleBankChange}
             ref={kitGridRef}
             sampleCounts={props.sampleCounts}
           />

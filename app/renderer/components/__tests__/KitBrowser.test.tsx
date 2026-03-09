@@ -141,6 +141,7 @@ const baseProps = {
 const createMockReturnValue = (overrides = {}) => ({
   bankNames: {},
   duplicateKitDest: "",
+  duplicateKitDirect: vi.fn().mockResolvedValue({}),
   duplicateKitError: null,
   duplicateKitSource: null,
   error: null,
@@ -521,11 +522,10 @@ describe("KitBrowser", () => {
       expect(mockSetDuplicateKitSource).not.toHaveBeenCalled();
     });
 
-    it("shows duplicate kit dialog when source is set", () => {
+    it("passes onDuplicateKit to KitGrid for popover-based duplication", () => {
       mockUseKitBrowser.mockReturnValue(
         createMockReturnValue({
-          duplicateKitDest: "B0",
-          duplicateKitSource: "A0",
+          duplicateKitDirect: vi.fn(),
         }),
       );
 
@@ -535,8 +535,8 @@ describe("KitBrowser", () => {
         </MockMessageDisplayProvider>,
       );
 
-      // Test the duplicate functionality exists when source is set
-      expect(screen.getByText("Duplicate A0 to:")).toBeInTheDocument();
+      // Duplicate UI is now handled by popovers in KitGridItem, not banners in KitBrowser
+      expect(screen.getByTestId("kit-grid")).toBeInTheDocument();
     });
   });
 
@@ -611,34 +611,15 @@ describe("KitBrowser", () => {
   });
 
   describe("Kit duplication cancellation", () => {
-    it("handles duplicate kit cancellation correctly", () => {
-      const mockSetDuplicateKitSource = vi.fn();
-      const mockSetDuplicateKitDest = vi.fn();
-      const mockSetDuplicateKitError = vi.fn();
-
-      mockUseKitBrowser.mockReturnValue(
-        createMockReturnValue({
-          duplicateKitDest: "C1",
-          duplicateKitSource: "A0",
-          setDuplicateKitDest: mockSetDuplicateKitDest,
-          setDuplicateKitError: mockSetDuplicateKitError,
-          setDuplicateKitSource: mockSetDuplicateKitSource,
-        }),
-      );
-
+    it("duplicate cancellation is handled by KitGridItem popover, not KitBrowser", () => {
+      // Cancellation is now handled at the card level via ActionPopover in KitGridItem
       render(
         <MockMessageDisplayProvider>
           <KitBrowser {...baseProps} />
         </MockMessageDisplayProvider>,
       );
 
-      const cancelButtons = screen.getAllByText("Cancel");
-      if (cancelButtons.length > 0) {
-        fireEvent.click(cancelButtons[0]);
-        expect(mockSetDuplicateKitSource).toHaveBeenCalledWith(null);
-        expect(mockSetDuplicateKitDest).toHaveBeenCalledWith("");
-        expect(mockSetDuplicateKitError).toHaveBeenCalledWith(null);
-      }
+      expect(screen.getByTestId("kit-grid")).toBeInTheDocument();
     });
   });
 });

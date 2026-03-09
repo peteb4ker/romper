@@ -64,12 +64,44 @@ export function useKitDeletion({
     setDeleteSummary(null);
   };
 
+  const requestDeleteSummary = async (
+    kitName: string,
+  ): Promise<{ locked: boolean; sampleCount: number } | null> => {
+    try {
+      const summary = await getKitDeleteSummary(kitName);
+      if (summary.locked) {
+        onMessage?.(
+          "Kit is locked. Unlock it before deleting.",
+          "warning",
+          4000,
+        );
+        return null;
+      }
+      return { locked: false, sampleCount: summary.sampleCount };
+    } catch (err) {
+      onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);
+      return null;
+    }
+  };
+
+  const deleteKitDirect = async (kitName: string): Promise<void> => {
+    try {
+      await deleteKit(kitName);
+      onMessage?.(`Kit ${kitName} deleted.`, "info", 4000);
+      onRefreshKits?.();
+    } catch (err) {
+      onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);
+    }
+  };
+
   return {
+    deleteKitDirect,
     deleteSummary,
     handleCancelDelete,
     handleConfirmDelete,
     handleRequestDelete,
     isDeleting,
     kitToDelete,
+    requestDeleteSummary,
   };
 }

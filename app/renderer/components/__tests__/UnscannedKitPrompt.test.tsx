@@ -25,7 +25,7 @@ describe("UnscannedKitPrompt", () => {
       />,
     );
 
-    expect(screen.getByText(/Kit needs scanning/i)).toBeInTheDocument();
+    expect(screen.getByText(/hasn't been scanned yet/i)).toBeInTheDocument();
     expect(screen.getByText("A01")).toBeInTheDocument();
   });
 

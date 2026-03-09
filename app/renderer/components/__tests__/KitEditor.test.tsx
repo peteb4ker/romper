@@ -466,7 +466,9 @@ describe("KitEditor", () => {
 
       // UnscannedKitPrompt should be rendered when there are samples but no voice aliases
       await waitFor(() => {
-        expect(screen.getByText(/kit needs scanning/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/hasn't been scanned yet/i),
+        ).toBeInTheDocument();
         expect(screen.getByTestId("unscanned-scan-button")).toBeInTheDocument();
       });
     });

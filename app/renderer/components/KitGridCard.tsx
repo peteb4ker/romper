@@ -14,8 +14,16 @@ interface KitGridCardProps {
   kitData?: KitWithRelations[] | null;
   kitsToDisplay: Kit[];
   onDelete?: (kitName: string) => void;
+  onDeleteKit?: (kitName: string) => Promise<void>;
   onDuplicate: (kitName: string) => void;
+  onDuplicateKit?: (
+    source: string,
+    dest: string,
+  ) => Promise<{ error?: string }>;
   onFocusKit?: (kitName: string) => void;
+  onRequestDeleteSummary?: (
+    kitName: string,
+  ) => Promise<{ locked: boolean; sampleCount: number } | null>;
   onSelectKit: (kitName: string) => void;
   onToggleFavorite?: (kitName: string) => void;
   sampleCounts?: Record<string, [number, number, number, number]>;
@@ -37,8 +45,11 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
   kitData,
   kitsToDisplay,
   onDelete,
+  onDeleteKit,
   onDuplicate,
+  onDuplicateKit,
   onFocusKit,
+  onRequestDeleteSummary,
   onSelectKit,
   onToggleFavorite,
   sampleCounts,
@@ -49,7 +60,6 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
   const isSelected = focusedIdx === globalIndex;
   const kitDataItem = kitData?.find((k) => k.name === kit.name) ?? null;
 
-  // Compute the favorite state for this kit
   const isFavorite = getKitFavoriteState
     ? getKitFavoriteState(kit.name)
     : kitDataItem?.is_favorite;
@@ -78,7 +88,10 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
         kit={kit.name}
         kitData={kitDataItem}
         onDelete={onDelete ? () => isValid && onDelete(kit.name) : undefined}
+        onDeleteKit={onDeleteKit}
         onDuplicate={() => isValid && onDuplicate(kit.name)}
+        onDuplicateKit={onDuplicateKit}
+        onRequestDeleteSummary={onRequestDeleteSummary}
         onSelect={handleSelectKit}
         onToggleFavorite={onToggleFavorite}
         sampleCounts={sampleCounts ? sampleCounts[kit.name] : undefined}

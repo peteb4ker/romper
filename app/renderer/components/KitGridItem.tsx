@@ -4,12 +4,14 @@ import {
   LockSimple,
   MusicNote,
   Trash,
+  Warning,
 } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
-import React from "react";
+import React, { useRef, useState } from "react";
 
 import { useKitItem } from "./hooks/kit-management/useKitItem";
 import StereoIcon from "./icons/StereoIcon";
+import ActionPopover from "./shared/ActionPopover";
 import { KitIconRenderer } from "./shared/KitIconRenderer";
 import {
   BaseKitItemProps,
@@ -17,13 +19,19 @@ import {
   KitItemRenderProps,
 } from "./shared/kitItemUtils";
 
-interface KitGridItemProps extends BaseKitItemProps {}
+interface KitGridItemProps extends BaseKitItemProps {
+  onDeleteKit?: (kitName: string) => Promise<void>;
+  onDuplicateKit?: (
+    source: string,
+    dest: string,
+  ) => Promise<{ error?: string }>;
+  onRequestDeleteSummary?: (
+    kitName: string,
+  ) => Promise<{ locked: boolean; sampleCount: number } | null>;
+}
 
 const stripExtension = (filename: string) => filename.replace(/\.[^.]+$/, "");
 
-/**
- * Highlights matched portions of text by wrapping them in a styled span.
- */
 const highlightMatch = (
   text: string,
   term: string,
@@ -62,7 +70,10 @@ const KitGridItem = React.memo(
         kit,
         kitData,
         onDelete,
+        onDeleteKit,
         onDuplicate,
+        onDuplicateKit,
+        onRequestDeleteSummary,
         onSelect,
         onToggleFavorite,
         sampleCounts,
@@ -75,6 +86,64 @@ const KitGridItem = React.memo(
       const icon = <KitIconRenderer iconType={iconType} size="md" />;
       const isFavorite = isFavoriteProp ?? kitData?.is_favorite ?? false;
 
+      // Delete popover state
+      const deleteButtonRef = useRef<HTMLButtonElement>(null);
+      const [showDeletePopover, setShowDeletePopover] = useState(false);
+      const [deleteSampleCount, setDeleteSampleCount] = useState<number>(0);
+      const [isDeleting, setIsDeleting] = useState(false);
+
+      // Duplicate popover state
+      const duplicateButtonRef = useRef<HTMLButtonElement>(null);
+      const [showDuplicatePopover, setShowDuplicatePopover] = useState(false);
+      const [duplicateDest, setDuplicateDest] = useState("");
+      const [duplicateError, setDuplicateError] = useState<null | string>(null);
+
+      const handleDeleteClick = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (onRequestDeleteSummary) {
+          const summary = await onRequestDeleteSummary(kit);
+          if (!summary) return; // locked or error
+          setDeleteSampleCount(summary.sampleCount);
+          setShowDeletePopover(true);
+        } else if (onDelete) {
+          onDelete();
+        }
+      };
+
+      const handleConfirmDelete = async () => {
+        if (!onDeleteKit) return;
+        setIsDeleting(true);
+        try {
+          await onDeleteKit(kit);
+        } finally {
+          setIsDeleting(false);
+          setShowDeletePopover(false);
+        }
+      };
+
+      const handleDuplicateClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (onDuplicateKit) {
+          setDuplicateDest("");
+          setDuplicateError(null);
+          setShowDuplicatePopover(true);
+        } else {
+          onDuplicate();
+        }
+      };
+
+      const handleConfirmDuplicate = async () => {
+        if (!onDuplicateKit) return;
+        const result = await onDuplicateKit(kit, duplicateDest);
+        if (result.error) {
+          setDuplicateError(result.error);
+        } else {
+          setShowDuplicatePopover(false);
+          setDuplicateDest("");
+          setDuplicateError(null);
+        }
+      };
+
       const totalSamples =
         (sampleCounts?.[0] || 0) +
         (sampleCounts?.[1] || 0) +
@@ -82,6 +151,9 @@ const KitGridItem = React.memo(
         (sampleCounts?.[3] || 0);
       const statusText = !isValid ? "Invalid kit" : `${totalSamples} samples`;
       const ariaLabel = `Kit ${kit} - ${statusText}`;
+
+      const canDelete =
+        isValid && onDeleteKit && kitData?.editable && !kitData?.locked;
 
       return (
         <div
@@ -203,30 +275,162 @@ const KitGridItem = React.memo(
               {isValid && (
                 <button
                   className="p-1 text-xs text-text-tertiary hover:text-accent-success ml-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDuplicate();
-                  }}
+                  onClick={handleDuplicateClick}
+                  ref={duplicateButtonRef}
                   title="Duplicate kit"
                 >
                   <Copy size={15} />
                 </button>
               )}
-              {isValid && onDelete && kitData?.editable && !kitData?.locked && (
+              {canDelete && (
                 <button
                   className="p-1 text-xs text-text-tertiary hover:text-accent-danger"
                   data-testid="delete-kit-button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                  }}
+                  onClick={handleDeleteClick}
+                  ref={deleteButtonRef}
                   title="Delete kit"
                 >
                   <Trash size={15} />
                 </button>
               )}
+              {/* Legacy: support old onDelete without popover */}
+              {isValid &&
+                !onDeleteKit &&
+                onDelete &&
+                kitData?.editable &&
+                !kitData?.locked && (
+                  <button
+                    className="p-1 text-xs text-text-tertiary hover:text-accent-danger"
+                    data-testid="delete-kit-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                    }}
+                    title="Delete kit"
+                  >
+                    <Trash size={15} />
+                  </button>
+                )}
             </div>
           </div>
+
+          {/* Delete confirmation popover */}
+          <ActionPopover
+            anchorRef={deleteButtonRef}
+            isOpen={showDeletePopover}
+            onClose={() => setShowDeletePopover(false)}
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-1.5">
+                {deleteSampleCount > 0 ? (
+                  <Warning
+                    className="text-accent-warning flex-shrink-0"
+                    size={14}
+                    weight="bold"
+                  />
+                ) : null}
+                <span className="text-sm font-semibold text-text-primary">
+                  Delete kit {kit}?
+                </span>
+              </div>
+              {deleteSampleCount > 0 && (
+                <p className="text-xs text-text-secondary">
+                  {deleteSampleCount} sample{" "}
+                  {deleteSampleCount === 1 ? "reference" : "references"} will be
+                  removed. Files on disk are not affected.
+                </p>
+              )}
+              {deleteSampleCount === 0 && (
+                <p className="text-xs text-text-tertiary">
+                  No samples. Safe to remove.
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  className={`px-2 py-1 text-xs text-white rounded font-semibold inline-flex items-center gap-1 disabled:opacity-50 ${deleteSampleCount > 0 ? "bg-accent-danger hover:bg-accent-danger/80" : "bg-accent-primary hover:bg-accent-primary/80"}`}
+                  data-testid="confirm-delete-button"
+                  disabled={isDeleting}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleConfirmDelete();
+                  }}
+                >
+                  <Trash size={13} />
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+                <button
+                  className="px-2 py-1 text-xs bg-surface-4 text-text-secondary rounded hover:bg-surface-3 font-semibold"
+                  disabled={isDeleting}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDeletePopover(false);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </ActionPopover>
+
+          {/* Duplicate popover */}
+          <ActionPopover
+            anchorRef={duplicateButtonRef}
+            isOpen={showDuplicatePopover}
+            onClose={() => {
+              setShowDuplicatePopover(false);
+              setDuplicateError(null);
+            }}
+          >
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-text-primary">
+                Duplicate {kit} to:
+                <input
+                  autoFocus
+                  className="ml-2 px-2 py-1 rounded border border-border-default text-sm bg-surface-2 text-text-primary w-16"
+                  data-testid="duplicate-dest-input"
+                  maxLength={3}
+                  onChange={(e) =>
+                    setDuplicateDest(e.target.value.toUpperCase())
+                  }
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleConfirmDuplicate();
+                    }
+                  }}
+                  value={duplicateDest}
+                />
+              </label>
+              {duplicateError && (
+                <div className="text-xs text-accent-danger">
+                  {duplicateError}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  className="px-2 py-1 text-xs bg-accent-success text-white rounded hover:bg-accent-success/80 font-semibold"
+                  data-testid="confirm-duplicate-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleConfirmDuplicate();
+                  }}
+                >
+                  Duplicate
+                </button>
+                <button
+                  className="px-2 py-1 text-xs bg-surface-4 text-text-secondary rounded hover:bg-surface-3 font-semibold"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDuplicatePopover(false);
+                    setDuplicateError(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </ActionPopover>
 
           {/* Voice channel strip */}
           {isValid &&
@@ -253,7 +457,6 @@ const KitGridItem = React.memo(
                       const voiceMatches = matchesByVoice?.[voiceNumber];
                       const hasMatches =
                         voiceMatches && voiceMatches.length > 0;
-                      // Show "Voice N" fallback only when search matches are displayed
                       const displayLabel =
                         voiceDisplayName ||
                         (hasVoiceMatches ? `Voice ${voiceNumber}` : "\u00A0");

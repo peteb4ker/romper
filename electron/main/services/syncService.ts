@@ -16,6 +16,13 @@ import { type SyncValidationError } from "./syncValidationService.js";
 export interface SyncChangeSummary {
   fileCount: number;
   kitCount: number;
+  kits: SyncKitSummary[];
+}
+
+export interface SyncKitSummary {
+  fileCount: number;
+  hasConversions: boolean;
+  kitName: string;
 }
 
 class SyncService {
@@ -59,8 +66,37 @@ class SyncService {
         return { error: samplesResult.error, success: false };
       }
 
-      const samples = samplesResult.data;
-      const fileCount = samples ? samples.length : 0;
+      const samples = samplesResult.data || [];
+      const fileCount = samples.length;
+
+      // Group samples by kit and detect which need format conversion
+      const kitMap = new Map<
+        string,
+        { fileCount: number; hasConversions: boolean }
+      >();
+      for (const sample of samples) {
+        const kitName =
+          (sample as { kitName?: string }).kitName || sample.kit_name;
+        if (!kitName) continue;
+        const entry = kitMap.get(kitName) || {
+          fileCount: 0,
+          hasConversions: false,
+        };
+        entry.fileCount++;
+        // Detect non-WAV files that will need conversion
+        if (sample.filename && !/\.wav$/i.test(sample.filename)) {
+          entry.hasConversions = true;
+        }
+        kitMap.set(kitName, entry);
+      }
+
+      const kits: SyncKitSummary[] = [...kitMap.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([kitName, data]) => ({
+          fileCount: data.fileCount,
+          hasConversions: data.hasConversions,
+          kitName,
+        }));
 
       console.log("[Backend] Samples result:", {
         sampleCount: fileCount,
@@ -70,6 +106,7 @@ class SyncService {
       const summary: SyncChangeSummary = {
         fileCount,
         kitCount,
+        kits,
       };
 
       console.log("[Backend] Generated sync summary:", summary);

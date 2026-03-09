@@ -5,7 +5,15 @@ import { useCallback, useState } from "react";
 interface SyncProgress {
   bytesCompleted: number;
   currentFile: string;
+  currentKitName?: string;
   error?: string;
+  errorDetails?: {
+    canRetry: boolean;
+    error: string;
+    fileName: string;
+    kitName?: string;
+    operation: "convert" | "copy";
+  };
   filesCompleted: number;
   status:
     | "completed"

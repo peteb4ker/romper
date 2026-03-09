@@ -45,7 +45,7 @@ describe("SyncUpdateDialog", () => {
   });
 
   describe("when dialog is open", () => {
-    it("should render panel with summary stats", () => {
+    it("should render panel with title", () => {
       render(
         <SyncUpdateDialog
           isOpen={true}
@@ -57,11 +57,9 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(screen.getByText("Write to SD Card")).toBeInTheDocument();
-      expect(screen.getByText("8 kits")).toBeInTheDocument();
-      expect(screen.getByText("15 samples")).toBeInTheDocument();
     });
 
-    it("should render bank summary chips", () => {
+    it("should render bank summary table with totals", () => {
       render(
         <SyncUpdateDialog
           isOpen={true}
@@ -73,13 +71,23 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(screen.getByTestId("bank-summary")).toBeInTheDocument();
+      // Column headers
+      expect(screen.getByText("Bank")).toBeInTheDocument();
+      expect(screen.getByText("Kits")).toBeInTheDocument();
+      expect(screen.getByText("Samples")).toBeInTheDocument();
+      // Bank rows
       expect(screen.getByTestId("bank-A")).toBeInTheDocument();
       expect(screen.getByTestId("bank-B")).toBeInTheDocument();
-      expect(screen.getByText("5k/8f")).toBeInTheDocument();
-      expect(screen.getByText("3k/7f")).toBeInTheDocument();
+      expect(screen.getByTestId("bank-A")).toHaveTextContent("5");
+      expect(screen.getByTestId("bank-A")).toHaveTextContent("8");
+      expect(screen.getByTestId("bank-B")).toHaveTextContent("3");
+      expect(screen.getByTestId("bank-B")).toHaveTextContent("7");
+      // Totals row
+      expect(screen.getByTestId("total-kits")).toHaveTextContent("8");
+      expect(screen.getByTestId("total-samples")).toHaveTextContent("15");
     });
 
-    it("should show CVT badge for banks needing conversion", () => {
+    it("should show conversion indicator for banks needing conversion", () => {
       render(
         <SyncUpdateDialog
           isOpen={true}
@@ -90,8 +98,8 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getByText("CVT")).toBeInTheDocument();
-      expect(screen.getByText("conversions needed")).toBeInTheDocument();
+      // Bank B has conversions, shown as "convert" in its row
+      expect(screen.getByText("convert")).toBeInTheDocument();
     });
 
     it("should display wipe SD card option", () => {
@@ -105,11 +113,13 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getByText("Clear SD card before sync")).toBeInTheDocument();
+      expect(
+        screen.getByText("Clear SD card before writing"),
+      ).toBeInTheDocument();
       expect(screen.getByTestId("wipe-sd-card-checkbox")).toBeInTheDocument();
     });
 
-    it("should require SD card selection before sync", () => {
+    it("should require SD card selection before writing", () => {
       render(
         <SyncUpdateDialog
           isOpen={true}
@@ -120,12 +130,12 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      const startSyncButton = screen.getByText("Start Sync");
+      const startSyncButton = screen.getByText("Start Write");
       expect(startSyncButton).toBeDisabled();
       expect(screen.getByText("No SD card selected")).toBeInTheDocument();
     });
 
-    it("should enable sync when SD card is selected", async () => {
+    it("should enable write when SD card is selected", async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
       render(
@@ -139,7 +149,7 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      const startSyncButton = screen.getByText("Start Sync");
+      const startSyncButton = screen.getByText("Start Write");
       expect(startSyncButton).not.toBeDisabled();
 
       await user.click(startSyncButton);
@@ -186,7 +196,7 @@ describe("SyncUpdateDialog", () => {
       const wipeCheckbox = screen.getByTestId("wipe-sd-card-checkbox");
       await user.click(wipeCheckbox);
 
-      await user.click(screen.getByText("Start Sync"));
+      await user.click(screen.getByText("Start Write"));
       expect(mockOnConfirm).toHaveBeenCalledWith({
         sdCardPath: "/path/to/sd",
         wipeSdCard: true,
@@ -206,13 +216,13 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(screen.getByText("Cancel")).toBeDisabled();
-      expect(screen.getByText("Syncing...")).toBeInTheDocument();
+      expect(screen.getByText("Writing...")).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /close sync dialog/i }),
+        screen.getByRole("button", { name: /close write dialog/i }),
       ).toBeDisabled();
     });
 
-    it("should disable Start Sync when no files to sync", () => {
+    it("should disable Start Write when no files to write", () => {
       const emptyChangeSummary: SyncChangeSummary = {
         banks: [],
         fileCount: 0,
@@ -230,9 +240,9 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getByText("Start Sync")).toBeDisabled();
-      expect(screen.getByText("0 kits")).toBeInTheDocument();
-      expect(screen.getByText("0 samples")).toBeInTheDocument();
+      expect(screen.getByText("Start Write")).toBeDisabled();
+      // No bank table shown when empty
+      expect(screen.queryByTestId("bank-summary")).not.toBeInTheDocument();
     });
 
     it("should show progress during sync", () => {
@@ -258,13 +268,11 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getByText("Copying files...")).toBeInTheDocument();
-      expect(screen.getByText("1/2")).toBeInTheDocument();
-      expect(screen.getByText("kick.wav")).toBeInTheDocument();
       expect(screen.getByTestId("current-kit-name")).toHaveTextContent("A0");
+      expect(screen.getByText("1/2")).toBeInTheDocument();
     });
 
-    it("should show success message when sync completes", () => {
+    it("should show success message when write completes", () => {
       const mockSyncProgress = {
         bytesCompleted: 2048,
         currentFile: "",
@@ -286,7 +294,7 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getByText("Sync Complete")).toBeInTheDocument();
+      expect(screen.getByText("Write Complete")).toBeInTheDocument();
     });
 
     it("should show SD card selection button", () => {
@@ -380,7 +388,7 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getAllByText("Sync Failed")).toHaveLength(1);
+      expect(screen.getAllByText("Write Failed")).toHaveLength(1);
       expect(screen.getByText("Permission denied")).toBeInTheDocument();
       expect(screen.getByText("problematic_file.wav")).toBeInTheDocument();
     });
@@ -439,13 +447,13 @@ describe("SyncUpdateDialog", () => {
         />,
       );
 
-      expect(screen.getAllByText("Sync Failed")).toHaveLength(1);
+      expect(screen.getAllByText("Write Failed")).toHaveLength(1);
       expect(
         screen.getByText(/Generic sync error occurred/),
       ).toBeInTheDocument();
     });
 
-    it("should disable start sync for non-retryable errors", () => {
+    it("should disable start write for non-retryable errors", () => {
       const mockSyncProgressWithNonRetryableError = {
         bytesCompleted: 100,
         currentFile: "test.wav",
@@ -492,7 +500,7 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(
-        screen.getByRole("button", { name: /close sync dialog/i }),
+        screen.getByRole("button", { name: /close write dialog/i }),
       ).toBeInTheDocument();
     });
   });

@@ -129,7 +129,7 @@ test.describe("Sync Workflow E2E Tests", () => {
       expect(buttonExists).toBe(true);
 
       // Check if dialog shows the expected state
-      const hasChanges = await window.isVisible("text=No changes to sync");
+      const hasChanges = await window.isVisible("text=No changes to write");
       if (hasChanges) {
         console.log("No files to sync - this is expected with test fixtures");
       }

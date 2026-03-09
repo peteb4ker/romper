@@ -116,7 +116,12 @@ export function useSyncUpdate(
         // Set up progress listener if available
         if (electronAPI.onSyncProgress) {
           electronAPI.onSyncProgress((progress: SyncProgress) => {
-            setSyncProgress(progress);
+            // Normalize backend "complete" status to frontend "completed"
+            const normalizedStatus =
+              (progress.status as string) === "complete"
+                ? "completed"
+                : progress.status;
+            setSyncProgress({ ...progress, status: normalizedStatus });
           });
         }
 

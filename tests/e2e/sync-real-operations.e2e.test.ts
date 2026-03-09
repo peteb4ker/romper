@@ -153,8 +153,8 @@ test.describe("Sync Real Operations E2E Tests", () => {
           await window.waitForTimeout(2000);
 
           // Check for completion or appropriate message
-          const noFilesMessage = await window.locator("text=No files to sync");
-          const successMessage = await window.locator("text=Sync completed");
+          const noFilesMessage = await window.locator("text=No files to write");
+          const successMessage = await window.locator("text=Write Complete");
 
           const hasNoFilesMsg = await noFilesMessage.isVisible();
           const hasSuccessMsg = await successMessage.isVisible();
@@ -256,8 +256,8 @@ test.describe("Sync Real Operations E2E Tests", () => {
           await window.waitForTimeout(2000);
 
           // Check for completion or appropriate message
-          const noFilesMessage = await window.locator("text=No files to sync");
-          const successMessage = await window.locator("text=Sync completed");
+          const noFilesMessage = await window.locator("text=No files to write");
+          const successMessage = await window.locator("text=Write Complete");
 
           const hasNoFilesMsg = await noFilesMessage.isVisible();
           const hasSuccessMsg = await successMessage.isVisible();

@@ -255,7 +255,8 @@ const KitGridItem = React.memo(
             setTimeout(resolve, EXIT_ANIMATION_MS);
           });
           await onDeleteKit(kit);
-        } finally {
+        } catch {
+          // Only reset if deletion failed — component stays mounted
           setIsDeleting(false);
           setIsExiting(false);
         }

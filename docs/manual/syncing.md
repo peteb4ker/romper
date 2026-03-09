@@ -2,8 +2,8 @@
 layout: manual
 title: Syncing
 prev_page:
-  url: /manual/kit-editor
-  title: Kit Editor
+  url: /manual/step-sequencer
+  title: Step Sequencer
 next_page:
   url: /manual/keyboard-shortcuts
   title: Keyboard Shortcuts

@@ -55,6 +55,14 @@ const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
       <div className="flex items-center gap-4">
         <a
           className="underline hover:text-accent-primary transition-colors"
+          href="https://peteb4ker.github.io/romper/manual/"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Romper Manual
+        </a>
+        <a
+          className="underline hover:text-accent-primary transition-colors"
           href="https://squarp.net/rample/manual/"
           rel="noopener noreferrer"
           target="_blank"

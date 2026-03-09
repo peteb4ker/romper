@@ -1,6 +1,9 @@
 name: End-to-End Tests
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - "**"
@@ -14,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: ${{ github.event_name == 'push' && fromJSON('["ubuntu-latest","macos-latest","windows-latest"]') || fromJSON('["ubuntu-latest"]') }}
 
     steps:
       - name: Checkout code

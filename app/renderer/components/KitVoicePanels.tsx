@@ -2,7 +2,6 @@ import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
 
 import { Link } from "@phosphor-icons/react";
 import React, { useState } from "react";
-import { toast } from "sonner";
 
 import type { SampleData, VoiceSamples } from "./kitTypes";
 
@@ -144,14 +143,14 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         voiceData,
       );
       if (primaryStatus.isLinked || secondaryStatus.isLinked) {
-        toast.error("One of these voices is already linked");
+        console.warn("One of these voices is already linked");
         return;
       }
 
       // Block if secondary voice has samples
       const secondarySamples = hookProps.samples[secondaryVoice] || [];
       if (secondarySamples.some((s) => s?.trim())) {
-        toast.error(
+        console.warn(
           `Voice ${secondaryVoice} has samples — remove them before linking`,
         );
         return;

@@ -1,12 +1,4 @@
-import { toast } from "sonner";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-
-// Mock sonner toast
-vi.mock("sonner", () => ({
-  toast: {
-    error: vi.fn(),
-  },
-}));
 
 // Mock shared error utils
 vi.mock("@romper/shared/errorUtils.js", () => ({
@@ -53,11 +45,6 @@ describe("Kit Data Error Handling - Unit Tests", () => {
         "[TestContext] Failed to test operation: Test API error",
         error,
       );
-
-      expect(toast.error).toHaveBeenCalledWith("Kit test operation failed", {
-        description: "Test API error",
-        duration: 5000,
-      });
     });
 
     test("should handle API errors silently", () => {
@@ -70,7 +57,6 @@ describe("Kit Data Error Handling - Unit Tests", () => {
 
       expect(result.success).toBe(false);
       expect(console.error).not.toHaveBeenCalled();
-      expect(toast.error).not.toHaveBeenCalled();
     });
 
     test("should handle sample load errors", () => {

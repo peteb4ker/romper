@@ -8,7 +8,6 @@ import {
   HashRouter as Router,
   Routes,
 } from "react-router-dom";
-import { toast } from "sonner";
 
 import AboutDialog from "./components/dialogs/AboutDialog";
 import { useMessageDisplay } from "./components/hooks/shared/useMessageDisplay";
@@ -19,12 +18,6 @@ import { SettingsProvider } from "./utils/SettingsContext";
 import { applyTheme } from "./utils/settingsManager";
 import AboutView from "./views/AboutView";
 import KitsView from "./views/KitsView";
-
-declare global {
-  interface Window {
-    toast: typeof toast;
-  }
-}
 
 const AppContent = () => {
   const messageDisplay = useMessageDisplay();
@@ -81,8 +74,6 @@ root.render(
 );
 
 import { setupRouteHmrHandlers } from "./utils/hmrStateManager";
-
-window.toast = toast;
 
 // HMR route state preservation
 setupRouteHmrHandlers();

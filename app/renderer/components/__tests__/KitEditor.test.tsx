@@ -61,6 +61,7 @@ function createMockLogic(overrides = {}) {
     },
     reloadKit: vi.fn(),
     samples: { 1: [], 2: [], 3: [], 4: [] },
+    scanStatus: { status: "idle" },
     selectedSampleIdx: 0,
     selectedVoice: 1,
     sequencerGridRef: { current: null },

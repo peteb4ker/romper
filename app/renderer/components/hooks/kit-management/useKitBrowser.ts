@@ -56,6 +56,9 @@ export function useKitBrowser({
     isCreatingKit: kitCreation.isCreatingKit,
     // Pass through for backward compatibility
     kits,
+    // Animation state: either newly created or duplicated kit name
+    newlyAnimatedKit:
+      kitCreation.newlyCreatedKit || kitDuplication.newlyDuplicatedKit,
     scrollContainerRef: bankNavigation.scrollContainerRef,
     sdCardWarning: errorHandling.sdCardWarning,
     selectedBank: bankNavigation.selectedBank,

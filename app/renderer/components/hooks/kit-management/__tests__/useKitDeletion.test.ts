@@ -148,11 +148,7 @@ describe("useKitDeletion", () => {
       });
 
       expect(mockDeleteKit).toHaveBeenCalledWith("A5");
-      expect(mockOnMessage).toHaveBeenCalledWith(
-        "Kit A5 deleted.",
-        "info",
-        4000,
-      );
+      // Success feedback is now handled by exit animation, not toast
       expect(mockOnRefreshKits).toHaveBeenCalled();
       expect(result.current.kitToDelete).toBeNull();
       expect(result.current.deleteSummary).toBeNull();
@@ -285,7 +281,7 @@ describe("useKitDeletion", () => {
   });
 
   describe("deleteKitDirect", () => {
-    it("deletes kit and shows message", async () => {
+    it("deletes kit and refreshes", async () => {
       mockDeleteKit.mockResolvedValue(undefined);
 
       const { result } = renderHook(() =>
@@ -300,11 +296,7 @@ describe("useKitDeletion", () => {
       });
 
       expect(mockDeleteKit).toHaveBeenCalledWith("A5");
-      expect(mockOnMessage).toHaveBeenCalledWith(
-        "Kit A5 deleted.",
-        "info",
-        4000,
-      );
+      // Success feedback is now handled by exit animation, not toast
       expect(mockOnRefreshKits).toHaveBeenCalled();
     });
 

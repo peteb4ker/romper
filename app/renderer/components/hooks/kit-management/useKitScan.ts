@@ -1,7 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { useCallback } from "react";
-import { toast } from "sonner";
+import React, { useCallback } from "react";
 
 // --- Utility Functions ---
 import {
@@ -14,6 +13,14 @@ const scanTypeDisplayMap: Record<string, string> = {
   voiceInference: "voice name inference",
   wavAnalysis: "WAV analysis",
 };
+
+export type BulkScanProgress =
+  | { current: number; currentKit: string; status: "scanning"; total: number }
+  | { message: string; status: "complete"; successCount: number }
+  | { message: string; status: "error" }
+  | { status: "idle" };
+
+const BULK_SCAN_COMPLETE_CLEAR_MS = 5000;
 
 export async function fileReader(filePath: string): Promise<ArrayBuffer> {
   if (!window.electronAPI?.readFile) {
@@ -29,27 +36,29 @@ export async function fileReader(filePath: string): Promise<ArrayBuffer> {
 export async function scanAllKits({
   fileReaderImpl = fileReader,
   kits,
+  onProgress,
   onRefreshKits,
   operations,
-  toastImpl = toast,
 }: {
   fileReaderImpl?: typeof fileReader;
   kits: KitWithRelations[];
+  onProgress?: (progress: BulkScanProgress) => void;
   onRefreshKits?: () => void;
   operations?: string[];
-  toastImpl?: typeof toast;
 }) {
   if (!kits || kits.length === 0) {
-    toastImpl.error("Kits are required for scanning");
+    onProgress?.({ message: "No kits to scan", status: "error" });
     return;
   }
 
   const { scanType, scanTypeDisplay } = getScanConfiguration(operations);
 
-  const toastId = toastImpl.loading(
-    `Starting ${scanTypeDisplay} scan of all kits...`,
-    { duration: Infinity },
-  );
+  onProgress?.({
+    current: 0,
+    currentKit: kits[0].name,
+    status: "scanning",
+    total: kits.length,
+  });
 
   try {
     let successCount = 0;
@@ -58,10 +67,12 @@ export async function scanAllKits({
 
     for (let i = 0; i < kits.length; i++) {
       const kitName = kits[i].name;
-      toastImpl.loading(
-        `Scanning kit ${i + 1}/${kits.length}: ${kitName} (${scanTypeDisplay})`,
-        { duration: Infinity, id: toastId },
-      );
+      onProgress?.({
+        current: i + 1,
+        currentKit: kitName,
+        status: "scanning",
+        total: kits.length,
+      });
 
       const result = await processSingleKitScan(
         kitName,
@@ -85,26 +96,20 @@ export async function scanAllKits({
       scanTypeDisplay,
     );
 
-    if (completion.type === "success") {
-      toastImpl.success(completion.message, {
-        duration: completion.duration,
-        id: toastId,
-      });
-    } else {
-      toastImpl.warning(completion.message, {
-        duration: completion.duration,
-        id: toastId,
-      });
-    }
+    onProgress?.({
+      message: completion.message,
+      status: "complete",
+      successCount,
+    });
 
     if (onRefreshKits) {
       onRefreshKits();
     }
   } catch (error) {
-    toastImpl.error(
-      `Scan error: ${error instanceof Error ? error.message : String(error)}`,
-      { duration: 8000, id: toastId },
-    );
+    onProgress?.({
+      message: `Scan error: ${error instanceof Error ? error.message : String(error)}`,
+      status: "error",
+    });
   }
 }
 
@@ -144,16 +149,45 @@ export function useKitScan({
   kits: KitWithRelations[];
   onRefreshKits?: () => void;
 }) {
+  const [bulkScanProgress, setBulkScanProgress] =
+    React.useState<BulkScanProgress>({ status: "idle" });
+  const clearTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(
+    null,
+  );
+
+  // Clean up timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    };
+  }, []);
+
   const handleScanAllKits = useCallback(
-    (operations?: string[]) =>
-      scanAllKits({
+    (operations?: string[]) => {
+      // Clear any existing completion timer
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+
+      return scanAllKits({
         kits,
+        onProgress: (progress) => {
+          setBulkScanProgress(progress);
+
+          // Auto-clear completion/error status after delay
+          if (progress.status === "complete" || progress.status === "error") {
+            clearTimerRef.current = setTimeout(
+              () => setBulkScanProgress({ status: "idle" }),
+              BULK_SCAN_COMPLETE_CLEAR_MS,
+            );
+          }
+        },
         onRefreshKits,
         operations,
-      }),
+      });
+    },
     [kits, onRefreshKits],
   );
-  return { handleScanAllKits };
+
+  return { bulkScanProgress, handleScanAllKits };
 }
 
 // Helper function to generate completion message
@@ -165,15 +199,13 @@ function getCompletionMessage(
 ) {
   if (errorCount === 0) {
     return {
-      duration: 5000,
-      message: `All kits ${scanTypeDisplay} scan completed successfully! ${successCount} kits processed.`,
+      message: `All ${successCount} kits scanned successfully (${scanTypeDisplay}).`,
       type: "success" as const,
     };
   } else {
     const errorSummary = errors.slice(0, 3).join("; ");
     const truncated = errors.length > 3 ? "..." : "";
     return {
-      duration: 8000,
       message: `Scan completed: ${successCount} successful, ${errorCount} failed. ${errorSummary}${truncated}`,
       type: "warning" as const,
     };

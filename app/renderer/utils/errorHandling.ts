@@ -2,40 +2,25 @@ import {
   createErrorHandler,
   getErrorMessage,
 } from "@romper/shared/errorUtils.js";
-import { toast } from "sonner";
 
 /**
- * Extended error handler for renderer that includes toast notifications
+ * Extended error handler for renderer
  */
 export interface RendererErrorHandler {
   /**
-   * Combined log + toast for common error handling pattern
+   * Combined log for common error handling pattern
    */
-  handleError(
-    error: unknown,
-    operation: string,
-    userMessage: string,
-    options?: { duration?: number },
-  ): void;
+  handleError(error: unknown, operation: string, userMessage: string): void;
 
   /**
    * Log error to console with context
    */
   logError(error: unknown, operation: string): void;
-
-  /**
-   * Show error toast notification
-   */
-  showErrorToast(
-    title: string,
-    error: unknown,
-    options?: { duration?: number },
-  ): void;
 }
 
 /**
- * Creates a renderer error handler with toast integration
- * Standardizes the common pattern: console.error + toast.error
+ * Creates a renderer error handler
+ * Logs errors to console — callers handle user-facing feedback inline
  */
 export function createRendererErrorHandler(
   context: string,
@@ -43,35 +28,19 @@ export function createRendererErrorHandler(
   const baseHandler = createErrorHandler(context);
 
   return {
-    handleError(
-      error: unknown,
-      operation: string,
-      userMessage: string,
-      options?: { duration?: number },
-    ): void {
+    handleError(error: unknown, operation: string, _userMessage: string): void {
       this.logError(error, operation);
-      this.showErrorToast(userMessage, error, options);
     },
 
     logError(error: unknown, operation: string): void {
       baseHandler.logError(error, operation);
-    },
-
-    showErrorToast(
-      title: string,
-      error: unknown,
-      options?: { duration?: number },
-    ): void {
-      toast.error(title, {
-        description: baseHandler.formatErrorForUser(error),
-        duration: options?.duration ?? 5000,
-      });
     },
   };
 }
 
 /**
  * Common error handling patterns for renderer hooks
+ * Log errors to console — UI feedback is handled inline by callers
  */
 export const ErrorPatterns = {
   /**
@@ -79,10 +48,6 @@ export const ErrorPatterns = {
    */
   apiOperation: (error: unknown, operation: string) => {
     console.error(`Failed to ${operation}:`, getErrorMessage(error));
-    toast.error(`Operation failed`, {
-      description: error instanceof Error ? error.message : String(error),
-      duration: 5000,
-    });
   },
 
   /**
@@ -90,10 +55,6 @@ export const ErrorPatterns = {
    */
   kitOperation: (error: unknown, operation: string) => {
     console.error(`Failed to ${operation}:`, getErrorMessage(error));
-    toast.error(`Kit ${operation} failed`, {
-      description: error instanceof Error ? error.message : String(error),
-      duration: 5000,
-    });
   },
 
   /**
@@ -101,9 +62,5 @@ export const ErrorPatterns = {
    */
   sampleOperation: (error: unknown, operation: string) => {
     console.error(`Failed to ${operation}:`, getErrorMessage(error));
-    toast.error(`Failed to ${operation}`, {
-      description: error instanceof Error ? error.message : String(error),
-      duration: 5000,
-    });
   },
 };

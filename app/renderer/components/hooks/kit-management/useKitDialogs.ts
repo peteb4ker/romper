@@ -10,7 +10,7 @@ export interface UseKitDialogsOptions {
  * Extracted from KitBrowser to reduce component complexity
  */
 export function useKitDialogs({
-  onMessage,
+  onMessage: _onMessage,
   setLocalStorePath,
 }: UseKitDialogsOptions) {
   // Local Store Wizard state
@@ -29,13 +29,10 @@ export function useKitDialogs({
     setShowLocalStoreWizard(false);
   }, []);
 
-  // Handler for successful local store setup
+  // Handler for successful local store setup — wizard closing is implicit success feedback
   const handleLocalStoreSuccess = useCallback(() => {
     setShowLocalStoreWizard(false);
-    if (onMessage) {
-      onMessage("Local store initialized successfully!", "success", 5000);
-    }
-  }, [onMessage]);
+  }, []);
 
   // Handler to show validation dialog
   const handleShowValidationDialog = useCallback(() => {

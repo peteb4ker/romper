@@ -57,12 +57,8 @@ describe("useKitDialogs", () => {
         result.current.handleLocalStoreSuccess();
       });
 
+      // Wizard closing is implicit success feedback — no toast needed
       expect(result.current.showLocalStoreWizard).toBe(false);
-      expect(mockOnMessage).toHaveBeenCalledWith(
-        "Local store initialized successfully!",
-        "success",
-        5000,
-      );
     });
 
     it("provides correct props for LocalStoreWizardUI", () => {

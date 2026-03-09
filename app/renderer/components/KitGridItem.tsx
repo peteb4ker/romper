@@ -20,6 +20,7 @@ import {
 } from "./shared/kitItemUtils";
 
 interface KitGridItemProps extends BaseKitItemProps {
+  isNew?: boolean;
   onDeleteKit?: (kitName: string) => Promise<void>;
   onDuplicateKit?: (
     source: string,
@@ -29,6 +30,8 @@ interface KitGridItemProps extends BaseKitItemProps {
     kitName: string,
   ) => Promise<{ locked: boolean; sampleCount: number } | null>;
 }
+
+const EXIT_ANIMATION_MS = 250;
 
 const stripExtension = (filename: string) => filename.replace(/\.[^.]+$/, "");
 
@@ -192,6 +195,7 @@ const KitGridItem = React.memo(
     (
       {
         isFavorite: isFavoriteProp,
+        isNew,
         isSelected,
         isValid,
         kit,
@@ -212,6 +216,10 @@ const KitGridItem = React.memo(
       const { iconLabel, iconType } = useKitItem(voiceNames);
       const icon = <KitIconRenderer iconType={iconType} size="md" />;
       const isFavorite = isFavoriteProp ?? kitData?.is_favorite ?? false;
+
+      // Animation states
+      const [isExiting, setIsExiting] = useState(false);
+      const [isPulsing, setIsPulsing] = useState(false);
 
       // Delete popover state
       const deleteButtonRef = useRef<HTMLButtonElement>(null);
@@ -241,10 +249,15 @@ const KitGridItem = React.memo(
         if (!onDeleteKit) return;
         setIsDeleting(true);
         try {
+          setShowDeletePopover(false);
+          setIsExiting(true);
+          await new Promise<void>((resolve) => {
+            setTimeout(resolve, EXIT_ANIMATION_MS);
+          });
           await onDeleteKit(kit);
         } finally {
           setIsDeleting(false);
-          setShowDeletePopover(false);
+          setIsExiting(false);
         }
       };
 
@@ -282,6 +295,13 @@ const KitGridItem = React.memo(
       const canDelete =
         isValid && onDeleteKit && kitData?.editable && !kitData?.locked;
 
+      // Build animation classes
+      const animationClasses = isExiting
+        ? "animate-kit-exit"
+        : isNew
+          ? "animate-kit-enter animate-border-flash"
+          : "";
+
       return (
         <div
           aria-label={ariaLabel}
@@ -292,7 +312,7 @@ const KitGridItem = React.memo(
               : kitData?.modified_since_sync
                 ? "border-accent-warning/40 bg-accent-warning/5"
                 : "border-border-subtle"
-          } cursor-pointer hover:bg-surface-2 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary`}
+          } cursor-pointer hover:bg-surface-2 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${animationClasses}`}
           data-kit={kit}
           data-testid={`kit-item-${kit}`}
           onClick={onSelect}
@@ -386,6 +406,11 @@ const KitGridItem = React.memo(
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
+                    // Pulse on favorite add (not remove)
+                    if (!isFavorite) {
+                      setIsPulsing(true);
+                      setTimeout(() => setIsPulsing(false), 200);
+                    }
                     onToggleFavorite(kit);
                   }}
                   title={
@@ -393,7 +418,7 @@ const KitGridItem = React.memo(
                   }
                 >
                   <BookmarkSimple
-                    className={isFavorite ? "" : "opacity-30"}
+                    className={`${isFavorite ? "" : "opacity-30"} ${isPulsing ? "animate-favorite-pulse" : ""}`}
                     size={17}
                     weight="fill"
                   />

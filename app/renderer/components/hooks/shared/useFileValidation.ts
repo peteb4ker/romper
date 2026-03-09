@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { toast } from "sonner";
 
 // Extended File interface for Electron context where dropped files may have a path property
 interface ElectronFile extends File {
@@ -61,11 +60,6 @@ export function useFileValidation() {
           "Cannot assign sample due to critical format issues:",
           errorMessage,
         );
-
-        toast.error("Cannot assign sample", {
-          description: errorMessage,
-          duration: 5000,
-        });
         return false;
       }
 
@@ -76,11 +70,6 @@ export function useFileValidation() {
         "Sample has format issues that will require conversion during SD card sync:",
         warningMessage,
       );
-
-      toast.warning("Sample format warning", {
-        description: `${warningMessage} The sample will be converted during SD card sync.`,
-        duration: 7000,
-      });
       return true;
     },
     [],

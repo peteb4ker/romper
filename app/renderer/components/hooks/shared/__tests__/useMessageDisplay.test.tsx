@@ -1,9 +1,4 @@
-vi.mock("sonner", () => ({
-  toast: vi.fn(),
-}));
-
 import { act, renderHook } from "@testing-library/react";
-import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useMessageDisplay } from "../useMessageDisplay";
@@ -12,6 +7,7 @@ describe("useMessageDisplay", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+
   it("returns the correct API", () => {
     const { result } = renderHook(() => useMessageDisplay());
     expect(typeof result.current.showMessage).toBe("function");
@@ -20,15 +16,24 @@ describe("useMessageDisplay", () => {
     expect(Array.isArray(result.current.messages)).toBe(true);
   });
 
-  it("calls toast with correct arguments", () => {
+  it("logs messages to console", () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation();
     const { result } = renderHook(() => useMessageDisplay());
     act(() => {
       result.current.showMessage("Test info", "info", 1234);
     });
-    expect(toast).toHaveBeenCalledWith(
-      "Test info",
-      expect.objectContaining({ duration: 1234 }),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith("[message] Test info");
+    consoleSpy.mockRestore();
+  });
+
+  it("logs error messages to console.error", () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
+    const { result } = renderHook(() => useMessageDisplay());
+    act(() => {
+      result.current.showMessage("Test error", "error");
+    });
+    expect(consoleErrorSpy).toHaveBeenCalledWith("[message] Test error");
+    consoleErrorSpy.mockRestore();
   });
 
   it("dismissMessage and clearMessages are callable and do nothing", () => {

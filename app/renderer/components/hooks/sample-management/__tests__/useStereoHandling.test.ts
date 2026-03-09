@@ -3,18 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Sample, useStereoHandling, Voice } from "../useStereoHandling";
 
-// Mock dependencies
-vi.mock("sonner", () => ({
-  toast: {
-    error: vi.fn(),
-    success: vi.fn(),
-    warning: vi.fn(),
-  },
-}));
-
-import { toast } from "sonner";
-const mockToast = vi.mocked(toast);
-
 describe("useStereoHandling", () => {
   // Mock voice data
   const mockVoices: Voice[] = [
@@ -272,14 +260,14 @@ describe("useStereoHandling", () => {
       const { result } = renderHook(() => useStereoHandling());
       const mockOnVoiceUpdate = vi.fn().mockResolvedValue(undefined);
 
-      const success = await result.current.linkVoicesForStereo(
+      const opResult = await result.current.linkVoicesForStereo(
         1,
         mockVoices,
         [],
         mockOnVoiceUpdate,
       );
 
-      expect(success).toBe(true);
+      expect(opResult.success).toBe(true);
       expect(mockOnVoiceUpdate).toHaveBeenCalledWith(1, { stereo_mode: true });
     });
 
@@ -287,19 +275,18 @@ describe("useStereoHandling", () => {
       const { result } = renderHook(() => useStereoHandling());
       const mockOnVoiceUpdate = vi.fn();
 
-      const success = await result.current.linkVoicesForStereo(
+      const opResult = await result.current.linkVoicesForStereo(
         4,
         mockVoices,
         [],
         mockOnVoiceUpdate,
       );
 
-      expect(success).toBe(false);
+      expect(opResult.success).toBe(false);
+      expect(opResult.error).toBe(
+        "Voice 4 cannot be linked - no voice 5 available",
+      );
       expect(mockOnVoiceUpdate).not.toHaveBeenCalled();
-      expect(mockToast.error).toHaveBeenCalledWith("Voice linking failed", {
-        description: "Voice 4 cannot be linked - no voice 5 available",
-        duration: 5000,
-      });
     });
   });
 
@@ -312,14 +299,14 @@ describe("useStereoHandling", () => {
       ];
       const mockOnVoiceUpdate = vi.fn().mockResolvedValue(undefined);
 
-      const success = await result.current.unlinkVoices(
+      const opResult = await result.current.unlinkVoices(
         1,
         stereoVoices,
         [],
         mockOnVoiceUpdate,
       );
 
-      expect(success).toBe(true);
+      expect(opResult.success).toBe(true);
       expect(mockOnVoiceUpdate).toHaveBeenCalledWith(1, { stereo_mode: false });
     });
 
@@ -327,19 +314,16 @@ describe("useStereoHandling", () => {
       const { result } = renderHook(() => useStereoHandling());
       const mockOnVoiceUpdate = vi.fn();
 
-      const success = await result.current.unlinkVoices(
+      const opResult = await result.current.unlinkVoices(
         1,
         mockVoices,
         [],
         mockOnVoiceUpdate,
       );
 
-      expect(success).toBe(false);
+      expect(opResult.success).toBe(false);
+      expect(opResult.error).toBe("Voice 1 is not in stereo mode");
       expect(mockOnVoiceUpdate).not.toHaveBeenCalled();
-      expect(mockToast.warning).toHaveBeenCalledWith("Voice not linked", {
-        description: "Voice 1 is not in stereo mode",
-        duration: 5000,
-      });
     });
 
     it("should prevent unlinking voice with stereo samples", async () => {
@@ -351,23 +335,18 @@ describe("useStereoHandling", () => {
       const stereoSamples = [{ ...mockSamples[0], is_stereo: true }];
       const mockOnVoiceUpdate = vi.fn();
 
-      const success = await result.current.unlinkVoices(
+      const opResult = await result.current.unlinkVoices(
         1,
         stereoVoices,
         stereoSamples,
         mockOnVoiceUpdate,
       );
 
-      expect(success).toBe(false);
-      expect(mockOnVoiceUpdate).not.toHaveBeenCalled();
-      expect(mockToast.warning).toHaveBeenCalledWith(
-        "Cannot unlink voice with stereo samples",
-        {
-          description:
-            "Remove stereo samples from voice 1 first, or convert them to mono",
-          duration: 7000,
-        },
+      expect(opResult.success).toBe(false);
+      expect(opResult.error).toBe(
+        "Remove stereo samples from voice 1 first, or convert them to mono",
       );
+      expect(mockOnVoiceUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -427,18 +406,15 @@ describe("useStereoHandling", () => {
         .fn()
         .mockRejectedValue(new Error("Update failed"));
 
-      const success = await result.current.linkVoicesForStereo(
+      const opResult = await result.current.linkVoicesForStereo(
         1,
         mockVoices,
         [],
         mockOnVoiceUpdate,
       );
 
-      expect(success).toBe(false);
-      expect(mockToast.error).toHaveBeenCalledWith("Voice linking failed", {
-        description: "Failed to link voices. Please try again.",
-        duration: 5000,
-      });
+      expect(opResult.success).toBe(false);
+      expect(opResult.error).toBe("Failed to link voices. Please try again.");
     });
 
     it("should handle unlinkVoices errors gracefully", async () => {
@@ -451,18 +427,15 @@ describe("useStereoHandling", () => {
         .fn()
         .mockRejectedValue(new Error("Update failed"));
 
-      const success = await result.current.unlinkVoices(
+      const opResult = await result.current.unlinkVoices(
         1,
         stereoVoices,
         [],
         mockOnVoiceUpdate,
       );
 
-      expect(success).toBe(false);
-      expect(mockToast.error).toHaveBeenCalledWith("Voice unlinking failed", {
-        description: "Failed to unlink voices. Please try again.",
-        duration: 5000,
-      });
+      expect(opResult.success).toBe(false);
+      expect(opResult.error).toBe("Failed to unlink voices. Please try again.");
     });
 
     it("should handle missing voice data in validateVoiceAssignment", () => {
@@ -646,14 +619,14 @@ describe("useStereoHandling", () => {
     it("should handle linkVoicesForStereo without onVoiceUpdate", async () => {
       const { result } = renderHook(() => useStereoHandling());
 
-      const success = await result.current.linkVoicesForStereo(
+      const opResult = await result.current.linkVoicesForStereo(
         1,
         mockVoices,
         [],
         undefined, // No callback
       );
 
-      expect(success).toBe(true);
+      expect(opResult.success).toBe(true);
     });
 
     it("should handle unlinkVoices without onVoiceUpdate", async () => {
@@ -663,14 +636,14 @@ describe("useStereoHandling", () => {
         ...mockVoices.slice(1),
       ];
 
-      const success = await result.current.unlinkVoices(
+      const opResult = await result.current.unlinkVoices(
         1,
         stereoVoices,
         [],
         undefined, // No callback
       );
 
-      expect(success).toBe(true);
+      expect(opResult.success).toBe(true);
     });
   });
 });

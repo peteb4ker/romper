@@ -5,13 +5,6 @@ import { ErrorPatterns } from "../errorHandling";
 // Mock console.error to avoid spam in test output
 const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-// Mock toast to avoid actual toast notifications during tests
-vi.mock("sonner", () => ({
-  toast: {
-    error: vi.fn(),
-  },
-}));
-
 describe("ErrorPatterns", () => {
   describe("apiOperation", () => {
     it("should handle errors without throwing", () => {

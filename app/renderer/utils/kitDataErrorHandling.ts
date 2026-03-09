@@ -1,5 +1,4 @@
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
-import { toast } from "sonner";
 
 import type { OperationResult } from "../components/hooks/sample-management/types";
 
@@ -32,13 +31,6 @@ export class KitDataErrorHandler {
 
     if (!options.silent) {
       console.error(`[${this.context}] ${fullMessage}`, error);
-    }
-
-    if (options.showToast) {
-      toast.error(`Kit ${operation} failed`, {
-        description: errorMessage,
-        duration: 5000,
-      });
     }
 
     return {

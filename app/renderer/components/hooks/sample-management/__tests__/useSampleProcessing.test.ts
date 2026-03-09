@@ -3,14 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useSampleProcessing } from "../useSampleProcessing";
 
-// Mock dependencies
-vi.mock("sonner", () => ({
-  toast: {
-    error: vi.fn(),
-    warning: vi.fn(),
-  },
-}));
-
 vi.mock("../useStereoHandling", () => ({
   useStereoHandling: vi.fn(),
 }));
@@ -108,8 +100,7 @@ describe("useSampleProcessing", () => {
 
       expect(samples).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Failed to get samples:",
-        "API Error",
+        expect.stringContaining("Failed to get samples"),
       );
 
       consoleErrorSpy.mockRestore();
@@ -130,9 +121,9 @@ describe("useSampleProcessing", () => {
   });
 
   describe("isDuplicateSample", () => {
-    it("should detect duplicate sample and show toast", async () => {
+    it("should detect duplicate sample and log warning", async () => {
       const { result } = renderHook(() => useSampleProcessing(mockOptions));
-      const { toast } = await import("sonner");
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
 
       const allSamples = [
         { source_path: "/path/existing.wav", voice_number: 1 },
@@ -145,18 +136,15 @@ describe("useSampleProcessing", () => {
       );
 
       expect(isDupe).toBe(true);
-      expect(vi.mocked(toast.warning)).toHaveBeenCalledWith(
-        "Duplicate sample",
-        {
-          description: "Sample already exists in voice 1",
-          duration: 5000,
-        },
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Duplicate sample"),
       );
+
+      consoleWarnSpy.mockRestore();
     });
 
     it("should return false for non-duplicate sample", async () => {
       const { result } = renderHook(() => useSampleProcessing(mockOptions));
-      const { toast } = await import("sonner");
 
       const allSamples = [
         { source_path: "/path/existing.wav", voice_number: 1 },
@@ -168,7 +156,6 @@ describe("useSampleProcessing", () => {
       );
 
       expect(isDupe).toBe(false);
-      expect(vi.mocked(toast.warning)).not.toHaveBeenCalled();
     });
 
     it("should only check samples for current voice", async () => {
@@ -255,7 +242,7 @@ describe("useSampleProcessing", () => {
   });
 
   describe("executeAssignment", () => {
-    it("should show error when no available slots", async () => {
+    it("should log warning when no available slots", async () => {
       const fullSamplesOptions = {
         ...mockOptions,
         samples: Array(12).fill("occupied.wav"), // All slots filled
@@ -263,19 +250,17 @@ describe("useSampleProcessing", () => {
       const { result } = renderHook(() =>
         useSampleProcessing(fullSamplesOptions),
       );
-      const { toast } = await import("sonner");
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
 
       await result.current.executeAssignment("/external/sample.wav", [], 0, {
         replaceExisting: false,
       });
 
-      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
-        "No available slots",
-        {
-          description: "Cannot add sample - all slots are filled",
-          duration: 5000,
-        },
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "No available slots - all slots are filled",
       );
+
+      consoleWarnSpy.mockRestore();
     });
 
     it("should call onSampleReplace when replacing existing sample", async () => {
@@ -320,7 +305,6 @@ describe("useSampleProcessing", () => {
 
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
       const { result } = renderHook(() => useSampleProcessing(mockOptions));
-      const { toast } = await import("sonner");
 
       await result.current.executeAssignment("/path/new.wav", [], 1, {
         replaceExisting: false,
@@ -328,14 +312,7 @@ describe("useSampleProcessing", () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to assign sample:",
-        "Assignment failed",
-      );
-      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
-        "Failed to assign sample",
-        {
-          description: "Assignment failed",
-          duration: 5000,
-        },
+        expect.any(Error),
       );
 
       consoleErrorSpy.mockRestore();
@@ -347,18 +324,14 @@ describe("useSampleProcessing", () => {
 
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
       const { result } = renderHook(() => useSampleProcessing(mockOptions));
-      const { toast } = await import("sonner");
 
       await result.current.executeAssignment("/path/new.wav", [], 1, {
         replaceExisting: false,
       });
 
-      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
-        "Failed to assign sample",
-        {
-          description: "String error",
-          duration: 5000,
-        },
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Failed to assign sample:",
+        "String error",
       );
 
       consoleErrorSpy.mockRestore();

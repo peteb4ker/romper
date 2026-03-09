@@ -144,7 +144,6 @@
     "react-dropzone": "^14.3.8",
     "react-router-dom": "^7.12.0",
     "react-window": "^1.8.11",
-    "sonner": "^2.0.5",
     "unzipper": "^0.12.3",
     "wavesurfer.js": "^7.9.5"
   }

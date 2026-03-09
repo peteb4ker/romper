@@ -1,9 +1,6 @@
 import type { Sample } from "@romper/shared/db/schema.js";
 
 import { useCallback } from "react";
-import { toast } from "sonner";
-
-import { ErrorPatterns } from "../../../utils/errorHandling";
 
 export interface UseSampleProcessingOptions {
   kitName: string;
@@ -40,7 +37,7 @@ export function useSampleProcessing({
 
     const result = await window.electronAPI.getAllSamplesForKit(kitName);
     if (!result.success) {
-      ErrorPatterns.apiOperation(result.error, "get samples");
+      console.error(`Failed to get samples: ${result.error}`);
       return null;
     }
 
@@ -58,10 +55,9 @@ export function useSampleProcessing({
       );
 
       if (isDuplicate) {
-        toast.warning("Duplicate sample", {
-          description: `Sample already exists in voice ${voice}`,
-          duration: 5000,
-        });
+        console.warn(
+          `Duplicate sample: ${filePath} already exists in voice ${voice}`,
+        );
       }
 
       return isDuplicate;
@@ -99,10 +95,7 @@ export function useSampleProcessing({
       const targetSlot = calculateTargetSlot(filePath, -1, droppedSlotNumber);
 
       if (targetSlot < 0) {
-        toast.error("No available slots", {
-          description: "Cannot add sample - all slots are filled",
-          duration: 5000,
-        });
+        console.warn("No available slots - all slots are filled");
         return;
       }
 
@@ -113,11 +106,7 @@ export function useSampleProcessing({
           await onSampleAdd(voice, targetSlot, filePath);
         }
       } catch (error) {
-        ErrorPatterns.sampleOperation(error, "assign sample");
-        toast.error("Failed to assign sample", {
-          description: error instanceof Error ? error.message : String(error),
-          duration: 5000,
-        });
+        console.error("Failed to assign sample:", error);
       }
     },
     [samples, calculateTargetSlot, voice, onSampleAdd, onSampleReplace],

@@ -10,6 +10,7 @@ import KitGridItem from "./KitGridItem";
 interface KitGridCardProps {
   focusedIdx: null | number;
   getKitFavoriteState?: (kitName: string) => boolean;
+  isNew?: boolean;
   kit: Kit;
   kitData?: KitWithRelations[] | null;
   kitsToDisplay: Kit[];
@@ -41,6 +42,7 @@ function hasSearchSampleMatches(kitDataItem: KitWithRelations | null): boolean {
 export const KitGridCard: React.FC<KitGridCardProps> = ({
   focusedIdx,
   getKitFavoriteState,
+  isNew,
   kit,
   kitData,
   kitsToDisplay,
@@ -83,6 +85,7 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
         data-kit={kit.name}
         data-testid={`kit-item-${kit.name}`}
         isFavorite={isFavorite}
+        isNew={isNew}
         isSelected={isSelected}
         isValid={isValid}
         kit={kit.name}

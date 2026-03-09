@@ -200,7 +200,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     };
 
     // Use the new useKitScan hook for scanning logic
-    const { handleScanAllKits } = useKitScan({
+    const { bulkScanProgress, handleScanAllKits } = useKitScan({
       kits,
       onRefreshKits: handleRefreshKits,
     });
@@ -216,6 +216,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
         ref={scrollContainerRef}
       >
         <KitBrowserHeader
+          bulkScanProgress={bulkScanProgress}
           favoritesCount={favoritesCount}
           isSearching={props.isSearching}
           modifiedCount={modifiedCount}
@@ -248,6 +249,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             isFiltered={isFiltered}
             kitData={kits}
             kits={kits}
+            newlyAnimatedKit={logic.newlyAnimatedKit}
             onBankFocus={handleBankFocus}
             onCreateKitInBank={handleCreateKitInBank}
             onDeleteKit={deletion.deleteKitDirect}

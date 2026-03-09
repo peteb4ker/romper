@@ -1025,7 +1025,10 @@ describe("KitGridItem", () => {
       const confirmBtn = await screen.findByTestId("confirm-delete-button");
       fireEvent.click(confirmBtn);
 
-      expect(editableProps.onDeleteKit).toHaveBeenCalledWith("A0");
+      // Exit animation delay (250ms) before onDeleteKit is called
+      await vi.waitFor(() => {
+        expect(editableProps.onDeleteKit).toHaveBeenCalledWith("A0");
+      });
     });
 
     it("closes popover after successful deletion", async () => {
@@ -1035,7 +1038,7 @@ describe("KitGridItem", () => {
       const confirmBtn = await screen.findByTestId("confirm-delete-button");
       fireEvent.click(confirmBtn);
 
-      // Wait for the deletion promise to resolve
+      // Popover closes immediately, then exit animation plays
       await vi.waitFor(() => {
         expect(
           screen.queryByTestId("confirm-delete-button"),

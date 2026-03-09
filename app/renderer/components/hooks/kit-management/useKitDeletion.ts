@@ -48,7 +48,7 @@ export function useKitDeletion({
     setIsDeleting(true);
     try {
       await deleteKit(kitToDelete);
-      onMessage?.(`Kit ${kitToDelete} deleted.`, "info", 4000);
+      // Success feedback handled by exit animation — no toast needed
       onRefreshKits?.();
     } catch (err) {
       onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);
@@ -87,7 +87,7 @@ export function useKitDeletion({
   const deleteKitDirect = async (kitName: string): Promise<void> => {
     try {
       await deleteKit(kitName);
-      onMessage?.(`Kit ${kitName} deleted.`, "info", 4000);
+      // Success feedback handled by exit animation — no toast needed
       onRefreshKits?.();
     } catch (err) {
       onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);

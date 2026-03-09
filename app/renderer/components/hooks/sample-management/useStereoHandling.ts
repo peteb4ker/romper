@@ -1,9 +1,6 @@
 import type { Sample, Voice } from "@romper/shared/db/schema";
 
 import { useCallback } from "react";
-import { toast } from "sonner";
-
-import { ErrorPatterns } from "../../../utils/errorHandling";
 
 // Sample assignment result
 export interface SampleAssignmentResult {
@@ -19,6 +16,12 @@ export interface VoiceLinkingResult {
   canLink: boolean;
   linkedVoice?: number; // The voice that will be linked
   reason?: string;
+}
+
+// Voice operation result (returned by link/unlink operations)
+export interface VoiceOperationResult {
+  error?: string;
+  success: boolean;
 }
 
 // Voice validation result
@@ -274,6 +277,7 @@ export function useStereoHandling() {
 
   /**
    * Link two voices for stereo operation
+   * Returns { success, error? } instead of showing toasts
    */
   const linkVoicesForStereo = useCallback(
     async (
@@ -284,15 +288,11 @@ export function useStereoHandling() {
         voiceNumber: number,
         updates: Partial<Voice>,
       ) => Promise<void>,
-    ): Promise<boolean> => {
+    ): Promise<VoiceOperationResult> => {
       const linkingResult = canLinkVoices(primaryVoice, voices, samples);
 
       if (!linkingResult.canLink) {
-        toast.error("Voice linking failed", {
-          description: linkingResult.reason,
-          duration: 5000,
-        });
-        return false;
+        return { error: linkingResult.reason, success: false };
       }
 
       try {
@@ -301,14 +301,13 @@ export function useStereoHandling() {
           await onVoiceUpdate(primaryVoice, { stereo_mode: true });
         }
 
-        return true;
+        return { success: true };
       } catch (error) {
-        ErrorPatterns.sampleOperation(error, "link voices for stereo");
-        toast.error("Voice linking failed", {
-          description: "Failed to link voices. Please try again.",
-          duration: 5000,
-        });
-        return false;
+        console.error("Failed to link voices for stereo:", error);
+        return {
+          error: "Failed to link voices. Please try again.",
+          success: false,
+        };
       }
     },
     [canLinkVoices],
@@ -316,6 +315,7 @@ export function useStereoHandling() {
 
   /**
    * Unlink voices (convert stereo voice back to mono)
+   * Returns { success, error? } instead of showing toasts
    */
   const unlinkVoices = useCallback(
     async (
@@ -326,15 +326,14 @@ export function useStereoHandling() {
         voiceNumber: number,
         updates: Partial<Voice>,
       ) => Promise<void>,
-    ): Promise<boolean> => {
+    ): Promise<VoiceOperationResult> => {
       const voiceData = voices.find((v) => v.voice_number === primaryVoice);
 
       if (!voiceData?.stereo_mode) {
-        toast.warning("Voice not linked", {
-          description: `Voice ${primaryVoice} is not in stereo mode`,
-          duration: 5000,
-        });
-        return false;
+        return {
+          error: `Voice ${primaryVoice} is not in stereo mode`,
+          success: false,
+        };
       }
 
       // Check if voice has stereo samples
@@ -343,11 +342,10 @@ export function useStereoHandling() {
       );
 
       if (stereoSamples.length > 0) {
-        toast.warning("Cannot unlink voice with stereo samples", {
-          description: `Remove stereo samples from voice ${primaryVoice} first, or convert them to mono`,
-          duration: 7000,
-        });
-        return false;
+        return {
+          error: `Remove stereo samples from voice ${primaryVoice} first, or convert them to mono`,
+          success: false,
+        };
       }
 
       try {
@@ -356,14 +354,13 @@ export function useStereoHandling() {
           await onVoiceUpdate(primaryVoice, { stereo_mode: false });
         }
 
-        return true;
+        return { success: true };
       } catch (error) {
-        ErrorPatterns.sampleOperation(error, "unlink voices");
-        toast.error("Voice unlinking failed", {
-          description: "Failed to unlink voices. Please try again.",
-          duration: 5000,
-        });
-        return false;
+        console.error("Failed to unlink voices:", error);
+        return {
+          error: "Failed to unlink voices. Please try again.",
+          success: false,
+        };
       }
     },
     [],

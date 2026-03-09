@@ -134,15 +134,33 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
   position,
 }) => {
   const popoverRef = React.useRef<HTMLDivElement>(null);
+  const [adjustedPos, setAdjustedPos] = React.useState(position);
 
   usePopoverDismiss(popoverRef, onClose);
+
+  React.useEffect(() => {
+    const el = popoverRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const margin = 8;
+    let { x, y } = position;
+    if (rect.bottom > window.innerHeight - margin) {
+      y = window.innerHeight - rect.height - margin;
+    }
+    if (rect.right > window.innerWidth - margin) {
+      x = window.innerWidth - rect.width - margin;
+    }
+    if (x !== position.x || y !== position.y) {
+      setAdjustedPos({ x, y });
+    }
+  }, [position]);
 
   return (
     <div
       className="fixed z-50 bg-surface-2 border border-border-strong rounded-lg shadow-lg py-1 min-w-[80px]"
       data-testid="condition-popover"
       ref={popoverRef}
-      style={{ left: position.x, top: position.y }}
+      style={{ left: adjustedPos.x, top: adjustedPos.y }}
     >
       {TRIGGER_CONDITIONS.map((cond) => {
         const isActive =

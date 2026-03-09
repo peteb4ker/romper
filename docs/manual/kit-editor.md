@@ -181,6 +181,29 @@ When two voices are configured for stereo playback (e.g., Voices 1+2 or Voices 3
 
 Sequencer patterns, trigger conditions, BPM, and sample modes are all saved per-kit in the database. Your patterns persist across sessions. Voice mutes are session-only.
 
+#### Example: Building a Pattern with the C0 Factory Kit
+
+This example uses the factory default **C0** kit to demonstrate steps, trigger conditions, sample selection modes, and volume controls working together. Try recreating this pattern and pressing play to hear how it sounds.
+
+![Step sequencer example pattern]({{ site.baseurl }}/images/manual/step-sequencer-example.png)
+
+Here's what's programmed in each voice:
+
+- **Voice 1 (Kick)** -- A single hit on step 1 with a **3:4** trigger condition, so it only fires on the 3rd of every 4 cycles. Sample mode is set to **Rnd** (random) to vary which kick sample plays each time.
+- **Voice 2 (Hi-Hat)** -- A busy pattern with most steps active (steps 2--7 and 9--16), creating a driving hi-hat rhythm. No trigger conditions, so it plays every cycle. Sample mode is **Rnd** for subtle variation between hits.
+- **Voice 3 (Snare)** -- Two hits using different trigger conditions: step 2 with **2:4** (fires on the 2nd cycle) and step 9 with **4:4** (fires only on the 4th cycle). This creates a snare pattern that evolves over 4 bars. Sample mode is **Rnd**.
+- **Voice 4 (Clap)** -- A single hit on step 2 with a **1:4** condition, so it only sounds on the 1st of every 4 cycles. Sample mode is **Rnd**.
+
+**What to listen for**: Because each voice uses different trigger conditions across a 4-cycle span, the pattern evolves over 4 bars before repeating. The kick appears only on bar 3, the snare shifts between bars 2 and 4, and the clap anchors bar 1 -- all while the hi-hat drives steadily underneath. Watch the **cycle counter** next to the BPM to follow which bar you're on.
+
+**To recreate this pattern:**
+
+1. Open the **C0** kit and press `S` to show the sequencer
+2. Click steps to activate them in each row (refer to the screenshot above)
+3. Right-click each step that needs a condition and select the appropriate **A:B** value
+4. Click the **sample mode** button on each row until it shows the shuffle icon (**Rnd**)
+5. Press **Play** and listen to the pattern evolve over 4 cycles
+
 #### Sequencer Keyboard Shortcuts
 
 | Action | Shortcut |

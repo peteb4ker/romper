@@ -1,3 +1,4 @@
+import { XIcon } from "@phosphor-icons/react";
 import React from "react";
 
 interface UnscannedKitPromptProps {
@@ -12,31 +13,27 @@ const UnscannedKitPrompt: React.FC<UnscannedKitPromptProps> = ({
   onScan,
 }) => {
   return (
-    <div className="p-4 mb-4 border border-accent-warning bg-accent-warning/15 rounded-md">
-      <div className="flex flex-col gap-2">
-        <h3 className="font-bold text-accent-warning">Kit needs scanning</h3>
-        <p className="text-sm text-accent-warning">
-          The kit <span className="font-mono font-bold">{kitName}</span> has not
-          been fully scanned. Scanning helps infer voice types, analyze WAV
-          files, and extract artist metadata.
-        </p>
-        <div className="flex gap-2 mt-2">
-          <button
-            className="px-3 py-1 text-sm bg-accent-warning hover:bg-accent-warning/80 text-white rounded-md shadow"
-            data-testid="unscanned-scan-button"
-            onClick={onScan}
-          >
-            Scan Now
-          </button>
-          <button
-            className="px-3 py-1 text-sm bg-surface-3 hover:bg-surface-4 text-text-secondary rounded-md"
-            data-testid="unscanned-dismiss-button"
-            onClick={onDismiss}
-          >
-            Dismiss
-          </button>
-        </div>
-      </div>
+    <div className="flex items-center gap-3 px-3 py-1.5 mb-2 border border-accent-warning/30 bg-accent-warning/10 rounded-md text-sm">
+      <span className="text-text-secondary">
+        {"Kit "}
+        <span className="font-mono font-bold text-text-primary">{kitName}</span>
+        {" hasn't been scanned yet"}
+      </span>
+      <button
+        className="px-2 py-0.5 text-xs bg-accent-warning hover:bg-accent-warning/80 text-white rounded font-semibold"
+        data-testid="unscanned-scan-button"
+        onClick={onScan}
+      >
+        Scan Now
+      </button>
+      <button
+        className="p-0.5 text-text-tertiary hover:text-text-primary ml-auto"
+        data-testid="unscanned-dismiss-button"
+        onClick={onDismiss}
+        title="Dismiss"
+      >
+        <XIcon size={14} />
+      </button>
     </div>
   );
 };

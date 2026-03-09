@@ -25,10 +25,6 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
     try {
       await duplicateKit(duplicateKitSource, duplicateKitDest);
 
-      // Note: No need to rescan duplicated kits since they use reference-only
-      // sample management. All sample metadata is already copied correctly
-      // by the copyKit operation in the database.
-
       const kitNameToScrollTo = duplicateKitDest;
       setDuplicateKitSource(null);
       setDuplicateKitDest("");
@@ -38,18 +34,30 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
     }
   };
 
+  const duplicateKitDirect = async (
+    source: string,
+    dest: string,
+  ): Promise<{ error?: string }> => {
+    if (!validateKitSlot(dest)) {
+      return { error: "Invalid destination slot. Use format A0-Z99." };
+    }
+    try {
+      await duplicateKit(source, dest);
+      if (onRefreshKits) onRefreshKits(dest);
+      return {};
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : String(err) };
+    }
+  };
+
   return {
     duplicateKitDest,
+    duplicateKitDirect,
     duplicateKitError,
-    // State
     duplicateKitSource,
-
-    // Actions
     handleDuplicateKit,
-
     setDuplicateKitDest,
     setDuplicateKitError,
-    // Setters
     setDuplicateKitSource,
   };
 }

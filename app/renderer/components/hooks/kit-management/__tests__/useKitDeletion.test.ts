@@ -208,6 +208,128 @@ describe("useKitDeletion", () => {
     });
   });
 
+  describe("requestDeleteSummary", () => {
+    it("returns summary for unlocked kit", async () => {
+      mockGetKitDeleteSummary.mockResolvedValue({
+        kitName: "A5",
+        locked: false,
+        sampleCount: 3,
+        voiceCount: 4,
+      });
+
+      const { result } = renderHook(() =>
+        useKitDeletion({
+          onMessage: mockOnMessage,
+          onRefreshKits: mockOnRefreshKits,
+        }),
+      );
+
+      let summary: { locked: boolean; sampleCount: number } | null = null;
+      await act(async () => {
+        summary = await result.current.requestDeleteSummary("A5");
+      });
+
+      expect(summary).toEqual({ locked: false, sampleCount: 3 });
+    });
+
+    it("returns null for locked kit", async () => {
+      mockGetKitDeleteSummary.mockResolvedValue({
+        kitName: "A5",
+        locked: true,
+        sampleCount: 3,
+        voiceCount: 4,
+      });
+
+      const { result } = renderHook(() =>
+        useKitDeletion({
+          onMessage: mockOnMessage,
+          onRefreshKits: mockOnRefreshKits,
+        }),
+      );
+
+      let summary: { locked: boolean; sampleCount: number } | null = null;
+      await act(async () => {
+        summary = await result.current.requestDeleteSummary("A5");
+      });
+
+      expect(summary).toBeNull();
+      expect(mockOnMessage).toHaveBeenCalledWith(
+        "Kit is locked. Unlock it before deleting.",
+        "warning",
+        4000,
+      );
+    });
+
+    it("returns null on error", async () => {
+      mockGetKitDeleteSummary.mockRejectedValue(new Error("DB error"));
+
+      const { result } = renderHook(() =>
+        useKitDeletion({
+          onMessage: mockOnMessage,
+          onRefreshKits: mockOnRefreshKits,
+        }),
+      );
+
+      let summary: { locked: boolean; sampleCount: number } | null = null;
+      await act(async () => {
+        summary = await result.current.requestDeleteSummary("A5");
+      });
+
+      expect(summary).toBeNull();
+      expect(mockOnMessage).toHaveBeenCalledWith(
+        "Failed to delete kit: DB error",
+        "error",
+        5000,
+      );
+    });
+  });
+
+  describe("deleteKitDirect", () => {
+    it("deletes kit and shows message", async () => {
+      mockDeleteKit.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() =>
+        useKitDeletion({
+          onMessage: mockOnMessage,
+          onRefreshKits: mockOnRefreshKits,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.deleteKitDirect("A5");
+      });
+
+      expect(mockDeleteKit).toHaveBeenCalledWith("A5");
+      expect(mockOnMessage).toHaveBeenCalledWith(
+        "Kit A5 deleted.",
+        "info",
+        4000,
+      );
+      expect(mockOnRefreshKits).toHaveBeenCalled();
+    });
+
+    it("handles error", async () => {
+      mockDeleteKit.mockRejectedValue(new Error("Delete failed"));
+
+      const { result } = renderHook(() =>
+        useKitDeletion({
+          onMessage: mockOnMessage,
+          onRefreshKits: mockOnRefreshKits,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.deleteKitDirect("A5");
+      });
+
+      expect(mockOnMessage).toHaveBeenCalledWith(
+        "Failed to delete kit: Delete failed",
+        "error",
+        5000,
+      );
+    });
+  });
+
   describe("handleCancelDelete", () => {
     it("resets kitToDelete and deleteSummary", async () => {
       mockGetKitDeleteSummary.mockResolvedValue({

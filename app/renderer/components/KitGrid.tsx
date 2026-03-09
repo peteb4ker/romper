@@ -85,8 +85,16 @@ interface KitGridProps {
   onBankFocus?: (bank: string) => void;
   onCreateKitInBank?: (bankLetter: string) => void;
   onDelete?: (kit: string) => void;
+  onDeleteKit?: (kitName: string) => Promise<void>;
   onDuplicate: (kit: string) => void;
-  onFocusKit?: (kit: string) => void; // NEW: notify parent of focus change
+  onDuplicateKit?: (
+    source: string,
+    dest: string,
+  ) => Promise<{ error?: string }>;
+  onFocusKit?: (kit: string) => void;
+  onRequestDeleteSummary?: (
+    kitName: string,
+  ) => Promise<{ locked: boolean; sampleCount: number } | null>;
   onSelectKit: (kit: string) => void;
   onToggleFavorite?: (kitName: string) => void; // Task 20.1.2: Favorites functionality
   onVisibleBankChange?: (bank: string) => void; // NEW: notify when visible bank changes during scroll
@@ -158,8 +166,11 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       onBankFocus,
       onCreateKitInBank,
       onDelete,
+      onDeleteKit,
       onDuplicate,
+      onDuplicateKit,
       onFocusKit,
+      onRequestDeleteSummary,
       onSelectKit,
       onToggleFavorite,
       onVisibleBankChange,
@@ -259,8 +270,11 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                     kitData={kitData}
                     kitsToDisplay={kitsToDisplay}
                     onDelete={onDelete}
+                    onDeleteKit={onDeleteKit}
                     onDuplicate={onDuplicate}
+                    onDuplicateKit={onDuplicateKit}
                     onFocusKit={onFocusKit}
+                    onRequestDeleteSummary={onRequestDeleteSummary}
                     onSelectKit={onSelectKit}
                     onToggleFavorite={onToggleFavorite}
                     sampleCounts={sampleCounts}

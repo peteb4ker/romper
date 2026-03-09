@@ -911,6 +911,287 @@ describe("KitGridItem", () => {
     });
   });
 
+  describe("Delete popover", () => {
+    const editableProps = {
+      ...defaultProps,
+      kitData: {
+        ...defaultProps.kitData,
+        editable: true,
+        locked: false,
+      },
+      onDeleteKit: vi.fn().mockResolvedValue(undefined),
+      onRequestDeleteSummary: vi
+        .fn()
+        .mockResolvedValue({ locked: false, sampleCount: 3 }),
+    };
+
+    it("renders delete button for editable, unlocked, valid kits", () => {
+      render(<KitGridItem {...editableProps} />);
+      expect(screen.getByTestId("delete-kit-button")).toBeInTheDocument();
+    });
+
+    it("does not render delete button for locked kits", () => {
+      render(
+        <KitGridItem
+          {...editableProps}
+          kitData={{ ...editableProps.kitData, locked: true }}
+        />,
+      );
+      expect(screen.queryByTestId("delete-kit-button")).not.toBeInTheDocument();
+    });
+
+    it("does not render delete button for non-editable kits", () => {
+      render(
+        <KitGridItem
+          {...editableProps}
+          kitData={{ ...editableProps.kitData, editable: false }}
+        />,
+      );
+      expect(screen.queryByTestId("delete-kit-button")).not.toBeInTheDocument();
+    });
+
+    it("opens delete popover after requesting summary", async () => {
+      render(<KitGridItem {...editableProps} />);
+      fireEvent.click(screen.getByTestId("delete-kit-button"));
+
+      expect(editableProps.onRequestDeleteSummary).toHaveBeenCalledWith("A0");
+      // Wait for the popover to appear
+      const confirmBtn = await screen.findByTestId("confirm-delete-button");
+      expect(confirmBtn).toBeInTheDocument();
+      expect(screen.getByText("Delete kit A0?")).toBeInTheDocument();
+    });
+
+    it("shows sample count in delete popover", async () => {
+      render(<KitGridItem {...editableProps} />);
+      fireEvent.click(screen.getByTestId("delete-kit-button"));
+
+      await screen.findByTestId("confirm-delete-button");
+      expect(
+        screen.getByText(/3 sample references will be removed/),
+      ).toBeInTheDocument();
+    });
+
+    it("shows singular 'reference' for 1 sample", async () => {
+      const props = {
+        ...editableProps,
+        onRequestDeleteSummary: vi
+          .fn()
+          .mockResolvedValue({ locked: false, sampleCount: 1 }),
+      };
+      render(<KitGridItem {...props} />);
+      fireEvent.click(screen.getByTestId("delete-kit-button"));
+
+      await screen.findByTestId("confirm-delete-button");
+      expect(
+        screen.getByText(/1 sample reference will be removed/),
+      ).toBeInTheDocument();
+    });
+
+    it("shows safe-to-remove message for 0 samples", async () => {
+      const props = {
+        ...editableProps,
+        onRequestDeleteSummary: vi
+          .fn()
+          .mockResolvedValue({ locked: false, sampleCount: 0 }),
+      };
+      render(<KitGridItem {...props} />);
+      fireEvent.click(screen.getByTestId("delete-kit-button"));
+
+      await screen.findByTestId("confirm-delete-button");
+      expect(
+        screen.getByText("No samples. Safe to remove."),
+      ).toBeInTheDocument();
+    });
+
+    it("does not open popover when summary returns null (locked)", async () => {
+      const props = {
+        ...editableProps,
+        onRequestDeleteSummary: vi.fn().mockResolvedValue(null),
+      };
+      render(<KitGridItem {...props} />);
+      fireEvent.click(screen.getByTestId("delete-kit-button"));
+
+      // Wait a tick for the async handler to complete
+      await new Promise((r) => setTimeout(r, 0));
+      expect(
+        screen.queryByTestId("confirm-delete-button"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("calls onDeleteKit when confirm is clicked", async () => {
+      render(<KitGridItem {...editableProps} />);
+      fireEvent.click(screen.getByTestId("delete-kit-button"));
+
+      const confirmBtn = await screen.findByTestId("confirm-delete-button");
+      fireEvent.click(confirmBtn);
+
+      expect(editableProps.onDeleteKit).toHaveBeenCalledWith("A0");
+    });
+
+    it("closes popover after successful deletion", async () => {
+      render(<KitGridItem {...editableProps} />);
+      fireEvent.click(screen.getByTestId("delete-kit-button"));
+
+      const confirmBtn = await screen.findByTestId("confirm-delete-button");
+      fireEvent.click(confirmBtn);
+
+      // Wait for the deletion promise to resolve
+      await vi.waitFor(() => {
+        expect(
+          screen.queryByTestId("confirm-delete-button"),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("closes popover when cancel is clicked", async () => {
+      render(<KitGridItem {...editableProps} />);
+      fireEvent.click(screen.getByTestId("delete-kit-button"));
+
+      await screen.findByTestId("confirm-delete-button");
+      fireEvent.click(screen.getByText("Cancel"));
+
+      expect(
+        screen.queryByTestId("confirm-delete-button"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("falls back to onDelete when onRequestDeleteSummary is not provided", () => {
+      const mockOnDelete = vi.fn();
+      render(
+        <KitGridItem
+          {...defaultProps}
+          kitData={{ ...defaultProps.kitData, editable: true, locked: false }}
+          onDelete={mockOnDelete}
+        />,
+      );
+      fireEvent.click(screen.getByTestId("delete-kit-button"));
+      expect(mockOnDelete).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("Duplicate popover", () => {
+    const duplicateProps = {
+      ...defaultProps,
+      onDuplicateKit: vi.fn().mockResolvedValue({}),
+    };
+
+    it("opens duplicate popover when button is clicked with onDuplicateKit", () => {
+      render(<KitGridItem {...duplicateProps} />);
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+
+      expect(screen.getByTestId("duplicate-dest-input")).toBeInTheDocument();
+      expect(screen.getByText("Duplicate A0 to:")).toBeInTheDocument();
+    });
+
+    it("calls onDuplicate (legacy) when onDuplicateKit not provided", () => {
+      const mockOnDuplicate = vi.fn();
+      render(<KitGridItem {...defaultProps} onDuplicate={mockOnDuplicate} />);
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+
+      expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
+      expect(
+        screen.queryByTestId("duplicate-dest-input"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("updates destination input value", () => {
+      render(<KitGridItem {...duplicateProps} />);
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+
+      const input = screen.getByTestId(
+        "duplicate-dest-input",
+      ) as HTMLInputElement;
+      fireEvent.change(input, { target: { value: "b5" } });
+      expect(input.value).toBe("B5"); // Should uppercase
+    });
+
+    it("calls onDuplicateKit when confirm is clicked", async () => {
+      render(<KitGridItem {...duplicateProps} />);
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+
+      const input = screen.getByTestId("duplicate-dest-input");
+      fireEvent.change(input, { target: { value: "B5" } });
+      fireEvent.click(screen.getByTestId("confirm-duplicate-button"));
+
+      expect(duplicateProps.onDuplicateKit).toHaveBeenCalledWith("A0", "B5");
+    });
+
+    it("submits on Enter key in input", async () => {
+      render(<KitGridItem {...duplicateProps} />);
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+
+      const input = screen.getByTestId("duplicate-dest-input");
+      fireEvent.change(input, { target: { value: "C2" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+
+      expect(duplicateProps.onDuplicateKit).toHaveBeenCalledWith("A0", "C2");
+    });
+
+    it("closes popover after successful duplication", async () => {
+      render(<KitGridItem {...duplicateProps} />);
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+
+      const input = screen.getByTestId("duplicate-dest-input");
+      fireEvent.change(input, { target: { value: "B5" } });
+      fireEvent.click(screen.getByTestId("confirm-duplicate-button"));
+
+      await vi.waitFor(() => {
+        expect(
+          screen.queryByTestId("duplicate-dest-input"),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("shows error when duplication fails", async () => {
+      const props = {
+        ...duplicateProps,
+        onDuplicateKit: vi
+          .fn()
+          .mockResolvedValue({ error: "Slot already occupied" }),
+      };
+      render(<KitGridItem {...props} />);
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+
+      const input = screen.getByTestId("duplicate-dest-input");
+      fireEvent.change(input, { target: { value: "B5" } });
+      fireEvent.click(screen.getByTestId("confirm-duplicate-button"));
+
+      await screen.findByText("Slot already occupied");
+      // Popover should remain open on error
+      expect(screen.getByTestId("duplicate-dest-input")).toBeInTheDocument();
+    });
+
+    it("closes popover when cancel is clicked", () => {
+      render(<KitGridItem {...duplicateProps} />);
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+
+      expect(screen.getByTestId("duplicate-dest-input")).toBeInTheDocument();
+      fireEvent.click(screen.getByText("Cancel"));
+
+      expect(
+        screen.queryByTestId("duplicate-dest-input"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("resets state when reopening duplicate popover", () => {
+      render(<KitGridItem {...duplicateProps} />);
+
+      // Open, type something, close
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+      fireEvent.change(screen.getByTestId("duplicate-dest-input"), {
+        target: { value: "X9" },
+      });
+      fireEvent.click(screen.getByText("Cancel"));
+
+      // Reopen - should be empty
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+      const input = screen.getByTestId(
+        "duplicate-dest-input",
+      ) as HTMLInputElement;
+      expect(input.value).toBe("");
+    });
+  });
+
   describe("Voice names on empty kits", () => {
     it("should show voice names when kit has no samples", () => {
       mockExtractVoiceNames.mockReturnValue({ 1: "kick", 2: "snare" });

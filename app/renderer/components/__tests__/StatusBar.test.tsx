@@ -195,6 +195,17 @@ describe("StatusBar", () => {
   });
 
   describe("links", () => {
+    it("should render Romper Manual link", () => {
+      render(<StatusBar />);
+      const manualLink = screen.getByRole("link", { name: "Romper Manual" });
+      expect(manualLink).toHaveAttribute(
+        "href",
+        "https://peteb4ker.github.io/romper/manual/",
+      );
+      expect(manualLink).toHaveAttribute("target", "_blank");
+      expect(manualLink).toHaveAttribute("rel", "noopener noreferrer");
+    });
+
     it("should render Rample Manual link", () => {
       render(<StatusBar />);
       const manualLink = screen.getByRole("link", { name: "Rample Manual" });

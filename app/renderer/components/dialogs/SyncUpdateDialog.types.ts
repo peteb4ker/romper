@@ -1,7 +1,14 @@
+export interface SyncBankSummary {
+  bank: string;
+  fileCount: number;
+  hasConversions: boolean;
+  kitCount: number;
+}
+
 export interface SyncChangeSummary {
+  banks?: SyncBankSummary[];
   fileCount: number;
   kitCount: number;
-  kits?: SyncKitSummary[];
 }
 
 export interface SyncErrorDetails {
@@ -20,12 +27,6 @@ export interface SyncFileOperation {
   reason?: string;
   sourcePath: string;
   targetFormat?: string;
-}
-
-export interface SyncKitSummary {
-  fileCount: number;
-  hasConversions: boolean;
-  kitName: string;
 }
 
 export interface SyncProgress {

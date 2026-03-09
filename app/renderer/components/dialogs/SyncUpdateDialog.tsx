@@ -1,18 +1,18 @@
 import {
   ArrowsClockwise,
+  Check,
   CheckCircle,
+  DownloadSimple,
   Folder,
   HardDrive,
   Spinner,
   Trash,
-  Warning,
   X,
 } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
 
 import type {
   SyncChangeSummary,
-  SyncKitSummary,
   SyncUpdateDialogProps,
 } from "./SyncUpdateDialog.types.js";
 
@@ -31,7 +31,6 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   syncProgress,
 }) => {
   const [wipeSdCard, setWipeSdCard] = useState(false);
-  const [showWipeOption, setShowWipeOption] = useState(false);
   const [localSdCardPath, setLocalSdCardPath] = useState<null | string>(
     sdCardPath || null,
   );
@@ -94,21 +93,8 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 
   const kitCount = changeSummary?.kitCount || 0;
   const fileCount = changeSummary?.fileCount || 0;
-  const kits = changeSummary?.kits || [];
-  const currentKitName = syncProgress?.currentKitName;
-  const errorKitName = syncProgress?.errorDetails?.kitName;
-
-  const getKitStatus = (
-    kit: SyncKitSummary,
-  ): "completed" | "error" | "idle" | "syncing" => {
-    if (!syncProgress) return "idle";
-    if (syncProgress.status === "error" && errorKitName === kit.kitName)
-      return "error";
-    if (syncProgress.status === "completed") return "completed";
-    if (currentKitName === kit.kitName) return "syncing";
-    if (currentKitName && kit.kitName < currentKitName) return "completed";
-    return "idle";
-  };
+  const banks = changeSummary?.banks || [];
+  const conversionsNeeded = banks.some((b) => b.hasConversions);
 
   return (
     <div
@@ -118,19 +104,25 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
       data-testid="sync-dialog"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b border-border-subtle relative z-10"
+        style={{
+          backgroundColor:
+            "color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2))",
+        }}
+      >
         <div className="flex items-center gap-2">
-          <ArrowsClockwise
-            className="text-accent-sync"
+          <DownloadSimple
+            className="text-accent-primary"
             size={16}
             weight="bold"
           />
           <h2 className="text-sm font-semibold text-text-primary">
-            Sync to SD Card
+            Write to SD Card
           </h2>
         </div>
         <button
-          aria-label="Close sync dialog"
+          aria-label="Close write dialog"
           className="p-1 rounded hover:bg-surface-3 text-text-tertiary disabled:opacity-50"
           disabled={isLoading}
           onClick={handleClose}
@@ -139,29 +131,113 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
         </button>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Summary Badge */}
-        {changeSummary && (
-          <div className="px-4 pt-3 pb-1">
-            <div className="flex items-center gap-2 text-xs text-text-tertiary">
-              <span className="font-medium text-text-secondary">
-                {kitCount} {kitCount === 1 ? "kit" : "kits"}
+      {/* Write Progress — pinned at top */}
+      {syncProgress && syncProgress.status !== "error" && (
+        <div className="px-4 py-2 border-b border-border-subtle">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-text-secondary font-medium">
+                {syncProgress.status === "preparing" && (
+                  <span className="flex items-center gap-1">
+                    <Spinner className="animate-spin" size={12} />
+                    Preparing...
+                  </span>
+                )}
+                {(syncProgress.status === "copying" ||
+                  syncProgress.status === "converting") && (
+                  <span className="flex items-center gap-1">
+                    <Spinner className="animate-spin" size={12} />
+                    Writing{" "}
+                    {syncProgress.currentKitName && (
+                      <span
+                        className="font-mono"
+                        data-testid="current-kit-name"
+                      >
+                        {syncProgress.currentKitName}
+                      </span>
+                    )}
+                  </span>
+                )}
+                {syncProgress.status === "finalizing" && "Finalizing..."}
+                {syncProgress.status === "completed" && (
+                  <span className="text-accent-success flex items-center gap-1">
+                    <CheckCircle size={12} weight="fill" />
+                    Write Complete
+                  </span>
+                )}
               </span>
-              <span>&middot;</span>
-              <span>
-                {fileCount} {fileCount === 1 ? "sample" : "samples"}
+              <span className="text-text-tertiary tabular-nums">
+                {syncProgress.filesCompleted}/{syncProgress.totalFiles}
               </span>
-              {syncProgress?.status === "completed" && (
-                <>
-                  <span>&middot;</span>
-                  <span className="text-accent-success font-medium">Done</span>
-                </>
-              )}
+            </div>
+            <div className="w-full bg-surface-3 rounded-full h-1.5">
+              <div
+                className={`h-1.5 rounded-full ${
+                  syncProgress.status === "completed"
+                    ? "bg-accent-success"
+                    : "bg-accent-primary"
+                }`}
+                style={{
+                  width: `${syncProgress.totalFiles > 0 ? (syncProgress.filesCompleted / syncProgress.totalFiles) * 100 : 0}%`,
+                }}
+              />
             </div>
           </div>
-        )}
+        </div>
+      )}
 
+      {/* Inline Error — pinned at top */}
+      {syncProgress?.status === "error" && (
+        <div className="px-4 py-2 border-b border-border-subtle">
+          <div className="p-2.5 bg-accent-danger/10 border border-accent-danger/20 rounded text-xs">
+            <div className="font-medium text-accent-danger mb-1">
+              Write Failed
+              {syncProgress.errorDetails?.kitName && (
+                <span className="font-normal text-accent-danger/70">
+                  {" "}
+                  &middot; {syncProgress.errorDetails.kitName}
+                </span>
+              )}
+            </div>
+            {syncProgress.errorDetails ? (
+              <>
+                <div className="text-accent-danger/80 mb-1">
+                  {syncProgress.errorDetails.operation === "copy"
+                    ? "Copying"
+                    : "Converting"}{" "}
+                  <code className="bg-accent-danger/15 px-1 rounded">
+                    {syncProgress.errorDetails.fileName}
+                  </code>
+                </div>
+                <div className="text-accent-danger/70">
+                  {syncProgress.errorDetails.error}
+                </div>
+                {syncProgress.errorDetails.canRetry && (
+                  <div className="mt-1.5 text-text-tertiary">
+                    This might be temporary. Try writing again.
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-accent-danger/80">
+                {syncProgress.error || "An unexpected error occurred."}
+                {syncProgress.currentFile && (
+                  <span>
+                    {" "}
+                    Failed on:{" "}
+                    <code className="bg-accent-danger/15 px-1 rounded">
+                      {syncProgress.currentFile}
+                    </code>
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
         {/* Loading State */}
         {isGeneratingSummary && (
           <div className="px-4 py-6 flex items-center justify-center gap-2 text-text-tertiary text-sm">
@@ -170,172 +246,61 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           </div>
         )}
 
-        {/* Kit List */}
-        {kits.length > 0 && (
-          <div className="px-3 py-2 space-y-0.5" data-testid="kit-list">
-            {kits.map((kit) => {
-              const status = getKitStatus(kit);
-              return (
-                <div
-                  className={`flex items-center justify-between px-2 py-1.5 rounded text-xs transition-colors ${
-                    status === "syncing"
-                      ? "bg-accent-sync/10 border border-accent-sync/20"
-                      : status === "error"
-                        ? "bg-accent-danger/10 border border-accent-danger/20"
-                        : status === "completed"
-                          ? "bg-accent-success/5"
-                          : "hover:bg-surface-3"
-                  }`}
-                  data-testid={`kit-row-${kit.kitName}`}
-                  key={kit.kitName}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    {status === "completed" && (
-                      <CheckCircle
-                        className="text-accent-success shrink-0"
-                        size={14}
-                        weight="fill"
-                      />
-                    )}
-                    {status === "syncing" && (
-                      <Spinner
-                        className="text-accent-sync animate-spin shrink-0"
-                        size={14}
-                      />
-                    )}
-                    {status === "error" && (
-                      <Warning
-                        className="text-accent-danger shrink-0"
-                        size={14}
-                        weight="fill"
-                      />
-                    )}
-                    {status === "idle" && <div className="w-3.5 shrink-0" />}
-                    <span
-                      className={`font-mono truncate ${
-                        status === "syncing"
-                          ? "text-accent-sync font-semibold"
-                          : status === "completed"
-                            ? "text-text-tertiary"
-                            : "text-text-primary"
-                      }`}
-                    >
-                      {kit.kitName}
+        {/* Bank Summary — table with totals */}
+        {banks.length > 0 && (
+          <div className="px-4 py-2" data-testid="bank-summary">
+            <div className="rounded border border-border-subtle overflow-hidden">
+              <div className="flex items-center px-2.5 py-1 text-[10px] text-text-tertiary uppercase tracking-wider bg-surface-3/50 border-b border-border-subtle">
+                <span className="w-10 shrink-0">Bank</span>
+                <span className="flex-1 text-right">Kits</span>
+                <span className="flex-1 text-right">Samples</span>
+                {conversionsNeeded && <span className="w-14 text-right" />}
+              </div>
+              <div className="divide-y divide-border-subtle">
+                {banks.map((bank) => (
+                  <div
+                    className="flex items-center px-2.5 py-1.5 text-xs bg-surface-3/30"
+                    data-testid={`bank-${bank.bank}`}
+                    key={bank.bank}
+                  >
+                    <span className="font-mono font-bold text-text-primary w-10 shrink-0">
+                      {bank.bank}
                     </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                    {kit.hasConversions && (
-                      <span
-                        className="text-[10px] px-1 py-0.5 rounded bg-accent-warning/15 text-accent-warning font-medium"
-                        title="Contains files that need format conversion"
-                      >
-                        CVT
+                    <span className="text-text-secondary tabular-nums flex-1 text-right">
+                      {bank.kitCount}
+                    </span>
+                    <span className="text-text-tertiary tabular-nums flex-1 text-right">
+                      {bank.fileCount}
+                    </span>
+                    {conversionsNeeded && (
+                      <span className="w-14 text-right">
+                        {bank.hasConversions && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-accent-warning">
+                            <span className="w-1 h-1 rounded-full bg-accent-warning" />
+                            convert
+                          </span>
+                        )}
                       </span>
                     )}
-                    <span className="text-text-tertiary tabular-nums">
-                      {kit.fileCount}
-                    </span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Inline Error */}
-        {syncProgress?.status === "error" && (
-          <div className="px-4 py-2">
-            <div className="p-2.5 bg-accent-danger/10 border border-accent-danger/20 rounded text-xs">
-              <div className="font-medium text-accent-danger mb-1">
-                Sync Failed
+                ))}
               </div>
-              {syncProgress.errorDetails ? (
-                <>
-                  <div className="text-accent-danger/80 mb-1">
-                    {syncProgress.errorDetails.operation === "copy"
-                      ? "Copying"
-                      : "Converting"}{" "}
-                    <code className="bg-accent-danger/15 px-1 rounded">
-                      {syncProgress.errorDetails.fileName}
-                    </code>
-                  </div>
-                  <div className="text-accent-danger/70">
-                    {syncProgress.errorDetails.error}
-                  </div>
-                  {syncProgress.errorDetails.canRetry && (
-                    <div className="mt-1.5 text-text-tertiary">
-                      This might be temporary. Try syncing again.
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-accent-danger/80">
-                  {syncProgress.error || "An unexpected error occurred."}
-                  {syncProgress.currentFile && (
-                    <span>
-                      {" "}
-                      Failed on:{" "}
-                      <code className="bg-accent-danger/15 px-1 rounded">
-                        {syncProgress.currentFile}
-                      </code>
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Sync Progress */}
-        {syncProgress &&
-          syncProgress.status !== "completed" &&
-          syncProgress.status !== "error" && (
-            <div className="px-4 py-2">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-text-secondary font-medium">
-                    {syncProgress.status === "preparing" && "Preparing..."}
-                    {syncProgress.status === "copying" && "Copying files..."}
-                    {syncProgress.status === "converting" && "Converting..."}
-                    {syncProgress.status === "finalizing" && "Finalizing..."}
-                  </span>
-                  <span className="text-text-tertiary tabular-nums">
-                    {syncProgress.filesCompleted}/{syncProgress.totalFiles}
-                  </span>
-                </div>
-                <div className="w-full bg-surface-3 rounded-full h-1.5">
-                  <div
-                    className="h-1.5 rounded-full transition-all duration-300 bg-accent-sync"
-                    style={{
-                      width: `${syncProgress.totalFiles > 0 ? (syncProgress.filesCompleted / syncProgress.totalFiles) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-                {syncProgress.currentFile && (
-                  <div className="text-[11px] text-text-tertiary truncate font-mono">
-                    {syncProgress.currentFile}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-        {/* Success State */}
-        {syncProgress?.status === "completed" && (
-          <div className="px-4 py-2">
-            <div className="flex items-center gap-2 p-2.5 bg-accent-success/10 border border-accent-success/20 rounded">
-              <CheckCircle
-                className="text-accent-success shrink-0"
-                size={16}
-                weight="fill"
-              />
-              <div className="text-xs">
-                <span className="font-medium text-accent-success">
-                  Sync Complete
+              {/* Totals */}
+              <div className="flex items-center px-2.5 py-1.5 text-xs border-t border-border-subtle bg-surface-3/50">
+                <span className="w-10 shrink-0" />
+                <span
+                  className="font-semibold text-text-primary tabular-nums flex-1 text-right"
+                  data-testid="total-kits"
+                >
+                  {kitCount}
                 </span>
-                <span className="text-accent-success/70 ml-1">
-                  &middot; {syncProgress.filesCompleted} files
+                <span
+                  className="font-semibold text-text-primary tabular-nums flex-1 text-right"
+                  data-testid="total-samples"
+                >
+                  {fileCount}
                 </span>
+                {conversionsNeeded && <span className="w-14" />}
               </div>
             </div>
           </div>
@@ -347,12 +312,12 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             className={`flex items-center gap-2 p-2 rounded border transition-colors ${
               localSdCardPath
                 ? "border-border-subtle bg-surface-3/50"
-                : "border-accent-sync/30 bg-accent-sync/5"
+                : "border-accent-primary/30 bg-accent-primary/5"
             }`}
           >
             <HardDrive
               className={
-                localSdCardPath ? "text-text-tertiary" : "text-accent-sync"
+                localSdCardPath ? "text-text-tertiary" : "text-accent-primary"
               }
               size={14}
             />
@@ -381,41 +346,41 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             </button>
           </div>
 
-          {/* Wipe Option - Disclosure */}
-          {!showWipeOption && !wipeSdCard && (
-            <button
-              className="text-[11px] text-text-tertiary hover:text-accent-danger transition-colors"
-              data-testid="show-wipe-option"
+          {/* Wipe SD Card */}
+          <label
+            className="flex items-center gap-2 px-2 py-1.5 cursor-pointer group"
+            htmlFor="wipeSdCard"
+          >
+            <input
+              checked={wipeSdCard}
+              className="sr-only peer"
+              data-testid="wipe-sd-card-checkbox"
               disabled={isLoading}
-              onClick={() => setShowWipeOption(true)}
-            >
-              Clear SD card before sync...
-            </button>
-          )}
-          {(showWipeOption || wipeSdCard) && (
-            <div className="flex items-center gap-2 p-2 bg-accent-danger/5 border border-accent-danger/15 rounded">
-              <input
-                checked={wipeSdCard}
-                className="w-3.5 h-3.5 text-accent-danger bg-surface-3 border-border-default rounded focus:ring-accent-danger focus:ring-1"
-                data-testid="wipe-sd-card-checkbox"
-                disabled={isLoading}
-                id="wipeSdCard"
-                onChange={(e) => setWipeSdCard(e.target.checked)}
-                type="checkbox"
-              />
-              <label className="text-[11px]" htmlFor="wipeSdCard">
-                <span className="font-medium text-accent-danger flex items-center gap-1">
-                  <Trash size={11} />
-                  Clear SD card before sync
-                </span>
-              </label>
+              id="wipeSdCard"
+              onChange={(e) => setWipeSdCard(e.target.checked)}
+              type="checkbox"
+            />
+            <div className="w-3.5 h-3.5 rounded-sm border border-border-default bg-surface-3 shrink-0 flex items-center justify-center peer-checked:bg-accent-danger peer-checked:border-accent-danger transition-colors">
+              {wipeSdCard && (
+                <Check className="text-white" size={10} weight="bold" />
+              )}
             </div>
-          )}
+            <span className="text-[11px] text-text-tertiary flex items-center gap-1 group-hover:text-text-secondary transition-colors">
+              <Trash size={11} />
+              Clear SD card before writing
+            </span>
+          </label>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-border-subtle">
+      <div
+        className="flex items-center justify-between px-4 py-3 border-t border-border-subtle relative z-10"
+        style={{
+          backgroundColor:
+            "color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2))",
+        }}
+      >
         <button
           className="px-3 py-1.5 text-xs text-text-secondary border border-border-default rounded hover:bg-surface-3 transition-colors disabled:opacity-50"
           data-testid="cancel-sync"
@@ -446,7 +411,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             syncProgress.status !== "error" ||
             !syncProgress.errorDetails?.canRetry) && (
             <button
-              className="px-3 py-1.5 text-xs bg-accent-sync text-white rounded font-semibold hover:bg-accent-sync/80 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              className="px-3 py-1.5 text-xs bg-accent-primary text-white rounded font-semibold hover:bg-accent-primary/80 transition-colors disabled:opacity-50 flex items-center gap-1.5"
               data-testid="confirm-sync"
               disabled={
                 isLoading ||
@@ -462,14 +427,14 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               {isLoading ? (
                 <>
                   <Spinner className="animate-spin" size={12} />
-                  Syncing...
+                  Writing...
                 </>
               ) : (
                 <>
-                  <ArrowsClockwise size={12} weight="bold" />
+                  <DownloadSimple size={12} weight="bold" />
                   {syncProgress?.status === "error"
-                    ? "Start New Sync"
-                    : "Start Sync"}
+                    ? "Start New Write"
+                    : "Start Write"}
                 </>
               )}
             </button>

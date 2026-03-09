@@ -82,9 +82,8 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
         wipeSdCard: options.wipeSdCard,
       });
       if (success) {
-        setShowSyncDialog(false);
-        setCurrentSyncKit(null);
-        setCurrentChangeSummary(null);
+        // Keep the dialog open so the user sees the "Write Complete" state.
+        // They will close it manually via the Close button.
 
         // Refresh kit data to ensure UI shows updated unsaved states
         if (onRefreshKits) {
@@ -95,16 +94,8 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
             console.error("[useKitSync] Failed to refresh kit data:", error);
           }
         }
-
-        if (onMessage) {
-          onMessage(
-            `All kits synced successfully to ${options.sdCardPath}!`,
-            "success",
-            3000,
-          );
-        }
       } else if (onMessage && syncError) {
-        onMessage(`Sync failed: ${syncError}`, "error");
+        onMessage(`Write failed: ${syncError}`, "error");
       }
     },
     [startSync, onMessage, syncError, onRefreshKits],

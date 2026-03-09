@@ -97,14 +97,8 @@ describe("useKitSync", () => {
         sdCardPath: "/path/to/sd",
         wipeSdCard: false,
       });
-      expect(result.current.showSyncDialog).toBe(false);
-      expect(result.current.currentSyncKit).toBe(null);
-      expect(result.current.currentChangeSummary).toBe(null);
-      expect(mockOnMessage).toHaveBeenCalledWith(
-        "All kits synced successfully to /path/to/sd!",
-        "success",
-        3000,
-      );
+      // Dialog stays open so user sees "Write Complete" state
+      expect(result.current.showSyncDialog).toBe(true);
       expect(mockOnRefreshKits).toHaveBeenCalled();
     });
 
@@ -167,11 +161,6 @@ describe("useKitSync", () => {
 
       // Verify refresh is called to update kit modification states
       expect(mockOnRefreshKits).toHaveBeenCalledTimes(1);
-      expect(mockOnMessage).toHaveBeenCalledWith(
-        "All kits synced successfully to /path/to/sd!",
-        "success",
-        3000,
-      );
     });
 
     it("does not call onRefreshKits when sync fails", async () => {
@@ -218,12 +207,8 @@ describe("useKitSync", () => {
       });
 
       // Should not throw error when onRefreshKits is not provided
-      expect(result.current.showSyncDialog).toBe(false);
-      expect(mockOnMessage).toHaveBeenCalledWith(
-        "All kits synced successfully to /path/to/sd!",
-        "success",
-        3000,
-      );
+      // Dialog stays open so user sees "Write Complete" state
+      expect(result.current.showSyncDialog).toBe(true);
     });
   });
 

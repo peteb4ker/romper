@@ -172,16 +172,16 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
         {/* Divider */}
         <div className="h-5 border-l border-border-subtle flex-shrink-0" />
 
-        {/* Sync */}
+        {/* Write to SD Card */}
         {props.onSyncToSdCard && (
           <button
             className="flex-shrink-0 px-2.5 py-1.5 text-xs border border-border-default text-text-secondary rounded-md hover:bg-surface-3 transition-colors duration-150 font-medium flex items-center gap-1"
             data-testid="sync-to-sd-card"
             onClick={props.onSyncToSdCard}
-            title="Sync modified kits to SD card"
+            title="Write kits to SD card"
           >
             <DownloadSimple size={12} />
-            Sync
+            Write
           </button>
         )}
 

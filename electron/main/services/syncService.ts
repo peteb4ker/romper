@@ -13,16 +13,17 @@ import { syncProgressManager } from "./syncProgressManager.js";
 import { syncSampleProcessingService } from "./syncSampleProcessing.js";
 import { type SyncValidationError } from "./syncValidationService.js";
 
-export interface SyncChangeSummary {
-  fileCount: number;
-  kitCount: number;
-  kits: SyncKitSummary[];
-}
-
-export interface SyncKitSummary {
+export interface SyncBankSummary {
+  bank: string;
   fileCount: number;
   hasConversions: boolean;
-  kitName: string;
+  kitCount: number;
+}
+
+export interface SyncChangeSummary {
+  banks: SyncBankSummary[];
+  fileCount: number;
+  kitCount: number;
 }
 
 class SyncService {
@@ -69,33 +70,36 @@ class SyncService {
       const samples = samplesResult.data || [];
       const fileCount = samples.length;
 
-      // Group samples by kit and detect which need format conversion
-      const kitMap = new Map<
+      // Group samples by bank (first character of kit name, A-Z) — max 26 banks
+      const bankMap = new Map<
         string,
-        { fileCount: number; hasConversions: boolean }
+        { fileCount: number; hasConversions: boolean; kitNames: Set<string> }
       >();
       for (const sample of samples) {
         const kitName =
           (sample as { kitName?: string }).kitName || sample.kit_name;
         if (!kitName) continue;
-        const entry = kitMap.get(kitName) || {
+        const bank = kitName.charAt(0).toUpperCase();
+        const entry = bankMap.get(bank) || {
           fileCount: 0,
           hasConversions: false,
+          kitNames: new Set<string>(),
         };
         entry.fileCount++;
-        // Detect non-WAV files that will need conversion
+        entry.kitNames.add(kitName);
         if (sample.filename && !/\.wav$/i.test(sample.filename)) {
           entry.hasConversions = true;
         }
-        kitMap.set(kitName, entry);
+        bankMap.set(bank, entry);
       }
 
-      const kits: SyncKitSummary[] = [...kitMap.entries()]
+      const banks: SyncBankSummary[] = [...bankMap.entries()]
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([kitName, data]) => ({
+        .map(([bank, data]) => ({
+          bank,
           fileCount: data.fileCount,
           hasConversions: data.hasConversions,
-          kitName,
+          kitCount: data.kitNames.size,
         }));
 
       console.log("[Backend] Samples result:", {
@@ -104,9 +108,9 @@ class SyncService {
       });
 
       const summary: SyncChangeSummary = {
+        banks,
         fileCount,
         kitCount,
-        kits,
       };
 
       console.log("[Backend] Generated sync summary:", summary);

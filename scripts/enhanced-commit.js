@@ -182,15 +182,15 @@ ${commitMessage}
       console.log("✅ Pull request created successfully!");
     }
 
-    // Enable auto-merge (routes through merge queue when enabled)
-    console.log("🤖 Enabling merge queue auto-merge...");
+    // Enable auto-merge for the PR
+    console.log("🤖 Enabling auto-merge...");
     try {
       runCommand("gh pr merge --auto --squash", { silent: true });
       console.log(
-        "✅ Merge queue enabled - PR will merge when all checks pass!",
+        "✅ Auto-merge enabled - PR will merge when all checks pass!",
       );
     } catch {
-      console.error("⚠️  Failed to enable merge queue auto-merge");
+      console.error("⚠️  Failed to enable auto-merge");
       console.error("You can enable it manually with:");
       console.error("  gh pr merge --auto --squash");
     }
@@ -205,7 +205,7 @@ ${commitMessage}
   console.log("  ✅ Committed with quality checks");
   console.log("  ✅ Pushed to remote repository");
   console.log("  ✅ Pull request created for review");
-  console.log("  🤖 Merge queue enabled (will merge when checks pass)");
+  console.log("  🤖 Auto-merge enabled (will merge when checks pass)");
 }
 
 main().catch((error) => {

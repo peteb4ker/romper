@@ -102,7 +102,7 @@ Click the **play icon** on any sample row to hear it. The currently playing samp
 
 The step sequencer lets you audition all four voices together in a rhythmic pattern. Program a looping 16-step sequence to hear how your kit's samples work together before syncing to the Rample. Toggle it with the **Show/Hide Sequencer** button at the bottom of the kit view, or press `S`.
 
-See the full [Step Sequencer](step-sequencer) guide for details on the grid, transport controls, trigger conditions, sample selection modes, voice volume/mute, and a walkthrough example.
+See the full [Step Sequencer]({{ site.baseurl }}/manual/step-sequencer) guide for details on the grid, transport controls, trigger conditions, sample selection modes, voice volume/mute, and a walkthrough example.
 
 ## Navigating Between Kits
 

@@ -44,7 +44,7 @@ import { SettingsContext } from "../../utils/SettingsContext";
 import KitsView from "../KitsView";
 
 // Mock the hooks used by KitsView
-const mockScanBanks = vi.fn();
+const mockScanBanks = vi.fn(() => Promise.resolve());
 const mockOpenValidationDialog = vi.fn(async () => {});
 const mockOpenWizard = vi.fn();
 const mockOpenChangeDirectory = vi.fn();

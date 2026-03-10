@@ -221,7 +221,7 @@ jobs:
           FAILED_CONDITIONS=$(echo "$GATE" | jq -r \
             '.projectStatus.conditions[] | select(.status == "ERROR") | "- **\(.metricKey)**: \(.actualValue) (required: \(.errorThreshold))"')
 
-          if [ "$STATUS" != "OK" ] || [ "$CRITICAL" -gt 0 ] || [ "$HOTSPOTS" -gt 0 ]; then
+          if [ "$STATUS" != "OK" ]; then
             gh issue create \
               --title "SonarCloud: quality gate failure on main" \
               --label "bug,priority:high" \

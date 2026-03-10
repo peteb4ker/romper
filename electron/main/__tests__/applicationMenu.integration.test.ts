@@ -29,15 +29,28 @@ const mockBrowserWindow = {
   },
 };
 
+const mockShell = {
+  openExternal: vi.fn(),
+};
+
+const mockNativeImage = {
+  createFromPath: vi.fn().mockReturnValue({
+    setTemplateImage: vi.fn(),
+  }),
+};
+
 // Mock electron modules
 vi.mock("electron", () => ({
   app: {
     getName: vi.fn().mockReturnValue("Romper"),
+    isPackaged: false,
     quit: vi.fn(),
   },
   BrowserWindow: mockBrowserWindow,
   ipcMain: mockIpcMain,
   Menu: mockMenu,
+  nativeImage: mockNativeImage,
+  shell: mockShell,
 }));
 
 describe("Menu IPC Integration Tests", () => {
@@ -49,56 +62,55 @@ describe("Menu IPC Integration Tests", () => {
     vi.clearAllMocks();
   });
 
-  it("should create application menu with Tools submenu", async () => {
-    // Import after mocking electron
+  it("should create application menu with File submenu containing scan items", async () => {
     const { createApplicationMenu } = await import("../applicationMenu");
 
-    // Create the menu
     createApplicationMenu();
 
-    // Verify that Menu.buildFromTemplate was called
     expect(mockMenu.buildFromTemplate).toHaveBeenCalledTimes(1);
 
-    // Get the menu template that was passed
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
 
-    // Find the Tools menu
+    // Find the File menu
+    const fileMenu = menuTemplate.find(
+      (item: unknown) => item.label === "File",
+    );
+    expect(fileMenu).toBeDefined();
+    expect(fileMenu.submenu).toBeDefined();
+
+    // Verify File submenu contains scan items and change local store
+    const fileSubmenu = fileMenu.submenu;
+    const fileMenuLabels = fileSubmenu.map((item: unknown) => item.label);
+    expect(fileMenuLabels).toContain("Scan All Kits");
+    expect(fileMenuLabels).toContain("Scan Banks");
+    expect(fileMenuLabels).toContain("Change Local Store...");
+
+    // Verify no Tools menu exists
     const toolsMenu = menuTemplate.find(
       (item: unknown) => item.label === "Tools",
     );
-    expect(toolsMenu).toBeDefined();
-    expect(toolsMenu.submenu).toBeDefined();
+    expect(toolsMenu).toBeUndefined();
 
-    // Verify Tools submenu contains expected items
-    const toolsSubmenu = toolsMenu.submenu;
-    const toolsMenuLabels = toolsSubmenu.map((item: unknown) => item.label);
-    expect(toolsMenuLabels).toContain("Scan All Kits");
-    expect(toolsMenuLabels).toContain("Validate Database");
-    expect(toolsMenuLabels).toContain("Setup Local Store...");
-
-    // Find the Help menu and verify About Romper is there
+    // Find the Help menu and verify manual links
     const helpMenu = menuTemplate.find(
       (item: unknown) => item.label === "Help",
     );
     expect(helpMenu).toBeDefined();
     const helpSubmenu = helpMenu.submenu;
     const helpMenuLabels = helpSubmenu.map((item: unknown) => item.label);
-    expect(helpMenuLabels).toContain("About Romper");
+    expect(helpMenuLabels).toContain("Romper Manual");
+    expect(helpMenuLabels).toContain("Rample Manual");
 
-    // Verify that Menu.setApplicationMenu was called
     expect(mockMenu.setApplicationMenu).toHaveBeenCalledTimes(1);
   });
 
   it("should register menu IPC handlers", async () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    // Import after mocking electron
     const { registerMenuIpcHandlers } = await import("../applicationMenu");
 
-    // Register the handlers
     registerMenuIpcHandlers();
 
-    // Verify that the registration was logged (since no actual IPC handlers are registered)
     expect(consoleSpy).toHaveBeenCalledWith(
       "[Menu] Menu IPC handlers registered",
     );
@@ -106,8 +118,7 @@ describe("Menu IPC Integration Tests", () => {
     consoleSpy.mockRestore();
   });
 
-  it("should send IPC messages to renderer when menu items are clicked", async () => {
-    // Mock a browser window
+  it("should send IPC messages to renderer when File menu items are clicked", async () => {
     const mockWindow = {
       webContents: {
         send: vi.fn(),
@@ -116,18 +127,15 @@ describe("Menu IPC Integration Tests", () => {
     mockBrowserWindow.getAllWindows.mockReturnValue([mockWindow]);
     mockBrowserWindow.getFocusedWindow.mockReturnValue(mockWindow);
 
-    // Import the menu creation function
     const { createApplicationMenu } = await import("../applicationMenu");
 
-    // Create the menu
     createApplicationMenu();
 
-    // Get the menu template
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
-    const toolsMenu = menuTemplate.find(
-      (item: unknown) => item.label === "Tools",
+    const fileMenu = menuTemplate.find(
+      (item: unknown) => item.label === "File",
     );
-    const submenu = toolsMenu.submenu;
+    const submenu = fileMenu.submenu;
 
     // Find and trigger the "Scan All Kits" menu item
     const scanMenuItem = submenu.find(
@@ -136,17 +144,14 @@ describe("Menu IPC Integration Tests", () => {
     expect(scanMenuItem).toBeDefined();
     expect(scanMenuItem.click).toBeDefined();
 
-    // Trigger the click handler
     scanMenuItem.click();
 
-    // Verify that the IPC message was sent to renderer
     expect(mockWindow.webContents.send).toHaveBeenCalledWith(
       "menu-scan-all-kits",
     );
   });
 
-  it("should handle all menu items correctly", async () => {
-    // Mock a browser window
+  it("should handle all IPC menu items correctly", async () => {
     const mockWindow = {
       webContents: {
         send: vi.fn(),
@@ -155,29 +160,21 @@ describe("Menu IPC Integration Tests", () => {
     mockBrowserWindow.getAllWindows.mockReturnValue([mockWindow]);
     mockBrowserWindow.getFocusedWindow.mockReturnValue(mockWindow);
 
-    // Import the menu creation function
     const { createApplicationMenu } = await import("../applicationMenu");
 
-    // Create the menu
     createApplicationMenu();
 
-    // Get the menu template
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
 
-    // Test each menu item
+    // Test each menu item that sends IPC messages
     const menuItems = [
-      { event: "menu-scan-all-kits", label: "Scan All Kits", menu: "Tools" },
+      { event: "menu-scan-all-kits", label: "Scan All Kits", menu: "File" },
+      { event: "menu-scan-banks", label: "Scan Banks", menu: "File" },
       {
-        event: "menu-validate-database",
-        label: "Validate Database",
-        menu: "Tools",
+        event: "menu-change-local-store-directory",
+        label: "Change Local Store...",
+        menu: "File",
       },
-      {
-        event: "menu-setup-local-store",
-        label: "Setup Local Store...",
-        menu: "Tools",
-      },
-      { event: "menu-about", label: "About Romper", menu: "Help" },
     ];
 
     menuItems.forEach(({ event, label, menu }) => {
@@ -189,40 +186,85 @@ describe("Menu IPC Integration Tests", () => {
       expect(menuItem).toBeDefined();
       expect(menuItem.click).toBeDefined();
 
-      // Reset mock
       mockWindow.webContents.send.mockClear();
 
-      // Trigger the click handler
       menuItem.click();
 
-      // Verify that the correct IPC message was sent
       expect(mockWindow.webContents.send).toHaveBeenCalledWith(event);
     });
   });
 
-  it("should handle missing browser windows gracefully", async () => {
-    // Mock no browser windows
-    mockBrowserWindow.getAllWindows.mockReturnValue([]);
-
-    // Import the menu creation function
+  it("should open external links for Help menu manual items", async () => {
     const { createApplicationMenu } = await import("../applicationMenu");
 
-    // Create the menu
     createApplicationMenu();
 
-    // Get the menu template
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
-    const toolsMenu = menuTemplate.find(
-      (item: unknown) => item.label === "Tools",
+    const helpMenu = menuTemplate.find(
+      (item: unknown) => item.label === "Help",
     );
-    const submenu = toolsMenu.submenu;
+    const submenu = helpMenu.submenu;
 
-    // Find and trigger the "Scan All Kits" menu item
+    // Test Romper Manual
+    const romperManual = submenu.find(
+      (item: unknown) => item.label === "Romper Manual",
+    );
+    expect(romperManual).toBeDefined();
+    romperManual.click();
+    expect(mockShell.openExternal).toHaveBeenCalledWith(
+      "https://peteb4ker.github.io/romper/manual/",
+    );
+
+    // Test Rample Manual
+    const rampleManual = submenu.find(
+      (item: unknown) => item.label === "Rample Manual",
+    );
+    expect(rampleManual).toBeDefined();
+    rampleManual.click();
+    expect(mockShell.openExternal).toHaveBeenCalledWith(
+      "https://squarp.net/rample/manual/",
+    );
+  });
+
+  it("should include dev tools in View menu when not packaged", async () => {
+    const { createApplicationMenu } = await import("../applicationMenu");
+
+    createApplicationMenu();
+
+    const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
+    const viewMenu = menuTemplate.find(
+      (item: unknown) => item.label === "View",
+    );
+    expect(viewMenu).toBeDefined();
+
+    const viewSubmenu = viewMenu.submenu;
+    const viewRoles = viewSubmenu
+      .filter((item: unknown) => item.role)
+      .map((item: unknown) => item.role);
+
+    // Dev items should be present (app.isPackaged is false in tests)
+    expect(viewRoles).toContain("reload");
+    expect(viewRoles).toContain("forceReload");
+    expect(viewRoles).toContain("toggleDevTools");
+  });
+
+  it("should handle missing browser windows gracefully", async () => {
+    mockBrowserWindow.getAllWindows.mockReturnValue([]);
+
+    const { createApplicationMenu } = await import("../applicationMenu");
+
+    createApplicationMenu();
+
+    const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
+    const fileMenu = menuTemplate.find(
+      (item: unknown) => item.label === "File",
+    );
+    const submenu = fileMenu.submenu;
+
     const scanMenuItem = submenu.find(
       (item: unknown) => item.label === "Scan All Kits",
     );
 
-    // This should not throw an error even with no windows
     expect(() => {
       scanMenuItem.click();
     }).not.toThrow();

@@ -7,9 +7,7 @@ export interface MenuEventHandlers {
   onRedo?: () => void;
   onScanAllKits?: () => void;
   onScanBanks?: () => void;
-  onSetupLocalStore?: () => void;
   onUndo?: () => void;
-  onValidateDatabase?: () => void;
 }
 
 /**
@@ -27,18 +25,6 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
     const handleScanBanks = () => {
       if (handlers.onScanBanks) {
         handlers.onScanBanks();
-      }
-    };
-
-    const handleValidateDatabase = () => {
-      if (handlers.onValidateDatabase) {
-        handlers.onValidateDatabase();
-      }
-    };
-
-    const handleSetupLocalStore = () => {
-      if (handlers.onSetupLocalStore) {
-        handlers.onSetupLocalStore();
       }
     };
 
@@ -74,12 +60,8 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
 
     // Register electron event listeners
     if (window.electronAPI) {
-      // Use electron's ipcRenderer.on equivalent through the preload script
-      // We need to add these event listeners to the electron API
       window.addEventListener("menu-scan-all-kits", handleScanAllKits);
       window.addEventListener("menu-scan-banks", handleScanBanks);
-      window.addEventListener("menu-validate-database", handleValidateDatabase);
-      window.addEventListener("menu-setup-local-store", handleSetupLocalStore);
       window.addEventListener(
         "menu-change-local-store-directory",
         handleChangeLocalStoreDirectory,
@@ -94,14 +76,6 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
     return () => {
       window.removeEventListener("menu-scan-all-kits", handleScanAllKits);
       window.removeEventListener("menu-scan-banks", handleScanBanks);
-      window.removeEventListener(
-        "menu-validate-database",
-        handleValidateDatabase,
-      );
-      window.removeEventListener(
-        "menu-setup-local-store",
-        handleSetupLocalStore,
-      );
       window.removeEventListener(
         "menu-change-local-store-directory",
         handleChangeLocalStoreDirectory,

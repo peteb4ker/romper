@@ -3,13 +3,13 @@ import { resolve } from "path";
 import { dirname, join } from "path";
 import { defineConfig } from "vite";
 
-// Plugin to copy migrations directory
-function copyMigrations() {
+// Plugin to copy a directory from source to dist
+function copyDirectory(srcRelative: string, destRelative: string) {
   return {
-    name: "copy-migrations",
+    name: `copy-${srcRelative.replace(/\//g, "-")}`,
     writeBundle() {
-      const src = resolve(__dirname, "electron/main/db/migrations");
-      const dest = resolve(__dirname, "dist/electron/main/db/migrations");
+      const src = resolve(__dirname, srcRelative);
+      const dest = resolve(__dirname, destRelative);
 
       function copyDir(srcDir: string, destDir: string) {
         mkdirSync(destDir, { recursive: true });
@@ -75,7 +75,13 @@ export default defineConfig({
     sourcemap: true,
     target: "node18",
   },
-  plugins: [copyMigrations()],
+  plugins: [
+    copyDirectory(
+      "electron/main/db/migrations",
+      "dist/electron/main/db/migrations",
+    ),
+    copyDirectory("electron/main/resources", "dist/electron/main/resources"),
+  ],
   resolve: {
     alias: {
       "@": resolve(__dirname, "."),

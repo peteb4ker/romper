@@ -26,8 +26,7 @@ describe("useMenuEvents", () => {
     const handlers = {
       onAbout: vi.fn(),
       onScanAllKits: vi.fn(),
-      onSetupLocalStore: vi.fn(),
-      onValidateDatabase: vi.fn(),
+      onScanBanks: vi.fn(),
     };
 
     renderHook(() => useMenuEvents(handlers));
@@ -37,11 +36,7 @@ describe("useMenuEvents", () => {
       expect.any(Function),
     );
     expect(mockAddEventListener).toHaveBeenCalledWith(
-      "menu-validate-database",
-      expect.any(Function),
-    );
-    expect(mockAddEventListener).toHaveBeenCalledWith(
-      "menu-setup-local-store",
+      "menu-scan-banks",
       expect.any(Function),
     );
     expect(mockAddEventListener).toHaveBeenCalledWith(
@@ -54,8 +49,7 @@ describe("useMenuEvents", () => {
     const handlers = {
       onAbout: vi.fn(),
       onScanAllKits: vi.fn(),
-      onSetupLocalStore: vi.fn(),
-      onValidateDatabase: vi.fn(),
+      onScanBanks: vi.fn(),
     };
 
     const { unmount } = renderHook(() => useMenuEvents(handlers));
@@ -66,11 +60,7 @@ describe("useMenuEvents", () => {
       expect.any(Function),
     );
     expect(mockRemoveEventListener).toHaveBeenCalledWith(
-      "menu-validate-database",
-      expect.any(Function),
-    );
-    expect(mockRemoveEventListener).toHaveBeenCalledWith(
-      "menu-setup-local-store",
+      "menu-scan-banks",
       expect.any(Function),
     );
     expect(mockRemoveEventListener).toHaveBeenCalledWith(
@@ -83,8 +73,7 @@ describe("useMenuEvents", () => {
     const handlers = {
       onAbout: vi.fn(),
       onScanAllKits: vi.fn(),
-      onSetupLocalStore: vi.fn(),
-      onValidateDatabase: vi.fn(),
+      onScanBanks: vi.fn(),
     };
 
     renderHook(() => useMenuEvents(handlers));
@@ -93,11 +82,8 @@ describe("useMenuEvents", () => {
     const scanHandler = mockAddEventListener.mock.calls.find(
       (call) => call[0] === "menu-scan-all-kits",
     )?.[1];
-    const validateHandler = mockAddEventListener.mock.calls.find(
-      (call) => call[0] === "menu-validate-database",
-    )?.[1];
-    const setupHandler = mockAddEventListener.mock.calls.find(
-      (call) => call[0] === "menu-setup-local-store",
+    const scanBanksHandler = mockAddEventListener.mock.calls.find(
+      (call) => call[0] === "menu-scan-banks",
     )?.[1];
     const aboutHandler = mockAddEventListener.mock.calls.find(
       (call) => call[0] === "menu-about",
@@ -105,13 +91,11 @@ describe("useMenuEvents", () => {
 
     // Trigger the events
     scanHandler?.();
-    validateHandler?.();
-    setupHandler?.();
+    scanBanksHandler?.();
     aboutHandler?.();
 
     expect(handlers.onScanAllKits).toHaveBeenCalledTimes(1);
-    expect(handlers.onValidateDatabase).toHaveBeenCalledTimes(1);
-    expect(handlers.onSetupLocalStore).toHaveBeenCalledTimes(1);
+    expect(handlers.onScanBanks).toHaveBeenCalledTimes(1);
     expect(handlers.onAbout).toHaveBeenCalledTimes(1);
   });
 

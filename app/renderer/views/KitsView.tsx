@@ -154,11 +154,9 @@ const KitsView: React.FC = () => {
   const { kitBrowserRef } = useKitViewMenuHandlers({
     canRedo: keyboardShortcuts.canRedo,
     canUndo: keyboardShortcuts.canUndo,
-    localStorePath,
     onMessage: showMessage,
     openChangeDirectory: dialogState.openChangeDirectory,
     openPreferences: dialogState.openPreferences,
-    openWizard: dialogState.openWizard,
   });
 
   // Startup actions

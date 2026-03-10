@@ -74,12 +74,6 @@ vi.mock("../../components/hooks/shared/useMenuEvents", () => ({
       window.addEventListener("menu-scan-banks", () =>
         callbacks.onScanBanks?.(),
       );
-      window.addEventListener("menu-validate-database", () =>
-        callbacks.onValidateDatabase?.(),
-      );
-      window.addEventListener("menu-setup-local-store", () =>
-        callbacks.onSetupLocalStore?.(),
-      );
       window.addEventListener("menu-change-local-store-directory", () =>
         callbacks.onChangeLocalStoreDirectory?.(),
       );
@@ -295,8 +289,6 @@ describe("KitsView", () => {
     beforeEach(() => {
       // Reset all mock functions before each test
       mockScanBanks.mockClear();
-      mockOpenValidationDialog.mockClear();
-      mockOpenWizard.mockClear();
       mockOpenChangeDirectory.mockClear();
       mockOpenPreferences.mockClear();
       mockHandleScanAllKits.mockClear();
@@ -338,46 +330,6 @@ describe("KitsView", () => {
 
       await waitFor(() => {
         expect(mockScanBanks).toHaveBeenCalled();
-      });
-    });
-
-    it("handles validate database menu event", async () => {
-      render(
-        <TestSettingsProvider>
-          <KitsView />
-        </TestSettingsProvider>,
-      );
-
-      // Wait for component to render and callbacks to be set up
-      await waitFor(() => {
-        expect(globalMenuCallbacks).not.toBeNull();
-      });
-
-      // Trigger the menu callback directly
-      globalMenuCallbacks.onValidateDatabase();
-
-      await waitFor(() => {
-        expect(mockOpenValidationDialog).toHaveBeenCalled();
-      });
-    });
-
-    it("handles setup local store menu event", async () => {
-      render(
-        <TestSettingsProvider>
-          <KitsView />
-        </TestSettingsProvider>,
-      );
-
-      // Wait for component to render and callbacks to be set up
-      await waitFor(() => {
-        expect(globalMenuCallbacks).not.toBeNull();
-      });
-
-      // Trigger the menu callback directly
-      globalMenuCallbacks.onSetupLocalStore();
-
-      await waitFor(() => {
-        expect(mockOpenWizard).toHaveBeenCalled();
       });
     });
 

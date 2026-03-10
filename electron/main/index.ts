@@ -130,6 +130,8 @@ function registerAllIpcHandlers(settings: InMemorySettings) {
   registerDbIpcHandlers(settings);
 }
 
+app.setName("Romper");
+
 app.whenReady().then(async () => {
   console.log("[Startup] App is starting...");
   try {

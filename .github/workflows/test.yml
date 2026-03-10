@@ -198,8 +198,8 @@ jobs:
           SONAR_ORGANIZATION: peteb4ker
           SONAR_HOST_URL: https://sonarcloud.io
 
-      # Check for quality issues and auto-create GitHub issue
-      - name: Check for quality issues and raise GitHub issue
+      # Risk-informed quality gate check with deduplication
+      - name: Check quality gate and manage issues
         if: always() && github.event_name == 'push'
         continue-on-error: true
         env:
@@ -221,11 +221,37 @@ jobs:
           FAILED_CONDITIONS=$(echo "$GATE" | jq -r \
             '.projectStatus.conditions[] | select(.status == "ERROR") | "- **\(.metricKey)**: \(.actualValue) (required: \(.errorThreshold))"')
 
+          # Search for existing open sonarcloud issue
+          EXISTING=$(gh issue list --label "sonarcloud" --state open --json number,body --limit 1)
+          EXISTING_NUMBER=$(echo "$EXISTING" | jq -r '.[0].number // empty')
+
+          ISSUE_TITLE="SonarCloud: quality gate failure on main"
+
           if [ "$STATUS" != "OK" ]; then
-            gh issue create \
-              --title "SonarCloud: quality gate failure on main" \
-              --label "bug,priority:high" \
-              --body "## SonarCloud Quality Gate Failed
+            if [ -n "$EXISTING_NUMBER" ]; then
+              # Extract previous issue count from existing issue body
+              PREV_CRITICAL=$(echo "$EXISTING" | jq -r '.[0].body' | grep -oP 'Critical/Blocker/Major Issues:\*\* \K\d+' || echo "0")
+              if [ "$CRITICAL" -gt "${PREV_CRITICAL:-0}" ]; then
+                gh issue comment "$EXISTING_NUMBER" --body "## Quality Gate Still Failing — Worsened
+
+          **Commit:** ${{ github.sha }}
+          **Critical/Blocker/Major Issues:** $CRITICAL (was $PREV_CRITICAL)
+          **Security Hotspots to Review:** $HOTSPOTS
+
+          ### Failed Conditions
+          $FAILED_CONDITIONS
+
+          _Updated by CI on main branch push._"
+                echo "::warning::SonarCloud issues worsened ($PREV_CRITICAL → $CRITICAL) — commented on #$EXISTING_NUMBER"
+              else
+                echo "SonarCloud quality gate still failing but not worsened (issues: $CRITICAL, was: $PREV_CRITICAL) — skipping duplicate"
+              fi
+            else
+              # No existing issue — create a new one
+              gh issue create \
+                --title "$ISSUE_TITLE" \
+                --label "bug,priority:high,sonarcloud" \
+                --body "## SonarCloud Quality Gate Failed
 
           **Commit:** ${{ github.sha }}
           **Quality Gate:** $STATUS
@@ -241,7 +267,17 @@ jobs:
           - [Quality Gate](https://sonarcloud.io/summary/overall?id=peteb4ker_romper)
 
           _Auto-created by CI on main branch push._"
-            echo "::warning::SonarCloud quality issues detected — GitHub issue created"
+              echo "::warning::SonarCloud quality issues detected — GitHub issue created"
+            fi
           else
-            echo "SonarCloud quality gate passed"
+            if [ -n "$EXISTING_NUMBER" ]; then
+              gh issue close "$EXISTING_NUMBER" --comment "## Quality Gate Passed
+
+          Quality gate passed on commit ${{ github.sha }}. Auto-closing.
+
+          _Resolved by CI on main branch push._"
+              echo "SonarCloud quality gate passed — auto-closed #$EXISTING_NUMBER"
+            else
+              echo "SonarCloud quality gate passed"
+            fi
           fi

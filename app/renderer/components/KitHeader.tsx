@@ -294,7 +294,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
 
         {onScanKit && (
           <button
-            className="ml-2 px-2 py-1 text-xs bg-accent-success text-text-inverse rounded shadow hover:brightness-110 font-semibold flex items-center transition duration-150"
+            className="ml-2 px-2 py-1 text-xs bg-accent-success text-text-inverse rounded hover:bg-accent-success/80 font-semibold flex items-center transition duration-150"
             onClick={onScanKit}
             title="Perform comprehensive kit scan (voice names, WAV analysis, artist metadata)"
           >

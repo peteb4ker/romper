@@ -21,7 +21,7 @@ The **bank navigation bar** runs along the left side of the kit grid. Click any 
 
 ![Bank navigation bar]({{ site.baseurl }}/images/manual/bank-nav.png){: .img-left}
 
-Banks that contain kits are displayed with their full name (e.g., "Bank A ALWIS"). Empty banks are skipped in the grid view.
+Banks that contain kits are displayed with their full name (e.g., "Bank A ALWIS"). The bank artist name is populated from RTF label files found in each bank's directory during scanning. Empty banks are skipped in the grid view.
 
 ## Kit Cards
 
@@ -102,6 +102,12 @@ Click the **Validate Store** button in the header to run a check across all kits
 - No duplicate samples within a voice
 
 Validation results appear in a dialog with warnings and errors you can act on.
+
+## Scanning Your Library
+
+Use **File > Scan All** (`Cmd+Shift+S` / `Ctrl+Shift+S`) to rescan your entire library. This runs a bank scan (reads RTF label files for bank artist metadata) followed by a kit scan (analyzes sample filenames for voice names and extracts WAV metadata). Banks are also scanned automatically at startup.
+
+To scan a single kit, open it in the Kit Editor and click **Scan Kit** or press `/`.
 
 ## Keyboard Navigation
 

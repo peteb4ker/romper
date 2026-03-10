@@ -5,8 +5,7 @@ export interface MenuEventHandlers {
   onChangeLocalStoreDirectory?: () => void;
   onPreferences?: () => void;
   onRedo?: () => void;
-  onScanAllKits?: () => void;
-  onScanBanks?: () => void;
+  onScanAll?: () => void;
   onUndo?: () => void;
 }
 
@@ -16,15 +15,9 @@ export interface MenuEventHandlers {
 export function useMenuEvents(handlers: MenuEventHandlers) {
   useEffect(() => {
     // Set up event listeners for menu events
-    const handleScanAllKits = () => {
-      if (handlers.onScanAllKits) {
-        handlers.onScanAllKits();
-      }
-    };
-
-    const handleScanBanks = () => {
-      if (handlers.onScanBanks) {
-        handlers.onScanBanks();
+    const handleScanAll = () => {
+      if (handlers.onScanAll) {
+        handlers.onScanAll();
       }
     };
 
@@ -60,8 +53,7 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
 
     // Register electron event listeners
     if (window.electronAPI) {
-      window.addEventListener("menu-scan-all-kits", handleScanAllKits);
-      window.addEventListener("menu-scan-banks", handleScanBanks);
+      window.addEventListener("menu-scan-all-kits", handleScanAll);
       window.addEventListener(
         "menu-change-local-store-directory",
         handleChangeLocalStoreDirectory,
@@ -74,8 +66,7 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
 
     // Cleanup event listeners
     return () => {
-      window.removeEventListener("menu-scan-all-kits", handleScanAllKits);
-      window.removeEventListener("menu-scan-banks", handleScanBanks);
+      window.removeEventListener("menu-scan-all-kits", handleScanAll);
       window.removeEventListener(
         "menu-change-local-store-directory",
         handleChangeLocalStoreDirectory,

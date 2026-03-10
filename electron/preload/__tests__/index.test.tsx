@@ -403,7 +403,6 @@ describe("preload/index.tsx", () => {
 
       const expectedEvents = [
         "menu-scan-all-kits",
-        "menu-scan-banks",
         "menu-change-local-store-directory",
         "menu-preferences",
         "menu-about",

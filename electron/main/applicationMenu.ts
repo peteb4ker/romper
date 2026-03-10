@@ -53,19 +53,8 @@ export function createApplicationMenu() {
               focusedWindow.webContents.send("menu-scan-all-kits");
             }
           },
-          icon: menuIcons.scanAllKits,
-          label: "Scan All Kits",
-        },
-        {
-          accelerator: "CmdOrCtrl+Shift+B",
-          click: () => {
-            const focusedWindow = BrowserWindow.getFocusedWindow();
-            if (focusedWindow) {
-              focusedWindow.webContents.send("menu-scan-banks");
-            }
-          },
-          icon: menuIcons.scanBanks,
-          label: "Scan Banks",
+          icon: menuIcons.scanAll,
+          label: "Scan All",
         },
         { type: "separator" as const },
         {

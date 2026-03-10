@@ -25,6 +25,5 @@ export const menuIcons = {
   preferences: createMenuIcon("gearSix"),
   rampleManual: createMenuIcon("book"),
   romperManual: createMenuIcon("bookOpenText"),
-  scanAllKits: createMenuIcon("magnifyingGlass"),
-  scanBanks: createMenuIcon("barcode"),
+  scanAll: createMenuIcon("magnifyingGlass"),
 };

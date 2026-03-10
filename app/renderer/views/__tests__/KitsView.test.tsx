@@ -69,10 +69,7 @@ vi.mock("../../components/hooks/shared/useMenuEvents", () => ({
     // Register menu event listeners
     if (typeof window !== "undefined") {
       window.addEventListener("menu-scan-all-kits", () =>
-        callbacks.onScanAllKits?.(),
-      );
-      window.addEventListener("menu-scan-banks", () =>
-        callbacks.onScanBanks?.(),
+        callbacks.onScanAll?.(),
       );
       window.addEventListener("menu-change-local-store-directory", () =>
         callbacks.onChangeLocalStoreDirectory?.(),
@@ -306,14 +303,17 @@ describe("KitsView", () => {
         expect(globalMenuCallbacks).not.toBeNull();
       });
 
-      // Trigger the menu callback directly
-      globalMenuCallbacks.onScanAllKits();
+      // Trigger the unified scan all callback
+      globalMenuCallbacks.onScanAll();
 
-      // The real implementation checks kitBrowserRef.current?.handleScanAllKits
-      // Since that's null in our test, there's nothing to assert - just verify no error
+      // The real implementation runs bank scan then checks kitBrowserRef.current?.handleScanAllKits
+      // Since kitBrowserRef is null in our test, bank scan runs but kit scan is a no-op
+      await waitFor(() => {
+        expect(mockScanBanks).toHaveBeenCalled();
+      });
     });
 
-    it("handles scan banks menu event", async () => {
+    it("handles scan all menu event (includes bank scan)", async () => {
       render(
         <TestSettingsProvider>
           <KitsView />
@@ -325,8 +325,8 @@ describe("KitsView", () => {
         expect(globalMenuCallbacks).not.toBeNull();
       });
 
-      // Trigger the menu callback directly
-      globalMenuCallbacks.onScanBanks();
+      // Trigger the unified scan all callback
+      globalMenuCallbacks.onScanAll();
 
       await waitFor(() => {
         expect(mockScanBanks).toHaveBeenCalled();

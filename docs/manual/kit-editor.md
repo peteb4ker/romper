@@ -24,6 +24,10 @@ Click any kit card in the Kit Browser to open it. The header shows:
 - **Lock toggle** -- Protect the kit from edits
 - **Scan Kit button** -- Re-analyze samples and refresh voice name detection
 
+### Unscanned Kit Prompt
+
+If a kit hasn't been scanned yet and contains samples, a banner appears below the header prompting you to scan. Click **Scan Now** to run the analysis, or dismiss the banner if you'd prefer to scan later. Scanning infers voice names from sample filenames and extracts WAV metadata (sample rate, bit depth, duration).
+
 ## Voice Panels
 
 The main area shows four voice panels, one for each of the Rample's voices. Each panel is color-coded:

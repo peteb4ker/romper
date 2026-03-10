@@ -25,18 +25,13 @@ describe("useMenuEvents", () => {
   it("should register event listeners on mount", () => {
     const handlers = {
       onAbout: vi.fn(),
-      onScanAllKits: vi.fn(),
-      onScanBanks: vi.fn(),
+      onScanAll: vi.fn(),
     };
 
     renderHook(() => useMenuEvents(handlers));
 
     expect(mockAddEventListener).toHaveBeenCalledWith(
       "menu-scan-all-kits",
-      expect.any(Function),
-    );
-    expect(mockAddEventListener).toHaveBeenCalledWith(
-      "menu-scan-banks",
       expect.any(Function),
     );
     expect(mockAddEventListener).toHaveBeenCalledWith(
@@ -48,8 +43,7 @@ describe("useMenuEvents", () => {
   it("should remove event listeners on unmount", () => {
     const handlers = {
       onAbout: vi.fn(),
-      onScanAllKits: vi.fn(),
-      onScanBanks: vi.fn(),
+      onScanAll: vi.fn(),
     };
 
     const { unmount } = renderHook(() => useMenuEvents(handlers));
@@ -57,10 +51,6 @@ describe("useMenuEvents", () => {
 
     expect(mockRemoveEventListener).toHaveBeenCalledWith(
       "menu-scan-all-kits",
-      expect.any(Function),
-    );
-    expect(mockRemoveEventListener).toHaveBeenCalledWith(
-      "menu-scan-banks",
       expect.any(Function),
     );
     expect(mockRemoveEventListener).toHaveBeenCalledWith(
@@ -72,8 +62,7 @@ describe("useMenuEvents", () => {
   it("should call appropriate handlers when events are triggered", () => {
     const handlers = {
       onAbout: vi.fn(),
-      onScanAllKits: vi.fn(),
-      onScanBanks: vi.fn(),
+      onScanAll: vi.fn(),
     };
 
     renderHook(() => useMenuEvents(handlers));
@@ -82,26 +71,21 @@ describe("useMenuEvents", () => {
     const scanHandler = mockAddEventListener.mock.calls.find(
       (call) => call[0] === "menu-scan-all-kits",
     )?.[1];
-    const scanBanksHandler = mockAddEventListener.mock.calls.find(
-      (call) => call[0] === "menu-scan-banks",
-    )?.[1];
     const aboutHandler = mockAddEventListener.mock.calls.find(
       (call) => call[0] === "menu-about",
     )?.[1];
 
     // Trigger the events
     scanHandler?.();
-    scanBanksHandler?.();
     aboutHandler?.();
 
-    expect(handlers.onScanAllKits).toHaveBeenCalledTimes(1);
-    expect(handlers.onScanBanks).toHaveBeenCalledTimes(1);
+    expect(handlers.onScanAll).toHaveBeenCalledTimes(1);
     expect(handlers.onAbout).toHaveBeenCalledTimes(1);
   });
 
   it("should handle missing handlers gracefully", () => {
     const handlers = {
-      onScanAllKits: vi.fn(),
+      onScanAll: vi.fn(),
       // Missing other handlers
     };
 

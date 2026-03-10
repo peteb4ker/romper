@@ -69,15 +69,13 @@ export function useKitViewMenuHandlers({
         dispatchUndoRedoEvent(true);
       }
     },
-    onScanAllKits: () => {
-      console.log("[useKitViewMenuHandlers] Menu scan all kits triggered");
+    onScanAll: async () => {
+      console.log("[useKitViewMenuHandlers] Menu scan all triggered");
+      // Run bank scan first (fast), then kit scan
+      await scanBanks();
       if (kitBrowserRef.current?.handleScanAllKits) {
         kitBrowserRef.current.handleScanAllKits();
       }
-    },
-    onScanBanks: () => {
-      console.log("[useKitViewMenuHandlers] Menu scan banks triggered");
-      scanBanks();
     },
     onUndo: () => {
       console.log("[useKitViewMenuHandlers] Menu undo triggered");

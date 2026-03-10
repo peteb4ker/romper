@@ -47,6 +47,7 @@ export function useKitBrowser({
     globalBankHotkeyHandler: bankNavigation.globalBankHotkeyHandler,
     handleBankClick: bankNavigation.handleBankClick,
     handleBankClickWithScroll: bankNavigation.handleBankClickWithScroll,
+    handleBankNameChange: bankNavigation.handleBankNameChange,
     // From kitCreation
     handleCreateKitInBank: kitCreation.handleCreateKitInBank,
 

@@ -19,6 +19,7 @@ import {
   getKits,
   getKitSamples,
   getKitsMetadata,
+  updateBank,
   updateKit,
   updateSampleMetadata,
   updateVoiceAlias,
@@ -29,6 +30,7 @@ import {
 import { registerSampleIpcHandlers } from "./db/sampleIpcHandlers.js";
 import { registerSyncIpcHandlers } from "./db/syncIpcHandlers.js";
 import { localStoreService } from "./services/localStoreService.js";
+import { rtfFileService } from "./services/rtfFileService.js";
 import { scanService } from "./services/scanService.js";
 
 export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
@@ -269,6 +271,44 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     createDbHandler(inMemorySettings, (dbDir: string) => {
       return getAllBanks(dbDir);
     }),
+  );
+
+  ipcMain.handle(
+    "update-bank",
+    createDbHandler(
+      inMemorySettings,
+      (
+        dbDir: string,
+        bankLetter: string,
+        updates: { artist?: null | string; rtf_filename?: null | string },
+      ) => {
+        const result = updateBank(dbDir, bankLetter, {
+          artist: updates.artist ?? undefined,
+          rtf_filename: updates.rtf_filename ?? undefined,
+        });
+        if (!result.success) return result;
+
+        // Manage RTF file in local store root
+        const localStorePath =
+          process.env.ROMPER_LOCAL_PATH ||
+          (typeof inMemorySettings.localStorePath === "string"
+            ? inMemorySettings.localStorePath
+            : undefined);
+        if (localStorePath) {
+          if (updates.artist) {
+            rtfFileService.writeRtfFile(
+              localStorePath,
+              bankLetter,
+              updates.artist,
+            );
+          } else {
+            rtfFileService.removeRtfFile(localStorePath, bankLetter);
+          }
+        }
+
+        return result;
+      },
+    ),
   );
 
   ipcMain.handle("scan-banks", async () => {

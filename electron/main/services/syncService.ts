@@ -3,7 +3,8 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import * as fs from "fs";
 import * as path from "path";
 
-import { markKitsAsSynced } from "../db/romperDbCoreORM.js";
+import { getAllBanks, markKitsAsSynced } from "../db/romperDbCoreORM.js";
+import { rtfFileService } from "./rtfFileService.js";
 import {
   type SyncFileOperation,
   syncFileOperationsService,
@@ -197,6 +198,9 @@ class SyncService {
         return { error: "Sync operation was cancelled", success: false };
       }
 
+      // Write bank RTF files to SD card root
+      this.writeBankRtfFiles(dbDir, options.sdCardPath);
+
       await this.markKitsAsSynced(inMemorySettings, allFiles, syncedFiles);
 
       return { data: { syncedFiles }, success: true };
@@ -306,6 +310,26 @@ class SyncService {
       throw new Error(
         `Failed to wipe SD card: ${error instanceof Error ? error.message : String(error)}`,
       );
+    }
+  }
+
+  /**
+   * Write bank RTF files to the SD card root for banks with artist names
+   */
+  private writeBankRtfFiles(dbDir: string, sdCardPath: string): void {
+    try {
+      const banksResult = getAllBanks(dbDir);
+      if (banksResult.success && banksResult.data) {
+        const written = rtfFileService.writeAllBankRtfFiles(
+          sdCardPath,
+          banksResult.data,
+        );
+        if (written > 0) {
+          console.log(`Wrote ${written} bank RTF files to SD card`);
+        }
+      }
+    } catch (error) {
+      console.warn("Failed to write bank RTF files to SD card:", error);
     }
   }
 }

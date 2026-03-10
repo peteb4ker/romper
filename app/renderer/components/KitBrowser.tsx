@@ -119,6 +119,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       duplicateKitDirect,
       focusedKit,
       globalBankHotkeyHandler,
+      handleBankNameChange,
       handleCreateKitInBank,
       handleVisibleBankChange,
       isCreatingKit,
@@ -251,6 +252,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             kits={kits}
             newlyAnimatedKit={logic.newlyAnimatedKit}
             onBankFocus={handleBankFocus}
+            onBankNameChange={handleBankNameChange}
             onCreateKitInBank={handleCreateKitInBank}
             onDeleteKit={deletion.deleteKitDirect}
             onDuplicate={() => {}}

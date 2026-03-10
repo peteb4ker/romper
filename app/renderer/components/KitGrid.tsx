@@ -10,63 +10,11 @@ import React, {
 } from "react";
 
 import AddKitCard from "./AddKitCard";
+import BankHeader from "./BankHeader";
 import { useKitListLogic } from "./hooks/kit-management/useKitListLogic";
 import { useKitListNavigation } from "./hooks/kit-management/useKitListNavigation";
 import { useKitGridKeyboard } from "./hooks/useKitGridKeyboard";
 import { KitGridCard } from "./KitGridCard";
-
-// Bank header component for grid layout
-interface BankHeaderProps {
-  bank: string;
-  bankName?: string;
-  onBankVisible?: (bank: string) => void;
-}
-
-const BankHeader: React.FC<BankHeaderProps> = ({
-  bank,
-  bankName,
-  onBankVisible,
-}) => {
-  const headerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!headerRef.current || !onBankVisible) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          onBankVisible(bank);
-        }
-      },
-      {
-        rootMargin: "-10% 0px -80% 0px",
-        threshold: 0.5,
-      },
-    );
-
-    observer.observe(headerRef.current);
-    return () => observer.disconnect();
-  }, [bank, onBankVisible]);
-
-  return (
-    <div
-      className="col-span-full mt-5 first:mt-1"
-      id={`bank-${bank}`}
-      ref={headerRef}
-    >
-      <div className="flex items-center gap-3 px-3 py-2 border-b border-border-subtle">
-        <span className="font-mono font-black text-xl text-accent-primary leading-none">
-          {bank}
-        </span>
-        {bankName && (
-          <span className="text-sm text-text-secondary tracking-wide truncate">
-            {bankName}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // Expose imperative scroll/focus API for parent components
 export interface KitGridHandle {
@@ -84,6 +32,7 @@ interface KitGridProps {
   kits: KitWithRelations[];
   newlyAnimatedKit?: null | string; // Kit name that should play entrance animation
   onBankFocus?: (bank: string) => void;
+  onBankNameChange?: (bank: string, newName: string) => void;
   onCreateKitInBank?: (bankLetter: string) => void;
   onDelete?: (kit: string) => void;
   onDeleteKit?: (kitName: string) => Promise<void>;
@@ -166,6 +115,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       kits,
       newlyAnimatedKit,
       onBankFocus,
+      onBankNameChange,
       onCreateKitInBank,
       onDelete,
       onDeleteKit,
@@ -260,7 +210,9 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
                 <BankHeader
                   bank={bank}
                   bankName={bankNames[bank]}
+                  onBankNameChange={onBankNameChange}
                   onBankVisible={onVisibleBankChange}
+                  variant="grid"
                 />
                 {/* Kit cards for this bank */}
                 {bankKits.map((kit) => (

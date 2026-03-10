@@ -4,21 +4,17 @@ import React, { useCallback, useRef } from "react";
 
 import { useBankScanning } from "../shared/useBankScanning";
 import { useMenuEvents } from "../shared/useMenuEvents";
-import { useValidationResults } from "../shared/useValidationResults";
 
 interface UseKitViewMenuHandlersProps {
   canRedo?: boolean;
   canUndo?: boolean;
-  localStorePath: null | string;
   onMessage: (text: string, type?: string, duration?: number) => void;
   openChangeDirectory: () => void;
   openPreferences: () => void;
-  openWizard: () => void;
 }
 
 interface UseKitViewMenuHandlersReturn {
   kitBrowserRef: React.RefObject<KitBrowserHandle | null>;
-  openValidationDialog: () => void;
 }
 
 /**
@@ -28,35 +24,12 @@ interface UseKitViewMenuHandlersReturn {
 export function useKitViewMenuHandlers({
   canRedo = false,
   canUndo = false,
-  localStorePath,
   onMessage,
   openChangeDirectory,
   openPreferences,
-  openWizard,
 }: UseKitViewMenuHandlersProps): UseKitViewMenuHandlersReturn {
   // Ref to access KitBrowser scan functionality
   const kitBrowserRef = useRef<KitBrowserHandle | null>(null);
-
-  // Validation results hook for database validation
-  const { openValidationDialog: openValidationDialogAsync } =
-    useValidationResults({
-      localStorePath: localStorePath ?? "",
-      onMessage: (text, type) => {
-        console.log("[useKitViewMenuHandlers] Validation message:", text);
-        onMessage(text, type);
-      },
-    });
-
-  // Wrapper to handle async validation dialog opening
-  const openValidationDialog = useCallback(() => {
-    openValidationDialogAsync().catch((error) => {
-      console.error(
-        "[useKitViewMenuHandlers] Error opening validation dialog:",
-        error,
-      );
-      onMessage("Failed to open validation dialog", "error");
-    });
-  }, [openValidationDialogAsync, onMessage]);
 
   // Bank scanning hook
   const { scanBanks } = useBankScanning({
@@ -79,7 +52,6 @@ export function useKitViewMenuHandlers({
   useMenuEvents({
     onAbout: () => {
       console.log("[useKitViewMenuHandlers] Menu about triggered");
-      // Could show an about dialog here
     },
     onChangeLocalStoreDirectory: () => {
       console.log(
@@ -107,24 +79,15 @@ export function useKitViewMenuHandlers({
       console.log("[useKitViewMenuHandlers] Menu scan banks triggered");
       scanBanks();
     },
-    onSetupLocalStore: () => {
-      console.log("[useKitViewMenuHandlers] Menu setup local store triggered");
-      openWizard();
-    },
     onUndo: () => {
       console.log("[useKitViewMenuHandlers] Menu undo triggered");
       if (canUndo) {
         dispatchUndoRedoEvent(false);
       }
     },
-    onValidateDatabase: () => {
-      console.log("[useKitViewMenuHandlers] Menu validate database triggered");
-      openValidationDialog();
-    },
   });
 
   return {
     kitBrowserRef,
-    openValidationDialog,
   };
 }

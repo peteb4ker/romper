@@ -88,9 +88,7 @@ interface MenuEventMap {
   "menu-redo": void;
   "menu-scan-all-kits": void;
   "menu-scan-banks": void;
-  "menu-setup-local-store": void;
   "menu-undo": void;
-  "menu-validate-database": void;
 }
 
 class MenuEventForwarder {
@@ -100,8 +98,6 @@ class MenuEventForwarder {
   }> = [
     { domEvent: "menu-scan-all-kits", ipcEvent: "menu-scan-all-kits" },
     { domEvent: "menu-scan-banks", ipcEvent: "menu-scan-banks" },
-    { domEvent: "menu-validate-database", ipcEvent: "menu-validate-database" },
-    { domEvent: "menu-setup-local-store", ipcEvent: "menu-setup-local-store" },
     {
       domEvent: "menu-change-local-store-directory",
       ipcEvent: "menu-change-local-store-directory",

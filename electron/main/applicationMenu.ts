@@ -1,11 +1,13 @@
-import { app, BrowserWindow, Menu } from "electron";
+import { app, BrowserWindow, Menu, shell } from "electron";
+
+const isDev = !app.isPackaged;
 
 /**
- * Creates and sets the application menu with Tools menu containing scanning and maintenance operations
+ * Creates and sets the application menu with streamlined structure
  */
 export function createApplicationMenu() {
   const template: Electron.MenuItemConstructorOptions[] = [
-    // Application menu (macOS) or File menu (Windows/Linux)
+    // Application menu (macOS only)
     ...(process.platform === "darwin"
       ? [
           {
@@ -40,7 +42,55 @@ export function createApplicationMenu() {
     {
       label: "File",
       submenu: [
-        ...(process.platform !== "darwin" ? [{ role: "quit" as const }] : []),
+        {
+          accelerator: "CmdOrCtrl+Shift+S",
+          click: () => {
+            const focusedWindow = BrowserWindow.getFocusedWindow();
+            if (focusedWindow) {
+              focusedWindow.webContents.send("menu-scan-all-kits");
+            }
+          },
+          label: "Scan All Kits",
+        },
+        {
+          accelerator: "CmdOrCtrl+Shift+B",
+          click: () => {
+            const focusedWindow = BrowserWindow.getFocusedWindow();
+            if (focusedWindow) {
+              focusedWindow.webContents.send("menu-scan-banks");
+            }
+          },
+          label: "Scan Banks",
+        },
+        { type: "separator" as const },
+        {
+          click: () => {
+            const focusedWindow = BrowserWindow.getFocusedWindow();
+            if (focusedWindow) {
+              focusedWindow.webContents.send(
+                "menu-change-local-store-directory",
+              );
+            }
+          },
+          label: "Change Local Store...",
+        },
+        ...(process.platform !== "darwin"
+          ? [
+              { type: "separator" as const },
+              {
+                accelerator: "Ctrl+,",
+                click: () => {
+                  const focusedWindow = BrowserWindow.getFocusedWindow();
+                  if (focusedWindow) {
+                    focusedWindow.webContents.send("menu-preferences");
+                  }
+                },
+                label: "Preferences...",
+              },
+              { type: "separator" as const },
+              { role: "quit" as const },
+            ]
+          : []),
       ],
     },
 
@@ -73,84 +123,6 @@ export function createApplicationMenu() {
         { role: "copy" as const },
         { role: "paste" as const },
         { role: "selectAll" as const },
-        ...(process.platform !== "darwin"
-          ? [
-              { type: "separator" as const },
-              {
-                accelerator: "Ctrl+,",
-                click: () => {
-                  const focusedWindow = BrowserWindow.getFocusedWindow();
-                  if (focusedWindow) {
-                    focusedWindow.webContents.send("menu-preferences");
-                  }
-                },
-                label: "Preferences...",
-              },
-            ]
-          : []),
-      ],
-    },
-
-    // Tools menu - This is where we put administrative actions
-    {
-      label: "Tools",
-      submenu: [
-        {
-          accelerator: "CmdOrCtrl+Shift+S",
-          click: () => {
-            // Send IPC message to renderer to trigger scan all kits
-            const focusedWindow = BrowserWindow.getFocusedWindow();
-            if (focusedWindow) {
-              focusedWindow.webContents.send("menu-scan-all-kits");
-            }
-          },
-          label: "Scan All Kits",
-        },
-        {
-          accelerator: "CmdOrCtrl+Shift+B",
-          click: () => {
-            // Send IPC message to renderer to trigger bank scanning
-            const focusedWindow = BrowserWindow.getFocusedWindow();
-            if (focusedWindow) {
-              focusedWindow.webContents.send("menu-scan-banks");
-            }
-          },
-          label: "Scan Banks",
-        },
-        {
-          accelerator: "CmdOrCtrl+Shift+V",
-          click: () => {
-            // Send IPC message to renderer to trigger validation
-            const focusedWindow = BrowserWindow.getFocusedWindow();
-            if (focusedWindow) {
-              focusedWindow.webContents.send("menu-validate-database");
-            }
-          },
-          label: "Validate Database",
-        },
-        { type: "separator" },
-        {
-          click: () => {
-            // Send IPC message to renderer to open local store wizard
-            const focusedWindow = BrowserWindow.getFocusedWindow();
-            if (focusedWindow) {
-              focusedWindow.webContents.send("menu-setup-local-store");
-            }
-          },
-          label: "Setup Local Store...",
-        },
-        {
-          click: () => {
-            // Send IPC message to renderer to open change directory dialog
-            const focusedWindow = BrowserWindow.getFocusedWindow();
-            if (focusedWindow) {
-              focusedWindow.webContents.send(
-                "menu-change-local-store-directory",
-              );
-            }
-          },
-          label: "Change Local Store Directory...",
-        },
       ],
     },
 
@@ -158,15 +130,19 @@ export function createApplicationMenu() {
     {
       label: "View",
       submenu: [
-        { role: "reload" as const },
-        { role: "forceReload" as const },
-        { role: "toggleDevTools" as const },
-        { type: "separator" as const },
         { role: "resetZoom" as const },
         { role: "zoomIn" as const },
         { role: "zoomOut" as const },
         { type: "separator" as const },
         { role: "togglefullscreen" as const },
+        ...(isDev
+          ? [
+              { type: "separator" as const },
+              { role: "reload" as const },
+              { role: "forceReload" as const },
+              { role: "toggleDevTools" as const },
+            ]
+          : []),
       ],
     },
 
@@ -193,13 +169,30 @@ export function createApplicationMenu() {
       submenu: [
         {
           click: () => {
-            const focusedWindow = BrowserWindow.getFocusedWindow();
-            if (focusedWindow) {
-              focusedWindow.webContents.send("menu-about");
-            }
+            shell.openExternal("https://peteb4ker.github.io/romper/manual/");
           },
-          label: "About Romper",
+          label: "Romper Manual",
         },
+        {
+          click: () => {
+            shell.openExternal("https://squarp.net/rample/manual/");
+          },
+          label: "Rample Manual",
+        },
+        ...(process.platform !== "darwin"
+          ? [
+              { type: "separator" as const },
+              {
+                click: () => {
+                  const focusedWindow = BrowserWindow.getFocusedWindow();
+                  if (focusedWindow) {
+                    focusedWindow.webContents.send("menu-about");
+                  }
+                },
+                label: "About Romper",
+              },
+            ]
+          : []),
       ],
     },
   ];

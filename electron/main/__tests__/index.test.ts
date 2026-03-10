@@ -35,6 +35,7 @@ vi.mock("electron", () => {
     getName: vi.fn(() => "Romper"),
     getPath: vi.fn(() => "/mock/userData"),
     quit: vi.fn(),
+    setName: vi.fn(),
     whenReady: vi.fn(() => Promise.resolve()),
   };
   const BrowserWindow = vi.fn().mockImplementation(() => ({

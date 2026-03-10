@@ -33,6 +33,12 @@ const mockShell = {
   openExternal: vi.fn(),
 };
 
+const mockNativeImage = {
+  createFromPath: vi.fn().mockReturnValue({
+    setTemplateImage: vi.fn(),
+  }),
+};
+
 // Mock electron modules
 vi.mock("electron", () => ({
   app: {
@@ -43,6 +49,7 @@ vi.mock("electron", () => ({
   BrowserWindow: mockBrowserWindow,
   ipcMain: mockIpcMain,
   Menu: mockMenu,
+  nativeImage: mockNativeImage,
   shell: mockShell,
 }));
 

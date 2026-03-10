@@ -1,5 +1,7 @@
 import { app, BrowserWindow, Menu, shell } from "electron";
 
+import { menuIcons } from "./menuIcons";
+
 const isDev = !app.isPackaged;
 
 /**
@@ -23,6 +25,7 @@ export function createApplicationMenu() {
                     focusedWindow.webContents.send("menu-preferences");
                   }
                 },
+                icon: menuIcons.preferences,
                 label: "Preferences...",
               },
               { type: "separator" as const },
@@ -50,6 +53,7 @@ export function createApplicationMenu() {
               focusedWindow.webContents.send("menu-scan-all-kits");
             }
           },
+          icon: menuIcons.scanAllKits,
           label: "Scan All Kits",
         },
         {
@@ -60,6 +64,7 @@ export function createApplicationMenu() {
               focusedWindow.webContents.send("menu-scan-banks");
             }
           },
+          icon: menuIcons.scanBanks,
           label: "Scan Banks",
         },
         { type: "separator" as const },
@@ -72,6 +77,7 @@ export function createApplicationMenu() {
               );
             }
           },
+          icon: menuIcons.changeLocalStore,
           label: "Change Local Store...",
         },
         ...(process.platform !== "darwin"
@@ -85,6 +91,7 @@ export function createApplicationMenu() {
                     focusedWindow.webContents.send("menu-preferences");
                   }
                 },
+                icon: menuIcons.preferences,
                 label: "Preferences...",
               },
               { type: "separator" as const },
@@ -98,26 +105,8 @@ export function createApplicationMenu() {
     {
       label: "Edit",
       submenu: [
-        {
-          accelerator: "CmdOrCtrl+Z",
-          click: () => {
-            const focusedWindow = BrowserWindow.getFocusedWindow();
-            if (focusedWindow) {
-              focusedWindow.webContents.send("menu-undo");
-            }
-          },
-          label: "Undo",
-        },
-        {
-          accelerator: "CmdOrCtrl+Shift+Z",
-          click: () => {
-            const focusedWindow = BrowserWindow.getFocusedWindow();
-            if (focusedWindow) {
-              focusedWindow.webContents.send("menu-redo");
-            }
-          },
-          label: "Redo",
-        },
+        { role: "undo" as const },
+        { role: "redo" as const },
         { type: "separator" as const },
         { role: "cut" as const },
         { role: "copy" as const },
@@ -171,12 +160,14 @@ export function createApplicationMenu() {
           click: () => {
             shell.openExternal("https://peteb4ker.github.io/romper/manual/");
           },
+          icon: menuIcons.romperManual,
           label: "Romper Manual",
         },
         {
           click: () => {
             shell.openExternal("https://squarp.net/rample/manual/");
           },
+          icon: menuIcons.rampleManual,
           label: "Rample Manual",
         },
         ...(process.platform !== "darwin"

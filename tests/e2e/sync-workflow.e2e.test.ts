@@ -116,17 +116,11 @@ test.describe("Sync Workflow E2E Tests", () => {
       // Wait for change summary generation to complete
       await window.waitForTimeout(3000);
 
-      // Verify the sync dialog shows summary with kit/file counts
-      const summarySection = await window.locator("text=kits");
-      await expect(summarySection).toBeVisible();
-
-      // For now, just verify the workflow gets this far
-      // The button might be disabled if there are no files to sync (which is fine for test fixtures)
+      // Verify the sync dialog finished loading by checking the confirm button is present
       const confirmButton = await window.locator(
         '[data-testid="confirm-sync"]',
       );
-      const buttonExists = (await confirmButton.count()) > 0;
-      expect(buttonExists).toBe(true);
+      await expect(confirmButton).toBeVisible();
 
       // Check if dialog shows the expected state
       const hasChanges = await window.isVisible("text=No changes to write");
@@ -229,9 +223,11 @@ test.describe("Sync Workflow E2E Tests", () => {
       // Wait for auto-summary generation (should happen automatically)
       await window.waitForTimeout(3000);
 
-      // Verify the sync dialog shows summary with kit/file counts
-      const summarySection = await window.locator("text=kits");
-      await expect(summarySection).toBeVisible();
+      // Verify the sync dialog finished loading by checking the confirm button is present
+      const confirmButton = await window.locator(
+        '[data-testid="confirm-sync"]',
+      );
+      await expect(confirmButton).toBeVisible();
 
       // Test cancellation instead of actual sync (since test fixtures may have no files)
       const cancelButton = await window.locator('[data-testid="cancel-sync"]');

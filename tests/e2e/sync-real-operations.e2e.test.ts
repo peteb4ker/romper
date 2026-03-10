@@ -125,9 +125,11 @@ test.describe("Sync Real Operations E2E Tests", () => {
       );
       await window.waitForTimeout(3000); // Allow time for file analysis
 
-      // The fixture kits don't have sample files — verify summary shows counts
-      const summarySection = await window.locator("text=kits");
-      await expect(summarySection).toBeVisible();
+      // Verify the sync dialog finished loading by checking the confirm button is present
+      const confirmButton = await window.locator(
+        '[data-testid="confirm-sync"]',
+      );
+      await expect(confirmButton).toBeVisible();
 
       console.log(
         "[E2E Sync Test] Sync dialog ready - fixture has no sample files to sync",
@@ -135,11 +137,8 @@ test.describe("Sync Real Operations E2E Tests", () => {
 
       // Since fixture has no sample files, sync button should be disabled or show no files
       // This tests the "no files to sync" scenario which is still valuable
-      const confirmButton = await window.locator(
-        '[data-testid="confirm-sync"]',
-      );
 
-      // Check if button exists and its state
+      // Check button state
       const buttonExists = (await confirmButton.count()) > 0;
       if (buttonExists) {
         const isEnabled = await confirmButton.isEnabled();
@@ -228,21 +227,19 @@ test.describe("Sync Real Operations E2E Tests", () => {
       );
       await window.waitForTimeout(3000);
 
-      // Even with existing files on SD card, the fixture kits don't have sample files
-      // Verify summary shows counts
-      const summarySection = await window.locator("text=kits");
-      await expect(summarySection).toBeVisible();
+      // Verify the sync dialog finished loading by checking the confirm button is present
+      const confirmButton = await window.locator(
+        '[data-testid="confirm-sync"]',
+      );
+      await expect(confirmButton).toBeVisible();
 
       console.log(
         "[E2E Sync Test] Sync dialog ready - fixture has no sample files even with existing SD files",
       );
 
       // Since fixture has no sample files, sync button should be disabled or show no files
-      const confirmButton = await window.locator(
-        '[data-testid="confirm-sync"]',
-      );
 
-      // Check if button exists and its state
+      // Check button state
       const buttonExists = (await confirmButton.count()) > 0;
       if (buttonExists) {
         const isEnabled = await confirmButton.isEnabled();

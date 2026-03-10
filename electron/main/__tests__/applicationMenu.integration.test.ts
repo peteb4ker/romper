@@ -81,8 +81,7 @@ describe("Menu IPC Integration Tests", () => {
     // Verify File submenu contains scan items and change local store
     const fileSubmenu = fileMenu.submenu;
     const fileMenuLabels = fileSubmenu.map((item: unknown) => item.label);
-    expect(fileMenuLabels).toContain("Scan All Kits");
-    expect(fileMenuLabels).toContain("Scan Banks");
+    expect(fileMenuLabels).toContain("Scan All");
     expect(fileMenuLabels).toContain("Change Local Store...");
 
     // Verify no Tools menu exists
@@ -137,9 +136,9 @@ describe("Menu IPC Integration Tests", () => {
     );
     const submenu = fileMenu.submenu;
 
-    // Find and trigger the "Scan All Kits" menu item
+    // Find and trigger the "Scan All" menu item
     const scanMenuItem = submenu.find(
-      (item: unknown) => item.label === "Scan All Kits",
+      (item: unknown) => item.label === "Scan All",
     );
     expect(scanMenuItem).toBeDefined();
     expect(scanMenuItem.click).toBeDefined();
@@ -168,8 +167,7 @@ describe("Menu IPC Integration Tests", () => {
 
     // Test each menu item that sends IPC messages
     const menuItems = [
-      { event: "menu-scan-all-kits", label: "Scan All Kits", menu: "File" },
-      { event: "menu-scan-banks", label: "Scan Banks", menu: "File" },
+      { event: "menu-scan-all-kits", label: "Scan All", menu: "File" },
       {
         event: "menu-change-local-store-directory",
         label: "Change Local Store...",
@@ -262,7 +260,7 @@ describe("Menu IPC Integration Tests", () => {
     const submenu = fileMenu.submenu;
 
     const scanMenuItem = submenu.find(
-      (item: unknown) => item.label === "Scan All Kits",
+      (item: unknown) => item.label === "Scan All",
     );
 
     expect(() => {

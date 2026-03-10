@@ -45,6 +45,12 @@ The slash key triggers a rescan of the current kit, re-analyzing sample filename
 
 When the sequencer is focused, the arrow keys move between steps in the 4x16 grid. Space toggles the step under the cursor on or off.
 
+## Menu Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Scan All (banks + kits) | `Cmd+Shift+S` (macOS) / `Ctrl+Shift+S` (Windows/Linux) |
+
 ## General Tips
 
 - **Focus indicators** are visible throughout the app, so you always know which element is selected

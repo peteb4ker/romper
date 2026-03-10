@@ -87,7 +87,6 @@ interface MenuEventMap {
   "menu-preferences": void;
   "menu-redo": void;
   "menu-scan-all-kits": void;
-  "menu-scan-banks": void;
   "menu-undo": void;
 }
 
@@ -97,7 +96,6 @@ class MenuEventForwarder {
     ipcEvent: keyof MenuEventMap;
   }> = [
     { domEvent: "menu-scan-all-kits", ipcEvent: "menu-scan-all-kits" },
-    { domEvent: "menu-scan-banks", ipcEvent: "menu-scan-banks" },
     {
       domEvent: "menu-change-local-store-directory",
       ipcEvent: "menu-change-local-store-directory",

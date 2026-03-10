@@ -88,7 +88,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
       {/* Inline scan status */}
       {logic.scanStatus.status === "scanning" && (
         <div
-          className="mx-2 px-3 py-1.5 text-xs text-text-secondary flex items-center gap-2"
+          className="px-2.5 py-1.5 text-xs text-text-secondary flex items-center gap-2"
           data-testid="kit-scan-status"
         >
           <span className="inline-block w-3 h-3 border-2 border-accent-primary border-t-transparent rounded-full animate-spin" />
@@ -97,7 +97,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
       )}
       {logic.scanStatus.status === "success" && (
         <div
-          className="mx-2 px-3 py-1.5 text-xs text-accent-success"
+          className="px-2.5 py-1.5 text-xs text-accent-success"
           data-testid="kit-scan-status"
         >
           Found {logic.scanStatus.sampleCount} samples
@@ -105,7 +105,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
       )}
       {logic.scanStatus.status === "error" && (
         <div
-          className="mx-2 px-3 py-1.5 text-xs text-accent-error"
+          className="px-2.5 py-1.5 text-xs text-accent-error"
           data-testid="kit-scan-status"
         >
           {logic.scanStatus.message}

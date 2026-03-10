@@ -20,7 +20,7 @@ const UnscannedKitPrompt: React.FC<UnscannedKitPromptProps> = ({
         {" hasn't been scanned yet"}
       </span>
       <button
-        className="px-2 py-0.5 text-xs bg-accent-warning hover:bg-accent-warning/80 text-white rounded font-semibold"
+        className="px-2 py-1 text-xs bg-accent-success hover:bg-accent-success/80 text-white rounded font-semibold"
         data-testid="unscanned-scan-button"
         onClick={onScan}
       >

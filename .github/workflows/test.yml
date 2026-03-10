@@ -127,6 +127,9 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: write
 
     steps:
       # Code checkout (full history for SonarCloud)
@@ -198,6 +201,7 @@ jobs:
       # Check for quality issues and auto-create GitHub issue
       - name: Check for quality issues and raise GitHub issue
         if: always() && github.event_name == 'push'
+        continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

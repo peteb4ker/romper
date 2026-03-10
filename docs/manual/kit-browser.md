@@ -21,7 +21,13 @@ The **bank navigation bar** runs along the left side of the kit grid. Click any 
 
 ![Bank navigation bar]({{ site.baseurl }}/images/manual/bank-nav.png){: .img-left}
 
-Banks that contain kits are displayed with their full name (e.g., "Bank A ALWIS"). The bank artist name is populated from RTF label files found in each bank's directory during scanning. Empty banks are skipped in the grid view.
+Banks that contain kits are displayed with their full name (e.g., "Bank A ALWIS"). Empty banks are skipped in the grid view.
+
+### Editing Bank Names
+
+Each bank header shows a pencil icon that lets you edit the bank's artist name inline. Click the pencil (or click the existing name) to enter edit mode, type the new name, and press **Enter** to save or **Escape** to cancel. Clearing the name removes it entirely.
+
+Bank names are stored in the database and written as RTF label files (`A - Artist Name.rtf`) to your local store. When you sync to an SD card, these RTF files are also written to the card root so the Rample hardware displays the correct artist names.
 
 ## Kit Cards
 

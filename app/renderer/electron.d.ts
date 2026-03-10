@@ -283,6 +283,10 @@ export interface ElectronAPI {
   toggleKitFavorite?: (
     kitName: string,
   ) => Promise<DbResult<{ isFavorite: boolean }>>;
+  updateBank?: (
+    bankLetter: string,
+    updates: { artist?: null | string; rtf_filename?: null | string },
+  ) => Promise<DbResult<void>>;
   updateKit?: (
     kitName: string,
     updates: {

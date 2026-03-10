@@ -498,6 +498,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("toggle-kit-favorite", kitName);
   },
 
+  updateBank: (
+    bankLetter: string,
+    updates: { artist?: null | string; rtf_filename?: null | string },
+  ) => {
+    isDev && console.debug("[IPC] updateBank invoked", bankLetter, updates);
+    return ipcRenderer.invoke("update-bank", bankLetter, updates);
+  },
+
   updateKit: (
     kitName: string,
     updates: {

@@ -169,6 +169,32 @@ export function useKitBankNavigation({
     setSelectedBank(bank);
   }, []);
 
+  // Handler for bank name editing
+  const handleBankNameChange = useCallback(
+    async (bank: string, newName: string) => {
+      const artist = newName || null;
+      const rtfFilename = newName ? `${bank} - ${newName}.rtf` : null;
+
+      const result = await window.electronAPI.updateBank?.(bank, {
+        artist,
+        rtf_filename: rtfFilename,
+      });
+
+      if (result?.success) {
+        setBankNames((prev) => {
+          const next = { ...prev };
+          if (newName) {
+            next[bank] = newName;
+          } else {
+            delete next[bank];
+          }
+          return next;
+        });
+      }
+    },
+    [],
+  );
+
   return {
     bankNames,
     focusBankInKitList,
@@ -178,6 +204,7 @@ export function useKitBankNavigation({
     // Actions
     handleBankClick,
     handleBankClickWithScroll,
+    handleBankNameChange,
     handleVisibleBankChange,
     scrollContainerRef,
     // State

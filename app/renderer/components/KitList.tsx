@@ -1,6 +1,5 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { VinylRecord } from "@phosphor-icons/react";
 import React, {
   forwardRef,
   useCallback,
@@ -10,71 +9,10 @@ import React, {
 } from "react";
 import { ListChildComponentProps, VariableSizeList } from "react-window";
 
+import BankHeader from "./BankHeader";
 import { useKitListLogic } from "./hooks/kit-management/useKitListLogic";
 import { useKitListNavigation } from "./hooks/kit-management/useKitListNavigation";
 import KitItem from "./KitItem";
-
-// Bank header component with intersection observer
-interface BankHeaderProps {
-  bank: string;
-  bankName?: string;
-  onBankVisible?: (bank: string) => void;
-}
-
-const BankHeader: React.FC<BankHeaderProps> = ({
-  bank,
-  bankName,
-  onBankVisible,
-}) => {
-  const headerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!headerRef.current || !onBankVisible) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          onBankVisible(bank);
-        }
-      },
-      {
-        rootMargin: "-10% 0px -80% 0px", // Only consider the top 20% of the viewport
-        threshold: 0.5, // Trigger when 50% of the header is visible
-      },
-    );
-
-    observer.observe(headerRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [bank, onBankVisible]);
-
-  return (
-    <div className="mt-2 first:mt-0" id={`bank-${bank}`} ref={headerRef}>
-      <div className="flex items-center gap-2 px-2 py-1 rounded bg-surface-3 border-l-4 border-l-accent-primary">
-        <VinylRecord
-          className="text-accent-primary/50 shrink-0"
-          size={14}
-          weight="duotone"
-        />
-        <span className="font-mono font-bold text-base text-accent-primary leading-none">
-          {bank}
-        </span>
-        {bankName && (
-          <>
-            <span className="text-border-strong text-xs leading-none">
-              &#x2022;
-            </span>
-            <span className="text-xs text-text-secondary tracking-wide truncate">
-              {bankName}
-            </span>
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // Expose imperative scroll/focus API for parent components
 export interface KitListHandle {
@@ -140,6 +78,7 @@ const Row: React.FC<RowProps> = ({
           bank={kitName[0]}
           bankName={bankNames[kitName[0]]}
           onBankVisible={onVisibleBankChange}
+          variant="list"
         />
       )}
       <KitItem

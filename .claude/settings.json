@@ -27,7 +27,9 @@
       "Bash(npx vitest run:*)",
       "Bash(npx vitest:*)",
       "Bash(sqlite3:*)",
-      "WebFetch(domain:tailwindcss.com)"
+      "WebFetch(domain:tailwindcss.com)",
+      "Skill(sonar-report)",
+      "Skill(sonar-fix)"
     ],
     "deny": []
   },

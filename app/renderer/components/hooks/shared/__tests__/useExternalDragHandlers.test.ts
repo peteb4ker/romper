@@ -389,6 +389,7 @@ describe("useExternalDragHandlers", () => {
         { valid: true },
         [],
         3,
+        3,
       );
     });
 
@@ -786,7 +787,8 @@ describe("useExternalDragHandlers", () => {
 
       await result.current.handleDrop(mockEvent, 1);
 
-      expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(3);
+      // Only 2 slots available (10 and 11), so only 2 files can be added
+      expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(2);
     });
   });
 });

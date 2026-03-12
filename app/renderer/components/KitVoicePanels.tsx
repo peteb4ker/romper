@@ -13,6 +13,7 @@ interface KitVoicePanelsProps {
   isEditable?: boolean; // Used directly in KitVoicePanel
   kit: KitWithRelations | null; // Used by useKitVoicePanels hook
   kitName: string; // Used by useKitVoicePanels hook
+  onBatchDropComplete?: () => void;
   onKitUpdated?: () => Promise<void>; // Called after voice stereo mode changes to reload kit data
   onPlay: (voice: number, sample: string) => void; // Used by useKitVoicePanels hook
   onRescanVoiceName: (voice: number, samples: VoiceSamples) => void; // Used by useKitVoicePanels hook
@@ -380,6 +381,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   }
                   kitName={hookProps.kitName}
                   linkedWith={linkingStatus.linkedWith}
+                  onBatchDropComplete={props.onBatchDropComplete}
                   onPlay={hookProps.onPlay}
                   onRescanVoiceName={() =>
                     hookProps.onRescanVoiceName(voice, hookProps.samples)

@@ -89,15 +89,19 @@ export function useSampleProcessing({
       filePath: string,
       allSamples: unknown[],
       droppedSlotNumber: number,
-      options: { replaceExisting: boolean },
+      options: { explicitSlot?: number; replaceExisting: boolean },
     ) => {
-      const existingSample = samples[droppedSlotNumber];
-      const targetSlot = calculateTargetSlot(filePath, -1, droppedSlotNumber);
+      const targetSlot =
+        options.explicitSlot !== undefined
+          ? options.explicitSlot
+          : calculateTargetSlot(filePath, -1, droppedSlotNumber);
 
       if (targetSlot < 0) {
         console.warn("No available slots - all slots are filled");
         return;
       }
+
+      const existingSample = samples[targetSlot];
 
       try {
         if (existingSample && options.replaceExisting && onSampleReplace) {
@@ -118,10 +122,12 @@ export function useSampleProcessing({
       formatValidation: unknown,
       allSamples: unknown[],
       droppedSlotNumber: number,
+      explicitSlot?: number,
     ): Promise<boolean> => {
       const samples = allSamples as Sample[];
 
       await executeAssignment(filePath, samples, droppedSlotNumber, {
+        explicitSlot,
         replaceExisting: false,
       });
 

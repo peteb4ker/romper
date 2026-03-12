@@ -7,6 +7,7 @@ export interface UseDragAndDropOptions {
   isDisabled?: boolean;
   isEditable: boolean;
   kitName: string;
+  onBatchDropComplete?: () => void;
   onSampleAdd?: (
     voice: number,
     slotNumber: number,
@@ -55,6 +56,7 @@ export function useDragAndDrop({
   isDisabled = false,
   isEditable,
   kitName,
+  onBatchDropComplete,
   onSampleAdd,
   onSampleMove,
   onSampleReplace,
@@ -84,6 +86,7 @@ export function useDragAndDrop({
   const externalDragHandlers = useExternalDragHandlers({
     fileValidation,
     isEditable: effectiveEditable,
+    onBatchDropComplete,
     onStereoDragLeave,
     onStereoDragOver,
     sampleProcessing,

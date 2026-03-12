@@ -9,6 +9,7 @@ export interface UseExternalDragHandlersOptions {
     validateDroppedFile: (filePath: string) => Promise<unknown>;
   };
   isEditable: boolean;
+  onBatchDropComplete?: () => void;
   onStereoDragLeave?: () => void;
   onStereoDragOver?: (
     voice: number,
@@ -26,6 +27,7 @@ export interface UseExternalDragHandlersOptions {
       formatValidation: unknown,
       allSamples: unknown[],
       droppedSlotNumber: number,
+      explicitSlot?: number,
     ) => Promise<boolean>;
   };
   samples: string[];
@@ -39,6 +41,7 @@ export interface UseExternalDragHandlersOptions {
 export function useExternalDragHandlers({
   fileValidation,
   isEditable,
+  onBatchDropComplete,
   onStereoDragLeave,
   onStereoDragOver,
   sampleProcessing,
@@ -130,6 +133,14 @@ export function useExternalDragHandlers({
         const allSamples = await sampleProcessing.getCurrentKitSamples();
         if (!allSamples) return;
 
+        // Track occupied slots during this batch to avoid stale state
+        const occupiedSlots = new Set<number>();
+        samples.forEach((s, i) => {
+          if (s) occupiedSlots.add(i);
+        });
+
+        let addedCount = 0;
+
         for (const file of files) {
           const filePath = await fileValidation.getFilePathFromDrop(file);
           console.log("Processing dropped file:", filePath);
@@ -144,18 +155,48 @@ export function useExternalDragHandlers({
             await fileValidation.validateDroppedFile(filePath);
           if (!formatValidation) continue;
 
+          // Find next available slot, starting from the drop target
+          let targetSlot = -1;
+          for (let i = 0; i < 12; i++) {
+            const candidate = (slotNumber + i) % 12;
+            if (!occupiedSlots.has(candidate)) {
+              targetSlot = candidate;
+              break;
+            }
+          }
+
+          if (targetSlot < 0) {
+            console.warn("No available slots remaining in this voice");
+            break;
+          }
+
           await sampleProcessing.processAssignment(
             filePath,
             formatValidation,
             allSamples,
             slotNumber,
+            targetSlot,
           );
+
+          occupiedSlots.add(targetSlot);
+          addedCount++;
+        }
+
+        if (addedCount > 0 && onBatchDropComplete) {
+          onBatchDropComplete();
         }
       } catch (error) {
         console.error("Error handling drop:", error);
       }
     },
-    [isEditable, onStereoDragLeave, fileValidation, sampleProcessing, samples],
+    [
+      isEditable,
+      onBatchDropComplete,
+      onStereoDragLeave,
+      fileValidation,
+      sampleProcessing,
+      samples,
+    ],
   );
 
   return {

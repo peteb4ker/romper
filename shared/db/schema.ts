@@ -1,6 +1,12 @@
 // Drizzle schema definitions for Romper Database
 import { relations } from "drizzle-orm";
-import { integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
+import {
+  integer,
+  real,
+  sqliteTable,
+  text,
+  unique,
+} from "drizzle-orm/sqlite-core";
 // Using text({ mode: 'json' }) for step patterns - much simpler than custom encoding!
 
 // Banks table - contains artist metadata for each bank (A-Z)
@@ -54,6 +60,7 @@ export const samples = sqliteTable(
   "samples",
   {
     filename: text("filename").notNull(), // Sample filename
+    gain_db: real("gain_db").notNull().default(0), // Per-sample gain trim in dB (-24 to +12, 0 = unity)
     id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
     is_stereo: integer("is_stereo", { mode: "boolean" })
       .notNull()

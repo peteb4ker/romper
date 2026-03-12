@@ -137,6 +137,37 @@ export function getSamplesToDelete(
 }
 
 /**
+ * Update per-sample gain (dB trim)
+ */
+export function updateSampleGain(
+  dbDir: string,
+  kitName: string,
+  voiceNumber: number,
+  slotNumber: number,
+  gainDb: number,
+): DbResult<void> {
+  return withDb(dbDir, (db) => {
+    const result = db
+      .update(samples)
+      .set({ gain_db: gainDb })
+      .where(
+        and(
+          eq(samples.kit_name, kitName),
+          eq(samples.voice_number, voiceNumber),
+          eq(samples.slot_number, slotNumber),
+        ),
+      )
+      .run();
+
+    if (result.changes === 0) {
+      throw new Error(
+        `Sample not found: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}`,
+      );
+    }
+  });
+}
+
+/**
  * Update sample WAV metadata
  */
 export function updateSampleMetadata(
@@ -163,6 +194,7 @@ export function updateSampleMetadata(
       updateData.wav_channels = updates.wav_channels;
     if (updates.wav_sample_rate !== undefined)
       updateData.wav_sample_rate = updates.wav_sample_rate;
+    if (updates.gain_db !== undefined) updateData.gain_db = updates.gain_db;
 
     if (Object.keys(updateData).length === 0) {
       return; // Nothing to update

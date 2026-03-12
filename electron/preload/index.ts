@@ -523,6 +523,29 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] updateKitBpm invoked", kitName, bpm);
     return ipcRenderer.invoke("update-kit-bpm", kitName, bpm);
   },
+  updateSampleGain: (
+    kitName: string,
+    voiceNumber: number,
+    slotNumber: number,
+    gainDb: number,
+  ) => {
+    isDev &&
+      console.debug(
+        "[IPC] updateSampleGain invoked",
+        kitName,
+        voiceNumber,
+        slotNumber,
+        gainDb,
+      );
+    return ipcRenderer.invoke(
+      "update-sample-gain",
+      kitName,
+      voiceNumber,
+      slotNumber,
+      gainDb,
+    );
+  },
+
   updateStepPattern: (kitName: string, stepPattern: number[][]) => {
     isDev &&
       console.debug("[IPC] updateStepPattern invoked", kitName, stepPattern);

@@ -1,0 +1,1 @@
+ALTER TABLE `samples` ADD `gain_db` real DEFAULT 0 NOT NULL;

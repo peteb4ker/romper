@@ -8,6 +8,7 @@ import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "./audioUtils.js";
 
 export interface ConversionOptions {
   forceMonoConversion?: boolean;
+  gainDb?: number;
   targetBitDepth?: number;
   targetChannels?: number;
   targetSampleRate?: number;
@@ -95,6 +96,11 @@ export async function convertSampleToRampleFormat(
       inputSamples,
     );
 
+    // Apply per-sample gain if non-zero
+    if (options.gainDb && options.gainDb !== 0) {
+      outputChannelData = applyGain(outputChannelData, options.gainDb);
+    }
+
     // Handle sample rate conversion if needed
     if (targetSampleRate !== inputSampleRate) {
       outputChannelData = resampleAudio(
@@ -151,9 +157,11 @@ export async function convertToRampleDefault(
   inputPath: string,
   outputPath: string,
   forceMonoConversion = false,
+  gainDb?: number,
 ): Promise<DbResult<ConversionResult>> {
   return convertSampleToRampleFormat(inputPath, outputPath, {
     forceMonoConversion,
+    gainDb,
     targetBitDepth: 16,
     targetSampleRate: 44100,
   });
@@ -228,6 +236,23 @@ function adjustChannelCount(
   }
 
   return outputChannelData;
+}
+
+/**
+ * Apply gain (in dB) to all channels, clamping to [-1.0, 1.0]
+ */
+function applyGain(
+  channelData: Float32Array[],
+  gainDb: number,
+): Float32Array[] {
+  const linearGain = Math.pow(10, gainDb / 20);
+  return channelData.map((channel) => {
+    const output = new Float32Array(channel.length);
+    for (let i = 0; i < channel.length; i++) {
+      output[i] = Math.max(-1.0, Math.min(1.0, channel[i] * linearGain));
+    }
+    return output;
+  });
 }
 
 /**

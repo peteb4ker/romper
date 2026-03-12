@@ -16,6 +16,7 @@ export interface SyncFileOperation {
   destinationPath: string;
   filename: string;
   forceMonoConversion?: boolean;
+  gainDb?: number;
   isStereo?: boolean;
   kitName: string;
   operation: "convert" | "copy";
@@ -97,9 +98,11 @@ export class SyncFileOperationsService {
     fileOp: SyncFileOperation,
     inMemorySettings: Record<string, unknown>,
   ): Promise<void> {
-    if (fileOp.operation === "copy") {
+    // Non-zero gain requires decode/re-encode even for "copy" operations
+    const needsGainConversion = fileOp.gainDb != null && fileOp.gainDb !== 0;
+    if (fileOp.operation === "copy" && !needsGainConversion) {
       fs.copyFileSync(fileOp.sourcePath, fileOp.destinationPath);
-    } else if (fileOp.operation === "convert") {
+    } else {
       await this.handleFileConversion(fileOp, inMemorySettings);
     }
   }
@@ -185,6 +188,7 @@ export class SyncFileOperationsService {
     results.filesToConvert.push({
       destinationPath,
       filename: sample.filename,
+      gainDb: sample.gain_db,
       isStereo: sample.is_stereo,
       kitName: sample.kit_name,
       operation: "convert",
@@ -209,6 +213,7 @@ export class SyncFileOperationsService {
     results.filesToCopy.push({
       destinationPath,
       filename: sample.filename,
+      gainDb: sample.gain_db,
       isStereo: sample.is_stereo,
       kitName: sample.kit_name,
       operation: "copy",
@@ -229,6 +234,7 @@ export class SyncFileOperationsService {
       fileOp.sourcePath,
       fileOp.destinationPath,
       forceMonoConversion,
+      fileOp.gainDb,
     );
     if (!conversionResult.success) {
       // Check if this is a WAV format error that we can ignore

@@ -192,7 +192,7 @@ export function useVoicePanelSlotRendering({
           {renderPlayButton(isPlaying, sampleName)}
           <div className="flex-1 min-w-0">
             <span
-              className="truncate text-xs font-mono font-medium text-text-primary"
+              className="block truncate text-xs font-mono font-medium text-text-primary"
               title={sampleName}
             >
               {sampleName}

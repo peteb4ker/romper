@@ -333,7 +333,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       </div>
 
       {/* Voice panels flex layout */}
-      <div className="flex gap-1.5 flex-1" data-testid="voice-panels-flex">
+      <div
+        className="flex gap-1.5 flex-1 min-w-0"
+        data-testid="voice-panels-flex"
+      >
         {[1, 2, 3, 4].map((voice) => {
           // Get voice linking status
           const linkingStatus = stereoHandling.getVoiceLinkingStatus(

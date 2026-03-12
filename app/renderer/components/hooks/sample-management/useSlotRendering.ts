@@ -103,8 +103,7 @@ export function useSlotRendering({
   // Helper function to calculate slot styling and drag feedback
   const getSlotStyling = useCallback(
     (slotNumber: number, sample: string | undefined) => {
-      const slotBaseClass =
-        "truncate flex items-center gap-2 mb-1 min-h-[28px]";
+      const slotBaseClass = "flex items-center gap-2 mb-1 min-h-[28px] min-w-0";
       const isDragOver = dragOverSlot === slotNumber;
       const isDropZone = dropZone?.slot === slotNumber;
       const isStereoHighlight =

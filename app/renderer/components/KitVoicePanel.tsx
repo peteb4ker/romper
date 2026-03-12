@@ -233,7 +233,7 @@ const KitVoicePanel: React.FC<
     .join(" ");
 
   return (
-    <div aria-label={`Voice ${voice} panel`} className="flex flex-col">
+    <div aria-label={`Voice ${voice} panel`} className="flex flex-col min-w-0">
       {rendering.renderVoiceName(dataTestIdVoiceName)}
       {/* Voice panel content */}
       <div className={voicePanelClasses}>

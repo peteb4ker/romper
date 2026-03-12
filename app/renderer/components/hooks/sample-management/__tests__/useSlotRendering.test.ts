@@ -91,7 +91,7 @@ describe("useSlotRendering", () => {
       const styling = result.current.getSlotStyling(0, "kick.wav");
 
       expect(styling.slotBaseClass).toBe(
-        "truncate flex items-center gap-2 mb-1 min-h-[28px]",
+        "flex items-center gap-2 mb-1 min-h-[28px] min-w-0",
       );
       expect(styling.dragOverClass).toBe("");
       expect(styling.isDragOver).toBe(false);

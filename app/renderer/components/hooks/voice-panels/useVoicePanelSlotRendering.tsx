@@ -124,6 +124,10 @@ export function useVoicePanelSlotRendering({
         slotBaseClass,
       } = getSlotStylingProps(slotNumber, sample);
       const sampleName = sample;
+      const displayName =
+        sampleName.length > 20
+          ? sampleName.slice(0, 20) + "\u2026"
+          : sampleName;
       const sampleKey = getSampleKey(sampleName);
       const isPlaying = samplePlaying[sampleKey];
       const uiSlotNumber = slotNumber + 1;
@@ -195,7 +199,7 @@ export function useVoicePanelSlotRendering({
               className="block truncate text-xs font-mono font-medium text-text-primary"
               title={sampleName}
             >
-              {sampleName}
+              {displayName}
             </span>
           </div>
           {isEditable && renderDeleteButton(slotNumber)}

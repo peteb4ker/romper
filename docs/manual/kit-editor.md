@@ -53,6 +53,7 @@ Each voice has up to **12 sample slots**, matching the Rample's 12-layer-per-voi
 - **Slot number** (1 through 12)
 - **Sample filename**
 - **Play button** -- Click to audition the sample
+- **Gain knob** -- Per-sample volume trim (see [Gain Control](#gain-control) below)
 - **Waveform display** -- Visual representation of the audio
 - **Delete button** -- Remove the sample from this slot
 
@@ -91,6 +92,28 @@ You can also name voices manually by editing the name field in the voice header.
 The **kit type** (Drum, Loop, Vocal, FX, Synth/Bass) is inferred from the combination of voice names. A kit with voices named Kick, Snare, HiHat, and Clap would be classified as a Drum kit.
 
 Click the **Scan Kit** button (or press `/`) to re-run the analysis at any time.
+
+## Gain Control
+
+Each sample slot has a small **gain knob** that lets you trim the volume of individual samples from **-24 dB to +12 dB**. This is useful for balancing samples within a voice -- for example, if one kick hit is louder than the others.
+
+### Using the Gain Knob
+
+- **Drag up/down** to adjust the gain. Hold Shift while scrolling for finer 0.5 dB steps
+- **Scroll** the mouse wheel over the knob to nudge the value up or down
+- **Click** the knob to reset it to **0 dB** (unity gain)
+- Hover over the knob to see the current dB value
+
+The knob scales up on hover so you can see the arc position clearly, even though it's compact in the sample row.
+
+### Gain vs. Voice Volume
+
+Per-sample gain and the [voice volume slider]({{ site.baseurl }}/manual/step-sequencer#voice-volume-and-mute) in the step sequencer serve different purposes:
+
+- **Per-sample gain** adjusts the relative loudness of individual samples within a voice. It is **baked into the WAV file** when you [sync to the SD card]({{ site.baseurl }}/manual/syncing), so the Rample hardware plays the sample at the adjusted level
+- **Voice volume** controls the overall playback level of an entire voice during sequencer preview. It is **not saved to the SD card** -- it only affects preview playback in Romper
+
+When both are active during preview, Romper combines them: the sample plays at its gain-adjusted level, then the voice volume scales the output. On hardware, only the baked-in gain applies -- voice volume has no effect on the Rample.
 
 ## Previewing Samples
 

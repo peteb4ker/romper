@@ -46,7 +46,7 @@ If validation finds issues, they're shown in a results dialog before any writing
 
 During sync, Romper writes:
 
-- **Sample files** -- WAV files are copied into the correct Rample folder structure (`/KITS/[bank][slot]/[voice]/`)
+- **Sample files** -- WAV files are copied into the correct Rample folder structure (`/KITS/[bank][slot]/[voice]/`). If a sample has a [gain adjustment]({{ site.baseurl }}/manual/kit-editor#gain-control), the gain is applied directly to the WAV data during copy so the Rample plays it at the correct level
 - **Labels** -- Kit names and voice names are written to `.rample_labels.json`
 - **Folder structure** -- Bank and kit directories are created as needed
 

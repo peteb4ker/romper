@@ -6,7 +6,7 @@ import type { VoiceSamples } from "../components/kitTypes";
 
 /**
  * Convert database sample objects to VoiceSamples format
- * Groups samples by voice number and handles stereo samples
+ * Groups samples by voice number, ordered by slot position
  */
 export function groupDbSamplesByVoice(dbSamples: Sample[]): VoiceSamples {
   const voices: VoiceSamples = { 1: [], 2: [], 3: [], 4: [] };
@@ -31,17 +31,6 @@ export function groupDbSamplesByVoice(dbSamples: Sample[]): VoiceSamples {
       const slotNumber = sample.slot_number;
       if (slotNumber >= 0 && slotNumber < 12) {
         voices[voiceNumber][slotNumber] = sample.filename;
-
-        // Task 7: If this is a stereo sample, also show it in the next voice
-        // This indicates that the next voice slot is consumed by the stereo pair
-        if (sample.is_stereo && voiceNumber < 4) {
-          const nextVoice = voiceNumber + 1;
-          if (!Array.isArray(voices[nextVoice])) {
-            voices[nextVoice] = [];
-          }
-          // Show the same filename in the next voice to indicate it's consumed
-          voices[nextVoice][slotNumber] = sample.filename;
-        }
       }
     }
   });

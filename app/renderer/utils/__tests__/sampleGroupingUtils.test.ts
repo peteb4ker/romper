@@ -37,7 +37,7 @@ describe("sampleGroupingUtils", () => {
       expect(result[1][2]).toBe("slot3.wav"); // slot_number 2 -> index 2
     });
 
-    it("should handle stereo samples by duplicating to next voice", () => {
+    it("should not duplicate stereo samples to next voice", () => {
       const dbSamples = [
         {
           filename: "stereo.wav",
@@ -49,22 +49,7 @@ describe("sampleGroupingUtils", () => {
 
       const result = groupDbSamplesByVoice(dbSamples);
       expect(result[1][0]).toBe("stereo.wav");
-      expect(result[2][0]).toBe("stereo.wav"); // duplicated to next voice
-    });
-
-    it("should not duplicate stereo samples from voice 4", () => {
-      const dbSamples = [
-        {
-          filename: "stereo.wav",
-          is_stereo: true,
-          slot_number: 0,
-          voice_number: 4,
-        },
-      ];
-
-      const result = groupDbSamplesByVoice(dbSamples);
-      expect(result[4][0]).toBe("stereo.wav");
-      // Voice 5 doesn't exist, so no duplication should occur
+      expect(result[2]).toEqual([]); // stereo is a voice config, not sample-driven
     });
 
     it("should ignore samples with invalid voice numbers", () => {
@@ -135,7 +120,7 @@ describe("sampleGroupingUtils", () => {
       expect(result[2][1]).toBe("v2s2.wav");
     });
 
-    it("should handle mixed stereo and mono samples", () => {
+    it("should handle mixed stereo and mono samples without ghost entries", () => {
       const dbSamples = [
         {
           filename: "mono.wav",
@@ -160,7 +145,7 @@ describe("sampleGroupingUtils", () => {
       const result = groupDbSamplesByVoice(dbSamples);
       expect(result[1][0]).toBe("mono.wav");
       expect(result[2][0]).toBe("stereo.wav");
-      expect(result[3][0]).toBe("stereo.wav"); // stereo duplicated to voice 3
+      expect(result[3]).toEqual([]); // no ghost entry from stereo sample
       expect(result[4][0]).toBe("another.wav");
     });
   });

@@ -26,6 +26,12 @@ export interface UseVoicePanelRenderingOptions {
   isLinkedPrimary?: boolean;
   kitName: string;
   linkedWith?: number;
+  onGainChange?: (
+    voice: number,
+    slotNumber: number,
+    sampleName: string,
+    gainDb: number,
+  ) => void;
   onPlay: (voice: number, sample: string) => void;
   onSampleSelect?: (voice: number, idx: number) => void;
   onStop: (voice: number, sample: string) => void;
@@ -104,6 +110,7 @@ export function useVoicePanelRendering({
   isLinkedPrimary,
   kitName,
   linkedWith,
+  onGainChange,
   onPlay,
   onSampleSelect,
   onStop,
@@ -138,6 +145,7 @@ export function useVoicePanelRendering({
     isLinkedPrimary,
     kitName,
     linkedWith,
+    onGainChange,
     onSampleSelect,
     onWaveformPlayingChange,
     playTriggers,

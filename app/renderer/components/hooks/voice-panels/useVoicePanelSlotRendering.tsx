@@ -66,6 +66,7 @@ export function useVoicePanelSlotRendering({
   isLinkedPrimary,
   kitName,
   linkedWith,
+  onGainChange,
   onSampleSelect,
   onWaveformPlayingChange,
   playTriggers,
@@ -212,6 +213,7 @@ export function useVoicePanelSlotRendering({
                   slotNumber,
                   db,
                 );
+                onGainChange?.(voice, slotNumber, sampleName, db);
               }}
               value={sampleData?.gain_db ?? 0}
             />
@@ -262,6 +264,7 @@ export function useVoicePanelSlotRendering({
       stopTriggers,
       handleCombinedDragOver,
       handleCombinedDrop,
+      onGainChange,
       slotRenderingHook,
     ],
   );

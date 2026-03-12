@@ -14,6 +14,12 @@ export interface BaseVoicePanelOptions {
   isActive: boolean;
   isEditable: boolean;
   kitName: string;
+  onGainChange?: (
+    voice: number,
+    slotNumber: number,
+    sampleName: string,
+    gainDb: number,
+  ) => void;
   onSampleSelect?: (voice: number, idx: number) => void;
   onWaveformPlayingChange: (
     voice: number,

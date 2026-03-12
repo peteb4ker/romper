@@ -191,7 +191,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
   });
 
   describe("Stereo Sample Handling", () => {
-    test("should duplicate stereo sample to next voice", () => {
+    test("should not duplicate stereo sample to next voice", () => {
       const dbSamples = [
         {
           filename: "stereo.wav",
@@ -204,10 +204,10 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const result = groupDbSamplesByVoice(dbSamples);
 
       expect(result[1]).toEqual(["stereo.wav"]);
-      expect(result[2]).toEqual(["stereo.wav"]); // Duplicated to next voice
+      expect(result[2]).toEqual([]); // Stereo is a voice config, no ghost entries
     });
 
-    test("should handle multiple stereo samples in same voice", () => {
+    test("should not duplicate multiple stereo samples to next voice", () => {
       const dbSamples = [
         {
           filename: "stereo1.wav",
@@ -226,10 +226,10 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const result = groupDbSamplesByVoice(dbSamples);
 
       expect(result[1]).toEqual(["stereo1.wav", "stereo2.wav"]);
-      expect(result[2]).toEqual(["stereo1.wav", "stereo2.wav"]); // Both duplicated
+      expect(result[2]).toEqual([]); // No ghost entries
     });
 
-    test("should not duplicate stereo sample from voice 4 (no next voice)", () => {
+    test("should keep stereo sample on voice 4 without duplication", () => {
       const dbSamples = [
         {
           filename: "stereo.wav",
@@ -242,12 +242,12 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const result = groupDbSamplesByVoice(dbSamples);
 
       expect(result[4]).toEqual(["stereo.wav"]);
-      expect(result[1]).toEqual([]); // No wraparound to voice 1
+      expect(result[1]).toEqual([]);
       expect(result[2]).toEqual([]);
       expect(result[3]).toEqual([]);
     });
 
-    test("should handle mixed stereo and mono samples", () => {
+    test("should handle mixed stereo and mono samples without ghost entries", () => {
       const dbSamples = [
         {
           filename: "mono1.wav",
@@ -272,10 +272,10 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const result = groupDbSamplesByVoice(dbSamples);
 
       expect(result[1]).toEqual(["mono1.wav", "stereo.wav"]);
-      expect(result[2]).toEqual(["mono2.wav", "stereo.wav"]); // Stereo duplicated + original mono
+      expect(result[2]).toEqual(["mono2.wav"]); // No ghost entry from stereo
     });
 
-    test("should handle stereo samples with gaps", () => {
+    test("should handle stereo samples with gaps without ghost entries", () => {
       const dbSamples = [
         {
           filename: "stereo.wav",
@@ -288,10 +288,10 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const result = groupDbSamplesByVoice(dbSamples);
 
       expect(result[1]).toEqual(["", "", "stereo.wav"]);
-      expect(result[2]).toEqual(["", "", "stereo.wav"]); // Gap preserved in duplication
+      expect(result[2]).toEqual([]); // No ghost entry
     });
 
-    test("should handle stereo samples across different slot positions", () => {
+    test("should handle stereo samples across different voices without ghost entries", () => {
       const dbSamples = [
         {
           filename: "stereo1.wav",
@@ -310,17 +310,8 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const result = groupDbSamplesByVoice(dbSamples);
 
       expect(result[2]).toEqual(["", "", "", "stereo1.wav"]);
-      expect(result[3]).toEqual([
-        "",
-        "",
-        "",
-        "stereo1.wav",
-        "",
-        "",
-        "",
-        "stereo2.wav",
-      ]); // Mixed duplication + original
-      expect(result[4]).toEqual(["", "", "", "", "", "", "", "stereo2.wav"]); // Stereo2 duplicated
+      expect(result[3]).toEqual(["", "", "", "", "", "", "", "stereo2.wav"]); // Only its own sample
+      expect(result[4]).toEqual([]); // No ghost entry
     });
   });
 
@@ -360,7 +351,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const result = groupDbSamplesByVoice(dbSamples);
 
       expect(result[1]).toEqual(["test.wav", "test2.wav"]);
-      expect(result[2]).toEqual([]); // Falsy is_stereo values don't duplicate
+      expect(result[2]).toEqual([]); // No ghost entries regardless of is_stereo value
     });
 
     test("should handle duplicate samples in same slot (last wins)", () => {
@@ -525,7 +516,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       expect(result[1]).toEqual(["kick.wav"]);
       expect(result[2]).toEqual(["snare.wav"]);
       expect(result[3]).toEqual(["hat_closed.wav", "hat_open.wav"]);
-      expect(result[4]).toEqual(["crash.wav"]); // No duplication (voice 4 -> no next voice)
+      expect(result[4]).toEqual(["crash.wav"]);
     });
 
     test("should handle melodic instrument multi-sampling", () => {
@@ -570,7 +561,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       expect(result[4]).toEqual([]);
     });
 
-    test("should handle mixed stereo and mono in production scenario", () => {
+    test("should handle mixed stereo and mono in production scenario without ghost entries", () => {
       const mixedSamples = [
         {
           filename: "kick_mono.wav",
@@ -601,9 +592,9 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const result = groupDbSamplesByVoice(mixedSamples);
 
       expect(result[1]).toEqual(["kick_mono.wav", "snare_stereo.wav"]);
-      expect(result[2]).toEqual(["bass_mono.wav", "snare_stereo.wav"]); // Stereo duplication
+      expect(result[2]).toEqual(["bass_mono.wav"]); // No ghost from snare_stereo
       expect(result[3]).toEqual(["pad_stereo.wav"]);
-      expect(result[4]).toEqual(["pad_stereo.wav"]); // Stereo duplication
+      expect(result[4]).toEqual([]); // No ghost from pad_stereo
     });
   });
 });

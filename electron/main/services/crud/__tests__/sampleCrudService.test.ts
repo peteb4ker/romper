@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as romperDbCoreORM from "../../../db/romperDbCoreORM.js";
 import * as fileSystemUtils from "../../../utils/fileSystemUtils.js";
-import * as stereoProcessingUtils from "../../../utils/stereoProcessingUtils.js";
 import * as sampleBatchOperations from "../../sampleBatchOperations.js";
 import * as sampleValidation from "../../sampleValidation.js";
 import { SampleCrudService } from "../sampleCrudService";
@@ -10,13 +9,11 @@ import { SampleCrudService } from "../sampleCrudService";
 // Mock dependencies
 vi.mock("../../../db/romperDbCoreORM.js");
 vi.mock("../../../utils/fileSystemUtils.js");
-vi.mock("../../../utils/stereoProcessingUtils.js");
 vi.mock("../../sampleBatchOperations.js");
 vi.mock("../../sampleValidation.js");
 
 const mockORM = vi.mocked(romperDbCoreORM);
 const mockFileSystem = vi.mocked(fileSystemUtils);
-const mockStereoUtils = vi.mocked(stereoProcessingUtils);
 const mockBatchOps = vi.mocked(sampleBatchOperations);
 const mockValidation = vi.mocked(sampleValidation);
 
@@ -62,9 +59,6 @@ describe("SampleCrudService", () => {
           isValid: true,
         },
       );
-
-      // Mock stereo configuration
-      mockStereoUtils.determineStereoConfiguration.mockReturnValue(false);
 
       // Mock database operations
       mockValidation.sampleValidationService.checkSampleExists.mockReturnValue({

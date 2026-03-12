@@ -1,6 +1,6 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
 
-import * as path from "path";
+import * as path from "node:path";
 
 import { markKitsAsSynced } from "../db/romperDbCoreORM.js";
 import {

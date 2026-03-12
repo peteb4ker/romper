@@ -1,6 +1,6 @@
 import type { Sample } from "@romper/shared/db/schema.js";
 
-import * as path from "path";
+import * as path from "node:path";
 
 /**
  * Service for generating Squarp Rample-compliant file and directory names

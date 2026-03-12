@@ -1,7 +1,7 @@
 import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
-import * as fs from "fs";
+import * as fs from "node:fs";
 
 import { getKitSamples } from "../../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../../utils/fileSystemUtils.js";

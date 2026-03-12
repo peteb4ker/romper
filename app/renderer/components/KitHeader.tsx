@@ -68,9 +68,12 @@ const getNavigationButtonState = (
   return {
     isDisabled,
     style: isDisabled ? { cursor: "not-allowed", opacity: 0.5 } : {},
-    title: hasTargetKit
-      ? `${isNext ? "Next" : "Previous"} Kit: ${kitName}`
-      : `No ${isNext ? "next" : "previous"} kit`,
+    title: (() => {
+      const direction = isNext ? "Next" : "Previous";
+      const directionLower = isNext ? "next" : "previous";
+      if (hasTargetKit) return `${direction} Kit: ${kitName}`;
+      return `No ${directionLower} kit`;
+    })(),
   };
 };
 

@@ -343,7 +343,7 @@ async function processVoiceInferenceResults(
   result: DatabaseScanResult,
 ): Promise<void> {
   for (const voiceNumStr in voiceNames) {
-    const voiceNumber = parseInt(voiceNumStr, 10);
+    const voiceNumber = Number.parseInt(voiceNumStr, 10);
     const voiceAlias = voiceNames[voiceNumber];
 
     if (voiceAlias) {

@@ -75,9 +75,11 @@ const StepButton: React.FC<StepButtonProps> = ({
     return undefined;
   };
 
+  const conditionSuffix = condition ? ` (${condition})` : "";
+
   return (
     <button
-      aria-label={`Toggle step ${stepIdx + 1} for voice ${voiceNumber}${condition ? ` (${condition})` : ""}`}
+      aria-label={`Toggle step ${stepIdx + 1} for voice ${voiceNumber}${conditionSuffix}`}
       aria-pressed={isOn}
       className={`relative w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 rounded-md border-2 mx-0.5 focus:outline-none transition-colors ${onColor} ${ledGlow}`}
       data-testid={`seq-step-${voiceIdx}-${stepIdx}`}
@@ -402,7 +404,10 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                 max={100}
                 min={0}
                 onChange={(e) =>
-                  onVolumeChange?.(voiceNumber, parseInt(e.target.value, 10))
+                  onVolumeChange?.(
+                    voiceNumber,
+                    Number.parseInt(e.target.value, 10),
+                  )
                 }
                 style={{ accentColor: "var(--text-tertiary)" }}
                 title={`Volume: ${volume}`}

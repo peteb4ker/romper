@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import fs from "fs-extra";
-import os from "os";
-import path from "path";
+import os from "node:os";
+import path from "node:path";
 import { _electron as electron } from "playwright";
 
 import {

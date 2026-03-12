@@ -1,6 +1,6 @@
-import { copyFileSync, mkdirSync, readdirSync, statSync } from "fs";
-import { resolve } from "path";
-import { dirname, join } from "path";
+import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { defineConfig } from "vite";
 
 // Plugin to copy a directory from source to dist

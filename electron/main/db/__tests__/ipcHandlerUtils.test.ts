@@ -1,4 +1,4 @@
-import * as path from "path";
+import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -8,7 +8,7 @@ import {
 } from "../ipcHandlerUtils";
 
 // Mock path module
-vi.mock("path");
+vi.mock("node:path");
 
 // Mock sample service
 vi.mock("../../services/sampleService.js", () => ({

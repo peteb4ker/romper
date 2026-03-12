@@ -1,7 +1,7 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
 
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 import { getAllBanks, markKitsAsSynced } from "../db/romperDbCoreORM.js";
 import { rtfFileService } from "./rtfFileService.js";

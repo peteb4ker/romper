@@ -1,8 +1,8 @@
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("fs", async (importOriginal) => {
+vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal<typeof fs>();
   return {
     ...actual,
@@ -12,7 +12,7 @@ vi.mock("fs", async (importOriginal) => {
   };
 });
 
-vi.mock("path", () => ({
+vi.mock("node:path", () => ({
   dirname: vi.fn(),
   join: vi.fn(),
 }));

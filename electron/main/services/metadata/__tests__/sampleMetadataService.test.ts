@@ -1,6 +1,6 @@
 import type { Sample } from "@romper/shared/db/schema.js";
 
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SampleMetadataService } from "../sampleMetadataService.js";
@@ -16,7 +16,7 @@ vi.mock("../../../utils/fileSystemUtils.js", () => ({
   },
 }));
 
-vi.mock("fs", () => ({
+vi.mock("node:fs", () => ({
   readFileSync: vi.fn(),
 }));
 

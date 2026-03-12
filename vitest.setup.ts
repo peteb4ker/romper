@@ -1,5 +1,5 @@
 import * as matchers from "@testing-library/jest-dom/matchers";
-import { TextEncoder } from "util";
+import { TextEncoder } from "node:util";
 import { beforeAll, expect, vi } from "vitest";
 
 import { setupAudioMocks } from "./tests/mocks/browser/audio";

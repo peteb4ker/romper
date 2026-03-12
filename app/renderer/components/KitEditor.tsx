@@ -91,7 +91,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           className="px-2.5 py-1.5 text-xs text-text-secondary flex items-center gap-2"
           data-testid="kit-scan-status"
         >
-          <span className="inline-block w-3 h-3 border-2 border-accent-primary border-t-transparent rounded-full animate-spin" />
+          <span className="inline-block w-3 h-3 border-2 border-accent-primary border-t-transparent rounded-full animate-spin" />{" "}
           Rescanning...
         </div>
       )}

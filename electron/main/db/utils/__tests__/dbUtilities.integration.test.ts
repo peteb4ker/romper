@@ -1,5 +1,5 @@
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { deleteDbFileWithRetry } from "../../fileOperations.js";
@@ -256,8 +256,8 @@ describe("Database Utilities Integration Tests", () => {
         const totalMigrations = migrations.length;
 
         // Compute the hash for 0009_purple_zaladane (the migration the repair function targets)
-        const crypto = require("crypto");
-        const fs = require("fs");
+        const crypto = require("node:crypto");
+        const fs = require("node:fs");
         const migrationsDir = path.resolve(__dirname, "../../../db/migrations");
         const migrationSql = fs
           .readFileSync(path.join(migrationsDir, "0009_purple_zaladane.sql"))

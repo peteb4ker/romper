@@ -53,6 +53,12 @@ const highlightMatch = (
   );
 };
 
+const getBorderStyle = (isValid: boolean, modifiedSinceSync?: boolean) => {
+  if (!isValid) return "border-border-subtle opacity-70 cursor-not-allowed";
+  if (modifiedSinceSync) return "border-accent-warning/40 bg-accent-warning/5";
+  return "border-border-subtle";
+};
+
 const getVoiceCountStyle = (count: number) => {
   if (count === 0) {
     return { text: "text-accent-danger", weight: "" };
@@ -235,14 +241,14 @@ const KitGridItem = React.memo(
 
       const handleDeleteClick = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (onRequestDeleteSummary) {
-          const summary = await onRequestDeleteSummary(kit);
-          if (!summary) return; // locked or error
-          setDeleteSampleCount(summary.sampleCount);
-          setShowDeletePopover(true);
-        } else if (onDelete) {
-          onDelete();
+        if (!onRequestDeleteSummary) {
+          onDelete?.();
+          return;
         }
+        const summary = await onRequestDeleteSummary(kit);
+        if (!summary) return;
+        setDeleteSampleCount(summary.sampleCount);
+        setShowDeletePopover(true);
       };
 
       const handleConfirmDelete = async () => {
@@ -264,13 +270,13 @@ const KitGridItem = React.memo(
 
       const handleDuplicateClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (onDuplicateKit) {
-          setDuplicateDest("");
-          setDuplicateError(null);
-          setShowDuplicatePopover(true);
-        } else {
+        if (!onDuplicateKit) {
           onDuplicate();
+          return;
         }
+        setDuplicateDest("");
+        setDuplicateError(null);
+        setShowDuplicatePopover(true);
       };
 
       const handleConfirmDuplicate = async () => {
@@ -278,11 +284,11 @@ const KitGridItem = React.memo(
         const result = await onDuplicateKit(kit, duplicateDest);
         if (result.error) {
           setDuplicateError(result.error);
-        } else {
-          setShowDuplicatePopover(false);
-          setDuplicateDest("");
-          setDuplicateError(null);
+          return;
         }
+        setShowDuplicatePopover(false);
+        setDuplicateDest("");
+        setDuplicateError(null);
       };
 
       const totalSamples =
@@ -297,23 +303,16 @@ const KitGridItem = React.memo(
         isValid && onDeleteKit && kitData?.editable && !kitData?.locked;
 
       // Build animation classes
-      const animationClasses = isExiting
-        ? "animate-kit-exit"
-        : isNew
-          ? "animate-kit-enter animate-border-flash"
-          : "";
+      let animationClasses = "";
+      if (isExiting) animationClasses = "animate-kit-exit";
+      else if (isNew)
+        animationClasses = "animate-kit-enter animate-border-flash";
 
       return (
         <div
           aria-label={ariaLabel}
           aria-selected={isSelected ? "true" : "false"}
-          className={`card-grain relative flex flex-col p-2 rounded-md border text-sm h-full w-full ${
-            !isValid
-              ? "border-border-subtle opacity-70 cursor-not-allowed"
-              : kitData?.modified_since_sync
-                ? "border-accent-warning/40 bg-accent-warning/5"
-                : "border-border-subtle"
-          } cursor-pointer hover:bg-surface-2 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${animationClasses}`}
+          className={`card-grain relative flex flex-col p-2 rounded-md border text-sm h-full w-full ${getBorderStyle(isValid, kitData?.modified_since_sync)} cursor-pointer hover:bg-surface-2 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${animationClasses}`}
           data-kit={kit}
           data-testid={`kit-item-${kit}`}
           onClick={onSelect}

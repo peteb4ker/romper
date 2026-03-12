@@ -1,7 +1,7 @@
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("fs", async (importOriginal) => {
+vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal<typeof fs>();
   return {
     ...actual,

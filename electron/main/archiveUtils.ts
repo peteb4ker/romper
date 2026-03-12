@@ -1,5 +1,5 @@
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import * as unzipper from "unzipper";
 
 interface UnzipperEntry {
@@ -30,14 +30,14 @@ export async function downloadArchive(
   tmpZipPath: string,
   onProgress: (percent: null | number) => void,
 ): Promise<void> {
-  const https = await import("https");
+  const https = await import("node:https");
 
   return new Promise((resolve, reject) => {
     const fileStream = fs.createWriteStream(tmpZipPath);
     setupFileStream(fileStream, resolve, reject);
 
     const request = https.get(url, (response) => {
-      const totalBytes = parseInt(
+      const totalBytes = Number.parseInt(
         response.headers["content-length"] || "0",
         10,
       );

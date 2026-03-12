@@ -142,7 +142,7 @@ export function wasRecentExplicitNavigation(): boolean {
   const timestamp = sessionStorage.getItem(HMR_EXPLICIT_NAVIGATION_KEY);
   if (!timestamp) return false;
 
-  const navigationTime = parseInt(timestamp, 10);
+  const navigationTime = Number.parseInt(timestamp, 10);
   const now = Date.now();
   return now - navigationTime < 1000; // Within last 1 second
 }

@@ -134,27 +134,39 @@ export class SampleBatchOperationsService {
   /**
    * Execute cross-kit sample movement with rollback support
    */
-  executeCrossKitMove(
+  executeCrossKitMove(options: {
     addSampleToSlot: (
       inMemorySettings: Record<string, unknown>,
       toKit: string,
       toVoice: number,
       toSlot: number,
       sourcePath: string,
-    ) => DbResult<{ sampleId: number }>,
-    inMemorySettings: Record<string, unknown>,
-    sampleToMove: Sample,
-    toKit: string,
-    toVoice: number,
-    toSlot: number,
-    fromKit: string,
-    fromVoice: number,
-    fromSlot: number,
-  ): DbResult<{
+    ) => DbResult<{ sampleId: number }>;
+    fromKit: string;
+    fromSlot: number;
+    fromVoice: number;
+    inMemorySettings: Record<string, unknown>;
+    sampleToMove: Sample;
+    toKit: string;
+    toSlot: number;
+    toVoice: number;
+  }): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
     replacedSample?: Sample;
   }> {
+    const {
+      addSampleToSlot,
+      fromKit,
+      fromSlot,
+      fromVoice,
+      inMemorySettings,
+      sampleToMove,
+      toKit,
+      toSlot,
+      toVoice,
+    } = options;
+
     try {
       // Step 1: Add the sample to destination kit
       const addResult = addSampleToSlot(

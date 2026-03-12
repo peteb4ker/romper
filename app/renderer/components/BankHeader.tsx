@@ -116,6 +116,14 @@ const BankHeader: React.FC<BankHeaderProps> = ({
                     className="text-xs text-text-secondary tracking-wide truncate cursor-pointer hover:text-text-primary"
                     data-testid={`bank-name-display-${bank}`}
                     onClick={handleEditClick}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleEditClick(e as unknown as React.MouseEvent);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                   >
                     {bankName}
                   </span>
@@ -168,6 +176,14 @@ const BankHeader: React.FC<BankHeaderProps> = ({
                 className="text-sm text-text-secondary tracking-wide truncate cursor-pointer hover:text-text-primary"
                 data-testid={`bank-name-display-${bank}`}
                 onClick={handleEditClick}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleEditClick(e as unknown as React.MouseEvent);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 {bankName}
               </span>

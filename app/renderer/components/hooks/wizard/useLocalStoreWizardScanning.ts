@@ -132,7 +132,7 @@ export function useLocalStoreWizardScanning({
           try {
             const result = await api.updateVoiceAlias(
               kitName,
-              parseInt(voiceNumber, 10),
+              Number.parseInt(voiceNumber, 10),
               voiceName,
             );
             if (result.success) {

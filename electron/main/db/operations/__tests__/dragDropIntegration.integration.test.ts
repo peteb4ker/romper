@@ -7,9 +7,9 @@ import * as schema from "@romper/shared/db/schema.js";
 import Database from "better-sqlite3";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { mkdtempSync, rmSync } from "fs";
-import { tmpdir } from "os";
-import path from "path";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {

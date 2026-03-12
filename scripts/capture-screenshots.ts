@@ -24,9 +24,9 @@
  *   npx tsx scripts/capture-screenshots.ts --list          # print available targets
  */
 
-import path from "path";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { _electron as electron } from "playwright";
-import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -394,14 +394,14 @@ async function main() {
   console.log(`\nCapturing ${targets.length} screenshot(s)...\n`);
 
   // Ensure manual images directory exists
-  const { mkdirSync } = await import("fs");
+  const { mkdirSync } = await import("node:fs");
   mkdirSync(path.join(DOCS_IMAGES, "manual"), { recursive: true });
 
   let electronApp;
   try {
     // Build the app first
     console.log("Building app...");
-    const { execSync } = await import("child_process");
+    const { execSync } = await import("node:child_process");
     execSync("npm run build", { cwd: ROOT, stdio: "inherit" });
 
     // Launch Electron using the local Romper instance (real local store)

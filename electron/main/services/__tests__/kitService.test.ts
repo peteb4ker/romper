@@ -1,8 +1,8 @@
-import * as path from "path";
+import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock path
-vi.mock("path", () => ({
+vi.mock("node:path", () => ({
   join: vi.fn((...args) => args.join("/")),
 }));
 

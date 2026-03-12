@@ -25,6 +25,7 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
           <div>
             <label
               className="block text-sm font-medium text-text-primary mb-2"
+              htmlFor="local-store-path"
               id="local-store-path-label"
             >
               Local Store Path
@@ -55,6 +56,7 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
           <div>
             <label
               className="block text-sm font-medium text-text-primary mb-2"
+              htmlFor="local-store-status"
               id="local-store-status-label"
             >
               Status

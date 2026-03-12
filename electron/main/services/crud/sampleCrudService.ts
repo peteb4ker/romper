@@ -5,7 +5,6 @@ import * as path from "node:path";
 
 import { addSample, markKitAsModified } from "../../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../../utils/fileSystemUtils.js";
-import { determineStereoConfiguration } from "../../utils/stereoProcessingUtils.js";
 import { sampleBatchOperationsService } from "../sampleBatchOperations.js";
 import { sampleValidationService } from "../sampleValidation.js";
 
@@ -50,12 +49,11 @@ export class SampleCrudService {
       // Create sample record
       const filename = path.basename(filePath);
 
-      // Detect true stereo/mono from file metadata
-      const isStereo = determineStereoConfiguration(filePath);
-
+      // Stereo is a voice configuration, not a sample property.
+      // The voice's stereo_mode determines stereo behavior at sync time.
       const sampleRecord: NewSample = {
         filename,
-        is_stereo: isStereo,
+        is_stereo: false,
         kit_name: kitName,
         slot_number: slotNumber, // ZERO-BASED: 0-11 (UI shows 1-12, DB stores 0-11)
         source_path: filePath,

@@ -226,7 +226,7 @@ const KitVoicePanel: React.FC<
 
   // Voice panel styles
   const voicePanelClasses = [
-    "flex-1 p-3 rounded-lg shadow text-text-primary min-h-[80px] border border-border-subtle",
+    "flex-1 p-3 rounded-lg shadow text-text-primary min-h-[80px] border border-border-subtle min-w-0 overflow-hidden",
     // Default background with grain texture
     "card-grain",
     // Stereo drag target
@@ -242,7 +242,7 @@ const KitVoicePanel: React.FC<
       <div className={voicePanelClasses}>
         <ul
           aria-label={`Sample slots for voice ${voice}`}
-          className="list-none ml-0 text-sm flex flex-col"
+          className="list-none ml-0 text-sm flex flex-col min-w-0"
           data-testid={`sample-list-voice-${voice}`}
           onKeyDown={keyboardNav.handleKeyDown}
           ref={listRef}

@@ -214,7 +214,6 @@ export function useVoicePanelSlotRendering({
                 );
               }}
               value={sampleData?.gain_db ?? 0}
-              voiceColor={`var(--voice-${voice})`}
             />
           )}
           {isEditable && renderDeleteButton(slotNumber)}

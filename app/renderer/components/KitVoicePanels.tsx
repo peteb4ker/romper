@@ -239,6 +239,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           samplesResult.data.forEach((sample: Sample) => {
             metadata[sample.filename] = {
               filename: sample.filename,
+              gain_db: sample.gain_db ?? 0,
               is_stereo: sample.is_stereo,
               source_path: sample.source_path,
               wav_bit_depth: sample.wav_bit_depth ?? undefined,

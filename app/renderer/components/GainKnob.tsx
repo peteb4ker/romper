@@ -11,7 +11,6 @@ interface GainKnobProps {
   disabled?: boolean;
   onChange: (db: number) => void;
   value: number;
-  voiceColor?: string;
 }
 
 function arcPath(
@@ -53,18 +52,29 @@ function polarToCart(
   return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
 }
 
-const GainKnob: React.FC<GainKnobProps> = ({
-  disabled,
-  onChange,
-  value,
-  voiceColor,
-}) => {
+const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
+  const [localDb, setLocalDb] = useState(value);
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
   const dragStartValue = useRef(0);
+  const didDrag = useRef(false);
+
+  // Sync local state when prop changes (e.g. kit reload)
+  useEffect(() => {
+    setLocalDb(value);
+  }, [value]);
 
   const clampDb = (db: number) => Math.max(MIN_DB, Math.min(MAX_DB, db));
+
+  const updateGain = useCallback(
+    (db: number) => {
+      const clamped = clampDb(db);
+      setLocalDb(clamped);
+      onChange(clamped);
+    },
+    [onChange],
+  );
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -72,20 +82,21 @@ const GainKnob: React.FC<GainKnobProps> = ({
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(true);
+      didDrag.current = false;
       dragStartY.current = e.clientY;
-      dragStartValue.current = value;
+      dragStartValue.current = localDb;
     },
-    [disabled, value],
+    [disabled, localDb],
   );
 
-  const handleDoubleClick = useCallback(
+  const handleClick = useCallback(
     (e: React.MouseEvent) => {
-      if (disabled) return;
+      if (disabled || didDrag.current) return;
       e.preventDefault();
       e.stopPropagation();
-      onChange(0);
+      updateGain(0);
     },
-    [disabled, onChange],
+    [disabled, updateGain],
   );
 
   const handleWheel = useCallback(
@@ -94,9 +105,9 @@ const GainKnob: React.FC<GainKnobProps> = ({
       e.stopPropagation();
       const step = e.shiftKey ? 0.5 : 1;
       const delta = e.deltaY < 0 ? step : -step;
-      onChange(clampDb(value + delta));
+      updateGain(localDb + delta);
     },
-    [disabled, onChange, value],
+    [disabled, updateGain, localDb],
   );
 
   useEffect(() => {
@@ -104,9 +115,9 @@ const GainKnob: React.FC<GainKnobProps> = ({
 
     const handleMouseMove = (e: MouseEvent) => {
       const dy = dragStartY.current - e.clientY;
-      // 2px per dB — comfortable sensitivity
+      if (Math.abs(dy) > 2) didDrag.current = true;
       const dbDelta = dy / 2;
-      onChange(clampDb(dragStartValue.current + dbDelta));
+      updateGain(dragStartValue.current + dbDelta);
     };
 
     const handleMouseUp = () => {
@@ -119,7 +130,7 @@ const GainKnob: React.FC<GainKnobProps> = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, onChange]);
+  }, [isDragging, updateGain]);
 
   const showLabel = isHovered || isDragging;
   const active = isHovered || isDragging;
@@ -131,16 +142,16 @@ const GainKnob: React.FC<GainKnobProps> = ({
   const bgArc = arcPath(cx, cy, r, START_ANGLE, END_ANGLE);
 
   // Value arc (from start to current value)
-  const valAngle = dbToAngle(value);
+  const valAngle = dbToAngle(localDb);
   const valArc =
-    value > MIN_DB ? arcPath(cx, cy, r, START_ANGLE, valAngle) : "";
+    localDb > MIN_DB ? arcPath(cx, cy, r, START_ANGLE, valAngle) : "";
 
   // Dot indicator position
-  const dotRad = dbToRadians(value);
+  const dotRad = dbToRadians(localDb);
   const dotX = cx + r * Math.cos(dotRad);
   const dotY = cy - r * Math.sin(dotRad);
 
-  const color = voiceColor || "var(--accent-primary)";
+  const color = "var(--text-secondary)";
 
   return (
     <div
@@ -150,13 +161,13 @@ const GainKnob: React.FC<GainKnobProps> = ({
       style={{ zIndex: active ? 10 : undefined }}
     >
       <svg
-        aria-label={`Gain: ${formatDb(value)}`}
+        aria-label={`Gain: ${formatDb(localDb)}`}
         aria-valuemax={MAX_DB}
         aria-valuemin={MIN_DB}
-        aria-valuenow={value}
+        aria-valuenow={localDb}
         className="transition-transform duration-150 ease-out"
         height={20}
-        onDoubleClick={handleDoubleClick}
+        onClick={handleClick}
         onMouseDown={handleMouseDown}
         onWheel={handleWheel}
         role="slider"
@@ -212,7 +223,7 @@ const GainKnob: React.FC<GainKnobProps> = ({
             transform: "translateY(-50%)",
           }}
         >
-          {formatDb(value)}
+          {formatDb(localDb)}
         </span>
       )}
     </div>

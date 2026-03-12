@@ -74,6 +74,8 @@ Round-robin and random modes are powerful for creating realistic drum patterns -
 
 Each voice has a **volume slider** on the right side of its row. Drag the slider to adjust that voice's playback volume (0--100%). Volume changes are saved to the kit.
 
+**Note**: Voice volume only affects preview playback in Romper -- it is **not written to the SD card** during sync. If you need volume adjustments that carry over to the Rample hardware, use the per-sample [gain control]({{ site.baseurl }}/manual/kit-editor#gain-control) in the Kit Editor, which is baked into each WAV file on sync.
+
 The **speaker icon** next to the volume slider toggles mute for that voice. When muted:
 
 - The voice is silenced during sequencer playback

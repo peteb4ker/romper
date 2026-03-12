@@ -21,6 +21,7 @@ import {
   getKitsMetadata,
   updateBank,
   updateKit,
+  updateSampleGain,
   updateSampleMetadata,
   updateVoiceAlias,
   updateVoiceSampleMode,
@@ -125,6 +126,28 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         voiceAlias: string,
       ) => {
         return updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias);
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    "update-sample-gain",
+    createDbHandler(
+      inMemorySettings,
+      (
+        dbDir: string,
+        kitName: string,
+        voiceNumber: number,
+        slotNumber: number,
+        gainDb: number,
+      ) => {
+        return updateSampleGain(
+          dbDir,
+          kitName,
+          voiceNumber,
+          slotNumber,
+          gainDb,
+        );
       },
     ),
   );

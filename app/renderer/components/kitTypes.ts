@@ -27,6 +27,7 @@ export interface KitSamplePlanSlot {
 export interface SampleData {
   [key: string]: unknown;
   filename: string;
+  gain_db?: number;
   is_stereo?: boolean;
   source_path: string;
   wav_bit_depth?: number;

@@ -298,6 +298,12 @@ export interface ElectronAPI {
     },
   ) => Promise<DbResult>;
   updateKitBpm?: (kitName: string, bpm: number) => Promise<DbResult>;
+  updateSampleGain?: (
+    kitName: string,
+    voiceNumber: number,
+    slotNumber: number,
+    gainDb: number,
+  ) => Promise<DbResult>;
   updateSampleMetadata?: (
     sampleId: number,
     metadata: {

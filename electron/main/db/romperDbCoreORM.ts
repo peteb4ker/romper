@@ -36,6 +36,7 @@ export {
   toggleKitFavorite,
   updateBank,
   updateKit,
+  updateSampleGain,
   updateSampleMetadata,
   updateVoiceAlias,
   updateVoiceSampleMode,

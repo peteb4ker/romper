@@ -119,6 +119,7 @@ describe("SyncFileOperationsService", () => {
         "/source/file.wav",
         "/dest/file.wav",
         false,
+        undefined,
       );
     });
 
@@ -136,6 +137,7 @@ describe("SyncFileOperationsService", () => {
         "/source/file.wav",
         "/dest/file.wav",
         true,
+        undefined,
       );
     });
   });

@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
 
 interface SampleWaveformProps {
+  gainDb?: number; // Per-sample gain trim in dB (-24 to +12, 0 = unity)
   // Secure API - uses kit/voice/slot identifiers
   kitName: string;
   onError?: (error: string) => void;
@@ -78,6 +79,7 @@ function tracePath(ctx: CanvasRenderingContext2D, values: Float32Array): void {
 }
 
 const SampleWaveform: React.FC<SampleWaveformProps> = ({
+  gainDb,
   kitName,
   onError,
   onPlayingChange,
@@ -248,9 +250,13 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       gainNodeRef.current.connect(ctx.destination);
     }
     // Logarithmic volume curve: x^2 approximates perceived loudness
-    const linear = volume != null ? volume / 100 : 1;
-    const gain = linear * linear;
-    gainNodeRef.current.gain.setValueAtTime(gain, ctx.currentTime);
+    const voiceLinear = volume != null ? volume / 100 : 1;
+    const voiceGain = voiceLinear * voiceLinear;
+    const sampleGain = Math.pow(10, (gainDb ?? 0) / 20); // dB to linear
+    gainNodeRef.current.gain.setValueAtTime(
+      voiceGain * sampleGain,
+      ctx.currentTime,
+    );
     source.connect(gainNodeRef.current);
 
     // Set up AnalyserNodes for VU meter

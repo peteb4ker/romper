@@ -30,6 +30,7 @@ export {
   getAllSamples,
   getKitSamples,
   getSamplesToDelete,
+  updateSampleGain,
   updateSampleMetadata,
 } from "./sampleCrudOperations.js";
 

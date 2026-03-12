@@ -2,6 +2,7 @@ import React from "react";
 
 import type { SampleData } from "../../kitTypes";
 
+import GainKnob from "../../GainKnob";
 import SampleWaveform from "../../SampleWaveform";
 import { MAX_SLOTS_PER_VOICE } from "./constants";
 import { createCombinedDragHandlers } from "./dragUtils";
@@ -202,8 +203,23 @@ export function useVoicePanelSlotRendering({
               {displayName}
             </span>
           </div>
+          {isEditable && (
+            <GainKnob
+              onChange={(db) => {
+                window.electronAPI?.updateSampleGain?.(
+                  kitName,
+                  voice,
+                  slotNumber,
+                  db,
+                );
+              }}
+              value={sampleData?.gain_db ?? 0}
+              voiceColor={`var(--voice-${voice})`}
+            />
+          )}
           {isEditable && renderDeleteButton(slotNumber)}
           <SampleWaveform
+            gainDb={sampleData?.gain_db}
             key={`${kitName}-${voice}-${uiSlotNumber}-${sampleName}`}
             kitName={kitName}
             onError={(err) => {

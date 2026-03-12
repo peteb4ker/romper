@@ -116,6 +116,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           );
         samples.push({
           filename,
+          gain_db: data.gain_db ?? 0,
           id: Math.abs(hash), // Ensure positive ID
           is_stereo: data.is_stereo || data.wav_channels === 2,
           kit_name: hookProps.kitName || "",

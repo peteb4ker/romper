@@ -3,8 +3,8 @@
 
 import { _electron as electron, expect, test } from "@playwright/test";
 import fs from "fs-extra";
-import path from "path";
-import { fileURLToPath } from "url";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // Retry a function with exponential backoff
 async function retryWithBackoff<T>(

@@ -1,5 +1,5 @@
 // File operations utilities for database management
-import * as fs from "fs";
+import * as fs from "node:fs";
 
 // Logging utilities
 const log = {

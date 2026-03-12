@@ -1,12 +1,12 @@
 import type { Sample } from "@romper/shared/db/schema.js";
 
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as romperDbCoreORM from "../../../db/romperDbCoreORM.js";
 import { SampleValidator } from "../sampleValidator";
 
-vi.mock("fs");
+vi.mock("node:fs");
 vi.mock("../../../db/romperDbCoreORM.js");
 
 const mockFs = vi.mocked(fs);

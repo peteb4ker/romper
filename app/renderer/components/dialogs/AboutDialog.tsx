@@ -141,7 +141,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
                 type="button"
               >
                 Feedback, bug reports
-              </button>
+              </button>{" "}
               , and contributions are welcome.
             </p>
             <p className="font-mono">

@@ -286,23 +286,24 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
           artist: updates.artist ?? undefined,
           rtf_filename: updates.rtf_filename ?? undefined,
         });
-        if (!result.success) return result;
 
-        // Manage RTF file in local store root
-        const localStorePath =
-          process.env.ROMPER_LOCAL_PATH ||
-          (typeof inMemorySettings.localStorePath === "string"
-            ? inMemorySettings.localStorePath
-            : undefined);
-        if (localStorePath) {
-          if (updates.artist) {
-            rtfFileService.writeRtfFile(
-              localStorePath,
-              bankLetter,
-              updates.artist,
-            );
-          } else {
-            rtfFileService.removeRtfFile(localStorePath, bankLetter);
+        if (result.success) {
+          // Manage RTF file in local store root
+          const localStorePath =
+            process.env.ROMPER_LOCAL_PATH ||
+            (typeof inMemorySettings.localStorePath === "string"
+              ? inMemorySettings.localStorePath
+              : undefined);
+          if (localStorePath) {
+            if (updates.artist) {
+              rtfFileService.writeRtfFile(
+                localStorePath,
+                bankLetter,
+                updates.artist,
+              );
+            } else {
+              rtfFileService.removeRtfFile(localStorePath, bankLetter);
+            }
           }
         }
 

@@ -6,9 +6,9 @@
  */
 
 import fs from "fs-extra";
-import path from "path";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import * as tar from "tar";
-import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

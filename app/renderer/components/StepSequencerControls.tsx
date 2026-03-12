@@ -38,7 +38,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
     const newValue = e.target.value;
     setInputValue(newValue);
 
-    const newBpm = parseInt(newValue, 10);
+    const newBpm = Number.parseInt(newValue, 10);
     if (bpmLogic.validateBpm(newBpm)) {
       bpmLogic.setBpm(newBpm);
     }

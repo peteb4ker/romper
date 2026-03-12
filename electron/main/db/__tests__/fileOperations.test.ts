@@ -1,10 +1,10 @@
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { deleteDbFileWithRetry } from "../fileOperations";
 
 // Mock fs functions
-vi.mock("fs");
+vi.mock("node:fs");
 const mockFs = vi.mocked(fs);
 
 describe("fileOperations unit tests", () => {

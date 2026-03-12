@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock better-sqlite3 to avoid native module errors - must be hoisted
@@ -63,7 +63,7 @@ vi.mock("electron", () => {
   };
   return { app, BrowserWindow, ipcMain, Menu };
 });
-vi.mock("path", () => {
+vi.mock("node:path", () => {
   const mock = {
     dirname: vi.fn(() => "/mock/dirname"),
     join: vi.fn((...args) => args.join("/")),

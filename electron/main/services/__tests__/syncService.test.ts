@@ -1,6 +1,6 @@
 import { BrowserWindow } from "electron";
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock modules
@@ -10,8 +10,8 @@ vi.mock("electron", () => ({
   },
 }));
 
-vi.mock("fs");
-vi.mock("path");
+vi.mock("node:fs");
+vi.mock("node:path");
 
 vi.mock("../../audioUtils.js", () => ({
   getAudioMetadata: vi.fn(),

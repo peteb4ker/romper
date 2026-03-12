@@ -18,7 +18,7 @@ vi.mock("electron", () => ({
     }),
   },
 }));
-vi.mock("fs", () => {
+vi.mock("node:fs", () => {
   const mock = {
     copyFileSync: vi.fn(),
     existsSync: vi.fn(() => true),
@@ -36,7 +36,7 @@ vi.mock("fs", () => {
   };
   return { ...mock, default: mock };
 });
-vi.mock("path", () => {
+vi.mock("node:path", () => {
   const mock = {
     dirname: vi.fn(() => "/mock/dirname"),
     join: vi.fn((...args) => args.join("/")),

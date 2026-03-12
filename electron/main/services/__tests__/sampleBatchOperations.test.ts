@@ -414,17 +414,17 @@ describe("SampleBatchOperationsService", () => {
           success: true,
         });
 
-      const result = service.executeCrossKitMove(
-        mockAddSampleToSlot,
-        mockSettings,
-        mockSample,
-        "DestKit",
-        2,
-        0,
-        "SourceKit",
-        1,
-        2,
-      );
+      const result = service.executeCrossKitMove({
+        addSampleToSlot: mockAddSampleToSlot,
+        fromKit: "SourceKit",
+        fromSlot: 2,
+        fromVoice: 1,
+        inMemorySettings: mockSettings,
+        sampleToMove: mockSample,
+        toKit: "DestKit",
+        toSlot: 0,
+        toVoice: 2,
+      });
 
       expect(result.success).toBe(true);
       expect(result.data?.movedSample).toEqual(mockSample);
@@ -447,17 +447,17 @@ describe("SampleBatchOperationsService", () => {
         success: false,
       });
 
-      const result = service.executeCrossKitMove(
-        mockAddSampleToSlot,
-        mockSettings,
-        mockSample,
-        "DestKit",
-        2,
-        0,
-        "SourceKit",
-        1,
-        2,
-      );
+      const result = service.executeCrossKitMove({
+        addSampleToSlot: mockAddSampleToSlot,
+        fromKit: "SourceKit",
+        fromSlot: 2,
+        fromVoice: 1,
+        inMemorySettings: mockSettings,
+        sampleToMove: mockSample,
+        toKit: "DestKit",
+        toSlot: 0,
+        toVoice: 2,
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
@@ -483,17 +483,17 @@ describe("SampleBatchOperationsService", () => {
           success: true,
         });
 
-      const result = service.executeCrossKitMove(
-        mockAddSampleToSlot,
-        mockSettings,
-        mockSample,
-        "DestKit",
-        2,
-        0,
-        "SourceKit",
-        1,
-        2,
-      );
+      const result = service.executeCrossKitMove({
+        addSampleToSlot: mockAddSampleToSlot,
+        fromKit: "SourceKit",
+        fromSlot: 2,
+        fromVoice: 1,
+        inMemorySettings: mockSettings,
+        sampleToMove: mockSample,
+        toKit: "DestKit",
+        toSlot: 0,
+        toVoice: 2,
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
@@ -521,17 +521,17 @@ describe("SampleBatchOperationsService", () => {
           success: true,
         });
 
-      const result = service.executeCrossKitMove(
-        mockAddSampleToSlot,
-        mockSettings,
-        stereoSample,
-        "DestKit",
-        2,
-        0,
-        "SourceKit",
-        1,
-        2,
-      );
+      const result = service.executeCrossKitMove({
+        addSampleToSlot: mockAddSampleToSlot,
+        fromKit: "SourceKit",
+        fromSlot: 2,
+        fromVoice: 1,
+        inMemorySettings: mockSettings,
+        sampleToMove: stereoSample,
+        toKit: "DestKit",
+        toSlot: 0,
+        toVoice: 2,
+      });
 
       expect(result.success).toBe(true);
       expect(mockAddSampleToSlot).toHaveBeenCalledWith(

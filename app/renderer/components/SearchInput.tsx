@@ -86,23 +86,31 @@ const SearchInput: React.FC<SearchInputProps> = ({
 
         {/* Loading Spinner or Clear Button */}
         <div className="absolute right-3 flex items-center">
-          {isSearching ? (
-            <CircleNotch
-              aria-label="Searching..."
-              className="text-accent-primary animate-spin"
-              size={16}
-            />
-          ) : value ? (
-            <button
-              aria-label="Clear search"
-              className="w-4 h-4 text-text-tertiary hover:text-text-primary transition-colors duration-150"
-              onClick={onClear}
-              title="Clear search (Esc)"
-              type="button"
-            >
-              <X size={16} />
-            </button>
-          ) : null}
+          {(() => {
+            if (isSearching) {
+              return (
+                <CircleNotch
+                  aria-label="Searching..."
+                  className="text-accent-primary animate-spin"
+                  size={16}
+                />
+              );
+            }
+            if (value) {
+              return (
+                <button
+                  aria-label="Clear search"
+                  className="w-4 h-4 text-text-tertiary hover:text-text-primary transition-colors duration-150"
+                  onClick={onClear}
+                  title="Clear search (Esc)"
+                  type="button"
+                >
+                  <X size={16} />
+                </button>
+              );
+            }
+            return null;
+          })()}
         </div>
       </div>
     </div>

@@ -72,10 +72,36 @@ for (const [voice, cols] of Object.entries(VU_VOICE_COLS)) {
 
 const borderColSet = new Set(VU_BORDER_COLS);
 
+interface AmbientLedOptions {
+  col: number;
+  el: HTMLElement;
+  glowColor: string;
+  isHovered: boolean;
+  mouse: { col: number; row: number } | null;
+  rawTime: number;
+  ripples: Ripple[];
+  row: number;
+  time: number;
+}
+
 interface CrossFadeState {
   ambientFade: number;
   vuInactiveSince: null | number;
   wasVuActive: boolean;
+}
+
+interface VuLedOptions {
+  ambientMix: number;
+  col: number;
+  defaultGlowColor: string;
+  el: HTMLElement;
+  rawTime: number;
+  ripples: Ripple[];
+  row: number;
+  time: number;
+  voiceBarHeights: Record<number, number>;
+  voiceGlowColors: Record<number, string>;
+  voicePeakRows: Record<number, number>;
 }
 
 /** Compute smoothed level and bar height for a voice */
@@ -291,31 +317,31 @@ export function useLedVisualization(
         const row = Math.floor(i / ICON_COLS);
 
         if (isVuMode) {
-          renderVuLed(
-            el,
+          renderVuLed({
+            ambientMix: crossFadeRef.current.ambientFade,
             col,
+            defaultGlowColor: glowColorRef.current,
+            el,
+            rawTime,
+            ripples: ripplesRef.current,
             row,
             time,
-            rawTime,
             voiceBarHeights,
+            voiceGlowColors: voiceGlowColorsRef.current,
             voicePeakRows,
-            crossFadeRef.current.ambientFade,
-            glowColorRef.current,
-            voiceGlowColorsRef.current,
-            ripplesRef.current,
-          );
+          });
         } else {
-          renderAmbientLed(
-            el,
+          renderAmbientLed({
             col,
+            el,
+            glowColor: glowColorRef.current,
+            isHovered: isHoveredRef.current,
+            mouse,
+            rawTime,
+            ripples: ripplesRef.current,
             row,
             time,
-            rawTime,
-            isHoveredRef.current,
-            mouse,
-            glowColorRef.current,
-            ripplesRef.current,
-          );
+          });
         }
       }
 
@@ -381,17 +407,9 @@ function computeAmbientBrightness(
   );
 }
 
-function renderAmbientLed(
-  el: HTMLElement,
-  col: number,
-  row: number,
-  time: number,
-  rawTime: number,
-  isHovered: boolean,
-  mouse: { col: number; row: number } | null,
-  glowColor: string,
-  ripples: Ripple[],
-): void {
+function renderAmbientLed(options: AmbientLedOptions): void {
+  const { col, el, glowColor, isHovered, mouse, rawTime, ripples, row, time } =
+    options;
   el.style.backgroundColor = "";
   let brightness = computeAmbientBrightness(col, row, time);
 
@@ -410,19 +428,20 @@ function renderAmbientLed(
   applyLedStyle(el, brightness, glowColor);
 }
 
-function renderVuLed(
-  el: HTMLElement,
-  col: number,
-  row: number,
-  time: number,
-  rawTime: number,
-  voiceBarHeights: Record<number, number>,
-  voicePeakRows: Record<number, number>,
-  ambientMix: number,
-  defaultGlowColor: string,
-  voiceGlowColors: Record<number, string>,
-  ripples: Ripple[],
-): void {
+function renderVuLed(options: VuLedOptions): void {
+  const {
+    ambientMix,
+    col,
+    defaultGlowColor,
+    el,
+    rawTime,
+    ripples,
+    row,
+    time,
+    voiceBarHeights,
+    voiceGlowColors,
+    voicePeakRows,
+  } = options;
   const voice = colToVoice.get(col);
   const isBorder = borderColSet.has(col);
 

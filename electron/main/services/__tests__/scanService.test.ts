@@ -1,15 +1,15 @@
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs
-vi.mock("fs", () => ({
+vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
   readdirSync: vi.fn(),
 }));
 
 // Mock path
-vi.mock("path", () => ({
+vi.mock("node:path", () => ({
   join: vi.fn((...args) => args.join("/")),
 }));
 

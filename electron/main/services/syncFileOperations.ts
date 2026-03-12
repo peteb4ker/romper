@@ -1,7 +1,7 @@
 import type { Sample } from "@romper/shared/db/schema.js";
 
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 import type { FormatValidationResult } from "../audioUtils.js";
 
@@ -241,7 +241,7 @@ export class SyncFileOperationsService {
         );
         // Copy the original file instead of converting it
         try {
-          const fs = await import("fs");
+          const fs = await import("node:fs");
           fs.copyFileSync(fileOp.sourcePath, fileOp.destinationPath);
           return; // Successfully handled by copying instead
         } catch (copyError) {

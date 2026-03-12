@@ -1,6 +1,6 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
 
-import * as fs from "fs";
+import * as fs from "node:fs";
 
 import {
   type FormatValidationResult,

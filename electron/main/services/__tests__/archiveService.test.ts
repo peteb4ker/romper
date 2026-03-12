@@ -1,5 +1,5 @@
-import { EventEmitter } from "events";
-import * as fs from "fs";
+import { EventEmitter } from "node:events";
+import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // EventEmitter-based stream mock
@@ -22,7 +22,7 @@ class MockStream extends EventEmitter {
 const unzipperStreams: unknown[] = [];
 let lastWriteStream: MockStream | null = null;
 
-vi.mock("fs", () => ({
+vi.mock("node:fs", () => ({
   createReadStream: vi.fn(() => new MockStream()),
   createWriteStream: vi.fn(() => (lastWriteStream = new MockStream())),
   existsSync: vi.fn(() => true),
@@ -30,7 +30,7 @@ vi.mock("fs", () => ({
   mkdirSync: vi.fn(),
   promises: { unlink: vi.fn() },
 }));
-vi.mock("path", () => ({
+vi.mock("node:path", () => ({
   dirname: vi.fn((p) => p.split("/").slice(0, -1).join("/")),
   join: vi.fn((...args) => args.join("/")),
 }));
@@ -135,7 +135,7 @@ describe("download-and-extract-archive handler", () => {
   }, 15000);
 
   it("handles download errors and emits archive-error", async () => {
-    const https = await import("https");
+    const https = await import("node:https");
     (https.get as unknown).mockImplementationOnce(() => {
       const req = new MockStream();
       setTimeout(() => {
@@ -327,7 +327,7 @@ describe("download-and-extract-archive handler", () => {
   }, 15000);
 
   it("handles response with no content-length header", async () => {
-    const https = await import("https");
+    const https = await import("node:https");
     (https.get as unknown).mockImplementationOnce(
       (_url: unknown, cb: unknown) => {
         const res = new MockStream();
@@ -360,7 +360,7 @@ describe("download-and-extract-archive handler", () => {
   }, 15000);
 
   it("handles large download progress reporting", async () => {
-    const https = await import("https");
+    const https = await import("node:https");
     (https.get as unknown).mockImplementationOnce(
       (_url: unknown, cb: unknown) => {
         const res = new MockStream();

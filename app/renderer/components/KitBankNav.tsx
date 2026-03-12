@@ -55,7 +55,7 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
     rafRef.current = requestAnimationFrame(() => {
       const rect = nav.getBoundingClientRect();
       const style = getComputedStyle(nav);
-      const padTop = parseFloat(style.paddingTop);
+      const padTop = Number.parseFloat(style.paddingTop);
       const y = clientY - rect.top - padTop;
       // Use fixed button height instead of nav content height.
       // The nav may be flex-stretched taller than its button content,
@@ -107,15 +107,12 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
               relative flex items-center justify-center
               rounded text-xs font-mono font-bold leading-none
               origin-left
-              ${
-                isSelected
-                  ? "bg-accent-primary text-text-inverse"
-                  : isNearest && isHovering
-                    ? "text-accent-primary"
-                    : enabled
-                      ? "text-text-secondary"
-                      : "text-text-tertiary/30 cursor-default"
-              }
+              ${(() => {
+                if (isSelected) return "bg-accent-primary text-text-inverse";
+                if (isNearest && isHovering) return "text-accent-primary";
+                if (enabled) return "text-text-secondary";
+                return "text-text-tertiary/30 cursor-default";
+              })()}
             `}
             disabled={!enabled}
             key={bank}

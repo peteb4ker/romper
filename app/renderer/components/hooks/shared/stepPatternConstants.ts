@@ -41,7 +41,9 @@ export interface FocusedStep {
  * Creates a default trigger conditions array (4 voices x 16 steps, all null)
  */
 export function createDefaultTriggerConditions(): (null | string)[][] {
-  return Array.from({ length: NUM_VOICES }, () => Array(NUM_STEPS).fill(null));
+  return Array.from({ length: NUM_VOICES }, () =>
+    new Array(NUM_STEPS).fill(null),
+  );
 }
 
 /**
@@ -71,8 +73,8 @@ export function shouldTrigger(
 ): boolean {
   if (condition === null) return true;
   const [aStr, bStr] = condition.split(":");
-  const a = parseInt(aStr, 10);
-  const b = parseInt(bStr, 10);
+  const a = Number.parseInt(aStr, 10);
+  const b = Number.parseInt(bStr, 10);
   return (cycleCount % b) + 1 === a;
 }
 

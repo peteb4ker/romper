@@ -22,10 +22,10 @@ export function toCapitalCase(str: string): string {
   if (!str || typeof str !== "string") return "";
   let result = str
     .toLowerCase()
-    .replace(/_/g, " ")
+    .replaceAll("_", " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
   // Always capitalize 'HH' and 'FX' as whole words
-  result = result.replace(/\bHh\b/g, "HH").replace(/\bFx\b/g, "FX");
+  result = result.replaceAll("Hh", "HH").replaceAll("Fx", "FX");
   return result;
 }
 
@@ -79,18 +79,18 @@ const VOICE_TYPE_PRECEDENCE = [
 
 // Compare kit slots by bank and number (e.g. 'A0', 'B10')
 export function compareKitSlots(a: string, b: string): number {
-  const bankA = a.charCodeAt(0);
-  const bankB = b.charCodeAt(0);
+  const bankA = a.codePointAt(0) ?? 0;
+  const bankB = b.codePointAt(0) ?? 0;
   if (bankA !== bankB) return bankA - bankB;
-  const numA = parseInt(a.slice(1), 10);
-  const numB = parseInt(b.slice(1), 10);
+  const numA = Number.parseInt(a.slice(1), 10);
+  const numB = Number.parseInt(b.slice(1), 10);
   return numA - numB;
 }
 
 // Get the next available kit slot (e.g. 'A0', 'A1', ..., 'B0', ...)
 export function getNextKitSlot(existing: string[]): null | string {
   const banks = Array.from({ length: 26 }, (_, i) =>
-    String.fromCharCode(65 + i),
+    String.fromCodePoint(65 + i),
   ); // 'A' to 'Z'
   for (const bank of banks) {
     for (let num = 0; num <= 99; num++) {
@@ -126,7 +126,9 @@ export function inferVoiceTypeFromFilename(filename: string): null | string {
 
 export function isValidKit(kit: string): boolean {
   // Valid kit: 1 uppercase letter A-Z, followed by 1-2 digits 0-99
-  return /^\p{Lu}\d{1,2}$/u.test(kit) && parseInt(kit.slice(1), 10) <= 99;
+  return (
+    /^\p{Lu}\d{1,2}$/u.test(kit) && Number.parseInt(kit.slice(1), 10) <= 99
+  );
 }
 
 export function showBankAnchor(

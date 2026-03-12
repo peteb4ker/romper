@@ -44,7 +44,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       return process.env.ROMPER_SDCARD_PATH;
     }
 
-    const os = await import("os");
+    const os = await import("node:os");
     const result = await dialog.showOpenDialog({
       defaultPath: os.homedir(),
       properties: ["openDirectory"],
@@ -144,7 +144,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     return localStoreService.readFile(filePath);
   });
   ipcMain.handle("get-user-home-dir", async () => {
-    const os = await import("os");
+    const os = await import("node:os");
     return os.homedir();
   });
   ipcMain.handle("select-local-store-path", async () => {

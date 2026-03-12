@@ -29,13 +29,13 @@ export function checkKitBasicFields(
   }
 
   // Check kit alias
-  if (kit.alias && kit.alias.toLowerCase().includes(searchTerm)) {
+  if (kit.alias?.toLowerCase().includes(searchTerm)) {
     matchDetails.matchedOn.push("alias");
     matchDetails.matchedAlias = kit.alias;
   }
 
   // Check artist (from bank)
-  if (kit.bank?.artist && kit.bank.artist.toLowerCase().includes(searchTerm)) {
+  if (kit.bank?.artist?.toLowerCase().includes(searchTerm)) {
     matchDetails.matchedOn.push("artist");
     matchDetails.matchedArtist = kit.bank.artist;
   }
@@ -83,10 +83,7 @@ export function checkKitVoices(
   if (!kit.voices) return;
 
   for (const voice of kit.voices) {
-    if (
-      voice.voice_alias &&
-      voice.voice_alias.toLowerCase().includes(searchTerm)
-    ) {
+    if (voice.voice_alias?.toLowerCase().includes(searchTerm)) {
       matchDetails.matchedOn.push(`voice:${voice.voice_alias}`);
       matchDetails.matchedVoices.push(voice.voice_alias);
     }
@@ -153,14 +150,14 @@ function getSamplesFromAllKitSamples(
 
   const results: SampleWithVoice[] = [];
   for (const voiceKey of Object.keys(kitSamples)) {
-    const voiceNumber = parseInt(voiceKey, 10);
+    const voiceNumber = Number.parseInt(voiceKey, 10);
     const voiceSamples = (kitSamples as Record<string, unknown>)[voiceKey];
     if (!Array.isArray(voiceSamples)) continue;
     for (const sample of voiceSamples) {
       if (sample?.filename) {
         results.push({
           filename: sample.filename,
-          voiceNumber: isNaN(voiceNumber) ? null : voiceNumber,
+          voiceNumber: Number.isNaN(voiceNumber) ? null : voiceNumber,
         });
       }
     }

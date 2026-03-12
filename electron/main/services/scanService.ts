@@ -5,8 +5,8 @@ import {
   inferVoiceTypeFromFilename,
 } from "@romper/shared/kitUtilsShared.js";
 // No spaced slot utilities needed - using 0-11 indexing directly
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 import { getAudioMetadata } from "../audioUtils.js";
 import {
@@ -76,7 +76,7 @@ export class ScanService {
 
       // Step 4: Insert new sample records for found files
       for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
-        const voice = parseInt(voiceNumber, 10);
+        const voice = Number.parseInt(voiceNumber, 10);
         const processResult = this.processSamplesForVoice(
           dbDir,
           kitName,
@@ -363,7 +363,7 @@ export class ScanService {
     let updatedVoices = 0;
 
     for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
-      const voice = parseInt(voiceNumber, 10);
+      const voice = Number.parseInt(voiceNumber, 10);
 
       if (voiceFiles.length > 0) {
         const firstFile = voiceFiles[0];

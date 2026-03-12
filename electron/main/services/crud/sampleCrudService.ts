@@ -1,7 +1,7 @@
 import type { DbResult, NewSample, Sample } from "@romper/shared/db/schema.js";
 
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
-import * as path from "path";
+import * as path from "node:path";
 
 import { addSample, markKitAsModified } from "../../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../../utils/fileSystemUtils.js";
@@ -207,17 +207,17 @@ export class SampleCrudService {
       }
 
       // Execute the cross-kit move using batch operations service
-      return sampleBatchOperationsService.executeCrossKitMove(
-        this.addSampleToSlot.bind(this),
+      return sampleBatchOperationsService.executeCrossKitMove({
+        addSampleToSlot: this.addSampleToSlot.bind(this),
+        fromKit,
+        fromSlot,
+        fromVoice,
         inMemorySettings,
         sampleToMove,
         toKit,
-        toVoice,
         toSlot,
-        fromKit,
-        fromVoice,
-        fromSlot,
-      );
+        toVoice,
+      });
     } catch (error) {
       return {
         error: `Failed to move sample between kits: ${getErrorMessage(error)}`,

@@ -43,14 +43,6 @@ export function useLocalStoreWizard(
     [stateHook],
   );
 
-  // --- Error message normalization ---
-  function normalizeErrorMessage(msg: string) {
-    if (msg.includes("premature close")) {
-      return "Download failed: The connection was closed before completion. Please check your internet connection and try again.";
-    }
-    return msg;
-  }
-
   // --- Progress reporting helper ---
   const reportStepProgress = useCallback(
     ({
@@ -283,6 +275,14 @@ function getElectronAPI(): ElectronAPI {
   return typeof window !== "undefined" && window.electronAPI
     ? window.electronAPI
     : ({} as ElectronAPI);
+}
+
+// --- Error message normalization ---
+function normalizeErrorMessage(msg: string) {
+  if (msg.includes("premature close")) {
+    return "Download failed: The connection was closed before completion. Please check your internet connection and try again.";
+  }
+  return msg;
 }
 
 function useElectronAPI(): ElectronAPI {

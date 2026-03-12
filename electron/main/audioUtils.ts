@@ -1,7 +1,7 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
 
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 
 /**
  * Squarp Rample format requirements

@@ -41,40 +41,41 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setIsClosing(false);
-      setLocalSdCardPath(sdCardPath || null);
+    if (!isOpen) return;
 
-      if (localChangeSummary) {
-        setChangeSummary(localChangeSummary);
-      } else if (onGenerateChangeSummary) {
-        setIsGeneratingSummary(true);
-        onGenerateChangeSummary("")
-          .then((summary) => {
-            if (summary) {
-              setChangeSummary(summary);
-            }
-          })
-          .catch((error) => {
-            console.error("Failed to generate change summary:", error);
-          })
-          .finally(() => {
-            setIsGeneratingSummary(false);
-          });
-      }
+    setIsClosing(false);
+    setLocalSdCardPath(sdCardPath || null);
+
+    if (localChangeSummary) {
+      setChangeSummary(localChangeSummary);
+      return;
     }
+
+    if (!onGenerateChangeSummary) return;
+
+    setIsGeneratingSummary(true);
+    onGenerateChangeSummary("")
+      .then((summary) => {
+        if (summary) {
+          setChangeSummary(summary);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to generate change summary:", error);
+      })
+      .finally(() => {
+        setIsGeneratingSummary(false);
+      });
   }, [isOpen, sdCardPath, localChangeSummary, onGenerateChangeSummary]);
 
   const handleSdCardSelect = async () => {
-    if (window.electronAPI?.selectSdCard) {
-      const selectedPath = await window.electronAPI.selectSdCard();
-      if (selectedPath) {
-        setLocalSdCardPath(selectedPath);
-        if (onSdCardPathChange) {
-          onSdCardPathChange(selectedPath);
-        }
-      }
-    }
+    if (!window.electronAPI?.selectSdCard) return;
+
+    const selectedPath = await window.electronAPI.selectSdCard();
+    if (!selectedPath) return;
+
+    setLocalSdCardPath(selectedPath);
+    onSdCardPathChange?.(selectedPath);
   };
 
   const handleConfirm = () => {
@@ -276,7 +277,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                       <span className="w-14 text-right">
                         {bank.hasConversions && (
                           <span className="inline-flex items-center gap-1 text-[10px] text-accent-warning">
-                            <span className="w-1 h-1 rounded-full bg-accent-warning" />
+                            <span className="w-1 h-1 rounded-full bg-accent-warning" />{" "}
                             convert
                           </span>
                         )}
@@ -407,9 +408,8 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               </button>
             )}
 
-          {(!syncProgress ||
-            syncProgress.status !== "error" ||
-            !syncProgress.errorDetails?.canRetry) && (
+          {(syncProgress?.status !== "error" ||
+            !syncProgress?.errorDetails?.canRetry) && (
             <button
               className="px-3 py-1.5 text-xs bg-accent-primary text-white rounded font-semibold hover:bg-accent-primary/80 transition-colors disabled:opacity-50 flex items-center gap-1.5"
               data-testid="confirm-sync"

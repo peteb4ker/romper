@@ -1,6 +1,6 @@
-import * as fs from "fs";
 import * as wav from "node-wav";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "../audioUtils";
@@ -12,9 +12,9 @@ import {
 } from "../formatConverter";
 
 // Mock dependencies
-vi.mock("fs");
+vi.mock("node:fs");
 vi.mock("node-wav");
-vi.mock("path");
+vi.mock("node:path");
 vi.mock("../audioUtils");
 
 const mockFs = vi.mocked(fs);

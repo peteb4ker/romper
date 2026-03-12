@@ -3,12 +3,12 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import * as schema from "@romper/shared/db/schema.js";
 // Database utility functions for connection, migration, and validation
 import BetterSqlite3 from "better-sqlite3";
-import crypto from "crypto";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import * as fs from "fs";
-import * as path from "path";
-import { fileURLToPath } from "url";
+import crypto from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

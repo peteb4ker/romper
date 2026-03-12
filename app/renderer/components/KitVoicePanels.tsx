@@ -109,7 +109,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         // Simple hash of filename for deterministic ID generation
         const hash = filename
           .split("")
-          .reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0);
+          .reduce(
+            (acc, char) => (acc << 5) - acc + (char.codePointAt(0) ?? 0),
+            0,
+          );
         samples.push({
           filename,
           id: Math.abs(hash), // Ensure positive ID
@@ -312,18 +315,18 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     <div className="flex w-full relative" data-testid="voice-panels-row">
       {/* Global slot numbers column */}
       <div className="flex flex-col justify-start pt-8 pr-3">
-        {[...Array(12)].map((_, i) => (
+        {Array.from({ length: 12 }, (_, i) => i + 1).map((slotNumber) => (
           <div
             className="min-h-[28px] flex items-center justify-end"
-            key={`global-slot-${i}`}
+            key={`global-slot-${slotNumber}`}
             style={{ marginBottom: 4 }}
           >
             <span
               className="text-xs font-mono text-text-tertiary select-none bg-surface-3 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
-              data-testid={`global-slot-number-${i}`}
+              data-testid={`global-slot-number-${slotNumber - 1}`}
               style={{ display: "inline-block", width: "32px" }}
             >
-              {i + 1}
+              {slotNumber}
             </span>
           </div>
         ))}
@@ -354,13 +357,12 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
               ].join(" ")}
               data-testid={`voice-panel-${voice}`}
               key={`${hookProps.kitName}-voicepanel-${voice}`}
-              style={
-                isSecondary
-                  ? { flex: 0, gap: 0, minWidth: 0, padding: 0 }
-                  : isPrimary
-                    ? { flex: 2 }
-                    : undefined
-              }
+              style={(() => {
+                if (isSecondary)
+                  return { flex: 0, gap: 0, minWidth: 0, padding: 0 };
+                if (isPrimary) return { flex: 2 };
+                return undefined;
+              })()}
             >
               {!deferredSecondaries.has(voice) && (
                 <KitVoicePanel

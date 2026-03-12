@@ -1,5 +1,5 @@
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 import {
   countZipEntries,
@@ -114,7 +114,7 @@ export class ArchiveService {
       phase: string;
     }) => void,
   ): Promise<string> {
-    const os = await import("os");
+    const os = await import("node:os");
     const tmp = os.tmpdir();
     const tmpZipPath = path.join(tmp, `romper_download_${Date.now()}.zip`);
 

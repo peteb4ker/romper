@@ -174,14 +174,14 @@ export function useVoicePanelSlotRendering({
           }
           draggable={isEditable}
           key={`${voice}-${slotNumber}-${sampleName}`}
-          onClick={() => onSampleSelect && onSampleSelect(voice, slotNumber)}
+          onClick={() => onSampleSelect?.(voice, slotNumber)}
           onContextMenu={(e) =>
             sampleActionsHook.handleSampleContextMenu(e, sampleData)
           }
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              onSampleSelect && onSampleSelect(voice, slotNumber);
+              onSampleSelect?.(voice, slotNumber);
             }
           }}
           role="option"
@@ -264,7 +264,7 @@ export function useVoicePanelSlotRendering({
       isDropZone,
       isStereoHighlight,
       slotBaseClass,
-    } = getSlotStylingProps(nextAvailableSlot, undefined);
+    } = getSlotStylingProps(nextAvailableSlot);
 
     return (
       <li
@@ -273,13 +273,13 @@ export function useVoicePanelSlotRendering({
         data-testid={`drop-zone-voice-${voice}`}
         key={`${voice}-drop-zone`}
         {...getConditionalDragHandlers(nextAvailableSlot)}
-        title={
-          isDragOver || isStereoHighlight || isDropZone
-            ? dropHintTitle
-            : isLinkedPrimary && linkedWith
-              ? `Drop stereo WAV files here for voices ${voice} and ${linkedWith}`
-              : `Drop WAV files here to add to voice ${voice}`
-        }
+        title={(() => {
+          if (isDragOver || isStereoHighlight || isDropZone)
+            return dropHintTitle;
+          if (isLinkedPrimary && linkedWith)
+            return `Drop stereo WAV files here for voices ${voice} and ${linkedWith}`;
+          return `Drop WAV files here to add to voice ${voice}`;
+        })()}
       >
         <div className="flex-1 flex items-center justify-center">
           <span className="text-sm text-text-tertiary text-center">

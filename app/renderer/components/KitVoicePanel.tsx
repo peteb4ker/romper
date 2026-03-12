@@ -18,6 +18,7 @@ interface KitVoicePanelProps {
   isStereoDragTarget?: boolean;
   kitName: string;
   linkedWith?: number;
+  onBatchDropComplete?: () => void;
   onPlay: (voice: number, sample: string) => void;
   onRescanVoiceName: (voice: number) => void;
   // New props for drag-and-drop sample assignment (Task 5.2.2)
@@ -96,6 +97,7 @@ const KitVoicePanel: React.FC<
   isStereoDragTarget = false,
   kitName,
   linkedWith,
+  onBatchDropComplete,
   onPlay,
   onSampleAdd,
   onSampleDelete,
@@ -146,6 +148,7 @@ const KitVoicePanel: React.FC<
     isDisabled,
     isEditable: effectiveEditable,
     kitName,
+    onBatchDropComplete,
     onSampleAdd,
     onSampleMove,
     onSampleReplace,

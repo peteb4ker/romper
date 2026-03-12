@@ -136,6 +136,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           isEditable={logic.kit?.editable ?? false}
           kit={logic.kit}
           kitName={props.kitName}
+          onBatchDropComplete={logic.handleScanKit}
           onKitUpdated={logic.reloadKit}
           onPlay={logic.playback.handlePlay}
           onRescanVoiceName={() => {}}

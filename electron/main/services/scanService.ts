@@ -26,8 +26,8 @@ export class ScanService {
   /**
    * Rescan a kit directory and update the database with current WAV files
    * This is a complex operation that:
-   * 1. Deletes existing sample records
-   * 2. Scans filesystem for WAV files
+   * 1. Checks kit directory exists (bail early if missing)
+   * 2. Deletes existing sample records
    * 3. Groups samples by voice
    * 4. Creates new sample records
    * 5. Infers voice types from filenames
@@ -49,19 +49,19 @@ export class ScanService {
     const dbDir = this.getDbPath(localStorePath);
 
     try {
-      // Step 1: Delete all existing samples for this kit
-      const deleteResult = deleteSamples(dbDir, kitName);
-      if (!deleteResult.success) {
-        return { error: deleteResult.error, success: false };
-      }
-
-      // Step 2: Scan kit directory for current WAV files
+      // Step 1: Check kit directory exists BEFORE deleting samples
       const kitPath = path.join(localStorePath, kitName);
       if (!fs.existsSync(kitPath)) {
         return {
           error: `Kit directory not found: ${kitPath}`,
           success: false,
         };
+      }
+
+      // Step 2: Delete existing samples (safe — directory confirmed above)
+      const deleteResult = deleteSamples(dbDir, kitName);
+      if (!deleteResult.success) {
+        return { error: deleteResult.error, success: false };
       }
 
       let scannedSamples = 0;

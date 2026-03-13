@@ -289,8 +289,7 @@ describe("KitService Integration Tests", () => {
       expect(destSamplesAfterCopy.success).toBe(true);
       expect(destSamplesAfterCopy.data).toHaveLength(1);
 
-      // THIS IS THE BUG: rescanKit deletes all samples before scanning directory
-      // Since duplicated kits don't have physical directories, this leaves them empty
+      // rescanKit now checks directory existence BEFORE deleting samples
       const rescanResult = await scanService.rescanKit(
         mockInMemorySettings,
         "B5",
@@ -298,12 +297,10 @@ describe("KitService Integration Tests", () => {
       expect(rescanResult.success).toBe(false);
       expect(rescanResult.error).toContain("Kit directory not found");
 
-      // The bug: samples are deleted even when rescan fails
+      // FIX: samples are preserved when directory doesn't exist
       const destSamplesAfterRescan = getKitSamples(TEST_DB_PATH, "B5");
       expect(destSamplesAfterRescan.success).toBe(true);
-      expect(destSamplesAfterRescan.data).toHaveLength(0); // Samples are gone!
-
-      // This demonstrates why rescanKit should not be called on duplicated kits
+      expect(destSamplesAfterRescan.data).toHaveLength(1); // Samples preserved!
     });
   });
 });

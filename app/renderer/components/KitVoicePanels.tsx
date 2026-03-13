@@ -120,9 +120,9 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           id: Math.abs(hash), // Ensure positive ID
           is_stereo: data.is_stereo || data.wav_channels === 2,
           kit_name: hookProps.kitName || "",
-          slot_number: 0, // Default slot since SampleData doesn't have slot
+          slot_number: data.slot_number ?? 0,
           source_path: data.source_path,
-          voice_number: 1, // Default voice since SampleData doesn't have voice
+          voice_number: data.voice_number ?? 1,
           wav_bit_depth: data.wav_bit_depth || null,
           wav_bitrate: data.wav_bitrate || null,
           wav_channels: data.wav_channels || null,
@@ -241,7 +241,9 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
               filename: sample.filename,
               gain_db: sample.gain_db ?? 0,
               is_stereo: sample.is_stereo,
+              slot_number: sample.slot_number,
               source_path: sample.source_path,
+              voice_number: sample.voice_number,
               wav_bit_depth: sample.wav_bit_depth ?? undefined,
               wav_bitrate: sample.wav_bitrate ?? undefined,
               wav_channels: sample.wav_channels ?? undefined,
@@ -257,7 +259,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     };
 
     loadSampleMetadata();
-  }, [hookProps.kitName]);
+  }, [hookProps.kitName, props.kit]);
 
   // Optimistic update for gain changes so SampleWaveform gets the new gainDb immediately
   const handleGainChange = React.useCallback(

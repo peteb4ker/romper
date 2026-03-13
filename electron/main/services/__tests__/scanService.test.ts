@@ -237,6 +237,7 @@ describe("ScanService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Kit directory not found");
+      expect(mockDeleteSamples).not.toHaveBeenCalled();
     });
 
     it("handles delete samples failure", async () => {

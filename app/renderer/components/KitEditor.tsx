@@ -59,7 +59,11 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
         onBack={props.onBack}
         onNextKit={props.onNextKit}
         onPrevKit={props.onPrevKit}
-        onScanKit={logic.handleScanKit}
+        onScanKit={
+          logic.kit?.editable
+            ? logic.handleInferVoiceNames
+            : logic.handleScanKit
+        }
         onToggleEditableMode={logic.toggleEditableMode}
         onToggleFavorite={props.onToggleFavorite}
         setEditingKitAlias={setEditingKitAlias}
@@ -110,7 +114,6 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           onBatchDropComplete={logic.reloadKit}
           onKitUpdated={logic.reloadKit}
           onPlay={logic.playback.handlePlay}
-          onRescanVoiceName={() => {}}
           onSampleAdd={logic.sampleManagement.handleSampleAdd}
           onSampleDelete={logic.sampleManagement.handleSampleDelete}
           onSampleKeyNav={logic.kitVoicePanels.onSampleKeyNav}

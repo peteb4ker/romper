@@ -7,7 +7,6 @@ export function useKitVoicePanels({
   kit,
   kitName,
   onPlay,
-  onRescanVoiceName,
   onSampleSelect,
   onSaveVoiceName,
   onStop,
@@ -26,7 +25,6 @@ export function useKitVoicePanels({
   kit: KitWithRelations | null;
   kitName: string;
   onPlay: (voice: number, sample: string) => void;
-  onRescanVoiceName: (voice: number, samples: VoiceSamples) => void;
   onSampleSelect: (voice: number, idx: number) => void;
   onSaveVoiceName: (voice: number, newName: string) => void;
   onStop: (voice: number, sample: string) => void;
@@ -105,7 +103,6 @@ export function useKitVoicePanels({
     kit,
     kitName,
     onPlay,
-    onRescanVoiceName,
     onSampleKeyNav: handleSampleNavigation,
     onSampleSelect,
     onSaveVoiceName,

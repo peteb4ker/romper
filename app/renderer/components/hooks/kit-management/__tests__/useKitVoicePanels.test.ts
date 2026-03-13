@@ -32,7 +32,6 @@ const defaultProps = {
   kit: mockKit,
   kitName: "TestKit",
   onPlay: vi.fn(),
-  onRescanVoiceName: vi.fn(),
   onSampleSelect: vi.fn(),
   onSaveVoiceName: vi.fn(),
   onStop: vi.fn(),
@@ -55,9 +54,6 @@ describe("useKitVoicePanels", () => {
       expect(result.current.kit).toBe(mockKit);
       expect(result.current.kitName).toBe("TestKit");
       expect(result.current.onPlay).toBe(defaultProps.onPlay);
-      expect(result.current.onRescanVoiceName).toBe(
-        defaultProps.onRescanVoiceName,
-      );
       expect(result.current.onSampleSelect).toBe(defaultProps.onSampleSelect);
       expect(result.current.onSaveVoiceName).toBe(defaultProps.onSaveVoiceName);
       expect(result.current.onStop).toBe(defaultProps.onStop);

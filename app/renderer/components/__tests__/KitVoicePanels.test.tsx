@@ -18,7 +18,7 @@ import { MockSettingsProvider } from "./MockSettingsProvider";
 const baseProps = {
   kitName: "Kit1",
   onPlay: vi.fn(),
-  onRescanVoiceName: vi.fn(),
+
   onSaveVoiceName: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
@@ -85,7 +85,6 @@ function MultiVoicePanelsTestWrapper({
           kit={kit}
           kitName={baseProps.kitName}
           onPlay={onPlay}
-          onRescanVoiceName={baseProps.onRescanVoiceName}
           onSampleKeyNav={() => {}}
           onSampleSelect={() => {}}
           onSaveVoiceName={baseProps.onSaveVoiceName}
@@ -365,7 +364,6 @@ describe("KitVoicePanels", () => {
               kit={null}
               kitName="TestKit"
               onPlay={vi.fn()}
-              onRescanVoiceName={vi.fn()}
               onSampleKeyNav={vi.fn()}
               onSampleSelect={vi.fn()}
               onSaveVoiceName={vi.fn()}
@@ -406,7 +404,6 @@ describe("KitVoicePanels", () => {
               kit={kit}
               kitName="TestKit"
               onPlay={vi.fn()}
-              onRescanVoiceName={vi.fn()}
               onSampleKeyNav={vi.fn()}
               onSampleSelect={vi.fn()}
               onSaveVoiceName={vi.fn()}
@@ -450,7 +447,7 @@ describe("KitVoicePanels", () => {
         kit: { alias: "TestKit", name: "TestKit", voices: [] },
         kitName: "TestKit",
         onPlay: vi.fn(),
-        onRescanVoiceName: vi.fn(),
+
         onSampleKeyNav: vi.fn(),
         onSampleSelect: vi.fn(),
         onSaveVoiceName: vi.fn(),
@@ -487,7 +484,6 @@ describe("KitVoicePanels", () => {
               kit={kit}
               kitName="TestKit"
               onPlay={vi.fn()}
-              onRescanVoiceName={vi.fn()}
               onSampleKeyNav={vi.fn()}
               onSampleSelect={vi.fn()}
               onSaveVoiceName={vi.fn()}

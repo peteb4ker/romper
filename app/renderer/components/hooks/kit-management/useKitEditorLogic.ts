@@ -1,6 +1,7 @@
 import type { KitEditorProps } from "@romper/app/renderer/components/kitTypes";
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
+import { inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
 import { useSampleManagement } from "../sample-management/useSampleManagement";
@@ -188,6 +189,48 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     }
   }, [kitName, onRequestSamplesReload, reloadKit]);
 
+  // Handler for in-memory voice name inference (editable kits without filesystem directories)
+  const handleInferVoiceNames = React.useCallback(async () => {
+    if (!kitName) return;
+
+    setScanStatus({ status: "scanning" });
+
+    try {
+      let inferredCount = 0;
+
+      for (const voice of [1, 2, 3, 4] as const) {
+        const voiceSamples = samples[voice];
+        if (!voiceSamples || voiceSamples.length === 0) continue;
+
+        const inferredType = inferVoiceTypeFromFilename(voiceSamples[0]);
+        if (inferredType && window.electronAPI?.updateVoiceAlias) {
+          await window.electronAPI.updateVoiceAlias(
+            kitName,
+            voice,
+            inferredType,
+          );
+          inferredCount++;
+        }
+      }
+
+      setScanStatus({ sampleCount: inferredCount, status: "success" });
+
+      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+      scanTimerRef.current = setTimeout(
+        () => setScanStatus({ status: "idle" }),
+        SCAN_SUCCESS_CLEAR_MS,
+      );
+
+      await reloadKit();
+    } catch (error) {
+      console.error("Voice inference error:", error);
+      setScanStatus({
+        message: error instanceof Error ? error.message : String(error),
+        status: "error",
+      });
+    }
+  }, [kitName, samples, reloadKit]);
+
   // Navigation state
   const [selectedVoice, setSelectedVoice] = React.useState(1);
   const [selectedSampleIdx, setSelectedSampleIdx] = React.useState(0);
@@ -201,9 +244,6 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     kit,
     kitName,
     onPlay: playback.handlePlay,
-    onRescanVoiceName: () => {
-      // Legacy voice rescanning is no longer needed as kit scanning handles voice inference
-    },
     onSampleSelect: (voice: number, idx: number) => {
       setSelectedVoice(voice);
       setSelectedSampleIdx(idx);
@@ -290,10 +330,14 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
         onNextKit?.();
         return;
       }
-      // Kit scanning shortcut
+      // Kit scanning shortcut (context-aware: editable kits use in-memory inference)
       if (e.key === "/") {
         e.preventDefault();
-        handleScanKit();
+        if (kit?.editable) {
+          handleInferVoiceNames();
+        } else {
+          handleScanKit();
+        }
         return;
       }
       // S key toggles sequencer
@@ -332,6 +376,8 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     kitVoicePanels,
     onPrevKit,
     onNextKit,
+    kit?.editable,
+    handleInferVoiceNames,
     handleScanKit,
   ]);
 
@@ -339,6 +385,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     // BPM management
     bpm,
     // Handlers
+    handleInferVoiceNames,
     handleScanKit,
     // Kit data
     kit,

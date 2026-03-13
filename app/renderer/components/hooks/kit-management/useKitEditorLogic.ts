@@ -18,6 +18,8 @@ export type ScanStatus =
   | { status: "idle" }
   | { status: "scanning" };
 
+const FLASH_DURATION_MS = 1200;
+
 interface UseKitEditorLogicParams extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent
   kitError?: null | string; // Error from parent kit loading
@@ -61,10 +63,17 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   });
   const scanTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(null);
 
-  // Clean up scan timer on unmount
+  // Flash feedback state for voice name updates
+  const [flashVoices, setFlashVoices] = React.useState<Set<number>>(new Set());
+  const flashTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(
+    null,
+  );
+
+  // Clean up timers on unmount
   React.useEffect(() => {
     return () => {
       if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     };
   }, []);
 
@@ -167,6 +176,16 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
           SCAN_SUCCESS_CLEAR_MS,
         );
 
+        // Flash voice panels to indicate updated names
+        if (result.data?.updatedVoices && result.data.updatedVoices > 0) {
+          setFlashVoices(new Set([1, 2, 3, 4]));
+          if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+          flashTimerRef.current = setTimeout(
+            () => setFlashVoices(new Set()),
+            FLASH_DURATION_MS,
+          );
+        }
+
         // Trigger sample reload in parent component
         if (onRequestSamplesReload) {
           await onRequestSamplesReload();
@@ -196,7 +215,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     setScanStatus({ status: "scanning" });
 
     try {
-      let inferredCount = 0;
+      const updatedVoices: number[] = [];
 
       for (const voice of [1, 2, 3, 4] as const) {
         const voiceSamples = samples[voice];
@@ -209,17 +228,27 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
             voice,
             inferredType,
           );
-          inferredCount++;
+          updatedVoices.push(voice);
         }
       }
 
-      setScanStatus({ sampleCount: inferredCount, status: "success" });
+      setScanStatus({ sampleCount: updatedVoices.length, status: "success" });
 
       if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
       scanTimerRef.current = setTimeout(
         () => setScanStatus({ status: "idle" }),
         SCAN_SUCCESS_CLEAR_MS,
       );
+
+      // Flash updated voice panels before reload so animation renders immediately
+      if (updatedVoices.length > 0) {
+        setFlashVoices(new Set(updatedVoices));
+        if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+        flashTimerRef.current = setTimeout(
+          () => setFlashVoices(new Set()),
+          FLASH_DURATION_MS,
+        );
+      }
 
       await reloadKit();
     } catch (error) {
@@ -384,6 +413,8 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   return {
     // BPM management
     bpm,
+    // Flash feedback for voice name updates
+    flashVoices,
     // Handlers
     handleInferVoiceNames,
     handleScanKit,

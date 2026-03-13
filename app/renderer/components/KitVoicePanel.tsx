@@ -13,6 +13,7 @@ interface KitVoicePanelProps {
   isActive?: boolean;
   isDisabled?: boolean;
   isEditable?: boolean;
+  isFlashing?: boolean;
   isLinkedPrimary?: boolean;
   // Task 7.1.3: Props for coordinated stereo drop highlighting
   isStereoDragTarget?: boolean;
@@ -98,6 +99,7 @@ const KitVoicePanel: React.FC<
   isActive = false,
   isDisabled = false,
   isEditable = true,
+  isFlashing = false,
   isLinkedPrimary = false,
   isStereoDragTarget = false,
   kitName,
@@ -237,6 +239,8 @@ const KitVoicePanel: React.FC<
     "card-grain",
     // Stereo drag target
     isStereoDragTarget && "bg-accent-warning/15",
+    // Flash animation after voice name inference
+    isFlashing && "animate-voice-flash",
   ]
     .filter(Boolean)
     .join(" ");

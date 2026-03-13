@@ -10,6 +10,7 @@ import { useStereoHandling } from "./hooks/sample-management/useStereoHandling";
 import KitVoicePanel from "./KitVoicePanel";
 
 interface KitVoicePanelsProps {
+  flashVoices?: Set<number>; // Voices currently showing flash animation
   isEditable?: boolean; // Used directly in KitVoicePanel
   kit: KitWithRelations | null; // Used by useKitVoicePanels hook
   kitName: string; // Used by useKitVoicePanels hook
@@ -394,6 +395,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   isActive={voice === hookProps.selectedVoice}
                   isDisabled={isSecondary}
                   isEditable={props.isEditable ?? false}
+                  isFlashing={props.flashVoices?.has(voice) ?? false}
                   isLinkedPrimary={isPrimary}
                   isStereoDragTarget={
                     stereoDragInfo?.targetVoice === voice ||

@@ -190,6 +190,7 @@
   --animate-kit-exit: kit-exit 250ms ease-out both;
   --animate-border-flash: border-flash 600ms ease-out 300ms both;
   --animate-favorite-pulse: favorite-pulse 200ms ease-out;
+  --animate-text-flash: text-flash 800ms ease-out both;
 
   /* Sync panel animations */
   --animate-sync-panel-enter: sync-panel-enter 250ms ease-out both;
@@ -261,6 +262,17 @@ html {
   to {
     border-color: var(--border-subtle);
     box-shadow: none;
+  }
+}
+
+@keyframes text-flash {
+  0% {
+    color: var(--accent-primary);
+    text-shadow: 0 0 6px color-mix(in srgb, var(--accent-primary) 30%, transparent);
+  }
+  100% {
+    color: var(--text-secondary);
+    text-shadow: none;
   }
 }
 

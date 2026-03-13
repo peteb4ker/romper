@@ -33,6 +33,7 @@ interface UseKitEditorLogicParams extends KitEditorProps {
 }
 
 const SCAN_SUCCESS_CLEAR_MS = 3000;
+const FLASH_DURATION_MS = 800;
 
 /**
  * Main business logic hook for KitEditor component
@@ -61,10 +62,17 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   });
   const scanTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(null);
 
-  // Clean up scan timer on unmount
+  // Flash state for voice name highlight after inference
+  const [flashVoices, setFlashVoices] = React.useState<Set<number>>(new Set());
+  const flashTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(
+    null,
+  );
+
+  // Clean up timers on unmount
   React.useEffect(() => {
     return () => {
       if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     };
   }, []);
 
@@ -194,6 +202,8 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     if (!kitName) return;
 
     try {
+      const updatedVoices: number[] = [];
+
       for (const voice of [1, 2, 3, 4] as const) {
         const voiceSamples = samples[voice];
         if (!voiceSamples || voiceSamples.length === 0) continue;
@@ -205,10 +215,21 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
             voice,
             inferredType,
           );
+          updatedVoices.push(voice);
         }
       }
 
       await reloadKit();
+
+      // Flash updated voice names to confirm the action
+      if (updatedVoices.length > 0) {
+        setFlashVoices(new Set(updatedVoices));
+        if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+        flashTimerRef.current = setTimeout(
+          () => setFlashVoices(new Set()),
+          FLASH_DURATION_MS,
+        );
+      }
     } catch (error) {
       console.error("Voice inference error:", error);
       setScanStatus({
@@ -371,6 +392,8 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   return {
     // BPM management
     bpm,
+    // Flash state for voice name highlight
+    flashVoices,
     // Handlers
     handleInferVoiceNames,
     handleScanKit,

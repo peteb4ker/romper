@@ -21,6 +21,7 @@ export interface UseVoicePanelRenderingOptions {
     handleInternalDragOver: (e: React.DragEvent, slotNumber: number) => void;
     handleInternalDrop: (e: React.DragEvent, slotNumber: number) => void;
   };
+  flashVoiceName?: boolean;
   isActive: boolean;
   isEditable: boolean;
   isLinkedPrimary?: boolean;
@@ -105,6 +106,7 @@ export interface UseVoicePanelRenderingOptions {
  */
 export function useVoicePanelRendering({
   dragAndDropHook,
+  flashVoiceName,
   isActive,
   isEditable,
   isLinkedPrimary,
@@ -164,6 +166,7 @@ export function useVoicePanelRendering({
 
   // UI element rendering functions hook
   const ui = useVoicePanelUI({
+    flashVoiceName,
     isEditable,
     isLinkedPrimary,
     linkedWith,

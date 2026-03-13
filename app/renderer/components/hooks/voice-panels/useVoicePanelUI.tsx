@@ -5,6 +5,7 @@ import React from "react";
 import StereoIcon from "../../icons/StereoIcon";
 
 export interface UseVoicePanelUIOptions {
+  flashVoiceName?: boolean;
   isEditable: boolean;
   isLinkedPrimary?: boolean;
   linkedWith?: number;
@@ -27,6 +28,7 @@ export interface UseVoicePanelUIOptions {
  * Extracted from useVoicePanelRendering to reduce complexity
  */
 export function useVoicePanelUI({
+  flashVoiceName,
   isEditable,
   isLinkedPrimary,
   linkedWith,
@@ -69,12 +71,15 @@ export function useVoicePanelUI({
         ) : (
           <>
             <span
-              className={
-                voiceName
-                  ? "text-sm text-text-secondary font-medium tracking-wide"
-                  : "text-sm text-text-tertiary italic"
-              }
+              className={[
+                "text-sm font-medium tracking-wide",
+                voiceName ? "text-text-secondary" : "text-text-tertiary italic",
+                flashVoiceName && voiceName ? "animate-text-flash" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               data-testid={dataTestIdVoiceName || `voice-name-${voice}`}
+              key={flashVoiceName ? "flash" : "idle"}
             >
               {voiceName ? toCapitalCase(voiceName) : "No voice name set"}
             </span>
@@ -109,6 +114,7 @@ export function useVoicePanelUI({
       voice,
       voiceNameEditorHook,
       voiceName,
+      flashVoiceName,
       isEditable,
       isLinkedPrimary,
       linkedWith,

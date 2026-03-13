@@ -10,6 +10,7 @@ import { useVoiceNameEditor } from "./hooks/voice-panels/useVoiceNameEditor";
 import { useVoicePanelRendering } from "./hooks/voice-panels/useVoicePanelRendering";
 
 interface KitVoicePanelProps {
+  flashVoiceName?: boolean;
   isActive?: boolean;
   isDisabled?: boolean;
   isEditable?: boolean;
@@ -95,6 +96,7 @@ const KitVoicePanel: React.FC<
   { dataTestIdVoiceName?: string } & KitVoicePanelProps
 > = ({
   dataTestIdVoiceName,
+  flashVoiceName = false,
   isActive = false,
   isDisabled = false,
   isEditable = true,
@@ -189,6 +191,7 @@ const KitVoicePanel: React.FC<
   // Rendering functions hook
   const rendering = useVoicePanelRendering({
     dragAndDropHook: dragAndDrop,
+    flashVoiceName,
     isActive,
     isEditable: effectiveEditable,
     isLinkedPrimary,

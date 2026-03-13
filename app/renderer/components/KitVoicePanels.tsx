@@ -10,6 +10,7 @@ import { useStereoHandling } from "./hooks/sample-management/useStereoHandling";
 import KitVoicePanel from "./KitVoicePanel";
 
 interface KitVoicePanelsProps {
+  flashVoices?: Set<number>; // Voices to flash-highlight after inference
   isEditable?: boolean; // Used directly in KitVoicePanel
   kit: KitWithRelations | null; // Used by useKitVoicePanels hook
   kitName: string; // Used by useKitVoicePanels hook
@@ -391,6 +392,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
               {!deferredSecondaries.has(voice) && (
                 <KitVoicePanel
                   dataTestIdVoiceName={`voice-name-${voice}`}
+                  flashVoiceName={props.flashVoices?.has(voice) ?? false}
                   isActive={voice === hookProps.selectedVoice}
                   isDisabled={isSecondary}
                   isEditable={props.isEditable ?? false}

@@ -108,6 +108,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto px-2">
         <KitVoicePanels
+          flashVoices={logic.flashVoices}
           isEditable={logic.kit?.editable ?? false}
           kit={logic.kit}
           kitName={props.kitName}

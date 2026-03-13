@@ -132,7 +132,6 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
     };
   }, [isDragging, updateGain]);
 
-  const showLabel = isHovered || isDragging;
   const active = isHovered || isDragging;
   const cx = 10;
   const cy = 10;
@@ -212,16 +211,10 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
           />
         )}
       </svg>
-      {showLabel && (
+      {active && (
         <span
-          className="absolute text-text-secondary whitespace-nowrap pointer-events-none"
-          style={{
-            fontSize: 10,
-            left: "100%",
-            marginLeft: 4,
-            top: "50%",
-            transform: "translateY(-50%)",
-          }}
+          className="absolute left-full ml-2 top-1/2 -translate-y-1/2 text-text-primary font-mono font-medium leading-none pointer-events-none select-none whitespace-nowrap bg-surface-2 border border-border-default rounded px-1.5 py-0.5"
+          style={{ fontSize: 11 }}
         >
           {formatDb(localDb)}
         </span>

@@ -259,6 +259,23 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     loadSampleMetadata();
   }, [hookProps.kitName]);
 
+  // Optimistic update for gain changes so SampleWaveform gets the new gainDb immediately
+  const handleGainChange = React.useCallback(
+    (
+      _voice: number,
+      _slotNumber: number,
+      sampleName: string,
+      gainDb: number,
+    ) => {
+      setSampleMetadata((prev) => {
+        const existing = prev[sampleName];
+        if (!existing) return prev;
+        return { ...prev, [sampleName]: { ...existing, gain_db: gainDb } };
+      });
+    },
+    [],
+  );
+
   // Callback for voice panels to notify about stereo drops
   const handleStereoDragOver = (
     voice: number,
@@ -384,6 +401,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   kitName={hookProps.kitName}
                   linkedWith={linkingStatus.linkedWith}
                   onBatchDropComplete={props.onBatchDropComplete}
+                  onGainChange={handleGainChange}
                   onPlay={hookProps.onPlay}
                   onRescanVoiceName={() =>
                     hookProps.onRescanVoiceName(voice, hookProps.samples)

@@ -19,6 +19,12 @@ interface KitVoicePanelProps {
   kitName: string;
   linkedWith?: number;
   onBatchDropComplete?: () => void;
+  onGainChange?: (
+    voice: number,
+    slotNumber: number,
+    sampleName: string,
+    gainDb: number,
+  ) => void;
   onPlay: (voice: number, sample: string) => void;
   onRescanVoiceName: (voice: number) => void;
   // New props for drag-and-drop sample assignment (Task 5.2.2)
@@ -98,6 +104,7 @@ const KitVoicePanel: React.FC<
   kitName,
   linkedWith,
   onBatchDropComplete,
+  onGainChange,
   onPlay,
   onSampleAdd,
   onSampleDelete,
@@ -189,6 +196,7 @@ const KitVoicePanel: React.FC<
     isLinkedPrimary,
     kitName,
     linkedWith,
+    onGainChange,
     onPlay,
     onSampleSelect,
     onStop,

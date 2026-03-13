@@ -16,7 +16,6 @@ interface KitVoicePanelsProps {
   onBatchDropComplete?: () => void;
   onKitUpdated?: () => Promise<void>; // Called after voice stereo mode changes to reload kit data
   onPlay: (voice: number, sample: string) => void; // Used by useKitVoicePanels hook
-  onRescanVoiceName: (voice: number, samples: VoiceSamples) => void; // Used by useKitVoicePanels hook
   // New props for drag-and-drop sample management (Task 5.2.2 & 5.2.3)
   onSampleAdd?: (
     voice: number,
@@ -405,9 +404,6 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   onBatchDropComplete={props.onBatchDropComplete}
                   onGainChange={handleGainChange}
                   onPlay={hookProps.onPlay}
-                  onRescanVoiceName={() =>
-                    hookProps.onRescanVoiceName(voice, hookProps.samples)
-                  }
                   onSampleAdd={props.onSampleAdd}
                   onSampleDelete={props.onSampleDelete}
                   onSampleKeyNav={hookProps.onSampleKeyNav}

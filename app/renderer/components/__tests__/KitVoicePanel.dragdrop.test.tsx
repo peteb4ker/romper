@@ -26,7 +26,6 @@ describe("KitVoicePanel Drag & Drop Integration", () => {
     isEditable: true,
     kitName: "TestKit",
     onPlay: vi.fn(),
-    onRescanVoiceName: vi.fn(),
     onSampleAdd: vi.fn(),
     onSampleDelete: vi.fn(),
     onSampleMove: vi.fn(),

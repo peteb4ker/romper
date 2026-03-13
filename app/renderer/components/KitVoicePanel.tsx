@@ -26,7 +26,6 @@ interface KitVoicePanelProps {
     gainDb: number,
   ) => void;
   onPlay: (voice: number, sample: string) => void;
-  onRescanVoiceName: (voice: number) => void;
   // New props for drag-and-drop sample assignment (Task 5.2.2)
   onSampleAdd?: (
     voice: number,
@@ -121,7 +120,6 @@ const KitVoicePanel: React.FC<
   playTriggers,
   playVolumes,
   sampleMetadata,
-  // onRescanVoiceName, // Legacy - voice rescanning now handled by kit-level scanning
   samplePlaying,
   samples,
   selectedIdx = -1,

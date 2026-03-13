@@ -37,7 +37,6 @@ const baseProps = {
   isEditable: true,
   kitName: "Kit1",
   onPlay: vi.fn(),
-  onRescanVoiceName: vi.fn(),
   onSampleAdd: vi.fn(),
   onSampleDelete: vi.fn(),
   onSampleMove: vi.fn(),

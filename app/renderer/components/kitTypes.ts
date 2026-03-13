@@ -29,7 +29,9 @@ export interface SampleData {
   filename: string;
   gain_db?: number;
   is_stereo?: boolean;
+  slot_number?: number;
   source_path: string;
+  voice_number?: number;
   wav_bit_depth?: number;
   wav_bitrate?: number;
   wav_channels?: number;

@@ -234,7 +234,7 @@ const KitVoicePanel: React.FC<
 
   // Voice panel styles
   const voicePanelClasses = [
-    "flex-1 p-3 rounded-lg shadow text-text-primary min-h-[80px] border border-border-subtle",
+    "flex-1 p-3 rounded-lg shadow text-text-primary min-h-[80px] border border-border-subtle overflow-hidden",
     // Default background with grain texture
     "card-grain",
     // Stereo drag target

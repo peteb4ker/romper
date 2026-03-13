@@ -378,7 +378,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
             <div
               className={[
                 "group/panel relative transition-all duration-300 ease-in-out overflow-hidden",
-                isSecondary ? "opacity-0" : "flex-1 opacity-100",
+                isSecondary ? "opacity-0" : "flex-1 w-0 opacity-100",
               ].join(" ")}
               data-testid={`voice-panel-${voice}`}
               key={`${hookProps.kitName}-voicepanel-${voice}`}

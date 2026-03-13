@@ -18,6 +18,7 @@ interface UseKitDataManagerReturn {
   kits: KitWithRelations[];
   loadKitsData: (scrollToKit?: string) => Promise<void>;
   refreshAllKitsAndSamples: () => Promise<void>;
+  refreshSingleKitMetadata: (kitName: string) => Promise<void>;
   reloadCurrentKitSamples: (kitName: string) => Promise<void>;
   sampleCounts: Record<string, [number, number, number, number]>;
   toggleKitEditable: (kitName: string) => Promise<void>;
@@ -148,6 +149,21 @@ export function useKitDataManager({
     },
     [loadKitSamples],
   );
+
+  // Refresh metadata for a single kit (voice aliases, etc.) without reloading all samples
+  const refreshSingleKitMetadata = useCallback(async (kitName: string) => {
+    try {
+      const kitResult = await window.electronAPI?.getKit?.(kitName);
+      if (kitResult?.success && kitResult.data) {
+        const updatedKit = kitResult.data as unknown as KitWithRelations;
+        setKits((prevKits) =>
+          prevKits.map((kit) => (kit.name === kitName ? updatedKit : kit)),
+        );
+      }
+    } catch (error) {
+      console.error(`Error refreshing kit metadata for ${kitName}:`, error);
+    }
+  }, []);
 
   // Helper function to load all kits and samples from database
   const refreshAllKitsAndSamples = useCallback(async () => {
@@ -312,6 +328,7 @@ export function useKitDataManager({
     kits,
     loadKitsData,
     refreshAllKitsAndSamples,
+    refreshSingleKitMetadata,
     reloadCurrentKitSamples,
     sampleCounts,
     toggleKitEditable,

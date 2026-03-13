@@ -16,6 +16,7 @@ interface KitEditorAllProps extends KitEditorProps {
   onCreateKit?: () => void; // Used by useKitEditorLogic hook
   onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitEditorLogic hook
+  onRefreshKitMetadata?: () => Promise<void>; // Targeted refresh for single kit metadata (voice aliases)
   onRequestSamplesReload?: () => Promise<void>;
   onToggleEditableMode?: (kitName: string) => Promise<void>; // Toggle editable mode - used via useKitEditorLogic hook
   onToggleFavorite?: (

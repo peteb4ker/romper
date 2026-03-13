@@ -193,11 +193,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   const handleInferVoiceNames = React.useCallback(async () => {
     if (!kitName) return;
 
-    setScanStatus({ status: "scanning" });
-
     try {
-      let inferredCount = 0;
-
       for (const voice of [1, 2, 3, 4] as const) {
         const voiceSamples = samples[voice];
         if (!voiceSamples || voiceSamples.length === 0) continue;
@@ -209,17 +205,8 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
             voice,
             inferredType,
           );
-          inferredCount++;
         }
       }
-
-      setScanStatus({ sampleCount: inferredCount, status: "success" });
-
-      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-      scanTimerRef.current = setTimeout(
-        () => setScanStatus({ status: "idle" }),
-        SCAN_SUCCESS_CLEAR_MS,
-      );
 
       await reloadKit();
     } catch (error) {

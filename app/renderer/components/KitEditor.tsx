@@ -9,7 +9,6 @@ import KitForm from "./KitForm";
 import KitHeader from "./KitHeader";
 import KitStepSequencer from "./KitStepSequencer";
 import KitVoicePanels from "./KitVoicePanels";
-import UnscannedKitPrompt from "./UnscannedKitPrompt";
 
 interface KitEditorAllProps extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent - used via useKitEditorLogic hook
@@ -29,8 +28,6 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
   // Note: All props are used via useKitEditorLogic hook
   // SonarQube doesn't detect indirect prop usage through hooks
   const logic = useKitEditorLogic(props);
-  const [dismissedUnscannedPrompt, setDismissedUnscannedPrompt] =
-    React.useState(false);
 
   // Kit alias editing state
   const [editingKitAlias, setEditingKitAlias] = React.useState(false);
@@ -43,22 +40,6 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
   React.useEffect(() => {
     setKitAliasInput(logic.kit?.alias || "");
   }, [logic.kit?.alias]);
-
-  // Check if kit needs scanning - this is just a simple heuristic for now
-  // A more robust implementation would check the database for scan status
-  // Don't show scanning prompt for empty kits (no samples to scan yet)
-  const hasAnySamples =
-    logic.samples &&
-    Object.values(logic.samples).some(
-      (voiceSamples) => voiceSamples.length > 0,
-    );
-  const needsScanning =
-    logic.kit &&
-    hasAnySamples && // Only show scanning prompt if there are actually samples to scan
-    (!logic.kit.voices ||
-      logic.kit.voices.length === 0 ||
-      logic.kit.voices.every((v) => !v.voice_alias)) &&
-    !dismissedUnscannedPrompt;
 
   return (
     <div
@@ -109,16 +90,6 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           data-testid="kit-scan-status"
         >
           {logic.scanStatus.message}
-        </div>
-      )}
-
-      {needsScanning && logic.scanStatus.status !== "scanning" && (
-        <div className="px-2">
-          <UnscannedKitPrompt
-            kitName={props.kitName}
-            onDismiss={() => setDismissedUnscannedPrompt(true)}
-            onScan={() => logic.handleScanKit()}
-          />
         </div>
       )}
 

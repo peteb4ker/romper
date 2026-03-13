@@ -191,6 +191,9 @@
   --animate-border-flash: border-flash 600ms ease-out 300ms both;
   --animate-favorite-pulse: favorite-pulse 200ms ease-out;
 
+  /* Voice name inference flash */
+  --animate-voice-flash: voice-flash 1200ms ease-out both;
+
   /* Sync panel animations */
   --animate-sync-panel-enter: sync-panel-enter 250ms ease-out both;
   --animate-sync-panel-exit: sync-panel-exit 200ms ease-in both;
@@ -273,6 +276,17 @@ html {
   }
   100% {
     transform: scale(1);
+  }
+}
+
+@keyframes voice-flash {
+  0% {
+    border-color: var(--accent-success);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-success) 20%, transparent);
+  }
+  100% {
+    border-color: var(--border-subtle);
+    box-shadow: none;
   }
 }
 

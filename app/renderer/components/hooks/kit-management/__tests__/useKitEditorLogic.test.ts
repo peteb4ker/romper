@@ -150,6 +150,8 @@ describe("useKitEditorLogic", () => {
     expect(result.current.playback).toBeDefined();
     expect(result.current.kitVoicePanels).toBeDefined();
     expect(result.current.sampleManagement).toBeDefined();
+    expect(result.current.flashVoices).toBeDefined();
+    expect(result.current.flashVoices.size).toBe(0);
   });
 
   it("handles kit scanning successfully", async () => {
@@ -642,6 +644,47 @@ describe("useKitEditorLogic", () => {
       });
 
       expect(window.electronAPI.updateVoiceAlias).not.toHaveBeenCalled();
+    });
+
+    it("sets flashVoices for updated voices", async () => {
+      const propsWithSamples = {
+        ...mockProps,
+        samples: {
+          1: ["kick_hard.wav"],
+          2: ["snare_01.wav"],
+          3: [],
+          4: [],
+        },
+      };
+
+      const { result } = renderHook(() => useKitEditorLogic(propsWithSamples));
+
+      await act(async () => {
+        await result.current.handleInferVoiceNames();
+      });
+
+      // flashVoices should contain the voices that were updated (1 and 2)
+      expect(result.current.flashVoices.has(1)).toBe(true);
+      expect(result.current.flashVoices.has(2)).toBe(true);
+      expect(result.current.flashVoices.has(3)).toBe(false);
+      expect(result.current.flashVoices.has(4)).toBe(false);
+    });
+
+    it("does not set flashVoices when no voices are inferred", async () => {
+      const propsWithEmptySamples = {
+        ...mockProps,
+        samples: { 1: [], 2: [], 3: [], 4: [] },
+      };
+
+      const { result } = renderHook(() =>
+        useKitEditorLogic(propsWithEmptySamples),
+      );
+
+      await act(async () => {
+        await result.current.handleInferVoiceNames();
+      });
+
+      expect(result.current.flashVoices.size).toBe(0);
     });
 
     it("skips voices where type cannot be inferred", async () => {

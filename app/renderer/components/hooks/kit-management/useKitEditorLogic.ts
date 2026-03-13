@@ -26,6 +26,7 @@ interface UseKitEditorLogicParams extends KitEditorProps {
   onCreateKit?: () => void;
   onKitUpdated?: () => Promise<void>;
   onMessage?: (text: string, type?: string, duration?: number) => void;
+  onRefreshKitMetadata?: () => Promise<void>;
   onRequestSamplesReload?: () => Promise<void>;
   onToggleEditableMode?: (kitName: string) => Promise<void>;
   onToggleFavorite?: (
@@ -47,6 +48,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     onKitUpdated,
     onNextKit,
     onPrevKit,
+    onRefreshKitMetadata,
     onRequestSamplesReload,
     onToggleEditableMode,
     onUpdateKitAlias,
@@ -250,7 +252,12 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
         );
       }
 
-      await reloadKit();
+      // Targeted refresh: only reload this kit's metadata, not all 187 kits
+      if (onRefreshKitMetadata) {
+        await onRefreshKitMetadata();
+      } else {
+        await reloadKit();
+      }
     } catch (error) {
       console.error("Voice inference error:", error);
       setScanStatus({
@@ -258,7 +265,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
         status: "error",
       });
     }
-  }, [kitName, samples, reloadKit]);
+  }, [kitName, samples, reloadKit, onRefreshKitMetadata]);
 
   // Navigation state
   const [selectedVoice, setSelectedVoice] = React.useState(1);

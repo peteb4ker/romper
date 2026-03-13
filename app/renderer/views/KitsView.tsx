@@ -101,6 +101,7 @@ const KitsView: React.FC = () => {
     getKitByName,
     kits,
     refreshAllKitsAndSamples,
+    refreshSingleKitMetadata,
     reloadCurrentKitSamples,
     sampleCounts,
     toggleKitEditable,
@@ -235,6 +236,13 @@ const KitsView: React.FC = () => {
     }
   }, [navigation.selectedKit, reloadCurrentKitSamples]);
 
+  // Handle targeted kit metadata refresh (voice aliases only, no sample reload)
+  const handleRefreshKitMetadata = useCallback(async () => {
+    if (navigation.selectedKit) {
+      await refreshSingleKitMetadata(navigation.selectedKit);
+    }
+  }, [navigation.selectedKit, refreshSingleKitMetadata]);
+
   // Wizard success handler
   const handleWizardSuccess = useCallback(async () => {
     setWizardJustCompleted(true);
@@ -291,6 +299,7 @@ const KitsView: React.FC = () => {
           onMessage={showMessage}
           onNextKit={navigation.handleNextKit}
           onPrevKit={navigation.handlePrevKit}
+          onRefreshKitMetadata={handleRefreshKitMetadata}
           onRequestSamplesReload={handleRequestSamplesReload}
           onToggleEditableMode={toggleKitEditable}
           onToggleFavorite={toggleKitFavorite}

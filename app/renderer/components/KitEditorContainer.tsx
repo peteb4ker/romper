@@ -19,6 +19,7 @@ interface KitEditorContainerProps {
   onMessage: (text: string, type?: string, duration?: number) => void;
   onNextKit: () => void;
   onPrevKit: () => void;
+  onRefreshKitMetadata?: () => Promise<void>;
   onRequestSamplesReload: () => Promise<void>;
   onToggleEditableMode?: (kitName: string) => Promise<void>;
   onToggleFavorite?: (
@@ -45,6 +46,7 @@ const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
     onMessage,
     onNextKit,
     onPrevKit,
+    onRefreshKitMetadata,
     onRequestSamplesReload,
     onToggleEditableMode,
     onToggleFavorite,
@@ -84,6 +86,7 @@ const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
       onMessage={handleMessage}
       onNextKit={onNextKit}
       onPrevKit={onPrevKit}
+      onRefreshKitMetadata={onRefreshKitMetadata}
       onRequestSamplesReload={handleRequestSamplesReload}
       onToggleEditableMode={onToggleEditableMode}
       onToggleFavorite={onToggleFavorite}

@@ -7,6 +7,8 @@ kramdown:
   input: GFM
   syntax_highlighter: rouge
 permalink: pretty
+plugins:
+  - jekyll-sitemap
 exclude:
   - developer/
   - templates/

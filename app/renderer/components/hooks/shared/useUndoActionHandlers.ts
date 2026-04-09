@@ -11,6 +11,10 @@ import type {
 
 import { dbSlotToUiSlot } from "@romper/shared/slotUtils";
 
+import { createLogger } from "../../../utils/logger";
+
+const log = createLogger("UNDO");
+
 export interface UseUndoActionHandlersOptions {
   kitName: string;
 }
@@ -122,43 +126,43 @@ export function useUndoActionHandlers({
 
   // Individual undo action handlers
   const undoDeleteSample = async (action: DeleteSampleAction) => {
-    console.log("[UNDO] Undoing DELETE_SAMPLE - adding sample back");
+    log.debug(" Undoing DELETE_SAMPLE - adding sample back");
     const result = await window.electronAPI?.addSampleToSlot?.(
       kitName,
       action.data.voice,
       action.data.slot,
       action.data.deletedSample.source_path,
     );
-    console.log("[UNDO] DELETE_SAMPLE undo result:", result);
+    log.debug(" DELETE_SAMPLE undo result:", result);
     return result;
   };
 
   const undoAddSample = async (action: AddSampleAction) => {
-    console.log("[UNDO] Undoing ADD_SAMPLE - deleting sample");
+    log.debug(" Undoing ADD_SAMPLE - deleting sample");
     const result = await window.electronAPI?.deleteSampleFromSlot?.(
       kitName,
       action.data.voice,
       action.data.slot,
     );
-    console.log("[UNDO] ADD_SAMPLE undo result:", result);
+    log.debug(" ADD_SAMPLE undo result:", result);
     return result;
   };
 
   const undoReplaceSample = async (action: ReplaceSampleAction) => {
-    console.log("[UNDO] Undoing REPLACE_SAMPLE - restoring old sample");
+    log.debug(" Undoing REPLACE_SAMPLE - restoring old sample");
     const result = await window.electronAPI?.replaceSampleInSlot?.(
       kitName,
       action.data.voice,
       action.data.slot,
       action.data.oldSample.source_path,
     );
-    console.log("[UNDO] REPLACE_SAMPLE undo result:", result);
+    log.debug(" REPLACE_SAMPLE undo result:", result);
     return result;
   };
 
   const undoMoveSampleWithSnapshot = async (action: MoveSampleAction) => {
-    console.log(
-      "[UNDO] Using snapshot-based restoration, snapshot length:",
+    log.debug(
+      "Using snapshot-based restoration, snapshot length:",
       action.data.stateSnapshot?.length || 0,
     );
 
@@ -223,7 +227,7 @@ export function useUndoActionHandlers({
   };
 
   const undoMoveSample = async (action: MoveSampleAction) => {
-    console.log("[UNDO] Undoing MOVE_SAMPLE");
+    log.debug(" Undoing MOVE_SAMPLE");
     try {
       if (action.data.stateSnapshot && action.data.stateSnapshot.length > 0) {
         return await undoMoveSampleWithSnapshot(action);
@@ -296,9 +300,7 @@ export function useUndoActionHandlers({
   };
 
   const undoReindexSamples = async (action: ReindexSamplesAction) => {
-    console.log(
-      "[UNDO] Undoing REINDEX_SAMPLES - restoring pre-reindexing state",
-    );
+    log.debug("Undoing REINDEX_SAMPLES - restoring pre-reindexing state");
 
     try {
       await clearCurrentVoiceSamples(action.data.voice);

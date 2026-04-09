@@ -186,7 +186,6 @@ export function getKitsMetadata(dbDir: string): DbResult<Partial<Kit>[]> {
     return db
       .select({
         alias: kits.alias,
-        artist: kits.artist,
         bank_letter: kits.bank_letter,
         bpm: kits.bpm,
         editable: kits.editable,

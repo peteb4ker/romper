@@ -3,17 +3,21 @@
 
 import type { NewKit } from "@romper/shared/db/schema.js";
 
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("Renderer");
+
 export async function createRomperDb(dbDir: string) {
   if (!window.electronAPI?.createRomperDb) {
-    console.error("[Renderer] Romper DB creation not available");
+    log.error("Romper DB creation not available");
     throw new Error("Romper DB creation not available");
   }
   const result = await window.electronAPI.createRomperDb(dbDir);
   if (!result.success) {
-    console.error("[Renderer] Failed to create Romper DB:", result.error);
+    log.error("Failed to create Romper DB:", result.error);
     throw new Error(result.error || "Failed to create Romper DB");
   }
-  console.log("[Renderer] Romper DB created at:", result.dbPath);
+  log.info("Romper DB created at:", result.dbPath);
   return result.dbPath;
 }
 

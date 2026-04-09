@@ -216,4 +216,23 @@ describe("InvalidLocalStoreDialog", () => {
     // Buttons should be disabled during selection
     expect(exitButton).toBeDisabled();
   });
+
+  it("should render re-run wizard button when onRerunWizard is provided", () => {
+    const onRerunWizard = vi.fn();
+    render(
+      <InvalidLocalStoreDialog
+        {...defaultProps}
+        onRerunWizard={onRerunWizard}
+      />,
+    );
+    const rerunBtn = screen.getByTestId("rerun-wizard-btn");
+    expect(rerunBtn).toBeInTheDocument();
+    fireEvent.click(rerunBtn);
+    expect(onRerunWizard).toHaveBeenCalledOnce();
+  });
+
+  it("should not render re-run wizard button when onRerunWizard is not provided", () => {
+    render(<InvalidLocalStoreDialog {...defaultProps} />);
+    expect(screen.queryByTestId("rerun-wizard-btn")).toBeNull();
+  });
 });

@@ -380,7 +380,11 @@ test.describe("Back Navigation E2E Tests", () => {
         await window.waitForTimeout(200);
       }
     } else {
-      test.skip();
+      throw new Error(
+        `Navigation cycle test failed: no kit items found in fixture. ` +
+          `data-testid attribute was: ${kitTestId ?? "null"}. ` +
+          `Ensure the E2E fixture contains valid kits.`,
+      );
     }
   });
 });

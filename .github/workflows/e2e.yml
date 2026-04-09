@@ -68,8 +68,15 @@ jobs:
             echo "Configured chrome-sandbox with proper permissions"
             ls -la "$CHROME_SANDBOX_PATH"
           else
-            echo "chrome-sandbox not found at expected path"
-            find node_modules/electron -name "chrome-sandbox" -type f || echo "chrome-sandbox not found anywhere"
+            echo "WARNING: chrome-sandbox not found at expected path"
+            FOUND_PATH=$(find node_modules/electron -name "chrome-sandbox" -type f 2>/dev/null | head -1)
+            if [ -n "$FOUND_PATH" ]; then
+              echo "Found chrome-sandbox at: $FOUND_PATH"
+              sudo chown root "$FOUND_PATH"
+              sudo chmod 4755 "$FOUND_PATH"
+            else
+              echo "chrome-sandbox not found - tests will use --no-sandbox flag"
+            fi
           fi
 
       - name: Setup test environment
@@ -125,13 +132,21 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get install -y xvfb
-          # Start Xvfb and wait for it to be ready
           export DISPLAY=:99
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          sleep 5
-          # Verify display is working
-          echo "Checking if display :99 is available..."
-          DISPLAY=:99 xdpyinfo || echo "Display check failed, but continuing..."
+          # Validate Xvfb is ready with retry (up to 10 attempts, 1s apart)
+          for i in $(seq 1 10); do
+            if DISPLAY=:99 xdpyinfo > /dev/null 2>&1; then
+              echo "Xvfb display :99 ready after $i attempt(s)"
+              break
+            fi
+            if [ "$i" -eq 10 ]; then
+              echo "ERROR: Xvfb display :99 failed to start after 10 attempts"
+              exit 1
+            fi
+            echo "Waiting for Xvfb... attempt $i/10"
+            sleep 1
+          done
 
       - name: Run end-to-end tests (Linux/macOS)
         if: matrix.os != 'windows-latest'

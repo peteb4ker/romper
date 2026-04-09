@@ -59,9 +59,12 @@ export function useLocalStoreWizard(
         for (let idx = 0; idx < items.length; idx++) {
           const item = items[idx];
           reportProgress({
+            currentKit: idx + 1,
             file: item,
+            kitName: item,
             percent: Math.round(((idx + 1) / items.length) * 100),
             phase,
+            totalKits: items.length,
           });
           await onStep(item, idx);
         }
@@ -149,6 +152,9 @@ export function useLocalStoreWizard(
     try {
       if (!state.targetPath) throw new Error("No target path specified");
       if (!state.source) throw new Error("No source selected");
+
+      await runPreChecks(api, state.targetPath, state.source);
+
       if (api.ensureDir) await api.ensureDir(state.targetPath);
 
       // Process source-specific operations
@@ -157,10 +163,12 @@ export function useLocalStoreWizard(
       // Create and populate database
       isDev &&
         console.debug("[Hook] initialize - creating and populating database");
-      const { dbDir, validKits } = await fileOpsHook.createAndPopulateDb(
-        state.targetPath,
-      );
+      const { dbDir, truncationWarnings, validKits } =
+        await fileOpsHook.createAndPopulateDb(state.targetPath);
       isDev && console.debug("[Hook] initialize - database creation completed");
+      if (truncationWarnings && truncationWarnings.length > 0) {
+        stateHook.setWizardState({ truncationWarnings });
+      }
 
       // Run scanning operations as the final step
       isDev &&
@@ -178,6 +186,20 @@ export function useLocalStoreWizard(
       console.error("[Hook] initialize error:", e);
       const errorMessage = e instanceof Error ? e.message : "Unknown error";
       stateHook.setError(normalizeErrorMessage(errorMessage));
+
+      // Clean up partial database on failure so retry starts fresh
+      if (state.targetPath && api.cleanupPartialInit) {
+        try {
+          await api.cleanupPartialInit(state.targetPath);
+          isDev &&
+            console.debug(
+              "[Hook] Cleaned up partial .romperdb after failed initialization",
+            );
+        } catch {
+          // Cleanup is best-effort; don't mask the original error
+        }
+      }
+
       if (state.source === "sdcard") {
         stateHook.setWizardState({ source: null });
       }
@@ -277,12 +299,42 @@ function getElectronAPI(): ElectronAPI {
     : ({} as ElectronAPI);
 }
 
-// --- Error message normalization ---
 function normalizeErrorMessage(msg: string) {
   if (msg.includes("premature close")) {
     return "Download failed: The connection was closed before completion. Please check your internet connection and try again.";
   }
   return msg;
+}
+
+// --- Error message normalization ---
+async function runPreChecks(
+  api: ElectronAPI,
+  targetPath: string,
+  source: LocalStoreSource,
+) {
+  if (api.checkPathWritable) {
+    const writableResult = await api.checkPathWritable(targetPath);
+    if (!writableResult.writable) {
+      throw new Error(
+        `Cannot write to ${targetPath}. Please choose a folder you have permission to write to.`,
+      );
+    }
+  }
+
+  if (api.checkDiskSpace && source !== "blank") {
+    const requiredBytes =
+      source === "squarp" ? 1024 * 1024 * 1024 : 500 * 1024 * 1024;
+    const spaceResult = await api.checkDiskSpace(targetPath, requiredBytes);
+    if (!spaceResult.sufficient) {
+      const availableMB = Math.round(
+        spaceResult.availableBytes / (1024 * 1024),
+      );
+      const requiredMB = Math.round(spaceResult.requiredBytes / (1024 * 1024));
+      throw new Error(
+        `Not enough disk space. Need ~${requiredMB} MB but only ${availableMB} MB available at ${targetPath}.`,
+      );
+    }
+  }
 }
 
 function useElectronAPI(): ElectronAPI {

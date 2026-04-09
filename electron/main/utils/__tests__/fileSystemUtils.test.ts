@@ -3,8 +3,12 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  checkDiskSpace,
+  checkDiskSpaceSufficient,
+  checkPathWritable,
   ensureDirectoryExists,
   getFileSize,
+  removeDirectorySafe,
   ServicePathManager,
   validateFileExists,
 } from "../fileSystemUtils";
@@ -356,6 +360,174 @@ describe("fileSystemUtils", () => {
 
       expect(result.exists).toBe(true);
       expect(result.error).toBeUndefined();
+    });
+  });
+
+  describe("checkDiskSpace", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should return available bytes when path exists", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.statfsSync.mockReturnValue({
+        bavail: 1000000,
+        bsize: 4096,
+      } as unknown as fs.StatsFs);
+
+      const result = checkDiskSpace("/some/path");
+
+      expect(result.sufficient).toBe(true);
+      expect(result.availableBytes).toBe(1000000 * 4096);
+    });
+
+    it("should return error when path does not exist", () => {
+      mockFs.existsSync.mockReturnValue(false);
+      mockPath.dirname.mockReturnValue("/some");
+
+      const result = checkDiskSpace("/some/nonexistent");
+
+      expect(result.sufficient).toBe(false);
+      expect(result.error).toBe("Path does not exist");
+    });
+
+    it("should return error when statfsSync throws", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.statfsSync.mockImplementation(() => {
+        throw new Error("I/O error");
+      });
+
+      const result = checkDiskSpace("/some/path");
+
+      expect(result.sufficient).toBe(false);
+      expect(result.error).toContain("Disk space check failed");
+    });
+  });
+
+  describe("checkDiskSpaceSufficient", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should return sufficient when enough space", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.statfsSync.mockReturnValue({
+        bavail: 1000000,
+        bsize: 4096,
+      } as unknown as fs.StatsFs);
+
+      const result = checkDiskSpaceSufficient("/path", 1024);
+
+      expect(result.sufficient).toBe(true);
+      expect(result.requiredBytes).toBe(1024);
+    });
+
+    it("should return insufficient when not enough space", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.statfsSync.mockReturnValue({
+        bavail: 1,
+        bsize: 1,
+      } as unknown as fs.StatsFs);
+
+      const result = checkDiskSpaceSufficient("/path", 1024 * 1024 * 1024);
+
+      expect(result.sufficient).toBe(false);
+      expect(result.availableBytes).toBe(1);
+      expect(result.requiredBytes).toBe(1024 * 1024 * 1024);
+    });
+  });
+
+  describe("removeDirectorySafe", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should remove directory within .romperdb scope", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.rmSync.mockImplementation(() => {});
+
+      const result = removeDirectorySafe("/path/.romperdb");
+
+      expect(result.removed).toBe(true);
+      expect(mockFs.rmSync).toHaveBeenCalledWith("/path/.romperdb", {
+        force: true,
+        recursive: true,
+      });
+    });
+
+    it("should refuse to remove directory outside .romperdb scope", () => {
+      const result = removeDirectorySafe("/path/to/other");
+
+      expect(result.removed).toBe(false);
+      expect(result.error).toContain("Refusing to remove");
+      expect(mockFs.rmSync).not.toHaveBeenCalled();
+    });
+
+    it("should return success if directory already gone", () => {
+      mockFs.existsSync.mockReturnValue(false);
+
+      const result = removeDirectorySafe("/path/.romperdb");
+
+      expect(result.removed).toBe(true);
+      expect(mockFs.rmSync).not.toHaveBeenCalled();
+    });
+
+    it("should handle rmSync errors", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.rmSync.mockImplementation(() => {
+        throw new Error("EACCES");
+      });
+
+      const result = removeDirectorySafe("/path/.romperdb");
+
+      expect(result.removed).toBe(false);
+      expect(result.error).toContain("Failed to remove");
+    });
+  });
+
+  describe("checkPathWritable", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should return writable when write and delete succeed", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.statSync.mockReturnValue({
+        isDirectory: () => true,
+      } as unknown as fs.Stats);
+      mockFs.writeFileSync.mockImplementation(() => {});
+      mockFs.unlinkSync.mockImplementation(() => {});
+      mockPath.join.mockReturnValue("/path/.romper-write-test-123");
+
+      const result = checkPathWritable("/path");
+
+      expect(result.writable).toBe(true);
+    });
+
+    it("should return not writable when write fails", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.statSync.mockReturnValue({
+        isDirectory: () => true,
+      } as unknown as fs.Stats);
+      mockFs.writeFileSync.mockImplementation(() => {
+        throw new Error("Permission denied");
+      });
+      mockPath.join.mockReturnValue("/path/.romper-write-test-123");
+
+      const result = checkPathWritable("/path");
+
+      expect(result.writable).toBe(false);
+      expect(result.error).toContain("Cannot write to path");
+    });
+
+    it("should return not writable when directory does not exist", () => {
+      mockFs.existsSync.mockReturnValue(false);
+      mockPath.dirname.mockReturnValue("/nonexistent");
+
+      const result = checkPathWritable("/nonexistent/sub");
+
+      expect(result.writable).toBe(false);
+      expect(result.error).toContain("Directory does not exist");
     });
   });
 });

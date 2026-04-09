@@ -49,6 +49,7 @@ const WizardTargetStep: React.FC<WizardTargetStepProps> = ({
         <input
           aria-label="Local store path"
           className="border border-border-default rounded px-2 py-1 w-full mb-2 bg-surface-1 text-text-primary"
+          data-testid="wizard-target-path-input"
           id="local-store-path-input"
           onChange={(e) => setTargetPath(e.target.value)}
           placeholder={defaultPath}
@@ -57,6 +58,7 @@ const WizardTargetStep: React.FC<WizardTargetStepProps> = ({
         />
         <FilePickerButton
           className="bg-surface-3 text-text-primary px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-accent-primary"
+          data-testid="wizard-target-browse-btn"
           icon={<FolderOpen size={14} />}
           isSelecting={isSelecting}
           onClick={handleChooseFolder}
@@ -66,6 +68,7 @@ const WizardTargetStep: React.FC<WizardTargetStepProps> = ({
         <button
           aria-label="Use default folder"
           className="bg-surface-3 text-text-primary px-2 py-1 rounded ml-2 focus:outline-none focus:ring-2 focus:ring-accent-primary"
+          data-testid="wizard-target-default-btn"
           onClick={() => setTargetPath(defaultPath)}
           type="button"
         >

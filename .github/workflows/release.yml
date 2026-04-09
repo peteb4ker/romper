@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   issues: write
+  id-token: write # Required for Azure Trusted Signing OIDC
 
 jobs:
   quality-gate:
@@ -65,13 +66,13 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             artifact-name: linux-artifacts
-          - os: macos-latest  
+          - os: macos-latest
             platform: darwin
             artifact-name: mac-artifacts
           - os: windows-latest
             platform: win32
             artifact-name: windows-artifacts
-    
+
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
 
@@ -101,6 +102,45 @@ jobs:
             libasound2-dev \
             libgtk-3-0
 
+      # ── macOS: Import signing certificate into temporary keychain ──
+      - name: Import macOS signing certificate
+        if: matrix.os == 'macos-latest' && secrets.APPLE_CERTIFICATE != ''
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          # Create a temporary keychain
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import certificate from base64 secret
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+
+          security import "$CERT_PATH" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+
+          # Set partition list to allow codesign access without UI prompt
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Add temporary keychain to search list (prepend so it's found first)
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+          # Extract identity name for Electron Forge
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "APPLE_IDENTITY=$IDENTITY" >> $GITHUB_ENV
+
+          echo "Certificate imported successfully. Identity: $IDENTITY"
+
       - name: Install dependencies
         run: npm ci
 
@@ -108,7 +148,39 @@ jobs:
         run: npm run build
 
       - name: Package application (Electron)
+        env:
+          # macOS notarization credentials (only used when secrets are configured)
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # APPLE_IDENTITY is set by the certificate import step above
         run: npm run make
+
+      # ── Windows: Sign artifacts with Azure Trusted Signing ──
+      - name: Sign Windows artifacts with Azure Trusted Signing
+        if: matrix.os == 'windows-latest' && secrets.AZURE_CLIENT_ID != ''
+        uses: azure/trusted-signing-action@v0.5.0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: https://eus.codesigning.azure.net/
+          trusted-signing-account-name: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_CERTIFICATE_PROFILE }}
+          files-folder: out/make/squirrel.windows/x64/
+          files-folder-filter: exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      # ── macOS: Clean up temporary keychain ──
+      - name: Clean up macOS keychain
+        if: always() && matrix.os == 'macos-latest' && secrets.APPLE_CERTIFICATE != ''
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          if [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          fi
 
       - name: Debug artifact structure (Windows)
         if: matrix.os == 'windows-latest'
@@ -174,7 +246,7 @@ jobs:
         run: |
           # Generate release notes using the Node.js script
           RELEASE_NOTES=$(node scripts/generate-github-release-notes.js ${{ github.ref_name }})
-          
+
           # Output to GitHub Actions
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT

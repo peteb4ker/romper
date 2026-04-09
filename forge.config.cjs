@@ -1,3 +1,13 @@
+// Determine if macOS signing credentials are available
+const hasMacSigningCreds = !!(
+  process.env.APPLE_IDENTITY || process.env.APPLE_SIGNING_IDENTITY
+);
+const hasMacNotarizeCreds = !!(
+  process.env.APPLE_ID &&
+  process.env.APPLE_ID_PASSWORD &&
+  process.env.APPLE_TEAM_ID
+);
+
 const config = {
   packagerConfig: {
     name: "Romper",
@@ -37,20 +47,33 @@ const config = {
     extraResource: [
       // Include any additional resources needed at runtime
     ],
-    // Code signing configuration framework (requires certificates)
-    // Uncomment and configure when Apple Developer certificates are available
-    // osxSign: {
-    //   identity: "Developer ID Application: Your Name (TEAM_ID)",
-    //   hardened_runtime: true,
-    //   entitlements: "./electron/resources/entitlements.plist",
-    //   "entitlements-inherit": "./electron/resources/entitlements.plist",
-    //   "signature-flags": "library"
-    // },
-    // osxNotarize: {
-    //   appleId: "your-apple-id@example.com",
-    //   appleIdPassword: "@env:APPLE_ID_PASSWORD", // App-specific password
-    //   teamId: "YOUR_TEAM_ID"
-    // }
+    // macOS code signing -- enabled only when APPLE_IDENTITY env var is set
+    ...(hasMacSigningCreds
+      ? {
+          osxSign: {
+            identity:
+              process.env.APPLE_IDENTITY ||
+              process.env.APPLE_SIGNING_IDENTITY,
+            optionsForFile: () => ({
+              hardenedRuntime: true,
+              entitlements: "./electron/resources/entitlements.plist",
+              "entitlements-inherit":
+                "./electron/resources/entitlements.plist",
+              "signature-flags": "library",
+            }),
+          },
+        }
+      : {}),
+    // macOS notarization -- enabled only when Apple ID credentials are set
+    ...(hasMacNotarizeCreds
+      ? {
+          osxNotarize: {
+            appleId: process.env.APPLE_ID,
+            appleIdPassword: process.env.APPLE_ID_PASSWORD,
+            teamId: process.env.APPLE_TEAM_ID,
+          },
+        }
+      : {}),
   },
   rebuildConfig: {},
   makers: [
@@ -62,6 +85,14 @@ const config = {
         authors: "Romper Development Team",
         description: "Sample manager for Squarp Rample Eurorack sampler",
         setupIcon: "./electron/resources/app-icon.ico",
+        // Windows code signing via pfx file (when available)
+        ...(process.env.WINDOWS_CERTIFICATE_FILE
+          ? {
+              certificateFile: process.env.WINDOWS_CERTIFICATE_FILE,
+              certificatePassword:
+                process.env.WINDOWS_CERTIFICATE_PASSWORD || "",
+            }
+          : {}),
       },
     },
     {

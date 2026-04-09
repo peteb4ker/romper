@@ -797,6 +797,63 @@ html.js-ready .fade-in.visible {
 }
 
 /* ===================================================================
+   Community & Support
+   =================================================================== */
+.community {
+    padding: 3rem 0 4rem;
+    text-align: center;
+}
+
+.community-description {
+    color: var(--text-secondary);
+    max-width: 500px;
+    margin: 0.5rem auto 2rem;
+    font-size: 1.05rem;
+}
+
+.community-links {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.community-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.75rem;
+    background-color: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+    min-width: 260px;
+}
+
+.community-card:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+}
+
+.community-card-icon {
+    color: var(--accent-primary);
+    flex-shrink: 0;
+}
+
+.community-card-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+    margin-bottom: 0.15rem;
+}
+
+.community-card-desc {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* ===================================================================
    Footer
    =================================================================== */
 .footer {
@@ -1139,6 +1196,128 @@ html.js-ready .fade-in.visible {
 }
 
 /* ===================================================================
+   Standalone Content Pages (FAQ, Troubleshooting, etc.)
+   =================================================================== */
+.page-content {
+    padding: 3rem 0 4rem;
+}
+
+.prose {
+    max-width: 740px;
+    margin: 0 auto;
+}
+
+.prose h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.prose h1 + p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.prose h1 + p + hr {
+    margin-top: 0;
+}
+
+.prose h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.prose h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.prose p {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.8;
+}
+
+.prose ul,
+.prose ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.prose li {
+    margin-bottom: 0.35rem;
+    line-height: 1.7;
+}
+
+.prose strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.prose code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background-color: var(--surface-3);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+.prose pre {
+    background-color: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+}
+
+.prose pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.prose a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.prose a:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
+.prose hr {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: 2rem 0;
+}
+
+.prose blockquote {
+    border-left: 3px solid var(--accent-primary);
+    padding: 0.75rem 1.25rem;
+    margin: 1.5rem 0;
+    background-color: var(--surface-2);
+    border-radius: 0 6px 6px 0;
+}
+
+.prose blockquote p {
+    margin-bottom: 0;
+}
+
+/* ===================================================================
    Custom Scrollbar
    =================================================================== */
 ::-webkit-scrollbar {
@@ -1221,6 +1400,17 @@ html.js-ready .fade-in.visible {
         display: none;
     }
 
+    .community-links {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .community-card {
+        min-width: auto;
+        width: 100%;
+        max-width: 320px;
+    }
+
     .nav-links {
         gap: 1rem;
     }
@@ -1294,6 +1484,14 @@ html.js-ready .fade-in.visible {
 
     .manual-pagination-link--next {
         text-align: left;
+    }
+
+    .page-content {
+        padding: 2rem 0 3rem;
+    }
+
+    .prose h1 {
+        font-size: 1.6rem;
     }
 }
 

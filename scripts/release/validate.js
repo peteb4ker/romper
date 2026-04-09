@@ -90,6 +90,36 @@ const checks = [
     fix: "Add license, description, and author fields to package.json for RPM packaging",
   },
   {
+    name: "macOS signing environment configured",
+    check: () => {
+      // Check if macOS signing env vars are set (for local builds)
+      const hasIdentity = !!(
+        process.env.APPLE_IDENTITY || process.env.APPLE_SIGNING_IDENTITY
+      );
+      const hasNotarize = !!(
+        process.env.APPLE_ID &&
+        process.env.APPLE_ID_PASSWORD &&
+        process.env.APPLE_TEAM_ID
+      );
+      return hasIdentity && hasNotarize;
+    },
+    fix: "Set APPLE_IDENTITY, APPLE_ID, APPLE_ID_PASSWORD, and APPLE_TEAM_ID for signed macOS builds. Unsigned builds will still work.",
+    warning: true, // Warning only — unsigned local builds are fine
+  },
+  {
+    name: "Windows signing environment configured",
+    check: () => {
+      // Check if Windows signing env vars are set (for local builds)
+      // In CI, Azure Trusted Signing Action handles this via secrets
+      return !!(
+        process.env.WINDOWS_CERTIFICATE_FILE ||
+        process.env.AZURE_CLIENT_ID
+      );
+    },
+    fix: "Set WINDOWS_CERTIFICATE_FILE (local) or AZURE_CLIENT_ID (CI) for signed Windows builds. Unsigned builds will still work.",
+    warning: true, // Warning only — unsigned local builds are fine
+  },
+  {
     name: "Tests passing",
     check: async () => {
       // This would require running tests, which is expensive

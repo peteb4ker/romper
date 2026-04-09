@@ -158,13 +158,27 @@ async function runWizardTest(
   // Initialize to kick off the import
   await window.click('[data-testid="wizard-initialize-btn"]');
 
-  // Wait for either success (wizard disappears) or failure (error appears)
+  // Wait for either success (wizard disappears or post-init guidance shown) or failure (error appears)
   await Promise.race([
     // Success path: wizard disappears
     window.waitForSelector('[data-testid="local-store-wizard"]', {
       state: "hidden",
       timeout: 30000,
     }),
+    // Success path: post-init guidance shown (blank folder or truncation warnings)
+    window
+      .waitForSelector('[data-testid="wizard-post-init-guidance"]', {
+        state: "visible",
+        timeout: 30000,
+      })
+      .then(async () => {
+        // Click continue to dismiss guidance and proceed
+        await window.click('[data-testid="post-init-continue-btn"]');
+        await window.waitForSelector('[data-testid="local-store-wizard"]', {
+          state: "hidden",
+          timeout: 10000,
+        });
+      }),
     // Failure path: error message appears
     window
       .waitForSelector('[data-testid="wizard-error"]', {

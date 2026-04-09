@@ -1,7 +1,14 @@
 import React from "react";
 
 interface WizardProgressBarProps {
-  progress: { file?: string; percent?: number; phase: string } | null;
+  progress: {
+    currentKit?: number;
+    file?: string;
+    kitName?: string;
+    percent?: number;
+    phase: string;
+    totalKits?: number;
+  } | null;
 }
 
 const WizardProgressBar: React.FC<WizardProgressBarProps> = ({ progress }) => {
@@ -24,13 +31,23 @@ const WizardProgressBar: React.FC<WizardProgressBarProps> = ({ progress }) => {
           </span>
         </div>
       </div>
-      {progress.file && (
+      {progress.currentKit && progress.totalKits ? (
         <div
-          className="text-xs mt-1 text-text-secondary truncate"
-          data-testid="wizard-progress-file"
+          className="text-xs mt-1 text-text-secondary"
+          data-testid="wizard-progress-kit"
         >
-          {progress.file}
+          Kit {progress.kitName || progress.currentKit} ({progress.currentKit}{" "}
+          of {progress.totalKits})
         </div>
+      ) : (
+        progress.file && (
+          <div
+            className="text-xs mt-1 text-text-secondary truncate"
+            data-testid="wizard-progress-file"
+          >
+            {progress.file}
+          </div>
+        )
       )}
     </div>
   );

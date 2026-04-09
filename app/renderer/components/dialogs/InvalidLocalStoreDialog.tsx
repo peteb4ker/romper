@@ -9,6 +9,7 @@ interface InvalidLocalStoreDialogProps {
   isOpen: boolean;
   localStorePath: null | string;
   onMessage?: (text: string, type?: string, duration?: number) => void;
+  onRerunWizard?: () => void;
 }
 
 /**
@@ -54,6 +55,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   isOpen,
   localStorePath,
   onMessage,
+  onRerunWizard,
 }) => {
   const { refreshLocalStoreStatus, setLocalStorePath } = useSettings();
   const [isValidating, setIsValidating] = useState(false);
@@ -253,26 +255,38 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div className="flex space-x-3">
-          <button
-            className="flex-1 rounded bg-accent-primary px-4 py-2 text-white hover:bg-accent-primary/80 disabled:opacity-50"
-            disabled={
-              !selectedPath ||
-              !validationResult?.isValid ||
-              isUpdating ||
-              isSelecting
-            }
-            onClick={handleUpdatePath}
-          >
-            {isUpdating ? "Updating..." : "Use This Directory"}
-          </button>
-          <button
-            className="rounded bg-accent-danger px-4 py-2 text-white hover:bg-accent-danger/80 disabled:opacity-50"
-            disabled={isUpdating || isSelecting}
-            onClick={handleExitApp}
-          >
-            Exit App
-          </button>
+        <div className="flex flex-col gap-3">
+          <div className="flex space-x-3">
+            <button
+              className="flex-1 rounded bg-accent-primary px-4 py-2 text-white hover:bg-accent-primary/80 disabled:opacity-50"
+              disabled={
+                !selectedPath ||
+                !validationResult?.isValid ||
+                isUpdating ||
+                isSelecting
+              }
+              onClick={handleUpdatePath}
+            >
+              {isUpdating ? "Updating..." : "Use This Directory"}
+            </button>
+            <button
+              className="rounded bg-accent-danger px-4 py-2 text-white hover:bg-accent-danger/80 disabled:opacity-50"
+              disabled={isUpdating || isSelecting}
+              onClick={handleExitApp}
+            >
+              Exit App
+            </button>
+          </div>
+          {onRerunWizard && (
+            <button
+              className="w-full rounded bg-surface-4 px-4 py-2 text-text-primary hover:bg-surface-3 disabled:opacity-50"
+              data-testid="rerun-wizard-btn"
+              disabled={isUpdating || isSelecting}
+              onClick={onRerunWizard}
+            >
+              Re-run Setup Wizard
+            </button>
+          )}
         </div>
       </div>
     </div>

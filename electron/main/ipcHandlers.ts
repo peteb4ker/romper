@@ -7,6 +7,11 @@ import { kitService } from "./services/kitService.js";
 import { localStoreService } from "./services/localStoreService.js";
 import { sampleService } from "./services/sampleService.js";
 import { settingsService } from "./services/settingsService.js";
+import {
+  checkDiskSpaceSufficient,
+  checkPathWritable,
+  removeDirectorySafe,
+} from "./utils/fileSystemUtils.js";
 
 export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("read-settings", () =>
@@ -201,5 +206,21 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
 
   ipcMain.handle("copy-dir", async (_event, src: string, dest: string) => {
     return archiveService.copyDirectory(src, dest);
+  });
+
+  ipcMain.handle(
+    "check-disk-space",
+    async (_event, targetPath: string, requiredBytes: number) => {
+      return checkDiskSpaceSufficient(targetPath, requiredBytes);
+    },
+  );
+
+  ipcMain.handle("check-path-writable", async (_event, targetPath: string) => {
+    return checkPathWritable(targetPath);
+  });
+
+  ipcMain.handle("cleanup-partial-init", async (_event, targetPath: string) => {
+    const dbDir = `${targetPath}/.romperdb`;
+    return removeDirectorySafe(dbDir);
   });
 }

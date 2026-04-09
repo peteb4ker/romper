@@ -47,10 +47,12 @@ Your kits, sample references, and metadata will appear in the Kit Browser immedi
 If you're new to the Rample or want a clean starting point:
 
 1. Select **Download Factory Samples** in the wizard
-2. Romper downloads the official Squarp sample packs
+2. Romper downloads the official Squarp sample packs (~500 MB, requires internet)
 3. Factory kits are imported into your local store
 
-This gives you professionally organized kits to explore and learn from.
+This gives you professionally organized kits to explore and learn from. If the download is interrupted, Romper will automatically retry up to 3 times.
+
+**Disk space:** Ensure you have at least **1 GB of free space** at your target location for factory samples.
 
 **Start with an Empty Library**
 
@@ -58,7 +60,7 @@ If you want to build everything from scratch:
 
 1. Select **Create Empty Library**
 2. Choose a directory for your local store
-3. You'll start with a blank kit grid ready to populate
+3. After setup completes, Romper will suggest next steps: you can import from an SD card, download factory samples, or proceed to the Kit Browser with an empty library
 
 ### Recovering an Existing Store
 
@@ -87,6 +89,20 @@ You can connect an SD card at any time, not just during initial setup:
 3. Romper validates your kits and copies them to the card
 
 For full details on the sync process, see [Syncing](syncing).
+
+## Troubleshooting Setup
+
+**"No kit folders found"** -- The SD card path you selected doesn't contain the expected folder structure. Rample kits use folders named with an uppercase letter followed by a number (e.g., A0, B1, C12). Make sure you're selecting the correct mounted volume.
+
+**"Not enough disk space"** -- Factory samples require ~1 GB and SD card imports vary by library size. Free up space at your target location and try again.
+
+**"Cannot write to path"** -- The target directory isn't writable. Choose a location in your Documents folder or another directory you have write access to.
+
+**"Download failed after 3 attempts"** -- Check your internet connection and try again. The factory samples download is ~500 MB and needs a stable connection.
+
+**Sample limit notice** -- Rample supports a maximum of 12 samples per voice. If your kits contain more, Romper keeps the first 12 and tells you how many were skipped.
+
+**Local store becomes invalid** -- If you move or delete your local store folder, Romper will show a recovery dialog. You can choose a new directory, point to the existing one, or re-run the setup wizard.
 
 ## What's Next
 

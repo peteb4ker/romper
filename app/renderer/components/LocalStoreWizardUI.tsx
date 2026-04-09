@@ -11,6 +11,7 @@ import { useLocalStoreWizard } from "./hooks/wizard/useLocalStoreWizard";
 import FilePickerButton from "./utils/FilePickerButton";
 import Spinner from "./utils/Spinner";
 import WizardErrorMessage from "./wizard/WizardErrorMessage";
+import WizardPostInitGuidance from "./wizard/WizardPostInitGuidance";
 import WizardProgressBar from "./wizard/WizardProgressBar";
 import WizardSourceStep from "./wizard/WizardSourceStep";
 import WizardStepNav from "./wizard/WizardStepNav";
@@ -46,6 +47,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
       null,
     );
     const [isSelectingExisting, setIsSelectingExisting] = useState(false);
+    const [showPostInitGuidance, setShowPostInitGuidance] = useState(false);
     const {
       canInitialize, // from hook
       defaultPath,
@@ -105,10 +107,18 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
 
     const handleInitialize = useCallback(async () => {
       const result = await initialize();
-      if (result.success && onSuccess) {
-        onSuccess();
+      if (result.success) {
+        const hasWarnings =
+          state.truncationWarnings && state.truncationWarnings.length > 0;
+        const isBlankFolder = state.source === "blank";
+
+        if (isBlankFolder || hasWarnings) {
+          setShowPostInitGuidance(true);
+        } else if (onSuccess) {
+          onSuccess();
+        }
       }
-    }, [initialize, onSuccess]);
+    }, [initialize, onSuccess, state.truncationWarnings, state.source]);
 
     // Helper function to validate electronAPI availability
     const validateElectronAPI = useCallback(() => {
@@ -238,7 +248,18 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
           </div>
         )}
 
-        {!showExistingStoreSelector && (
+        {showPostInitGuidance && (
+          <WizardPostInitGuidance
+            isBlankFolder={state.source === "blank"}
+            onDismiss={() => {
+              setShowPostInitGuidance(false);
+              if (onSuccess) onSuccess();
+            }}
+            truncationWarnings={state.truncationWarnings}
+          />
+        )}
+
+        {!showExistingStoreSelector && !showPostInitGuidance && (
           <>
             {/* Show summary on both Target and Initialize steps */}
             {(currentStep === WizardStep.Target ||
@@ -302,7 +323,15 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
                 </button>
                 <button
                   className="bg-surface-4 text-text-primary px-4 py-2 rounded"
-                  onClick={onClose}
+                  onClick={() => {
+                    if (state.isInitializing) {
+                      const confirmed = window.confirm(
+                        "Initialization is in progress. Closing now may leave an incomplete database. Are you sure?",
+                      );
+                      if (!confirmed) return;
+                    }
+                    onClose();
+                  }}
                 >
                   Cancel
                 </button>

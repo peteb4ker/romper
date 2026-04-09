@@ -91,7 +91,6 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         kitName: string,
         updates: {
           alias?: string;
-          artist?: string;
           description?: string;
           tags?: string[];
         },

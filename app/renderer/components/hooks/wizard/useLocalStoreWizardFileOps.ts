@@ -41,7 +41,12 @@ export function useLocalStoreWizardFileOps({
       const files = await api.listFilesInRoot(sdCardSourcePath);
       const kitFolders = getKitFolders(files);
       if (kitFolders.length === 0) {
-        return "No valid kit folders found. Please choose a folder with kit subfolders (e.g. A0, B12, etc).";
+        const nonHidden = files.filter((f) => !f.startsWith("."));
+        const foundList =
+          nonHidden.length > 0
+            ? `Found: ${nonHidden.slice(0, 5).join(", ")}${nonHidden.length > 5 ? ` (+${nonHidden.length - 5} more)` : ""}`
+            : "The folder is empty";
+        return `No kit folders found in ${sdCardSourcePath}. ${foundList}. Expected folders named like A0, B1, Drum01 (uppercase letter followed by a number).`;
       }
       return null;
     },
@@ -84,36 +89,52 @@ export function useLocalStoreWizardFileOps({
   const extractSquarpArchive = useCallback(
     async (targetPath: string) => {
       const url = config.squarpArchiveUrl;
+      const isTest = process.env.NODE_ENV === "test";
+      const maxRetries = isTest ? 1 : 3;
 
-      // Throttle progress updates to avoid thousands of UI refreshes
-      let lastProgressUpdate = 0;
-      let lastProgressPhase = "";
-      const progressThrottle = 100; // Update at most every 100ms
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        // Throttle progress updates to avoid thousands of UI refreshes
+        let lastProgressUpdate = 0;
+        let lastProgressPhase = "";
+        const progressThrottle = 100;
 
-      const result = await api.downloadAndExtractArchive?.(
-        url,
-        targetPath,
-        (p: unknown) => {
-          const progress = p as ProgressEvent;
-          const now = Date.now();
-          // Always report phase changes and completion
-          if (
-            progress.percent === 100 ||
-            progress.phase !== lastProgressPhase ||
-            now - lastProgressUpdate > progressThrottle
-          ) {
-            lastProgressUpdate = now;
-            lastProgressPhase = progress.phase;
-            reportProgress(progress);
-          }
-        },
-        (e: unknown) => {
-          const error = e as Error;
-          setError(error.message || String(e));
-        },
-      );
-      if (!result?.success)
-        throw new Error(result?.error || "Failed to extract archive");
+        const result = await api.downloadAndExtractArchive?.(
+          url,
+          targetPath,
+          (p: unknown) => {
+            const progress = p as ProgressEvent;
+            const now = Date.now();
+            if (
+              progress.percent === 100 ||
+              progress.phase !== lastProgressPhase ||
+              now - lastProgressUpdate > progressThrottle
+            ) {
+              lastProgressUpdate = now;
+              lastProgressPhase = progress.phase;
+              reportProgress(progress);
+            }
+          },
+          (e: unknown) => {
+            const error = e as Error;
+            setError(error.message || String(e));
+          },
+        );
+
+        if (result?.success) return;
+
+        if (attempt < maxRetries) {
+          const delay = attempt * 2000;
+          reportProgress({
+            percent: 0,
+            phase: `Download failed, retrying (attempt ${attempt + 1} of ${maxRetries})...`,
+          });
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        } else {
+          throw new Error(
+            `Factory samples download failed after ${maxRetries} attempts. Please check your internet connection and try again.`,
+          );
+        }
+      }
     },
     [api, reportProgress, setError],
   );
@@ -127,6 +148,13 @@ export function useLocalStoreWizardFileOps({
         throw new Error("listFilesInRoot is not available");
       const kitFolders = await api.listFilesInRoot(targetPath);
       const validKits = getKitFolders(kitFolders);
+      const truncationWarnings: Array<{
+        kept: number;
+        kitName: string;
+        skipped: number;
+        total: number;
+        voiceNumber: number;
+      }> = [];
       if (validKits.length > 0) {
         await reportStepProgress({
           items: validKits,
@@ -162,13 +190,14 @@ export function useLocalStoreWizardFileOps({
                     voice_number: Number(voiceNum),
                   });
                 }
-                // Log if samples were skipped
                 if (voiceSamples.length > 12) {
-                  const isDev = process.env.NODE_ENV === "development";
-                  isDev &&
-                    console.debug(
-                      `[Hook] Skipped ${voiceSamples.length - 12} samples in voice ${voiceNum} (exceeds 12 slot limit)`,
-                    );
+                  truncationWarnings.push({
+                    kept: 12,
+                    kitName,
+                    skipped: voiceSamples.length - 12,
+                    total: voiceSamples.length,
+                    voiceNumber: Number(voiceNum),
+                  });
                 }
               }
             }
@@ -176,7 +205,7 @@ export function useLocalStoreWizardFileOps({
           phase: "Writing to database",
         });
       }
-      return { dbDir, validKits };
+      return { dbDir, truncationWarnings, validKits };
     },
     [api, reportStepProgress],
   );

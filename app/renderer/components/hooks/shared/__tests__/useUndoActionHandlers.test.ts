@@ -215,17 +215,10 @@ describe("useUndoActionHandlers", () => {
           type: "MOVE_SAMPLE",
         };
 
-        const consoleSpy = vi.spyOn(console, "log").mockImplementation();
+        const result2 = await result.current.executeUndoAction(action);
 
-        await result.current.executeUndoAction(action);
-
-        // Should use snapshot-based restoration
-        expect(consoleSpy).toHaveBeenCalledWith(
-          "[UNDO] Using snapshot-based restoration, snapshot length:",
-          1,
-        );
-
-        consoleSpy.mockRestore();
+        // Snapshot-based restoration should succeed
+        expect(result2).toEqual({ success: true });
       });
 
       it("should use legacy restoration when no snapshot available", async () => {

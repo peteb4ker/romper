@@ -206,7 +206,9 @@ describe("useLocalStoreWizard", () => {
     await act(async () => {
       await result.current.initialize();
     });
-    expect(result.current.state.error).toBe("fail");
+    expect(result.current.state.error).toMatch(
+      /Factory samples download failed/,
+    );
     expect(result.current.state.isInitializing).toBe(false);
   });
 
@@ -251,7 +253,9 @@ describe("useLocalStoreWizard", () => {
     await act(async () => {
       await result.current.initialize();
     });
-    expect(result.current.state.error).toMatch(/connection was closed/i);
+    expect(result.current.state.error).toMatch(
+      /Factory samples download failed/,
+    );
     expect(result.current.state.isInitializing).toBe(false);
     expect(result.current.progress).toBeNull();
   });
@@ -592,5 +596,93 @@ describe("useLocalStoreWizard", () => {
     // Should not call scanning when no kits found
     expect(mockExecuteFullKitScan).not.toHaveBeenCalled();
     expect(window.electronAPI.updateKit).not.toHaveBeenCalled();
+  });
+
+  it("shows disk space error when insufficient space for squarp download", async () => {
+    vi.mocked(window.electronAPI.checkPathWritable).mockResolvedValue({
+      writable: true,
+    });
+    vi.mocked(window.electronAPI.checkDiskSpace).mockResolvedValue({
+      availableBytes: 100 * 1024 * 1024,
+      requiredBytes: 1024 * 1024 * 1024,
+      sufficient: false,
+    });
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("squarp");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(result.current.state.error).toMatch(/Not enough disk space/);
+    expect(result.current.state.isInitializing).toBe(false);
+  });
+
+  it("shows writability error when target path is not writable", async () => {
+    vi.mocked(window.electronAPI.checkPathWritable).mockResolvedValue({
+      error: "Permission denied",
+      writable: false,
+    });
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/read-only/path/romper");
+      result.current.setSource("blank");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(result.current.state.error).toMatch(/Cannot write to/);
+    expect(result.current.state.isInitializing).toBe(false);
+  });
+
+  it("calls cleanupPartialInit on initialization failure", async () => {
+    const cleanupMock = vi.fn().mockResolvedValue({ removed: true });
+    vi.mocked(window.electronAPI.cleanupPartialInit).mockImplementation(
+      cleanupMock,
+    );
+    vi.mocked(window.electronAPI.checkPathWritable).mockResolvedValue({
+      writable: true,
+    });
+    // Force an error during database creation
+    vi.mocked(window.electronAPI.listFilesInRoot).mockRejectedValue(
+      new Error("DB creation failed"),
+    );
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("blank");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(result.current.state.error).toBeTruthy();
+    expect(cleanupMock).toHaveBeenCalledWith("/mock/home/Documents/romper");
+  });
+
+  it("skips disk space check for blank folder source", async () => {
+    const checkDiskSpaceMock = vi.fn();
+    vi.mocked(window.electronAPI.checkDiskSpace).mockImplementation(
+      checkDiskSpaceMock,
+    );
+    vi.mocked(window.electronAPI.checkPathWritable).mockResolvedValue({
+      writable: true,
+    });
+    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+      async () => [],
+    );
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("blank");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+    expect(checkDiskSpaceMock).not.toHaveBeenCalled();
   });
 });

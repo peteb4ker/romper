@@ -152,6 +152,19 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] cancelKitSync invoked");
     return ipcRenderer.invoke("cancelKitSync");
   },
+  checkDiskSpace: (targetPath: string, requiredBytes: number) => {
+    isDev &&
+      console.debug("[IPC] checkDiskSpace invoked", targetPath, requiredBytes);
+    return ipcRenderer.invoke("check-disk-space", targetPath, requiredBytes);
+  },
+  checkPathWritable: (targetPath: string) => {
+    isDev && console.debug("[IPC] checkPathWritable invoked", targetPath);
+    return ipcRenderer.invoke("check-path-writable", targetPath);
+  },
+  cleanupPartialInit: (targetPath: string) => {
+    isDev && console.debug("[IPC] cleanupPartialInit invoked", targetPath);
+    return ipcRenderer.invoke("cleanup-partial-init", targetPath);
+  },
   closeApp: (): Promise<void> => {
     isDev && console.debug("[IPC] closeApp invoked");
     return ipcRenderer.invoke("close-app");

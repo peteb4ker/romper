@@ -29,7 +29,6 @@ describe("schema types", () => {
 
     const kitRecord: Kit = {
       alias: null,
-      artist: null,
       editable: false,
       locked: false,
       name: "test-kit",

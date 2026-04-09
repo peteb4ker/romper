@@ -119,7 +119,7 @@ describe("useLocalStoreWizardFileOps", () => {
       const error = await result.current.validateSdCardFolder("/path");
 
       expect(error).toBe(
-        "No valid kit folders found. Please choose a folder with kit subfolders (e.g. A0, B12, etc).",
+        "No kit folders found in /path. Found: file.txt, README.md. Expected folders named like A0, B1, Drum01 (uppercase letter followed by a number).",
       );
     });
 
@@ -275,7 +275,7 @@ describe("useLocalStoreWizardFileOps", () => {
 
       await expect(
         result.current.extractSquarpArchive("/target/path"),
-      ).rejects.toThrow("Download failed");
+      ).rejects.toThrow("Factory samples download failed");
     });
 
     it("should handle missing API method", async () => {
@@ -296,7 +296,7 @@ describe("useLocalStoreWizardFileOps", () => {
 
       await expect(
         result.current.extractSquarpArchive("/target/path"),
-      ).rejects.toThrow("Failed to extract archive");
+      ).rejects.toThrow("Factory samples download failed");
     });
   });
 

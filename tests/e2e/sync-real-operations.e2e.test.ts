@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import fs from "fs-extra";
+import { execSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { _electron as electron } from "playwright";
@@ -13,21 +14,21 @@ import {
 /**
  * End-to-End Sync Test with Real File Operations
  *
- * This test fills the gap in SYNC.1 testing by performing actual sync operations
- * with real files, using temp folders as local store and SD card.
+ * This test exercises the sync confirmation dialog and actual sync workflow
+ * using the pre-built E2E fixture which contains:
+ * - Two kits (A0, B1) each with 2 WAV samples (1_kick.wav, 2_snare.wav)
+ * - A database with sample records referencing those files
  *
- * Unlike existing E2E tests that cancel before sync, this test:
- * - Creates real kits with sample files
- * - Executes complete sync workflow
- * - Verifies file operations and Rample naming convention
- * - Tests edge cases with real filesystem operations
+ * After extracting the fixture, we update the database source_path values
+ * to point to the actual extracted WAV files, so the sync system can find them.
  */
 test.describe("Sync Real Operations E2E Tests", () => {
-  let electronApp: unknown;
-  let window: unknown;
+  let electronApp: ReturnType<typeof electron.launch> extends Promise<infer T>
+    ? T
+    : never;
+  let window: Awaited<ReturnType<typeof electronApp.firstWindow>>;
   let testEnv: E2ETestEnvironment;
   let tempSdCardDir: string;
-  let testSampleFiles: { aiff: string; flac: string; wav: string };
 
   test.beforeEach(async () => {
     // Use existing fixture system for proper database setup
@@ -43,8 +44,9 @@ test.describe("Sync Real Operations E2E Tests", () => {
     );
     console.log(`[E2E Sync Test] Created temp SD card: ${tempSdCardDir}`);
 
-    // Create sample audio files for testing
-    await createTestSampleFiles();
+    // Fix source_path values in the fixture database so they point to the
+    // actual extracted WAV files instead of the stale temp paths from fixture generation
+    fixDatabaseSourcePaths(testEnv.localStorePath);
 
     // Launch Electron app with fixture environment + custom SD card path
     electronApp = await electron.launch({
@@ -73,8 +75,15 @@ test.describe("Sync Real Operations E2E Tests", () => {
       timeout: 10000,
     });
 
-    // Add our test sample files to the existing kits in the database
-    await addTestSampleFilesToExistingKits();
+    // Ensure the main process inMemorySettings.localStorePath points to the
+    // fixture's local store, not whatever is in the user's settings file.
+    // The ROMPER_LOCAL_PATH env var is used by the renderer but the sync IPC
+    // handler reads from inMemorySettings directly.
+    await window.evaluate(async (fixturePath) => {
+      if (window.electronAPI?.setSetting) {
+        await window.electronAPI.setSetting("localStorePath", fixturePath);
+      }
+    }, testEnv.localStorePath);
   });
 
   test.afterEach(async () => {
@@ -95,22 +104,20 @@ test.describe("Sync Real Operations E2E Tests", () => {
   });
 
   test.describe("Full Sync Workflow with Real Files", () => {
-    test("should perform complete sync with file conversion and copying", async () => {
+    test("should show change summary with actual sample counts and complete sync", async () => {
       // Wait for kit list to be populated
       await window.waitForSelector('[data-testid="kit-grid"]', {
         timeout: 10000,
       });
 
       // Verify test kits are visible
-      const kitItems = await window.locator('[data-testid^="kit-item-"]');
+      const kitItems = window.locator('[data-testid^="kit-item-"]');
       const kitCount = await kitItems.count();
-      expect(kitCount).toBeGreaterThan(0);
+      expect(kitCount).toBe(2);
       console.log(`[E2E Sync Test] Found ${kitCount} kits ready for sync`);
 
       // Open sync dialog
-      const syncButton = await window.locator(
-        '[data-testid="sync-to-sd-card"]',
-      );
+      const syncButton = window.locator('[data-testid="sync-to-sd-card"]');
       await syncButton.waitFor({ state: "visible", timeout: 5000 });
       await syncButton.click();
 
@@ -119,92 +126,73 @@ test.describe("Sync Real Operations E2E Tests", () => {
         timeout: 5000,
       });
 
-      // Wait for change summary generation
+      // Wait for change summary generation to complete
       console.log(
         "[E2E Sync Test] Waiting for sync change summary generation...",
       );
-      await window.waitForTimeout(3000); // Allow time for file analysis
 
-      // Verify the sync dialog finished loading by checking the confirm button is present
-      const confirmButton = await window.locator(
-        '[data-testid="confirm-sync"]',
-      );
-      await expect(confirmButton).toBeVisible();
+      // The bank summary should appear once the change summary is generated
+      const bankSummary = window.locator('[data-testid="bank-summary"]');
+      await bankSummary.waitFor({ state: "visible", timeout: 10000 });
+      console.log("[E2E Sync Test] Bank summary appeared");
 
+      // Verify the total sample count matches our fixture (4 samples: 2 per kit)
+      const totalSamples = window.locator('[data-testid="total-samples"]');
+      await expect(totalSamples).toBeVisible();
+      const sampleCountText = await totalSamples.textContent();
+      expect(Number(sampleCountText)).toBe(4);
       console.log(
-        "[E2E Sync Test] Sync dialog ready - fixture has no sample files to sync",
+        `[E2E Sync Test] Change summary shows ${sampleCountText} samples`,
       );
 
-      // Since fixture has no sample files, sync button should be disabled or show no files
-      // This tests the "no files to sync" scenario which is still valuable
+      // Verify the total kit count
+      const totalKits = window.locator('[data-testid="total-kits"]');
+      await expect(totalKits).toBeVisible();
+      const kitCountText = await totalKits.textContent();
+      expect(Number(kitCountText)).toBe(2);
 
-      // Check button state
-      const buttonExists = (await confirmButton.count()) > 0;
-      if (buttonExists) {
-        const isEnabled = await confirmButton.isEnabled();
-        console.log(`[E2E Sync Test] Confirm button enabled: ${isEnabled}`);
+      // Verify bank rows exist for A and B
+      await expect(window.locator('[data-testid="bank-A"]')).toBeVisible();
+      await expect(window.locator('[data-testid="bank-B"]')).toBeVisible();
 
-        if (isEnabled) {
-          console.log("[E2E Sync Test] Starting sync (no files expected)...");
-          await confirmButton.click();
+      // Verify confirm button is enabled (not disabled) since we have files to sync
+      const confirmButton = window.locator('[data-testid="confirm-sync"]');
+      await expect(confirmButton).toBeVisible();
+      await expect(confirmButton).toBeEnabled();
 
-          // For no files, sync should complete immediately
-          await window.waitForTimeout(2000);
+      // Execute the sync
+      console.log("[E2E Sync Test] Starting sync with 4 sample files...");
+      await confirmButton.click();
 
-          // Check for completion or appropriate message
-          const noFilesMessage = await window.locator("text=No files to write");
-          const successMessage = await window.locator("text=Write Complete");
+      // Wait for sync to complete - look for the "Write Complete" status
+      const writeComplete = window.locator("text=Write Complete");
+      await writeComplete.waitFor({ state: "visible", timeout: 15000 });
+      console.log("[E2E Sync Test] Sync completed successfully");
 
-          const hasNoFilesMsg = await noFilesMessage.isVisible();
-          const hasSuccessMsg = await successMessage.isVisible();
-
-          console.log(
-            `[E2E Sync Test] No files message: ${hasNoFilesMsg}, Success: ${hasSuccessMsg}`,
-          );
-
-          // Either should be acceptable for this scenario
-          expect(hasNoFilesMsg || hasSuccessMsg).toBe(true);
-        } else {
-          console.log(
-            "[E2E Sync Test] Confirm button disabled - no files to sync (expected)",
-          );
-        }
-      } else {
-        console.log(
-          "[E2E Sync Test] Confirm button not found - checking for no files message",
-        );
-        const noFilesMessage = await window.locator("text=No files");
-        await expect(noFilesMessage).toBeVisible();
-      }
-
-      // Close any open dialogs
-      const closeButton = await window.locator(
-        '[data-testid="close-sync-dialog"]',
+      // Verify files were written to the SD card directory
+      const sdCardContents = await fs.readdir(tempSdCardDir);
+      // Sync should create kit folders on the SD card
+      expect(sdCardContents.length).toBeGreaterThan(0);
+      console.log(
+        `[E2E Sync Test] SD card contents after sync: ${sdCardContents.join(", ")}`,
       );
-      if (await closeButton.isVisible()) {
-        await closeButton.click();
-      }
 
-      // Try alternative close methods
-      const cancelButton = await window.locator('[data-testid="cancel-sync"]');
-      if (await cancelButton.isVisible()) {
-        await cancelButton.click();
-      }
+      // Close the sync dialog
+      const closeButton = window.locator('[data-testid="cancel-sync"]');
+      await closeButton.click();
+
+      // Wait for dialog to close
+      await window.waitForSelector('[data-testid="sync-dialog"]', {
+        state: "detached",
+        timeout: 3000,
+      });
 
       // Verify we're back to kit list
-      await window.waitForSelector('[data-testid="kit-grid"]', {
-        timeout: 5000,
-      });
-      const kitListVisible = await window.isVisible('[data-testid="kit-grid"]');
-      expect(kitListVisible).toBe(true);
-
-      console.log(
-        "[E2E Sync Test] Successfully tested sync workflow with no files scenario",
-      );
+      await expect(window.locator('[data-testid="kit-grid"]')).toBeVisible();
     });
 
-    test("should handle existing files and conversions correctly", async () => {
-      // Pre-populate SD card with some existing files
+    test("should handle sync with existing files on SD card correctly", async () => {
+      // Pre-populate SD card with some existing kit folders
       await createExistingFilesOnSdCard();
 
       await window.waitForSelector('[data-testid="kit-grid"]', {
@@ -212,189 +200,119 @@ test.describe("Sync Real Operations E2E Tests", () => {
       });
 
       // Open sync dialog
-      const syncButton = await window.locator(
-        '[data-testid="sync-to-sd-card"]',
-      );
+      const syncButton = window.locator('[data-testid="sync-to-sd-card"]');
       await syncButton.click();
 
       await window.waitForSelector('[data-testid="sync-dialog"]', {
         timeout: 5000,
       });
 
-      // Wait for change summary generation
+      // Wait for the bank summary to appear (indicates change summary is ready)
+      const bankSummary = window.locator('[data-testid="bank-summary"]');
+      await bankSummary.waitFor({ state: "visible", timeout: 10000 });
+
+      // The change summary should still show our 4 fixture samples
+      const totalSamples = window.locator('[data-testid="total-samples"]');
+      const sampleCountText = await totalSamples.textContent();
+      expect(Number(sampleCountText)).toBe(4);
+
+      // Confirm button should be enabled
+      const confirmButton = window.locator('[data-testid="confirm-sync"]');
+      await expect(confirmButton).toBeEnabled();
+
+      // Execute sync with existing files on SD card
       console.log(
-        "[E2E Sync Test] Waiting for sync change summary with existing files...",
+        "[E2E Sync Test] Starting sync with existing SD card files...",
       );
-      await window.waitForTimeout(3000);
+      await confirmButton.click();
 
-      // Verify the sync dialog finished loading by checking the confirm button is present
-      const confirmButton = await window.locator(
-        '[data-testid="confirm-sync"]',
-      );
-      await expect(confirmButton).toBeVisible();
-
+      // Wait for sync completion
+      const writeComplete = window.locator("text=Write Complete");
+      await writeComplete.waitFor({ state: "visible", timeout: 15000 });
       console.log(
-        "[E2E Sync Test] Sync dialog ready - fixture has no sample files even with existing SD files",
+        "[E2E Sync Test] Sync with existing files completed successfully",
       );
 
-      // Since fixture has no sample files, sync button should be disabled or show no files
-
-      // Check button state
-      const buttonExists = (await confirmButton.count()) > 0;
-      if (buttonExists) {
-        const isEnabled = await confirmButton.isEnabled();
-        console.log(`[E2E Sync Test] Confirm button enabled: ${isEnabled}`);
-
-        if (isEnabled) {
-          console.log("[E2E Sync Test] Starting sync (no files expected)...");
-          await confirmButton.click();
-
-          // For no files, sync should complete immediately
-          await window.waitForTimeout(2000);
-
-          // Check for completion or appropriate message
-          const noFilesMessage = await window.locator("text=No files to write");
-          const successMessage = await window.locator("text=Write Complete");
-
-          const hasNoFilesMsg = await noFilesMessage.isVisible();
-          const hasSuccessMsg = await successMessage.isVisible();
-
-          console.log(
-            `[E2E Sync Test] No files message: ${hasNoFilesMsg}, Success: ${hasSuccessMsg}`,
-          );
-
-          // Either should be acceptable for this scenario
-          expect(hasNoFilesMsg || hasSuccessMsg).toBe(true);
-        } else {
-          console.log(
-            "[E2E Sync Test] Confirm button disabled - no files to sync (expected)",
-          );
-        }
-      } else {
-        console.log(
-          "[E2E Sync Test] Confirm button not found - checking for no files message",
-        );
-        const noFilesMessage = await window.locator("text=No files");
-        await expect(noFilesMessage).toBeVisible();
-      }
+      // Verify the SD card still has content (wasn't wiped since we didn't check the wipe option)
+      const sdCardContents = await fs.readdir(tempSdCardDir);
+      expect(sdCardContents.length).toBeGreaterThan(0);
 
       // Close sync dialog
-      const closeButton = await window.locator(
-        '[data-testid="close-sync-dialog"]',
-      );
-      if (await closeButton.isVisible()) {
-        await closeButton.click();
-      }
+      const closeButton = window.locator('[data-testid="cancel-sync"]');
+      await closeButton.click();
 
-      // Try alternative close methods
-      const cancelButton = await window.locator('[data-testid="cancel-sync"]');
-      if (await cancelButton.isVisible()) {
-        await cancelButton.click();
-      }
+      await window.waitForSelector('[data-testid="sync-dialog"]', {
+        state: "detached",
+        timeout: 3000,
+      });
 
       // Verify we're back to kit list
-      await window.waitForSelector('[data-testid="kit-grid"]', {
-        timeout: 5000,
-      });
-      const kitListVisible = await window.isVisible('[data-testid="kit-grid"]');
-      expect(kitListVisible).toBe(true);
-
-      console.log(
-        "[E2E Sync Test] Successfully tested sync workflow with existing SD files but no sample files",
-      );
+      await expect(window.locator('[data-testid="kit-grid"]')).toBeVisible();
     });
   });
 
   /**
-   * Creates simple test sample files for sync testing
-   * Note: These are minimal files just for testing file operations, not real audio
+   * Update sample source_path values in the fixture database to point to
+   * the actual extracted WAV files. The fixture's DB was generated in a
+   * different temp directory, so the paths are stale.
+   *
+   * Uses the sqlite3 CLI because better-sqlite3's native module may be
+   * compiled against a different Node.js version than Playwright's runner.
    */
-  async function createTestSampleFiles() {
-    const samplesDir = path.join(tempSdCardDir, "test-samples");
-    await fs.ensureDir(samplesDir);
+  function fixDatabaseSourcePaths(localStorePath: string) {
+    const dbPath = path.join(localStorePath, ".romperdb", "romper.sqlite");
 
-    testSampleFiles = {
-      aiff: path.join(samplesDir, "test-sample.aiff"),
-      flac: path.join(samplesDir, "test-sample.flac"),
-      wav: path.join(samplesDir, "test-sample.wav"),
-    };
+    // Build an UPDATE statement that replaces the directory portion of source_path
+    // with the actual localStorePath. The fixture samples have paths like:
+    //   /tmp/old-temp-dir/A0/1_kick.wav
+    // We need them to become:
+    //   /tmp/new-extracted-dir/A0/1_kick.wav
+    //
+    // We reconstruct each path as: localStorePath / kit_name / filename
+    const sql = `UPDATE samples SET source_path = '${localStorePath}' || '/' || kit_name || '/' || filename;`;
 
-    // Create simple test files with just enough data to test file operations
-    // The sync system should handle format validation and conversion gracefully
-    const testFileContent = Buffer.alloc(1024, 0x42); // Simple 1KB file with pattern
+    execSync(`sqlite3 "${dbPath}" "${sql}"`);
 
-    // Add minimal format headers to distinguish file types
-    const wavFile = Buffer.concat([
-      Buffer.from("RIFF", "ascii"),
-      Buffer.from([0x00, 0x04, 0x00, 0x00]), // size placeholder
-      Buffer.from("WAVE", "ascii"),
-      testFileContent,
-    ]);
+    // Verify the update worked
+    const countOutput = execSync(
+      `sqlite3 "${dbPath}" "SELECT COUNT(*) FROM samples WHERE source_path LIKE '${localStorePath}%';"`,
+    )
+      .toString()
+      .trim();
 
-    const aiffFile = Buffer.concat([
-      Buffer.from("FORM", "ascii"),
-      Buffer.from([0x00, 0x04, 0x00, 0x00]), // size placeholder
-      Buffer.from("AIFF", "ascii"),
-      testFileContent,
-    ]);
-
-    const flacFile = Buffer.concat([
-      Buffer.from("fLaC", "ascii"),
-      testFileContent,
-    ]);
-
-    await fs.writeFile(testSampleFiles.wav, wavFile);
-    await fs.writeFile(testSampleFiles.aiff, aiffFile);
-    await fs.writeFile(testSampleFiles.flac, flacFile);
-
-    console.log(`[E2E Sync Test] Created test sample files:`);
-    console.log(`  WAV: ${testSampleFiles.wav}`);
-    console.log(`  AIFF: ${testSampleFiles.aiff}`);
-    console.log(`  FLAC: ${testSampleFiles.flac}`);
+    console.log(
+      `[E2E Sync Test] Updated ${countOutput} sample source_path values to match extracted fixture at ${localStorePath}`,
+    );
   }
 
   /**
-   * Add test sample files to the existing kits from fixtures
-   * This modifies the existing fixture kits to reference our test files
-   */
-  async function addTestSampleFilesToExistingKits() {
-    console.log("[E2E Sync Test] Adding test sample files to existing kits...");
-
-    // The fixture already has kits (A0, B1), we'll add sample references to them
-    const result = await window.evaluate((sampleFiles) => {
-      // Access the electron API to update kits with sample paths
-      if (!(window as unknown).electronAPI?.updateKitSamples) {
-        console.log("updateKitSamples API not available, using test approach");
-        // Store reference for the test to use
-        (window as unknown).testSampleFiles = sampleFiles;
-        return {
-          message: "Sample files referenced for testing",
-          success: true,
-        };
-      }
-      return {
-        message: "Sample files will be handled by sync test",
-        success: true,
-      };
-    }, testSampleFiles);
-
-    console.log(`[E2E Sync Test] Sample file setup: ${result.message}`);
-  }
-
-  /**
-   * Create some existing files on SD card to test update scenarios
+   * Create some existing files on SD card to test sync with pre-existing content
    */
   async function createExistingFilesOnSdCard() {
     console.log("[E2E Sync Test] Creating existing files on SD card...");
 
-    // Create a few existing files
-    const existingFile1 = path.join(tempSdCardDir, "001_ExistingKit.wav");
-    const existingFile2 = path.join(tempSdCardDir, "002_AnotherKit.wav");
+    // Create existing kit folders with dummy files to simulate a previously-synced SD card
+    const existingKitDir = path.join(tempSdCardDir, "A0");
+    await fs.ensureDir(existingKitDir);
 
-    const dummyAudio = Buffer.alloc(1024, 0);
-    await fs.writeFile(existingFile1, dummyAudio);
-    await fs.writeFile(existingFile2, dummyAudio);
+    // Create a minimal WAV file header (44 bytes RIFF/WAVE header + minimal data)
+    const wavHeader = Buffer.alloc(48, 0);
+    wavHeader.write("RIFF", 0, 4, "ascii");
+    wavHeader.writeUInt32LE(40, 4); // file size - 8
+    wavHeader.write("WAVE", 8, 4, "ascii");
+    wavHeader.write("fmt ", 12, 4, "ascii");
+    wavHeader.writeUInt32LE(16, 16); // subchunk1 size
+    wavHeader.writeUInt16LE(1, 20); // PCM format
+    wavHeader.writeUInt16LE(1, 22); // mono
+    wavHeader.writeUInt32LE(44100, 24); // sample rate
+    wavHeader.writeUInt32LE(88200, 28); // byte rate
+    wavHeader.writeUInt16LE(2, 32); // block align
+    wavHeader.writeUInt16LE(16, 34); // bits per sample
+    wavHeader.write("data", 36, 4, "ascii");
+    wavHeader.writeUInt32LE(4, 40); // data size
 
-    console.log("[E2E Sync Test] Created existing files for update testing");
+    await fs.writeFile(path.join(existingKitDir, "SP-01-001.wav"), wavHeader);
+
+    console.log("[E2E Sync Test] Created existing SD card content in A0/");
   }
 });

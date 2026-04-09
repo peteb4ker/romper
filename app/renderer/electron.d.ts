@@ -36,6 +36,23 @@ export interface ElectronAPI {
     filePath: string,
   ) => Promise<DbResult<{ sampleId: number }>>;
   cancelKitSync?: () => void;
+  checkDiskSpace?: (
+    targetPath: string,
+    requiredBytes: number,
+  ) => Promise<{
+    availableBytes: number;
+    error?: string;
+    requiredBytes: number;
+    sufficient: boolean;
+  }>;
+  checkPathWritable?: (targetPath: string) => Promise<{
+    error?: string;
+    writable: boolean;
+  }>;
+  cleanupPartialInit?: (targetPath: string) => Promise<{
+    error?: string;
+    removed: boolean;
+  }>;
   closeApp?: () => Promise<void>;
   copyDir?: (src: string, dest: string) => Promise<void>;
   copyKit?: (sourceKit: string, destKit: string) => Promise<void>;

@@ -6,7 +6,6 @@ import type { Kit, KitWithRelations, NewKit } from "@romper/shared/db/schema";
  */
 export const createMockKit = (overrides: Partial<Kit> = {}): Kit => ({
   alias: null,
-  artist: null,
   bank_letter: "A",
   created_at: new Date().toISOString(),
   editable: false,
@@ -45,7 +44,6 @@ export const createMockKitWithRelations = (
  */
 export const createMockNewKit = (overrides: Partial<NewKit> = {}): NewKit => ({
   alias: null,
-  artist: null,
   bank_letter: "A",
   editable: false,
   locked: false,

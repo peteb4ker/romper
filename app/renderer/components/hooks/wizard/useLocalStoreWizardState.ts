@@ -13,12 +13,24 @@ export interface LocalStoreWizardState {
   source: LocalStoreSource | null;
   sourceConfirmed?: boolean;
   targetPath: string;
+  truncationWarnings?: TruncationWarning[];
 }
 
 export interface ProgressEvent {
+  currentKit?: number;
   file?: string;
+  kitName?: string;
   percent?: number;
   phase: string;
+  totalKits?: number;
+}
+
+export interface TruncationWarning {
+  kept: number;
+  kitName: string;
+  skipped: number;
+  total: number;
+  voiceNumber: number;
 }
 
 export interface UseLocalStoreWizardStateOptions {

@@ -2,6 +2,10 @@ import type { SyncChangeSummary } from "@romper/app/renderer/components/dialogs/
 
 import { useCallback, useState } from "react";
 
+import { createLogger } from "../../../utils/logger";
+
+const log = createLogger("Sync");
+
 interface SyncProgress {
   bytesCompleted: number;
   currentFile: string;
@@ -70,14 +74,14 @@ export function useSyncUpdate(
 
       try {
         const result = await electronAPI.generateSyncChangeSummary(sdCardPath);
-        console.log("[Frontend] generateSyncChangeSummary result:", result);
+        log.debug("generateSyncChangeSummary result:", result);
 
         if (!result.success) {
           setError(result.error || "Failed to generate sync summary");
           return null;
         }
 
-        console.log("[Frontend] Returning summary data:", result.data);
+        log.debug("Returning summary data:", result.data);
         return (result.data as unknown as SyncChangeSummary) || null;
       } catch (err) {
         const errorMessage =

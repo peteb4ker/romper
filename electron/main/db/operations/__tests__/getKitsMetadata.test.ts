@@ -35,7 +35,7 @@ describe("getKitsMetadata - Unit Tests", () => {
     const mockKitData = [
       {
         alias: "Test Kit",
-        artist: null,
+
         bank_letter: "A",
         bpm: 120,
         editable: true,
@@ -65,7 +65,7 @@ describe("getKitsMetadata - Unit Tests", () => {
     const mockKitData = [
       {
         alias: "Test Kit",
-        artist: null,
+
         bank_letter: null,
         bpm: 120,
         editable: true,
@@ -95,7 +95,7 @@ describe("getKitsMetadata - Unit Tests", () => {
     const mockKitData = [
       {
         alias: "Kit 1",
-        artist: null,
+
         bank_letter: "A",
         bpm: 120,
         editable: true,
@@ -107,7 +107,7 @@ describe("getKitsMetadata - Unit Tests", () => {
       },
       {
         alias: "Kit 2",
-        artist: null,
+
         bank_letter: "B",
         bpm: 140,
         editable: false,
@@ -144,7 +144,7 @@ describe("getKitsMetadata - Unit Tests", () => {
     expect(selectMock).toHaveBeenCalledTimes(1);
     expect(selectMock).toHaveBeenCalledWith({
       alias: expect.anything(),
-      artist: expect.anything(),
+
       bank_letter: expect.anything(),
       bpm: expect.anything(),
       editable: expect.anything(),
@@ -204,7 +204,7 @@ describe("getKitsMetadata - Unit Tests", () => {
     // Verify the query uses explicit column selection to avoid circular references
     expect(selectMock).toHaveBeenCalledWith({
       alias: expect.anything(),
-      artist: expect.anything(),
+
       bank_letter: expect.anything(),
       bpm: expect.anything(),
       editable: expect.anything(),
@@ -223,7 +223,7 @@ describe("getKitsMetadata - Unit Tests", () => {
     const mockKitData = [
       {
         alias: "Test Kit",
-        artist: null,
+
         bank_letter: "A",
         bpm: 120,
         editable: true,

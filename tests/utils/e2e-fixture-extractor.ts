@@ -125,19 +125,26 @@ export async function extractE2EFixture(): Promise<E2ETestEnvironment> {
   console.log(`[E2E Fixture] Extracting fixture to: ${localStorePath}`);
 
   // Extract the archive to the local store path
-  await tar.extract({
-    cwd: localStorePath,
-    file: fixtureArchivePath,
-    strip: 0, // Don't strip directory levels
-  });
+  try {
+    await tar.extract({
+      cwd: localStorePath,
+      file: fixtureArchivePath,
+      strip: 0,
+    });
+  } catch (extractError) {
+    // Clean up on extraction failure
+    await fs.remove(localStorePath).catch(() => {});
+    await fs.remove(tempSdcardPath).catch(() => {});
+    throw new Error(
+      `E2E fixture extraction failed: ${extractError instanceof Error ? extractError.message : String(extractError)}. ` +
+        `Archive: ${fixtureArchivePath}, Target: ${localStorePath}`,
+    );
+  }
 
   console.log(
     `[E2E Fixture] Extraction completed. Found kits: ${metadata.kits.join(", ")}`,
   );
 
-  // Set up environment variables
-  // Note: We set both ROMPER_LOCAL_PATH and ROMPER_SDCARD_PATH to point to our temp directories
-  // This prevents tests from hanging on SD card selection
   const environment = {
     NODE_ENV: "test",
     ROMPER_LOCAL_PATH: localStorePath,
@@ -145,12 +152,25 @@ export async function extractE2EFixture(): Promise<E2ETestEnvironment> {
     ROMPER_TEST_MODE: "true",
   };
 
-  return {
+  const testEnv: E2ETestEnvironment = {
     environment,
     localStorePath,
     metadata,
     tempSdcardPath,
   };
+
+  // Validate fixture integrity after extraction
+  const isValid = await verifyE2EFixture(testEnv);
+  if (!isValid) {
+    await fs.remove(localStorePath).catch(() => {});
+    await fs.remove(tempSdcardPath).catch(() => {});
+    throw new Error(
+      `E2E fixture validation failed after extraction. Check logs above for details. ` +
+        `Expected kits: ${metadata.kits.join(", ")}`,
+    );
+  }
+
+  return testEnv;
 }
 
 /**

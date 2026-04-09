@@ -8,9 +8,12 @@ import { useCallback } from "react";
 
 import type { OperationResult } from "../sample-management/types";
 
+import { createLogger } from "../../../utils/logger";
 import { useRedoActionHandlers } from "./useRedoActionHandlers";
 import { useUndoActionHandlers } from "./useUndoActionHandlers";
 import { useUndoRedoState } from "./useUndoRedoState";
+
+const log = createLogger("UNDO");
 
 export function useUndoRedo(kitName: string) {
   // State management hook
@@ -25,18 +28,15 @@ export function useUndoRedo(kitName: string) {
     result: OperationResult,
     actionToUndo: AnyUndoAction,
   ) => {
-    console.log("[UNDO] Final result:", result);
+    log.debug("Final result:", result);
 
     if (result.success) {
-      console.log("[UNDO] Undo operation successful, updating state");
+      log.debug("Undo operation successful, updating state");
       state.handleUndoSuccess(actionToUndo);
-      console.log("[UNDO] Emitting refresh event");
+      log.debug("Emitting refresh event");
       state.emitRefreshEvent();
     } else {
-      console.log(
-        "[UNDO] Undo operation failed:",
-        result.error || "No error message",
-      );
+      log.warn("Undo operation failed:", result.error || "No error message");
       state.setError(result.error || "Failed to undo action");
     }
   };
@@ -72,11 +72,7 @@ export function useUndoRedo(kitName: string) {
     state.setUndoing(true);
 
     try {
-      console.log(
-        "[UNDO] Starting undo execution for type:",
-        actionToUndo.type,
-      );
-      console.log("[UNDO] ElectronAPI available:", !!window.electronAPI);
+      log.debug("Starting undo execution for type:", actionToUndo.type);
 
       const result = await undoHandlers.executeUndoAction(actionToUndo);
       const operationResult: OperationResult = result || {
@@ -85,14 +81,12 @@ export function useUndoRedo(kitName: string) {
       };
       handleUndoResult(operationResult, actionToUndo);
     } catch (error) {
-      console.log("[UNDO] Exception during undo:", error);
+      log.error("Exception during undo:", error);
       state.setError(
         `Failed to undo action: ${error instanceof Error ? error.message : String(error)}`,
       );
     } finally {
-      console.log(
-        "[UNDO] Undo operation completed, setting isUndoing to false",
-      );
+      log.debug("Undo operation completed");
       state.setUndoing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -46,6 +46,95 @@ export class ServicePathManager {
 }
 
 /**
+ * Checks available disk space at a given path
+ */
+export function checkDiskSpace(targetPath: string): {
+  availableBytes: number;
+  error?: string;
+  requiredBytes?: number;
+  sufficient: boolean;
+} {
+  try {
+    const resolvedPath = fs.existsSync(targetPath)
+      ? targetPath
+      : path.dirname(targetPath);
+
+    if (!fs.existsSync(resolvedPath)) {
+      return {
+        availableBytes: 0,
+        error: "Path does not exist",
+        sufficient: false,
+      };
+    }
+
+    const stats = fs.statfsSync(resolvedPath);
+    const availableBytes = stats.bavail * stats.bsize;
+    return { availableBytes, sufficient: true };
+  } catch (error) {
+    return {
+      availableBytes: 0,
+      error: `Disk space check failed: ${error instanceof Error ? error.message : String(error)}`,
+      sufficient: false,
+    };
+  }
+}
+
+/**
+ * Checks available disk space against a required amount
+ */
+export function checkDiskSpaceSufficient(
+  targetPath: string,
+  requiredBytes: number,
+): {
+  availableBytes: number;
+  error?: string;
+  requiredBytes: number;
+  sufficient: boolean;
+} {
+  const result = checkDiskSpace(targetPath);
+  if (result.error) {
+    return { ...result, requiredBytes, sufficient: false };
+  }
+  return {
+    availableBytes: result.availableBytes,
+    requiredBytes,
+    sufficient: result.availableBytes >= requiredBytes,
+  };
+}
+
+/**
+ * Checks if a path is writable by attempting to create and remove a temp file
+ */
+export function checkPathWritable(targetPath: string): {
+  error?: string;
+  writable: boolean;
+} {
+  try {
+    const dirToCheck =
+      fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()
+        ? targetPath
+        : path.dirname(targetPath);
+
+    if (!fs.existsSync(dirToCheck)) {
+      return {
+        error: `Directory does not exist: ${dirToCheck}`,
+        writable: false,
+      };
+    }
+
+    const testFile = path.join(dirToCheck, `.romper-write-test-${Date.now()}`);
+    fs.writeFileSync(testFile, "");
+    fs.unlinkSync(testFile);
+    return { writable: true };
+  } catch (error) {
+    return {
+      error: `Cannot write to path: ${error instanceof Error ? error.message : String(error)}`,
+      writable: false,
+    };
+  }
+}
+
+/**
  * Ensures a directory exists, creating it recursively if needed
  */
 export function ensureDirectoryExists(dirPath: string): void {
@@ -67,6 +156,34 @@ export function getFileSize(filePath: string): number {
     console.warn(`Failed to get file size for ${filePath}:`, error);
   }
   return 0;
+}
+
+/**
+ * Removes a directory and its contents recursively.
+ * Only removes directories under a known safe parent (must contain ".romperdb" in path).
+ */
+export function removeDirectorySafe(dirPath: string): {
+  error?: string;
+  removed: boolean;
+} {
+  try {
+    if (!dirPath.includes(".romperdb")) {
+      return {
+        error: "Refusing to remove directory outside .romperdb scope",
+        removed: false,
+      };
+    }
+    if (!fs.existsSync(dirPath)) {
+      return { removed: true }; // Already gone
+    }
+    fs.rmSync(dirPath, { force: true, recursive: true });
+    return { removed: true };
+  } catch (error) {
+    return {
+      error: `Failed to remove directory: ${error instanceof Error ? error.message : String(error)}`,
+      removed: false,
+    };
+  }
 }
 
 /**

@@ -10,19 +10,29 @@ export const createElectronAPIMock = (
   // Sample operations
   addSampleToSlot: vi.fn().mockResolvedValue(undefined),
   cancelKitSync: vi.fn().mockResolvedValue(undefined),
+  // Filesystem pre-checks
+  checkDiskSpace: vi.fn().mockResolvedValue({
+    availableBytes: 10 * 1024 * 1024 * 1024,
+    requiredBytes: 0,
+    sufficient: true,
+  }),
+  checkPathWritable: vi.fn().mockResolvedValue({ writable: true }),
+  cleanupPartialInit: vi.fn().mockResolvedValue({ removed: true }),
   // Application operations
   closeApp: vi.fn().mockResolvedValue(undefined),
   copyDir: vi.fn().mockResolvedValue(undefined),
   copyKit: vi.fn().mockResolvedValue(undefined),
   // Kit operations
   createKit: vi.fn().mockResolvedValue(undefined),
+
   // Database setup
   createRomperDb: vi.fn().mockResolvedValue(undefined),
+
   deleteSampleFromSlot: vi.fn().mockResolvedValue(undefined),
   // Archive operations
   downloadAndExtractArchive: vi.fn().mockResolvedValue(undefined),
-
   ensureDir: vi.fn().mockResolvedValue(undefined),
+
   // Sync operations
   generateSyncChangeSummary: vi
     .fn()
@@ -66,7 +76,6 @@ export const createElectronAPIMock = (
     data: [
       {
         alias: null,
-        artist: null,
         bank_letter: "A",
         editable: false,
         locked: false,
@@ -76,7 +85,6 @@ export const createElectronAPIMock = (
       },
       {
         alias: null,
-        artist: null,
         bank_letter: "A",
         editable: false,
         locked: false,

@@ -8,6 +8,7 @@ import {
   validateLocalStoreAndDb,
   validateLocalStoreBasic,
 } from "../localStoreValidator.js";
+import { logger } from "../utils/logger.js";
 
 /**
  * Service for local store validation and management operations
@@ -186,7 +187,7 @@ export class LocalStoreService {
     path: null | string;
     success: boolean;
   } {
-    console.log(
+    logger.log(
       "[LocalStoreService] Validating existing local store:",
       selectedPath,
     );
@@ -195,7 +196,7 @@ export class LocalStoreService {
     // but don't validate all kits and their files - that's done separately
     const validation = validateLocalStoreAndDb(selectedPath);
 
-    console.log("[LocalStoreService] Validation result:", {
+    logger.log("[LocalStoreService] Validation result:", {
       error: validation.error,
       errorSummary: validation.errorSummary,
       hasErrors: !!validation.errors,
@@ -203,14 +204,14 @@ export class LocalStoreService {
     });
 
     if (validation.isValid) {
-      console.log("[LocalStoreService] ✓ Validation passed");
+      logger.log("[LocalStoreService] ✓ Validation passed");
       return { error: null, path: selectedPath, success: true };
     } else {
       const errorMsg =
         validation.error ||
         validation.errorSummary ||
         "Selected directory does not contain a valid Romper database";
-      console.log("[LocalStoreService] ✗ Validation failed:", errorMsg);
+      logger.log("[LocalStoreService] ✗ Validation failed:", errorMsg);
       return {
         error: errorMsg,
         path: null,

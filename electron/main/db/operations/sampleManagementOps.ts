@@ -4,6 +4,7 @@ import * as schema from "@romper/shared/db/schema.js";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 
+import { logger } from "../../utils/logger.js";
 import { withDb } from "../utils/dbUtilities.js";
 import { moveSampleInsertOnly } from "./sampleMovement.js";
 
@@ -34,7 +35,7 @@ export function getSampleToMove(
     .get();
 
   if (!sampleToMove) {
-    console.log(
+    logger.log(
       `[Main] No sample found at voice ${fromVoice}, slot ${fromSlot}`,
     );
     return null;

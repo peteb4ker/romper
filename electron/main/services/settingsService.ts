@@ -4,6 +4,8 @@ import * as path from "node:path";
 
 import type { InMemorySettings } from "../types/settings.js";
 
+import { logger } from "../utils/logger.js";
+
 /**
  * Service for application settings management
  * Extracted from ipcHandlers.ts to separate business logic from IPC routing
@@ -65,7 +67,7 @@ export class SettingsService {
     key: string,
     value: unknown,
   ): void {
-    console.log(
+    logger.log(
       "[SettingsService] write-setting called with key:",
       key,
       "value:",
@@ -73,14 +75,11 @@ export class SettingsService {
     );
 
     const settingsPath = this.getSettingsPath();
-    console.log("[SettingsService] Settings path:", settingsPath);
+    logger.log("[SettingsService] Settings path:", settingsPath);
 
     // Update in-memory settings
     inMemorySettings[key] = value;
-    console.log(
-      "[SettingsService] Updated inMemorySettings:",
-      inMemorySettings,
-    );
+    logger.log("[SettingsService] Updated inMemorySettings:", inMemorySettings);
 
     // Write to persistent storage
     fs.writeFileSync(
@@ -88,7 +87,7 @@ export class SettingsService {
       JSON.stringify(inMemorySettings, null, 2),
       "utf-8",
     );
-    console.log("[SettingsService] Settings written to file");
+    logger.log("[SettingsService] Settings written to file");
   }
 
   private getSettingsPath(): string {

@@ -1,5 +1,3 @@
-console.log("[Romper Electron] Main process entrypoint loaded");
-
 import { app, BrowserWindow } from "electron";
 import fs from "node:fs";
 import path from "node:path";
@@ -21,6 +19,9 @@ import {
   saveWindowState,
   validateAndFixLocalStore,
 } from "./mainProcessSetup.js";
+import { logger } from "./utils/logger.js";
+
+logger.log("[Romper Electron] Main process entrypoint loaded");
 
 let inMemorySettings: InMemorySettings = {
   localStorePath: null,
@@ -29,25 +30,25 @@ let inMemorySettings: InMemorySettings = {
 const isDev = process.env.NODE_ENV === "development";
 
 const preloadPath = path.resolve(__dirname, "../preload/index.mjs");
-console.log(" Electron will use preload:", preloadPath);
+logger.log(" Electron will use preload:", preloadPath);
 
 function createWindow() {
-  console.log("[Electron Main] Environment variables check:");
-  console.log(
+  logger.log("[Electron Main] Environment variables check:");
+  logger.log(
     "  ROMPER_SDCARD_PATH:",
     process.env.ROMPER_SDCARD_PATH || "(not set)",
   );
-  console.log(
+  logger.log(
     "  ROMPER_LOCAL_PATH:",
     process.env.ROMPER_LOCAL_PATH || "(not set)",
   );
-  console.log(
+  logger.log(
     "  ROMPER_SQUARP_ARCHIVE_URL:",
     process.env.ROMPER_SQUARP_ARCHIVE_URL || "(not set)",
   );
 
   if (process.env.ROMPER_LOCAL_PATH) {
-    console.log(
+    logger.log(
       "[Electron Main] Environment override: Using ROMPER_LOCAL_PATH for local store",
     );
   }
@@ -103,7 +104,7 @@ function createWindow() {
   } else {
     const indexPath = path.resolve(__dirname, "../../renderer/index.html");
     if (process.env.NODE_ENV !== "test") {
-      console.log("[Romper Electron] Attempting to load:", indexPath);
+      logger.log("[Romper Electron] Attempting to load:", indexPath);
       if (!fs.existsSync(indexPath)) {
         console.error("[Romper Electron] index.html not found at:", indexPath);
       }
@@ -133,9 +134,9 @@ function registerAllIpcHandlers(settings: InMemorySettings) {
 app.setName("Romper");
 
 app.whenReady().then(async () => {
-  console.log("[Startup] App is starting...");
+  logger.log("[Startup] App is starting...");
   try {
-    console.log("[Startup] App is ready. Configuring...");
+    logger.log("[Startup] App is ready. Configuring...");
     createWindow();
     createApplicationMenu();
     registerMenuIpcHandlers();
@@ -150,19 +151,19 @@ app.whenReady().then(async () => {
     );
 
     // Final summary of local store configuration
-    console.log("[Startup] Final local store configuration:");
+    logger.log("[Startup] Final local store configuration:");
     if (process.env.ROMPER_LOCAL_PATH) {
-      console.log(
+      logger.log(
         "  - Using environment override:",
         process.env.ROMPER_LOCAL_PATH,
       );
     } else if (inMemorySettings.localStorePath) {
-      console.log(
+      logger.log(
         "  - Using settings file path:",
         inMemorySettings.localStorePath,
       );
     } else {
-      console.log("  - No local store configured - wizard will be shown");
+      logger.log("  - No local store configured - wizard will be shown");
     }
 
     // Register IPC handlers

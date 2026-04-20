@@ -6,6 +6,7 @@ import {
   downloadArchive,
   extractZipEntries,
 } from "../archiveUtils.js";
+import { logger } from "../utils/logger.js";
 
 /**
  * Service for archive download and extraction operations
@@ -145,10 +146,7 @@ export class ArchiveService {
    */
   private handleFileUrl(url: string): string {
     const tmpZipPath = url.replace("file://", "");
-    console.log(
-      "[ArchiveService] Using local file for extraction:",
-      tmpZipPath,
-    );
+    logger.log("[ArchiveService] Using local file for extraction:", tmpZipPath);
 
     if (!fs.existsSync(tmpZipPath)) {
       throw new Error(`Local file does not exist: ${tmpZipPath}`);

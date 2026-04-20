@@ -10,6 +10,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { logger } from "../../utils/logger.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -29,7 +31,7 @@ export function checkMigrationState(sqlite: BetterSqlite3.Database): void {
     )
     .all() as { name: string }[];
 
-  console.log(
+  logger.log(
     `[Main] Found ${tables.length} tables:`,
     tables.map((t) => t.name),
   );
@@ -40,9 +42,9 @@ export function checkMigrationState(sqlite: BetterSqlite3.Database): void {
     const migrations = sqlite
       .prepare("SELECT hash, created_at FROM __drizzle_migrations ORDER BY id")
       .all();
-    console.log(`[Main] Found ${migrations.length} applied migrations`);
+    logger.log(`[Main] Found ${migrations.length} applied migrations`);
   } else {
-    console.log("[Main] No migration history found");
+    logger.log("[Main] No migration history found");
   }
 }
 
@@ -66,12 +68,12 @@ export function createRomperDbFile(dbDir: string): {
     const db = drizzle(sqlite, { schema });
     const migrationsPath = getMigrationsPath();
     if (migrationsPath) {
-      console.log(
+      logger.log(
         "[Main] Creating database with migrations path:",
         migrationsPath,
       );
       migrate(db, { migrationsFolder: migrationsPath });
-      console.log("[Main] Initial migrations completed successfully");
+      logger.log("[Main] Initial migrations completed successfully");
     } else {
       console.error(
         "[Main] Migrations folder not found at any known location.",
@@ -92,7 +94,7 @@ export function createRomperDbFile(dbDir: string): {
         success: false,
       };
     }
-    console.log("[Main] Database created and validated successfully");
+    logger.log("[Main] Database created and validated successfully");
     return { dbPath, success: true };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
@@ -152,12 +154,12 @@ export function executeMigrations(
     throw new Error("Migrations folder not found");
   }
 
-  console.log(`[Main] Migrating database: ${dbPath}`);
-  console.log(`[Main] Using migrations from: ${migrationsPath}`);
+  logger.log(`[Main] Migrating database: ${dbPath}`);
+  logger.log(`[Main] Using migrations from: ${migrationsPath}`);
 
   try {
     migrate(db, { migrationsFolder: migrationsPath });
-    console.log(`[Main] Migrations completed successfully for ${dbPath}`);
+    logger.log(`[Main] Migrations completed successfully for ${dbPath}`);
   } catch (e) {
     logMigrationError(e, dbPath, dbDir);
     throw e;
@@ -189,7 +191,7 @@ export function getMigrationsPath(): null | string {
 
   for (const migrationsPath of possiblePaths) {
     if (fs.existsSync(migrationsPath)) {
-      console.log(`[Main] Found migrations folder at: ${migrationsPath}`);
+      logger.log(`[Main] Found migrations folder at: ${migrationsPath}`);
       return migrationsPath;
     }
   }
@@ -304,7 +306,7 @@ export function repairMigrationHistory(sqlite: BetterSqlite3.Database): void {
   );
 
   if (entry) {
-    console.log(
+    logger.log(
       `[Main] Repairing migration history: applied missing columns and recorded ${migrationTag} (partially applied from deleted 0008)`,
     );
     sqlite

@@ -41,6 +41,15 @@ interface VoiceData {
 }
 
 const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
+  // Destructure props used inside useCallback to satisfy exhaustive-deps
+  // without depending on the whole `props` object.
+  const {
+    kitName,
+    onVoiceSettingChanged,
+    setTriggerConditions,
+    triggerConditions,
+  } = props;
+
   // Manage BPM state at this level to ensure sequencer logic gets live updates
   const bpmLogic = useBpm({ initialBpm: props.bpm, kitName: props.kitName });
 
@@ -102,49 +111,41 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   const debouncedRefresh = React.useCallback(() => {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     refreshTimerRef.current = setTimeout(() => {
-      props.onVoiceSettingChanged?.();
+      onVoiceSettingChanged?.();
     }, 500);
-  }, [props.onVoiceSettingChanged]);
+  }, [onVoiceSettingChanged]);
 
   // Handle volume change — update local state + persist via IPC
   const handleVolumeChange = React.useCallback(
     (voiceNumber: number, volume: number) => {
       setVoiceVolumes((prev) => ({ ...prev, [voiceNumber]: volume }));
-      window.electronAPI?.updateVoiceVolume?.(
-        props.kitName,
-        voiceNumber,
-        volume,
-      );
+      window.electronAPI?.updateVoiceVolume?.(kitName, voiceNumber, volume);
       debouncedRefresh();
     },
-    [props.kitName, debouncedRefresh],
+    [kitName, debouncedRefresh],
   );
 
   // Handle sample mode change — update local state + persist via IPC
   const handleSampleModeChange = React.useCallback(
     (voiceNumber: number, mode: SampleMode) => {
       setSampleModes((prev) => ({ ...prev, [voiceNumber]: mode }));
-      window.electronAPI?.updateVoiceSampleMode?.(
-        props.kitName,
-        voiceNumber,
-        mode,
-      );
-      props.onVoiceSettingChanged?.();
+      window.electronAPI?.updateVoiceSampleMode?.(kitName, voiceNumber, mode);
+      onVoiceSettingChanged?.();
     },
-    [props.kitName, props.onVoiceSettingChanged],
+    [kitName, onVoiceSettingChanged],
   );
 
   // Handle trigger condition change — update local state + persist
   const handleConditionChange = React.useCallback(
     (voiceIdx: number, stepIdx: number, condition: TriggerCondition) => {
-      const newConditions = props.triggerConditions.map((row, v) =>
+      const newConditions = triggerConditions.map((row, v) =>
         v === voiceIdx
           ? row.map((c, s) => (s === stepIdx ? condition : c))
           : row,
       );
-      props.setTriggerConditions(newConditions);
+      setTriggerConditions(newConditions);
     },
-    [props.triggerConditions, props.setTriggerConditions],
+    [triggerConditions, setTriggerConditions],
   );
 
   // Compute stereo-linked voice pairs from voice data

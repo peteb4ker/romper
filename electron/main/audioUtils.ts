@@ -1,7 +1,17 @@
+import type {
+  AudioMetadata,
+  FormatIssue,
+  FormatValidationResult,
+} from "@romper/shared/audioTypes.js";
 import type { DbResult } from "@romper/shared/db/schema.js";
 
 import fs from "node:fs";
 import path from "node:path";
+
+// Re-export shared audio types for callers that still import them from here.
+// The canonical definitions live in shared/audioTypes.ts so the renderer
+// does not need to reach into electron/main/.
+export type { AudioMetadata, FormatIssue, FormatValidationResult };
 
 /**
  * Squarp Rample format requirements
@@ -19,42 +29,6 @@ export const RAMPLE_FORMAT_REQUIREMENTS: RampleFormatRequirements = {
   maxChannels: 2, // mono or stereo
   sampleRates: [44100],
 } as const;
-
-/**
- * Audio file metadata
- */
-export interface AudioMetadata {
-  bitDepth?: number;
-  channels?: number;
-  duration?: number;
-  fileSize?: number;
-  sampleRate?: number;
-}
-
-/**
- * Specific format issue with type and description
- */
-export interface FormatIssue {
-  current?: number | string;
-  message: string;
-  required?: number | readonly (number | string)[] | string;
-  type:
-    | "bitDepth"
-    | "channels"
-    | "extension"
-    | "fileAccess"
-    | "invalidFormat"
-    | "sampleRate";
-}
-
-/**
- * Format validation result for a sample file
- */
-export interface FormatValidationResult {
-  issues: FormatIssue[];
-  isValid: boolean;
-  metadata?: AudioMetadata;
-}
 
 /**
  * Reads WAV file header to extract audio metadata

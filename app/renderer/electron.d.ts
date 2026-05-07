@@ -1,4 +1,9 @@
 import type {
+  AudioMetadata,
+  FormatIssue,
+  FormatValidationResult,
+} from "@romper/shared/audioTypes.js";
+import type {
   Bank,
   DbResult,
   KitValidationError,
@@ -8,13 +13,6 @@ import type {
   NewSample,
   Sample,
 } from "@romper/shared/db/schema.js";
-
-// Import shared types from the schema file
-import type {
-  AudioMetadata,
-  FormatIssue,
-  FormatValidationResult,
-} from "../../electron/main/audioUtils.js";
 
 export {
   Bank,

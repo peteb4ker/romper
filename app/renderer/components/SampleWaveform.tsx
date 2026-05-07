@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
 
@@ -169,49 +169,52 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   }, [kitName, voiceNumber, slotNumber]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
 
   // Draw waveform using an envelope (top/bottom outline with fill)
-  function drawWaveform(buffer: AudioBuffer) {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const w = canvas.width;
-    const h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
+  const drawWaveform = useCallback(
+    (buffer: AudioBuffer) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
 
-    const color = resolveWaveformColor(voiceColor);
-    const data = buffer.getChannelData(0);
-    const step = Math.ceil(data.length / w);
-    const amp = h / 2;
+      const color = resolveWaveformColor(voiceColor);
+      const data = buffer.getChannelData(0);
+      const step = Math.ceil(data.length / w);
+      const amp = h / 2;
 
-    const { bottoms, tops } = buildEnvelope(data, w, step, amp);
+      const { bottoms, tops } = buildEnvelope(data, w, step, amp);
 
-    // Draw filled envelope
-    ctx.beginPath();
-    tracePath(ctx, tops);
-    for (let i = w - 1; i >= 0; i--) {
-      ctx.lineTo(i, bottoms[i]);
-    }
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.12;
-    ctx.fill();
+      // Draw filled envelope
+      ctx.beginPath();
+      tracePath(ctx, tops);
+      for (let i = w - 1; i >= 0; i--) {
+        ctx.lineTo(i, bottoms[i]);
+      }
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.12;
+      ctx.fill();
 
-    // Draw edge strokes
-    ctx.strokeStyle = color;
-    ctx.globalAlpha = 0.6;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    tracePath(ctx, tops);
-    ctx.stroke();
-    ctx.beginPath();
-    tracePath(ctx, bottoms);
-    ctx.stroke();
+      // Draw edge strokes
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.6;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      tracePath(ctx, tops);
+      ctx.stroke();
+      ctx.beginPath();
+      tracePath(ctx, bottoms);
+      ctx.stroke();
 
-    ctx.globalAlpha = 1.0;
-  }
+      ctx.globalAlpha = 1.0;
+    },
+    [voiceColor],
+  );
 
   // Stop playback logic
-  const stopPlayback = () => {
+  const stopPlayback = useCallback(() => {
     if (sourceRef.current) {
       try {
         // Clear onended BEFORE stop() to prevent the stale callback from
@@ -231,7 +234,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
     }
-  };
+  }, [voiceNumber]);
 
   // Play sample and animate playhead (triggered by playTrigger prop)
   useEffect(() => {
@@ -331,7 +334,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     // the current stopTrigger value. Skip to avoid killing the new source.
     if (stopTrigger === stopTriggerAtPlayRef.current) return;
     stopPlayback();
-  }, [stopTrigger, isPlaying]);
+  }, [stopTrigger, isPlaying, stopPlayback]);
 
   // Notify parent about playing state changes
   useEffect(() => {
@@ -355,7 +358,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       ctx.lineTo(x, canvas.height);
       ctx.stroke();
     }
-  }, [playhead, isPlaying, audioBuffer]);
+  }, [playhead, isPlaying, audioBuffer, drawWaveform]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -368,7 +371,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         });
       }
     };
-  }, []);
+  }, [stopPlayback]);
 
   return (
     <div style={{ alignItems: "center", display: "flex" }}>

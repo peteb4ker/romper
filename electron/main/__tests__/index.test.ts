@@ -157,16 +157,20 @@ describe.sequential("main/index.ts", () => {
     delete process.env.ROMPER_SQUARP_ARCHIVE_URL;
   });
 
-  it("handles production mode file loading", async () => {
+  it("suppresses debug logs in production mode", async () => {
     const originalEnv = process.env.NODE_ENV;
+    const originalDebug = process.env.ROMPER_DEBUG;
     process.env.NODE_ENV = "production";
+    delete process.env.ROMPER_DEBUG;
 
     const existsSyncSpy = vi.spyOn(fs, "existsSync").mockReturnValue(true);
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     await import("../index");
 
-    expect(spy).toHaveBeenCalledWith(
+    // In production the "Attempting to load" debug log is gated out by the
+    // logger; only console.error / console.warn remain visible.
+    expect(spy).not.toHaveBeenCalledWith(
       "[Romper Electron] Attempting to load:",
       expect.stringContaining("index.html"),
     );
@@ -174,6 +178,7 @@ describe.sequential("main/index.ts", () => {
     spy.mockRestore();
     existsSyncSpy.mockRestore();
     process.env.NODE_ENV = originalEnv;
+    if (originalDebug !== undefined) process.env.ROMPER_DEBUG = originalDebug;
   });
 
   it("logs error when index.html is missing in production", async () => {

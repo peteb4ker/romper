@@ -3,6 +3,7 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import * as schema from "@romper/shared/db/schema.js";
 import { eq, inArray } from "drizzle-orm";
 
+import { logger } from "../../utils/logger.js";
 import { withDb } from "../utils/dbUtilities.js";
 
 const { kits } = schema;
@@ -49,13 +50,13 @@ export function markKitsAsSynced(
   kitNames: string[],
 ): DbResult<void> {
   return withDb(dbDir, (db) => {
-    console.log(
+    logger.log(
       `[markKitsAsSynced] Attempting to mark ${kitNames.length} kits as synced:`,
       kitNames,
     );
 
     if (kitNames.length === 0) {
-      console.log("[markKitsAsSynced] Successfully updated 0/0 kits");
+      logger.log("[markKitsAsSynced] Successfully updated 0/0 kits");
       return;
     }
 
@@ -74,7 +75,7 @@ export function markKitsAsSynced(
         );
       }
 
-      console.log(
+      logger.log(
         `[markKitsAsSynced] Successfully updated ${result.changes}/${kitNames.length} kits`,
       );
     } catch (error) {

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import type { InMemorySettings } from "./types/settings.js";
 
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
+import { logger } from "./utils/logger.js";
 
 export interface WindowState {
   height: number;
@@ -13,10 +14,10 @@ export interface WindowState {
 }
 
 export function loadSettings(settingsPath: string): InMemorySettings {
-  console.log("[Settings] Loading settings from:", settingsPath);
+  logger.log("[Settings] Loading settings from:", settingsPath);
 
   if (!fs.existsSync(settingsPath)) {
-    console.log("[Settings] Settings file not found - will use empty settings");
+    logger.log("[Settings] Settings file not found - will use empty settings");
     return { localStorePath: null };
   }
 
@@ -25,7 +26,7 @@ export function loadSettings(settingsPath: string): InMemorySettings {
     const fileContent = fs.readFileSync(settingsPath, "utf-8");
 
     if (fileContent.length === 0) {
-      console.log("[Settings] Settings file is empty - using empty settings");
+      logger.log("[Settings] Settings file is empty - using empty settings");
       return { localStorePath: null };
     }
 
@@ -36,7 +37,7 @@ export function loadSettings(settingsPath: string): InMemorySettings {
         localStorePath: parsed.localStorePath || null,
         sdCardPath: parsed.sdCardPath,
       };
-      console.log(
+      logger.log(
         "[Settings] Loaded settings:",
         JSON.stringify(settings, null, 2),
       );
@@ -96,19 +97,19 @@ export function validateAndFixLocalStore(
   settingsPath: string,
   envOverridePath?: string,
 ): InMemorySettings {
-  console.log("[Validation] Starting local store validation");
+  logger.log("[Validation] Starting local store validation");
 
   if (envOverridePath) {
-    console.log("[Validation] Environment override detected:", envOverridePath);
+    logger.log("[Validation] Environment override detected:", envOverridePath);
     const envValidation = validateLocalStoreAndDb(envOverridePath);
-    console.log("[Validation] Environment override validation result:", {
+    logger.log("[Validation] Environment override validation result:", {
       error: envValidation.error,
       errorSummary: envValidation.errorSummary,
       isValid: envValidation.isValid,
     });
 
     if (envValidation.isValid) {
-      console.log("[Validation] ✓ Environment override path is valid");
+      logger.log("[Validation] ✓ Environment override path is valid");
       return settings;
     } else {
       console.warn("[Validation] ✗ Environment override path is invalid");
@@ -117,18 +118,18 @@ export function validateAndFixLocalStore(
     }
   }
 
-  console.log(
+  logger.log(
     "[Validation] Settings have localStorePath:",
     !!settings.localStorePath,
   );
 
   if (settings.localStorePath) {
-    console.log(
+    logger.log(
       "[Validation] Validating local store path:",
       settings.localStorePath,
     );
     const validation = validateLocalStoreAndDb(settings.localStorePath);
-    console.log("[Validation] Validation result:", {
+    logger.log("[Validation] Validation result:", {
       error: validation.error,
       errorSummary: validation.errorSummary,
       isValid: validation.isValid,
@@ -147,17 +148,17 @@ export function validateAndFixLocalStore(
           JSON.stringify(settings, null, 2),
           "utf-8",
         );
-        console.log(
+        logger.log(
           "[Startup] Invalid local store path removed from settings file",
         );
       } catch (writeError) {
         console.error("[Startup] Failed to update settings file:", writeError);
       }
     } else {
-      console.log("[Validation] ✓ Local store path is valid");
+      logger.log("[Validation] ✓ Local store path is valid");
     }
   } else {
-    console.log("[Validation] No local store path to validate");
+    logger.log("[Validation] No local store path to validate");
   }
 
   return settings;

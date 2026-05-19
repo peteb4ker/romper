@@ -2,8 +2,11 @@ import type { KitBrowserHandle } from "@romper/app/renderer/components/KitBrowse
 
 import React, { useCallback, useRef } from "react";
 
+import { createLogger } from "../../../utils/logger";
 import { useBankScanning } from "../shared/useBankScanning";
 import { useMenuEvents } from "../shared/useMenuEvents";
+
+const log = createLogger("KitViewMenu");
 
 interface UseKitViewMenuHandlersProps {
   canRedo?: boolean;
@@ -51,26 +54,24 @@ export function useKitViewMenuHandlers({
   // Menu event handlers
   useMenuEvents({
     onAbout: () => {
-      console.log("[useKitViewMenuHandlers] Menu about triggered");
+      log.debug("Menu about triggered");
     },
     onChangeLocalStoreDirectory: () => {
-      console.log(
-        "[useKitViewMenuHandlers] Menu change local store directory triggered",
-      );
+      log.debug("Menu change local store directory triggered");
       openChangeDirectory();
     },
     onPreferences: () => {
-      console.log("[useKitViewMenuHandlers] Menu preferences triggered");
+      log.debug("Menu preferences triggered");
       openPreferences();
     },
     onRedo: () => {
-      console.log("[useKitViewMenuHandlers] Menu redo triggered");
+      log.debug("Menu redo triggered");
       if (canRedo) {
         dispatchUndoRedoEvent(true);
       }
     },
     onScanAll: () => {
-      console.log("[useKitViewMenuHandlers] Menu scan all triggered");
+      log.debug("Menu scan all triggered");
       // Run bank scan first (fast), then kit scan
       scanBanks().then(() => {
         if (kitBrowserRef.current?.handleScanAllKits) {
@@ -79,7 +80,7 @@ export function useKitViewMenuHandlers({
       });
     },
     onUndo: () => {
-      console.log("[useKitViewMenuHandlers] Menu undo triggered");
+      log.debug("Menu undo triggered");
       if (canUndo) {
         dispatchUndoRedoEvent(false);
       }

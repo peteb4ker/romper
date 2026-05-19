@@ -1,6 +1,9 @@
 import { useCallback, useState } from "react";
 
+import { createLogger } from "../../../utils/logger";
 import { isVoiceAtSampleLimit } from "../../utils/kitOperations";
+
+const log = createLogger("ExternalDrag");
 
 export interface UseExternalDragHandlersOptions {
   // Processing hooks
@@ -110,7 +113,7 @@ export function useExternalDragHandlers({
 
       // Check if drop is blocked due to 12-sample limit
       if (isVoiceAtSampleLimit(samples)) {
-        console.log("Drop blocked: voice already has 12 samples");
+        log.debug("Drop blocked: voice already has 12 samples");
         setDragOverSlot(null);
         setDropZone(null);
         if (onStereoDragLeave) {
@@ -143,7 +146,7 @@ export function useExternalDragHandlers({
 
         for (const file of files) {
           const filePath = await fileValidation.getFilePathFromDrop(file);
-          console.log("Processing dropped file:", filePath);
+          log.debug("Processing dropped file:", filePath);
 
           const isDuplicate = await sampleProcessing.isDuplicateSample(
             allSamples,

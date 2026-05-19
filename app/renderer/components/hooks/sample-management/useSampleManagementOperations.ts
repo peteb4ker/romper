@@ -3,7 +3,10 @@ import type { AnyUndoAction } from "@romper/shared/undoTypes";
 import { getErrorMessage } from "@romper/shared/errorUtils";
 import { useCallback } from "react";
 
+import { createLogger } from "../../../utils/logger";
 import { useSampleManagementUndoActions } from "./useSampleManagementUndoActions";
+
+const log = createLogger("SampleMgmt");
 
 export interface UseSampleManagementOperationsOptions {
   kitName: string;
@@ -53,7 +56,7 @@ export function useSampleManagementOperations({
 
           // Record undo action unless explicitly skipped
           if (!skipUndoRecording && onAddUndoAction && result.data) {
-            console.log("[SAMPLE_MGT] Recording ADD_SAMPLE undo action");
+            log.debug("Recording ADD_SAMPLE undo action");
             const addAction = undoActions.createAddSampleAction(
               voice,
               slotNumber,
@@ -61,8 +64,8 @@ export function useSampleManagementOperations({
             );
             onAddUndoAction(addAction);
           } else {
-            console.log(
-              "[SAMPLE_MGT] NOT recording ADD_SAMPLE undo action - skipUndoRecording:",
+            log.debug(
+              "NOT recording ADD_SAMPLE undo action - skipUndoRecording:",
               skipUndoRecording,
               "onAddUndoAction:",
               !!onAddUndoAction,
@@ -123,7 +126,7 @@ export function useSampleManagementOperations({
 
           // Record undo action unless explicitly skipped
           if (oldSample && result.data && onAddUndoAction) {
-            console.log("[SAMPLE_MGT] Recording REPLACE_SAMPLE undo action");
+            log.debug("Recording REPLACE_SAMPLE undo action");
             const replaceAction = undoActions.createReplaceSampleAction(
               voice,
               slotNumber,

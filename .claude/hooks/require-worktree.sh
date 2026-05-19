@@ -24,6 +24,7 @@ esac
 # Allow writes inside a worktree subdirectory
 case "$FILE_PATH" in
   "$PROJECT_DIR"/worktrees/*) exit 0 ;;
+  */.claude/worktrees/*) exit 0 ;;   # Claude Code native worktrees
 esac
 
 # File is inside the main repo but NOT in a worktree — block

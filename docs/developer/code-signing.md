@@ -1,7 +1,7 @@
 <!--
 title: Code Signing Strategy
 owners: maintainer
-last_reviewed: 2026-03-03
+last_reviewed: 2026-05-19
 tags: developer, release, security
 -->
 
@@ -107,7 +107,77 @@ Code signing integrates into the existing GitHub Actions release workflow (`.git
 
 ### Workflow Integration
 
-The release workflow should add signing steps after building but before uploading artifacts. See the [Electron Forge code signing guide](https://www.electronforge.io/guides/code-signing) and [Azure Trusted Signing GitHub Action](https://github.com/azure/trusted-signing-action) for implementation details.
+Signing is **already wired up** in `.github/workflows/release.yml` and `forge.config.cjs`.
+Both paths are inert until their secrets exist:
+
+- The macOS certificate-import and notarization steps run only when `APPLE_CERTIFICATE` is set.
+- The Windows `azure/trusted-signing-action` step runs only when `AZURE_CLIENT_ID` is set.
+
+No code changes are needed to enable signing — only the account setup and repository
+secrets described below. Unsigned builds continue to work for local development.
+
+## Release Signing Setup Checklist
+
+This is the **only remaining work to ship signed installers**. Everything in code is done;
+these are one-time account and secret-configuration tasks for the maintainer.
+
+### macOS — Apple Developer ID + notarization
+
+- [ ] Enroll in the Apple Developer Program ($99/year) — <https://developer.apple.com/programs/>
+- [ ] Create a **Developer ID Application** certificate: Xcode → Settings → Accounts →
+      Manage Certificates → "+" → Developer ID Application (or via the developer portal).
+- [ ] Export it as a `.p12`: Keychain Access → expand the certificate to include its private
+      key → right-click → Export → `.p12`, and set an export password.
+- [ ] Base64-encode the `.p12` for the GitHub secret: `base64 -i certificate.p12 | pbcopy`
+- [ ] Create an app-specific password for notarization at <https://appleid.apple.com> →
+      Sign-In and Security → App-Specific Passwords.
+- [ ] Find your Team ID at <https://developer.apple.com/account> → Membership Details.
+- [ ] Add the macOS repository secrets (see table below).
+
+`APPLE_IDENTITY` is **not** a secret — the release workflow derives it automatically from the
+imported certificate.
+
+| GitHub secret | Value |
+|---------------|-------|
+| `APPLE_CERTIFICATE` | base64 string of the `.p12` |
+| `APPLE_CERTIFICATE_PASSWORD` | the `.p12` export password |
+| `APPLE_ID` | your Apple ID email |
+| `APPLE_ID_PASSWORD` | the app-specific password |
+| `APPLE_TEAM_ID` | your 10-character Team ID |
+
+### Windows — Azure Trusted Signing
+
+- [ ] Create an Azure account and enable Trusted Signing (~$9.99/month — can be disabled
+      between releases; see [Cost Optimization](#cost-optimization)).
+- [ ] Create a Trusted Signing **account** and a **certificate profile** in the Azure portal.
+      The profile requires individual-developer identity validation (allow a few days).
+- [ ] Confirm the signing region. The workflow endpoint is hard-coded to East US
+      (`https://eus.codesigning.azure.net/` in `release.yml`). If your account is in another
+      region, update that endpoint to match.
+- [ ] Create an Azure AD app registration (service principal) and generate a client secret.
+      Record the client ID, tenant ID, and client secret.
+- [ ] Grant that service principal the **Trusted Signing Certificate Profile Signer** role on
+      the Trusted Signing account (Access control / IAM).
+- [ ] Add the Windows repository secrets (see table below).
+
+| GitHub secret | Value |
+|---------------|-------|
+| `AZURE_CLIENT_ID` | service principal application (client) ID |
+| `AZURE_CLIENT_SECRET` | service principal client secret |
+| `AZURE_TENANT_ID` | Azure AD tenant ID |
+| `AZURE_SIGNING_ACCOUNT` | Trusted Signing account name |
+| `AZURE_CERTIFICATE_PROFILE` | certificate profile name |
+
+All secrets are added under **repository Settings → Secrets and variables → Actions**.
+
+### Verify after the first signed release
+
+- [ ] macOS: `codesign --verify --deep --strict --verbose=2 Romper.app`, then
+      `spctl -a -vvv -t install Romper.app` — Gatekeeper should report the app as accepted.
+- [ ] Windows: the installer's Properties → Digital Signatures tab shows a valid signature
+      (or run `signtool verify /pa /v RomperSetup.exe`).
+- [ ] `node scripts/release/validate.js` reports the signing environment as configured
+      (it currently treats unsigned builds as a non-blocking warning).
 
 ## Alternatives Considered
 

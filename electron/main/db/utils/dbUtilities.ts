@@ -377,7 +377,7 @@ export function withDb<T>(
     sqlite = new BetterSqlite3(dbPath);
     const db = drizzle(sqlite, { schema });
     const result = fn(db);
-    return { data: result as T, success: true };
+    return { data: result, success: true };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     console.error(`[Main] Database operation error:`, error);

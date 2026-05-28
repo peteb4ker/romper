@@ -1,4 +1,3 @@
-import type { Sample } from "@romper/shared/db/schema.js";
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 import { useCallback } from "react";
@@ -58,7 +57,7 @@ export function useSampleManagementMoveOps({
       if (!samplesResult?.success || !samplesResult.data) return [];
 
       const affectedVoices = new Set([fromVoice, toVoice]);
-      return (samplesResult.data as Sample[])
+      return samplesResult.data
         .filter((s) => affectedVoices.has(s.voice_number))
         .map((s) => ({
           sample: {

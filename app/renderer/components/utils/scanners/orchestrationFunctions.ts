@@ -7,7 +7,6 @@ import type {
   ProgressCallback,
   ScannerFunction,
   ScanOperation,
-  VoiceInferenceInput,
   WAVAnalysisOutput,
 } from "./types";
 
@@ -30,17 +29,14 @@ export async function executeFullKitScan(
 
   const operations: ScanOperation[] = [
     {
-      input: { samples: kitData.samples } as VoiceInferenceInput,
+      input: { samples: kitData.samples },
       name: "voiceInference",
       scanner: scanVoiceInference as ScannerFunction<unknown, unknown>,
     },
     {
       input: {},
       name: "wavAnalysis",
-      scanner: createWAVAnalysisScanner(
-        kitData.wavFiles,
-        kitData.fileReader,
-      ) as ScannerFunction<unknown, unknown>,
+      scanner: createWAVAnalysisScanner(kitData.wavFiles, kitData.fileReader),
     },
   ];
 
@@ -63,7 +59,7 @@ export async function executeVoiceInferenceScan(
 
   const operations: ScanOperation[] = [
     {
-      input: { samples } as VoiceInferenceInput,
+      input: { samples },
       name: "voiceInference",
       scanner: scanVoiceInference as ScannerFunction<unknown, unknown>,
     },
@@ -92,10 +88,7 @@ export async function executeWAVAnalysisScan(
     {
       input: {},
       name: "wavAnalysis",
-      scanner: createWAVAnalysisScanner(
-        wavFiles,
-        fileReader,
-      ) as ScannerFunction<unknown, unknown>,
+      scanner: createWAVAnalysisScanner(wavFiles, fileReader),
     },
   ];
 

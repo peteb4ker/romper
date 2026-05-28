@@ -1,4 +1,3 @@
-import type { Sample } from "@romper/shared/db/schema.js";
 import type {
   AddSampleAction,
   AnyUndoAction,
@@ -54,8 +53,8 @@ export function useUndoActionHandlers({
       await window.electronAPI?.getAllSamplesForKit?.(kitName);
 
     if (currentSamplesResult?.success && currentSamplesResult.data) {
-      const currentSamples = (currentSamplesResult.data as Sample[]).filter(
-        (s) => affectedVoices.has(s.voice_number),
+      const currentSamples = currentSamplesResult.data.filter((s) =>
+        affectedVoices.has(s.voice_number),
       );
 
       for (const sample of currentSamples) {
@@ -86,7 +85,7 @@ export function useUndoActionHandlers({
       await window.electronAPI?.getAllSamplesForKit?.(kitName);
 
     if (currentSamplesResult?.success && currentSamplesResult.data) {
-      const currentSamples = (currentSamplesResult.data as Sample[]).filter(
+      const currentSamples = currentSamplesResult.data.filter(
         (s) => s.voice_number === voice,
       );
 

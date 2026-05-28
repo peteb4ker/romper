@@ -153,7 +153,7 @@ export function useKitDataManager({
     try {
       const kitResult = await window.electronAPI?.getKit?.(kitName);
       if (kitResult?.success && kitResult.data) {
-        const updatedKit = kitResult.data as unknown as KitWithRelations;
+        const updatedKit = kitResult.data;
         setKits((prevKits) =>
           prevKits.map((kit) => (kit.name === kitName ? updatedKit : kit)),
         );

@@ -27,8 +27,8 @@ const WizardPostInitGuidance: React.FC<WizardPostInitGuidanceProps> =
               Some samples were skipped (max 12 per voice):
             </p>
             <ul className="text-sm space-y-1">
-              {truncationWarnings.map((w, i) => (
-                <li key={i}>
+              {truncationWarnings.map((w) => (
+                <li key={`${w.kitName}-${w.voiceNumber}`}>
                   Kit <strong>{w.kitName}</strong>, Voice {w.voiceNumber}:{" "}
                   {w.skipped} of {w.total} samples skipped (kept first {w.kept})
                 </li>

@@ -25,7 +25,9 @@ interface KitBrowserHeaderProps {
   showModifiedOnly?: boolean;
 }
 
-function BulkScanStatus({ progress }: { progress: BulkScanProgress }) {
+function BulkScanStatus({
+  progress,
+}: Readonly<{ progress: BulkScanProgress }>) {
   if (progress.status === "idle") return null;
 
   if (progress.status === "scanning") {

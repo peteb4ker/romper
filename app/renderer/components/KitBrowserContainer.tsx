@@ -25,7 +25,6 @@ interface KitBrowserContainerProps {
   onSearchClear?: () => void;
   onSelectKit: (kitName: string) => void;
   onShowSettings: () => void;
-  ref?: React.Ref<KitBrowserHandle>;
   sampleCounts: Record<string, [number, number, number, number]>;
   // Search functionality
   searchQuery?: string;

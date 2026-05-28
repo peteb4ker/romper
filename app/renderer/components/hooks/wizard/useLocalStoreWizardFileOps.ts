@@ -56,7 +56,7 @@ export function useLocalStoreWizardFileOps({
   // --- SD Card validation and copy combined ---
   const validateAndCopySdCardKits = useCallback(
     async (sdCardSourcePath: string, targetPath: string) => {
-      if (!sdCardSourcePath) throw new Error();
+      if (!sdCardSourcePath) throw new Error("SD card source path is required");
       const validationError = await validateSdCardFolder(sdCardSourcePath);
       if (validationError) {
         setWizardState({

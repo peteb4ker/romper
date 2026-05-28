@@ -272,7 +272,7 @@ export function useVoicePanelSlotRendering({
   // Helper function to render single drop zone per voice (append-only)
   const renderSingleDropZone = React.useCallback(() => {
     const { nextAvailableSlot } = slotRenderingHook.calculateRenderSlots();
-    const sampleCount = samples.filter((s) => s).length;
+    const sampleCount = samples.filter(Boolean).length;
 
     // Only show drop zone if editable and voice isn't full
     if (!isEditable || sampleCount >= MAX_SLOTS_PER_VOICE) {
@@ -341,7 +341,7 @@ export function useVoicePanelSlotRendering({
   // Main render function for all sample slots (always render exactly MAX_SLOTS_PER_VOICE for consistent height)
   const renderSampleSlots = React.useCallback(() => {
     const renderedSlots = [];
-    const sampleCount = samples.filter((s) => s).length;
+    const sampleCount = samples.filter(Boolean).length;
 
     // Always render exactly MAX_SLOTS_PER_VOICE slot positions
     for (let i = 0; i < MAX_SLOTS_PER_VOICE; i++) {

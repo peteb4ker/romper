@@ -13,9 +13,9 @@ export function decodeStepPatternFromBlob(
   }
 
   // Create 4 voices x 16 steps pattern
-  const stepPattern: number[][] = Array(STEP_PATTERN_VOICES)
+  const stepPattern: number[][] = new Array(STEP_PATTERN_VOICES)
     .fill(0)
-    .map(() => Array(STEP_PATTERN_STEPS));
+    .map(() => new Array(STEP_PATTERN_STEPS));
 
   for (let step = 0; step < STEP_PATTERN_STEPS; step++) {
     for (let voice = 0; voice < STEP_PATTERN_VOICES; voice++) {

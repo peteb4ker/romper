@@ -9,7 +9,9 @@ interface KitBankNavProps {
   selectedBank?: string;
 }
 
-const banks = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
+const banks = Array.from({ length: 26 }, (_, i) =>
+  String.fromCodePoint(65 + i),
+);
 
 // Fisheye scale: closest letter scales to max, fades over `radius` neighbors
 const BASE_SCALE = 1;

@@ -16,22 +16,22 @@ export type WaveType = "saw" | "sine" | "triangle";
 
 // Each row gets its own LFO config for varied wave patterns
 export const ROW_LFO_CONFIGS: RowLfoConfig[] = [
-  { frequency: 0.12, phase: 0.0, spatialFreq: 0.3, wave: "sine" },
+  { frequency: 0.12, phase: 0, spatialFreq: 0.3, wave: "sine" },
   { frequency: 0.18, phase: 0.4, spatialFreq: 0.25, wave: "triangle" },
   { frequency: 0.09, phase: 0.8, spatialFreq: 0.35, wave: "saw" },
   { frequency: 0.22, phase: 1.2, spatialFreq: 0.2, wave: "sine" },
   { frequency: 0.15, phase: 1.6, spatialFreq: 0.4, wave: "triangle" },
-  { frequency: 0.1, phase: 2.0, spatialFreq: 0.15, wave: "sine" },
+  { frequency: 0.1, phase: 2, spatialFreq: 0.15, wave: "sine" },
   { frequency: 0.25, phase: 2.4, spatialFreq: 0.3, wave: "saw" },
   { frequency: 0.08, phase: 2.8, spatialFreq: 0.28, wave: "triangle" },
   { frequency: 0.2, phase: 3.2, spatialFreq: 0.22, wave: "sine" },
   { frequency: 0.14, phase: 3.6, spatialFreq: 0.38, wave: "saw" },
-  { frequency: 0.3, phase: 4.0, spatialFreq: 0.18, wave: "triangle" },
+  { frequency: 0.3, phase: 4, spatialFreq: 0.18, wave: "triangle" },
   { frequency: 0.11, phase: 4.4, spatialFreq: 0.32, wave: "sine" },
   { frequency: 0.19, phase: 4.8, spatialFreq: 0.26, wave: "saw" },
   { frequency: 0.35, phase: 5.2, spatialFreq: 0.2, wave: "triangle" },
   { frequency: 0.13, phase: 5.6, spatialFreq: 0.35, wave: "sine" },
-  { frequency: 0.16, phase: 6.0, spatialFreq: 0.24, wave: "saw" },
+  { frequency: 0.16, phase: 6, spatialFreq: 0.24, wave: "saw" },
 ];
 
 // Interaction tuning

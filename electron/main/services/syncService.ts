@@ -221,7 +221,7 @@ class SyncService {
     // Base time per file (seconds)
     const baseTimePerFile = 0.5;
     // Additional time per conversion
-    const timePerConversion = 2.0;
+    const timePerConversion = 2;
 
     return Math.ceil(
       totalFiles * baseTimePerFile + conversions * timePerConversion,

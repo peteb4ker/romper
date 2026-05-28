@@ -8,7 +8,9 @@ export function useKitStepSequencer(initialPattern?: boolean[][]) {
   // pattern[voice][step] = boolean
   const [pattern, setPattern] = useState<boolean[][]>(
     initialPattern ||
-      Array.from({ length: NUM_VOICES }, () => Array(NUM_STEPS).fill(false)),
+      Array.from({ length: NUM_VOICES }, () =>
+        new Array(NUM_STEPS).fill(false),
+      ),
   );
 
   // Helper function to toggle a specific step in a voice row

@@ -8,7 +8,7 @@ export function groupSamplesByVoice(files: string[]): {
   files.forEach((f) => {
     const match = /^([1-4])./.exec(f);
     if (match) {
-      const voice = parseInt(match[1], 10);
+      const voice = Number.parseInt(match[1], 10);
       if (voices[voice]) voices[voice].push(f);
     }
   });
@@ -199,7 +199,7 @@ function checkWordBoundaryKeywords(name: string): null | string {
     if (!Array.isArray(keywords)) continue;
     for (const keyword of keywords) {
       if (!keyword.includes(" ")) {
-        if (new RegExp(`(^|\\W)${keyword}(?=\\W|$)`, "i").test(name)) {
+        if (new RegExp(String.raw`(^|\W)${keyword}(?=\W|$)`, "i").test(name)) {
           return toCapitalCase(type);
         }
       }

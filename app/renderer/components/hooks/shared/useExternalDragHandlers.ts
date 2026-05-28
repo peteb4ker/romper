@@ -79,7 +79,7 @@ export function useExternalDragHandlers({
         }
 
         // Determine if this is insert-before or append
-        const currentSampleCount = samples.filter((s) => s).length;
+        const currentSampleCount = samples.filter(Boolean).length;
         const isAppend = slotNumber === currentSampleCount;
         const mode = isAppend ? "append" : "insert";
 

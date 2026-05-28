@@ -118,9 +118,7 @@ export function useKitDataManager({
           const sortedKitNames = loadedKits
             .map((k) => k.name)
             .sort(compareKitSlots);
-          const kitIndex = sortedKitNames.findIndex(
-            (name) => name === scrollToKit,
-          );
+          const kitIndex = sortedKitNames.indexOf(scrollToKit);
 
           if (kitIndex !== -1) {
             const kitEl = document.querySelector(`[data-kit='${scrollToKit}']`);

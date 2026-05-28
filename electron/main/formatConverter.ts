@@ -249,7 +249,7 @@ function applyGain(
   return channelData.map((channel) => {
     const output = new Float32Array(channel.length);
     for (let i = 0; i < channel.length; i++) {
-      output[i] = Math.max(-1.0, Math.min(1.0, channel[i] * linearGain));
+      output[i] = Math.max(-1, Math.min(1, channel[i] * linearGain));
     }
     return output;
   });

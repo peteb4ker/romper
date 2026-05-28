@@ -133,52 +133,57 @@ function registerAllIpcHandlers(settings: InMemorySettings) {
 
 app.setName("Romper");
 
+// NOTE: Kept as a `.then()` chain rather than top-level `await` (SonarCloud
+// S7785). Converting the Electron main entry to top-level await causes
+// `electron.launch` to hang in e2e (ESM-main bootstrap deadlock), so this
+// pattern is intentional.
+app.whenReady().then(async () => {
+  logger.log("[Startup] App is starting...");
+  try {
+    logger.log("[Startup] App is ready. Configuring...");
+    createWindow();
+    createApplicationMenu();
+    registerMenuIpcHandlers();
+
+    // Load and validate settings
+    const settingsPath = getSettingsPath();
+    inMemorySettings = loadSettings(settingsPath);
+    inMemorySettings = validateAndFixLocalStore(
+      inMemorySettings,
+      settingsPath,
+      process.env.ROMPER_LOCAL_PATH,
+    );
+
+    // Final summary of local store configuration
+    logger.log("[Startup] Final local store configuration:");
+    if (process.env.ROMPER_LOCAL_PATH) {
+      logger.log(
+        "  - Using environment override:",
+        process.env.ROMPER_LOCAL_PATH,
+      );
+    } else if (inMemorySettings.localStorePath) {
+      logger.log(
+        "  - Using settings file path:",
+        inMemorySettings.localStorePath,
+      );
+    } else {
+      logger.log("  - No local store configured - wizard will be shown");
+    }
+
+    // Register IPC handlers
+    registerAllIpcHandlers(inMemorySettings);
+    createApplicationMenu();
+  } catch (error: unknown) {
+    console.error(
+      "[Startup] Error during app initialization:",
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+});
+
 process.on("unhandledRejection", (reason: unknown) => {
   console.error(
     "Unhandled Promise Rejection:",
     reason instanceof Error ? reason.message : String(reason),
   );
 });
-
-await app.whenReady();
-logger.log("[Startup] App is starting...");
-try {
-  logger.log("[Startup] App is ready. Configuring...");
-  createWindow();
-  createApplicationMenu();
-  registerMenuIpcHandlers();
-
-  // Load and validate settings
-  const settingsPath = getSettingsPath();
-  inMemorySettings = loadSettings(settingsPath);
-  inMemorySettings = validateAndFixLocalStore(
-    inMemorySettings,
-    settingsPath,
-    process.env.ROMPER_LOCAL_PATH,
-  );
-
-  // Final summary of local store configuration
-  logger.log("[Startup] Final local store configuration:");
-  if (process.env.ROMPER_LOCAL_PATH) {
-    logger.log(
-      "  - Using environment override:",
-      process.env.ROMPER_LOCAL_PATH,
-    );
-  } else if (inMemorySettings.localStorePath) {
-    logger.log(
-      "  - Using settings file path:",
-      inMemorySettings.localStorePath,
-    );
-  } else {
-    logger.log("  - No local store configured - wizard will be shown");
-  }
-
-  // Register IPC handlers
-  registerAllIpcHandlers(inMemorySettings);
-  createApplicationMenu();
-} catch (error: unknown) {
-  console.error(
-    "[Startup] Error during app initialization:",
-    error instanceof Error ? error.message : String(error),
-  );
-}

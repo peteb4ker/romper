@@ -1,4 +1,4 @@
-import { Plus } from "@phosphor-icons/react";
+import { PlusIcon } from "@phosphor-icons/react";
 import React from "react";
 
 interface AddKitCardProps {
@@ -23,7 +23,7 @@ const AddKitCard: React.FC<AddKitCardProps> = ({
         disabled={isCreating}
         onClick={() => onClick(bankLetter)}
       >
-        <Plus size={20} weight="bold" />
+        <PlusIcon size={20} weight="bold" />
         <span className="text-xs font-medium">
           {isCreating ? "Creating..." : "Add Kit"}
         </span>

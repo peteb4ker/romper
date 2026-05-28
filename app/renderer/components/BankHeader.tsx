@@ -1,4 +1,4 @@
-import { Pencil, VinylRecord } from "@phosphor-icons/react";
+import { PencilIcon, VinylRecordIcon } from "@phosphor-icons/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export interface BankHeaderProps {
@@ -86,7 +86,7 @@ const BankHeader: React.FC<BankHeaderProps> = ({
     return (
       <div className="mt-2 first:mt-0" id={`bank-${bank}`} ref={headerRef}>
         <div className="flex items-center gap-2 px-2 py-1 rounded bg-surface-3 border-l-4 border-l-accent-primary">
-          <VinylRecord
+          <VinylRecordIcon
             className="text-accent-primary/50 shrink-0"
             size={14}
             weight="duotone"
@@ -137,7 +137,7 @@ const BankHeader: React.FC<BankHeaderProps> = ({
                   title={bankName ? "Edit bank name" : "Add bank name"}
                   type="button"
                 >
-                  <Pencil size={12} weight="bold" />
+                  <PencilIcon size={12} weight="bold" />
                 </button>
               )}
             </>
@@ -196,7 +196,7 @@ const BankHeader: React.FC<BankHeaderProps> = ({
                 title={bankName ? "Edit bank name" : "Add bank name"}
                 type="button"
               >
-                <Pencil size={14} weight="bold" />
+                <PencilIcon size={14} weight="bold" />
               </button>
             )}
           </>

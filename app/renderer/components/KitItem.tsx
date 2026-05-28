@@ -1,4 +1,4 @@
-import { Circle, Copy } from "@phosphor-icons/react";
+import { CircleIcon, CopyIcon } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
@@ -109,7 +109,7 @@ const KitItem = React.memo(
                 )}
                 {isValid && kitData?.modified_since_sync && (
                   <div className="flex items-center gap-1 ml-2">
-                    <Circle
+                    <CircleIcon
                       className="text-accent-warning"
                       size={12}
                       weight="fill"
@@ -156,7 +156,7 @@ const KitItem = React.memo(
                     }}
                     title="Duplicate kit"
                   >
-                    <Copy size={14} />
+                    <CopyIcon size={14} />
                   </button>
                 )}
               </div>

@@ -19,10 +19,10 @@ vi.mock("../../utils/SettingsContext", () => ({
 
 // Mock @phosphor-icons/react
 vi.mock("@phosphor-icons/react", () => ({
-  Database: () => <div data-testid="database-icon" />,
-  Monitor: () => <div data-testid="monitor-icon" />,
-  Moon: () => <div data-testid="moon-icon" />,
-  Sun: () => <div data-testid="sun-icon" />,
+  DatabaseIcon: () => <div data-testid="database-icon" />,
+  MonitorIcon: () => <div data-testid="monitor-icon" />,
+  MoonIcon: () => <div data-testid="moon-icon" />,
+  SunIcon: () => <div data-testid="sun-icon" />,
 }));
 
 describe("StatusBar", () => {

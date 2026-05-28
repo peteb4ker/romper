@@ -1,14 +1,14 @@
 import type { Kit, KitWithRelations } from "@romper/shared/db/schema";
 
 import {
-  ArrowLeft,
-  ArrowsClockwise,
-  BookmarkSimple,
-  CaretLeft,
-  CaretRight,
-  Circle,
-  Lock,
-  PencilSimple,
+  ArrowLeftIcon,
+  ArrowsClockwiseIcon,
+  BookmarkSimpleIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  CircleIcon,
+  LockIcon,
+  PencilSimpleIcon,
 } from "@phosphor-icons/react";
 import React, { useCallback } from "react";
 
@@ -178,7 +178,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             onClick={handleBack}
             title="Back"
           >
-            <ArrowLeft className="inline-block mr-1" size={14} /> Back
+            <ArrowLeftIcon className="inline-block mr-1" size={14} /> Back
           </button>
         )}
         {onPrevKit && prevButtonState && (
@@ -189,7 +189,12 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             style={prevButtonState.style}
             title={prevButtonState.title}
           >
-            {renderNavigationButtonContent(false, kitIndex!, kits!, CaretLeft)}
+            {renderNavigationButtonContent(
+              false,
+              kitIndex!,
+              kits!,
+              CaretLeftIcon,
+            )}
           </button>
         )}
         {onNextKit && nextButtonState && (
@@ -200,7 +205,12 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             style={nextButtonState.style}
             title={nextButtonState.title}
           >
-            {renderNavigationButtonContent(true, kitIndex!, kits!, CaretRight)}
+            {renderNavigationButtonContent(
+              true,
+              kitIndex!,
+              kits!,
+              CaretRightIcon,
+            )}
           </button>
         )}
       </div>
@@ -240,7 +250,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
               kit?.is_favorite ? "Remove from favorites" : "Add to favorites"
             }
           >
-            <BookmarkSimple
+            <BookmarkSimpleIcon
               className={kit?.is_favorite ? "" : "opacity-30"}
               size={20}
               weight="fill"
@@ -258,7 +268,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
           <div className="flex items-center gap-2">
             {kit?.modified_since_sync && (
               <div className="flex items-center gap-1 mr-2">
-                <Circle
+                <CircleIcon
                   className="text-accent-warning"
                   size={12}
                   weight="fill"
@@ -288,9 +298,9 @@ const KitHeader: React.FC<KitHeaderProps> = ({
               </span>
             </button>
             {isEditable ? (
-              <PencilSimple className="text-accent-sync" size={16} />
+              <PencilSimpleIcon className="text-accent-sync" size={16} />
             ) : (
-              <Lock className="text-text-tertiary" size={16} />
+              <LockIcon className="text-text-tertiary" size={16} />
             )}
           </div>
         )}
@@ -301,7 +311,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
             onClick={onScanKit}
             title="Perform comprehensive kit scan (voice names, WAV analysis, artist metadata)"
           >
-            <ArrowsClockwise className="inline-block mr-1" size={14} />
+            <ArrowsClockwiseIcon className="inline-block mr-1" size={14} />
             Scan Kit
           </button>
         )}

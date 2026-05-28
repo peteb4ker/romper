@@ -1,4 +1,8 @@
-import { BookmarkSimple, DownloadSimple, GearSix } from "@phosphor-icons/react";
+import {
+  BookmarkSimpleIcon,
+  DownloadSimpleIcon,
+  GearSixIcon,
+} from "@phosphor-icons/react";
 import React from "react";
 
 import type { BulkScanProgress } from "./hooks/kit-management/useKitScan";
@@ -118,7 +122,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
                 : "Show only favorite kits"
             }
           >
-            <BookmarkSimple size={14} weight="fill" />
+            <BookmarkSimpleIcon size={14} weight="fill" />
             Favorites
             {typeof props.favoritesCount === "number" &&
               props.favoritesCount > 0 && (
@@ -182,7 +186,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
             onClick={props.onSyncToSdCard}
             title="Write kits to SD card"
           >
-            <DownloadSimple size={12} />
+            <DownloadSimpleIcon size={12} />
             Write
           </button>
         )}
@@ -194,7 +198,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
           onClick={props.onShowSettings}
           title="Configure settings and preferences"
         >
-          <GearSix size={16} />
+          <GearSixIcon size={16} />
         </button>
       </div>
 

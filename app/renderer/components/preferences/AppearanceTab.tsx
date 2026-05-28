@@ -1,4 +1,4 @@
-import { Monitor, Moon, Sun } from "@phosphor-icons/react";
+import { MonitorIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
 import React from "react";
 
 import { type ThemeMode } from "../../utils/SettingsContext";
@@ -17,13 +17,13 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
     label: string;
     value: ThemeMode;
   }> = [
-    { icon: <Sun size={16} />, label: "Light", value: "light" },
+    { icon: <SunIcon size={16} />, label: "Light", value: "light" },
     {
-      icon: <Monitor size={16} />,
+      icon: <MonitorIcon size={16} />,
       label: "System",
       value: "system",
     },
-    { icon: <Moon size={16} />, label: "Dark", value: "dark" },
+    { icon: <MoonIcon size={16} />, label: "Dark", value: "dark" },
   ];
 
   return (
@@ -53,13 +53,13 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
                     >
                       {option.value === "light" && (
                         <div className="w-full h-full bg-surface-1 flex items-center justify-center">
-                          <Sun className="text-accent-warning" size={24} />
+                          <SunIcon className="text-accent-warning" size={24} />
                         </div>
                       )}
 
                       {option.value === "dark" && (
                         <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-                          <Moon className="text-accent-primary" size={24} />
+                          <MoonIcon className="text-accent-primary" size={24} />
                         </div>
                       )}
 
@@ -75,14 +75,14 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
                             <div className="relative w-6 h-6">
                               {/* Left half - dark icon on light background */}
                               <div className="absolute inset-0 w-1/2 overflow-hidden">
-                                <Monitor
+                                <MonitorIcon
                                   className="text-text-primary"
                                   size={24}
                                 />
                               </div>
                               {/* Right half - light icon on dark background */}
                               <div className="absolute inset-0 w-1/2 left-1/2 overflow-hidden">
-                                <Monitor
+                                <MonitorIcon
                                   className="text-white -ml-3"
                                   size={24}
                                 />

@@ -26,7 +26,7 @@ import {
 interface UseLedAnimationReturn {
   addRipple: (col: number, row: number) => void;
   clearMousePosition: () => void;
-  ledRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
+  ledRefs: React.RefObject<(HTMLDivElement | null)[]>;
   setMousePosition: (col: number, row: number) => void;
 }
 

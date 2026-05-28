@@ -1,4 +1,4 @@
-import { X } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 import React, { useEffect } from "react";
 
 import LedPixelGrid from "./led-grid/LedPixelGrid";
@@ -62,7 +62,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
           onClick={onClose}
           type="button"
         >
-          <X size={20} />
+          <XIcon size={20} />
         </button>
 
         {/* Content overlay */}

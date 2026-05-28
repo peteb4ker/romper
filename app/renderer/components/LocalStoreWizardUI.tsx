@@ -1,8 +1,8 @@
 import {
-  Archive,
-  FolderOpen,
-  HardDrive,
-  MagnifyingGlass,
+  ArchiveIcon,
+  FolderOpenIcon,
+  HardDriveIcon,
+  MagnifyingGlassIcon,
 } from "@phosphor-icons/react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -75,17 +75,17 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
 
     const sourceOptions = [
       {
-        icon: <HardDrive className="mx-auto mb-2" size={30} />,
+        icon: <HardDriveIcon className="mx-auto mb-2" size={30} />,
         label: "Rample SD Card",
         value: "sdcard",
       },
       {
-        icon: <Archive className="mx-auto mb-2" size={30} />,
+        icon: <ArchiveIcon className="mx-auto mb-2" size={30} />,
         label: "Squarp.net Factory Samples",
         value: "squarp",
       },
       {
-        icon: <FolderOpen className="mx-auto mb-2" size={30} />,
+        icon: <FolderOpenIcon className="mx-auto mb-2" size={30} />,
         label: "Blank Folder",
         value: "blank",
       },
@@ -228,7 +228,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
               <FilePickerButton
                 className="bg-accent-primary text-white px-4 py-2 rounded"
                 data-testid="browse-existing-store-btn"
-                icon={<MagnifyingGlass size={14} />}
+                icon={<MagnifyingGlassIcon size={14} />}
                 isSelecting={isSelectingExisting}
                 onClick={handleChooseExistingStore}
               >
@@ -343,7 +343,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
                 data-testid="choose-existing-store-btn"
                 onClick={() => setShowExistingStoreSelector(true)}
               >
-                <MagnifyingGlass size={14} /> Choose Existing Store
+                <MagnifyingGlassIcon size={14} /> Choose Existing Store
               </button>
             </div>
           </>

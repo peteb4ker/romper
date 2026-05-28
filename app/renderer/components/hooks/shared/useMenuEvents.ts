@@ -52,29 +52,29 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
     };
 
     // Register electron event listeners
-    if (window.electronAPI) {
-      window.addEventListener("menu-scan-all-kits", handleScanAll);
-      window.addEventListener(
+    if (globalThis.electronAPI) {
+      globalThis.addEventListener("menu-scan-all-kits", handleScanAll);
+      globalThis.addEventListener(
         "menu-change-local-store-directory",
         handleChangeLocalStoreDirectory,
       );
-      window.addEventListener("menu-preferences", handlePreferences);
-      window.addEventListener("menu-about", handleAbout);
-      window.addEventListener("menu-undo", handleUndo);
-      window.addEventListener("menu-redo", handleRedo);
+      globalThis.addEventListener("menu-preferences", handlePreferences);
+      globalThis.addEventListener("menu-about", handleAbout);
+      globalThis.addEventListener("menu-undo", handleUndo);
+      globalThis.addEventListener("menu-redo", handleRedo);
     }
 
     // Cleanup event listeners
     return () => {
-      window.removeEventListener("menu-scan-all-kits", handleScanAll);
-      window.removeEventListener(
+      globalThis.removeEventListener("menu-scan-all-kits", handleScanAll);
+      globalThis.removeEventListener(
         "menu-change-local-store-directory",
         handleChangeLocalStoreDirectory,
       );
-      window.removeEventListener("menu-preferences", handlePreferences);
-      window.removeEventListener("menu-about", handleAbout);
-      window.removeEventListener("menu-undo", handleUndo);
-      window.removeEventListener("menu-redo", handleRedo);
+      globalThis.removeEventListener("menu-preferences", handlePreferences);
+      globalThis.removeEventListener("menu-about", handleAbout);
+      globalThis.removeEventListener("menu-undo", handleUndo);
+      globalThis.removeEventListener("menu-redo", handleRedo);
     };
   }, [handlers]);
 }

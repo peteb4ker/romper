@@ -76,8 +76,8 @@ export function markExplicitNavigation(): void {
  */
 export function restoreRouteState(): void {
   const savedRoute = sessionStorage.getItem(HMR_ROUTE_KEY);
-  if (savedRoute && savedRoute !== window.location.hash) {
-    window.location.hash = savedRoute;
+  if (savedRoute && savedRoute !== globalThis.location.hash) {
+    globalThis.location.hash = savedRoute;
   }
 }
 
@@ -108,7 +108,7 @@ export function restoreSelectedKitIfExists(
  * Save the current route to session storage
  */
 export function saveRouteState(): void {
-  const currentPath = window.location.hash;
+  const currentPath = globalThis.location.hash;
   sessionStorage.setItem(HMR_ROUTE_KEY, currentPath);
 }
 

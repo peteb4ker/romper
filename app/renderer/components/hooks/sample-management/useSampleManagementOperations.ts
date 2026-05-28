@@ -35,13 +35,13 @@ export function useSampleManagementOperations({
 
   const handleSampleAdd = useCallback(
     async (voice: number, slotNumber: number, filePath: string) => {
-      if (!window.electronAPI?.addSampleToSlot) {
+      if (!globalThis.electronAPI?.addSampleToSlot) {
         onMessage?.("Sample management not available", "error");
         return;
       }
 
       try {
-        const result = await window.electronAPI.addSampleToSlot(
+        const result = await globalThis.electronAPI.addSampleToSlot(
           kitName,
           voice,
           slotNumber,
@@ -100,7 +100,7 @@ export function useSampleManagementOperations({
 
   const handleSampleReplace = useCallback(
     async (voice: number, slotNumber: number, filePath: string) => {
-      if (!window.electronAPI?.replaceSampleInSlot) {
+      if (!globalThis.electronAPI?.replaceSampleInSlot) {
         onMessage?.("Sample management not available", "error");
         return;
       }
@@ -111,7 +111,7 @@ export function useSampleManagementOperations({
           slotNumber,
         );
 
-        const result = await window.electronAPI.replaceSampleInSlot(
+        const result = await globalThis.electronAPI.replaceSampleInSlot(
           kitName,
           voice,
           slotNumber,
@@ -155,7 +155,7 @@ export function useSampleManagementOperations({
 
   const handleSampleDelete = useCallback(
     async (voice: number, slotNumber: number) => {
-      if (!window.electronAPI?.deleteSampleFromSlot) {
+      if (!globalThis.electronAPI?.deleteSampleFromSlot) {
         onMessage?.("Sample management not available", "error");
         return;
       }
@@ -166,7 +166,7 @@ export function useSampleManagementOperations({
           slotNumber,
         );
 
-        const result = await window.electronAPI.deleteSampleFromSlot(
+        const result = await globalThis.electronAPI.deleteSampleFromSlot(
           kitName,
           voice,
           slotNumber,

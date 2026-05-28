@@ -35,11 +35,11 @@ export function useSampleManagementMoveOps({
   const validateMoveAPI = useCallback(
     (isCrossKit: boolean) => {
       if (isCrossKit) {
-        if (!window.electronAPI?.moveSampleBetweenKits) {
+        if (!globalThis.electronAPI?.moveSampleBetweenKits) {
           onMessage?.("Cross-kit sample move not available", "error");
           return false;
         }
-      } else if (!window.electronAPI?.moveSampleInKit) {
+      } else if (!globalThis.electronAPI?.moveSampleInKit) {
         onMessage?.("Sample move not available", "error");
         return false;
       }
@@ -53,7 +53,7 @@ export function useSampleManagementMoveOps({
       if (skipUndoRecording || !onAddUndoAction) return [];
 
       const samplesResult =
-        await window.electronAPI?.getAllSamplesForKit?.(kitName);
+        await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
       if (!samplesResult?.success || !samplesResult.data) return [];
 
       const affectedVoices = new Set([fromVoice, toVoice]);
@@ -108,7 +108,7 @@ export function useSampleManagementMoveOps({
         let result;
 
         if (isCrossKit) {
-          result = await window.electronAPI.moveSampleBetweenKits?.(
+          result = await globalThis.electronAPI.moveSampleBetweenKits?.(
             kitName,
             fromVoice,
             fromSlot,
@@ -119,7 +119,7 @@ export function useSampleManagementMoveOps({
           );
         } else {
           const stateSnapshot = await captureStateSnapshot(fromVoice, toVoice);
-          result = await window.electronAPI.moveSampleInKit?.(
+          result = await globalThis.electronAPI.moveSampleInKit?.(
             kitName,
             fromVoice,
             fromSlot,

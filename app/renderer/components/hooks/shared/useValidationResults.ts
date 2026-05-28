@@ -45,7 +45,7 @@ export function useValidationResults({
     setIsLoading(true);
     try {
       const result =
-        await window.electronAPI.validateLocalStore(localStorePath);
+        await globalThis.electronAPI.validateLocalStore(localStorePath);
       setValidationResult(result);
 
       if (!result.isValid && onMessage) {
@@ -97,7 +97,7 @@ export function useValidationResults({
   // Helper function to rescan a single kit
   const rescanSingleKit = useCallback(async (kitName: string) => {
     try {
-      const result = await window.electronAPI.rescanKit(kitName);
+      const result = await globalThis.electronAPI.rescanKit(kitName);
 
       if (result.success && result.data) {
         return {
@@ -185,7 +185,7 @@ export function useValidationResults({
 
       // Re-validate to show updated results
       const updatedValidation =
-        await window.electronAPI.validateLocalStore(localStorePath);
+        await globalThis.electronAPI.validateLocalStore(localStorePath);
       setValidationResult(updatedValidation);
 
       // Close dialog if successful and valid

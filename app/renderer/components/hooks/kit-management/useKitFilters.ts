@@ -65,7 +65,8 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
   const handleToggleFavorite = useCallback(
     async (kitName: string) => {
       try {
-        const result = await window.electronAPI.toggleKitFavorite?.(kitName);
+        const result =
+          await globalThis.electronAPI.toggleKitFavorite?.(kitName);
         if (result?.success) {
           // Update individual kit favorite state immediately (for instant UI update)
           const newFavoriteState = result.data?.isFavorite ?? false;
@@ -75,7 +76,8 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
           }));
 
           // Update favorites count for filter badge (lightweight)
-          const countResult = await window.electronAPI.getFavoriteKitsCount?.();
+          const countResult =
+            await globalThis.electronAPI.getFavoriteKitsCount?.();
           if (countResult?.success && typeof countResult.data === "number") {
             setFavoritesCount(countResult.data);
           }
@@ -118,7 +120,7 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
       }
 
       try {
-        const result = await window.electronAPI.getFavoriteKitsCount?.();
+        const result = await globalThis.electronAPI.getFavoriteKitsCount?.();
         if (result?.success && typeof result.data === "number") {
           setFavoritesCount(result.data);
         } else {

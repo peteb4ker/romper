@@ -109,7 +109,7 @@ class MenuEventForwarder {
   initialize(): void {
     this.eventMappings.forEach(({ domEvent, ipcEvent }) => {
       ipcRenderer.on(ipcEvent, () => {
-        window.dispatchEvent(new CustomEvent(domEvent));
+        globalThis.dispatchEvent(new CustomEvent(domEvent));
       });
     });
   }

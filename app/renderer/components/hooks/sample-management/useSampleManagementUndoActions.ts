@@ -48,7 +48,7 @@ export function useSampleManagementUndoActions({
       if (skipUndoRecording) return null;
 
       const samplesResult =
-        await window.electronAPI?.getAllSamplesForKit?.(kitName);
+        await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
       if (samplesResult?.success && samplesResult.data) {
         return (
           samplesResult.data.find(
@@ -68,7 +68,7 @@ export function useSampleManagementUndoActions({
 
       try {
         const samplesResult =
-          await window.electronAPI?.getAllSamplesForKit?.(kitName);
+          await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
         if (samplesResult?.success && samplesResult.data) {
           return (
             samplesResult.data.find(

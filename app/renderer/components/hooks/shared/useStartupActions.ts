@@ -20,7 +20,7 @@ export function useStartupActions({
       // Run bank scanning on startup (after migrations)
       try {
         console.info("[Startup] Running bank scanning...");
-        const bankScanResult = await window.electronAPI.scanBanks?.();
+        const bankScanResult = await globalThis.electronAPI.scanBanks?.();
         if (bankScanResult?.success) {
           console.info(
             `[Startup] Bank scanning complete. Updated ${bankScanResult.data?.updatedBanks} banks.`,

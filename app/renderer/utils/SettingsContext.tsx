@@ -74,8 +74,8 @@ const initialState: SettingsState = {
 
 // Helper function to detect system theme preference
 function getSystemThemePreference(): boolean {
-  if (typeof window !== "undefined" && window.matchMedia) {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  if (typeof globalThis !== "undefined" && globalThis.matchMedia) {
+    return globalThis.matchMedia("(prefers-color-scheme: dark)").matches;
   }
   return false;
 }
@@ -168,7 +168,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Refresh local store status
   const refreshLocalStoreStatus = useCallback(async () => {
     try {
-      const status = await window.electronAPI.getLocalStoreStatus();
+      const status = await globalThis.electronAPI.getLocalStoreStatus();
       dispatch({ payload: status, type: "UPDATE_LOCAL_STORE_STATUS" });
     } catch (error) {
       console.error("Failed to refresh local store status:", error);
@@ -181,7 +181,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     dispatch({ type: "INIT_START" });
 
     try {
-      const loadedSettings = await window.electronAPI.readSettings();
+      const loadedSettings = await globalThis.electronAPI.readSettings();
 
       const settings: Settings = {
         confirmDestructiveActions:
@@ -210,7 +210,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const setLocalStorePath = useCallback(
     async (path: string) => {
       try {
-        await window.electronAPI.setSetting("localStorePath", path);
+        await globalThis.electronAPI.setSetting("localStorePath", path);
         dispatch({ payload: path, type: "UPDATE_LOCAL_STORE_PATH" });
         await refreshLocalStoreStatus();
       } catch (error) {
@@ -224,7 +224,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const setThemeMode = useCallback(
     async (mode: ThemeMode) => {
       try {
-        await window.electronAPI.setSetting("themeMode", mode);
+        await globalThis.electronAPI.setSetting("themeMode", mode);
         dispatch({ payload: mode, type: "UPDATE_THEME_MODE" });
         applyTheme(shouldUseDarkMode(mode));
       } catch (error) {
@@ -237,7 +237,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Update confirm destructive actions setting
   const setConfirmDestructiveActions = useCallback(async (enabled: boolean) => {
     try {
-      await window.electronAPI.setSetting("confirmDestructiveActions", enabled);
+      await globalThis.electronAPI.setSetting(
+        "confirmDestructiveActions",
+        enabled,
+      );
       dispatch({
         payload: enabled,
         type: "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS",
@@ -264,10 +267,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (
       state.settings.themeMode === "system" &&
-      typeof window !== "undefined" &&
-      window.matchMedia
+      typeof globalThis !== "undefined" &&
+      globalThis.matchMedia
     ) {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const mediaQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
 
       const handleSystemThemeChange = () => {
         if (state.settings.themeMode === "system") {

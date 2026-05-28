@@ -23,10 +23,10 @@ export type BulkScanProgress =
 const BULK_SCAN_COMPLETE_CLEAR_MS = 5000;
 
 export async function fileReader(filePath: string): Promise<ArrayBuffer> {
-  if (!window.electronAPI?.readFile) {
+  if (!globalThis.electronAPI?.readFile) {
     throw new Error("File reader not available");
   }
-  const result = await window.electronAPI.readFile(filePath);
+  const result = await globalThis.electronAPI.readFile(filePath);
   if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to read file");
   }

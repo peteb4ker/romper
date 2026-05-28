@@ -294,8 +294,8 @@ export function useLocalStoreWizard(
 
 function getElectronAPI(): ElectronAPI {
   // Use type assertion to avoid type conflict with window.electronAPI
-  return typeof window !== "undefined" && window.electronAPI
-    ? window.electronAPI
+  return typeof globalThis !== "undefined" && globalThis.electronAPI
+    ? globalThis.electronAPI
     : ({} as ElectronAPI);
 }
 

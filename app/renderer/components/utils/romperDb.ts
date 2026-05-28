@@ -8,11 +8,11 @@ import { createLogger } from "../../utils/logger";
 const log = createLogger("Renderer");
 
 export async function createRomperDb(dbDir: string) {
-  if (!window.electronAPI?.createRomperDb) {
+  if (!globalThis.electronAPI?.createRomperDb) {
     log.error("Romper DB creation not available");
     throw new Error("Romper DB creation not available");
   }
-  const result = await window.electronAPI.createRomperDb(dbDir);
+  const result = await globalThis.electronAPI.createRomperDb(dbDir);
   if (!result.success) {
     log.error("Failed to create Romper DB:", result.error);
     throw new Error(result.error || "Failed to create Romper DB");
@@ -22,9 +22,9 @@ export async function createRomperDb(dbDir: string) {
 }
 
 export async function insertKit(dbDir: string, kit: NewKit) {
-  if (!window.electronAPI?.insertKit) throw new Error("IPC not available");
+  if (!globalThis.electronAPI?.insertKit) throw new Error("IPC not available");
 
-  const result = await window.electronAPI.insertKit(dbDir, kit);
+  const result = await globalThis.electronAPI.insertKit(dbDir, kit);
   if (!result.success) throw new Error(result.error || "Failed to insert kit");
   return kit.name; // Return the kit name instead of an ID
 }
@@ -44,7 +44,8 @@ export async function insertSample(
     wav_sample_rate?: number;
   },
 ) {
-  if (!window.electronAPI?.insertSample) throw new Error("IPC not available");
+  if (!globalThis.electronAPI?.insertSample)
+    throw new Error("IPC not available");
 
   // Provide default values for required fields
   const sampleWithDefaults = {
@@ -56,7 +57,7 @@ export async function insertSample(
     wav_sample_rate: sample.wav_sample_rate || null,
   };
 
-  const result = await window.electronAPI.insertSample(
+  const result = await globalThis.electronAPI.insertSample(
     dbDir,
     sampleWithDefaults,
   );

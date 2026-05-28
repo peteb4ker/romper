@@ -31,7 +31,7 @@ interface SyncProgress {
 }
 
 interface SyncUpdateDependencies {
-  electronAPI?: typeof window.electronAPI;
+  electronAPI?: typeof globalThis.electronAPI;
 }
 
 interface UseSyncUpdateResult {
@@ -52,7 +52,7 @@ interface UseSyncUpdateResult {
 export function useSyncUpdate(
   deps: SyncUpdateDependencies = {},
 ): UseSyncUpdateResult {
-  const electronAPI = deps.electronAPI || window.electronAPI;
+  const electronAPI = deps.electronAPI || globalThis.electronAPI;
 
   const [syncProgress, setSyncProgress] = useState<null | SyncProgress>(null);
   const [isLoading, setIsLoading] = useState(false);

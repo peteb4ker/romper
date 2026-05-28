@@ -175,7 +175,7 @@ export function useKitBankNavigation({
       const artist = newName || null;
       const rtfFilename = newName ? `${bank} - ${newName}.rtf` : null;
 
-      const result = await window.electronAPI.updateBank?.(bank, {
+      const result = await globalThis.electronAPI.updateBank?.(bank, {
         artist,
         rtf_filename: rtfFilename,
       });

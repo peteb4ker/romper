@@ -95,11 +95,11 @@ export function useKitPlayback(samples: null | undefined | VoiceSamples) {
     const handleError = (errMsg: string) => {
       setPlaybackError(errMsg || "Playback failed");
     };
-    window.electronAPI.onSamplePlaybackEnded?.(handleEnded);
-    window.electronAPI.onSamplePlaybackError?.(handleError);
+    globalThis.electronAPI.onSamplePlaybackEnded?.(handleEnded);
+    globalThis.electronAPI.onSamplePlaybackError?.(handleError);
     return () => {
-      window.electronAPI.onSamplePlaybackEnded?.(() => {});
-      window.electronAPI.onSamplePlaybackError?.(() => {});
+      globalThis.electronAPI.onSamplePlaybackEnded?.(() => {});
+      globalThis.electronAPI.onSamplePlaybackError?.(() => {});
     };
   }, []);
 

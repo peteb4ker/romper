@@ -9,19 +9,11 @@ import { useKitFilters } from "../useKitFilters";
 const mockToggleKitFavorite = vi.fn();
 const mockGetFavoriteKitsCount = vi.fn();
 
-// Ensure window.electronAPI is properly mocked
-Object.defineProperty(globalThis, "window", {
-  value: {
-    electronAPI: {
-      getFavoriteKitsCount: mockGetFavoriteKitsCount,
-      toggleKitFavorite: mockToggleKitFavorite,
-    },
-  },
-  writable: true,
-});
-
-// Ensure global window is also set
-global.window = globalThis.window as unknown;
+// Ensure electronAPI is properly mocked (code reads globalThis.electronAPI)
+globalThis.electronAPI = {
+  getFavoriteKitsCount: mockGetFavoriteKitsCount,
+  toggleKitFavorite: mockToggleKitFavorite,
+} as unknown as typeof globalThis.electronAPI;
 
 describe("useKitFilters", () => {
   const mockOnMessage = vi.fn();

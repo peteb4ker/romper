@@ -26,9 +26,9 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
   // Get SD card path from settings (includes environment overrides)
   useEffect(() => {
     const getSettings = async () => {
-      if (window.electronAPI?.readSettings) {
+      if (globalThis.electronAPI?.readSettings) {
         try {
-          const settings = await window.electronAPI.readSettings();
+          const settings = await globalThis.electronAPI.readSettings();
           log.debug("Settings loaded:", settings);
           if (settings?.sdCardPath) {
             log.debug(
@@ -118,9 +118,9 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
       setSdCardPath(path);
 
       // Save to settings if electronAPI is available
-      if (window.electronAPI?.writeSettings) {
+      if (globalThis.electronAPI?.writeSettings) {
         try {
-          await window.electronAPI.writeSettings("sdCardPath", path);
+          await globalThis.electronAPI.writeSettings("sdCardPath", path);
           log.debug("SD card path saved to settings:", path);
         } catch (error) {
           log.error("Failed to save SD card path to settings:", error);

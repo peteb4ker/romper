@@ -38,8 +38,8 @@ interface FormatValidationResult {
 export function useFileValidation() {
   const getFilePathFromDrop = useCallback(
     async (file: File): Promise<string> => {
-      if (window.electronFileAPI?.getDroppedFilePath) {
-        return await window.electronFileAPI.getDroppedFilePath(file);
+      if (globalThis.electronFileAPI?.getDroppedFilePath) {
+        return await globalThis.electronFileAPI.getDroppedFilePath(file);
       }
       return (file as ElectronFile).path || file.name;
     },
@@ -77,12 +77,13 @@ export function useFileValidation() {
 
   const validateDroppedFile = useCallback(
     async (filePath: string) => {
-      if (!window.electronAPI?.validateSampleFormat) {
+      if (!globalThis.electronAPI?.validateSampleFormat) {
         console.error("Format validation not available");
         return null;
       }
 
-      const result = await window.electronAPI.validateSampleFormat(filePath);
+      const result =
+        await globalThis.electronAPI.validateSampleFormat(filePath);
       if (!result.success || !result.data) {
         console.error("Format validation failed:", result.error);
         return null;

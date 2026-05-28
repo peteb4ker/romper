@@ -161,11 +161,11 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     setScanStatus({ status: "scanning" });
 
     try {
-      if (!window.electronAPI?.rescanKit) {
+      if (!globalThis.electronAPI?.rescanKit) {
         throw new Error("Rescan API not available");
       }
 
-      const result = await window.electronAPI.rescanKit(kitName);
+      const result = await globalThis.electronAPI.rescanKit(kitName);
 
       if (result.success) {
         const sampleCount = result.data?.scannedSamples || 0;
@@ -224,8 +224,8 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
         if (!voiceSamples || voiceSamples.length === 0) continue;
 
         const inferredType = inferVoiceTypeFromFilename(voiceSamples[0]);
-        if (inferredType && window.electronAPI?.updateVoiceAlias) {
-          await window.electronAPI.updateVoiceAlias(
+        if (inferredType && globalThis.electronAPI?.updateVoiceAlias) {
+          await globalThis.electronAPI.updateVoiceAlias(
             kitName,
             voice,
             inferredType,
@@ -321,9 +321,12 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     const handler = (e: CustomEvent) => {
       onMessage(e.detail, "error");
     };
-    window.addEventListener("SampleWaveformError", handler as EventListener);
+    globalThis.addEventListener(
+      "SampleWaveformError",
+      handler as EventListener,
+    );
     return () => {
-      window.removeEventListener(
+      globalThis.removeEventListener(
         "SampleWaveformError",
         handler as EventListener,
       );
@@ -400,8 +403,8 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
         }
       }
     }
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+    globalThis.addEventListener("keydown", handleGlobalKeyDown);
+    return () => globalThis.removeEventListener("keydown", handleGlobalKeyDown);
   }, [
     sequencerOpen,
     selectedVoice,

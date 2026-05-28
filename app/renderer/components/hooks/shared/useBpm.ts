@@ -25,9 +25,9 @@ export function useBpm({ initialBpm = 120, kitName }: UseBpmParams) {
       setBpmState(clampedBpm);
 
       // Persist to database
-      if (kitName && window.electronAPI?.updateKitBpm) {
+      if (kitName && globalThis.electronAPI?.updateKitBpm) {
         try {
-          await window.electronAPI.updateKitBpm(kitName, clampedBpm);
+          await globalThis.electronAPI.updateKitBpm(kitName, clampedBpm);
         } catch (error) {
           console.error("Failed to update BPM:", error);
           // Revert on error

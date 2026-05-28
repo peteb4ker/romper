@@ -252,8 +252,8 @@ const KitsView: React.FC = () => {
 
   // Critical error handler
   const handleCriticalError = useCallback(() => {
-    if (window.electronAPI?.closeApp) {
-      window.electronAPI.closeApp();
+    if (globalThis.electronAPI?.closeApp) {
+      globalThis.electronAPI.closeApp();
     } else {
       // Fallback for development or if API is not available
       window.close();
@@ -320,7 +320,7 @@ const KitsView: React.FC = () => {
           localStorePath={localStorePath}
           modifiedCount={kitFilters.modifiedCount}
           onAboutClick={() =>
-            window.dispatchEvent(new CustomEvent("menu-about"))
+            globalThis.dispatchEvent(new CustomEvent("menu-about"))
           }
           onMessage={showMessage}
           onRefreshKits={refreshAllKitsAndSamples}
@@ -345,7 +345,7 @@ const KitsView: React.FC = () => {
         onClose={dialogState.closeWizard}
         onCloseApp={
           needsLocalStoreSetup
-            ? () => window.electronAPI?.closeApp?.()
+            ? () => globalThis.electronAPI?.closeApp?.()
             : undefined
         }
         onInitializationChange={setIsWizardInitializing}

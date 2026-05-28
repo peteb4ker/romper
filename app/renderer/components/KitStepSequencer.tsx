@@ -118,7 +118,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   const handleVolumeChange = React.useCallback(
     (voiceNumber: number, volume: number) => {
       setVoiceVolumes((prev) => ({ ...prev, [voiceNumber]: volume }));
-      window.electronAPI?.updateVoiceVolume?.(kitName, voiceNumber, volume);
+      globalThis.electronAPI?.updateVoiceVolume?.(kitName, voiceNumber, volume);
       debouncedRefresh();
     },
     [kitName, debouncedRefresh],
@@ -128,7 +128,11 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   const handleSampleModeChange = React.useCallback(
     (voiceNumber: number, mode: SampleMode) => {
       setSampleModes((prev) => ({ ...prev, [voiceNumber]: mode }));
-      window.electronAPI?.updateVoiceSampleMode?.(kitName, voiceNumber, mode);
+      globalThis.electronAPI?.updateVoiceSampleMode?.(
+        kitName,
+        voiceNumber,
+        mode,
+      );
       onVoiceSettingChanged?.();
     },
     [kitName, onVoiceSettingChanged],

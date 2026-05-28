@@ -48,7 +48,7 @@ export function useKitDataManager({
     async (kit: string): Promise<VoiceSamples> => {
       try {
         const samplesResult =
-          await window.electronAPI?.getAllSamplesForKit?.(kit);
+          await globalThis.electronAPI?.getAllSamplesForKit?.(kit);
 
         if (samplesResult?.success && samplesResult.data) {
           const grouped = groupDbSamplesByVoice(samplesResult.data);
@@ -75,7 +75,7 @@ export function useKitDataManager({
       let kitNames: string[] = [];
       let loadedKits: KitWithRelations[] = [];
       try {
-        const kitsResult = await window.electronAPI?.getKits?.();
+        const kitsResult = await globalThis.electronAPI?.getKits?.();
         if (kitsResult?.success && kitsResult.data) {
           const kitsWithBanks =
             kitsResult.data as unknown as KitWithRelations[];
@@ -151,7 +151,7 @@ export function useKitDataManager({
   // Refresh metadata for a single kit (voice aliases, etc.) without reloading all samples
   const refreshSingleKitMetadata = useCallback(async (kitName: string) => {
     try {
-      const kitResult = await window.electronAPI?.getKit?.(kitName);
+      const kitResult = await globalThis.electronAPI?.getKit?.(kitName);
       if (kitResult?.success && kitResult.data) {
         const updatedKit = kitResult.data;
         setKits((prevKits) =>
@@ -166,7 +166,7 @@ export function useKitDataManager({
   // Helper function to load all kits and samples from database
   const refreshAllKitsAndSamples = useCallback(async () => {
     try {
-      const kitsResult = await window.electronAPI?.getKits?.();
+      const kitsResult = await globalThis.electronAPI?.getKits?.();
       if (kitsResult?.success && kitsResult.data) {
         const kitsWithBanks = kitsResult.data as unknown as KitWithRelations[];
         setKits(kitsWithBanks);
@@ -221,7 +221,8 @@ export function useKitDataManager({
   const toggleKitFavorite = useCallback(
     async (kitName: string) => {
       try {
-        const result = await window.electronAPI?.toggleKitFavorite?.(kitName);
+        const result =
+          await globalThis.electronAPI?.toggleKitFavorite?.(kitName);
         if (result?.success) {
           // Update local state immediately for optimistic UI update
           const newFavoriteState = result.data?.isFavorite ?? false;
@@ -247,12 +248,12 @@ export function useKitDataManager({
       },
       errorContext: string,
     ) => {
-      if (!window.electronAPI?.updateKit) {
+      if (!globalThis.electronAPI?.updateKit) {
         throw new Error("Update kit API not available");
       }
 
       try {
-        const result = await window.electronAPI.updateKit(kitName, updates);
+        const result = await globalThis.electronAPI.updateKit(kitName, updates);
         if (result.success) {
           // Update local state with properly typed updates
           const stateUpdates: Partial<KitWithRelations> = {};

@@ -26,13 +26,13 @@ export function useStepPattern({
 
   const updateStepPattern = useCallback(
     async (pattern: number[][]) => {
-      if (!window.electronAPI?.updateStepPattern || !kitName) return;
+      if (!globalThis.electronAPI?.updateStepPattern || !kitName) return;
 
       // Update UI state immediately for responsive feedback
       setStepPatternState(pattern);
 
       try {
-        const result = await window.electronAPI.updateStepPattern(
+        const result = await globalThis.electronAPI.updateStepPattern(
           kitName,
           pattern,
         );

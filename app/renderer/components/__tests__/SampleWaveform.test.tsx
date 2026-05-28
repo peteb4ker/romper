@@ -265,7 +265,7 @@ describe("SampleWaveform", () => {
   });
 
   it("cleans up resources on unmount", async () => {
-    const { unmount } = render(
+    const { container, unmount } = render(
       <SampleWaveform
         kitName="A1"
         playTrigger={0}
@@ -278,8 +278,8 @@ describe("SampleWaveform", () => {
       unmount();
     });
 
-    // Should not crash on unmount
-    expect(true).toBe(true);
+    // Unmount should tear down the rendered DOM without crashing
+    expect(container.childElementCount).toBe(0);
   });
 
   it("creates GainNode and applies volume when volume prop is provided", async () => {

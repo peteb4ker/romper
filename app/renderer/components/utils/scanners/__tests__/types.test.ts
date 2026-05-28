@@ -37,13 +37,13 @@ describe("scanner types", () => {
 
   describe("ErrorHandlingStrategy type", () => {
     it("should allow 'continue' value", () => {
-      const strategy: ErrorHandlingStrategy = "continue";
-      expect(strategy).toBe("continue");
+      const strategies: ErrorHandlingStrategy[] = ["continue", "stop"];
+      expect(strategies[0]).toBe("continue");
     });
 
     it("should allow 'stop' value", () => {
-      const strategy: ErrorHandlingStrategy = "stop";
-      expect(strategy).toBe("stop");
+      const strategies: ErrorHandlingStrategy[] = ["continue", "stop"];
+      expect(strategies[1]).toBe("stop");
     });
   });
 

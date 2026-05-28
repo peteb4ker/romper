@@ -184,8 +184,8 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers({});
 
     await ipcMainHandlers["close-app"]();
-    // The app.quit mock is set up globally, so we just check it doesn't throw
-    expect(true).toBe(true);
+    const electron = await import("electron");
+    expect(vi.mocked(electron.app.quit)).toHaveBeenCalled();
   });
 
   it("registers select-sd-card and returns selected path", async () => {

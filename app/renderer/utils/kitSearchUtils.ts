@@ -173,7 +173,7 @@ function getSamplesFromKitRelation(kit: KitWithRelations): SampleWithVoice[] {
   return kit.samples
     .filter((sample) => !!sample.filename)
     .map((sample) => ({
-      filename: sample.filename!,
+      filename: sample.filename,
       voiceNumber: sample.voice_number,
     }));
 }

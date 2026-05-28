@@ -51,7 +51,7 @@ export function useSampleManagementUndoActions({
         await window.electronAPI?.getAllSamplesForKit?.(kitName);
       if (samplesResult?.success && samplesResult.data) {
         return (
-          (samplesResult.data as Sample[]).find(
+          samplesResult.data.find(
             (s) => s.voice_number === voice && s.slot_number === slotNumber,
           ) || null
         );
@@ -71,7 +71,7 @@ export function useSampleManagementUndoActions({
           await window.electronAPI?.getAllSamplesForKit?.(kitName);
         if (samplesResult?.success && samplesResult.data) {
           return (
-            (samplesResult.data as Sample[]).find(
+            samplesResult.data.find(
               (sample) =>
                 sample.voice_number === voice &&
                 sample.slot_number === slotNumber,

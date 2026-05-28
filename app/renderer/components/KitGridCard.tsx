@@ -33,9 +33,10 @@ interface KitGridCardProps {
 
 const CARD_HEIGHT = 104;
 
-function hasSearchSampleMatches(kitDataItem: KitWithRelations | null): boolean {
-  const k = kitDataItem as KitWithSearchMatch | null;
-  const byVoice = k?.searchMatch?.matchedSamplesByVoice;
+function hasSearchSampleMatches(
+  kitDataItem: KitWithSearchMatch | null,
+): boolean {
+  const byVoice = kitDataItem?.searchMatch?.matchedSamplesByVoice;
   return !!byVoice && Object.keys(byVoice).length > 0;
 }
 

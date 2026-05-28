@@ -308,10 +308,9 @@ describe("hmrStateManager", () => {
       sessionStorage.setItem("hmr_selected_kit", "Kit1");
       const kits = [{ name: "Kit1" }];
 
-      restoreSelectedKitIfExists(kits, null, undefined);
-
-      // Should not throw
-      expect(true).toBe(true);
+      expect(() =>
+        restoreSelectedKitIfExists(kits, null, undefined),
+      ).not.toThrow();
       vi.restoreAllMocks();
     });
 

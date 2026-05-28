@@ -16,8 +16,8 @@ describe("useMessageDisplay", () => {
     expect(Array.isArray(result.current.messages)).toBe(true);
   });
 
-  it("logs messages to console", () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation();
+  it("logs info messages via the structured logger", () => {
+    const consoleSpy = vi.spyOn(console, "info").mockImplementation();
     const { result } = renderHook(() => useMessageDisplay());
     act(() => {
       result.current.showMessage("Test info", "info", 1234);

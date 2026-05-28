@@ -8,7 +8,10 @@ import type {
   VoiceInferenceOutput,
 } from "../../utils/scanners/types";
 
+import { createLogger } from "../../../utils/logger";
 import { executeFullKitScan } from "../../utils/scanners/orchestrationFunctions";
+
+const log = createLogger("WizardScanning");
 
 export interface UseLocalStoreWizardScanningOptions {
   api: ElectronAPI;
@@ -30,15 +33,11 @@ export function useLocalStoreWizardScanning({
   const runScanning = useCallback(
     async (targetPath: string, dbDir: string, kitNames: string[]) => {
       if (kitNames.length === 0) {
-        console.log("[Hook] No kits to scan, skipping scanning phase");
+        log.debug("No kits to scan, skipping scanning phase");
         return;
       }
 
-      console.log(
-        "[Hook] Starting scanning operations for",
-        kitNames.length,
-        "kits",
-      );
+      log.debug("Starting scanning operations for", kitNames.length, "kits");
 
       // Create a file reader that works with Electron APIs
       const createFileReader = () => {
@@ -90,13 +89,10 @@ export function useLocalStoreWizardScanning({
 
           // Log scan results for debugging
           if (scanResult.errors.length > 0) {
-            console.warn(
-              `[Hook] Scan warnings for kit ${kitName}:`,
-              scanResult.errors,
-            );
+            log.warn(`Scan warnings for kit ${kitName}:`, scanResult.errors);
           }
         } catch (error) {
-          console.error(`[Hook] Scanning failed for kit ${kitName}:`, error);
+          log.error(`Scanning failed for kit ${kitName}:`, error);
           // Continue with other kits even if one fails
         }
       };
@@ -136,18 +132,18 @@ export function useLocalStoreWizardScanning({
               voiceName,
             );
             if (result.success) {
-              console.log(
-                `[Hook] Set voice ${voiceNumber} alias to "${voiceName}" for kit ${kitName}`,
+              log.debug(
+                `Set voice ${voiceNumber} alias to "${voiceName}" for kit ${kitName}`,
               );
             } else {
-              console.warn(
-                `[Hook] Failed to set voice alias for kit ${kitName}, voice ${voiceNumber}:`,
+              log.warn(
+                `Failed to set voice alias for kit ${kitName}, voice ${voiceNumber}:`,
                 result.error,
               );
             }
           } catch (error) {
-            console.warn(
-              `[Hook] Error setting voice alias for kit ${kitName}, voice ${voiceNumber}:`,
+            log.warn(
+              `Error setting voice alias for kit ${kitName}, voice ${voiceNumber}:`,
               error,
             );
           }
@@ -160,7 +156,7 @@ export function useLocalStoreWizardScanning({
         phase: "Scanning kits for metadata...",
       });
 
-      console.log("[Hook] Scanning operations completed");
+      log.debug("Scanning operations completed");
     },
     [api, reportStepProgress],
   );

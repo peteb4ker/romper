@@ -471,7 +471,7 @@ describe("useExternalDragHandlers", () => {
       );
     });
 
-    it("logs dropped file path", async () => {
+    it("processes the resolved dropped file path", async () => {
       const { result } = renderHook(() =>
         useExternalDragHandlers(defaultProps),
       );
@@ -479,8 +479,8 @@ describe("useExternalDragHandlers", () => {
       const mockEvent = createMockEvent([createMockFile("logged.wav")]);
       await result.current.handleDrop(mockEvent, 1);
 
-      expect(console.log).toHaveBeenCalledWith(
-        "Processing dropped file:",
+      expect(mockSampleProcessing.isDuplicateSample).toHaveBeenCalledWith(
+        expect.anything(),
         "/path/to/file.wav",
       );
     });

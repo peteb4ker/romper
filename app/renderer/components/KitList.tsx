@@ -9,10 +9,13 @@ import React, {
 } from "react";
 import { ListChildComponentProps, VariableSizeList } from "react-window";
 
+import { createLogger } from "../utils/logger";
 import BankHeader from "./BankHeader";
 import { useKitListLogic } from "./hooks/kit-management/useKitListLogic";
 import { useKitListNavigation } from "./hooks/kit-management/useKitListNavigation";
 import KitItem from "./KitItem";
+
+const log = createLogger("KitList");
 
 // Expose imperative scroll/focus API for parent components
 export interface KitListHandle {
@@ -168,14 +171,9 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
         if (listRef.current) {
           const offset = getOffsetForIndex(idx) - HEADER_HEIGHT;
           listRef.current.scrollTo(Math.max(0, offset));
-          console.log(
-            "[KitList] scrollAndFocusKitByIndex",
-            idx,
-            "offset",
-            offset,
-          );
+          log.debug("scrollAndFocusKitByIndex", idx, "offset", offset);
         } else {
-          console.warn("[KitList] listRef.current is null");
+          log.warn("listRef.current is null");
         }
         setFocus(idx);
         if (onFocusKit) onFocusKit(kitsToDisplay[idx].name);

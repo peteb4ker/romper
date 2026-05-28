@@ -259,8 +259,11 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining("No sample available for voice 2"),
+      // Voice 2 is active at step 1 but has no samples — it must not trigger playback
+      expect(mockOnPlaySample).not.toHaveBeenCalledWith(
+        2,
+        expect.anything(),
+        expect.anything(),
       );
     });
 

@@ -40,6 +40,15 @@ jobs:
           echo "Current directory: $(pwd)"
         shell: bash
 
+      # Ubuntu/macOS runners ship the sqlite3 CLI; Windows does not. The sync
+      # E2E tests shell out to `sqlite3` to fix fixture source paths.
+      - name: Install sqlite3 CLI (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install sqlite --no-progress -y
+          sqlite3 -version
+        shell: pwsh
+
       - name: Install system dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |

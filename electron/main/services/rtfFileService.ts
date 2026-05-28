@@ -15,7 +15,7 @@ class RtfFileService {
    */
   removeRtfFile(dirPath: string, bankLetter: string): void {
     const files = fs.readdirSync(dirPath);
-    const pattern = new RegExp(`^${bankLetter} - .+\\.rtf$`, "iu");
+    const pattern = new RegExp(String.raw`^${bankLetter} - .+\.rtf$`, "iu");
     for (const file of files) {
       if (pattern.test(file)) {
         fs.unlinkSync(path.join(dirPath, file));
@@ -49,7 +49,7 @@ class RtfFileService {
 
     const filename = `${bankLetter} - ${artistName}.rtf`;
     const filePath = path.join(dirPath, filename);
-    fs.writeFileSync(filePath, "{\\rtf1}", "utf-8");
+    fs.writeFileSync(filePath, String.raw`{\rtf1}`, "utf-8");
   }
 }
 

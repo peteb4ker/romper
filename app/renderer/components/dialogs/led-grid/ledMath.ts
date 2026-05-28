@@ -88,7 +88,7 @@ export function computeRippleBoost(
     const radius = elapsed * speed;
     const dx = col - ripple.col;
     const dy = row - ripple.row;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.hypot(dx, dy);
     const ringDist = Math.abs(dist - radius);
     if (ringDist < width) {
       const ringIntensity = 1 - ringDist / width;

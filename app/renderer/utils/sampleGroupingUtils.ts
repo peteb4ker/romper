@@ -44,7 +44,7 @@ export function groupDbSamplesByVoice(dbSamples: Sample[]): VoiceSamples {
       }
     }
     // Remove trailing empty slots
-    while (voice.length > 0 && voice[voice.length - 1] === "") {
+    while (voice.length > 0 && voice.at(-1) === "") {
       voice.pop();
     }
   });

@@ -116,7 +116,7 @@ export function useInternalDragHandlers({
 
       // Determine drop mode for visual feedback
       // All moves are insert-only, but we need to distinguish insert vs append
-      const currentSampleCount = samples.filter((s) => s).length;
+      const currentSampleCount = samples.filter(Boolean).length;
       const isAppend = slotNumber === currentSampleCount;
       const mode = isAppend ? "append" : "insert";
 

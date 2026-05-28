@@ -22,7 +22,7 @@ export function scanVoiceInference(
 
     // Process each voice
     for (const [voiceNumber, files] of Object.entries(samples)) {
-      const voiceNum = parseInt(voiceNumber, 10);
+      const voiceNum = Number.parseInt(voiceNumber, 10);
 
       if (!files || files.length === 0) {
         continue;

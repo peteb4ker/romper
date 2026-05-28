@@ -27,8 +27,8 @@ function buildEnvelope(
   const tops = new Float32Array(width);
   const bottoms = new Float32Array(width);
   for (let i = 0; i < width; i++) {
-    let max = -1.0,
-      min = 1.0;
+    let max = -1,
+      min = 1;
     for (let j = 0; j < step; j++) {
       const datum = data[i * step + j] || 0;
       if (datum < min) min = datum;
@@ -57,7 +57,7 @@ function computeRms(
 // string usable by canvas APIs. Falls back to accent-primary or a default blue.
 function resolveWaveformColor(voiceColor?: string): string {
   if (voiceColor) {
-    const varMatch = voiceColor.match(/^var\((.+)\)$/);
+    const varMatch = /^var\((.+)\)$/.exec(voiceColor);
     if (varMatch) {
       const resolved = getComputedStyle(document.documentElement)
         .getPropertyValue(varMatch[1])
@@ -208,7 +208,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       tracePath(ctx, bottoms);
       ctx.stroke();
 
-      ctx.globalAlpha = 1.0;
+      ctx.globalAlpha = 1;
     },
     [voiceColor],
   );

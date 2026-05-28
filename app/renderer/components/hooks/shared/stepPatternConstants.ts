@@ -97,7 +97,7 @@ export const LED_GLOWS = [
  * Creates a default empty step pattern (4 voices x 16 steps, all velocity 0)
  */
 export function createDefaultStepPattern(): number[][] {
-  return Array.from({ length: NUM_VOICES }, () => Array(NUM_STEPS).fill(0));
+  return Array.from({ length: NUM_VOICES }, () => new Array(NUM_STEPS).fill(0));
 }
 
 /**

@@ -24,7 +24,7 @@ export const VU_NOISE_FLOOR = 0.02; // RMS below this reads as silence
 
 // Brightness values
 export const VU_LIT_MIN_BRIGHTNESS = 0.6;
-export const VU_LIT_MAX_BRIGHTNESS = 1.0;
-export const VU_PEAK_BRIGHTNESS = 1.0;
+export const VU_LIT_MAX_BRIGHTNESS = 1;
+export const VU_PEAK_BRIGHTNESS = 1;
 export const VU_UNLIT_BRIGHTNESS = 0.03;
 export const VU_BORDER_BRIGHTNESS = 0.02;

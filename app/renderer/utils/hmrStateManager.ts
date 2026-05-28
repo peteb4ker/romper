@@ -49,7 +49,7 @@ export function getSavedSelectedKit(): null | string {
  */
 export function isHmrAvailable(): boolean {
   return (
-    typeof (import.meta as ImportMeta).hot !== "undefined" &&
+    (import.meta as ImportMeta).hot !== undefined &&
     (import.meta as ImportMeta).hot !== null
   );
 }

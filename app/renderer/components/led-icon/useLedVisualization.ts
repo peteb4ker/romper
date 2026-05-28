@@ -200,9 +200,7 @@ export function updateCrossFade(
   );
   if (!allDecayed) return;
 
-  if (cf.vuInactiveSince === null) {
-    cf.vuInactiveSince = rawTime;
-  }
+  cf.vuInactiveSince ??= rawTime;
   const elapsed = (rawTime - cf.vuInactiveSince) * 1000;
   cf.ambientFade = Math.min(1, elapsed / VU_CROSSFADE_MS);
   if (cf.ambientFade >= 1) {
@@ -264,9 +262,7 @@ export function useLedVisualization(
       const rawTime = performance.now() / 1000;
       const mouse = mouseRef.current;
 
-      if (lastRawTimeRef.current === null) {
-        lastRawTimeRef.current = rawTime;
-      }
+      lastRawTimeRef.current ??= rawTime;
       const delta = rawTime - lastRawTimeRef.current;
       lastRawTimeRef.current = rawTime;
       const multiplier = isHoveredRef.current

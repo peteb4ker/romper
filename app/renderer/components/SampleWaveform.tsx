@@ -46,8 +46,8 @@ function computeRms(
 ): number {
   analyser.getByteTimeDomainData(dataArray);
   let sum = 0;
-  for (let i = 0; i < dataArray.length; i++) {
-    const sample = (dataArray[i] - 128) / 128;
+  for (const datum of dataArray) {
+    const sample = (datum - 128) / 128;
     sum += sample * sample;
   }
   return Math.sqrt(sum / dataArray.length);
@@ -248,7 +248,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       gainNodeRef.current.connect(ctx.destination);
     }
     // Logarithmic volume curve: x^2 approximates perceived loudness
-    const voiceLinear = volume != null ? volume / 100 : 1;
+    const voiceLinear = volume == null ? 1 : volume / 100;
     const voiceGain = voiceLinear * voiceLinear;
     const sampleGain = Math.pow(10, (gainDb ?? 0) / 20); // dB to linear
     gainNodeRef.current.gain.setValueAtTime(

@@ -20,7 +20,7 @@ export function bankHasKits(kits: KitWithRelations[], bank: string): boolean {
 export function getAvailableBanks(kits: KitWithRelations[]): string[] {
   const banks = new Set<string>();
   for (const kit of kits) {
-    if (kit && kit.name && kit.name.length > 0) {
+    if (kit?.name && kit.name.length > 0) {
       banks.add(kit.name[0].toUpperCase());
     }
   }

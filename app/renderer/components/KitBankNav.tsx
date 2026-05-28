@@ -92,10 +92,7 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
       {banks.map((bank, i) => {
         const enabled = kits.some(
           (k) =>
-            k &&
-            k.name &&
-            typeof k.name === "string" &&
-            k.name.startsWith(bank),
+            k?.name && typeof k.name === "string" && k.name.startsWith(bank),
         );
         const isSelected = enabled && selectedBank === bank;
         const scale = isHovering ? getScale(i, hoverIndex) : BASE_SCALE;
@@ -131,7 +128,7 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
               willChange: isHovering ? "transform" : "auto",
               zIndex: isNearest && isHovering ? 50 : "auto",
             }}
-            title={!isHovering ? bankNames[bank] || undefined : undefined}
+            title={isHovering ? undefined : bankNames[bank] || undefined}
           >
             {bank}
             {/* Floating label — only when there's a bank name to show */}

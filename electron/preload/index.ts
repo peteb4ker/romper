@@ -91,7 +91,7 @@ interface MenuEventMap {
 }
 
 class MenuEventForwarder {
-  private eventMappings: Array<{
+  private readonly eventMappings: Array<{
     domEvent: string;
     ipcEvent: keyof MenuEventMap;
   }> = [

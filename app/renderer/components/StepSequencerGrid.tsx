@@ -8,12 +8,12 @@ import {
 import React from "react";
 import ReactDOM from "react-dom";
 
-import type { SampleMode } from "./hooks/shared/stepPatternConstants";
 import type { StereoLinks } from "./KitStepSequencer";
 
 import {
   type FocusedStep,
   SAMPLE_MODE_LABELS,
+  type SampleMode,
   TRIGGER_CONDITIONS,
   type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
@@ -168,7 +168,7 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
         const isActive =
           cond === currentCondition ||
           (cond === null && currentCondition === null);
-        const label = cond === null ? "Always" : cond;
+        const label = cond ?? "Always";
         return (
           <button
             className={`block w-full text-left px-3 py-1 text-xs hover:bg-surface-3 transition-colors ${isActive ? "text-accent-primary font-bold" : "text-text-primary"}`}

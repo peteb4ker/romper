@@ -36,12 +36,12 @@ export function useStepPattern({
           kitName,
           pattern,
         );
-        if (!result.success) {
+        if (result.success) {
+          onSaved?.();
+        } else {
           console.error("Failed to save step pattern:", result.error);
           // Revert UI state on failure
           setStepPatternState(ensureValidStepPattern(initialPattern));
-        } else {
-          onSaved?.();
         }
       } catch (e) {
         console.error("Exception saving step pattern:", e);

@@ -161,18 +161,18 @@ export class SyncService {
     logger.log(`[SyncService] Database directory: ${dbDir}`);
 
     const markSyncedResult = markKitsAsSynced(dbDir, syncedKitNames);
-    if (!markSyncedResult.success) {
+    if (markSyncedResult.success) {
+      logger.log(
+        `[SyncService] Successfully marked ${syncedKitNames.length} kits as synced:`,
+        syncedKitNames,
+      );
+    } else {
       console.error(
         "[SyncService] Failed to mark kits as synced:",
         markSyncedResult.error,
       );
       // Don't throw here - we don't want to fail the entire sync for this
       // But we should surface this error somehow
-    } else {
-      logger.log(
-        `[SyncService] Successfully marked ${syncedKitNames.length} kits as synced:`,
-        syncedKitNames,
-      );
     }
   }
 

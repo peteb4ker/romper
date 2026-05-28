@@ -60,9 +60,7 @@ export function checkKitSamples(
       matchDetails.matchedOn.push(`sample:${filename}`);
       matchDetails.matchedSamples.push(filename);
       if (voiceNumber != null) {
-        if (!matchDetails.matchedSamplesByVoice) {
-          matchDetails.matchedSamplesByVoice = {};
-        }
+        matchDetails.matchedSamplesByVoice ??= {};
         if (!matchDetails.matchedSamplesByVoice[voiceNumber]) {
           matchDetails.matchedSamplesByVoice[voiceNumber] = [];
         }

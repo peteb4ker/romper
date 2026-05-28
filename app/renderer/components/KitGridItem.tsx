@@ -296,7 +296,7 @@ const KitGridItem = React.memo(
         (sampleCounts?.[1] || 0) +
         (sampleCounts?.[2] || 0) +
         (sampleCounts?.[3] || 0);
-      const statusText = !isValid ? "Invalid kit" : `${totalSamples} samples`;
+      const statusText = isValid ? `${totalSamples} samples` : "Invalid kit";
       const ariaLabel = `Kit ${kit} - ${statusText}`;
 
       const canDelete =
@@ -531,6 +531,13 @@ const KitGridItem = React.memo(
                       const displayLabel =
                         voiceDisplayName ||
                         (hasVoiceMatches ? `Voice ${voiceNumber}` : "\u00A0");
+                      const countCell = hasVoiceMatches ? null : (
+                        <span
+                          className={`text-[13px] font-mono ${countStyle.text} ${countStyle.weight}`}
+                        >
+                          {count}
+                        </span>
+                      );
 
                       return (
                         <div
@@ -576,12 +583,8 @@ const KitGridItem = React.memo(
                                 );
                               })}
                             </div>
-                          ) : hasVoiceMatches ? null : (
-                            <span
-                              className={`text-[13px] font-mono ${countStyle.text} ${countStyle.weight}`}
-                            >
-                              {count}
-                            </span>
+                          ) : (
+                            countCell
                           )}
                         </div>
                       );

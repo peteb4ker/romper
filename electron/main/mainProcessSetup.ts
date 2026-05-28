@@ -135,7 +135,9 @@ export function validateAndFixLocalStore(
       isValid: validation.isValid,
     });
 
-    if (!validation.isValid) {
+    if (validation.isValid) {
+      logger.log("[Validation] ✓ Local store path is valid");
+    } else {
       console.warn("[Startup] ✗ Saved local store path is invalid");
       console.warn("  - Path:", settings.localStorePath);
       console.warn("  - Error:", validation.error);
@@ -154,8 +156,6 @@ export function validateAndFixLocalStore(
       } catch (writeError) {
         console.error("[Startup] Failed to update settings file:", writeError);
       }
-    } else {
-      logger.log("[Validation] ✓ Local store path is valid");
     }
   } else {
     logger.log("[Validation] No local store path to validate");

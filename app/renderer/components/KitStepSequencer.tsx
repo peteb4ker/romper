@@ -1,10 +1,9 @@
 import React from "react";
 
-import type { SampleMode } from "./hooks/shared/stepPatternConstants";
-
 import { useKitStepSequencerLogic } from "./hooks/kit-management/useKitStepSequencerLogic";
 import {
   NUM_VOICES,
+  type SampleMode,
   type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
 import { useBpm } from "./hooks/shared/useBpm";

@@ -317,13 +317,13 @@ async function processSingleWAVAnalysis(
     },
   );
 
-  if (!updateResult?.success) {
+  if (updateResult?.success) {
+    result.scannedWavFiles++;
+  } else {
     result.errors.push({
       error: `Failed to update metadata for ${filePath}: ${updateResult?.error}`,
       operation: `wav-${filePath}`,
     });
-  } else {
-    result.scannedWavFiles++;
   }
 }
 

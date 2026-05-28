@@ -224,11 +224,14 @@ jobs:
           FAILED_CONDITIONS=$(echo "$GATE" | jq -r \
             '.projectStatus.conditions[] | select(.status == "ERROR") | "- **\(.metricKey)**: \(.actualValue) (required: \(.errorThreshold))"')
 
-          # Search for existing open sonarcloud issue
-          EXISTING=$(gh issue list --label "sonarcloud" --state open --json number,body --limit 1)
-          EXISTING_NUMBER=$(echo "$EXISTING" | jq -r '.[0].number // empty')
-
           ISSUE_TITLE="SonarCloud: quality gate failure on main"
+
+          # Find CI's own auto-managed gate tracker. Match the exact title — NOT
+          # just the shared "sonarcloud" label — so human-created issues that also
+          # carry the label are never auto-closed when the gate passes.
+          EXISTING=$(gh issue list --label "sonarcloud" --state open --json number,title,body --limit 30 \
+            | jq --arg t "$ISSUE_TITLE" '[.[] | select(.title == $t)][0:1]')
+          EXISTING_NUMBER=$(echo "$EXISTING" | jq -r '.[0].number // empty')
 
           if [ "$STATUS" != "OK" ]; then
             if [ -n "$EXISTING_NUMBER" ]; then

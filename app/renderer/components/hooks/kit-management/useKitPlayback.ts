@@ -91,20 +91,14 @@ export function useKitPlayback(samples: null | undefined | VoiceSamples) {
   };
 
   useEffect(() => {
-    // @ts-ignore
     const handleEnded = () => {};
-    // @ts-ignore
     const handleError = (errMsg: string) => {
       setPlaybackError(errMsg || "Playback failed");
     };
-    // @ts-ignore
     window.electronAPI.onSamplePlaybackEnded?.(handleEnded);
-    // @ts-ignore
     window.electronAPI.onSamplePlaybackError?.(handleError);
     return () => {
-      // @ts-ignore
       window.electronAPI.onSamplePlaybackEnded?.(() => {});
-      // @ts-ignore
       window.electronAPI.onSamplePlaybackError?.(() => {});
     };
   }, []);

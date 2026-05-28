@@ -8,6 +8,8 @@ import React, {
   useReducer,
 } from "react";
 
+import { config } from "../config";
+
 interface Settings {
   confirmDestructiveActions: boolean;
   localStorePath: null | string;
@@ -180,9 +182,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       const loadedSettings = await window.electronAPI.readSettings();
-
-      // Import config to check for environment override
-      const { config } = await import("../config");
 
       const settings: Settings = {
         confirmDestructiveActions:

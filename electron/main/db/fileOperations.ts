@@ -1,12 +1,14 @@
 // File operations utilities for database management
 import * as fs from "node:fs";
 
-// Logging utilities
+import { logger } from "../utils/logger.js";
+
+// Logging utilities — error is always on, info is gated via logger
 const log = {
   error: (message: string, ...args: unknown[]) =>
     console.error(`[Romper Electron] ${message}`, ...args),
   info: (message: string, ...args: unknown[]) =>
-    console.log(`[Romper Electron] ${message}`, ...args),
+    logger.log(`[Romper Electron] ${message}`, ...args),
 };
 
 export async function deleteDbFileWithRetry(

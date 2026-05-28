@@ -14,6 +14,7 @@ import {
   getKitSamples,
   validateDatabaseSchema,
 } from "./db/romperDbCoreORM.js";
+import { logger } from "./utils/logger.js";
 
 /**
  * Derives the Romper database path from a local store path.
@@ -38,14 +39,14 @@ export function validateLocalStoreAgainstDb(
 
   // Get all kits from the database
   const kitsResult = getKits(basicResult.dbDir!);
-  console.log("[Validation] Kits query result:", {
+  logger.log("[Validation] Kits query result:", {
     dataLength: kitsResult.data?.length,
     error: kitsResult.error,
     success: kitsResult.success,
   });
 
   if (!kitsResult.success || !kitsResult.data) {
-    console.log("[Validation] Failed to get kits, returning error");
+    logger.log("[Validation] Failed to get kits, returning error");
     return {
       errorSummary: `Failed to retrieve kits from database: ${kitsResult.error}`,
       isValid: false,
@@ -73,14 +74,14 @@ export function validateLocalStoreAgainstDb(
     }
   }
 
-  console.log("[Validation] File validation completed:", {
+  logger.log("[Validation] File validation completed:", {
     isValid,
     kitErrorsCount: kitErrors.length,
     totalKits: kitsResult.data.length,
   });
 
   if (kitErrors.length > 0) {
-    console.log("[Validation] Kit errors found:", kitErrors);
+    logger.log("[Validation] Kit errors found:", kitErrors);
   }
 
   const result = {
@@ -91,7 +92,7 @@ export function validateLocalStoreAgainstDb(
     isValid,
   };
 
-  console.log("[Validation] Final validation result:", result);
+  logger.log("[Validation] Final validation result:", result);
   return result;
 }
 
@@ -244,19 +245,19 @@ function findExtraFiles(
  * Helper function to perform basic validation checks
  */
 function performBasicValidation(localStorePath: string) {
-  console.log(
+  logger.log(
     "[Validation] Starting validateLocalStoreAgainstDb for:",
     localStorePath,
   );
 
   const basicValidation = validateLocalStoreAndDb(localStorePath);
-  console.log("[Validation] Basic validation result:", {
+  logger.log("[Validation] Basic validation result:", {
     error: basicValidation.error,
     isValid: basicValidation.isValid,
   });
 
   if (!basicValidation.isValid) {
-    console.log("[Validation] Basic validation failed, returning error");
+    logger.log("[Validation] Basic validation failed, returning error");
     return {
       error: basicValidation.error,
       success: false,
@@ -266,8 +267,8 @@ function performBasicValidation(localStorePath: string) {
   const romperDbPath = basicValidation.romperDbPath!;
   const dbDir = path.dirname(romperDbPath);
 
-  console.log("[Validation] Basic validation passed, checking kits...");
-  console.log("[Validation] DB directory:", dbDir);
+  logger.log("[Validation] Basic validation passed, checking kits...");
+  logger.log("[Validation] DB directory:", dbDir);
 
   return { dbDir, success: true };
 }

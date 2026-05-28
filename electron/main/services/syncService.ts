@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { getAllBanks, markKitsAsSynced } from "../db/romperDbCoreORM.js";
+import { logger } from "../utils/logger.js";
 import { rtfFileService } from "./rtfFileService.js";
 import {
   type SyncFileOperation,
@@ -103,7 +104,7 @@ class SyncService {
           kitCount: data.kitNames.size,
         }));
 
-      console.log("[Backend] Samples result:", {
+      logger.log("[Backend] Samples result:", {
         sampleCount: fileCount,
         success: samplesResult.success,
       });
@@ -114,7 +115,7 @@ class SyncService {
         kitCount,
       };
 
-      console.log("[Backend] Generated sync summary:", summary);
+      logger.log("[Backend] Generated sync summary:", summary);
       return { data: summary, success: true };
     } catch (error) {
       const errorMessage =
@@ -243,7 +244,7 @@ class SyncService {
           const syncOutputDir = path.join(localStorePath, "sync_output");
           if (fs.existsSync(syncOutputDir)) {
             fs.rmSync(syncOutputDir, { force: true, recursive: true });
-            console.log("Cleaned up partial sync files");
+            logger.log("Cleaned up partial sync files");
           }
         }
       } catch (cleanupError) {
@@ -273,7 +274,7 @@ class SyncService {
     if (!markSyncedResult.success) {
       console.warn("Failed to mark kits as synced:", markSyncedResult.error);
     } else {
-      console.log(
+      logger.log(
         `Marked ${syncedKitNames.length} kits as synced:`,
         syncedKitNames,
       );
@@ -305,7 +306,7 @@ class SyncService {
         }
       }
 
-      console.log(`Successfully wiped SD card at: ${sdCardPath}`);
+      logger.log(`Successfully wiped SD card at: ${sdCardPath}`);
     } catch (error) {
       throw new Error(
         `Failed to wipe SD card: ${error instanceof Error ? error.message : String(error)}`,
@@ -325,7 +326,7 @@ class SyncService {
           banksResult.data,
         );
         if (written > 0) {
-          console.log(`Wrote ${written} bank RTF files to SD card`);
+          logger.log(`Wrote ${written} bank RTF files to SD card`);
         }
       }
     } catch (error) {

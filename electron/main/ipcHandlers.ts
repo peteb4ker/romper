@@ -12,6 +12,7 @@ import {
   checkPathWritable,
   removeDirectorySafe,
 } from "./utils/fileSystemUtils.js";
+import { logger } from "./utils/logger.js";
 
 export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("read-settings", () =>
@@ -24,14 +25,14 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
 
   // Add local store status handler
   ipcMain.handle("get-local-store-status", (_) => {
-    console.log("[Main] get-local-store-status called");
+    logger.log("[Main] get-local-store-status called");
 
     const result = localStoreService.getLocalStoreStatus(
       inMemorySettings.localStorePath,
       process.env.ROMPER_LOCAL_PATH,
     );
 
-    console.log("[Main] Returning local store status:", result);
+    logger.log("[Main] Returning local store status:", result);
     return result;
   });
 

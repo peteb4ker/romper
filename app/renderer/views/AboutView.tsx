@@ -22,7 +22,6 @@ declare global {
 }
 
 const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
-  // @ts-ignore
   const version =
     (import.meta.env ? import.meta.env.VITE_APP_VERSION : undefined) ?? "dev";
   const currentYear = new Date().getFullYear();

@@ -3,6 +3,7 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import * as path from "node:path";
 
 import { markKitsAsSynced } from "../db/romperDbCoreORM.js";
+import { logger } from "../utils/logger.js";
 import {
   type SyncExecutorService,
   syncExecutorService,
@@ -132,7 +133,7 @@ export class SyncService {
     allFiles: SyncFileOperation[],
     syncedFiles: number,
   ): Promise<void> {
-    console.log(
+    logger.log(
       `[SyncService] markKitsAsSynced called - syncedFiles: ${syncedFiles}, allFiles: ${allFiles.length}`,
     );
 
@@ -153,11 +154,11 @@ export class SyncService {
     const dbDir = path.join(localStorePath, ".romperdb");
     const syncedKitNames = [...new Set(allFiles.map((file) => file.kitName))];
 
-    console.log(
+    logger.log(
       `[SyncService] Attempting to mark ${syncedKitNames.length} kits as synced:`,
       syncedKitNames,
     );
-    console.log(`[SyncService] Database directory: ${dbDir}`);
+    logger.log(`[SyncService] Database directory: ${dbDir}`);
 
     const markSyncedResult = markKitsAsSynced(dbDir, syncedKitNames);
     if (!markSyncedResult.success) {
@@ -168,7 +169,7 @@ export class SyncService {
       // Don't throw here - we don't want to fail the entire sync for this
       // But we should surface this error somehow
     } else {
-      console.log(
+      logger.log(
         `[SyncService] Successfully marked ${syncedKitNames.length} kits as synced:`,
         syncedKitNames,
       );

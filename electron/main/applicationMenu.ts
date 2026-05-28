@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, shell } from "electron";
 
 import { menuIcons } from "./menuIcons";
+import { logger } from "./utils/logger.js";
 
 const isDev = !app.isPackaged;
 
@@ -187,5 +188,5 @@ export function createApplicationMenu() {
 export function registerMenuIpcHandlers() {
   // Menu actions are handled via webContents.send() to the renderer process
   // No additional IPC handlers needed for basic menu functionality
-  console.log("[Menu] Menu IPC handlers registered");
+  logger.log("[Menu] Menu IPC handlers registered");
 }

@@ -126,7 +126,10 @@ jobs:
     needs: [unit-tests, integration-tests]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # The SonarCloud Scan step exceeded the previous 8-minute limit and was
+    # killed mid-scan on every main push, so SonarCloud had not re-analyzed
+    # since 2026-04-10. Give the scan room to complete.
+    timeout-minutes: 25
     permissions:
       contents: read
       issues: write

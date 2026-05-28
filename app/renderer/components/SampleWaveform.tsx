@@ -94,7 +94,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
-  const [, setError] = useState<null | string>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const animationRef = useRef<null | number>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -110,11 +109,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   // Load audio file and decode
   useEffect(() => {
     let cancelled = false;
-    setError(null);
 
     // Use secure API with kit/voice/slot identifiers
     if (!window.electronAPI?.getSampleAudioBuffer) {
-      setError("Sample audio buffer API not available");
       if (onError) onError("Sample audio buffer API not available");
       return;
     }
@@ -127,7 +124,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         // Handle null response for missing samples (empty slots)
         if (!arrayBuffer) {
           setAudioBuffer(null);
-          setError(null);
           return;
         }
 
@@ -153,7 +149,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
             `[SampleWaveform] Sample not found: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}:`,
             err,
           );
-          setError(null); // Don't show error to user for missing samples
         }
         setAudioBuffer(null);
       });

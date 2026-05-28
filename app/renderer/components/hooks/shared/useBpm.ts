@@ -10,7 +10,7 @@ interface UseBpmParams {
  * Provides BPM state, validation, and persistence functionality
  */
 export function useBpm({ initialBpm = 120, kitName }: UseBpmParams) {
-  const [bpm, setBpmState] = React.useState(initialBpm);
+  const [bpmState, setBpmState] = React.useState(initialBpm);
   const [isEditing, setIsEditing] = React.useState(false);
 
   // Update local state when initial BPM changes (kit switching)
@@ -43,7 +43,7 @@ export function useBpm({ initialBpm = 120, kitName }: UseBpmParams) {
   }, []);
 
   return {
-    bpm,
+    bpm: bpmState,
     isEditing,
     setBpm,
     setIsEditing,

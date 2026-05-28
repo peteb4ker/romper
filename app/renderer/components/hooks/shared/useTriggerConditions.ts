@@ -19,7 +19,7 @@ export function useTriggerConditions({
   kitName,
   onSaved,
 }: UseTriggerConditionsParams) {
-  const [triggerConditions, setTriggerConditionsState] = useState<
+  const [triggerConditionsState, setTriggerConditionsState] = useState<
     (null | string)[][]
   >(() => ensureValidTriggerConditions(initialConditions));
 
@@ -69,6 +69,6 @@ export function useTriggerConditions({
 
   return {
     setTriggerConditions: updateTriggerConditions,
-    triggerConditions,
+    triggerConditions: triggerConditionsState,
   };
 }

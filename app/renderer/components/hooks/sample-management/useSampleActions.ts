@@ -37,8 +37,8 @@ export function useSampleActions({
   const handleSampleContextMenu = useCallback(
     (e: React.MouseEvent, sampleData: SampleData | undefined) => {
       e.preventDefault();
-      if (sampleData?.source_path && window.electronAPI?.showItemInFolder) {
-        window.electronAPI.showItemInFolder(sampleData.source_path);
+      if (sampleData?.source_path && globalThis.electronAPI?.showItemInFolder) {
+        globalThis.electronAPI.showItemInFolder(sampleData.source_path);
       }
     },
     [],

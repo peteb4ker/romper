@@ -17,23 +17,23 @@ export async function createKit(kitSlot: string): Promise<void> {
     throw new Error("Invalid kit slot. Use format A0-Z99.");
   }
 
-  if (!window.electronAPI?.createKit) {
+  if (!globalThis.electronAPI?.createKit) {
     throw new Error("Electron API not available");
   }
 
-  await window.electronAPI.createKit(kitSlot);
+  await globalThis.electronAPI.createKit(kitSlot);
 }
 
 /**
  * Deletes a kit and all its child records (samples, voices) from the database
  */
 export async function deleteKit(kitName: string): Promise<void> {
-  if (!window.electronAPI?.deleteKit) {
+  if (!globalThis.electronAPI?.deleteKit) {
     throw new Error("Electron API not available");
   }
 
   try {
-    await window.electronAPI.deleteKit(kitName);
+    await globalThis.electronAPI.deleteKit(kitName);
   } catch (err) {
     let msg = String(err instanceof Error ? err.message : err);
     msg = msg
@@ -54,12 +54,12 @@ export async function duplicateKit(
     throw new Error("Invalid destination slot. Use format A0-Z99.");
   }
 
-  if (!window.electronAPI?.copyKit) {
+  if (!globalThis.electronAPI?.copyKit) {
     throw new Error("Electron API not available");
   }
 
   try {
-    await window.electronAPI.copyKit(sourceSlot, destSlot);
+    await globalThis.electronAPI.copyKit(sourceSlot, destSlot);
   } catch (err) {
     // Clean up error message
     let msg = String(err instanceof Error ? err.message : err);
@@ -113,12 +113,12 @@ export async function getKitDeleteSummary(kitName: string): Promise<{
   sampleCount: number;
   voiceCount: number;
 }> {
-  if (!window.electronAPI?.getKitDeleteSummary) {
+  if (!globalThis.electronAPI?.getKitDeleteSummary) {
     throw new Error("Electron API not available");
   }
 
   try {
-    return await window.electronAPI.getKitDeleteSummary(kitName);
+    return await globalThis.electronAPI.getKitDeleteSummary(kitName);
   } catch (err) {
     let msg = String(err instanceof Error ? err.message : err);
     msg = msg

@@ -166,8 +166,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         voiceData,
         sampleData,
         async (voiceNumber, updates) => {
-          if (window.electronAPI?.updateVoiceStereoMode) {
-            await window.electronAPI.updateVoiceStereoMode(
+          if (globalThis.electronAPI?.updateVoiceStereoMode) {
+            await globalThis.electronAPI.updateVoiceStereoMode(
               hookProps.kitName,
               voiceNumber,
               updates.stereo_mode ?? false,
@@ -194,8 +194,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         voiceData,
         sampleData,
         async (voiceNumber, updates) => {
-          if (window.electronAPI?.updateVoiceStereoMode) {
-            await window.electronAPI.updateVoiceStereoMode(
+          if (globalThis.electronAPI?.updateVoiceStereoMode) {
+            await globalThis.electronAPI.updateVoiceStereoMode(
               hookProps.kitName,
               voiceNumber,
               updates.stereo_mode ?? false,
@@ -225,13 +225,13 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // Load sample metadata when kit changes
   React.useEffect(() => {
     const loadSampleMetadata = async () => {
-      if (!hookProps.kitName || !window.electronAPI?.getAllSamplesForKit) {
+      if (!hookProps.kitName || !globalThis.electronAPI?.getAllSamplesForKit) {
         setSampleMetadata({});
         return;
       }
 
       try {
-        const samplesResult = await window.electronAPI.getAllSamplesForKit(
+        const samplesResult = await globalThis.electronAPI.getAllSamplesForKit(
           hookProps.kitName,
         );
         if (samplesResult?.success && samplesResult.data) {

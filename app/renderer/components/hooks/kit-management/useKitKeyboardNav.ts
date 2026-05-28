@@ -36,12 +36,12 @@ export function useKitKeyboardNav({
 
   // Register global A-Z navigation for bank selection and kit focus
   useEffect(() => {
-    window.addEventListener("keydown", globalBankHotkeyHandler);
-    window.addEventListener("keydown", favoritesKeyboardHandler);
+    globalThis.addEventListener("keydown", globalBankHotkeyHandler);
+    globalThis.addEventListener("keydown", favoritesKeyboardHandler);
 
     return () => {
-      window.removeEventListener("keydown", globalBankHotkeyHandler);
-      window.removeEventListener("keydown", favoritesKeyboardHandler);
+      globalThis.removeEventListener("keydown", globalBankHotkeyHandler);
+      globalThis.removeEventListener("keydown", favoritesKeyboardHandler);
     };
   }, [globalBankHotkeyHandler, favoritesKeyboardHandler]);
 

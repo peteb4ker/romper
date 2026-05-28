@@ -30,12 +30,12 @@ export function useSampleProcessing({
   voice,
 }: UseSampleProcessingOptions) {
   const getCurrentKitSamples = useCallback(async () => {
-    if (!window.electronAPI?.getAllSamplesForKit) {
+    if (!globalThis.electronAPI?.getAllSamplesForKit) {
       console.error("Sample management not available");
       return null;
     }
 
-    const result = await window.electronAPI.getAllSamplesForKit(kitName);
+    const result = await globalThis.electronAPI.getAllSamplesForKit(kitName);
     if (!result.success) {
       console.error(`Failed to get samples: ${result.error}`);
       return null;

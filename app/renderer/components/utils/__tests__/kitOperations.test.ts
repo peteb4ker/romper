@@ -22,10 +22,8 @@ const mockElectronAPI = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  global.window = {
-    ...global.window,
-    electronAPI: mockElectronAPI,
-  } as unknown;
+  globalThis.electronAPI =
+    mockElectronAPI as unknown as typeof globalThis.electronAPI;
 });
 
 describe("validateKitSlot", () => {
@@ -68,7 +66,7 @@ describe("createKit", () => {
   });
 
   it("throws error when Electron API is not available", async () => {
-    global.window = { electronAPI: {} } as unknown;
+    globalThis.electronAPI = {} as unknown as typeof globalThis.electronAPI;
 
     await expect(createKit("A1")).rejects.toThrow("Electron API not available");
   });
@@ -98,7 +96,7 @@ describe("duplicateKit", () => {
   });
 
   it("throws error when Electron API is not available", async () => {
-    global.window = { electronAPI: {} } as unknown;
+    globalThis.electronAPI = {} as unknown as typeof globalThis.electronAPI;
 
     await expect(duplicateKit("A1", "B2")).rejects.toThrow(
       "Electron API not available",
@@ -139,7 +137,7 @@ describe("deleteKit", () => {
   });
 
   it("throws error when Electron API is not available", async () => {
-    global.window = { electronAPI: {} } as unknown;
+    globalThis.electronAPI = {} as unknown as typeof globalThis.electronAPI;
 
     await expect(deleteKit("A5")).rejects.toThrow("Electron API not available");
   });
@@ -178,7 +176,7 @@ describe("getKitDeleteSummary", () => {
   });
 
   it("throws error when Electron API is not available", async () => {
-    global.window = { electronAPI: {} } as unknown;
+    globalThis.electronAPI = {} as unknown as typeof globalThis.electronAPI;
 
     await expect(getKitDeleteSummary("A5")).rejects.toThrow(
       "Electron API not available",

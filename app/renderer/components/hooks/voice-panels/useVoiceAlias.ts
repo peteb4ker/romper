@@ -11,10 +11,10 @@ export interface UseVoiceAliasParams {
 export function useVoiceAlias({ kitName, onUpdate }: UseVoiceAliasParams) {
   const updateVoiceAlias = useCallback(
     async (voiceNumber: number, voiceAlias: string) => {
-      if (!window.electronAPI?.updateVoiceAlias || !kitName) return;
+      if (!globalThis.electronAPI?.updateVoiceAlias || !kitName) return;
 
       try {
-        const result = await window.electronAPI.updateVoiceAlias(
+        const result = await globalThis.electronAPI.updateVoiceAlias(
           kitName,
           voiceNumber,
           voiceAlias,

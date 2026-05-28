@@ -42,11 +42,11 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
   const handleSelectDirectory = async () => {
     setIsSelecting(true);
     try {
-      if (!window.electronAPI?.selectLocalStorePath) {
+      if (!globalThis.electronAPI?.selectLocalStorePath) {
         throw new Error("Directory selection not available");
       }
 
-      const path = await window.electronAPI.selectLocalStorePath();
+      const path = await globalThis.electronAPI.selectLocalStorePath();
       if (path && isMountedRef.current) {
         setSelectedPath(path);
         setValidationResult(null);
@@ -80,12 +80,12 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
         return;
       }
 
-      if (!window.electronAPI?.validateLocalStoreBasic) {
+      if (!globalThis.electronAPI?.validateLocalStoreBasic) {
         throw new Error("Directory validation not available");
       }
 
       const result =
-        await window.electronAPI.validateLocalStoreBasic(pathToUse);
+        await globalThis.electronAPI.validateLocalStoreBasic(pathToUse);
       if (isMountedRef.current) {
         setValidationResult({
           error: result.error,

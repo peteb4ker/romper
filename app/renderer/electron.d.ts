@@ -407,4 +407,16 @@ declare global {
       getDroppedFilePath: (file: File) => Promise<string>;
     };
   }
+
+  // In the renderer `globalThis === window`, so the preload-injected bridges
+  // are also reachable as `globalThis.electronAPI` / `globalThis.electronFileAPI`.
+  // Declared as globals so code can prefer `globalThis` over `window` (S7764).
+
+  var electronAPI: ElectronAPI;
+
+  var electronFileAPI:
+    | {
+        getDroppedFilePath: (file: File) => Promise<string>;
+      }
+    | undefined;
 }

@@ -207,7 +207,7 @@ export function useVoicePanelSlotRendering({
           {isEditable && (
             <GainKnob
               onChange={(db) => {
-                window.electronAPI?.updateSampleGain?.(
+                globalThis.electronAPI?.updateSampleGain?.(
                   kitName,
                   voice,
                   slotNumber,
@@ -224,8 +224,11 @@ export function useVoicePanelSlotRendering({
             key={`${kitName}-${voice}-${uiSlotNumber}-${sampleName}`}
             kitName={kitName}
             onError={(err) => {
-              if (typeof window !== "undefined" && window.dispatchEvent) {
-                window.dispatchEvent(
+              if (
+                typeof globalThis !== "undefined" &&
+                globalThis.dispatchEvent
+              ) {
+                globalThis.dispatchEvent(
                   new CustomEvent("SampleWaveformError", { detail: err }),
                 );
               }

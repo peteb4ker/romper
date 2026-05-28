@@ -25,13 +25,13 @@ export function useKit({ kitName, onKitUpdated }: UseKitParams) {
   const [error, setError] = useState<null | string>(null);
 
   const loadKit = useCallback(async () => {
-    if (!window.electronAPI?.getKit || !kitName) return;
+    if (!globalThis.electronAPI?.getKit || !kitName) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await window.electronAPI.getKit(kitName);
+      const result = await globalThis.electronAPI.getKit(kitName);
       if (result.success && result.data) {
         setKit(result.data);
       } else {
@@ -50,10 +50,10 @@ export function useKit({ kitName, onKitUpdated }: UseKitParams) {
   }, [kitName, loadKit]);
 
   const updateKitAlias = async (alias: string) => {
-    if (!window.electronAPI?.updateKit || !kitName) return;
+    if (!globalThis.electronAPI?.updateKit || !kitName) return;
 
     try {
-      const result = await window.electronAPI.updateKit(kitName, { alias });
+      const result = await globalThis.electronAPI.updateKit(kitName, { alias });
       if (result.success) {
         await loadKit();
         // Refresh the kit browser's data after updating alias
@@ -69,12 +69,12 @@ export function useKit({ kitName, onKitUpdated }: UseKitParams) {
   };
 
   const toggleEditableMode = async () => {
-    if (!window.electronAPI?.updateKit || !kitName || !kit) return;
+    if (!globalThis.electronAPI?.updateKit || !kitName || !kit) return;
 
     const newEditableState = !kit.editable;
 
     try {
-      const result = await window.electronAPI.updateKit(kitName, {
+      const result = await globalThis.electronAPI.updateKit(kitName, {
         editable: newEditableState,
       });
       if (result.success) {

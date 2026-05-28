@@ -69,9 +69,9 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   }, [isOpen, sdCardPath, localChangeSummary, onGenerateChangeSummary]);
 
   const handleSdCardSelect = async () => {
-    if (!window.electronAPI?.selectSdCard) return;
+    if (!globalThis.electronAPI?.selectSdCard) return;
 
-    const selectedPath = await window.electronAPI.selectSdCard();
+    const selectedPath = await globalThis.electronAPI.selectSdCard();
     if (!selectedPath) return;
 
     setLocalSdCardPath(selectedPath);

@@ -30,8 +30,8 @@ const AppContent = () => {
   // Listen for menu-about custom event (from LED icon click and native menu)
   useEffect(() => {
     const handler = () => setShowAboutModal(true);
-    window.addEventListener("menu-about", handler);
-    return () => window.removeEventListener("menu-about", handler);
+    globalThis.addEventListener("menu-about", handler);
+    return () => globalThis.removeEventListener("menu-about", handler);
   }, []);
 
   return (

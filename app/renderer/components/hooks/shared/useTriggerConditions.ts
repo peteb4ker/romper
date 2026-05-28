@@ -39,13 +39,13 @@ export function useTriggerConditions({
 
   const updateTriggerConditions = useCallback(
     async (conditions: (null | string)[][]) => {
-      if (!window.electronAPI?.updateTriggerConditions || !kitName) return;
+      if (!globalThis.electronAPI?.updateTriggerConditions || !kitName) return;
 
       // Update UI state immediately for responsive feedback
       setTriggerConditionsState(conditions);
 
       try {
-        const result = await window.electronAPI.updateTriggerConditions(
+        const result = await globalThis.electronAPI.updateTriggerConditions(
           kitName,
           conditions,
         );

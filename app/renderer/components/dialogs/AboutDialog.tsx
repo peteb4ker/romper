@@ -4,7 +4,8 @@ import React, { useEffect } from "react";
 import LedPixelGrid from "./led-grid/LedPixelGrid";
 
 const openExternal = (url: string) => {
-  if (window.electronAPI?.openExternal) window.electronAPI.openExternal(url);
+  if (globalThis.electronAPI?.openExternal)
+    globalThis.electronAPI.openExternal(url);
   else window.open(url, "_blank", "noopener,noreferrer");
 };
 

@@ -54,7 +54,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
 
   const handleChangeLocalStore = async () => {
     try {
-      const result = await window.electronAPI.selectExistingLocalStore?.();
+      const result = await globalThis.electronAPI.selectExistingLocalStore?.();
       if (result?.success && result.path) {
         await setLocalStorePath(result.path);
       }

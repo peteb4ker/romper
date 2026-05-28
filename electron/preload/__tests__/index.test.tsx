@@ -46,10 +46,9 @@ describe("preload/index.tsx", () => {
       return originalRequire.apply(this, arguments);
     };
 
-    // Mock global window for menuEventForwarder
-    global.window = {
-      dispatchEvent: vi.fn(),
-    } as unknown;
+    // Mock dispatchEvent for menuEventForwarder (code uses globalThis.dispatchEvent)
+    globalThis.dispatchEvent =
+      vi.fn() as unknown as typeof globalThis.dispatchEvent;
   });
 
   it("exposes romperEnv in main world", async () => {
@@ -391,7 +390,7 @@ describe("preload/index.tsx", () => {
       callback();
 
       // Check that a DOM event was dispatched
-      expect(global.window.dispatchEvent).toHaveBeenCalledWith(
+      expect(globalThis.dispatchEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "menu-scan-all-kits",
         }),

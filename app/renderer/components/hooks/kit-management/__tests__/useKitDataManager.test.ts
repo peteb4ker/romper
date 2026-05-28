@@ -306,13 +306,10 @@ describe("useKitDataManager", () => {
       success: true,
     });
 
-    globalThis.window = {
-      ...globalThis.window,
-      electronAPI: {
-        getAllSamplesForKit: freshMock,
-        getKits: vi.fn().mockResolvedValue({ data: mockKits, success: true }),
-      },
-    };
+    globalThis.electronAPI = {
+      getAllSamplesForKit: freshMock,
+      getKits: vi.fn().mockResolvedValue({ data: mockKits, success: true }),
+    } as unknown as typeof globalThis.electronAPI;
 
     const { result } = renderHook(() =>
       useKitDataManager({
@@ -337,13 +334,10 @@ describe("useKitDataManager", () => {
       success: true,
     });
 
-    globalThis.window = {
-      ...globalThis.window,
-      electronAPI: {
-        getAllSamplesForKit: freshMock,
-        getKits: vi.fn().mockResolvedValue({ data: mockKits, success: true }),
-      },
-    };
+    globalThis.electronAPI = {
+      getAllSamplesForKit: freshMock,
+      getKits: vi.fn().mockResolvedValue({ data: mockKits, success: true }),
+    } as unknown as typeof globalThis.electronAPI;
 
     const { result } = renderHook(() =>
       useKitDataManager({

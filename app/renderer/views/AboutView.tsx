@@ -1,8 +1,8 @@
 import React from "react";
 
 const openExternal = (url: string) => {
-  if (window.electronAPI?.openExternal) {
-    window.electronAPI.openExternal(url);
+  if (globalThis.electronAPI?.openExternal) {
+    globalThis.electronAPI.openExternal(url);
   } else {
     window.open(url, "_blank", "noopener,noreferrer");
   }
@@ -29,9 +29,9 @@ const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
     if (navigate) {
       navigate("/kits");
     } else {
-      window.history.length > 1
-        ? window.history.back()
-        : window.location.assign("/kits");
+      globalThis.history.length > 1
+        ? globalThis.history.back()
+        : globalThis.location.assign("/kits");
     }
   };
   return (

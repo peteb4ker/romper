@@ -10,7 +10,7 @@ interface UseBankScanningProps {
 export function useBankScanning({ onMessage }: UseBankScanningProps) {
   const scanBanks = useCallback(async () => {
     try {
-      const result = await window.electronAPI.scanBanks?.();
+      const result = await globalThis.electronAPI.scanBanks?.();
       if (result?.success) {
         onMessage?.(
           `Bank scanning complete. Updated ${result.data?.updatedBanks} banks.`,

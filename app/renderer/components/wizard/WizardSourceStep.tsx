@@ -38,8 +38,8 @@ const WizardSourceStep: React.FC<WizardSourceStepProps> = ({
       if (setSdCardPath) setSdCardPath(config.sdCardPath!);
       return;
     }
-    if (window.electronAPI?.selectSdCard) {
-      const pickedPath = await window.electronAPI.selectSdCard();
+    if (globalThis.electronAPI?.selectSdCard) {
+      const pickedPath = await globalThis.electronAPI.selectSdCard();
       if (pickedPath && setSdCardPath) {
         setSdCardPath(pickedPath);
         setSourceConfirmed?.(true);

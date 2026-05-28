@@ -67,8 +67,8 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     }, [state.isInitializing, onInitializationChange]);
 
     const safeSelectLocalStorePath = useCallback(async () => {
-      if (window.electronAPI?.selectLocalStorePath) {
-        return await window.electronAPI.selectLocalStorePath();
+      if (globalThis.electronAPI?.selectLocalStorePath) {
+        return await globalThis.electronAPI.selectLocalStorePath();
       }
       return undefined;
     }, []);
@@ -122,18 +122,18 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
 
     // Helper function to validate electronAPI availability
     const validateElectronAPI = useCallback(() => {
-      if (!window.electronAPI?.selectExistingLocalStore) {
-        const errorMsg = window.electronAPI
+      if (!globalThis.electronAPI?.selectExistingLocalStore) {
+        const errorMsg = globalThis.electronAPI
           ? "selectExistingLocalStore method not found (preload issue)"
           : "electronAPI not available (app may need restart)";
 
         console.error("Debug info:", {
-          availableMethods: window.electronAPI
-            ? Object.keys(window.electronAPI)
+          availableMethods: globalThis.electronAPI
+            ? Object.keys(globalThis.electronAPI)
             : "none",
-          electronAPI: !!window.electronAPI,
+          electronAPI: !!globalThis.electronAPI,
           selectExistingLocalStore:
-            !!window.electronAPI?.selectExistingLocalStore,
+            !!globalThis.electronAPI?.selectExistingLocalStore,
         });
 
         return { error: errorMsg, isValid: false };
@@ -153,11 +153,12 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     );
 
     const handleChooseExistingStore = useCallback(async () => {
-      isDev && console.debug("electronAPI available:", !!window.electronAPI);
+      isDev &&
+        console.debug("electronAPI available:", !!globalThis.electronAPI);
       isDev &&
         console.debug(
           "selectExistingLocalStore method available:",
-          !!window.electronAPI?.selectExistingLocalStore,
+          !!globalThis.electronAPI?.selectExistingLocalStore,
         );
 
       const validation = validateElectronAPI();
@@ -171,7 +172,8 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
 
       try {
         isDev && console.debug("Calling selectExistingLocalStore...");
-        const result = await window.electronAPI.selectExistingLocalStore?.();
+        const result =
+          await globalThis.electronAPI.selectExistingLocalStore?.();
         isDev && console.debug("selectExistingLocalStore result:", result);
 
         if (result?.success && result.path) {
@@ -325,7 +327,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
                   className="bg-surface-4 text-text-primary px-4 py-2 rounded"
                   onClick={() => {
                     if (state.isInitializing) {
-                      const confirmed = window.confirm(
+                      const confirmed = globalThis.confirm(
                         "Initialization is in progress. Closing now may leave an incomplete database. Are you sure?",
                       );
                       if (!confirmed) return;

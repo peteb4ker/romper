@@ -84,11 +84,11 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   const handleSelectDirectory = async () => {
     setIsSelecting(true);
     try {
-      if (!window.electronAPI?.selectLocalStorePath) {
+      if (!globalThis.electronAPI?.selectLocalStorePath) {
         throw new Error("Directory selection not available");
       }
 
-      const path = await window.electronAPI.selectLocalStorePath();
+      const path = await globalThis.electronAPI.selectLocalStorePath();
       if (path && isMountedRef.current) {
         setSelectedPath(path);
         await validatePath(path);
@@ -108,11 +108,11 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   const validatePath = async (path: string) => {
     setIsValidating(true);
     try {
-      if (!window.electronAPI?.validateLocalStore) {
+      if (!globalThis.electronAPI?.validateLocalStore) {
         throw new Error("Validation API not available");
       }
 
-      const result = await window.electronAPI.validateLocalStore(path);
+      const result = await globalThis.electronAPI.validateLocalStore(path);
       if (isMountedRef.current) {
         setValidationResult({
           error: result.error || undefined,
@@ -162,8 +162,8 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   };
 
   const handleExitApp = () => {
-    if (window.electronAPI?.closeApp) {
-      window.electronAPI.closeApp();
+    if (globalThis.electronAPI?.closeApp) {
+      globalThis.electronAPI.closeApp();
     } else {
       // Fallback for development or if API is not available
       window.close();

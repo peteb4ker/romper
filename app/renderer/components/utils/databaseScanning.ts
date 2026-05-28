@@ -287,7 +287,7 @@ async function processSingleWAVAnalysis(
   kitName: string,
   result: DatabaseScanResult,
 ): Promise<void> {
-  const samples = await window.electronAPI?.getAllSamplesForKit?.(kitName);
+  const samples = await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
   if (!samples?.success || !samples.data) {
     result.errors.push({
       error: `Could not retrieve samples for kit ${kitName}`,
@@ -307,7 +307,7 @@ async function processSingleWAVAnalysis(
     return;
   }
 
-  const updateResult = await window.electronAPI?.updateSampleMetadata?.(
+  const updateResult = await globalThis.electronAPI?.updateSampleMetadata?.(
     matchingSample.id,
     {
       wav_bit_depth: analysis.bitDepth,

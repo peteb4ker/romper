@@ -111,12 +111,12 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     let cancelled = false;
 
     // Use secure API with kit/voice/slot identifiers
-    if (!window.electronAPI?.getSampleAudioBuffer) {
+    if (!globalThis.electronAPI?.getSampleAudioBuffer) {
       if (onError) onError("Sample audio buffer API not available");
       return;
     }
 
-    window.electronAPI
+    globalThis.electronAPI
       .getSampleAudioBuffer(kitName, voiceNumber, slotNumber)
       .then(async (arrayBuffer: ArrayBuffer | null) => {
         if (cancelled) return;
@@ -135,7 +135,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
             // Ignore close errors
           }
         }
-        const ctx = new window.AudioContext();
+        const ctx = new globalThis.AudioContext();
         audioCtxRef.current = ctx;
         ctx.decodeAudioData(arrayBuffer.slice(0), (buf) => {
           setAudioBuffer(buf);

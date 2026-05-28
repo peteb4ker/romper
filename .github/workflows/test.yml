@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+      # TEMP: run the full analysis (incl. SonarCloud scan) on this diagnostics
+      # branch as a push event, so the jasmin hang can be diagnosed off main.
+      - chore/jasmin-stacktrace-diagnostics
   pull_request:
     branches:
       - "**"

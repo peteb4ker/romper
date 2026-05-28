@@ -58,7 +58,7 @@ export interface VoiceVuState {
 interface UseLedVisualizationReturn {
   addRipple: (col: number, row: number) => void;
   clearMousePosition: () => void;
-  ledRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
+  ledRefs: React.RefObject<(HTMLDivElement | null)[]>;
   setMousePosition: (col: number, row: number) => void;
 }
 
@@ -233,7 +233,7 @@ export function updatePeakState(state: VoiceVuState, barHeight: number): void {
 }
 
 export function useLedVisualization(
-  isHoveredRef: React.MutableRefObject<boolean>,
+  isHoveredRef: React.RefObject<boolean>,
 ): UseLedVisualizationReturn {
   const ledRefs = useRef<(HTMLDivElement | null)[]>([]);
   const mouseRef = useRef<{ col: number; row: number } | null>(null);

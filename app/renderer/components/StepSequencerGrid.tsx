@@ -1,9 +1,9 @@
 import {
-  NumberCircleOne,
-  Repeat,
-  Shuffle,
-  SpeakerSimpleHigh,
-  SpeakerSimpleSlash,
+  NumberCircleOneIcon,
+  RepeatIcon,
+  ShuffleIcon,
+  SpeakerSimpleHighIcon,
+  SpeakerSimpleSlashIcon,
 } from "@phosphor-icons/react";
 import React from "react";
 import ReactDOM from "react-dom";
@@ -20,9 +20,9 @@ import {
 import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
 
 const SAMPLE_MODE_ICONS: Record<SampleMode, React.ReactNode> = {
-  first: <NumberCircleOne size={14} weight="bold" />,
-  random: <Shuffle size={14} weight="bold" />,
-  "round-robin": <Repeat size={14} weight="bold" />,
+  first: <NumberCircleOneIcon size={14} weight="bold" />,
+  random: <ShuffleIcon size={14} weight="bold" />,
+  "round-robin": <RepeatIcon size={14} weight="bold" />,
 };
 
 const SAMPLE_MODE_CYCLE: SampleMode[] = ["first", "random", "round-robin"];
@@ -388,13 +388,16 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                 type="button"
               >
                 {isMuted ? (
-                  <SpeakerSimpleSlash
+                  <SpeakerSimpleSlashIcon
                     className="text-amber-500"
                     size={14}
                     weight="bold"
                   />
                 ) : (
-                  <SpeakerSimpleHigh className="text-text-tertiary" size={14} />
+                  <SpeakerSimpleHighIcon
+                    className="text-text-tertiary"
+                    size={14}
+                  />
                 )}
               </button>
               <input

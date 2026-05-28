@@ -1,8 +1,8 @@
 import {
-  ArrowsClockwise,
-  CheckCircle,
-  Warning,
-  X,
+  ArrowsClockwiseIcon,
+  CheckCircleIcon,
+  WarningIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import { KitValidationError } from "@romper/shared/db/schema.js";
 import React from "react";
@@ -97,9 +97,9 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
             {validationResult?.isValid ? (
-              <CheckCircle className="text-accent-success" size={24} />
+              <CheckCircleIcon className="text-accent-success" size={24} />
             ) : (
-              <Warning className="text-accent-warning" size={24} />
+              <WarningIcon className="text-accent-warning" size={24} />
             )}
             Local Store Validation Results
           </h2>
@@ -108,7 +108,7 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
             className="text-text-tertiary hover:text-text-primary"
             onClick={onClose}
           >
-            <X size={24} />
+            <XIcon size={24} />
           </button>
         </div>
 
@@ -201,7 +201,7 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
                         </>
                       ) : (
                         <>
-                          <ArrowsClockwise size={16} />
+                          <ArrowsClockwiseIcon size={16} />
                           Rescan Selected Kits
                         </>
                       )}

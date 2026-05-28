@@ -1,4 +1,4 @@
-import { Check, PencilSimple, X } from "@phosphor-icons/react";
+import { CheckIcon, PencilSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
@@ -56,14 +56,14 @@ export function useVoicePanelUI({
               onClick={voiceNameEditorHook.handleSave}
               title="Save"
             >
-              <Check size={16} />
+              <CheckIcon size={16} />
             </button>
             <button
               className="ml-1 text-accent-danger"
               onClick={voiceNameEditorHook.handleCancel}
               title="Cancel"
             >
-              <X size={16} />
+              <XIcon size={16} />
             </button>
           </>
         ) : (
@@ -84,7 +84,7 @@ export function useVoicePanelUI({
                 onClick={voiceNameEditorHook.startEditing}
                 title="Edit voice name"
               >
-                <PencilSimple size={16} />
+                <PencilSimpleIcon size={16} />
               </button>
             )}
           </>

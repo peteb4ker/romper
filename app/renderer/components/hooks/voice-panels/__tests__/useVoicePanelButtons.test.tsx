@@ -6,9 +6,9 @@ import { useVoicePanelButtons } from "../useVoicePanelButtons";
 
 // Mock @phosphor-icons/react
 vi.mock("@phosphor-icons/react", () => ({
-  Play: () => <span data-testid="play-icon">Play</span>,
-  Stop: () => <span data-testid="square-icon">Square</span>,
-  Trash: () => <span data-testid="trash-icon">Trash</span>,
+  PlayIcon: () => <span data-testid="play-icon">Play</span>,
+  StopIcon: () => <span data-testid="square-icon">Square</span>,
+  TrashIcon: () => <span data-testid="trash-icon">Trash</span>,
 }));
 
 describe("useVoicePanelButtons", () => {

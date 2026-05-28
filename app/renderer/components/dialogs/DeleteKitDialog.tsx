@@ -1,4 +1,4 @@
-import { Info, Trash, Warning } from "@phosphor-icons/react";
+import { InfoIcon, TrashIcon, WarningIcon } from "@phosphor-icons/react";
 import React from "react";
 
 interface DeleteKitDialogProps {
@@ -24,13 +24,13 @@ const DeleteKitDialog: React.FC<DeleteKitDialogProps> = ({
     >
       <div className="flex items-center gap-1.5">
         {hasSamples ? (
-          <Warning
+          <WarningIcon
             className="text-accent-warning flex-shrink-0"
             size={14}
             weight="bold"
           />
         ) : (
-          <Info
+          <InfoIcon
             className="text-text-tertiary flex-shrink-0"
             size={14}
             weight="bold"
@@ -59,7 +59,7 @@ const DeleteKitDialog: React.FC<DeleteKitDialogProps> = ({
           disabled={isDeleting}
           onClick={onConfirm}
         >
-          <Trash size={13} />
+          <TrashIcon size={13} />
           {isDeleting ? "Deleting..." : "Delete"}
         </button>
         <button

@@ -1,4 +1,9 @@
-import { Database, Monitor, Moon, Sun } from "@phosphor-icons/react";
+import {
+  DatabaseIcon,
+  MonitorIcon,
+  MoonIcon,
+  SunIcon,
+} from "@phosphor-icons/react";
 import React from "react";
 
 import { useSettings } from "../utils/SettingsContext";
@@ -21,12 +26,12 @@ const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
 
   const getThemeIcon = () => {
     if (themeMode === "system") {
-      return <Monitor size={16} />;
+      return <MonitorIcon size={16} />;
     }
     if (isDarkMode) {
-      return <Sun size={16} />;
+      return <SunIcon size={16} />;
     }
-    return <Moon size={16} />;
+    return <MoonIcon size={16} />;
   };
   return (
     <div
@@ -35,7 +40,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
     >
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1">
-          <Database size={16} /> Local Store:{" "}
+          <DatabaseIcon size={16} /> Local Store:{" "}
           <span className="font-mono">
             {localStorePath || "Not configured"}
           </span>

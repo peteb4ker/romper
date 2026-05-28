@@ -1,4 +1,4 @@
-import { GearSix, X } from "@phosphor-icons/react";
+import { GearSixIcon, XIcon } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
@@ -80,7 +80,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-subtle">
           <div className="flex items-center gap-2">
-            <GearSix size={18} />
+            <GearSixIcon size={18} />
             <h2
               className="text-lg font-semibold text-text-primary"
               id="preferences-title"
@@ -93,7 +93,7 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
             className="p-1 rounded hover:bg-surface-3 text-text-tertiary"
             onClick={onClose}
           >
-            <X size={18} />
+            <XIcon size={18} />
           </button>
         </div>
 

@@ -1,13 +1,13 @@
 import {
-  ArrowsClockwise,
-  Check,
-  CheckCircle,
-  DownloadSimple,
-  Folder,
-  HardDrive,
-  Spinner,
-  Trash,
-  X,
+  ArrowsClockwiseIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  DownloadSimpleIcon,
+  FolderIcon,
+  HardDriveIcon,
+  SpinnerIcon,
+  TrashIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
 
@@ -113,7 +113,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
         }}
       >
         <div className="flex items-center gap-2">
-          <DownloadSimple
+          <DownloadSimpleIcon
             className="text-accent-primary"
             size={16}
             weight="bold"
@@ -128,7 +128,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           disabled={isLoading}
           onClick={handleClose}
         >
-          <X size={16} />
+          <XIcon size={16} />
         </button>
       </div>
 
@@ -140,14 +140,14 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               <span className="text-text-secondary font-medium">
                 {syncProgress.status === "preparing" && (
                   <span className="flex items-center gap-1">
-                    <Spinner className="animate-spin" size={12} />
+                    <SpinnerIcon className="animate-spin" size={12} />
                     Preparing...
                   </span>
                 )}
                 {(syncProgress.status === "copying" ||
                   syncProgress.status === "converting") && (
                   <span className="flex items-center gap-1">
-                    <Spinner className="animate-spin" size={12} />
+                    <SpinnerIcon className="animate-spin" size={12} />
                     Writing{" "}
                     {syncProgress.currentKitName && (
                       <span
@@ -162,7 +162,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 {syncProgress.status === "finalizing" && "Finalizing..."}
                 {syncProgress.status === "completed" && (
                   <span className="text-accent-success flex items-center gap-1">
-                    <CheckCircle size={12} weight="fill" />
+                    <CheckCircleIcon size={12} weight="fill" />
                     Write Complete
                   </span>
                 )}
@@ -242,7 +242,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
         {/* Loading State */}
         {isGeneratingSummary && (
           <div className="px-4 py-6 flex items-center justify-center gap-2 text-text-tertiary text-sm">
-            <Spinner className="animate-spin" size={16} />
+            <SpinnerIcon className="animate-spin" size={16} />
             <span>Scanning kits...</span>
           </div>
         )}
@@ -316,7 +316,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 : "border-accent-primary/30 bg-accent-primary/5"
             }`}
           >
-            <HardDrive
+            <HardDriveIcon
               className={
                 localSdCardPath ? "text-text-tertiary" : "text-accent-primary"
               }
@@ -342,7 +342,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               disabled={isLoading}
               onClick={handleSdCardSelect}
             >
-              <Folder size={11} />
+              <FolderIcon size={11} />
               {localSdCardPath ? "Change" : "Select"}
             </button>
           </div>
@@ -363,11 +363,11 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             />
             <div className="w-3.5 h-3.5 rounded-sm border border-border-default bg-surface-3 shrink-0 flex items-center justify-center peer-checked:bg-accent-danger peer-checked:border-accent-danger transition-colors">
               {wipeSdCard && (
-                <Check className="text-white" size={10} weight="bold" />
+                <CheckIcon className="text-white" size={10} weight="bold" />
               )}
             </div>
             <span className="text-[11px] text-text-tertiary flex items-center gap-1 group-hover:text-text-secondary transition-colors">
-              <Trash size={11} />
+              <TrashIcon size={11} />
               Clear SD card before writing
             </span>
           </label>
@@ -403,7 +403,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 disabled={isLoading}
                 onClick={handleConfirm}
               >
-                <ArrowsClockwise size={12} weight="bold" />
+                <ArrowsClockwiseIcon size={12} weight="bold" />
                 Retry
               </button>
             )}
@@ -426,12 +426,12 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             >
               {isLoading ? (
                 <>
-                  <Spinner className="animate-spin" size={12} />
+                  <SpinnerIcon className="animate-spin" size={12} />
                   Writing...
                 </>
               ) : (
                 <>
-                  <DownloadSimple size={12} weight="bold" />
+                  <DownloadSimpleIcon size={12} weight="bold" />
                   {syncProgress?.status === "error"
                     ? "Start New Write"
                     : "Start Write"}

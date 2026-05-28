@@ -1,4 +1,4 @@
-import { Play, Stop, Trash } from "@phosphor-icons/react";
+import { PlayIcon, StopIcon, TrashIcon } from "@phosphor-icons/react";
 import React from "react";
 
 export interface UseVoicePanelButtonsOptions {
@@ -39,7 +39,7 @@ export function useVoicePanelButtons({
             onClick={() => onStop(voice, sampleName)}
             style={buttonStyle}
           >
-            <Stop size={14} />
+            <StopIcon size={14} />
           </button>
         );
       }
@@ -51,7 +51,7 @@ export function useVoicePanelButtons({
           onClick={() => onPlay(voice, sampleName)}
           style={buttonStyle}
         >
-          <Play size={14} />
+          <PlayIcon size={14} />
         </button>
       );
     },
@@ -77,7 +77,7 @@ export function useVoicePanelButtons({
         }}
         title="Delete sample"
       >
-        <Trash size={14} />
+        <TrashIcon size={14} />
       </button>
     ),
     [sampleActionsHook],

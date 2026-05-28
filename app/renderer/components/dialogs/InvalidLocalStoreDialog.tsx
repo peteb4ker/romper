@@ -1,4 +1,8 @@
-import { ArrowsClockwise, Folder, Warning } from "@phosphor-icons/react";
+import {
+  ArrowsClockwiseIcon,
+  FolderIcon,
+  WarningIcon,
+} from "@phosphor-icons/react";
 import React, { useEffect, useRef, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
@@ -170,7 +174,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
     if (isValidating) {
       return (
         <div className="flex items-center space-x-2 text-accent-primary">
-          <ArrowsClockwise className="animate-spin" size={16} />
+          <ArrowsClockwiseIcon className="animate-spin" size={16} />
           <span className="text-sm">Validating directory...</span>
         </div>
       );
@@ -201,7 +205,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75">
       <div className="mx-4 w-full max-w-md rounded-lg bg-surface-2 border border-border-subtle p-6 shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
         <div className="mb-4 flex items-center space-x-3">
-          <Warning className="text-accent-danger" size={24} />
+          <WarningIcon className="text-accent-danger" size={24} />
           <h2 className="text-lg font-semibold text-text-primary">
             Invalid Local Store
           </h2>
@@ -230,7 +234,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
         <div className="mb-4">
           <FilePickerButton
             disabled={isUpdating}
-            icon={<Folder size={16} />}
+            icon={<FolderIcon size={16} />}
             isSelecting={isSelecting}
             onClick={handleSelectDirectory}
           >

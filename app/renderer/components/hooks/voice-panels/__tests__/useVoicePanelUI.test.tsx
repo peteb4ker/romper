@@ -7,9 +7,9 @@ import { useVoicePanelUI } from "../useVoicePanelUI";
 
 // Mock @phosphor-icons/react
 vi.mock("@phosphor-icons/react", () => ({
-  Check: () => <span data-testid="check-icon">Check</span>,
-  PencilSimple: () => <span data-testid="edit-icon">Edit</span>,
-  X: () => <span data-testid="x-icon">X</span>,
+  CheckIcon: () => <span data-testid="check-icon">Check</span>,
+  PencilSimpleIcon: () => <span data-testid="edit-icon">Edit</span>,
+  XIcon: () => <span data-testid="x-icon">X</span>,
 }));
 
 // Mock the shared utility

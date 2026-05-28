@@ -1,6 +1,6 @@
 import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
 
-import { Link } from "@phosphor-icons/react";
+import { LinkIcon } from "@phosphor-icons/react";
 import React, { useState } from "react";
 
 import type { SampleData, VoiceSamples } from "./kitTypes";
@@ -454,7 +454,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     }}
                     title="Stereo link"
                   >
-                    <Link size={14} />
+                    <LinkIcon size={14} />
                   </div>
                 )}
               {/* Chain icon — right edge of panel, always visible */}
@@ -470,7 +470,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     title="Click to link stereo channels"
                     type="button"
                   >
-                    <Link size={14} />
+                    <LinkIcon size={14} />
                   </button>
                 </div>
               )}

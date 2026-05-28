@@ -1,4 +1,4 @@
-import { FolderOpen } from "@phosphor-icons/react";
+import { FolderOpenIcon } from "@phosphor-icons/react";
 import React, { useState } from "react";
 
 import FilePickerButton from "../utils/FilePickerButton";
@@ -59,7 +59,7 @@ const WizardTargetStep: React.FC<WizardTargetStepProps> = ({
         <FilePickerButton
           className="bg-surface-3 text-text-primary px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-accent-primary"
           data-testid="wizard-target-browse-btn"
-          icon={<FolderOpen size={14} />}
+          icon={<FolderOpenIcon size={14} />}
           isSelecting={isSelecting}
           onClick={handleChooseFolder}
         >

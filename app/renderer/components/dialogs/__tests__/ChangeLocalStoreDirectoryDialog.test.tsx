@@ -33,11 +33,11 @@ vi.mock("../../utils/FilePickerButton", () => ({
 
 // Mock @phosphor-icons/react
 vi.mock("@phosphor-icons/react", () => ({
-  ArrowsClockwise: vi.fn(() => <div data-testid="refresh">Refresh</div>),
-  CheckCircle: vi.fn(() => <div data-testid="check-circle">Check</div>),
-  Folder: vi.fn(() => <div data-testid="folder">Folder</div>),
-  Warning: vi.fn(() => <div data-testid="alert-triangle">Alert</div>),
-  X: vi.fn(() => <div data-testid="close-x">X</div>),
+  ArrowsClockwiseIcon: vi.fn(() => <div data-testid="refresh">Refresh</div>),
+  CheckCircleIcon: vi.fn(() => <div data-testid="check-circle">Check</div>),
+  FolderIcon: vi.fn(() => <div data-testid="folder">Folder</div>),
+  WarningIcon: vi.fn(() => <div data-testid="alert-triangle">Alert</div>),
+  XIcon: vi.fn(() => <div data-testid="close-x">X</div>),
 }));
 
 // Setup centralized electronAPI mock

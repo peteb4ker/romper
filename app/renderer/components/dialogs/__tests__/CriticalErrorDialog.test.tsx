@@ -6,7 +6,7 @@ import CriticalErrorDialog from "../CriticalErrorDialog";
 
 // Mock @phosphor-icons/react
 vi.mock("@phosphor-icons/react", () => ({
-  Warning: vi.fn(() => <div data-testid="alert-triangle">Alert</div>),
+  WarningIcon: vi.fn(() => <div data-testid="alert-triangle">Alert</div>),
 }));
 
 describe("CriticalErrorDialog", () => {

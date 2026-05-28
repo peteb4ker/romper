@@ -1,9 +1,9 @@
 import {
-  ArrowsCounterClockwise,
-  Folder,
-  MicrophoneStage,
-  PianoKeys,
-  Sparkle,
+  ArrowsCounterClockwiseIcon,
+  FolderIcon,
+  MicrophoneStageIcon,
+  PianoKeysIcon,
+  SparkleIcon,
 } from "@phosphor-icons/react";
 import React from "react";
 
@@ -51,7 +51,7 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
       );
     case "fx":
       return (
-        <Sparkle
+        <SparkleIcon
           className={`text-text-secondary ${className}`}
           size={iconSize}
           weight="fill"
@@ -59,14 +59,14 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
       );
     case "loop":
       return (
-        <ArrowsCounterClockwise
+        <ArrowsCounterClockwiseIcon
           className={`text-text-secondary ${className}`}
           size={iconSize}
         />
       );
     case "mic":
       return (
-        <MicrophoneStage
+        <MicrophoneStageIcon
           className={`text-text-secondary ${className}`}
           size={iconSize}
           weight="fill"
@@ -74,7 +74,7 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
       );
     case "piano":
       return (
-        <PianoKeys
+        <PianoKeysIcon
           className={`text-text-secondary ${className}`}
           size={iconSize}
           weight="fill"
@@ -82,7 +82,7 @@ export const KitIconRenderer: React.FC<KitIconRendererProps> = ({
       );
     default:
       return (
-        <Folder
+        <FolderIcon
           className={`text-text-secondary ${className}`}
           size={iconSize}
         />

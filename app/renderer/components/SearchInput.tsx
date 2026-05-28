@@ -1,4 +1,8 @@
-import { CircleNotch, MagnifyingGlass, X } from "@phosphor-icons/react";
+import {
+  CircleNotchIcon,
+  MagnifyingGlassIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import React, { useEffect, useRef } from "react";
 
 export interface SearchActions {
@@ -59,7 +63,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
     <div className={`relative ${className}`}>
       <div className="relative flex items-center">
         {/* Search Icon */}
-        <MagnifyingGlass
+        <MagnifyingGlassIcon
           aria-hidden="true"
           className="absolute left-3 text-text-tertiary pointer-events-none z-10"
           size={16}
@@ -89,7 +93,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
           {(() => {
             if (isSearching) {
               return (
-                <CircleNotch
+                <CircleNotchIcon
                   aria-label="Searching..."
                   className="text-accent-primary animate-spin"
                   size={16}
@@ -105,7 +109,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
                   title="Clear search (Esc)"
                   type="button"
                 >
-                  <X size={16} />
+                  <XIcon size={16} />
                 </button>
               );
             }

@@ -1,8 +1,8 @@
 import {
-  BookmarkSimple,
-  Copy,
-  LockSimple,
-  MusicNote,
+  BookmarkSimpleIcon,
+  CopyIcon,
+  LockSimpleIcon,
+  MusicNoteIcon,
   TrashIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
@@ -345,7 +345,7 @@ const KitGridItem = React.memo(
                     data-testid="lock-icon"
                     title="Factory kit (read-only)"
                   >
-                    <LockSimple
+                    <LockSimpleIcon
                       className="text-text-secondary"
                       size={15}
                       weight="bold"
@@ -388,7 +388,7 @@ const KitGridItem = React.memo(
                   className="px-1 py-0.5 text-xs bg-voice-3-muted text-voice-3 rounded border border-voice-3/30 font-mono truncate inline-flex items-center gap-0.5"
                   title={`Artist: ${kitData.searchMatch.matchedArtist}`}
                 >
-                  <MusicNote data-testid="icon-music-note" size={13} />{" "}
+                  <MusicNoteIcon data-testid="icon-music-note" size={13} />{" "}
                   {kitData.searchMatch.matchedArtist}
                 </span>
               </div>
@@ -417,7 +417,7 @@ const KitGridItem = React.memo(
                     isFavorite ? "Remove from favorites" : "Add to favorites"
                   }
                 >
-                  <BookmarkSimple
+                  <BookmarkSimpleIcon
                     className={`${isFavorite ? "" : "opacity-30"} ${isPulsing ? "animate-favorite-pulse" : ""}`}
                     size={17}
                     weight="fill"
@@ -431,7 +431,7 @@ const KitGridItem = React.memo(
                   ref={duplicateButtonRef}
                   title="Duplicate kit"
                 >
-                  <Copy size={15} />
+                  <CopyIcon size={15} />
                 </button>
               )}
               {canDelete && (

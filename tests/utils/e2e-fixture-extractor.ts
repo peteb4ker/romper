@@ -6,6 +6,7 @@
  */
 
 import fs from "fs-extra";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as tar from "tar";
@@ -116,8 +117,8 @@ export async function extractE2EFixture(): Promise<E2ETestEnvironment> {
 
   // Create temporary directories
   const testId = Date.now();
-  const localStorePath = path.join("/tmp", `romper-e2e-local-${testId}`);
-  const tempSdcardPath = path.join("/tmp", `romper-e2e-sdcard-${testId}`);
+  const localStorePath = path.join(os.tmpdir(), `romper-e2e-local-${testId}`);
+  const tempSdcardPath = path.join(os.tmpdir(), `romper-e2e-sdcard-${testId}`);
 
   await fs.ensureDir(localStorePath);
   await fs.ensureDir(tempSdcardPath);

@@ -3,6 +3,7 @@
 
 import { _electron as electron, expect, test } from "@playwright/test";
 import fs from "fs-extra";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -144,7 +145,10 @@ async function runWizardTest(
   }
 
   // 2. target - generate dynamic path since ROMPER_LOCAL_PATH is empty
-  const targetPath = path.join("/tmp", `romper-e2e-${source}-${Date.now()}`);
+  const targetPath = path.join(
+    os.tmpdir(),
+    `romper-e2e-${source}-${Date.now()}`,
+  );
   await window.waitForSelector("#local-store-path-input", { state: "visible" });
   await window.fill("#local-store-path-input", targetPath);
 

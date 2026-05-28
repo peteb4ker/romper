@@ -1,4 +1,6 @@
 import { defineConfig } from "@playwright/test";
+import os from "node:os";
+import path from "node:path";
 
 export default defineConfig({
   expect: {
@@ -33,7 +35,8 @@ export default defineConfig({
           env: {
             ...process.env,
             ROMPER_SDCARD_PATH:
-              process.env.ROMPER_SDCARD_PATH || "/tmp/e2e-sdcard",
+              process.env.ROMPER_SDCARD_PATH ||
+              path.join(os.tmpdir(), "e2e-sdcard"),
             // Ensure display is set for headless environments
             ...(process.env.CI && !process.env.DISPLAY
               ? { DISPLAY: ":99" }

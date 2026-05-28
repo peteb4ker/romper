@@ -453,6 +453,11 @@ describe("Async State Management - Unit Tests", () => {
           // Expected cancellation error - do nothing
         }
       });
+
+      // The debounced operation fired exactly once, and cancelling during
+      // execution leaves the hook in a settled (not-loading) state.
+      expect(mockOperation).toHaveBeenCalledTimes(1);
+      expect(result.current.loading).toBe(false);
     });
   });
 });

@@ -49,13 +49,13 @@ export function useTriggerConditions({
           kitName,
           conditions,
         );
-        if (!result.success) {
+        if (result.success) {
+          onSaved?.();
+        } else {
           console.error("Failed to save trigger conditions:", result.error);
           setTriggerConditionsState(
             ensureValidTriggerConditions(initialConditions),
           );
-        } else {
-          onSaved?.();
         }
       } catch (e) {
         console.error("Exception saving trigger conditions:", e);

@@ -123,9 +123,9 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     // Helper function to validate electronAPI availability
     const validateElectronAPI = useCallback(() => {
       if (!window.electronAPI?.selectExistingLocalStore) {
-        const errorMsg = !window.electronAPI
-          ? "electronAPI not available (app may need restart)"
-          : "selectExistingLocalStore method not found (preload issue)";
+        const errorMsg = window.electronAPI
+          ? "selectExistingLocalStore method not found (preload issue)"
+          : "electronAPI not available (app may need restart)";
 
         console.error("Debug info:", {
           availableMethods: window.electronAPI

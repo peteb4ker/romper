@@ -19,8 +19,8 @@ export class SampleSlotService {
 
     // Find the next available slot (first gap or after last sample)
     let nextAvailableSlot = 0; // 0-based slot indexing
-    for (let i = 0; i < voiceSamples.length; i++) {
-      if (voiceSamples[i].slot_number === nextAvailableSlot) {
+    for (const voiceSample of voiceSamples) {
+      if (voiceSample.slot_number === nextAvailableSlot) {
         nextAvailableSlot++;
       } else {
         // Found a gap, this is the next available slot
@@ -113,8 +113,8 @@ export class SampleSlotService {
 
     // Find the next available slot (first gap or after last sample)
     let nextAvailableSlot = 0; // 0-based slot indexing
-    for (let i = 0; i < voiceSamples.length; i++) {
-      if (voiceSamples[i].slot_number === nextAvailableSlot) {
+    for (const voiceSample of voiceSamples) {
+      if (voiceSample.slot_number === nextAvailableSlot) {
         nextAvailableSlot++;
       } else {
         // Found a gap, this is the next available slot

@@ -92,9 +92,8 @@ export function useSampleProcessing({
       options: { explicitSlot?: number; replaceExisting: boolean },
     ) => {
       const targetSlot =
-        options.explicitSlot !== undefined
-          ? options.explicitSlot
-          : calculateTargetSlot(filePath, -1, droppedSlotNumber);
+        options.explicitSlot ??
+        calculateTargetSlot(filePath, -1, droppedSlotNumber);
 
       if (targetSlot < 0) {
         console.warn("No available slots - all slots are filled");

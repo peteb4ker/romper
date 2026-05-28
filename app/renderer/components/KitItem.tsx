@@ -46,7 +46,7 @@ const KitItem = React.memo(
         (sampleCounts?.[1] || 0) +
         (sampleCounts?.[2] || 0) +
         (sampleCounts?.[3] || 0);
-      const statusText = !isValid ? "Invalid kit" : `${totalSamples} samples`;
+      const statusText = isValid ? `${totalSamples} samples` : "Invalid kit";
       const ariaLabel = `Kit ${kit} - ${statusText}`;
 
       // Add data-testid to root element for unambiguous test selection

@@ -8,7 +8,7 @@ export const MAX_VELOCITY = 127;
 export function decodeStepPatternFromBlob(
   blob: null | Uint8Array,
 ): null | number[][] {
-  if (!blob || blob.length !== STEP_PATTERN_BLOB_SIZE) {
+  if (blob?.length !== STEP_PATTERN_BLOB_SIZE) {
     return null;
   }
 

@@ -271,13 +271,13 @@ class SyncService {
     const syncedKitNames = [...new Set(allFiles.map((file) => file.kitName))];
 
     const markSyncedResult = markKitsAsSynced(dbDir, syncedKitNames);
-    if (!markSyncedResult.success) {
-      console.warn("Failed to mark kits as synced:", markSyncedResult.error);
-    } else {
+    if (markSyncedResult.success) {
       logger.log(
         `Marked ${syncedKitNames.length} kits as synced:`,
         syncedKitNames,
       );
+    } else {
+      console.warn("Failed to mark kits as synced:", markSyncedResult.error);
     }
   }
 

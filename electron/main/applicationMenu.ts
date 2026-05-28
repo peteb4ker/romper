@@ -70,8 +70,9 @@ export function createApplicationMenu() {
           icon: menuIcons.changeLocalStore,
           label: "Change Local Store...",
         },
-        ...(process.platform !== "darwin"
-          ? [
+        ...(process.platform === "darwin"
+          ? []
+          : [
               { type: "separator" as const },
               {
                 accelerator: "Ctrl+,",
@@ -86,8 +87,7 @@ export function createApplicationMenu() {
               },
               { type: "separator" as const },
               { role: "quit" as const },
-            ]
-          : []),
+            ]),
       ],
     },
 
@@ -160,8 +160,9 @@ export function createApplicationMenu() {
           icon: menuIcons.rampleManual,
           label: "Rample Manual",
         },
-        ...(process.platform !== "darwin"
-          ? [
+        ...(process.platform === "darwin"
+          ? []
+          : [
               { type: "separator" as const },
               {
                 click: () => {
@@ -172,8 +173,7 @@ export function createApplicationMenu() {
                 },
                 label: "About Romper",
               },
-            ]
-          : []),
+            ]),
       ],
     },
   ];

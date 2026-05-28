@@ -42,9 +42,11 @@ export function useLocalStoreWizardFileOps({
       const kitFolders = getKitFolders(files);
       if (kitFolders.length === 0) {
         const nonHidden = files.filter((f) => !f.startsWith("."));
+        const overflow =
+          nonHidden.length > 5 ? ` (+${nonHidden.length - 5} more)` : "";
         const foundList =
           nonHidden.length > 0
-            ? `Found: ${nonHidden.slice(0, 5).join(", ")}${nonHidden.length > 5 ? ` (+${nonHidden.length - 5} more)` : ""}`
+            ? `Found: ${nonHidden.slice(0, 5).join(", ")}${overflow}`
             : "The folder is empty";
         return `No kit folders found in ${sdCardSourcePath}. ${foundList}. Expected folders named like A0, B1, Drum01 (uppercase letter followed by a number).`;
       }

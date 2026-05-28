@@ -202,13 +202,11 @@ const KitList = forwardRef<KitListHandle, KitListProps>(
         const idx = kitsToDisplay.findIndex(
           (k) => k?.name?.[0]?.toUpperCase() === bank,
         );
+        e.preventDefault();
         if (idx !== -1) {
           if (typeof onBankFocus === "function") onBankFocus(bank);
           if (onFocusKit) onFocusKit(kitsToDisplay[idx].name);
           setFocus(idx);
-          e.preventDefault();
-        } else {
-          e.preventDefault();
         }
       }
     };

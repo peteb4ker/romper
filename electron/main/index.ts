@@ -75,9 +75,7 @@ function createWindow() {
 
   win.on("close", () => {
     const windowStatePath = getWindowStatePath();
-    if (!win.isMaximized()) {
-      saveWindowState(win.getBounds(), win.isMaximized(), windowStatePath);
-    } else {
+    if (win.isMaximized()) {
       // Save maximized flag but keep previous bounds for restore
       try {
         const existing = fs.existsSync(windowStatePath)
@@ -90,6 +88,8 @@ function createWindow() {
       } catch {
         // Ignore
       }
+    } else {
+      saveWindowState(win.getBounds(), win.isMaximized(), windowStatePath);
     }
   });
 
@@ -133,53 +133,52 @@ function registerAllIpcHandlers(settings: InMemorySettings) {
 
 app.setName("Romper");
 
-app.whenReady().then(async () => {
-  logger.log("[Startup] App is starting...");
-  try {
-    logger.log("[Startup] App is ready. Configuring...");
-    createWindow();
-    createApplicationMenu();
-    registerMenuIpcHandlers();
-
-    // Load and validate settings
-    const settingsPath = getSettingsPath();
-    inMemorySettings = loadSettings(settingsPath);
-    inMemorySettings = validateAndFixLocalStore(
-      inMemorySettings,
-      settingsPath,
-      process.env.ROMPER_LOCAL_PATH,
-    );
-
-    // Final summary of local store configuration
-    logger.log("[Startup] Final local store configuration:");
-    if (process.env.ROMPER_LOCAL_PATH) {
-      logger.log(
-        "  - Using environment override:",
-        process.env.ROMPER_LOCAL_PATH,
-      );
-    } else if (inMemorySettings.localStorePath) {
-      logger.log(
-        "  - Using settings file path:",
-        inMemorySettings.localStorePath,
-      );
-    } else {
-      logger.log("  - No local store configured - wizard will be shown");
-    }
-
-    // Register IPC handlers
-    registerAllIpcHandlers(inMemorySettings);
-    createApplicationMenu();
-  } catch (error: unknown) {
-    console.error(
-      "[Startup] Error during app initialization:",
-      error instanceof Error ? error.message : String(error),
-    );
-  }
-});
-
 process.on("unhandledRejection", (reason: unknown) => {
   console.error(
     "Unhandled Promise Rejection:",
     reason instanceof Error ? reason.message : String(reason),
   );
 });
+
+await app.whenReady();
+logger.log("[Startup] App is starting...");
+try {
+  logger.log("[Startup] App is ready. Configuring...");
+  createWindow();
+  createApplicationMenu();
+  registerMenuIpcHandlers();
+
+  // Load and validate settings
+  const settingsPath = getSettingsPath();
+  inMemorySettings = loadSettings(settingsPath);
+  inMemorySettings = validateAndFixLocalStore(
+    inMemorySettings,
+    settingsPath,
+    process.env.ROMPER_LOCAL_PATH,
+  );
+
+  // Final summary of local store configuration
+  logger.log("[Startup] Final local store configuration:");
+  if (process.env.ROMPER_LOCAL_PATH) {
+    logger.log(
+      "  - Using environment override:",
+      process.env.ROMPER_LOCAL_PATH,
+    );
+  } else if (inMemorySettings.localStorePath) {
+    logger.log(
+      "  - Using settings file path:",
+      inMemorySettings.localStorePath,
+    );
+  } else {
+    logger.log("  - No local store configured - wizard will be shown");
+  }
+
+  // Register IPC handlers
+  registerAllIpcHandlers(inMemorySettings);
+  createApplicationMenu();
+} catch (error: unknown) {
+  console.error(
+    "[Startup] Error during app initialization:",
+    error instanceof Error ? error.message : String(error),
+  );
+}

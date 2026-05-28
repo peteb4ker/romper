@@ -1,17 +1,6 @@
 // Drizzle ORM implementation - Main entry point
 // Core functions now delegate to extracted modules for better organization
 
-import type {
-  DbResult,
-  KitWithRelations,
-  NewKit,
-  NewSample,
-  Sample,
-} from "@romper/shared/db/schema.js";
-
-// Re-export types for convenience
-export type { DbResult, KitWithRelations, NewKit, NewSample, Sample };
-
 // Import and re-export CRUD operations
 export {
   addKit,
@@ -43,9 +32,9 @@ export {
   updateVoiceStereoMode,
   updateVoiceVolume,
 } from "./operations/crudOperations.js";
+
 // Import and re-export sample management operations
 export { moveSample } from "./operations/sampleManagementOps.js";
-
 // Import and re-export database utilities
 export { DB_FILENAME } from "./utils/dbUtilities.js";
 
@@ -56,3 +45,12 @@ export {
   validateDatabaseSchema,
   withDb,
 } from "./utils/dbUtilities.js";
+
+// Re-export types for convenience
+export type {
+  DbResult,
+  KitWithRelations,
+  NewKit,
+  NewSample,
+  Sample,
+} from "@romper/shared/db/schema.js";

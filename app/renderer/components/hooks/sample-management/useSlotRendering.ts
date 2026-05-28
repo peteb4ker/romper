@@ -32,7 +32,7 @@ export function useSlotRendering({
   // Helper function to calculate render slots
   const calculateRenderSlots = useCallback(() => {
     const lastSampleIndex = samples
-      .map((sample, index) => (sample !== "" ? index : -1))
+      .map((sample, index) => (sample === "" ? -1 : index))
       .reduce((max, current) => Math.max(max, current), -1);
     const nextAvailableSlot = lastSampleIndex + 1;
 

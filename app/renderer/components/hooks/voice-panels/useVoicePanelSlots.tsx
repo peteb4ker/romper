@@ -1,12 +1,11 @@
 import React from "react";
 
-import { MAX_SLOTS_PER_VOICE } from "./constants";
 import { BaseVoicePanelOptions } from "./types";
 import { useVoicePanelDragHandlers } from "./useVoicePanelDragHandlers";
 import { useVoicePanelSlotRendering } from "./useVoicePanelSlotRendering";
 
 // Re-export constant for backward compatibility
-export { MAX_SLOTS_PER_VOICE };
+export { MAX_SLOTS_PER_VOICE } from "./constants";
 
 export interface DragHandlers {
   onDragEnd?: (e: React.DragEvent) => void;

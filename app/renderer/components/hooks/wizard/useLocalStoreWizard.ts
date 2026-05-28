@@ -7,13 +7,13 @@ import { useLocalStoreWizardFileOps } from "./useLocalStoreWizardFileOps";
 import { useLocalStoreWizardScanning } from "./useLocalStoreWizardScanning";
 import {
   type LocalStoreSource,
-  type LocalStoreWizardState,
   type ProgressEvent,
   useLocalStoreWizardState,
 } from "./useLocalStoreWizardState";
 
 // Re-export types for convenience
-export type { LocalStoreSource, LocalStoreWizardState, ProgressEvent };
+export type { LocalStoreSource, ProgressEvent };
+export type { LocalStoreWizardState } from "./useLocalStoreWizardState";
 
 declare global {
   interface Window {

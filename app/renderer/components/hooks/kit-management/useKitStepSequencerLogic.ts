@@ -2,6 +2,7 @@ import React from "react";
 
 import type { StereoLinks } from "../../KitStepSequencer";
 
+import { createLogger } from "../../../utils/logger";
 import {
   ensureValidStepPattern,
   type FocusedStep,
@@ -13,6 +14,8 @@ import {
   shouldTrigger,
   type TriggerCondition,
 } from "../shared/stepPatternConstants";
+
+const log = createLogger("Sequencer");
 
 interface UseKitStepSequencerLogicParams {
   bpm?: number;
@@ -214,16 +217,14 @@ export function useKitStepSequencerLogic(
       if (isStepActive && shouldTrigger(condition, cycleCount)) {
         const voiceSamples = samples[voiceNumber];
         const sample = selectSample(voiceNumber, voiceSamples);
-        console.log(
-          `[Sequencer] Step ${currentSeqStep} voice ${voiceNumber}: active=${isStepActive}, condition=${condition}, cycle=${cycleCount}, sample=${sample}`,
+        log.debug(
+          `Step ${currentSeqStep} voice ${voiceNumber}: active=${isStepActive}, condition=${condition}, cycle=${cycleCount}, sample=${sample}`,
         );
         if (sample) {
           const vol = voiceVolumes[voiceNumber] ?? 100;
           onPlaySample(voiceNumber, sample, vol);
         } else {
-          console.log(
-            `[Sequencer] No sample available for voice ${voiceNumber}`,
-          );
+          log.debug(`No sample available for voice ${voiceNumber}`);
         }
       }
     }
@@ -253,8 +254,8 @@ export function useKitStepSequencerLogic(
       const oldVelocity = stepPattern[voiceIdx][stepIdx];
       const newVelocity = oldVelocity > 0 ? 0 : 127;
 
-      console.log(
-        `[Sequencer] Toggling step voice ${voiceIdx + 1}, step ${stepIdx}: ${oldVelocity} -> ${newVelocity}`,
+      log.debug(
+        `Toggling step voice ${voiceIdx + 1}, step ${stepIdx}: ${oldVelocity} -> ${newVelocity}`,
       );
 
       const newPattern = stepPattern.map((row, v) =>
@@ -263,10 +264,7 @@ export function useKitStepSequencerLogic(
           : row,
       );
 
-      console.log(
-        `[Sequencer] New pattern for voice ${voiceIdx + 1}:`,
-        newPattern[voiceIdx],
-      );
+      log.debug(`New pattern for voice ${voiceIdx + 1}:`, newPattern[voiceIdx]);
       setStepPattern(newPattern);
     },
     [stepPattern, setStepPattern],

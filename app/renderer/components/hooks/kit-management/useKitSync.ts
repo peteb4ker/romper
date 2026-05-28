@@ -2,7 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { SyncChangeSummary } from "../../dialogs/SyncUpdateDialog.types";
 
+import { createLogger } from "../../../utils/logger";
 import { useSyncUpdate } from "../shared/useSyncUpdate";
+
+const log = createLogger("KitSync");
 
 export interface UseKitSyncOptions {
   onMessage?: (text: string, type?: string, duration?: number) => void;
@@ -26,16 +29,16 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
       if (window.electronAPI?.readSettings) {
         try {
           const settings = await window.electronAPI.readSettings();
-          console.log("Settings loaded:", settings);
+          log.debug("Settings loaded:", settings);
           if (settings?.sdCardPath) {
-            console.log(
+            log.debug(
               "Setting SD card path from settings:",
               settings.sdCardPath,
             );
             setSdCardPath(settings.sdCardPath);
           }
         } catch (error) {
-          console.error("Failed to read settings:", error);
+          log.error("Failed to read settings:", error);
         }
       }
     };
@@ -62,7 +65,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
       setCurrentChangeSummary(null);
       setShowSyncDialog(true);
     } catch (error) {
-      console.error("Error initiating sync:", error);
+      log.error("Error initiating sync:", error);
       if (onMessage) {
         onMessage(
           `Failed to initiate sync: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -87,11 +90,11 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
 
         // Refresh kit data to ensure UI shows updated unsaved states
         if (onRefreshKits) {
-          console.log("[useKitSync] Refreshing kit data after successful sync");
+          log.debug("Refreshing kit data after successful sync");
           try {
             await onRefreshKits();
           } catch (error) {
-            console.error("[useKitSync] Failed to refresh kit data:", error);
+            log.error("Failed to refresh kit data:", error);
           }
         }
       } else if (onMessage && syncError) {
@@ -118,9 +121,9 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
       if (window.electronAPI?.writeSettings) {
         try {
           await window.electronAPI.writeSettings("sdCardPath", path);
-          console.log("SD card path saved to settings:", path);
+          log.debug("SD card path saved to settings:", path);
         } catch (error) {
-          console.error("Failed to save SD card path to settings:", error);
+          log.error("Failed to save SD card path to settings:", error);
           if (onMessage) {
             onMessage("Failed to save SD card path", "warning");
           }

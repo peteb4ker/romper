@@ -1,16 +1,20 @@
+import { createLogger } from "../../../utils/logger";
+
+const log = createLogger("message");
+
 export function useMessageDisplay() {
   const showMessage = (
     text: string,
     type: string = "info",
     _duration?: number,
   ) => {
-    // Route to console — all user-facing feedback is now handled inline
+    // Route to structured logger — all user-facing feedback is now handled inline
     if (type === "error") {
-      console.error(`[message] ${text}`);
+      log.error(text);
     } else if (type === "warning") {
-      console.warn(`[message] ${text}`);
+      log.warn(text);
     } else {
-      console.log(`[message] ${text}`);
+      log.info(text);
     }
   };
 

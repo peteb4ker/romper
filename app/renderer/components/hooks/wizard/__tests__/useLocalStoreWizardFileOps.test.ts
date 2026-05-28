@@ -258,6 +258,49 @@ describe("useLocalStoreWizardFileOps", () => {
       );
     });
 
+    it("should forward progress updates and surface error-callback messages", async () => {
+      // Arrange — the archive API invokes the progress and error callbacks
+      // the hook passes in (the default mock never calls them).
+      mockApi.downloadAndExtractArchive = vi.fn(
+        async (
+          _url: string,
+          _target: string,
+          onProgress: (p: unknown) => void,
+          onError: (e: unknown) => void,
+        ) => {
+          onProgress({ percent: 50, phase: "Downloading" });
+          onProgress({ percent: 100, phase: "Downloading" });
+          onError(new Error("network blip"));
+          return { success: true };
+        },
+      );
+
+      const { result } = renderHook(() =>
+        useLocalStoreWizardFileOps({
+          api: mockApi,
+          reportProgress: mockReportProgress,
+          reportStepProgress: mockReportStepProgress,
+          setError: mockSetError,
+          setWizardState: mockSetWizardState,
+        }),
+      );
+
+      // Act
+      await result.current.extractSquarpArchive("/target/path");
+
+      // Assert — first event reported (phase change), 100% always reported,
+      // and the error callback routed to setError.
+      expect(mockReportProgress).toHaveBeenCalledWith({
+        percent: 50,
+        phase: "Downloading",
+      });
+      expect(mockReportProgress).toHaveBeenCalledWith({
+        percent: 100,
+        phase: "Downloading",
+      });
+      expect(mockSetError).toHaveBeenCalledWith("network blip");
+    });
+
     it("should handle extraction errors", async () => {
       mockApi.downloadAndExtractArchive = vi.fn(() =>
         Promise.resolve({ error: "Download failed", success: false }),

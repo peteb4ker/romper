@@ -144,7 +144,7 @@ jobs:
         if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
         uses: indygreg/apple-code-sign-action@v1
         with:
-          input_path: electron/out/Romper-darwin-arm64/Romper.app
+          input_path: out/Romper-darwin-arm64/Romper.app
           p12_file: ${{ runner.temp }}/cert.p12
           p12_password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           # --for-notarization enables hardened runtime + timestamp server +

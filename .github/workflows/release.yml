@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Manual trigger reason (e.g. testing signing on a non-tag branch). The `release` job is gated to tag pushes only, so manual runs build artifacts but do not publish."
+        required: false
+        default: "manual test run"
 
 permissions:
   contents: write

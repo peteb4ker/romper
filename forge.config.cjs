@@ -5,7 +5,6 @@ const config = {
     appBundleId: "com.romper.samplemanager",
     appCategoryType: "public.app-category.music",
     icon: "./electron/resources/app-icon", // Don't include extension, Forge handles it
-    out: "./electron/out",
     ignore: [
       // Ignore source files and dev dependencies
       "^/src",

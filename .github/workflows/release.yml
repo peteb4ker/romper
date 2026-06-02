@@ -107,58 +107,78 @@ jobs:
             libasound2-dev \
             libgtk-3-0
 
-      # ── macOS: Import signing certificate into temporary keychain ──
-      - name: Import macOS signing certificate
-        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          # Create a temporary keychain
-          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
-          KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          # Import certificate from base64 secret
-          CERT_PATH="$RUNNER_TEMP/certificate.p12"
-          echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_PATH"
-
-          security import "$CERT_PATH" \
-            -P "$APPLE_CERTIFICATE_PASSWORD" \
-            -A \
-            -t cert \
-            -f pkcs12 \
-            -k "$KEYCHAIN_PATH"
-
-          # Set partition list to allow codesign access without UI prompt
-          security set-key-partition-list -S apple-tool:,apple:,codesign: \
-            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          # Add temporary keychain to search list (prepend so it's found first)
-          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
-
-          # Extract identity name for Electron Forge
-          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | head -1 | sed 's/.*"\(.*\)".*/\1/')
-          echo "APPLE_IDENTITY=$IDENTITY" >> $GITHUB_ENV
-
-          echo "Certificate imported successfully. Identity: $IDENTITY"
-
       - name: Install dependencies
         run: npm ci
 
       - name: Build application
         run: npm run build
 
-      - name: Package application (Electron)
+      # ── macOS: Package unsigned, sign with rcodesign, then make DMG/zip ──
+      # See electron/forge#3131: @electron/osx-sign was silently falling back
+      # to ad-hoc signing in CI. Replaced with indygreg/apple-code-sign-action
+      # (rcodesign), which signs without needing a keychain.
+      - name: Package Electron app (unsigned) — macOS
+        if: matrix.os == 'macos-latest'
+        run: npx electron-forge package -p darwin -a arm64
+
+      - name: Materialize signing inputs — macOS
+        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
         env:
-          # macOS notarization credentials (only used when secrets are configured)
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # APPLE_IDENTITY is set by the certificate import step above
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          ASC_API_KEY_JSON: ${{ secrets.ASC_API_KEY_JSON }}
+        run: |
+          # Decode p12 from base64 secret
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          chmod 600 "$RUNNER_TEMP/cert.p12"
+          # Write ASC API key JSON (produced by `rcodesign encode-app-store-connect-api-key`)
+          printf '%s' "$ASC_API_KEY_JSON" > "$RUNNER_TEMP/asc-api-key.json"
+          chmod 600 "$RUNNER_TEMP/asc-api-key.json"
+
+      - name: Sign Romper.app — macOS
+        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+        uses: indygreg/apple-code-sign-action@v1
+        with:
+          input_path: electron/out/Romper-darwin-arm64/Romper.app
+          p12_file: ${{ runner.temp }}/cert.p12
+          p12_password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # --for-notarization enables hardened runtime + timestamp server +
+          # Developer ID cert validation in one flag.
+          sign_args: |
+            --for-notarization
+            --entitlements-xml-file
+            electron/resources/entitlements.plist
+
+      - name: Make installers (skip package) — macOS
+        if: matrix.os == 'macos-latest'
+        run: npx electron-forge make --skip-package -p darwin -a arm64
+
+      - name: Locate DMG artifact — macOS
+        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+        id: dmg_path
+        run: |
+          DMG=$(find out/make -maxdepth 3 -name '*.dmg' -type f | head -1)
+          if [ -z "$DMG" ]; then
+            echo "::error::No DMG produced by Forge"
+            find out/make -type f
+            exit 1
+          fi
+          echo "path=$DMG" >> "$GITHUB_OUTPUT"
+          echo "Found DMG: $DMG"
+
+      - name: Sign + notarize + staple DMG — macOS
+        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+        uses: indygreg/apple-code-sign-action@v1
+        with:
+          input_path: ${{ steps.dmg_path.outputs.path }}
+          p12_file: ${{ runner.temp }}/cert.p12
+          p12_password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          notarize: true
+          staple: true
+          app_store_connect_api_key_json_file: ${{ runner.temp }}/asc-api-key.json
+
+      # ── Linux / Windows: Forge handles everything in one step ──
+      - name: Package application (Electron) — Linux/Windows
+        if: matrix.os != 'macos-latest'
         run: npm run make
 
       # ── Windows: Sign artifacts with Azure Trusted Signing ──
@@ -178,14 +198,12 @@ jobs:
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
 
-      # ── macOS: Clean up temporary keychain ──
-      - name: Clean up macOS keychain
-        if: always() && matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+      # ── macOS: Wipe signing inputs from the runner ──
+      - name: Clean up signing inputs — macOS
+        if: always() && matrix.os == 'macos-latest'
         run: |
-          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
-          if [ -f "$KEYCHAIN_PATH" ]; then
-            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
-          fi
+          rm -P "$RUNNER_TEMP/cert.p12" 2>/dev/null || true
+          rm -P "$RUNNER_TEMP/asc-api-key.json" 2>/dev/null || true
 
       - name: Debug artifact structure (Windows)
         if: matrix.os == 'windows-latest'

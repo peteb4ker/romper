@@ -1,13 +1,3 @@
-// Determine if macOS signing credentials are available
-const hasMacSigningCreds = !!(
-  process.env.APPLE_IDENTITY || process.env.APPLE_SIGNING_IDENTITY
-);
-const hasMacNotarizeCreds = !!(
-  process.env.APPLE_ID &&
-  process.env.APPLE_ID_PASSWORD &&
-  process.env.APPLE_TEAM_ID
-);
-
 const config = {
   packagerConfig: {
     name: "Romper",
@@ -47,33 +37,11 @@ const config = {
     extraResource: [
       // Include any additional resources needed at runtime
     ],
-    // macOS code signing -- enabled only when APPLE_IDENTITY env var is set
-    ...(hasMacSigningCreds
-      ? {
-          osxSign: {
-            identity:
-              process.env.APPLE_IDENTITY ||
-              process.env.APPLE_SIGNING_IDENTITY,
-            optionsForFile: () => ({
-              hardenedRuntime: true,
-              entitlements: "./electron/resources/entitlements.plist",
-              "entitlements-inherit":
-                "./electron/resources/entitlements.plist",
-              "signature-flags": "library",
-            }),
-          },
-        }
-      : {}),
-    // macOS notarization -- enabled only when Apple ID credentials are set
-    ...(hasMacNotarizeCreds
-      ? {
-          osxNotarize: {
-            appleId: process.env.APPLE_ID,
-            appleIdPassword: process.env.APPLE_ID_PASSWORD,
-            teamId: process.env.APPLE_TEAM_ID,
-          },
-        }
-      : {}),
+    // macOS signing + notarization are handled out-of-band by
+    // indygreg/apple-code-sign-action in .github/workflows/release.yml
+    // (rcodesign + ASC API key). Forge produces an unsigned .app; the
+    // workflow signs it, then runs the DMG/zip makers around it, then
+    // notarizes+staples the DMG.
   },
   rebuildConfig: {},
   makers: [

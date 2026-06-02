@@ -171,16 +171,44 @@ jobs:
           echo "path=$DMG" >> "$GITHUB_OUTPUT"
           echo "Found DMG: $DMG"
 
-      - name: Sign + notarize + staple DMG — macOS
+      - name: Sign DMG — macOS
         if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
         uses: indygreg/apple-code-sign-action@v1
         with:
           input_path: ${{ steps.dmg_path.outputs.path }}
           p12_file: ${{ runner.temp }}/cert.p12
           p12_password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          notarize: true
-          staple: true
-          app_store_connect_api_key_json_file: ${{ runner.temp }}/asc-api-key.json
+
+      # ── Notarize + staple manually so we control the Apple poll timeout.
+      # The action hardcodes --max-wait-seconds 600 (10 min); Apple's notary
+      # service has been taking 12+ min lately (Romper.dmg submission
+      # 8b66b65c-3708-41dd-bf4a-908d4cbee272 was still InProgress after the
+      # action gave up). Bumped to 30 min here.
+      - name: Install rcodesign for notarization
+        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+        run: |
+          set -euo pipefail
+          VERSION="0.29.0"
+          ASSET="apple-codesign-${VERSION}-macos-universal.tar.gz"
+          EXPECTED_SHA="d98372d5524226ccf9dc0eda03d4e4f5826182dabb2fc3f2bd303ed9113a748d"
+          curl -fsSL -o "$RUNNER_TEMP/$ASSET" \
+            "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F${VERSION}/${ASSET}"
+          ACTUAL_SHA=$(shasum -a 256 "$RUNNER_TEMP/$ASSET" | awk '{print $1}')
+          if [ "$EXPECTED_SHA" != "$ACTUAL_SHA" ]; then
+            echo "::error::rcodesign tarball SHA mismatch (expected $EXPECTED_SHA, got $ACTUAL_SHA)"
+            exit 1
+          fi
+          tar -xzf "$RUNNER_TEMP/$ASSET" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apple-codesign-${VERSION}-macos-universal" >> "$GITHUB_PATH"
+
+      - name: Notarize + staple DMG — macOS
+        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+        run: |
+          rcodesign notary-submit \
+            --staple \
+            --max-wait-seconds 1800 \
+            --api-key-file "$RUNNER_TEMP/asc-api-key.json" \
+            "${{ steps.dmg_path.outputs.path }}"
 
       # ── Linux / Windows: Forge handles everything in one step ──
       - name: Package application (Electron) — Linux/Windows

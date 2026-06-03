@@ -58,16 +58,9 @@ export default defineConfig({
         ? ["**/*.integration.test.{js,ts,jsx,tsx}"]
         : ["**/*.test.{js,ts,jsx,tsx}"],
       // Maximum parallelization for 12-core machine
+      maxWorkers: 10,
+      minWorkers: 4,
       pool: "threads",
-      poolOptions: {
-        threads: {
-          // Use more threads for faster execution
-          maxThreads: 10,
-          minThreads: 4,
-          // Enable atomics for better thread synchronization
-          useAtomics: true,
-        },
-      },
       // Optimized reporters - dot is fastest
       reporter: ["dot"],
       setupFiles: ["./vitest.setup.ts"],

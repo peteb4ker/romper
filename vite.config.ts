@@ -92,14 +92,9 @@ export default defineConfig({
         ? ["**/*.integration.test.{js,ts,jsx,tsx}"]
         : ["**/*.test.{js,ts,jsx,tsx}"],
       // Performance optimizations
+      maxWorkers: isCI ? 8 : 2,
+      minWorkers: isCI ? 2 : 1,
       pool: "threads",
-      poolOptions: {
-        threads: {
-          maxThreads: isCI ? 8 : 2,
-          minThreads: isCI ? 2 : 1,
-          useAtomics: true,
-        },
-      },
       // Optimized reporters for CI
       reporter: isCI ? ["dot"] : ["verbose"],
       setupFiles: ["./vitest.setup.ts"],

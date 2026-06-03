@@ -8,7 +8,9 @@ import {
 } from "../ipcHandlerUtils";
 
 // Mock path module
-vi.mock("node:path");
+vi.mock("node:path", async (importOriginal) =>
+  vi.mockObject(await importOriginal<typeof import("node:path")>()),
+);
 
 // Mock sample service
 vi.mock("../../services/sampleService.js", () => ({

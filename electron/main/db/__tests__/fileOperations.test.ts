@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteDbFileWithRetry } from "../fileOperations";
 
 // Mock fs functions
-vi.mock("node:fs");
+vi.mock("node:fs", async (importOriginal) =>
+  vi.mockObject(await importOriginal<typeof import("node:fs")>()),
+);
 const mockFs = vi.mocked(fs);
 
 describe("fileOperations unit tests", () => {

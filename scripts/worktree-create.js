@@ -233,8 +233,19 @@ function main() {
   console.log(`  Path:   ${worktreePath}`);
 
   try {
-    // Create worktree with new branch
-    runCommand(`git worktree add ${worktreePath} -b ${branchName}`);
+    // Fetch first so origin/main reflects the actual upstream tip. Without
+    // this, a stale local origin/main would propagate into every new
+    // feature branch.
+    runCommand("git fetch origin --quiet", { silent: true });
+
+    // Always base new feature branches on origin/main rather than the
+    // caller's current HEAD. Without the explicit base, `git worktree add
+    // -b` uses whatever branch the caller was on -- if that branch carries
+    // commits not yet on main (e.g. an unmerged fix branch), those commits
+    // leak into every spawned worktree and pollute their PRs.
+    runCommand(
+      `git worktree add ${worktreePath} -b ${branchName} origin/main`,
+    );
 
     // Phase 1: Claude settings symlink
     const settingsOk = setupClaudeSettings(mainRoot, worktreePath);

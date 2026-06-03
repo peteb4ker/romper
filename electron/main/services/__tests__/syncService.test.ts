@@ -10,8 +10,12 @@ vi.mock("electron", () => ({
   },
 }));
 
-vi.mock("node:fs");
-vi.mock("node:path");
+vi.mock("node:fs", async (importOriginal) =>
+  vi.mockObject(await importOriginal<typeof import("node:fs")>()),
+);
+vi.mock("node:path", async (importOriginal) =>
+  vi.mockObject(await importOriginal<typeof import("node:path")>()),
+);
 
 vi.mock("../../audioUtils.js", () => ({
   getAudioMetadata: vi.fn(),

@@ -78,7 +78,9 @@ beforeEach(() => {
   });
 
   // Mock AudioContext and related APIs
-  global.AudioContext = vi.fn(() => createMockAudioContext());
+  global.AudioContext = vi.fn(function () {
+    return createMockAudioContext();
+  });
 
   // Mock animation frame functions
   global.requestAnimationFrame = vi.fn((cb) => {
@@ -309,7 +311,9 @@ describe("SampleWaveform", () => {
       decodeAudioData: vi.fn((_buf, cb) => cb(mockAudioBuffer)),
     });
 
-    global.AudioContext = vi.fn(() => mockAudioContext);
+    global.AudioContext = vi.fn(function () {
+      return mockAudioContext;
+    });
 
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
       new ArrayBuffer(1024),
@@ -413,7 +417,9 @@ describe("SampleWaveform", () => {
       state: "running",
     };
 
-    global.AudioContext = vi.fn(() => mockAudioContext);
+    global.AudioContext = vi.fn(function () {
+      return mockAudioContext;
+    });
 
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
       new ArrayBuffer(1024),
@@ -491,7 +497,9 @@ describe("SampleWaveform", () => {
       ),
     });
 
-    global.AudioContext = vi.fn(() => mockAudioContext);
+    global.AudioContext = vi.fn(function () {
+      return mockAudioContext;
+    });
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
       new ArrayBuffer(1024),
     );
@@ -576,7 +584,9 @@ describe("SampleWaveform", () => {
       ),
     });
 
-    global.AudioContext = vi.fn(() => mockAudioContext);
+    global.AudioContext = vi.fn(function () {
+      return mockAudioContext;
+    });
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
       new ArrayBuffer(1024),
     );
@@ -670,7 +680,9 @@ describe("SampleWaveform", () => {
       ),
     });
 
-    global.AudioContext = vi.fn(() => mockAudioContext);
+    global.AudioContext = vi.fn(function () {
+      return mockAudioContext;
+    });
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
       new ArrayBuffer(1024),
     );
@@ -750,7 +762,9 @@ describe("SampleWaveform", () => {
       state: "running",
     };
 
-    global.AudioContext = vi.fn(() => mockAudioContext);
+    global.AudioContext = vi.fn(function () {
+      return mockAudioContext;
+    });
 
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
       new ArrayBuffer(1024),

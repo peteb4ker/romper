@@ -60,7 +60,7 @@ vi.mock("unzipper", () => ({
     return stream;
   }),
 }));
-vi.mock("https", () => ({
+vi.mock("node:https", () => ({
   get: vi.fn((_url: unknown, cb: unknown) => {
     const res = new MockStream();
     res.headers = { "content-length": "100" };

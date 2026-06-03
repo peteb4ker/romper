@@ -38,20 +38,22 @@ vi.mock("electron", () => {
     setName: vi.fn(),
     whenReady: vi.fn(() => Promise.resolve()),
   };
-  const BrowserWindow = vi.fn().mockImplementation(() => ({
-    getAllWindows: vi.fn().mockReturnValue([]),
-    getBounds: vi.fn(() => ({ height: 800, width: 1200, x: 0, y: 0 })),
-    getFocusedWindow: vi.fn(),
-    isMaximized: vi.fn(() => false),
-    loadFile: vi.fn(() => Promise.resolve()),
-    loadURL: vi.fn(() => Promise.resolve()),
-    maximize: vi.fn(),
-    on: vi.fn(),
-    webContents: {
+  const BrowserWindow = vi.fn().mockImplementation(function () {
+    return {
+      getAllWindows: vi.fn().mockReturnValue([]),
+      getBounds: vi.fn(() => ({ height: 800, width: 1200, x: 0, y: 0 })),
+      getFocusedWindow: vi.fn(),
+      isMaximized: vi.fn(() => false),
+      loadFile: vi.fn(() => Promise.resolve()),
+      loadURL: vi.fn(() => Promise.resolve()),
+      maximize: vi.fn(),
       on: vi.fn(),
-      send: vi.fn(),
-    },
-  }));
+      webContents: {
+        on: vi.fn(),
+        send: vi.fn(),
+      },
+    };
+  });
   const Menu = {
     buildFromTemplate: vi.fn().mockReturnValue({}),
     setApplicationMenu: vi.fn(),
@@ -213,7 +215,9 @@ describe.sequential("main/index.ts", () => {
       maximize: vi.fn(),
       on: vi.fn(),
     };
-    vi.mocked(BrowserWindow).mockReturnValue(mockWindow as unknown);
+    vi.mocked(BrowserWindow).mockImplementation(function () {
+      return mockWindow as unknown;
+    });
 
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     await import("../index");
@@ -239,7 +243,9 @@ describe.sequential("main/index.ts", () => {
       maximize: vi.fn(),
       on: vi.fn(),
     };
-    vi.mocked(BrowserWindow).mockReturnValue(mockWindow as unknown);
+    vi.mocked(BrowserWindow).mockImplementation(function () {
+      return mockWindow as unknown;
+    });
 
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     await import("../index");

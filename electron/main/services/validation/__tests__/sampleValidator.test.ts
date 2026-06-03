@@ -6,7 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as romperDbCoreORM from "../../../db/romperDbCoreORM.js";
 import { SampleValidator } from "../sampleValidator";
 
-vi.mock("node:fs");
+vi.mock("node:fs", async (importOriginal) =>
+  vi.mockObject(await importOriginal<typeof import("node:fs")>()),
+);
 vi.mock("../../../db/romperDbCoreORM.js");
 
 const mockFs = vi.mocked(fs);

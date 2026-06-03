@@ -10,7 +10,9 @@ const mockWorker = {
   terminate: vi.fn(),
 };
 
-global.Worker = vi.fn().mockImplementation(() => mockWorker);
+global.Worker = vi.fn().mockImplementation(function () {
+  return mockWorker;
+});
 global.URL.createObjectURL = vi.fn().mockReturnValue("mock-worker-url");
 
 describe("useKitStepSequencerLogic", () => {

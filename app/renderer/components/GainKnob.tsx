@@ -157,6 +157,7 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
       className="relative flex items-center"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      role="presentation"
       style={{ zIndex: active ? 10 : undefined }}
     >
       <svg

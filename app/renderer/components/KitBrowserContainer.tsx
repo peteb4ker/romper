@@ -6,7 +6,7 @@ import type { KitBrowserHandle } from "./KitBrowser";
 
 import KitBrowser from "./KitBrowser";
 
-interface KitBrowserContainerProps {
+type KitBrowserContainerProps = Readonly<{
   // Favorites filter functionality
   favoritesCount?: number;
   getKitFavoriteState?: (kitName: string) => boolean;
@@ -32,7 +32,7 @@ interface KitBrowserContainerProps {
   setLocalStorePath: (path: string) => void;
   showFavoritesOnly?: boolean;
   showModifiedOnly?: boolean;
-}
+}>;
 
 /**
  * Container component for KitBrowser

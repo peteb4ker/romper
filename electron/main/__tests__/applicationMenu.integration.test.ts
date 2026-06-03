@@ -294,6 +294,63 @@ describe("Menu IPC Integration Tests", () => {
     }
   });
 
+  it("should omit dev tools from View menu when packaged and ROMPER_ENABLE_DEVTOOLS is unset", async () => {
+    vi.resetModules();
+    const electron = await import("electron");
+    // @ts-expect-error -- mock object, writable in test
+    electron.app.isPackaged = true;
+    delete process.env.ROMPER_ENABLE_DEVTOOLS;
+
+    try {
+      const { createApplicationMenu } = await import("../applicationMenu");
+      createApplicationMenu();
+
+      const menuTemplate = mockMenu.buildFromTemplate.mock.calls.at(-1)?.[0];
+      const viewMenu = menuTemplate.find(
+        (item: unknown) => item.label === "View",
+      );
+      const viewRoles = viewMenu.submenu
+        .filter((item: unknown) => item.role)
+        .map((item: unknown) => item.role);
+
+      expect(viewRoles).not.toContain("reload");
+      expect(viewRoles).not.toContain("forceReload");
+      expect(viewRoles).not.toContain("toggleDevTools");
+    } finally {
+      // @ts-expect-error -- restore mock state
+      electron.app.isPackaged = false;
+    }
+  });
+
+  it("should include dev tools in View menu when packaged but ROMPER_ENABLE_DEVTOOLS=1", async () => {
+    vi.resetModules();
+    const electron = await import("electron");
+    // @ts-expect-error -- mock object, writable in test
+    electron.app.isPackaged = true;
+    process.env.ROMPER_ENABLE_DEVTOOLS = "1";
+
+    try {
+      const { createApplicationMenu } = await import("../applicationMenu");
+      createApplicationMenu();
+
+      const menuTemplate = mockMenu.buildFromTemplate.mock.calls.at(-1)?.[0];
+      const viewMenu = menuTemplate.find(
+        (item: unknown) => item.label === "View",
+      );
+      const viewRoles = viewMenu.submenu
+        .filter((item: unknown) => item.role)
+        .map((item: unknown) => item.role);
+
+      expect(viewRoles).toContain("reload");
+      expect(viewRoles).toContain("forceReload");
+      expect(viewRoles).toContain("toggleDevTools");
+    } finally {
+      // @ts-expect-error -- restore mock state
+      electron.app.isPackaged = false;
+      delete process.env.ROMPER_ENABLE_DEVTOOLS;
+    }
+  });
+
   it("should handle missing browser windows gracefully", async () => {
     mockBrowserWindow.getAllWindows.mockReturnValue([]);
 

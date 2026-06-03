@@ -175,6 +175,7 @@ Romper can be configured using environment variables for advanced use cases:
 - **`ROMPER_SDCARD_PATH`** - Default SD card directory path
 - **`ROMPER_LOCAL_PATH`** - Default local sample library path  
 - **`ROMPER_SQUARP_ARCHIVE_URL`** - Custom factory samples archive URL
+- **`ROMPER_ENABLE_DEVTOOLS`** - Set to `1` to expose Reload / Toggle Developer Tools in the View menu of a packaged build (off by default; intended for diagnosing issues in installed releases)
 
 ## 🛠️ Development
 

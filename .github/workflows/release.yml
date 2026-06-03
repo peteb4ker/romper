@@ -149,10 +149,16 @@ jobs:
           p12_password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           # --for-notarization enables hardened runtime + timestamp server +
           # Developer ID cert validation in one flag.
+          #
+          # --config-file points at electron/resources/rcodesign.toml, which
+          # declares per-helper entitlement scopes. v1.1.0 shipped with the
+          # top-level binary entitled but the Chromium helpers (Renderer/GPU/
+          # Plugin) unentitled, breaking V8 under hardened runtime and causing
+          # a renderer white-screen. See #260.
           sign_args: |
             --for-notarization
-            --entitlements-xml-file
-            electron/resources/entitlements.plist
+            --config-file
+            electron/resources/rcodesign.toml
 
       # ── Install rcodesign for the manual notarize+staple steps below.
       # The action hardcodes --max-wait-seconds 600 (10 min); Apple's notary

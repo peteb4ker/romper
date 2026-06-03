@@ -1,0 +1,33 @@
+# rcodesign signing configuration for Romper.app
+#
+# Background: v1.1.0 shipped with hardened runtime applied to all binaries
+# (recursive default of `rcodesign sign --for-notarization`) but entitlements
+# applied ONLY to the top-level `Contents/MacOS/romper` binary. The Chromium
+# helpers (Renderer, GPU, Plugin) inherited hardened runtime but had NO
+# entitlements, so V8 couldn't JIT JavaScript -> renderer silently failed ->
+# white-screen on launch. See https://github.com/peteb4ker/romper/issues/260.
+#
+# `@electron/osx-sign` (the signer we migrated away from) applied per-helper
+# entitlements automatically because it knew the Electron bundle layout.
+# `rcodesign` doesn't, so we declare those scopes explicitly here.
+#
+# All four helpers use the same plist as the top-level binary: the three
+# entitlements it carries (allow-jit, allow-unsigned-executable-memory,
+# disable-library-validation) are exactly what each Chromium helper process
+# needs under hardened runtime. Splitting into per-helper plists would be
+# marginally tighter but offers no practical security gain for this app.
+
+[default.sign]
+entitlements_xml_file = "electron/resources/entitlements.plist"
+
+[default.sign.path."Contents/Frameworks/Romper Helper.app"]
+entitlements_xml_file = "electron/resources/entitlements.plist"
+
+[default.sign.path."Contents/Frameworks/Romper Helper (GPU).app"]
+entitlements_xml_file = "electron/resources/entitlements.plist"
+
+[default.sign.path."Contents/Frameworks/Romper Helper (Plugin).app"]
+entitlements_xml_file = "electron/resources/entitlements.plist"
+
+[default.sign.path."Contents/Frameworks/Romper Helper (Renderer).app"]
+entitlements_xml_file = "electron/resources/entitlements.plist"

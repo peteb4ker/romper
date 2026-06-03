@@ -99,6 +99,32 @@ If Romper reports that your local store is invalid or corrupted:
 - **Check disk health** -- Corrupted stores can indicate disk issues. Run your operating system's disk checking utility.
 - **Backup consideration** -- The local store is a working copy. Your definitive data lives on your SD card and in your original sample files. Losing the local store means rebuilding your kit configurations, but no samples are lost.
 
+---
+
+## Inspecting Romper with Developer Tools
+
+If something is misbehaving and you want to capture diagnostic output for a bug report -- or you simply want to inspect the running app -- you can enable the Chromium Developer Tools in an installed build by launching Romper with the `ROMPER_ENABLE_DEVTOOLS` environment variable set to `1`. By default this is off, so installed releases do not expose **Reload** / **Force Reload** / **Toggle Developer Tools** in the View menu.
+
+**macOS** (terminal):
+
+```sh
+ROMPER_ENABLE_DEVTOOLS=1 open -a Romper
+```
+
+**Linux** (terminal):
+
+```sh
+ROMPER_ENABLE_DEVTOOLS=1 romper
+```
+
+**Windows** (PowerShell):
+
+```powershell
+$env:ROMPER_ENABLE_DEVTOOLS = "1"; & "$env:LOCALAPPDATA\Programs\Romper\Romper.exe"
+```
+
+Once the app is running with the variable set, the View menu gains a separator followed by the standard DevTools entries. The default shortcut is `Cmd+Option+I` on macOS and `Ctrl+Shift+I` on Windows / Linux. Use the **Console** tab for renderer errors and the **Network** tab to see whether assets failed to load.
+
 </div>
 </div>
 </section>

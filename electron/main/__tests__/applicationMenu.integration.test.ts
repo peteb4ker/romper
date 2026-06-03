@@ -43,8 +43,10 @@ const mockNativeImage = {
 vi.mock("electron", () => ({
   app: {
     getName: vi.fn().mockReturnValue("Romper"),
+    getVersion: vi.fn().mockReturnValue("1.1.0"),
     isPackaged: false,
     quit: vi.fn(),
+    setAboutPanelOptions: vi.fn(),
   },
   BrowserWindow: mockBrowserWindow,
   ipcMain: mockIpcMain,
@@ -244,6 +246,109 @@ describe("Menu IPC Integration Tests", () => {
     expect(viewRoles).toContain("reload");
     expect(viewRoles).toContain("forceReload");
     expect(viewRoles).toContain("toggleDevTools");
+  });
+
+  it("should route the macOS app-menu About entry to the custom AboutDialog IPC", async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, "platform", { value: "darwin" });
+
+    const mockWindow = {
+      webContents: {
+        send: vi.fn(),
+      },
+    };
+    mockBrowserWindow.getFocusedWindow.mockReturnValue(mockWindow);
+
+    try {
+      const { createApplicationMenu } = await import("../applicationMenu");
+
+      createApplicationMenu();
+
+      const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
+      const appMenu = menuTemplate.find(
+        (item: unknown) => item.label === "Romper",
+      );
+      expect(appMenu).toBeDefined();
+
+      const aboutItem = appMenu.submenu.find(
+        (item: unknown) => item.label === "About Romper",
+      );
+      expect(aboutItem).toBeDefined();
+      // It must be a click handler, not the generic native { role: "about" }
+      expect(aboutItem.role).toBeUndefined();
+      expect(aboutItem.click).toBeDefined();
+
+      aboutItem.click();
+      expect(mockWindow.webContents.send).toHaveBeenCalledWith("menu-about");
+
+      // No duplicate About entry should leak into the Help menu on macOS
+      const helpMenu = menuTemplate.find(
+        (item: unknown) => item.label === "Help",
+      );
+      const helpAbout = helpMenu.submenu.find(
+        (item: unknown) => item.label === "About Romper",
+      );
+      expect(helpAbout).toBeUndefined();
+    } finally {
+      Object.defineProperty(process, "platform", { value: originalPlatform });
+    }
+  });
+
+  it("should omit dev tools from View menu when packaged and ROMPER_ENABLE_DEVTOOLS is unset", async () => {
+    vi.resetModules();
+    const electron = await import("electron");
+    // @ts-expect-error -- mock object, writable in test
+    electron.app.isPackaged = true;
+    delete process.env.ROMPER_ENABLE_DEVTOOLS;
+
+    try {
+      const { createApplicationMenu } = await import("../applicationMenu");
+      createApplicationMenu();
+
+      const menuTemplate = mockMenu.buildFromTemplate.mock.calls.at(-1)?.[0];
+      const viewMenu = menuTemplate.find(
+        (item: unknown) => item.label === "View",
+      );
+      const viewRoles = viewMenu.submenu
+        .filter((item: unknown) => item.role)
+        .map((item: unknown) => item.role);
+
+      expect(viewRoles).not.toContain("reload");
+      expect(viewRoles).not.toContain("forceReload");
+      expect(viewRoles).not.toContain("toggleDevTools");
+    } finally {
+      // @ts-expect-error -- restore mock state
+      electron.app.isPackaged = false;
+    }
+  });
+
+  it("should include dev tools in View menu when packaged but ROMPER_ENABLE_DEVTOOLS=1", async () => {
+    vi.resetModules();
+    const electron = await import("electron");
+    // @ts-expect-error -- mock object, writable in test
+    electron.app.isPackaged = true;
+    process.env.ROMPER_ENABLE_DEVTOOLS = "1";
+
+    try {
+      const { createApplicationMenu } = await import("../applicationMenu");
+      createApplicationMenu();
+
+      const menuTemplate = mockMenu.buildFromTemplate.mock.calls.at(-1)?.[0];
+      const viewMenu = menuTemplate.find(
+        (item: unknown) => item.label === "View",
+      );
+      const viewRoles = viewMenu.submenu
+        .filter((item: unknown) => item.role)
+        .map((item: unknown) => item.role);
+
+      expect(viewRoles).toContain("reload");
+      expect(viewRoles).toContain("forceReload");
+      expect(viewRoles).toContain("toggleDevTools");
+    } finally {
+      // @ts-expect-error -- restore mock state
+      electron.app.isPackaged = false;
+      delete process.env.ROMPER_ENABLE_DEVTOOLS;
+    }
   });
 
   it("should handle missing browser windows gracefully", async () => {

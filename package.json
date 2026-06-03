@@ -60,7 +60,8 @@
     "analyze:loc": "node scripts/architecture/analyze-loc.js",
     "analyze:dependencies": "node scripts/architecture/analyze-dependencies.js",
     "analyze:complexity": "node scripts/architecture/analyze-complexity.js",
-    "icons:generate": "node scripts/generate-app-icons.mjs"
+    "icons:generate": "node scripts/generate-app-icons.mjs",
+    "dmg:background:generate": "node scripts/generate-dmg-background.mjs"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.11.1",
@@ -102,6 +103,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-sonarjs": "^3.0.4",
     "fast-check": "^4.6.0",
+    "fontkit": "^2.0.4",
     "globals": "^16.3.0",
     "handlebars": "^4.7.9",
     "husky": "^9.1.7",

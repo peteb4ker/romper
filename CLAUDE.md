@@ -33,10 +33,42 @@ npm run worktree:create <task-name>
 cd worktrees/<task-name>
 ```
 
-The script creates `feature/<task-name>` branched from `origin/main`,
-assigns unique dev-server ports, links Claude settings, and runs
-`npm install`. To remove a finished worktree use
+The script fetches `origin`, then creates `feature/<task-name>` branched
+from `origin/main`, assigns unique dev-server ports, links Claude
+settings, and runs `npm install`. To remove a finished worktree use
 `npm run worktree:remove`.
+
+**All new branches must be rooted at `origin/main`.** This is not a
+preference -- mis-rooting silently pollutes PR diffs with whichever
+commits live on the parent branch but not yet on main (see
+[#270](https://github.com/peteb4ker/romper/pull/270) for the incident
+that motivated the script fix). Concretely:
+
+- Prefer `npm run worktree:create` -- it does the right thing for you.
+- If you must use raw git (e.g. Claude Code's own `Agent` tool's
+  worktree isolation, or a manual `git worktree add`), pass
+  `origin/main` as the explicit base:
+
+  ```sh
+  git fetch origin --quiet
+  git worktree add <path> -b <branch> origin/main
+  ```
+
+- Before opening a PR, sanity-check the branch base:
+
+  ```sh
+  git log --oneline origin/main..HEAD
+  ```
+
+  If anything beyond your intended commits shows up, rebase onto
+  `origin/main` with `git rebase --onto origin/main <orphan-commit>`
+  before pushing.
+
+- Claude Code sessions sometimes start in a worktree that's already
+  checked out on a non-main branch. That's harmless for inspection,
+  but never run `git worktree add` *without* an explicit base from
+  inside such a session -- inherit-from-HEAD is exactly the trap
+  this directive is here to prevent.
 
 ## Hard rules
 

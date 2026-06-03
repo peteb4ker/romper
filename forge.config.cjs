@@ -99,6 +99,19 @@ const config = {
         title: "Romper ${version}",
         format: "ULFO",
         icon: "./electron/resources/app-icon.icns",
+        // Branded DMG window: dark background with a drag-to-install arrow.
+        // The icon coordinates below MUST stay in sync with the layout baked
+        // into scripts/generate-dmg-background.mjs (APP_X / APPS_X / ICON_Y).
+        // appdmg auto-detects dmg-background@2x.png for retina displays.
+        background: "./electron/resources/dmg-background.png",
+        iconSize: 100,
+        additionalDMGOptions: {
+          window: { size: { width: 540, height: 380 } },
+        },
+        contents: (opts) => [
+          { x: 140, y: 205, type: "file", path: opts.appPath },
+          { x: 400, y: 205, type: "link", path: "/Applications" },
+        ],
       },
     },
   ],

@@ -5,6 +5,10 @@
   "license": "MIT",
   "private": true,
   "version": "1.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/peteb4ker/romper.git"
+  },
   "type": "module",
   "main": "dist/electron/main/index.js",
   "scripts": {
@@ -148,6 +152,7 @@
     "react-router-dom": "^7.12.0",
     "react-window": "^1.8.11",
     "unzipper": "^0.12.3",
+    "update-electron-app": "^3.2.0",
     "wavesurfer.js": "^7.9.5"
   }
 }

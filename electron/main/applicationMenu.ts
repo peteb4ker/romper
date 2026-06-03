@@ -4,6 +4,10 @@ import { menuIcons } from "./menuIcons";
 import { logger } from "./utils/logger.js";
 
 const isDev = !app.isPackaged;
+// Power-user escape hatch for inspecting a packaged build. Set
+// ROMPER_ENABLE_DEVTOOLS=1 in the launch env to expose View → Reload /
+// Force Reload / Toggle DevTools in production. See issue #262.
+const allowDevTools = isDev || process.env.ROMPER_ENABLE_DEVTOOLS === "1";
 
 /**
  * Creates and sets the application menu with streamlined structure
@@ -131,7 +135,7 @@ export function createApplicationMenu() {
         { role: "zoomOut" as const },
         { type: "separator" as const },
         { role: "togglefullscreen" as const },
-        ...(isDev
+        ...(allowDevTools
           ? [
               { type: "separator" as const },
               { role: "reload" as const },

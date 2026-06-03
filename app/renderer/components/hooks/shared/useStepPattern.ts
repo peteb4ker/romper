@@ -16,9 +16,10 @@ export function useStepPattern({
   kitName,
   onSaved,
 }: UseStepPatternParams) {
-  const [stepPatternState, setStepPatternState] = useState<null | number[][]>(
-    null,
-  );
+  // useState is already destructured as [value, setter]; NOSONAR
+  // suppresses S6754 false positive.
+  // prettier-ignore
+  const [stepPatternState, setStepPatternState] = useState<null | number[][]>(null); // NOSONAR
 
   useEffect(() => {
     setStepPatternState(ensureValidStepPattern(initialPattern));

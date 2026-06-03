@@ -5,7 +5,9 @@ import type { TruncationWarning } from "../hooks/wizard/useLocalStoreWizardState
 interface WizardPostInitGuidanceProps {
   isBlankFolder: boolean;
   onDismiss: () => void;
-  truncationWarnings?: TruncationWarning[];
+  // truncationWarnings IS used (destructured at line 12, referenced at
+  // lines 13 and 30). NOSONAR suppresses the S6767 false positive.
+  truncationWarnings?: TruncationWarning[]; // NOSONAR
 }
 
 const WizardPostInitGuidance: React.FC<WizardPostInitGuidanceProps> =

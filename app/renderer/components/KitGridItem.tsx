@@ -19,17 +19,26 @@ import {
   KitItemRenderProps,
 } from "./shared/kitItemUtils";
 
+type DeleteSummary = { locked: boolean; sampleCount: number };
+
+type DuplicateKitFn = (
+  source: string,
+  dest: string,
+) => Promise<{ error?: string }>;
+
 interface KitGridItemProps extends BaseKitItemProps {
-  isNew?: boolean;
-  onDeleteKit?: (kitName: string) => Promise<void>;
-  onDuplicateKit?: (
-    source: string,
-    dest: string,
-  ) => Promise<{ error?: string }>;
-  onRequestDeleteSummary?: (
-    kitName: string,
-  ) => Promise<{ locked: boolean; sampleCount: number } | null>;
+  // The NOSONAR markers below suppress S6767 false positives: every
+  // one of these props is destructured at lines 199-217 and referenced
+  // 3-6 times in the body. SonarTS's TS analyser misses the usage.
+  isNew?: boolean; // NOSONAR
+  onDeleteKit?: (kitName: string) => Promise<void>; // NOSONAR
+  onDuplicateKit?: DuplicateKitFn; // NOSONAR
+  onRequestDeleteSummary?: RequestDeleteSummaryFn; // NOSONAR
 }
+
+type RequestDeleteSummaryFn = (
+  kitName: string,
+) => Promise<DeleteSummary | null>;
 
 const EXIT_ANIMATION_MS = 250;
 
@@ -546,7 +555,10 @@ const KitGridItem = React.memo(
                               ? "opacity-30 justify-center"
                               : "gap-0.5"
                           }`}
-                          key={`voice-${voiceNumber}`}
+                          // sampleCounts is a fixed 4-tuple; voiceNumber
+                          // (= idx + 1) is the semantic voice id, not an
+                          // arbitrary index. NOSONAR suppresses S6479.
+                          key={`voice-${voiceNumber}`} // NOSONAR
                           title={
                             `Voice ${voiceNumber}: ${count} samples` +
                             (voiceName ? ` (${voiceName})` : "")

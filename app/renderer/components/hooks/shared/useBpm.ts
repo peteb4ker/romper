@@ -10,8 +10,10 @@ interface UseBpmParams {
  * Provides BPM state, validation, and persistence functionality
  */
 export function useBpm({ initialBpm = 120, kitName }: UseBpmParams) {
-  const [bpmState, setBpmState] = React.useState(initialBpm);
-  const [isEditing, setIsEditing] = React.useState(false);
+  // S6754 NOSONAR suppressions: both useState calls below are already
+  // destructured as [value, setter] -- the rule fires as a false positive.
+  const [bpmState, setBpmState] = React.useState(initialBpm); // NOSONAR
+  const [isEditing, setIsEditing] = React.useState(false); // NOSONAR
 
   // Update local state when initial BPM changes (kit switching)
   React.useEffect(() => {

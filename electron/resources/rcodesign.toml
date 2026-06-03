@@ -17,7 +17,11 @@
 # needs under hardened runtime. Splitting into per-helper plists would be
 # marginally tighter but offers no practical security gain for this app.
 
-[default.sign]
+# `entitlements_xml_file` is only valid under a per-path scope, not directly
+# under `[default.sign]`. The main executable (`executableName: "romper"` in
+# forge.config.cjs) is therefore declared as its own path scope, exactly like
+# the four Chromium helpers below.
+[default.sign.path."Contents/MacOS/romper"]
 entitlements_xml_file = "electron/resources/entitlements.plist"
 
 [default.sign.path."Contents/Frameworks/Romper Helper.app"]

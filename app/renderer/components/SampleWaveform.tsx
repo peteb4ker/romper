@@ -91,7 +91,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   volume,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+  // useState is already destructured as [value, setter]; NOSONAR
+  // suppresses S6754 false positive.
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null); // NOSONAR
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);

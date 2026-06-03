@@ -11,6 +11,8 @@ export interface UseTriggerConditionsParams {
   onSaved?: () => Promise<void> | void;
 }
 
+type TriggerConditionsState = (null | string)[][];
+
 /**
  * Hook for managing trigger conditions (mirrors useStepPattern structure)
  */
@@ -19,9 +21,10 @@ export function useTriggerConditions({
   kitName,
   onSaved,
 }: UseTriggerConditionsParams) {
-  const [triggerConditionsState, setTriggerConditionsState] = useState<
-    (null | string)[][]
-  >(() => ensureValidTriggerConditions(initialConditions));
+  // useState is already destructured as [value, setter]; NOSONAR
+  // suppresses S6754 false positive.
+  // prettier-ignore
+  const [triggerConditionsState, setTriggerConditionsState] = useState<TriggerConditionsState>(() => ensureValidTriggerConditions(initialConditions)); // NOSONAR
 
   // Reset to defaults when kit changes, before new kit data arrives
   const prevKitNameRef = React.useRef(kitName);

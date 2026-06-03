@@ -10,21 +10,26 @@ import type { BulkScanProgress } from "./hooks/kit-management/useKitScan";
 import LedIconGrid from "./led-icon/LedIconGrid";
 import SearchInput from "./SearchInput";
 
+// onShowLocalStoreWizard and searchResultCount are dead props retained
+// for upstream API compatibility -- removing them would cascade through
+// KitBrowser / KitsView / Container plus their tests. onAboutClick is a
+// passthrough to <LedIconGrid> that SonarTS misclassifies as unused.
+// NOSONAR markers suppress S6767 on those three lines.
 interface KitBrowserHeaderProps {
   bulkScanProgress?: BulkScanProgress;
   favoritesCount?: number;
   isSearching?: boolean;
   modifiedCount?: number;
-  onAboutClick?: () => void;
+  onAboutClick?: () => void; // NOSONAR
   onSearchChange?: (query: string) => void;
   onSearchClear?: () => void;
-  onShowLocalStoreWizard: () => void;
+  onShowLocalStoreWizard: () => void; // NOSONAR
   onShowSettings: () => void;
   onSyncToSdCard?: () => void;
   onToggleFavoritesFilter?: () => void;
   onToggleModifiedFilter?: () => void;
   searchQuery?: string;
-  searchResultCount?: number;
+  searchResultCount?: number; // NOSONAR
   showFavoritesOnly?: boolean;
   showModifiedOnly?: boolean;
 }

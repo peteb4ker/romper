@@ -11,6 +11,7 @@ import {
   createApplicationMenu,
   registerMenuIpcHandlers,
 } from "./applicationMenu.js";
+import { initAutoUpdater } from "./autoUpdater.js";
 import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
 import { registerIpcHandlers } from "./ipcHandlers.js";
 import {
@@ -173,6 +174,10 @@ app.whenReady().then(async () => {
     // Register IPC handlers
     registerAllIpcHandlers(inMemorySettings);
     createApplicationMenu();
+
+    // Kick off auto-update (no-op outside packaged macOS builds). Fire-and-
+    // forget so a slow/failed update check never delays the window or menu.
+    void initAutoUpdater();
   } catch (error: unknown) {
     console.error(
       "[Startup] Error during app initialization:",

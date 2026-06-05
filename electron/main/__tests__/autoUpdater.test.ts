@@ -67,7 +67,7 @@ describe("initAutoUpdater", () => {
       repo: "peteb4ker/romper",
       type: 0,
     });
-    expect(opts.updateInterval).toBe("1 hour");
+    expect(opts.updateInterval).toBe("1 week");
     expect(opts.notifyUser).toBe(true);
     expect(typeof opts.logger.log).toBe("function");
   });

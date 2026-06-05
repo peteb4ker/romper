@@ -21,8 +21,10 @@ import { logger } from "./utils/logger.js";
 // updater does not depend on package.json's `repository` field being present.
 const GITHUB_REPO = "peteb4ker/romper";
 
-// Conservative cadence for a desktop app: checks on launch, then hourly.
-const UPDATE_INTERVAL = "1 hour";
+// Conservative cadence for a desktop app: checks on launch, then at most
+// weekly while the app stays open. (update-electron-app caps the interval at
+// just under ~24 days, so a week is well within range.)
+const UPDATE_INTERVAL = "1 week";
 
 /**
  * Initialise auto-update. Safe to call unconditionally on every platform —

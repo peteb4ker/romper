@@ -160,23 +160,28 @@ export function getFileSize(filePath: string): number {
 
 /**
  * Removes a directory and its contents recursively.
- * Only removes directories under a known safe parent (must contain ".romperdb" in path).
+ * Only removes directories that have a ".romperdb" path segment, guarding
+ * against accidental removal of unrelated directories.
  */
 export function removeDirectorySafe(dirPath: string): {
   error?: string;
   removed: boolean;
 } {
   try {
-    if (!dirPath.includes(".romperdb")) {
+    // Canonicalize first so traversal (e.g. ".romperdb/../../etc") and
+    // lookalike names (e.g. ".romperdb-backup") cannot slip past the scope
+    // check via a naive substring match.
+    const resolved = path.resolve(dirPath);
+    if (!resolved.split(path.sep).includes(".romperdb")) {
       return {
         error: "Refusing to remove directory outside .romperdb scope",
         removed: false,
       };
     }
-    if (!fs.existsSync(dirPath)) {
+    if (!fs.existsSync(resolved)) {
       return { removed: true }; // Already gone
     }
-    fs.rmSync(dirPath, { force: true, recursive: true });
+    fs.rmSync(resolved, { force: true, recursive: true });
     return { removed: true };
   } catch (error) {
     return {

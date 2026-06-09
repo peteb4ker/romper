@@ -1,4 +1,4 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 import React from "react";
@@ -24,7 +24,7 @@ interface KitEditorContainerProps {
   onToggleEditableMode?: (kitName: string) => Promise<void>;
   onToggleFavorite?: (
     kitName: string,
-  ) => Promise<{ isFavorite?: boolean; success: boolean }>;
+  ) => Promise<DbResult<{ isFavorite: boolean }>>;
   onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>;
   samples: VoiceSamples;
 }

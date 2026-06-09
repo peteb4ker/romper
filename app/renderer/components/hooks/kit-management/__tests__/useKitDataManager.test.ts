@@ -1,4 +1,4 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -511,13 +511,15 @@ describe("useKitDataManager", () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      let toggleResult: { isFavorite?: boolean; success: boolean };
+      let toggleResult: DbResult<{ isFavorite: boolean }>;
       await act(async () => {
         toggleResult = await result.current.toggleKitFavorite("A0");
       });
 
-      expect(toggleResult.success).toBe(true);
-      expect(toggleResult.isFavorite).toBe(true);
+      expect(toggleResult).toEqual({
+        data: { isFavorite: true },
+        success: true,
+      });
       expect(window.electronAPI.toggleKitFavorite).toHaveBeenCalledWith("A0");
 
       // Check that local state was updated
@@ -544,13 +546,15 @@ describe("useKitDataManager", () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      let toggleResult: { isFavorite?: boolean; success: boolean };
+      let toggleResult: DbResult<{ isFavorite: boolean }>;
       await act(async () => {
         toggleResult = await result.current.toggleKitFavorite("A0");
       });
 
-      expect(toggleResult.success).toBe(false);
-      expect(toggleResult.isFavorite).toBeUndefined();
+      expect(toggleResult).toEqual({
+        error: "Failed to toggle favorite",
+        success: false,
+      });
     });
 
     it("should handle API exception", async () => {
@@ -571,13 +575,15 @@ describe("useKitDataManager", () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      let toggleResult: { isFavorite?: boolean; success: boolean };
+      let toggleResult: DbResult<{ isFavorite: boolean }>;
       await act(async () => {
         toggleResult = await result.current.toggleKitFavorite("A0");
       });
 
-      expect(toggleResult.success).toBe(false);
-      expect(toggleResult.isFavorite).toBeUndefined();
+      expect(toggleResult).toEqual({
+        error: "Network error",
+        success: false,
+      });
     });
   });
 

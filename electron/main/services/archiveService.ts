@@ -214,9 +214,15 @@ export class ArchiveService {
   ): Promise<string> {
     if (url.startsWith("file://")) {
       return this.handleFileUrl(url);
-    } else {
-      return this.downloadFromUrl(url, progressCallback);
     }
+    // Only allow downloads over HTTPS. Reject http:// and any other scheme
+    // explicitly rather than letting it fall through to the HTTPS downloader.
+    if (!url.startsWith("https://")) {
+      throw new Error(
+        "Unsupported archive URL scheme: only https:// and file:// are allowed",
+      );
+    }
+    return this.downloadFromUrl(url, progressCallback);
   }
 }
 

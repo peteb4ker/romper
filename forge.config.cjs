@@ -1,3 +1,6 @@
+const { FusesPlugin } = require("@electron-forge/plugin-fuses");
+const { FuseV1Options, FuseVersion } = require("@electron/fuses");
+
 const config = {
   packagerConfig: {
     name: "Romper",
@@ -115,7 +118,30 @@ const config = {
       },
     },
   ],
-  plugins: [],
+  plugins: [
+    // Flip Electron fuses on the packaged binary to shrink the attack surface.
+    // ELECTRON_RUN_AS_NODE, the Node CLI inspect flags, and NODE_OPTIONS are
+    // disabled so the shipped binary cannot be repurposed as a general Node
+    // runtime or attached to with a debugger.
+    //
+    // The asar-integrity fuses (OnlyLoadAppFromAsar /
+    // EnableEmbeddedAsarIntegrityValidation) are intentionally left disabled:
+    // this project does not currently package with asar, and enabling it has
+    // native-module (better-sqlite3) implications that are out of scope here.
+    //
+    // Fuses are flipped during forge packaging, before the out-of-band macOS
+    // signing step in .github/workflows/release.yml, so the signature covers
+    // the fused binary.
+    new FusesPlugin({
+      version: FuseVersion.V1,
+      [FuseV1Options.EnableCookieEncryption]: true,
+      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: false,
+      [FuseV1Options.EnableNodeCliInspectArguments]: false,
+      [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
+      [FuseV1Options.OnlyLoadAppFromAsar]: false,
+      [FuseV1Options.RunAsNode]: false,
+    }),
+  ],
 };
 
 module.exports = config;

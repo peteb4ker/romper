@@ -64,6 +64,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.resolve(__dirname, "../preload/index.cjs"),
+      sandbox: true,
     },
     width: windowState.width,
     x: windowState.x,

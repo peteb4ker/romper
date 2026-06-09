@@ -291,6 +291,22 @@ describe("download-and-extract-archive handler", () => {
     );
   }, 15000);
 
+  it("rejects non-https, non-file URL schemes", async () => {
+    const handler = ipcMainHandlers["download-and-extract-archive"];
+    const result = await handler(
+      mockEvent as unknown,
+      "http://insecure.com/archive.zip",
+      "/mock/dest",
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/only https:\/\/ and file:\/\/ are allowed/);
+    expect(mockEvent.sender.send).toHaveBeenCalledWith(
+      "archive-error",
+      expect.objectContaining({ message: expect.any(String) }),
+    );
+  }, 15000);
+
   it("handles file:// URLs for local archive files", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
 

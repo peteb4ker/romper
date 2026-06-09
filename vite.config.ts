@@ -2,7 +2,44 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
 import path from "node:path";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+
+// Tightens the Content-Security-Policy in the *production* index.html while
+// leaving the dev CSP (which must allow the Vite HMR websocket) untouched.
+// The dev `connect-src ws://localhost:*` is removed from packaged builds and
+// `base-uri` / `frame-ancestors` / `object-src` are added.
+function hardenProductionCsp(): Plugin {
+  const productionCsp = [
+    "default-src 'self'",
+    "script-src 'self' blob:",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "connect-src 'self'",
+    "font-src 'self'",
+    "worker-src 'self' blob:",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+  ].join("; ");
+
+  return {
+    name: "romper-harden-production-csp",
+    transformIndexHtml: {
+      handler(html, ctx) {
+        // ctx.server is only defined during `vite` dev serve; in `vite build`
+        // it is undefined, which is exactly when we want the hardened CSP.
+        if (ctx.server) {
+          return html;
+        }
+        return html.replace(
+          /<meta\s+http-equiv="Content-Security-Policy"[^>]*\/?>/i,
+          `<meta http-equiv="Content-Security-Policy" content="${productionCsp}" />`,
+        );
+      },
+      order: "post",
+    },
+  };
+}
 
 // Centralized Vite config for all packages (renderer, shared, etc)
 export default defineConfig({
@@ -16,7 +53,7 @@ export default defineConfig({
       plugins: [autoprefixer()],
     },
   },
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), hardenProductionCsp()],
   resolve: {
     alias: {
       "@romper/app": path.resolve(__dirname, "app"),

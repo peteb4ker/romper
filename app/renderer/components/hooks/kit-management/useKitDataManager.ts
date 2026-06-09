@@ -1,5 +1,5 @@
 import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
 import React, { useCallback, useEffect, useState } from "react";
@@ -24,7 +24,7 @@ interface UseKitDataManagerReturn {
   toggleKitEditable: (kitName: string) => Promise<void>;
   toggleKitFavorite: (
     kitName: string,
-  ) => Promise<{ isFavorite?: boolean; success: boolean }>;
+  ) => Promise<DbResult<{ isFavorite: boolean }>>;
   updateKit: (kitName: string, updates: Partial<KitWithRelations>) => void;
   updateKitAlias: (kitName: string, alias: string) => Promise<void>;
 }
@@ -219,7 +219,7 @@ export function useKitDataManager({
 
   // Toggle kit favorite status
   const toggleKitFavorite = useCallback(
-    async (kitName: string) => {
+    async (kitName: string): Promise<DbResult<{ isFavorite: boolean }>> => {
       try {
         const result =
           await globalThis.electronAPI?.toggleKitFavorite?.(kitName);
@@ -227,12 +227,18 @@ export function useKitDataManager({
           // Update local state immediately for optimistic UI update
           const newFavoriteState = result.data?.isFavorite ?? false;
           updateKit(kitName, { is_favorite: newFavoriteState });
-          return { isFavorite: newFavoriteState, success: true };
+          return { data: { isFavorite: newFavoriteState }, success: true };
         }
-        return { success: false };
+        return {
+          error: result?.error ?? "Toggle favorite API not available",
+          success: false,
+        };
       } catch (error) {
         console.error("Error toggling kit favorite:", error);
-        return { success: false };
+        return {
+          error: error instanceof Error ? error.message : String(error),
+          success: false,
+        };
       }
     },
     [updateKit],

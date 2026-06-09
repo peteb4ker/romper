@@ -1,4 +1,4 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 
 import React from "react";
 
@@ -21,7 +21,7 @@ interface KitEditorAllProps extends KitEditorProps {
   onToggleEditableMode?: (kitName: string) => Promise<void>; // Toggle editable mode - used via useKitEditorLogic hook
   onToggleFavorite?: (
     kitName: string,
-  ) => Promise<{ isFavorite?: boolean; success: boolean }>; // For favorite star button
+  ) => Promise<DbResult<{ isFavorite: boolean }>>; // For favorite star button
   onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>; // Update kit alias - used via useKitEditorLogic hook
 }
 

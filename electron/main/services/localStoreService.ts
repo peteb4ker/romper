@@ -10,6 +10,10 @@ import {
 } from "../localStoreValidator.js";
 import { logger } from "../utils/logger.js";
 
+// Upper bound for read-file responses. Sample WAVs are far smaller; this only
+// guards against a request for a pathologically large or special file.
+const MAX_READ_FILE_BYTES = 256 * 1024 * 1024; // 256 MiB
+
 /**
  * Service for local store validation and management operations
  * Extracted from ipcHandlers.ts and dbIpcHandlers.ts to separate business logic from IPC routing
@@ -150,7 +154,13 @@ export class LocalStoreService {
   }
 
   /**
-   * Read a file and return its buffer
+   * Read a file and return its buffer.
+   *
+   * Hardened against two misuses of this renderer-facing channel:
+   * - Symbolic links are refused (lstat), so a link planted inside the local
+   *   store cannot redirect a read to an arbitrary sensitive file.
+   * - Reads are capped, so a request for a huge/special file cannot exhaust
+   *   memory in the main process.
    */
   readFile(filePath: string): {
     data?: ArrayBuffer;
@@ -158,6 +168,20 @@ export class LocalStoreService {
     success: boolean;
   } {
     try {
+      const stats = fs.lstatSync(filePath);
+      if (stats.isSymbolicLink()) {
+        return { error: "Refusing to read a symbolic link", success: false };
+      }
+      if (!stats.isFile()) {
+        return { error: "Not a regular file", success: false };
+      }
+      if (stats.size > MAX_READ_FILE_BYTES) {
+        return {
+          error: `File exceeds maximum readable size (${MAX_READ_FILE_BYTES} bytes)`,
+          success: false,
+        };
+      }
+
       const data = fs.readFileSync(filePath);
       return {
         data: data.buffer.slice(

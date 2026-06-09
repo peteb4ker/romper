@@ -306,6 +306,13 @@ describe("LocalStoreService", () => {
   });
 
   describe("readFile", () => {
+    // A regular, small file by default; individual tests override as needed.
+    const regularFileStat = {
+      isFile: () => true,
+      isSymbolicLink: () => false,
+      size: 1024,
+    } as unknown;
+
     it("successfully reads file and returns ArrayBuffer", () => {
       const mockBuffer = Buffer.from("test file content");
       // Mock the buffer properties that the service uses
@@ -322,6 +329,7 @@ describe("LocalStoreService", () => {
         writable: false,
       });
 
+      mockFs.lstatSync.mockReturnValue(regularFileStat);
       mockFs.readFileSync.mockReturnValue(mockBuffer);
 
       const result = localStoreService.readFile("/test/file.txt");
@@ -331,7 +339,50 @@ describe("LocalStoreService", () => {
       expect(mockFs.readFileSync).toHaveBeenCalledWith("/test/file.txt");
     });
 
+    it("refuses to read a symbolic link", () => {
+      mockFs.lstatSync.mockReturnValue({
+        isFile: () => false,
+        isSymbolicLink: () => true,
+        size: 10,
+      } as unknown);
+
+      const result = localStoreService.readFile("/test/link.wav");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/symbolic link/i);
+      expect(mockFs.readFileSync).not.toHaveBeenCalled();
+    });
+
+    it("refuses to read a non-regular file", () => {
+      mockFs.lstatSync.mockReturnValue({
+        isFile: () => false,
+        isSymbolicLink: () => false,
+        size: 10,
+      } as unknown);
+
+      const result = localStoreService.readFile("/dev/zero");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/not a regular file/i);
+      expect(mockFs.readFileSync).not.toHaveBeenCalled();
+    });
+
+    it("refuses to read a file over the size cap", () => {
+      mockFs.lstatSync.mockReturnValue({
+        isFile: () => true,
+        isSymbolicLink: () => false,
+        size: 1024 * 1024 * 1024, // 1 GiB > cap
+      } as unknown);
+
+      const result = localStoreService.readFile("/test/huge.bin");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/maximum readable size/i);
+      expect(mockFs.readFileSync).not.toHaveBeenCalled();
+    });
+
     it("returns error when file read fails", () => {
+      mockFs.lstatSync.mockReturnValue(regularFileStat);
       mockFs.readFileSync.mockImplementation(() => {
         throw new Error("File not found");
       });
@@ -345,6 +396,7 @@ describe("LocalStoreService", () => {
     });
 
     it("handles non-Error exceptions", () => {
+      mockFs.lstatSync.mockReturnValue(regularFileStat);
       mockFs.readFileSync.mockImplementation(() => {
         const error: unknown = "String error";
         throw error;

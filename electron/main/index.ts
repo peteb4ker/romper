@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -70,6 +70,8 @@ function createWindow() {
     y: windowState.y,
   });
 
+  hardenNavigation(win);
+
   if (windowState.isMaximized) {
     win.maximize();
   }
@@ -125,6 +127,43 @@ function getSettingsPath(): string {
 
 function getWindowStatePath(): string {
   return path.join(app.getPath("userData"), "window-state.json");
+}
+
+/**
+ * Apply Electron navigation hardening to a window's web contents:
+ * - Deny all `window.open` / target=_blank popups, sending http(s) URLs to the
+ *   user's external browser instead of opening an in-app window.
+ * - Block any top-level navigation that would leave the app's own origin
+ *   (e.g. an injected link), routing external http(s) links to the browser.
+ *
+ * Same-origin SPA routing uses the history API and does not trigger
+ * `will-navigate`, so this does not interfere with normal app navigation.
+ */
+function hardenNavigation(win: BrowserWindow): void {
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) {
+      void shell.openExternal(url);
+    }
+    return { action: "deny" };
+  });
+
+  win.webContents.on("will-navigate", (event, navigationUrl) => {
+    if (isSameOrigin(navigationUrl, win.webContents.getURL())) {
+      return;
+    }
+    event.preventDefault();
+    if (/^https?:\/\//i.test(navigationUrl)) {
+      void shell.openExternal(navigationUrl);
+    }
+  });
+}
+
+function isSameOrigin(a: string, b: string): boolean {
+  try {
+    return new URL(a).origin === new URL(b).origin;
+  } catch {
+    return false;
+  }
 }
 
 function registerAllIpcHandlers(settings: InMemorySettings) {

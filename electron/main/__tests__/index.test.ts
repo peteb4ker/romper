@@ -49,8 +49,10 @@ vi.mock("electron", () => {
       maximize: vi.fn(),
       on: vi.fn(),
       webContents: {
+        getURL: vi.fn(() => ""),
         on: vi.fn(),
         send: vi.fn(),
+        setWindowOpenHandler: vi.fn(),
       },
     };
   });
@@ -214,6 +216,12 @@ describe.sequential("main/index.ts", () => {
       loadURL: vi.fn().mockRejectedValue(new Error("Load URL failed")),
       maximize: vi.fn(),
       on: vi.fn(),
+      webContents: {
+        getURL: vi.fn(() => ""),
+        on: vi.fn(),
+        send: vi.fn(),
+        setWindowOpenHandler: vi.fn(),
+      },
     };
     vi.mocked(BrowserWindow).mockImplementation(function () {
       return mockWindow as unknown;
@@ -242,6 +250,12 @@ describe.sequential("main/index.ts", () => {
       loadURL: vi.fn().mockResolvedValue(undefined),
       maximize: vi.fn(),
       on: vi.fn(),
+      webContents: {
+        getURL: vi.fn(() => ""),
+        on: vi.fn(),
+        send: vi.fn(),
+        setWindowOpenHandler: vi.fn(),
+      },
     };
     vi.mocked(BrowserWindow).mockImplementation(function () {
       return mockWindow as unknown;

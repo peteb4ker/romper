@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 
 import type { ElectronAPI } from "../../../electron.d";
 
 import { config } from "../../../config";
+import { createLogger } from "../../../utils/logger";
 import { useLocalStoreWizardFileOps } from "./useLocalStoreWizardFileOps";
 import { useLocalStoreWizardScanning } from "./useLocalStoreWizardScanning";
 import {
@@ -10,6 +11,12 @@ import {
   type ProgressEvent,
   useLocalStoreWizardState,
 } from "./useLocalStoreWizardState";
+import { useWizardProgress } from "./useWizardProgress";
+import {
+  getElectronAPI,
+  normalizeErrorMessage,
+  runPreChecks,
+} from "./wizardInitUtils";
 
 // Re-export types for convenience
 export type { LocalStoreSource, ProgressEvent };
@@ -21,57 +28,23 @@ declare global {
   }
 }
 
+const log = createLogger("LocalStoreWizard");
+
 // --- Main Hook ---
 export function useLocalStoreWizard(
   onProgress?: (p: ProgressEvent) => void,
   setLocalStorePath?: (path: string) => void,
 ) {
   const api = useElectronAPI();
-  const progressCb = useRef(onProgress);
-  progressCb.current = onProgress;
 
   // State management hook
   const stateHook = useLocalStoreWizardState({ api });
   const { defaultPath, progress, state } = stateHook;
 
-  // --- Progress reporting ---
-  const reportProgress = useCallback(
-    (p: ProgressEvent) => {
-      stateHook.setProgress(p);
-      if (progressCb.current) progressCb.current(p);
-    },
-    [stateHook],
-  );
-
-  // --- Progress reporting helper ---
-  const reportStepProgress = useCallback(
-    ({
-      items,
-      onStep,
-      phase,
-    }: {
-      items: string[];
-      onStep: (item: string, idx: number) => Promise<void>;
-      phase: string;
-    }) => {
-      // Sequentially process items for correct progress updates
-      return (async () => {
-        for (let idx = 0; idx < items.length; idx++) {
-          const item = items[idx];
-          reportProgress({
-            currentKit: idx + 1,
-            file: item,
-            kitName: item,
-            percent: Math.round(((idx + 1) / items.length) * 100),
-            phase,
-            totalKits: items.length,
-          });
-          await onStep(item, idx);
-        }
-        if (items.length > 0) reportProgress({ percent: 100, phase });
-      })();
-    },
-    [reportProgress],
+  // Progress reporting (wizard state + optional external callback)
+  const { reportProgress, reportStepProgress } = useWizardProgress(
+    stateHook.setProgress,
+    onProgress,
   );
 
   // File operations hook
@@ -91,60 +64,41 @@ export function useLocalStoreWizard(
 
   // Helper function to set the local store path
   const setLocalStorePathHelper = useCallback(async () => {
-    const isDev = process.env.NODE_ENV === "development";
-    isDev &&
-      console.debug(
-        "[Hook] setLocalStorePath callback available:",
-        !!setLocalStorePath,
-      );
-    isDev && console.debug("[Hook] state.targetPath:", state.targetPath);
+    log.debug(
+      `setLocalStorePath callback available: ${!!setLocalStorePath}, targetPath: ${state.targetPath}`,
+    );
 
     if (setLocalStorePath) {
-      isDev &&
-        console.debug(
-          "[Hook] Calling setLocalStorePath with:",
-          state.targetPath,
-        );
       setLocalStorePath(state.targetPath);
-      isDev && console.debug("[Hook] setLocalStorePath called successfully");
     } else if (api.setSetting) {
-      isDev && console.debug("[Hook] Falling back to api.setSetting");
+      log.debug("Falling back to api.setSetting");
       await api.setSetting("localStorePath", state.targetPath);
-      isDev && console.debug("[Hook] api.setSetting called successfully");
     } else {
-      isDev &&
-        console.debug("[Hook] No method available to set local store path!");
+      log.debug("No method available to set local store path!");
     }
   }, [state.targetPath, setLocalStorePath, api]);
 
   // Helper function to handle source-specific operations
   const processSource = useCallback(async () => {
-    const isDev = process.env.NODE_ENV === "development";
-
     if (state.source === "sdcard") {
       if (!state.sdCardSourcePath) throw new Error("No SD card path selected");
-      isDev && console.debug("[Hook] initialize - copying SD card kits");
+      log.debug("initialize - copying SD card kits");
       await fileOpsHook.validateAndCopySdCardKits(
         state.sdCardSourcePath,
         state.targetPath,
       );
     } else if (state.source === "squarp") {
-      isDev && console.debug("[Hook] initialize - extracting Squarp archive");
+      log.debug("initialize - extracting Squarp archive");
       await fileOpsHook.extractSquarpArchive(state.targetPath);
-      isDev &&
-        console.debug(
-          "[Hook] initialize - Squarp archive extraction completed",
-        );
+      log.debug("initialize - Squarp archive extraction completed");
       // Add a small delay to ensure filesystem sync
       await new Promise((resolve) => setTimeout(resolve, 100));
-      isDev &&
-        console.debug("[Hook] initialize - filesystem sync delay completed");
+      log.debug("initialize - filesystem sync delay completed");
     }
   }, [state.source, state.sdCardSourcePath, state.targetPath, fileOpsHook]);
 
   const initialize = useCallback(async () => {
-    const isDev = process.env.NODE_ENV === "development";
-    isDev && console.debug("[Hook] initialize starting with state:", state);
+    log.debug("initialize starting");
     stateHook.setIsInitializing(true);
     stateHook.setError(null);
     stateHook.setProgress(null);
@@ -161,29 +115,26 @@ export function useLocalStoreWizard(
       await processSource();
 
       // Create and populate database
-      isDev &&
-        console.debug("[Hook] initialize - creating and populating database");
+      log.debug("initialize - creating and populating database");
       const { dbDir, truncationWarnings, validKits } =
         await fileOpsHook.createAndPopulateDb(state.targetPath);
-      isDev && console.debug("[Hook] initialize - database creation completed");
+      log.debug("initialize - database creation completed");
       if (truncationWarnings && truncationWarnings.length > 0) {
         stateHook.setWizardState({ truncationWarnings });
       }
 
       // Run scanning operations as the final step
-      isDev &&
-        console.debug("[Hook] initialize - starting scanning operations");
+      log.debug("initialize - starting scanning operations");
       await scanningHook.runScanning(state.targetPath, dbDir, validKits);
-      isDev &&
-        console.debug("[Hook] initialize - scanning operations completed");
+      log.debug("initialize - scanning operations completed");
 
       // Set the local store path only after everything is ready
       await setLocalStorePathHelper();
 
-      isDev && console.debug("[Hook] initialize completed successfully");
+      log.debug("initialize completed successfully");
       return { success: true };
     } catch (e: unknown) {
-      console.error("[Hook] initialize error:", e);
+      log.error("initialize error:", e);
       const errorMessage = e instanceof Error ? e.message : "Unknown error";
       stateHook.setError(normalizeErrorMessage(errorMessage));
 
@@ -191,10 +142,7 @@ export function useLocalStoreWizard(
       if (state.targetPath && api.cleanupPartialInit) {
         try {
           await api.cleanupPartialInit(state.targetPath);
-          isDev &&
-            console.debug(
-              "[Hook] Cleaned up partial .romperdb after failed initialization",
-            );
+          log.debug("Cleaned up partial .romperdb after failed initialization");
         } catch {
           // Cleanup is best-effort; don't mask the original error
         }
@@ -290,51 +238,6 @@ export function useLocalStoreWizard(
       fileOpsHook.validateSdCardFolder,
     ],
   );
-}
-
-function getElectronAPI(): ElectronAPI {
-  // Use type assertion to avoid type conflict with window.electronAPI
-  return typeof globalThis !== "undefined" && globalThis.electronAPI
-    ? globalThis.electronAPI
-    : ({} as ElectronAPI);
-}
-
-function normalizeErrorMessage(msg: string) {
-  if (msg.includes("premature close")) {
-    return "Download failed: The connection was closed before completion. Please check your internet connection and try again.";
-  }
-  return msg;
-}
-
-// --- Error message normalization ---
-async function runPreChecks(
-  api: ElectronAPI,
-  targetPath: string,
-  source: LocalStoreSource,
-) {
-  if (api.checkPathWritable) {
-    const writableResult = await api.checkPathWritable(targetPath);
-    if (!writableResult.writable) {
-      throw new Error(
-        `Cannot write to ${targetPath}. Please choose a folder you have permission to write to.`,
-      );
-    }
-  }
-
-  if (api.checkDiskSpace && source !== "blank") {
-    const requiredBytes =
-      source === "squarp" ? 1024 * 1024 * 1024 : 500 * 1024 * 1024;
-    const spaceResult = await api.checkDiskSpace(targetPath, requiredBytes);
-    if (!spaceResult.sufficient) {
-      const availableMB = Math.round(
-        spaceResult.availableBytes / (1024 * 1024),
-      );
-      const requiredMB = Math.round(spaceResult.requiredBytes / (1024 * 1024));
-      throw new Error(
-        `Not enough disk space. Need ~${requiredMB} MB but only ${availableMB} MB available at ${targetPath}.`,
-      );
-    }
-  }
 }
 
 function useElectronAPI(): ElectronAPI {

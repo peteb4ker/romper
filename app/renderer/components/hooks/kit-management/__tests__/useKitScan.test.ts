@@ -1,91 +1,150 @@
-import { describe, expect, it, vi } from "vitest";
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { scanSingleKit } from "../useKitScan";
+import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
+import { scanAllKits, scanSingleKit, useKitScan } from "../useKitScan";
 
-// Mock the orchestration functions
-vi.mock("../../../utils/scanners/orchestrationFunctions", () => ({
-  executeFullKitScan: vi.fn(),
-  executeVoiceInferenceScan: vi.fn(),
-  executeWAVAnalysisScan: vi.fn(),
-}));
-
-// No bankOperations mocks needed anymore
+const kit = (name: string) => ({ name }) as never;
 
 describe("scanSingleKit", () => {
-  const fileReaderImpl = vi.fn();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupElectronAPIMock();
+  });
 
-  it("calls executeVoiceInferenceScan for voiceInference", async () => {
-    const { executeVoiceInferenceScan } =
-      await import("../../../utils/scanners/orchestrationFunctions");
-    vi.mocked(executeVoiceInferenceScan).mockResolvedValue({ success: true });
-
-    const result = await scanSingleKit({
-      fileReaderImpl,
-      kitName: "A01_Kick",
-      scanType: "voiceInference",
-      scanTypeDisplay: "voice name inference",
+  it("delegates to the main-process rescan", async () => {
+    vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
+      data: { scannedSamples: 7, updatedVoices: 2 },
+      success: true,
     });
 
-    expect(executeVoiceInferenceScan).toHaveBeenCalled();
+    const result = await scanSingleKit({ kitName: "A1" });
+
+    expect(window.electronAPI.rescanKit).toHaveBeenCalledWith("A1");
     expect(result.success).toBe(true);
   });
 
-  it("calls executeWAVAnalysisScan for wavAnalysis", async () => {
-    const { executeWAVAnalysisScan } =
-      await import("../../../utils/scanners/orchestrationFunctions");
-    vi.mocked(executeWAVAnalysisScan).mockResolvedValue({ success: true });
-
-    const result = await scanSingleKit({
-      fileReaderImpl,
-      kitName: "A01_Kick",
-      scanType: "wavAnalysis",
-      scanTypeDisplay: "WAV analysis",
+  it("returns the rescan failure as-is", async () => {
+    vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
+      error: "Kit directory not found",
+      success: false,
     });
 
-    expect(executeWAVAnalysisScan).toHaveBeenCalled();
-    expect(result.success).toBe(true);
+    const result = await scanSingleKit({ kitName: "A1" });
+    expect(result).toEqual({
+      error: "Kit directory not found",
+      success: false,
+    });
   });
 
-  it("calls executeFullKitScan for full scan", async () => {
-    const { executeFullKitScan } =
-      await import("../../../utils/scanners/orchestrationFunctions");
-    vi.mocked(executeFullKitScan).mockResolvedValue({ success: true });
+  it("fails cleanly when the rescan API is unavailable", async () => {
+    delete (window.electronAPI as { rescanKit?: unknown }).rescanKit;
 
-    const result = await scanSingleKit({
-      fileReaderImpl,
-      kitName: "A01_Kick",
-      scanType: "full",
-      scanTypeDisplay: "comprehensive",
-    });
+    const result = await scanSingleKit({ kitName: "A1" });
+    expect(result.success).toBe(false);
 
-    expect(executeFullKitScan).toHaveBeenCalled();
-    expect(result.success).toBe(true);
+    setupElectronAPIMock();
   });
 });
 
-import { act, renderHook } from "@testing-library/react";
+describe("scanAllKits", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupElectronAPIMock();
+    vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
+      data: { scannedSamples: 3, updatedVoices: 1 },
+      success: true,
+    });
+  });
 
-import { useKitScan } from "../useKitScan";
+  it("rescans every kit and reports completion", async () => {
+    const onProgress = vi.fn();
+    const onRefreshKits = vi.fn();
+
+    await scanAllKits({
+      kits: [kit("A1"), kit("A2")],
+      onProgress,
+      onRefreshKits,
+    });
+
+    expect(window.electronAPI.rescanKit).toHaveBeenCalledTimes(2);
+    expect(window.electronAPI.rescanKit).toHaveBeenCalledWith("A1");
+    expect(window.electronAPI.rescanKit).toHaveBeenCalledWith("A2");
+    expect(onProgress).toHaveBeenLastCalledWith({
+      message: "All 2 kits scanned successfully (comprehensive).",
+      status: "complete",
+      successCount: 2,
+    });
+    expect(onRefreshKits).toHaveBeenCalledTimes(1);
+  });
+
+  it("counts failures and surfaces their errors", async () => {
+    vi.mocked(window.electronAPI.rescanKit)
+      .mockResolvedValueOnce({ data: { scannedSamples: 3 }, success: true })
+      .mockResolvedValueOnce({ error: "boom", success: false });
+    const onProgress = vi.fn();
+
+    await scanAllKits({ kits: [kit("A1"), kit("A2")], onProgress });
+
+    expect(onProgress).toHaveBeenLastCalledWith({
+      message: expect.stringContaining("1 successful, 1 failed. A2: boom"),
+      status: "complete",
+      successCount: 1,
+    });
+  });
+
+  it("reports an error when there are no kits", async () => {
+    const onProgress = vi.fn();
+    await scanAllKits({ kits: [], onProgress });
+
+    expect(onProgress).toHaveBeenCalledWith({
+      message: "No kits to scan",
+      status: "error",
+    });
+    expect(window.electronAPI.rescanKit).not.toHaveBeenCalled();
+  });
+});
 
 describe("useKitScan", () => {
-  it("should show error if no kits", async () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupElectronAPIMock();
+    vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
+      data: { scannedSamples: 3, updatedVoices: 1 },
+      success: true,
+    });
+  });
+
+  it("tracks bulk scan progress through to completion", async () => {
+    const onRefreshKits = vi.fn();
     const { result } = renderHook(() =>
-      useKitScan({ kits: [], onRefreshKits: vi.fn() }),
+      useKitScan({ kits: [kit("A1")], onRefreshKits }),
     );
+
     await act(async () => {
       await result.current.handleScanAllKits();
     });
-    // Verify the hook returns expected state after handling empty kits
-    expect(result.current.handleScanAllKits).toBeDefined();
-    expect(typeof result.current.handleScanAllKits).toBe("function");
+
+    expect(result.current.bulkScanProgress).toEqual({
+      message: "All 1 kits scanned successfully (comprehensive).",
+      status: "complete",
+      successCount: 1,
+    });
+    expect(onRefreshKits).toHaveBeenCalledTimes(1);
   });
 
-  it("should call onRefreshKits after scan", async () => {
-    const onRefreshKits = vi.fn();
+  it("reports an error state when there are no kits", async () => {
     const { result } = renderHook(() =>
-      useKitScan({ kits: ["KitA"], onRefreshKits }),
+      useKitScan({ kits: [], onRefreshKits: vi.fn() }),
     );
-    // This test would be quite complex to properly mock, so let's simplify
-    expect(result.current.handleScanAllKits).toBeDefined();
+
+    await act(async () => {
+      await result.current.handleScanAllKits();
+    });
+
+    expect(result.current.bulkScanProgress).toEqual({
+      message: "No kits to scan",
+      status: "error",
+    });
   });
 });

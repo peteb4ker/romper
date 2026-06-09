@@ -2,13 +2,6 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React, { useCallback } from "react";
 
-// --- Utility Functions ---
-import {
-  executeFullKitScan,
-  executeVoiceInferenceScan,
-  executeWAVAnalysisScan,
-} from "../../utils/scanners/orchestrationFunctions";
-
 const scanTypeDisplayMap: Record<string, string> = {
   voiceInference: "voice name inference",
   wavAnalysis: "WAV analysis",
@@ -22,25 +15,12 @@ export type BulkScanProgress =
 
 const BULK_SCAN_COMPLETE_CLEAR_MS = 5000;
 
-export async function fileReader(filePath: string): Promise<ArrayBuffer> {
-  if (!globalThis.electronAPI?.readFile) {
-    throw new Error("File reader not available");
-  }
-  const result = await globalThis.electronAPI.readFile(filePath);
-  if (!result.success || !result.data) {
-    throw new Error(result.error || "Failed to read file");
-  }
-  return result.data;
-}
-
 export async function scanAllKits({
-  fileReaderImpl = fileReader,
   kits,
   onProgress,
   onRefreshKits,
   operations,
 }: {
-  fileReaderImpl?: typeof fileReader;
   kits: KitWithRelations[];
   onProgress?: (progress: BulkScanProgress) => void;
   onRefreshKits?: () => void;
@@ -51,7 +31,7 @@ export async function scanAllKits({
     return;
   }
 
-  const { scanType, scanTypeDisplay } = getScanConfiguration(operations);
+  const { scanTypeDisplay } = getScanConfiguration(operations);
 
   onProgress?.({
     current: 0,
@@ -74,12 +54,7 @@ export async function scanAllKits({
         total: kits.length,
       });
 
-      const result = await processSingleKitScan(
-        kitName,
-        scanType,
-        scanTypeDisplay,
-        fileReaderImpl,
-      );
+      const result = await processSingleKitScan(kitName);
 
       if (result.success) {
         successCount++;
@@ -113,32 +88,13 @@ export async function scanAllKits({
   }
 }
 
-export async function scanSingleKit({
-  fileReaderImpl,
-  kitName: _kitName,
-  scanType,
-  scanTypeDisplay: _scanTypeDisplay,
-}: {
-  fileReaderImpl: typeof fileReader;
-  kitName: string;
-  scanType: string;
-  scanTypeDisplay: string;
-}) {
-  if (scanType === "voiceInference") {
-    const emptySamples = { 1: [], 2: [], 3: [], 4: [] };
-    return executeVoiceInferenceScan(emptySamples);
-  } else if (scanType === "wavAnalysis") {
-    const wavFiles: string[] = [];
-    return executeWAVAnalysisScan(wavFiles, fileReaderImpl);
-  } else {
-    // Full scan - voice inference and WAV analysis only
-    const scanInput = {
-      fileReader: fileReaderImpl,
-      samples: { 1: [], 2: [], 3: [], 4: [] },
-      wavFiles: [],
-    };
-    return executeFullKitScan(scanInput);
+export async function scanSingleKit({ kitName }: { kitName: string }) {
+  // Delegate to the main-process rescan, which re-reads the kit directory,
+  // rebuilds sample records, extracts WAV metadata, and infers voice names.
+  if (!globalThis.electronAPI?.rescanKit) {
+    return { error: "Rescan API not available", success: false as const };
   }
+  return globalThis.electronAPI.rescanKit(kitName);
 }
 
 // --- useKitScan Hook ---
@@ -212,40 +168,28 @@ function getCompletionMessage(
   }
 }
 
-// Helper function to determine scan type and display name
+// Helper function to determine the display name for the scan
 function getScanConfiguration(operations?: string[]) {
-  const scanType = operations?.length === 1 ? operations[0] : "full";
   const scanTypeDisplay =
     operations?.length === 1
       ? scanTypeDisplayMap[operations[0]] || operations[0]
       : "comprehensive";
 
-  return { scanType, scanTypeDisplay };
+  return { scanTypeDisplay };
 }
 
 // Helper function to process a single kit scan
-async function processSingleKitScan(
-  kitName: string,
-  scanType: string,
-  scanTypeDisplay: string,
-  fileReaderImpl: typeof fileReader,
-) {
+async function processSingleKitScan(kitName: string) {
   try {
-    const result = await scanSingleKit({
-      fileReaderImpl,
-      kitName,
-      scanType,
-      scanTypeDisplay,
-    });
+    const result = await scanSingleKit({ kitName });
 
     if (result.success) {
       return { success: true };
-    } else {
-      return {
-        error: `${kitName}: ${result.errors.map((e: { error: string; operation: string }) => e.error).join(", ")}`,
-        success: false,
-      };
     }
+    return {
+      error: `${kitName}: ${result.error || "Unknown error"}`,
+      success: false,
+    };
   } catch (error) {
     return {
       error: `${kitName}: ${error instanceof Error ? error.message : String(error)}`,

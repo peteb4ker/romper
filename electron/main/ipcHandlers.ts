@@ -63,6 +63,25 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("show-item-in-folder", async (_event, path: string) => {
     shell.showItemInFolder(path);
   });
+
+  // Open an external link in the system browser (https only)
+  ipcMain.handle("open-external", async (_event, url: string) => {
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      return { error: `Invalid URL: ${url}`, success: false };
+    }
+    if (parsed.protocol !== "https:") {
+      return {
+        error: `Refusing to open non-https URL: ${url}`,
+        success: false,
+      };
+    }
+    await shell.openExternal(url);
+    return { success: true };
+  });
+
   ipcMain.handle("get-kit-delete-summary", async (_event, kitName: string) => {
     const effectiveSettings: InMemorySettings = {
       ...inMemorySettings,

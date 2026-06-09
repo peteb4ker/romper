@@ -414,6 +414,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
       callback(progress),
     );
   },
+  openExternal: (url: string) => {
+    isDev && console.debug("[IPC] openExternal invoked", url);
+    return ipcRenderer.invoke("open-external", url);
+  },
   playSample: (
     filePath: string,
     options?: { channel?: "left" | "mono" | "right" | "stereo" },

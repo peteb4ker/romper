@@ -233,7 +233,7 @@ export interface ElectronAPI {
       totalFiles: number;
     }) => void,
   ) => void;
-  openExternal?: (url: string) => Promise<void>;
+  openExternal?: (url: string) => Promise<{ error?: string; success: boolean }>;
   playSample?: (
     filePath: string,
     options?: { channel?: "left" | "mono" | "right" | "stereo" },

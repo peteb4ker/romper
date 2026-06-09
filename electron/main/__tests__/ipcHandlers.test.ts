@@ -17,6 +17,10 @@ vi.mock("electron", () => ({
       ipcMainHandlers[name] = fn;
     }),
   },
+  shell: {
+    openExternal: vi.fn(() => Promise.resolve()),
+    showItemInFolder: vi.fn(),
+  },
 }));
 vi.mock("node:fs", () => {
   const mock = {
@@ -118,6 +122,45 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers(inMemorySettings);
     await ipcMainHandlers["write-settings"]({}, "baz", 42);
     expect(inMemorySettings.baz).toBe(42);
+  });
+
+  it("registers open-external and opens https URLs in the system browser", async () => {
+    const { shell } = await import("electron");
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    registerIpcHandlers({});
+
+    const result = await ipcMainHandlers["open-external"](
+      {},
+      "https://github.com/peteb4ker/romper",
+    );
+
+    expect(result).toEqual({ success: true });
+    expect(shell.openExternal).toHaveBeenCalledWith(
+      "https://github.com/peteb4ker/romper",
+    );
+  });
+
+  it("open-external refuses non-https and invalid URLs", async () => {
+    const { shell } = await import("electron");
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    registerIpcHandlers({});
+
+    const httpResult = await ipcMainHandlers["open-external"](
+      {},
+      "http://example.com",
+    );
+    expect(httpResult.success).toBe(false);
+
+    const fileResult = await ipcMainHandlers["open-external"](
+      {},
+      "file:///etc/passwd",
+    );
+    expect(fileResult.success).toBe(false);
+
+    const junkResult = await ipcMainHandlers["open-external"]({}, "not a url");
+    expect(junkResult.success).toBe(false);
+
+    expect(shell.openExternal).not.toHaveBeenCalled();
   });
 
   it("registers ensure-dir and creates directory", async () => {

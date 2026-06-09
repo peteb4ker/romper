@@ -1,10 +1,6 @@
-import { render, waitFor } from "@testing-library/react";
+import { waitFor } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-vi.mock("../utils/settingsManager", () => ({
-  applyTheme: vi.fn(),
-}));
 
 vi.mock("../utils/SettingsContext", () => ({
   SettingsProvider: ({ children }: { children: React.ReactNode }) => (
@@ -50,16 +46,6 @@ describe("renderer/main.tsx", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-  });
-
-  it("calls applyTheme on mount", async () => {
-    const { applyTheme } = await import("../utils/settingsManager");
-    // Actually render the App to trigger useEffect
-    const { App } = await import("../main");
-    render(<App />);
-    await waitFor(() => {
-      expect(applyTheme).toHaveBeenCalled();
-    });
   });
 
   it("renders the app with SettingsProvider and main layout", async () => {

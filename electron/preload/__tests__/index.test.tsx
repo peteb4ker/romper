@@ -89,9 +89,6 @@ describe("preload/index.tsx", () => {
         insertKit: expect.any(Function),
         insertSample: expect.any(Function),
         listFilesInRoot: expect.any(Function),
-        onSamplePlaybackEnded: expect.any(Function),
-        onSamplePlaybackError: expect.any(Function),
-        playSample: expect.any(Function),
         readFile: expect.any(Function),
         readSettings: expect.any(Function),
         replaceSampleInSlot: expect.any(Function),
@@ -101,7 +98,6 @@ describe("preload/index.tsx", () => {
         selectLocalStorePath: expect.any(Function),
         selectSdCard: expect.any(Function),
         setSetting: expect.any(Function),
-        stopSample: expect.any(Function),
         updateKit: expect.any(Function),
         updateStepPattern: expect.any(Function),
         updateVoiceAlias: expect.any(Function),
@@ -417,50 +413,6 @@ describe("preload/index.tsx", () => {
   });
 
   describe("electronAPI event listeners", () => {
-    it("sets up onSamplePlaybackEnded listener correctly", async () => {
-      await import("../index");
-
-      const electronAPICall =
-        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
-        );
-      const api = electronAPICall[1];
-
-      const callback = vi.fn();
-
-      api.onSamplePlaybackEnded(callback);
-
-      expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
-        "sample-playback-ended",
-      );
-      expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
-        "sample-playback-ended",
-        callback,
-      );
-    });
-
-    it("sets up onSamplePlaybackError listener correctly", async () => {
-      await import("../index");
-
-      const electronAPICall =
-        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
-        );
-      const api = electronAPICall[1];
-
-      const callback = vi.fn();
-
-      api.onSamplePlaybackError(callback);
-
-      expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
-        "sample-playback-error",
-      );
-      expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
-        "sample-playback-error",
-        expect.any(Function),
-      );
-    });
-
     it("sets up downloadAndExtractArchive progress listeners", async () => {
       await import("../index");
 
@@ -563,7 +515,6 @@ describe("preload/index.tsx", () => {
         ipcChannel: "get-favorite-kits-count",
         method: "getFavoriteKitsCount",
       },
-      { args: [], ipcChannel: "stop-sample", method: "stopSample" },
 
       // Methods with single string parameter
       { args: ["A01"], ipcChannel: "create-kit", method: "createKit" },
@@ -744,11 +695,6 @@ describe("preload/index.tsx", () => {
 
     // Test methods with options parameters
     const optionsParameterMethods = [
-      {
-        args: ["/path/to/sample.wav", { channel: "mono" }],
-        ipcChannel: "play-sample",
-        method: "playSample",
-      },
       {
         args: ["TestKit", 1, 0, "/path/to/sample.wav"],
         ipcChannel: "add-sample-to-slot",

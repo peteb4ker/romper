@@ -141,7 +141,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
         "get-all-samples-for-kit",
         "rescan-kit",
         "rescan-kits-missing-metadata",
-        "delete-all-samples-for-kit",
         "get-all-banks",
         "scan-banks",
         "add-sample-to-slot",

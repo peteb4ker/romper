@@ -395,18 +395,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
       mode,
     );
   },
-  onSamplePlaybackEnded: (cb: () => void) => {
-    isDev && console.debug("[IPC] onSamplePlaybackEnded registered");
-    ipcRenderer.removeAllListeners("sample-playback-ended");
-    ipcRenderer.on("sample-playback-ended", cb);
-  },
-  onSamplePlaybackError: (cb: (errMsg: string) => void) => {
-    isDev && console.debug("[IPC] onSamplePlaybackError registered");
-    ipcRenderer.removeAllListeners("sample-playback-error");
-    ipcRenderer.on("sample-playback-error", (_event: unknown, errMsg: string) =>
-      cb(errMsg),
-    );
-  },
   onSyncProgress: (callback: (progress: SyncProgress) => void) => {
     isDev && console.debug("[IPC] onSyncProgress listener registered");
     ipcRenderer.removeAllListeners("sync-progress");
@@ -417,13 +405,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   openExternal: (url: string) => {
     isDev && console.debug("[IPC] openExternal invoked", url);
     return ipcRenderer.invoke("open-external", url);
-  },
-  playSample: (
-    filePath: string,
-    options?: { channel?: "left" | "mono" | "right" | "stereo" },
-  ) => {
-    isDev && console.debug("[IPC] playSample invoked", filePath, options);
-    return ipcRenderer.invoke("play-sample", filePath, options);
   },
   readFile: (filePath: string) => {
     isDev && console.debug("[IPC] readFile invoked", filePath);
@@ -502,11 +483,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   }) => {
     isDev && console.debug("[IPC] startKitSync invoked", syncData);
     return ipcRenderer.invoke("startKitSync", syncData);
-  },
-
-  stopSample: () => {
-    isDev && console.debug("[IPC] stopSample invoked");
-    return ipcRenderer.invoke("stop-sample");
   },
 
   // Task 20.1: Favorites system

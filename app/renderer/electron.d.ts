@@ -206,8 +206,6 @@ export interface ElectronAPI {
       replacedSample?: Sample;
     }>
   >;
-  onSamplePlaybackEnded?: (cb: () => void) => void;
-  onSamplePlaybackError?: (cb: (errMsg: string) => void) => void;
   onSyncProgress?: (
     callback: (progress: {
       bytesCompleted: number;
@@ -234,10 +232,6 @@ export interface ElectronAPI {
     }) => void,
   ) => void;
   openExternal?: (url: string) => Promise<{ error?: string; success: boolean }>;
-  playSample?: (
-    filePath: string,
-    options?: { channel?: "left" | "mono" | "right" | "stereo" },
-  ) => Promise<unknown>;
   readAudioFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // ArrayBuffer for audio files
   readFile?: (filePath: string) => Promise<DbResult<ArrayBuffer>>; // Returns file content as ArrayBuffer
   readSettings: () => Promise<{
@@ -291,8 +285,6 @@ export interface ElectronAPI {
     sdCardPath: string;
     wipeSdCard?: boolean;
   }) => Promise<DbResult<{ syncedFiles: number }>>;
-
-  stopSample?: () => Promise<unknown>;
 
   // Task 20.1: Favorites system
   toggleKitFavorite?: (

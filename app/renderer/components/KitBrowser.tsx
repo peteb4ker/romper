@@ -1,11 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import React, {
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-} from "react";
+import React, { useCallback, useImperativeHandle, useRef } from "react";
 
 import SyncUpdateDialog from "./dialogs/SyncUpdateDialog";
 import ValidationResultsDialog from "./dialogs/ValidationResultsDialog";
@@ -171,19 +166,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       globalBankHotkeyHandler,
       onToggleFavorite: handleToggleFavorite,
     });
-
-    // Effect handlers for messages
-    useEffect(() => {
-      if (logic.sdCardWarning && onMessage) {
-        onMessage(logic.sdCardWarning, "warning", 5000);
-      }
-    }, [logic.sdCardWarning, onMessage]);
-
-    useEffect(() => {
-      if (logic.error && onMessage) {
-        onMessage(logic.error, "error", 7000);
-      }
-    }, [logic.error, onMessage]);
 
     // Handler for KitBankNav and KitGrid keyboard navigation
     const focusBankInKitGrid = (bank: string) => {

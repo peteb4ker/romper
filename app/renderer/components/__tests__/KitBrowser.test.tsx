@@ -439,50 +439,6 @@ describe("KitBrowser", () => {
     });
   });
 
-  describe("Error handling", () => {
-    it("displays error messages from logic", () => {
-      const mockOnMessage = vi.fn();
-      mockUseKitBrowser.mockReturnValue(
-        createMockReturnValue({
-          error: "Test error message",
-        }),
-      );
-
-      render(
-        <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} onMessage={mockOnMessage} />
-        </MockMessageDisplayProvider>,
-      );
-
-      expect(mockOnMessage).toHaveBeenCalledWith(
-        "Test error message",
-        "error",
-        7000,
-      );
-    });
-
-    it("displays SD card warnings", () => {
-      const mockOnMessage = vi.fn();
-      mockUseKitBrowser.mockReturnValue(
-        createMockReturnValue({
-          sdCardWarning: "SD card warning message",
-        }),
-      );
-
-      render(
-        <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} onMessage={mockOnMessage} />
-        </MockMessageDisplayProvider>,
-      );
-
-      expect(mockOnMessage).toHaveBeenCalledWith(
-        "SD card warning message",
-        "warning",
-        5000,
-      );
-    });
-  });
-
   describe("Settings Button", () => {
     it("clicking Settings button triggers onShowSettings prop", () => {
       const mockOnShowSettings = vi.fn();

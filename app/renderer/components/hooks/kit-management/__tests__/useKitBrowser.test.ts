@@ -6,18 +6,6 @@ import { describe, expect, it, vi } from "vitest";
 import { useKitBrowser } from "../useKitBrowser";
 
 // Mock the composed hooks
-vi.mock("../useKitErrorHandling", () => ({
-  useKitErrorHandling: vi.fn(() => ({
-    clearAllErrors: vi.fn(),
-    clearError: vi.fn(),
-    clearSdCardWarning: vi.fn(),
-    error: null,
-    sdCardWarning: null,
-    setError: vi.fn(),
-    setSdCardWarning: vi.fn(),
-  })),
-}));
-
 vi.mock("../useKitCreation", () => ({
   useKitCreation: vi.fn(() => ({
     handleCreateKitInBank: vi.fn(),
@@ -80,12 +68,6 @@ describe("useKitBrowser", () => {
     const { result } = renderHook(() => useKitBrowser(defaultProps));
 
     // Check that all expected properties are present
-    // From errorHandling
-    expect(result.current.error).toBeDefined();
-    expect(result.current.sdCardWarning).toBeDefined();
-    expect(result.current.setError).toBeDefined();
-    expect(result.current.setSdCardWarning).toBeDefined();
-
     // From kitCreation
     expect(result.current.handleCreateKitInBank).toBeDefined();
     expect(result.current.isCreatingKit).toBeDefined();

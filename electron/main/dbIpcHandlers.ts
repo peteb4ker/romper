@@ -12,7 +12,6 @@ import {
   addKit,
   addSample,
   createRomperDbFile,
-  deleteSamples,
   getAllBanks,
   getAllSamples,
   getKit,
@@ -279,13 +278,6 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("rescan-kits-missing-metadata", async () => {
     return scanService.rescanKitsWithMissingMetadata(inMemorySettings);
   });
-
-  ipcMain.handle(
-    "delete-all-samples-for-kit",
-    async (_event, dbDir: string, kitName: string) => {
-      return deleteSamples(dbDir, kitName);
-    },
-  );
 
   // Bank operations
   ipcMain.handle(

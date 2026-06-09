@@ -116,10 +116,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
       data: [],
       success: true,
     });
-    vi.mocked(romperDbCore.updateSampleMetadata).mockReturnValue({
-      success: true,
-    });
-
     registerDbIpcHandlers(mockInMemorySettings);
   });
 
@@ -133,7 +129,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
         "update-kit-metadata",
         "get-all-kits",
         "update-voice-alias",
-        "update-sample-metadata",
         "update-step-pattern",
         "validate-local-store",
         "validate-local-store-basic",
@@ -178,23 +173,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
       await handler({});
 
       expect(romperDbCore.getKits).toHaveBeenCalledWith("/test/path/.romperdb");
-    });
-
-    it("update-sample-metadata routes to updateSampleMetadata", async () => {
-      const handler = handlerRegistry["update-sample-metadata"];
-      const metadata = {
-        wav_bit_depth: 16,
-        wav_bitrate: 1411200,
-        wav_channels: 2,
-        wav_sample_rate: 44100,
-      };
-      await handler({}, 123, metadata);
-
-      expect(romperDbCore.updateSampleMetadata).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-        123,
-        metadata,
-      );
     });
   });
 

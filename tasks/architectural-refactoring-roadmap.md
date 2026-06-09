@@ -90,8 +90,8 @@ The architectural analysis identified **12 red flag files** exceeding 300 LOC th
 - [ ] Extract form validation logic to custom hook
 
 ### Task 2.3: databaseScanning.ts (342 LOC) → Target: <250 LOC
-- [ ] Split scanning operations by domain (kits, samples, voices)
-- [ ] Extract progress tracking utilities
+- [x] Resolved by deletion: the module was an unused renderer-side mirror of
+      the main-process `scanService.rescanKit` flow (no production importers)
 
 ### Task 2.4: KitsView.tsx (336 LOC) → Target: <250 LOC
 - [ ] Extract view state management to custom hooks

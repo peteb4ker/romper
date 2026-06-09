@@ -319,15 +319,6 @@ export interface ElectronAPI {
     slotNumber: number,
     gainDb: number,
   ) => Promise<DbResult>;
-  updateSampleMetadata?: (
-    sampleId: number,
-    metadata: {
-      wav_bit_depth?: null | number;
-      wav_bitrate?: null | number;
-      wav_channels?: null | number;
-      wav_sample_rate?: null | number;
-    },
-  ) => Promise<DbResult>;
   updateStepPattern?: (
     kitName: string,
     stepPattern: number[][],

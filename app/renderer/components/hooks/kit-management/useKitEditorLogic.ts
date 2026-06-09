@@ -192,12 +192,12 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   // Global keyboard navigation for sample preview, sequencer toggle, kit navigation, and scanning
   useKitEditorKeyboardNav({
     isEditable: !!kit?.editable,
-    onInferVoiceNames: handleInferVoiceNames,
+    onInferVoiceNames: () => void handleInferVoiceNames(),
     onNextKit,
     onPlaySample: playback.handlePlay,
     onPrevKit,
     onSampleKeyNav: kitVoicePanels.onSampleKeyNav,
-    onScanKit: handleScanKit,
+    onScanKit: () => void handleScanKit(),
     samples,
     selectedSampleIdx,
     selectedVoice,

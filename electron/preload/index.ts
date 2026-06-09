@@ -54,12 +54,7 @@ class SettingsManager {
       return parsedSettings;
     } catch (e) {
       console.error("Failed to read settings:", e);
-      // Even if reading settings fails, check for environment variable
-      const fallbackSettings: SettingsData = {};
-      if (process.env.ROMPER_LOCAL_PATH) {
-        fallbackSettings.localStorePath = process.env.ROMPER_LOCAL_PATH;
-      }
-      return fallbackSettings;
+      throw e;
     }
   }
 
@@ -74,6 +69,7 @@ class SettingsManager {
       await ipcRenderer.invoke("write-settings", key, value);
     } catch (e) {
       console.error("Failed to write settings:", e);
+      throw e;
     }
   }
 }

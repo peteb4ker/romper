@@ -194,7 +194,7 @@ describe("SettingsContext", () => {
   });
 
   describe("Error handling", () => {
-    it("handles setSetting errors", async () => {
+    it("surfaces setConfirmDestructiveActions failures in error state", async () => {
       mockElectronAPI.setSetting.mockRejectedValue(new Error("Save failed"));
 
       const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -216,6 +216,55 @@ describe("SettingsContext", () => {
         "Failed to update confirmDestructiveActions setting:",
         expect.any(Error),
       );
+      expect(result.current.error).toBe(
+        "Failed to save destructive-action confirmation setting: Save failed",
+      );
+      // The failed value must not be reflected in state
+      expect(result.current.confirmDestructiveActions).toBe(true);
+    });
+
+    it("surfaces setThemeMode failures in error state without changing the theme", async () => {
+      mockElectronAPI.setSetting.mockRejectedValue(new Error("Disk full"));
+
+      const wrapper = ({ children }: { children: React.ReactNode }) => (
+        <SettingsProvider>{children}</SettingsProvider>
+      );
+
+      const { result } = renderHook(() => useSettings(), { wrapper });
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      await act(async () => {
+        await result.current.setThemeMode("dark");
+      });
+
+      expect(result.current.error).toBe("Failed to save theme mode: Disk full");
+      expect(result.current.themeMode).toBe("light");
+    });
+
+    it("surfaces setLocalStorePath failures in error state without changing the path", async () => {
+      mockElectronAPI.setSetting.mockRejectedValue(new Error("EACCES"));
+
+      const wrapper = ({ children }: { children: React.ReactNode }) => (
+        <SettingsProvider>{children}</SettingsProvider>
+      );
+
+      const { result } = renderHook(() => useSettings(), { wrapper });
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      await act(async () => {
+        await result.current.setLocalStorePath("/new/path");
+      });
+
+      expect(result.current.error).toBe(
+        "Failed to save local store path: EACCES",
+      );
+      expect(result.current.localStorePath).toBe("/test/path");
     });
 
     it("clears error state", async () => {

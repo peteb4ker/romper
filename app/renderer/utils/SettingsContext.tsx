@@ -24,6 +24,7 @@ type SettingsAction =
     }
   | { payload: Settings; type: "INIT_SUCCESS" }
   | { payload: string; type: "INIT_ERROR" }
+  | { payload: string; type: "SET_ERROR" }
   | { payload: string; type: "UPDATE_LOCAL_STORE_PATH" }
   | { payload: ThemeMode; type: "UPDATE_THEME_MODE" }
   | { type: "CLEAR_ERROR" }
@@ -72,6 +73,12 @@ const initialState: SettingsState = {
   },
 };
 
+// Helper function to build a user-facing error message from a caught error
+function describeError(prefix: string, error: unknown): string {
+  const detail = error instanceof Error ? error.message : String(error);
+  return `${prefix}: ${detail}`;
+}
+
 // Helper function to detect system theme preference
 function getSystemThemePreference(): boolean {
   if (typeof globalThis !== "undefined" && globalThis.matchMedia) {
@@ -107,6 +114,9 @@ function settingsReducer(
         isLoading: false,
         settings: action.payload,
       };
+
+    case "SET_ERROR":
+      return { ...state, error: action.payload };
 
     case "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS":
       return {
@@ -215,6 +225,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         await refreshLocalStoreStatus();
       } catch (error) {
         console.error("Failed to update local store path:", error);
+        dispatch({
+          payload: describeError("Failed to save local store path", error),
+          type: "SET_ERROR",
+        });
       }
     },
     [refreshLocalStoreStatus],
@@ -229,6 +243,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         applyTheme(shouldUseDarkMode(mode));
       } catch (error) {
         console.error("Failed to update theme mode:", error);
+        dispatch({
+          payload: describeError("Failed to save theme mode", error),
+          type: "SET_ERROR",
+        });
       }
     },
     [applyTheme],
@@ -250,6 +268,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         "Failed to update confirmDestructiveActions setting:",
         error,
       );
+      dispatch({
+        payload: describeError(
+          "Failed to save destructive-action confirmation setting",
+          error,
+        ),
+        type: "SET_ERROR",
+      });
     }
   }, []);
 

@@ -279,9 +279,7 @@ describe("preload/index.tsx", () => {
       delete process.env.ROMPER_LOCAL_PATH;
     });
 
-    it("returns environment variable in readSettings when settings read fails", async () => {
-      process.env.ROMPER_LOCAL_PATH = "/env/fallback/path";
-
+    it("rethrows when settings read fails so callers can react", async () => {
       // Mock console.error to avoid test noise
       const consoleErrorSpy = vi
         .spyOn(console, "error")
@@ -303,18 +301,18 @@ describe("preload/index.tsx", () => {
         );
       const api = electronAPICall[1];
 
-      const result = await api.readSettings();
-      expect(result).toEqual({ localStorePath: "/env/fallback/path" });
+      await expect(api.readSettings()).rejects.toThrow(
+        "Failed to read settings",
+      );
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to read settings:",
         expect.any(Error),
       );
 
       consoleErrorSpy.mockRestore();
-      delete process.env.ROMPER_LOCAL_PATH;
     });
 
-    it("handles setSetting write errors gracefully", async () => {
+    it("rethrows setSetting write errors so callers can react", async () => {
       const consoleErrorSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
@@ -335,8 +333,10 @@ describe("preload/index.tsx", () => {
         );
       const api = electronAPICall[1];
 
-      // Should not throw, but should log error
-      await api.setSetting("testKey", "testValue");
+      // A failed write must surface to the caller, not silently resolve
+      await expect(api.setSetting("testKey", "testValue")).rejects.toThrow(
+        "Write failed",
+      );
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to write settings:",
         expect.any(Error),

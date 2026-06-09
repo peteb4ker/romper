@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useKitViewMenuHandlers } from "../useKitViewMenuHandlers";
 
 // Mock the dependencies
-vi.mock("../useBankScanning", () => ({
+vi.mock("../../shared/useBankScanning", () => ({
   useBankScanning: vi.fn(() => ({
     scanBanks: vi.fn(),
   })),
 }));
 
-vi.mock("../useMenuEvents", () => ({
+vi.mock("../../shared/useMenuEvents", () => ({
   useMenuEvents: vi.fn(),
 }));
 

@@ -9,13 +9,13 @@ import { useKitVoicePanels } from "../useKitVoicePanels";
 // Mock all the hooks that useKitEditorLogic depends on
 // Note: useKit is no longer used by useKitEditorLogic
 
-vi.mock("../useVoiceAlias", () => ({
+vi.mock("../../voice-panels/useVoiceAlias", () => ({
   useVoiceAlias: vi.fn(() => ({
     updateVoiceAlias: vi.fn(),
   })),
 }));
 
-vi.mock("../useSampleManagement", () => ({
+vi.mock("../../sample-management/useSampleManagement", () => ({
   useSampleManagement: vi.fn(() => ({
     handleSampleManagement: vi.fn(),
     isManaging: false,
@@ -48,19 +48,11 @@ vi.mock("../useKitVoicePanels", () => ({
   })),
 }));
 
-vi.mock("../useStepPattern", () => ({
+vi.mock("../../shared/useStepPattern", () => ({
   useStepPattern: vi.fn(() => ({
     setStepPattern: vi.fn(),
     stepPattern: null,
   })),
-}));
-
-vi.mock("sonner", () => ({
-  toast: {
-    error: vi.fn(),
-    loading: vi.fn(),
-    success: vi.fn(),
-  },
 }));
 
 describe("useKitEditorLogic", () => {

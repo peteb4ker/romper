@@ -20,7 +20,7 @@ vi.mock("../components/StatusBar", () => ({
   default: () => <div data-testid="status-bar">StatusBar</div>,
 }));
 
-vi.mock("../components/hooks/useMessageDisplay", () => ({
+vi.mock("../components/hooks/shared/useMessageDisplay", () => ({
   useMessageDisplay: () => ({
     addMessage: vi.fn(),
     dismissMessage: vi.fn(),

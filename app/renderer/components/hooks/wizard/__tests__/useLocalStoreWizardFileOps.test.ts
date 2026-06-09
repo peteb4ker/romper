@@ -8,14 +8,14 @@ vi.mock("@romper/shared/kitUtilsShared", () => ({
   groupSamplesByVoice: vi.fn(() => new Map()),
 }));
 
-vi.mock("../../config", () => ({
+vi.mock("../../../../config", () => ({
   config: {
     localStoreRootFolderName: "RamplerLocal",
     squarpArchiveUrl: "https://data.squarp.net/RampleSamplesV1-2.zip",
   },
 }));
 
-vi.mock("../utils/romperDb", () => ({
+vi.mock("../../../utils/romperDb", () => ({
   createRomperDb: vi.fn().mockResolvedValue(undefined),
   insertKit: vi.fn().mockResolvedValue(undefined),
   insertSample: vi.fn().mockResolvedValue(undefined),

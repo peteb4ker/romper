@@ -8,17 +8,17 @@ vi.mock("@romper/shared/kitUtilsShared", () => ({
   groupSamplesByVoice: vi.fn(() => new Map()),
 }));
 
-vi.mock("../utils/scanners/orchestrationFunctions", () => ({
+vi.mock("../../../utils/scanners/orchestrationFunctions", () => ({
   executeFullKitScan: vi.fn(() =>
     Promise.resolve({
-      scannedKitResult: {
-        data: { kits: [], samples: [] },
-        success: true,
+      completedOperations: 2,
+      errors: [],
+      results: {
+        voiceInference: { voiceNames: { 1: "Kick" } },
+        wavAnalysis: [],
       },
-      validationResult: {
-        data: { errors: [] },
-        success: true,
-      },
+      success: true,
+      totalOperations: 2,
     }),
   ),
 }));
@@ -108,7 +108,9 @@ describe("useLocalStoreWizardScanning", () => {
       // Note: Implementation uses executeFullKitScan, not scanKitForData directly
     });
 
-    it("should handle file reader creation correctly", async () => {
+    it("wires a working file reader into the scan input", async () => {
+      const { executeFullKitScan } =
+        await import("../../../utils/scanners/orchestrationFunctions");
       const { result } = renderHook(() =>
         useLocalStoreWizardScanning({
           api: mockApi,
@@ -118,7 +120,15 @@ describe("useLocalStoreWizardScanning", () => {
 
       await result.current.runScanning("/target/path", "/db/dir", ["A0"]);
 
-      expect(mockApi.readFile).toHaveBeenCalled();
+      const scanInput = vi.mocked(executeFullKitScan).mock.calls[0][0];
+      expect(scanInput.fileReader).toEqual(expect.any(Function));
+
+      // The created reader delegates to api.readFile and unwraps the result
+      const buffer = await scanInput.fileReader!("/target/path/A0/sample1.wav");
+      expect(mockApi.readFile).toHaveBeenCalledWith(
+        "/target/path/A0/sample1.wav",
+      );
+      expect(buffer).toBeInstanceOf(ArrayBuffer);
     });
 
     it("should handle errors when file reading is not available", async () => {

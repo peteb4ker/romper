@@ -8,7 +8,7 @@ import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 import { MockSettingsProvider } from "./MockSettingsProvider";
 
 // Mock the hooks used by KitVoicePanel
-vi.mock("../hooks/useStereoHandling", () => ({
+vi.mock("../hooks/sample-management/useStereoHandling", () => ({
   useStereoHandling: vi.fn(() => ({
     analyzeStereoAssignment: vi.fn().mockReturnValue({
       assignAsMono: false,
@@ -22,14 +22,6 @@ vi.mock("../hooks/useStereoHandling", () => ({
       replaceExisting: false,
     }),
   })),
-}));
-
-vi.mock("sonner", () => ({
-  toast: {
-    error: vi.fn(),
-    success: vi.fn(),
-    warning: vi.fn(),
-  },
 }));
 
 const baseProps = {

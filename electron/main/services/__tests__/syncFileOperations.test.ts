@@ -21,7 +21,7 @@ vi.mock("../../formatConverter.js", () => ({
   convertToRampleDefault: vi.fn().mockResolvedValue({ success: true }),
 }));
 
-vi.mock("./syncProgressManager.js", () => ({
+vi.mock("../syncProgressManager.js", () => ({
   syncProgressManager: {
     emitErrorProgress: vi.fn(),
     emitFileCompletionProgress: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock("./syncProgressManager.js", () => ({
   },
 }));
 
-vi.mock("./syncValidationService.js", () => ({
+vi.mock("../syncValidationService.js", () => ({
   syncValidationService: {
     addValidationError: vi.fn(),
     categorizeError: vi.fn().mockReturnValue({

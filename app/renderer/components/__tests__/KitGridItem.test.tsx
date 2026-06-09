@@ -12,7 +12,7 @@ vi.mock("@romper/shared/kitUtilsShared", () => ({
   }),
 }));
 
-vi.mock("../hooks/useKitItem", () => ({
+vi.mock("../hooks/kit-management/useKitItem", () => ({
   useKitItem: vi.fn(() => ({
     iconLabel: "Test Icon",
     iconType: "drum",

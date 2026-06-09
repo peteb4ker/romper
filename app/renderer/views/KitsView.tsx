@@ -1,21 +1,15 @@
-// Removed unused import
-
-import React, { useCallback, useEffect, useRef, useState } from "react";
-
-interface ImportMeta {
-  env: {
-    MODE?: string;
-    VITE_ROMPER_TEST_MODE?: string;
-  };
-}
+import React, { useCallback, useEffect } from "react";
 
 import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
 import InvalidLocalStoreDialog from "../components/dialogs/InvalidLocalStoreDialog";
+import { EnvironmentBanner } from "../components/EnvironmentBanner";
 import { useKitDataManager } from "../components/hooks/kit-management/useKitDataManager";
 import { useKitFilters } from "../components/hooks/kit-management/useKitFilters";
 import { useKitNavigation } from "../components/hooks/kit-management/useKitNavigation";
 import { useKitSearch } from "../components/hooks/kit-management/useKitSearch";
 import { useKitViewMenuHandlers } from "../components/hooks/kit-management/useKitViewMenuHandlers";
+import { useLocalStoreSetupFlow } from "../components/hooks/kit-management/useLocalStoreSetupFlow";
+import { useSampleRefreshListener } from "../components/hooks/kit-management/useSampleRefreshListener";
 import { useDialogState } from "../components/hooks/shared/useDialogState";
 import { useGlobalKeyboardShortcuts } from "../components/hooks/shared/useGlobalKeyboardShortcuts";
 import { useMessageDisplay } from "../components/hooks/shared/useMessageDisplay";
@@ -24,10 +18,7 @@ import KitBrowserContainer from "../components/KitBrowserContainer";
 import KitEditorContainer from "../components/KitEditorContainer";
 import KitViewDialogs from "../components/KitViewDialogs";
 import LocalStoreWizardModal from "../components/LocalStoreWizardModal";
-import {
-  // restoreSelectedKitIfExists, // DISABLED
-  saveSelectedKitState,
-} from "../utils/hmrStateManager";
+import { saveSelectedKitState } from "../utils/hmrStateManager";
 import { useSettings } from "../utils/SettingsContext";
 
 /**
@@ -45,55 +36,18 @@ const KitsView: React.FC = () => {
 
   const { showMessage } = useMessageDisplay();
 
-  // Determine local store configuration state according to requirements
-  // A1-A3: No local store configured - show setup wizard
-  // Also includes test environment overrides with invalid paths (for wizard tests)
-  const isTestEnvironment =
-    (import.meta as ImportMeta).env.MODE === "test" ||
-    (import.meta as ImportMeta).env.VITE_ROMPER_TEST_MODE === "true";
-  const isEnvironmentOverride =
-    localStoreStatus?.isEnvironmentOverride || false;
-  const needsLocalStoreSetup =
-    isInitialized &&
-    localStoreStatus !== null &&
-    (!localStoreStatus.hasLocalStore ||
-      (isTestEnvironment &&
-        isEnvironmentOverride &&
-        !localStoreStatus.isValid));
-
-  // D: Environment variable override - show test mode banner
-
-  // C1-C6: Local store configured but invalid - show modal blocking error dialog
-  // Exception: In test environment with env override, don't block - let tests proceed
-  const hasInvalidLocalStore =
-    isInitialized &&
-    localStoreStatus !== null &&
-    Boolean(localStoreStatus.hasLocalStore) &&
-    !localStoreStatus.isValid &&
-    !(isTestEnvironment && isEnvironmentOverride);
-
-  // Critical environment variable error - should close app
-  const hasCriticalEnvironmentError = Boolean(
-    localStoreStatus?.isCriticalEnvironmentError,
-  );
-
-  const [showEnvironmentBanner, setShowEnvironmentBanner] = useState(false);
-
-  // Show environment banner when environment override is detected
-  useEffect(() => {
-    if (isEnvironmentOverride) {
-      setShowEnvironmentBanner(true);
-    }
-  }, [isEnvironmentOverride]);
-
   // Dialog state management
   const dialogState = useDialogState();
 
-  // Track if we just completed the wizard to prevent re-opening
-  const [wizardJustCompleted, setWizardJustCompleted] = useState(false);
-
-  // Track wizard initialization state to suppress invalid store dialog
-  const [isWizardInitializing, setIsWizardInitializing] = useState(false);
+  // Local store configuration gate (setup wizard / invalid store / critical
+  // environment error scenarios) and the wizard lifecycle around it
+  const setupFlow = useLocalStoreSetupFlow({
+    closeWizard: dialogState.closeWizard,
+    isInitialized,
+    localStoreStatus,
+    refreshLocalStoreStatus,
+    setShowWizard: dialogState.setShowWizard,
+  });
 
   // Kit data management
   const {
@@ -110,7 +64,8 @@ const KitsView: React.FC = () => {
   } = useKitDataManager({
     isInitialized,
     localStorePath,
-    needsLocalStoreSetup: needsLocalStoreSetup || hasInvalidLocalStore,
+    needsLocalStoreSetup:
+      setupFlow.needsLocalStoreSetup || setupFlow.hasInvalidLocalStore,
   });
 
   // Kit navigation
@@ -163,25 +118,9 @@ const KitsView: React.FC = () => {
   // Startup actions
   useStartupActions({
     localStorePath,
-    needsLocalStoreSetup: needsLocalStoreSetup || hasInvalidLocalStore,
+    needsLocalStoreSetup:
+      setupFlow.needsLocalStoreSetup || setupFlow.hasInvalidLocalStore,
   });
-
-  // Auto-trigger wizard on startup if local store is not configured
-  useEffect(() => {
-    if (needsLocalStoreSetup && !wizardJustCompleted) {
-      dialogState.setShowWizard(true);
-    }
-  }, [needsLocalStoreSetup, dialogState, wizardJustCompleted]);
-
-  // HMR: Restore selected kit state after hot reload
-  // DISABLED: This was causing kits to be auto-selected after copy operations
-  // useEffect(() => {
-  //   restoreSelectedKitIfExists(
-  //     kits,
-  //     navigation.selectedKit,
-  //     navigation.setSelectedKit,
-  //   );
-  // }, [kits, navigation.selectedKit, navigation.setSelectedKit]);
 
   // HMR: Save selected kit state before hot reload
   useEffect(() => {
@@ -190,44 +129,11 @@ const KitsView: React.FC = () => {
     }
   }, [navigation.selectedKit]);
 
-  // Reset wizardJustCompleted when needsLocalStoreSetup becomes false
-  useEffect(() => {
-    if (!needsLocalStoreSetup && wizardJustCompleted) {
-      setWizardJustCompleted(false);
-    }
-  }, [needsLocalStoreSetup, wizardJustCompleted]);
-
-  // Store latest values in refs to avoid recreating event listener
-  const selectedKitRef = useRef(navigation.selectedKit);
-  const reloadCurrentKitSamplesRef = useRef(reloadCurrentKitSamples);
-
-  // Update refs when values change
-  useEffect(() => {
-    selectedKitRef.current = navigation.selectedKit;
-  }, [navigation.selectedKit]);
-
-  useEffect(() => {
-    reloadCurrentKitSamplesRef.current = reloadCurrentKitSamples;
-  }, [reloadCurrentKitSamples]);
-
-  // Listen for refresh events from undo operations - stable event listener
-  useEffect(() => {
-    const handleRefreshSamples = (event: Event) => {
-      const customEvent = event as CustomEvent<{ kitName: string }>;
-      if (customEvent.detail.kitName === selectedKitRef.current) {
-        void reloadCurrentKitSamplesRef.current(selectedKitRef.current);
-      }
-    };
-
-    document.addEventListener("romper:refresh-samples", handleRefreshSamples);
-
-    return () => {
-      document.removeEventListener(
-        "romper:refresh-samples",
-        handleRefreshSamples,
-      );
-    };
-  }, []); // Empty dependency array - event listener is created only once
+  // Reload the selected kit's samples when undo operations request it
+  useSampleRefreshListener({
+    reloadCurrentKitSamples,
+    selectedKit: navigation.selectedKit,
+  });
 
   // Handle samples reload request
   const handleRequestSamplesReload = useCallback(async () => {
@@ -243,48 +149,17 @@ const KitsView: React.FC = () => {
     }
   }, [navigation.selectedKit, refreshSingleKitMetadata]);
 
-  // Wizard success handler
-  const handleWizardSuccess = useCallback(async () => {
-    setWizardJustCompleted(true);
-    dialogState.closeWizard();
-    await refreshLocalStoreStatus();
-  }, [dialogState, refreshLocalStoreStatus]);
-
-  // Critical error handler
-  const handleCriticalError = useCallback(() => {
-    if (globalThis.electronAPI?.closeApp) {
-      void globalThis.electronAPI.closeApp();
-    } else {
-      // Fallback for development or if API is not available
-      window.close();
-    }
-  }, []);
-
   return (
     <div className="flex flex-col h-full min-h-0" data-testid="kits-view">
       {/* Environment Variable Test Mode Banner */}
-      {showEnvironmentBanner &&
-        isEnvironmentOverride &&
-        !hasCriticalEnvironmentError &&
-        !isTestEnvironment && (
-          <div className="bg-accent-warning/10 border-l-4 border-accent-warning p-3 mb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="text-accent-warning text-sm font-medium">
-                  🧪 Test Mode: Using ROMPER_LOCAL_PATH environment override
-                </span>
-                <span className="ml-2 text-accent-warning/70 text-xs font-mono">
-                  {localStoreStatus?.localStorePath}
-                </span>
-              </div>
-              <button
-                className="text-accent-warning/70 hover:text-accent-warning text-sm"
-                onClick={() => setShowEnvironmentBanner(false)}
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
+      {setupFlow.showEnvironmentBanner &&
+        setupFlow.isEnvironmentOverride &&
+        !setupFlow.hasCriticalEnvironmentError &&
+        !setupFlow.isTestEnvironment && (
+          <EnvironmentBanner
+            localStorePath={localStoreStatus?.localStorePath}
+            onDismiss={setupFlow.dismissEnvironmentBanner}
+          />
         )}
 
       {navigation.selectedKit && navigation.selectedKitSamples && currentKit ? (
@@ -344,12 +219,12 @@ const KitsView: React.FC = () => {
         isOpen={dialogState.showWizard}
         onClose={dialogState.closeWizard}
         onCloseApp={
-          needsLocalStoreSetup
+          setupFlow.needsLocalStoreSetup
             ? () => globalThis.electronAPI?.closeApp?.()
             : undefined
         }
-        onInitializationChange={setIsWizardInitializing}
-        onSuccess={handleWizardSuccess}
+        onInitializationChange={setupFlow.setIsWizardInitializing}
+        onSuccess={setupFlow.handleWizardSuccess}
         setLocalStorePath={setLocalStorePath}
       />
 
@@ -359,9 +234,9 @@ const KitsView: React.FC = () => {
           localStoreStatus?.error || "Invalid local store configuration"
         }
         isOpen={
-          hasInvalidLocalStore &&
-          !hasCriticalEnvironmentError &&
-          !isWizardInitializing
+          setupFlow.hasInvalidLocalStore &&
+          !setupFlow.hasCriticalEnvironmentError &&
+          !setupFlow.isWizardInitializing
         }
         localStorePath={localStoreStatus?.localStorePath || null}
         onMessage={showMessage}
@@ -369,9 +244,9 @@ const KitsView: React.FC = () => {
 
       {/* Critical Environment Error Dialog */}
       <CriticalErrorDialog
-        isOpen={Boolean(hasCriticalEnvironmentError)}
+        isOpen={Boolean(setupFlow.hasCriticalEnvironmentError)}
         message={`The environment variable ROMPER_LOCAL_PATH is set to "${localStoreStatus?.localStorePath}" but this path is invalid: ${localStoreStatus?.error}. The application cannot continue with an invalid environment override.`}
-        onConfirm={handleCriticalError}
+        onConfirm={setupFlow.handleCriticalError}
         title="Critical Configuration Error"
       />
 

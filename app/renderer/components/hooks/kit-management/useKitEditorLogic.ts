@@ -1,7 +1,6 @@
 import type { KitEditorProps } from "@romper/app/renderer/components/kitTypes";
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
 import { useSampleManagement } from "../sample-management/useSampleManagement";
@@ -9,16 +8,13 @@ import { useBpm } from "../shared/useBpm";
 import { useStepPattern } from "../shared/useStepPattern";
 import { useTriggerConditions } from "../shared/useTriggerConditions";
 import { useVoiceAlias } from "../voice-panels/useVoiceAlias";
+import { useKitEditorKeyboardNav } from "./useKitEditorKeyboardNav";
+import { useKitErrorReporting } from "./useKitErrorReporting";
 import { useKitPlayback } from "./useKitPlayback";
+import { useKitScanning } from "./useKitScanning";
 import { useKitVoicePanels } from "./useKitVoicePanels";
 
-export type ScanStatus =
-  | { message: string; status: "error" }
-  | { sampleCount: number; status: "success" }
-  | { status: "idle" }
-  | { status: "scanning" };
-
-const FLASH_DURATION_MS = 1200;
+export type { ScanStatus } from "./useKitScanning";
 
 interface UseKitEditorLogicParams extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent
@@ -35,17 +31,17 @@ interface UseKitEditorLogicParams extends KitEditorProps {
   onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>;
 }
 
-const SCAN_SUCCESS_CLEAR_MS = 3000;
-
 /**
- * Main business logic hook for KitEditor component
- * Orchestrates all kit detail operations including playback, metadata, scanning, and navigation
+ * Main business logic hook for KitEditor component.
+ * Composes the focused concern hooks (playback, scanning, navigation,
+ * error reporting, metadata) and owns only the glue state between them.
  */
 export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   // Destructure props for useEffect dependencies
   const {
     kitName,
     onKitUpdated,
+    onMessage,
     onNextKit,
     onPrevKit,
     onRefreshKitMetadata,
@@ -58,26 +54,6 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   const kit = props.kit ?? null; // Convert undefined to null for compatibility
   const kitError = props.kitError ?? null; // Accept error from parent if provided
   const kitLoading = false; // Data is passed from parent
-
-  // Scan status state (replaces toast-based feedback)
-  const [scanStatus, setScanStatus] = React.useState<ScanStatus>({
-    status: "idle",
-  });
-  const scanTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(null);
-
-  // Flash feedback state for voice name updates
-  const [flashVoices, setFlashVoices] = React.useState<Set<number>>(new Set());
-  const flashTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(
-    null,
-  );
-
-  // Clean up timers on unmount
-  React.useEffect(() => {
-    return () => {
-      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-    };
-  }, []);
 
   // Reload kit function - now just triggers parent refresh
   const reloadKit = React.useCallback(async () => {
@@ -154,118 +130,15 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     [props.samples],
   );
 
-  // Handler for kit rescanning (database-first approach)
-  const handleScanKit = React.useCallback(async () => {
-    if (!kitName) return;
-
-    setScanStatus({ status: "scanning" });
-
-    try {
-      if (!globalThis.electronAPI?.rescanKit) {
-        throw new Error("Rescan API not available");
-      }
-
-      const result = await globalThis.electronAPI.rescanKit(kitName);
-
-      if (result.success) {
-        const sampleCount = result.data?.scannedSamples || 0;
-        setScanStatus({ sampleCount, status: "success" });
-
-        // Auto-clear success status after delay
-        if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-        scanTimerRef.current = setTimeout(
-          () => setScanStatus({ status: "idle" }),
-          SCAN_SUCCESS_CLEAR_MS,
-        );
-
-        // Flash voice panels to indicate updated names
-        if (result.data?.updatedVoices && result.data.updatedVoices > 0) {
-          setFlashVoices(new Set([1, 2, 3, 4]));
-          if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-          flashTimerRef.current = setTimeout(
-            () => setFlashVoices(new Set()),
-            FLASH_DURATION_MS,
-          );
-        }
-
-        // Trigger sample reload in parent component
-        if (onRequestSamplesReload) {
-          await onRequestSamplesReload();
-        }
-
-        // Reload kit to show updated voice names from rescan
-        await reloadKit();
-      } else {
-        setScanStatus({
-          message: result.error || "Rescan failed",
-          status: "error",
-        });
-      }
-    } catch (error) {
-      console.error("Kit scan error:", error);
-      setScanStatus({
-        message: error instanceof Error ? error.message : String(error),
-        status: "error",
-      });
-    }
-  }, [kitName, onRequestSamplesReload, reloadKit]);
-
-  // Handler for in-memory voice name inference (editable kits without filesystem directories)
-  const handleInferVoiceNames = React.useCallback(async () => {
-    if (!kitName) return;
-
-    setScanStatus({ status: "scanning" });
-
-    try {
-      const updatedVoices: number[] = [];
-
-      for (const voice of [1, 2, 3, 4] as const) {
-        const voiceSamples = samples[voice];
-        if (!voiceSamples || voiceSamples.length === 0) continue;
-
-        const inferredType = inferVoiceTypeFromFilename(voiceSamples[0]);
-        if (inferredType && globalThis.electronAPI?.updateVoiceAlias) {
-          await globalThis.electronAPI.updateVoiceAlias(
-            kitName,
-            voice,
-            inferredType,
-          );
-          updatedVoices.push(voice);
-        }
-      }
-
-      setScanStatus({ sampleCount: updatedVoices.length, status: "success" });
-
-      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-      scanTimerRef.current = setTimeout(
-        () => setScanStatus({ status: "idle" }),
-        SCAN_SUCCESS_CLEAR_MS,
-      );
-
-      // Flash updated voice panels before reload so animation renders immediately
-      if (updatedVoices.length > 0) {
-        setFlashVoices(new Set(updatedVoices));
-        if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-        flashTimerRef.current = setTimeout(
-          () => setFlashVoices(new Set()),
-          FLASH_DURATION_MS,
-        );
-      }
-
-      // Targeted refresh: only reload this kit's metadata, not all 187 kits
-      if (onRefreshKitMetadata) {
-        await onRefreshKitMetadata();
-      } else {
-        await reloadKit();
-      }
-    } catch (error) {
-      console.error("Voice inference error:", error);
-      setScanStatus({
-        message: error instanceof Error ? error.message : String(error),
-        status: "error",
-      });
-    }
-  }, [kitName, samples, reloadKit, onRefreshKitMetadata]);
+  // Scanning logic (filesystem rescan + in-memory voice name inference)
+  const { flashVoices, handleInferVoiceNames, handleScanKit, scanStatus } =
+    useKitScanning({
+      kitName,
+      onRefreshKitMetadata,
+      onRequestSamplesReload,
+      reloadKit,
+      samples,
+    });
 
   // Navigation state
   const [selectedVoice, setSelectedVoice] = React.useState(1);
@@ -299,39 +172,12 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     stopTriggers: playback.stopTriggers,
   });
 
-  // Error reporting effects
-  // Destructure the onMessage prop to avoid re-renders when other props change
-  const { onMessage } = props;
-
-  React.useEffect(() => {
-    if (playback.playbackError && onMessage) {
-      onMessage(playback.playbackError, "error");
-    }
-  }, [playback.playbackError, onMessage]);
-
-  React.useEffect(() => {
-    if (kitError && onMessage) {
-      onMessage(kitError, "error");
-    }
-  }, [kitError, onMessage]);
-
-  // Listen for SampleWaveform errors bubbled up from children
-  React.useEffect(() => {
-    if (!onMessage) return;
-    const handler = (e: CustomEvent) => {
-      onMessage(e.detail, "error");
-    };
-    globalThis.addEventListener(
-      "SampleWaveformError",
-      handler as EventListener,
-    );
-    return () => {
-      globalThis.removeEventListener(
-        "SampleWaveformError",
-        handler as EventListener,
-      );
-    };
-  }, [onMessage]);
+  // Forward playback / kit / waveform errors to the parent message handler
+  useKitErrorReporting({
+    kitError,
+    onMessage,
+    playbackError: playback.playbackError,
+  });
 
   // Focus management
   React.useEffect(() => {
@@ -344,81 +190,20 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   }, [sequencerOpen]);
 
   // Global keyboard navigation for sample preview, sequencer toggle, kit navigation, and scanning
-  React.useEffect(() => {
-    function handleGlobalKeyDown(e: KeyboardEvent) {
-      // Ignore if a modal, input, textarea, or contenteditable is focused
-      const active = document.activeElement;
-      if (
-        active &&
-        ((active.tagName === "INPUT" &&
-          (active as HTMLInputElement).type !== "checkbox") ||
-          active.tagName === "TEXTAREA" ||
-          (active as HTMLElement).isContentEditable)
-      ) {
-        return;
-      }
-
-      // Kit navigation shortcuts
-      if (e.key === ",") {
-        e.preventDefault();
-        onPrevKit?.();
-        return;
-      }
-      if (e.key === ".") {
-        e.preventDefault();
-        onNextKit?.();
-        return;
-      }
-      // Kit scanning shortcut (context-aware: editable kits use in-memory inference)
-      if (e.key === "/") {
-        e.preventDefault();
-        if (kit?.editable) {
-          void handleInferVoiceNames();
-        } else {
-          void handleScanKit();
-        }
-        return;
-      }
-      // S key toggles sequencer
-      if (e.key === "s" || e.key === "S") {
-        e.preventDefault();
-        setSequencerOpen((open) => !open);
-        return;
-      }
-      // Only handle navigation keys for sample nav if sequencer is closed
-      // Enter key removed to prevent conflicts with kit name editing
-      if (!sequencerOpen && [" ", "ArrowDown", "ArrowUp"].includes(e.key)) {
-        e.preventDefault();
-        if (e.key === "ArrowDown") {
-          kitVoicePanels.onSampleKeyNav("down");
-        } else if (e.key === "ArrowUp") {
-          kitVoicePanels.onSampleKeyNav("up");
-        } else if (e.key === " ") {
-          // Preview/play selected sample with Space key only
-          const samplesForVoice = samples[selectedVoice] || [];
-          const sample = samplesForVoice[selectedSampleIdx];
-          if (sample) {
-            playback.handlePlay(selectedVoice, sample);
-          }
-        }
-      }
-    }
-    globalThis.addEventListener("keydown", handleGlobalKeyDown);
-    return () => globalThis.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [
-    sequencerOpen,
-    selectedVoice,
-    selectedSampleIdx,
-    samples,
-    playback,
-    playback.handlePlay,
-    kitVoicePanels,
-    onPrevKit,
+  useKitEditorKeyboardNav({
+    isEditable: !!kit?.editable,
+    onInferVoiceNames: handleInferVoiceNames,
     onNextKit,
-    kit?.editable,
-    handleInferVoiceNames,
-    handleScanKit,
-  ]);
+    onPlaySample: playback.handlePlay,
+    onPrevKit,
+    onSampleKeyNav: kitVoicePanels.onSampleKeyNav,
+    onScanKit: handleScanKit,
+    samples,
+    selectedSampleIdx,
+    selectedVoice,
+    sequencerOpen,
+    setSequencerOpen,
+  });
 
   return {
     // BPM management

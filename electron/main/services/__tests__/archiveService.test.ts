@@ -32,7 +32,14 @@ vi.mock("node:fs", () => ({
 }));
 vi.mock("node:path", () => ({
   dirname: vi.fn((p) => p.split("/").slice(0, -1).join("/")),
+  isAbsolute: vi.fn((p: string) => p.startsWith("/")),
   join: vi.fn((...args) => args.join("/")),
+  resolve: vi.fn((...args: string[]) => {
+    // Minimal resolve: join non-empty segments, keeping leading slash.
+    const joined = args.filter(Boolean).join("/").replace(/\/+/g, "/");
+    return joined.startsWith("/") ? joined : `/${joined}`;
+  }),
+  sep: "/",
 }));
 
 // Unzipper mock: emits normal events unless test sets .emitUnzipEvents to emit error
@@ -43,12 +50,14 @@ vi.mock("unzipper", () => ({
       setTimeout(() => {
         stream.emit("entry", {
           autodrain: () => {},
+          on: () => {},
           path: "foo.wav",
           pipe: () => new MockStream(),
           type: "File",
         });
         stream.emit("entry", {
           autodrain: () => {},
+          on: () => {},
           path: "bar/",
           pipe: () => new MockStream(),
           type: "Directory",
@@ -253,6 +262,7 @@ describe("download-and-extract-archive handler", () => {
             // Emit an entry to trigger file extraction
             stream.emit("entry", {
               autodrain: () => {},
+              on: () => {},
               path: "foo.wav",
               pipe: () => {
                 const s = new MockStream();

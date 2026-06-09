@@ -118,7 +118,7 @@
     "lcov": "^1.16.0",
     "lint-staged": "^16.1.2",
     "madge": "^8.0.0",
-    "nyc": "^17.1.0",
+    "nyc": "^18.0.0",
     "playwright": "^1.56.1",
     "rollup": "^4.59.0",
     "sharp": "^0.34.5",
@@ -134,7 +134,8 @@
     "eslint": "^9.0.0",
     "serialize-javascript": "^7.0.5",
     "minimatch@>=10.0.0": "10.2.4",
-    "tar": "^7.5.8"
+    "tar": "^7.5.8",
+    "shell-quote": "^1.8.4"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

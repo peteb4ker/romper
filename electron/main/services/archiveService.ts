@@ -96,9 +96,16 @@ export class ArchiveService {
     for (const item of fs.readdirSync(src)) {
       const srcItem = path.join(src, item);
       const destItem = path.join(dest, item);
-      if (fs.lstatSync(srcItem).isDirectory()) {
+      // Use lstat (no symlink following) and skip symlinks entirely: following
+      // them would copy the contents of files outside the source tree (e.g. a
+      // link planted in an SD-card folder pointing at a sensitive file).
+      const stats = fs.lstatSync(srcItem);
+      if (stats.isSymbolicLink()) {
+        continue;
+      }
+      if (stats.isDirectory()) {
         this.copyRecursiveSync(srcItem, destItem);
-      } else {
+      } else if (stats.isFile()) {
         fs.copyFileSync(srcItem, destItem);
       }
     }

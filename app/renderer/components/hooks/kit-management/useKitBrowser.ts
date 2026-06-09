@@ -8,7 +8,6 @@ import {
 } from "./useKitBankNavigation";
 import { useKitCreation } from "./useKitCreation";
 import { useKitDuplication } from "./useKitDuplication";
-import { useKitErrorHandling } from "./useKitErrorHandling";
 
 interface UseKitBrowserProps {
   kitListRef: RefObject<KitListComponent | null>;
@@ -26,7 +25,6 @@ export function useKitBrowser({
   const kits: KitWithRelations[] = externalKits;
 
   // Compose the smaller, focused hooks
-  const errorHandling = useKitErrorHandling();
   const kitCreation = useKitCreation({ kits, onMessage, onRefreshKits });
   const kitDuplication = useKitDuplication({ onRefreshKits });
   const bankNavigation = useKitBankNavigation({ kitListRef, kits });
@@ -40,8 +38,6 @@ export function useKitBrowser({
     duplicateKitDirect: kitDuplication.duplicateKitDirect,
     duplicateKitError: kitDuplication.duplicateKitError,
     duplicateKitSource: kitDuplication.duplicateKitSource,
-    // From errorHandling
-    error: errorHandling.error,
     focusBankInKitList: bankNavigation.focusBankInKitList,
     focusedKit: bankNavigation.focusedKit,
     globalBankHotkeyHandler: bankNavigation.globalBankHotkeyHandler,
@@ -61,16 +57,13 @@ export function useKitBrowser({
     newlyAnimatedKit:
       kitCreation.newlyCreatedKit || kitDuplication.newlyDuplicatedKit,
     scrollContainerRef: bankNavigation.scrollContainerRef,
-    sdCardWarning: errorHandling.sdCardWarning,
     selectedBank: bankNavigation.selectedBank,
 
     setBankNames: bankNavigation.setBankNames,
     setDuplicateKitDest: kitDuplication.setDuplicateKitDest,
     setDuplicateKitError: kitDuplication.setDuplicateKitError,
     setDuplicateKitSource: kitDuplication.setDuplicateKitSource,
-    setError: errorHandling.setError,
     setFocusedKit: bankNavigation.setFocusedKit,
-    setSdCardWarning: errorHandling.setSdCardWarning,
     setSelectedBank: bankNavigation.setSelectedBank,
   };
 }

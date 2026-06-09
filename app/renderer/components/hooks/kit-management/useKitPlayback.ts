@@ -90,19 +90,6 @@ export function useKitPlayback(samples: null | undefined | VoiceSamples) {
     }));
   };
 
-  useEffect(() => {
-    const handleEnded = () => {};
-    const handleError = (errMsg: string) => {
-      setPlaybackError(errMsg || "Playback failed");
-    };
-    globalThis.electronAPI.onSamplePlaybackEnded?.(handleEnded);
-    globalThis.electronAPI.onSamplePlaybackError?.(handleError);
-    return () => {
-      globalThis.electronAPI.onSamplePlaybackEnded?.(() => {});
-      globalThis.electronAPI.onSamplePlaybackError?.(() => {});
-    };
-  }, []);
-
   return {
     handlePlay,
     handleStop,

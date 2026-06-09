@@ -127,12 +127,9 @@ export const createElectronAPIMock = (
   moveSampleBetweenKits: vi.fn().mockResolvedValue({ success: true }),
   // Move operations
   moveSampleInKit: vi.fn().mockResolvedValue({ success: true }),
-  onSamplePlaybackEnded: vi.fn(),
-  onSamplePlaybackError: vi.fn(),
   onSyncProgress: vi.fn(),
   openExternal: vi.fn().mockResolvedValue(undefined),
 
-  playSample: vi.fn().mockResolvedValue(undefined),
   readFile: vi.fn().mockResolvedValue({
     data: new ArrayBuffer(1024),
     success: true,
@@ -166,7 +163,6 @@ export const createElectronAPIMock = (
   showItemInFolder: vi.fn().mockResolvedValue(undefined),
 
   startKitSync: vi.fn().mockResolvedValue(undefined),
-  stopSample: vi.fn().mockResolvedValue(undefined),
   toggleKitFavorite: vi.fn().mockResolvedValue({
     data: { isFavorite: true },
     success: true,

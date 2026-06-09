@@ -15,7 +15,6 @@ import MessageDisplay from "./components/MessageDisplay";
 import { MessageDisplayContext } from "./components/MessageDisplayContext";
 import StatusBar from "./components/StatusBar";
 import { SettingsProvider } from "./utils/SettingsContext";
-import { applyTheme } from "./utils/settingsManager";
 import AboutView from "./views/AboutView";
 import KitsView from "./views/KitsView";
 
@@ -55,10 +54,6 @@ const AppContent = () => {
 };
 
 const App = () => {
-  useEffect(() => {
-    applyTheme(); // Apply the saved theme on app load
-  }, []);
-
   return (
     <Router>
       <AppContent />

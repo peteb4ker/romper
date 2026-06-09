@@ -142,18 +142,4 @@ describe("useKitPlayback", () => {
     });
     expect(result.current.stopTriggers["1:kick.wav"] || 0).toBe(stopBefore);
   });
-
-  it("sets playbackError on error event", () => {
-    let errorHandler: unknown;
-    vi.mocked(window.electronAPI.onSamplePlaybackError).mockImplementation(
-      (cb) => {
-        errorHandler = cb;
-      },
-    );
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
-    act(() => {
-      errorHandler("fail!");
-    });
-    expect(result.current.playbackError).toBe("fail!");
-  });
 });

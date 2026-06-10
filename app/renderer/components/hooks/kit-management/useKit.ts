@@ -46,7 +46,7 @@ export function useKit({ kitName, onKitUpdated }: UseKitParams) {
 
   useEffect(() => {
     if (!kitName) return;
-    loadKit();
+    void loadKit();
   }, [kitName, loadKit]);
 
   const updateKitAlias = async (alias: string) => {

@@ -260,7 +260,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Initialize on mount
   useEffect(() => {
-    initializeSettings();
+    void initializeSettings();
   }, [initializeSettings]);
 
   // Listen for system theme changes when using "system" mode

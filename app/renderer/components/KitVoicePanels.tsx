@@ -258,7 +258,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       }
     };
 
-    loadSampleMetadata();
+    void loadSampleMetadata();
   }, [hookProps.kitName, props.kit]);
 
   // Optimistic update for gain changes so SampleWaveform gets the new gainDb immediately

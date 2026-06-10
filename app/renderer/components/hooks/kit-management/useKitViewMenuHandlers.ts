@@ -73,7 +73,7 @@ export function useKitViewMenuHandlers({
     onScanAll: () => {
       log.debug("Menu scan all triggered");
       // Run bank scan first (fast), then kit scan
-      scanBanks().then(() => {
+      void scanBanks().then(() => {
         if (kitBrowserRef.current?.handleScanAllKits) {
           kitBrowserRef.current.handleScanAllKits();
         }

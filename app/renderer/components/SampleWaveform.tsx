@@ -139,7 +139,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         }
         const ctx = new globalThis.AudioContext();
         audioCtxRef.current = ctx;
-        ctx.decodeAudioData(arrayBuffer.slice(0), (buf) => {
+        void ctx.decodeAudioData(arrayBuffer.slice(0), (buf) => {
           setAudioBuffer(buf);
           drawWaveform(buf);
         });

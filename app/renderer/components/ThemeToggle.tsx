@@ -8,11 +8,11 @@ const ThemeToggle: React.FC = () => {
   const toggleDarkMode = () => {
     // Cycle through: light -> dark -> system
     if (themeMode === "light") {
-      setThemeMode("dark");
+      void setThemeMode("dark");
     } else if (themeMode === "dark") {
-      setThemeMode("system");
+      void setThemeMode("system");
     } else {
-      setThemeMode("light");
+      void setThemeMode("light");
     }
   };
 

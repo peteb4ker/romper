@@ -53,7 +53,7 @@ export function useTriggerConditions({
           conditions,
         );
         if (result.success) {
-          onSaved?.();
+          void onSaved?.();
         } else {
           console.error("Failed to save trigger conditions:", result.error);
           setTriggerConditionsState(

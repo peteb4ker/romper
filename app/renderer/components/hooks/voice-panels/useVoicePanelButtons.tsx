@@ -66,7 +66,7 @@ export function useVoicePanelButtons({
         className="p-1 rounded hover:bg-accent-danger/15 text-xs text-accent-danger ml-2"
         onClick={(e) => {
           e.stopPropagation();
-          sampleActionsHook.handleDeleteSample(slotNumber);
+          void sampleActionsHook.handleDeleteSample(slotNumber);
         }}
         style={{
           alignItems: "center",

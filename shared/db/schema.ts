@@ -94,7 +94,7 @@ export const samples = sqliteTable(
 // Export types inferred from schema
 export type Bank = typeof banks.$inferSelect;
 // More specific database result types
-export interface DbKitsResult extends DbResult<Kit[]> {}
+export type DbKitsResult = DbResult<Kit[]>;
 
 // Database operation result wrapper
 export interface DbResult<T = unknown> {
@@ -102,9 +102,9 @@ export interface DbResult<T = unknown> {
   error?: string;
   success: boolean;
 }
-export interface DbSamplesResult extends DbResult<Sample[]> {}
+export type DbSamplesResult = DbResult<Sample[]>;
 
-export interface DbVoicesResult extends DbResult<Voice[]> {}
+export type DbVoicesResult = DbResult<Voice[]>;
 export type Kit = typeof kits.$inferSelect;
 
 // Kit validation types

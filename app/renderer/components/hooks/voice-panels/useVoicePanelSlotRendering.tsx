@@ -207,7 +207,7 @@ export function useVoicePanelSlotRendering({
           {isEditable && (
             <GainKnob
               onChange={(db) => {
-                globalThis.electronAPI?.updateSampleGain?.(
+                void globalThis.electronAPI?.updateSampleGain?.(
                   kitName,
                   voice,
                   slotNumber,

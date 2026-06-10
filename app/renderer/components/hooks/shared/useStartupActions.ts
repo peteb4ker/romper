@@ -37,6 +37,6 @@ export function useStartupActions({
       }
     };
 
-    runStartupActions();
+    void runStartupActions();
   }, [localStorePath, needsLocalStoreSetup]);
 }

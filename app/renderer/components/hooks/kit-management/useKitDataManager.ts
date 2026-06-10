@@ -318,7 +318,7 @@ export function useKitDataManager({
 
   // Load all kits and samples on mount and when dependencies change
   useEffect(() => {
-    loadKitsData();
+    void loadKitsData();
   }, [loadKitsData]);
 
   return {

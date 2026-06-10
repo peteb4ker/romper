@@ -138,7 +138,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
 
     setIsUpdating(true);
     try {
-      setLocalStorePath(selectedPath);
+      void setLocalStorePath(selectedPath);
       onMessage?.(
         "Local store directory updated successfully. Refreshing...",
         "success",
@@ -146,8 +146,8 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
 
       // Give user a moment to see the success message before refresh
       // Use React-friendly settings refresh instead of window.location.reload()
-      setTimeout(async () => {
-        await refreshLocalStoreStatus();
+      setTimeout(() => {
+        void refreshLocalStoreStatus();
       }, 1000);
     } catch (error) {
       onMessage?.(
@@ -163,7 +163,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
 
   const handleExitApp = () => {
     if (globalThis.electronAPI?.closeApp) {
-      globalThis.electronAPI.closeApp();
+      void globalThis.electronAPI.closeApp();
     } else {
       // Fallback for development or if API is not available
       window.close();

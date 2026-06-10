@@ -8,9 +8,9 @@ export const MockMessageDisplayProvider: React.FC<{
   <MessageDisplayContext.Provider
     value={{
       clearMessages: () => {},
-      dismissMessage: () => {},
+      dismissMessage: (_id: number) => {},
       messages: [],
-      showMessage: () => {},
+      showMessage: () => 0,
     }}
   >
     {children}

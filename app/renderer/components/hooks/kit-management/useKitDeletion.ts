@@ -91,6 +91,9 @@ export function useKitDeletion({
       onRefreshKits?.();
     } catch (err) {
       onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);
+      // Rethrow so the caller (KitGridItem) can roll back its exit animation —
+      // otherwise a failed delete leaves the card looking deleted.
+      throw err;
     }
   };
 

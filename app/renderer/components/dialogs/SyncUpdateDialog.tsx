@@ -38,12 +38,14 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
     localChangeSummary,
   );
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [summaryError, setSummaryError] = useState<null | string>(null);
   const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
 
     setIsClosing(false);
+    setSummaryError(null);
     setLocalSdCardPath(sdCardPath || null);
 
     if (localChangeSummary) {
@@ -58,10 +60,22 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
       .then((summary) => {
         if (summary) {
           setChangeSummary(summary);
+        } else {
+          // A null summary means generation failed — distinguish it from a
+          // genuine "nothing to sync" so the user doesn't confirm a write
+          // (including the wipe option) against a summary that never loaded.
+          setSummaryError(
+            "Could not scan kits for changes. Please check the SD card and try again.",
+          );
         }
       })
       .catch((error) => {
         console.error("Failed to generate change summary:", error);
+        setSummaryError(
+          error instanceof Error
+            ? `Could not scan kits for changes: ${error.message}`
+            : "Could not scan kits for changes.",
+        );
       })
       .finally(() => {
         setIsGeneratingSummary(false);
@@ -244,6 +258,17 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           <div className="px-4 py-6 flex items-center justify-center gap-2 text-text-tertiary text-sm">
             <SpinnerIcon className="animate-spin" size={16} />
             <span>Scanning kits...</span>
+          </div>
+        )}
+
+        {/* Summary generation failure */}
+        {!isGeneratingSummary && summaryError && (
+          <div
+            className="px-4 py-3 m-3 rounded border border-accent-danger bg-accent-danger/10 text-accent-danger text-sm"
+            data-testid="summary-error"
+            role="alert"
+          >
+            {summaryError}
           </div>
         )}
 

@@ -1,9 +1,18 @@
 name: TypeCheck
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - "**"
+
+concurrency:
+  # Cancel superseded runs on the same branch/PR; never cancel main-push runs
+  # (they carry coverage + SonarCloud).
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   typecheck:

@@ -1,7 +1,7 @@
 <!-- 
 title: Release Process
 owners: developer-team
-last_reviewed: 2025-08-20
+last_reviewed: 2026-06-10
 tags: developer
 -->
 
@@ -55,27 +55,32 @@ Romper uses **manual tag-based releases** because:
    # Example: "version": "1.0.1"
    ```
 
-2. **Commit the version bump**:
+2. **Land the version bump via a PR** (never push commits to `main`
+   directly — see the hard rules in `CLAUDE.md`):
    ```bash
-   git add package.json
-   git commit -m "bump: version 1.0.1"
+   npm version 1.0.1 --no-git-tag-version   # updates package.json + lockfile
+   git commit -am "release: bump version to 1.0.1"
+   # push the branch, open a PR, merge it
    ```
 
-3. **Create and push git tag**:
+3. **Create and push the git tag** once the bump is on `main`:
    ```bash
-   # Create tag (this triggers the release workflow)
-   git tag v1.0.1
-   git push origin main --tags
+   git fetch origin main
+   git tag v1.0.1 origin/main
+   git push origin v1.0.1     # this triggers the release workflow
    ```
 
 ### Step 3: Monitor Automated Process
 
 The GitHub Actions workflow will automatically:
 
-1. **Build for all platforms** (Windows, macOS, Linux)
-2. **Generate release notes** from commits since the last tag
-3. **Create GitHub release** with all artifacts and proper release notes
-4. **Attach distribution packages** for all platforms
+1. **Check the SonarCloud quality gate** — any open CRITICAL/BLOCKER issue
+   or unreviewed security hotspot blocks the release and auto-files a
+   GitHub issue; fix the issues and re-tag
+2. **Build for all platforms** (Windows, macOS, Linux)
+3. **Generate release notes** from commits since the last tag
+4. **Create GitHub release** with all artifacts and proper release notes
+5. **Attach distribution packages** for all platforms
 
 You can monitor progress at: https://github.com/peteb4ker/romper/actions
 
@@ -93,6 +98,20 @@ git tag v1.0.1  # Bug fixes
 git tag v1.1.0  # New features  
 git tag v2.0.0  # Breaking changes
 ```
+
+### Release candidates (prereleases)
+
+Tags containing a hyphen (e.g. `v1.4.0-rc.1`) are published as GitHub
+**prereleases** and are never marked *Latest* — the release workflow derives
+both flags from the tag name. This matters because the macOS auto-updater
+(update.electronjs.org) serves whatever release GitHub marks Latest: an RC
+tagged in stable format would be pushed to every existing user.
+
+- Cut an RC exactly like a release, with the prerelease version
+  (`npm version 1.4.0-rc.1 --no-git-tag-version`, PR, then tag
+  `v1.4.0-rc.1`).
+- Promote by repeating the process with the final version. Semver orders
+  `1.4.0-rc.1 < 1.4.0`, so RC users auto-update forward to the final.
 
 ## Release Artifacts
 
@@ -174,17 +193,14 @@ npm run build
    git commit -m "fix: critical security vulnerability"
    ```
 
-3. **Merge to main and release**:
+3. **Land the hotfix and bump via PRs, then tag**:
    ```bash
-   git checkout main
-   git merge hotfix/1.2.4
-   
-   # Update package.json version to 1.2.4
-   git add package.json
-   git commit -m "bump: version 1.2.4"
-   
-   git tag v1.2.4
-   git push origin main --tags
+   # open a PR for the hotfix branch (including the version bump to 1.2.4)
+   # and merge it — direct pushes to main are not allowed
+
+   git fetch origin main
+   git tag v1.2.4 origin/main
+   git push origin v1.2.4
    ```
 
 #### Rollback Process
@@ -233,6 +249,6 @@ The Romper release process is designed to be:
 - **Complete**: All platforms built and released simultaneously
 
 For most releases, the process is just:
-1. `git tag v1.0.1`
-2. `git push origin --tags`
+1. Land the version-bump PR
+2. `git tag v1.0.1 origin/main && git push origin v1.0.1`
 3. Monitor GitHub Actions for completion

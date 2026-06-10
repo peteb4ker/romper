@@ -21,7 +21,6 @@ import {
   updateBank,
   updateKit,
   updateSampleGain,
-  updateSampleMetadata,
   updateVoiceAlias,
   updateVoiceSampleMode,
   updateVoiceStereoMode,
@@ -53,25 +52,6 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     async (_event, dbDir: string, sample: NewSample) => {
       return addSample(dbDir, sample);
     },
-  );
-
-  ipcMain.handle(
-    "update-sample-metadata",
-    createDbHandler(
-      inMemorySettings,
-      (
-        dbDir: string,
-        sampleId: number,
-        metadata: {
-          wav_bit_depth?: null | number;
-          wav_bitrate?: null | number;
-          wav_channels?: null | number;
-          wav_sample_rate?: null | number;
-        },
-      ) => {
-        return updateSampleMetadata(dbDir, sampleId, metadata);
-      },
-    ),
   );
 
   ipcMain.handle(

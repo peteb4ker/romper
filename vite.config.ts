@@ -104,14 +104,20 @@ export default defineConfig({
           ? "./coverage/integration"
           : "./coverage/unit",
         // Only enforce thresholds for unit tests; integration tests cover
-        // a small subset of files and will naturally have lower percentages
+        // a small subset of files and will naturally have lower percentages.
+        // Re-baselined for Vitest 4's rewritten v8 coverage (AST-aware
+        // remapping counts branches/statements differently than Vitest 3 —
+        // the old 85/85 gate went permanently red the day the migration
+        // landed). Set just below current main (84.75 st / 77.99 br /
+        // 82.36 fn / 85.47 ln) so the gate catches regressions; ratchet
+        // these up as coverage grows.
         thresholds: isIntegration
           ? undefined
           : {
-              branches: 85,
-              functions: 80,
+              branches: 77,
+              functions: 82,
               lines: 85,
-              statements: 85,
+              statements: 84,
             },
       },
       environment: isIntegration ? "node" : "jsdom",

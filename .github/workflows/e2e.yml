@@ -10,6 +10,12 @@ on:
   # Allow manual trigger
   workflow_dispatch:
 
+concurrency:
+  # Cancel superseded runs on the same branch/PR; never cancel main-push runs
+  # (they carry coverage + SonarCloud).
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   e2e-tests:
     runs-on: ${{ matrix.os }}
@@ -159,7 +165,9 @@ jobs:
 
       - name: Run end-to-end tests (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        run: npm run test:e2e
+        # test:play (not test:e2e) — the build already ran above; test:e2e
+        # would rebuild a second time.
+        run: npm run test:play
         env:
           ROMPER_SDCARD_PATH: /tmp/e2e-sdcard
           CI: true
@@ -167,7 +175,7 @@ jobs:
 
       - name: Run end-to-end tests (Windows)
         if: matrix.os == 'windows-latest'
-        run: npm run test:e2e
+        run: npm run test:play
         env:
           ROMPER_SDCARD_PATH: C:\temp\e2e-sdcard
           CI: true

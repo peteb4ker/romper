@@ -63,5 +63,7 @@ export async function insertSample(
   );
   if (!result.success)
     throw new Error(result.error || "Failed to insert sample");
-  return result.sampleId;
+  // The id lives in the DbResult payload (the old top-level read was
+  // always undefined)
+  return result.data?.sampleId;
 }

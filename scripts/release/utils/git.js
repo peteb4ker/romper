@@ -40,13 +40,21 @@ function isWorkingDirectoryClean() {
 }
 
 /**
- * Get the latest tag
+ * Get the latest tag to use as the release-notes baseline.
+ *
+ * Tags pointing at HEAD are excluded: in CI the release workflow checks
+ * out the tag being released, so a plain `git describe` returns that tag
+ * itself and "commits since last tag" comes back empty — the bug behind
+ * the generic "maintenance release" notes and self-comparing changelog
+ * links on every release through v1.3.0-rc.1.
  */
 function getLatestTag() {
   try {
-    return execGit("describe --tags --abbrev=0", { silent: true });
+    const tagsAtHead = execGit("tag --points-at HEAD", { silent: true });
+    const ref = tagsAtHead ? "HEAD~1" : "HEAD";
+    return execGit(`describe --tags --abbrev=0 ${ref}`, { silent: true });
   } catch {
-    // No tags exist yet
+    // No tags exist yet (or HEAD has no parent)
     return null;
   }
 }

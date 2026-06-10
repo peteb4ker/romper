@@ -140,4 +140,4 @@ Thank you to all contributors who helped make this release possible!
 
 ---
 
-**Full Changelog**: [{{previous_version}}...{{version}}](https://github.com/peteb4ker/romper/compare/{{previous_version}}...{{version}})
+**Full Changelog**: [{{previous_version}}...v{{version}}](https://github.com/peteb4ker/romper/compare/{{previous_version}}...v{{version}})

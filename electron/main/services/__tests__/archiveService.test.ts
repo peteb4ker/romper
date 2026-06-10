@@ -42,29 +42,36 @@ vi.mock("node:path", () => ({
   sep: "/",
 }));
 
-// Unzipper mock: emits normal events unless test sets .emitUnzipEvents to emit error
+// Unzipper mock. vi.mock calls are hoisted, so per-test factories don't
+// work (the last registered factory would silently win for the whole
+// file) — instead the single top-level mock delegates entry emission to
+// a swappable script that tests override and beforeEach resets.
+const defaultUnzipScript = (stream: MockStream) => {
+  setTimeout(() => {
+    stream.emit("entry", {
+      autodrain: () => {},
+      on: () => {},
+      path: "foo.wav",
+      pipe: () => new MockStream(),
+      type: "File",
+    });
+    stream.emit("entry", {
+      autodrain: () => {},
+      on: () => {},
+      path: "bar/",
+      pipe: () => new MockStream(),
+      type: "Directory",
+    });
+    stream.emit("close");
+  }, 10);
+};
+let unzipScript: (stream: MockStream) => void = defaultUnzipScript;
+
 vi.mock("unzipper", () => ({
   Parse: vi.fn(() => {
     const stream = new MockStream();
-    (stream as unknown).emitUnzipEvents = () => {
-      setTimeout(() => {
-        stream.emit("entry", {
-          autodrain: () => {},
-          on: () => {},
-          path: "foo.wav",
-          pipe: () => new MockStream(),
-          type: "File",
-        });
-        stream.emit("entry", {
-          autodrain: () => {},
-          on: () => {},
-          path: "bar/",
-          pipe: () => new MockStream(),
-          type: "Directory",
-        });
-        stream.emit("close");
-      }, 10);
-    };
+    (stream as unknown as MockStream).emitUnzipEvents = () =>
+      unzipScript(stream);
     unzipperStreams.push(stream);
     return stream;
   }),
@@ -104,6 +111,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
   unzipperStreams.length = 0;
   lastWriteStream = null;
+  unzipScript = defaultUnzipScript;
   const { registerIpcHandlers } = await import("../../ipcHandlers");
   registerIpcHandlers({}, {});
 });
@@ -166,31 +174,23 @@ describe("download-and-extract-archive handler", () => {
   }, 15000);
 
   it("skips __MACOSX and dot-underscore entries", async () => {
-    vi.mocked(unzipperStreams).length = 0;
-    vi.mock("unzipper", () => ({
-      Parse: vi.fn(() => {
-        const stream = new MockStream();
-        (stream as unknown).emitUnzipEvents = () => {
-          setTimeout(() => {
-            stream.emit("entry", {
-              autodrain: vi.fn(),
-              path: "__MACOSX/._foo.wav",
-              pipe: vi.fn(),
-              type: "File",
-            });
-            stream.emit("entry", {
-              autodrain: vi.fn(),
-              path: "._bar.wav",
-              pipe: vi.fn(),
-              type: "File",
-            });
-            stream.emit("close");
-          }, 10);
-        };
-        unzipperStreams.push(stream);
-        return stream;
-      }),
-    }));
+    unzipScript = (stream) => {
+      setTimeout(() => {
+        stream.emit("entry", {
+          autodrain: vi.fn(),
+          path: "__MACOSX/._foo.wav",
+          pipe: vi.fn(),
+          type: "File",
+        });
+        stream.emit("entry", {
+          autodrain: vi.fn(),
+          path: "._bar.wav",
+          pipe: vi.fn(),
+          type: "File",
+        });
+        stream.emit("close");
+      }, 10);
+    };
     (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
@@ -206,19 +206,11 @@ describe("download-and-extract-archive handler", () => {
   }, 15000);
 
   it("handles zero valid entries gracefully", async () => {
-    vi.mocked(unzipperStreams).length = 0;
-    vi.mock("unzipper", () => ({
-      Parse: vi.fn(() => {
-        const stream = new MockStream();
-        (stream as unknown).emitUnzipEvents = () => {
-          setTimeout(() => {
-            stream.emit("close");
-          }, 10);
-        };
-        unzipperStreams.push(stream);
-        return stream;
-      }),
-    }));
+    unzipScript = (stream) => {
+      setTimeout(() => {
+        stream.emit("close");
+      }, 10);
+    };
     (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await handler(
@@ -253,33 +245,25 @@ describe("download-and-extract-archive handler", () => {
   }, 15000);
 
   it("logs file write errors but continues extraction", async () => {
-    vi.mocked(unzipperStreams).length = 0;
-    vi.mock("unzipper", () => ({
-      Parse: vi.fn(() => {
-        const stream = new MockStream();
-        (stream as unknown).emitUnzipEvents = () => {
-          setTimeout(() => {
-            // Emit an entry to trigger file extraction
-            stream.emit("entry", {
-              autodrain: () => {},
-              on: () => {},
-              path: "foo.wav",
-              pipe: () => {
-                const s = new MockStream();
-                setTimeout(() => s.emit("error", new Error("write fail")), 5);
-                setTimeout(() => s.emit("finish"), 10);
-                return s;
-              },
-              type: "File",
-            });
-            // End extraction
-            setTimeout(() => stream.emit("close"), 20);
-          }, 1);
-        };
-        unzipperStreams.push(stream);
-        return stream;
-      }),
-    }));
+    unzipScript = (stream) => {
+      setTimeout(() => {
+        // Emit an entry to trigger file extraction
+        stream.emit("entry", {
+          autodrain: () => {},
+          on: () => {},
+          path: "foo.wav",
+          pipe: () => {
+            const s = new MockStream();
+            setTimeout(() => s.emit("error", new Error("write fail")), 5);
+            setTimeout(() => s.emit("finish"), 10);
+            return s;
+          },
+          type: "File",
+        });
+        // End extraction
+        setTimeout(() => stream.emit("close"), 20);
+      }, 1);
+    };
     (fs.createReadStream as unknown).mockImplementation(() => {
       const s = new MockStream();
       setTimeout(() => {

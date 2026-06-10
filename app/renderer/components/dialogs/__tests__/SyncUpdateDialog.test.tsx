@@ -360,6 +360,48 @@ describe("SyncUpdateDialog", () => {
     });
   });
 
+  describe("summary generation failure", () => {
+    it("shows a distinct error when summary generation returns null", async () => {
+      const onGenerate = vi.fn().mockResolvedValue(null);
+
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          onGenerateChangeSummary={onGenerate}
+          sdCardPath="/sd"
+        />,
+      );
+
+      const banner = await screen.findByTestId("summary-error");
+      expect(banner).toHaveTextContent(/could not scan kits/i);
+
+      // Confirm must be disabled — no summary, so no write (and no wipe)
+      expect(screen.getByTestId("confirm-sync")).toBeDisabled();
+    });
+
+    it("shows the failure reason when summary generation throws", async () => {
+      const onGenerate = vi.fn().mockRejectedValue(new Error("SD unmounted"));
+
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          onGenerateChangeSummary={onGenerate}
+          sdCardPath="/sd"
+        />,
+      );
+
+      const banner = await screen.findByTestId("summary-error");
+      expect(banner).toHaveTextContent("SD unmounted");
+      expect(screen.getByTestId("confirm-sync")).toBeDisabled();
+    });
+  });
+
   describe("error handling", () => {
     it("should show detailed error message with error details", () => {
       const mockSyncProgressWithError = {

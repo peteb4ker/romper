@@ -300,7 +300,7 @@ describe("useKitDeletion", () => {
       expect(mockOnRefreshKits).toHaveBeenCalled();
     });
 
-    it("handles error", async () => {
+    it("reports the error AND rethrows so the caller can roll back", async () => {
       mockDeleteKit.mockRejectedValue(new Error("Delete failed"));
 
       const { result } = renderHook(() =>
@@ -311,7 +311,10 @@ describe("useKitDeletion", () => {
       );
 
       await act(async () => {
-        await result.current.deleteKitDirect("A5");
+        // Must reject — KitGridItem relies on this to revert its exit animation
+        await expect(result.current.deleteKitDirect("A5")).rejects.toThrow(
+          "Delete failed",
+        );
       });
 
       expect(mockOnMessage).toHaveBeenCalledWith(
@@ -319,6 +322,7 @@ describe("useKitDeletion", () => {
         "error",
         5000,
       );
+      expect(mockOnRefreshKits).not.toHaveBeenCalled();
     });
   });
 

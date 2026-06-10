@@ -29,7 +29,17 @@ export function useBpm({ initialBpm = 120, kitName }: UseBpmParams) {
       // Persist to database
       if (kitName && globalThis.electronAPI?.updateKitBpm) {
         try {
-          await globalThis.electronAPI.updateKitBpm(kitName, clampedBpm);
+          const result = await globalThis.electronAPI.updateKitBpm(
+            kitName,
+            clampedBpm,
+          );
+          // updateKitBpm returns a DbResult and does NOT reject on a DB
+          // failure — revert when it reports success: false so the UI never
+          // shows a BPM that was not persisted.
+          if (result && !result.success) {
+            console.error("Failed to update BPM:", result.error);
+            setBpmState(initialBpm);
+          }
         } catch (error) {
           console.error("Failed to update BPM:", error);
           // Revert on error

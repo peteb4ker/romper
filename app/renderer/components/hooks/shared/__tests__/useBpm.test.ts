@@ -103,6 +103,27 @@ describe("useBpm", () => {
     });
   });
 
+  it("reverts BPM when the DbResult reports failure (no rejection)", async () => {
+    // updateKitBpm returns a DbResult and does NOT reject on a DB failure;
+    // the hook must inspect result.success rather than only catching.
+    mockUpdateKitBpm?.mockResolvedValue({
+      error: "disk full",
+      success: false,
+    });
+
+    const { result } = renderHook(() =>
+      useBpm({ initialBpm: 120, kitName: "A1" }),
+    );
+
+    await act(async () => {
+      await result.current.setBpm(140);
+    });
+
+    await waitFor(() => {
+      expect(result.current.bpm).toBe(120); // reverted, value was not persisted
+    });
+  });
+
   it("reverts BPM on API exception", async () => {
     mockUpdateKitBpm?.mockRejectedValue(new Error("Network error"));
 

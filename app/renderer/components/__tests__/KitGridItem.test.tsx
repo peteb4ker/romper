@@ -1046,6 +1046,29 @@ describe("KitGridItem", () => {
       });
     });
 
+    it("rolls back the exit animation when deletion fails", async () => {
+      const failingProps = {
+        ...editableProps,
+        onDeleteKit: vi.fn().mockRejectedValue(new Error("DB locked")),
+      };
+      const { container } = render(<KitGridItem {...failingProps} />);
+      fireEvent.click(screen.getByTestId("delete-kit-button"));
+
+      const confirmBtn = await screen.findByTestId("confirm-delete-button");
+      fireEvent.click(confirmBtn);
+
+      await vi.waitFor(() => {
+        expect(failingProps.onDeleteKit).toHaveBeenCalledWith("A0");
+      });
+
+      // The card must NOT remain in its exiting state — the rollback branch
+      // (previously dead because deleteKitDirect swallowed the rejection)
+      // clears the exit animation so the kit reappears.
+      await vi.waitFor(() => {
+        expect(container.querySelector(".animate-kit-exit")).toBeNull();
+      });
+    });
+
     it("closes popover when cancel is clicked", async () => {
       render(<KitGridItem {...editableProps} />);
       fireEvent.click(screen.getByTestId("delete-kit-button"));

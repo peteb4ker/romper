@@ -132,7 +132,7 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
       }
     };
 
-    fetchFavoritesCount();
+    void fetchFavoritesCount();
   }, [kits]); // Re-fetch when kits change
 
   // Task 20.2.2: Calculate modified count when kits change

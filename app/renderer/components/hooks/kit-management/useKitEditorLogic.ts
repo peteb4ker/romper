@@ -373,9 +373,9 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
       if (e.key === "/") {
         e.preventDefault();
         if (kit?.editable) {
-          handleInferVoiceNames();
+          void handleInferVoiceNames();
         } else {
-          handleScanKit();
+          void handleScanKit();
         }
         return;
       }

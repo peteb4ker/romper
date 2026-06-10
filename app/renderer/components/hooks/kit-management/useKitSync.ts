@@ -42,7 +42,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
         }
       }
     };
-    getSettings();
+    void getSettings();
   }, []);
 
   // Sync functionality from useSyncUpdate hook

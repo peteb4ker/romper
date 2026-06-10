@@ -9,7 +9,7 @@ export const AllTheProviders: React.FC<WrapperProps> = ({ children }) => {
   return <>{children}</>;
 };
 
-interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {}
+type CustomRenderOptions = Omit<RenderOptions, "wrapper">;
 
 const customRender = (
   ui: React.ReactElement,

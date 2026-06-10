@@ -38,7 +38,7 @@ export function useSampleActions({
     (e: React.MouseEvent, sampleData: SampleData | undefined) => {
       e.preventDefault();
       if (sampleData?.source_path && globalThis.electronAPI?.showItemInFolder) {
-        globalThis.electronAPI.showItemInFolder(sampleData.source_path);
+        void globalThis.electronAPI.showItemInFolder(sampleData.source_path);
       }
     },
     [],

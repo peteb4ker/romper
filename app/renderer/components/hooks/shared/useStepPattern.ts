@@ -38,7 +38,7 @@ export function useStepPattern({
           pattern,
         );
         if (result.success) {
-          onSaved?.();
+          void onSaved?.();
         } else {
           console.error("Failed to save step pattern:", result.error);
           // Revert UI state on failure

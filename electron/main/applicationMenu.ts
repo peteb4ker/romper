@@ -169,14 +169,16 @@ export function createApplicationMenu() {
       submenu: [
         {
           click: () => {
-            shell.openExternal("https://peteb4ker.github.io/romper/manual/");
+            void shell.openExternal(
+              "https://peteb4ker.github.io/romper/manual/",
+            );
           },
           icon: menuIcons.romperManual,
           label: "Romper Manual",
         },
         {
           click: () => {
-            shell.openExternal("https://squarp.net/rample/manual/");
+            void shell.openExternal("https://squarp.net/rample/manual/");
           },
           icon: menuIcons.rampleManual,
           label: "Rample Manual",

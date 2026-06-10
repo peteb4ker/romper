@@ -2,7 +2,7 @@ import React from "react";
 
 const openExternal = (url: string) => {
   if (globalThis.electronAPI?.openExternal) {
-    globalThis.electronAPI.openExternal(url);
+    void globalThis.electronAPI.openExternal(url);
   } else {
     window.open(url, "_blank", "noopener,noreferrer");
   }

@@ -5,7 +5,7 @@ import LedPixelGrid from "./led-grid/LedPixelGrid";
 
 const openExternal = (url: string) => {
   if (globalThis.electronAPI?.openExternal)
-    globalThis.electronAPI.openExternal(url);
+    void globalThis.electronAPI.openExternal(url);
   else window.open(url, "_blank", "noopener,noreferrer");
 };
 

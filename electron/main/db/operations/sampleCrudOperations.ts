@@ -29,7 +29,7 @@ export function buildDeleteConditions(
   kitName: string,
   filter?: { slotNumber?: number; voiceNumber?: number },
 ): SQL {
-  let conditions = [eq(samples.kit_name, kitName)];
+  const conditions = [eq(samples.kit_name, kitName)];
 
   if (filter?.voiceNumber !== undefined) {
     conditions.push(eq(samples.voice_number, filter.voiceNumber));

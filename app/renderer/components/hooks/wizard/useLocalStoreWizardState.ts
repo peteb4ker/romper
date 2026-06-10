@@ -124,7 +124,7 @@ export function useLocalStoreWizardState({
       setDefaultPath("");
     };
 
-    loadDefaultPath();
+    void loadDefaultPath();
 
     // Clear targetPath and source on wizard mount (start)
     setState((s) => ({

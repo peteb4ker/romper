@@ -68,7 +68,7 @@ export function useSampleProcessing({
   const calculateTargetSlot = useCallback(
     (path: string, slotNumber: number, droppedSlotNumber: number): number => {
       const isFromLocalStore = path.includes(kitName);
-      let targetSlot = slotNumber >= 0 ? slotNumber : droppedSlotNumber;
+      const targetSlot = slotNumber >= 0 ? slotNumber : droppedSlotNumber;
 
       if (!isFromLocalStore && slotNumber < 0) {
         for (let i = 0; i < 12; i++) {

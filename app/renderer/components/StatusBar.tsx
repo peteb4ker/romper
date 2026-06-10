@@ -80,11 +80,11 @@ const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
           onClick={() => {
             // Cycle through: light -> dark -> system
             if (themeMode === "light") {
-              setThemeMode("dark");
+              void setThemeMode("dark");
             } else if (themeMode === "dark") {
-              setThemeMode("system");
+              void setThemeMode("system");
             } else {
-              setThemeMode("light");
+              void setThemeMode("light");
             }
           }}
           title={`Current: ${themeMode}${getThemeDisplayText()}`}

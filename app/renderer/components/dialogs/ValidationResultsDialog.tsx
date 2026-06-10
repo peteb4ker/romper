@@ -40,7 +40,7 @@ const ValidationResultsDialog: React.FC<ValidationResultsDialogProps> = ({
   // Trigger validation when dialog opens
   React.useEffect(() => {
     if (isOpen) {
-      validateLocalStore();
+      void validateLocalStore();
     }
   }, [isOpen, validateLocalStore]);
 

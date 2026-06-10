@@ -64,7 +64,7 @@ export function useGlobalKeyboardShortcuts({
         event.stopPropagation();
 
         if (undoRedo.canUndo && !undoRedo.isUndoing) {
-          undoRedo.undo();
+          void undoRedo.undo();
         }
         return true;
       }
@@ -81,7 +81,7 @@ export function useGlobalKeyboardShortcuts({
         event.stopPropagation();
 
         if (undoRedo.canRedo && !undoRedo.isRedoing) {
-          undoRedo.redo();
+          void undoRedo.redo();
         }
         return true;
       }

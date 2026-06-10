@@ -146,7 +146,7 @@ const KitsView: React.FC = () => {
     isEditMode: currentKit?.editable ?? false,
     onBackNavigation: navigation.selectedKit
       ? () => {
-          navigation.handleBack();
+          void navigation.handleBack();
         }
       : undefined,
   });
@@ -215,7 +215,7 @@ const KitsView: React.FC = () => {
     const handleRefreshSamples = (event: Event) => {
       const customEvent = event as CustomEvent<{ kitName: string }>;
       if (customEvent.detail.kitName === selectedKitRef.current) {
-        reloadCurrentKitSamplesRef.current(selectedKitRef.current);
+        void reloadCurrentKitSamplesRef.current(selectedKitRef.current);
       }
     };
 
@@ -253,7 +253,7 @@ const KitsView: React.FC = () => {
   // Critical error handler
   const handleCriticalError = useCallback(() => {
     if (globalThis.electronAPI?.closeApp) {
-      globalThis.electronAPI.closeApp();
+      void globalThis.electronAPI.closeApp();
     } else {
       // Fallback for development or if API is not available
       window.close();

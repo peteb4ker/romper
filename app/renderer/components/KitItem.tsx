@@ -11,7 +11,7 @@ import {
   KitItemRenderProps,
 } from "./shared/kitItemUtils";
 
-interface KitItemProps extends BaseKitItemProps {}
+type KitItemProps = BaseKitItemProps;
 
 // Add ref forwarding to support programmatic focus from KitList
 const KitItem = React.memo(

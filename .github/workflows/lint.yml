@@ -24,4 +24,6 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
-        run: npm run lint
+        # lint:check (no --fix) so violations fail CI instead of being
+        # silently auto-fixed in the throwaway runner workspace.
+        run: npm run lint:check

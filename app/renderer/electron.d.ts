@@ -53,11 +53,11 @@ export interface ElectronAPI {
   }>;
   closeApp?: () => Promise<void>;
   copyDir?: (src: string, dest: string) => Promise<void>;
-  copyKit?: (sourceKit: string, destKit: string) => Promise<void>;
-  createKit?: (kitSlot: string) => Promise<void>;
+  copyKit?: (sourceKit: string, destKit: string) => Promise<DbResult>;
+  createKit?: (kitSlot: string) => Promise<DbResult>;
   // Missing methods causing errors
   createRomperDb?: (dbDir: string) => Promise<RomperDbResult>;
-  deleteKit?: (kitName: string) => Promise<void>;
+  deleteKit?: (kitName: string) => Promise<DbResult>;
   deleteSampleFromSlot?: (
     kitName: string,
     voiceNumber: number,
@@ -120,12 +120,14 @@ export interface ElectronAPI {
   getFavoriteKitsCount?: () => Promise<DbResult<number>>;
   // Database methods for kit metadata (replacing JSON file dependency)
   getKit?: (kitName: string) => Promise<DbResult<KitWithRelations>>;
-  getKitDeleteSummary?: (kitName: string) => Promise<{
-    kitName: string;
-    locked: boolean;
-    sampleCount: number;
-    voiceCount: number;
-  }>;
+  getKitDeleteSummary?: (kitName: string) => Promise<
+    DbResult<{
+      kitName: string;
+      locked: boolean;
+      sampleCount: number;
+      voiceCount: number;
+    }>
+  >;
   getKits?: () => Promise<
     DbResult<
       Array<{
@@ -159,7 +161,7 @@ export interface ElectronAPI {
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
-  ) => Promise<ArrayBuffer | null>;
+  ) => Promise<DbResult<ArrayBuffer | null>>;
   getSetting: (
     key: keyof {
       confirmDestructiveActions?: boolean;

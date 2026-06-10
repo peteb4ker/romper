@@ -112,9 +112,10 @@ describe("SampleWaveform", () => {
   });
 
   it("loads and decodes audio buffer on mount", async () => {
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
-      new ArrayBuffer(1024),
-    );
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: new ArrayBuffer(1024),
+      success: true,
+    });
 
     await act(async () => {
       render(
@@ -165,7 +166,10 @@ describe("SampleWaveform", () => {
   });
 
   it("handles null audio buffer response gracefully (empty slot)", async () => {
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(null);
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: null,
+      success: true,
+    });
     const onError = vi.fn();
 
     await act(async () => {
@@ -315,9 +319,10 @@ describe("SampleWaveform", () => {
       return mockAudioContext;
     });
 
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
-      new ArrayBuffer(1024),
-    );
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: new ArrayBuffer(1024),
+      success: true,
+    });
 
     const { rerender } = render(
       <SampleWaveform
@@ -421,9 +426,10 @@ describe("SampleWaveform", () => {
       return mockAudioContext;
     });
 
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
-      new ArrayBuffer(1024),
-    );
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: new ArrayBuffer(1024),
+      success: true,
+    });
 
     const { rerender } = render(
       <SampleWaveform
@@ -500,9 +506,10 @@ describe("SampleWaveform", () => {
     global.AudioContext = vi.fn(function () {
       return mockAudioContext;
     });
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
-      new ArrayBuffer(1024),
-    );
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: new ArrayBuffer(1024),
+      success: true,
+    });
 
     const { rerender } = render(
       <SampleWaveform
@@ -587,9 +594,10 @@ describe("SampleWaveform", () => {
     global.AudioContext = vi.fn(function () {
       return mockAudioContext;
     });
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
-      new ArrayBuffer(1024),
-    );
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: new ArrayBuffer(1024),
+      success: true,
+    });
     const onPlayingChange = vi.fn();
 
     const { rerender } = render(
@@ -683,9 +691,10 @@ describe("SampleWaveform", () => {
     global.AudioContext = vi.fn(function () {
       return mockAudioContext;
     });
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
-      new ArrayBuffer(1024),
-    );
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: new ArrayBuffer(1024),
+      success: true,
+    });
     const onPlayingChange = vi.fn();
 
     const { rerender } = render(
@@ -766,9 +775,10 @@ describe("SampleWaveform", () => {
       return mockAudioContext;
     });
 
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue(
-      new ArrayBuffer(1024),
-    );
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: new ArrayBuffer(1024),
+      success: true,
+    });
 
     const { rerender } = render(
       <SampleWaveform

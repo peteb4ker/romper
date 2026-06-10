@@ -77,8 +77,7 @@ export function useKitDataManager({
       try {
         const kitsResult = await globalThis.electronAPI?.getKits?.();
         if (kitsResult?.success && kitsResult.data) {
-          const kitsWithBanks =
-            kitsResult.data as unknown as KitWithRelations[];
+          const kitsWithBanks = kitsResult.data;
           setKits(kitsWithBanks);
           loadedKits = kitsWithBanks;
           kitNames = kitsWithBanks.map((kit: KitWithRelations) => kit.name);
@@ -168,7 +167,7 @@ export function useKitDataManager({
     try {
       const kitsResult = await globalThis.electronAPI?.getKits?.();
       if (kitsResult?.success && kitsResult.data) {
-        const kitsWithBanks = kitsResult.data as unknown as KitWithRelations[];
+        const kitsWithBanks = kitsResult.data;
         setKits(kitsWithBanks);
         const kitNames = kitsWithBanks.map((kit: KitWithRelations) => kit.name);
 

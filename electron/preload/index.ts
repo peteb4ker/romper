@@ -1,4 +1,10 @@
 import type { NewKit, NewSample } from "@romper/shared/db/types.js";
+import type {
+  ElectronAPI,
+  SettingsData,
+  SettingsKey,
+  SyncProgress,
+} from "@romper/shared/electronApi.js";
 
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
@@ -6,26 +12,7 @@ const { contextBridge, ipcRenderer, webUtils } = require("electron");
 const isDev = process.env.NODE_ENV === "development";
 
 // ===== SETTINGS MANAGER =====
-interface SettingsData {
-  confirmDestructiveActions?: boolean;
-  localStorePath?: string;
-  theme?: string;
-  themeMode?: "dark" | "light" | "system";
-}
-
-type SettingsKey = keyof SettingsData;
 type SettingsValue = SettingsData[SettingsKey];
-
-interface SyncProgress {
-  bytesTransferred: number;
-  currentFile: string;
-  elapsedTime: number;
-  estimatedTimeRemaining: number;
-  filesCompleted: number;
-  status: "complete" | "converting" | "copying" | "error" | "preparing";
-  totalBytes: number;
-  totalFiles: number;
-}
 
 class SettingsManager {
   async getSetting(key: SettingsKey): Promise<SettingsValue> {
@@ -120,7 +107,9 @@ contextBridge.exposeInMainWorld("romperEnv", {
   ROMPER_SQUARP_ARCHIVE_URL: process.env.ROMPER_SQUARP_ARCHIVE_URL,
 });
 
-contextBridge.exposeInMainWorld("electronAPI", {
+// The contract is canonical (shared/electronApi.ts); `satisfies` makes a
+// missing or drifted method a compile error in the preload build.
+const electronAPI = {
   // Task 5.2.2 & 5.2.3: Sample management operations for drag-and-drop editing
   addSampleToSlot: (
     kitName: string,
@@ -372,14 +361,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-    mode: "insert" | "overwrite",
   ) => {
     isDev &&
       console.debug(
         "[IPC] moveSampleInKit invoked",
         kitName,
         `${fromVoice}:${fromSlot} -> ${toVoice}:${toSlot}`,
-        mode,
       );
     return ipcRenderer.invoke(
       "move-sample-in-kit",
@@ -388,7 +375,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
       fromSlot,
       toVoice,
       toSlot,
-      mode,
     );
   },
   onSyncProgress: (callback: (progress: SyncProgress) => void) => {
@@ -456,29 +442,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] selectSdCard invoked");
     return ipcRenderer.invoke("select-sd-card");
   },
-  setSetting: async (key: string, value: SettingsValue): Promise<void> => {
-    return await settingsManager.setSetting(key as SettingsKey, value);
+  setSetting: async (key: SettingsKey, value: unknown): Promise<void> => {
+    return await settingsManager.setSetting(key, value as SettingsValue);
   },
   showItemInFolder: (path: string): Promise<void> => {
     isDev && console.debug("[IPC] showItemInFolder invoked", path);
     return ipcRenderer.invoke("show-item-in-folder", path);
   },
-  startKitSync: (syncData: {
-    filesToConvert: Array<{
-      destinationPath: string;
-      filename: string;
-      operation: "convert" | "copy";
-      sourcePath: string;
-    }>;
-    filesToCopy: Array<{
-      destinationPath: string;
-      filename: string;
-      operation: "convert" | "copy";
-      sourcePath: string;
-    }>;
-  }) => {
-    isDev && console.debug("[IPC] startKitSync invoked", syncData);
-    return ipcRenderer.invoke("startKitSync", syncData);
+  startKitSync: (options: { sdCardPath: string; wipeSdCard?: boolean }) => {
+    isDev && console.debug("[IPC] startKitSync invoked", options);
+    return ipcRenderer.invoke("startKitSync", options);
   },
 
   // Task 20.1: Favorites system
@@ -656,11 +629,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("validate-sample-sources", kitName);
   },
 
-  writeSettings: async (key: string, value: SettingsValue): Promise<void> => {
+  writeSettings: async (key: string, value: unknown): Promise<void> => {
     isDev && console.debug("[IPC] writeSettings invoked", key, value);
-    return await settingsManager.writeSettings(key as SettingsKey, value);
+    return await settingsManager.writeSettings(
+      key as SettingsKey,
+      value as SettingsValue,
+    );
   },
-});
+} satisfies ElectronAPI;
+
+contextBridge.exposeInMainWorld("electronAPI", electronAPI);
 
 // Initialize menu event forwarding
 menuEventForwarder.initialize();

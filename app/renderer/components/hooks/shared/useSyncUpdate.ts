@@ -163,7 +163,7 @@ export function useSyncUpdate(
 
   const cancelSync = useCallback(() => {
     if (electronAPI?.cancelKitSync) {
-      electronAPI.cancelKitSync();
+      void electronAPI.cancelKitSync();
     }
 
     setSyncProgress(null);

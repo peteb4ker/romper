@@ -740,7 +740,9 @@ describe("preload/index.tsx", () => {
 
       mockElectron.ipcRenderer.invoke.mockResolvedValue("mock-result");
 
-      await api.moveSampleInKit("TestKit", 1, 0, 2, 1, "insert");
+      // No mode argument: main's handler never accepted one and the
+      // renderer never passed one — the contract is 5 params.
+      await api.moveSampleInKit("TestKit", 1, 0, 2, 1);
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "move-sample-in-kit",
         "TestKit",
@@ -748,7 +750,6 @@ describe("preload/index.tsx", () => {
         0,
         2,
         1,
-        "insert",
       );
     });
 

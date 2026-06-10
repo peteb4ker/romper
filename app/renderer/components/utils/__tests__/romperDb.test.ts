@@ -17,7 +17,7 @@ describe("romperDb", () => {
       success: true,
     }));
     vi.mocked(window.electronAPI.insertSample).mockImplementation(async () => ({
-      sampleId: 99,
+      data: { sampleId: 99 },
       success: true,
     }));
   });

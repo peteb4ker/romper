@@ -346,5 +346,10 @@ jobs:
             release-artifacts/**/*.deb
             release-artifacts/**/*.rpm
             release-artifacts/**/*.AppImage
-          makeLatest: true
+          # Tags containing a hyphen (e.g. v1.3.0-rc.1) are prereleases:
+          # published on GitHub but NOT marked latest, so the
+          # update.electronjs.org feed (which serves the latest stable
+          # release) never pushes them to existing users via auto-update.
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          makeLatest: ${{ !contains(github.ref_name, '-') && 'true' || 'false' }}
           draft: false

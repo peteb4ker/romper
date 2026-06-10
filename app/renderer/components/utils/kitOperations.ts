@@ -21,7 +21,10 @@ export async function createKit(kitSlot: string): Promise<void> {
     throw new Error("Electron API not available");
   }
 
-  await globalThis.electronAPI.createKit(kitSlot);
+  const result = await globalThis.electronAPI.createKit(kitSlot);
+  if (!result.success) {
+    throw new Error(result.error || "Failed to create kit");
+  }
 }
 
 /**
@@ -32,14 +35,9 @@ export async function deleteKit(kitName: string): Promise<void> {
     throw new Error("Electron API not available");
   }
 
-  try {
-    await globalThis.electronAPI.deleteKit(kitName);
-  } catch (err) {
-    let msg = String(err instanceof Error ? err.message : err);
-    msg = msg
-      .replace(/^Error invoking remote method 'delete-kit':\s*/, "")
-      .replace(/^Error:\s*/, "");
-    throw new Error(msg);
+  const result = await globalThis.electronAPI.deleteKit(kitName);
+  if (!result.success) {
+    throw new Error(result.error || "Failed to delete kit");
   }
 }
 
@@ -58,15 +56,9 @@ export async function duplicateKit(
     throw new Error("Electron API not available");
   }
 
-  try {
-    await globalThis.electronAPI.copyKit(sourceSlot, destSlot);
-  } catch (err) {
-    // Clean up error message
-    let msg = String(err instanceof Error ? err.message : err);
-    msg = msg
-      .replace(/^Error invoking remote method 'copy-kit':\s*/, "")
-      .replace(/^Error:\s*/, "");
-    throw new Error(msg);
+  const result = await globalThis.electronAPI.copyKit(sourceSlot, destSlot);
+  if (!result.success) {
+    throw new Error(result.error || "Failed to copy kit");
   }
 }
 
@@ -117,15 +109,11 @@ export async function getKitDeleteSummary(kitName: string): Promise<{
     throw new Error("Electron API not available");
   }
 
-  try {
-    return await globalThis.electronAPI.getKitDeleteSummary(kitName);
-  } catch (err) {
-    let msg = String(err instanceof Error ? err.message : err);
-    msg = msg
-      .replace(/^Error invoking remote method 'get-kit-delete-summary':\s*/, "")
-      .replace(/^Error:\s*/, "");
-    throw new Error(msg);
+  const result = await globalThis.electronAPI.getKitDeleteSummary(kitName);
+  if (!result.success || !result.data) {
+    throw new Error(result.error || "Failed to get kit delete summary");
   }
+  return result.data;
 }
 
 /**

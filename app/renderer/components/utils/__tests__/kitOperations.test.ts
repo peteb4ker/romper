@@ -50,7 +50,7 @@ describe("validateKitSlot", () => {
 
 describe("createKit", () => {
   it("successfully creates a kit with valid slot", async () => {
-    mockElectronAPI.createKit.mockResolvedValue(undefined);
+    mockElectronAPI.createKit.mockResolvedValue({ success: true });
 
     await createKit("A1");
 
@@ -71,8 +71,11 @@ describe("createKit", () => {
     await expect(createKit("A1")).rejects.toThrow("Electron API not available");
   });
 
-  it("propagates Electron API errors", async () => {
-    mockElectronAPI.createKit.mockRejectedValue(new Error("Disk full"));
+  it("throws the DbResult error on failure", async () => {
+    mockElectronAPI.createKit.mockResolvedValue({
+      error: "Disk full",
+      success: false,
+    });
 
     await expect(createKit("A1")).rejects.toThrow("Disk full");
   });
@@ -80,7 +83,7 @@ describe("createKit", () => {
 
 describe("duplicateKit", () => {
   it("successfully duplicates a kit with valid slots", async () => {
-    mockElectronAPI.copyKit.mockResolvedValue(undefined);
+    mockElectronAPI.copyKit.mockResolvedValue({ success: true });
 
     await duplicateKit("A1", "B2");
 
@@ -103,33 +106,23 @@ describe("duplicateKit", () => {
     );
   });
 
-  it("cleans up error messages from Electron API", async () => {
-    mockElectronAPI.copyKit.mockRejectedValue(
-      new Error(
-        "Error invoking remote method 'copy-kit': Error: Source kit not found",
-      ),
-    );
+  it("throws the clean DbResult error on failure", async () => {
+    // The handler returns a DbResult envelope, so the service's own message
+    // arrives intact — no "Error invoking remote method" prefix to strip.
+    mockElectronAPI.copyKit.mockResolvedValue({
+      error: "Source kit not found",
+      success: false,
+    });
 
     await expect(duplicateKit("A1", "B2")).rejects.toThrow(
       "Source kit not found",
-    );
-  });
-
-  it("handles various error message formats", async () => {
-    // Test different error prefixes
-    mockElectronAPI.copyKit.mockRejectedValue(
-      new Error("Error: Kit already exists"),
-    );
-
-    await expect(duplicateKit("A1", "B2")).rejects.toThrow(
-      "Kit already exists",
     );
   });
 });
 
 describe("deleteKit", () => {
   it("successfully deletes a kit", async () => {
-    mockElectronAPI.deleteKit.mockResolvedValue(undefined);
+    mockElectronAPI.deleteKit.mockResolvedValue({ success: true });
 
     await deleteKit("A5");
 
@@ -142,20 +135,19 @@ describe("deleteKit", () => {
     await expect(deleteKit("A5")).rejects.toThrow("Electron API not available");
   });
 
-  it("cleans up error messages from Electron API", async () => {
-    mockElectronAPI.deleteKit.mockRejectedValue(
-      new Error(
-        "Error invoking remote method 'delete-kit': Error: Kit not found",
-      ),
-    );
+  it("throws the clean DbResult error on failure", async () => {
+    mockElectronAPI.deleteKit.mockResolvedValue({
+      error: "Kit not found",
+      success: false,
+    });
 
     await expect(deleteKit("A5")).rejects.toThrow("Kit not found");
   });
 
-  it("handles non-Error rejection values", async () => {
-    mockElectronAPI.deleteKit.mockRejectedValue("string error");
+  it("falls back to a generic message when the failure has no error", async () => {
+    mockElectronAPI.deleteKit.mockResolvedValue({ success: false });
 
-    await expect(deleteKit("A5")).rejects.toThrow("string error");
+    await expect(deleteKit("A5")).rejects.toThrow("Failed to delete kit");
   });
 });
 
@@ -167,7 +159,10 @@ describe("getKitDeleteSummary", () => {
       sampleCount: 3,
       voiceCount: 4,
     };
-    mockElectronAPI.getKitDeleteSummary.mockResolvedValue(summary);
+    mockElectronAPI.getKitDeleteSummary.mockResolvedValue({
+      data: summary,
+      success: true,
+    });
 
     const result = await getKitDeleteSummary("A5");
 
@@ -183,20 +178,21 @@ describe("getKitDeleteSummary", () => {
     );
   });
 
-  it("cleans up error messages from Electron API", async () => {
-    mockElectronAPI.getKitDeleteSummary.mockRejectedValue(
-      new Error(
-        "Error invoking remote method 'get-kit-delete-summary': Error: Kit not found",
-      ),
-    );
+  it("throws the clean DbResult error on failure", async () => {
+    mockElectronAPI.getKitDeleteSummary.mockResolvedValue({
+      error: "Kit not found",
+      success: false,
+    });
 
     await expect(getKitDeleteSummary("A5")).rejects.toThrow("Kit not found");
   });
 
-  it("handles non-Error rejection values", async () => {
-    mockElectronAPI.getKitDeleteSummary.mockRejectedValue("db failure");
+  it("throws when the summary data is missing", async () => {
+    mockElectronAPI.getKitDeleteSummary.mockResolvedValue({ success: true });
 
-    await expect(getKitDeleteSummary("A5")).rejects.toThrow("db failure");
+    await expect(getKitDeleteSummary("A5")).rejects.toThrow(
+      "Failed to get kit delete summary",
+    );
   });
 });
 

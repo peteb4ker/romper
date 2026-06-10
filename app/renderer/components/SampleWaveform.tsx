@@ -120,10 +120,15 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
 
     globalThis.electronAPI
       .getSampleAudioBuffer(kitName, voiceNumber, slotNumber)
-      .then(async (arrayBuffer: ArrayBuffer | null) => {
+      .then(async (result) => {
         if (cancelled) return;
 
-        // Handle null response for missing samples (empty slots)
+        if (!result.success) {
+          throw new Error(result.error || "Failed to load sample audio");
+        }
+
+        // Handle null data for missing samples (empty slots)
+        const arrayBuffer = result.data;
         if (!arrayBuffer) {
           setAudioBuffer(null);
           return;

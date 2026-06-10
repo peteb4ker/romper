@@ -21,9 +21,9 @@ export const createElectronAPIMock = (
   // Application operations
   closeApp: vi.fn().mockResolvedValue(undefined),
   copyDir: vi.fn().mockResolvedValue(undefined),
-  copyKit: vi.fn().mockResolvedValue(undefined),
+  copyKit: vi.fn().mockResolvedValue({ success: true }),
   // Kit operations
-  createKit: vi.fn().mockResolvedValue(undefined),
+  createKit: vi.fn().mockResolvedValue({ success: true }),
 
   // Database setup
   createRomperDb: vi.fn().mockResolvedValue(undefined),
@@ -100,7 +100,9 @@ export const createElectronAPIMock = (
   getLocalStoreStatus: vi
     .fn()
     .mockResolvedValue({ hasLocalStore: true, isValid: true }),
-  getSampleAudioBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+  getSampleAudioBuffer: vi
+    .fn()
+    .mockResolvedValue({ data: new ArrayBuffer(8), success: true }),
   // Settings operations
   getSetting: vi.fn().mockResolvedValue("/mock/local/store"),
   getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),

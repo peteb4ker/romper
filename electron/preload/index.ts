@@ -173,11 +173,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] copyDir invoked", src, dest);
     return ipcRenderer.invoke("copy-dir", src, dest);
   },
-  copyKit: (sourceKit: string, destKit: string): Promise<void> => {
+  copyKit: (sourceKit: string, destKit: string) => {
     isDev && console.debug("[IPC] copyKit invoked", sourceKit, destKit);
     return ipcRenderer.invoke("copy-kit", sourceKit, destKit);
   },
-  createKit: (kitSlot: string): Promise<void> => {
+  createKit: (kitSlot: string) => {
     isDev && console.debug("[IPC] createKit invoked", kitSlot);
     return ipcRenderer.invoke("create-kit", kitSlot);
   },
@@ -185,7 +185,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     isDev && console.debug("[IPC] createRomperDb invoked", dbDir);
     return ipcRenderer.invoke("create-romper-db", dbDir);
   },
-  deleteKit: (kitName: string): Promise<void> => {
+  deleteKit: (kitName: string) => {
     isDev && console.debug("[IPC] deleteKit invoked", kitName);
     return ipcRenderer.invoke("delete-kit", kitName);
   },

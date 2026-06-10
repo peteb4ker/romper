@@ -253,16 +253,16 @@ describe("registerIpcHandlers", () => {
     expect(result).toBeNull();
   });
 
-  it("registers create-kit and creates kit successfully", async () => {
+  it("registers create-kit and returns success", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
-    await expect(
-      ipcMainHandlers["create-kit"]({}, "A0"),
-    ).resolves.toBeUndefined();
+    await expect(ipcMainHandlers["create-kit"]({}, "A0")).resolves.toEqual({
+      success: true,
+    });
   });
 
-  it("create-kit throws error on failure", async () => {
+  it("create-kit returns the failure DbResult", async () => {
     const { kitService } = await import("../services/kitService.js");
     vi.mocked(kitService.createKit).mockReturnValue({
       error: "Create failed",
@@ -272,21 +272,22 @@ describe("registerIpcHandlers", () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
-    await expect(ipcMainHandlers["create-kit"]({}, "A0")).rejects.toThrow(
-      "Create failed",
-    );
+    await expect(ipcMainHandlers["create-kit"]({}, "A0")).resolves.toEqual({
+      error: "Create failed",
+      success: false,
+    });
   });
 
-  it("registers copy-kit and copies kit successfully", async () => {
+  it("registers copy-kit and returns success", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
-    await expect(
-      ipcMainHandlers["copy-kit"]({}, "A0", "A1"),
-    ).resolves.toBeUndefined();
+    await expect(ipcMainHandlers["copy-kit"]({}, "A0", "A1")).resolves.toEqual({
+      success: true,
+    });
   });
 
-  it("copy-kit throws error on failure", async () => {
+  it("copy-kit returns the failure DbResult", async () => {
     const { kitService } = await import("../services/kitService.js");
     vi.mocked(kitService.copyKit).mockReturnValue({
       error: "Copy failed",
@@ -296,9 +297,10 @@ describe("registerIpcHandlers", () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
-    await expect(ipcMainHandlers["copy-kit"]({}, "A0", "A1")).rejects.toThrow(
-      "Copy failed",
-    );
+    await expect(ipcMainHandlers["copy-kit"]({}, "A0", "A1")).resolves.toEqual({
+      error: "Copy failed",
+      success: false,
+    });
   });
 
   it("registers list-files-in-root and returns file list", async () => {
@@ -322,10 +324,11 @@ describe("registerIpcHandlers", () => {
       1,
       0,
     );
-    expect(result).toBeInstanceOf(ArrayBuffer);
+    expect(result.success).toBe(true);
+    expect(result.data).toBeInstanceOf(ArrayBuffer);
   });
 
-  it("get-sample-audio-buffer throws error on failure", async () => {
+  it("get-sample-audio-buffer returns the failure DbResult", async () => {
     const { sampleService } = await import("../services/sampleService.js");
     vi.mocked(sampleService.getSampleAudioBuffer).mockReturnValue({
       error: "Buffer failed",
@@ -337,7 +340,7 @@ describe("registerIpcHandlers", () => {
 
     await expect(
       ipcMainHandlers["get-sample-audio-buffer"]({}, "A0", 1, 0),
-    ).rejects.toThrow("Buffer failed");
+    ).resolves.toEqual({ error: "Buffer failed", success: false });
   });
 
   it("registers read-file and returns file content", async () => {

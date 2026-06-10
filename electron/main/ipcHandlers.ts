@@ -89,11 +89,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
         process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
     };
 
-    const result = kitService.getKitDeleteSummary(effectiveSettings, kitName);
-    if (!result.success) {
-      throw new Error(result.error || "Failed to get kit delete summary");
-    }
-    return result.data;
+    return kitService.getKitDeleteSummary(effectiveSettings, kitName);
   });
 
   ipcMain.handle("delete-kit", async (_event, kitName: string) => {
@@ -103,10 +99,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
         process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
     };
 
-    const result = kitService.deleteKit(effectiveSettings, kitName);
-    if (!result.success) {
-      throw new Error(result.error || "Failed to delete kit");
-    }
+    return kitService.deleteKit(effectiveSettings, kitName);
   });
 
   ipcMain.handle("create-kit", async (_event, kitSlot: string) => {
@@ -117,10 +110,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
         process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
     };
 
-    const result = kitService.createKit(effectiveSettings, kitSlot);
-    if (!result.success) {
-      throw new Error(result.error || "Failed to create kit");
-    }
+    return kitService.createKit(effectiveSettings, kitSlot);
   });
 
   ipcMain.handle(
@@ -133,10 +123,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
           process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
       };
 
-      const result = kitService.copyKit(effectiveSettings, sourceKit, destKit);
-      if (!result.success) {
-        throw new Error(result.error || "Failed to copy kit");
-      }
+      return kitService.copyKit(effectiveSettings, sourceKit, destKit);
     },
   );
   ipcMain.handle("list-files-in-root", async (_event, localStorePath: string) =>
@@ -151,18 +138,12 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       voiceNumber: number,
       slotNumber: number,
     ) => {
-      const result = sampleService.getSampleAudioBuffer(
+      return sampleService.getSampleAudioBuffer(
         inMemorySettings,
         kitName,
         voiceNumber,
         slotNumber,
       );
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to get sample audio buffer");
-      }
-
-      return result.data;
     },
   );
   ipcMain.handle("read-file", async (_event, filePath: string) => {

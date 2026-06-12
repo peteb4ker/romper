@@ -1,4 +1,4 @@
-import type { DbResult, NewKit, NewSample } from "@romper/shared/db/schema.js";
+import type { DbResult, NewKit } from "@romper/shared/db/schema.js";
 
 import * as path from "node:path";
 
@@ -6,11 +6,10 @@ import type { InMemorySettings } from "../types/settings.js";
 
 import {
   addKit,
-  addSample,
+  copyKit as copyKitDb,
   deleteKit as deleteKitDb,
   getKit,
   getKitDeleteSummary as getKitDeleteSummaryDb,
-  getKitSamples,
 } from "../db/romperDbCoreORM.js";
 
 /**
@@ -37,70 +36,10 @@ export class KitService {
 
     const dbPath = this.getDbPath(localStorePath);
 
-    // Check if source kit exists in database
-    const sourceKitData = getKit(dbPath, sourceKit);
-    if (!sourceKitData.success || !sourceKitData.data) {
-      return { error: "Source kit does not exist.", success: false };
-    }
-
-    // Check if destination kit already exists in database
-    const existingDestKit = getKit(dbPath, destKit);
-    if (existingDestKit.success && existingDestKit.data) {
-      return { error: "Destination kit already exists.", success: false };
-    }
-
-    // Copy kit metadata in database only (no folder copying)
-    const destKitRecord: NewKit = {
-      alias: sourceKitData.data.alias, // Copy source kit's alias
-      bank_letter: destKit.charAt(0), // Extract bank letter from kit name
-      editable: true, // Duplicated kits are editable by default
-      locked: false,
-      modified_since_sync: false,
-      name: destKit,
-      step_pattern: sourceKitData.data.step_pattern,
-    };
-
-    const result = addKit(dbPath, destKitRecord);
-    if (!result.success) {
-      return {
-        error: `Failed to duplicate kit: ${result.error}`,
-        success: false,
-      };
-    }
-
-    // Copy all sample references from source kit to destination kit
-    const sourceSamples = getKitSamples(dbPath, sourceKit);
-    if (!sourceSamples.success) {
-      return {
-        error: `Failed to fetch samples for source kit: ${sourceSamples.error ?? "Unknown error"}`,
-        success: false,
-      };
-    }
-    if (sourceSamples.data) {
-      for (const sample of sourceSamples.data) {
-        // Create new sample record for destination kit, preserving all original properties
-        const newSample: NewSample = {
-          filename: sample.filename,
-          is_stereo: sample.is_stereo,
-          kit_name: destKit, // Change kit_name to destination
-          slot_number: sample.slot_number,
-          source_path: sample.source_path,
-          voice_number: sample.voice_number,
-          wav_bitrate: sample.wav_bitrate,
-          wav_sample_rate: sample.wav_sample_rate,
-        };
-
-        const sampleResult = addSample(dbPath, newSample);
-        if (!sampleResult.success) {
-          return {
-            error: `Failed to copy sample: ${sampleResult.error}`,
-            success: false,
-          };
-        }
-      }
-    }
-
-    return { success: true };
+    // The db layer copies kit, voices, and samples atomically with all
+    // user-editable fields preserved (bpm, trigger conditions, voice
+    // settings, sample gain and WAV metadata).
+    return copyKitDb(dbPath, sourceKit, destKit);
   }
 
   /**

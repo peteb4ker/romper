@@ -51,6 +51,86 @@ export function addKit(dbDir: string, kit: NewKit): DbResult<void> {
 }
 
 /**
+ * Copy a kit and all its child records (voices, samples) atomically.
+ *
+ * Copies every user-editable field — bpm, trigger_conditions, step_pattern,
+ * voice aliases/volumes/modes, per-sample gain and full WAV metadata — and
+ * resets the lifecycle flags (editable on, locked/favorite/synced off).
+ * Runs in a single transaction so a mid-copy failure leaves no partial kit.
+ */
+export function copyKit(
+  dbDir: string,
+  sourceKitName: string,
+  destKitName: string,
+): DbResult<void> {
+  return withDbTransaction(dbDir, (db) => {
+    const source = db
+      .select()
+      .from(kits)
+      .where(eq(kits.name, sourceKitName))
+      .get();
+    if (!source) {
+      throw new Error("Source kit does not exist.");
+    }
+
+    const existing = db
+      .select()
+      .from(kits)
+      .where(eq(kits.name, destKitName))
+      .get();
+    if (existing) {
+      throw new Error("Destination kit already exists.");
+    }
+
+    db.insert(kits)
+      .values({
+        ...source,
+        bank_letter: destKitName.charAt(0),
+        editable: true, // Duplicated kits are editable by default
+        is_favorite: false,
+        locked: false,
+        modified_since_sync: false,
+        name: destKitName,
+      })
+      .run();
+
+    const sourceVoices = db
+      .select()
+      .from(voices)
+      .where(eq(voices.kit_name, sourceKitName))
+      .orderBy(voices.voice_number)
+      .all();
+    // Strip the autoincrement id and retarget the kit; everything else is
+    // copied wholesale so new columns are picked up automatically.
+    const cloneForDest = <T extends { id: number }>(row: T) => {
+      const { id, ...rest } = row;
+      void id;
+      return { ...rest, kit_name: destKitName };
+    };
+
+    const voiceRows =
+      sourceVoices.length > 0
+        ? sourceVoices.map(cloneForDest)
+        : Array.from({ length: 4 }, (_, i) => ({
+            kit_name: destKitName,
+            stereo_mode: false,
+            voice_alias: null,
+            voice_number: i + 1,
+          }));
+    db.insert(voices).values(voiceRows).run();
+
+    const sourceSamples = db
+      .select()
+      .from(samples)
+      .where(eq(samples.kit_name, sourceKitName))
+      .all();
+    for (const sample of sourceSamples) {
+      db.insert(samples).values(cloneForDest(sample)).run();
+    }
+  });
+}
+
+/**
  * Delete a kit and all its child records (samples, voices) atomically
  */
 export function deleteKit(dbDir: string, kitName: string): DbResult<void> {

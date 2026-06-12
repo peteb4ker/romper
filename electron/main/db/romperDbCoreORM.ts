@@ -6,6 +6,7 @@ export {
   addKit,
   addSample,
   buildDeleteConditions,
+  copyKit,
   deleteKit,
   deleteSamples,
   deleteSamplesWithoutReindexing,

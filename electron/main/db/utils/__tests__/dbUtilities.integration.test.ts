@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -172,6 +173,24 @@ describe("Database Utilities Integration Tests", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
+    });
+
+    it("applies the per-connection pragmas (WAL + busy_timeout)", () => {
+      const result = withDb(TEST_DB_DIR, (db) => {
+        // drizzle exposes the underlying better-sqlite3 session; query the
+        // pragmas through raw SQL on the same connection
+        const journalMode = db.get<{ journal_mode: string }>(
+          sql`PRAGMA journal_mode`,
+        );
+        const busyTimeout = db.get<{ timeout: number }>(
+          sql`PRAGMA busy_timeout`,
+        );
+        return { busyTimeout, journalMode };
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.journalMode?.journal_mode).toBe("wal");
+      expect(result.data?.busyTimeout?.timeout).toBe(5000);
     });
   });
 

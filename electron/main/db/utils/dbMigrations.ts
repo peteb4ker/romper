@@ -75,6 +75,9 @@ export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
 
   try {
     const sqlite = new BetterSqlite3(dbPath);
+    // Wait for concurrent connections instead of failing with SQLITE_BUSY
+    // (openDatabase lives in dbUtilities, which imports this module)
+    sqlite.pragma("busy_timeout = 5000");
     const db = drizzle(sqlite, { schema });
 
     checkMigrationState(sqlite);

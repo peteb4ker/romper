@@ -38,7 +38,7 @@ export function createRomperDbFile(dbDir: string): {
   const dbPath = path.join(dbDir, DB_FILENAME);
   try {
     fs.mkdirSync(dbDir, { recursive: true });
-    const sqlite = new BetterSqlite3(dbPath);
+    const sqlite = openDatabase(dbPath);
     const db = drizzle(sqlite, { schema });
     const migrationsPath = getMigrationsPath();
     if (migrationsPath) {
@@ -78,13 +78,47 @@ export function createRomperDbFile(dbDir: string): {
 }
 
 /**
+ * Open a SQLite connection with the standard per-connection settings.
+ *
+ * Connections are opened fresh for every operation, so pragmas must be
+ * applied on each open:
+ * - busy_timeout: wait for a lock instead of failing immediately with
+ *   SQLITE_BUSY when another connection (sync run, parallel IPC call)
+ *   holds the write lock
+ * - WAL journal mode + synchronous=NORMAL: readers no longer block the
+ *   writer and vice versa; the standard pairing. journal_mode is set
+ *   tolerantly — on filesystems without shared-memory support SQLite
+ *   keeps the previous mode and everything still works.
+ *
+ * foreign_keys stays OFF intentionally: kits.bank_letter references
+ * banks.letter, but kits can be created before a bank scan has populated
+ * the banks table — enforcement would break createKit.
+ */
+export function openDatabase(
+  dbPath: string,
+  options: BetterSqlite3.Options = {},
+): BetterSqlite3.Database {
+  const sqlite = new BetterSqlite3(dbPath, options);
+  sqlite.pragma("busy_timeout = 5000");
+  if (!options.readonly) {
+    try {
+      sqlite.pragma("journal_mode = WAL");
+      sqlite.pragma("synchronous = NORMAL");
+    } catch {
+      // Keep the database usable in its existing journal mode
+    }
+  }
+  return sqlite;
+}
+
+/**
  * Validate that the database schema is correctly set up
  */
 export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
   const dbPath = path.join(dbDir, DB_FILENAME);
 
   try {
-    const sqlite = new BetterSqlite3(dbPath, { readonly: true });
+    const sqlite = openDatabase(dbPath, { readonly: true });
 
     // Check that all expected tables exist
     const expectedTables = ["banks", "kits", "samples", "voices"];
@@ -134,7 +168,7 @@ export function withDb<T>(
 
   let sqlite: BetterSqlite3.Database | null = null;
   try {
-    sqlite = new BetterSqlite3(dbPath);
+    sqlite = openDatabase(dbPath);
     const db = drizzle(sqlite, { schema });
     const result = fn(db);
     return { data: result, success: true };
@@ -169,11 +203,12 @@ export function withDbTransaction<T>(
 
   let sqlite: BetterSqlite3.Database | null = null;
   try {
-    sqlite = new BetterSqlite3(dbPath);
+    sqlite = openDatabase(dbPath);
     const db = drizzle(sqlite, { schema });
 
-    // Start transaction
-    sqlite.exec("BEGIN TRANSACTION");
+    // IMMEDIATE takes the write lock up front, so a concurrent writer is
+    // rejected at BEGIN (after busy_timeout) instead of mid-transaction
+    sqlite.exec("BEGIN IMMEDIATE TRANSACTION");
 
     try {
       const result = fn(db, sqlite);

@@ -43,6 +43,20 @@ export function useKitDataManager({
     [kit: string]: VoiceSamples;
   }>({});
 
+  // getKits() already returns each kit's samples (batched in the db layer);
+  // group them per voice here instead of re-fetching kit-by-kit over IPC —
+  // the per-kit loop was an N+1 that serialized startup on IPC round trips.
+  const groupLoadedKitSamples = useCallback(
+    (loadedKits: KitWithRelations[]) => {
+      const samples: { [kit: string]: VoiceSamples } = {};
+      for (const kit of loadedKits) {
+        samples[kit.name] = groupDbSamplesByVoice(kit.samples ?? []);
+      }
+      return samples;
+    },
+    [],
+  );
+
   // Helper function to load samples for a single kit
   const loadKitSamples = useCallback(
     async (kit: string): Promise<VoiceSamples> => {
@@ -71,8 +85,8 @@ export function useKitDataManager({
       }
       console.info("[useKitDataManager] Loading kits from", localStorePath);
 
-      // 1. Load kits from database (includes bank relationships)
-      let kitNames: string[] = [];
+      // Load kits from database — the result includes bank relationships
+      // and every kit's samples, so one IPC call covers everything
       let loadedKits: KitWithRelations[] = [];
       try {
         const kitsResult = await globalThis.electronAPI?.getKits?.();
@@ -80,7 +94,6 @@ export function useKitDataManager({
           const kitsWithBanks = kitsResult.data;
           setKits(kitsWithBanks);
           loadedKits = kitsWithBanks;
-          kitNames = kitsWithBanks.map((kit: KitWithRelations) => kit.name);
         } else {
           console.error(
             "Failed to load kits from database:",
@@ -95,20 +108,7 @@ export function useKitDataManager({
         loadedKits = [];
       }
 
-      // 2. Load samples for each kit from database
-      const samples: { [kit: string]: VoiceSamples } = {};
-      if (kitNames.length > 0) {
-        console.debug(
-          `[useKitDataManager] Loading samples for ${kitNames.length} kits...`,
-        );
-        for (const kit of kitNames) {
-          samples[kit] = await loadKitSamples(kit);
-        }
-        console.debug(
-          `[useKitDataManager] Loaded samples for ${kitNames.length} kits`,
-        );
-      }
-      setAllKitSamples(samples);
+      setAllKitSamples(groupLoadedKitSamples(loadedKits));
 
       // If a specific kit should be scrolled to, do it after data loads
       if (scrollToKit) {
@@ -128,7 +128,12 @@ export function useKitDataManager({
         }, 100); // Small delay to ensure DOM is updated
       }
     },
-    [isInitialized, localStorePath, needsLocalStoreSetup, loadKitSamples],
+    [
+      isInitialized,
+      localStorePath,
+      needsLocalStoreSetup,
+      groupLoadedKitSamples,
+    ],
   );
 
   // Function to reload samples for a specific kit
@@ -169,21 +174,7 @@ export function useKitDataManager({
       if (kitsResult?.success && kitsResult.data) {
         const kitsWithBanks = kitsResult.data;
         setKits(kitsWithBanks);
-        const kitNames = kitsWithBanks.map((kit: KitWithRelations) => kit.name);
-
-        const samples: { [kit: string]: VoiceSamples } = {};
-        if (kitNames.length > 0) {
-          console.debug(
-            `[useKitDataManager] Refreshing samples for ${kitNames.length} kits...`,
-          );
-          for (const kit of kitNames) {
-            samples[kit] = await loadKitSamples(kit);
-          }
-          console.debug(
-            `[useKitDataManager] Refreshed samples for ${kitNames.length} kits`,
-          );
-        }
-        setAllKitSamples(samples);
+        setAllKitSamples(groupLoadedKitSamples(kitsWithBanks));
       } else {
         console.error("Failed to load kits from database:", kitsResult?.error);
         setKits([]);
@@ -194,7 +185,7 @@ export function useKitDataManager({
       setKits([]);
       setAllKitSamples({});
     }
-  }, [loadKitSamples]);
+  }, [groupLoadedKitSamples]);
 
   // Get a specific kit by name from the cached data
   const getKitByName = useCallback(

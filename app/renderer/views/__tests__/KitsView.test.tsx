@@ -165,11 +165,45 @@ describe("KitsView", () => {
     }
 
     // Mock electronAPI methods using centralized mocks
+    // getKits() carries each kit's samples inline — the hook no longer
+    // fetches samples kit-by-kit at load time.
+    const defaultSamples = [
+      {
+        filename: "kick.wav",
+        is_stereo: false,
+        slot_number: 100,
+        voice_number: 1,
+      },
+      {
+        filename: "snare.wav",
+        is_stereo: false,
+        slot_number: 100,
+        voice_number: 2,
+      },
+    ];
     vi.mocked(window.electronAPI.getKits).mockResolvedValue({
       data: [
-        { alias: null, bank_letter: "A", editable: false, name: "A0" },
-        { alias: null, bank_letter: "A", editable: false, name: "A1" },
-        { alias: null, bank_letter: "B", editable: false, name: "B0" },
+        {
+          alias: null,
+          bank_letter: "A",
+          editable: false,
+          name: "A0",
+          samples: defaultSamples,
+        },
+        {
+          alias: null,
+          bank_letter: "A",
+          editable: false,
+          name: "A1",
+          samples: defaultSamples,
+        },
+        {
+          alias: null,
+          bank_letter: "B",
+          editable: false,
+          name: "B0",
+          samples: defaultSamples,
+        },
       ],
       success: true,
     });
@@ -400,16 +434,11 @@ describe("KitsView", () => {
 
       await waitFor(() => {
         expect(window.electronAPI.getKits).toHaveBeenCalled();
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-          "A0",
-        );
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-          "A1",
-        );
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-          "B0",
-        );
+        expect(screen.getByText("A0")).toBeInTheDocument();
       });
+
+      // Samples arrive inline on getKits(); no per-kit fetching at load
+      expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
     });
 
     it("handles database errors gracefully", async () => {
@@ -429,10 +458,10 @@ describe("KitsView", () => {
       });
     });
 
-    it("handles sample loading errors gracefully", async () => {
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        error: "Sample loading failed",
-        success: false,
+    it("handles kits without sample data gracefully", async () => {
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
+        data: [{ alias: null, bank_letter: "A", editable: false, name: "A0" }],
+        success: true,
       });
 
       render(
@@ -442,38 +471,47 @@ describe("KitsView", () => {
       );
 
       await waitFor(() => {
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalled();
+        expect(window.electronAPI.getKits).toHaveBeenCalled();
+        expect(screen.getByText("A0")).toBeInTheDocument();
       });
     });
   });
 
   describe("Sample data processing", () => {
     it("correctly groups samples by voice", async () => {
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         data: [
           {
-            filename: "kick.wav",
-            is_stereo: false,
-            slot_number: 100,
-            voice_number: 1,
-          },
-          {
-            filename: "snare.wav",
-            is_stereo: false,
-            slot_number: 100,
-            voice_number: 2,
-          },
-          {
-            filename: "hat.wav",
-            is_stereo: false,
-            slot_number: 200,
-            voice_number: 1,
-          },
-          {
-            filename: "stereo.wav",
-            is_stereo: true,
-            slot_number: 100,
-            voice_number: 3,
+            alias: null,
+            bank_letter: "A",
+            editable: false,
+            name: "A0",
+            samples: [
+              {
+                filename: "kick.wav",
+                is_stereo: false,
+                slot_number: 100,
+                voice_number: 1,
+              },
+              {
+                filename: "snare.wav",
+                is_stereo: false,
+                slot_number: 100,
+                voice_number: 2,
+              },
+              {
+                filename: "hat.wav",
+                is_stereo: false,
+                slot_number: 200,
+                voice_number: 1,
+              },
+              {
+                filename: "stereo.wav",
+                is_stereo: true,
+                slot_number: 100,
+                voice_number: 3,
+              },
+            ],
           },
         ],
         success: true,
@@ -486,7 +524,8 @@ describe("KitsView", () => {
       );
 
       await waitFor(() => {
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalled();
+        expect(window.electronAPI.getKits).toHaveBeenCalled();
+        expect(screen.getByText("A0")).toBeInTheDocument();
       });
 
       // The component should process stereo samples correctly
@@ -753,7 +792,9 @@ describe("KitsView", () => {
       ).toBeInTheDocument();
     });
 
-    it("handles sample loading exceptions", async () => {
+    it("handles single-kit sample reload exceptions", async () => {
+      // The per-kit fetch is only used for single-kit reloads now; a
+      // rejection there must not crash the view
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(
         new Error("File not found"),
       );
@@ -765,7 +806,7 @@ describe("KitsView", () => {
       );
 
       await waitFor(() => {
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalled();
+        expect(window.electronAPI.getKits).toHaveBeenCalled();
       });
 
       // Component should still render without crashing
@@ -1019,46 +1060,59 @@ describe("KitsView", () => {
 
   describe("Memoized sample counts", () => {
     it("correctly calculates sample counts for all kits", async () => {
-      // Mock detailed sample data
-      vi.mocked(window.electronAPI.getAllSamplesForKit)
-        .mockResolvedValueOnce({
-          data: [
-            {
-              filename: "kick.wav",
-              is_stereo: false,
-              slot_number: 100,
-              voice_number: 1,
-            },
-            {
-              filename: "snare.wav",
-              is_stereo: false,
-              slot_number: 200,
-              voice_number: 1,
-            },
-            {
-              filename: "hat.wav",
-              is_stereo: false,
-              slot_number: 100,
-              voice_number: 2,
-            },
-          ],
-          success: true,
-        })
-        .mockResolvedValueOnce({
-          data: [
-            {
-              filename: "bass.wav",
-              is_stereo: false,
-              slot_number: 100,
-              voice_number: 1,
-            },
-          ],
-          success: true,
-        })
-        .mockResolvedValueOnce({
-          data: [],
-          success: true,
-        });
+      // Each kit's samples ride along on getKits()
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
+        data: [
+          {
+            alias: null,
+            bank_letter: "A",
+            editable: false,
+            name: "A0",
+            samples: [
+              {
+                filename: "kick.wav",
+                is_stereo: false,
+                slot_number: 100,
+                voice_number: 1,
+              },
+              {
+                filename: "snare.wav",
+                is_stereo: false,
+                slot_number: 200,
+                voice_number: 1,
+              },
+              {
+                filename: "hat.wav",
+                is_stereo: false,
+                slot_number: 100,
+                voice_number: 2,
+              },
+            ],
+          },
+          {
+            alias: null,
+            bank_letter: "A",
+            editable: false,
+            name: "A1",
+            samples: [
+              {
+                filename: "bass.wav",
+                is_stereo: false,
+                slot_number: 100,
+                voice_number: 1,
+              },
+            ],
+          },
+          {
+            alias: null,
+            bank_letter: "B",
+            editable: false,
+            name: "B0",
+            samples: [],
+          },
+        ],
+        success: true,
+      });
 
       render(
         <TestSettingsProvider>
@@ -1068,7 +1122,8 @@ describe("KitsView", () => {
 
       // Wait for all data to load
       await waitFor(() => {
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledTimes(3);
+        expect(window.electronAPI.getKits).toHaveBeenCalled();
+        expect(screen.getByText("A0")).toBeInTheDocument();
       });
 
       // Component should have processed sample counts
@@ -1078,19 +1133,27 @@ describe("KitsView", () => {
 
   describe("Stereo sample handling", () => {
     it("correctly handles stereo samples spanning two voices", async () => {
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         data: [
           {
-            filename: "stereo-kick.wav",
-            is_stereo: true,
-            slot_number: 100,
-            voice_number: 1,
-          },
-          {
-            filename: "mono-snare.wav",
-            is_stereo: false,
-            slot_number: 100,
-            voice_number: 3,
+            alias: null,
+            bank_letter: "A",
+            editable: false,
+            name: "A0",
+            samples: [
+              {
+                filename: "stereo-kick.wav",
+                is_stereo: true,
+                slot_number: 100,
+                voice_number: 1,
+              },
+              {
+                filename: "mono-snare.wav",
+                is_stereo: false,
+                slot_number: 100,
+                voice_number: 3,
+              },
+            ],
           },
         ],
         success: true,
@@ -1103,7 +1166,8 @@ describe("KitsView", () => {
       );
 
       await waitFor(() => {
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalled();
+        expect(window.electronAPI.getKits).toHaveBeenCalled();
+        expect(screen.getByText("A0")).toBeInTheDocument();
       });
 
       // The stereo sample should appear in both voice 1 and voice 2
@@ -1111,13 +1175,21 @@ describe("KitsView", () => {
     });
 
     it("handles stereo sample at voice 4 boundary", async () => {
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         data: [
           {
-            filename: "stereo-at-end.wav",
-            is_stereo: true,
-            slot_number: 100,
-            voice_number: 4,
+            alias: null,
+            bank_letter: "A",
+            editable: false,
+            name: "A0",
+            samples: [
+              {
+                filename: "stereo-at-end.wav",
+                is_stereo: true,
+                slot_number: 100,
+                voice_number: 4,
+              },
+            ],
           },
         ],
         success: true,
@@ -1130,7 +1202,8 @@ describe("KitsView", () => {
       );
 
       await waitFor(() => {
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalled();
+        expect(window.electronAPI.getKits).toHaveBeenCalled();
+        expect(screen.getByText("A0")).toBeInTheDocument();
       });
 
       // Stereo sample at voice 4 should not overflow to voice 5 (doesn't exist)

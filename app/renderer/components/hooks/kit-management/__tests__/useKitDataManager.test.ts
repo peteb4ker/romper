@@ -9,21 +9,6 @@ import { useKitDataManager } from "../useKitDataManager";
 // Using real groupDbSamplesByVoice implementation to handle spaced slots correctly
 
 describe("useKitDataManager", () => {
-  const mockKits: KitWithRelations[] = [
-    {
-      alias: null,
-      bank_letter: "A",
-      editable: false,
-      name: "A0",
-    } as KitWithRelations,
-    {
-      alias: null,
-      bank_letter: "A",
-      editable: false,
-      name: "A1",
-    } as KitWithRelations,
-  ];
-
   const mockSamples = [
     {
       filename: "kick.wav",
@@ -37,6 +22,25 @@ describe("useKitDataManager", () => {
       slot_number: 0,
       voice_number: 2,
     },
+  ];
+
+  // getKits() returns each kit's samples inline — that single call is the
+  // only data source the hook uses at startup (no per-kit fetching).
+  const mockKits: KitWithRelations[] = [
+    {
+      alias: null,
+      bank_letter: "A",
+      editable: false,
+      name: "A0",
+      samples: mockSamples,
+    } as unknown as KitWithRelations,
+    {
+      alias: null,
+      bank_letter: "A",
+      editable: false,
+      name: "A1",
+      samples: mockSamples,
+    } as unknown as KitWithRelations,
   ];
 
   beforeEach(() => {
@@ -113,6 +117,25 @@ describe("useKitDataManager", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(window.electronAPI.getKits).toHaveBeenCalled();
+  });
+
+  it("does not fetch samples kit-by-kit at startup (N+1 regression guard)", async () => {
+    renderHook(() =>
+      useKitDataManager({
+        isInitialized: true,
+        localStorePath: "/test/path",
+        needsLocalStoreSetup: false,
+      }),
+    );
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    // Startup samples come from the kits returned by getKits(); the
+    // per-kit IPC call is reserved for single-kit reloads.
+    expect(window.electronAPI.getKits).toHaveBeenCalledTimes(1);
+    expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
   });
 
   it("should handle getKits API failure", async () => {

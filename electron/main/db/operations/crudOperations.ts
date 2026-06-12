@@ -8,6 +8,7 @@ import { withDb } from "../utils/dbUtilities.js";
 // Re-export operations from extracted modules
 export {
   addKit,
+  copyKit,
   deleteKit,
   getFavoriteKits,
   getFavoriteKitsCount,

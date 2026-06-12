@@ -13,6 +13,10 @@ import {
   createRomperDbFile,
   getKit,
   getKitSamples,
+  updateVoiceAlias,
+  updateVoiceSampleMode,
+  updateVoiceStereoMode,
+  updateVoiceVolume,
 } from "../../db/romperDbCoreORM.js";
 import { KitService } from "../kitService.js";
 import { ScanService } from "../scanService.js";
@@ -247,6 +251,93 @@ describe("KitService Integration Tests", () => {
       const destSamplesResult = getKitSamples(TEST_DB_PATH, "D2");
       expect(destSamplesResult.success).toBe(true);
       expect(destSamplesResult.data).toHaveLength(0);
+    });
+
+    it("preserves bpm, trigger conditions, voice settings, and sample gain on copy", () => {
+      const sourceKitRecord: NewKit = {
+        alias: "Full Kit",
+        bank_letter: "E",
+        bpm: 140,
+        editable: false,
+        locked: true,
+        modified_since_sync: true,
+        name: "E1",
+        step_pattern: [
+          [1, 0, 1, 0],
+          [0, 1, 0, 1],
+        ],
+        trigger_conditions: [["1:2", null, "3:4", null]],
+      };
+      expect(addKit(TEST_DB_PATH, sourceKitRecord).success).toBe(true);
+
+      // Customize every voice-level setting on the source
+      expect(updateVoiceAlias(TEST_DB_PATH, "E1", 1, "Kicks").success).toBe(
+        true,
+      );
+      expect(updateVoiceVolume(TEST_DB_PATH, "E1", 2, 55).success).toBe(true);
+      expect(
+        updateVoiceSampleMode(TEST_DB_PATH, "E1", 3, "random").success,
+      ).toBe(true);
+      expect(updateVoiceStereoMode(TEST_DB_PATH, "E1", 4, true).success).toBe(
+        true,
+      );
+
+      // Sample with non-default gain and full WAV metadata
+      const sample: NewSample = {
+        filename: "kick.wav",
+        gain_db: -6,
+        is_stereo: false,
+        kit_name: "E1",
+        slot_number: 0,
+        source_path: "/test/path/kick.wav",
+        voice_number: 1,
+        wav_bit_depth: 24,
+        wav_bitrate: 16,
+        wav_channels: 1,
+        wav_sample_rate: 48000,
+      };
+      expect(addSample(TEST_DB_PATH, sample).success).toBe(true);
+
+      const copyResult = kitService.copyKit(mockInMemorySettings, "E1", "F2");
+      expect(copyResult.success).toBe(true);
+
+      const destKit = getKit(TEST_DB_PATH, "F2");
+      expect(destKit.success).toBe(true);
+      expect(destKit.data?.bpm).toBe(140);
+      expect(destKit.data?.trigger_conditions).toEqual([
+        ["1:2", null, "3:4", null],
+      ]);
+      expect(destKit.data?.step_pattern).toEqual([
+        [1, 0, 1, 0],
+        [0, 1, 0, 1],
+      ]);
+      // Lifecycle flags reset for the duplicate
+      expect(destKit.data?.editable).toBe(true);
+      expect(destKit.data?.locked).toBe(false);
+      expect(destKit.data?.modified_since_sync).toBe(false);
+      expect(destKit.data?.is_favorite).toBe(false);
+
+      const destVoices = destKit.data?.voices ?? [];
+      expect(destVoices).toHaveLength(4);
+      expect(destVoices.find((v) => v.voice_number === 1)?.voice_alias).toBe(
+        "Kicks",
+      );
+      expect(destVoices.find((v) => v.voice_number === 2)?.voice_volume).toBe(
+        55,
+      );
+      expect(destVoices.find((v) => v.voice_number === 3)?.sample_mode).toBe(
+        "random",
+      );
+      expect(destVoices.find((v) => v.voice_number === 4)?.stereo_mode).toBe(
+        true,
+      );
+
+      const destSamples = getKitSamples(TEST_DB_PATH, "F2");
+      expect(destSamples.success).toBe(true);
+      const destSample = destSamples.data?.[0];
+      expect(destSample?.gain_db).toBe(-6);
+      expect(destSample?.wav_bit_depth).toBe(24);
+      expect(destSample?.wav_channels).toBe(1);
     });
 
     it("REGRESSION TEST: demonstrates rescanKit incompatibility with reference-only duplication", async () => {

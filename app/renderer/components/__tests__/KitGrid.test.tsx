@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import React, { createRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -202,6 +208,62 @@ describe("KitGrid", () => {
       expect(() => {
         ref.current?.scrollToKit("NonExistentKit");
       }).not.toThrow();
+    });
+  });
+
+  describe("virtualization", () => {
+    const makeKit = (name: string) => ({
+      alias: null,
+      artist: null,
+      bank_letter: name[0],
+      editable: false,
+      locked: false,
+      modified_since_sync: false,
+      name,
+      samples: [],
+      step_pattern: null,
+      voices: [],
+    });
+
+    // 20 banks x 25 kits = 500 kits
+    const manyKits = Array.from("ABCDEFGHIJKLMNOPQRST").flatMap((bank) =>
+      Array.from({ length: 25 }, (_, i) => makeKit(`${bank}${i}`)),
+    );
+
+    it("mounts only a bounded number of cards for large kit sets", () => {
+      render(<KitGrid {...baseProps} kits={manyKits} />);
+
+      const mountedCards = screen.getAllByTestId(/^kit-item-/);
+      expect(mountedCards.length).toBeGreaterThan(0);
+      // Only the visible window (plus overscan) should be mounted,
+      // not all 500 kits.
+      expect(mountedCards.length).toBeLessThan(60);
+    });
+
+    it("renders kits at the top of the list in the initial window", () => {
+      render(<KitGrid {...baseProps} kits={manyKits} />);
+
+      expect(screen.getByTestId("kit-item-A0")).toBeInTheDocument();
+      expect(screen.getByTestId("kit-item-A1")).toBeInTheDocument();
+    });
+
+    it("does not mount kits far outside the visible window", () => {
+      render(<KitGrid {...baseProps} kits={manyKits} />);
+
+      expect(screen.queryByTestId("kit-item-T24")).not.toBeInTheDocument();
+    });
+
+    it("scrollToKit scrolls a far-away kit's row into the window", () => {
+      const ref = createRef<KitGridHandle>();
+      render(<KitGrid {...baseProps} kits={manyKits} ref={ref} />);
+
+      expect(screen.queryByTestId("kit-item-T24")).not.toBeInTheDocument();
+
+      act(() => {
+        ref.current?.scrollToKit("T24");
+      });
+
+      expect(screen.getByTestId("kit-item-T24")).toBeInTheDocument();
     });
   });
 

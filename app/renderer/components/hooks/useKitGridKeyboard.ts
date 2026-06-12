@@ -12,6 +12,9 @@ interface UseKitGridKeyboardProps {
   onFocusKit?: (kitName: string) => void;
   onSelectKit: (kitName: string) => void;
   rowCount: number;
+  // When provided (virtualized grids), used instead of DOM scrollIntoView
+  // so off-window (unmounted) kits can still be scrolled to.
+  scrollItemIntoView?: (idx: number) => void;
   setFocus: (index: number) => void;
 }
 
@@ -24,6 +27,7 @@ export function useKitGridKeyboard({
   onFocusKit,
   onSelectKit,
   rowCount,
+  scrollItemIntoView,
   setFocus,
 }: UseKitGridKeyboardProps) {
   // Convert flat index to grid coordinates
@@ -49,22 +53,27 @@ export function useKitGridKeyboard({
     (idx: number) => {
       if (idx < 0 || idx >= kitsToDisplay.length) return;
 
-      const kit = kitsToDisplay[idx];
-      const kitElement = containerRef.current?.querySelector(
-        `[data-kit="${kit.name}"]`,
-      );
+      if (scrollItemIntoView) {
+        // Virtualized grid: scroll via the list so unmounted kits work
+        scrollItemIntoView(idx);
+      } else {
+        const kit = kitsToDisplay[idx];
+        const kitElement = containerRef.current?.querySelector(
+          `[data-kit="${kit.name}"]`,
+        );
 
-      if (kitElement && containerRef.current) {
-        kitElement.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
+        if (kitElement && containerRef.current) {
+          kitElement.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
       }
 
       setFocus(idx);
       if (onFocusKit) onFocusKit(kitsToDisplay[idx].name);
     },
-    [kitsToDisplay, setFocus, onFocusKit, containerRef],
+    [kitsToDisplay, setFocus, onFocusKit, containerRef, scrollItemIntoView],
   );
 
   // Helper function to scroll to a kit by name

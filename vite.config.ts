@@ -90,6 +90,12 @@ export default defineConfig({
           "**/*.test.*",
           "**/*Mock*.tsx",
           "**/*Mock*.ts",
+          // Test infrastructure (mocks, factories, fixtures, helpers). These
+          // are imported by tests so v8 instruments them, but they are not
+          // production code and were dragging the reported coverage down —
+          // e.g. tests/mocks/electron/electronAPI.ts isn't matched by the
+          // *Mock* patterns above (the word lives in the dir, not the name).
+          "tests/**",
         ],
         include: [
           "app/renderer/**/*.ts",

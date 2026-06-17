@@ -24,7 +24,15 @@ let lastWriteStream: MockStream | null = null;
 
 vi.mock("node:fs", () => ({
   createReadStream: vi.fn(() => new MockStream()),
-  createWriteStream: vi.fn(() => (lastWriteStream = new MockStream())),
+  createWriteStream: vi.fn(() => {
+    const stream = new MockStream();
+    lastWriteStream = stream;
+    // A real fs.WriteStream emits "close" once writing completes. Extraction
+    // now waits for every write to settle before resolving, so the mock must
+    // model that signal or the handler would hang.
+    setImmediate(() => stream.emit("close"));
+    return stream;
+  }),
   existsSync: vi.fn(() => true),
   mkdir: vi.fn((dir, opts, cb) => cb && cb(null)),
   mkdirSync: vi.fn(),
@@ -252,14 +260,14 @@ describe("download-and-extract-archive handler", () => {
           autodrain: () => {},
           on: () => {},
           path: "foo.wav",
-          pipe: () => {
-            const s = new MockStream();
-            setTimeout(() => s.emit("error", new Error("write fail")), 5);
-            setTimeout(() => s.emit("finish"), 10);
-            return s;
-          },
+          pipe: () => new MockStream(),
           type: "File",
         });
+        // Simulate a failure on the destination write stream (created
+        // synchronously while handling the entry above).
+        if (lastWriteStream) {
+          lastWriteStream.emit("error", new Error("write fail"));
+        }
         // End extraction
         setTimeout(() => stream.emit("close"), 20);
       }, 1);

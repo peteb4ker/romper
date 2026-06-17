@@ -123,7 +123,7 @@ describe("extractZipEntries", () => {
       "nested/b.wav": "world",
     });
     const dest = path.join(tmpRoot, "out");
-    fs.mkdirSync(dest);
+    fs.mkdirSync(dest, { recursive: true });
 
     await extractZipEntries(zipPath, dest, 2, () => {});
 
@@ -140,7 +140,7 @@ describe("extractZipEntries", () => {
     const big = Buffer.alloc(2048, 0x61); // 2 KiB
     const zipPath = buildZip({ "big.wav": big });
     const dest = path.join(tmpRoot, "out");
-    fs.mkdirSync(dest);
+    fs.mkdirSync(dest, { recursive: true });
 
     const limits: ArchiveLimits = {
       ...DEFAULT_ARCHIVE_LIMITS,
@@ -156,7 +156,7 @@ describe("extractZipEntries", () => {
     const big = Buffer.alloc(2048, 0x62);
     const zipPath = buildZip({ "big.wav": big });
     const dest = path.join(tmpRoot, "out");
-    fs.mkdirSync(dest);
+    fs.mkdirSync(dest, { recursive: true });
 
     const limits: ArchiveLimits = {
       ...DEFAULT_ARCHIVE_LIMITS,
@@ -175,7 +175,7 @@ describe("extractZipEntries", () => {
       "c.wav": "3",
     });
     const dest = path.join(tmpRoot, "out");
-    fs.mkdirSync(dest);
+    fs.mkdirSync(dest, { recursive: true });
 
     const limits: ArchiveLimits = {
       ...DEFAULT_ARCHIVE_LIMITS,

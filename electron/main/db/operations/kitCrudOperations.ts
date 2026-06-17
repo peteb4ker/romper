@@ -103,8 +103,8 @@ export function copyKit(
     // Strip the autoincrement id and retarget the kit; everything else is
     // copied wholesale so new columns are picked up automatically.
     const cloneForDest = <T extends { id: number }>(row: T) => {
-      const { id, ...rest } = row;
-      void id;
+      const rest: { id?: number } & Omit<T, "id"> = { ...row };
+      delete rest.id;
       return { ...rest, kit_name: destKitName };
     };
 

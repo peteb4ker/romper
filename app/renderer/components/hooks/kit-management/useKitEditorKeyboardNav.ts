@@ -2,6 +2,15 @@ import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
 
 import React from "react";
 
+type SampleNavParams = Pick<
+  UseKitEditorKeyboardNavParams,
+  | "onPlaySample"
+  | "onSampleKeyNav"
+  | "samples"
+  | "selectedSampleIdx"
+  | "selectedVoice"
+>;
+
 interface UseKitEditorKeyboardNavParams {
   isEditable: boolean;
   onInferVoiceNames: () => void;
@@ -39,14 +48,7 @@ export function useKitEditorKeyboardNav({
   React.useEffect(() => {
     function handleGlobalKeyDown(e: KeyboardEvent) {
       // Ignore if a modal, input, textarea, or contenteditable is focused
-      const active = document.activeElement;
-      if (
-        active &&
-        ((active.tagName === "INPUT" &&
-          (active as HTMLInputElement).type !== "checkbox") ||
-          active.tagName === "TEXTAREA" ||
-          (active as HTMLElement).isContentEditable)
-      ) {
+      if (isTypingTarget(document.activeElement)) {
         return;
       }
 
@@ -81,18 +83,13 @@ export function useKitEditorKeyboardNav({
       // Enter key removed to prevent conflicts with kit name editing
       if (!sequencerOpen && [" ", "ArrowDown", "ArrowUp"].includes(e.key)) {
         e.preventDefault();
-        if (e.key === "ArrowDown") {
-          onSampleKeyNav("down");
-        } else if (e.key === "ArrowUp") {
-          onSampleKeyNav("up");
-        } else if (e.key === " ") {
-          // Preview/play selected sample with Space key only
-          const samplesForVoice = samples[selectedVoice] || [];
-          const sample = samplesForVoice[selectedSampleIdx];
-          if (sample) {
-            onPlaySample(selectedVoice, sample);
-          }
-        }
+        handleSampleNavKey(e.key, {
+          onPlaySample,
+          onSampleKeyNav,
+          samples,
+          selectedSampleIdx,
+          selectedVoice,
+        });
       }
     }
     globalThis.addEventListener("keydown", handleGlobalKeyDown);
@@ -111,4 +108,36 @@ export function useKitEditorKeyboardNav({
     onScanKit,
     setSequencerOpen,
   ]);
+}
+
+/** Handle the sample navigation/preview keys (arrows + space). */
+function handleSampleNavKey(key: string, params: SampleNavParams): void {
+  if (key === "ArrowDown") {
+    params.onSampleKeyNav("down");
+    return;
+  }
+  if (key === "ArrowUp") {
+    params.onSampleKeyNav("up");
+    return;
+  }
+  // Preview/play selected sample with Space key only
+  const sample = (params.samples[params.selectedVoice] || [])[
+    params.selectedSampleIdx
+  ];
+  if (sample) {
+    params.onPlaySample(params.selectedVoice, sample);
+  }
+}
+
+/** True when focus is in a text-entry field, where shortcuts must not fire. */
+function isTypingTarget(active: Element | null): boolean {
+  if (!active) {
+    return false;
+  }
+  if (active.tagName === "INPUT") {
+    return (active as HTMLInputElement).type !== "checkbox";
+  }
+  return (
+    active.tagName === "TEXTAREA" || (active as HTMLElement).isContentEditable
+  );
 }

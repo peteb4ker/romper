@@ -86,19 +86,42 @@ export async function extractZipEntries(
   return new Promise((resolve, reject) => {
     let processedCount = 0;
     let settled = false;
+    let streamClosed = false;
+    let failure: Error | null = null;
     const budget: ExtractionBudget = { totalBytes: 0, validEntries: 0 };
+    // In-flight file writes. The extraction promise must not settle until every
+    // write has finished (or been torn down); otherwise a caller that cleans up
+    // the destination directory races still-open write streams, producing
+    // intermittent ENOENT failures under parallel load.
+    const pendingWrites = new Set<Promise<void>>();
+    const openWriteStreams = new Set<fs.WriteStream>();
 
     const stream = fs.createReadStream(zipPath).pipe(unzipper.Parse());
 
-    const fail = (error: unknown) => {
-      if (settled) return;
+    const maybeSettle = () => {
+      if (settled || !streamClosed || pendingWrites.size > 0) return;
       settled = true;
+      if (failure) {
+        reject(failure);
+      } else {
+        resolve();
+      }
+    };
+
+    const fail = (error: unknown) => {
+      if (failure) return;
+      failure = error instanceof Error ? error : new Error(String(error));
       stream.destroy();
-      reject(error instanceof Error ? error : new Error(String(error)));
+      // Tear down any in-flight writes so their streams close promptly and we
+      // don't leave fs operations racing the caller's cleanup.
+      for (const writeStream of openWriteStreams) {
+        writeStream.destroy();
+      }
+      maybeSettle();
     };
 
     stream.on("entry", (entry: UnzipperEntry) => {
-      if (settled) {
+      if (settled || failure) {
         entry.autodrain();
         return;
       }
@@ -133,16 +156,27 @@ export async function extractZipEntries(
       if (entry.type === "Directory") {
         handleDirectoryEntry(entry, destPath);
       } else {
-        handleFileEntry(entry, destPath, limits, budget, fail);
+        const writePromise = handleFileEntry(
+          entry,
+          destPath,
+          limits,
+          budget,
+          fail,
+          () => failure !== null,
+          openWriteStreams,
+        );
+        pendingWrites.add(writePromise);
+        void writePromise.finally(() => {
+          pendingWrites.delete(writePromise);
+          maybeSettle();
+        });
       }
     });
 
     stream.on("error", fail);
     stream.on("close", () => {
-      if (!settled) {
-        settled = true;
-        resolve();
-      }
+      streamClosed = true;
+      maybeSettle();
     });
   });
 }
@@ -188,6 +222,35 @@ export function isWithinDirectory(destDir: string, entryPath: string): boolean {
   );
 }
 
+// Enforce per-file and cumulative size limits as data flows, failing fast when
+// either bound is crossed.
+function attachSizeGuard(
+  entry: UnzipperEntry,
+  limits: ArchiveLimits,
+  budget: ExtractionBudget,
+  fail: (error: unknown) => void,
+): void {
+  let fileBytes = 0;
+  entry.on("data", (...args: unknown[]) => {
+    const chunk = args[0] as Buffer;
+    fileBytes += chunk.length;
+    budget.totalBytes += chunk.length;
+    if (fileBytes > limits.maxFileBytes) {
+      fail(
+        new Error(
+          `Archive entry exceeds per-file size limit (${limits.maxFileBytes} bytes): ${entry.path}`,
+        ),
+      );
+    } else if (budget.totalBytes > limits.maxTotalBytes) {
+      fail(
+        new Error(
+          `Archive exceeds total uncompressed size limit (${limits.maxTotalBytes} bytes)`,
+        ),
+      );
+    }
+  });
+}
+
 // Helper to track download progress
 function createProgressTracker(
   totalBytes: number,
@@ -219,51 +282,70 @@ function handleDirectoryEntry(entry: UnzipperEntry, destPath: string): void {
 }
 
 // Helper function to handle file extraction, enforcing per-file and cumulative
-// size limits to defend against decompression bombs.
+// size limits to defend against decompression bombs. Returns a promise that
+// resolves once the write has finished (or been torn down/errored), so the
+// caller can wait for every write to complete before settling the extraction.
 function handleFileEntry(
   entry: UnzipperEntry,
   destPath: string,
   limits: ArchiveLimits,
   budget: ExtractionBudget,
   fail: (error: unknown) => void,
-): void {
-  fs.mkdir(path.dirname(destPath), { recursive: true }, (err) => {
-    if (err) {
-      console.warn(
-        "Failed to create parent directory:",
-        path.dirname(destPath),
-        err,
-      );
-      entry.autodrain();
-      return;
-    }
-
-    let fileBytes = 0;
-    entry.on("data", (...args: unknown[]) => {
-      const chunk = args[0] as Buffer;
-      fileBytes += chunk.length;
-      budget.totalBytes += chunk.length;
-      if (fileBytes > limits.maxFileBytes) {
-        fail(
-          new Error(
-            `Archive entry exceeds per-file size limit (${limits.maxFileBytes} bytes): ${entry.path}`,
-          ),
+  isFailed: () => boolean,
+  openWriteStreams: Set<fs.WriteStream>,
+): Promise<void> {
+  return new Promise<void>((resolveWrite) => {
+    fs.mkdir(path.dirname(destPath), { recursive: true }, (err) => {
+      if (err) {
+        console.warn(
+          "Failed to create parent directory:",
+          path.dirname(destPath),
+          err,
         );
-      } else if (budget.totalBytes > limits.maxTotalBytes) {
-        fail(
-          new Error(
-            `Archive exceeds total uncompressed size limit (${limits.maxTotalBytes} bytes)`,
-          ),
-        );
+        entry.autodrain();
+        resolveWrite();
+        return;
       }
-    });
 
-    entry.pipe(fs.createWriteStream(destPath)).on("error", (err: unknown) => {
-      setImmediate(() => {
-        console.warn("Failed to write file:", destPath, err);
-      });
+      // The extraction may have already failed (e.g. a sibling entry tripped a
+      // size or count limit) while this mkdir was in flight. Bail out without
+      // opening a write stream so we don't write into a directory the caller is
+      // about to tear down.
+      if (isFailed()) {
+        entry.autodrain();
+        resolveWrite();
+        return;
+      }
+
+      attachSizeGuard(entry, limits, budget, fail);
+      pipeEntryToFile(entry, destPath, openWriteStreams, resolveWrite);
     });
   });
+}
+
+// Pipe an entry to its destination file, tracking the write stream so the
+// extraction can wait for (and tear down) it. `done` is invoked exactly once
+// when the write is no longer in flight.
+function pipeEntryToFile(
+  entry: UnzipperEntry,
+  destPath: string,
+  openWriteStreams: Set<fs.WriteStream>,
+  done: () => void,
+): void {
+  const writeStream = fs.createWriteStream(destPath);
+  openWriteStreams.add(writeStream);
+  const finishWrite = () => {
+    openWriteStreams.delete(writeStream);
+    done();
+  };
+  // "close" fires after a successful finish and after a destroy(); "error"
+  // covers open/write failures. Either way the write is no longer in flight.
+  writeStream.on("close", finishWrite);
+  writeStream.on("error", (err: unknown) => {
+    warnWriteFailure(destPath, err);
+    finishWrite();
+  });
+  entry.pipe(writeStream);
 }
 
 // Helper to setup file stream handlers
@@ -276,4 +358,12 @@ function setupFileStream(
     fileStream.close(() => resolve());
   });
   fileStream.on("error", reject);
+}
+
+// Defer the warning so it doesn't interleave with the synchronous teardown path
+// (matches the original behaviour of logging write failures out-of-band).
+function warnWriteFailure(destPath: string, err: unknown): void {
+  setImmediate(() => {
+    console.warn("Failed to write file:", destPath, err);
+  });
 }

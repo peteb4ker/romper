@@ -123,7 +123,7 @@
     "playwright": "^1.56.1",
     "rollup": "^4.59.0",
     "sharp": "^0.34.5",
-    "sonarqube-scanner": "^4.3.6",
+    "sonarqube-scanner": "^4.3.8",
     "tailwindcss": "^4.1.8",
     "tar": "^7.5.8",
     "typescript": "^5.8.3",

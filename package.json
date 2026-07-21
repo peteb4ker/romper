@@ -136,7 +136,7 @@
     "serialize-javascript": "^7.0.5",
     "minimatch@>=10.0.0": "10.2.4",
     "tar": "^7.5.8",
-    "shell-quote": "^1.8.4"
+    "shell-quote": "^1.10.0"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

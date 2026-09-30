@@ -30,6 +30,12 @@ let inMemorySettings: InMemorySettings = {
 
 const isDev = process.env.NODE_ENV === "development";
 
+// ROMPER_HEADLESS=true keeps the window hidden and the app out of the way
+// (no Dock icon, no focus stealing). The e2e suite sets it so test runs
+// don't take over the developer's screen; Playwright drives the hidden
+// window over CDP the same way it drives a visible one.
+const isHeadless = process.env.ROMPER_HEADLESS === "true";
+
 const preloadPath = path.resolve(__dirname, "../preload/index.mjs");
 logger.log(" Electron will use preload:", preloadPath);
 
@@ -60,7 +66,12 @@ function createWindow() {
   const win: BrowserWindow = new BrowserWindow({
     height: windowState.height,
     icon: path.resolve(__dirname, "../resources/app-icon.icns"),
+    show: !isHeadless,
     webPreferences: {
+      // Never let Chromium treat the hidden window as backgrounded and
+      // throttle its timers or animation frames. tests/e2e/
+      // headless-window.e2e.test.ts checks the page still behaves as visible.
+      backgroundThrottling: !isHeadless,
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.resolve(__dirname, "../preload/index.cjs"),
@@ -73,11 +84,14 @@ function createWindow() {
 
   hardenNavigation(win);
 
-  if (windowState.isMaximized) {
+  // maximize() would show the window, and a hidden window's bounds shouldn't
+  // overwrite the user's saved ones.
+  if (windowState.isMaximized && !isHeadless) {
     win.maximize();
   }
 
   win.on("close", () => {
+    if (isHeadless) return;
     const windowStatePath = getWindowStatePath();
     if (win.isMaximized()) {
       // Save maximized flag but keep previous bounds for restore
@@ -173,6 +187,12 @@ function registerAllIpcHandlers(settings: InMemorySettings) {
 }
 
 app.setName("Romper");
+
+if (isHeadless && process.platform === "darwin") {
+  // Accessory apps get no Dock icon and don't activate on launch, so a
+  // headless run never takes keyboard focus from the user.
+  app.setActivationPolicy("accessory");
+}
 
 // NOTE: Kept as a `.then()` chain rather than top-level `await` (SonarCloud
 // S7785). Converting the Electron main entry to top-level await causes

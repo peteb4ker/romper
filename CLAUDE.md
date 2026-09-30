@@ -17,7 +17,9 @@ Playwright (e2e).
   (`npm run lint` auto-fixes).
 - `npm run test:e2e` -- builds, then runs Playwright against the built app.
   Run it when you touch `electron/main` or app startup; unit and integration
-  tests can't see startup failures.
+  tests can't see startup failures. The window stays hidden
+  (`ROMPER_HEADLESS=true`, set in `playwright.config.ts`), so it's safe to run
+  while the user is working; `npm run test:e2e:headed` shows it.
 - `npm run dev` -- builds everything, then runs Vite + Electron. Long-running;
   start it with `run_in_background`. The `run-app` skill covers ports,
   restarts, and screenshotting the live app.

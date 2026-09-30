@@ -103,12 +103,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   // Secure method - get audio buffer by sample identifier
   ipcMain.handle(
     "get-sample-audio-buffer",
-    async (
-      _event,
-      kitName: string,
-      voiceNumber: number,
-      slotNumber: number,
-    ) => {
+    (_event, kitName: string, voiceNumber: number, slotNumber: number) => {
       return sampleService.getSampleAudioBuffer(
         inMemorySettings,
         kitName,

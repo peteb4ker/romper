@@ -353,9 +353,10 @@ describe("registerIpcHandlers", () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
-    await expect(
-      ipcMainHandlers["get-sample-audio-buffer"]({}, "A0", 1, 0),
-    ).resolves.toEqual({ error: "Buffer failed", success: false });
+    expect(ipcMainHandlers["get-sample-audio-buffer"]({}, "A0", 1, 0)).toEqual({
+      error: "Buffer failed",
+      success: false,
+    });
   });
 
   it("registers read-file and returns file content", async () => {

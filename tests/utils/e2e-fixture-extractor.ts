@@ -8,6 +8,7 @@
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import * as tar from "tar";
 
@@ -142,6 +143,8 @@ export async function extractE2EFixture(): Promise<E2ETestEnvironment> {
     );
   }
 
+  resolveSampleSourcePaths(localStorePath);
+
   console.log(
     `[E2E Fixture] Extraction completed. Found kits: ${metadata.kits.join(", ")}`,
   );
@@ -213,6 +216,22 @@ export async function verifyE2EFixture(
       return false;
     }
 
+    // Check that every sample's source_path resolves to a file
+    const db = new DatabaseSync(dbPath, { readOnly: true });
+    try {
+      const rows = db.prepare("SELECT source_path FROM samples").all() as {
+        source_path: string;
+      }[];
+      for (const { source_path } of rows) {
+        if (!(await fs.pathExists(source_path))) {
+          console.error(`[E2E Fixture] Sample file missing: ${source_path}`);
+          return false;
+        }
+      }
+    } finally {
+      db.close();
+    }
+
     // Check that kit folders exist
     for (const kitName of testEnv.metadata.kits) {
       const kitPath = path.join(testEnv.localStorePath, kitName);
@@ -237,5 +256,35 @@ export async function verifyE2EFixture(
   } catch (error) {
     console.error(`[E2E Fixture] Verification failed:`, error);
     return false;
+  }
+}
+
+/**
+ * The fixture stores each sample's source_path relative to the local store
+ * root (the app reads samples from source_path, and the extraction directory
+ * differs every run). Rewrite them as absolute paths into this extraction.
+ *
+ * Uses node:sqlite because better-sqlite3 is built for Electron's ABI, not
+ * the Node that runs Playwright.
+ */
+function resolveSampleSourcePaths(localStorePath: string): void {
+  const db = new DatabaseSync(
+    path.join(localStorePath, ".romperdb", "romper.sqlite"),
+  );
+  try {
+    const rows = db.prepare("SELECT id, source_path FROM samples").all() as {
+      id: number;
+      source_path: string;
+    }[];
+    const update = db.prepare(
+      "UPDATE samples SET source_path = ? WHERE id = ?",
+    );
+    for (const { id, source_path } of rows) {
+      if (!path.isAbsolute(source_path)) {
+        update.run(path.join(localStorePath, source_path), id);
+      }
+    }
+  } finally {
+    db.close();
   }
 }

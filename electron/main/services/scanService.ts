@@ -1,21 +1,16 @@
-import type { DbResult, NewSample } from "@romper/shared/db/schema.js";
+import type { DbResult, KitScanResult } from "@romper/shared/db/schema.js";
 
-import {
-  groupSamplesByVoice,
-  inferVoiceTypeFromFilename,
-} from "@romper/shared/kitUtilsShared.js";
-// No spaced slot utilities needed - using 0-11 indexing directly
+import { groupSamplesByVoice } from "@romper/shared/kitUtilsShared.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import type { WavMetadataFields } from "../db/operations/kitScanOperations.js";
+
 import { getAudioMetadata } from "../audioUtils.js";
 import {
-  addSample,
-  deleteSamples,
   getAllSamples,
+  mergeKitScan,
   updateBank,
-  updateSampleMetadata,
-  updateVoiceAlias,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 
@@ -25,21 +20,17 @@ import { ServicePathManager } from "../utils/fileSystemUtils.js";
  */
 export class ScanService {
   /**
-   * Rescan a kit directory and update the database with current WAV files
-   * This is a complex operation that:
-   * 1. Checks kit directory exists (bail early if missing)
-   * 2. Deletes existing sample records
-   * 3. Groups samples by voice
-   * 4. Creates new sample records
-   * 5. Infers voice types from filenames
+   * Scan a kit folder and merge its WAV files into the database (RE-04).
+   *
+   * The kit directory must exist. Unreferenced WAV files are added, existing
+   * sample rows and their user data are kept, missing files are reported,
+   * and locked kits are left alone. See planKitScanMerge for the rules.
+   * The database work runs in one transaction.
    */
   rescanKit(
     inMemorySettings: Record<string, unknown>,
     kitName: string,
-  ): DbResult<{
-    scannedSamples: number;
-    updatedVoices: number;
-  }> {
+  ): DbResult<KitScanResult> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
       return { error: "No local store path configured", success: false };
@@ -48,7 +39,6 @@ export class ScanService {
     const dbDir = this.getDbPath(localStorePath);
 
     try {
-      // Step 1: Check kit directory exists BEFORE deleting samples
       const kitPath = path.join(localStorePath, kitName);
       if (!fs.existsSync(kitPath)) {
         return {
@@ -57,52 +47,23 @@ export class ScanService {
         };
       }
 
-      // Step 2: Delete existing samples (safe — directory confirmed above)
-      const deleteResult = deleteSamples(dbDir, kitName);
-      if (!deleteResult.success) {
-        return { error: deleteResult.error, success: false };
-      }
+      const wavFiles = fs
+        .readdirSync(kitPath)
+        .filter((file) => file.toLowerCase().endsWith(".wav"));
 
-      let scannedSamples = 0;
-
-      const files = fs.readdirSync(kitPath);
-      const wavFiles = files.filter((file) =>
-        file.toLowerCase().endsWith(".wav"),
-      );
-
-      // Step 3: Group samples by voice using filename prefix parsing
-      const groupedSamples = groupSamplesByVoice(wavFiles);
-
-      // Step 4: Insert new sample records for found files
-      for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
-        const voice = Number.parseInt(voiceNumber, 10);
-        const processResult = this.processSamplesForVoice(
-          dbDir,
-          kitName,
-          kitPath,
-          voice,
-          voiceFiles,
-        );
-
-        if (!processResult.success) {
-          return { error: processResult.error, success: false };
-        }
-
-        scannedSamples += processResult.data || 0;
-      }
-
-      // Step 5: Run voice inference on the grouped samples
-      const updatedVoices = this.updateVoiceAliases(
+      const result = mergeKitScan(
         dbDir,
         kitName,
-        groupedSamples,
+        { filesByVoice: groupSamplesByVoice(wavFiles), kitPath },
+        { fileExists: fs.existsSync, readMetadata: readWavMetadata },
       );
-
-      // Return success with scan results
-      return {
-        data: { scannedSamples, updatedVoices },
-        success: true,
-      };
+      if (!result.success) {
+        return {
+          error: `Failed to scan kit ${kitName}: ${result.error}`,
+          success: false,
+        };
+      }
+      return result;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -149,7 +110,8 @@ export class ScanService {
         const rescanResult = this.rescanKit(inMemorySettings, kitName);
         if (rescanResult.success && rescanResult.data) {
           kitsRescanned.push(kitName);
-          totalSamplesUpdated += rescanResult.data.scannedSamples;
+          totalSamplesUpdated +=
+            rescanResult.data.metadataUpdated + rescanResult.data.addedSamples;
         } else {
           console.error(
             `Failed to rescan kit ${kitName}: ${rescanResult.error}`,
@@ -292,92 +254,23 @@ export class ScanService {
     }
     return result;
   }
+}
 
-  /**
-   * Helper method to process and insert samples for a voice
-   */
-  private processSamplesForVoice(
-    dbDir: string,
-    kitName: string,
-    kitPath: string,
-    voice: number,
-    voiceFiles: string[],
-  ): DbResult<number> {
-    let samplesProcessed = 0;
+/** Read the WAV header fields the samples table stores, or null. */
+export function readWavMetadata(filePath: string): null | WavMetadataFields {
+  const metadataResult = getAudioMetadata(filePath);
+  if (!metadataResult.success || !metadataResult.data) return null;
 
-    for (let slotNumber = 0; slotNumber < voiceFiles.length; slotNumber++) {
-      const wavFile = voiceFiles[slotNumber]; // Array is 0-based, slot is 0-based
-      const isStereo = /stereo|st|_s\.|_S\./i.test(wavFile);
-      const samplePath = path.join(kitPath, wavFile);
-
-      const sampleRecord: NewSample = {
-        filename: wavFile,
-        is_stereo: isStereo,
-        kit_name: kitName,
-        slot_number: slotNumber, // ZERO-BASED: 0-11 (UI shows 1-12, DB stores 0-11)
-        source_path: samplePath,
-        voice_number: voice,
-      };
-
-      const insertResult = addSample(dbDir, sampleRecord);
-      if (!insertResult.success) {
-        return { error: insertResult.error, success: false };
-      }
-
-      // Extract and save WAV metadata for the newly created sample
-      const metadataResult = getAudioMetadata(samplePath);
-      if (metadataResult.success && metadataResult.data && insertResult.data) {
-        const metadata = metadataResult.data;
-        updateSampleMetadata(dbDir, insertResult.data.sampleId, {
-          wav_bit_depth: metadata.bitDepth ?? null,
-          wav_bitrate:
-            metadata.sampleRate && metadata.channels && metadata.bitDepth
-              ? metadata.sampleRate * metadata.channels * metadata.bitDepth
-              : null,
-          wav_channels: metadata.channels ?? null,
-          wav_sample_rate: metadata.sampleRate ?? null,
-        });
-      }
-
-      samplesProcessed++;
-    }
-
-    return { data: samplesProcessed, success: true };
-  }
-
-  /**
-   * Helper method to update voice aliases based on filename inference
-   */
-  private updateVoiceAliases(
-    dbDir: string,
-    kitName: string,
-    groupedSamples: { [voice: number]: string[] },
-  ): number {
-    let updatedVoices = 0;
-
-    for (const [voiceNumber, voiceFiles] of Object.entries(groupedSamples)) {
-      const voice = Number.parseInt(voiceNumber, 10);
-
-      if (voiceFiles.length > 0) {
-        const firstFile = voiceFiles[0];
-        const inferredType = inferVoiceTypeFromFilename(firstFile);
-
-        if (inferredType) {
-          const updateResult = updateVoiceAlias(
-            dbDir,
-            kitName,
-            voice,
-            inferredType,
-          );
-          if (updateResult.success) {
-            updatedVoices++;
-          }
-        }
-      }
-    }
-
-    return updatedVoices;
-  }
+  const { bitDepth, channels, sampleRate } = metadataResult.data;
+  return {
+    wav_bit_depth: bitDepth ?? null,
+    wav_bitrate:
+      sampleRate && channels && bitDepth
+        ? sampleRate * channels * bitDepth
+        : null,
+    wav_channels: channels ?? null,
+    wav_sample_rate: sampleRate ?? null,
+  };
 }
 
 // Export singleton instance

@@ -171,7 +171,7 @@ describe("ScanService Integration Tests", () => {
       const kitRecord: NewKit = {
         alias: "Full Kit",
         bank_letter: "A",
-        editable: true,
+        editable: false,
         locked: false,
         modified_since_sync: false,
         name: "A1",
@@ -200,47 +200,98 @@ describe("ScanService Integration Tests", () => {
       expect(samplesResult.data).toHaveLength(4);
     });
 
-    it("should delete existing samples before rescanning", () => {
-      // Create kit in database with a pre-existing sample
-      const kitRecord: NewKit = {
-        alias: "Rescan Kit",
+    it("keeps existing samples and their user data, adding only new files (RE-04)", () => {
+      addKit(TEST_DB_PATH, {
+        alias: "Factory Kit",
         bank_letter: "A",
-        editable: true,
+        editable: false,
         locked: false,
         modified_since_sync: false,
         name: "A1",
         step_pattern: null,
-      };
-      addKit(TEST_DB_PATH, kitRecord);
+      });
 
-      const oldSample: NewSample = {
-        filename: "old-sample.wav",
-        is_stereo: false,
-        kit_name: "A1",
-        slot_number: 0,
-        source_path: "/old/path/old-sample.wav",
-        voice_number: 1,
-      };
-      addSample(TEST_DB_PATH, oldSample);
-
-      // Verify old sample exists
-      const beforeSamples = getKitSamples(TEST_DB_PATH, "A1");
-      expect(beforeSamples.data).toHaveLength(1);
-
-      // Create kit directory with different files
       const kitDir = path.join(TEST_DB_DIR, "A1");
       fs.mkdirSync(kitDir, { recursive: true });
-      createTestWavFile(path.join(kitDir, "1-new-kick.wav"));
+      createTestWavFile(path.join(kitDir, "1-kick.wav"));
+      createTestWavFile(path.join(kitDir, "1-new-kick.wav"), { channels: 2 });
+
+      // A store sample the user trimmed, and a sample added in-app from
+      // outside the store (reference-only, so it has no file in the kit folder)
+      const userSamples: NewSample[] = [
+        {
+          filename: "1-kick.wav",
+          gain_db: -4.5,
+          is_stereo: false,
+          kit_name: "A1",
+          slot_number: 0,
+          source_path: path.join(kitDir, "1-kick.wav"),
+          voice_number: 1,
+        },
+        {
+          filename: "my-snare.wav",
+          gain_db: 3,
+          is_stereo: false,
+          kit_name: "A1",
+          slot_number: 0,
+          source_path: path.join(TEST_DB_DIR, "elsewhere", "my-snare.wav"),
+          voice_number: 2,
+        },
+      ];
+      userSamples.forEach((sample) => addSample(TEST_DB_PATH, sample));
 
       const result = scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
+      expect(result.data).toMatchObject({
+        addedSamples: 1,
+        missingSamples: [
+          {
+            filename: "my-snare.wav",
+            slotNumber: 0,
+            sourcePath: path.join(TEST_DB_DIR, "elsewhere", "my-snare.wav"),
+            voiceNumber: 2,
+          },
+        ],
+        scannedSamples: 2,
+      });
 
-      // Old sample should be replaced by new scan results
-      const afterSamples = getKitSamples(TEST_DB_PATH, "A1");
-      expect(afterSamples.success).toBe(true);
-      expect(afterSamples.data).toHaveLength(1);
-      expect(afterSamples.data![0].filename).toBe("1-new-kick.wav");
+      const rows = getKitSamples(TEST_DB_PATH, "A1").data!;
+      expect(rows).toHaveLength(3);
+      expect(rows.find((r) => r.filename === "1-kick.wav")).toMatchObject({
+        gain_db: -4.5,
+        slot_number: 0,
+        voice_number: 1,
+      });
+      expect(rows.find((r) => r.filename === "my-snare.wav")).toMatchObject({
+        gain_db: 3,
+        voice_number: 2,
+      });
+      expect(rows.find((r) => r.filename === "1-new-kick.wav")).toMatchObject({
+        is_stereo: false,
+        slot_number: 1,
+        voice_number: 1,
+        wav_channels: 2,
+        wav_sample_rate: 44100,
+      });
+    });
+
+    it("scanning twice changes nothing the second time", () => {
+      addKit(TEST_DB_PATH, {
+        bank_letter: "A",
+        editable: false,
+        name: "A1",
+      });
+      const kitDir = path.join(TEST_DB_DIR, "A1");
+      createTestWavFile(path.join(kitDir, "1-kick.wav"));
+      createTestWavFile(path.join(kitDir, "2-snare.wav"));
+
+      scanService.rescanKit(mockInMemorySettings, "A1");
+      const before = getKitSamples(TEST_DB_PATH, "A1").data;
+      const second = scanService.rescanKit(mockInMemorySettings, "A1");
+
+      expect(second.data?.addedSamples).toBe(0);
+      expect(getKitSamples(TEST_DB_PATH, "A1").data).toEqual(before);
     });
 
     it("should ignore non-WAV files in the kit directory", () => {
@@ -472,6 +523,13 @@ describe("ScanService Integration Tests", () => {
       expect(result.data).toBeTruthy();
       // Kit A2 has missing metadata, so it needs rescan
       expect(result.data!.kitsNeedingRescan).toContain("A2");
+      // The merge fills in the metadata without replacing the row
+      expect(result.data!.totalSamplesUpdated).toBe(1);
+      const [pad] = getKitSamples(TEST_DB_PATH, "A2").data!;
+      expect(pad).toMatchObject({
+        filename: "1-pad.wav",
+        wav_sample_rate: 44100,
+      });
     });
 
     it("should return empty arrays when no samples exist", () => {

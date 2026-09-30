@@ -29,6 +29,86 @@ describe("useKitScanning", () => {
     onRequestSamplesReload.mockResolvedValue(undefined);
   });
 
+  describe("handleScanKit", () => {
+    it("shows what the merge changed alongside the sample count", async () => {
+      vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
+        data: {
+          addedSamples: 2,
+          locked: false,
+          metadataUpdated: 0,
+          missingSamples: [
+            {
+              filename: "gone.wav",
+              slotNumber: 0,
+              sourcePath: "/Volumes/USB/gone.wav",
+              voiceNumber: 1,
+            },
+          ],
+          scannedSamples: 12,
+          skippedFiles: [
+            { filename: "1 extra.wav", reason: "voice_full", voiceNumber: 1 },
+          ],
+          updatedVoices: 0,
+        },
+        success: true,
+      });
+      const { result } = renderHook(() => useKitScanning(defaultParams));
+
+      await act(async () => {
+        await result.current.handleScanKit();
+      });
+
+      expect(window.electronAPI.rescanKit).toHaveBeenCalledWith("A0");
+      expect(result.current.scanStatus).toEqual({
+        detail:
+          "2 samples added, 1 sample missing on disk, 1 file skipped (voice has 12 samples)",
+        sampleCount: 12,
+        status: "success",
+      });
+      expect(onRequestSamplesReload).toHaveBeenCalled();
+      expect(reloadKit).toHaveBeenCalled();
+    });
+
+    it("says a locked kit was left unchanged", async () => {
+      vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
+        data: {
+          addedSamples: 0,
+          locked: true,
+          metadataUpdated: 0,
+          missingSamples: [],
+          scannedSamples: 3,
+          skippedFiles: [],
+          updatedVoices: 0,
+        },
+        success: true,
+      });
+      const { result } = renderHook(() => useKitScanning(defaultParams));
+
+      await act(async () => {
+        await result.current.handleScanKit();
+      });
+
+      expect(result.current.scanStatus).toEqual({
+        detail: "1 locked kit left unchanged",
+        sampleCount: 3,
+        status: "success",
+      });
+    });
+
+    it("omits the detail when nothing changed", async () => {
+      const { result } = renderHook(() => useKitScanning(defaultParams));
+
+      await act(async () => {
+        await result.current.handleScanKit();
+      });
+
+      expect(result.current.scanStatus).toEqual({
+        sampleCount: 4,
+        status: "success",
+      });
+    });
+  });
+
   describe("handleInferVoiceNames", () => {
     it("infers and saves voice aliases for voices with samples", async () => {
       const { result } = renderHook(() => useKitScanning(defaultParams));

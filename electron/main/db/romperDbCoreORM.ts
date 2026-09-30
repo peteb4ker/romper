@@ -23,6 +23,7 @@ export {
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
+  mergeKitScan,
   toggleKitFavorite,
   updateBank,
   updateKit,

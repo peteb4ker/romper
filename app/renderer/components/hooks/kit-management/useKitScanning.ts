@@ -3,9 +3,15 @@ import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
 import { inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
+import {
+  addScanResultToTotals,
+  describeScanTotals,
+  EMPTY_SCAN_TOTALS,
+} from "./useKitScan";
+
 export type ScanStatus =
+  | { detail?: string; sampleCount: number; status: "success" }
   | { message: string; status: "error" }
-  | { sampleCount: number; status: "success" }
   | { status: "idle" }
   | { status: "scanning" };
 
@@ -87,7 +93,14 @@ export function useKitScanning({
 
       if (result.success) {
         const sampleCount = result.data?.scannedSamples || 0;
-        setScanStatus({ sampleCount, status: "success" });
+        const detail = describeScanTotals(
+          addScanResultToTotals(EMPTY_SCAN_TOTALS, result.data),
+        );
+        setScanStatus({
+          ...(detail ? { detail } : {}),
+          sampleCount,
+          status: "success",
+        });
 
         // Auto-clear success status after delay
         scheduleStatusClear();

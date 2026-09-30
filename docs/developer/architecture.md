@@ -80,6 +80,16 @@ exist, but see RE-09 below.
   [step-sequencer-slicer.md](step-sequencer-slicer.md).
 - Undo/redo is renderer state (`hooks/shared/useUndoRedoState.ts`); it is not
   persisted.
+- **Scanning merges, it never rebuilds** (`mergeKitScan` in
+  `db/operations/kitScanOperations.ts`, one transaction per kit). Existing
+  sample rows keep their slot, voice, gain and `source_path`; a row whose
+  file is gone is reported as missing, not deleted. Unreferenced
+  voice-prefixed WAVs in `<store>/<kit>/` are added to **non-editable** kits
+  only, in the lowest free slot, never past 12 per voice. Editable kits own
+  their sample list, so new folder files are reported but not added (adding
+  them would undo in-app deletions). Locked kits are not touched. Voice
+  names are inferred only for voices without one. "Scan All" asks for
+  confirmation first.
 - User-facing messages go through `MessageDisplayContext` /
   `useMessageDisplay`.
 

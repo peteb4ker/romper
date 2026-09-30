@@ -69,6 +69,13 @@ vi.mock("../services/localStoreService.js", () => ({
   },
 }));
 
+vi.mock("../services/localStoreSetupService.js", () => ({
+  localStoreSetupService: {
+    cleanupFailedSetup: vi.fn(() => ({ removed: false })),
+    hasExistingLocalStore: vi.fn(() => ({ exists: true })),
+  },
+}));
+
 vi.mock("../services/kitService.js", () => ({
   kitService: {
     copyKit: vi.fn(() => ({ success: true })),
@@ -517,5 +524,40 @@ describe("registerIpcHandlers", () => {
     expect(mockEvent.sender.send).toHaveBeenCalledWith("archive-error", {
       message: "Network error",
     });
+  });
+
+  it("cleanup-partial-init goes through the setup guard with the configured store (RE-10)", async () => {
+    const { localStoreSetupService } =
+      await import("../services/localStoreSetupService.js");
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    registerIpcHandlers({ localStorePath: "/configured/store" });
+
+    const result = await ipcMainHandlers["cleanup-partial-init"](
+      {},
+      "/mock/target",
+    );
+
+    expect(localStoreSetupService.cleanupFailedSetup).toHaveBeenCalledWith(
+      "/mock/target",
+      "/configured/store",
+    );
+    expect(result).toEqual({ removed: false });
+  });
+
+  it("check-existing-local-store reports an existing store", async () => {
+    const { localStoreSetupService } =
+      await import("../services/localStoreSetupService.js");
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    registerIpcHandlers({});
+
+    const result = await ipcMainHandlers["check-existing-local-store"](
+      {},
+      "/mock/target",
+    );
+
+    expect(localStoreSetupService.hasExistingLocalStore).toHaveBeenCalledWith(
+      "/mock/target",
+    );
+    expect(result).toEqual({ exists: true });
   });
 });

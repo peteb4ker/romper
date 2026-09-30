@@ -557,6 +557,16 @@ describe("preload/index.tsx", () => {
       },
       { args: ["/path/to/dir"], ipcChannel: "ensure-dir", method: "ensureDir" },
       {
+        args: ["/target"],
+        ipcChannel: "check-existing-local-store",
+        method: "checkExistingLocalStore",
+      },
+      {
+        args: ["/target"],
+        ipcChannel: "cleanup-partial-init",
+        method: "cleanupPartialInit",
+      },
+      {
         args: ["/path/to/db"],
         ipcChannel: "create-romper-db",
         method: "createRomperDb",

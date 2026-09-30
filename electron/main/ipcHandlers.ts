@@ -5,13 +5,14 @@ import type { InMemorySettings } from "./types/settings.js";
 import { archiveService } from "./services/archiveService.js";
 import { kitService } from "./services/kitService.js";
 import { localStoreService } from "./services/localStoreService.js";
+import { localStoreSetupService } from "./services/localStoreSetupService.js";
 import { sampleService } from "./services/sampleService.js";
 import { getSdCardDialogDefaultPath } from "./services/sdCardSafety.js";
 import { settingsService } from "./services/settingsService.js";
 import {
   checkDiskSpaceSufficient,
   checkPathWritable,
-  removeDirectorySafe,
+  ServicePathManager,
 } from "./utils/fileSystemUtils.js";
 import { logger } from "./utils/logger.js";
 
@@ -186,8 +187,14 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     return checkPathWritable(targetPath);
   });
 
-  ipcMain.handle("cleanup-partial-init", (_event, targetPath: string) => {
-    const dbDir = `${targetPath}/.romperdb`;
-    return removeDirectorySafe(dbDir);
-  });
+  ipcMain.handle("cleanup-partial-init", (_event, targetPath: string) =>
+    localStoreSetupService.cleanupFailedSetup(
+      targetPath,
+      ServicePathManager.getLocalStorePath(inMemorySettings),
+    ),
+  );
+
+  ipcMain.handle("check-existing-local-store", (_event, targetPath: string) =>
+    localStoreSetupService.hasExistingLocalStore(targetPath),
+  );
 }

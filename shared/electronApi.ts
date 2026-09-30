@@ -43,12 +43,17 @@ export interface ElectronAPI {
     requiredBytes: number;
     sufficient: boolean;
   }>;
+  // Whether the folder already holds a local store; setup refuses it (RE-10)
+  checkExistingLocalStore: (
+    targetPath: string,
+  ) => Promise<{ error?: string; exists: boolean }>;
   checkPathWritable: (
     targetPath: string,
   ) => Promise<{ error?: string; writable: boolean }>;
+  // Moves aside a .romperdb that setup created this session; refuses others
   cleanupPartialInit: (
     targetPath: string,
-  ) => Promise<{ error?: string; removed: boolean }>;
+  ) => Promise<{ error?: string; movedTo?: string; removed: boolean }>;
   closeApp: () => Promise<void>;
   copyDir: (src: string, dest: string) => Promise<unknown>;
   copyKit: (sourceKit: string, destKit: string) => Promise<DbResult>;

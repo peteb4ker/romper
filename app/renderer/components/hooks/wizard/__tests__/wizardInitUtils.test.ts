@@ -32,6 +32,44 @@ describe("wizardInitUtils", () => {
       .fn()
       .mockResolvedValue({ writable: true } as { writable: boolean });
 
+    it("refuses a target that already holds a local store before any other check", async () => {
+      const checkPathWritable = vi.fn();
+      const api = {
+        checkExistingLocalStore: vi.fn().mockResolvedValue({
+          error: "Use Choose Existing Store",
+          exists: true,
+        }),
+        checkPathWritable,
+      } as unknown as ElectronAPI;
+
+      await expect(runPreChecks(api, "/target", "blank")).rejects.toThrow(
+        "Use Choose Existing Store",
+      );
+      // The writability probe writes a file; it must not run
+      expect(checkPathWritable).not.toHaveBeenCalled();
+    });
+
+    it("falls back to a generic message when main gives none", async () => {
+      const api = {
+        checkExistingLocalStore: vi.fn().mockResolvedValue({ exists: true }),
+      } as unknown as ElectronAPI;
+
+      await expect(runPreChecks(api, "/target", "blank")).rejects.toThrow(
+        "already contains a Romper local store",
+      );
+    });
+
+    it("passes a target without a local store", async () => {
+      const api = {
+        checkExistingLocalStore: vi.fn().mockResolvedValue({ exists: false }),
+        checkPathWritable: writable,
+      } as unknown as ElectronAPI;
+
+      await expect(
+        runPreChecks(api, "/target", "blank"),
+      ).resolves.toBeUndefined();
+    });
+
     it("throws when the target path is not writable", async () => {
       const api = {
         checkPathWritable: vi.fn().mockResolvedValue({ writable: false }),

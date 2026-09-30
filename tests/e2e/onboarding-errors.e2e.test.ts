@@ -10,6 +10,7 @@ import path from "node:path";
  * 1. SD card with no valid kit folders
  * 2. Blank folder shows post-initialization guidance
  * 3. Wizard error display renders correctly
+ * 4. A target that already holds a local store is refused and left intact
  */
 test.describe("Onboarding Error Recovery E2E Tests", () => {
   // Each test manages its own Electron app lifecycle since environment varies per scenario
@@ -188,6 +189,43 @@ test.describe("Onboarding Error Recovery E2E Tests", () => {
         state: "hidden",
         timeout: 10000,
       });
+    } finally {
+      await electronApp.close();
+    }
+  });
+
+  test("should refuse a target that already has a local store (RE-10)", async () => {
+    const targetPath = await createTempDir("romper-e2e-existing-store-");
+    const dbFile = path.join(targetPath, ".romperdb", "romper.sqlite");
+    await fs.outputFile(dbFile, "existing user data");
+
+    const { electronApp, window } = await launchWizardApp({});
+
+    try {
+      await window.locator('[data-testid="wizard-source-blank"]').click();
+      await window.waitForSelector("#local-store-path-input", {
+        state: "visible",
+        timeout: 5000,
+      });
+      await window.fill("#local-store-path-input", targetPath);
+
+      const initButton = window.locator(
+        '[data-testid="wizard-initialize-btn"]',
+      );
+      await initButton.waitFor({ state: "visible", timeout: 5000 });
+      await initButton.click();
+
+      const errorElement = window.locator('[data-testid="wizard-error"]');
+      await errorElement.waitFor({ state: "visible", timeout: 10000 });
+      await expect(errorElement).toContainText(
+        "already contains a Romper local store",
+      );
+      await expect(errorElement).toContainText("Choose Existing Store");
+
+      // The existing store is untouched and nothing was moved aside
+      expect(await fs.readFile(dbFile, "utf-8")).toBe("existing user data");
+      const entries = await fs.readdir(targetPath);
+      expect(entries).toEqual([".romperdb"]);
     } finally {
       await electronApp.close();
     }

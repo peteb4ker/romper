@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import fs from "fs-extra";
-import { execSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { _electron as electron } from "playwright";
@@ -19,8 +18,8 @@ import {
  * - Two kits (A0, B1) each with 2 WAV samples (1_kick.wav, 2_snare.wav)
  * - A database with sample records referencing those files
  *
- * After extracting the fixture, we update the database source_path values
- * to point to the actual extracted WAV files, so the sync system can find them.
+ * The fixture extractor points each sample's source_path at the extracted
+ * WAV file, so the sync system can find them.
  */
 test.describe("Sync Real Operations E2E Tests", () => {
   let electronApp: ReturnType<typeof electron.launch> extends Promise<infer T>
@@ -43,10 +42,6 @@ test.describe("Sync Real Operations E2E Tests", () => {
       `[E2E Sync Test] Using fixture local store: ${testEnv.localStorePath}`,
     );
     console.log(`[E2E Sync Test] Created temp SD card: ${tempSdCardDir}`);
-
-    // Fix source_path values in the fixture database so they point to the
-    // actual extracted WAV files instead of the stale temp paths from fixture generation
-    fixDatabaseSourcePaths(testEnv.localStorePath);
 
     // Launch Electron app with fixture environment + custom SD card path
     electronApp = await electron.launch({
@@ -240,40 +235,6 @@ test.describe("Sync Real Operations E2E Tests", () => {
       await expect(window.locator('[data-testid="kit-grid"]')).toBeVisible();
     });
   });
-
-  /**
-   * Update sample source_path values in the fixture database to point to
-   * the actual extracted WAV files. The fixture's DB was generated in a
-   * different temp directory, so the paths are stale.
-   *
-   * Uses the sqlite3 CLI because better-sqlite3's native module may be
-   * compiled against a different Node.js version than Playwright's runner.
-   */
-  function fixDatabaseSourcePaths(localStorePath: string) {
-    const dbPath = path.join(localStorePath, ".romperdb", "romper.sqlite");
-
-    // Build an UPDATE statement that replaces the directory portion of source_path
-    // with the actual localStorePath. The fixture samples have paths like:
-    //   /tmp/old-temp-dir/A0/1_kick.wav
-    // We need them to become:
-    //   /tmp/new-extracted-dir/A0/1_kick.wav
-    //
-    // We reconstruct each path as: localStorePath / kit_name / filename
-    const sql = `UPDATE samples SET source_path = '${localStorePath}' || '/' || kit_name || '/' || filename;`;
-
-    execSync(`sqlite3 "${dbPath}" "${sql}"`);
-
-    // Verify the update worked
-    const countOutput = execSync(
-      `sqlite3 "${dbPath}" "SELECT COUNT(*) FROM samples WHERE source_path LIKE '${localStorePath}%';"`,
-    )
-      .toString()
-      .trim();
-
-    console.log(
-      `[E2E Sync Test] Updated ${countOutput} sample source_path values to match extracted fixture at ${localStorePath}`,
-    );
-  }
 
   /**
    * Create some existing files on SD card to test sync with pre-existing content

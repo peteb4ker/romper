@@ -28,6 +28,7 @@
     "test:e2e": "npm run build && npm run test:play",
     "test:e2e:headed": "npm run build && cross-env ROMPER_HEADLESS=false playwright test",
     "test:play": "playwright test",
+    "fixtures:e2e": "npm run build && node scripts/generate-e2e-fixtures-from-wizard.mjs",
     "coverage:merge": "npm run coverage:merge:json && npm run coverage:merge:lcov",
     "coverage:merge:json": "mkdir -p coverage/merged && istanbul-merge --out coverage/coverage-final.json coverage/unit/coverage-final.json coverage/integration/coverage-final.json",
     "coverage:merge:lcov": "mkdir -p coverage/merged && lcov -q -a coverage/unit/lcov.info -a coverage/integration/lcov.info --output-file coverage/merged/lcov.info",

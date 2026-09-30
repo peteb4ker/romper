@@ -162,6 +162,7 @@ describe.sequential("main/index.ts", () => {
 
       expect(options.show).toBe(false);
       expect(options.webPreferences.backgroundThrottling).toBe(false);
+      expect(options.webPreferences.offscreen).toBe(true);
       expect(app.setActivationPolicy).toHaveBeenCalledWith("accessory");
       expect(win.maximize).not.toHaveBeenCalled();
       expect(savedWindowState).toBe(false);
@@ -172,6 +173,7 @@ describe.sequential("main/index.ts", () => {
 
       expect(options.show).toBe(true);
       expect(options.webPreferences.backgroundThrottling).toBe(true);
+      expect(options.webPreferences.offscreen).toBe(false);
       expect(app.setActivationPolicy).not.toHaveBeenCalled();
       expect(win.maximize).toHaveBeenCalled();
       expect(savedWindowState).toBe(true);

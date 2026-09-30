@@ -4,6 +4,11 @@
 # paths, so it works wherever worktrees live (the sibling romper-worktrees/
 # dir, Claude Code's .claude/worktrees/, or the legacy in-repo worktrees/).
 INPUT=$(cat)
+
+# Cloud sessions run in their own clone on a claude/* branch, which is a main
+# checkout by git's definition; the shared-checkout rule doesn't apply there.
+[ "$CLAUDE_CODE_REMOTE" = "true" ] && exit 0
+
 FILE_PATH=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // .tool_input.notebook_path // .tool_input.path // empty' 2>/dev/null)
 [ -z "$FILE_PATH" ] && exit 0
 

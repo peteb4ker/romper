@@ -10,7 +10,7 @@
  *     set up at least once so romper-settings.json exists)
  *
  * Usage:
- *   npx tsx scripts/capture-screenshots.ts [--target <name>] [--all] [--list]
+ *   npm run screenshots -- [--target <name>] [--all] [--list]
  *
  * Targets are defined in SCREENSHOT_TARGETS below. New targets can be added
  * by appending to that array -- each target specifies a name, the navigation
@@ -18,10 +18,10 @@
  * output path under docs/images/.
  *
  * Examples:
- *   npx tsx scripts/capture-screenshots.ts --all          # capture everything
- *   npx tsx scripts/capture-screenshots.ts --target kit-browser
- *   npx tsx scripts/capture-screenshots.ts --target kit-editor
- *   npx tsx scripts/capture-screenshots.ts --list          # print available targets
+ *   npm run screenshots -- --all          # capture everything
+ *   npm run screenshots -- --target kit-browser
+ *   npm run screenshots -- --target kit-editor
+ *   npm run screenshots -- --list          # print available targets
  */
 
 import path from "node:path";

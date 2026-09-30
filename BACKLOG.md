@@ -23,7 +23,6 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-10 | High | Setup | If setup fails, the cleanup deletes `<target>/.romperdb` without checking that this run created it. | in progress (`fix/re-10-setup-existing-store`) |
 | RE-04 | High | Scan | "Scan Kit" on a non-editable kit, and "File > Scan All" on every kit, delete all of the kit's sample rows and rebuild them from `<store>/<kit>/*.wav`. | in progress (`fix/re-04-scan-merge`) |
 | RE-02 | High | Security | The `will-navigate` guard compares `URL.origin`, which is `"null"` for every `file://` URL. | in progress (`fix/re-02-navigation-guard`) |
 | RE-03 | High | Security | The renderer can read any file (up to 256 MiB), list any folder, create and copy folders, extract a downloaded archive into any folder, write a probe file anywhere, and create or insert into a database in any folder. | in progress (`fix/re-03-scoped-fs-ipc`) |
@@ -70,7 +69,7 @@ This file tracks what's being done about each item.
 | RE-28 | Medium | DB | Multi-step writes run without a transaction: kit plus its four voices; delete plus reindex (the reindex opens a second connection while the first is open); write plus the modified flag; scan insert plus metadata. | open |
 | RE-29 | Medium | Sync | Mono conversion is effectively dead. It runs only when `samples.is_stereo` is true, but that is `false` for every added or imported sample and is guessed from the file name on rescan (`/stereo\ | open |
 | RE-30 | Medium | Config | `ROMPER_LOCAL_PATH` is honoured by kit and DB handlers but ignored by sample, scan, sync and audio-buffer code. | in progress (#355) |
-| RE-31 | Medium | Setup | A failed SD-card setup cannot be retried: the directory copy uses a non-recursive `mkdirSync`, which fails because the earlier cleanup left the copied kit folders behind. | open |
+| RE-31 | Medium | Setup | A failed SD-card setup cannot be retried: the directory copy uses a non-recursive `mkdirSync`, which fails because the earlier cleanup left the copied kit folders behind. | open (needs a decision: a recursive copy would overwrite same-named kit folders; see #359) |
 | RE-32 | Medium | Kits | Kit names are checked inconsistently. Import accepts names such as `Drum01`; `insert-kit` checks nothing; `kitService` rejects anything outside `^\p{Lu}\d{1,2}$`, so such kits cannot be deleted or duplicated. | open |
 | RE-33 | Medium | DB | Migration upkeep: 0008 is missing and there are two 0009 migrations, handled by a custom repair that runs `ALTER` statements outside a transaction. | open |
 | RE-34 | Medium | Setup | Voice naming in the first-run wizard does nothing: its alias writes are rejected because the store path is saved only afterwards. | open |
@@ -103,4 +102,5 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-10 | High | Setup | If setup fails, the cleanup deletes `<target>/.romperdb` without checking that this run created it. | done (#359) |
 | RE-01 | Critical | Sync | "Clear SD card before writing" deletes every file and folder at the chosen path. | done (#351) |

@@ -4,34 +4,52 @@
     "allow": [
       "Bash(cat:*)",
       "Bash(find:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
       "Bash(grep:*)",
       "Bash(ls:*)",
+      "Bash(wc:*)",
       "Bash(mkdir:*)",
-      "Bash(mv:*)",
       "Bash(node:*)",
-      "Bash(npm run build:main:*)",
-      "Bash(npm run build:preload:*)",
-      "Bash(npm run lint:*)",
-      "Bash(npm run lint)",
-      "Bash(npm run test:*)",
-      "Bash(npm run test:integration:*)",
-      "Bash(npm run test:unit:*)",
-      "Bash(npm run typecheck:*)",
-      "Bash(npm test:*)",
-      "Bash(npm test)",
-      "Bash(npx drizzle-kit:*)",
-      "Bash(npx eslint:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npx vitest run:*)",
-      "Bash(npx vitest:*)",
       "Bash(sqlite3:*)",
-      "WebFetch(domain:tailwindcss.com)",
-      "Skill(sonar-report)",
-      "Skill(sonar-fix)"
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git fetch:*)",
+      "Bash(git branch:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git rev-list:*)",
+      "Bash(git worktree list:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run worktree:*)",
+      "Bash(npm test:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm view:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npx tsx:*)",
+      "WebFetch(domain:squarp.net)",
+      "WebFetch(domain:orm.drizzle.team)",
+      "WebFetch(domain:www.electronjs.org)",
+      "WebFetch(domain:tailwindcss.com)"
     ],
-    "deny": []
+    "deny": ["mcp__chrome-devtools"]
   },
   "hooks": {
     "PreToolUse": [
@@ -49,7 +67,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/prevent-main-commit.sh\""
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-git.sh\""
           }
         ]
       }

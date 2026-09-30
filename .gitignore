@@ -67,8 +67,6 @@ Thumbs.db
 *.swo
 *~
 
-# Documentation audit reports (generated files)
-docs/audits/
 
-# Architecture analysis reports (generated files)
-reports/
+# Claude Code personal settings (symlinked into worktrees)
+.claude/settings.local.json

@@ -33,8 +33,13 @@ is already green, skip auto-merge and merge it directly (rebase method).
 
 - Branch protection on `main` requires branches to be up to date
   (`strict: true`) and these checks: build, lint, typecheck, unit-tests,
-  integration-tests (ubuntu-latest), e2e-tests-check. So after each merge,
-  every other open PR is *behind* and can't merge until it is rebased.
+  integration-tests (ubuntu-latest). So after each merge, every other open
+  PR is *behind* and can't merge until it is rebased.
+- Auto-merge waits only for the required checks. `e2e-tests-check` and the
+  Windows and macOS integration runs aren't required, so a PR can
+  auto-merge while they're red or still running. Before arming auto-merge
+  on a PR that touches `electron/main`, startup, file handling, or paths,
+  confirm with `gh pr checks <n>` that those runs are green.
 - Merge serially, oldest-green first. For the next PR: rebase onto
   `origin/main`, `git push --force-with-lease`, re-arm auto-merge
   immediately, and let it merge when CI goes green.

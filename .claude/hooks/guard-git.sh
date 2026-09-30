@@ -8,7 +8,14 @@ INPUT=$(cat)
 COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 [ -z "$COMMAND" ] && exit 0
 
-# Drop quoted strings so commit messages that mention a flag don't trip the checks.
+# Drop heredoc bodies and quoted strings, so commit messages that mention a
+# flag or `git push origin main` don't trip the checks.
+COMMAND=$(printf '%s\n' "$COMMAND" | awk '
+  delim != "" { line = $0; gsub(/^[ \t]+|[ \t]+$/, "", line); if (line == delim) delim = ""; next }
+  match($0, /<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*/) {
+    d = substr($0, RSTART, RLENGTH); sub(/^<<-?[ \t]*["\047]?/, "", d); delim = d
+  }
+  { print }')
 COMMAND=$(printf '%s' "$COMMAND" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
 
 block() {
@@ -26,6 +33,15 @@ fi
 
 if printf '%s' "$COMMAND" | grep -qE '\bgit\b[^;&|]*\bcommit\b[^;&|]*[[:space:]]-[[:alpha:]]*n'; then
   block "git commit -n bypasses git hooks. Fix the failing check instead."
+fi
+
+if printf '%s' "$COMMAND" | grep -qE '\bcore\.hooksPath\b'; then
+  block "Overriding core.hooksPath bypasses git hooks. Fix the failing check instead."
+fi
+
+# enforce_admins is off on main, so --admin merges past required checks.
+if printf '%s' "$COMMAND" | grep -qE '\bgh\b[^;&|]*\bpr\b[^;&|]*\bmerge\b[^;&|]*--admin'; then
+  block "gh pr merge --admin skips required checks. Let CI pass (see the ship-pr skill)."
 fi
 
 # Pushing to main by refspec (origin main, HEAD:main, refs/heads/main).

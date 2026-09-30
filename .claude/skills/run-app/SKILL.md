@@ -12,10 +12,11 @@ broken app. Always verify through Electron.
 
 1. **Ports.** Each worktree needs its own ports in `.env.local`
    (`VITE_DEV_SERVER_PORT`, `ELECTRON_INSPECT_PORT`, `REMOTE_DEBUG_PORT`).
-   `npm run worktree:create` writes it. Claude Code session worktrees under
-   `.claude/worktrees/` don't get one; create it with unused ports (check
-   `lsof -nP -iTCP -sTCP:LISTEN`). Without it, `scripts/dev.js` falls back to
-   5173/9229 and collides with any other running instance.
+   `npm run worktree:create` writes it. Desktop-app session worktrees
+   (`../romper-worktrees/romper/<name>`) don't get one; create it with
+   unused ports (check `lsof -nP -iTCP -sTCP:LISTEN`). Without it,
+   `scripts/dev.js` falls back to 5173/9229 and collides with any other
+   running instance.
 2. **Stop only your own stale instance**, matched by your ports:
    `pkill -f "remote-debugging-port=<REMOTE_DEBUG_PORT>"` and
    `pkill -f "vite dev --config vite.config.ts --port <VITE_DEV_SERVER_PORT>"`.

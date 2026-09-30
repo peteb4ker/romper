@@ -14,9 +14,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-env:
-  NODE_VERSION: "22"
-
 jobs:
   # Unit tests - runs independently and uploads coverage
   unit-tests:
@@ -34,7 +31,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: "npm"
           cache-dependency-path: "package-lock.json"
 
@@ -59,6 +56,7 @@ jobs:
   # Cross-platform integration tests - runs in parallel with unit tests
   integration-tests:
     strategy:
+      fail-fast: false
       matrix:
         # All three OSes on PRs too: they take about a minute, and Windows-only
         # failures (file locking, chmod semantics) otherwise reach main unseen.
@@ -77,7 +75,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: "npm"
           cache-dependency-path: "package-lock.json"
 
@@ -158,7 +156,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: "npm"
           cache-dependency-path: "package-lock.json"
 

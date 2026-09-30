@@ -60,7 +60,9 @@ jobs:
   integration-tests:
     strategy:
       matrix:
-        os: ${{ github.event_name == 'push' && fromJSON('["ubuntu-latest","windows-latest","macos-latest"]') || fromJSON('["ubuntu-latest"]') }}
+        # All three OSes on PRs too: they take about a minute, and Windows-only
+        # failures (file locking, chmod semantics) otherwise reach main unseen.
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
 

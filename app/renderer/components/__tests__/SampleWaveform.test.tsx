@@ -422,7 +422,7 @@ describe("SampleWaveform", () => {
         data: new ArrayBuffer(1024),
         success: true,
       });
-      return { gainNodes, sources };
+      return { ctx: mockAudioContext, gainNodes, sources };
     }
 
     async function renderAndPlay(
@@ -452,6 +452,58 @@ describe("SampleWaveform", () => {
       });
       return rerender;
     }
+
+    async function playAgain(
+      rerender: ReturnType<typeof render>["rerender"],
+      trigger: number,
+    ) {
+      await act(async () => {
+        rerender(
+          <SampleWaveform
+            kitName="A1"
+            playOptions={{ region: { length: 0.125, start: 0.25 } }}
+            playTrigger={trigger}
+            slotNumber={1}
+            voiceNumber={1}
+          />,
+        );
+      });
+    }
+
+    it("releases a finished slice's source and envelope", async () => {
+      const { gainNodes, sources } = setupRegionMocks();
+      await renderAndPlay({ length: 0.125, start: 0.25 });
+      const envelope = gainNodes.find((n) =>
+        sources[0].connect.mock.calls.some(([target]) => target === n),
+      )!;
+
+      act(() => sources[0].onended?.());
+
+      expect(sources[0].disconnect).toHaveBeenCalled();
+      expect(envelope.disconnect).toHaveBeenCalled();
+    });
+
+    it("creates the volume gain and VU meter once, not per trigger", async () => {
+      const { ctx, sources } = setupRegionMocks();
+      const rerender = await renderAndPlay({ length: 0.125, start: 0.25 });
+      await playAgain(rerender, 2);
+      await playAgain(rerender, 3);
+
+      expect(sources).toHaveLength(3);
+      expect(ctx.createAnalyser).toHaveBeenCalledTimes(1);
+      // One shared volume gain plus one envelope per slice
+      expect(ctx.createGain).toHaveBeenCalledTimes(4);
+    });
+
+    it("resumes a suspended context before playing", async () => {
+      const { ctx } = setupRegionMocks();
+      const resume = vi.fn().mockResolvedValue(undefined);
+      Object.assign(ctx, { resume, state: "suspended" });
+
+      await renderAndPlay({ length: 0.125, start: 0.25 });
+
+      expect(resume).toHaveBeenCalled();
+    });
 
     it("starts at the region offset and plays only its duration", async () => {
       const { gainNodes, sources } = setupRegionMocks();

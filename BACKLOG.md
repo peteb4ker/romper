@@ -36,7 +36,7 @@ This file tracks what's being done about each item.
 | RE-11 | High | Renderer | Toast messages never appear. `useMessageDisplay()` creates local state. | open |
 | RE-12 | High | Renderer | There is no React error boundary. Any exception during render unmounts the whole tree and leaves a blank window with no way to recover. | open |
 | RE-13 | High | Playback | The voice choke can fail after any kit refresh. Step, condition, mode, volume and alias edits reload all kits, which resets the "playing" map while samples are still playing, so the next trigger on that voice does not stop them. | open |
-| RE-14 | High | Playback | Each play connects a new analyser (and a splitter for stereo) to the slot's gain node, and nothing disconnects them. | open |
+| RE-14 | High | Playback | Each play connects a new analyser (and a splitter for stereo) to the slot's gain node, and nothing disconnects them. | partly done (slicer PR: meters made once per slot and finished sources released; one shared AudioContext still open) |
 | RE-16 | High | Platform | macOS auto-update does not work in packaged builds. The main process is built as a browser-style library, so the bundled `update-electron-app` gets an empty `node:assert` and a `require` shim that throws under ESM. | open |
 | RE-17 | High | Release | The release workflow runs no unit, integration or e2e tests and does not check that the tag is on `main` or that CI passed. | open |
 | RE-15 | High | Platform | Electron 39.8.10 is out of support (its last patch was 2026-05-05; supported majors are 42 to 44). | open (#348 moved to Electron 41; 42+ is supported) |

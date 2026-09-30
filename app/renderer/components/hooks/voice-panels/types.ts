@@ -1,6 +1,6 @@
 import React from "react";
 
-import type { SampleData } from "../../kitTypes";
+import type { PlayOptions, SampleData } from "../../kitTypes";
 
 import { DragAndDropHook } from "./useVoicePanelDragHandlers";
 import { SlotRenderingHook } from "./useVoicePanelSlotRendering";
@@ -26,6 +26,7 @@ export interface BaseVoicePanelOptions {
     sample: string,
     playing: boolean,
   ) => void;
+  playOptions?: { [key: string]: PlayOptions | undefined };
   playTriggers: { [key: string]: number };
   playVolumes?: { [key: string]: number };
   renderDeleteButton: (slotNumber: number) => React.ReactElement;

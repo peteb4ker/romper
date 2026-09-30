@@ -4,7 +4,7 @@ priority: medium
 status: specification
 updated: 2026-09-30
 context_size: medium
-implementation_status: not started. The spec was agreed through Q&A and is awaiting review before implementation.
+implementation_status: implemented on branch claude/inspiring-cray-avt5kh (Phases 0–4). Timing verified in the built app under Xvfb; not yet checked by ear on real hardware.
 -->
 
 # PRD: Step Sequencer Slicer
@@ -104,7 +104,7 @@ scheduled on the `AudioContext` clock.
 **Randomization.** The only randomization today is the per-voice **Rnd**
 sample mode.
 
-**Fit with existing plans.** `tasks/PRD.md` lists per-step sample
+**Fit with existing plans.** `docs/developer/product-requirements.md` lists per-step sample
 selection and per-step velocity as possible future enhancements. Slicing
 fits alongside them: the existing per-step data says _whether_ a step
 plays, and slice data adds _what_ it plays.
@@ -133,9 +133,37 @@ plays, and slice data adds _what_ it plays.
 > whichever sample is playing. So Rnd sample mode plus slices varies both
 > the slot and the slice.
 >
-> The waveform strip shows the voice's **currently selected slot**, the
-> one highlighted in the voice panel. During playback it follows the slot
-> that actually fired.
+> The waveform strip shows the voice's **currently selected slot** (the
+> one highlighted in the voice panel), or the voice's first sample when
+> another voice is selected. It does not jump between slots during
+> playback: with Rnd or R-R that would redraw on every step. Slices are
+> proportional, so the flash still marks the right region whichever slot
+> fired.
+
+## Learnability (added 2026-09-30)
+
+Usage must be self-evident. Someone who has never read the manual should
+be able to slice a break within a minute. So:
+
+- **A hint line under the strip always says what to do next.** It changes
+  with context:
+  - no step selected: _"Click a step, then click a slice to choose what it
+    plays."_
+  - step selected: _"Step 3 plays slice 5. Click a slice to change it,
+    drag for longer hits, or 🎲 Roll for surprises."_
+  - it also mentions that clicking the selected step again turns it off.
+- **Hovering a step previews its slice on the waveform** as a ghost
+  highlight, so the link between steps and slices is visible before
+  anything is clicked.
+- **Every control is visible and labelled.** The dice and undo buttons
+  show text labels, not just icons. Every control has a tooltip, and
+  tooltips name the keyboard shortcut where one exists. Keyboard and
+  scroll-wheel shortcuts are accelerators only; everything they do can
+  also be done by clicking.
+- **Turning slice mode on shows its result at once.** Active steps
+  immediately show slice numbers, and the strip slides in.
+- **Clicking a slice on the waveform plays it**, so the waveform can be
+  explored by ear.
 
 ## User Experience
 
@@ -211,8 +239,7 @@ voice at a time, called the **editing voice**.
   length, has a translucent highlight in the voice colour.
 - Every other slice the voice uses gets a faint tick, so you can see
   which parts of the sample the pattern touches.
-- During playback, the slice that is sounding flashes and a playhead
-  moves through it.
+- During playback, the slice that is sounding flashes.
 
 **Waveform interactions.** Each one acts on the selected step.
 
@@ -414,9 +441,12 @@ export interface SliceStep {
   save fails.
 - Slice data for steps that are off is **kept**, so turning a step off
   and on again restores its slice.
+- A `null` cell means "no slice chosen yet" and plays the **sequential
+  default** (step _n_ → slice `n mod division`). Turning slice mode on
+  therefore needs no data write, and the defaults follow the division.
 - The undo-roll copy lives in renderer memory only and is never saved.
 - Slice data is **not synced** to the SD card.
-- Update `docs/developer/romper-db.md` and the ERD.
+- Update `docs/developer/romper-db.md`.
 
 ### IPC additions
 
@@ -448,6 +478,34 @@ handlers.
 
 - Record the measurement and the chosen path in a short note in this
   spec.
+
+> **Phase 0 outcome (2026-09-30).** Measured in the built Electron app
+> (under Xvfb, fake audio output) by recording every
+> `AudioBufferSourceNode.start()` call during a sliced `/16` loop at 120 BPM,
+> where the ideal step is 125 ms:
+>
+> | Path                                                  | Step interval (min / median / max) |
+> | ----------------------------------------------------- | ---------------------------------- |
+> | Existing: `setInterval` worker, sound started at once | 114.6 / 126.9 / 137.0 ms           |
+> | New: drift-free worker, sound scheduled 80 ms ahead   | 125.0 / 125.0 / 125.0 ms           |
+>
+> The old path had about ±10 ms of jitter. It also drifted: `setInterval`
+> ran slow, so 120 BPM played at about 118. That fails the 5 ms target, so
+> the **scheduled path was built**, and it applies to **every voice**, not
+> only slice voices, so voices can't flam against each other:
+>
+> - The worker times each step from the start (self-correcting
+>   `setTimeout`) and sends the step's ideal time with it.
+> - Each trigger carries `startAt` = ideal time + `SCHEDULE_AHEAD_MS`
+>   (80 ms). `SampleWaveform` maps that to its audio clock with
+>   `getOutputTimestamp()`. `currentTime` alone moved in ~10 ms chunks and
+>   still jittered.
+> - Chokes and retriggers stop the old sound **at the new sound's start
+>   time** (`stopAt`), so scheduling ahead never opens a gap.
+> - The cost is that sound lags the on-screen playhead by 80 ms. Previews
+>   you click still play immediately.
+>
+> Still to confirm by ear on real hardware: success criterion 1.
 
 ### Phase 1: core slice playback
 
@@ -487,7 +545,7 @@ handlers.
 - Add a **Slicer** section to `docs/manual/step-sequencer.md`.
 - Update `docs/manual/keyboard-shortcuts.md`.
 - Take new screenshots with `scripts/capture-screenshots.ts`.
-- Update `docs/developer/romper-db.md`, the ERD and `tasks/INDEX.md`.
+- Update `docs/developer/romper-db.md`.
 
 ## Test Plan
 
@@ -600,7 +658,7 @@ The state must persist after reopening the kit.
 - Randomizing which steps are on (rhythm dice).
 - Undo history for more than one roll.
 - Choosing the slot per step. Per-step sample choice is still a separate
-  possible enhancement in `tasks/PRD.md`.
+  possible enhancement in `docs/developer/product-requirements.md`.
 - Syncing slice data or the SLICER setting to the SD card.
 - Swing, per-step velocity, pitch, and other per-step parameter changes.
 
@@ -644,4 +702,4 @@ The state must persist after reopening the kit.
     and CCx5 is length (127 is the default). x is the voice (1–4), or 5
     for all voices.
 - `docs/manual/step-sequencer.md`: how the sequencer works today.
-- `tasks/PRD.md`: sequencer non-goals and possible future enhancements.
+- `docs/developer/product-requirements.md`: sequencer non-goals and possible future enhancements.

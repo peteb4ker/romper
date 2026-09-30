@@ -30,6 +30,7 @@ export {
   updateSampleMetadata,
   updateVoiceAlias,
   updateVoiceSampleMode,
+  updateVoiceSliceSettings,
   updateVoiceStereoMode,
   updateVoiceVolume,
 } from "./operations/crudOperations.js";

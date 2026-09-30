@@ -1,6 +1,11 @@
+import type { SliceStep } from "@romper/shared/sliceTypes";
+
 import {
+  DiceFiveIcon,
+  LockSimpleIcon,
   NumberCircleOneIcon,
   RepeatIcon,
+  ScissorsIcon,
   ShuffleIcon,
   SpeakerSimpleHighIcon,
   SpeakerSimpleSlashIcon,
@@ -8,8 +13,10 @@ import {
 import React from "react";
 import ReactDOM from "react-dom";
 
+import type { RolledSteps } from "./hooks/kit-management/useSlicerEditor";
 import type { StereoLinks } from "./KitStepSequencer";
 
+import { sequentialSliceStep } from "./hooks/shared/sliceConstants";
 import {
   type FocusedStep,
   SAMPLE_MODE_LABELS,
@@ -18,6 +25,7 @@ import {
   type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
 import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
+import SliceStepEditor from "./SliceStepEditor";
 
 const SAMPLE_MODE_ICONS: Record<SampleMode, React.ReactNode> = {
   first: <NumberCircleOneIcon size={14} weight="bold" />,
@@ -35,6 +43,15 @@ const VOICE_BG_COLORS: Record<number, string> = {
   3: "bg-voice-4/40",
 };
 
+/** What a step on a slice-mode row shows. */
+export interface StepSliceDisplay {
+  flash: boolean; // just changed by a roll
+  lengthSlices: number;
+  locked: boolean;
+  random: boolean;
+  startSlice: number;
+}
+
 interface StepButtonProps {
   condition: TriggerCondition;
   isFocused: boolean;
@@ -44,10 +61,65 @@ interface StepButtonProps {
   onClick: () => void;
   onColor: string;
   onContextMenu: (e: React.MouseEvent) => void;
+  onMouseEnter?: () => void;
+  slice?: StepSliceDisplay;
   stepIdx: number;
   voiceIdx: number;
   voiceNumber: number;
 }
+
+function sliceAriaSuffix(slice?: StepSliceDisplay): string {
+  if (!slice) return "";
+  const what = slice.random
+    ? "random slice"
+    : `slice ${slice.startSlice + 1}${slice.lengthSlices > 1 ? `, ${slice.lengthSlices} slices long` : ""}`;
+  return `, ${what}${slice.locked ? ", locked" : ""}`;
+}
+
+/** Slice number (or dice), length bar, lock mark and condition badge. */
+const StepSliceContent: React.FC<{
+  condition: TriggerCondition;
+  slice: StepSliceDisplay;
+  stepIdx: number;
+  voiceIdx: number;
+}> = ({ condition, slice, stepIdx, voiceIdx }) => (
+  <span
+    className="absolute inset-0 pointer-events-none select-none text-white/95"
+    data-testid={`seq-slice-${voiceIdx}-${stepIdx}`}
+    style={{ textShadow: "0 0 3px rgba(0,0,0,0.6)", zIndex: 1 }}
+  >
+    <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold">
+      {slice.random ? (
+        <DiceFiveIcon size={14} weight="bold" />
+      ) : (
+        slice.startSlice + 1
+      )}
+    </span>
+    {slice.lengthSlices > 1 && !slice.random && (
+      <span
+        className="absolute bottom-0.5 left-0.5 h-0.5 rounded bg-white/90"
+        style={{
+          width: `calc(${Math.min(1, slice.lengthSlices / 8) * 100}% - 4px)`,
+        }}
+      />
+    )}
+    {slice.locked && (
+      <LockSimpleIcon
+        className="absolute top-0 right-0"
+        size={8}
+        weight="fill"
+      />
+    )}
+    {condition && (
+      <span
+        className="absolute top-0 left-0.5 text-[7px] font-bold leading-none"
+        data-testid={`seq-condition-${voiceIdx}-${stepIdx}`}
+      >
+        {condition}
+      </span>
+    )}
+  </span>
+);
 
 const StepButton: React.FC<StepButtonProps> = ({
   condition,
@@ -58,6 +130,8 @@ const StepButton: React.FC<StepButtonProps> = ({
   onClick,
   onColor,
   onContextMenu,
+  onMouseEnter,
+  slice,
   stepIdx,
   voiceIdx,
   voiceNumber,
@@ -76,20 +150,31 @@ const StepButton: React.FC<StepButtonProps> = ({
   };
 
   const conditionSuffix = condition ? ` (${condition})` : "";
+  const showSlice = slice && isOn;
 
   return (
     <button
-      aria-label={`Toggle step ${stepIdx + 1} for voice ${voiceNumber}${conditionSuffix}`}
+      aria-label={`Toggle step ${stepIdx + 1} for voice ${voiceNumber}${conditionSuffix}${isOn ? sliceAriaSuffix(slice) : ""}`}
       aria-pressed={isOn}
-      className={`relative w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 rounded-md border-2 mx-0.5 focus:outline-none transition-colors ${onColor} ${ledGlow}`}
+      className={`relative w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 rounded-md border-2 mx-0.5 focus:outline-none transition-colors ${onColor} ${ledGlow}${slice?.flash ? " ring-2 ring-white" : ""}`}
+      data-slice-step={slice ? `${voiceIdx}:${stepIdx}` : undefined}
       data-testid={`seq-step-${voiceIdx}-${stepIdx}`}
       onClick={onClick}
       onContextMenu={onContextMenu}
+      onMouseEnter={onMouseEnter}
       role="gridcell"
       type="button"
     >
+      {showSlice && (
+        <StepSliceContent
+          condition={condition}
+          slice={slice}
+          stepIdx={stepIdx}
+          voiceIdx={voiceIdx}
+        />
+      )}
       {/* Trigger condition indicator */}
-      {condition && isOn && (
+      {condition && isOn && !showSlice && (
         <span
           className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white/90 pointer-events-none select-none"
           data-testid={`seq-condition-${voiceIdx}-${stepIdx}`}
@@ -127,6 +212,7 @@ interface ConditionPopoverProps {
   onClose: () => void;
   onSelect: (condition: TriggerCondition) => void;
   position: { x: number; y: number };
+  sliceSection?: React.ReactNode;
 }
 
 const ConditionPopover: React.FC<ConditionPopoverProps> = ({
@@ -134,6 +220,7 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
   onClose,
   onSelect,
   position,
+  sliceSection,
 }) => {
   const popoverRef = React.useRef<HTMLDivElement>(null);
   const [adjustedPos, setAdjustedPos] = React.useState(position);
@@ -161,9 +248,22 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
     <div
       className="fixed z-50 bg-surface-2 border border-border-strong rounded-lg shadow-lg py-1 min-w-[80px]"
       data-testid="condition-popover"
+      // Keep typing in the popover from reaching the grid's shortcuts
+      // (portals still bubble React events); Escape must reach the dismiss hook.
+      onKeyDown={(e) => {
+        if (e.key !== "Escape") e.stopPropagation();
+      }}
       ref={popoverRef}
       style={{ left: adjustedPos.x, top: adjustedPos.y }}
     >
+      {sliceSection && (
+        <>
+          {sliceSection}
+          <div className="px-3 pt-1 pb-0.5 border-t border-border-subtle text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
+            Condition
+          </div>
+        </>
+      )}
       {TRIGGER_CONDITIONS.map((cond) => {
         const isActive =
           cond === currentCondition ||
@@ -204,11 +304,34 @@ interface StepSequencerGridProps {
   ) => void;
   onMuteToggle?: (voiceNumber: number) => void;
   onSampleModeChange?: (voiceNumber: number, mode: SampleMode) => void;
+  onSliceStepUpdate?: (
+    voiceIdx: number,
+    stepIdx: number,
+    edit: (step: SliceStep) => SliceStep,
+  ) => void;
+  onSliceToggle?: (voiceNumber: number) => void;
+  /** Replaces the default click (toggle) — used for slice-row selection. */
+  onStepClick?: (voiceIdx: number, stepIdx: number) => void;
+  onStepHover?: (step: FocusedStep | null) => void;
+  onStepWheel?: (
+    voiceIdx: number,
+    stepIdx: number,
+    delta: number,
+    length: boolean,
+  ) => void;
   onVolumeChange?: (voiceNumber: number, volume: number) => void;
+  rolledSteps?: null | RolledSteps;
   ROW_COLORS: string[];
   safeStepPattern: number[][];
   sampleModes?: Record<number, SampleMode>;
   setFocusedStep: (step: FocusedStep) => void;
+  /** Voices (by number) in slice mode. */
+  sliceEnabled?: Record<number, boolean>;
+  slicerDivision?: number;
+  sliceSteps?: (null | SliceStep)[][];
+  /** Voices (by number) that can't be sliced (no samples). */
+  sliceUnavailable?: Record<number, boolean>;
+  sliceViews?: { lengthSlices: number; startSlice: number }[][];
   stereoLinks?: StereoLinks;
   toggleStep: (voiceIdx: number, stepIdx: number) => void;
   triggerConditions?: (null | string)[][];
@@ -228,11 +351,22 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   onConditionChange,
   onMuteToggle,
   onSampleModeChange,
+  onSliceStepUpdate,
+  onSliceToggle,
+  onStepClick,
+  onStepHover,
+  onStepWheel,
   onVolumeChange,
+  rolledSteps,
   ROW_COLORS,
   safeStepPattern,
   sampleModes = {},
   setFocusedStep,
+  sliceEnabled = {},
+  slicerDivision = 16,
+  sliceSteps,
+  sliceUnavailable = {},
+  sliceViews,
   stereoLinks,
   toggleStep,
   triggerConditions,
@@ -256,8 +390,52 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   };
 
   const handleStepClick = (voiceIdx: number, stepIdx: number) => {
+    if (onStepClick) {
+      onStepClick(voiceIdx, stepIdx);
+      return;
+    }
     setFocusedStep({ step: stepIdx, voice: voiceIdx });
     toggleStep(voiceIdx, stepIdx);
+  };
+
+  // Scroll wheel over a slice step nudges its slice (Shift: its length).
+  // A native non-passive listener so the page doesn't scroll meanwhile.
+  React.useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !onStepWheel) return;
+    const onWheel = (e: WheelEvent) => {
+      const target = (e.target as HTMLElement | null)?.closest?.(
+        "[data-slice-step]",
+      );
+      const id = target?.getAttribute("data-slice-step");
+      if (!id) return;
+      const delta = e.deltaY || e.deltaX;
+      if (!delta) return;
+      e.preventDefault();
+      const [voiceIdx, stepIdx] = id.split(":").map(Number);
+      onStepWheel(voiceIdx, stepIdx, delta < 0 ? 1 : -1, e.shiftKey);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [gridRef, onStepWheel]);
+
+  const stepSlice = (
+    voiceIdx: number,
+    stepIdx: number,
+  ): StepSliceDisplay | undefined => {
+    if (!sliceEnabled[voiceIdx + 1]) return undefined;
+    const view = sliceViews?.[voiceIdx]?.[stepIdx];
+    if (!view) return undefined;
+    const cell = sliceSteps?.[voiceIdx]?.[stepIdx];
+    return {
+      flash:
+        rolledSteps?.voiceIdx === voiceIdx &&
+        rolledSteps.steps.includes(stepIdx),
+      lengthSlices: view.lengthSlices,
+      locked: cell?.locked ?? false,
+      random: cell?.random ?? false,
+      startSlice: view.startSlice,
+    };
   };
 
   const handleStepContextMenu = (
@@ -279,6 +457,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
       className="flex flex-col gap-2"
       data-testid="kit-step-sequencer-grid"
       onKeyDown={handleStepGridKeyDown}
+      onMouseLeave={() => onStepHover?.(null)}
       ref={gridRef}
       role="grid"
       style={{ height: GRID_HEIGHT, outline: "none" }}
@@ -355,6 +534,13 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                       onContextMenu={(e) =>
                         handleStepContextMenu(e, voiceIdx, stepIdx)
                       }
+                      onMouseEnter={
+                        onStepHover
+                          ? () =>
+                              onStepHover({ step: stepIdx, voice: voiceIdx })
+                          : undefined
+                      }
+                      slice={stepSlice(voiceIdx, stepIdx)}
                       stepIdx={stepIdx}
                       voiceIdx={voiceIdx}
                       voiceNumber={voiceNumber}
@@ -365,6 +551,35 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
 
               {/* Spacer between steps and voice controls */}
               <div className="w-3" />
+
+              {/* Slice mode toggle */}
+              {onSliceToggle && (
+                <button
+                  aria-label={`Slice mode for voice ${voiceNumber}`}
+                  aria-pressed={sliceEnabled[voiceNumber] ?? false}
+                  className={`flex items-center justify-center w-7 h-7 rounded border focus:outline-none focus:ring-1 focus:ring-accent-primary transition-colors mr-1.5 disabled:opacity-40 disabled:cursor-not-allowed ${sliceEnabled[voiceNumber] ? "bg-surface-3 border-border-strong" : "bg-surface-2 border-border-default hover:bg-surface-3"}`}
+                  data-testid={`slice-toggle-${voiceIdx}`}
+                  disabled={
+                    !sliceEnabled[voiceNumber] && sliceUnavailable[voiceNumber]
+                  }
+                  onClick={() => onSliceToggle(voiceNumber)}
+                  style={
+                    sliceEnabled[voiceNumber]
+                      ? { color: `var(--voice-${voiceNumber})` }
+                      : undefined
+                  }
+                  title={
+                    sliceEnabled[voiceNumber]
+                      ? "Slice mode on: each step plays a slice of the sample. Click to play whole samples again."
+                      : sliceUnavailable[voiceNumber]
+                        ? "Add a sample to this voice to slice it"
+                        : "Slice mode: play parts of a long sample from each step"
+                  }
+                  type="button"
+                >
+                  <ScissorsIcon size={14} weight="bold" />
+                </button>
+              )}
 
               {/* Sample mode toggle */}
               <button
@@ -435,6 +650,20 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
               onConditionChange?.(popover.voiceIdx, popover.stepIdx, condition);
             }}
             position={{ x: popover.x, y: popover.y }}
+            sliceSection={
+              sliceEnabled[popover.voiceIdx + 1] && onSliceStepUpdate ? (
+                <SliceStepEditor
+                  division={slicerDivision}
+                  onChange={(edit) =>
+                    onSliceStepUpdate(popover.voiceIdx, popover.stepIdx, edit)
+                  }
+                  step={
+                    sliceSteps?.[popover.voiceIdx]?.[popover.stepIdx] ??
+                    sequentialSliceStep(popover.stepIdx, slicerDivision)
+                  }
+                />
+              ) : undefined
+            }
           />,
           document.body,
         )}

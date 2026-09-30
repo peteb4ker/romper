@@ -1,5 +1,10 @@
 import type { NewKit, NewSample } from "@romper/shared/db/schema.js";
+import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
 
+import {
+  isSlicerDivision,
+  normalizeSliceSteps,
+} from "@romper/shared/sliceTypes.js";
 // IMPORTANT: Drizzle ORM with better-sqlite3 is SYNCHRONOUS - do not use await with database operations
 import { ipcMain } from "electron";
 
@@ -23,6 +28,7 @@ import {
   updateSampleGain,
   updateVoiceAlias,
   updateVoiceSampleMode,
+  updateVoiceSliceSettings,
   updateVoiceStereoMode,
   updateVoiceVolume,
 } from "./db/romperDbCoreORM.js";
@@ -202,6 +208,49 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         return updateKit(dbDir, kitName, {
           trigger_conditions: triggerConditions,
         });
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    "update-slice-steps",
+    createDbHandler(
+      inMemorySettings,
+      (dbDir: string, kitName: string, sliceSteps: unknown) => {
+        return updateKit(dbDir, kitName, {
+          slice_steps: normalizeSliceSteps(sliceSteps),
+        });
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    "update-kit-slicer-division",
+    createDbHandler(
+      inMemorySettings,
+      (dbDir: string, kitName: string, division: number) => {
+        if (!isSlicerDivision(division)) {
+          return {
+            error: `Invalid slicer division: ${division}`,
+            success: false,
+          };
+        }
+        return updateKit(dbDir, kitName, { slicer_division: division });
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    "update-voice-slice-settings",
+    createDbHandler(
+      inMemorySettings,
+      (
+        dbDir: string,
+        kitName: string,
+        voiceNumber: number,
+        settings: Partial<VoiceSliceSettings>,
+      ) => {
+        return updateVoiceSliceSettings(dbDir, kitName, voiceNumber, settings);
       },
     ),
   );

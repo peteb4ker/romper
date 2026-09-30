@@ -9,6 +9,8 @@ import {
 } from "drizzle-orm/sqlite-core";
 // Using text({ mode: 'json' }) for step patterns - much simpler than custom encoding!
 
+import type { SliceStep } from "../sliceTypes";
+
 // Banks table - contains artist metadata for each bank (A-Z)
 export const banks = sqliteTable("banks", {
   artist: text("artist"), // Artist name extracted from RTF filename
@@ -31,6 +33,10 @@ export const kits = sqliteTable("kits", {
     .notNull()
     .default(false), // Task 5.3: Track if kit modified since last sync
   name: text("name").primaryKey(), // Natural key (A0, B1, etc.)
+  slice_steps: text("slice_steps", { mode: "json" }).$type<
+    (null | SliceStep)[][] | null
+  >(), // JSON storage for slicer data (4 voices x 16 steps)
+  slicer_division: integer("slicer_division").notNull().default(16), // Kit-wide slice count, like the Rample's SLICER setting
   step_pattern: text("step_pattern", { mode: "json" }).$type<
     null | number[][]
   >(), // JSON storage for step patterns
@@ -46,6 +52,14 @@ export const voices = sqliteTable("voices", {
     .notNull()
     .references(() => kits.name), // FK to kits.name
   sample_mode: text("sample_mode").notNull().default("first"), // "first" | "random" | "round-robin"
+  slice_enabled: integer("slice_enabled", { mode: "boolean" })
+    .notNull()
+    .default(false), // Sequencer slice mode for this voice
+  slice_max_length: integer("slice_max_length").notNull().default(2), // Max slices when varying length (1, 2, 4, 8)
+  slice_roll_amount: integer("slice_roll_amount").notNull().default(100), // Percent of eligible steps a roll changes
+  slice_vary_length: integer("slice_vary_length", { mode: "boolean" })
+    .notNull()
+    .default(false), // Rolls and live-random steps also vary slice length
   stereo_mode: integer("stereo_mode", { mode: "boolean" })
     .notNull()
     .default(false), // Voice-level stereo mode: if true, all samples in voice must be stereo

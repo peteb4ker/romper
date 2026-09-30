@@ -45,6 +45,20 @@ The slash key triggers a rescan of the current kit, re-analyzing sample filename
 
 When the sequencer is focused, the arrow keys move between steps in the 4x16 grid. Space toggles the step under the cursor on or off.
 
+### Slicer
+
+These work on a step in a row with slice mode (✂) turned on. Everything they do can also be done with the mouse.
+
+| Action | Shortcut |
+|--------|----------|
+| Previous / next slice | `[` / `]` |
+| Shorter / longer | `{` / `}` (Shift + `[` / `]`) |
+| Random slice each time on / off | `R` |
+| Lock on / off (rolls skip it) | `L` |
+| Roll the row | `D` |
+| Undo the last roll | `Cmd+Z` / `Ctrl+Z` |
+| Change slice / length with the mouse | Scroll wheel / Shift + scroll wheel over the step |
+
 ## Menu Shortcuts
 
 | Action | Shortcut |

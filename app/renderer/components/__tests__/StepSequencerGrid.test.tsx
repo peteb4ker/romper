@@ -467,4 +467,124 @@ describe("StepSequencerGrid", () => {
       );
     });
   });
+
+  describe("slice rows", () => {
+    function sliceProps(overrides = {}) {
+      const pattern = Array.from({ length: 4 }, () => Array(16).fill(0));
+      pattern[0][0] = 127;
+      pattern[0][1] = 127;
+      pattern[0][2] = 127;
+      const sliceSteps = Array.from({ length: 4 }, () => Array(16).fill(null));
+      sliceSteps[0][1] = { length: 72, locked: true, random: false, start: 0 };
+      sliceSteps[0][2] = { length: 24, locked: false, random: true, start: 0 };
+      const sliceViews = Array.from({ length: 4 }, () =>
+        Array.from({ length: 16 }, (_, s) => ({
+          lengthSlices: 1,
+          startSlice: s,
+        })),
+      );
+      sliceViews[0][0] = { lengthSlices: 1, startSlice: 6 };
+      sliceViews[0][1] = { lengthSlices: 3, startSlice: 0 };
+      return {
+        ...defaultProps,
+        onSliceStepUpdate: vi.fn(),
+        onSliceToggle: vi.fn(),
+        onStepClick: vi.fn(),
+        onStepHover: vi.fn(),
+        onStepWheel: vi.fn(),
+        safeStepPattern: pattern,
+        sliceEnabled: { 1: true },
+        slicerDivision: 16,
+        sliceSteps,
+        sliceUnavailable: { 3: true },
+        sliceViews,
+        ...overrides,
+      };
+    }
+
+    it("shows slice numbers, length bars, lock marks and dice on active steps", () => {
+      render(<StepSequencerGrid {...sliceProps()} />);
+      expect(screen.getByTestId("seq-slice-0-0")).toHaveTextContent("7");
+      expect(screen.getByTestId("seq-step-0-1")).toHaveAccessibleName(
+        /slice 1, 3 slices long, locked/,
+      );
+      expect(screen.getByTestId("seq-step-0-2")).toHaveAccessibleName(
+        /random slice/,
+      );
+      // Rows not in slice mode keep plain LEDs
+      expect(screen.queryByTestId("seq-slice-1-0")).not.toBeInTheDocument();
+    });
+
+    it("toggles slice mode per voice and disables it for empty voices", () => {
+      const props = sliceProps();
+      render(<StepSequencerGrid {...props} />);
+      expect(screen.getByTestId("slice-toggle-0")).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(screen.getByTestId("slice-toggle-2")).toBeDisabled();
+      fireEvent.click(screen.getByTestId("slice-toggle-1"));
+      expect(props.onSliceToggle).toHaveBeenCalledWith(2);
+    });
+
+    it("routes step clicks and hovers to the slicer", () => {
+      const props = sliceProps();
+      render(<StepSequencerGrid {...props} />);
+      fireEvent.click(screen.getByTestId("seq-step-0-3"));
+      expect(props.onStepClick).toHaveBeenCalledWith(0, 3);
+      expect(props.toggleStep).not.toHaveBeenCalled();
+
+      fireEvent.mouseEnter(screen.getByTestId("seq-step-0-4"));
+      expect(props.onStepHover).toHaveBeenCalledWith({ step: 4, voice: 0 });
+      fireEvent.mouseLeave(screen.getByTestId("kit-step-sequencer-grid"));
+      expect(props.onStepHover).toHaveBeenLastCalledWith(null);
+    });
+
+    it("nudges a slice with the scroll wheel (Shift for length)", () => {
+      const props = sliceProps();
+      const gridRef = { current: null as HTMLDivElement | null };
+      render(<StepSequencerGrid {...props} gridRef={gridRef} />);
+      fireEvent.wheel(screen.getByTestId("seq-step-0-0"), { deltaY: -100 });
+      expect(props.onStepWheel).toHaveBeenCalledWith(0, 0, 1, false);
+      fireEvent.wheel(screen.getByTestId("seq-step-0-0"), {
+        deltaY: 100,
+        shiftKey: true,
+      });
+      expect(props.onStepWheel).toHaveBeenLastCalledWith(0, 0, -1, true);
+    });
+
+    it("adds a slice section to the right-click popover of slice rows", () => {
+      const props = sliceProps();
+      render(<StepSequencerGrid {...props} />);
+      fireEvent.contextMenu(screen.getByTestId("seq-step-0-1"));
+      expect(screen.getByTestId("slice-step-editor")).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId("slice-step-lock"));
+      expect(props.onSliceStepUpdate).toHaveBeenCalledWith(
+        0,
+        1,
+        expect.any(Function),
+      );
+
+      // Typing in the popover must not reach the grid's shortcuts
+      fireEvent.keyDown(screen.getByTestId("slice-step-start"), { key: "r" });
+      expect(props.handleStepGridKeyDown).not.toHaveBeenCalled();
+    });
+
+    it("has no slice section on rows that are not sliced", () => {
+      render(<StepSequencerGrid {...sliceProps()} />);
+      fireEvent.contextMenu(screen.getByTestId("seq-step-1-0"));
+      expect(screen.getByTestId("condition-popover")).toBeInTheDocument();
+      expect(screen.queryByTestId("slice-step-editor")).not.toBeInTheDocument();
+    });
+
+    it("flashes steps changed by a roll", () => {
+      render(
+        <StepSequencerGrid
+          {...sliceProps({ rolledSteps: { id: 1, steps: [0], voiceIdx: 0 } })}
+        />,
+      );
+      expect(screen.getByTestId("seq-step-0-0").className).toMatch(/ring-2/);
+    });
+  });
 });

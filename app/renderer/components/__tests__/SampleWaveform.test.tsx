@@ -364,6 +364,196 @@ describe("SampleWaveform", () => {
     }
   });
 
+  describe("region (slice) playback", () => {
+    function setupRegionMocks() {
+      const gainNodes: {
+        connect: ReturnType<typeof vi.fn>;
+        disconnect: ReturnType<typeof vi.fn>;
+        gain: Record<string, unknown>;
+      }[] = [];
+      const sources: {
+        connect: ReturnType<typeof vi.fn>;
+        disconnect: ReturnType<typeof vi.fn>;
+        onended: (() => void) | null;
+        start: ReturnType<typeof vi.fn>;
+        stop: ReturnType<typeof vi.fn>;
+      }[] = [];
+      const mockAudioBuffer = {
+        duration: 2.0,
+        getChannelData: vi.fn(() => new Float32Array(100)),
+        length: 88200,
+        numberOfChannels: 1,
+        sampleRate: 44100,
+      };
+      const mockAudioContext = createMockAudioContext({
+        createBufferSource: vi.fn(() => {
+          const source = {
+            buffer: null,
+            connect: vi.fn(),
+            disconnect: vi.fn(),
+            onended: null,
+            start: vi.fn(),
+            stop: vi.fn(),
+          };
+          sources.push(source);
+          return source;
+        }),
+        createGain: vi.fn(() => {
+          const node = {
+            connect: vi.fn(),
+            disconnect: vi.fn(),
+            gain: {
+              cancelScheduledValues: vi.fn(),
+              linearRampToValueAtTime: vi.fn(),
+              setValueAtTime: vi.fn(),
+              value: 1,
+            },
+          };
+          gainNodes.push(node);
+          return node;
+        }),
+        currentTime: 5,
+        decodeAudioData: vi.fn((_buf, cb) => cb(mockAudioBuffer)),
+      });
+      global.AudioContext = vi.fn(function () {
+        return mockAudioContext;
+      });
+      vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+        data: new ArrayBuffer(1024),
+        success: true,
+      });
+      return { gainNodes, sources };
+    }
+
+    async function renderAndPlay(
+      playRegion: { length: number; start: number } | undefined,
+    ) {
+      const { rerender } = render(
+        <SampleWaveform
+          kitName="A1"
+          playTrigger={0}
+          slotNumber={1}
+          voiceNumber={1}
+        />,
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+      await act(async () => {
+        rerender(
+          <SampleWaveform
+            kitName="A1"
+            playOptions={playRegion ? { region: playRegion } : undefined}
+            playTrigger={1}
+            slotNumber={1}
+            voiceNumber={1}
+          />,
+        );
+      });
+      return rerender;
+    }
+
+    it("starts at the region offset and plays only its duration", async () => {
+      const { gainNodes, sources } = setupRegionMocks();
+      await renderAndPlay({ length: 0.125, start: 0.25 });
+
+      // 2 s sample: start 25 % = 0.5 s, length 12.5 % = 0.25 s
+      expect(sources[0].start).toHaveBeenCalledWith(5, 0.5, 0.25);
+      // Source routes through a per-source envelope with anti-click ramps
+      const envelope = gainNodes.find((n) =>
+        sources[0].connect.mock.calls.some(([target]) => target === n),
+      )!;
+      expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+        1,
+        5.002,
+      );
+      expect(envelope.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+        0,
+        5.25,
+      );
+    });
+
+    it("clips a region that runs past the end of the sample", async () => {
+      const { sources } = setupRegionMocks();
+      await renderAndPlay({ length: 0.5, start: 0.75 });
+      expect(sources[0].start).toHaveBeenCalledWith(5, 1.5, 0.5);
+    });
+
+    it("plays the whole sample when no region is given", async () => {
+      const { sources } = setupRegionMocks();
+      await renderAndPlay(undefined);
+      expect(sources[0].start).toHaveBeenCalledWith();
+    });
+
+    it("starts at the scheduled time when one is given", async () => {
+      const { sources } = setupRegionMocks();
+      vi.spyOn(performance, "now").mockReturnValue(1000);
+      const { rerender } = render(
+        <SampleWaveform
+          kitName="A1"
+          playTrigger={0}
+          slotNumber={1}
+          voiceNumber={1}
+        />,
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+      await act(async () => {
+        rerender(
+          <SampleWaveform
+            kitName="A1"
+            playOptions={{ startAt: 1080 }}
+            playTrigger={1}
+            slotNumber={1}
+            voiceNumber={1}
+          />,
+        );
+      });
+      await act(async () => {
+        rerender(
+          <SampleWaveform
+            kitName="A1"
+            playOptions={{
+              region: { length: 0.125, start: 0 },
+              startAt: 1205,
+            }}
+            playTrigger={2}
+            slotNumber={1}
+            voiceNumber={1}
+          />,
+        );
+      });
+      vi.mocked(performance.now).mockRestore();
+
+      // 80 ms ahead of "now" on a context whose clock reads 5 s
+      expect(sources[0].start.mock.calls[0][0]).toBeCloseTo(5.08, 5);
+      // The retriggered slice is scheduled, and the first stops right then
+      expect(sources[1].start.mock.calls[0][0]).toBeCloseTo(5.205, 5);
+      expect(sources[0].stop.mock.calls[0][0]).toBeCloseTo(5.205, 5);
+    });
+
+    it("fades out instead of cutting when a slice is retriggered", async () => {
+      const { sources } = setupRegionMocks();
+      const rerender = await renderAndPlay({ length: 0.125, start: 0 });
+      await act(async () => {
+        rerender(
+          <SampleWaveform
+            kitName="A1"
+            playOptions={{ region: { length: 0.125, start: 0.5 } }}
+            playTrigger={2}
+            slotNumber={1}
+            voiceNumber={1}
+          />,
+        );
+      });
+
+      // First slice stops after a short fade; second starts at its offset
+      expect(sources[0].stop).toHaveBeenCalledWith(5.002);
+      expect(sources[1].start).toHaveBeenCalledWith(5, 1, 0.25);
+    });
+  });
+
   it("handles parameter changes without errors", async () => {
     const { rerender } = render(
       <SampleWaveform

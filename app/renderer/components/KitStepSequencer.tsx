@@ -1,12 +1,25 @@
+import type { SliceStep } from "@romper/shared/sliceTypes";
+
 import React from "react";
+
+import type { SliceView } from "./hooks/shared/sliceConstants";
+import type { PlayOptions } from "./kitTypes";
 
 import { useKitStepSequencerLogic } from "./hooks/kit-management/useKitStepSequencerLogic";
 import {
+  type SlicerVoiceData,
+  useSlicerEditor,
+  useVoiceSliceSettings,
+} from "./hooks/kit-management/useSlicerEditor";
+import {
+  type FocusedStep,
   NUM_VOICES,
   type SampleMode,
   type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
 import { useBpm } from "./hooks/shared/useBpm";
+import { useSliceSteps } from "./hooks/shared/useSliceSteps";
+import SliceStrip from "./SliceStrip";
 import StepSequencerControls from "./StepSequencerControls";
 import StepSequencerDrawer from "./StepSequencerDrawer";
 import StepSequencerGrid from "./StepSequencerGrid";
@@ -20,19 +33,29 @@ interface KitStepSequencerProps {
   bpm?: number;
   gridRef?: React.RefObject<HTMLDivElement>;
   kitName: string;
-  onPlaySample: (voice: number, sample: string, volume?: number) => void;
+  onPlaySample: (
+    voice: number,
+    sample: string,
+    volume?: number,
+    options?: PlayOptions,
+  ) => void;
   onVoiceSettingChanged?: () => void;
   samples: { [voice: number]: string[] };
+  /** Slot selected in the voice panels; the slice strip shows it. */
+  selectedSampleIdx?: number;
+  selectedVoice?: number;
   sequencerOpen: boolean;
   setSequencerOpen: (open: boolean) => void;
   setStepPattern: (pattern: number[][]) => void;
   setTriggerConditions: (conditions: (null | string)[][]) => void;
+  slicerDivision?: null | number;
+  sliceSteps?: (null | SliceStep)[][] | null;
   stepPattern: null | number[][];
   triggerConditions: (null | string)[][];
   voices?: VoiceData[];
 }
 
-interface VoiceData {
+interface VoiceData extends SlicerVoiceData {
   sample_mode?: string;
   stereo_mode?: boolean;
   voice_number: number;
@@ -174,22 +197,174 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     return { linkedSecondaries, primaryLabels };
   }, [props.voices]);
 
+  // Slicer: per-step slice data, kit-wide division, per-voice settings
+  const slicerData = useSliceSteps({
+    initialDivision: props.slicerDivision,
+    initialSliceSteps: props.sliceSteps,
+    kitName,
+    onSaved: onVoiceSettingChanged,
+  });
+  const { sliceSettings, updateSliceSettings } = useVoiceSliceSettings(
+    kitName,
+    props.voices,
+    onVoiceSettingChanged,
+  );
+
+  // The slicer editor needs the sequencer logic and vice versa; these refs
+  // bridge the two callbacks the logic hook calls into the slicer.
+  const gridKeyRef = React.useRef<
+    (e: React.KeyboardEvent<HTMLDivElement>, focus: FocusedStep) => boolean
+  >(() => false);
+  const sliceTriggeredRef = React.useRef<
+    (voiceNumber: number, view: SliceView) => void
+  >(() => {});
+  const onGridKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>, focus: FocusedStep) =>
+      gridKeyRef.current(e, focus),
+    [],
+  );
+  const onSliceTriggered = React.useCallback(
+    (voiceNumber: number, view: SliceView) =>
+      sliceTriggeredRef.current(voiceNumber, view),
+    [],
+  );
+
   // Pass the current BPM from bpmLogic to sequencer logic for live updates
   const logic = useKitStepSequencerLogic({
     ...props,
     bpm: bpmLogic.bpm,
+    onGridKeyDown,
+    onSliceTriggered,
     sampleModes,
+    slicerDivision: slicerData.slicerDivision,
+    sliceSettings,
+    sliceSteps: slicerData.sliceSteps,
     stereoLinks,
     triggerConditions: props.triggerConditions,
     voiceMutes,
     voiceVolumes,
   });
 
+  const slicer = useSlicerEditor({
+    focusedStep: logic.focusedStep,
+    isSeqPlaying: logic.isSeqPlaying,
+    kitName,
+    onPlaySample: props.onPlaySample,
+    samples: props.samples,
+    selectedSampleIdx: props.selectedSampleIdx,
+    selectedVoice: props.selectedVoice,
+    setFocusedStep: logic.setFocusedStep,
+    setSliceSteps: slicerData.setSliceSteps,
+    slicerDivision: slicerData.slicerDivision,
+    sliceSettings,
+    sliceSteps: slicerData.sliceSteps,
+    stepPattern: logic.safeStepPattern,
+    toggleStep: logic.toggleStep,
+    updateSliceSettings,
+    voiceVolumes,
+  });
+  gridKeyRef.current = slicer.handleGridKeyDown;
+  sliceTriggeredRef.current = slicer.handleSliceTriggered;
+
+  const sliceEnabled = React.useMemo(() => {
+    const enabled: Record<number, boolean> = {};
+    for (const [voice, settings] of Object.entries(sliceSettings)) {
+      enabled[Number(voice)] = settings.enabled;
+    }
+    return enabled;
+  }, [sliceSettings]);
+
+  const sliceUnavailable = React.useMemo(() => {
+    const unavailable: Record<number, boolean> = {};
+    for (let v = 1; v <= NUM_VOICES; v++) {
+      unavailable[v] = !(props.samples[v] ?? []).some(Boolean);
+    }
+    return unavailable;
+  }, [props.samples]);
+
+  const editingVoice = slicer.editingVoice;
+  const editingIdx = editingVoice == null ? -1 : editingVoice - 1;
+  const editingRowOn = (step: number) =>
+    (logic.safeStepPattern[editingIdx]?.[step] ?? 0) > 0;
+  const selectedStep = slicer.selectedStep;
+  const hover = slicer.hoverStep;
+  const usedSlices = React.useMemo(() => {
+    const used = new Set<number>();
+    if (editingIdx < 0) return used;
+    slicer.sliceViews[editingIdx]?.forEach((view, step) => {
+      const cell = slicerData.sliceSteps[editingIdx]?.[step];
+      if (
+        (logic.safeStepPattern[editingIdx]?.[step] ?? 0) > 0 &&
+        !cell?.random
+      ) {
+        used.add(view.startSlice);
+      }
+    });
+    return used;
+  }, [
+    editingIdx,
+    logic.safeStepPattern,
+    slicer.sliceViews,
+    slicerData.sliceSteps,
+  ]);
+
   return (
     <StepSequencerDrawer
       sequencerOpen={props.sequencerOpen}
       setSequencerOpen={props.setSequencerOpen}
     >
+      {editingVoice != null && (
+        <div className="w-full max-w-[960px] px-4">
+          <SliceStrip
+            canUndoRoll={slicer.canUndoRoll}
+            division={slicerData.slicerDivision}
+            editingVoice={editingVoice}
+            hoverView={
+              hover &&
+              hover.voice === editingIdx &&
+              hover.step !== selectedStep &&
+              editingRowOn(hover.step)
+                ? (slicer.sliceViews[editingIdx]?.[hover.step] ?? null)
+                : null
+            }
+            kitName={kitName}
+            notice={slicer.notice}
+            onAssign={slicer.assignSlice}
+            onAudition={slicer.auditionSlice}
+            onDivisionChange={(d) => void slicerData.setSlicerDivision(d)}
+            onRoll={() => slicer.roll(editingVoice)}
+            onSelectVoice={slicer.setEditingVoice}
+            onSettingsChange={(update) =>
+              slicer.handleSliceSettingsChange(editingVoice, update)
+            }
+            onUndoRoll={slicer.undoRoll}
+            playingView={
+              slicer.playingSlice?.voiceNumber === editingVoice
+                ? slicer.playingSlice.view
+                : null
+            }
+            sampleName={slicer.displayedSample}
+            selectedStep={selectedStep}
+            selectedStepRandom={
+              selectedStep != null &&
+              (slicerData.sliceSteps[editingIdx]?.[selectedStep]?.random ??
+                false)
+            }
+            selectedView={
+              selectedStep == null
+                ? null
+                : (slicer.sliceViews[editingIdx]?.[selectedStep] ?? null)
+            }
+            settings={sliceSettings[editingVoice]}
+            sliceVoices={slicer.sliceVoices}
+            slotIndex={slicer.displayedSlot}
+            usedSlices={usedSlices}
+            voiceLabel={
+              stereoLinks.primaryLabels[editingVoice] ?? String(editingVoice)
+            }
+          />
+        </div>
+      )}
       <div className="flex flex-row items-center justify-center gap-2">
         {/* Transport column — left */}
         <StepSequencerControls
@@ -212,11 +387,22 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
           onConditionChange={handleConditionChange}
           onMuteToggle={handleMuteToggle}
           onSampleModeChange={handleSampleModeChange}
+          onSliceStepUpdate={slicer.updateSliceStep}
+          onSliceToggle={slicer.handleSliceToggle}
+          onStepClick={slicer.handleStepClick}
+          onStepHover={slicer.setHoverStep}
+          onStepWheel={slicer.handleStepWheel}
           onVolumeChange={handleVolumeChange}
+          rolledSteps={slicer.rolledSteps}
           ROW_COLORS={logic.ROW_COLORS}
           safeStepPattern={logic.safeStepPattern}
           sampleModes={sampleModes}
           setFocusedStep={logic.setFocusedStep}
+          sliceEnabled={sliceEnabled}
+          slicerDivision={slicerData.slicerDivision}
+          sliceSteps={slicerData.sliceSteps}
+          sliceUnavailable={sliceUnavailable}
+          sliceViews={slicer.sliceViews}
           stereoLinks={stereoLinks}
           toggleStep={logic.toggleStep}
           triggerConditions={props.triggerConditions}

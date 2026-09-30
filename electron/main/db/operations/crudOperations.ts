@@ -38,6 +38,7 @@ export {
 export {
   updateVoiceAlias,
   updateVoiceSampleMode,
+  updateVoiceSliceSettings,
   updateVoiceStereoMode,
   updateVoiceVolume,
 } from "./voiceCrudOperations.js";

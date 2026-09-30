@@ -128,6 +128,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           onSaveVoiceName={logic.updateVoiceAlias}
           onStop={logic.playback.handleStop}
           onWaveformPlayingChange={logic.playback.handleWaveformPlayingChange}
+          playOptions={logic.playback.playOptions}
           playTriggers={logic.playback.playTriggers}
           playVolumes={logic.playback.playVolumes}
           samplePlaying={logic.playback.samplePlaying}
@@ -147,10 +148,14 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
         onPlaySample={logic.playback.handlePlay}
         onVoiceSettingChanged={logic.reloadKit}
         samples={logic.samples}
+        selectedSampleIdx={logic.selectedSampleIdx}
+        selectedVoice={logic.selectedVoice}
         sequencerOpen={logic.sequencerOpen}
         setSequencerOpen={logic.setSequencerOpen}
         setStepPattern={logic.setStepPattern}
         setTriggerConditions={logic.setTriggerConditions}
+        slicerDivision={logic.kit?.slicer_division}
+        sliceSteps={logic.kit?.slice_steps}
         stepPattern={logic.stepPattern}
         triggerConditions={logic.triggerConditions}
         voices={logic.kit?.voices}

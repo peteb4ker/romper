@@ -340,7 +340,7 @@ describe("KitService Integration Tests", () => {
       expect(destSample?.wav_channels).toBe(1);
     });
 
-    it("REGRESSION TEST: demonstrates rescanKit incompatibility with reference-only duplication", async () => {
+    it("REGRESSION TEST: demonstrates rescanKit incompatibility with reference-only duplication", () => {
       // This test documents the issue: rescanKit is incompatible with reference-only kit duplication
       // because it deletes sample references and expects physical directories.
 
@@ -381,10 +381,7 @@ describe("KitService Integration Tests", () => {
       expect(destSamplesAfterCopy.data).toHaveLength(1);
 
       // rescanKit now checks directory existence BEFORE deleting samples
-      const rescanResult = await scanService.rescanKit(
-        mockInMemorySettings,
-        "B5",
-      );
+      const rescanResult = scanService.rescanKit(mockInMemorySettings, "B5");
       expect(rescanResult.success).toBe(false);
       expect(rescanResult.error).toContain("Kit directory not found");
 

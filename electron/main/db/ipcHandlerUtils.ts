@@ -26,7 +26,7 @@ export function createSampleOperationHandler(
   inMemorySettings: Record<string, unknown>,
   operationType: "add" | "delete" | "replace",
 ) {
-  return async (
+  return (
     _event: unknown,
     kitName: string,
     voiceNumber: number,

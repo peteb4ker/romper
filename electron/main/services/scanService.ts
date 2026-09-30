@@ -33,15 +33,13 @@ export class ScanService {
    * 4. Creates new sample records
    * 5. Infers voice types from filenames
    */
-  async rescanKit(
+  rescanKit(
     inMemorySettings: Record<string, unknown>,
     kitName: string,
-  ): Promise<
-    DbResult<{
-      scannedSamples: number;
-      updatedVoices: number;
-    }>
-  > {
+  ): DbResult<{
+    scannedSamples: number;
+    updatedVoices: number;
+  }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
       return { error: "No local store path configured", success: false };
@@ -119,15 +117,13 @@ export class ScanService {
    * Rescan all kits that have samples with missing WAV metadata
    * This is useful for migrating existing kits after the metadata feature was added
    */
-  async rescanKitsWithMissingMetadata(
+  rescanKitsWithMissingMetadata(
     inMemorySettings: Record<string, unknown>,
-  ): Promise<
-    DbResult<{
-      kitsNeedingRescan: string[];
-      kitsRescanned: string[];
-      totalSamplesUpdated: number;
-    }>
-  > {
+  ): DbResult<{
+    kitsNeedingRescan: string[];
+    kitsRescanned: string[];
+    totalSamplesUpdated: number;
+  }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
       return { error: "No local store path configured", success: false };
@@ -150,7 +146,7 @@ export class ScanService {
       let totalSamplesUpdated = 0;
 
       for (const kitName of kitsNeedingRescan) {
-        const rescanResult = await this.rescanKit(inMemorySettings, kitName);
+        const rescanResult = this.rescanKit(inMemorySettings, kitName);
         if (rescanResult.success && rescanResult.data) {
           kitsRescanned.push(kitName);
           totalSamplesUpdated += rescanResult.data.scannedSamples;
@@ -183,13 +179,11 @@ export class ScanService {
    * Scan local store for bank RTF files and update database
    * Looks for files matching "A - Artist Name.rtf" pattern
    */
-  async scanBanks(inMemorySettings: Record<string, unknown>): Promise<
-    DbResult<{
-      scannedAt: Date;
-      scannedFiles: number;
-      updatedBanks: number;
-    }>
-  > {
+  scanBanks(inMemorySettings: Record<string, unknown>): DbResult<{
+    scannedAt: Date;
+    scannedFiles: number;
+    updatedBanks: number;
+  }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
       return { error: "No local store path configured", success: false };

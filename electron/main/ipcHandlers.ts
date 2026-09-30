@@ -60,7 +60,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   });
 
   // Show item in folder handler
-  ipcMain.handle("show-item-in-folder", async (_event, path: string) => {
+  ipcMain.handle("show-item-in-folder", (_event, path: string) => {
     shell.showItemInFolder(path);
   });
 
@@ -82,24 +82,22 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     return { success: true };
   });
 
-  ipcMain.handle("get-kit-delete-summary", async (_event, kitName: string) =>
+  ipcMain.handle("get-kit-delete-summary", (_event, kitName: string) =>
     kitService.getKitDeleteSummary(inMemorySettings, kitName),
   );
 
-  ipcMain.handle("delete-kit", async (_event, kitName: string) =>
+  ipcMain.handle("delete-kit", (_event, kitName: string) =>
     kitService.deleteKit(inMemorySettings, kitName),
   );
 
-  ipcMain.handle("create-kit", async (_event, kitSlot: string) =>
+  ipcMain.handle("create-kit", (_event, kitSlot: string) =>
     kitService.createKit(inMemorySettings, kitSlot),
   );
 
-  ipcMain.handle(
-    "copy-kit",
-    async (_event, sourceKit: string, destKit: string) =>
-      kitService.copyKit(inMemorySettings, sourceKit, destKit),
+  ipcMain.handle("copy-kit", (_event, sourceKit: string, destKit: string) =>
+    kitService.copyKit(inMemorySettings, sourceKit, destKit),
   );
-  ipcMain.handle("list-files-in-root", async (_event, localStorePath: string) =>
+  ipcMain.handle("list-files-in-root", (_event, localStorePath: string) =>
     localStoreService.listFilesInRoot(localStorePath),
   );
   // Secure method - get audio buffer by sample identifier
@@ -119,7 +117,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       );
     },
   );
-  ipcMain.handle("read-file", async (_event, filePath: string) => {
+  ipcMain.handle("read-file", (_event, filePath: string) => {
     return localStoreService.readFile(filePath);
   });
   ipcMain.handle("get-user-home-dir", async () => {
@@ -174,26 +172,26 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       }
     },
   );
-  ipcMain.handle("ensure-dir", async (_event, dir: string) => {
+  ipcMain.handle("ensure-dir", (_event, dir: string) => {
     return archiveService.ensureDirectory(dir);
   });
 
-  ipcMain.handle("copy-dir", async (_event, src: string, dest: string) => {
+  ipcMain.handle("copy-dir", (_event, src: string, dest: string) => {
     return archiveService.copyDirectory(src, dest);
   });
 
   ipcMain.handle(
     "check-disk-space",
-    async (_event, targetPath: string, requiredBytes: number) => {
+    (_event, targetPath: string, requiredBytes: number) => {
       return checkDiskSpaceSufficient(targetPath, requiredBytes);
     },
   );
 
-  ipcMain.handle("check-path-writable", async (_event, targetPath: string) => {
+  ipcMain.handle("check-path-writable", (_event, targetPath: string) => {
     return checkPathWritable(targetPath);
   });
 
-  ipcMain.handle("cleanup-partial-init", async (_event, targetPath: string) => {
+  ipcMain.handle("cleanup-partial-init", (_event, targetPath: string) => {
     const dbDir = `${targetPath}/.romperdb`;
     return removeDirectorySafe(dbDir);
   });

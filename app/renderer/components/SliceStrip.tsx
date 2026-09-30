@@ -128,6 +128,13 @@ function resolveCssVar(name: string): string {
   );
 }
 
+/** The strip header's sample name, with its slot number when known. */
+function sampleLabel(sampleName: null | string, slotIndex: null | number) {
+  if (!sampleName) return "no sample";
+  if (slotIndex == null) return sampleName;
+  return `${sampleName} (slot ${slotIndex + 1})`;
+}
+
 function spanText(view: SliceView): string {
   const first = view.startSlice + 1;
   return view.lengthSlices > 1
@@ -316,9 +323,7 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
           data-testid="slice-strip-sample"
           title={sampleName ?? undefined}
         >
-          {sampleName
-            ? `${sampleName}${slotIndex != null ? ` (slot ${slotIndex + 1})` : ""}`
-            : "no sample"}
+          {sampleLabel(sampleName, slotIndex)}
         </span>
 
         <span className="flex-1" />
@@ -327,7 +332,7 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
           className="flex items-center gap-1 text-text-secondary"
           title="Kit-wide — like the Rample's SLICER setting. Changing it and back never loses your slices."
         >
-          Slices
+          <span>Slices</span>
           <select
             aria-label="Slice division"
             className={selectClass}
@@ -371,7 +376,7 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
           className="flex items-center gap-1 text-text-secondary"
           title="How many of the row's steps a roll changes"
         >
-          Amount
+          <span>Amount</span>
           <select
             aria-label="Roll amount"
             className={selectClass}
@@ -398,13 +403,13 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
             onChange={(e) => onSettingsChange({ varyLength: e.target.checked })}
             type="checkbox"
           />
-          Vary length
+          <span>Vary length</span>
         </label>
         <label
           className="flex items-center gap-1 text-text-secondary"
           title="Longest random length, in slices"
         >
-          up to
+          <span>up to</span>
           <select
             aria-label="Maximum random length"
             className={selectClass}

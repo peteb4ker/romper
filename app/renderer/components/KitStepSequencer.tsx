@@ -320,8 +320,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
             division={slicerData.slicerDivision}
             editingVoice={editingVoice}
             hoverView={
-              hover &&
-              hover.voice === editingIdx &&
+              hover?.voice === editingIdx &&
               hover.step !== selectedStep &&
               editingRowOn(hover.step)
                 ? (slicer.sliceViews[editingIdx]?.[hover.step] ?? null)

@@ -70,10 +70,25 @@ interface StepButtonProps {
 
 function sliceAriaSuffix(slice?: StepSliceDisplay): string {
   if (!slice) return "";
-  const what = slice.random
-    ? "random slice"
-    : `slice ${slice.startSlice + 1}${slice.lengthSlices > 1 ? `, ${slice.lengthSlices} slices long` : ""}`;
-  return `, ${what}${slice.locked ? ", locked" : ""}`;
+  const parts: string[] = [];
+  if (slice.random) {
+    parts.push("random slice");
+  } else {
+    parts.push(`slice ${slice.startSlice + 1}`);
+    if (slice.lengthSlices > 1) {
+      parts.push(`${slice.lengthSlices} slices long`);
+    }
+  }
+  if (slice.locked) parts.push("locked");
+  return `, ${parts.join(", ")}`;
+}
+
+function sliceToggleTitle(enabled: boolean, unavailable: boolean): string {
+  if (enabled) {
+    return "Slice mode on: each step plays a slice of the sample. Click to play whole samples again.";
+  }
+  if (unavailable) return "Add a sample to this voice to slice it";
+  return "Slice mode: play parts of a long sample from each step";
 }
 
 /** Slice number (or dice), length bar, lock mark and condition badge. */
@@ -246,6 +261,7 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
 
   return (
     <div
+      aria-label="Step options"
       className="fixed z-50 bg-surface-2 border border-border-strong rounded-lg shadow-lg py-1 min-w-[80px]"
       data-testid="condition-popover"
       // Keep typing in the popover from reaching the grid's shortcuts
@@ -254,6 +270,7 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
         if (e.key !== "Escape") e.stopPropagation();
       }}
       ref={popoverRef}
+      role="dialog"
       style={{ left: adjustedPos.x, top: adjustedPos.y }}
     >
       {sliceSection && (
@@ -406,8 +423,8 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
     const onWheel = (e: WheelEvent) => {
       const target = (e.target as HTMLElement | null)?.closest?.(
         "[data-slice-step]",
-      );
-      const id = target?.getAttribute("data-slice-step");
+      ) as HTMLElement | null | undefined;
+      const id = target?.dataset.sliceStep;
       if (!id) return;
       const delta = e.deltaY || e.deltaX;
       if (!delta) return;
@@ -568,13 +585,10 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                       ? { color: `var(--voice-${voiceNumber})` }
                       : undefined
                   }
-                  title={
-                    sliceEnabled[voiceNumber]
-                      ? "Slice mode on: each step plays a slice of the sample. Click to play whole samples again."
-                      : sliceUnavailable[voiceNumber]
-                        ? "Add a sample to this voice to slice it"
-                        : "Slice mode: play parts of a long sample from each step"
-                  }
+                  title={sliceToggleTitle(
+                    sliceEnabled[voiceNumber] ?? false,
+                    sliceUnavailable[voiceNumber] ?? false,
+                  )}
                   type="button"
                 >
                   <ScissorsIcon size={14} weight="bold" />

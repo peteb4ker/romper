@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import type { PlayOptions } from "./kitTypes";
+import type { PlayOptions, PlayRegion } from "./kitTypes";
 
 import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
 
@@ -59,6 +59,35 @@ function computeRms(
   return Math.sqrt(sum / dataArray.length);
 }
 
+/** Gain envelope with short fades at both ends of a slice, so it doesn't click. */
+function createSliceEnvelope(
+  ctx: BaseAudioContext,
+  startTime: number,
+  playLength: number,
+): GainNode {
+  const envelope = ctx.createGain();
+  const fade = Math.min(ANTI_CLICK_SECONDS, playLength / 4);
+  envelope.gain.setValueAtTime(0, startTime);
+  envelope.gain.linearRampToValueAtTime(1, startTime + fade);
+  envelope.gain.setValueAtTime(1, startTime + playLength - fade);
+  envelope.gain.linearRampToValueAtTime(0, startTime + playLength);
+  return envelope;
+}
+
+/** Offset and duration (seconds) to play: a region of the buffer, or all of it. */
+function playWindow(
+  duration: number,
+  region?: PlayRegion,
+): { offset: number; playLength: number } {
+  if (!region) return { offset: 0, playLength: duration };
+  const offset = Math.min(Math.max(region.start, 0), 1) * duration;
+  const playLength = Math.max(
+    0,
+    Math.min(region.length * duration, duration - offset),
+  );
+  return { offset, playLength };
+}
+
 // Resolve a color value that may be a CSS var() reference into a raw color
 // string usable by canvas APIs. Falls back to accent-primary or a default blue.
 function resolveWaveformColor(voiceColor?: string): string {
@@ -74,6 +103,22 @@ function resolveWaveformColor(voiceColor?: string): string {
   }
   const style = getComputedStyle(document.documentElement);
   return style.getPropertyValue("--accent-primary").trim() || "#2889be";
+}
+
+/** Start a source now, at a scheduled time, or for a region only. */
+function startSource(
+  source: AudioBufferSourceNode,
+  ctx: BaseAudioContext,
+  startTime: number,
+  window?: { offset: number; playLength: number },
+): void {
+  if (window) {
+    source.start(startTime, window.offset, window.playLength);
+  } else if (startTime > ctx.currentTime) {
+    source.start(startTime);
+  } else {
+    source.start();
+  }
 }
 
 /**
@@ -323,26 +368,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
 
     // Region (slice) playback: offset + duration, with an anti-click envelope
     const playRegion = playOptions?.region;
-    const offset = playRegion
-      ? Math.min(Math.max(playRegion.start, 0), 1) * audioBuffer.duration
-      : 0;
-    const playLength = playRegion
-      ? Math.max(
-          0,
-          Math.min(
-            playRegion.length * audioBuffer.duration,
-            audioBuffer.duration - offset,
-          ),
-        )
-      : audioBuffer.duration;
+    const { offset, playLength } = playWindow(audioBuffer.duration, playRegion);
     if (playRegion) {
-      const envelope = ctx.createGain();
-      const now = startTime;
-      const fade = Math.min(ANTI_CLICK_SECONDS, playLength / 4);
-      envelope.gain.setValueAtTime(0, now);
-      envelope.gain.linearRampToValueAtTime(1, now + fade);
-      envelope.gain.setValueAtTime(1, now + playLength - fade);
-      envelope.gain.linearRampToValueAtTime(0, now + playLength);
+      const envelope = createSliceEnvelope(ctx, startTime, playLength);
       source.connect(envelope);
       envelope.connect(gainNodeRef.current);
       envelopeRef.current = envelope;
@@ -373,13 +401,12 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       analyserDataRRef.current = null;
     }
 
-    if (playRegion) {
-      source.start(startTime, offset, playLength);
-    } else if (startTime > ctx.currentTime) {
-      source.start(startTime);
-    } else {
-      source.start();
-    }
+    startSource(
+      source,
+      ctx,
+      startTime,
+      playRegion ? { offset, playLength } : undefined,
+    );
     sourceRef.current = source;
     setIsPlaying(true);
     function animate() {

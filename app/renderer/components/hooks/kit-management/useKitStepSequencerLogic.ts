@@ -269,44 +269,43 @@ export function useKitStepSequencerLogic(
     // Use explicit voice numbers 1-4 to match the voice_number field architecture
     for (let voiceIdx = 0; voiceIdx < NUM_VOICES; voiceIdx++) {
       const voiceNumber = voiceIdx + 1; // Convert 0-based index to 1-based voice number
+      const due = isVoiceDue({
+        cycleCount,
+        step: currentSeqStep,
+        stepPattern,
+        stereoLinks,
+        triggerConditions,
+        voiceIdx,
+        voiceMutes,
+      });
+      if (!due) continue;
 
-      // Skip secondary voices that are stereo-linked to a primary
-      if (stereoLinks?.linkedSecondaries.has(voiceNumber)) continue;
+      const sample = selectSample(voiceNumber, samples[voiceNumber]);
+      log.debug(
+        `Step ${currentSeqStep} voice ${voiceNumber}: cycle=${cycleCount}, sample=${sample}`,
+      );
+      if (!sample) {
+        log.debug(`No sample available for voice ${voiceNumber}`);
+        continue;
+      }
 
-      const isStepActive = stepPattern[voiceIdx][currentSeqStep] > 0; // Check if velocity > 0
-      const condition = (triggerConditions?.[voiceIdx]?.[currentSeqStep] ??
-        null) as TriggerCondition;
-
-      if (voiceMutes[voiceNumber]) continue;
-
-      if (isStepActive && shouldTrigger(condition, cycleCount)) {
-        const voiceSamples = samples[voiceNumber];
-        const sample = selectSample(voiceNumber, voiceSamples);
-        log.debug(
-          `Step ${currentSeqStep} voice ${voiceNumber}: active=${isStepActive}, condition=${condition}, cycle=${cycleCount}, sample=${sample}`,
+      const vol = voiceVolumes[voiceNumber] ?? 100;
+      const slice = sliceSettings?.[voiceNumber];
+      if (slice?.enabled) {
+        // Slice mode: the slot is chosen above; now pick its slice
+        const view = resolveTriggeredSlice(
+          sliceSteps?.[voiceIdx]?.[currentSeqStep] ?? null,
+          currentSeqStep,
+          slicerDivision,
+          slice,
         );
-        if (sample) {
-          const vol = voiceVolumes[voiceNumber] ?? 100;
-          const slice = sliceSettings?.[voiceNumber];
-          if (slice?.enabled) {
-            // Slice mode: the slot is chosen above; now pick its slice
-            const view = resolveTriggeredSlice(
-              sliceSteps?.[voiceIdx]?.[currentSeqStep] ?? null,
-              currentSeqStep,
-              slicerDivision,
-              slice,
-            );
-            onPlaySample(voiceNumber, sample, vol, {
-              region: sliceRegion(view, slicerDivision),
-              startAt,
-            });
-            onSliceTriggered?.(voiceNumber, view);
-          } else {
-            onPlaySample(voiceNumber, sample, vol, { startAt });
-          }
-        } else {
-          log.debug(`No sample available for voice ${voiceNumber}`);
-        }
+        onPlaySample(voiceNumber, sample, vol, {
+          region: sliceRegion(view, slicerDivision),
+          startAt,
+        });
+        onSliceTriggered?.(voiceNumber, view);
+      } else {
+        onPlaySample(voiceNumber, sample, vol, { startAt });
       }
     }
   }, [
@@ -464,4 +463,28 @@ export function useKitStepSequencerLogic(
     setIsSeqPlaying,
     toggleStep,
   };
+}
+
+/**
+ * Whether a voice should fire on this step: not a stereo-linked secondary,
+ * not muted, step on, and its A:B condition met this cycle.
+ */
+function isVoiceDue(args: {
+  cycleCount: number;
+  step: number;
+  stepPattern: number[][];
+  stereoLinks?: StereoLinks;
+  triggerConditions?: (null | string)[][];
+  voiceIdx: number;
+  voiceMutes: Record<number, boolean>;
+}): boolean {
+  const { cycleCount, step, stepPattern, stereoLinks, voiceIdx } = args;
+  const voiceNumber = voiceIdx + 1;
+  // Secondary voices that are stereo-linked play through their primary
+  if (stereoLinks?.linkedSecondaries.has(voiceNumber)) return false;
+  if (args.voiceMutes[voiceNumber]) return false;
+  if (!(stepPattern[voiceIdx][step] > 0)) return false; // velocity > 0 = on
+  const condition = (args.triggerConditions?.[voiceIdx]?.[step] ??
+    null) as TriggerCondition;
+  return shouldTrigger(condition, cycleCount);
 }

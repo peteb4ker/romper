@@ -258,6 +258,21 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         }
         const ctx = new globalThis.AudioContext();
         audioCtxRef.current = ctx;
+        // Nodes belong to one context; the old ones can't connect to this one
+        gainNodeRef.current = null;
+        analyserLRef.current = null;
+        analyserRRef.current = null;
+        analyserDataLRef.current = null;
+        analyserDataRRef.current = null;
+        ctx.onstatechange = () => {
+          // A context the OS suspends or interrupts (output device change,
+          // sleep) plays nothing; make that visible instead of silent
+          if (ctx.state !== "running" && ctx.state !== "closed") {
+            console.warn(
+              `[SampleWaveform] AudioContext ${ctx.state}: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}`,
+            );
+          }
+        };
         void ctx.decodeAudioData(arrayBuffer.slice(0), (buf) => {
           setAudioBuffer(buf);
           drawWaveform(buf);
@@ -363,12 +378,37 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     // Snapshot current stopTrigger so the stop effect won't kill this
     // freshly started source if both triggers changed in the same batch.
     stopTriggerAtPlayRef.current = stopTrigger ?? 0;
+    if (ctx.state === "suspended") {
+      void ctx.resume().catch(() => {
+        // Nothing more to do; onstatechange has logged it
+      });
+    }
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
-    // Route through GainNode for volume control
+    // Volume gain and VU meters are created once per context and reused.
+    // Creating meters per trigger leaked thousands of connected nodes a
+    // minute under the sequencer (RE-14).
+    const isStereo = audioBuffer.numberOfChannels >= 2;
     if (!gainNodeRef.current) {
-      gainNodeRef.current = ctx.createGain();
-      gainNodeRef.current.connect(ctx.destination);
+      const gain = ctx.createGain();
+      gain.connect(ctx.destination);
+      gainNodeRef.current = gain;
+      const analyserL = ctx.createAnalyser();
+      analyserL.fftSize = 256;
+      analyserLRef.current = analyserL;
+      analyserDataLRef.current = new Uint8Array(analyserL.frequencyBinCount);
+      if (isStereo) {
+        const analyserR = ctx.createAnalyser();
+        analyserR.fftSize = 256;
+        analyserRRef.current = analyserR;
+        analyserDataRRef.current = new Uint8Array(analyserR.frequencyBinCount);
+        const splitter = ctx.createChannelSplitter(2);
+        gain.connect(splitter);
+        splitter.connect(analyserL, 0);
+        splitter.connect(analyserR, 1);
+      } else {
+        gain.connect(analyserL);
+      }
     }
     // Logarithmic volume curve: x^2 approximates perceived loudness
     const voiceLinear = volume == null ? 1 : volume / 100;
@@ -386,29 +426,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       envelopeRef.current = envelope;
     } else {
       source.connect(gainNodeRef.current);
-    }
-
-    // Set up AnalyserNodes for VU meter
-    const isStereo = audioBuffer.numberOfChannels >= 2;
-    const analyserL = ctx.createAnalyser();
-    analyserL.fftSize = 256;
-    analyserLRef.current = analyserL;
-    analyserDataLRef.current = new Uint8Array(analyserL.frequencyBinCount);
-
-    if (isStereo) {
-      const analyserR = ctx.createAnalyser();
-      analyserR.fftSize = 256;
-      analyserRRef.current = analyserR;
-      analyserDataRRef.current = new Uint8Array(analyserR.frequencyBinCount);
-
-      const splitter = ctx.createChannelSplitter(2);
-      gainNodeRef.current.connect(splitter);
-      splitter.connect(analyserL, 0);
-      splitter.connect(analyserR, 1);
-    } else {
-      gainNodeRef.current.connect(analyserL);
-      analyserRRef.current = null;
-      analyserDataRRef.current = null;
     }
 
     startSource(
@@ -448,7 +465,11 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       }
     }
     animate();
+    const sliceEnvelope = envelopeRef.current;
     source.onended = () => {
+      // Release the finished source and its slice envelope from the graph
+      source.disconnect();
+      sliceEnvelope?.disconnect();
       setIsPlaying(false);
       setPlayhead(0);
       clearVoiceLevel(voiceNumber);

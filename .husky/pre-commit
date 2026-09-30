@@ -1,43 +1,21 @@
-echo "🚀 Running pre-commit checks..."
-echo "🔍 TypeScript → 🧹 Linting → 🧪 Testing → 🏗️ Building → 📊 SonarQube"
+echo "Running pre-commit checks: typecheck, lint, unit + integration tests, build"
 
-# Block commits on main branch (hard block)
 CURRENT_BRANCH=$(git branch --show-current)
 if [ "$CURRENT_BRANCH" = "main" ]; then
-  echo "BLOCKED: Direct commits to main branch are not allowed!"
-  echo "Use the worktree workflow:"
-  echo "   npm run worktree:create <task-name>"
-  echo "   cd worktrees/<task-name>"
-  echo "   npm run commit \"your message\""
+  echo "BLOCKED: direct commits to main are not allowed."
+  echo "Work on a branch in a worktree (npm run worktree:create <task-name>) and open a PR."
   exit 1
 fi
 
-# Check for unstaged changes before running any checks
+# The checks run against the working tree, so unstaged edits would be
+# validated but not committed. Require the index to match the working tree.
 if ! git diff --quiet; then
-  echo "❌ You have unstaged changes. Please stage all changes before committing:"
-  echo ""
+  echo "Unstaged changes to tracked files; stage or discard them first:"
   git diff --name-only
-  echo ""
-  echo "Run: git add -A"
   exit 1
 fi
 
-# Run the pre-commit checks
-npm run pre-commit
-
-if [ $? -eq 0 ]; then
-  # After all checks pass, verify no new changes were introduced
-  if ! git diff --quiet; then
-    echo "❌ Linting or other tools modified files during pre-commit checks."
-    echo "Files that were modified:"
-    git diff --name-only
-    echo ""
-    echo "Please stage these changes and commit again:"
-    echo "git add -A && git commit --amend --no-edit"
-    exit 1
-  fi
-  echo "✅ All pre-commit checks passed!"
-else
-  echo "❌ Pre-commit checks failed. Commit aborted."
+if ! npm run pre-commit; then
+  echo "Pre-commit checks failed; nothing was committed. Fix the failures, stage the fixes, and commit again (not --amend)."
   exit 1
 fi

@@ -3,6 +3,7 @@ import type {
   Bank,
   DbResult,
   Kit,
+  KitScanResult,
   KitWithRelations,
   LocalStoreValidationDetailedResult,
   NewKit,
@@ -151,9 +152,7 @@ export interface ElectronAPI {
     slotNumber: number,
     filePath: string,
   ) => Promise<DbResult<{ sampleId: number }>>;
-  rescanKit: (
-    kitName: string,
-  ) => Promise<DbResult<{ scannedSamples: number; updatedVoices: number }>>;
+  rescanKit: (kitName: string) => Promise<DbResult<KitScanResult>>;
   rescanKitsMissingMetadata: () => Promise<
     DbResult<{
       kitsNeedingRescan: string[];

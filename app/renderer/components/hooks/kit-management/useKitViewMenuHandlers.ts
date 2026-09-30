@@ -5,6 +5,7 @@ import React, { useCallback, useRef } from "react";
 import { createLogger } from "../../../utils/logger";
 import { useBankScanning } from "../shared/useBankScanning";
 import { useMenuEvents } from "../shared/useMenuEvents";
+import { SCAN_ALL_CONFIRM_MESSAGE } from "./useKitScan";
 
 const log = createLogger("KitViewMenu");
 
@@ -72,6 +73,8 @@ export function useKitViewMenuHandlers({
     },
     onScanAll: () => {
       log.debug("Menu scan all triggered");
+      // Scan All touches every kit, so ask first (RE-04)
+      if (!globalThis.confirm(SCAN_ALL_CONFIRM_MESSAGE)) return;
       // Run bank scan first (fast), then kit scan
       void scanBanks().then(() => {
         if (kitBrowserRef.current?.handleScanAllKits) {

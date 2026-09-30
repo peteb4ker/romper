@@ -87,6 +87,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           data-testid="kit-scan-status"
         >
           Found {logic.scanStatus.sampleCount} samples
+          {logic.scanStatus.detail ? `: ${logic.scanStatus.detail}` : ""}
         </div>
       )}
       {logic.scanStatus.status === "error" && (

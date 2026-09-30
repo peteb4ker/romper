@@ -121,6 +121,44 @@ export type DbSamplesResult = DbResult<Sample[]>;
 export type DbVoicesResult = DbResult<Voice[]>;
 export type Kit = typeof kits.$inferSelect;
 
+export interface KitScanMissingSample {
+  filename: string;
+  slotNumber: number;
+  sourcePath: string;
+  voiceNumber: number;
+}
+
+/**
+ * Outcome of scanning one kit folder into the database (RE-04).
+ *
+ * A scan merges: it never deletes rows or changes a row's slot, voice, gain
+ * or source path. Missing files are reported, not removed. A locked kit is
+ * left untouched (`locked: true`, all counts zero).
+ */
+export interface KitScanResult {
+  /** New sample rows created for WAV files not yet referenced by the kit */
+  addedSamples: number;
+  /** True when the kit is locked and the scan made no changes */
+  locked: boolean;
+  /** Existing rows whose missing WAV metadata was filled in */
+  metadataUpdated: number;
+  /** Existing rows whose source file no longer exists (rows are kept) */
+  missingSamples: KitScanMissingSample[];
+  /** Voice-prefixed WAV files found in the kit folder */
+  scannedSamples: number;
+  /** Folder files that were not added, and why */
+  skippedFiles: KitScanSkippedFile[];
+  /** Voices whose empty name was filled in from a filename */
+  updatedVoices: number;
+}
+
+export interface KitScanSkippedFile {
+  filename: string;
+  /** kit_editable: user kits own their sample list; voice_full: 12 samples already */
+  reason: "kit_editable" | "voice_full";
+  voiceNumber: number;
+}
+
 // Kit validation types
 export interface KitValidationError {
   extraFiles: string[];

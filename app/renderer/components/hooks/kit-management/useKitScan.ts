@@ -1,4 +1,4 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { KitScanResult, KitWithRelations } from "@romper/shared/db/schema";
 
 import React, { useCallback } from "react";
 
@@ -14,6 +14,71 @@ export type BulkScanProgress =
   | { status: "idle" };
 
 const BULK_SCAN_COMPLETE_CLEAR_MS = 5000;
+
+/** Scan outcomes summed over one or more kits. */
+export interface ScanTotals {
+  added: number;
+  editableSkipped: number;
+  lockedKits: number;
+  missing: number;
+  voiceFullSkipped: number;
+}
+
+export function addScanResultToTotals(
+  totals: ScanTotals,
+  result: KitScanResult | undefined,
+): ScanTotals {
+  if (!result) return totals;
+  const skipped = result.skippedFiles ?? [];
+  return {
+    added: totals.added + (result.addedSamples ?? 0),
+    editableSkipped:
+      totals.editableSkipped +
+      skipped.filter((f) => f.reason === "kit_editable").length,
+    lockedKits: totals.lockedKits + (result.locked ? 1 : 0),
+    missing: totals.missing + (result.missingSamples?.length ?? 0),
+    voiceFullSkipped:
+      totals.voiceFullSkipped +
+      skipped.filter((f) => f.reason === "voice_full").length,
+  };
+}
+
+/**
+ * One-line summary of what a scan changed, e.g.
+ * "2 samples added, 1 missing file kept". Empty when nothing notable.
+ */
+export function describeScanTotals(totals: ScanTotals): string {
+  const plural = (n: number, word: string) =>
+    `${n} ${word}${n === 1 ? "" : "s"}`;
+  const parts: string[] = [];
+  if (totals.added > 0) parts.push(`${plural(totals.added, "sample")} added`);
+  if (totals.missing > 0)
+    parts.push(`${plural(totals.missing, "sample")} missing on disk`);
+  if (totals.voiceFullSkipped > 0)
+    parts.push(
+      `${plural(totals.voiceFullSkipped, "file")} skipped (voice has 12 samples)`,
+    );
+  if (totals.editableSkipped > 0)
+    parts.push(
+      `${plural(totals.editableSkipped, "new file")} not added to editable kits`,
+    );
+  if (totals.lockedKits > 0)
+    parts.push(`${plural(totals.lockedKits, "locked kit")} left unchanged`);
+  return parts.join(", ");
+}
+
+export const EMPTY_SCAN_TOTALS: ScanTotals = {
+  added: 0,
+  editableSkipped: 0,
+  lockedKits: 0,
+  missing: 0,
+  voiceFullSkipped: 0,
+};
+
+export const SCAN_ALL_CONFIRM_MESSAGE =
+  "Scan All re-reads every kit folder in the local store. New WAV files are " +
+  "added to non-editable kits; existing samples, gain and slot order are " +
+  "kept, and locked kits are skipped. Continue?";
 
 export async function scanAllKits({
   kits,
@@ -44,6 +109,7 @@ export async function scanAllKits({
     let successCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
+    let totals = EMPTY_SCAN_TOTALS;
 
     for (let i = 0; i < kits.length; i++) {
       const kitName = kits[i].name;
@@ -58,6 +124,7 @@ export async function scanAllKits({
 
       if (result.success) {
         successCount++;
+        totals = addScanResultToTotals(totals, result.data);
       } else {
         errorCount++;
         errors.push(result.error || "Unknown error");
@@ -70,9 +137,10 @@ export async function scanAllKits({
       errors,
       scanTypeDisplay,
     );
+    const detail = describeScanTotals(totals);
 
     onProgress?.({
-      message: completion.message,
+      message: detail ? `${completion.message} ${detail}.` : completion.message,
       status: "complete",
       successCount,
     });
@@ -89,8 +157,9 @@ export async function scanAllKits({
 }
 
 export async function scanSingleKit({ kitName }: { kitName: string }) {
-  // Delegate to the main-process rescan, which re-reads the kit directory,
-  // rebuilds sample records, extracts WAV metadata, and infers voice names.
+  // Delegate to the main-process scan, which merges the kit folder into the
+  // database: adds unreferenced WAV files, keeps existing samples, reports
+  // missing files, fills in WAV metadata and empty voice names (RE-04).
   if (!globalThis.electronAPI?.rescanKit) {
     return { error: "Rescan API not available", success: false as const };
   }
@@ -184,7 +253,7 @@ async function processSingleKitScan(kitName: string) {
     const result = await scanSingleKit({ kitName });
 
     if (result.success) {
-      return { success: true };
+      return { data: result.data, success: true };
     }
     return {
       error: `${kitName}: ${result.error || "Unknown error"}`,

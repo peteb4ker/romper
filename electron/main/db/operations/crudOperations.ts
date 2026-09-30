@@ -23,6 +23,8 @@ export {
   updateKit,
 } from "./kitCrudOperations.js";
 
+export { mergeKitScan } from "./kitScanOperations.js";
+
 export {
   addSample,
   buildDeleteConditions,

@@ -326,6 +326,7 @@ describe("KitsView", () => {
     });
 
     it("handles scan all kits menu event", async () => {
+      const confirm = vi.spyOn(globalThis, "confirm").mockReturnValue(true);
       render(
         <TestSettingsProvider>
           <KitsView />
@@ -345,9 +346,12 @@ describe("KitsView", () => {
       await waitFor(() => {
         expect(mockScanBanks).toHaveBeenCalled();
       });
+      expect(confirm).toHaveBeenCalledTimes(1);
+      confirm.mockRestore();
     });
 
-    it("handles scan all menu event (includes bank scan)", async () => {
+    it("does not scan when Scan All is not confirmed", async () => {
+      const confirm = vi.spyOn(globalThis, "confirm").mockReturnValue(false);
       render(
         <TestSettingsProvider>
           <KitsView />
@@ -362,9 +366,9 @@ describe("KitsView", () => {
       // Trigger the unified scan all callback
       globalMenuCallbacks.onScanAll();
 
-      await waitFor(() => {
-        expect(mockScanBanks).toHaveBeenCalled();
-      });
+      expect(confirm).toHaveBeenCalledTimes(1);
+      expect(mockScanBanks).not.toHaveBeenCalled();
+      confirm.mockRestore();
     });
 
     it("handles change local store directory menu event", async () => {

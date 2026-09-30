@@ -21,12 +21,9 @@ vi.mock("@romper/shared/kitUtilsShared.js", () => ({
 
 // Mock database operations
 vi.mock("../../db/romperDbCoreORM.js", () => ({
-  addSample: vi.fn(),
-  deleteSamples: vi.fn(),
   getAllSamples: vi.fn(),
+  mergeKitScan: vi.fn(),
   updateBank: vi.fn(),
-  updateSampleMetadata: vi.fn(),
-  updateVoiceAlias: vi.fn(),
 }));
 
 // Mock audio utilities
@@ -34,32 +31,34 @@ vi.mock("../../audioUtils.js", () => ({
   getAudioMetadata: vi.fn(),
 }));
 
-import {
-  groupSamplesByVoice,
-  inferVoiceTypeFromFilename,
-} from "@romper/shared/kitUtilsShared.js";
+import { groupSamplesByVoice } from "@romper/shared/kitUtilsShared.js";
+
+import type { KitScanIo } from "../../db/operations/kitScanOperations.js";
 
 import { getAudioMetadata } from "../../audioUtils.js";
 import {
-  addSample,
-  deleteSamples,
   getAllSamples,
+  mergeKitScan,
   updateBank,
-  updateSampleMetadata,
-  updateVoiceAlias,
 } from "../../db/romperDbCoreORM.js";
-import { ScanService } from "../scanService.js";
+import { readWavMetadata, ScanService } from "../scanService.js";
 
 const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
-const mockAddSample = vi.mocked(addSample);
-const mockDeleteSamples = vi.mocked(deleteSamples);
+const mockMergeKitScan = vi.mocked(mergeKitScan);
 const mockUpdateBank = vi.mocked(updateBank);
-const mockUpdateSampleMetadata = vi.mocked(updateSampleMetadata);
-const mockUpdateVoiceAlias = vi.mocked(updateVoiceAlias);
 const mockGroupSamplesByVoice = vi.mocked(groupSamplesByVoice);
-const mockInferVoiceTypeFromFilename = vi.mocked(inferVoiceTypeFromFilename);
 const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
+
+const EMPTY_SCAN_RESULT = {
+  addedSamples: 0,
+  locked: false,
+  metadataUpdated: 0,
+  missingSamples: [],
+  scannedSamples: 0,
+  skippedFiles: [],
+  updatedVoices: 0,
+};
 
 describe("ScanService", () => {
   let scanService: ScanService;
@@ -73,10 +72,6 @@ describe("ScanService", () => {
 
     mockPath.join.mockImplementation((...args) => args.join("/"));
     mockFs.existsSync.mockReturnValue(true);
-    mockDeleteSamples.mockReturnValue({ success: true });
-    mockAddSample.mockReturnValue({ data: { sampleId: 1 }, success: true });
-    mockUpdateSampleMetadata.mockReturnValue({ success: true });
-    mockUpdateVoiceAlias.mockReturnValue({ success: true });
     mockUpdateBank.mockReturnValue({ success: true });
     mockGetAudioMetadata.mockReturnValue({
       data: {
@@ -92,124 +87,81 @@ describe("ScanService", () => {
     beforeEach(() => {
       mockFs.readdirSync.mockReturnValue([
         "1_kick.wav",
-        "1_snare.wav",
+        "1_snare.WAV",
         "2_hihat.wav",
-        "2_openhat.wav",
         "readme.txt", // Non-WAV file should be ignored
       ] as unknown);
 
       mockGroupSamplesByVoice.mockReturnValue({
-        "1": ["1_kick.wav", "1_snare.wav"],
-        "2": ["2_hihat.wav", "2_openhat.wav"],
+        1: ["1_kick.wav", "1_snare.WAV"],
+        2: ["2_hihat.wav"],
+        3: [],
+        4: [],
       });
 
-      mockInferVoiceTypeFromFilename.mockImplementation((filename: string) => {
-        if (filename.includes("kick")) return "KICK";
-        if (filename.includes("hihat")) return "HIHAT";
-        return null;
+      mockMergeKitScan.mockReturnValue({
+        data: { ...EMPTY_SCAN_RESULT, addedSamples: 3, scannedSamples: 3 },
+        success: true,
       });
     });
 
-    it("successfully rescans a kit directory", () => {
+    it("merges the kit folder's WAV files instead of deleting samples", () => {
       const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(true);
-      expect(result.data?.scannedSamples).toBe(4);
-      expect(result.data?.updatedVoices).toBe(2);
-
-      // Should delete existing samples first
-      expect(mockDeleteSamples).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-        "TestKit",
-      );
-
-      // Should scan kit directory
+      expect(result.data?.addedSamples).toBe(3);
       expect(mockFs.readdirSync).toHaveBeenCalledWith("/test/path/TestKit");
-
-      // Should add new samples
-      expect(mockAddSample).toHaveBeenCalledTimes(4);
-      expect(mockAddSample).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-        expect.objectContaining({
-          filename: "1_kick.wav",
-          is_stereo: false,
-          kit_name: "TestKit",
-          slot_number: 0,
-          source_path: "/test/path/TestKit/1_kick.wav",
-          voice_number: 1,
-        }),
-      );
-
-      // Should update voice aliases
-      expect(mockUpdateVoiceAlias).toHaveBeenCalledWith(
+      expect(mockGroupSamplesByVoice).toHaveBeenCalledWith([
+        "1_kick.wav",
+        "1_snare.WAV",
+        "2_hihat.wav",
+      ]);
+      expect(mockMergeKitScan).toHaveBeenCalledTimes(1);
+      expect(mockMergeKitScan).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "TestKit",
-        1,
-        "KICK",
-      );
-      expect(mockUpdateVoiceAlias).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-        "TestKit",
-        2,
-        "HIHAT",
-      );
-
-      // Should extract and save WAV metadata for each sample
-      expect(mockGetAudioMetadata).toHaveBeenCalledTimes(4);
-      expect(mockGetAudioMetadata).toHaveBeenCalledWith(
-        "/test/path/TestKit/1_kick.wav",
-      );
-      expect(mockGetAudioMetadata).toHaveBeenCalledWith(
-        "/test/path/TestKit/1_snare.wav",
-      );
-      expect(mockGetAudioMetadata).toHaveBeenCalledWith(
-        "/test/path/TestKit/2_hihat.wav",
-      );
-      expect(mockGetAudioMetadata).toHaveBeenCalledWith(
-        "/test/path/TestKit/2_openhat.wav",
-      );
-
-      // Should update sample metadata for each sample
-      expect(mockUpdateSampleMetadata).toHaveBeenCalledTimes(4);
-      expect(mockUpdateSampleMetadata).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-        1,
         {
-          wav_bit_depth: 16,
-          wav_bitrate: 44100 * 2 * 16, // sampleRate * channels * bitDepth
-          wav_channels: 2,
-          wav_sample_rate: 44100,
+          filesByVoice: {
+            1: ["1_kick.wav", "1_snare.WAV"],
+            2: ["2_hihat.wav"],
+            3: [],
+            4: [],
+          },
+          kitPath: "/test/path/TestKit",
         },
+        expect.objectContaining({
+          fileExists: expect.any(Function),
+          readMetadata: expect.any(Function),
+        }),
       );
     });
 
-    it("detects stereo samples by filename patterns", () => {
-      mockFs.readdirSync.mockReturnValue([
-        "1_kick_stereo.wav",
-        "2_hat_st.wav",
-      ] as unknown);
-      mockGroupSamplesByVoice.mockReturnValue({
-        "1": ["1_kick_stereo.wav"],
-        "2": ["2_hat_st.wav"],
+    it("gives the merge real file checks and WAV metadata", () => {
+      scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const io = mockMergeKitScan.mock.calls[0][3] as KitScanIo;
+
+      mockFs.existsSync.mockReturnValueOnce(false);
+      expect(io.fileExists("/gone.wav")).toBe(false);
+
+      mockGetAudioMetadata.mockReturnValue({
+        data: { bitDepth: 16, channels: 2, sampleRate: 44100 },
+        success: true,
       });
+      expect(io.readMetadata("/x.wav")).toEqual({
+        wav_bit_depth: 16,
+        wav_bitrate: 44100 * 2 * 16,
+        wav_channels: 2,
+        wav_sample_rate: 44100,
+      });
+    });
+
+    it("returns the merge result unchanged, including a locked kit", () => {
+      const locked = { ...EMPTY_SCAN_RESULT, locked: true, scannedSamples: 3 };
+      mockMergeKitScan.mockReturnValue({ data: locked, success: true });
 
       const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
-      expect(result.success).toBe(true);
-      expect(mockAddSample).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-        expect.objectContaining({
-          filename: "1_kick_stereo.wav",
-          is_stereo: true,
-        }),
-      );
-      expect(mockAddSample).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-        expect.objectContaining({
-          filename: "2_hat_st.wav",
-          is_stereo: true,
-        }),
-      );
+      expect(result).toEqual({ data: locked, success: true });
     });
 
     it("returns error when no local store path configured", () => {
@@ -217,6 +169,7 @@ describe("ScanService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
+      expect(mockMergeKitScan).not.toHaveBeenCalled();
     });
 
     it("returns error when kit directory does not exist", () => {
@@ -228,29 +181,19 @@ describe("ScanService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Kit directory not found");
-      expect(mockDeleteSamples).not.toHaveBeenCalled();
+      expect(mockMergeKitScan).not.toHaveBeenCalled();
     });
 
-    it("handles delete samples failure", () => {
-      mockDeleteSamples.mockReturnValue({
-        error: "Delete failed",
+    it("reports a failed (rolled back) merge", () => {
+      mockMergeKitScan.mockReturnValue({
+        error: "SQLITE_BUSY",
         success: false,
       });
 
       const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Delete failed");
-      expect(mockAddSample).not.toHaveBeenCalled();
-    });
-
-    it("handles add sample failure", () => {
-      mockAddSample.mockReturnValue({ error: "Add failed", success: false });
-
-      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Add failed");
+      expect(result.error).toBe("Failed to scan kit TestKit: SQLITE_BUSY");
     });
 
     it("handles exceptions gracefully", () => {
@@ -264,83 +207,41 @@ describe("ScanService", () => {
       expect(result.error).toContain(
         "Failed to scan kit directory: Permission denied",
       );
+      expect(mockMergeKitScan).not.toHaveBeenCalled();
     });
+  });
 
-    it("handles WAV metadata extraction failure gracefully", () => {
+  describe("readWavMetadata", () => {
+    it("returns null when the WAV can't be read", () => {
       mockGetAudioMetadata.mockReturnValue({
         error: "Invalid WAV format",
         success: false,
       });
 
-      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
-
-      expect(result.success).toBe(true);
-      expect(result.data?.scannedSamples).toBe(4);
-      // Should still add samples even if metadata extraction fails
-      expect(mockAddSample).toHaveBeenCalledTimes(4);
-      // Should not attempt to update metadata for failed extractions
-      expect(mockUpdateSampleMetadata).not.toHaveBeenCalled();
+      expect(readWavMetadata("/bad.wav")).toBeNull();
     });
 
-    it("handles incomplete WAV metadata gracefully", () => {
+    it("leaves bitrate null when a field is missing", () => {
       mockGetAudioMetadata.mockReturnValue({
-        data: {
-          bitDepth: 16,
-          // Missing channels and sampleRate
-        },
+        data: { bitDepth: 16 },
         success: true,
       });
 
-      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
-
-      expect(result.success).toBe(true);
-      expect(mockUpdateSampleMetadata).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-        1,
-        {
-          wav_bit_depth: 16,
-          wav_bitrate: null, // Should be null when calculation fails
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-      );
+      expect(readWavMetadata("/partial.wav")).toEqual({
+        wav_bit_depth: 16,
+        wav_bitrate: null,
+        wav_channels: null,
+        wav_sample_rate: null,
+      });
     });
 
-    it("calculates bitrate correctly for different audio formats", () => {
+    it("calculates bitrate for other formats", () => {
       mockGetAudioMetadata.mockReturnValue({
-        data: {
-          bitDepth: 24,
-          channels: 1,
-          sampleRate: 48000,
-        },
+        data: { bitDepth: 24, channels: 1, sampleRate: 48000 },
         success: true,
       });
 
-      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
-
-      expect(result.success).toBe(true);
-      expect(mockUpdateSampleMetadata).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-        1,
-        {
-          wav_bit_depth: 24,
-          wav_bitrate: 48000 * 1 * 24, // 1,152,000 bps
-          wav_channels: 1,
-          wav_sample_rate: 48000,
-        },
-      );
-    });
-
-    it("handles missing sample metadata when addSample fails", () => {
-      mockAddSample.mockReturnValue({ error: "Add failed", success: false });
-
-      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Add failed");
-      // Should not attempt metadata extraction if sample insertion fails
-      expect(mockGetAudioMetadata).not.toHaveBeenCalled();
-      expect(mockUpdateSampleMetadata).not.toHaveBeenCalled();
+      expect(readWavMetadata("/mono.wav")?.wav_bitrate).toBe(48000 * 1 * 24);
     });
   });
 
@@ -372,14 +273,28 @@ describe("ScanService", () => {
     it("rescans a kit in the override, not the saved path", () => {
       mockFs.readdirSync.mockReturnValue([] as unknown);
       mockGroupSamplesByVoice.mockReturnValue({});
+      mockMergeKitScan.mockReturnValue({
+        data: {
+          addedSamples: 0,
+          locked: false,
+          metadataUpdated: 0,
+          missingSamples: [],
+          scannedSamples: 0,
+          skippedFiles: [],
+          updatedVoices: 0,
+        },
+        success: true,
+      });
 
       const result = scanService.rescanKit(mockInMemorySettings, "A0");
 
       expect(result.success).toBe(true);
       expect(mockFs.existsSync).toHaveBeenCalledWith("/env/store/A0");
-      expect(mockDeleteSamples).toHaveBeenCalledWith(
+      expect(mockMergeKitScan).toHaveBeenCalledWith(
         "/env/store/.romperdb",
         "A0",
+        expect.objectContaining({ kitPath: "/env/store/A0" }),
+        expect.anything(),
       );
     });
 
@@ -548,7 +463,7 @@ describe("ScanService", () => {
       // Mock successful kit rescanning
       const scanService = new ScanService();
       vi.spyOn(scanService, "rescanKit").mockReturnValue({
-        data: { scannedSamples: 5, updatedVoices: 2 },
+        data: { ...EMPTY_SCAN_RESULT, addedSamples: 1, metadataUpdated: 4 },
         success: true,
       });
 
@@ -558,7 +473,7 @@ describe("ScanService", () => {
       expect(result.success).toBe(true);
       expect(result.data?.kitsNeedingRescan).toEqual(["A1", "A2"]);
       expect(result.data?.kitsRescanned).toEqual(["A1", "A2"]);
-      expect(result.data?.totalSamplesUpdated).toBe(10); // 5 + 5 from both rescans
+      expect(result.data?.totalSamplesUpdated).toBe(10); // (4 + 1) per kit
     });
 
     it("handles kits with no missing metadata", () => {
@@ -636,7 +551,7 @@ describe("ScanService", () => {
           return { error: "Kit A1 failed", success: false };
         }
         return {
-          data: { scannedSamples: 3, updatedVoices: 1 },
+          data: { ...EMPTY_SCAN_RESULT, metadataUpdated: 3 },
           success: true,
         };
       });

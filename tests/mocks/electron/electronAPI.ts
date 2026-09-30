@@ -145,7 +145,15 @@ export const createElectronAPIMock = (
   }),
   replaceSampleInSlot: vi.fn().mockResolvedValue(undefined),
   rescanKit: vi.fn().mockResolvedValue({
-    data: { scannedSamples: 4, updatedVoices: 4 },
+    data: {
+      addedSamples: 0,
+      locked: false,
+      metadataUpdated: 0,
+      missingSamples: [],
+      scannedSamples: 4,
+      skippedFiles: [],
+      updatedVoices: 4,
+    },
     success: true,
   }),
   rescanKitsMissingMetadata: vi.fn().mockResolvedValue({

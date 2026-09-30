@@ -2,7 +2,13 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
-import { scanAllKits, scanSingleKit, useKitScan } from "../useKitScan";
+import {
+  describeScanTotals,
+  EMPTY_SCAN_TOTALS,
+  scanAllKits,
+  scanSingleKit,
+  useKitScan,
+} from "../useKitScan";
 
 const kit = (name: string) => ({ name }) as never;
 
@@ -78,6 +84,63 @@ describe("scanAllKits", () => {
     expect(onRefreshKits).toHaveBeenCalledTimes(1);
   });
 
+  it("adds up what the merge changed across kits", async () => {
+    const base = {
+      addedSamples: 0,
+      locked: false,
+      metadataUpdated: 0,
+      missingSamples: [],
+      scannedSamples: 3,
+      skippedFiles: [],
+      updatedVoices: 0,
+    };
+    vi.mocked(window.electronAPI.rescanKit)
+      .mockResolvedValueOnce({
+        data: {
+          ...base,
+          addedSamples: 2,
+          skippedFiles: [
+            { filename: "1 new.wav", reason: "kit_editable", voiceNumber: 1 },
+          ],
+        },
+        success: true,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          ...base,
+          addedSamples: 1,
+          missingSamples: [
+            {
+              filename: "a.wav",
+              slotNumber: 0,
+              sourcePath: "/x/a.wav",
+              voiceNumber: 2,
+            },
+          ],
+        },
+        success: true,
+      })
+      .mockResolvedValueOnce({
+        data: { ...base, locked: true },
+        success: true,
+      });
+    const onProgress = vi.fn();
+
+    await scanAllKits({
+      kits: [kit("A1"), kit("A2"), kit("A3")],
+      onProgress,
+    });
+
+    expect(onProgress).toHaveBeenLastCalledWith({
+      message:
+        "All 3 kits scanned successfully (comprehensive). 3 samples added, " +
+        "1 sample missing on disk, 1 new file not added to editable kits, " +
+        "1 locked kit left unchanged.",
+      status: "complete",
+      successCount: 3,
+    });
+  });
+
   it("counts failures and surfaces their errors", async () => {
     vi.mocked(window.electronAPI.rescanKit)
       .mockResolvedValueOnce({ data: { scannedSamples: 3 }, success: true })
@@ -146,5 +209,26 @@ describe("useKitScan", () => {
       message: "No kits to scan",
       status: "error",
     });
+  });
+});
+
+describe("describeScanTotals", () => {
+  it("is empty when nothing changed", () => {
+    expect(describeScanTotals(EMPTY_SCAN_TOTALS)).toBe("");
+  });
+
+  it("pluralises each part", () => {
+    expect(
+      describeScanTotals({
+        added: 1,
+        editableSkipped: 0,
+        lockedKits: 2,
+        missing: 3,
+        voiceFullSkipped: 2,
+      }),
+    ).toBe(
+      "1 sample added, 3 samples missing on disk, " +
+        "2 files skipped (voice has 12 samples), 2 locked kits left unchanged",
+    );
   });
 });

@@ -61,6 +61,9 @@ memory in `~/.claude`, `.claude/settings.local.json`, `.env.local`, or
 anything said in another session. Anything another session needs goes in
 the repo or on GitHub.
 
+- **Backlog:** [`BACKLOG.md`](BACKLOG.md) is the shared status board. Pick
+  work from it, claim items with a draft PR titled `... (RE-NN)`, and update
+  an item's status in the PR that changes it. Its header has the protocol.
 - **Plans:** for work bigger than one PR, commit a spec to
   `docs/developer/<feature>.md` before implementing (like
   `step-sequencer-slicer.md`), and link it from an issue or the PR.
@@ -126,6 +129,8 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
 - [`docs/developer/code-signing.md`](docs/developer/code-signing.md) --
   macOS rcodesign config and per-helper entitlements (only a tag-triggered
   release exercises `electron/resources/rcodesign.toml`; PR CI doesn't)
+- [`BACKLOG.md`](BACKLOG.md) -- prioritized status of every finding; start
+  here when choosing what to work on
 - [`aidlc-docs/inception/reverse-engineering/`](aidlc-docs/inception/reverse-engineering/)
   -- AI-DLC reverse-engineering set; `code-quality-assessment.md` is the
   findings register that fix commits cite by ID (`RE-01`...)

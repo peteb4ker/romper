@@ -56,6 +56,7 @@ export default defineConfig([
       "app/node_modules",
       "**/node_modules",
       "worktrees",
+      ".claude/worktrees",
       "_site",
       "_site_preview",
       "docs/_site",

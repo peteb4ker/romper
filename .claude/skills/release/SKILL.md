@@ -36,7 +36,7 @@ Cut release `$ARGUMENTS` (a bare semver, no `v` prefix; the tag adds it).
 3. **Watch the workflow.** The tag fires `release.yml`:
    SonarCloud quality gate → 3-platform builds (macOS sign/notarize, Windows
    Azure Trusted Signing) → GitHub release with generated notes
-   (`scripts/release/generate-notes.js` handles prerelease versions).
+   (`scripts/generate-github-release-notes.js`, which handles prerelease versions).
    A failed quality gate auto-files a GitHub issue; fix the issues and re-tag.
 4. **Verify** on the releases page: RCs must show the *Pre-release* badge and
    **Latest** must still point at the previous stable. A stable release must

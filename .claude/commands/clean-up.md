@@ -1,36 +1,22 @@
 ---
-description: Check out main, pull latest, and clean up merged worktrees and branches
+description: Update main and remove worktrees and branches whose PRs have merged
 allowed-tools: Bash, Read
 ---
 
-Clean up the workspace: switch to main, pull latest, remove merged worktrees and branches.
+Run from the main checkout (`/Users/pete/workspace/romper`, not a worktree).
 
-**NEVER** delete unmerged worktrees or branches — only clean up what's fully merged.
+1. `git checkout main && git pull --ff-only origin main && git fetch --prune origin`
+2. For each worktree in `git worktree list` (skip the main checkout and any
+   worktree with uncommitted changes), and each local branch other than
+   `main`, decide whether it is merged:
+   - `gh pr list --state merged --head <branch> --json number` returns a PR, or
+   - `git cherry origin/main <branch>` prints no `+` lines (every commit is
+     already on main — this is what catches rebase merges, which
+     `git branch --merged` misses because rebasing rewrites SHAs).
+3. Merged: `git worktree remove <path>` then `git branch -D <branch>`.
+   Not merged: leave it and report it as active. Never force-remove a worktree
+   that has uncommitted changes.
+4. `git worktree prune`.
 
-**Squash merge detection**: `git branch --merged` misses squash merges. Use `git diff main <branch> --stat` — empty output means merged.
-
-## Steps
-
-1. **Switch to main and pull**: `git checkout main && git pull origin main`
-2. **Prune remotes**: `git fetch --prune origin`
-3. **Clean merged worktrees**: Run `git worktree list`, then for each non-main worktree:
-   - Check merged: `git branch --merged main | grep <branch>` OR `git diff main <branch> --stat` is empty
-   - Merged → `git worktree remove <path>` then `git branch -D <branch>`
-   - Unmerged → skip, report as active
-4. **Clean merged branches**: `git branch --merged main | grep -v '^\*' | grep -v 'main' | xargs -r git branch -d`
-5. **Final prune**: `git worktree prune`
-
-## Summary format
-
-```
-## Clean-up Summary
-
-| Action | Item | Status |
-|--------|------|--------|
-| Removed worktree | `<name>` | merged via PR #N |
-| Deleted branch | `<branch>` | merged into main |
-| Pruned remotes | N stale refs | cleaned |
-| Kept worktree | `<name>` | unmerged (active) |
-
-**Current state:** On `main` at `<sha>`. N worktrees remain.
-```
+Report a short table of what was removed (with the PR number) and what was
+kept, then the current `main` SHA.

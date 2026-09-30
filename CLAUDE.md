@@ -50,7 +50,35 @@ through a PR.
   non-main HEAD pollutes the PR with someone else's commits (see
   [#270](https://github.com/peteb4ker/romper/pull/270)).
 - Merging: see the `ship-pr` skill. Rebase onto `origin/main` and
-  `git push --force-with-lease`; merge with the rebase method.
+  `git push --force-with-lease`; merge with the rebase method. Don't use
+  GitHub's "Update branch" button: it adds a merge commit.
+
+## Working alongside other sessions
+
+Several Claude sessions work on this repo at once, some in the desktop app
+and some in the cloud. A cloud session sees only what's pushed: not personal
+memory in `~/.claude`, `.claude/settings.local.json`, `.env.local`, or
+anything said in another session. Anything another session needs goes in
+the repo or on GitHub.
+
+- **Plans:** for work bigger than one PR, commit a spec to
+  `docs/developer/<feature>.md` before implementing (like
+  `step-sequencer-slicer.md`), and link it from an issue or the PR.
+- **Status:** the PR is the status record. Keep its description current
+  (done, left, how it was verified) and hand off in PR comments.
+- **Findings:** cite IDs from the findings register
+  (`aidlc-docs/inception/reverse-engineering/code-quality-assessment.md`)
+  and add new ones there.
+- **Before starting**, check what's in flight: `gh pr list`,
+  `git worktree list`, and `ListAgents` for live local sessions. Don't edit
+  another session's worktree or push to its branch; message it or comment on
+  its PR.
+- **Messages:** `SendMessage` reaches local, Remote Control, and cloud
+  sessions, but cloud sessions can't reply, so their results come back
+  through the PR. To wait on a local session, use `notify_when_idle` rather
+  than polling.
+- **Unattended PRs:** a routine (`/schedule`) can re-check a cloud-owned PR's
+  CI and act on failures until it merges.
 
 ## Hard rules
 

@@ -17,6 +17,7 @@ import {
   updateSampleMetadata,
   updateVoiceAlias,
 } from "../db/romperDbCoreORM.js";
+import { ServicePathManager } from "../utils/fileSystemUtils.js";
 
 /**
  * Service for scanning operations (kit rescanning and bank scanning)
@@ -252,15 +253,13 @@ export class ScanService {
   }
 
   private getDbPath(localStorePath: string): string {
-    return path.join(localStorePath, ".romperdb");
+    return ServicePathManager.getDbPath(localStorePath);
   }
 
   private getLocalStorePath(
     inMemorySettings: Record<string, unknown>,
   ): null | string {
-    return typeof inMemorySettings.localStorePath === "string"
-      ? inMemorySettings.localStorePath
-      : null;
+    return ServicePathManager.getLocalStorePath(inMemorySettings);
   }
 
   private hasMissingMetadata(sample: {

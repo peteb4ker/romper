@@ -1,5 +1,5 @@
 import * as path from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock path
 vi.mock("node:path", () => ({
@@ -257,6 +257,57 @@ describe("KitService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
+    });
+  });
+
+  describe("with ROMPER_LOCAL_PATH set", () => {
+    beforeEach(() => {
+      vi.stubEnv("ROMPER_LOCAL_PATH", "/env/store");
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("creates the kit in the override's database, not the saved path's", () => {
+      const result = kitService.createKit(mockInMemorySettings, "A5");
+
+      expect(result.success).toBe(true);
+      expect(mockGetKit).toHaveBeenCalledWith("/env/store/.romperdb", "A5");
+      expect(mockAddKit).toHaveBeenCalledWith(
+        "/env/store/.romperdb",
+        expect.objectContaining({ name: "A5" }),
+      );
+    });
+
+    it("works when only the override is set", () => {
+      const noSavedPath = { localStorePath: null };
+
+      kitService.copyKit(noSavedPath, "A0", "A1");
+      kitService.getKitDeleteSummary(noSavedPath, "A0");
+
+      expect(mockCopyKit).toHaveBeenCalledWith(
+        "/env/store/.romperdb",
+        "A0",
+        "A1",
+      );
+      expect(mockGetKitDeleteSummary).toHaveBeenCalledWith(
+        "/env/store/.romperdb",
+        "A0",
+      );
+    });
+
+    it("deletes from the override's database", () => {
+      mockGetKit.mockReturnValue({
+        data: { locked: false, name: "A0" },
+        success: true,
+      } as unknown as ReturnType<typeof getKit>);
+      mockDeleteKit.mockReturnValue({ success: true });
+
+      const result = kitService.deleteKit({ localStorePath: null }, "A0");
+
+      expect(result.success).toBe(true);
+      expect(mockDeleteKit).toHaveBeenCalledWith("/env/store/.romperdb", "A0");
     });
   });
 });

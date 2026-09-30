@@ -1,7 +1,5 @@
 import type { DbResult, NewKit } from "@romper/shared/db/schema.js";
 
-import * as path from "node:path";
-
 import type { InMemorySettings } from "../types/settings.js";
 
 import {
@@ -11,6 +9,7 @@ import {
   getKit,
   getKitDeleteSummary as getKitDeleteSummaryDb,
 } from "../db/romperDbCoreORM.js";
+import { ServicePathManager } from "../utils/fileSystemUtils.js";
 
 /**
  * Service for kit management operations
@@ -140,11 +139,11 @@ export class KitService {
   }
 
   private getDbPath(localStorePath: string): string {
-    return path.join(localStorePath, ".romperdb");
+    return ServicePathManager.getDbPath(localStorePath);
   }
 
   private getLocalStorePath(inMemorySettings: InMemorySettings): null | string {
-    return inMemorySettings.localStorePath;
+    return ServicePathManager.getLocalStorePath(inMemorySettings);
   }
 
   private validateKitSlot(kitSlot: string): void {

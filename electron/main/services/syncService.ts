@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { getAllBanks, markKitsAsSynced } from "../db/romperDbCoreORM.js";
+import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { logger } from "../utils/logger.js";
 import { rtfFileService } from "./rtfFileService.js";
 import { clearRampleContent, validateSdCardTarget } from "./sdCardSafety.js";
@@ -45,12 +46,13 @@ class SyncService {
     _sdCardPath?: string,
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
-      const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath || typeof localStorePath !== "string") {
+      const localStorePath =
+        ServicePathManager.getLocalStorePath(inMemorySettings);
+      if (!localStorePath) {
         return { error: "No local store path configured", success: false };
       }
 
-      const dbDir = path.join(localStorePath, ".romperdb");
+      const dbDir = ServicePathManager.getDbPath(localStorePath);
 
       // Get kit count
       const { getKits } = await import("../db/romperDbCoreORM.js");
@@ -141,23 +143,26 @@ class SyncService {
     try {
       // For now, we need to generate file operations for sync
       // This is a temporary fix - we should separate summary from sync operations
-      const localStorePath = inMemorySettings.localStorePath;
-      if (!localStorePath || typeof localStorePath !== "string") {
+      const localStorePath =
+        ServicePathManager.getLocalStorePath(inMemorySettings);
+      if (!localStorePath) {
         return { error: "No local store path configured", success: false };
       }
 
       // Refuse targets that are clearly not an SD card (system root, the home
       // folder or above it, or anything overlapping a local store) before
-      // anything is read or written.
+      // anything is read or written. The saved path is protected too when
+      // ROMPER_LOCAL_PATH overrides it.
+      const savedLocalStorePath = inMemorySettings.localStorePath;
       const target = validateSdCardTarget(options.sdCardPath, [
         localStorePath,
-        process.env.ROMPER_LOCAL_PATH ?? "",
+        typeof savedLocalStorePath === "string" ? savedLocalStorePath : "",
       ]);
       if (!target.ok) {
         return { error: target.reason, success: false };
       }
 
-      const dbDir = path.join(localStorePath, ".romperdb");
+      const dbDir = ServicePathManager.getDbPath(localStorePath);
       const samplesResult =
         await syncSampleProcessingService.gatherAllSamples(dbDir);
       if (!samplesResult.success) {
@@ -268,8 +273,9 @@ class SyncService {
       console.error("Sync failed, attempting cleanup...");
 
       try {
-        const localStorePath = inMemorySettings.localStorePath;
-        if (localStorePath && typeof localStorePath === "string") {
+        const localStorePath =
+          ServicePathManager.getLocalStorePath(inMemorySettings);
+        if (localStorePath) {
           const syncOutputDir = path.join(localStorePath, "sync_output");
           if (fs.existsSync(syncOutputDir)) {
             fs.rmSync(syncOutputDir, { force: true, recursive: true });
@@ -292,11 +298,11 @@ class SyncService {
     allFiles: SyncFileOperation[],
     syncedFiles: number,
   ): Promise<void> {
-    const localStorePath = inMemorySettings.localStorePath;
-    if (!localStorePath || !syncedFiles || typeof localStorePath !== "string")
-      return;
+    const localStorePath =
+      ServicePathManager.getLocalStorePath(inMemorySettings);
+    if (!localStorePath || !syncedFiles) return;
 
-    const dbDir = path.join(localStorePath, ".romperdb");
+    const dbDir = ServicePathManager.getDbPath(localStorePath);
     const syncedKitNames = [...new Set(allFiles.map((file) => file.kitName))];
 
     const markSyncedResult = markKitsAsSynced(dbDir, syncedKitNames);

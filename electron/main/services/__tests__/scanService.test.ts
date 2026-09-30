@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs
 vi.mock("node:fs", () => ({
@@ -371,6 +371,56 @@ describe("ScanService", () => {
       // Should not attempt metadata extraction if sample insertion fails
       expect(mockGetAudioMetadata).not.toHaveBeenCalled();
       expect(mockUpdateSampleMetadata).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("with ROMPER_LOCAL_PATH set", () => {
+    const noSavedPath = { localStorePath: null };
+
+    beforeEach(() => {
+      vi.stubEnv("ROMPER_LOCAL_PATH", "/env/store");
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("scans banks in the override when no path is saved", async () => {
+      mockFs.readdirSync.mockReturnValue(["A - Artist One.rtf"] as unknown);
+
+      const result = await scanService.scanBanks(noSavedPath);
+
+      expect(result.success).toBe(true);
+      expect(mockFs.readdirSync).toHaveBeenCalledWith("/env/store");
+      expect(mockUpdateBank).toHaveBeenCalledWith(
+        "/env/store/.romperdb",
+        "A",
+        expect.objectContaining({ artist: "Artist One" }),
+      );
+    });
+
+    it("rescans a kit in the override, not the saved path", async () => {
+      mockFs.readdirSync.mockReturnValue([] as unknown);
+      mockGroupSamplesByVoice.mockReturnValue({});
+
+      const result = await scanService.rescanKit(mockInMemorySettings, "A0");
+
+      expect(result.success).toBe(true);
+      expect(mockFs.existsSync).toHaveBeenCalledWith("/env/store/A0");
+      expect(mockDeleteSamples).toHaveBeenCalledWith(
+        "/env/store/.romperdb",
+        "A0",
+      );
+    });
+
+    it("reads samples from the override when finding kits to rescan", async () => {
+      vi.mocked(getAllSamples).mockReturnValue({ data: [], success: true });
+
+      const result =
+        await scanService.rescanKitsWithMissingMetadata(noSavedPath);
+
+      expect(result.success).toBe(true);
+      expect(getAllSamples).toHaveBeenCalledWith("/env/store/.romperdb");
     });
   });
 

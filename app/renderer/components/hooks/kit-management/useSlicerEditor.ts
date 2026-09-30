@@ -115,9 +115,7 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
     voiceVolumes,
   } = params;
 
-  const [editingVoiceState, setEditingVoice] = React.useState<null | number>(
-    null,
-  );
+  const [chosenVoice, setChosenVoice] = React.useState<null | number>(null);
   const [selection, setSelection] = React.useState<FocusedStep | null>(null);
   const [hoverStep, setHoverStep] = React.useState<FocusedStep | null>(null);
   const [playingSlice, setPlayingSlice] = React.useState<null | PlayingSlice>(
@@ -134,7 +132,7 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
 
   // Forget selection, undo and flashes when switching kits
   React.useEffect(() => {
-    setEditingVoice(null);
+    setChosenVoice(null);
     setSelection(null);
     setRollUndo(null);
     setRolledSteps(null);
@@ -157,8 +155,8 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
 
   // The voice the slice strip edits: the last one used, else the first sliced
   const editingVoice =
-    editingVoiceState != null && sliceSettings[editingVoiceState]?.enabled
-      ? editingVoiceState
+    chosenVoice != null && sliceSettings[chosenVoice]?.enabled
+      ? chosenVoice
       : (sliceVoices[0] ?? null);
 
   const isSliceVoice = React.useCallback(
@@ -174,7 +172,7 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
     const voiceNumber = focusedStep.voice + 1;
     if (isSliceVoice(voiceNumber)) {
       setSelection(focusedStep);
-      setEditingVoice(voiceNumber);
+      setChosenVoice(voiceNumber);
     }
   }, [focusedStep, isSliceVoice]);
 
@@ -188,7 +186,7 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
       const enabled = !isSliceVoice(voiceNumber);
       updateSliceSettings(voiceNumber, { enabled });
       if (enabled) {
-        setEditingVoice(voiceNumber);
+        setChosenVoice(voiceNumber);
         setNotice(null);
       }
     },
@@ -229,7 +227,7 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
         toggleStep(voiceIdx, stepIdx);
         return;
       }
-      setEditingVoice(voiceNumber);
+      setChosenVoice(voiceNumber);
       setSelection({ step: stepIdx, voice: voiceIdx });
       setRollUndo(null);
       const isOn = (stepPattern[voiceIdx]?.[stepIdx] ?? 0) > 0;
@@ -464,7 +462,7 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
     rolledSteps,
     selectedStep,
     selection,
-    setEditingVoice,
+    setEditingVoice: setChosenVoice,
     setHoverStep,
     sliceViews,
     sliceVoices,

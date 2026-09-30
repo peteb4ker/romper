@@ -35,7 +35,7 @@ const SliceStepEditor: React.FC<SliceStepEditorProps> = ({
         Slice
       </div>
       <label className="flex items-center justify-between gap-2">
-        Plays slice
+        <span>Plays slice</span>
         <input
           aria-label="Slice number"
           className="w-14 h-5 px-1 rounded border border-border-default bg-surface-1 text-right"
@@ -93,7 +93,7 @@ const SliceStepEditor: React.FC<SliceStepEditorProps> = ({
           onChange={() => onChange((s) => ({ ...s, random: !s.random }))}
           type="checkbox"
         />
-        Random slice each time
+        <span>Random slice each time</span>
       </label>
       <label
         className="flex items-center gap-1.5"
@@ -105,7 +105,7 @@ const SliceStepEditor: React.FC<SliceStepEditorProps> = ({
           onChange={() => onChange((s) => ({ ...s, locked: !s.locked }))}
           type="checkbox"
         />
-        Lock (rolls skip it)
+        <span>Lock (rolls skip it)</span>
       </label>
     </div>
   );

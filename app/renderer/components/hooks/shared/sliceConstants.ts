@@ -3,7 +3,6 @@
 // of the kit-wide division, so changing the division never rewrites data.
 
 import {
-  normalizeSliceSteps,
   SLICE_TICKS,
   type SliceStep,
   type VoiceSliceSettings,
@@ -28,19 +27,19 @@ export interface SliceView {
 
 const defaultRng: Rng = () => Math.random(); // NOSONAR - not cryptographic, used for musical randomization
 
-export function createEmptySliceSteps(): (null | SliceStep)[][] {
-  return Array.from({ length: NUM_VOICES }, () =>
-    new Array<null | SliceStep>(NUM_STEPS).fill(null),
-  );
-}
-
-export const ensureValidSliceSteps = normalizeSliceSteps;
-
 export interface RollOptions {
   amount: number; // percent of eligible steps to change
   division: number;
   maxLength: number;
   varyLength: boolean;
+}
+
+export { normalizeSliceSteps as ensureValidSliceSteps } from "@romper/shared/sliceTypes";
+
+export function createEmptySliceSteps(): (null | SliceStep)[][] {
+  return Array.from({ length: NUM_VOICES }, () =>
+    new Array<null | SliceStep>(NUM_STEPS).fill(null),
+  );
 }
 
 /** Build a slice step from slice numbers, clamping the length to the sample end. */

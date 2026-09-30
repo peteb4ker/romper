@@ -82,7 +82,7 @@ describe("sliceConstants", () => {
     });
 
     it("stores a full-sample length as SLICE_TICKS", () => {
-      expect(makeSliceStep(0, 16, 16).length).toBe(SLICE_TICKS);
+      expect(makeSliceStep(0, 16, 16)).toHaveLength(SLICE_TICKS);
     });
   });
 

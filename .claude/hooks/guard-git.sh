@@ -39,7 +39,7 @@ if printf '%s' "$COMMAND" | grep -qE '\bcore\.hooksPath\b'; then
   block "Overriding core.hooksPath bypasses git hooks. Fix the failing check instead."
 fi
 
-# enforce_admins is off on main, so --admin merges past required checks.
+# --admin skips required checks (and fails outright while enforce_admins is on).
 if printf '%s' "$COMMAND" | grep -qE '\bgh\b[^;&|]*\bpr\b[^;&|]*\bmerge\b[^;&|]*--admin'; then
   block "gh pr merge --admin skips required checks. Let CI pass (see the ship-pr skill)."
 fi

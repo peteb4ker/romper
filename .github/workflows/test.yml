@@ -16,7 +16,6 @@ concurrency:
 
 env:
   NODE_VERSION: "22"
-  JAVA_VERSION: "17"
 
 jobs:
   # Unit tests - runs independently and uploads coverage
@@ -43,15 +42,14 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
 
-      # Run unit tests (fast on PRs, coverage on main)
+      # Coverage runs on PRs too (~10s slower than test:unit:fast) so
+      # SonarCloud can analyze PRs, including coverage on new code.
       - name: Run unit tests
-        run: ${{ github.event_name == 'push' && 'npm run test:unit' || 'npm run test:unit:fast' }}
+        run: npm run test:unit
         env:
           CI: true
 
-      # Upload unit test coverage artifacts (main only, for SonarCloud)
       - name: Upload unit coverage artifacts
-        if: github.event_name == 'push'
         uses: actions/upload-artifact@v5
         with:
           name: unit-coverage
@@ -111,26 +109,28 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           sleep 2
 
-      # Run integration tests (fast on PRs, coverage on main)
       - name: Run integration tests
-        run: ${{ github.event_name == 'push' && 'npm run test:integration' || 'npm run test:integration:fast' }}
+        run: npm run test:integration
         env:
           CI: true
           DISPLAY: ${{ matrix.os == 'ubuntu-latest' && ':99' || '' }}
 
-      # Upload integration coverage artifacts (main only, Ubuntu only)
       - name: Upload integration coverage artifacts
-        if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v5
         with:
           name: integration-coverage
           path: coverage/integration/
           retention-days: 1
 
-  # Analysis and reporting - downloads coverage artifacts and runs analysis
+  # Coverage merge + SonarCloud. Runs on main pushes and on same-repo PRs
+  # (fork and Dependabot PRs don't get SONAR_TOKEN).
   analysis:
     needs: [unit-tests, integration-tests]
-    if: github.event_name == 'push'
+    if: >-
+      github.event_name == 'push' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       github.actor != 'dependabot[bot]')
     runs-on: ubuntu-latest
     # The SonarCloud Scan step exceeded the previous 8-minute limit and was
     # killed mid-scan on every main push, so SonarCloud had not re-analyzed
@@ -139,6 +139,11 @@ jobs:
     permissions:
       contents: read
       issues: write
+      pull-requests: read
+    # Step-level `if:` can't see secrets or a step's own env, so expose the
+    # token at job level.
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
       # Code checkout (full history for SonarCloud)
@@ -178,16 +183,8 @@ jobs:
           npm run coverage:merge
           npm run coverage:total
 
-      # Setup Java for SonarCloud (parallel with coverage)
-      - name: Setup Java for SonarCloud
-        uses: actions/setup-java@v5
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: "temurin"
-
-      # Code coverage upload (only on main branch)
       - name: Upload coverage to Codecov
-        if: github.ref == 'refs/heads/main'
+        if: github.event_name == 'push'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -195,24 +192,19 @@ jobs:
           files: ./coverage/coverage-final.json
           disable_search: true
 
-      # SonarCloud analysis
+      # sonarcloud-github-action was deprecated and its bundled scanner
+      # stopped working (no analysis landed after 2026-07-21).
       - name: SonarCloud Scan
         if: env.SONAR_TOKEN != ''
-        uses: SonarSource/sonarcloud-github-action@v2
-        with:
-          projectBaseDir: .
+        uses: SonarSource/sonarqube-scan-action@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_ORGANIZATION: peteb4ker
-          SONAR_HOST_URL: https://sonarcloud.io
 
       # Risk-informed quality gate check with deduplication
       - name: Check quality gate and manage issues
         if: always() && github.event_name == 'push'
         continue-on-error: true
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           GATE=$(curl -s -u "$SONAR_TOKEN:" \

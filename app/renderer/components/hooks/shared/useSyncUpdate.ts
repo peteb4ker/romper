@@ -1,4 +1,5 @@
 import type { SyncChangeSummary } from "@romper/app/renderer/components/dialogs/SyncUpdateDialog.types";
+import type { SyncOptions } from "@romper/shared/electronApi.js";
 
 import { useCallback, useState } from "react";
 
@@ -42,10 +43,7 @@ interface UseSyncUpdateResult {
     sdCardPath?: string,
   ) => Promise<null | SyncChangeSummary>;
   isLoading: boolean;
-  startSync: (options: {
-    sdCardPath: string;
-    wipeSdCard?: boolean;
-  }) => Promise<boolean>;
+  startSync: (options: SyncOptions) => Promise<boolean>;
   syncProgress: null | SyncProgress;
 }
 
@@ -82,7 +80,7 @@ export function useSyncUpdate(
         }
 
         log.debug("Returning summary data:", result.data);
-        return (result.data as unknown as SyncChangeSummary) || null;
+        return result.data ?? null;
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Unknown error occurred";
@@ -96,10 +94,7 @@ export function useSyncUpdate(
   );
 
   const startSync = useCallback(
-    async (options: {
-      sdCardPath: string;
-      wipeSdCard?: boolean;
-    }): Promise<boolean> => {
+    async (options: SyncOptions): Promise<boolean> => {
       if (!electronAPI?.startKitSync) {
         setError("Sync functionality not available");
         return false;
@@ -131,6 +126,7 @@ export function useSyncUpdate(
 
         const result = await electronAPI.startKitSync({
           sdCardPath: options.sdCardPath,
+          skipInvalidFiles: options.skipInvalidFiles,
           wipeSdCard: options.wipeSdCard,
         });
 

@@ -3,7 +3,11 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { getAllBanks, markKitsAsSynced } from "../db/romperDbCoreORM.js";
+import {
+  getAllBanks,
+  getKits,
+  markKitsAsSynced,
+} from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { logger } from "../utils/logger.js";
 import { rtfFileService } from "./rtfFileService.js";
@@ -26,8 +30,38 @@ export interface SyncBankSummary {
 
 export interface SyncChangeSummary {
   banks: SyncBankSummary[];
+  /** Files that will be written to the card */
   fileCount: number;
   kitCount: number;
+  /** Samples that can't be written (missing or unreadable source files) */
+  validationErrors: SyncValidationError[];
+  warnings: string[];
+}
+
+export interface SyncOptions {
+  sdCardPath: string;
+  /**
+   * The user has seen the summary's validation errors and chose to write
+   * the rest. Without it, sync refuses to start while any sample would be
+   * skipped, so a card is never wiped and then only partly written.
+   */
+  skipInvalidFiles?: boolean;
+  wipeSdCard?: boolean;
+}
+
+export interface SyncOutcome {
+  /** Samples that were not written because they failed validation */
+  skippedFiles: SyncValidationError[];
+  syncedFiles: number;
+  warnings: string[];
+}
+
+interface SyncPlan {
+  dbDir: string;
+  files: SyncFileOperation[];
+  localStorePath: string;
+  validationErrors: SyncValidationError[];
+  warnings: string[];
 }
 
 class SyncService {
@@ -43,20 +77,20 @@ class SyncService {
    */
   async generateChangeSummary(
     inMemorySettings: Record<string, unknown>,
-    _sdCardPath?: string,
+    sdCardPath?: string,
   ): Promise<DbResult<SyncChangeSummary>> {
     try {
-      const localStorePath =
-        ServicePathManager.getLocalStorePath(inMemorySettings);
-      if (!localStorePath) {
-        return { error: "No local store path configured", success: false };
+      const planResult = await this.planSync(
+        inMemorySettings,
+        sdCardPath || undefined,
+      );
+      if (!planResult.success || !planResult.data) {
+        return { error: planResult.error, success: false };
       }
-
-      const dbDir = ServicePathManager.getDbPath(localStorePath);
+      const plan = planResult.data;
 
       // Get kit count
-      const { getKits } = await import("../db/romperDbCoreORM.js");
-      const kitsResult = getKits(dbDir);
+      const kitsResult = getKits(plan.dbDir);
       if (!kitsResult.success || !kitsResult.data) {
         return {
           error: kitsResult.error ?? "Failed to load kits",
@@ -64,35 +98,23 @@ class SyncService {
         };
       }
       const kitCount = kitsResult.data.length;
+      const fileCount = plan.files.length;
 
-      // Get all samples for counting and size calculation
-      const samplesResult =
-        await syncSampleProcessingService.gatherAllSamples(dbDir);
-      if (!samplesResult.success) {
-        return { error: samplesResult.error, success: false };
-      }
-
-      const samples = samplesResult.data || [];
-      const fileCount = samples.length;
-
-      // Group samples by bank (first character of kit name, A-Z) — max 26 banks
+      // Group the planned files by bank (first character of kit name, A-Z)
       const bankMap = new Map<
         string,
         { fileCount: number; hasConversions: boolean; kitNames: Set<string> }
       >();
-      for (const sample of samples) {
-        const kitName =
-          (sample as { kitName?: string }).kitName || sample.kit_name;
-        if (!kitName) continue;
-        const bank = kitName.charAt(0).toUpperCase();
+      for (const file of plan.files) {
+        const bank = file.kitName.charAt(0).toUpperCase();
         const entry = bankMap.get(bank) || {
           fileCount: 0,
           hasConversions: false,
           kitNames: new Set<string>(),
         };
         entry.fileCount++;
-        entry.kitNames.add(kitName);
-        if (sample.filename && !/\.wav$/i.test(sample.filename)) {
+        entry.kitNames.add(file.kitName);
+        if (file.operation === "convert") {
           entry.hasConversions = true;
         }
         bankMap.set(bank, entry);
@@ -107,15 +129,12 @@ class SyncService {
           kitCount: data.kitNames.size,
         }));
 
-      logger.log("[Backend] Samples result:", {
-        sampleCount: fileCount,
-        success: samplesResult.success,
-      });
-
       const summary: SyncChangeSummary = {
         banks,
         fileCount,
         kitCount,
+        validationErrors: plan.validationErrors,
+        warnings: plan.warnings,
       };
 
       logger.log("[Backend] Generated sync summary:", summary);
@@ -135,14 +154,9 @@ class SyncService {
    */
   async startKitSync(
     inMemorySettings: Record<string, unknown>,
-    options: {
-      sdCardPath: string;
-      wipeSdCard?: boolean;
-    },
-  ): Promise<DbResult<{ syncedFiles: number }>> {
+    options: SyncOptions,
+  ): Promise<DbResult<SyncOutcome>> {
     try {
-      // For now, we need to generate file operations for sync
-      // This is a temporary fix - we should separate summary from sync operations
       const localStorePath =
         ServicePathManager.getLocalStorePath(inMemorySettings);
       if (!localStorePath) {
@@ -162,35 +176,31 @@ class SyncService {
         return { error: target.reason, success: false };
       }
 
-      const dbDir = ServicePathManager.getDbPath(localStorePath);
-      const samplesResult =
-        await syncSampleProcessingService.gatherAllSamples(dbDir);
-      if (!samplesResult.success) {
-        return { error: samplesResult.error, success: false };
+      const planResult = await this.planSync(
+        inMemorySettings,
+        options.sdCardPath,
+      );
+      if (!planResult.success || !planResult.data) {
+        return { error: planResult.error, success: false };
       }
+      const {
+        dbDir,
+        files: allFiles,
+        validationErrors,
+        warnings,
+      } = planResult.data;
 
-      // Generate file operations for actual sync using existing logic
-      const results = {
-        filesToConvert: [] as SyncFileOperation[],
-        filesToCopy: [] as SyncFileOperation[],
-        hasFormatWarnings: false,
-        validationErrors: [] as SyncValidationError[],
-        warnings: [] as string[],
-      };
-
-      const samples = samplesResult.data || [];
-
-      // Process samples with standard sync logic - stereo behavior is now corrected in core processor
-      for (const sample of samples) {
-        syncSampleProcessingService.processSampleForSync(
-          sample,
-          localStorePath,
-          results,
-          options.sdCardPath,
-        );
+      // Samples that can't be written must not be dropped silently. Refuse
+      // before touching the card (and before any wipe) unless the user has
+      // reviewed them in the summary and chosen to skip them.
+      if (validationErrors.length > 0 && !options.skipInvalidFiles) {
+        const count = validationErrors.length;
+        const samples = count === 1 ? "1 sample" : `${count} samples`;
+        return {
+          error: `${samples} can't be written to the card. Nothing was written. Confirm skipping them in the write summary to continue.`,
+          success: false,
+        };
       }
-
-      const allFiles = [...results.filesToCopy, ...results.filesToConvert];
 
       // Set per-file forceMonoConversion based on voice stereo_mode
       // Mono voices need stereo samples converted to mono; stereo voices pass through
@@ -220,9 +230,21 @@ class SyncService {
       // Write bank RTF files to SD card root
       this.writeBankRtfFiles(dbDir, options.sdCardPath);
 
-      this.markKitsAsSynced(inMemorySettings, allFiles, syncedFiles);
+      // A kit with a skipped sample isn't in sync with the card, so it keeps
+      // its "modified since sync" flag.
+      const incompleteKits = new Set(
+        validationErrors.map((error) => error.kitName),
+      );
+      this.markKitsAsSynced(
+        inMemorySettings,
+        allFiles.filter((file) => !incompleteKits.has(file.kitName)),
+        syncedFiles,
+      );
 
-      return { data: { syncedFiles }, success: true };
+      return {
+        data: { skippedFiles: validationErrors, syncedFiles, warnings },
+        success: true,
+      };
     } catch (error) {
       this.handleSyncFailure(inMemorySettings, error);
       return {
@@ -314,6 +336,55 @@ class SyncService {
     } else {
       console.warn("Failed to mark kits as synced:", markSyncedResult.error);
     }
+  }
+
+  /**
+   * Work out which files a sync would write, and which samples it can't
+   * write. The summary and the sync share this so they always agree.
+   */
+  private async planSync(
+    inMemorySettings: Record<string, unknown>,
+    sdCardPath?: string,
+  ): Promise<DbResult<SyncPlan>> {
+    const localStorePath =
+      ServicePathManager.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { error: "No local store path configured", success: false };
+    }
+
+    const dbDir = ServicePathManager.getDbPath(localStorePath);
+    const samplesResult =
+      await syncSampleProcessingService.gatherAllSamples(dbDir);
+    if (!samplesResult.success) {
+      return { error: samplesResult.error, success: false };
+    }
+
+    const results = {
+      filesToConvert: [] as SyncFileOperation[],
+      filesToCopy: [] as SyncFileOperation[],
+      hasFormatWarnings: false,
+      validationErrors: [] as SyncValidationError[],
+      warnings: [] as string[],
+    };
+    for (const sample of samplesResult.data || []) {
+      syncSampleProcessingService.processSampleForSync(
+        sample,
+        localStorePath,
+        results,
+        sdCardPath,
+      );
+    }
+
+    return {
+      data: {
+        dbDir,
+        files: [...results.filesToCopy, ...results.filesToConvert],
+        localStorePath,
+        validationErrors: results.validationErrors,
+        warnings: results.warnings,
+      },
+      success: true,
+    };
   }
 
   /**

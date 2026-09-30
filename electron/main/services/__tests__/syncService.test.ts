@@ -1,3 +1,5 @@
+import type { Sample } from "@romper/shared/db/schema.js";
+
 import { BrowserWindow } from "electron";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -119,21 +121,12 @@ describe("SyncService", () => {
       sampleRate: 44100,
     });
 
-    // Mock getKits for generateChangeSummary
-    vi.doMock("../../db/romperDbCoreORM.js", async () => {
-      const actual = await vi.importActual("../../db/romperDbCoreORM.js");
-      return {
-        ...actual,
-        getKits: vi.fn().mockResolvedValue({
-          data: [
-            { bank_letter: "A", name: "A01" },
-            { bank_letter: "B", name: "B02" },
-          ],
-          success: true,
-        }),
-        getKitSamples: mockGetKitSamples,
-        markKitsAsSynced: mockMarkKitsAsSynced,
-      };
+    mockGetKits.mockReturnValue({
+      data: [
+        { bank_letter: "A", name: "A01" },
+        { bank_letter: "B", name: "B02" },
+      ],
+      success: true,
     });
 
     mockGetKitSamples.mockResolvedValue({
@@ -224,11 +217,6 @@ describe("SyncService", () => {
 
     it("generates the change summary from the override when no path is saved", async () => {
       mockGetKits.mockReturnValue({ data: [], success: true });
-      // generateChangeSummary imports getKits dynamically; replace the
-      // outer beforeEach's doMock so the call is observable.
-      vi.doMock("../../db/romperDbCoreORM.js", () => ({
-        getKits: mockGetKits,
-      }));
 
       const result = await syncService.generateChangeSummary({
         localStorePath: null,
@@ -439,6 +427,130 @@ describe("SyncService", () => {
     });
   });
 
+  describe("samples that can't be written (RE-09)", () => {
+    const mockSettings = { localStorePath: "/local/store" };
+    const sample = (kitName: string, filename: string) =>
+      ({ filename, kit_name: kitName, kitName }) as unknown as Sample;
+
+    beforeEach(() => {
+      // A1/kick.wav can be written; A1/missing.wav and B2/gone.wav can't.
+      vi.spyOn(
+        syncSampleProcessingService,
+        "gatherAllSamples",
+      ).mockResolvedValue({
+        data: [
+          sample("A1", "kick.wav"),
+          sample("A1", "missing.wav"),
+          sample("B2", "gone.wav"),
+          sample("C3", "snare.wav"),
+        ],
+        success: true,
+      });
+      vi.spyOn(
+        syncSampleProcessingService,
+        "processSampleForSync",
+      ).mockImplementation((s, _store, results) => {
+        if (s.filename === "missing.wav" || s.filename === "gone.wav") {
+          results.validationErrors.push({
+            error: `Source file not found: /src/${s.filename}`,
+            filename: s.filename,
+            kitName: s.kit_name,
+            sourcePath: `/src/${s.filename}`,
+            type: "missing_file",
+          });
+          return;
+        }
+        results.filesToCopy.push({
+          destinationPath: `/sd/card/${s.kit_name}/1/${s.filename}`,
+          filename: s.filename,
+          kitName: s.kit_name,
+          operation: "copy",
+          sourcePath: `/src/${s.filename}`,
+        });
+        results.warnings.push(`note about ${s.filename}`);
+      });
+      vi.spyOn(syncFileOperationsService, "processAllFiles").mockResolvedValue(
+        2,
+      );
+      mockMarkKitsAsSynced.mockReturnValue({ success: true });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("reports them in the summary and counts only files that will be written", async () => {
+      mockGetKits.mockReturnValue({ data: [{}, {}, {}], success: true });
+
+      const result = await syncService.generateChangeSummary(mockSettings);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.fileCount).toBe(2);
+      expect(result.data?.banks.map((b) => [b.bank, b.fileCount])).toEqual([
+        ["A", 1],
+        ["C", 1],
+      ]);
+      expect(result.data?.validationErrors.map((e) => e.filename)).toEqual([
+        "missing.wav",
+        "gone.wav",
+      ]);
+      expect(result.data?.warnings).toEqual([
+        "note about kick.wav",
+        "note about snare.wav",
+      ]);
+    });
+
+    it("refuses to sync without confirmation, before wiping or writing anything", async () => {
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+        wipeSdCard: true,
+      });
+
+      expect(result).toEqual({
+        error:
+          "2 samples can't be written to the card. Nothing was written. Confirm skipping them in the write summary to continue.",
+        success: false,
+      });
+      expect(mockClearRampleContent).not.toHaveBeenCalled();
+      expect(syncFileOperationsService.processAllFiles).not.toHaveBeenCalled();
+      expect(mockMarkKitsAsSynced).not.toHaveBeenCalled();
+    });
+
+    it("writes the rest and reports the skipped samples once confirmed", async () => {
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+        skipInvalidFiles: true,
+        wipeSdCard: true,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.syncedFiles).toBe(2);
+      expect(result.data?.skippedFiles.map((e) => e.filename)).toEqual([
+        "missing.wav",
+        "gone.wav",
+      ]);
+      expect(result.data?.warnings).toHaveLength(2);
+      expect(mockClearRampleContent).toHaveBeenCalledWith("/sd/card");
+      expect(
+        vi
+          .mocked(syncFileOperationsService.processAllFiles)
+          .mock.calls[0][0].map((f) => f.filename),
+      ).toEqual(["kick.wav", "snare.wav"]);
+    });
+
+    it("leaves kits with a skipped sample marked as modified", async () => {
+      await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+        skipInvalidFiles: true,
+      });
+
+      expect(mockMarkKitsAsSynced).toHaveBeenCalledWith(
+        "/local/store/.romperdb",
+        ["C3"],
+      );
+    });
+  });
+
   describe("error handling", () => {
     const mockSettings = {
       localStorePath: "/local/store",
@@ -449,33 +561,39 @@ describe("SyncService", () => {
       wipeSdCard: false,
     };
 
-    it("handles generateChangeSummary failures", async () => {
-      // Mock generateChangeSummary to fail
-      const mockGenerateChangeSummary = vi.spyOn(
-        syncService,
-        "generateChangeSummary",
-      );
-      mockGenerateChangeSummary.mockResolvedValue({
-        error: "Failed to generate summary",
+    it("fails when the kits can't be loaded", async () => {
+      mockGetKits.mockReturnValue({
+        error: "Failed to load kits",
         success: false,
       });
 
       const result = await syncService.startKitSync(mockSettings, mockOptions);
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("Failed to load kits");
+      expect(result).toEqual({ error: "Failed to load kits", success: false });
     });
 
-    it("handles general sync errors", async () => {
-      // Mock fs operations to throw errors
+    it("reports an unexpected error while planning as a sync failure", async () => {
+      mockGetKitSamples.mockReturnValue({
+        data: [
+          {
+            filename: "kick.wav",
+            kit_name: "A01",
+            source_path: "/source/kick.wav",
+            voice_number: 1,
+          },
+        ],
+        success: true,
+      } as unknown as ReturnType<typeof getKitSamples>);
       mockFs.statSync.mockImplementation(() => {
         throw new Error("Filesystem error");
       });
 
       const result = await syncService.startKitSync(mockSettings, mockOptions);
 
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      expect(result).toEqual({
+        error: "Failed to sync kit: Filesystem error",
+        success: false,
+      });
     });
   });
 

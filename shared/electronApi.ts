@@ -173,10 +173,7 @@ export interface ElectronAPI {
   selectSdCard: () => Promise<null | string>;
   setSetting: (key: SettingsKey, value: unknown) => Promise<void>;
   showItemInFolder: (path: string) => Promise<unknown>;
-  startKitSync: (options: {
-    sdCardPath: string;
-    wipeSdCard?: boolean;
-  }) => Promise<DbResult<{ syncedFiles: number }>>;
+  startKitSync: (options: SyncOptions) => Promise<DbResult<SyncOutcome>>;
   toggleKitFavorite: (
     kitName: string,
   ) => Promise<DbResult<{ isFavorite: boolean }>>;
@@ -280,29 +277,38 @@ export interface SettingsData {
 
 export type SettingsKey = keyof SettingsData;
 
+export interface SyncBankSummary {
+  bank: string;
+  fileCount: number;
+  hasConversions: boolean;
+  kitCount: number;
+}
+
 export interface SyncChangeSummary {
-  estimatedSize: number;
-  estimatedTime: number;
-  filesToConvert: SyncFilePlan[];
-  filesToCopy: SyncFilePlan[];
-  hasFormatWarnings: boolean;
-  validationErrors: Array<{
-    error: string;
-    filename: string;
-    sourcePath: string;
-    type: "access_denied" | "invalid_format" | "missing_file" | "other";
-  }>;
+  banks: SyncBankSummary[];
+  /** Files that will be written to the card */
+  fileCount: number;
+  kitCount: number;
+  /** Samples that can't be written (missing or unreadable source files) */
+  validationErrors: SyncValidationError[];
   warnings: string[];
 }
 
-export interface SyncFilePlan {
-  destinationPath: string;
-  filename: string;
-  operation: "convert" | "copy";
-  originalFormat?: string;
-  reason?: string;
-  sourcePath: string;
-  targetFormat?: string;
+export interface SyncOptions {
+  sdCardPath: string;
+  /**
+   * Confirms the user chose to write everything except the samples listed
+   * in the summary's validationErrors. Without it, sync refuses to start
+   * while any sample would be skipped.
+   */
+  skipInvalidFiles?: boolean;
+  wipeSdCard?: boolean;
+}
+
+export interface SyncOutcome {
+  skippedFiles: SyncValidationError[];
+  syncedFiles: number;
+  warnings: string[];
 }
 
 // The sync progress events forwarded over the "sync-progress" channel.
@@ -330,4 +336,12 @@ export interface SyncProgress {
     | "preparing";
   totalBytes: number;
   totalFiles: number;
+}
+
+export interface SyncValidationError {
+  error: string;
+  filename: string;
+  kitName?: string;
+  sourcePath: string;
+  type: "access_denied" | "invalid_format" | "missing_file" | "other";
 }

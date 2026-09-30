@@ -30,7 +30,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-09 | High | Sync | Validation errors (such as missing source files) and warnings are built and then dropped. | open |
+| RE-09 | High | Sync | Validation errors (such as missing source files) and warnings are built and then dropped. | in progress (`fix/re-09-sync-validation`) |
 | RE-06 | High | Sync | Sync writes `<card>/<kit>/<voice>/<file>`, but SD import and rescan read only WAVs at the kit root and take the voice from the first character of the file name. | open; needs a decision on the card layout (confirm what the Rample firmware reads) |
 | RE-05 | High | Sync | Sync only adds or overwrites. Removed, moved or renamed samples and deleted kits stay on the card. | open |
 | RE-07 | High | Sync | Sync blocks the main process for the whole run: every file is copied or converted with synchronous calls, so no IPC (including Cancel) runs until it finishes. | open |
@@ -67,7 +67,6 @@ This file tracks what's being done about each item.
 | RE-27 | Medium | Samples | Moving a sample to another kit is not atomic and rebuilds the row from `source_path` only, dropping gain, WAV metadata and the stereo flag. | open |
 | RE-28 | Medium | DB | Multi-step writes run without a transaction: kit plus its four voices; delete plus reindex (the reindex opens a second connection while the first is open); write plus the modified flag; scan insert plus metadata. | open |
 | RE-29 | Medium | Sync | Mono conversion is effectively dead. It runs only when `samples.is_stereo` is true, but that is `false` for every added or imported sample and is guessed from the file name on rescan (`/stereo\ | open |
-| RE-30 | Medium | Config | `ROMPER_LOCAL_PATH` is honoured by kit and DB handlers but ignored by sample, scan, sync and audio-buffer code. | in progress (#355) |
 | RE-31 | Medium | Setup | A failed SD-card setup cannot be retried: the directory copy uses a non-recursive `mkdirSync`, which fails because the earlier cleanup left the copied kit folders behind. | open (needs a decision: a recursive copy would overwrite same-named kit folders; see #359) |
 | RE-32 | Medium | Kits | Kit names are checked inconsistently. Import accepts names such as `Drum01`; `insert-kit` checks nothing; `kitService` rejects anything outside `^\p{Lu}\d{1,2}$`, so such kits cannot be deleted or duplicated. | open |
 | RE-33 | Medium | DB | Migration upkeep: 0008 is missing and there are two 0009 migrations, handled by a custom repair that runs `ALTER` statements outside a transaction. | open |
@@ -101,6 +100,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-30 | Medium | Config | `ROMPER_LOCAL_PATH` is honoured by kit and DB handlers but ignored by sample, scan, sync and audio-buffer code. | done (#355) |
 | RE-02 | High | Security | The `will-navigate` guard compares `URL.origin`, which is `"null"` for every `file://` URL. | done (#358; the IPC sender check ships with RE-03) |
 | RE-10 | High | Setup | If setup fails, the cleanup deletes `<target>/.romperdb` without checking that this run created it. | done (#359) |
 | RE-01 | Critical | Sync | "Clear SD card before writing" deletes every file and folder at the chosen path. | done (#351) |

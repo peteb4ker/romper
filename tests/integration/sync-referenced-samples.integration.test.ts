@@ -264,16 +264,40 @@ describe("Sync Referenced Samples Integration Test", () => {
       voice_number: 2,
     });
 
-    // Perform sync
     const inMemorySettings = { localStorePath };
-    const syncResult = await syncService.startKitSync(inMemorySettings, {
+
+    // The summary reports the missing sample instead of dropping it
+    const summary = await syncService.generateChangeSummary(inMemorySettings);
+    expect(summary.data?.fileCount).toBe(1);
+    expect(summary.data?.validationErrors).toEqual([
+      expect.objectContaining({
+        filename: "missing.wav",
+        kitName,
+        type: "missing_file",
+      }),
+    ]);
+
+    // Without confirmation, sync refuses and writes nothing
+    const refused = await syncService.startKitSync(inMemorySettings, {
       sdCardPath,
       wipeSdCard: false,
     });
+    expect(refused.success).toBe(false);
+    expect(refused.error).toMatch(/1 sample can't be written/);
+    expect(fs.existsSync(path.join(sdCardPath, kitName))).toBe(false);
 
-    // Should sync the valid sample but skip the missing one
+    // Once the user confirms, the valid sample is written and the missing
+    // one is reported as skipped
+    const syncResult = await syncService.startKitSync(inMemorySettings, {
+      sdCardPath,
+      skipInvalidFiles: true,
+      wipeSdCard: false,
+    });
     expect(syncResult.success).toBe(true);
     expect(syncResult.data?.syncedFiles).toBe(1);
+    expect(syncResult.data?.skippedFiles).toEqual([
+      expect.objectContaining({ filename: "missing.wav", kitName }),
+    ]);
 
     // Only the valid sample should be synced
     expect(fs.existsSync(path.join(sdCardPath, kitName, "2", "kick.wav"))).toBe(

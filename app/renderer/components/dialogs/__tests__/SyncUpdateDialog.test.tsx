@@ -16,6 +16,21 @@ describe("SyncUpdateDialog", () => {
     ],
     fileCount: 15,
     kitCount: 8,
+    validationErrors: [],
+    warnings: [],
+  };
+
+  const summaryWithInvalidFiles: SyncChangeSummary = {
+    ...mockChangeSummary,
+    validationErrors: [
+      {
+        error: "Source file not found: /samples/missing.wav",
+        filename: "missing.wav",
+        kitName: "A1",
+        sourcePath: "/samples/missing.wav",
+        type: "missing_file",
+      },
+    ],
   };
 
   beforeEach(() => {
@@ -181,8 +196,93 @@ describe("SyncUpdateDialog", () => {
       await user.click(startSyncButton);
       expect(mockOnConfirm).toHaveBeenCalledWith({
         sdCardPath: "/path/to/sd",
+        skipInvalidFiles: false,
         wipeSdCard: false,
       });
+    });
+
+    describe("with samples that can't be written", () => {
+      it("lists them and blocks the write until the user agrees to skip them", async () => {
+        const user = userEvent.setup({
+          advanceTimers: vi.advanceTimersByTime,
+        });
+
+        render(
+          <SyncUpdateDialog
+            isOpen={true}
+            kitName="A0"
+            localChangeSummary={summaryWithInvalidFiles}
+            onClose={mockOnClose}
+            onConfirm={mockOnConfirm}
+            sdCardPath="/path/to/sd"
+          />,
+        );
+
+        const invalidFiles = screen.getByTestId("invalid-files");
+        expect(invalidFiles).toHaveTextContent("1 sample can't be written");
+        expect(invalidFiles).toHaveTextContent("A1");
+        expect(invalidFiles).toHaveTextContent("missing.wav");
+        expect(invalidFiles).toHaveTextContent(
+          "Source file not found: /samples/missing.wav",
+        );
+        expect(screen.getByTestId("confirm-sync")).toBeDisabled();
+
+        await user.click(screen.getByTestId("skip-invalid-files-checkbox"));
+        expect(screen.getByTestId("confirm-sync")).not.toBeDisabled();
+
+        await user.click(screen.getByTestId("confirm-sync"));
+        expect(mockOnConfirm).toHaveBeenCalledWith({
+          sdCardPath: "/path/to/sd",
+          skipInvalidFiles: true,
+          wipeSdCard: false,
+        });
+      });
+
+      it("shows how many were skipped once the write completes", () => {
+        render(
+          <SyncUpdateDialog
+            isOpen={true}
+            kitName="A0"
+            localChangeSummary={summaryWithInvalidFiles}
+            onClose={mockOnClose}
+            onConfirm={mockOnConfirm}
+            sdCardPath="/path/to/sd"
+            syncProgress={{
+              bytesCompleted: 0,
+              currentFile: "",
+              filesCompleted: 15,
+              status: "completed",
+              totalBytes: 0,
+              totalFiles: 15,
+            }}
+          />,
+        );
+
+        expect(screen.getByTestId("skipped-count")).toHaveTextContent(
+          "1 skipped",
+        );
+      });
+    });
+
+    it("shows sync warnings", () => {
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={{
+            ...mockChangeSummary,
+            warnings: [
+              'Stereo sample "pad.wav" on voice 1 will play across voices 1 and 2',
+            ],
+          }}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+        />,
+      );
+
+      expect(screen.getByTestId("sync-warnings")).toHaveTextContent(
+        'Stereo sample "pad.wav" on voice 1',
+      );
     });
 
     it("should call onClose when Cancel button is clicked", async () => {
@@ -225,6 +325,7 @@ describe("SyncUpdateDialog", () => {
       await user.click(screen.getByText("Start Write"));
       expect(mockOnConfirm).toHaveBeenCalledWith({
         sdCardPath: "/path/to/sd",
+        skipInvalidFiles: false,
         wipeSdCard: true,
       });
     });

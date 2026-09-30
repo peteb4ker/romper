@@ -8,7 +8,6 @@ import {
   checkPathWritable,
   ensureDirectoryExists,
   getFileSize,
-  removeDirectorySafe,
   validateFileExists,
 } from "../fileSystemUtils.js";
 
@@ -225,55 +224,6 @@ describe("fileSystemUtils Integration Tests", () => {
     });
   });
 
-  describe("removeDirectorySafe", () => {
-    it("should remove a directory within .romperdb scope", () => {
-      const safeDir = path.join(TEST_DIR, ".romperdb", "temp-data");
-      fs.mkdirSync(safeDir, { recursive: true });
-      fs.writeFileSync(path.join(safeDir, "test.db"), "data");
-
-      const result = removeDirectorySafe(safeDir);
-
-      expect(result.removed).toBe(true);
-      expect(result.error).toBeUndefined();
-      expect(fs.existsSync(safeDir)).toBe(false);
-    });
-
-    it("should refuse to remove a directory outside .romperdb scope", () => {
-      const unsafeDir = path.join(TEST_DIR, "regular-dir");
-      fs.mkdirSync(unsafeDir, { recursive: true });
-
-      const result = removeDirectorySafe(unsafeDir);
-
-      expect(result.removed).toBe(false);
-      expect(result.error).toContain("Refusing to remove");
-      // Directory should still exist
-      expect(fs.existsSync(unsafeDir)).toBe(true);
-    });
-
-    it("should return success for an already-removed directory", () => {
-      const dir = path.join(TEST_DIR, ".romperdb", "already-gone");
-      // Don't create the directory
-
-      const result = removeDirectorySafe(dir);
-
-      expect(result.removed).toBe(true);
-      expect(result.error).toBeUndefined();
-    });
-
-    it("should recursively remove nested directories within .romperdb", () => {
-      const baseDir = path.join(TEST_DIR, ".romperdb", "nested");
-      const subDir = path.join(baseDir, "sub1", "sub2");
-      fs.mkdirSync(subDir, { recursive: true });
-      fs.writeFileSync(path.join(subDir, "deep-file.txt"), "deep");
-      fs.writeFileSync(path.join(baseDir, "root-file.txt"), "root");
-
-      const result = removeDirectorySafe(baseDir);
-
-      expect(result.removed).toBe(true);
-      expect(fs.existsSync(baseDir)).toBe(false);
-    });
-  });
-
   describe("validateFileExists", () => {
     it("should return exists=true for a real file", () => {
       const filePath = path.join(TEST_DIR, "real-file.wav");
@@ -362,26 +312,6 @@ describe("fileSystemUtils Integration Tests", () => {
       const spaceResult = checkDiskSpace(dir);
       expect(spaceResult.sufficient).toBe(true);
       expect(spaceResult.availableBytes).toBeGreaterThan(0);
-    });
-
-    it("should safely remove a .romperdb directory and confirm cleanup", () => {
-      const romperDbDir = path.join(TEST_DIR, ".romperdb", "cleanup-test");
-      ensureDirectoryExists(romperDbDir);
-
-      const filePath = path.join(romperDbDir, "data.sqlite");
-      fs.writeFileSync(filePath, "db content");
-
-      // Verify setup
-      expect(validateFileExists(filePath).exists).toBe(true);
-      expect(getFileSize(filePath)).toBeGreaterThan(0);
-
-      // Remove
-      const removeResult = removeDirectorySafe(romperDbDir);
-      expect(removeResult.removed).toBe(true);
-
-      // Verify cleanup
-      expect(validateFileExists(filePath).exists).toBe(false);
-      expect(getFileSize(filePath)).toBe(0);
     });
   });
 });

@@ -663,6 +663,81 @@ describe("useLocalStoreWizard", () => {
     expect(cleanupMock).toHaveBeenCalledWith("/mock/home/Documents/romper");
   });
 
+  it("refuses a target that already has a local store and leaves it alone (RE-10)", async () => {
+    const message =
+      'This folder already contains a Romper local store (.romperdb). Use "Choose Existing Store".';
+    vi.mocked(window.electronAPI.checkExistingLocalStore).mockResolvedValueOnce(
+      { error: message, exists: true },
+    );
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/existing");
+      result.current.setSource("squarp");
+    });
+    let initResult: { error?: string; success: boolean } | undefined;
+    await act(async () => {
+      initResult = await result.current.initialize();
+    });
+
+    expect(window.electronAPI.checkExistingLocalStore).toHaveBeenCalledWith(
+      "/mock/home/Documents/existing",
+    );
+    expect(initResult).toEqual({ error: message, success: false });
+    expect(result.current.state.error).toBe(message);
+    // Nothing was written, so nothing is cleaned up
+    expect(window.electronAPI.ensureDir).not.toHaveBeenCalled();
+    expect(window.electronAPI.downloadAndExtractArchive).not.toHaveBeenCalled();
+    expect(window.electronAPI.createRomperDb).not.toHaveBeenCalled();
+    expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+    expect(window.electronAPI.setSetting).not.toHaveBeenCalled();
+  });
+
+  it("surfaces main's refusal to create a database over an existing store", async () => {
+    // Covers a store appearing between the pre-check and creation
+    vi.mocked(window.electronAPI.createRomperDb).mockResolvedValueOnce({
+      error: "This folder already contains a Romper local store (.romperdb).",
+      success: false,
+    });
+    vi.mocked(window.electronAPI.cleanupPartialInit).mockResolvedValueOnce({
+      error:
+        "Refusing to clean up a local store that this setup did not create",
+      removed: false,
+    });
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("blank");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    expect(result.current.state.error).toMatch(
+      /already contains a Romper local store/,
+    );
+    expect(window.electronAPI.insertKit).not.toHaveBeenCalled();
+  });
+
+  it("does not ask main to clean up when setup fails before creating the database", async () => {
+    vi.mocked(window.electronAPI.checkPathWritable).mockResolvedValueOnce({
+      writable: false,
+    });
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath("/read-only/path/romper");
+      result.current.setSource("blank");
+    });
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    expect(result.current.state.error).toMatch(/Cannot write to/);
+    expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+  });
+
   it("skips disk space check for blank folder source", async () => {
     const checkDiskSpaceMock = vi.fn();
     vi.mocked(window.electronAPI.checkDiskSpace).mockImplementation(

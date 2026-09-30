@@ -146,6 +146,10 @@ const electronAPI = {
       console.debug("[IPC] checkDiskSpace invoked", targetPath, requiredBytes);
     return ipcRenderer.invoke("check-disk-space", targetPath, requiredBytes);
   },
+  checkExistingLocalStore: (targetPath: string) => {
+    isDev && console.debug("[IPC] checkExistingLocalStore invoked", targetPath);
+    return ipcRenderer.invoke("check-existing-local-store", targetPath);
+  },
   checkPathWritable: (targetPath: string) => {
     isDev && console.debug("[IPC] checkPathWritable invoked", targetPath);
     return ipcRenderer.invoke("check-path-writable", targetPath);

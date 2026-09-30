@@ -16,6 +16,7 @@ export const createElectronAPIMock = (
     requiredBytes: 0,
     sufficient: true,
   }),
+  checkExistingLocalStore: vi.fn().mockResolvedValue({ exists: false }),
   checkPathWritable: vi.fn().mockResolvedValue({ writable: true }),
   cleanupPartialInit: vi.fn().mockResolvedValue({ removed: true }),
   // Application operations

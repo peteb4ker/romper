@@ -16,7 +16,6 @@ import { createDbHandler } from "./db/ipcHandlerUtils.js";
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   getAllBanks,
   getAllSamples,
   getKit,
@@ -35,6 +34,7 @@ import {
 import { registerSampleIpcHandlers } from "./db/sampleIpcHandlers.js";
 import { registerSyncIpcHandlers } from "./db/syncIpcHandlers.js";
 import { localStoreService } from "./services/localStoreService.js";
+import { localStoreSetupService } from "./services/localStoreSetupService.js";
 import { rtfFileService } from "./services/rtfFileService.js";
 import { scanService } from "./services/scanService.js";
 import { ServicePathManager } from "./utils/fileSystemUtils.js";
@@ -46,9 +46,10 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   registerFavoritesIpcHandlers(inMemorySettings);
 
   // Basic database operations
-  ipcMain.handle("create-romper-db", (_event, dbDir: string) => {
-    return createRomperDbFile(dbDir);
-  });
+  // Setup-only: refuses a folder that already holds a store (RE-10)
+  ipcMain.handle("create-romper-db", (_event, dbDir: string) =>
+    localStoreSetupService.createSetupDatabase(dbDir),
+  );
 
   ipcMain.handle("insert-kit", (_event, dbDir: string, kit: NewKit) => {
     return addKit(dbDir, kit);

@@ -152,7 +152,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
   });
 
   describe("Database Operation Handlers", () => {
-    it("create-romper-db routes to createRomperDbFile", async () => {
+    it("create-romper-db creates the database through the setup guard", async () => {
       const handler = handlerRegistry["create-romper-db"];
       await handler({}, "/test/db");
 

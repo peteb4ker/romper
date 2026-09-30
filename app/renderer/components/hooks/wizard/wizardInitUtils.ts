@@ -21,12 +21,27 @@ export function normalizeErrorMessage(msg: string) {
   return msg;
 }
 
-/** Verify the target is writable and has enough space for the chosen source */
+/**
+ * Verify the target holds no local store yet, is writable, and has enough
+ * space for the chosen source. Runs before setup writes anything.
+ */
 export async function runPreChecks(
   api: ElectronAPI,
   targetPath: string,
   source: LocalStoreSource,
 ) {
+  // Setting up over an existing store would clash with (and, before RE-10,
+  // delete) it; send the user to "Choose Existing Store" instead
+  if (api.checkExistingLocalStore) {
+    const existing = await api.checkExistingLocalStore(targetPath);
+    if (existing.exists) {
+      throw new Error(
+        existing.error ??
+          "This folder already contains a Romper local store (.romperdb).",
+      );
+    }
+  }
+
   if (api.checkPathWritable) {
     const writableResult = await api.checkPathWritable(targetPath);
     if (!writableResult.writable) {

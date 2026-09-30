@@ -8,7 +8,6 @@ import {
   checkPathWritable,
   ensureDirectoryExists,
   getFileSize,
-  removeDirectorySafe,
   ServicePathManager,
   validateFileExists,
 } from "../fileSystemUtils";
@@ -474,83 +473,6 @@ describe("fileSystemUtils", () => {
       expect(result.sufficient).toBe(false);
       expect(result.availableBytes).toBe(1);
       expect(result.requiredBytes).toBe(1024 * 1024 * 1024);
-    });
-  });
-
-  describe("removeDirectorySafe", () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
-      // Provide real-ish path semantics so the canonicalisation logic is
-      // exercised: resolve normalises ".." segments; sep is POSIX.
-      mockPath.resolve.mockImplementation((...segs: string[]) => {
-        const out: string[] = [];
-        for (const part of segs.join("/").split("/")) {
-          if (part === "" || part === ".") continue;
-          if (part === "..") out.pop();
-          else out.push(part);
-        }
-        return "/" + out.join("/");
-      });
-      (mockPath as { sep: string }).sep = "/";
-    });
-
-    it("should remove directory within .romperdb scope", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.rmSync.mockImplementation(() => {});
-
-      const result = removeDirectorySafe("/path/.romperdb");
-
-      expect(result.removed).toBe(true);
-      expect(mockFs.rmSync).toHaveBeenCalledWith("/path/.romperdb", {
-        force: true,
-        recursive: true,
-      });
-    });
-
-    it("should refuse to remove directory outside .romperdb scope", () => {
-      const result = removeDirectorySafe("/path/to/other");
-
-      expect(result.removed).toBe(false);
-      expect(result.error).toContain("Refusing to remove");
-      expect(mockFs.rmSync).not.toHaveBeenCalled();
-    });
-
-    it("should refuse a lookalike directory name (not an exact segment)", () => {
-      const result = removeDirectorySafe("/path/.romperdb-backup");
-
-      expect(result.removed).toBe(false);
-      expect(result.error).toContain("Refusing to remove");
-      expect(mockFs.rmSync).not.toHaveBeenCalled();
-    });
-
-    it("should refuse a traversal that escapes the .romperdb segment", () => {
-      // Resolves to /etc — no .romperdb segment survives normalisation.
-      const result = removeDirectorySafe("/path/.romperdb/../../etc");
-
-      expect(result.removed).toBe(false);
-      expect(result.error).toContain("Refusing to remove");
-      expect(mockFs.rmSync).not.toHaveBeenCalled();
-    });
-
-    it("should return success if directory already gone", () => {
-      mockFs.existsSync.mockReturnValue(false);
-
-      const result = removeDirectorySafe("/path/.romperdb");
-
-      expect(result.removed).toBe(true);
-      expect(mockFs.rmSync).not.toHaveBeenCalled();
-    });
-
-    it("should handle rmSync errors", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.rmSync.mockImplementation(() => {
-        throw new Error("EACCES");
-      });
-
-      const result = removeDirectorySafe("/path/.romperdb");
-
-      expect(result.removed).toBe(false);
-      expect(result.error).toContain("Failed to remove");
     });
   });
 

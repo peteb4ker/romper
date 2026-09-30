@@ -102,6 +102,8 @@ export function useLocalStoreWizard(
     stateHook.setIsInitializing(true);
     stateHook.setError(null);
     stateHook.setProgress(null);
+    // Only a run that got as far as creating the database has one to clean up
+    let dbCreationStarted = false;
 
     try {
       if (!state.targetPath) throw new Error("No target path specified");
@@ -116,6 +118,7 @@ export function useLocalStoreWizard(
 
       // Create and populate database
       log.debug("initialize - creating and populating database");
+      dbCreationStarted = true;
       const { dbDir, truncationWarnings, validKits } =
         await fileOpsHook.createAndPopulateDb(state.targetPath);
       log.debug("initialize - database creation completed");
@@ -138,11 +141,16 @@ export function useLocalStoreWizard(
       const errorMessage = e instanceof Error ? e.message : "Unknown error";
       stateHook.setError(normalizeErrorMessage(errorMessage));
 
-      // Clean up partial database on failure so retry starts fresh
-      if (state.targetPath && api.cleanupPartialInit) {
+      // Move this run's partial database aside so a retry starts fresh.
+      // Main only acts on a .romperdb this setup created (RE-10).
+      if (dbCreationStarted && state.targetPath && api.cleanupPartialInit) {
         try {
-          await api.cleanupPartialInit(state.targetPath);
-          log.debug("Cleaned up partial .romperdb after failed initialization");
+          const cleanup = await api.cleanupPartialInit(state.targetPath);
+          if (cleanup.removed) {
+            log.debug("Moved partial .romperdb aside after failed setup");
+          } else {
+            log.warn("Partial .romperdb was not cleaned up:", cleanup.error);
+          }
         } catch {
           // Cleanup is best-effort; don't mask the original error
         }

@@ -80,7 +80,7 @@ export async function convertSampleToRampleFormat(
 
     // Read and decode input WAV file
     const inputBuffer = fs.readFileSync(inputPath);
-    const decoded = wav.decode(inputBuffer);
+    const decoded = decodeWav(inputBuffer);
 
     if (!decoded?.channelData?.length) {
       return { error: "Failed to decode input WAV file", success: false };
@@ -165,6 +165,28 @@ export async function convertToRampleDefault(
     targetBitDepth: 16,
     targetSampleRate: 44100,
   });
+}
+
+/**
+ * Decodes a WAV file buffer with node-wav.
+ *
+ * node-wav 0.0.2 mis-handles a Buffer that is a view at a non-zero offset into
+ * a larger ArrayBuffer: it starts parsing at `byteOffset` but stops at
+ * `length` instead of `byteOffset + length`, so decoding silently returns
+ * undefined. `fs.readFileSync` hands back exactly such pooled views for files
+ * smaller than half of `Buffer.poolSize`, which is 64 KiB under Electron 41
+ * (Node 24) versus 8 KiB under Node 22. Copy offset views into a Buffer that
+ * owns its own ArrayBuffer before decoding.
+ */
+export function decodeWav(buffer: Buffer): ReturnType<typeof wav.decode> {
+  if (buffer.byteOffset === 0) {
+    return wav.decode(buffer);
+  }
+  const standalone = buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength,
+  );
+  return wav.decode(Buffer.from(standalone));
 }
 
 /**

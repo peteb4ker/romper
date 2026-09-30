@@ -56,7 +56,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
   } = useSyncUpdate();
 
   // Handler to initiate sync to SD card
-  const handleSyncToSdCard = useCallback(async () => {
+  const handleSyncToSdCard = useCallback(() => {
     try {
       // Sync all kits to SD card
       setCurrentSyncKit("All Kits");

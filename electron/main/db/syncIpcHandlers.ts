@@ -20,7 +20,7 @@ export function registerSyncIpcHandlers(
     return syncService.startKitSync(inMemorySettings, options);
   });
 
-  ipcMain.handle("cancelKitSync", async () => {
+  ipcMain.handle("cancelKitSync", () => {
     syncService.cancelSync();
   });
 }

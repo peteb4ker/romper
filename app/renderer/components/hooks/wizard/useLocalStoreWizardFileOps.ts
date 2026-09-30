@@ -7,7 +7,6 @@ import type {
   ProgressEvent,
 } from "./useLocalStoreWizardState";
 
-import { config } from "../../../config";
 import { createRomperDb, insertKit, insertSample } from "../../utils/romperDb";
 
 export interface UseLocalStoreWizardFileOpsOptions {
@@ -90,7 +89,7 @@ export function useLocalStoreWizardFileOps({
 
   const extractSquarpArchive = useCallback(
     async (targetPath: string) => {
-      const url = config.squarpArchiveUrl;
+      // Main owns the archive URL; the renderer only names the destination.
       const isTest = process.env.NODE_ENV === "test";
       const maxRetries = isTest ? 1 : 3;
 
@@ -101,7 +100,6 @@ export function useLocalStoreWizardFileOps({
         const progressThrottle = 100;
 
         const result = await api.downloadAndExtractArchive?.(
-          url,
           targetPath,
           (p: unknown) => {
             const progress = p as ProgressEvent;

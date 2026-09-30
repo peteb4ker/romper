@@ -59,6 +59,11 @@ export interface ElectronAPI {
   copyDir: (src: string, dest: string) => Promise<unknown>;
   copyKit: (sourceKit: string, destKit: string) => Promise<DbResult>;
   createKit: (kitSlot: string) => Promise<DbResult>;
+  /**
+   * Setup-wizard channels (createRomperDb, insertKit, insertSample) name the
+   * new store's `.romperdb` folder because it isn't configured yet; main
+   * rejects any folder outside the roots it has granted (RE-03).
+   */
   createRomperDb: (dbDir: string) => Promise<RomperDbResult>;
   deleteKit: (kitName: string) => Promise<DbResult>;
   deleteSampleFromSlot: (
@@ -73,8 +78,8 @@ export interface ElectronAPI {
     voiceNumber: number,
     slotNumber: number,
   ) => Promise<DbResult<{ deletedSamples: Sample[] }>>;
+  /** Installs the Squarp factory samples; main owns the archive URL. */
   downloadAndExtractArchive: (
-    url: string,
     destDir: string,
     onProgress?: (p: unknown) => void,
     onError?: (e: unknown) => void,
@@ -84,7 +89,7 @@ export interface ElectronAPI {
     sdCardPath?: string,
   ) => Promise<DbResult<SyncChangeSummary>>;
   getAllBanks: () => Promise<DbResult<Bank[]>>;
-  getAllSamples: (dbDir: string) => Promise<DbResult<Sample[]>>;
+  getAllSamples: () => Promise<DbResult<Sample[]>>;
   getAllSamplesForKit: (kitName: string) => Promise<DbResult<Sample[]>>;
   getAudioMetadata: (filePath: string) => Promise<DbResult<AudioMetadata>>;
   getFavoriteKits: () => Promise<DbResult<KitWithRelations[]>>;
@@ -152,6 +157,14 @@ export interface ElectronAPI {
     slotNumber: number,
     filePath: string,
   ) => Promise<DbResult<{ sampleId: number }>>;
+  /**
+   * Ask main to allow a setup-wizard target folder the user typed. Main
+   * confirms it with the user in a native prompt unless it is already inside
+   * a folder Romper has been given.
+   */
+  requestLocalStoreAccess: (
+    targetPath: string,
+  ) => Promise<{ error?: string; granted: boolean }>;
   rescanKit: (kitName: string) => Promise<DbResult<KitScanResult>>;
   rescanKitsMissingMetadata: () => Promise<
     DbResult<{

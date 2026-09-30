@@ -191,6 +191,30 @@ describe("preload/index.tsx", () => {
     const result = await fileApi.getDroppedFilePath(file);
     expect(mockElectron.webUtils.getPathForFile).toHaveBeenCalledWith(file);
     expect(result).toBe("/mock/path/test.wav");
+    // RE-03: the real dropped path is reported so main allows reading it.
+    expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
+      "register-dropped-file",
+      "/mock/path/test.wav",
+    );
+  });
+
+  it("does not register a drop when webUtils yields no path", async () => {
+    await import("../index");
+
+    const fileApi =
+      mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+        (c) => c[0] === "electronFileAPI",
+      )?.[1];
+
+    mockElectron.webUtils.getPathForFile.mockResolvedValue("");
+    mockElectron.ipcRenderer.invoke.mockClear();
+
+    const result = await fileApi.getDroppedFilePath(new File([], "x.wav"));
+    expect(result).toBe("");
+    expect(mockElectron.ipcRenderer.invoke).not.toHaveBeenCalledWith(
+      "register-dropped-file",
+      expect.anything(),
+    );
   });
 
   it("handles getDroppedFilePath error when webUtils unavailable", async () => {
@@ -427,12 +451,7 @@ describe("preload/index.tsx", () => {
 
       mockElectron.ipcRenderer.invoke.mockResolvedValue("success");
 
-      await api.downloadAndExtractArchive(
-        "http://test.com",
-        "/dest",
-        onProgress,
-        onError,
-      );
+      await api.downloadAndExtractArchive("/dest", onProgress, onError);
 
       expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
         "archive-progress",
@@ -450,7 +469,6 @@ describe("preload/index.tsx", () => {
       );
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "download-and-extract-archive",
-        "http://test.com",
         "/dest",
       );
     });
@@ -572,9 +590,14 @@ describe("preload/index.tsx", () => {
         method: "createRomperDb",
       },
       {
-        args: ["/path/to/db"],
+        args: [],
         ipcChannel: "get-all-samples",
         method: "getAllSamples",
+      },
+      {
+        args: ["/typed/romper"],
+        ipcChannel: "request-local-store-access",
+        method: "requestLocalStoreAccess",
       },
       {
         args: ["/local/store"],
@@ -802,10 +825,10 @@ describe("preload/index.tsx", () => {
 
       mockElectron.ipcRenderer.invoke.mockResolvedValue("mock-result");
 
-      await api.downloadAndExtractArchive("http://test.com", "/dest/path");
+      await api.downloadAndExtractArchive("/dest/path");
+      // The renderer names only the destination; main owns the archive URL.
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "download-and-extract-archive",
-        "http://test.com",
         "/dest/path",
       );
       // Should not set up listeners when no callbacks provided

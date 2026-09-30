@@ -59,7 +59,7 @@ describe("useLocalStoreWizard", () => {
     });
     vi.mocked(window.electronAPI.setSetting).mockResolvedValue(undefined);
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
-      async (_url, _destDir, _onProgress, _onError) => ({ success: true }),
+      async (_destDir, _onProgress, _onError) => ({ success: true }),
     );
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
       async (_path) => [],
@@ -171,8 +171,7 @@ describe("useLocalStoreWizard", () => {
 
   it("initializes from Squarp.net archive (downloads and extracts)", async () => {
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
-      async (url, destDir) => {
-        if (!url.endsWith(".zip")) throw new Error("Invalid URL");
+      async (destDir) => {
         if (!destDir.includes("romper")) throw new Error("Invalid destDir");
         return { success: true };
       },
@@ -215,7 +214,7 @@ describe("useLocalStoreWizard", () => {
   it("sets and clears progress during Squarp.net archive initialization", async () => {
     let progressCb: unknown = null;
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
-      async (url, destDir, onProgress) => {
+      async (_destDir, onProgress) => {
         progressCb = onProgress;
         // Simulate progress events
         if (progressCb) progressCb({ percent: 10, phase: "Downloading" });
@@ -239,7 +238,7 @@ describe("useLocalStoreWizard", () => {
 
   it("handles premature close error with user-friendly message", async () => {
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
-      async (url, destDir, onProgress, onError) => {
+      async (_destDir, _onProgress, onError) => {
         if (onError) onError({ message: "premature close" });
         return { error: "premature close", success: false };
       },
@@ -289,7 +288,7 @@ describe("useLocalStoreWizard", () => {
       return true;
     });
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
-      async (_url, _destDir) => {
+      async (_destDir) => {
         return { success: true };
       },
     );

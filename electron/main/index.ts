@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,6 +25,7 @@ import {
   isAllowedAppNavigation,
   isExternalHttpUrl,
 } from "./navigationPolicy.js";
+import { enforceTrustedIpcSenders } from "./security/ipcSender.js";
 import { logger } from "./utils/logger.js";
 
 logger.log("[Romper Electron] Main process entrypoint loaded");
@@ -37,6 +38,11 @@ const isDev = process.env.NODE_ENV === "development";
 const vitePort = process.env.VITE_DEV_SERVER_PORT || "5173";
 const devServerUrl = `http://localhost:${vitePort}`;
 const rendererIndexPath = path.resolve(__dirname, "../../renderer/index.html");
+// The app's own page: the only place the window may navigate to (RE-02) and
+// the only page IPC is accepted from (RE-03).
+const appTarget: AppNavigationTarget = isDev
+  ? { devServerOrigin: devServerUrl, kind: "dev" }
+  : { indexPath: rendererIndexPath, kind: "file" };
 
 // ROMPER_HEADLESS=true keeps the window hidden and the app out of the way
 // (no Dock icon, no focus stealing). The e2e suite sets it so test runs
@@ -94,12 +100,7 @@ function createWindow() {
     y: windowState.y,
   });
 
-  hardenNavigation(
-    win,
-    isDev
-      ? { devServerOrigin: devServerUrl, kind: "dev" }
-      : { indexPath: rendererIndexPath, kind: "file" },
-  );
+  hardenNavigation(win, appTarget);
 
   // A headless run (the e2e suite) shouldn't be heard either. Muting the
   // page silences output only: the audio graph and timing run as normal.
@@ -217,6 +218,8 @@ function hardenNavigation(
 }
 
 function registerAllIpcHandlers(settings: InMemorySettings) {
+  // Wrap every handler registered from here on with sender validation.
+  enforceTrustedIpcSenders(ipcMain, appTarget);
   registerIpcHandlers(settings);
   registerDbIpcHandlers(settings);
 }

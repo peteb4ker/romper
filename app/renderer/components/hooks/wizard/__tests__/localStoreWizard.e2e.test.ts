@@ -7,6 +7,11 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  approveLocalStorePrompts,
+  getLocalStorePromptsShown,
+} from "../../../../../../tests/utils/e2e-dialogs";
+
 // Retry a function with exponential backoff
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
@@ -96,6 +101,9 @@ async function runWizardTest(
 
     return win;
   });
+
+  // The typed target path below makes main ask the user to approve it (RE-03)
+  await approveLocalStorePrompts(electronApp);
 
   // Restore renderer log listener
   window.on("console", (msg) => {
@@ -196,6 +204,9 @@ async function runWizardTest(
         throw new Error(`Wizard initialization failed: ${errorText}`);
       }),
   ]);
+
+  // Main asked the user to approve the typed folder before writing to it
+  expect(await getLocalStorePromptsShown(electronApp)).toEqual([targetPath]);
 
   // Assert that the db exists
   const dbPath = path.join(targetPath, ".romperdb", "romper.sqlite");

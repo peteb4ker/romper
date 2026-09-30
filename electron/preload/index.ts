@@ -222,13 +222,11 @@ const electronAPI = {
     );
   },
   downloadAndExtractArchive: (
-    url: string,
     destDir: string,
     onProgress?: (p: unknown) => void,
     onError?: (e: unknown) => void,
   ) => {
-    isDev &&
-      console.debug("[IPC] downloadAndExtractArchive invoked", url, destDir);
+    isDev && console.debug("[IPC] downloadAndExtractArchive invoked", destDir);
     if (onProgress) {
       ipcRenderer.removeAllListeners("archive-progress");
       ipcRenderer.on("archive-progress", (_event: unknown, progress: unknown) =>
@@ -241,7 +239,7 @@ const electronAPI = {
         onError(error),
       );
     }
-    return ipcRenderer.invoke("download-and-extract-archive", url, destDir);
+    return ipcRenderer.invoke("download-and-extract-archive", destDir);
   },
   ensureDir: (dir: string) => {
     isDev && console.debug("[IPC] ensureDir invoked", dir);
@@ -257,9 +255,9 @@ const electronAPI = {
     isDev && console.debug("[IPC] getAllBanks invoked");
     return ipcRenderer.invoke("get-all-banks");
   },
-  getAllSamples: (dbDir: string) => {
-    isDev && console.debug("[IPC] getAllSamples invoked", dbDir);
-    return ipcRenderer.invoke("get-all-samples", dbDir);
+  getAllSamples: () => {
+    isDev && console.debug("[IPC] getAllSamples invoked");
+    return ipcRenderer.invoke("get-all-samples");
   },
   getAllSamplesForKit: (kitName: string) => {
     isDev && console.debug("[IPC] getAllSamplesForKit invoked", kitName);
@@ -426,6 +424,10 @@ const electronAPI = {
       slotNumber,
       filePath,
     );
+  },
+  requestLocalStoreAccess: (targetPath: string) => {
+    isDev && console.debug("[IPC] requestLocalStoreAccess invoked", targetPath);
+    return ipcRenderer.invoke("request-local-store-access", targetPath);
   },
   rescanKit: (kitName: string) => {
     isDev && console.debug("[IPC] rescanKit invoked", kitName);
@@ -683,12 +685,19 @@ contextBridge.exposeInMainWorld("electronAPI", electronAPI);
 // Initialize menu event forwarding
 menuEventForwarder.initialize();
 
-// Expose a function to get the file path from a dropped File object (Electron only)
+// Expose a function to get the file path from a dropped File object (Electron only).
+// webUtils only yields a path for a File the user actually dropped or picked,
+// so the path is reported to main, which then allows reading that file
+// (RE-03). The renderer can't reach this channel with a path of its choosing.
 contextBridge.exposeInMainWorld("electronFileAPI", {
   getDroppedFilePath: async (file: File) => {
     if (webUtils?.getPathForFile) {
       try {
-        return await webUtils.getPathForFile(file);
+        const filePath = await webUtils.getPathForFile(file);
+        if (filePath) {
+          await ipcRenderer.invoke("register-dropped-file", filePath);
+        }
+        return filePath;
       } catch (e) {
         console.error("webUtils.getPathForFile failed:", e);
         throw e;

@@ -9,6 +9,13 @@ import {
 import { logger } from "../utils/logger.js";
 
 /**
+ * The Squarp factory sample pack. Main owns this URL: the renderer only names
+ * the destination folder, never what is downloaded (RE-03).
+ */
+export const SQUARP_FACTORY_SAMPLES_URL =
+  "https://data.squarp.net/RampleSamplesV1-2.zip";
+
+/**
  * Service for archive download and extraction operations
  * Extracted from ipcHandlers.ts to separate business logic from IPC routing
  */
@@ -224,6 +231,18 @@ export class ArchiveService {
     }
     return this.downloadFromUrl(url, progressCallback);
   }
+}
+
+/**
+ * The archive the setup wizard installs. `ROMPER_SQUARP_ARCHIVE_URL` (set by
+ * whoever launches the app, e.g. e2e tests pointing at a local fixture zip)
+ * overrides the default.
+ */
+export function getFactorySamplesArchiveUrl(): string {
+  const override = process.env.ROMPER_SQUARP_ARCHIVE_URL;
+  return override && override.trim() !== ""
+    ? override
+    : SQUARP_FACTORY_SAMPLES_URL;
 }
 
 // Export singleton instance

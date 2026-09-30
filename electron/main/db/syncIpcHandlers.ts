@@ -1,5 +1,6 @@
 import { ipcMain } from "electron";
 
+import { checkPathAccess } from "../security/pathAccess.js";
 import { type SyncOptions, syncService } from "../services/syncService.js";
 
 /**
@@ -17,6 +18,10 @@ export function registerSyncIpcHandlers(
   );
 
   ipcMain.handle("startKitSync", (_event, options: SyncOptions) => {
+    // RE-03: sync writes (and may clear) the target, so it must be the SD
+    // card from settings/env or a folder the user picked this session.
+    const access = checkPathAccess(options?.sdCardPath, { write: true });
+    if (!access.ok) return { error: access.error, success: false };
     return syncService.startKitSync(inMemorySettings, options);
   });
 

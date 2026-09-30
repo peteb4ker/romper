@@ -40,6 +40,51 @@ Database operations return `DbResult<T>` (`{ success, data?, error? }`);
 `shared/errorUtils.ts` has `createErrorResult`, `getErrorMessage` and
 `logError` for building them.
 
+### The renderer is untrusted
+
+Main treats every IPC argument as hostile (RE-02, RE-03). Code for this lives
+in `electron/main/security/`.
+
+- **Sender check** (`ipcSender.ts`). Before any handler is registered,
+  `index.ts` wraps `ipcMain.handle` so every handler first checks
+  `event.senderFrame`: it must be the top-level frame showing the app's own
+  page (the Vite origin in dev, the bundled `index.html` file URL otherwise;
+  the same `isAllowedAppNavigation` test the navigation guard uses).
+  Anything else throws before the handler runs. New handlers get this for
+  free; don't register them before `registerAllIpcHandlers`.
+- **Path authorization** (`pathAccess.ts`). A channel that takes a filesystem
+  path checks it with `checkPathAccess(p, { write })` (or
+  `pathAccess.assertAllowed`) before touching the disk. The path is resolved
+  (`..` removed, symlinks resolved through the nearest existing ancestor,
+  dangling links refused) and must sit inside a root:
+  - read and write: the local store (`ROMPER_LOCAL_PATH`, then settings), the
+    SD card (`ROMPER_SDCARD_PATH`, then settings), `~/Documents/romper` (the
+    wizard default), and any folder the user picked in one of main's folder
+    dialogs this session;
+  - read only: files the user dropped this session (the preload reports the
+    path `webUtils.getPathForFile` returns, over `register-dropped-file`).
+  - `write-settings` checks `localStorePath` and `sdCardPath`, so the
+    renderer can't grant itself a root.
+- **Typed wizard targets** (`localStoreAccessPrompt.ts`). A target folder the
+  user typed rather than picked needs their OK in a native prompt shown by
+  main (`requestLocalStoreAccess`). The filesystem root and the home folder
+  (and anything above it) are refused. E2E tests answer the prompt with
+  `tests/utils/e2e-dialogs.ts`.
+- **Sample sources** (`sampleSourceAccess.ts`). Samples are referenced from
+  wherever the user dragged them, so reading one file (`readFile`,
+  `getAudioMetadata`, `validateSampleFormat`, the path given to
+  `addSampleToSlot`/`replaceSampleInSlot`) is also allowed when the store's
+  database already references it, or referenced it before an edit this
+  session (so undo can put a sample back).
+- The factory-samples archive URL is fixed in main
+  (`getFactorySamplesArchiveUrl`, overridable only by the
+  `ROMPER_SQUARP_ARCHIVE_URL` launch environment). Wizard database channels
+  (`createRomperDb`, `insertKit`, `insertSample`) still name the new store's
+  `.romperdb` folder because it isn't configured yet; main requires it to be
+  a `.romperdb` folder inside a writable root, and an inserted sample's
+  `source_path` to be inside a root. Other database channels derive the path
+  from the configured store.
+
 ## Data
 
 - SQLite at `<local store>/.romperdb/romper.sqlite`, accessed through Drizzle
@@ -99,8 +144,8 @@ exist, but see RE-09 below.
   sample playing on the same voice (`handlePlay` in `useKitPlayback.ts`).
 - Kit samples are loaded over IPC by kit / voice / slot
   (`getSampleAudioBuffer`) and played through an `AudioBufferSourceNode` into
-  a `GainNode`. Other channels (`readFile`, `getAudioMetadata`) still take
-  raw paths and aren't scoped (RE-03).
+  a `GainNode`. Channels that take a file path (`readFile`,
+  `getAudioMetadata`) are scoped by main; see "The renderer is untrusted".
 - Each voice picks a sample by `sample_mode`: `first`, `random`, or
   `round-robin`. A voice in slice mode then plays only a region of that
   sample (`PlayOptions.region`, offset + duration with ~2 ms anti-click

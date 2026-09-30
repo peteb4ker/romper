@@ -3,6 +3,8 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 
+import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
+
 /**
  * Onboarding Error Recovery E2E Tests
  *
@@ -50,6 +52,9 @@ test.describe("Onboarding Error Recovery E2E Tests", () => {
       },
       timeout: 30000,
     });
+
+    // Tests type the target path, which main asks the user to approve (RE-03)
+    await approveLocalStorePrompts(electronApp);
 
     const window = await electronApp.firstWindow();
 

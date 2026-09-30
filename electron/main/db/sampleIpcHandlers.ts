@@ -1,5 +1,6 @@
 import { ipcMain } from "electron";
 
+import { rememberKitSampleSources } from "../security/sampleSourceAccess.js";
 import { sampleService } from "../services/sampleService.js";
 import { createSampleOperationHandler } from "./ipcHandlerUtils.js";
 
@@ -32,6 +33,7 @@ export function registerSampleIpcHandlers(
       voiceNumber: number,
       slotNumber: number,
     ) => {
+      rememberKitSampleSources(inMemorySettings, kitName);
       return sampleService.deleteSampleFromSlotWithoutReindexing(
         inMemorySettings,
         kitName,
@@ -52,6 +54,7 @@ export function registerSampleIpcHandlers(
       toSlot: number,
     ) => {
       try {
+        rememberKitSampleSources(inMemorySettings, kitName);
         const result = sampleService.moveSampleInKit(
           inMemorySettings,
           kitName,
@@ -88,6 +91,11 @@ export function registerSampleIpcHandlers(
       },
     ) => {
       try {
+        rememberKitSampleSources(
+          inMemorySettings,
+          params?.fromKit,
+          params?.toKit,
+        );
         const result = sampleService.moveSampleBetweenKits(
           inMemorySettings,
           params,

@@ -250,8 +250,8 @@ describe("useLocalStoreWizardFileOps", () => {
 
       await result.current.extractSquarpArchive("/target/path");
 
+      // The renderer names only the destination; main owns the archive URL.
       expect(mockApi.downloadAndExtractArchive).toHaveBeenCalledWith(
-        "https://data.squarp.net/RampleSamplesV1-2.zip",
         "/target/path",
         expect.any(Function), // progress callback
         expect.any(Function), // error callback
@@ -263,7 +263,6 @@ describe("useLocalStoreWizardFileOps", () => {
       // the hook passes in (the default mock never calls them).
       mockApi.downloadAndExtractArchive = vi.fn(
         async (
-          _url: string,
           _target: string,
           onProgress: (p: unknown) => void,
           onError: (e: unknown) => void,

@@ -14,8 +14,10 @@ vi.mock("electron", () => ({
   },
 }));
 
-// Mock filesystem
-vi.mock("fs", () => ({
+// Mock filesystem (keeping the real realpath/lstat that path authorization
+// uses to resolve the SD card path)
+vi.mock("fs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("fs")>()),
   existsSync: vi.fn(() => true),
   mkdirSync: vi.fn(),
   readdirSync: vi.fn(() => []),
@@ -43,6 +45,14 @@ describe("Sync IPC Integration Tests", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+
+    // RE-03: startKitSync only writes to an SD card folder main has granted
+    // (settings, env, or a folder picked in the dialog this session).
+    const { pathAccess } =
+      await import("../../electron/main/security/pathAccess");
+    pathAccess.reset();
+    pathAccess.grantRoot("/sd/card");
+    pathAccess.grantRoot("/nonexistent");
 
     // Import modules after clearing mocks
     ({ dialog, ipcMain } = await import("electron"));
@@ -246,20 +256,33 @@ describe("Sync IPC Integration Tests", () => {
       );
       const handler = handlerCall[1];
 
-      // Test with missing sdCardPath
-      await handler(
+      // Test with missing sdCardPath: refused before the sync service runs
+      const result = await handler(
         {},
         {
           wipeSdCard: false,
         },
       );
 
-      expect(mockSyncService.startKitSync).toHaveBeenCalledWith(
+      expect(result.success).toBe(false);
+      expect(mockSyncService.startKitSync).not.toHaveBeenCalled();
+    });
+
+    it("should refuse an SD card folder Romper was never given (RE-03)", async () => {
+      registerSyncIpcHandlers({});
+
+      const handler = ipcMain.handle.mock.calls.find(
+        (call) => call[0] === "startKitSync",
+      )[1];
+
+      const result = await handler(
         {},
-        {
-          wipeSdCard: false,
-        },
+        { sdCardPath: "/Users/test/Library/LaunchAgents", wipeSdCard: true },
       );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/Access denied/);
+      expect(mockSyncService.startKitSync).not.toHaveBeenCalled();
     });
   });
 
@@ -403,10 +426,11 @@ describe("Sync IPC Integration Tests", () => {
         (call) => call[0] === "startKitSync",
       )[1];
 
-      // Test with undefined request
-      await handler({}, undefined);
+      // Test with undefined request: refused before the sync service runs
+      const result = await handler({}, undefined);
 
-      expect(mockSyncService.startKitSync).toHaveBeenCalledWith({}, undefined);
+      expect(result.success).toBe(false);
+      expect(mockSyncService.startKitSync).not.toHaveBeenCalled();
     });
 
     it("should handle concurrent IPC requests", async () => {

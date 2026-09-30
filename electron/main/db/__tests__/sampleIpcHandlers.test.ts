@@ -19,8 +19,13 @@ vi.mock("../ipcHandlerUtils.js", () => ({
   createSampleOperationHandler: vi.fn(() => vi.fn()),
 }));
 
+vi.mock("../../security/sampleSourceAccess.js", () => ({
+  rememberKitSampleSources: vi.fn(),
+}));
+
 import { ipcMain } from "electron";
 
+import { rememberKitSampleSources } from "../../security/sampleSourceAccess.js";
 import * as ipcHandlerUtils from "../ipcHandlerUtils.js";
 import { registerSampleIpcHandlers } from "../sampleIpcHandlers";
 
@@ -104,3 +109,50 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
 // Note: The actual handler logic (what happens when handlers are invoked)
 // should be tested in integration tests, not unit tests.
 // Unit tests should only verify that handlers are registered correctly.
+
+describe("registerSampleIpcHandlers - undo source grants (RE-03)", () => {
+  const settings = { localStorePath: "/store" };
+
+  function handlerFor(channel: string) {
+    registerSampleIpcHandlers(settings);
+    const call = vi
+      .mocked(ipcMain.handle)
+      .mock.calls.find(([name]) => name === channel);
+    return call![1] as (...args: unknown[]) => unknown;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("remembers the kit's sources before deleting without reindexing", async () => {
+    await handlerFor("delete-sample-from-slot-without-reindexing")(
+      {},
+      "A0",
+      1,
+      0,
+    );
+    expect(rememberKitSampleSources).toHaveBeenCalledWith(settings, "A0");
+  });
+
+  it("remembers the kit's sources before moving within a kit", async () => {
+    await handlerFor("move-sample-in-kit")({}, "A0", 1, 0, 2, 0);
+    expect(rememberKitSampleSources).toHaveBeenCalledWith(settings, "A0");
+  });
+
+  it("remembers both kits' sources before moving between kits", async () => {
+    await handlerFor("move-sample-between-kits")(
+      {},
+      {
+        fromKit: "A0",
+        fromSlot: 0,
+        fromVoice: 1,
+        mode: "insert",
+        toKit: "B1",
+        toSlot: 0,
+        toVoice: 1,
+      },
+    );
+    expect(rememberKitSampleSources).toHaveBeenCalledWith(settings, "A0", "B1");
+  });
+});

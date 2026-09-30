@@ -27,6 +27,7 @@ export interface FileValidationResult {
 export interface SyncValidationError {
   error: string;
   filename: string;
+  kitName?: string;
   sourcePath: string;
   type: "access_denied" | "invalid_format" | "missing_file" | "other";
 }

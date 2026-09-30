@@ -77,11 +77,16 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
 
   // Handler to confirm sync operation
   const handleConfirmSync = useCallback(
-    async (options: { sdCardPath: null | string; wipeSdCard: boolean }) => {
+    async (options: {
+      sdCardPath: null | string;
+      skipInvalidFiles: boolean;
+      wipeSdCard: boolean;
+    }) => {
       if (!options.sdCardPath) return;
 
       const success = await startSync({
         sdCardPath: options.sdCardPath,
+        skipInvalidFiles: options.skipInvalidFiles,
         wipeSdCard: options.wipeSdCard,
       });
       if (success) {

@@ -234,6 +234,47 @@ test.describe("Sync Real Operations E2E Tests", () => {
       // Verify we're back to kit list
       await expect(window.locator('[data-testid="kit-grid"]')).toBeVisible();
     });
+
+    test("lists a missing sample and writes the rest only after the user agrees to skip it (RE-09)", async () => {
+      await fs.remove(path.join(testEnv.localStorePath, "A0", "1_kick.wav"));
+
+      await window.waitForSelector('[data-testid="kit-grid"]', {
+        timeout: 10000,
+      });
+      await window.locator('[data-testid="sync-to-sd-card"]').click();
+
+      // The summary lists the missing sample and counts only the other three
+      const invalidFiles = window.locator('[data-testid="invalid-files"]');
+      await invalidFiles.waitFor({ state: "visible", timeout: 10000 });
+      await expect(invalidFiles).toContainText("1 sample can't be written");
+      await expect(invalidFiles).toContainText("A0");
+      await expect(invalidFiles).toContainText("1_kick.wav");
+      await expect(window.locator('[data-testid="total-samples"]')).toHaveText(
+        "3",
+      );
+
+      // Writing is blocked until the user agrees to skip it
+      const confirmButton = window.locator('[data-testid="confirm-sync"]');
+      await expect(confirmButton).toBeDisabled();
+      await window.locator('label[for="skipInvalidFiles"]').click();
+      await expect(confirmButton).toBeEnabled();
+
+      await confirmButton.click();
+      await window
+        .locator("text=Write Complete")
+        .waitFor({ state: "visible", timeout: 15000 });
+      await expect(window.locator('[data-testid="skipped-count"]')).toHaveText(
+        /1 skipped/,
+      );
+
+      // The missing sample was skipped; everything else was written
+      expect(
+        await fs.pathExists(path.join(tempSdCardDir, "A0", "1", "1_kick.wav")),
+      ).toBe(false);
+      expect(
+        await fs.pathExists(path.join(tempSdCardDir, "B1", "1", "1_kick.wav")),
+      ).toBe(true);
+    });
   });
 
   /**

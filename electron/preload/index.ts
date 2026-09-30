@@ -3,6 +3,7 @@ import type {
   ElectronAPI,
   SettingsData,
   SettingsKey,
+  SyncOptions,
   SyncProgress,
 } from "@romper/shared/electronApi.js";
 import type {
@@ -457,7 +458,7 @@ const electronAPI = {
     isDev && console.debug("[IPC] showItemInFolder invoked", path);
     return ipcRenderer.invoke("show-item-in-folder", path);
   },
-  startKitSync: (options: { sdCardPath: string; wipeSdCard?: boolean }) => {
+  startKitSync: (options: SyncOptions) => {
     isDev && console.debug("[IPC] startKitSync invoked", options);
     return ipcRenderer.invoke("startKitSync", options);
   },

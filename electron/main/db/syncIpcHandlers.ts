@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
 
-import { syncService } from "../services/syncService.js";
+import { type SyncOptions, syncService } from "../services/syncService.js";
 
 /**
  * Registers all sync-related IPC handlers
@@ -16,18 +16,9 @@ export function registerSyncIpcHandlers(
     },
   );
 
-  ipcMain.handle(
-    "startKitSync",
-    async (
-      _event,
-      options: {
-        sdCardPath: string;
-        wipeSdCard?: boolean;
-      },
-    ) => {
-      return syncService.startKitSync(inMemorySettings, options);
-    },
-  );
+  ipcMain.handle("startKitSync", (_event, options: SyncOptions) => {
+    return syncService.startKitSync(inMemorySettings, options);
+  });
 
   ipcMain.handle("cancelKitSync", async () => {
     syncService.cancelSync();

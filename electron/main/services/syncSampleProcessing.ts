@@ -77,24 +77,48 @@ export class SyncSampleProcessingService {
     results: SyncResults,
     sdCardPath?: string,
   ): void {
-    if (!sample.source_path) {
-      return; // Skip samples without source path
+    const { filename, kit_name: kitName, source_path: sourcePath } = sample;
+    const firstNewError = results.validationErrors.length;
+
+    if (sourcePath) {
+      this.planSampleFile(sample, localStorePath, results, sdCardPath);
+    } else {
+      results.validationErrors.push({
+        error: "No source file is recorded for this sample",
+        filename,
+        sourcePath: "",
+        type: "missing_file",
+      });
     }
 
+    // The validators don't know which kit a sample belongs to; the UI needs
+    // it to say where the skipped sample lives.
+    for (const error of results.validationErrors.slice(firstNewError)) {
+      error.kitName = kitName;
+    }
+  }
+
+  /**
+   * Validate a sample's source file and queue the copy or conversion.
+   * Failures are recorded in results.validationErrors.
+   */
+  private planSampleFile(
+    sample: Sample,
+    localStorePath: string,
+    results: SyncResults,
+    sdCardPath?: string,
+  ): void {
     const { filename, kit_name: kitName, source_path: sourcePath } = sample;
 
-    // Validate source file and handle errors
     const fileValidation = syncValidationService.validateSyncSourceFile(
       filename,
       sourcePath,
       results.validationErrors,
     );
-
     if (!fileValidation.isValid) {
       return;
     }
 
-    // Determine operation type and add to appropriate list
     const destinationPath = this.getDestinationPath(
       localStorePath,
       kitName,

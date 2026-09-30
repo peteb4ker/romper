@@ -219,7 +219,7 @@ describe("SyncSampleProcessingService", () => {
       results.filesToConvert = [];
     });
 
-    it("should handle sample without source path", () => {
+    it("reports a sample without a source path instead of skipping it silently", () => {
       const sampleNoSource = { ...monoSample, source_path: undefined };
 
       syncSampleProcessingService.processSampleForSync(
@@ -230,6 +230,54 @@ describe("SyncSampleProcessingService", () => {
 
       expect(mockValidateSyncSourceFile).not.toHaveBeenCalled();
       expect(mockCategorizeSyncFileOperation).not.toHaveBeenCalled();
+      expect(results.validationErrors).toEqual([
+        {
+          error: "No source file is recorded for this sample",
+          filename: "kick.wav",
+          kitName: "TestKit",
+          sourcePath: "",
+          type: "missing_file",
+        },
+      ]);
+    });
+
+    it("tags validation errors with the sample's kit", () => {
+      mockValidateSyncSourceFile.mockImplementation(
+        (filename, sourcePath, validationErrors) => {
+          validationErrors.push({
+            error: `Source file not found: ${sourcePath}`,
+            filename,
+            sourcePath,
+            type: "missing_file",
+          });
+          return { fileSize: 0, isValid: false };
+        },
+      );
+
+      syncSampleProcessingService.processSampleForSync(
+        monoSample,
+        "/local/store",
+        results,
+      );
+
+      expect(results.validationErrors).toEqual([
+        expect.objectContaining({ filename: "kick.wav", kitName: "TestKit" }),
+      ]);
+    });
+
+    it("doesn't warn about stereo playback for a sample that can't be written", () => {
+      mockValidateSyncSourceFile.mockReturnValue({
+        fileSize: 0,
+        isValid: false,
+      });
+
+      syncSampleProcessingService.processSampleForSync(
+        stereoSample,
+        "/local/store",
+        results,
+      );
+
+      expect(results.warnings).toEqual([]);
     });
 
     it("should process mono sample correctly", () => {

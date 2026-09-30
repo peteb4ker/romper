@@ -7,6 +7,7 @@ import {
   HardDriveIcon,
   SpinnerIcon,
   TrashIcon,
+  WarningIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
@@ -31,6 +32,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   syncProgress,
 }) => {
   const [wipeSdCard, setWipeSdCard] = useState(false);
+  const [skipInvalidFiles, setSkipInvalidFiles] = useState(false);
   const [localSdCardPath, setLocalSdCardPath] = useState<null | string>(
     sdCardPath || null,
   );
@@ -46,6 +48,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 
     setIsClosing(false);
     setSummaryError(null);
+    setSkipInvalidFiles(false);
     setLocalSdCardPath(sdCardPath || null);
 
     if (localChangeSummary) {
@@ -93,7 +96,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   };
 
   const handleConfirm = () => {
-    onConfirm({ sdCardPath: localSdCardPath, wipeSdCard });
+    onConfirm({ sdCardPath: localSdCardPath, skipInvalidFiles, wipeSdCard });
   };
 
   const handleClose = () => {
@@ -110,6 +113,10 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const fileCount = changeSummary?.fileCount || 0;
   const banks = changeSummary?.banks || [];
   const conversionsNeeded = banks.some((b) => b.hasConversions);
+  const invalidFiles = changeSummary?.validationErrors || [];
+  const warnings = changeSummary?.warnings || [];
+  // Samples that can't be written are skipped only once the user says so.
+  const needsSkipConfirmation = invalidFiles.length > 0 && !skipInvalidFiles;
 
   return (
     <div
@@ -178,6 +185,14 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                   <span className="text-accent-success flex items-center gap-1">
                     <CheckCircleIcon size={12} weight="fill" />
                     Write Complete
+                    {invalidFiles.length > 0 && (
+                      <span
+                        className="text-accent-warning font-normal"
+                        data-testid="skipped-count"
+                      >
+                        &middot; {invalidFiles.length} skipped
+                      </span>
+                    )}
                   </span>
                 )}
               </span>
@@ -332,6 +347,74 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           </div>
         )}
 
+        {/* Samples that can't be written */}
+        {invalidFiles.length > 0 && (
+          <div className="px-4 py-2" data-testid="invalid-files">
+            <div className="p-2.5 rounded border border-accent-danger/30 bg-accent-danger/10 text-xs space-y-2">
+              <div className="flex items-center gap-1.5 font-medium text-accent-danger">
+                <WarningIcon size={12} weight="bold" />
+                {invalidFiles.length === 1
+                  ? "1 sample can't be written"
+                  : `${invalidFiles.length} samples can't be written`}
+              </div>
+              <ul className="max-h-32 overflow-y-auto space-y-1">
+                {invalidFiles.map((file) => (
+                  <li
+                    className="text-accent-danger/80"
+                    key={`${file.kitName}/${file.filename}/${file.sourcePath}`}
+                  >
+                    {file.kitName && (
+                      <span className="font-mono">
+                        {file.kitName} &middot;{" "}
+                      </span>
+                    )}
+                    <code className="bg-accent-danger/15 px-1 rounded">
+                      {file.filename}
+                    </code>
+                    <div className="text-accent-danger/60 break-all">
+                      {file.error}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <label
+                className="flex items-center gap-2 pt-1 cursor-pointer"
+                htmlFor="skipInvalidFiles"
+              >
+                <input
+                  checked={skipInvalidFiles}
+                  className="sr-only peer"
+                  data-testid="skip-invalid-files-checkbox"
+                  disabled={isLoading}
+                  id="skipInvalidFiles"
+                  onChange={(e) => setSkipInvalidFiles(e.target.checked)}
+                  type="checkbox"
+                />
+                <div className="w-3.5 h-3.5 rounded-sm border border-border-default bg-surface-3 shrink-0 flex items-center justify-center peer-checked:bg-accent-danger peer-checked:border-accent-danger transition-colors">
+                  {skipInvalidFiles && (
+                    <CheckIcon className="text-white" size={10} weight="bold" />
+                  )}
+                </div>
+                <span className="text-text-secondary">
+                  Write the other samples and skip{" "}
+                  {invalidFiles.length === 1 ? "this one" : "these"}
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Informational warnings */}
+        {warnings.length > 0 && (
+          <div className="px-4 py-2" data-testid="sync-warnings">
+            <ul className="p-2.5 rounded border border-accent-warning/30 bg-accent-warning/10 text-[11px] text-text-secondary space-y-1 max-h-24 overflow-y-auto">
+              {warnings.map((warning) => (
+                <li key={warning}>{warning}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* SD Card Selection */}
         <div className="px-4 py-2 space-y-2">
           <div
@@ -458,6 +541,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 isGeneratingSummary ||
                 !changeSummary ||
                 fileCount === 0 ||
+                needsSkipConfirmation ||
                 !localSdCardPath ||
                 (syncProgress?.status === "error" &&
                   !syncProgress?.errorDetails?.canRetry)

@@ -1,15 +1,10 @@
-export interface SyncBankSummary {
-  bank: string;
-  fileCount: number;
-  hasConversions: boolean;
-  kitCount: number;
-}
+export type {
+  SyncBankSummary,
+  SyncChangeSummary,
+  SyncValidationError,
+} from "@romper/shared/electronApi.js";
 
-export interface SyncChangeSummary {
-  banks?: SyncBankSummary[];
-  fileCount: number;
-  kitCount: number;
-}
+import type { SyncChangeSummary } from "@romper/shared/electronApi.js";
 
 export interface SyncErrorDetails {
   canRetry: boolean;
@@ -55,6 +50,7 @@ export interface SyncUpdateDialogProps {
   onClose: () => void;
   onConfirm: (options: {
     sdCardPath: null | string;
+    skipInvalidFiles: boolean;
     wipeSdCard: boolean;
   }) => void;
   onGenerateChangeSummary?: (
@@ -63,11 +59,4 @@ export interface SyncUpdateDialogProps {
   onSdCardPathChange?: (path: null | string) => void;
   sdCardPath?: null | string;
   syncProgress?: null | SyncProgress;
-}
-
-export interface SyncValidationError {
-  error: string;
-  filename: string;
-  sourcePath: string;
-  type: "access_denied" | "invalid_format" | "missing_file" | "other";
 }

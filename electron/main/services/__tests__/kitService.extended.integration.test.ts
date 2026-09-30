@@ -1,6 +1,7 @@
 import type { NewKit, NewSample } from "@romper/shared/db/schema.js";
 
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -25,9 +26,11 @@ import { KitService } from "../kitService.js";
  * kitService.integration.test.ts.
  */
 
-const TEST_DB_DIR = path.join(__dirname, "test-data-kit-extended");
-const TEST_LOCAL_STORE_PATH = TEST_DB_DIR;
-const TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
+// Each test gets its own local store under the OS temp dir (see beforeEach),
+// so nothing is written into the source tree.
+let TEST_DB_DIR: string;
+let TEST_LOCAL_STORE_PATH: string;
+let TEST_DB_PATH: string;
 
 async function cleanupSqliteFiles(dir: string) {
   if (!fs.existsSync(dir)) return;
@@ -51,11 +54,12 @@ describe("KitService Extended Integration Tests", () => {
   let kitService: KitService;
   let mockInMemorySettings: InMemorySettings;
 
-  beforeEach(async () => {
-    if (!fs.existsSync(TEST_DB_DIR)) {
-      fs.mkdirSync(TEST_DB_DIR, { recursive: true });
-    }
-    await cleanupSqliteFiles(TEST_DB_DIR);
+  beforeEach(() => {
+    TEST_DB_DIR = fs.mkdtempSync(
+      path.join(os.tmpdir(), "romper-kit-extended-"),
+    );
+    TEST_LOCAL_STORE_PATH = TEST_DB_DIR;
+    TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
     createRomperDbFile(TEST_DB_PATH);
 
     kitService = new KitService();
@@ -66,6 +70,7 @@ describe("KitService Extended Integration Tests", () => {
 
   afterEach(async () => {
     await cleanupSqliteFiles(TEST_DB_DIR);
+    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });
 
   describe("createKit", () => {

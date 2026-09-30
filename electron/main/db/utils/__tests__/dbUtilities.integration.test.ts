@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -17,8 +18,10 @@ import {
 } from "../dbUtilities";
 
 // Test utilities
-const TEST_DB_DIR = path.join(__dirname, "test-data");
-const TEST_DB_PATH = path.join(TEST_DB_DIR, DB_FILENAME);
+// Each test gets its own directory under the OS temp dir (see beforeEach),
+// so nothing is written into the source tree.
+let TEST_DB_DIR: string;
+let TEST_DB_PATH: string;
 
 async function cleanupSqliteFiles(dir: string) {
   if (!fs.existsSync(dir)) {
@@ -42,32 +45,17 @@ async function cleanupSqliteFiles(dir: string) {
   }
 }
 
-async function cleanupTestDb() {
-  if (fs.existsSync(TEST_DB_PATH)) {
-    await deleteDbFileWithRetry(TEST_DB_PATH);
-  }
-}
-
-async function ensureTestDirClean() {
-  if (fs.existsSync(TEST_DB_DIR)) {
-    // Clean up any SQLite files in subdirectories first
-    await cleanupSqliteFiles(TEST_DB_DIR);
-
-    // Remove the entire directory
-    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
-  }
-
-  // Create fresh directory
-  fs.mkdirSync(TEST_DB_DIR, { recursive: true });
-}
-
 describe("Database Utilities Integration Tests", () => {
-  beforeEach(async () => {
-    await ensureTestDirClean();
+  beforeEach(() => {
+    TEST_DB_DIR = fs.mkdtempSync(
+      path.join(os.tmpdir(), "romper-db-utilities-"),
+    );
+    TEST_DB_PATH = path.join(TEST_DB_DIR, DB_FILENAME);
   });
 
   afterEach(async () => {
-    await cleanupTestDb();
+    await cleanupSqliteFiles(TEST_DB_DIR);
+    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });
 
   describe("Database Creation", () => {

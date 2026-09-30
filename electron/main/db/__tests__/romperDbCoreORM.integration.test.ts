@@ -2,6 +2,7 @@ import type { Kit, Sample } from "@romper/shared/db/schema.js";
 
 // Unit tests for Drizzle ORM implementation
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -27,8 +28,10 @@ import {
 } from "../romperDbCoreORM.js";
 
 // Test utilities
-const TEST_DB_DIR = path.join(__dirname, "test-data");
-const TEST_DB_PATH = path.join(TEST_DB_DIR, "romper.sqlite");
+// Each test gets its own directory under the OS temp dir (see beforeEach),
+// so nothing is written into the source tree.
+let TEST_DB_DIR: string;
+let TEST_DB_PATH: string;
 
 async function cleanupSqliteFiles(dir: string) {
   if (!fs.existsSync(dir)) return;
@@ -48,28 +51,15 @@ async function cleanupSqliteFiles(dir: string) {
   }
 }
 
-async function cleanupTestDb() {
-  if (fs.existsSync(TEST_DB_PATH)) {
-    await deleteDbFileWithRetry(TEST_DB_PATH);
-  }
-}
-
-async function ensureTestDirClean() {
-  if (fs.existsSync(TEST_DB_DIR)) {
-    // Clean up any SQLite files in subdirectories first
-    await cleanupSqliteFiles(TEST_DB_DIR);
-    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
-  }
-  fs.mkdirSync(TEST_DB_DIR, { recursive: true });
-}
-
 describe("Drizzle ORM Database Operations", () => {
-  beforeEach(async () => {
-    await ensureTestDirClean();
+  beforeEach(() => {
+    TEST_DB_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "romper-db-core-orm-"));
+    TEST_DB_PATH = path.join(TEST_DB_DIR, "romper.sqlite");
   });
 
   afterEach(async () => {
-    await cleanupTestDb();
+    await cleanupSqliteFiles(TEST_DB_DIR);
+    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });
 
   describe("Database Creation", () => {

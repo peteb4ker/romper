@@ -1,6 +1,7 @@
 import type { NewKit } from "@romper/shared/db/schema.js";
 
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -16,9 +17,11 @@ import {
 import { SampleService } from "../sampleService.js";
 
 // Test utilities
-const TEST_DB_DIR = path.join(__dirname, "test-data-sample-svc");
-const TEST_LOCAL_STORE_PATH = TEST_DB_DIR;
-const TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
+// Each test gets its own local store under the OS temp dir (see beforeEach),
+// so nothing is written into the source tree.
+let TEST_DB_DIR: string;
+let TEST_LOCAL_STORE_PATH: string;
+let TEST_DB_PATH: string;
 
 async function cleanupSqliteFiles(dir: string) {
   if (!fs.existsSync(dir)) return;
@@ -100,14 +103,12 @@ describe("SampleService Integration Tests", () => {
   let mockInMemorySettings: InMemorySettings;
   let testWavDir: string;
 
-  beforeEach(async () => {
-    // Ensure test directory exists
-    if (!fs.existsSync(TEST_DB_DIR)) {
-      fs.mkdirSync(TEST_DB_DIR, { recursive: true });
-    }
-
-    // Clean up any existing test databases
-    await cleanupSqliteFiles(TEST_DB_DIR);
+  beforeEach(() => {
+    TEST_DB_DIR = fs.mkdtempSync(
+      path.join(os.tmpdir(), "romper-sample-service-"),
+    );
+    TEST_LOCAL_STORE_PATH = TEST_DB_DIR;
+    TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
 
     // Create fresh database
     createRomperDbFile(TEST_DB_PATH);
@@ -119,9 +120,7 @@ describe("SampleService Integration Tests", () => {
 
     // Create test WAV directory
     testWavDir = path.join(TEST_DB_DIR, "test-wavs");
-    if (!fs.existsSync(testWavDir)) {
-      fs.mkdirSync(testWavDir, { recursive: true });
-    }
+    fs.mkdirSync(testWavDir, { recursive: true });
 
     // Create a test kit
     const kitRecord: NewKit = {
@@ -138,10 +137,7 @@ describe("SampleService Integration Tests", () => {
 
   afterEach(async () => {
     await cleanupSqliteFiles(TEST_DB_DIR);
-    // Clean up test WAV files
-    if (fs.existsSync(testWavDir)) {
-      fs.rmSync(testWavDir, { force: true, recursive: true });
-    }
+    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });
 
   describe("addSampleToSlot", () => {

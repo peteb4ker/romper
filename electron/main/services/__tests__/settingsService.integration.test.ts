@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -12,7 +13,9 @@ vi.mock("electron", () => ({
   },
 }));
 
-const TEST_DATA_DIR = path.join(__dirname, "test-data-settings");
+// Each test gets its own directory under the OS temp dir (see beforeEach),
+// so nothing is written into the source tree.
+let TEST_DATA_DIR: string;
 
 import { app } from "electron";
 
@@ -27,13 +30,12 @@ describe("SettingsService Integration Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    TEST_DATA_DIR = fs.mkdtempSync(
+      path.join(os.tmpdir(), "romper-settings-service-"),
+    );
+
     // Set the mock return value for app.getPath
     mockApp.getPath.mockReturnValue(TEST_DATA_DIR);
-
-    // Ensure test directory exists
-    if (!fs.existsSync(TEST_DATA_DIR)) {
-      fs.mkdirSync(TEST_DATA_DIR, { recursive: true });
-    }
 
     settingsService = new SettingsService();
     mockInMemorySettings = {
@@ -45,14 +47,7 @@ describe("SettingsService Integration Tests", () => {
   });
 
   afterEach(() => {
-    // Clean up settings file
-    const settingsPath = path.join(TEST_DATA_DIR, "romper-settings.json");
-    if (fs.existsSync(settingsPath)) {
-      fs.unlinkSync(settingsPath);
-    }
-    if (fs.existsSync(TEST_DATA_DIR)) {
-      fs.rmSync(TEST_DATA_DIR, { force: true, recursive: true });
-    }
+    fs.rmSync(TEST_DATA_DIR, { force: true, recursive: true });
     vi.restoreAllMocks();
   });
 

@@ -1,5 +1,6 @@
 import * as wav from "node-wav";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -21,7 +22,9 @@ import {
  * files on the filesystem.
  */
 
-const TEST_DIR = path.join(__dirname, "test-data-audio-utils");
+// Each test gets its own directory under the OS temp dir (see beforeEach),
+// so nothing is written into the source tree.
+let TEST_DIR: string;
 
 /** Create a minimal valid WAV header manually for edge-case tests */
 function createRawWavHeader(config: {
@@ -79,16 +82,11 @@ function createTestWavFile(
 
 describe("audioUtils integration tests", () => {
   beforeEach(() => {
-    if (fs.existsSync(TEST_DIR)) {
-      fs.rmSync(TEST_DIR, { force: true, recursive: true });
-    }
-    fs.mkdirSync(TEST_DIR, { recursive: true });
+    TEST_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "romper-audio-utils-"));
   });
 
   afterEach(() => {
-    if (fs.existsSync(TEST_DIR)) {
-      fs.rmSync(TEST_DIR, { force: true, recursive: true });
-    }
+    fs.rmSync(TEST_DIR, { force: true, recursive: true });
   });
 
   describe("getAudioMetadata - with real node-wav generated files", () => {

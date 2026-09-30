@@ -1,34 +1,30 @@
 #!/bin/bash
-# Block file edits to the main working tree — require worktree usage
+# PreToolUse(Edit|Write|NotebookEdit): block edits to this repo's main
+# checkout; changes belong in a worktree. Asks git rather than matching
+# paths, so it works wherever worktrees live (the sibling romper-worktrees/
+# dir, Claude Code's .claude/worktrees/, or the legacy in-repo worktrees/).
 INPUT=$(cat)
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.path // empty')
+FILE_PATH=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // .tool_input.notebook_path // .tool_input.path // empty' 2>/dev/null)
+[ -z "$FILE_PATH" ] && exit 0
 
-# If no file path provided, allow (defensive)
-if [ -z "$FILE_PATH" ]; then
-  exit 0
-fi
+# The file may not exist yet; start from its nearest existing directory.
+DIR=$(dirname "$FILE_PATH")
+while [ ! -d "$DIR" ] && [ "$DIR" != "/" ]; do DIR=$(dirname "$DIR"); done
 
-PROJECT_DIR="$CLAUDE_PROJECT_DIR"
+GIT_DIR=$(git -C "$DIR" rev-parse --path-format=absolute --git-dir 2>/dev/null) || exit 0
+COMMON_DIR=$(git -C "$DIR" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
 
-# Guard: if PROJECT_DIR is unset, allow (don't block without context)
-if [ -z "$PROJECT_DIR" ]; then
-  exit 0
-fi
+# A linked worktree has its own git dir; only the main checkout shares it.
+[ "$GIT_DIR" != "$COMMON_DIR" ] && exit 0
 
-# Allow writes outside the project directory (e.g., ~/.claude/plans/)
-case "$FILE_PATH" in
-  "$PROJECT_DIR"/*) ;; # Inside project, continue checks
-  *) exit 0 ;;         # Outside project, allow
-esac
+# Only guard this repository, not other repos Claude might touch.
+PROJECT_COMMON=$(git -C "${CLAUDE_PROJECT_DIR:-.}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+[ "$COMMON_DIR" != "$PROJECT_COMMON" ] && exit 0
 
-# Allow writes inside a worktree subdirectory
-case "$FILE_PATH" in
-  "$PROJECT_DIR"/worktrees/*) exit 0 ;;
-  */.claude/worktrees/*) exit 0 ;;   # Claude Code native worktrees
-esac
+# Gitignored files in the main checkout (e.g. .claude/settings.local.json,
+# .env.local) aren't part of any change; allow them.
+git -C "$DIR" check-ignore -q "$FILE_PATH" 2>/dev/null && exit 0
 
-# File is inside the main repo but NOT in a worktree — block
-echo "BLOCKED: You must create a worktree before editing project files." >&2
-echo "Run: npm run worktree:create <task-name>" >&2
-echo "Then edit files in worktrees/<task-name>/ using absolute paths." >&2
+echo "BLOCKED: $FILE_PATH is in the main checkout. Make changes in a worktree:" >&2
+echo "  npm run worktree:create <task-name>   (creates ../romper-worktrees/<task-name>)" >&2
 exit 2

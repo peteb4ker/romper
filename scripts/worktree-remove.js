@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 import { execSync } from "child_process";
-import fs from "fs";
-import path from "path";
+import { getMainRoot, listWorktrees } from "./worktree-paths.js";
 
 function runCommand(command, options = {}) {
   try {
@@ -20,84 +19,71 @@ function runCommand(command, options = {}) {
   }
 }
 
+// A branch is merged when every commit on it already has an equivalent on
+// origin/main. `git cherry` compares patches, so it also recognizes rebase
+// merges, which `git branch --merged` misses (rebasing rewrites the SHAs).
+function isMerged(branchName, cwd) {
+  try {
+    runCommand("git fetch origin --quiet", { cwd, silent: true });
+    const out = runCommand(`git cherry origin/main ${branchName}`, {
+      cwd,
+      silent: true,
+    });
+    return !out.split("\n").some((line) => line.startsWith("+"));
+  } catch {
+    return false;
+  }
+}
+
 function main() {
   const taskName = process.argv[2];
-
-  if (!taskName) {
-    console.error("❌ Task name required");
-    console.error("Usage: npm run worktree:remove <task-name>");
-    console.error("");
-    console.error("List available worktrees with:");
-    console.error("  npm run worktree:list");
-    process.exit(1);
-  }
-
-  console.log(`🗑️  Removing worktree: ${taskName}`);
-
-  const worktreePath = path.join(process.cwd(), "worktrees", taskName);
-  const branchName = `feature/${taskName}`;
-
-  // Check if worktree exists
-  if (!fs.existsSync(worktreePath)) {
-    console.error(`❌ Worktree not found: ${worktreePath}`);
-    console.error("Available worktrees:");
-    try {
-      runCommand("npm run worktree:list");
-    } catch {
-      console.error("No worktrees found");
-    }
-    process.exit(1);
-  }
-
-  // Check if branch has been merged or if user wants to force remove
   const force = process.argv.includes("--force") || process.argv.includes("-f");
 
-  if (!force) {
-    try {
-      // Check if branch has unmerged changes
-      const _result = runCommand(
-        `git branch --no-merged main | grep -q ${branchName}`,
-        { silent: true },
-      );
-      console.log("⚠️  Warning: Branch has unmerged changes!");
-      console.log("If you are sure you want to remove it, use:");
-      console.log(`  npm run worktree:remove ${taskName} --force`);
-      console.log("");
-      console.log("Or merge/PR the branch first, then remove the worktree.");
-      process.exit(1);
-    } catch {
-      // Branch is merged or doesn't exist, safe to remove
-    }
+  if (!taskName || taskName.startsWith("-")) {
+    console.error("Task name required");
+    console.error("Usage: npm run worktree:remove <task-name> [--force]");
+    console.error("List worktrees with: npm run worktree:list");
+    process.exit(1);
+  }
+
+  const mainRoot = getMainRoot();
+  const branchName = `feature/${taskName}`;
+
+  // Look the worktree up by branch so this works wherever it lives (the
+  // sibling worktrees dir, or the legacy in-repo worktrees/ dir).
+  const worktree = listWorktrees(mainRoot).find(
+    (wt) => wt.branch === branchName,
+  );
+  if (!worktree) {
+    console.error(`No worktree is checked out on ${branchName}.`);
+    runCommand("git worktree list", { cwd: mainRoot });
+    process.exit(1);
+  }
+
+  if (!force && !isMerged(branchName, mainRoot)) {
+    console.error(`${branchName} has commits that aren't on origin/main.`);
+    console.error(
+      `Merge it first, or remove anyway: npm run worktree:remove ${taskName} --force`,
+    );
+    process.exit(1);
   }
 
   try {
-    console.log(`📁 Removing worktree directory: ${worktreePath}`);
-    runCommand(`git worktree remove ${worktreePath}`);
-
-    // Try to delete the branch if it exists
-    try {
-      console.log(`🌿 Deleting branch: ${branchName}`);
-      runCommand(`git branch -D ${branchName}`, { silent: true });
-    } catch {
-      // Branch might not exist or might be protected, that's okay
-      console.log(
-        `ℹ️  Branch ${branchName} not deleted (might not exist or be protected)`,
-      );
-    }
-
-    // Clean up any orphaned worktree references
-    try {
-      runCommand("git worktree prune", { silent: true });
-    } catch {
-      // Ignore prune errors
-    }
-
-    console.log("✅ Worktree removed successfully!");
+    console.log(`Removing worktree ${worktree.path}`);
+    runCommand(
+      `git worktree remove "${worktree.path}"${force ? " --force" : ""}`,
+      {
+        cwd: mainRoot,
+      },
+    );
+    runCommand(`git branch -D ${branchName}`, { cwd: mainRoot, silent: true });
+    runCommand("git worktree prune", { cwd: mainRoot, silent: true });
+    console.log(`Removed ${worktree.path} and deleted ${branchName}.`);
   } catch {
-    console.error("❌ Failed to remove worktree");
-    console.error("You may need to force remove with:");
-    console.error(`  git worktree remove --force ${worktreePath}`);
-    console.error(`  git branch -D ${branchName}`);
+    console.error(
+      "Failed to remove the worktree. It may have uncommitted changes;",
+    );
+    console.error(`inspect it, then retry with --force.`);
     process.exit(1);
   }
 }

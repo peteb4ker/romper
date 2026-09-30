@@ -36,11 +36,15 @@ through a PR.
 - If the session is already in a worktree (for example
   `.claude/worktrees/<name>` on a `claude/*` branch) and
   `git log --oneline origin/main..HEAD` shows only your own commits, work
-  there. Don't nest another worktree inside it.
-- Otherwise create one with `npm run worktree:create <task-name>`
-  (branches `feature/<task-name>` from `origin/main`, writes per-worktree dev
-  ports to `.env.local`, links Claude settings, runs `npm install`). Remove
-  it with `npm run worktree:remove`.
+  there. Don't nest another worktree inside it. (The desktop app's
+  Settings → Claude Code → "Worktree location" can move these out of the
+  repo too; point it at `../romper-worktrees`.)
+- Otherwise create one with `npm run worktree:create <task-name>`. It
+  branches `feature/<task-name>` from `origin/main` in
+  `../romper-worktrees/<task-name>` (beside the main checkout, not inside
+  it), writes per-worktree dev ports to `.env.local`, links Claude settings,
+  and runs `npm install`. Remove it with `npm run worktree:remove
+  <task-name>` once merged.
 - With raw git, always pass the base explicitly:
   `git worktree add <path> -b <branch> origin/main`. Inheriting from a
   non-main HEAD pollutes the PR with someone else's commits (see

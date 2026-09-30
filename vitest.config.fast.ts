@@ -32,7 +32,9 @@ export default defineConfig({
         "**/node_modules/**",
         "**/dist/**",
         "**/out/**",
-        "**/worktrees/**",
+        // Anchored so a checkout inside a worktrees/ dir still watches itself.
+        path.resolve(__dirname, "worktrees") + "/**",
+        path.resolve(__dirname, ".claude/worktrees") + "/**",
       ],
     },
   },

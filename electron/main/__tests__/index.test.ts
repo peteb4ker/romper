@@ -454,8 +454,8 @@ describe.sequential("main/index.ts", () => {
     });
 
     it("allows the dev-server origin in development only", async () => {
-      const originalPort = process.env.VITE_DEV_SERVER_PORT;
-      delete process.env.VITE_DEV_SERVER_PORT;
+      // Worktrees set their own port in .env.local, which Vitest exposes
+      vi.stubEnv("VITE_DEV_SERVER_PORT", "5173");
       const dev = await loadWithCapturedWindow("development");
       expect(
         fire(dev.handlers.get("will-navigate"), "http://localhost:5173/#/kits"),
@@ -471,12 +471,11 @@ describe.sequential("main/index.ts", () => {
         fire(prod.handlers.get("will-navigate"), "http://localhost:5173/"),
       ).toHaveBeenCalled();
       prod.warn.mockRestore();
-      if (originalPort !== undefined) {
-        process.env.VITE_DEV_SERVER_PORT = originalPort;
-      }
+      vi.unstubAllEnvs();
     });
 
     it("blocks redirects to disallowed targets without opening them", async () => {
+      vi.stubEnv("VITE_DEV_SERVER_PORT", "5173");
       const { handlers, shell, warn } =
         await loadWithCapturedWindow("development");
       expect(
@@ -490,6 +489,7 @@ describe.sequential("main/index.ts", () => {
       ).not.toHaveBeenCalled();
       expect(shell.openExternal).not.toHaveBeenCalled();
       warn.mockRestore();
+      vi.unstubAllEnvs();
     });
 
     it("refuses <webview> attachment", async () => {

@@ -98,8 +98,10 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
 
 - Never bypass git hooks (`--no-verify`, `-n`, `HUSKY=0`). Fix the failure.
 - Never commit on or push to `main`.
-- A red CI check is yours to fix until proven otherwise; don't dismiss it as
-  pre-existing.
+- A red CI check is yours to fix, including failures already on main that
+  someone else caused; nobody else will fix them. Check whether a failure
+  is also on main (`gh run list --commit <sha>` along main's history), fix
+  it in its own `fix/` PR, and tell any live session that owns the code.
 - Don't verify UI in a browser. The renderer needs `globalThis.electronAPI`
   from the preload script, so the Vite URL is broken outside Electron. The
   chrome-devtools MCP server is denied in `.claude/settings.json`; use the

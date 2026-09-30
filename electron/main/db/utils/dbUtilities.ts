@@ -36,26 +36,27 @@ export function createRomperDbFile(dbDir: string): {
   success: boolean;
 } {
   const dbPath = path.join(dbDir, DB_FILENAME);
+  let sqlite: null | ReturnType<typeof openDatabase> = null;
   try {
     fs.mkdirSync(dbDir, { recursive: true });
-    const sqlite = openDatabase(dbPath);
+    sqlite = openDatabase(dbPath);
     const db = drizzle(sqlite, { schema });
     const migrationsPath = getMigrationsPath();
-    if (migrationsPath) {
-      logger.log(
-        "[Main] Creating database with migrations path:",
-        migrationsPath,
-      );
-      migrate(db, { migrationsFolder: migrationsPath });
-      logger.log("[Main] Initial migrations completed successfully");
-    } else {
+    if (!migrationsPath) {
       console.error(
         "[Main] Migrations folder not found at any known location.",
       );
-      sqlite.close();
       return { error: `Migrations folder not found.`, success: false };
     }
+    logger.log(
+      "[Main] Creating database with migrations path:",
+      migrationsPath,
+    );
+    migrate(db, { migrationsFolder: migrationsPath });
+    logger.log("[Main] Initial migrations completed successfully");
+    // Close before validating, which opens its own connection
     sqlite.close();
+    sqlite = null;
     // Validate the schema was created correctly
     const validation = validateDatabaseSchema(dbDir);
     if (!validation.success) {
@@ -74,6 +75,10 @@ export function createRomperDbFile(dbDir: string): {
     const error = e instanceof Error ? e.message : String(e);
     console.error("[Main] Database creation error:", error);
     return { error, success: false };
+  } finally {
+    // A failed migration must not leave the file open: Windows then can't
+    // delete or rename it (cleanup after a failed setup, test teardown).
+    sqlite?.close();
   }
 }
 

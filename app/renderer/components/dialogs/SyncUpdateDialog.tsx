@@ -393,9 +393,24 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             </div>
             <span className="text-[11px] text-text-tertiary flex items-center gap-1 group-hover:text-text-secondary transition-colors">
               <TrashIcon size={11} />
-              Clear SD card before writing
+              Remove existing kits from the card first
             </span>
           </label>
+          {wipeSdCard && (
+            <p
+              className="px-2 pb-1 text-[11px] leading-snug text-accent-danger"
+              data-testid="wipe-sd-card-warning"
+            >
+              Deletes kit folders (A0 to Z99) and bank name files
+              {localSdCardPath ? (
+                <>
+                  {" in "}
+                  <span className="font-mono break-all">{localSdCardPath}</span>
+                </>
+              ) : null}
+              . Other files on the card are kept.
+            </p>
+          )}
         </div>
       </div>
 

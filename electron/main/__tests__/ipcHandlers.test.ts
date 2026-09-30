@@ -85,6 +85,10 @@ vi.mock("../services/sampleService.js", () => ({
   },
 }));
 
+vi.mock("../services/sdCardSafety.js", () => ({
+  getSdCardDialogDefaultPath: vi.fn(() => "/Volumes"),
+}));
+
 vi.mock("../services/archiveService.js", () => ({
   archiveService: {
     copyDirectory: vi.fn(() => ({ success: true })),
@@ -237,6 +241,17 @@ describe("registerIpcHandlers", () => {
 
     const result = await ipcMainHandlers["select-sd-card"]();
     expect(result).toBe("/mock/sd");
+  });
+
+  it("select-sd-card opens the picker at the removable-volume folder, not the home folder", async () => {
+    const electron = await import("electron");
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    registerIpcHandlers({});
+
+    await ipcMainHandlers["select-sd-card"]();
+    expect(vi.mocked(electron.dialog.showOpenDialog)).toHaveBeenCalledWith(
+      expect.objectContaining({ defaultPath: "/Volumes" }),
+    );
   });
 
   it("select-sd-card returns null when cancelled", async () => {

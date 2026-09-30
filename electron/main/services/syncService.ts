@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { getAllBanks, markKitsAsSynced } from "../db/romperDbCoreORM.js";
 import { logger } from "../utils/logger.js";
 import { rtfFileService } from "./rtfFileService.js";
+import { clearRampleContent, validateSdCardTarget } from "./sdCardSafety.js";
 import {
   type SyncFileOperation,
   syncFileOperationsService,
@@ -145,6 +146,17 @@ class SyncService {
         return { error: "No local store path configured", success: false };
       }
 
+      // Refuse targets that are clearly not an SD card (system root, the home
+      // folder or above it, or anything overlapping a local store) before
+      // anything is read or written.
+      const target = validateSdCardTarget(options.sdCardPath, [
+        localStorePath,
+        process.env.ROMPER_LOCAL_PATH ?? "",
+      ]);
+      if (!target.ok) {
+        return { error: target.reason, success: false };
+      }
+
       const dbDir = path.join(localStorePath, ".romperdb");
       const samplesResult =
         await syncSampleProcessingService.gatherAllSamples(dbDir);
@@ -179,9 +191,10 @@ class SyncService {
       // Mono voices need stereo samples converted to mono; stereo voices pass through
       annotateMonoConversion(allFiles, dbDir);
 
-      // Handle SD card wiping if requested
-      if (options.wipeSdCard && options.sdCardPath) {
-        await this.wipeSdCard(options.sdCardPath);
+      // Remove existing kits from the card if requested. Only Rample kit
+      // folders and bank RTF files are removed; other files are kept.
+      if (options.wipeSdCard) {
+        this.clearSdCard(options.sdCardPath);
       }
 
       syncProgressManager.initializeSyncJob(allFiles);
@@ -211,6 +224,22 @@ class SyncService {
         error: `Failed to sync kit: ${error instanceof Error ? error.message : String(error)}`,
         success: false,
       };
+    }
+  }
+
+  /**
+   * Remove existing Rample kits and bank files from the SD card before sync
+   */
+  private clearSdCard(sdCardPath: string): void {
+    try {
+      const { removed } = clearRampleContent(sdCardPath);
+      logger.log(
+        `Removed ${removed.length} kit folders and bank files from SD card at: ${sdCardPath}`,
+      );
+    } catch (error) {
+      throw new Error(
+        `Failed to clear SD card: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -278,39 +307,6 @@ class SyncService {
       );
     } else {
       console.warn("Failed to mark kits as synced:", markSyncedResult.error);
-    }
-  }
-
-  /**
-   * Wipe SD card contents before sync
-   */
-  private async wipeSdCard(sdCardPath: string): Promise<void> {
-    if (!fs.existsSync(sdCardPath)) {
-      throw new Error(`SD card path does not exist: ${sdCardPath}`);
-    }
-
-    try {
-      // List all items in the SD card directory
-      const items = fs.readdirSync(sdCardPath);
-
-      for (const item of items) {
-        const itemPath = path.join(sdCardPath, item);
-        const stats = fs.statSync(itemPath);
-
-        if (stats.isDirectory()) {
-          // Remove directory recursively
-          fs.rmSync(itemPath, { force: true, recursive: true });
-        } else {
-          // Remove file
-          fs.unlinkSync(itemPath);
-        }
-      }
-
-      logger.log(`Successfully wiped SD card at: ${sdCardPath}`);
-    } catch (error) {
-      throw new Error(
-        `Failed to wipe SD card: ${error instanceof Error ? error.message : String(error)}`,
-      );
     }
   }
 

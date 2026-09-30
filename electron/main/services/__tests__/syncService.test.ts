@@ -1,7 +1,7 @@
 import { BrowserWindow } from "electron";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock modules
 vi.mock("electron", () => ({
@@ -35,9 +35,16 @@ vi.mock("../syncMonoAnnotation.js", () => ({
   annotateMonoConversion: vi.fn(),
 }));
 
+vi.mock("../sdCardSafety.js", () => ({
+  clearRampleContent: vi.fn(() => ({ removed: [] })),
+  validateSdCardTarget: vi.fn(() => ({ ok: true })),
+}));
+
 import { getAudioMetadata, validateSampleFormat } from "../../audioUtils.js";
 import { getKitSamples, markKitsAsSynced } from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
+import { clearRampleContent, validateSdCardTarget } from "../sdCardSafety.js";
+import { syncFileOperationsService } from "../syncFileOperations.js";
 import { syncProgressManager } from "../syncProgressManager.js";
 import { syncSampleProcessingService } from "../syncSampleProcessing.js";
 import { syncService } from "../syncService.js";
@@ -51,6 +58,8 @@ const mockGetKitSamples = vi.mocked(getKitSamples);
 const mockMarkKitsAsSynced = vi.mocked(markKitsAsSynced);
 const _mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
 const mockBrowserWindow = vi.mocked(BrowserWindow);
+const mockValidateSdCardTarget = vi.mocked(validateSdCardTarget);
+const mockClearRampleContent = vi.mocked(clearRampleContent);
 
 describe("SyncService", () => {
   let mockWindow: unknown;
@@ -216,24 +225,6 @@ describe("SyncService", () => {
       expect(result).toBeDefined();
     });
 
-    it("handles wipe SD card option", async () => {
-      const wipeSdCardOptions = {
-        ...mockOptions,
-        wipeSdCard: true,
-      };
-
-      // Mock rimraf for wipe functionality
-      const mockRimraf = vi.fn().mockResolvedValue(undefined);
-      vi.doMock("rimraf", () => ({ rimraf: mockRimraf }));
-
-      const result = await syncService.startKitSync(
-        mockSettings,
-        wipeSdCardOptions,
-      );
-
-      expect(result).toBeDefined();
-    });
-
     it("handles missing local store path", async () => {
       const emptySettings = {};
 
@@ -244,16 +235,17 @@ describe("SyncService", () => {
     });
 
     it("handles missing SD card path", async () => {
-      const invalidOptions = {
-        sdCardPath: "",
-      };
+      mockValidateSdCardTarget.mockReturnValueOnce({
+        ok: false,
+        reason: "No SD card folder selected",
+      });
 
-      const result = await syncService.startKitSync(
-        mockSettings,
-        invalidOptions,
-      );
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "",
+      });
 
       expect(result.success).toBe(false);
+      expect(result.error).toBe("No SD card folder selected");
     });
 
     it("returns sync results with file count", async () => {
@@ -272,63 +264,124 @@ describe("SyncService", () => {
     });
   });
 
-  describe("wipeSdCard functionality", () => {
+  describe("SD card safety", () => {
     const mockSettings = {
       localStorePath: "/local/store",
     };
 
-    it("wipes SD card when option is enabled", async () => {
-      const wipeSdCardOptions = {
+    beforeEach(() => {
+      // Reach the write stage deterministically with nothing to copy.
+      vi.spyOn(
+        syncSampleProcessingService,
+        "gatherAllSamples",
+      ).mockResolvedValue({ data: [], success: true });
+      vi.spyOn(syncFileOperationsService, "processAllFiles").mockResolvedValue(
+        0,
+      );
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("refuses an unsafe target before reading or writing anything", async () => {
+      mockValidateSdCardTarget.mockReturnValueOnce({
+        ok: false,
+        reason: "Refusing to use your home folder",
+      });
+
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/Users/someone",
+        wipeSdCard: true,
+      });
+
+      expect(result).toEqual({
+        error: "Refusing to use your home folder",
+        success: false,
+      });
+      expect(
+        syncSampleProcessingService.gatherAllSamples,
+      ).not.toHaveBeenCalled();
+      expect(mockClearRampleContent).not.toHaveBeenCalled();
+      expect(syncFileOperationsService.processAllFiles).not.toHaveBeenCalled();
+    });
+
+    it("protects the local store and the ROMPER_LOCAL_PATH override", async () => {
+      const previous = process.env.ROMPER_LOCAL_PATH;
+      process.env.ROMPER_LOCAL_PATH = "/env/store";
+      try {
+        await syncService.startKitSync(mockSettings, {
+          sdCardPath: "/sd/card",
+        });
+      } finally {
+        if (previous === undefined) delete process.env.ROMPER_LOCAL_PATH;
+        else process.env.ROMPER_LOCAL_PATH = previous;
+      }
+
+      expect(mockValidateSdCardTarget).toHaveBeenCalledWith("/sd/card", [
+        "/local/store",
+        "/env/store",
+      ]);
+    });
+
+    it("clears only Rample content when the clear option is ticked", async () => {
+      const result = await syncService.startKitSync(mockSettings, {
         sdCardPath: "/sd/card",
         wipeSdCard: true,
-      };
+      });
 
-      // Mock fs.readdirSync to return some files
-      mockFs.readdirSync.mockReturnValue(["file1.wav", "file2.wav"] as unknown);
-      const mockRm = vi.fn().mockResolvedValue(undefined);
-      mockFs.rm = mockRm;
-
-      const result = await syncService.startKitSync(
-        mockSettings,
-        wipeSdCardOptions,
-      );
-
-      expect(result).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(mockClearRampleContent).toHaveBeenCalledWith("/sd/card");
+      // The old implementation removed every entry directly; it must not.
+      expect(mockFs.rmSync).not.toHaveBeenCalled();
+      expect(mockFs.unlinkSync).not.toHaveBeenCalled();
     });
 
-    it("handles wipe SD card errors", async () => {
-      const wipeSdCardOptions = {
-        sdCardPath: "/nonexistent/path",
+    it("clears before any file is written", async () => {
+      const order: string[] = [];
+      mockClearRampleContent.mockImplementationOnce(() => {
+        order.push("clear");
+        return { removed: [] };
+      });
+      vi.mocked(
+        syncFileOperationsService.processAllFiles,
+      ).mockImplementationOnce(async () => {
+        order.push("write");
+        return 0;
+      });
+
+      await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
         wipeSdCard: true,
-      };
+      });
 
-      // Mock fs.existsSync to return false for nonexistent path
-      mockFs.existsSync.mockReturnValueOnce(false);
-
-      const result = await syncService.startKitSync(
-        mockSettings,
-        wipeSdCardOptions,
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-      // The error could be about missing path or failing to load kits - both are valid error conditions
-      expect(typeof result.error).toBe("string");
+      expect(order).toEqual(["clear", "write"]);
     });
 
-    it("skips wipe when option is disabled", async () => {
-      const noWipeOptions = {
+    it("does not clear the card when the option is not ticked", async () => {
+      await syncService.startKitSync(mockSettings, {
         sdCardPath: "/sd/card",
         wipeSdCard: false,
-      };
+      });
 
-      const mockRm = vi.fn();
-      mockFs.rm = mockRm;
+      expect(mockClearRampleContent).not.toHaveBeenCalled();
+    });
 
-      await syncService.startKitSync(mockSettings, noWipeOptions);
+    it("reports a failed clear as a sync error and writes nothing", async () => {
+      mockClearRampleContent.mockImplementationOnce(() => {
+        throw new Error("SD card path does not exist: /sd/card");
+      });
 
-      // Verify wipe was not called
-      expect(mockRm).not.toHaveBeenCalled();
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+        wipeSdCard: true,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain(
+        "Failed to clear SD card: SD card path does not exist",
+      );
+      expect(syncFileOperationsService.processAllFiles).not.toHaveBeenCalled();
     });
   });
 

@@ -38,7 +38,6 @@ Central table for kit configurations and sequencer state.
 | modified_since_sync | BOOLEAN | NOT NULL, default false | Tracks changes since last SD card sync |
 | step_pattern | TEXT (JSON) | nullable | 4 voices x 16 steps pattern grid |
 | trigger_conditions | TEXT (JSON) | nullable | A:B trigger conditions per step |
-| voice_volume | INTEGER | NOT NULL, default 100 | Kit-level volume (0-100) |
 
 ### voices
 

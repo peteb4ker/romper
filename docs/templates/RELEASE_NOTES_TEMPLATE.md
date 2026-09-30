@@ -64,16 +64,16 @@ This is a maintenance release with minor updates.
 ## 📥 Downloads
 
 ### Windows
-- **Installer**: `Romper.Sample.Manager-{{version}}.Setup.exe` - Recommended for most users
+- **Installer**: `Romper-{{version}}.Setup.exe` - Recommended for most users
 
 ### macOS
-- **DMG**: `Romper.Sample.Manager.dmg` - Recommended for most users
-- **ZIP**: `Romper.Sample.Manager-darwin-arm64-{{version}}.zip` - Alternative download
+- **DMG**: `Romper.dmg` - Recommended for most users
+- **ZIP**: `Romper-darwin-arm64-{{version}}.zip` - Alternative download
 
 ### Linux
 - **DEB**: `romper_{{version}}_amd64.deb` - For Debian/Ubuntu
 - **RPM**: `romper-{{version}}-1.x86_64.rpm` - For Fedora/RHEL
-- **ZIP**: `Romper.Sample.Manager-linux-x64-{{version}}.zip` - Universal package
+- **ZIP**: `Romper-linux-x64-{{version}}.zip` - Universal package
 
 ## 💾 Installation
 
@@ -90,12 +90,12 @@ This is a maintenance release with minor updates.
 ### Linux
 **Debian/Ubuntu**:
 ```bash
-sudo dpkg -i romper-sample-manager_{{version}}_amd64.deb
+sudo dpkg -i romper_{{version}}_amd64.deb
 ```
 
 **Fedora/RHEL**:
 ```bash
-sudo rpm -i romper-sample-manager-{{version}}.x86_64.rpm
+sudo rpm -i romper-{{version}}-1.x86_64.rpm
 ```
 
 ## 📋 System Requirements
@@ -117,15 +117,13 @@ No known issues in this release.
 
 ## 📚 Documentation
 
-- [Getting Started Guide](https://github.com/peteb4ker/romper/blob/main/docs/user/getting-started.md)
-- [User Manual](https://github.com/peteb4ker/romper/blob/main/docs/user/user-manual.md)
-- [Release Process](https://github.com/peteb4ker/romper/blob/main/docs/developer/release-process.md)
+- [Getting Started](https://peteb4ker.github.io/romper/manual/getting-started/)
+- [User Manual](https://peteb4ker.github.io/romper/manual/)
+- [Troubleshooting](https://github.com/peteb4ker/romper/blob/main/docs/troubleshooting.md)
 
 ## 🤝 Support
 
 - **Issues**: [GitHub Issues](https://github.com/peteb4ker/romper/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/peteb4ker/romper/discussions)
-- **Wiki**: [Project Wiki](https://github.com/peteb4ker/romper/wiki)
 
 ## 🙏 Acknowledgments
 

@@ -225,11 +225,7 @@ if (isHeadless && process.platform === "darwin") {
   app.setActivationPolicy("accessory");
 }
 
-// NOTE: Kept as a `.then()` chain rather than top-level `await` (SonarCloud
-// S7785). Converting the Electron main entry to top-level await causes
-// `electron.launch` to hang in e2e (ESM-main bootstrap deadlock), so this
-// pattern is intentional.
-void app.whenReady().then(() => {
+function onAppReady(): void {
   logger.log("[Startup] App is starting...");
   try {
     logger.log("[Startup] App is ready. Configuring...");
@@ -275,7 +271,13 @@ void app.whenReady().then(() => {
       error instanceof Error ? error.message : String(error),
     );
   }
-});
+}
+
+// NOTE: Kept as a `.then()` chain rather than top-level `await` (SonarCloud
+// S7785). Converting the Electron main entry to top-level await causes
+// `electron.launch` to hang in e2e (ESM-main bootstrap deadlock), so this
+// pattern is intentional.
+void app.whenReady().then(onAppReady); // NOSONAR - S7785, see note
 
 process.on("unhandledRejection", (reason: unknown) => {
   console.error(

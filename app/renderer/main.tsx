@@ -14,6 +14,7 @@ import { useMessageDisplay } from "./components/hooks/shared/useMessageDisplay";
 import MessageDisplay from "./components/MessageDisplay";
 import { MessageDisplayContext } from "./components/MessageDisplayContext";
 import StatusBar from "./components/StatusBar";
+import { installDocumentDropGuard } from "./utils/documentDropGuard";
 import { SettingsProvider } from "./utils/SettingsContext";
 import AboutView from "./views/AboutView";
 import KitsView from "./views/KitsView";
@@ -60,6 +61,9 @@ const App = () => {
     </Router>
   );
 };
+
+// Keep a file dropped outside a sample slot from navigating the window (RE-02).
+installDocumentDropGuard();
 
 const root = ReactDOM.createRoot(document.getElementById("app")!);
 root.render(

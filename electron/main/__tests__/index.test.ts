@@ -66,7 +66,10 @@ vi.mock("electron", () => {
     handle: vi.fn(),
     on: vi.fn(),
   };
-  return { app, BrowserWindow, ipcMain, Menu };
+  const shell = {
+    openExternal: vi.fn(() => Promise.resolve()),
+  };
+  return { app, BrowserWindow, ipcMain, Menu, shell };
 });
 vi.mock("node:path", () => {
   const mock = {
@@ -351,5 +354,160 @@ describe.sequential("main/index.ts", () => {
     );
 
     spy.mockRestore();
+  });
+
+  describe("navigation hardening (RE-02)", () => {
+    type Handler = (...args: unknown[]) => unknown;
+
+    async function loadWithCapturedWindow(nodeEnv: string) {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = nodeEnv;
+      const handlers = new Map<string, Handler>();
+      let windowOpenHandler: Handler | undefined;
+      const { BrowserWindow, shell } = await import("electron");
+      vi.mocked(BrowserWindow).mockImplementation(function () {
+        return {
+          getBounds: vi.fn(() => ({ height: 800, width: 1200, x: 0, y: 0 })),
+          isMaximized: vi.fn(() => false),
+          loadFile: vi.fn().mockResolvedValue(undefined),
+          loadURL: vi.fn().mockResolvedValue(undefined),
+          maximize: vi.fn(),
+          on: vi.fn(),
+          webContents: {
+            getURL: vi.fn(() => ""),
+            on: vi.fn((name: string, handler: Handler) => {
+              handlers.set(name, handler);
+            }),
+            send: vi.fn(),
+            setWindowOpenHandler: vi.fn((handler: Handler) => {
+              windowOpenHandler = handler;
+            }),
+          },
+        } as unknown;
+      });
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      await import("../index");
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      process.env.NODE_ENV = originalEnv;
+      return { handlers, shell, warn, windowOpenHandler };
+    }
+
+    function fire(handler: Handler | undefined, url: string) {
+      const event = { preventDefault: vi.fn() };
+      handler?.(event, url);
+      return event.preventDefault;
+    }
+
+    it("registers will-navigate, will-redirect and will-attach-webview guards", async () => {
+      const { handlers, warn, windowOpenHandler } =
+        await loadWithCapturedWindow("production");
+      expect(handlers.has("will-navigate")).toBe(true);
+      expect(handlers.has("will-redirect")).toBe(true);
+      expect(handlers.has("will-attach-webview")).toBe(true);
+      expect(windowOpenHandler).toBeDefined();
+      warn.mockRestore();
+    });
+
+    it("blocks navigation to an arbitrary local file in production", async () => {
+      const { handlers, shell, warn } =
+        await loadWithCapturedWindow("production");
+      const prevented = fire(
+        handlers.get("will-navigate"),
+        "file:///Users/me/Downloads/evil.html",
+      );
+      expect(prevented).toHaveBeenCalled();
+      expect(shell.openExternal).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        "[Security] Blocked navigation to:",
+        "file:///Users/me/Downloads/evil.html",
+      );
+      warn.mockRestore();
+    });
+
+    it("sends external http(s) links to the browser instead of navigating", async () => {
+      const { handlers, shell, warn } =
+        await loadWithCapturedWindow("production");
+      const prevented = fire(
+        handlers.get("will-navigate"),
+        "https://squarp.net/rample/manual/",
+      );
+      expect(prevented).toHaveBeenCalled();
+      expect(shell.openExternal).toHaveBeenCalledWith(
+        "https://squarp.net/rample/manual/",
+      );
+      warn.mockRestore();
+    });
+
+    it("blocks data: and javascript: navigations without opening them", async () => {
+      const { handlers, shell, warn } =
+        await loadWithCapturedWindow("production");
+      expect(
+        fire(handlers.get("will-navigate"), "data:text/html,hi"),
+      ).toHaveBeenCalled();
+      expect(
+        fire(handlers.get("will-navigate"), "javascript:alert(1)"),
+      ).toHaveBeenCalled();
+      expect(shell.openExternal).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it("allows the dev-server origin in development only", async () => {
+      const originalPort = process.env.VITE_DEV_SERVER_PORT;
+      delete process.env.VITE_DEV_SERVER_PORT;
+      const dev = await loadWithCapturedWindow("development");
+      expect(
+        fire(dev.handlers.get("will-navigate"), "http://localhost:5173/#/kits"),
+      ).not.toHaveBeenCalled();
+      expect(
+        fire(dev.handlers.get("will-navigate"), "http://localhost:9999/"),
+      ).toHaveBeenCalled();
+      dev.warn.mockRestore();
+
+      vi.resetModules();
+      const prod = await loadWithCapturedWindow("production");
+      expect(
+        fire(prod.handlers.get("will-navigate"), "http://localhost:5173/"),
+      ).toHaveBeenCalled();
+      prod.warn.mockRestore();
+      if (originalPort !== undefined) {
+        process.env.VITE_DEV_SERVER_PORT = originalPort;
+      }
+    });
+
+    it("blocks redirects to disallowed targets without opening them", async () => {
+      const { handlers, shell, warn } =
+        await loadWithCapturedWindow("development");
+      expect(
+        fire(handlers.get("will-redirect"), "https://evil.example/"),
+      ).toHaveBeenCalled();
+      expect(
+        fire(handlers.get("will-redirect"), "file:///tmp/evil.html"),
+      ).toHaveBeenCalled();
+      expect(
+        fire(handlers.get("will-redirect"), "http://localhost:5173/"),
+      ).not.toHaveBeenCalled();
+      expect(shell.openExternal).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it("refuses <webview> attachment", async () => {
+      const { handlers, warn } = await loadWithCapturedWindow("production");
+      expect(fire(handlers.get("will-attach-webview"), "")).toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it("denies popups and opens only http(s) URLs externally", async () => {
+      const { shell, warn, windowOpenHandler } =
+        await loadWithCapturedWindow("production");
+      expect(windowOpenHandler?.({ url: "https://example.com/" })).toEqual({
+        action: "deny",
+      });
+      expect(windowOpenHandler?.({ url: "file:///tmp/evil.html" })).toEqual({
+        action: "deny",
+      });
+      expect(shell.openExternal).toHaveBeenCalledTimes(1);
+      expect(shell.openExternal).toHaveBeenCalledWith("https://example.com/");
+      warn.mockRestore();
+    });
   });
 });

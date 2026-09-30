@@ -229,7 +229,7 @@ if (isHeadless && process.platform === "darwin") {
 // S7785). Converting the Electron main entry to top-level await causes
 // `electron.launch` to hang in e2e (ESM-main bootstrap deadlock), so this
 // pattern is intentional.
-void app.whenReady().then(async () => {
+void app.whenReady().then(() => {
   logger.log("[Startup] App is starting...");
   try {
     logger.log("[Startup] App is ready. Configuring...");

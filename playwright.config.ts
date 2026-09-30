@@ -2,6 +2,10 @@ import { defineConfig } from "@playwright/test";
 import os from "node:os";
 import path from "node:path";
 
+function escapeRegExp(text: string) {
+  return text.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+}
+
 export default defineConfig({
   expect: {
     timeout: process.env.CI ? 3000 : 2000, // Faster expect timeout in CI
@@ -51,6 +55,12 @@ export default defineConfig({
   // Optimize for CI performance
   reporter: process.env.CI ? [["dot"], ["html", { open: "never" }]] : "list",
   testDir: ".",
+  // Nested worktrees (worktrees/, and Claude Code's .claude/worktrees/) carry
+  // their own copies of the e2e suite. Match relative to this checkout, since
+  // this checkout may itself be one of those worktrees.
+  testIgnore: new RegExp(
+    `^${escapeRegExp(import.meta.dirname)}[\\\\/](\\.claude[\\\\/])?worktrees[\\\\/]`,
+  ),
   timeout: process.env.CI ? 45000 : 15000, // Allow sufficient time for Electron wizard operations
   use: {
     // Faster action and navigation timeouts in CI

@@ -132,6 +132,7 @@ export default defineConfig({
         "dist",
         "out",
         "worktrees",
+        "**/.claude/worktrees/**",
         "**/*.e2e.test.{js,ts,jsx,tsx}",
         ...(isIntegration ? [] : ["**/*.integration.test.{js,ts,jsx,tsx}"]),
       ],

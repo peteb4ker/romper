@@ -224,27 +224,38 @@ describe("Database Utilities Integration Tests", () => {
   });
 
   describe("Error Handling", () => {
-    it("should handle permission errors gracefully", () => {
-      // Create a read-only directory (if possible)
-      const readOnlyDir = path.join(TEST_DB_DIR, "readonly");
-      fs.mkdirSync(readOnlyDir, { recursive: true });
+    it("fails gracefully when the database folder can't be created", () => {
+      // A regular file where a parent folder should be makes creation fail
+      // the same way on every platform.
+      const notADir = path.join(TEST_DB_DIR, "not-a-dir");
+      fs.writeFileSync(notADir, "");
 
-      try {
-        fs.chmodSync(readOnlyDir, 0o444); // Read-only
+      const result = createRomperDbFile(path.join(notADir, "db"));
 
-        const result = createRomperDbFile(readOnlyDir);
-
-        // Should fail due to permissions
-        expect(result.success).toBe(false);
-        expect(result.error).toBeDefined();
-
-        // Restore permissions for cleanup
-        fs.chmodSync(readOnlyDir, 0o755);
-      } catch {
-        // Skip if chmod is not supported (e.g., Windows)
-        console.log("Skipping permission test - chmod not supported");
-      }
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
+
+    // A read-only folder only blocks writes on POSIX (chmod on Windows sets
+    // an attribute that doesn't stop file creation), and root ignores it.
+    it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+      "fails gracefully in a read-only folder",
+      () => {
+        const readOnlyDir = path.join(TEST_DB_DIR, "readonly");
+        fs.mkdirSync(readOnlyDir, { recursive: true });
+        fs.chmodSync(readOnlyDir, 0o444);
+
+        try {
+          const result = createRomperDbFile(readOnlyDir);
+
+          expect(result.success).toBe(false);
+          expect(result.error).toBeDefined();
+        } finally {
+          // Always restore, or the next test can't remove the test folder
+          fs.chmodSync(readOnlyDir, 0o755);
+        }
+      },
+    );
   });
 
   describe("repairMigrationHistory", () => {

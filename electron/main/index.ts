@@ -82,6 +82,10 @@ function createWindow() {
       backgroundThrottling: !isHeadless,
       contextIsolation: true,
       nodeIntegration: false,
+      // A hidden native window gets no compositor frames on Linux and
+      // Windows, so requestAnimationFrame stalls after the first couple of
+      // frames. Offscreen rendering drives frames without showing anything.
+      offscreen: isHeadless,
       preload: path.resolve(__dirname, "../preload/index.cjs"),
       sandbox: true,
     },

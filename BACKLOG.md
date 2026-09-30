@@ -23,7 +23,6 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-03 | High | Security | The renderer can read any file (up to 256 MiB), list any folder, create and copy folders, extract a downloaded archive into any folder, write a probe file anywhere, and create or insert into a database in any folder. | in progress (`fix/re-03-scoped-fs-ipc`) |
 
 ## Next
 
@@ -98,9 +97,10 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-03 | High | Security | The renderer can read any file (up to 256 MiB), list any folder, create and copy folders, extract a downloaded archive into any folder, write a probe file anywhere, and create or insert into a database in any folder. | done (#367) |
 | RE-04 | High | Scan | "Scan Kit" on a non-editable kit, and "File > Scan All" on every kit, delete all of the kit's sample rows and rebuild them from `<store>/<kit>/*.wav`. | done (#360) |
 | RE-09 | High | Sync | Validation errors (such as missing source files) and warnings are built and then dropped. | done (#364) |
 | RE-30 | Medium | Config | `ROMPER_LOCAL_PATH` is honoured by kit and DB handlers but ignored by sample, scan, sync and audio-buffer code. | done (#355) |
-| RE-02 | High | Security | The `will-navigate` guard compares `URL.origin`, which is `"null"` for every `file://` URL. | done (#358; the IPC sender check ships with RE-03) |
+| RE-02 | High | Security | The `will-navigate` guard compares `URL.origin`, which is `"null"` for every `file://` URL. | done (#358; the IPC sender check in #367) |
 | RE-10 | High | Setup | If setup fails, the cleanup deletes `<target>/.romperdb` without checking that this run created it. | done (#359) |
 | RE-01 | Critical | Sync | "Clear SD card before writing" deletes every file and folder at the chosen path. | done (#351) |

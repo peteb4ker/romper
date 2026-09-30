@@ -35,6 +35,7 @@ vi.mock("electron", () => {
     getName: vi.fn(() => "Romper"),
     getPath: vi.fn(() => "/mock/userData"),
     quit: vi.fn(),
+    setActivationPolicy: vi.fn(),
     setName: vi.fn(),
     whenReady: vi.fn(() => Promise.resolve()),
   };
@@ -102,6 +103,7 @@ beforeEach(() => {
   delete process.env.ROMPER_LOCAL_PATH;
   delete process.env.ROMPER_SDCARD_PATH;
   delete process.env.ROMPER_SQUARP_ARCHIVE_URL;
+  delete process.env.ROMPER_HEADLESS;
 
   // Clean up process listeners to prevent MaxListenersExceededWarning
   process.removeAllListeners("unhandledRejection");
@@ -114,6 +116,65 @@ afterEach(() => {
 // Orchestration tests for the thin index.ts shell.
 // Pure logic tests (settings, validation, window state) are in mainProcessSetup.test.ts.
 describe.sequential("main/index.ts", () => {
+  describe("ROMPER_HEADLESS", () => {
+    const originalPlatform = process.platform;
+
+    async function launch() {
+      const { app, BrowserWindow } = await import("electron");
+      // A saved window state that asks for a maximized window
+      vi.mocked(fs.readFileSync).mockReturnValue('{"isMaximized": true}');
+      const writeSpy = vi
+        .spyOn(fs, "writeFileSync")
+        .mockImplementation(() => {});
+      await import("../index");
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const win = vi.mocked(BrowserWindow).mock.results[0].value;
+      const closeHandler = vi
+        .mocked(win.on)
+        .mock.calls.find(([event]) => event === "close")?.[1];
+      writeSpy.mockClear();
+      closeHandler?.();
+
+      return {
+        app,
+        options: vi.mocked(BrowserWindow).mock.calls[0][0],
+        savedWindowState: writeSpy.mock.calls.length > 0,
+        win,
+      };
+    }
+
+    beforeEach(() => {
+      Object.defineProperty(process, "platform", { value: "darwin" });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(process, "platform", { value: originalPlatform });
+    });
+
+    it("hides the window and keeps the app out of the Dock and focus", async () => {
+      process.env.ROMPER_HEADLESS = "true";
+
+      const { app, options, savedWindowState, win } = await launch();
+
+      expect(options.show).toBe(false);
+      expect(options.webPreferences.backgroundThrottling).toBe(false);
+      expect(app.setActivationPolicy).toHaveBeenCalledWith("accessory");
+      expect(win.maximize).not.toHaveBeenCalled();
+      expect(savedWindowState).toBe(false);
+    });
+
+    it("shows a normal window when unset", async () => {
+      const { app, options, savedWindowState, win } = await launch();
+
+      expect(options.show).toBe(true);
+      expect(options.webPreferences.backgroundThrottling).toBe(true);
+      expect(app.setActivationPolicy).not.toHaveBeenCalled();
+      expect(win.maximize).toHaveBeenCalled();
+      expect(savedWindowState).toBe(true);
+    });
+  });
+
   it("calls app.whenReady on import", async () => {
     const { app } = await import("electron");
     await import("../index");

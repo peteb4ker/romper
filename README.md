@@ -174,7 +174,8 @@ npm run dev
 # Testing
 npm run test:fast   # Unit + integration (~1 min)
 npm run test        # Same, with merged coverage
-npm run test:e2e    # End-to-end tests
+npm run test:e2e    # End-to-end tests (hidden window)
+npm run test:e2e:headed  # Same, with the app window visible
 
 # Quality checks
 npm run lint        # ESLint + auto-fix

@@ -6,6 +6,11 @@ function escapeRegExp(text: string) {
   return text.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }
 
+// Run the app with a hidden window so e2e doesn't take over the screen.
+// Every spec launches Electron with process.env, so this reaches all of them.
+// `npm run test:e2e:headed` (ROMPER_HEADLESS=false) shows the window instead.
+process.env.ROMPER_HEADLESS ??= "true";
+
 export default defineConfig({
   expect: {
     timeout: process.env.CI ? 3000 : 2000, // Faster expect timeout in CI

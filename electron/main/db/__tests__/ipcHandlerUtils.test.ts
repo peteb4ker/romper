@@ -21,6 +21,15 @@ vi.mock("../../services/sampleService.js", () => ({
   },
 }));
 
+vi.mock("../../security/sampleSourceAccess.js", () => ({
+  checkSampleSourceAccess: vi.fn(() => ({ ok: true })),
+  rememberKitSampleSources: vi.fn(),
+}));
+
+import {
+  checkSampleSourceAccess,
+  rememberKitSampleSources,
+} from "../../security/sampleSourceAccess.js";
 import { sampleService } from "../../services/sampleService.js";
 
 describe("ipcHandlerUtils", () => {
@@ -415,6 +424,64 @@ describe("ipcHandlerUtils", () => {
           error: "Failed to perform sample operation: null",
           success: false,
         });
+      });
+    });
+
+    describe("sample source authorization (RE-03)", () => {
+      const denied = { error: "Access denied: outside", ok: false } as const;
+
+      it.each(["add", "replace"] as const)(
+        "%s refuses a file the user never gave Romper",
+        async (operation) => {
+          vi.mocked(checkSampleSourceAccess).mockReturnValueOnce(denied);
+          const handler = createSampleOperationHandler(
+            mockInMemorySettings,
+            operation,
+          );
+          const result = await handler(
+            mockEvent,
+            "A0",
+            1,
+            0,
+            "/Users/me/.ssh/id_rsa",
+          );
+          expect(checkSampleSourceAccess).toHaveBeenCalledWith(
+            mockInMemorySettings,
+            "/Users/me/.ssh/id_rsa",
+          );
+          expect(result).toEqual({ error: denied.error, success: false });
+          expect(sampleService.addSampleToSlot).not.toHaveBeenCalled();
+          expect(sampleService.replaceSampleInSlot).not.toHaveBeenCalled();
+        },
+      );
+
+      it("delete doesn't check a source path but remembers the kit's sources", async () => {
+        vi.mocked(sampleService.deleteSampleFromSlot).mockReturnValue({
+          success: true,
+        });
+        const handler = createSampleOperationHandler(
+          mockInMemorySettings,
+          "delete",
+        );
+        await handler(mockEvent, "A0", 1, 0);
+        expect(checkSampleSourceAccess).not.toHaveBeenCalled();
+        expect(rememberKitSampleSources).toHaveBeenCalledWith(
+          mockInMemorySettings,
+          "A0",
+        );
+      });
+
+      it("add doesn't remember kit sources (nothing is removed)", async () => {
+        vi.mocked(sampleService.addSampleToSlot).mockReturnValue({
+          data: { sampleId: 1 },
+          success: true,
+        });
+        const handler = createSampleOperationHandler(
+          mockInMemorySettings,
+          "add",
+        );
+        await handler(mockEvent, "A0", 1, 0, "/Music/kick.wav");
+        expect(rememberKitSampleSources).not.toHaveBeenCalled();
       });
     });
   });

@@ -45,13 +45,43 @@ vi.mock("../services/scanService.js", () => ({
 // Mock audio utilities
 vi.mock("../audioUtils.js", () => ({
   getAudioMetadata: vi.fn(),
+  validateSampleFormat: vi.fn(() => ({ success: true })),
+}));
+
+vi.mock("../services/localStoreService.js", () => ({
+  localStoreService: {
+    validateLocalStore: vi.fn(() => ({ isValid: true })),
+    validateLocalStoreBasic: vi.fn(() => ({ isValid: true })),
+  },
+}));
+
+// Path authorization is unit-tested in security/__tests__; here it is a
+// switch so each guarded channel can be checked allowed and denied.
+vi.mock("../security/pathAccess.js", () => ({
+  checkDatabaseDirAccess: vi.fn(() => ({ ok: true })),
+  checkPathAccess: vi.fn(() => ({ ok: true })),
+  pathAccess: { useSettings: vi.fn() },
+}));
+
+vi.mock("../security/sampleSourceAccess.js", () => ({
+  checkSampleSourceAccess: vi.fn(() => ({ ok: true })),
+  rememberKitSampleSources: vi.fn(),
 }));
 
 import { ipcMain } from "electron";
 
-import { getAudioMetadata } from "../audioUtils.js";
+import { getAudioMetadata, validateSampleFormat } from "../audioUtils.js";
 import * as romperDbCore from "../db/romperDbCoreORM";
 import { registerDbIpcHandlers } from "../dbIpcHandlers";
+import {
+  checkDatabaseDirAccess,
+  checkPathAccess,
+} from "../security/pathAccess.js";
+import {
+  checkSampleSourceAccess,
+  rememberKitSampleSources,
+} from "../security/sampleSourceAccess.js";
+import { localStoreService } from "../services/localStoreService.js";
 import { sampleService } from "../services/sampleService.js";
 import { scanService } from "../services/scanService.js";
 
@@ -59,6 +89,7 @@ const mockIpcMain = vi.mocked(ipcMain);
 const mockSampleService = vi.mocked(sampleService);
 const mockScanService = vi.mocked(scanService);
 const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
+const DENIED = { error: "Access denied: outside granted folders", ok: false };
 
 describe("dbIpcHandlers - Routing Tests", () => {
   let handlerRegistry: Record<string, Function> = {};
@@ -154,17 +185,22 @@ describe("dbIpcHandlers - Routing Tests", () => {
   describe("Database Operation Handlers", () => {
     it("create-romper-db creates the database through the setup guard", async () => {
       const handler = handlerRegistry["create-romper-db"];
-      await handler({}, "/test/db");
+      await handler({}, "/test/path/.romperdb");
 
-      expect(romperDbCore.createRomperDbFile).toHaveBeenCalledWith("/test/db");
+      expect(romperDbCore.createRomperDbFile).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+      );
     });
 
     it("insert-kit routes to addKit", async () => {
       const handler = handlerRegistry["insert-kit"];
       const kit = { bank_letter: "A", name: "A5" };
-      await handler({}, "/test/db", kit);
+      await handler({}, "/test/path/.romperdb", kit);
 
-      expect(romperDbCore.addKit).toHaveBeenCalledWith("/test/db", kit);
+      expect(romperDbCore.addKit).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        kit,
+      );
     });
 
     it("get-all-kits routes to database with settings validation", async () => {
@@ -399,6 +435,165 @@ describe("dbIpcHandlers - Routing Tests", () => {
         bitDepth: 24,
       });
       expect(mockGetAudioMetadata).toHaveBeenCalledWith("/path/to/partial.wav");
+    });
+  });
+
+  describe("Path authorization (RE-03)", () => {
+    const dbDir = "/new/store/.romperdb";
+
+    it("create-romper-db refuses a database folder outside the roots", async () => {
+      const { localStoreSetupService } =
+        await import("../services/localStoreSetupService.js");
+      const createSetupDatabase = vi.spyOn(
+        localStoreSetupService,
+        "createSetupDatabase",
+      );
+      vi.mocked(checkDatabaseDirAccess).mockReturnValueOnce(DENIED);
+      const result = await handlerRegistry["create-romper-db"](
+        {},
+        "/Users/me/Library/.romperdb",
+      );
+      expect(checkDatabaseDirAccess).toHaveBeenCalledWith(
+        "/Users/me/Library/.romperdb",
+      );
+      expect(result).toEqual({ error: DENIED.error, success: false });
+      expect(createSetupDatabase).not.toHaveBeenCalled();
+      expect(romperDbCore.createRomperDbFile).not.toHaveBeenCalled();
+      createSetupDatabase.mockRestore();
+    });
+
+    it("insert-kit refuses a denied database folder", async () => {
+      vi.mocked(checkDatabaseDirAccess).mockReturnValueOnce(DENIED);
+      const result = await handlerRegistry["insert-kit"]({}, "/elsewhere", {
+        bank_letter: "A",
+        name: "A0",
+      });
+      expect(result.success).toBe(false);
+      expect(romperDbCore.addKit).not.toHaveBeenCalled();
+    });
+
+    it("insert-sample checks the database folder and the sample's source path", async () => {
+      const sample = {
+        filename: "1 kick.wav",
+        kit_name: "A0",
+        slot_number: 0,
+        source_path: "/new/store/A0/1 kick.wav",
+        voice_number: 1,
+      };
+      const ok = await handlerRegistry["insert-sample"]({}, dbDir, sample);
+      expect(ok.success).toBe(true);
+      expect(checkDatabaseDirAccess).toHaveBeenCalledWith(dbDir);
+      expect(checkPathAccess).toHaveBeenCalledWith(sample.source_path);
+      expect(romperDbCore.addSample).toHaveBeenCalledWith(dbDir, sample);
+    });
+
+    it("insert-sample refuses a source path outside the roots", async () => {
+      vi.mocked(checkPathAccess).mockReturnValueOnce(DENIED);
+      const result = await handlerRegistry["insert-sample"]({}, dbDir, {
+        filename: "id_rsa",
+        kit_name: "A0",
+        slot_number: 0,
+        source_path: "/Users/me/.ssh/id_rsa",
+        voice_number: 1,
+      });
+      expect(result).toEqual({ error: DENIED.error, success: false });
+      expect(romperDbCore.addSample).not.toHaveBeenCalled();
+    });
+
+    it("insert-sample refuses a denied database folder", async () => {
+      vi.mocked(checkDatabaseDirAccess).mockReturnValueOnce(DENIED);
+      const result = await handlerRegistry["insert-sample"]({}, "/x", {
+        source_path: "",
+      });
+      expect(result.success).toBe(false);
+      expect(romperDbCore.addSample).not.toHaveBeenCalled();
+    });
+
+    it("get-all-samples reads the configured store, not a renderer path", async () => {
+      vi.mocked(romperDbCore.getAllSamples).mockReturnValue({
+        data: [],
+        success: true,
+      });
+      await handlerRegistry["get-all-samples"]({}, "/attacker/.romperdb");
+      expect(romperDbCore.getAllSamples).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+      );
+    });
+
+    it.each(["validate-local-store", "validate-local-store-basic"])(
+      "%s refuses a renderer path outside the roots",
+      async (channel) => {
+        vi.mocked(checkPathAccess).mockReturnValueOnce(DENIED);
+        const result = await handlerRegistry[channel]({}, "/Users/me");
+        expect(checkPathAccess).toHaveBeenCalledWith("/Users/me");
+        expect(result).toEqual({ error: DENIED.error, isValid: false });
+        expect(localStoreService.validateLocalStore).not.toHaveBeenCalled();
+        expect(
+          localStoreService.validateLocalStoreBasic,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it("validate-local-store validates an allowed path", async () => {
+      const result = await handlerRegistry["validate-local-store"](
+        {},
+        "/picked/store",
+      );
+      expect(result).toEqual({ isValid: true });
+      expect(localStoreService.validateLocalStore).toHaveBeenCalledWith(
+        "/picked/store",
+      );
+    });
+
+    it.each(["get-audio-metadata", "validate-sample-format"])(
+      "%s only reads sample sources the user gave Romper",
+      async (channel) => {
+        vi.mocked(checkSampleSourceAccess).mockReturnValueOnce(DENIED);
+        const result = await handlerRegistry[channel]({}, "/etc/passwd");
+        expect(checkSampleSourceAccess).toHaveBeenCalledWith(
+          mockInMemorySettings,
+          "/etc/passwd",
+        );
+        expect(result).toEqual({ error: DENIED.error, success: false });
+        expect(getAudioMetadata).not.toHaveBeenCalled();
+        expect(validateSampleFormat).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(["add-sample-to-slot", "replace-sample-in-slot"])(
+      "%s refuses a source file the user never gave Romper",
+      async (channel) => {
+        vi.mocked(checkSampleSourceAccess).mockReturnValueOnce(DENIED);
+        const result = await handlerRegistry[channel](
+          {},
+          "A0",
+          1,
+          0,
+          "/Users/me/.ssh/id_rsa",
+        );
+        expect(result).toEqual({ error: DENIED.error, success: false });
+        expect(mockSampleService.addSampleToSlot).not.toHaveBeenCalled();
+        expect(mockSampleService.replaceSampleInSlot).not.toHaveBeenCalled();
+      },
+    );
+
+    it("replace and delete remember the kit's sources so undo can re-add them", async () => {
+      await handlerRegistry["replace-sample-in-slot"](
+        {},
+        "A0",
+        1,
+        0,
+        "/new.wav",
+      );
+      await handlerRegistry["delete-sample-from-slot"]({}, "B1", 1, 0);
+      expect(rememberKitSampleSources).toHaveBeenCalledWith(
+        mockInMemorySettings,
+        "A0",
+      );
+      expect(rememberKitSampleSources).toHaveBeenCalledWith(
+        mockInMemorySettings,
+        "B1",
+      );
     });
   });
 });

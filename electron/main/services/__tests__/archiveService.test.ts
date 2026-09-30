@@ -102,6 +102,27 @@ vi.mock("node:https", () => ({
 }));
 
 const mockEvent = { sender: { send: vi.fn() } };
+
+// The handler takes only the destination; the archive URL comes from main
+// (ROMPER_SQUARP_ARCHIVE_URL overrides the Squarp default).
+async function invokeWithArchiveUrl(handler: unknown, url: string) {
+  process.env.ROMPER_SQUARP_ARCHIVE_URL = url;
+  try {
+    return await (handler as Function)(mockEvent, "/mock/dest");
+  } finally {
+    delete process.env.ROMPER_SQUARP_ARCHIVE_URL;
+  }
+}
+
+vi.mock("../../security/pathAccess.js", () => ({
+  checkPathAccess: vi.fn(() => ({ ok: true })),
+  pathAccess: {
+    assertAllowed: vi.fn(),
+    grantRead: vi.fn(),
+    grantRoot: vi.fn(),
+    useSettings: vi.fn(),
+  },
+}));
 const ipcMainHandlers: { [key: string]: unknown } = {};
 vi.mock("electron", () => ({
   app: { getPath: vi.fn(() => "/mock/userData") },
@@ -127,10 +148,9 @@ beforeEach(async () => {
 describe("download-and-extract-archive handler", () => {
   it("emits progress events for download and extraction", async () => {
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "https://example.com/archive.zip",
-      "/mock/dest",
     );
     expect(result).toBeTypeOf("object");
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
@@ -147,10 +167,9 @@ describe("download-and-extract-archive handler", () => {
       throw new Error("fail");
     });
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "https://example.com/archive.zip",
-      "/mock/dest",
     );
     expect(result.success).toBe(false);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
@@ -169,10 +188,9 @@ describe("download-and-extract-archive handler", () => {
       return req;
     });
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "https://fail.com/archive.zip",
-      "/mock/dest",
     );
     expect(result.success).toBe(false);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
@@ -201,10 +219,9 @@ describe("download-and-extract-archive handler", () => {
     };
     (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "https://skip.com/archive.zip",
-      "/mock/dest",
     );
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
@@ -221,10 +238,9 @@ describe("download-and-extract-archive handler", () => {
     };
     (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "https://zero.com/archive.zip",
-      "/mock/dest",
     );
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
@@ -240,10 +256,9 @@ describe("download-and-extract-archive handler", () => {
     );
     (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "https://mkdir.com/archive.zip",
-      "/mock/dest",
     );
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
@@ -281,10 +296,9 @@ describe("download-and-extract-archive handler", () => {
       return s;
     });
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "https://write.com/archive.zip",
-      "/mock/dest",
     );
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
@@ -295,10 +309,9 @@ describe("download-and-extract-archive handler", () => {
 
   it("rejects non-https, non-file URL schemes", async () => {
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "http://insecure.com/archive.zip",
-      "/mock/dest",
     );
 
     expect(result.success).toBe(false);
@@ -313,10 +326,9 @@ describe("download-and-extract-archive handler", () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
 
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "file:///mock/local/archive.zip",
-      "/mock/dest",
     );
 
     expect(result.success).toBe(true);
@@ -330,10 +342,9 @@ describe("download-and-extract-archive handler", () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
 
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "file:///mock/nonexistent/archive.zip",
-      "/mock/dest",
     );
 
     expect(result.success).toBe(false);
@@ -364,10 +375,9 @@ describe("download-and-extract-archive handler", () => {
     );
 
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "https://nocontent.com/archive.zip",
-      "/mock/dest",
     );
 
     expect(result.success).toBe(true);
@@ -399,10 +409,9 @@ describe("download-and-extract-archive handler", () => {
     );
 
     const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await handler(
-      mockEvent as unknown,
+    const result = await invokeWithArchiveUrl(
+      handler,
       "https://large.com/archive.zip",
-      "/mock/dest",
     );
 
     expect(result.success).toBe(true);
@@ -414,4 +423,41 @@ describe("download-and-extract-archive handler", () => {
       }),
     );
   }, 15000);
+});
+
+describe("getFactorySamplesArchiveUrl (RE-03)", () => {
+  it("defaults to the Squarp factory sample pack", async () => {
+    const { getFactorySamplesArchiveUrl, SQUARP_FACTORY_SAMPLES_URL } =
+      await import("../archiveService");
+    delete process.env.ROMPER_SQUARP_ARCHIVE_URL;
+    expect(SQUARP_FACTORY_SAMPLES_URL).toBe(
+      "https://data.squarp.net/RampleSamplesV1-2.zip",
+    );
+    expect(getFactorySamplesArchiveUrl()).toBe(SQUARP_FACTORY_SAMPLES_URL);
+  });
+
+  it("uses ROMPER_SQUARP_ARCHIVE_URL from the launch environment", async () => {
+    const { getFactorySamplesArchiveUrl } = await import("../archiveService");
+    process.env.ROMPER_SQUARP_ARCHIVE_URL = "file:///fixtures/squarp.zip";
+    try {
+      expect(getFactorySamplesArchiveUrl()).toBe("file:///fixtures/squarp.zip");
+    } finally {
+      delete process.env.ROMPER_SQUARP_ARCHIVE_URL;
+    }
+  });
+
+  it("ignores a URL passed by the renderer", async () => {
+    const { archiveService } = await import("../archiveService");
+    const spy = vi
+      .spyOn(archiveService, "downloadAndExtractArchive")
+      .mockResolvedValue({ success: true });
+    const handler = ipcMainHandlers["download-and-extract-archive"] as Function;
+    await handler(mockEvent, "/mock/dest", "https://evil.test/payload.zip");
+    expect(spy).toHaveBeenCalledWith(
+      "https://data.squarp.net/RampleSamplesV1-2.zip",
+      "/mock/dest",
+      expect.any(Function),
+    );
+    spy.mockRestore();
+  });
 });

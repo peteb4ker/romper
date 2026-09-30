@@ -1,5 +1,9 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
 
+import {
+  checkSampleSourceAccess,
+  rememberKitSampleSources,
+} from "../security/sampleSourceAccess.js";
 import { sampleService } from "../services/sampleService.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 
@@ -35,6 +39,16 @@ export function createSampleOperationHandler(
   ) => {
     try {
       let result: DbResult<unknown>;
+
+      // RE-03: a new sample source must be a file the user gave Romper.
+      if (operationType !== "delete" && filePath) {
+        const access = checkSampleSourceAccess(inMemorySettings, filePath);
+        if (!access.ok) return { error: access.error, success: false };
+      }
+      // Undo re-adds whatever this edit removes; let it read those files.
+      if (operationType !== "add") {
+        rememberKitSampleSources(inMemorySettings, kitName);
+      }
 
       switch (operationType) {
         case "add":

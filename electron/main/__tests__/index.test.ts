@@ -90,6 +90,9 @@ vi.mock("../applicationMenu.js", () => ({
   createApplicationMenu: vi.fn(),
   registerMenuIpcHandlers: vi.fn(),
 }));
+vi.mock("../security/ipcSender.js", () => ({
+  enforceTrustedIpcSenders: vi.fn(),
+}));
 vi.mock("../localStoreValidator.js", () => ({
   validateLocalStoreAndDb: vi.fn(() => ({ isValid: true })),
 }));
@@ -515,5 +518,55 @@ describe.sequential("main/index.ts", () => {
       expect(shell.openExternal).toHaveBeenCalledWith("https://example.com/");
       warn.mockRestore();
     });
+  });
+
+  it("installs IPC sender validation before registering any handler", async () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    const { ipcMain } = await import("electron");
+    const { createApplicationMenu } = await import("../applicationMenu.js");
+    vi.mocked(createApplicationMenu).mockImplementation(() => {});
+    const { enforceTrustedIpcSenders } =
+      await import("../security/ipcSender.js");
+    const { registerIpcHandlers } = await import("../ipcHandlers.js");
+    const { registerDbIpcHandlers } = await import("../dbIpcHandlers.js");
+
+    await import("../index");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(enforceTrustedIpcSenders).toHaveBeenCalledWith(ipcMain, {
+      indexPath: expect.stringContaining("renderer/index.html"),
+      kind: "file",
+    });
+    const enforcedAt = vi.mocked(enforceTrustedIpcSenders).mock
+      .invocationCallOrder[0];
+    expect(enforcedAt).toBeLessThan(
+      vi.mocked(registerIpcHandlers).mock.invocationCallOrder[0],
+    );
+    expect(enforcedAt).toBeLessThan(
+      vi.mocked(registerDbIpcHandlers).mock.invocationCallOrder[0],
+    );
+    process.env.NODE_ENV = originalEnv;
+  });
+
+  it("trusts only the Vite dev server origin in development", async () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "development";
+    vi.stubEnv("VITE_DEV_SERVER_PORT", "5199");
+    const { ipcMain } = await import("electron");
+    const { createApplicationMenu } = await import("../applicationMenu.js");
+    vi.mocked(createApplicationMenu).mockImplementation(() => {});
+    const { enforceTrustedIpcSenders } =
+      await import("../security/ipcSender.js");
+
+    await import("../index");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(enforceTrustedIpcSenders).toHaveBeenCalledWith(ipcMain, {
+      devServerOrigin: "http://localhost:5199",
+      kind: "dev",
+    });
+    process.env.NODE_ENV = originalEnv;
+    vi.unstubAllEnvs();
   });
 });

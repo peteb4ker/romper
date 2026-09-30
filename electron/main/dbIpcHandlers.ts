@@ -33,6 +33,12 @@ import {
 } from "./db/romperDbCoreORM.js";
 import { registerSampleIpcHandlers } from "./db/sampleIpcHandlers.js";
 import { registerSyncIpcHandlers } from "./db/syncIpcHandlers.js";
+import {
+  checkDatabaseDirAccess,
+  checkPathAccess,
+  pathAccess,
+} from "./security/pathAccess.js";
+import { checkSampleSourceAccess } from "./security/sampleSourceAccess.js";
 import { localStoreService } from "./services/localStoreService.js";
 import { localStoreSetupService } from "./services/localStoreSetupService.js";
 import { rtfFileService } from "./services/rtfFileService.js";
@@ -40,24 +46,41 @@ import { scanService } from "./services/scanService.js";
 import { ServicePathManager } from "./utils/fileSystemUtils.js";
 
 export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
+  pathAccess.useSettings(inMemorySettings);
+
   // Register all handler groups
   registerSampleIpcHandlers(inMemorySettings);
   registerSyncIpcHandlers(inMemorySettings);
   registerFavoritesIpcHandlers(inMemorySettings);
 
-  // Basic database operations
-  // Setup-only: refuses a folder that already holds a store (RE-10)
-  ipcMain.handle("create-romper-db", (_event, dbDir: string) =>
-    localStoreSetupService.createSetupDatabase(dbDir),
-  );
+  // Setup-wizard database operations. They run before the new store is
+  // configured, so they name its .romperdb folder; it must sit inside a
+  // writable root (RE-03). create-romper-db also refuses a folder that
+  // already holds a store (RE-10).
+  ipcMain.handle("create-romper-db", (_event, dbDir: string) => {
+    const access = checkDatabaseDirAccess(dbDir);
+    if (!access.ok) return { error: access.error, success: false };
+    return localStoreSetupService.createSetupDatabase(dbDir);
+  });
 
   ipcMain.handle("insert-kit", (_event, dbDir: string, kit: NewKit) => {
+    const access = checkDatabaseDirAccess(dbDir);
+    if (!access.ok) return { error: access.error, success: false };
     return addKit(dbDir, kit);
   });
 
   ipcMain.handle(
     "insert-sample",
     (_event, dbDir: string, sample: NewSample) => {
+      const access = checkDatabaseDirAccess(dbDir);
+      // The wizard only records files inside the store it is creating.
+      const sourceAccess =
+        access.ok && sample?.source_path
+          ? checkPathAccess(sample.source_path)
+          : access;
+      if (!sourceAccess.ok) {
+        return { error: sourceAccess.error, success: false };
+      }
       return addSample(dbDir, sample);
     },
   );
@@ -268,6 +291,8 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     if (!pathToValidate) {
       throw new Error("No local store path provided or configured");
     }
+    const access = checkPathAccess(pathToValidate);
+    if (!access.ok) return { error: access.error, isValid: false };
     return localStoreService.validateLocalStore(pathToValidate);
   });
 
@@ -284,13 +309,16 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
       if (!pathToValidate) {
         throw new Error("No local store path provided or configured");
       }
+      const access = checkPathAccess(pathToValidate);
+      if (!access.ok) return { error: access.error, isValid: false };
       return localStoreService.validateLocalStoreBasic(pathToValidate);
     },
   );
 
-  ipcMain.handle("get-all-samples", (_event, dbDir: string) => {
-    return getAllSamples(dbDir);
-  });
+  ipcMain.handle(
+    "get-all-samples",
+    createDbHandler(inMemorySettings, (dbDir: string) => getAllSamples(dbDir)),
+  );
 
   ipcMain.handle(
     "get-all-samples-for-kit",
@@ -357,10 +385,14 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
 
   // Audio format validation
   ipcMain.handle("get-audio-metadata", (_event, filePath: string) => {
+    const access = checkSampleSourceAccess(inMemorySettings, filePath);
+    if (!access.ok) return { error: access.error, success: false };
     return getAudioMetadata(filePath);
   });
 
   ipcMain.handle("validate-sample-format", (_event, filePath: string) => {
+    const access = checkSampleSourceAccess(inMemorySettings, filePath);
+    if (!access.ok) return { error: access.error, success: false };
     return validateSampleFormat(filePath);
   });
 

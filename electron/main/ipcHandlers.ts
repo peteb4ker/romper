@@ -2,7 +2,13 @@ import { app, dialog, ipcMain, shell } from "electron";
 
 import type { InMemorySettings } from "./types/settings.js";
 
-import { archiveService } from "./services/archiveService.js";
+import { requestLocalStoreAccess } from "./security/localStoreAccessPrompt.js";
+import { checkPathAccess, pathAccess } from "./security/pathAccess.js";
+import { checkSampleSourceAccess } from "./security/sampleSourceAccess.js";
+import {
+  archiveService,
+  getFactorySamplesArchiveUrl,
+} from "./services/archiveService.js";
 import { kitService } from "./services/kitService.js";
 import { localStoreService } from "./services/localStoreService.js";
 import { localStoreSetupService } from "./services/localStoreSetupService.js";
@@ -16,12 +22,25 @@ import {
 } from "./utils/fileSystemUtils.js";
 import { logger } from "./utils/logger.js";
 
+// Settings whose value becomes an allowed root, so the renderer can't widen
+// its own file access by writing one (RE-03).
+const PATH_SETTING_KEYS: ReadonlySet<string> = new Set([
+  "localStorePath",
+  "sdCardPath",
+]);
+
 export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
+  pathAccess.useSettings(inMemorySettings);
+
   ipcMain.handle("read-settings", () =>
     settingsService.readSettings(inMemorySettings),
   );
 
   ipcMain.handle("write-settings", (_event, key: string, value: unknown) => {
+    const clearing = value === null || value === undefined || value === "";
+    if (PATH_SETTING_KEYS.has(key) && !clearing) {
+      pathAccess.assertAllowed(value, { write: true });
+    }
     settingsService.writeSetting(inMemorySettings, key, value);
   });
 
@@ -57,7 +76,9 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       properties: ["openDirectory"],
       title: "Select SD Card Path",
     });
-    return result.canceled ? null : result.filePaths[0];
+    if (result.canceled) return null;
+    pathAccess.grantRoot(result.filePaths[0]);
+    return result.filePaths[0];
   });
 
   // Show item in folder handler
@@ -98,9 +119,10 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("copy-kit", (_event, sourceKit: string, destKit: string) =>
     kitService.copyKit(inMemorySettings, sourceKit, destKit),
   );
-  ipcMain.handle("list-files-in-root", (_event, localStorePath: string) =>
-    localStoreService.listFilesInRoot(localStorePath),
-  );
+  ipcMain.handle("list-files-in-root", (_event, localStorePath: string) => {
+    pathAccess.assertAllowed(localStorePath);
+    return localStoreService.listFilesInRoot(localStorePath);
+  });
   // Secure method - get audio buffer by sample identifier
   ipcMain.handle(
     "get-sample-audio-buffer",
@@ -114,6 +136,8 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     },
   );
   ipcMain.handle("read-file", (_event, filePath: string) => {
+    const access = checkSampleSourceAccess(inMemorySettings, filePath);
+    if (!access.ok) return { error: access.error, success: false };
     return localStoreService.readFile(filePath);
   });
   ipcMain.handle("get-user-home-dir", async () => {
@@ -128,6 +152,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       title: "Select Local Store Folder",
     });
     if (result.canceled || !result.filePaths.length) return null;
+    pathAccess.grantRoot(result.filePaths[0]);
     return result.filePaths[0];
   });
 
@@ -142,14 +167,35 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       return { error: "Selection cancelled", path: null, success: false };
     }
 
+    pathAccess.grantRoot(result.filePaths[0]);
     return localStoreService.validateExistingLocalStore(result.filePaths[0]);
   });
+
+  // A folder the user typed into the setup wizard: main asks the user to
+  // confirm it before any channel will write there.
+  ipcMain.handle("request-local-store-access", (event, targetPath: string) =>
+    requestLocalStoreAccess(event.sender, targetPath),
+  );
+
+  // The preload reports each file path it resolved from a real user drop
+  // (webUtils.getPathForFile), so main can allow reading that file.
+  ipcMain.handle("register-dropped-file", (_event, filePath: string) => {
+    pathAccess.grantRead(filePath);
+  });
+
+  // Installs the Squarp factory samples into destDir. The archive URL is
+  // fixed in main (getFactorySamplesArchiveUrl); the renderer can't choose it.
   ipcMain.handle(
     "download-and-extract-archive",
-    async (event, url: string, destDir: string) => {
+    async (event, destDir: string) => {
+      const access = checkPathAccess(destDir, { write: true });
+      if (!access.ok) {
+        event.sender.send("archive-error", { message: access.error });
+        return { error: access.error, success: false };
+      }
       try {
         const result = await archiveService.downloadAndExtractArchive(
-          url,
+          getFactorySamplesArchiveUrl(),
           destDir,
           (progress) => {
             event.sender.send("archive-progress", progress);
@@ -169,32 +215,59 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     },
   );
   ipcMain.handle("ensure-dir", (_event, dir: string) => {
+    const access = checkPathAccess(dir, { write: true });
+    if (!access.ok) return { error: access.error, success: false };
     return archiveService.ensureDirectory(dir);
   });
 
   ipcMain.handle("copy-dir", (_event, src: string, dest: string) => {
+    const access = checkPathAccess(src);
+    const destAccess = access.ok
+      ? checkPathAccess(dest, { write: true })
+      : access;
+    if (!destAccess.ok) return { error: destAccess.error, success: false };
     return archiveService.copyDirectory(src, dest);
   });
 
   ipcMain.handle(
     "check-disk-space",
     (_event, targetPath: string, requiredBytes: number) => {
+      const access = checkPathAccess(targetPath);
+      if (!access.ok) {
+        return {
+          availableBytes: 0,
+          error: access.error,
+          requiredBytes,
+          sufficient: false,
+        };
+      }
       return checkDiskSpaceSufficient(targetPath, requiredBytes);
     },
   );
 
   ipcMain.handle("check-path-writable", (_event, targetPath: string) => {
+    const access = checkPathAccess(targetPath, { write: true });
+    if (!access.ok) return { error: access.error, writable: false };
     return checkPathWritable(targetPath);
   });
 
-  ipcMain.handle("cleanup-partial-init", (_event, targetPath: string) =>
-    localStoreSetupService.cleanupFailedSetup(
+  // RE-10 decides what setup may remove; RE-03 first confines the target to
+  // a folder Romper has been given.
+  ipcMain.handle("cleanup-partial-init", (_event, targetPath: string) => {
+    const access = checkPathAccess(targetPath, { write: true });
+    if (!access.ok) return { error: access.error, removed: false };
+    return localStoreSetupService.cleanupFailedSetup(
       targetPath,
       ServicePathManager.getLocalStorePath(inMemorySettings),
-    ),
-  );
+    );
+  });
 
-  ipcMain.handle("check-existing-local-store", (_event, targetPath: string) =>
-    localStoreSetupService.hasExistingLocalStore(targetPath),
-  );
+  // Read-only probe, but it still reveals whether a folder holds a store, so
+  // it is confined too. Fails closed: if Romper may not look, the wizard is
+  // told to stop (with the access error) rather than that the folder is free.
+  ipcMain.handle("check-existing-local-store", (_event, targetPath: string) => {
+    const access = checkPathAccess(targetPath);
+    if (!access.ok) return { error: access.error, exists: true };
+    return localStoreSetupService.hasExistingLocalStore(targetPath);
+  });
 }

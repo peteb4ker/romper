@@ -144,6 +144,7 @@ export const createElectronAPIMock = (
     themeMode: "light",
   }),
   replaceSampleInSlot: vi.fn().mockResolvedValue(undefined),
+  requestLocalStoreAccess: vi.fn().mockResolvedValue({ granted: true }),
   rescanKit: vi.fn().mockResolvedValue({
     data: {
       addedSamples: 0,

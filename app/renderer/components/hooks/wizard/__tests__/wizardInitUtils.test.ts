@@ -32,7 +32,61 @@ describe("wizardInitUtils", () => {
       .fn()
       .mockResolvedValue({ writable: true } as { writable: boolean });
 
-    it("refuses a target that already holds a local store before any other check", async () => {
+    it("asks main to approve the target before any other check (RE-03)", async () => {
+      const requestLocalStoreAccess = vi
+        .fn()
+        .mockResolvedValue({ granted: true });
+      // Main only probes a folder it has granted, so approval comes first
+      const checkExistingLocalStore = vi
+        .fn()
+        .mockResolvedValue({ exists: false });
+      const api = {
+        checkExistingLocalStore,
+        checkPathWritable: writable,
+        requestLocalStoreAccess,
+      } as unknown as ElectronAPI;
+
+      await runPreChecks(api, "/typed/romper", "blank");
+      expect(requestLocalStoreAccess).toHaveBeenCalledWith("/typed/romper");
+      const approvedAt = requestLocalStoreAccess.mock.invocationCallOrder[0];
+      expect(approvedAt).toBeLessThan(
+        checkExistingLocalStore.mock.invocationCallOrder[0],
+      );
+      expect(approvedAt).toBeLessThan(
+        writable.mock.invocationCallOrder.at(-1)!,
+      );
+    });
+
+    it("stops with main's reason when the target isn't approved", async () => {
+      const checkExistingLocalStore = vi.fn();
+      const checkPathWritable = vi.fn();
+      const api = {
+        checkExistingLocalStore,
+        checkPathWritable,
+        requestLocalStoreAccess: vi.fn().mockResolvedValue({
+          error: "Romper wasn't given permission to use /typed/romper.",
+          granted: false,
+        }),
+      } as unknown as ElectronAPI;
+
+      await expect(runPreChecks(api, "/typed/romper", "blank")).rejects.toThrow(
+        "Romper wasn't given permission to use /typed/romper.",
+      );
+      expect(checkExistingLocalStore).not.toHaveBeenCalled();
+      expect(checkPathWritable).not.toHaveBeenCalled();
+    });
+
+    it("falls back to a generic message when main gives no reason", async () => {
+      const api = {
+        requestLocalStoreAccess: vi.fn().mockResolvedValue({ granted: false }),
+      } as unknown as ElectronAPI;
+
+      await expect(runPreChecks(api, "/typed", "blank")).rejects.toThrow(
+        "Romper wasn't given permission to use /typed",
+      );
+    });
+
+    it("refuses a target that already holds a local store before the writability probe", async () => {
       const checkPathWritable = vi.fn();
       const api = {
         checkExistingLocalStore: vi.fn().mockResolvedValue({

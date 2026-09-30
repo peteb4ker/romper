@@ -102,7 +102,30 @@ vi.mock("../services/archiveService.js", () => ({
     downloadAndExtractArchive: vi.fn(() => Promise.resolve({ success: true })),
     ensureDirectory: vi.fn(() => ({ success: true })),
   },
+  getFactorySamplesArchiveUrl: vi.fn(() => "https://factory.test/samples.zip"),
 }));
+
+// Path authorization is unit-tested in security/__tests__; here it is a
+// switch so each guarded channel can be checked allowed and denied.
+vi.mock("../security/pathAccess.js", () => ({
+  checkPathAccess: vi.fn(() => ({ ok: true })),
+  pathAccess: {
+    assertAllowed: vi.fn(),
+    grantRead: vi.fn(),
+    grantRoot: vi.fn(),
+    useSettings: vi.fn(),
+  },
+}));
+
+vi.mock("../security/sampleSourceAccess.js", () => ({
+  checkSampleSourceAccess: vi.fn(() => ({ ok: true })),
+}));
+
+vi.mock("../security/localStoreAccessPrompt.js", () => ({
+  requestLocalStoreAccess: vi.fn(() => Promise.resolve({ granted: true })),
+}));
+
+const DENIED = { error: "Access denied: outside granted folders", ok: false };
 
 beforeEach(() => {
   Object.keys(ipcMainHandlers).forEach((k) => delete ipcMainHandlers[k]);
@@ -460,11 +483,16 @@ describe("registerIpcHandlers", () => {
 
     const result = await ipcMainHandlers["download-and-extract-archive"](
       mockEvent,
-      "https://example.com/archive.zip",
       "/mock/dest",
     );
 
     expect(result.success).toBe(true);
+    // The archive URL comes from main, never from the renderer.
+    expect(archiveService.downloadAndExtractArchive).toHaveBeenCalledWith(
+      "https://factory.test/samples.zip",
+      "/mock/dest",
+      expect.any(Function),
+    );
     expect(mockEvent.sender.send).toHaveBeenCalledWith("archive-progress", {
       percent: 50,
     });
@@ -488,7 +516,6 @@ describe("registerIpcHandlers", () => {
 
     const result = await ipcMainHandlers["download-and-extract-archive"](
       mockEvent,
-      "https://example.com/archive.zip",
       "/mock/dest",
     );
 
@@ -515,7 +542,6 @@ describe("registerIpcHandlers", () => {
 
     const result = await ipcMainHandlers["download-and-extract-archive"](
       mockEvent,
-      "https://example.com/archive.zip",
       "/mock/dest",
     );
 
@@ -559,5 +585,264 @@ describe("registerIpcHandlers", () => {
       "/mock/target",
     );
     expect(result).toEqual({ exists: true });
+  });
+});
+
+describe("registerIpcHandlers - path authorization (RE-03)", () => {
+  async function setup(settings: Record<string, unknown> = {}) {
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    registerIpcHandlers(settings as never);
+    const access = await import("../security/pathAccess.js");
+    const samples = await import("../security/sampleSourceAccess.js");
+    return {
+      assertAllowed: vi.mocked(access.pathAccess.assertAllowed),
+      checkPathAccess: vi.mocked(access.checkPathAccess),
+      checkSampleSourceAccess: vi.mocked(samples.checkSampleSourceAccess),
+      grantRead: vi.mocked(access.pathAccess.grantRead),
+      grantRoot: vi.mocked(access.pathAccess.grantRoot),
+      useSettings: vi.mocked(access.pathAccess.useSettings),
+    };
+  }
+
+  it("points the policy at the live settings object", async () => {
+    const settings = { localStorePath: "/store" };
+    const { useSettings } = await setup(settings);
+    expect(useSettings).toHaveBeenCalledWith(settings);
+  });
+
+  it("ensure-dir checks write access and refuses a denied folder", async () => {
+    const { archiveService } = await import("../services/archiveService.js");
+    const { checkPathAccess } = await setup();
+
+    checkPathAccess.mockReturnValueOnce(DENIED);
+    const denied = await ipcMainHandlers["ensure-dir"](
+      {},
+      "/Users/me/Library/LaunchAgents",
+    );
+
+    expect(checkPathAccess).toHaveBeenCalledWith(
+      "/Users/me/Library/LaunchAgents",
+      { write: true },
+    );
+    expect(denied).toEqual({ error: DENIED.error, success: false });
+    expect(archiveService.ensureDirectory).not.toHaveBeenCalled();
+  });
+
+  it("copy-dir needs read access to the source and write access to the destination", async () => {
+    const { archiveService } = await import("../services/archiveService.js");
+    const { checkPathAccess } = await setup();
+
+    await ipcMainHandlers["copy-dir"]({}, "/sd/A0", "/store/A0");
+    expect(checkPathAccess).toHaveBeenCalledWith("/sd/A0");
+    expect(checkPathAccess).toHaveBeenCalledWith("/store/A0", { write: true });
+    expect(archiveService.copyDirectory).toHaveBeenCalledWith(
+      "/sd/A0",
+      "/store/A0",
+    );
+
+    vi.mocked(archiveService.copyDirectory).mockClear();
+    checkPathAccess.mockReturnValueOnce(DENIED); // source
+    const deniedSource = await ipcMainHandlers["copy-dir"](
+      {},
+      "/Users/me/.ssh",
+      "/store/A0",
+    );
+    expect(deniedSource.success).toBe(false);
+
+    checkPathAccess
+      .mockReturnValueOnce({ ok: true }) // source
+      .mockReturnValueOnce(DENIED); // destination
+    const deniedDest = await ipcMainHandlers["copy-dir"](
+      {},
+      "/sd/A0",
+      "/Users/me/Library/LaunchAgents",
+    );
+    expect(deniedDest.success).toBe(false);
+    expect(archiveService.copyDirectory).not.toHaveBeenCalled();
+  });
+
+  it("check-path-writable refuses to write its probe outside the roots", async () => {
+    const { checkPathAccess } = await setup();
+    checkPathAccess.mockReturnValueOnce(DENIED);
+    const result = await ipcMainHandlers["check-path-writable"]({}, "/etc");
+    expect(checkPathAccess).toHaveBeenCalledWith("/etc", { write: true });
+    expect(result).toEqual({ error: DENIED.error, writable: false });
+  });
+
+  it("check-disk-space needs read access", async () => {
+    const { checkPathAccess } = await setup();
+    checkPathAccess.mockReturnValueOnce(DENIED);
+    const result = await ipcMainHandlers["check-disk-space"]({}, "/etc", 100);
+    expect(checkPathAccess).toHaveBeenCalledWith("/etc");
+    expect(result).toEqual({
+      availableBytes: 0,
+      error: DENIED.error,
+      requiredBytes: 100,
+      sufficient: false,
+    });
+  });
+
+  it("cleanup-partial-init needs write access to the target", async () => {
+    const { checkPathAccess } = await setup();
+    checkPathAccess.mockReturnValueOnce(DENIED);
+    const { localStoreSetupService } =
+      await import("../services/localStoreSetupService.js");
+    const result = await ipcMainHandlers["cleanup-partial-init"]({}, "/other");
+    expect(checkPathAccess).toHaveBeenCalledWith("/other", { write: true });
+    expect(result).toEqual({ error: DENIED.error, removed: false });
+    expect(localStoreSetupService.cleanupFailedSetup).not.toHaveBeenCalled();
+  });
+
+  it("check-existing-local-store needs read access and fails closed", async () => {
+    const { checkPathAccess } = await setup();
+    checkPathAccess.mockReturnValueOnce(DENIED);
+    const { localStoreSetupService } =
+      await import("../services/localStoreSetupService.js");
+    const result = await ipcMainHandlers["check-existing-local-store"](
+      {},
+      "/Users/me",
+    );
+    expect(checkPathAccess).toHaveBeenCalledWith("/Users/me");
+    // Can't confirm the folder is free, so the wizard is told to stop
+    expect(result).toEqual({ error: DENIED.error, exists: true });
+    expect(localStoreSetupService.hasExistingLocalStore).not.toHaveBeenCalled();
+  });
+
+  it("list-files-in-root asserts read access before listing", async () => {
+    const { localStoreService } =
+      await import("../services/localStoreService.js");
+    const { assertAllowed } = await setup();
+    assertAllowed.mockImplementationOnce(() => {
+      throw new Error(DENIED.error);
+    });
+    await expect(
+      Promise.resolve().then(() =>
+        ipcMainHandlers["list-files-in-root"]({}, "/Users/me"),
+      ),
+    ).rejects.toThrow(DENIED.error);
+    expect(assertAllowed).toHaveBeenCalledWith("/Users/me");
+    expect(localStoreService.listFilesInRoot).not.toHaveBeenCalled();
+  });
+
+  it("read-file only reads sample sources the user gave Romper", async () => {
+    const { localStoreService } =
+      await import("../services/localStoreService.js");
+    const settings = { localStorePath: "/store" };
+    const { checkSampleSourceAccess } = await setup(settings);
+    checkSampleSourceAccess.mockReturnValueOnce(DENIED);
+    const result = await ipcMainHandlers["read-file"]({}, "/Users/me/.ssh/id");
+    expect(checkSampleSourceAccess).toHaveBeenCalledWith(
+      settings,
+      "/Users/me/.ssh/id",
+    );
+    expect(result).toEqual({ error: DENIED.error, success: false });
+    expect(localStoreService.readFile).not.toHaveBeenCalled();
+  });
+
+  it("download-and-extract-archive refuses a denied destination without downloading", async () => {
+    const { archiveService } = await import("../services/archiveService.js");
+    const { checkPathAccess } = await setup();
+    const event = { sender: { send: vi.fn() } };
+    checkPathAccess.mockReturnValueOnce(DENIED);
+
+    const result = await ipcMainHandlers["download-and-extract-archive"](
+      event,
+      "/Users/me/Library/LaunchAgents",
+    );
+
+    expect(checkPathAccess).toHaveBeenCalledWith(
+      "/Users/me/Library/LaunchAgents",
+      { write: true },
+    );
+    expect(result).toEqual({ error: DENIED.error, success: false });
+    expect(event.sender.send).toHaveBeenCalledWith("archive-error", {
+      message: DENIED.error,
+    });
+    expect(archiveService.downloadAndExtractArchive).not.toHaveBeenCalled();
+  });
+
+  it("write-settings refuses a path setting outside the roots", async () => {
+    const { settingsService } = await import("../services/settingsService.js");
+    const { assertAllowed } = await setup();
+    assertAllowed.mockImplementationOnce(() => {
+      throw new Error(DENIED.error);
+    });
+    expect(() =>
+      ipcMainHandlers["write-settings"]({}, "localStorePath", "/elsewhere"),
+    ).toThrow(DENIED.error);
+    expect(assertAllowed).toHaveBeenCalledWith("/elsewhere", { write: true });
+    expect(settingsService.writeSetting).not.toHaveBeenCalled();
+  });
+
+  it("write-settings checks sdCardPath but not other keys, and allows clearing", async () => {
+    const { settingsService } = await import("../services/settingsService.js");
+    const { assertAllowed } = await setup();
+
+    ipcMainHandlers["write-settings"]({}, "sdCardPath", "/Volumes/RAMPLE");
+    expect(assertAllowed).toHaveBeenCalledWith("/Volumes/RAMPLE", {
+      write: true,
+    });
+
+    assertAllowed.mockClear();
+    ipcMainHandlers["write-settings"]({}, "themeMode", "dark");
+    ipcMainHandlers["write-settings"]({}, "localStorePath", null);
+    ipcMainHandlers["write-settings"]({}, "sdCardPath", undefined);
+    ipcMainHandlers["write-settings"]({}, "sdCardPath", "");
+    expect(assertAllowed).not.toHaveBeenCalled();
+    expect(settingsService.writeSetting).toHaveBeenCalledTimes(5);
+  });
+
+  it("folder dialogs grant the picked folder as a root", async () => {
+    const electron = await import("electron");
+    const { grantRoot } = await setup();
+    vi.mocked(electron.dialog.showOpenDialog).mockResolvedValue({
+      canceled: false,
+      filePaths: ["/picked"],
+    });
+
+    await ipcMainHandlers["select-sd-card"]();
+    await ipcMainHandlers["select-local-store-path"]();
+    await ipcMainHandlers["select-existing-local-store"]();
+
+    expect(grantRoot).toHaveBeenCalledTimes(3);
+    expect(grantRoot).toHaveBeenCalledWith("/picked");
+  });
+
+  it("cancelled folder dialogs grant nothing", async () => {
+    const electron = await import("electron");
+    const { grantRoot } = await setup();
+    vi.mocked(electron.dialog.showOpenDialog).mockResolvedValue({
+      canceled: true,
+      filePaths: [],
+    });
+
+    await ipcMainHandlers["select-sd-card"]();
+    await ipcMainHandlers["select-local-store-path"]();
+    await ipcMainHandlers["select-existing-local-store"]();
+
+    expect(grantRoot).not.toHaveBeenCalled();
+  });
+
+  it("register-dropped-file grants read access to the dropped file only", async () => {
+    const { grantRead, grantRoot } = await setup();
+    await ipcMainHandlers["register-dropped-file"]({}, "/Music/kick.wav");
+    expect(grantRead).toHaveBeenCalledWith("/Music/kick.wav");
+    expect(grantRoot).not.toHaveBeenCalled();
+  });
+
+  it("request-local-store-access delegates to main's confirmation prompt", async () => {
+    const { requestLocalStoreAccess } =
+      await import("../security/localStoreAccessPrompt.js");
+    await setup();
+    const sender = { id: 1 };
+    const result = await ipcMainHandlers["request-local-store-access"](
+      { sender },
+      "/typed/romper",
+    );
+    expect(requestLocalStoreAccess).toHaveBeenCalledWith(
+      sender,
+      "/typed/romper",
+    );
+    expect(result).toEqual({ granted: true });
   });
 });

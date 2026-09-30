@@ -22,14 +22,26 @@ export function normalizeErrorMessage(msg: string) {
 }
 
 /**
- * Verify the target holds no local store yet, is writable, and has enough
- * space for the chosen source. Runs before setup writes anything.
+ * Verify the target is approved, holds no local store yet, is writable, and
+ * has enough space for the chosen source. Runs before setup writes anything.
+ * Main only lets the wizard use a folder the user picked or confirmed, so a
+ * typed path is confirmed first (RE-03); main won't even probe it before.
  */
 export async function runPreChecks(
   api: ElectronAPI,
   targetPath: string,
   source: LocalStoreSource,
 ) {
+  if (api.requestLocalStoreAccess) {
+    const access = await api.requestLocalStoreAccess(targetPath);
+    if (!access.granted) {
+      throw new Error(
+        access.error ??
+          `Romper wasn't given permission to use ${targetPath}. Choose another folder.`,
+      );
+    }
+  }
+
   // Setting up over an existing store would clash with (and, before RE-10,
   // delete) it; send the user to "Choose Existing Store" instead
   if (api.checkExistingLocalStore) {

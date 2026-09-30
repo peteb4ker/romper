@@ -1,8 +1,5 @@
-<!-- 
+<!--
 title: Romper Sample Manager - Product Requirements Document (PRD)
-owners: product-team
-last_reviewed: 2025-08-15
-tags: project-management
 -->
 
 # Romper Sample Manager - Product Requirements Document (PRD)
@@ -245,7 +242,7 @@ The three main user journeys are:
 
 ### Audio Format and Processing User Stories
 
-- As a Rample owner, I want to control whether stereo samples are treated as mono by default so I can manage my preferred workflow.
+- As a Rample owner, I want to choose per voice whether it plays stereo, so stereo samples use two voices only where I want them to.
 - As a Rample owner, I want to be warned when samples need format conversion so I understand what changes will be made.
 - As a Rample owner, I want stereo samples to be properly handled according to my settings so they work correctly with the Rample hardware.
 
@@ -351,7 +348,7 @@ The three main user journeys are:
 **Format & File Management**
 
 - Enforce SD card naming conventions (?X format: A0, B1, Z99, etc.)
-- Convert stereo samples to mono using averaging when configured
+- Convert stereo samples to mono (channel average) when their voice is mono
 - Preserve original files while storing converted versions on SD card
 - Validate minimum kit requirements (voice 1 sample) for sync eligibility
 
@@ -374,12 +371,9 @@ The three main user journeys are:
 
 **Audio Format Preferences**
 
-- Global "default to mono samples" setting (enabled by default) with persistent storage
-- Per-sample stereo/mono toggle overrides when global setting is disabled
-- Format conversion warnings and user prompts for conflicting stereo sample placement
-- Handle stereo sample placement as single files on primary voice (hardware automatically plays across voice N and N+1)
-- User prompts when stereo samples would affect adjacent voice behavior
-- Auto-convert stereo samples to mono with warning when added to voice 4 (no next voice available)
+- Stereo is set per voice (link voice N with N+1); see Stereo Sample Handling Logic in section 11
+- Linking is blocked while the secondary voice holds samples
+- Stereo files on a mono voice are converted to mono at sync
 
 **Administrative: Change Local Store Directory**
 
@@ -592,31 +586,7 @@ Optimized layout addresses whitespace and scanning efficiency:
 - Smart truncation of kit names with full names on hover
 - Sample count indicators use color coding (red: 0, light green: 1-11, bold green: 12)
 
-## 6.2 Current State (Temporary - Pre-UX Implementation)
-
-> **Note**: The following describes current implementation limitations that will be addressed through the UX improvement tasks. These findings are temporary and will be removed once the design system above is implemented.
-
-**Current Kit List Issues (To Be Resolved):**
-
-- **Full-width cards waste horizontal space** - only 3-4 kits visible at once
-- Kit cards contain excessive whitespace reducing information density
-- Single "Modified" indicator insufficient for complex kit states
-- No visual distinction between factory, user, and work-in-progress kits
-- Full file paths displayed causing information overload
-
-**Current Navigation Issues (To Be Resolved):**
-
-- Top menu mixes different user journey actions (sync next to add kit)
-- No mode separation between browse/edit/sync workflows
-- No favorites or priority system for kit organization
-- A-Z bank navigation only method for large kit collections
-
-**Current Sample Location Issues (To Be Resolved):**
-
-- Reference-first architecture benefits not clear to users
-- Full file paths overwhelming in kit cards
-- No contextual labeling for different sample source types
-- Location awareness vs interface simplicity not balanced
+## 6.2 Screen-Level Design
 
 ### General Application Design
 
@@ -659,59 +629,6 @@ Optimized layout addresses whitespace and scanning efficiency:
 - Keyboard navigation is custom (not browser focus-based).
 - The sequencer UI is accessible via keyboard but does not require screen reader support.
 
-## 7. Project Context
-
-**Note**: Romper is an open-source hobby project developed by and for the Rample community. This PRD focuses on user value and technical implementation rather than business strategy, competitive analysis, or commercial metrics, as these are not applicable to this project context.
-
-## 7.1 Contribution Guidelines and Community Management
-
-### Project Home
-
-- **Repository**: https://github.com/peteb4ker/romper
-- **License**: MIT
-- **Community**: Built by and for Rample owners and electronic music producers
-
-### Contributing to Romper
-
-Pull requests are welcome! We encourage contributions from the Rample community to help improve the tool for everyone.
-
-#### Getting Started
-
-- Fork the repository on GitHub
-- Read the development documentation in [Developer Setup](docs/developer/development.md)
-- Check existing issues and discussions before starting new work
-- Follow the coding standards outlined in `.github/copilot-instructions.md`
-
-#### Types of Contributions Welcome
-
-- **Bug fixes**: Help identify and resolve issues affecting users
-- **Feature enhancements**: Improvements to existing functionality based on user feedback
-- **Performance optimizations**: Especially around kit loading and UI responsiveness
-- **Documentation**: Improvements to user guides, API docs, and developer documentation
-- **Testing**: Additional test coverage and edge case validation
-- **UI/UX improvements**: Accessibility enhancements and user experience refinements
-
-#### Contribution Process
-
-1. **Discuss first**: For significant changes, open an issue to discuss the approach
-2. **Follow coding standards**: Use TypeScript, follow existing patterns, maintain test coverage
-3. **Test thoroughly**: Run `npm test` and `npm run test:e2e` before submitting
-4. **Update documentation**: Include relevant docs updates with your changes
-5. **Submit PR**: Provide clear description of changes and motivation
-
-#### Community Guidelines
-
-- **Respectful collaboration**: Maintain a welcoming environment for all skill levels
-- **User-focused**: Prioritize changes that improve the experience for Rample owners
-- **Quality standards**: Maintain code quality, test coverage, and documentation standards
-- **Hardware context**: Remember that all features should align with Rample hardware capabilities
-
-### Feedback and Support
-
-- **Issues**: Report bugs and request features via GitHub Issues
-- **Discussions**: Use GitHub Discussions for questions and community interaction
-- **Documentation**: Refer to `/docs/` for user guides and technical documentation
-
 ## 8. Success Metrics
 
 ### Overall Success Metrics
@@ -725,7 +642,7 @@ Pull requests are welcome! We encourage contributions from the Rample community 
 ### Kit Success Metrics
 
 - Users can create, edit, and update kits to SD card without manual file management
-- All actions (add, replace, delete, undo/redo) work as described and are persisted
+- All actions (add, replace, delete, undo/redo) work as described; kit changes persist immediately (undo history lasts for the session)
 - Users receive clear warnings for format issues and can preview all changes
 - The local store and DB remain in sync, with errors surfaced to the user if not
 
@@ -769,45 +686,7 @@ Pull requests are welcome! We encourage contributions from the Rample community 
 
 ## 10. Romper DB Schema
 
-The Romper DB is a SQLite database with the following schema:
-
-### kits
-
-- `id` INTEGER PRIMARY KEY AUTOINCREMENT
-- `name` TEXT NOT NULL (e.g. A0, B2, Z99) - serves as natural key for kit identification
-- `alias` TEXT (optional, human-readable name)
-- `artist` TEXT (optional, artist name)
-- `editable` BOOLEAN NOT NULL DEFAULT 0 (true for user kits, false for imported/factory kits)
-- `step_pattern` TEXT (optional, JSON string storing 4x16 step pattern for XOX sequencer)
-
-### samples
-
-- `id` INTEGER PRIMARY KEY AUTOINCREMENT
-- `kit_name` TEXT NOT NULL (FK to kits.name) - references kit by name, not ID
-- `voice_number` INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4) - explicit voice assignment (1-4)
-- `slot_number` INTEGER NOT NULL CHECK(slot_number BETWEEN 1 AND 12) - slot within voice (1-12)
-- `source_path` TEXT NOT NULL (absolute path to original sample file for external references)
-- `filename` TEXT NOT NULL (filename used on SD card)
-- `is_stereo` BOOLEAN NOT NULL DEFAULT 0
-
-### voices
-
-- `id` INTEGER PRIMARY KEY AUTOINCREMENT
-- `kit_name` TEXT NOT NULL (FK to kits.name) - references kit by name
-- `voice_number` INTEGER NOT NULL CHECK(voice_number BETWEEN 1 AND 4) - voice position (1-4)
-- `alias` TEXT (optional, user-defined voice name, e.g., "Kick", "Snare")
-
-### Architecture Notes
-
-- There is no separate plan table. Each kit may have editable true/false.
-- There is always 0..1 editable state per kit, tracked by the editable flag.
-- All imported/factory kits have editable = false.
-- All new/user kits have editable = true by default.
-- **Immutable Baseline Local Store**: The local store serves as an immutable baseline that preserves the initial state chosen during setup (SD card contents, factory samples, or empty folder). This baseline is never modified after initialization.
-- **Reference-Only Sample Management**: Samples reference their original source files via `source_path` - no copying to local store until SD card sync. This prevents local store bloat and maintains clean separation between baseline content and user additions.
-- **Explicit Voice Tracking**: The `voice_number` field provides explicit voice assignment (1-4) rather than inferring voice from sample ordering, ensuring reliable voice identification.
-- **Kit Name as Foreign Key**: Uses `kit_name` rather than `kit_id` for foreign key relationships, providing natural human-readable references.
-- No sample_files table or local_store_path tracking - samples stay in original locations until sync.
+See [romper-db.md](romper-db.md).
 
 ## 11. Technical Implementation Details
 
@@ -818,13 +697,12 @@ The Romper DB is a SQLite database with the following schema:
 - Uses `better-sqlite3` for local storage.
 - Uses native filesystem APIs for file operations (no browser sandboxing).
 - Distributed via GitHub releases, with macOS and Windows support.
-- Destructive sync is only allowed after confirmation and local backup.
+- Destructive sync (wiping the card first) requires confirmation.
 - No user data is collected.
 - The app is standalone and isolated; the only external interaction is syncing with the SD card.
 - Data is persisted locally only; no cloud sync is needed.
 - No multi-user or multi-computer sync is required.
 - Unit testing uses vitest.
-- 80% code coverage is required.
 - At least one integration test checks that the application loads successfully.
 - Tests for A-Z hotkey navigation.
 - Tests for info/error/warning message display.
@@ -832,18 +710,6 @@ The Romper DB is a SQLite database with the following schema:
 - Tests for tagging/favoriting.
 - Tests for missing sample detection/warning.
 - Precompute and memoize kit sample counts and voice label sets in the kit browser. These values are calculated only once per kit list load/change, not on every render, to maximize performance and minimize UI update latency.
-
-### Database Layer Requirements
-
-- **ORM Integration**: Migrate from raw SQL to Drizzle ORM for improved type safety, modularity, and maintainability.
-- **Type-Safe Queries**: All database operations must be compile-time type-checked with full TypeScript integration.
-- **Clean API Design**: Replace complex wrapper patterns with direct, simple function signatures that leverage TypeScript's native error handling.
-- **Schema-First Approach**: Define database entities using Drizzle's schema definition for clear data modeling and automatic type generation.
-- **Connection Management**: Implement efficient database connection lifecycle management with proper resource cleanup.
-- **Business Logic Separation**: Separate database access logic from business logic to improve testability and modularity.
-- **Migration Support**: Use Drizzle's migration system for schema changes, particularly for adding the missing `source_path` field to samples table.
-- **Performance Optimization**: Maintain or improve current query performance while reducing code complexity and improving maintainability.
-- **Better-SQLite3 Compatibility**: Ensure seamless integration with existing `better-sqlite3` driver without requiring database engine changes.
 
 ### Hardware Constraints
 
@@ -867,18 +733,10 @@ The Romper DB is a SQLite database with the following schema:
 
 ### Stereo Sample Handling Logic
 
-- **Default to mono samples** global setting is enabled by default and persisted to local settings
-- When a stereo sample is added to a kit:
-  - If the sample is mono, it is linked to the voice and slot it was added to
-  - If the sample is stereo and "default to mono" setting is ON: treat the stereo sample as mono
-  - If the sample is stereo and "default to mono" setting is OFF:
-    - The complete stereo file is placed on the primary voice (N) as a single file
-    - Rample hardware automatically plays left channel on voice N and right channel on voice N+1
-    - Only the primary voice (N) needs to be triggered to play the complete stereo sample
-    - If stereo sample is added to voice 4 (no next voice available), auto-convert to mono with warning about mono status
-    - No file splitting occurs - stereo samples remain as single stereo files
-- **Channel merging behavior**: When previewing a stereo sample that is to be treated as mono, the two channels are merged on playback using an averaging method
-- **Conversion timing**: Sample format conversion only occurs on commit/sync to SD card, not during preview
+- Stereo is a per-voice setting (`voices.stereo_mode`), never inferred from a file's channel count.
+- A stereo voice N is linked with voice N+1: the Rample plays the left channel on N and the right on N+1, so only N is triggered and N+1 holds no samples of its own. Voice 4 can't be a stereo primary.
+- Stereo files stay single files; nothing is split.
+- At sync, stereo files on a mono voice are converted to mono. Format conversion happens only at sync, never during preview.
 
 ### Multi-Sample Drop Handling
 
@@ -930,9 +788,7 @@ In the kit browser, kit item cards show useful kit metadata including:
 ### Preview and Audition Technical Considerations
 
 - **Reference-Based Preview**: Sample preview uses `source_path` references for playback without copying files to local store.
-- **Hardware-Accurate Playback**: Audio playback handles stereo-to-mono conversion to match Rample hardware behavior using channel averaging method.
-- **Real-Time Format Handling**: When previewing a stereo sample configured to be treated as mono, the two channels are merged on playback.
-- **Conversion Timing**: Sample format conversion (16 bit 44100 Hz, stereo-to-mono averaging) occurs only during commit/sync, not during preview.
+- **Conversion Timing**: Sample format conversion (16 bit 44100 Hz, stereo-to-mono) occurs only during sync, not during preview.
 - **Voice-Aware Sequencer**: XOX sequencer pattern data is stored in the Romper DB per kit, with sequencer playback using the first sample in each voice based on `voice_number` assignment.
 - **External File Dependencies**: Preview system must handle missing source files gracefully, displaying appropriate warnings when files cannot be located.
 - Future enhancements may include adjustable tempo, per-step sample selection, and additional SQLite persistence features.

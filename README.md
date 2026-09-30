@@ -123,50 +123,30 @@ Built with modern web technologies (**Electron**, **React**, **TypeScript**, **D
 
 ```
 romper/
-  app/renderer/    # React UI components and renderer logic
-  electron/        # Electron main process and native integrations
-  shared/          # Shared utilities between renderer and main
-  docs/            # Documentation
-  tests/           # End-to-end tests
-  .github/chatmodes/ # GitHub Copilot Chatmodes for development workflows
+  app/renderer/    # React UI (components, hooks, styles)
+  electron/        # Electron main process and preload
+  shared/          # Types and Drizzle schema shared by main and renderer
+  tests/           # Integration and end-to-end tests
+  docs/            # Website, user manual, developer docs
 ```
 
 ## 📚 Documentation
 
 ### For Users
 
-- **[Getting Started Guide](docs/user/getting-started.md)** - Installation and first-time setup
-- **[User Documentation](docs/index.md)** - Complete user guide and feature overview
-- **[Keyboard Shortcuts](docs/user/keyboard-shortcuts.md)** - Speed up your workflow
-- **[Settings Guide](docs/user/settings.md)** - Configure Romper preferences
+- **[User Manual](https://peteb4ker.github.io/romper/manual/)** - Getting started, kit browser, kit editor, syncing, keyboard shortcuts
+- **[Troubleshooting](docs/troubleshooting.md)**
+- **[FAQ](docs/faq.md)**
 
 ### For Developers
 
-- **[Architecture Overview](docs/developer/architecture.md)** - Core design patterns and decisions
-- **[Contributing Guide](docs/developer/contributing.md)** - How to contribute to the project
-- **[Development Setup](docs/developer/development.md)** - Set up your development environment
-- **[Development Workflow](docs/developer/development-workflow.md)** - Task execution and quality standards
-- **[Coding Guide](docs/developer/coding-guide.md)** - Human-readable development best practices
-- **[Database Schema](docs/developer/romper-db.md)** - Complete database documentation
-
-### For AI Development Tools
-
-- **[CLAUDE.md](CLAUDE.md)** - Claude Code project instructions
-- **[Agent Instructions](.agent/)** - Machine-readable coding standards
-- **[GitHub Copilot Instructions](.github/copilot-instructions.md)** - Copilot development standards
-
-### Project Management
-
-- **[Product Requirements](tasks/PRD.md)** - Complete project vision
-- **[Current Tasks](tasks/tasks-PRD.md)** - Development progress tracking
-
-## 💬 Development Workflows
-
-The project uses structured workflows for different development tasks:
-
-- [**Define.chatmode.md**](.github/chatmodes/Define.chatmode.md) - Create detailed Product Requirements Documents (PRDs)
-- [**Plan.chatmode.md**](.github/chatmodes/Plan.chatmode.md) - Generate implementation task lists from PRDs
-- [**Build.chatmode.md**](.github/chatmodes/Build.chatmode.md) - Execute tasks methodically with progress tracking
+- **[Contributing](CONTRIBUTING.md)** - Setup, workflow, commit conventions
+- **[Product Requirements](docs/developer/product-requirements.md)** - Users, journeys, and requirements
+- **[Architecture](docs/developer/architecture.md)** - Process split, IPC, playback pipeline
+- **[Coding Guide](docs/developer/coding-guide.md)** - Conventions for TypeScript, components, and tests
+- **[Database Schema](docs/developer/romper-db.md)**
+- **[Release Process](docs/developer/release-process.md)** and **[Code Signing](docs/developer/code-signing.md)**
+- **[CLAUDE.md](CLAUDE.md)** - Instructions for AI coding agents
 
 ## ⚙️ Configuration
 
@@ -181,7 +161,7 @@ Romper can be configured using environment variables for advanced use cases:
 
 ### Prerequisites
 
-- **Node.js** 18+ with npm
+- **Node.js** 22 with npm
 - **Git** for version control  
 - **Squarp Rample** (optional, for testing with real hardware)
 
@@ -192,8 +172,8 @@ Romper can be configured using environment variables for advanced use cases:
 npm run dev
 
 # Testing
-npm run test:fast   # Quick tests (~14s)
-npm run test        # Full test suite with coverage (~40s) 
+npm run test:fast   # Unit + integration (~1 min)
+npm run test        # Same, with merged coverage
 npm run test:e2e    # End-to-end tests
 
 # Quality checks
@@ -207,7 +187,7 @@ npm run make        # Create distributables
 
 ### Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development workflows, coding standards, and the mandatory worktree system.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 📄 License & Privacy
 

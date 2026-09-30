@@ -1,193 +1,129 @@
-<!-- 
+<!--
 layout: default
 title: Romper Architecture
 -->
 
 # Romper Architecture
 
-This document describes the core architectural patterns and design decisions in Romper.
-
-## Application Architecture
-
-### Electron Multi-Process Model
-
-- **Main Process**: Database operations, file system access, IPC coordination
-- **Renderer Process**: React UI, user interactions, audio playback
-- **IPC Communication**: Type-safe communication between processes via Electron IPC
-
-### Component Architecture
-
-- **Hook-based Logic**: All business logic lives in custom hooks (`hooks/use<ComponentName>.ts`)
-- **Presentation Components**: UI components contain only rendering logic and hook calls
-- **Separation of Concerns**: Clear boundaries between data, logic, and presentation layers
-
-## Data Architecture
-
-### Database Layer (Drizzle ORM)
-
-- **Schema-First Design**: Type-safe database operations with compile-time validation
-- **Synchronous Driver**: better-sqlite3 for predictable, blocking database operations
-- **Natural Keys**: Uses human-readable kit names (A0, B1, etc.) as foreign keys
-
-### Data Flow Pattern
-
-```
-User Action → Hook → IPC → Main Process → Database → IPC → Hook → Component Update
-```
-
-### Key Database Entities
-
-- **Kits**: Container for samples with metadata and editing state
-- **Voices**: 4 voices per kit with optional aliases (kick, snare, etc.)
-- **Samples**: Individual audio files organized by voice and slot
-
-## Sample Management Architecture
-
-### Reference-Only Storage
-
-User-added samples are **referenced by absolute path** rather than copied locally. This enables:
-
-- **Flexible file locations**: Samples can live anywhere on filesystem
-- **No storage duplication**: Original files remain in place
-- **Clean local store**: Prevents pollution of baseline content
-
-### File Operations Flow
-
-1. **Assignment**: Sample path stored in database (`source_path` field)
-2. **Preview**: Direct playback from original file location
-3. **Sync**: Copy from `source_path` to SD card with format conversion
-
-### Immutable Baseline Architecture
-
-- **Local store baseline**: Immutable baseline from setup
-- **User samples as references**: Referenced by `source_path` only
-- **Sync-time processing**: Copied/converted during sync only
-- **Baseline preservation**: Original content untouched
-
-### Kit Editing System Architecture
-
-- **Editable mode control**: ON for user kits, OFF for factory kits
-- **Reference-only samples**: User samples stored via `source_path` field
-- **Voice-based organization**: 4 voices per kit, 12 slots per voice
-- **Undo/redo system**: Action history stored in database for full operation tracking
-
-### Sample Playback Architecture
-
-- **Voice choke (monophonic)**: When a sample triggers on any voice, it MUST stop the previous sample playing on that voice. Each voice is monophonic — only one sample sounds at a time per voice.
-- **Web Audio API**: Playback uses `AudioBufferSourceNode` routed through a `GainNode` for volume control.
-- **Secure sample loading**: Audio buffers loaded via IPC using kit/voice/slot identifiers (never raw file paths).
-- **Sample modes**: Each voice selects samples via `first`, `random`, or `round-robin` mode.
-
-### Database Schema Architecture
-
-- **Human-readable keys**: kit_name as foreign key (not kit_id) for readable references
-- **Explicit voice tracking**: voice_number field (1-4) for unambiguous voice identification
-- **External references**: source_path field for user samples outside local store
-- **Schema-first approach**: Drizzle ORM with compile-time type safety
-
-### Local Store Initialization
-
-During setup, Romper creates a local store from one of three sources (SD card, factory samples, or empty folder). This baseline remains unchanged - user modifications are tracked as references only.
-
-## Kit Editing System
-
-### Editable State Management
-
-- **Kit-level editing mode**: Toggle between read-only and editable states
-- **Modification tracking**: Track changes since last SD card sync
-- **Action history**: Database-persisted undo/redo system
-
-### Voice and Slot Organization
-
-- **Fixed structure**: 4 voices per kit, up to 12 samples per voice
-- **Explicit tracking**: `voice_number` field (1-4) for reliable identification
-- **Flexible assignment**: Drag-and-drop sample assignment to any voice/slot
-
-## Audio Processing Architecture
-
-### Format Handling Strategy
-
-- **Lazy conversion**: Format conversion only during SD card sync, not during editing
-- **Preview accuracy**: Audio preview matches final Rample hardware behavior
-- **Original preservation**: Source files never modified during operations
-
-### Stereo Sample Logic
-
-- **Global preference**: "Default to mono" setting affects new assignments
-- **Per-sample override**: Individual samples can override global setting
-- **Conflict resolution**: Handle stereo assignments that would conflict with existing samples
-
-## Sync Operations Architecture
-
-### Validation-First Approach
-
-1. **Pre-sync validation**: Verify all referenced files exist and are accessible
-2. **User confirmation**: Show exactly what will be copied/converted
-3. **Atomic operations**: All-or-nothing sync with rollback on failure
-4. **State synchronization**: Update database to reflect successful sync
-
-### File System Safety
-
-- **Path validation**: Sanitize and validate all file paths
-- **Permission checking**: Verify access rights before operations
-- **Atomic file operations**: Use proper locking and temporary files
-
-## Error Handling Architecture
-
-### Graceful Degradation
-
-- **Functional continuity**: App remains usable when non-critical components fail
-- **User communication**: Clear error messages with actionable guidance
-- **Recovery mechanisms**: Automatic retry with exponential backoff where appropriate
-
-### Data Protection
-
-- **Validation layers**: Multiple validation points before destructive operations
-- **Backup strategies**: Automatic backups before significant changes
-- **Reference integrity**: Handle missing or moved files gracefully
-
-## Performance Architecture
-
-### UI Responsiveness
-
-- **Sub-50ms target**: All user interactions should respond within 50ms
-- **Memoization strategy**: Cache expensive computations (kit metadata, voice labels)
-- **Efficient rendering**: React.memo, useMemo, virtualization for large lists
-
-### Database Performance
-
-- **Prepared statements**: Drizzle ORM uses prepared statements for common queries
-- **Batch operations**: Group related database operations for efficiency
-- **Strategic indexing**: Optimize for common query patterns
-
-## Testing Architecture
-
-### Test Organization
-
-- **Co-located tests**: Unit tests in `__tests__/` directories next to source code
-- **Test isolation**: Each test file is independent with proper cleanup
-- **Mock strategy**: Centralized mocks in `vitest.setup.ts`, extended as needed
-
-### Coverage Strategy
-
-- **80% coverage requirement**: Maintain high test coverage across codebase
-- **Unit vs Integration**: Clear separation between fast unit tests and comprehensive integration tests
-- **Dependency mocking**: Test only the code under test, mock all dependencies
-
-## Security Architecture
-
-### File System Security
-
-- **Path validation**: Prevent directory traversal and unauthorized access
-- **Input sanitization**: Validate all user-provided file paths and names
-- **Secure defaults**: Fail securely when validation fails
-
-### Data Integrity
-
-- **Database constraints**: Schema-level validation for data consistency
-- **Transaction boundaries**: Group related operations for atomicity
-- **Reference validation**: Verify file existence before critical operations
-
----
-
-_This architecture provides a foundation for safe, efficient sample management while maintaining clear separation of concerns and excellent user experience._
+## Layout
+
+| Path | What lives there |
+| --- | --- |
+| `app/renderer/` | React UI: `views/`, `components/`, hooks in `components/hooks/<domain>/`, `styles/` |
+| `electron/main/` | Main process: IPC handlers, database (`db/`), services (`services/`), format conversion |
+| `electron/preload/` | The `contextBridge` bridge between renderer and main |
+| `shared/` | Types, the Drizzle schema (`shared/db/schema.ts`), the IPC contract (`shared/electronApi.ts`), error helpers |
+| `tests/` | `integration/`, `e2e/`, shared `mocks/`, `factories/`, `fixtures/` |
+
+Imports use the `@romper/app/*`, `@romper/electron/*` and `@romper/shared/*`
+aliases. Dependency direction: `electron/main` imports only from `shared`,
+and `shared` imports from nothing else in the repo.
+
+## Process split and IPC
+
+- **Main** owns the database, the file system, format conversion, and SD
+  card sync.
+- **Renderer** owns the UI and audio playback (Web Audio).
+- **Preload** exposes three globals via `contextBridge`:
+  `electronAPI` (the IPC surface), `electronFileAPI` (file-drop helpers), and
+  `romperEnv` (environment flags). Renderer code reaches them through
+  `globalThis.electronAPI`.
+
+`shared/electronApi.ts` is the single contract for `electronAPI`. The preload
+implements it with `satisfies ElectronAPI`, and the renderer's global
+declaration imports the same type, so drift is a compile error.
+`tests/unit/ipcChannelParity.test.ts` checks that every channel the preload
+invokes has a matching `ipcMain.handle` in main. Handlers are registered in
+`electron/main/ipcHandlers.ts`, `dbIpcHandlers.ts`, and `electron/main/db/*IpcHandlers.ts`.
+
+Database operations return `DbResult<T>` (`{ success, data?, error? }`);
+`shared/errorUtils.ts` has `createErrorResult`, `getErrorMessage` and
+`logError` for building them.
+
+## Data
+
+- SQLite at `<local store>/.romperdb/romper.sqlite`, accessed through Drizzle
+  on the **synchronous** better-sqlite3 driver. Queries end in `.all()`,
+  `.get()`, `.run()` or `.values()`; there is no `await` on the database.
+- Tables: `banks`, `kits`, `voices` (4 per kit), `samples` (up to 12 per
+  voice). Kits are keyed by their human-readable name (`A0`, `B12`), which
+  other tables use as the foreign key. Slots are 0-based in the database.
+  Details: [romper-db.md](romper-db.md).
+- Migrations live in `electron/main/db/migrations/` (drizzle-kit).
+- The `postinstall` step rebuilds better-sqlite3 for Electron's Node ABI. That
+  is why integration tests run inside Electron (`ELECTRON_RUN_AS_NODE`)
+  rather than plain Node.
+
+Pass database shapes (e.g. `KitWithRelations`) down the component tree as
+they are, and derive display data where it's consumed (e.g.
+`extractVoiceNames` in `KitGridItem`), rather than reshaping them up front.
+
+## Local store and samples
+
+Setup creates a local store from an SD card, the Squarp factory samples, or
+an empty folder. That baseline is never modified.
+
+Samples the user adds are **referenced, not copied**: the database stores the
+file's absolute `source_path`. Preview plays from that path; conversion and
+copying happen only at sync time. Sync validation checks that referenced files
+exist, but see RE-09 below.
+
+## Kits
+
+- Kit flags: `editable` (user kits on, factory kits off), `locked`,
+  `is_favorite`, and `modified_since_sync`.
+- Each kit stores its step-sequencer pattern (`step_pattern`), A:B trigger
+  conditions (`trigger_conditions`), both JSON, and `bpm`.
+- Undo/redo is renderer state (`hooks/shared/useUndoRedoState.ts`); it is not
+  persisted.
+- User-facing messages go through `MessageDisplayContext` /
+  `useMessageDisplay`.
+
+## Playback
+
+- **Voices are monophonic (voice choke).** Triggering a sample stops any other
+  sample playing on the same voice (`handlePlay` in `useKitPlayback.ts`).
+- Kit samples are loaded over IPC by kit / voice / slot
+  (`getSampleAudioBuffer`) and played through an `AudioBufferSourceNode` into
+  a `GainNode`. Other channels (`readFile`, `getAudioMetadata`) still take
+  raw paths and aren't scoped (RE-03).
+- Each voice picks a sample by `sample_mode`: `first`, `random`, or
+  `round-robin`.
+
+## Stereo
+
+Stereo is a **voice** setting (`voices.stereo_mode`), not a sample property.
+A stereo voice pairs with the next voice. Never infer stereo from a file's
+channel count, and never copy samples to the adjacent voice based on the
+sample's `is_stereo` flag; doing so created phantom samples that couldn't be
+deleted. At sync, `syncMonoAnnotation.ts` marks stereo files on mono voices
+for downmixing (channel average, in `formatConverter.ts`).
+
+## Sync to SD card
+
+`syncService.ts` orchestrates. Each sample is converted if needed
+(`formatConverter.ts`) and written to `<card>/<kit>/<voice>/<original file
+name>` (`syncSampleProcessing.ts`). The user can choose to wipe the card
+first; `sdCardSafety.ts` guards which folders may be cleared.
+
+Known gaps, tracked in the findings register
+([aidlc-docs/inception/reverse-engineering/code-quality-assessment.md](../../aidlc-docs/inception/reverse-engineering/code-quality-assessment.md)):
+
+- **RE-06:** scan and SD import read WAVs at the kit root and take the voice
+  from the file name's first character, so a card written by sync can't be
+  re-imported. `rampleNamingService.ts` implements flat
+  `{voice}sample{slot}.wav` naming, but nothing on the sync path calls it
+  (nor `stereoSyncProcessor.ts`).
+- **RE-09:** validation results are built and then dropped, so sync can
+  report success with samples missing.
+
+## Testing
+
+- **Unit** (jsdom): `__tests__/` next to the source. Shared mocks live in
+  `tests/mocks/` and are wired up in `vitest.setup.ts`; tests override them
+  with `vi.mocked(globalThis.electronAPI.someMethod)` (assigning
+  `window.electronAPI` is a lint error in tests).
+- **Integration** (Node inside Electron): `tests/integration/*.integration.test.ts`.
+- **E2E** (Playwright against the built app): `*.e2e.test.ts`, mostly in
+  `tests/e2e/`. Only e2e exercises app startup.
+- Unit coverage thresholds are in `vite.config.ts`.

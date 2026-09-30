@@ -110,11 +110,8 @@ describe("ScanService", () => {
       });
     });
 
-    it("successfully rescans a kit directory", async () => {
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "TestKit",
-      );
+    it("successfully rescans a kit directory", () => {
+      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(true);
       expect(result.data?.scannedSamples).toBe(4);
@@ -186,7 +183,7 @@ describe("ScanService", () => {
       );
     });
 
-    it("detects stereo samples by filename patterns", async () => {
+    it("detects stereo samples by filename patterns", () => {
       mockFs.readdirSync.mockReturnValue([
         "1_kick_stereo.wav",
         "2_hat_st.wav",
@@ -196,10 +193,7 @@ describe("ScanService", () => {
         "2": ["2_hat_st.wav"],
       });
 
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "TestKit",
-      );
+      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(true);
       expect(mockAddSample).toHaveBeenCalledWith(
@@ -218,65 +212,53 @@ describe("ScanService", () => {
       );
     });
 
-    it("returns error when no local store path configured", async () => {
-      const result = await scanService.rescanKit({}, "TestKit");
+    it("returns error when no local store path configured", () => {
+      const result = scanService.rescanKit({}, "TestKit");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
     });
 
-    it("returns error when kit directory does not exist", async () => {
+    it("returns error when kit directory does not exist", () => {
       mockFs.existsSync.mockImplementation(
         (path: string) => !path.includes("TestKit"),
       );
 
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "TestKit",
-      );
+      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Kit directory not found");
       expect(mockDeleteSamples).not.toHaveBeenCalled();
     });
 
-    it("handles delete samples failure", async () => {
+    it("handles delete samples failure", () => {
       mockDeleteSamples.mockReturnValue({
         error: "Delete failed",
         success: false,
       });
 
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "TestKit",
-      );
+      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Delete failed");
       expect(mockAddSample).not.toHaveBeenCalled();
     });
 
-    it("handles add sample failure", async () => {
+    it("handles add sample failure", () => {
       mockAddSample.mockReturnValue({ error: "Add failed", success: false });
 
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "TestKit",
-      );
+      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Add failed");
     });
 
-    it("handles exceptions gracefully", async () => {
+    it("handles exceptions gracefully", () => {
       mockFs.readdirSync.mockImplementation(() => {
         throw new Error("Permission denied");
       });
 
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "TestKit",
-      );
+      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(false);
       expect(result.error).toContain(
@@ -284,16 +266,13 @@ describe("ScanService", () => {
       );
     });
 
-    it("handles WAV metadata extraction failure gracefully", async () => {
+    it("handles WAV metadata extraction failure gracefully", () => {
       mockGetAudioMetadata.mockReturnValue({
         error: "Invalid WAV format",
         success: false,
       });
 
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "TestKit",
-      );
+      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(true);
       expect(result.data?.scannedSamples).toBe(4);
@@ -303,7 +282,7 @@ describe("ScanService", () => {
       expect(mockUpdateSampleMetadata).not.toHaveBeenCalled();
     });
 
-    it("handles incomplete WAV metadata gracefully", async () => {
+    it("handles incomplete WAV metadata gracefully", () => {
       mockGetAudioMetadata.mockReturnValue({
         data: {
           bitDepth: 16,
@@ -312,10 +291,7 @@ describe("ScanService", () => {
         success: true,
       });
 
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "TestKit",
-      );
+      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(true);
       expect(mockUpdateSampleMetadata).toHaveBeenCalledWith(
@@ -330,7 +306,7 @@ describe("ScanService", () => {
       );
     });
 
-    it("calculates bitrate correctly for different audio formats", async () => {
+    it("calculates bitrate correctly for different audio formats", () => {
       mockGetAudioMetadata.mockReturnValue({
         data: {
           bitDepth: 24,
@@ -340,10 +316,7 @@ describe("ScanService", () => {
         success: true,
       });
 
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "TestKit",
-      );
+      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(true);
       expect(mockUpdateSampleMetadata).toHaveBeenCalledWith(
@@ -358,13 +331,10 @@ describe("ScanService", () => {
       );
     });
 
-    it("handles missing sample metadata when addSample fails", async () => {
+    it("handles missing sample metadata when addSample fails", () => {
       mockAddSample.mockReturnValue({ error: "Add failed", success: false });
 
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "TestKit",
-      );
+      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Add failed");
@@ -385,10 +355,10 @@ describe("ScanService", () => {
       vi.unstubAllEnvs();
     });
 
-    it("scans banks in the override when no path is saved", async () => {
+    it("scans banks in the override when no path is saved", () => {
       mockFs.readdirSync.mockReturnValue(["A - Artist One.rtf"] as unknown);
 
-      const result = await scanService.scanBanks(noSavedPath);
+      const result = scanService.scanBanks(noSavedPath);
 
       expect(result.success).toBe(true);
       expect(mockFs.readdirSync).toHaveBeenCalledWith("/env/store");
@@ -399,11 +369,11 @@ describe("ScanService", () => {
       );
     });
 
-    it("rescans a kit in the override, not the saved path", async () => {
+    it("rescans a kit in the override, not the saved path", () => {
       mockFs.readdirSync.mockReturnValue([] as unknown);
       mockGroupSamplesByVoice.mockReturnValue({});
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "A0");
+      const result = scanService.rescanKit(mockInMemorySettings, "A0");
 
       expect(result.success).toBe(true);
       expect(mockFs.existsSync).toHaveBeenCalledWith("/env/store/A0");
@@ -413,11 +383,10 @@ describe("ScanService", () => {
       );
     });
 
-    it("reads samples from the override when finding kits to rescan", async () => {
+    it("reads samples from the override when finding kits to rescan", () => {
       vi.mocked(getAllSamples).mockReturnValue({ data: [], success: true });
 
-      const result =
-        await scanService.rescanKitsWithMissingMetadata(noSavedPath);
+      const result = scanService.rescanKitsWithMissingMetadata(noSavedPath);
 
       expect(result.success).toBe(true);
       expect(getAllSamples).toHaveBeenCalledWith("/env/store/.romperdb");
@@ -436,8 +405,8 @@ describe("ScanService", () => {
       ] as unknown);
     });
 
-    it("successfully scans bank RTF files", async () => {
-      const result = await scanService.scanBanks(mockInMemorySettings);
+    it("successfully scans bank RTF files", () => {
+      const result = scanService.scanBanks(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(result.data?.scannedFiles).toBe(3); // Only valid RTF files
@@ -474,10 +443,10 @@ describe("ScanService", () => {
       );
     });
 
-    it("converts bank letters to uppercase", async () => {
+    it("converts bank letters to uppercase", () => {
       mockFs.readdirSync.mockReturnValue(["a - Artist Lower.rtf"] as unknown);
 
-      const result = await scanService.scanBanks(mockInMemorySettings);
+      const result = scanService.scanBanks(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(mockUpdateBank).toHaveBeenCalledWith(
@@ -490,23 +459,23 @@ describe("ScanService", () => {
       );
     });
 
-    it("returns error when no local store path configured", async () => {
-      const result = await scanService.scanBanks({});
+    it("returns error when no local store path configured", () => {
+      const result = scanService.scanBanks({});
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
     });
 
-    it("returns error when local store path does not exist", async () => {
+    it("returns error when local store path does not exist", () => {
       mockFs.existsSync.mockReturnValue(false);
 
-      const result = await scanService.scanBanks(mockInMemorySettings);
+      const result = scanService.scanBanks(mockInMemorySettings);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Local store path not found");
     });
 
-    it("handles partial bank update failures", async () => {
+    it("handles partial bank update failures", () => {
       mockUpdateBank.mockImplementation((dbDir: string, bankLetter: string) => {
         if (bankLetter === "B") {
           return { error: "Update failed", success: false };
@@ -514,19 +483,19 @@ describe("ScanService", () => {
         return { success: true };
       });
 
-      const result = await scanService.scanBanks(mockInMemorySettings);
+      const result = scanService.scanBanks(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(result.data?.scannedFiles).toBe(3);
       expect(result.data?.updatedBanks).toBe(2); // Only successful updates counted
     });
 
-    it("handles exceptions gracefully", async () => {
+    it("handles exceptions gracefully", () => {
       mockFs.readdirSync.mockImplementation(() => {
         throw new Error("Access denied");
       });
 
-      const result = await scanService.scanBanks(mockInMemorySettings);
+      const result = scanService.scanBanks(mockInMemorySettings);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Failed to scan banks: Access denied");
@@ -542,7 +511,7 @@ describe("ScanService", () => {
       mockGetAllSamples.mockReturnValue({ data: [], success: true });
     });
 
-    it("identifies and rescans kits with missing metadata", async () => {
+    it("identifies and rescans kits with missing metadata", () => {
       // Mock samples with mixed metadata status
       const mockSamples = [
         // Kit A0 has complete metadata
@@ -578,13 +547,13 @@ describe("ScanService", () => {
 
       // Mock successful kit rescanning
       const scanService = new ScanService();
-      vi.spyOn(scanService, "rescanKit").mockResolvedValue({
+      vi.spyOn(scanService, "rescanKit").mockReturnValue({
         data: { scannedSamples: 5, updatedVoices: 2 },
         success: true,
       });
 
       const result =
-        await scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
+        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(result.data?.kitsNeedingRescan).toEqual(["A1", "A2"]);
@@ -592,7 +561,7 @@ describe("ScanService", () => {
       expect(result.data?.totalSamplesUpdated).toBe(10); // 5 + 5 from both rescans
     });
 
-    it("handles kits with no missing metadata", async () => {
+    it("handles kits with no missing metadata", () => {
       // Mock samples with complete metadata
       const mockSamples = [
         {
@@ -610,7 +579,7 @@ describe("ScanService", () => {
       });
 
       const result =
-        await scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
+        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(result.data?.kitsNeedingRescan).toEqual([]);
@@ -618,27 +587,27 @@ describe("ScanService", () => {
       expect(result.data?.totalSamplesUpdated).toBe(0);
     });
 
-    it("returns error when no local store path configured", async () => {
-      const result = await scanService.rescanKitsWithMissingMetadata({});
+    it("returns error when no local store path configured", () => {
+      const result = scanService.rescanKitsWithMissingMetadata({});
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
     });
 
-    it("returns error when getAllSamples fails", async () => {
+    it("returns error when getAllSamples fails", () => {
       mockGetAllSamples.mockReturnValue({
         error: "Database error",
         success: false,
       });
 
       const result =
-        await scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
+        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Failed to query samples");
     });
 
-    it("handles individual kit rescan failures gracefully", async () => {
+    it("handles individual kit rescan failures gracefully", () => {
       const mockSamples = [
         {
           filename: "sample1.wav",
@@ -662,20 +631,18 @@ describe("ScanService", () => {
       });
 
       const scanService = new ScanService();
-      vi.spyOn(scanService, "rescanKit").mockImplementation(
-        async (_, kitName) => {
-          if (kitName === "A1") {
-            return { error: "Kit A1 failed", success: false };
-          }
-          return {
-            data: { scannedSamples: 3, updatedVoices: 1 },
-            success: true,
-          };
-        },
-      );
+      vi.spyOn(scanService, "rescanKit").mockImplementation((_, kitName) => {
+        if (kitName === "A1") {
+          return { error: "Kit A1 failed", success: false };
+        }
+        return {
+          data: { scannedSamples: 3, updatedVoices: 1 },
+          success: true,
+        };
+      });
 
       const result =
-        await scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
+        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(result.data?.kitsNeedingRescan).toEqual(["A1", "A2"]);
@@ -683,13 +650,13 @@ describe("ScanService", () => {
       expect(result.data?.totalSamplesUpdated).toBe(3);
     });
 
-    it("handles exceptions gracefully", async () => {
+    it("handles exceptions gracefully", () => {
       mockGetAllSamples.mockImplementation(() => {
         throw new Error("Database connection failed");
       });
 
       const result =
-        await scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
+        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain(

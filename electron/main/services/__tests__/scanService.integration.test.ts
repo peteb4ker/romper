@@ -128,24 +128,21 @@ describe("ScanService Integration Tests", () => {
   });
 
   describe("rescanKit", () => {
-    it("should return error when localStorePath is not configured", async () => {
-      const result = await scanService.rescanKit({}, "A1");
+    it("should return error when localStorePath is not configured", () => {
+      const result = scanService.rescanKit({}, "A1");
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("No local store path configured");
     });
 
-    it("should return error when kit directory does not exist", async () => {
-      const result = await scanService.rescanKit(
-        mockInMemorySettings,
-        "NONEXISTENT",
-      );
+    it("should return error when kit directory does not exist", () => {
+      const result = scanService.rescanKit(mockInMemorySettings, "NONEXISTENT");
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Kit directory not found");
     });
 
-    it("should scan an empty kit directory and find no samples", async () => {
+    it("should scan an empty kit directory and find no samples", () => {
       // Create kit in database
       const kitRecord: NewKit = {
         alias: "Empty Kit",
@@ -162,14 +159,14 @@ describe("ScanService Integration Tests", () => {
       const kitDir = path.join(TEST_DB_DIR, "A1");
       fs.mkdirSync(kitDir, { recursive: true });
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
       expect(result.data).toBeTruthy();
       expect(result.data!.scannedSamples).toBe(0);
     });
 
-    it("should scan a kit directory with WAV files grouped by voice", async () => {
+    it("should scan a kit directory with WAV files grouped by voice", () => {
       // Create kit in database
       const kitRecord: NewKit = {
         alias: "Full Kit",
@@ -191,7 +188,7 @@ describe("ScanService Integration Tests", () => {
       createTestWavFile(path.join(kitDir, "2-snare.wav"));
       createTestWavFile(path.join(kitDir, "3-hat.wav"));
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
       expect(result.data).toBeTruthy();
@@ -203,7 +200,7 @@ describe("ScanService Integration Tests", () => {
       expect(samplesResult.data).toHaveLength(4);
     });
 
-    it("should delete existing samples before rescanning", async () => {
+    it("should delete existing samples before rescanning", () => {
       // Create kit in database with a pre-existing sample
       const kitRecord: NewKit = {
         alias: "Rescan Kit",
@@ -235,7 +232,7 @@ describe("ScanService Integration Tests", () => {
       fs.mkdirSync(kitDir, { recursive: true });
       createTestWavFile(path.join(kitDir, "1-new-kick.wav"));
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
 
@@ -246,7 +243,7 @@ describe("ScanService Integration Tests", () => {
       expect(afterSamples.data![0].filename).toBe("1-new-kick.wav");
     });
 
-    it("should ignore non-WAV files in the kit directory", async () => {
+    it("should ignore non-WAV files in the kit directory", () => {
       const kitRecord: NewKit = {
         alias: "Mixed Files Kit",
         bank_letter: "A",
@@ -267,13 +264,13 @@ describe("ScanService Integration Tests", () => {
       fs.writeFileSync(path.join(kitDir, "cover.png"), "image data");
       fs.writeFileSync(path.join(kitDir, "1-kick.mp3"), "mp3 data");
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
       expect(result.data!.scannedSamples).toBe(1);
     });
 
-    it("should preserve samples when kit directory is missing (no destructive delete)", async () => {
+    it("should preserve samples when kit directory is missing (no destructive delete)", () => {
       const kitRecord: NewKit = {
         alias: "Protected Kit",
         bank_letter: "A",
@@ -296,7 +293,7 @@ describe("ScanService Integration Tests", () => {
       addSample(TEST_DB_PATH, sample);
 
       // Do NOT create kit directory - it should fail gracefully
-      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Kit directory not found");
@@ -307,7 +304,7 @@ describe("ScanService Integration Tests", () => {
       expect(samplesResult.data).toHaveLength(1);
     });
 
-    it("should handle case-insensitive WAV extension", async () => {
+    it("should handle case-insensitive WAV extension", () => {
       const kitRecord: NewKit = {
         alias: "Case Test Kit",
         bank_letter: "A",
@@ -325,7 +322,7 @@ describe("ScanService Integration Tests", () => {
       createTestWavFile(path.join(kitDir, "1-kick.WAV"));
       createTestWavFile(path.join(kitDir, "2-snare.Wav"));
 
-      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
       expect(result.data!.scannedSamples).toBe(2);
@@ -333,15 +330,15 @@ describe("ScanService Integration Tests", () => {
   });
 
   describe("scanBanks", () => {
-    it("should return error when localStorePath is not configured", async () => {
-      const result = await scanService.scanBanks({});
+    it("should return error when localStorePath is not configured", () => {
+      const result = scanService.scanBanks({});
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("No local store path configured");
     });
 
-    it("should return error when local store path does not exist", async () => {
-      const result = await scanService.scanBanks({
+    it("should return error when local store path does not exist", () => {
+      const result = scanService.scanBanks({
         localStorePath: "/nonexistent/path",
       });
 
@@ -349,7 +346,7 @@ describe("ScanService Integration Tests", () => {
       expect(result.error).toContain("Local store path not found");
     });
 
-    it("should scan and find RTF bank files", async () => {
+    it("should scan and find RTF bank files", () => {
       // Create RTF files matching the "A - Artist Name.rtf" pattern
       fs.writeFileSync(
         path.join(TEST_DB_DIR, "A - Techno Artist.rtf"),
@@ -360,14 +357,14 @@ describe("ScanService Integration Tests", () => {
         "rtf content",
       );
 
-      const result = await scanService.scanBanks(mockInMemorySettings);
+      const result = scanService.scanBanks(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(result.data).toBeTruthy();
       expect(result.data!.scannedFiles).toBe(2);
     });
 
-    it("should ignore non-matching RTF filenames", async () => {
+    it("should ignore non-matching RTF filenames", () => {
       // Create files that don't match the pattern
       fs.writeFileSync(path.join(TEST_DB_DIR, "notes.rtf"), "notes");
       fs.writeFileSync(path.join(TEST_DB_DIR, "readme.txt"), "readme");
@@ -376,28 +373,28 @@ describe("ScanService Integration Tests", () => {
         "rtf content",
       );
 
-      const result = await scanService.scanBanks(mockInMemorySettings);
+      const result = scanService.scanBanks(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       // Only "A - Valid Artist.rtf" matches the pattern
       expect(result.data!.scannedFiles).toBe(1);
     });
 
-    it("should return zero counts when no RTF files exist", async () => {
-      const result = await scanService.scanBanks(mockInMemorySettings);
+    it("should return zero counts when no RTF files exist", () => {
+      const result = scanService.scanBanks(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(result.data!.scannedFiles).toBe(0);
       expect(result.data!.updatedBanks).toBe(0);
     });
 
-    it("should extract bank letter and artist name correctly", async () => {
+    it("should extract bank letter and artist name correctly", () => {
       fs.writeFileSync(
         path.join(TEST_DB_DIR, "C - My Cool Artist.rtf"),
         "rtf content",
       );
 
-      const result = await scanService.scanBanks(mockInMemorySettings);
+      const result = scanService.scanBanks(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(result.data!.scannedFiles).toBe(1);
@@ -407,14 +404,14 @@ describe("ScanService Integration Tests", () => {
   });
 
   describe("rescanKitsWithMissingMetadata", () => {
-    it("should return error when localStorePath is not configured", async () => {
-      const result = await scanService.rescanKitsWithMissingMetadata({});
+    it("should return error when localStorePath is not configured", () => {
+      const result = scanService.rescanKitsWithMissingMetadata({});
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("No local store path configured");
     });
 
-    it("should identify kits with missing metadata and rescan them", async () => {
+    it("should identify kits with missing metadata and rescan them", () => {
       // Create two kits
       const kit1: NewKit = {
         alias: "Kit With Metadata",
@@ -469,7 +466,7 @@ describe("ScanService Integration Tests", () => {
       createTestWavFile(path.join(kit2Dir, "1-pad.wav"));
 
       const result =
-        await scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
+        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(result.data).toBeTruthy();
@@ -477,9 +474,9 @@ describe("ScanService Integration Tests", () => {
       expect(result.data!.kitsNeedingRescan).toContain("A2");
     });
 
-    it("should return empty arrays when no samples exist", async () => {
+    it("should return empty arrays when no samples exist", () => {
       const result =
-        await scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
+        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
 
       expect(result.success).toBe(true);
       expect(result.data!.kitsNeedingRescan).toHaveLength(0);

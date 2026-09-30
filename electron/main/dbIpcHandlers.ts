@@ -46,17 +46,17 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   registerFavoritesIpcHandlers(inMemorySettings);
 
   // Basic database operations
-  ipcMain.handle("create-romper-db", async (_event, dbDir: string) => {
+  ipcMain.handle("create-romper-db", (_event, dbDir: string) => {
     return createRomperDbFile(dbDir);
   });
 
-  ipcMain.handle("insert-kit", async (_event, dbDir: string, kit: NewKit) => {
+  ipcMain.handle("insert-kit", (_event, dbDir: string, kit: NewKit) => {
     return addKit(dbDir, kit);
   });
 
   ipcMain.handle(
     "insert-sample",
-    async (_event, dbDir: string, sample: NewSample) => {
+    (_event, dbDir: string, sample: NewSample) => {
       return addSample(dbDir, sample);
     },
   );
@@ -256,26 +256,23 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
-    "validate-local-store",
-    async (_event, localStorePath?: string) => {
-      // Check environment override first, then provided path, then settings
-      const settingsPath =
-        typeof inMemorySettings.localStorePath === "string"
-          ? inMemorySettings.localStorePath
-          : undefined;
-      const pathToValidate =
-        process.env.ROMPER_LOCAL_PATH || localStorePath || settingsPath;
-      if (!pathToValidate) {
-        throw new Error("No local store path provided or configured");
-      }
-      return localStoreService.validateLocalStore(pathToValidate);
-    },
-  );
+  ipcMain.handle("validate-local-store", (_event, localStorePath?: string) => {
+    // Check environment override first, then provided path, then settings
+    const settingsPath =
+      typeof inMemorySettings.localStorePath === "string"
+        ? inMemorySettings.localStorePath
+        : undefined;
+    const pathToValidate =
+      process.env.ROMPER_LOCAL_PATH || localStorePath || settingsPath;
+    if (!pathToValidate) {
+      throw new Error("No local store path provided or configured");
+    }
+    return localStoreService.validateLocalStore(pathToValidate);
+  });
 
   ipcMain.handle(
     "validate-local-store-basic",
-    async (_event, localStorePath?: string) => {
+    (_event, localStorePath?: string) => {
       // Check environment override first, then provided path, then settings
       const settingsPath =
         typeof inMemorySettings.localStorePath === "string"
@@ -290,7 +287,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     },
   );
 
-  ipcMain.handle("get-all-samples", async (_event, dbDir: string) => {
+  ipcMain.handle("get-all-samples", (_event, dbDir: string) => {
     return getAllSamples(dbDir);
   });
 
@@ -301,11 +298,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     }),
   );
 
-  ipcMain.handle("rescan-kit", async (_event, kitName: string) => {
+  ipcMain.handle("rescan-kit", (_event, kitName: string) => {
     return scanService.rescanKit(inMemorySettings, kitName);
   });
 
-  ipcMain.handle("rescan-kits-missing-metadata", async () => {
+  ipcMain.handle("rescan-kits-missing-metadata", () => {
     return scanService.rescanKitsWithMissingMetadata(inMemorySettings);
   });
 
@@ -353,16 +350,16 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle("scan-banks", async () => {
+  ipcMain.handle("scan-banks", () => {
     return scanService.scanBanks(inMemorySettings);
   });
 
   // Audio format validation
-  ipcMain.handle("get-audio-metadata", async (_event, filePath: string) => {
+  ipcMain.handle("get-audio-metadata", (_event, filePath: string) => {
     return getAudioMetadata(filePath);
   });
 
-  ipcMain.handle("validate-sample-format", async (_event, filePath: string) => {
+  ipcMain.handle("validate-sample-format", (_event, filePath: string) => {
     return validateSampleFormat(filePath);
   });
 

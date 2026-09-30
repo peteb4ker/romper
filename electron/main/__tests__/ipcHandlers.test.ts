@@ -272,7 +272,7 @@ describe("registerIpcHandlers", () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
-    await expect(ipcMainHandlers["create-kit"]({}, "A0")).resolves.toEqual({
+    expect(ipcMainHandlers["create-kit"]({}, "A0")).toEqual({
       success: true,
     });
   });
@@ -287,7 +287,7 @@ describe("registerIpcHandlers", () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
-    await expect(ipcMainHandlers["create-kit"]({}, "A0")).resolves.toEqual({
+    expect(ipcMainHandlers["create-kit"]({}, "A0")).toEqual({
       error: "Create failed",
       success: false,
     });
@@ -297,7 +297,7 @@ describe("registerIpcHandlers", () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
-    await expect(ipcMainHandlers["copy-kit"]({}, "A0", "A1")).resolves.toEqual({
+    expect(ipcMainHandlers["copy-kit"]({}, "A0", "A1")).toEqual({
       success: true,
     });
   });
@@ -312,7 +312,7 @@ describe("registerIpcHandlers", () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
-    await expect(ipcMainHandlers["copy-kit"]({}, "A0", "A1")).resolves.toEqual({
+    expect(ipcMainHandlers["copy-kit"]({}, "A0", "A1")).toEqual({
       error: "Copy failed",
       success: false,
     });

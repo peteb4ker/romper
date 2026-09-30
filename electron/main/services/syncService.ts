@@ -220,11 +220,11 @@ class SyncService {
       // Write bank RTF files to SD card root
       this.writeBankRtfFiles(dbDir, options.sdCardPath);
 
-      await this.markKitsAsSynced(inMemorySettings, allFiles, syncedFiles);
+      this.markKitsAsSynced(inMemorySettings, allFiles, syncedFiles);
 
       return { data: { syncedFiles }, success: true };
     } catch (error) {
-      await this.handleSyncFailure(inMemorySettings, error);
+      this.handleSyncFailure(inMemorySettings, error);
       return {
         error: `Failed to sync kit: ${error instanceof Error ? error.message : String(error)}`,
         success: false,
@@ -265,10 +265,10 @@ class SyncService {
   /**
    * Handle sync failure and cleanup
    */
-  private async handleSyncFailure(
+  private handleSyncFailure(
     inMemorySettings: Record<string, unknown>,
     _error: unknown,
-  ): Promise<void> {
+  ): void {
     if (syncProgressManager.getCurrentSyncJob()) {
       console.error("Sync failed, attempting cleanup...");
 
@@ -293,11 +293,11 @@ class SyncService {
   /**
    * Mark kits as synced after successful operation
    */
-  private async markKitsAsSynced(
+  private markKitsAsSynced(
     inMemorySettings: Record<string, unknown>,
     allFiles: SyncFileOperation[],
     syncedFiles: number,
-  ): Promise<void> {
+  ): void {
     const localStorePath =
       ServicePathManager.getLocalStorePath(inMemorySettings);
     if (!localStorePath || !syncedFiles) return;

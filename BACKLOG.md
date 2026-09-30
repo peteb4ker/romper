@@ -30,7 +30,6 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-09 | High | Sync | Validation errors (such as missing source files) and warnings are built and then dropped. | in progress (`fix/re-09-sync-validation`) |
 | RE-06 | High | Sync | Sync writes `<card>/<kit>/<voice>/<file>`, but SD import and rescan read only WAVs at the kit root and take the voice from the first character of the file name. | open; needs a decision on the card layout (confirm what the Rample firmware reads) |
 | RE-05 | High | Sync | Sync only adds or overwrites. Removed, moved or renamed samples and deleted kits stay on the card. | open |
 | RE-07 | High | Sync | Sync blocks the main process for the whole run: every file is copied or converted with synchronous calls, so no IPC (including Cancel) runs until it finishes. | open |
@@ -100,6 +99,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-09 | High | Sync | Validation errors (such as missing source files) and warnings are built and then dropped. | done (#364) |
 | RE-30 | Medium | Config | `ROMPER_LOCAL_PATH` is honoured by kit and DB handlers but ignored by sample, scan, sync and audio-buffer code. | done (#355) |
 | RE-02 | High | Security | The `will-navigate` guard compares `URL.origin`, which is `"null"` for every `file://` URL. | done (#358; the IPC sender check ships with RE-03) |
 | RE-10 | High | Setup | If setup fails, the cleanup deletes `<target>/.romperdb` without checking that this run created it. | done (#359) |

@@ -70,8 +70,11 @@ export default defineConfig({
         "**/node_modules/**",
         "**/dist/**",
         "**/out/**",
-        // Only ignore the local worktrees/ subdirectory, not ancestor worktree paths
+        // Nested worktrees under this checkout. Anchored to __dirname so a
+        // checkout that is itself inside a worktrees/ dir still watches its
+        // own files.
         path.resolve(__dirname, "worktrees") + "/**",
+        path.resolve(__dirname, ".claude/worktrees") + "/**",
       ],
     },
   },

@@ -4,6 +4,12 @@ import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
+import {
+  getMainRoot,
+  getWorktreesDir,
+  listWorktrees,
+} from "./worktree-paths.js";
+
 function runCommand(command, options = {}) {
   try {
     return execSync(command, {
@@ -18,15 +24,6 @@ function runCommand(command, options = {}) {
     }
     throw error;
   }
-}
-
-// Get the main repo root (where .git directory lives)
-function getMainRoot() {
-  const gitCommonDir = execSync("git rev-parse --git-common-dir", {
-    encoding: "utf8",
-  }).trim();
-  // gitCommonDir is the .git directory — parent is the repo root
-  return path.resolve(gitCommonDir, "..");
 }
 
 // Set up Claude settings.local.json symlink in a worktree
@@ -81,51 +78,15 @@ function setupEnvLocal(worktreePath, offset) {
   return { vitePort, inspectPort, debugPort };
 }
 
-// Count existing worktrees to determine port offset
+// Port offset for a new worktree: the number of existing worktrees
+// (the main checkout counts as 0).
 function getWorktreeOffset(mainRoot) {
-  const output = execSync("git worktree list --porcelain", {
-    encoding: "utf8",
-    cwd: mainRoot,
-  });
-
-  let count = 0;
-  for (const line of output.split("\n")) {
-    if (line.startsWith("worktree ")) {
-      count++;
-    }
-  }
-  // Main repo is count 0, first worktree is 1, etc.
-  // But we want offset for the NEW worktree, which will be the current count
-  // (since main is included in the count)
-  return count;
-}
-
-// Parse worktree list from git
-function getWorktrees(mainRoot) {
-  const output = execSync("git worktree list --porcelain", {
-    encoding: "utf8",
-    cwd: mainRoot,
-  });
-
-  const worktrees = [];
-  let current = null;
-
-  for (const line of output.split("\n")) {
-    if (line.startsWith("worktree ")) {
-      if (current) worktrees.push(current);
-      current = { path: line.slice("worktree ".length) };
-    } else if (line.startsWith("branch ")) {
-      if (current) current.branch = line.slice("branch ".length);
-    }
-  }
-  if (current) worktrees.push(current);
-
-  return worktrees;
+  return listWorktrees(mainRoot).length;
 }
 
 function fixExistingWorktrees() {
   const mainRoot = getMainRoot();
-  const worktrees = getWorktrees(mainRoot);
+  const worktrees = listWorktrees(mainRoot);
 
   console.log(`Found ${worktrees.length} worktree(s)`);
 
@@ -184,7 +145,9 @@ function main() {
     console.error("Examples:");
     console.error("  npm run worktree:create task-5.2-kit-editor");
     console.error("  npm run worktree:create fix-sample-loading");
-    console.error("  node scripts/worktree-create.js --fix  # Fix existing worktrees");
+    console.error(
+      "  node scripts/worktree-create.js --fix  # Fix existing worktrees",
+    );
     process.exit(1);
   }
 
@@ -202,8 +165,9 @@ function main() {
 
   console.log(`Creating worktree for: ${taskName}`);
 
-  // Ensure worktrees directory exists
-  const worktreesDir = path.join(mainRoot, "worktrees");
+  // Worktrees live beside the main checkout, not inside it (see
+  // worktree-paths.js).
+  const worktreesDir = getWorktreesDir(mainRoot);
   if (!fs.existsSync(worktreesDir)) {
     fs.mkdirSync(worktreesDir, { recursive: true });
   }
@@ -244,7 +208,7 @@ function main() {
     // commits not yet on main (e.g. an unmerged fix branch), those commits
     // leak into every spawned worktree and pollute their PRs.
     runCommand(
-      `git worktree add ${worktreePath} -b ${branchName} origin/main`,
+      `git worktree add "${worktreePath}" -b ${branchName} origin/main`,
     );
 
     // Phase 1: Claude settings symlink
@@ -269,17 +233,21 @@ function main() {
     // Phase 4: Validation summary
     console.log("\n" + "=".repeat(50));
     console.log("Worktree ready:");
-    console.log(`  Path:     worktrees/${taskName}`);
+    console.log(`  Path:     ${worktreePath}`);
     console.log(`  Branch:   ${branchName}`);
     if (ports) {
       console.log(
         `  Ports:    vite=${ports.vitePort}, inspector=${ports.inspectPort}, debug=${ports.debugPort}`,
       );
     }
-    console.log(`  Claude:   ${settingsOk ? "settings.local.json linked" : "source not found (skipped)"}`);
-    console.log(`  Deps:     ${depsInstalled ? "installed" : skipInstall ? "skipped (--skip-install)" : "failed"}`);
+    console.log(
+      `  Claude:   ${settingsOk ? "settings.local.json linked" : "source not found (skipped)"}`,
+    );
+    console.log(
+      `  Deps:     ${depsInstalled ? "installed" : skipInstall ? "skipped (--skip-install)" : "failed"}`,
+    );
     console.log("");
-    console.log(`  cd worktrees/${taskName} && npm run dev`);
+    console.log(`  cd ${worktreePath} && npm run dev`);
     console.log("=".repeat(50));
   } catch {
     console.error("Failed to create worktree");

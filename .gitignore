@@ -47,6 +47,7 @@ test-results/
 *.cache
 *.tmp
 worktrees/
+.claude/worktrees/
 
 # IDE specific files
 .vscode/settings.json

@@ -313,7 +313,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
       sequencerOpen={props.sequencerOpen}
       setSequencerOpen={props.setSequencerOpen}
     >
-      {editingVoice != null && (
+      {slicer.editorOpen && editingVoice != null && (
         <div className="w-full max-w-[960px] px-4">
           <SliceStrip
             canUndoRoll={slicer.canUndoRoll}
@@ -330,6 +330,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
             notice={slicer.notice}
             onAssign={slicer.assignSlice}
             onAudition={slicer.auditionSlice}
+            onClose={slicer.closeEditor}
             onDivisionChange={(d) => void slicerData.setSlicerDivision(d)}
             onRoll={() => slicer.roll(editingVoice)}
             onSelectVoice={slicer.setEditingVoice}

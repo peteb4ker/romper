@@ -53,6 +53,7 @@ vi.mock("electron", () => {
         getURL: vi.fn(() => ""),
         on: vi.fn(),
         send: vi.fn(),
+        setAudioMuted: vi.fn(),
         setWindowOpenHandler: vi.fn(),
       },
     };
@@ -163,6 +164,8 @@ describe.sequential("main/index.ts", () => {
       expect(options.show).toBe(false);
       expect(options.webPreferences.backgroundThrottling).toBe(false);
       expect(options.webPreferences.offscreen).toBe(true);
+      // e2e runs play real audio; they shouldn't be heard
+      expect(win.webContents.setAudioMuted).toHaveBeenCalledWith(true);
       expect(app.setActivationPolicy).toHaveBeenCalledWith("accessory");
       expect(win.maximize).not.toHaveBeenCalled();
       expect(savedWindowState).toBe(false);
@@ -174,6 +177,7 @@ describe.sequential("main/index.ts", () => {
       expect(options.show).toBe(true);
       expect(options.webPreferences.backgroundThrottling).toBe(true);
       expect(options.webPreferences.offscreen).toBe(false);
+      expect(win.webContents.setAudioMuted).not.toHaveBeenCalled();
       expect(app.setActivationPolicy).not.toHaveBeenCalled();
       expect(win.maximize).toHaveBeenCalled();
       expect(savedWindowState).toBe(true);

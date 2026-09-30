@@ -199,6 +199,10 @@ voice at a time, called the **editing voice**.
 - If several voices are in slice mode, the strip header shows small voice
   tabs (for example `V1 · V3`) for switching between them. The other
   slice rows still show their slice numbers but are not highlighted.
+- **Closing the strip** (× in its header) hides the editor only. Slice
+  mode stays on for every sliced voice, and they keep playing their slices,
+  so several voices can be sliced at once without the strip open. Clicking a
+  step on a sliced row, or turning ✂ on for another voice, opens it again.
 
 ```
 ┌ V1 ▸ breakbeat.wav (slot 1) ───────── Division [/16 ▾] ── 🎲 Roll  ↶ ── Amount [100%▾]  Vary length ☐ max [2▾] ┐

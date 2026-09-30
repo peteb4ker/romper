@@ -2,6 +2,7 @@ import {
   ArrowCounterClockwiseIcon,
   DiceFiveIcon,
   ScissorsIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import {
   MAX_LENGTH_OPTIONS,
@@ -25,6 +26,8 @@ export interface SliceStripProps {
   notice?: null | string;
   onAssign: (startSlice: number, lengthSlices: number) => void;
   onAudition: (startSlice: number, lengthSlices: number) => void;
+  /** Hide the strip. Sliced voices keep playing their slices. */
+  onClose: () => void;
   onDivisionChange: (division: SlicerDivision) => void;
   onRoll: () => void;
   onSelectVoice: (voiceNumber: number) => void;
@@ -210,6 +213,7 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
     notice,
     onAssign,
     onAudition,
+    onClose,
     onDivisionChange,
     onRoll,
     onSelectVoice,
@@ -427,6 +431,16 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
             ))}
           </select>
         </label>
+        <button
+          aria-label="Close slicer"
+          className="p-0.5 rounded text-text-tertiary hover:text-text-primary hover:bg-surface-3"
+          data-testid="slice-close"
+          onClick={onClose}
+          title="Close the slicer. Sliced voices keep playing their slices; click a step on a sliced row to edit again."
+          type="button"
+        >
+          <XIcon size={14} weight="bold" />
+        </button>
       </div>
 
       {/* Waveform with slice grid */}

@@ -154,6 +154,66 @@ describe("useSlicerEditor", () => {
     });
   });
 
+  describe("closing the editor", () => {
+    it("hides the strip but leaves every sliced voice in slice mode", () => {
+      const { result } = renderHook(() =>
+        useHarness({ voices: voice1Sliced }, onPlaySample),
+      );
+      act(() => result.current.editor.handleSliceToggle(2));
+      act(() => result.current.editor.handleStepClick(1, 4));
+      expect(result.current.editor.editorOpen).toBe(true);
+
+      act(() => result.current.editor.closeEditor());
+
+      expect(result.current.editor.editorOpen).toBe(false);
+      expect(result.current.editor.selectedStep).toBeNull();
+      // Slice mode (what playback reads) is untouched for both voices
+      expect(result.current.sliceSettings[1].enabled).toBe(true);
+      expect(result.current.sliceSettings[2].enabled).toBe(true);
+      expect(api.updateVoiceSliceSettings).not.toHaveBeenCalledWith(
+        "A0",
+        expect.any(Number),
+        { enabled: false },
+      );
+    });
+
+    it("reopens when a step on a sliced row is clicked", () => {
+      const { result } = renderHook(() =>
+        useHarness({ voices: voice1Sliced }, onPlaySample),
+      );
+      act(() => result.current.editor.closeEditor());
+
+      act(() => result.current.editor.handleStepClick(0, 3));
+
+      expect(result.current.editor.editorOpen).toBe(true);
+      expect(result.current.editor.editingVoice).toBe(1);
+      expect(result.current.editor.selectedStep).toBe(3);
+    });
+
+    it("stays closed while clicking steps on rows that aren't sliced", () => {
+      const { result } = renderHook(() =>
+        useHarness({ voices: voice1Sliced }, onPlaySample),
+      );
+      act(() => result.current.editor.closeEditor());
+
+      act(() => result.current.editor.handleStepClick(1, 3));
+
+      expect(result.current.editor.editorOpen).toBe(false);
+    });
+
+    it("reopens on the voice whose slice mode is turned on", () => {
+      const { result } = renderHook(() =>
+        useHarness({ voices: voice1Sliced }, onPlaySample),
+      );
+      act(() => result.current.editor.closeEditor());
+
+      act(() => result.current.editor.handleSliceToggle(2));
+
+      expect(result.current.editor.editorOpen).toBe(true);
+      expect(result.current.editor.editingVoice).toBe(2);
+    });
+  });
+
   describe("step clicks", () => {
     it("toggles steps on rows that are not sliced", () => {
       const { result } = renderHook(() => useHarness({}, onPlaySample));

@@ -101,6 +101,10 @@ function createWindow() {
       : { indexPath: rendererIndexPath, kind: "file" },
   );
 
+  // A headless run (the e2e suite) shouldn't be heard either. Muting the
+  // page silences output only: the audio graph and timing run as normal.
+  if (isHeadless) win.webContents.setAudioMuted(true);
+
   // maximize() would show the window, and a hidden window's bounds shouldn't
   // overwrite the user's saved ones.
   if (windowState.isMaximized && !isHeadless) {

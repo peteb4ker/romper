@@ -66,13 +66,16 @@ memory in `~/.claude`, `.claude/settings.local.json`, `.env.local`, or
 anything said in another session. Anything another session needs goes in
 the repo or on GitHub.
 
-- **Session names:** `L | <feature> #<PR>` for a local session (desktop
-  app or CLI on this machine), `C | <feature> #<PR>` for a cloud session.
-  Keep the feature to a few words and add the PR number once a PR exists,
-  e.g. `L | Scan merge (RE-04) #360`, `C | Step slicer #354`. Rename the
-  session (`set_session_title`) when you start, when you open the PR, and
-  when the scope changes. `ListAgents` addresses sessions by title, so look
-  names up again before messaging.
+- **Session names:** `💻 <feature> #<PR>` for a local session (desktop
+  app or CLI on this machine), `☁️ <feature> #<PR>` for a cloud session. The
+  project's main (coordinating) thread puts ⭐ in front:
+  `⭐💻 RE-03 scoped fs IPC #367`. Keep the feature to a few words and add
+  the PR number once a PR exists, e.g. `💻 Scan merge (RE-04) #360`,
+  `☁️ Step slicer #354`. Rename the session (`set_session_title`) when you
+  start, when you open the PR, and when the scope changes. `ListAgents`
+  addresses sessions by title, so look names up again before messaging.
+  The main thread turns off its PR monitor's `auto_archive_on_close`, so
+  it isn't archived when its PR merges.
 - **Backlog:** [`BACKLOG.md`](BACKLOG.md) is the shared status board. Pick
   work from it, claim items with a draft PR titled `... (RE-NN)`, and update
   an item's status in the PR that changes it. Its header has the protocol.

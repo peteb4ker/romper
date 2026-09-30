@@ -483,7 +483,7 @@ function isVoiceDue(args: {
   // Secondary voices that are stereo-linked play through their primary
   if (stereoLinks?.linkedSecondaries.has(voiceNumber)) return false;
   if (args.voiceMutes[voiceNumber]) return false;
-  if (!(stepPattern[voiceIdx][step] > 0)) return false; // velocity > 0 = on
+  if ((stepPattern[voiceIdx][step] ?? 0) <= 0) return false; // velocity > 0 = on
   const condition = (args.triggerConditions?.[voiceIdx]?.[step] ??
     null) as TriggerCondition;
   return shouldTrigger(condition, cycleCount);

@@ -79,6 +79,18 @@ describe("ipcHandlerUtils", () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
     });
+
+    it("should prefer the ROMPER_LOCAL_PATH override", () => {
+      vi.stubEnv("ROMPER_LOCAL_PATH", "/env/store");
+      try {
+        const result = validateAndGetDbDir(mockInMemorySettings);
+
+        expect(result.success).toBe(true);
+        expect(result.dbDir).toBe("/env/store/.romperdb");
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    });
   });
 
   describe("createDbHandler", () => {

@@ -37,6 +37,7 @@ import { registerSyncIpcHandlers } from "./db/syncIpcHandlers.js";
 import { localStoreService } from "./services/localStoreService.js";
 import { rtfFileService } from "./services/rtfFileService.js";
 import { scanService } from "./services/scanService.js";
+import { ServicePathManager } from "./utils/fileSystemUtils.js";
 
 export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   // Register all handler groups
@@ -333,10 +334,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         if (result.success) {
           // Manage RTF file in local store root
           const localStorePath =
-            process.env.ROMPER_LOCAL_PATH ||
-            (typeof inMemorySettings.localStorePath === "string"
-              ? inMemorySettings.localStorePath
-              : undefined);
+            ServicePathManager.getLocalStorePath(inMemorySettings);
           if (localStorePath) {
             if (updates.artist) {
               rtfFileService.writeRtfFile(

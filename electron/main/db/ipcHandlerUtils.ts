@@ -1,8 +1,7 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
 
-import * as path from "node:path";
-
 import { sampleService } from "../services/sampleService.js";
+import { ServicePathManager } from "../utils/fileSystemUtils.js";
 
 /**
  * Creates a wrapper for IPC handlers that require database directory validation
@@ -97,7 +96,7 @@ export function createSampleOperationHandler(
 
 /**
  * Validates local store path and returns database directory
- * Checks environment variable override first, then settings
+ * (ROMPER_LOCAL_PATH override first, then settings; see ServicePathManager)
  */
 export function validateAndGetDbDir(
   inMemorySettings: Record<string, unknown>,
@@ -106,14 +105,9 @@ export function validateAndGetDbDir(
   error?: string;
   success: boolean;
 } {
-  // Check environment override first, then settings
-  const localStorePath =
-    process.env.ROMPER_LOCAL_PATH ||
-    (typeof inMemorySettings.localStorePath === "string"
-      ? inMemorySettings.localStorePath
-      : undefined);
+  const localStorePath = ServicePathManager.getLocalStorePath(inMemorySettings);
   if (!localStorePath) {
     return { error: "No local store path configured", success: false };
   }
-  return { dbDir: path.join(localStorePath, ".romperdb"), success: true };
+  return { dbDir: ServicePathManager.getDbPath(localStorePath), success: true };
 }

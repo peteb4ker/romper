@@ -92,6 +92,42 @@ describe("fileSystemUtils", () => {
 
         expect(result).toBe("/home/user/music");
       });
+
+      describe("with ROMPER_LOCAL_PATH set", () => {
+        afterEach(() => {
+          vi.unstubAllEnvs();
+        });
+
+        it("prefers the override over the saved path", () => {
+          vi.stubEnv("ROMPER_LOCAL_PATH", "/env/store");
+
+          const result = ServicePathManager.getLocalStorePath({
+            localStorePath: "/home/user/music",
+          });
+
+          expect(result).toBe("/env/store");
+        });
+
+        it("uses the override when no path is saved", () => {
+          vi.stubEnv("ROMPER_LOCAL_PATH", "/env/store");
+
+          const result = ServicePathManager.getLocalStorePath({
+            localStorePath: null,
+          });
+
+          expect(result).toBe("/env/store");
+        });
+
+        it("ignores a blank override", () => {
+          vi.stubEnv("ROMPER_LOCAL_PATH", "  ");
+
+          const result = ServicePathManager.getLocalStorePath({
+            localStorePath: "/home/user/music",
+          });
+
+          expect(result).toBe("/home/user/music");
+        });
+      });
     });
 
     describe("validateAndGetPaths", () => {

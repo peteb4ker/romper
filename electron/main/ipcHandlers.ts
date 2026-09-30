@@ -82,49 +82,22 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     return { success: true };
   });
 
-  ipcMain.handle("get-kit-delete-summary", async (_event, kitName: string) => {
-    const effectiveSettings: InMemorySettings = {
-      ...inMemorySettings,
-      localStorePath:
-        process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
-    };
+  ipcMain.handle("get-kit-delete-summary", async (_event, kitName: string) =>
+    kitService.getKitDeleteSummary(inMemorySettings, kitName),
+  );
 
-    return kitService.getKitDeleteSummary(effectiveSettings, kitName);
-  });
+  ipcMain.handle("delete-kit", async (_event, kitName: string) =>
+    kitService.deleteKit(inMemorySettings, kitName),
+  );
 
-  ipcMain.handle("delete-kit", async (_event, kitName: string) => {
-    const effectiveSettings: InMemorySettings = {
-      ...inMemorySettings,
-      localStorePath:
-        process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
-    };
-
-    return kitService.deleteKit(effectiveSettings, kitName);
-  });
-
-  ipcMain.handle("create-kit", async (_event, kitSlot: string) => {
-    // Add environment override to settings for this operation
-    const effectiveSettings: InMemorySettings = {
-      ...inMemorySettings,
-      localStorePath:
-        process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
-    };
-
-    return kitService.createKit(effectiveSettings, kitSlot);
-  });
+  ipcMain.handle("create-kit", async (_event, kitSlot: string) =>
+    kitService.createKit(inMemorySettings, kitSlot),
+  );
 
   ipcMain.handle(
     "copy-kit",
-    async (_event, sourceKit: string, destKit: string) => {
-      // Add environment override to settings for this operation
-      const effectiveSettings: InMemorySettings = {
-        ...inMemorySettings,
-        localStorePath:
-          process.env.ROMPER_LOCAL_PATH || inMemorySettings.localStorePath,
-      };
-
-      return kitService.copyKit(effectiveSettings, sourceKit, destKit);
-    },
+    async (_event, sourceKit: string, destKit: string) =>
+      kitService.copyKit(inMemorySettings, sourceKit, destKit),
   );
   ipcMain.handle("list-files-in-root", async (_event, localStorePath: string) =>
     localStoreService.listFilesInRoot(localStorePath),

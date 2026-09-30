@@ -17,11 +17,17 @@ export class ServicePathManager {
   }
 
   /**
-   * Get local store path from settings
+   * Get the effective local store path: the ROMPER_LOCAL_PATH environment
+   * override if set, otherwise the saved setting. Every main-process reader
+   * of the local store path should go through this.
    */
   static getLocalStorePath(
     inMemorySettings: Record<string, unknown>,
   ): null | string {
+    const envOverride = process.env.ROMPER_LOCAL_PATH;
+    if (envOverride && envOverride.trim() !== "") {
+      return envOverride;
+    }
     const path = inMemorySettings.localStorePath;
     return typeof path === "string" && path.trim() !== "" ? path : null;
   }

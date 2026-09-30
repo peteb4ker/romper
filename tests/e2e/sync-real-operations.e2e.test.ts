@@ -74,16 +74,6 @@ test.describe("Sync Real Operations E2E Tests", () => {
     await window.waitForSelector('[data-testid="kits-view"]', {
       timeout: 10000,
     });
-
-    // Ensure the main process inMemorySettings.localStorePath points to the
-    // fixture's local store, not whatever is in the user's settings file.
-    // The ROMPER_LOCAL_PATH env var is used by the renderer but the sync IPC
-    // handler reads from inMemorySettings directly.
-    await window.evaluate(async (fixturePath) => {
-      if (window.electronAPI?.setSetting) {
-        await window.electronAPI.setSetting("localStorePath", fixturePath);
-      }
-    }, testEnv.localStorePath);
   });
 
   test.afterEach(async () => {

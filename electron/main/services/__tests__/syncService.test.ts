@@ -23,6 +23,8 @@ vi.mock("../../audioUtils.js", () => ({
 }));
 
 vi.mock("../../db/romperDbCoreORM.js", () => ({
+  getAllBanks: vi.fn(),
+  getKits: vi.fn(),
   getKitSamples: vi.fn(),
   markKitsAsSynced: vi.fn(),
 }));
@@ -41,7 +43,11 @@ vi.mock("../sdCardSafety.js", () => ({
 }));
 
 import { getAudioMetadata, validateSampleFormat } from "../../audioUtils.js";
-import { getKitSamples, markKitsAsSynced } from "../../db/romperDbCoreORM.js";
+import {
+  getKits,
+  getKitSamples,
+  markKitsAsSynced,
+} from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
 import { clearRampleContent, validateSdCardTarget } from "../sdCardSafety.js";
 import { syncFileOperationsService } from "../syncFileOperations.js";
@@ -54,6 +60,7 @@ const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
 const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 const mockValidateSampleFormat = vi.mocked(validateSampleFormat);
+const mockGetKits = vi.mocked(getKits);
 const mockGetKitSamples = vi.mocked(getKitSamples);
 const mockMarkKitsAsSynced = vi.mocked(markKitsAsSynced);
 const _mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
@@ -198,6 +205,55 @@ describe("SyncService", () => {
     });
   });
 
+  describe("ROMPER_LOCAL_PATH override", () => {
+    beforeEach(() => {
+      vi.stubEnv("ROMPER_LOCAL_PATH", "/env/store");
+      vi.spyOn(
+        syncSampleProcessingService,
+        "gatherAllSamples",
+      ).mockResolvedValue({ data: [], success: true });
+      vi.spyOn(syncFileOperationsService, "processAllFiles").mockResolvedValue(
+        0,
+      );
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      vi.restoreAllMocks();
+    });
+
+    it("generates the change summary from the override when no path is saved", async () => {
+      mockGetKits.mockReturnValue({ data: [], success: true });
+      // generateChangeSummary imports getKits dynamically; replace the
+      // outer beforeEach's doMock so the call is observable.
+      vi.doMock("../../db/romperDbCoreORM.js", () => ({
+        getKits: mockGetKits,
+      }));
+
+      const result = await syncService.generateChangeSummary({
+        localStorePath: null,
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockGetKits).toHaveBeenCalledWith("/env/store/.romperdb");
+      expect(syncSampleProcessingService.gatherAllSamples).toHaveBeenCalledWith(
+        "/env/store/.romperdb",
+      );
+    });
+
+    it("syncs from the override instead of the saved path", async () => {
+      const result = await syncService.startKitSync(
+        { localStorePath: "/saved/store" },
+        { sdCardPath: "/sd/card" },
+      );
+
+      expect(result.success).toBe(true);
+      expect(syncSampleProcessingService.gatherAllSamples).toHaveBeenCalledWith(
+        "/env/store/.romperdb",
+      );
+    });
+  });
+
   describe("startKitSync", () => {
     const mockSettings = {
       localStorePath: "/local/store",
@@ -306,21 +362,19 @@ describe("SyncService", () => {
       expect(syncFileOperationsService.processAllFiles).not.toHaveBeenCalled();
     });
 
-    it("protects the local store and the ROMPER_LOCAL_PATH override", async () => {
-      const previous = process.env.ROMPER_LOCAL_PATH;
-      process.env.ROMPER_LOCAL_PATH = "/env/store";
+    it("protects the ROMPER_LOCAL_PATH override and the saved local store", async () => {
+      vi.stubEnv("ROMPER_LOCAL_PATH", "/env/store");
       try {
         await syncService.startKitSync(mockSettings, {
           sdCardPath: "/sd/card",
         });
       } finally {
-        if (previous === undefined) delete process.env.ROMPER_LOCAL_PATH;
-        else process.env.ROMPER_LOCAL_PATH = previous;
+        vi.unstubAllEnvs();
       }
 
       expect(mockValidateSdCardTarget).toHaveBeenCalledWith("/sd/card", [
-        "/local/store",
         "/env/store",
+        "/local/store",
       ]);
     });
 

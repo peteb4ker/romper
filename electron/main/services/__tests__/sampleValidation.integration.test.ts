@@ -1,6 +1,7 @@
 import type { NewKit, NewSample, Sample } from "@romper/shared/db/schema.js";
 
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -14,8 +15,10 @@ import { SampleValidationService } from "../sampleValidation.js";
 import { SampleValidator } from "../validation/sampleValidator.js";
 
 // Test utilities
-const TEST_DB_DIR = path.join(__dirname, "test-data-sample-val");
-const TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
+// Each test gets its own directory under the OS temp dir (see beforeEach),
+// so nothing is written into the source tree.
+let TEST_DB_DIR: string;
+let TEST_DB_PATH: string;
 
 async function cleanupSqliteFiles(dir: string) {
   if (!fs.existsSync(dir)) return;
@@ -108,21 +111,16 @@ describe("SampleValidation Integration Tests", () => {
   let sampleValidator: SampleValidator;
   let testWavDir: string;
 
-  beforeEach(async () => {
-    if (!fs.existsSync(TEST_DB_DIR)) {
-      fs.mkdirSync(TEST_DB_DIR, { recursive: true });
-    }
-
-    await cleanupSqliteFiles(TEST_DB_DIR);
+  beforeEach(() => {
+    TEST_DB_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "romper-sample-val-"));
+    TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
     createRomperDbFile(TEST_DB_PATH);
 
     sampleValidationService = new SampleValidationService();
     sampleValidator = new SampleValidator();
 
     testWavDir = path.join(TEST_DB_DIR, "test-wavs");
-    if (!fs.existsSync(testWavDir)) {
-      fs.mkdirSync(testWavDir, { recursive: true });
-    }
+    fs.mkdirSync(testWavDir, { recursive: true });
 
     // Create test kit with samples
     const kitRecord: NewKit = {
@@ -139,9 +137,7 @@ describe("SampleValidation Integration Tests", () => {
 
   afterEach(async () => {
     await cleanupSqliteFiles(TEST_DB_DIR);
-    if (fs.existsSync(testWavDir)) {
-      fs.rmSync(testWavDir, { force: true, recursive: true });
-    }
+    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });
 
   describe("SampleValidationService.validateVoiceAndSlot", () => {

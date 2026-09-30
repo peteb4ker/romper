@@ -122,6 +122,48 @@ function startSource(
 }
 
 /**
+ * Stop a playing source at `stopAt` (context time, or now). Slice sources
+ * fade out over a few ms instead of cutting, so they don't click.
+ */
+function stopSource(
+  source: AudioBufferSourceNode,
+  envelope: GainNode | null,
+  ctx: BaseAudioContext | null,
+  stopAt?: number,
+): void {
+  // Clear onended BEFORE stop() to prevent the stale callback from
+  // firing asynchronously and corrupting state for a newly started source.
+  source.onended = null;
+  const t = ctx ? Math.max(ctx.currentTime, stopAt ?? 0) : 0;
+  if (!envelope || !ctx) {
+    try {
+      source.stop(t);
+    } catch {
+      // Ignore stop errors
+    }
+    source.disconnect();
+    return;
+  }
+  try {
+    if (envelope.gain.cancelAndHoldAtTime) {
+      envelope.gain.cancelAndHoldAtTime(t);
+    } else {
+      envelope.gain.cancelScheduledValues(t);
+      envelope.gain.setValueAtTime(envelope.gain.value, t);
+    }
+    envelope.gain.linearRampToValueAtTime(0, t + ANTI_CLICK_SECONDS);
+    source.onended = () => {
+      source.disconnect();
+      envelope.disconnect();
+    };
+    source.stop(t + ANTI_CLICK_SECONDS);
+  } catch {
+    source.disconnect();
+    envelope.disconnect();
+  }
+}
+
+/**
  * Convert a performance.now() timestamp to a context time (now if unset or
  * past). getOutputTimestamp() pairs the two clocks precisely; currentTime alone
  * can advance in coarse (~10 ms) chunks, which would jitter scheduled starts.
@@ -292,40 +334,8 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const stopPlayback = useCallback(
     (stopAt?: number) => {
       const source = sourceRef.current;
-      const envelope = envelopeRef.current;
-      const ctx = audioCtxRef.current;
       if (source) {
-        // Clear onended BEFORE stop() to prevent the stale callback from
-        // firing asynchronously and corrupting state for a newly started source.
-        source.onended = null;
-        const t = ctx ? Math.max(ctx.currentTime, stopAt ?? 0) : 0;
-        if (envelope && ctx) {
-          // Slice playback: fade out quickly instead of cutting, to avoid clicks
-          try {
-            if (envelope.gain.cancelAndHoldAtTime) {
-              envelope.gain.cancelAndHoldAtTime(t);
-            } else {
-              envelope.gain.cancelScheduledValues(t);
-              envelope.gain.setValueAtTime(envelope.gain.value, t);
-            }
-            envelope.gain.linearRampToValueAtTime(0, t + ANTI_CLICK_SECONDS);
-            source.onended = () => {
-              source.disconnect();
-              envelope.disconnect();
-            };
-            source.stop(t + ANTI_CLICK_SECONDS);
-          } catch {
-            source.disconnect();
-            envelope.disconnect();
-          }
-        } else {
-          try {
-            source.stop(t);
-          } catch {
-            // Ignore stop errors
-          }
-          source.disconnect();
-        }
+        stopSource(source, envelopeRef.current, audioCtxRef.current, stopAt);
         sourceRef.current = null;
         envelopeRef.current = null;
       }

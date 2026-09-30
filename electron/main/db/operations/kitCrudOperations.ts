@@ -4,6 +4,7 @@ import type {
   KitWithRelations,
   NewKit,
 } from "@romper/shared/db/schema.js";
+import type { SliceStep } from "@romper/shared/sliceTypes.js";
 
 import * as schema from "@romper/shared/db/schema.js";
 import { eq } from "drizzle-orm";
@@ -291,6 +292,8 @@ export function updateKit(
     is_favorite?: boolean;
     modified?: boolean;
     name?: string;
+    slice_steps?: (null | SliceStep)[][] | null;
+    slicer_division?: number;
     step_pattern?: null | number[][];
     trigger_conditions?: (null | string)[][] | null;
   },

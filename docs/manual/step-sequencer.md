@@ -68,6 +68,35 @@ When a voice has multiple samples loaded, the sample mode button (to the right o
 
 Round-robin and random modes are powerful for creating realistic drum patterns -- load multiple kick or hi-hat variations into a single voice and let the sequencer cycle through them automatically.
 
+## Slicer
+
+The slicer plays **parts of a long sample** from each step -- a drum break, a vocal phrase, a chord progression -- the same way the Rample plays a slice when an external sequencer sends it *start point* and *length* (CC x4 and CC x5).
+
+**To slice a sample:**
+
+1. Put a long sample in one of the voice's slots.
+2. Click the **✂** button at the right of that voice's sequencer row.
+3. A waveform strip appears above the grid, cut into slices, and every lit step in the row shows the slice it plays. Step 1 plays slice 1, step 2 plays slice 2 and so on, so a one-bar loop sliced into 16 plays back as the original loop at its own tempo.
+4. Press **Play**, then start changing things.
+
+**To choose what a step plays**, click the step, then click a slice on the waveform. Drag across several slices for a longer hit. Hovering a step shows its slice on the waveform; clicking a slice plays it so you can explore the sample by ear (Alt/Option-click plays it without assigning it). The line under the waveform always tells you what to do next.
+
+On a slice row, clicking a lit step **selects** it; clicking the selected step again turns it off. The scroll wheel over a step moves it to the previous or next slice (Shift + scroll changes its length), and right-clicking a step lets you type a slice number, change the length, make it random, or lock it.
+
+**Slices** sets how many equal parts the sample is cut into: /8, /12, /16, /24, /32, /48, /64 or /128, like the Rample's **SLICER** setting. It applies to the whole kit. Changing it never loses anything -- switch back and your slices are exactly where they were -- so trying another division is a quick way to find something new.
+
+### Happy accidents
+
+- **🎲 Roll** gives the row's steps random slices. The result stays put, so when something great comes up, keep it. **Undo** takes back the last roll.
+- **Amount** decides how much a roll changes: 25% nudges the pattern, 100% rewrites it.
+- **Lock** a step (right-click, or `L`) to keep it while you roll everything else -- for example, keep the kick on step 1.
+- **Random slice each time** (right-click, or `R`) makes a step pick a new slice every time it plays, shown as a dice on the step, so the pattern never repeats exactly.
+- **Vary length** makes rolls and random steps pick a random length too, up to the length you choose.
+
+Slicing works together with everything else: trigger conditions still decide *whether* a step plays, and the sample mode (1st / Rnd / R-R) still decides *which* slot plays -- the slice is then taken from that slot. Sample mode **Rnd** plus random slices gives the most surprising results.
+
+**Note**: Like the rest of the sequencer, slicing is a preview inside Romper. It is not written to the SD card. To play slices on the Rample, sequence **start point** (CC x4) and **length** (CC x5) from your external sequencer, with SLICER set to the same division.
+
 ## Voice Volume and Mute
 
 ![Voice controls]({{ site.baseurl }}/images/manual/voice-controls.png){: .img-left}
@@ -90,7 +119,7 @@ When two voices are configured for stereo playback (e.g., Voices 1+2 or Voices 3
 
 ## Persistence
 
-Sequencer patterns, trigger conditions, BPM, and sample modes are all saved per-kit in the database. Your patterns persist across sessions. Voice mutes are session-only.
+Sequencer patterns, trigger conditions, BPM, sample modes, and slicer settings are all saved per-kit in the database. Your patterns persist across sessions. Voice mutes are session-only.
 
 ## Example: Building a Pattern with the C0 Factory Kit
 
@@ -122,3 +151,9 @@ Here's what's programmed in each voice:
 | Show/hide sequencer | `S` |
 | Toggle step | `Space` or `Enter` |
 | Navigate steps | Arrow keys |
+| Previous / next slice (slice rows) | `[` / `]` |
+| Shorter / longer slice (slice rows) | `{` / `}` |
+| Random slice each time (slice rows) | `R` |
+| Lock step (slice rows) | `L` |
+| Roll slices (slice rows) | `D` |
+| Undo the last roll | `Cmd+Z` / `Ctrl+Z` |

@@ -1,4 +1,7 @@
-import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
+import type {
+  PlayOptions,
+  VoiceSamples,
+} from "@romper/app/renderer/components/kitTypes";
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import { useCallback } from "react";
@@ -11,6 +14,7 @@ export function useKitVoicePanels({
   onSaveVoiceName,
   onStop,
   onWaveformPlayingChange,
+  playOptions,
   playTriggers,
   playVolumes,
   samplePlaying,
@@ -33,6 +37,7 @@ export function useKitVoicePanels({
     sample: string,
     playing: boolean,
   ) => void;
+  playOptions?: { [key: string]: PlayOptions | undefined };
   playTriggers: { [key: string]: number };
   playVolumes?: { [key: string]: number };
   samplePlaying: { [key: string]: boolean };
@@ -108,6 +113,7 @@ export function useKitVoicePanels({
     onSaveVoiceName,
     onStop,
     onWaveformPlayingChange,
+    playOptions,
     playTriggers,
     playVolumes,
     samplePlaying,

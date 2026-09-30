@@ -142,4 +142,30 @@ describe("useKitPlayback", () => {
     });
     expect(result.current.stopTriggers["1:kick.wav"] || 0).toBe(stopBefore);
   });
+
+  it("records play options for a play, and clears them for a plain play", () => {
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const options = { region: { length: 0.0625, start: 0.25 }, startAt: 1000 };
+    act(() => {
+      result.current.handlePlay(2, "break.wav", 80, options);
+    });
+    expect(result.current.playOptions["2:break.wav"]).toEqual(options);
+
+    act(() => {
+      result.current.handlePlay(2, "break.wav");
+    });
+    expect(result.current.playOptions["2:break.wav"]).toBeUndefined();
+  });
+
+  it("stops a choked sample when the choking sound is scheduled to start", () => {
+    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    act(() => {
+      result.current.handleWaveformPlayingChange(1, "kick.wav", true);
+    });
+    act(() => {
+      result.current.handlePlay(1, "kick2.wav", 100, { startAt: 2500 });
+    });
+    expect(result.current.stopTriggers["1:kick.wav"]).toBe(1);
+    expect(result.current.playOptions["1:kick.wav"]?.stopAt).toBe(2500);
+  });
 });

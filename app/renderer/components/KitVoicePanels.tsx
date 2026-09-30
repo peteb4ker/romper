@@ -3,7 +3,7 @@ import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
 import { LinkIcon } from "@phosphor-icons/react";
 import React, { useState } from "react";
 
-import type { SampleData, VoiceSamples } from "./kitTypes";
+import type { PlayOptions, SampleData, VoiceSamples } from "./kitTypes";
 
 import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
 import { useStereoHandling } from "./hooks/sample-management/useStereoHandling";
@@ -45,6 +45,7 @@ interface KitVoicePanelsProps {
     sample: string,
     playing: boolean,
   ) => void; // Used by useKitVoicePanels hook
+  playOptions?: { [key: string]: PlayOptions | undefined }; // Region and start time per sample key, set by sequencer
   playTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
   playVolumes?: { [key: string]: number }; // Volume per sample key, set by sequencer
   samplePlaying: { [key: string]: boolean }; // Used by useKitVoicePanels hook
@@ -83,6 +84,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         id: voice_number,
         kit_name: hookProps.kitName || "",
         sample_mode: "first",
+        slice_enabled: false,
+        slice_max_length: 2,
+        slice_roll_amount: 100,
+        slice_vary_length: false,
         stereo_mode: false,
         voice_alias: null,
         voice_number,
@@ -95,6 +100,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       id: voice.id,
       kit_name: voice.kit_name,
       sample_mode: voice.sample_mode || "first",
+      slice_enabled: voice.slice_enabled ?? false,
+      slice_max_length: voice.slice_max_length ?? 2,
+      slice_roll_amount: voice.slice_roll_amount ?? 100,
+      slice_vary_length: voice.slice_vary_length ?? false,
       stereo_mode: voice.stereo_mode || false,
       voice_alias: voice.voice_alias,
       voice_number: voice.voice_number,
@@ -418,6 +427,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   onStop={hookProps.onStop}
                   onVoiceUnlink={handleVoiceUnlink}
                   onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
+                  playOptions={hookProps.playOptions}
                   playTriggers={hookProps.playTriggers}
                   playVolumes={hookProps.playVolumes}
                   sampleMetadata={sampleMetadata}

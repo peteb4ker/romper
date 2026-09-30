@@ -1,8 +1,16 @@
+import type { SliceStep, VoiceSliceSettings } from "@romper/shared/sliceTypes";
+
 import React from "react";
 
 import type { StereoLinks } from "../../KitStepSequencer";
+import type { PlayOptions } from "../../kitTypes";
 
 import { createLogger } from "../../../utils/logger";
+import {
+  resolveTriggeredSlice,
+  sliceRegion,
+  type SliceView,
+} from "../shared/sliceConstants";
 import {
   ensureValidStepPattern,
   type FocusedStep,
@@ -17,16 +25,39 @@ import {
 
 const log = createLogger("Sequencer");
 
+/**
+ * Sequencer triggers are scheduled this far ahead of each step's ideal time,
+ * so React latency and audio output latency don't reach the audio: every
+ * voice starts exactly on the grid, and consecutive slices of a loop join up
+ * without gaps. Sound lags the on-screen playhead by this much.
+ */
+export const SCHEDULE_AHEAD_MS = 80;
+
 interface UseKitStepSequencerLogicParams {
   bpm?: number;
   gridRef?: React.RefObject<HTMLDivElement>;
   kitName?: string; // Add kit name for secure playback
-  onPlaySample: (voice: number, sample: string, volume?: number) => void;
+  /** Extra grid keys (slicer shortcuts); return true when handled. */
+  onGridKeyDown?: (
+    e: React.KeyboardEvent<HTMLDivElement>,
+    focusedStep: FocusedStep,
+  ) => boolean;
+  onPlaySample: (
+    voice: number,
+    sample: string,
+    volume?: number,
+    options?: PlayOptions,
+  ) => void;
+  /** Called when a slice-mode step fires, with the slice it played. */
+  onSliceTriggered?: (voiceNumber: number, view: SliceView) => void;
   sampleModes?: Record<number, SampleMode>;
   samples: { [voice: number]: string[] };
   sequencerOpen: boolean;
   setSequencerOpen: (open: boolean) => void;
   setStepPattern: (pattern: number[][]) => void;
+  slicerDivision?: number;
+  sliceSettings?: Record<number, VoiceSliceSettings>;
+  sliceSteps?: (null | SliceStep)[][];
   stepPattern: null | number[][];
   stereoLinks?: StereoLinks;
   triggerConditions?: (null | string)[][];
@@ -44,11 +75,16 @@ export function useKitStepSequencerLogic(
   const {
     bpm = 120,
     gridRef,
+    onGridKeyDown,
     onPlaySample,
+    onSliceTriggered,
     sampleModes = {},
     samples,
     sequencerOpen,
     setStepPattern,
+    slicerDivision = 16,
+    sliceSettings,
+    sliceSteps,
     stepPattern,
     stereoLinks,
     triggerConditions,
@@ -61,8 +97,11 @@ export function useKitStepSequencerLogic(
 
   // Calculate step duration from BPM (assuming 16th notes)
   const stepDuration = React.useMemo(() => {
-    return Math.round(60000 / (bpm * 4));
+    return 60000 / (bpm * 4);
   }, [bpm]);
+
+  // Ideal time (performance.now() ms) of the step being triggered
+  const stepTimeRef = React.useRef(0);
 
   // Create worker from inline source to avoid MIME type issues
   const workerBlob = React.useMemo(() => {
@@ -71,8 +110,30 @@ export function useKitStepSequencerLogic(
       let currentStep = 0;
       let cycleCount = 0;
       let numSteps = 16;
-      let interval = null;
+      let timer = null;
       let stepDuration = 125; // Default, will be overridden by START message
+      let startTime = 0;
+      let ticks = 0;
+
+      // Drift-free clock: each step is timed from the start, not from the
+      // previous timer firing, and carries its ideal (absolute) time.
+      function scheduleNext() {
+        const target = startTime + (ticks + 1) * stepDuration;
+        timer = setTimeout(() => {
+          if (!isPlaying) return;
+          ticks++;
+          const prevStep = currentStep;
+          currentStep = (currentStep + 1) % numSteps;
+          if (prevStep === numSteps - 1 && currentStep === 0) {
+            cycleCount++;
+          }
+          self.postMessage({
+            payload: { at: performance.timeOrigin + target, currentStep, cycleCount },
+            type: "STEP",
+          });
+          scheduleNext();
+        }, Math.max(0, target - performance.now()));
+      }
 
       self.onmessage = function (e) {
         if (!e.data || typeof e.data !== "object") {
@@ -85,20 +146,14 @@ export function useKitStepSequencerLogic(
           isPlaying = true;
           numSteps = payload.numSteps ?? 16;
           stepDuration = payload.stepDuration ?? 125;
-          if (interval) clearInterval(interval);
-          interval = setInterval(() => {
-            if (!isPlaying) return;
-            const prevStep = currentStep;
-            currentStep = (currentStep + 1) % numSteps;
-            if (prevStep === numSteps - 1 && currentStep === 0) {
-              cycleCount++;
-            }
-            self.postMessage({ payload: { currentStep, cycleCount }, type: "STEP" });
-          }, stepDuration);
+          if (timer) clearTimeout(timer);
+          startTime = performance.now();
+          ticks = 0;
+          scheduleNext();
         } else if (type === "STOP") {
           isPlaying = false;
-          if (interval) clearInterval(interval);
-          interval = null;
+          if (timer) clearTimeout(timer);
+          timer = null;
           currentStep = 0;
           cycleCount = 0;
           self.postMessage({ payload: { currentStep, cycleCount }, type: "STEP" });
@@ -137,6 +192,11 @@ export function useKitStepSequencerLogic(
 
     worker.onmessage = (e: MessageEvent) => {
       if (e.data.type === "STEP") {
+        const at = e.data.payload.at;
+        stepTimeRef.current =
+          typeof at === "number"
+            ? at - performance.timeOrigin
+            : performance.now();
         setCurrentSeqStep(e.data.payload.currentStep);
         setCycleCount(e.data.payload.cycleCount ?? 0);
       }
@@ -155,6 +215,8 @@ export function useKitStepSequencerLogic(
     if (!worker) return;
 
     if (isSeqPlaying) {
+      // The first step plays straight away; later steps come from the worker
+      stepTimeRef.current = performance.now();
       worker.postMessage({
         payload: { numSteps: NUM_STEPS, stepDuration },
         type: "START",
@@ -200,6 +262,9 @@ export function useKitStepSequencerLogic(
     if (lastStepRef.current === currentSeqStep) return; // Only trigger on step change
 
     lastStepRef.current = currentSeqStep;
+    // Anchor to the step's ideal time (not now) so late messages don't add
+    // jitter; playback clamps anything already past to "now"
+    const startAt = stepTimeRef.current + SCHEDULE_AHEAD_MS;
 
     // Use explicit voice numbers 1-4 to match the voice_number field architecture
     for (let voiceIdx = 0; voiceIdx < NUM_VOICES; voiceIdx++) {
@@ -222,7 +287,23 @@ export function useKitStepSequencerLogic(
         );
         if (sample) {
           const vol = voiceVolumes[voiceNumber] ?? 100;
-          onPlaySample(voiceNumber, sample, vol);
+          const slice = sliceSettings?.[voiceNumber];
+          if (slice?.enabled) {
+            // Slice mode: the slot is chosen above; now pick its slice
+            const view = resolveTriggeredSlice(
+              sliceSteps?.[voiceIdx]?.[currentSeqStep] ?? null,
+              currentSeqStep,
+              slicerDivision,
+              slice,
+            );
+            onPlaySample(voiceNumber, sample, vol, {
+              region: sliceRegion(view, slicerDivision),
+              startAt,
+            });
+            onSliceTriggered?.(voiceNumber, view);
+          } else {
+            onPlaySample(voiceNumber, sample, vol, { startAt });
+          }
         } else {
           log.debug(`No sample available for voice ${voiceNumber}`);
         }
@@ -237,7 +318,11 @@ export function useKitStepSequencerLogic(
     triggerConditions,
     samples,
     onPlaySample,
+    onSliceTriggered,
     selectSample,
+    sliceSettings,
+    slicerDivision,
+    sliceSteps,
     voiceMutes,
     voiceVolumes,
   ]);
@@ -321,6 +406,11 @@ export function useKitStepSequencerLogic(
 
       const { step, voice } = focusedStep;
 
+      if (onGridKeyDown?.(e, focusedStep)) {
+        e.preventDefault();
+        return;
+      }
+
       if (e.key === "ArrowRight") moveFocus("right");
       else if (e.key === "ArrowLeft") moveFocus("left");
       else if (e.key === "ArrowDown") moveFocus("down");
@@ -334,7 +424,7 @@ export function useKitStepSequencerLogic(
       }
       e.preventDefault();
     },
-    [sequencerOpen, focusedStep, moveFocus, toggleStep],
+    [sequencerOpen, focusedStep, moveFocus, toggleStep, onGridKeyDown],
   );
 
   // Focus management when sequencer opens

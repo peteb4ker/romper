@@ -5,6 +5,10 @@ import type {
   SettingsKey,
   SyncProgress,
 } from "@romper/shared/electronApi.js";
+import type {
+  SliceStep,
+  VoiceSliceSettings,
+} from "@romper/shared/sliceTypes.js";
 
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
@@ -485,6 +489,12 @@ const electronAPI = {
     isDev && console.debug("[IPC] updateKitBpm invoked", kitName, bpm);
     return ipcRenderer.invoke("update-kit-bpm", kitName, bpm);
   },
+  updateKitSlicerDivision: (kitName: string, division: number) => {
+    isDev &&
+      console.debug("[IPC] updateKitSlicerDivision invoked", kitName, division);
+    return ipcRenderer.invoke("update-kit-slicer-division", kitName, division);
+  },
+
   updateSampleGain: (
     kitName: string,
     voiceNumber: number,
@@ -506,6 +516,11 @@ const electronAPI = {
       slotNumber,
       gainDb,
     );
+  },
+
+  updateSliceSteps: (kitName: string, sliceSteps: (null | SliceStep)[][]) => {
+    isDev && console.debug("[IPC] updateSliceSteps invoked", kitName);
+    return ipcRenderer.invoke("update-slice-steps", kitName, sliceSteps);
   },
 
   updateStepPattern: (kitName: string, stepPattern: number[][]) => {
@@ -568,6 +583,26 @@ const electronAPI = {
       kitName,
       voiceNumber,
       sampleMode,
+    );
+  },
+
+  updateVoiceSliceSettings: (
+    kitName: string,
+    voiceNumber: number,
+    settings: Partial<VoiceSliceSettings>,
+  ) => {
+    isDev &&
+      console.debug(
+        "[IPC] updateVoiceSliceSettings invoked",
+        kitName,
+        voiceNumber,
+        settings,
+      );
+    return ipcRenderer.invoke(
+      "update-voice-slice-settings",
+      kitName,
+      voiceNumber,
+      settings,
     );
   },
 

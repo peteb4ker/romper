@@ -9,6 +9,7 @@ import type {
   NewSample,
   Sample,
 } from "./db/schema.js";
+import type { SliceStep, VoiceSliceSettings } from "./sliceTypes.js";
 
 /**
  * THE canonical contract for the preload bridge (window.electronAPI).
@@ -189,11 +190,19 @@ export interface ElectronAPI {
     },
   ) => Promise<DbResult>;
   updateKitBpm: (kitName: string, bpm: number) => Promise<DbResult>;
+  updateKitSlicerDivision: (
+    kitName: string,
+    division: number,
+  ) => Promise<DbResult>;
   updateSampleGain: (
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
     gainDb: number,
+  ) => Promise<DbResult>;
+  updateSliceSteps: (
+    kitName: string,
+    sliceSteps: (null | SliceStep)[][],
   ) => Promise<DbResult>;
   updateStepPattern: (
     kitName: string,
@@ -212,6 +221,11 @@ export interface ElectronAPI {
     kitName: string,
     voiceNumber: number,
     sampleMode: string,
+  ) => Promise<DbResult>;
+  updateVoiceSliceSettings: (
+    kitName: string,
+    voiceNumber: number,
+    settings: Partial<VoiceSliceSettings>,
   ) => Promise<DbResult>;
   updateVoiceStereoMode: (
     kitName: string,

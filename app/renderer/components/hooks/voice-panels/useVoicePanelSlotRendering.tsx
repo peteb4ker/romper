@@ -69,6 +69,7 @@ export function useVoicePanelSlotRendering({
   onGainChange,
   onSampleSelect,
   onWaveformPlayingChange,
+  playOptions,
   playTriggers,
   playVolumes,
   renderDeleteButton,
@@ -236,6 +237,7 @@ export function useVoicePanelSlotRendering({
             onPlayingChange={(playing) =>
               onWaveformPlayingChange(voice, sample, playing)
             }
+            playOptions={playOptions?.[sampleKey]}
             playTrigger={playTriggers[sampleKey] || 0}
             slotNumber={slotNumber}
             stopTrigger={stopTriggers[sampleKey] || 0}
@@ -262,6 +264,7 @@ export function useVoicePanelSlotRendering({
       renderDeleteButton,
       kitName,
       onWaveformPlayingChange,
+      playOptions,
       playTriggers,
       playVolumes,
       stopTriggers,

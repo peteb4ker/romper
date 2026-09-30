@@ -574,4 +574,106 @@ describe("KitStepSequencer", () => {
       expect(stereoLinks.primaryLabels[1]).toBe("1+2");
     });
   });
+
+  describe("slicer", () => {
+    function renderSequencer(extra = {}) {
+      return render(
+        <KitStepSequencer
+          bpm={120}
+          kitName="TestKit"
+          onPlaySample={onPlaySample}
+          samples={defaultSamples}
+          sequencerOpen={true}
+          setSequencerOpen={setSequencerOpen}
+          setStepPattern={setStepPattern}
+          setTriggerConditions={vi.fn()}
+          stepPattern={stepPattern}
+          triggerConditions={Array.from({ length: 4 }, () =>
+            Array(16).fill(null),
+          )}
+          {...extra}
+        />,
+      );
+    }
+
+    it("shows no slice strip until a voice is in slice mode", () => {
+      renderSequencer();
+      expect(screen.queryByTestId("slice-strip")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId("slice-toggle-0"));
+
+      expect(screen.getByTestId("slice-strip")).toBeInTheDocument();
+      expect(screen.getByTestId("slice-strip-sample")).toHaveTextContent(
+        "kick.wav (slot 1)",
+      );
+      expect(window.electronAPI.updateVoiceSliceSettings).toHaveBeenCalledWith(
+        "TestKit",
+        1,
+        { enabled: true },
+      );
+    });
+
+    it("opens with the strip for a voice already in slice mode", () => {
+      renderSequencer({
+        slicerDivision: 32,
+        voices: sliceVoices,
+      });
+      expect(screen.getByTestId("slice-strip")).toBeInTheDocument();
+      expect(screen.getByTestId("slice-division")).toHaveValue("32");
+      expect(screen.getByTestId("slice-hint")).toHaveTextContent(
+        /Click a step/,
+      );
+    });
+
+    it("wires the strip's controls to persistence and the slicer", async () => {
+      renderSequencer({ voices: sliceVoices });
+
+      fireEvent.change(screen.getByTestId("slice-division"), {
+        target: { value: "8" },
+      });
+      await act(async () => {});
+      expect(window.electronAPI.updateKitSlicerDivision).toHaveBeenCalledWith(
+        "TestKit",
+        8,
+      );
+
+      fireEvent.change(screen.getByTestId("slice-roll-amount"), {
+        target: { value: "50" },
+      });
+      expect(window.electronAPI.updateVoiceSliceSettings).toHaveBeenCalledWith(
+        "TestKit",
+        3,
+        { rollAmount: 50 },
+      );
+
+      // No steps are on, so the roll explains what to do instead
+      fireEvent.click(screen.getByTestId("slice-roll"));
+      expect(screen.getByTestId("slice-hint")).toHaveTextContent(
+        /Nothing to roll/,
+      );
+      fireEvent.click(screen.getByTestId("slice-undo-roll"));
+    });
+
+    it("previews a slice when one is clicked with the sequencer stopped", () => {
+      renderSequencer({ voices: sliceVoices });
+      fireEvent.click(screen.getByTestId("slice-4"));
+      expect(onPlaySample).toHaveBeenCalledWith(3, "hat.wav", 100, {
+        region: { length: 1 / 16, start: 4 / 16 },
+      });
+    });
+
+    it("passes slicer data to the sequencer logic", () => {
+      renderSequencer({ voices: sliceVoices });
+      const lastCall = mockUseKitStepSequencerLogic.mock.calls.at(-1)![0];
+      expect(lastCall.sliceSettings[3].enabled).toBe(true);
+      expect(lastCall.slicerDivision).toBe(16);
+      expect(typeof lastCall.onGridKeyDown).toBe("function");
+      expect(typeof lastCall.onSliceTriggered).toBe("function");
+    });
+  });
 });
+
+// Hoisted: voice data from the kit is stable between renders
+const sliceVoices = [
+  { slice_enabled: true, voice_number: 3, voice_volume: 100 },
+];

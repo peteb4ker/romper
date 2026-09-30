@@ -1,4 +1,5 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
+import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
 
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq } from "drizzle-orm";
@@ -39,6 +40,37 @@ export function updateVoiceSampleMode(
     ensureVoiceRow(db, kitName, voiceNumber);
     db.update(voices)
       .set({ sample_mode: sampleMode })
+      .where(
+        and(eq(voices.kit_name, kitName), eq(voices.voice_number, voiceNumber)),
+      )
+      .run();
+  });
+}
+
+/**
+ * Update voice slicer settings (slice mode toggle and roll settings).
+ * Only the provided fields are changed.
+ */
+export function updateVoiceSliceSettings(
+  dbDir: string,
+  kitName: string,
+  voiceNumber: number,
+  settings: Partial<VoiceSliceSettings>,
+): DbResult<void> {
+  return withDb(dbDir, (db) => {
+    ensureVoiceRow(db, kitName, voiceNumber);
+    const updates: Partial<typeof voices.$inferInsert> = {};
+    if (settings.enabled !== undefined)
+      updates.slice_enabled = settings.enabled;
+    if (settings.maxLength !== undefined)
+      updates.slice_max_length = settings.maxLength;
+    if (settings.rollAmount !== undefined)
+      updates.slice_roll_amount = settings.rollAmount;
+    if (settings.varyLength !== undefined)
+      updates.slice_vary_length = settings.varyLength;
+    if (Object.keys(updates).length === 0) return;
+    db.update(voices)
+      .set(updates)
       .where(
         and(eq(voices.kit_name, kitName), eq(voices.voice_number, voiceNumber)),
       )

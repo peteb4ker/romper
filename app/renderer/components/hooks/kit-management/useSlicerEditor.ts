@@ -1,0 +1,543 @@
+import {
+  DEFAULT_VOICE_SLICE_SETTINGS,
+  type SlicerDivision,
+  type SliceStep,
+  type VoiceSliceSettings,
+} from "@romper/shared/sliceTypes";
+import React from "react";
+
+import type { PlayOptions } from "../../kitTypes";
+
+import {
+  makeSliceStep,
+  nudgeLengthSlices,
+  nudgeStartSlice,
+  rollSliceRow,
+  sequentialSliceStep,
+  sliceRegion,
+  type SliceView,
+  toSliceView,
+} from "../shared/sliceConstants";
+import { type FocusedStep, NUM_VOICES } from "../shared/stepPatternConstants";
+
+export interface PlayingSlice {
+  id: number;
+  view: SliceView;
+  voiceNumber: number;
+}
+
+export interface RolledSteps {
+  id: number;
+  steps: number[];
+  voiceIdx: number;
+}
+
+export interface SlicerVoiceData {
+  slice_enabled?: boolean;
+  slice_max_length?: number;
+  slice_roll_amount?: number;
+  slice_vary_length?: boolean;
+  voice_number: number;
+}
+
+type SliceSteps = (null | SliceStep)[][];
+
+interface UseSlicerEditorParams {
+  focusedStep: FocusedStep;
+  isSeqPlaying: boolean;
+  kitName: string;
+  onPlaySample: (
+    voice: number,
+    sample: string,
+    volume?: number,
+    options?: PlayOptions,
+  ) => void;
+  samples: { [voice: number]: string[] };
+  selectedSampleIdx?: number;
+  selectedVoice?: number;
+  setFocusedStep: (step: FocusedStep) => void;
+  setSliceSteps: (
+    update: ((prev: SliceSteps) => SliceSteps) | SliceSteps,
+  ) => Promise<void> | void;
+  slicerDivision: SlicerDivision;
+  sliceSettings: Record<number, VoiceSliceSettings>;
+  sliceSteps: SliceSteps;
+  stepPattern: number[][];
+  toggleStep: (voiceIdx: number, stepIdx: number) => void;
+  updateSliceSettings: (
+    voiceNumber: number,
+    update: Partial<VoiceSliceSettings>,
+  ) => void;
+  voiceVolumes: Record<number, number>;
+}
+
+/** Index of the slot the slice strip shows for a voice, or null if empty. */
+export function displayedSlotIndex(
+  voiceSamples: string[] | undefined,
+  voiceNumber: number,
+  selectedVoice?: number,
+  selectedSampleIdx?: number,
+): null | number {
+  if (!voiceSamples?.length) return null;
+  if (
+    selectedVoice === voiceNumber &&
+    selectedSampleIdx != null &&
+    voiceSamples[selectedSampleIdx]
+  ) {
+    return selectedSampleIdx;
+  }
+  const first = voiceSamples.findIndex(Boolean);
+  return first === -1 ? null : first;
+}
+
+/**
+ * State and actions for the sequencer slicer: which voice the slice strip
+ * edits, the selected step, per-voice slicer settings, slice edits, rolls
+ * with single-level undo, and slicer keyboard shortcuts.
+ */
+export function useSlicerEditor(params: UseSlicerEditorParams) {
+  const {
+    focusedStep,
+    isSeqPlaying,
+    kitName,
+    onPlaySample,
+    samples,
+    selectedSampleIdx,
+    selectedVoice,
+    setFocusedStep,
+    setSliceSteps,
+    slicerDivision,
+    sliceSettings,
+    sliceSteps,
+    stepPattern,
+    toggleStep,
+    updateSliceSettings,
+    voiceVolumes,
+  } = params;
+
+  const [editingVoiceState, setEditingVoice] = React.useState<null | number>(
+    null,
+  );
+  const [selection, setSelection] = React.useState<FocusedStep | null>(null);
+  const [hoverStep, setHoverStep] = React.useState<FocusedStep | null>(null);
+  const [playingSlice, setPlayingSlice] = React.useState<null | PlayingSlice>(
+    null,
+  );
+  const [rolledSteps, setRolledSteps] = React.useState<null | RolledSteps>(
+    null,
+  );
+  const [rollUndo, setRollUndo] = React.useState<{
+    row: (null | SliceStep)[];
+    voiceIdx: number;
+  } | null>(null);
+  const [notice, setNotice] = React.useState<null | string>(null);
+
+  // Forget selection, undo and flashes when switching kits
+  React.useEffect(() => {
+    setEditingVoice(null);
+    setSelection(null);
+    setRollUndo(null);
+    setRolledSteps(null);
+    setPlayingSlice(null);
+    setNotice(null);
+  }, [kitName]);
+
+  React.useEffect(() => {
+    if (!isSeqPlaying) setPlayingSlice(null);
+  }, [isSeqPlaying]);
+
+  const sliceVoices = React.useMemo(
+    () =>
+      Object.entries(sliceSettings)
+        .filter(([, s]) => s.enabled)
+        .map(([v]) => Number(v))
+        .sort((a, b) => a - b),
+    [sliceSettings],
+  );
+
+  // The voice the slice strip edits: the last one used, else the first sliced
+  const editingVoice =
+    editingVoiceState != null && sliceSettings[editingVoiceState]?.enabled
+      ? editingVoiceState
+      : (sliceVoices[0] ?? null);
+
+  const isSliceVoice = React.useCallback(
+    (voiceNumber: number) => sliceSettings[voiceNumber]?.enabled ?? false,
+    [sliceSettings],
+  );
+
+  // Keyboard focus on a slice row selects that step
+  const prevFocusRef = React.useRef(focusedStep);
+  React.useEffect(() => {
+    if (prevFocusRef.current === focusedStep) return;
+    prevFocusRef.current = focusedStep;
+    const voiceNumber = focusedStep.voice + 1;
+    if (isSliceVoice(voiceNumber)) {
+      setSelection(focusedStep);
+      setEditingVoice(voiceNumber);
+    }
+  }, [focusedStep, isSliceVoice]);
+
+  const selectedStep =
+    selection && editingVoice != null && selection.voice === editingVoice - 1
+      ? selection.step
+      : null;
+
+  const handleSliceToggle = React.useCallback(
+    (voiceNumber: number) => {
+      const enabled = !isSliceVoice(voiceNumber);
+      updateSliceSettings(voiceNumber, { enabled });
+      if (enabled) {
+        setEditingVoice(voiceNumber);
+        setNotice(null);
+      }
+    },
+    [isSliceVoice, updateSliceSettings],
+  );
+
+  /** Apply an edit to one step's slice (materialising its default first). */
+  const updateSliceStep = React.useCallback(
+    (
+      voiceIdx: number,
+      stepIdx: number,
+      edit: (step: SliceStep) => SliceStep,
+    ) => {
+      setRollUndo(null);
+      void setSliceSteps((prev) =>
+        replaceRow(
+          prev,
+          voiceIdx,
+          prev[voiceIdx].map((cell, s) =>
+            s === stepIdx
+              ? edit(cell ?? sequentialSliceStep(stepIdx, slicerDivision))
+              : cell,
+          ),
+        ),
+      );
+    },
+    [setSliceSteps, slicerDivision],
+  );
+
+  /** Slice rows: click selects an active step; clicking it again turns it off. */
+  const handleStepClick = React.useCallback(
+    (voiceIdx: number, stepIdx: number) => {
+      const voiceNumber = voiceIdx + 1;
+      const wasSelected =
+        selection?.voice === voiceIdx && selection?.step === stepIdx;
+      setFocusedStep({ step: stepIdx, voice: voiceIdx });
+      if (!isSliceVoice(voiceNumber)) {
+        toggleStep(voiceIdx, stepIdx);
+        return;
+      }
+      setEditingVoice(voiceNumber);
+      setSelection({ step: stepIdx, voice: voiceIdx });
+      setRollUndo(null);
+      const isOn = (stepPattern[voiceIdx]?.[stepIdx] ?? 0) > 0;
+      if (!isOn || wasSelected) {
+        toggleStep(voiceIdx, stepIdx);
+      }
+    },
+    [isSliceVoice, selection, setFocusedStep, stepPattern, toggleStep],
+  );
+
+  const handleStepWheel = React.useCallback(
+    (voiceIdx: number, stepIdx: number, delta: number, length: boolean) => {
+      if (!isSliceVoice(voiceIdx + 1)) return;
+      if ((stepPattern[voiceIdx]?.[stepIdx] ?? 0) === 0) return;
+      updateSliceStep(voiceIdx, stepIdx, (step) =>
+        length
+          ? nudgeLengthSlices(step, delta, slicerDivision)
+          : nudgeStartSlice(step, delta, slicerDivision),
+      );
+    },
+    [isSliceVoice, slicerDivision, stepPattern, updateSliceStep],
+  );
+
+  const handleSliceTriggered = React.useCallback(
+    (voiceNumber: number, view: SliceView) => {
+      setPlayingSlice((prev) => ({
+        id: (prev?.id ?? 0) + 1,
+        view,
+        voiceNumber,
+      }));
+    },
+    [],
+  );
+
+  // The sample the strip shows for the editing voice
+  const displayedSlot =
+    editingVoice == null
+      ? null
+      : displayedSlotIndex(
+          samples[editingVoice],
+          editingVoice,
+          selectedVoice,
+          selectedSampleIdx,
+        );
+  const displayedSample =
+    editingVoice != null && displayedSlot != null
+      ? samples[editingVoice][displayedSlot]
+      : null;
+
+  const auditionSlice = React.useCallback(
+    (startSlice: number, lengthSlices: number) => {
+      if (isSeqPlaying || editingVoice == null || !displayedSample) return;
+      onPlaySample(
+        editingVoice,
+        displayedSample,
+        voiceVolumes[editingVoice] ?? 100,
+        { region: sliceRegion({ lengthSlices, startSlice }, slicerDivision) },
+      );
+    },
+    [
+      displayedSample,
+      editingVoice,
+      isSeqPlaying,
+      onPlaySample,
+      slicerDivision,
+      voiceVolumes,
+    ],
+  );
+
+  /** Point the selected step at a slice span (turning the step on if needed). */
+  const assignSlice = React.useCallback(
+    (startSlice: number, lengthSlices: number) => {
+      auditionSlice(startSlice, lengthSlices);
+      if (editingVoice == null || selectedStep == null) return;
+      const voiceIdx = editingVoice - 1;
+      updateSliceStep(voiceIdx, selectedStep, (step) =>
+        makeSliceStep(startSlice, lengthSlices, slicerDivision, {
+          locked: step.locked,
+        }),
+      );
+      if ((stepPattern[voiceIdx]?.[selectedStep] ?? 0) === 0) {
+        toggleStep(voiceIdx, selectedStep);
+      }
+    },
+    [
+      auditionSlice,
+      editingVoice,
+      selectedStep,
+      slicerDivision,
+      stepPattern,
+      toggleStep,
+      updateSliceStep,
+    ],
+  );
+
+  const roll = React.useCallback(
+    (voiceNumber: number) => {
+      const voiceIdx = voiceNumber - 1;
+      const settings = sliceSettings[voiceNumber];
+      const row = sliceSteps[voiceIdx];
+      if (!settings || !row) return;
+      const active = (stepPattern[voiceIdx] ?? []).map((v) => v > 0);
+      const result = rollSliceRow(row, active, {
+        amount: settings.rollAmount,
+        division: slicerDivision,
+        maxLength: settings.maxLength,
+        varyLength: settings.varyLength,
+      });
+      if (result.rolled.length === 0) {
+        setNotice(
+          "Nothing to roll: turn on some steps, or unlock them, in this row.",
+        );
+        return;
+      }
+      setNotice(null);
+      setRollUndo({ row, voiceIdx });
+      setRolledSteps((prev) => ({
+        id: (prev?.id ?? 0) + 1,
+        steps: result.rolled,
+        voiceIdx,
+      }));
+      void setSliceSteps((prev) => replaceRow(prev, voiceIdx, result.row));
+    },
+    [setSliceSteps, sliceSettings, slicerDivision, sliceSteps, stepPattern],
+  );
+
+  const undoRoll = React.useCallback(() => {
+    if (!rollUndo) return;
+    const { row, voiceIdx } = rollUndo;
+    setRollUndo(null);
+    setRolledSteps(null);
+    void setSliceSteps((prev) => replaceRow(prev, voiceIdx, row));
+  }, [rollUndo, setSliceSteps]);
+
+  // Clear the rolled-step flash shortly after it appears
+  React.useEffect(() => {
+    if (!rolledSteps) return;
+    const timer = setTimeout(() => setRolledSteps(null), 600);
+    return () => clearTimeout(timer);
+  }, [rolledSteps]);
+
+  /** Slicer keyboard shortcuts on the focused step; true when handled. */
+  const handleGridKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>, focus: FocusedStep): boolean => {
+      const voiceNumber = focus.voice + 1;
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
+        if (!rollUndo) return false;
+        e.stopPropagation(); // keep the sample undo from also firing
+        undoRoll();
+        return true;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return false;
+      if (!isSliceVoice(voiceNumber)) return false;
+
+      const { step, voice } = focus;
+      const isOn = (stepPattern[voice]?.[step] ?? 0) > 0;
+      switch (e.key) {
+        case "[":
+        case "]":
+          if (isOn) {
+            updateSliceStep(voice, step, (s) =>
+              nudgeStartSlice(s, e.key === "]" ? 1 : -1, slicerDivision),
+            );
+          }
+          return true;
+        case "{":
+        case "}":
+          if (isOn) {
+            updateSliceStep(voice, step, (s) =>
+              nudgeLengthSlices(s, e.key === "}" ? 1 : -1, slicerDivision),
+            );
+          }
+          return true;
+        case "d":
+        case "D":
+          roll(voiceNumber);
+          return true;
+        case "l":
+        case "L":
+          updateSliceStep(voice, step, (s) => ({ ...s, locked: !s.locked }));
+          return true;
+        case "r":
+        case "R":
+          updateSliceStep(voice, step, (s) => ({ ...s, random: !s.random }));
+          return true;
+        default:
+          return false;
+      }
+    },
+    [
+      isSliceVoice,
+      roll,
+      rollUndo,
+      slicerDivision,
+      stepPattern,
+      undoRoll,
+      updateSliceStep,
+    ],
+  );
+
+  /** Slice views of every step, with defaults filled in, for display. */
+  const sliceViews = React.useMemo(
+    () =>
+      sliceSteps.map((row) =>
+        row.map((cell, s) =>
+          toSliceView(
+            cell ?? sequentialSliceStep(s, slicerDivision),
+            slicerDivision,
+          ),
+        ),
+      ),
+    [sliceSteps, slicerDivision],
+  );
+
+  return {
+    assignSlice,
+    auditionSlice,
+    canUndoRoll: rollUndo != null,
+    displayedSample,
+    displayedSlot,
+    editingVoice,
+    handleGridKeyDown,
+    handleSliceSettingsChange: updateSliceSettings,
+    handleSliceToggle,
+    handleSliceTriggered,
+    handleStepClick,
+    handleStepWheel,
+    hoverStep,
+    notice,
+    playingSlice,
+    roll,
+    rolledSteps,
+    selectedStep,
+    selection,
+    setEditingVoice,
+    setHoverStep,
+    sliceViews,
+    sliceVoices,
+    undoRoll,
+    updateSliceStep,
+  };
+}
+
+/**
+ * Per-voice slicer settings, initialised from voice data like volume and
+ * sample mode, and persisted over IPC when changed.
+ */
+export function useVoiceSliceSettings(
+  kitName: string,
+  voices: SlicerVoiceData[] | undefined,
+  onVoiceSettingChanged?: () => void,
+) {
+  const [sliceSettings, setSliceSettings] = React.useState(
+    defaultSettingsRecord,
+  );
+  React.useEffect(() => {
+    if (!voices?.length) return;
+    setSliceSettings((prev) => {
+      const next = { ...prev };
+      for (const voice of voices) {
+        next[voice.voice_number] = settingsFromVoice(voice);
+      }
+      return next;
+    });
+  }, [voices]);
+
+  const updateSliceSettings = React.useCallback(
+    (voiceNumber: number, update: Partial<VoiceSliceSettings>) => {
+      setSliceSettings((prev) => ({
+        ...prev,
+        [voiceNumber]: { ...prev[voiceNumber], ...update },
+      }));
+      void globalThis.electronAPI?.updateVoiceSliceSettings?.(
+        kitName,
+        voiceNumber,
+        update,
+      );
+      onVoiceSettingChanged?.();
+    },
+    [kitName, onVoiceSettingChanged],
+  );
+
+  return { sliceSettings, updateSliceSettings };
+}
+
+function defaultSettingsRecord(): Record<number, VoiceSliceSettings> {
+  const record: Record<number, VoiceSliceSettings> = {};
+  for (let v = 1; v <= NUM_VOICES; v++) {
+    record[v] = { ...DEFAULT_VOICE_SLICE_SETTINGS };
+  }
+  return record;
+}
+
+function replaceRow(
+  grid: SliceSteps,
+  voiceIdx: number,
+  row: (null | SliceStep)[],
+): SliceSteps {
+  return grid.map((r, v) => (v === voiceIdx ? row : r));
+}
+
+function settingsFromVoice(voice: SlicerVoiceData): VoiceSliceSettings {
+  return {
+    enabled: voice.slice_enabled ?? DEFAULT_VOICE_SLICE_SETTINGS.enabled,
+    maxLength: voice.slice_max_length ?? DEFAULT_VOICE_SLICE_SETTINGS.maxLength,
+    rollAmount:
+      voice.slice_roll_amount ?? DEFAULT_VOICE_SLICE_SETTINGS.rollAmount,
+    varyLength:
+      voice.slice_vary_length ?? DEFAULT_VOICE_SLICE_SETTINGS.varyLength,
+  };
+}

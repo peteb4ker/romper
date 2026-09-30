@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
+import type { PlayOptions } from "./kitTypes";
+
 import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
+
+// Short gain ramp at slice edges and on choke, so slices don't click
+const ANTI_CLICK_SECONDS = 0.002;
 
 interface SampleWaveformProps {
   gainDb?: number; // Per-sample gain trim in dB (-24 to +12, 0 = unity)
@@ -9,6 +14,7 @@ interface SampleWaveformProps {
   onError?: (error: string) => void;
   onPlayingChange?: (playing: boolean) => void;
 
+  playOptions?: PlayOptions; // region and start time (sequencer); whole sample, now, if unset
   playTrigger: number; // increment to trigger play externally
   slotNumber: number;
   stopTrigger?: number; // increment to trigger stop externally
@@ -70,6 +76,21 @@ function resolveWaveformColor(voiceColor?: string): string {
   return style.getPropertyValue("--accent-primary").trim() || "#2889be";
 }
 
+/**
+ * Convert a performance.now() timestamp to a context time (now if unset or
+ * past). getOutputTimestamp() pairs the two clocks precisely; currentTime alone
+ * can advance in coarse (~10 ms) chunks, which would jitter scheduled starts.
+ */
+function toContextTime(ctx: BaseAudioContext, at?: number): number {
+  if (at == null) return ctx.currentTime;
+  const stamp = (ctx as AudioContext).getOutputTimestamp?.();
+  const mapped =
+    stamp?.contextTime != null && stamp.performanceTime
+      ? stamp.contextTime + (at - stamp.performanceTime) / 1000
+      : ctx.currentTime + (at - performance.now()) / 1000;
+  return Math.max(ctx.currentTime, mapped);
+}
+
 // Trace a canvas path through an array of y-values
 function tracePath(ctx: CanvasRenderingContext2D, values: Float32Array): void {
   for (let i = 0; i < values.length; i++) {
@@ -83,6 +104,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   kitName,
   onError,
   onPlayingChange,
+  playOptions,
   playTrigger,
   slotNumber,
   stopTrigger,
@@ -97,6 +119,8 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
+  // Per-source envelope used for region (slice) playback anti-click fades
+  const envelopeRef = useRef<GainNode | null>(null);
   const animationRef = useRef<null | number>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
@@ -107,6 +131,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   // Track stopTrigger value at the time of last play to prevent a batched
   // stop from killing a freshly started source in the same render cycle.
   const stopTriggerAtPlayRef = useRef(0);
+  // Latest play options, read when a choke arrives
+  const playOptionsRef = useRef(playOptions);
+  playOptionsRef.current = playOptions;
 
   // Load audio file and decode
   useEffect(() => {
@@ -215,38 +242,72 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     [voiceColor],
   );
 
-  // Stop playback logic
-  const stopPlayback = useCallback(() => {
-    if (sourceRef.current) {
-      try {
+  // Stop playback logic. `stopAt` (context time) lets a choke land exactly
+  // when the next scheduled sound starts, instead of leaving a gap before it.
+  const stopPlayback = useCallback(
+    (stopAt?: number) => {
+      const source = sourceRef.current;
+      const envelope = envelopeRef.current;
+      const ctx = audioCtxRef.current;
+      if (source) {
         // Clear onended BEFORE stop() to prevent the stale callback from
         // firing asynchronously and corrupting state for a newly started source.
-        sourceRef.current.onended = null;
-        sourceRef.current.stop();
-      } catch {
-        // Ignore stop errors
+        source.onended = null;
+        const t = ctx ? Math.max(ctx.currentTime, stopAt ?? 0) : 0;
+        if (envelope && ctx) {
+          // Slice playback: fade out quickly instead of cutting, to avoid clicks
+          try {
+            if (envelope.gain.cancelAndHoldAtTime) {
+              envelope.gain.cancelAndHoldAtTime(t);
+            } else {
+              envelope.gain.cancelScheduledValues(t);
+              envelope.gain.setValueAtTime(envelope.gain.value, t);
+            }
+            envelope.gain.linearRampToValueAtTime(0, t + ANTI_CLICK_SECONDS);
+            source.onended = () => {
+              source.disconnect();
+              envelope.disconnect();
+            };
+            source.stop(t + ANTI_CLICK_SECONDS);
+          } catch {
+            source.disconnect();
+            envelope.disconnect();
+          }
+        } else {
+          try {
+            source.stop(t);
+          } catch {
+            // Ignore stop errors
+          }
+          source.disconnect();
+        }
+        sourceRef.current = null;
+        envelopeRef.current = null;
       }
-      sourceRef.current.disconnect();
-      sourceRef.current = null;
-    }
-    setIsPlaying(false);
-    setPlayhead(0);
-    clearVoiceLevel(voiceNumber);
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-  }, [voiceNumber]);
+      setIsPlaying(false);
+      setPlayhead(0);
+      clearVoiceLevel(voiceNumber);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    },
+    [voiceNumber],
+  );
 
   // Play sample and animate playhead (triggered by playTrigger prop)
   useEffect(() => {
     if (!audioBuffer || !audioCtxRef.current) return;
     if (playTrigger === 0) return; // don't auto-play on mount
-    stopPlayback(); // Stop any previous playback (clears stale onended)
+    const ctx = audioCtxRef.current;
+    // Sequencer triggers are scheduled slightly ahead on a steady timeline
+    // (performance.now() ms); convert to this context's clock
+    const startTime = toContextTime(ctx, playOptions?.startAt);
+    // Stop any previous playback (clears stale onended) as this one starts
+    stopPlayback(startTime);
     // Snapshot current stopTrigger so the stop effect won't kill this
     // freshly started source if both triggers changed in the same batch.
     stopTriggerAtPlayRef.current = stopTrigger ?? 0;
-    const ctx = audioCtxRef.current;
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
     // Route through GainNode for volume control
@@ -258,11 +319,36 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     const voiceLinear = volume == null ? 1 : volume / 100;
     const voiceGain = voiceLinear * voiceLinear;
     const sampleGain = Math.pow(10, (gainDb ?? 0) / 20); // dB to linear
-    gainNodeRef.current.gain.setValueAtTime(
-      voiceGain * sampleGain,
-      ctx.currentTime,
-    );
-    source.connect(gainNodeRef.current);
+    gainNodeRef.current.gain.setValueAtTime(voiceGain * sampleGain, startTime);
+
+    // Region (slice) playback: offset + duration, with an anti-click envelope
+    const playRegion = playOptions?.region;
+    const offset = playRegion
+      ? Math.min(Math.max(playRegion.start, 0), 1) * audioBuffer.duration
+      : 0;
+    const playLength = playRegion
+      ? Math.max(
+          0,
+          Math.min(
+            playRegion.length * audioBuffer.duration,
+            audioBuffer.duration - offset,
+          ),
+        )
+      : audioBuffer.duration;
+    if (playRegion) {
+      const envelope = ctx.createGain();
+      const now = startTime;
+      const fade = Math.min(ANTI_CLICK_SECONDS, playLength / 4);
+      envelope.gain.setValueAtTime(0, now);
+      envelope.gain.linearRampToValueAtTime(1, now + fade);
+      envelope.gain.setValueAtTime(1, now + playLength - fade);
+      envelope.gain.linearRampToValueAtTime(0, now + playLength);
+      source.connect(envelope);
+      envelope.connect(gainNodeRef.current);
+      envelopeRef.current = envelope;
+    } else {
+      source.connect(gainNodeRef.current);
+    }
 
     // Set up AnalyserNodes for VU meter
     const isStereo = audioBuffer.numberOfChannels >= 2;
@@ -287,14 +373,19 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       analyserDataRRef.current = null;
     }
 
-    source.start();
+    if (playRegion) {
+      source.start(startTime, offset, playLength);
+    } else if (startTime > ctx.currentTime) {
+      source.start(startTime);
+    } else {
+      source.start();
+    }
     sourceRef.current = source;
     setIsPlaying(true);
-    const startTime = ctx.currentTime;
     function animate() {
       if (!audioBuffer) return;
-      const elapsed = ctx.currentTime - startTime;
-      setPlayhead(Math.min(elapsed / audioBuffer.duration, 1));
+      const elapsed = Math.max(0, ctx.currentTime - startTime);
+      setPlayhead(Math.min((offset + elapsed) / audioBuffer.duration, 1));
 
       // Report RMS levels for VU meter
       const leftRms =
@@ -311,7 +402,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         right: rightRms,
       });
 
-      if (elapsed < audioBuffer.duration) {
+      if (elapsed < playLength) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
         setIsPlaying(false);
@@ -335,7 +426,11 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     // If the play effect just ran in this render cycle, it already recorded
     // the current stopTrigger value. Skip to avoid killing the new source.
     if (stopTrigger === stopTriggerAtPlayRef.current) return;
-    stopPlayback();
+    // A choke from a scheduled sequencer trigger carries its start time
+    const ctx = audioCtxRef.current;
+    stopPlayback(
+      ctx ? toContextTime(ctx, playOptionsRef.current?.stopAt) : undefined,
+    );
   }, [stopTrigger, isPlaying, stopPlayback]);
 
   // Notify parent about playing state changes

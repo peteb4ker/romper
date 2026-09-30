@@ -1,6 +1,6 @@
 import React from "react";
 
-import type { SampleData } from "./kitTypes";
+import type { PlayOptions, SampleData } from "./kitTypes";
 
 import { useSampleActions } from "./hooks/sample-management/useSampleActions";
 import { useSlotRendering } from "./hooks/sample-management/useSlotRendering";
@@ -66,6 +66,7 @@ interface KitVoicePanelProps {
     sample: string,
     playing: boolean,
   ) => void;
+  playOptions?: { [key: string]: PlayOptions | undefined };
   playTriggers: { [key: string]: number };
   playVolumes?: { [key: string]: number };
   sampleMetadata?: { [filename: string]: SampleData }; // Optional metadata lookup
@@ -122,6 +123,7 @@ const KitVoicePanel: React.FC<
   onStop,
   onVoiceUnlink,
   onWaveformPlayingChange,
+  playOptions,
   playTriggers,
   playVolumes,
   sampleMetadata,
@@ -205,6 +207,7 @@ const KitVoicePanel: React.FC<
     onStop,
     onVoiceUnlink,
     onWaveformPlayingChange,
+    playOptions,
     playTriggers,
     playVolumes,
     sampleActionsHook: sampleActions,

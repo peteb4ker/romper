@@ -74,6 +74,10 @@ exist, but see RE-09 below.
   `is_favorite`, and `modified_since_sync`.
 - Each kit stores its step-sequencer pattern (`step_pattern`), A:B trigger
   conditions (`trigger_conditions`), both JSON, and `bpm`.
+- The sequencer slicer adds per-step slice data (`slice_steps`, JSON, in
+  ticks of 384 per sample so the kit-wide `slicer_division` can change
+  without losing data) and per-voice `slice_*` settings. See
+  [step-sequencer-slicer.md](step-sequencer-slicer.md).
 - Undo/redo is renderer state (`hooks/shared/useUndoRedoState.ts`); it is not
   persisted.
 - User-facing messages go through `MessageDisplayContext` /
@@ -88,7 +92,16 @@ exist, but see RE-09 below.
   a `GainNode`. Other channels (`readFile`, `getAudioMetadata`) still take
   raw paths and aren't scoped (RE-03).
 - Each voice picks a sample by `sample_mode`: `first`, `random`, or
-  `round-robin`.
+  `round-robin`. A voice in slice mode then plays only a region of that
+  sample (`PlayOptions.region`, offset + duration with ~2 ms anti-click
+  fades).
+- Sequencer timing: the step worker times each step from the start (no
+  `setInterval` drift) and sends its ideal time. Every trigger is scheduled
+  `SCHEDULE_AHEAD_MS` (80 ms) after that (`PlayOptions.startAt`), mapped to
+  each `AudioContext` with `getOutputTimestamp()`, so voices land exactly on
+  the grid regardless of React latency. Chokes and retriggers stop the old
+  sound at the new one's start (`stopAt`), so scheduling never opens a gap.
+  Clicked previews play immediately.
 
 ## Stereo
 

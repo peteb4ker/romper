@@ -4,10 +4,11 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { createRomperDbFile } from "../../utils/dbUtilities.js";
-import { addKit, getKit } from "../kitCrudOperations.js";
+import { addKit, getKit, updateKit } from "../kitCrudOperations.js";
 import {
   updateVoiceAlias,
   updateVoiceSampleMode,
+  updateVoiceSliceSettings,
   updateVoiceVolume,
 } from "../voiceCrudOperations.js";
 
@@ -163,6 +164,71 @@ describe("Voice CRUD Operations - Integration Tests", () => {
       const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
       expect(voice1!.voice_volume).toBe(60); // Volume preserved
       expect(voice1!.sample_mode).toBe("random");
+    });
+  });
+
+  describe("updateVoiceSliceSettings", () => {
+    test("new voices default to slice mode off with default roll settings", () => {
+      const kit = getKit(dbDir, testKitName);
+      const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
+      expect(voice1!.slice_enabled).toBe(false);
+      expect(voice1!.slice_roll_amount).toBe(100);
+      expect(voice1!.slice_vary_length).toBe(false);
+      expect(voice1!.slice_max_length).toBe(2);
+    });
+
+    test("updates only the provided fields", () => {
+      updateVoiceSliceSettings(dbDir, testKitName, 2, { enabled: true });
+      const result = updateVoiceSliceSettings(dbDir, testKitName, 2, {
+        maxLength: 4,
+        rollAmount: 25,
+        varyLength: true,
+      });
+      expect(result.success).toBe(true);
+
+      const kit = getKit(dbDir, testKitName);
+      const voice2 = kit.data!.voices!.find((v) => v.voice_number === 2);
+      expect(voice2!.slice_enabled).toBe(true);
+      expect(voice2!.slice_roll_amount).toBe(25);
+      expect(voice2!.slice_vary_length).toBe(true);
+      expect(voice2!.slice_max_length).toBe(4);
+
+      const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
+      expect(voice1!.slice_enabled).toBe(false);
+    });
+
+    test("an empty update succeeds without changing anything", () => {
+      const result = updateVoiceSliceSettings(dbDir, testKitName, 1, {});
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("kit slicer fields", () => {
+    test("default to /16 and no slice data", () => {
+      const kit = getKit(dbDir, testKitName);
+      expect(kit.data!.slicer_division).toBe(16);
+      expect(kit.data!.slice_steps).toBeNull();
+    });
+
+    test("round-trip slicer division and slice steps", () => {
+      const sliceSteps = Array.from({ length: 4 }, () =>
+        new Array(16).fill(null),
+      );
+      sliceSteps[0][2] = { length: 24, locked: true, random: false, start: 96 };
+      updateKit(dbDir, testKitName, {
+        slice_steps: sliceSteps,
+        slicer_division: 32,
+      });
+
+      const kit = getKit(dbDir, testKitName);
+      expect(kit.data!.slicer_division).toBe(32);
+      expect(kit.data!.slice_steps![0][2]).toEqual({
+        length: 24,
+        locked: true,
+        random: false,
+        start: 96,
+      });
+      expect(kit.data!.slice_steps![1][0]).toBeNull();
     });
   });
 });

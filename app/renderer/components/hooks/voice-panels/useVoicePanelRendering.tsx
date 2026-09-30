@@ -1,6 +1,6 @@
 import React from "react";
 
-import type { SampleData } from "../../kitTypes";
+import type { PlayOptions, SampleData } from "../../kitTypes";
 
 import { useVoicePanelButtons } from "./useVoicePanelButtons";
 import { type DragHandlers, useVoicePanelSlots } from "./useVoicePanelSlots";
@@ -41,6 +41,7 @@ export interface UseVoicePanelRenderingOptions {
     sample: string,
     playing: boolean,
   ) => void;
+  playOptions?: { [key: string]: PlayOptions | undefined };
   playTriggers: { [key: string]: number };
   playVolumes?: { [key: string]: number };
   sampleActionsHook: {
@@ -116,6 +117,7 @@ export function useVoicePanelRendering({
   onStop,
   onVoiceUnlink,
   onWaveformPlayingChange,
+  playOptions,
   playTriggers,
   playVolumes,
   sampleActionsHook,
@@ -148,6 +150,7 @@ export function useVoicePanelRendering({
     onGainChange,
     onSampleSelect,
     onWaveformPlayingChange,
+    playOptions,
     playTriggers,
     playVolumes,
     renderDeleteButton: buttons.renderDeleteButton,

@@ -1,7 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useKitStepSequencerLogic } from "../useKitStepSequencerLogic";
+import {
+  SCHEDULE_AHEAD_MS,
+  useKitStepSequencerLogic,
+} from "../useKitStepSequencerLogic";
 
 // Mock the worker
 const mockWorker = {
@@ -43,6 +46,9 @@ describe("useKitStepSequencerLogic", () => {
     // Reset console methods
     vi.spyOn(console, "log").mockImplementation(() => {});
   });
+
+  // Sequencer triggers carry a scheduled start time
+  const scheduled = { startAt: expect.any(Number) };
 
   const getDefaultParams = () => ({
     bpm: 120,
@@ -192,7 +198,12 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
     });
 
     it("should not trigger samples when not playing", () => {
@@ -294,8 +305,18 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
-      expect(mockOnPlaySample).toHaveBeenCalledWith(2, "snare.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        2,
+        "snare.wav",
+        100,
+        scheduled,
+      );
       expect(mockOnPlaySample).toHaveBeenCalledTimes(2);
     });
   });
@@ -319,7 +340,12 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
     });
 
     it("should use random sample in 'random' mode", () => {
@@ -344,7 +370,12 @@ describe("useKitStepSequencerLogic", () => {
       });
 
       // With Math.random() returning 0.9, floor(0.9 * 2) = 1, so second sample
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick2.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick2.wav",
+        100,
+        scheduled,
+      );
 
       mathRandomSpy.mockRestore();
     });
@@ -368,7 +399,12 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
 
       // Second trigger — should play kick2.wav (index 1)
       act(() => {
@@ -377,7 +413,12 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick2.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick2.wav",
+        100,
+        scheduled,
+      );
 
       // Third trigger — should wrap back to kick.wav (index 0)
       act(() => {
@@ -386,7 +427,13 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenNthCalledWith(3, 1, "kick.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenNthCalledWith(
+        3,
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
     });
 
     it("should pass custom voiceVolumes to onPlaySample", () => {
@@ -408,7 +455,12 @@ describe("useKitStepSequencerLogic", () => {
       });
 
       // Voice 1 should be called with volume 75
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 75);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        75,
+        scheduled,
+      );
     });
 
     it("should use default volume 100 when voiceVolumes not specified for a voice", () => {
@@ -431,7 +483,12 @@ describe("useKitStepSequencerLogic", () => {
       });
 
       // Voice 2 should use default volume 100
-      expect(mockOnPlaySample).toHaveBeenCalledWith(2, "snare.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        2,
+        "snare.wav",
+        100,
+        scheduled,
+      );
     });
 
     it("should default to first mode when no sampleModes provided", () => {
@@ -450,7 +507,12 @@ describe("useKitStepSequencerLogic", () => {
       });
 
       // Should default to first sample
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
     });
   });
 
@@ -900,7 +962,12 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
 
       // Test step 3 (velocity 1)
       act(() => {
@@ -909,7 +976,12 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
     });
   });
 
@@ -955,7 +1027,12 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(2, "snare.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        2,
+        "snare.wav",
+        100,
+        scheduled,
+      );
     });
 
     it("should not skip voices when voiceMutes is empty", () => {
@@ -976,7 +1053,12 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
     });
   });
 
@@ -1055,7 +1137,12 @@ describe("useKitStepSequencerLogic", () => {
         } as MessageEvent);
       });
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
     });
 
     it("should skip linked secondary voice in keyboard navigation down", () => {
@@ -1100,6 +1187,165 @@ describe("useKitStepSequencerLogic", () => {
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 });
+    });
+  });
+
+  describe("Slice mode", () => {
+    const sliceOn = {
+      1: { enabled: true, maxLength: 2, rollAmount: 100, varyLength: false },
+    };
+
+    function playStep(
+      result: { current: ReturnType<typeof useKitStepSequencerLogic> },
+      step: number,
+    ) {
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: step }, type: "STEP" },
+        } as MessageEvent);
+      });
+    }
+
+    it("plays the step's stored slice as a region of the sample", () => {
+      const sliceSteps = Array.from({ length: 4 }, () =>
+        new Array(16).fill(null),
+      );
+      // slice 5 of 16 (start tick 96), 2 slices long (48 ticks)
+      sliceSteps[0][4] = {
+        length: 48,
+        locked: false,
+        random: false,
+        start: 96,
+      };
+      const onSliceTriggered = vi.fn();
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          onSliceTriggered,
+          slicerDivision: 16,
+          sliceSettings: sliceOn,
+          sliceSteps,
+        }),
+      );
+
+      playStep(result, 4);
+
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100, {
+        region: { length: 2 / 16, start: 4 / 16 },
+        startAt: expect.any(Number),
+      });
+      expect(onSliceTriggered).toHaveBeenCalledWith(1, {
+        lengthSlices: 2,
+        startSlice: 4,
+      });
+    });
+
+    it("uses the sequential default when a step has no slice data", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          slicerDivision: 8,
+          sliceSettings: sliceOn,
+        }),
+      );
+
+      playStep(result, 8);
+
+      // step 9 of 16 wraps to slice 1 of 8
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100, {
+        region: { length: 1 / 8, start: 0 },
+        startAt: expect.any(Number),
+      });
+    });
+
+    it("plays whole samples for voices not in slice mode", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          sliceSettings: {
+            1: { ...sliceOn[1], enabled: false },
+          },
+        }),
+      );
+
+      playStep(result, 0);
+
+      expect(mockOnPlaySample).toHaveBeenCalledWith(
+        1,
+        "kick.wav",
+        100,
+        scheduled,
+      );
+    });
+  });
+
+  describe("Extra grid keys", () => {
+    it("lets the caller handle a key before the default handling", () => {
+      const onGridKeyDown = vi.fn(() => true);
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          onGridKeyDown,
+          sequencerOpen: true,
+        }),
+      );
+      const preventDefault = vi.fn();
+
+      act(() => {
+        result.current.handleStepGridKeyDown({
+          key: " ",
+          preventDefault,
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
+      });
+
+      expect(onGridKeyDown).toHaveBeenCalled();
+      expect(preventDefault).toHaveBeenCalled();
+      // Handled by the caller, so the step is not toggled
+      expect(mockSetStepPattern).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Scheduled timing", () => {
+    it("schedules each step ahead of its ideal time from the worker", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic(getDefaultParams()),
+      );
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+      mockOnPlaySample.mockClear();
+
+      const ideal = performance.now() + 500;
+      act(() => {
+        mockWorker.onmessage?.({
+          data: {
+            payload: {
+              at: performance.timeOrigin + ideal,
+              currentStep: 1,
+            },
+            type: "STEP",
+          },
+        } as MessageEvent);
+      });
+
+      const options = mockOnPlaySample.mock.calls[0][3];
+      expect(options.startAt).toBeCloseTo(ideal + SCHEDULE_AHEAD_MS, 3);
+    });
+
+    it("uses an exact, unrounded step length", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({ ...getDefaultParams(), bpm: 133 }),
+      );
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+      const start = mockWorker.postMessage.mock.calls.find(
+        ([msg]) => msg.type === "START",
+      )![0];
+      expect(start.payload.stepDuration).toBeCloseTo(60000 / (133 * 4), 6);
     });
   });
 });

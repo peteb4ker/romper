@@ -24,6 +24,22 @@ export interface KitSamplePlanSlot {
   voiceType?: string;
 }
 
+/** How the sequencer asks a sample to play. */
+export interface PlayOptions {
+  /** Part of the sample to play (sequencer slicer); whole sample if unset. */
+  region?: PlayRegion;
+  /** When to start, as a performance.now() timestamp; now if unset or past. */
+  startAt?: number;
+  /** Set on a choked sample: stop when the choking sound starts. */
+  stopAt?: number;
+}
+
+/** Part of a sample to play, as fractions of its length (sequencer slicer). */
+export interface PlayRegion {
+  length: number;
+  start: number;
+}
+
 export interface SampleData {
   [key: string]: unknown;
   filename: string;

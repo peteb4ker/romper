@@ -4,9 +4,10 @@ allowed-tools: Bash, Read
 ---
 
 Run from the main checkout (`/Users/pete/workspace/romper`, not a worktree).
-Worktrees live in `../romper-worktrees/` (from `npm run worktree:create`) and
-`.claude/worktrees/` (Claude Code sessions); a few may still be in the legacy
-`worktrees/`. `git worktree list` shows them all.
+Worktrees live in `../romper-worktrees/` (from `npm run worktree:create`),
+`../romper-worktrees/romper/` (desktop-app sessions), and `.claude/worktrees/`
+(desktop-app sessions before the location setting changed).
+`git worktree list` shows them all.
 
 1. `git checkout main && git pull --ff-only origin main && git fetch --prune origin`
 2. For each worktree in `git worktree list` (skip the main checkout and any

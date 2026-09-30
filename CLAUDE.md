@@ -19,7 +19,10 @@ Playwright (e2e).
   Run it when you touch `electron/main` or app startup; unit and integration
   tests can't see startup failures. The window stays hidden
   (`ROMPER_HEADLESS=true`, set in `playwright.config.ts`), so it's safe to run
-  while the user is working; `npm run test:e2e:headed` shows it.
+  while the user is working; `npm run test:e2e:headed` shows it. To rerun
+  one spec against an existing build, use
+  `npm run test:play -- tests/e2e/<file>`. It doesn't rebuild, so run
+  `npm run build` first after changing code.
 - `npm run dev` -- builds everything, then runs Vite + Electron. Long-running;
   start it with `run_in_background`. The `run-app` skill covers ports,
   restarts, and screenshotting the live app.
@@ -35,12 +38,12 @@ stage, and commit again (don't `--amend`).
 Work happens on a branch in a worktree, rooted at `origin/main`, and lands
 through a PR.
 
-- If the session is already in a worktree (for example
-  `.claude/worktrees/<name>` on a `claude/*` branch) and
+- If the session is already in a worktree on a `claude/*` branch and
   `git log --oneline origin/main..HEAD` shows only your own commits, work
-  there. Don't nest another worktree inside it. (The desktop app's
-  Settings → Claude Code → "Worktree location" can move these out of the
-  repo too; point it at `../romper-worktrees`.)
+  there. Don't nest another worktree inside it. Desktop-app sessions land in
+  `../romper-worktrees/romper/<name>`, or in `.claude/worktrees/<name>` if
+  the app's "Worktree location" setting is unset. Cloud sessions work in
+  their own clone, on the branch they were given.
 - Otherwise create one with `npm run worktree:create <task-name>`. It
   branches `feature/<task-name>` from `origin/main` in
   `../romper-worktrees/<task-name>` (beside the main checkout, not inside

@@ -25,11 +25,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build shared package
+      - name: Build main, preload and renderer
         run: npm run build

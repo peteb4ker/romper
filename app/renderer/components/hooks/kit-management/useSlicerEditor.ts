@@ -116,6 +116,9 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
   } = params;
 
   const [chosenVoice, setChosenVoice] = React.useState<null | number>(null);
+  // Whether the slice strip is showing. Separate from slice mode: closing
+  // the editor leaves every sliced voice playing its slices.
+  const [editorOpen, setEditorOpen] = React.useState(true);
   const [selection, setSelection] = React.useState<FocusedStep | null>(null);
   const [hoverStep, setHoverStep] = React.useState<FocusedStep | null>(null);
   const [playingSlice, setPlayingSlice] = React.useState<null | PlayingSlice>(
@@ -133,6 +136,7 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
   // Forget selection, undo and flashes when switching kits
   React.useEffect(() => {
     setChosenVoice(null);
+    setEditorOpen(true);
     setSelection(null);
     setRollUndo(null);
     setRolledSteps(null);
@@ -187,6 +191,7 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
       updateSliceSettings(voiceNumber, { enabled });
       if (enabled) {
         setChosenVoice(voiceNumber);
+        setEditorOpen(true);
         setNotice(null);
       }
     },
@@ -228,6 +233,7 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
         return;
       }
       setChosenVoice(voiceNumber);
+      setEditorOpen(true);
       setSelection({ step: stepIdx, voice: voiceIdx });
       setRollUndo(null);
       const isOn = (stepPattern[voiceIdx]?.[stepIdx] ?? 0) > 0;
@@ -442,13 +448,20 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
     [sliceSteps, slicerDivision],
   );
 
+  const closeEditor = React.useCallback(() => {
+    setEditorOpen(false);
+    setSelection(null);
+  }, []);
+
   return {
     assignSlice,
     auditionSlice,
     canUndoRoll: rollUndo != null,
+    closeEditor,
     displayedSample,
     displayedSlot,
     editingVoice,
+    editorOpen,
     handleGridKeyDown,
     handleSliceSettingsChange: updateSliceSettings,
     handleSliceToggle,

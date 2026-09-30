@@ -7,6 +7,7 @@ import { getAudioMetadata } from "../audioUtils.js";
 import {
   convertSampleToRampleFormat,
   convertToRampleDefault,
+  decodeWav,
   getRequiredConversionOptions,
 } from "../formatConverter.js";
 
@@ -62,6 +63,60 @@ describe("formatConverter integration tests", () => {
     }
   });
 
+  describe("decodeWav - pooled Buffer views", () => {
+    /**
+     * Copy `source` into a Buffer that is a view at `byteOffset` into a larger
+     * ArrayBuffer, mimicking what fs.readFileSync returns from the Buffer pool.
+     */
+    function toOffsetView(source: Buffer, byteOffset: number): Buffer {
+      const backing = new ArrayBuffer(byteOffset + source.length + 64);
+      const view = Buffer.from(backing, byteOffset, source.length);
+      source.copy(view);
+      return view;
+    }
+
+    it("should decode a Buffer that is an offset view into a larger ArrayBuffer", () => {
+      const numSamples = 441;
+      const left = generateSineWave(numSamples, 440);
+      const right = generateSineWave(numSamples, 880);
+      const encoded = wav.encode([left, right], {
+        bitDepth: 16,
+        float: false,
+        sampleRate: 44100,
+      });
+      // Offset larger than the file itself: node-wav alone returns undefined here
+      const pooled = toOffsetView(encoded, encoded.length + 8);
+      expect(wav.decode(pooled)).toBeUndefined();
+
+      const decoded = decodeWav(pooled);
+
+      expect(decoded.sampleRate).toBe(44100);
+      expect(decoded.channelData.length).toBe(2);
+      expect(decoded.channelData[0].length).toBe(numSamples);
+      for (let i = 0; i < 10; i++) {
+        expect(decoded.channelData[0][i]).toBeCloseTo(left[i], 3);
+        expect(decoded.channelData[1][i]).toBeCloseTo(right[i], 3);
+      }
+    });
+
+    it("should decode a Buffer that owns its ArrayBuffer (byteOffset 0)", () => {
+      const numSamples = 441;
+      const mono = generateSineWave(numSamples, 440);
+      const standalone = Buffer.from(
+        new Uint8Array(
+          wav.encode([mono], { bitDepth: 16, float: false, sampleRate: 44100 }),
+        ).buffer,
+      );
+      expect(standalone.byteOffset).toBe(0);
+
+      const decoded = decodeWav(standalone);
+
+      expect(decoded.channelData.length).toBe(1);
+      expect(decoded.channelData[0].length).toBe(numSamples);
+      expect(decoded.channelData[0][5]).toBeCloseTo(mono[5], 3);
+    });
+  });
+
   describe("convertSampleToRampleFormat - channel conversion", () => {
     it("should convert stereo WAV to mono when forceMonoConversion is set", async () => {
       const inputPath = path.join(TEST_DIR, "stereo-input.wav");
@@ -86,7 +141,7 @@ describe("formatConverter integration tests", () => {
       // Verify output file is valid WAV
       expect(fs.existsSync(outputPath)).toBe(true);
       const outputBuffer = fs.readFileSync(outputPath);
-      const decoded = wav.decode(outputBuffer);
+      const decoded = decodeWav(outputBuffer);
       expect(decoded.channelData.length).toBe(1);
       expect(decoded.sampleRate).toBe(44100);
 
@@ -119,7 +174,7 @@ describe("formatConverter integration tests", () => {
 
       // Verify output is valid stereo WAV
       const outputBuffer = fs.readFileSync(outputPath);
-      const decoded = wav.decode(outputBuffer);
+      const decoded = decodeWav(outputBuffer);
       expect(decoded.channelData.length).toBe(2);
 
       // Both channels should be identical to the input mono
@@ -148,7 +203,7 @@ describe("formatConverter integration tests", () => {
       expect(result.success).toBe(true);
       expect(result.data!.convertedFormat.channels).toBe(2);
 
-      const decoded = wav.decode(fs.readFileSync(outputPath));
+      const decoded = decodeWav(fs.readFileSync(outputPath));
       expect(decoded.channelData.length).toBe(2);
     });
   });
@@ -174,7 +229,7 @@ describe("formatConverter integration tests", () => {
 
       expect(result.success).toBe(true);
 
-      const decoded = wav.decode(fs.readFileSync(outputPath));
+      const decoded = decodeWav(fs.readFileSync(outputPath));
       const outputData = decoded.channelData[0];
 
       // Gain of +6dB should roughly double the amplitude
@@ -200,7 +255,7 @@ describe("formatConverter integration tests", () => {
 
       expect(result.success).toBe(true);
 
-      const decoded = wav.decode(fs.readFileSync(outputPath));
+      const decoded = decodeWav(fs.readFileSync(outputPath));
       const outputData = decoded.channelData[0];
 
       const linearGain = Math.pow(10, gainDb / 20);
@@ -224,7 +279,7 @@ describe("formatConverter integration tests", () => {
 
       expect(result.success).toBe(true);
 
-      const decoded = wav.decode(fs.readFileSync(outputPath));
+      const decoded = decodeWav(fs.readFileSync(outputPath));
       const outputData = decoded.channelData[0];
 
       // With 0dB gain, output should match input
@@ -255,7 +310,7 @@ describe("formatConverter integration tests", () => {
 
       expect(result.success).toBe(true);
 
-      const decoded = wav.decode(fs.readFileSync(outputPath));
+      const decoded = decodeWav(fs.readFileSync(outputPath));
       const outputData = decoded.channelData[0];
 
       // All samples should be clamped to 1.0 (or very close due to 16-bit quantization)
@@ -287,7 +342,7 @@ describe("formatConverter integration tests", () => {
       expect(result.data!.originalFormat.sampleRate).toBe(48000);
 
       // Verify output is at 44100 Hz
-      const decoded = wav.decode(fs.readFileSync(outputPath));
+      const decoded = decodeWav(fs.readFileSync(outputPath));
       expect(decoded.sampleRate).toBe(44100);
 
       // Resampled length should be floor(4800 * 44100/48000) = 4410
@@ -314,7 +369,7 @@ describe("formatConverter integration tests", () => {
       expect(result.success).toBe(true);
       expect(result.data!.convertedFormat.sampleRate).toBe(44100);
 
-      const decoded = wav.decode(fs.readFileSync(outputPath));
+      const decoded = decodeWav(fs.readFileSync(outputPath));
       expect(decoded.sampleRate).toBe(44100);
 
       // Upsampled length should be floor(2205 * 44100/22050) = 4410
@@ -337,7 +392,7 @@ describe("formatConverter integration tests", () => {
 
       expect(result.success).toBe(true);
 
-      const decoded = wav.decode(fs.readFileSync(outputPath));
+      const decoded = decodeWav(fs.readFileSync(outputPath));
       expect(decoded.sampleRate).toBe(44100);
       expect(decoded.channelData[0].length).toBe(numSamples);
     });
@@ -370,7 +425,7 @@ describe("formatConverter integration tests", () => {
       expect(result.data!.originalFormat.channels).toBe(2);
       expect(result.data!.originalFormat.sampleRate).toBe(48000);
 
-      const decoded = wav.decode(fs.readFileSync(outputPath));
+      const decoded = decodeWav(fs.readFileSync(outputPath));
       expect(decoded.channelData.length).toBe(1);
       expect(decoded.sampleRate).toBe(44100);
     });
@@ -491,7 +546,7 @@ describe("formatConverter integration tests", () => {
         sampleRate: 44100,
       });
 
-      const decoded = wav.decode(fs.readFileSync(outputPath));
+      const decoded = decodeWav(fs.readFileSync(outputPath));
       expect(decoded.channelData.length).toBe(1);
       expect(decoded.sampleRate).toBe(44100);
     });

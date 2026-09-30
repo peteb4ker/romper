@@ -6,6 +6,7 @@ import { archiveService } from "./services/archiveService.js";
 import { kitService } from "./services/kitService.js";
 import { localStoreService } from "./services/localStoreService.js";
 import { sampleService } from "./services/sampleService.js";
+import { getSdCardDialogDefaultPath } from "./services/sdCardSafety.js";
 import { settingsService } from "./services/settingsService.js";
 import {
   checkDiskSpaceSufficient,
@@ -50,9 +51,8 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       return process.env.ROMPER_SDCARD_PATH;
     }
 
-    const os = await import("node:os");
     const result = await dialog.showOpenDialog({
-      defaultPath: os.homedir(),
+      defaultPath: getSdCardDialogDefaultPath(),
       properties: ["openDirectory"],
       title: "Select SD Card Path",
     });

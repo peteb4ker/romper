@@ -114,9 +114,35 @@ describe("SyncUpdateDialog", () => {
       );
 
       expect(
-        screen.getByText("Clear SD card before writing"),
+        screen.getByText("Remove existing kits from the card first"),
       ).toBeInTheDocument();
       expect(screen.getByTestId("wipe-sd-card-checkbox")).toBeInTheDocument();
+      // The explanation only appears once the option is ticked
+      expect(
+        screen.queryByTestId("wipe-sd-card-warning"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("explains exactly what will be removed, naming the card path", async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          sdCardPath="/Volumes/RAMPLE"
+        />,
+      );
+
+      await user.click(screen.getByTestId("wipe-sd-card-checkbox"));
+
+      const warning = screen.getByTestId("wipe-sd-card-warning");
+      expect(warning).toHaveTextContent(
+        "Deletes kit folders (A0 to Z99) and bank name files in /Volumes/RAMPLE. Other files on the card are kept.",
+      );
     });
 
     it("should require SD card selection before writing", () => {

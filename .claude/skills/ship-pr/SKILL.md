@@ -31,14 +31,13 @@ is already green, skip auto-merge and merge it directly (rebase method).
 
 ## Queue mechanics (no merge queue on free GitHub)
 
-- Merge serially, oldest-green first. After each merge, the next PR is
-  *behind* main; that is fine — "require branches up to date" is
-  intentionally off, so a behind-but-conflict-free PR rebase-merges without
-  re-running CI.
-- The backstop for that gap is post-merge validation on `main` (build /
-  typecheck / lint run on every push to main). If main goes red after a
-  merge, fix forward immediately; it gates nothing else.
-- Only rebase + re-push a queued PR when it actually conflicts; each re-push
-  costs a full CI round. Re-arm auto-merge after any re-push.
+- Branch protection on `main` requires branches to be up to date
+  (`strict: true`) and these checks: build, lint, typecheck, unit-tests,
+  integration-tests (ubuntu-latest), e2e-tests-check. So after each merge,
+  every other open PR is *behind* and can't merge until it is rebased.
+- Merge serially, oldest-green first. For the next PR: rebase onto
+  `origin/main`, `git push --force-with-lease`, re-arm auto-merge
+  immediately, and let it merge when CI goes green.
+- If `main` goes red after a merge, fix forward immediately.
 - Lockfile conflicts on rebase: take your side, then `npm install` to
   regenerate, and confirm overrides/audit state survived.

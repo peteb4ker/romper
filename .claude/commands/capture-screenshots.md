@@ -34,10 +34,10 @@ To capture a new feature or UI element:
 First, list available targets to see what can be captured:
 
 ```
-node scripts/capture-screenshots.ts --list
+npm run screenshots -- --list
 ```
 
-Then capture based on the user's argument: $ARGUMENTS
+Then run `npm run screenshots -- <args>` with the user's argument: $ARGUMENTS
 
 If no argument is provided, ask the user whether they want:
 - `--all` to capture all screenshots

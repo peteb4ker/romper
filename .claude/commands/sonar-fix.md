@@ -1,106 +1,34 @@
 ---
-description: Find the open SonarCloud GitHub issue and systematically fix the reported issues
-argument-hint: "[--major-only | --mechanical-only | --all]  Optionally limit scope of fixes (default: --all)"
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, mcp__sonarqube__search_sonar_issues_in_projects, mcp__sonarqube__show_rule
+description: Fix open SonarCloud issues for peteb4ker_romper, optionally filtered by rule, severity, or path
+argument-hint: "[rule key | severity | path]  e.g. typescript:S6557, MAJOR, app/renderer/components"
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep, mcp__sonarqube__search_sonar_issues_in_projects, mcp__sonarqube__show_rule
 ---
 
-Find the open SonarCloud tracking issue on GitHub and fix the reported code quality issues.
+Fix open SonarCloud issues on project `peteb4ker_romper`. Scope: $ARGUMENTS (all open issues if empty).
 
-## Step 1: Find the Tracking Issue
+## Getting the issues
 
-```bash
-gh issue view $(gh issue list --label "sonarcloud" --state open --json number --jq '.[0].number') --json number,body
+Use the SonarQube MCP tools if they're connected. Otherwise the project is public, so the web API works without a token:
+
+```sh
+curl -s "https://sonarcloud.io/api/issues/search?componentKeys=peteb4ker_romper&issueStatuses=OPEN,CONFIRMED&ps=500" \
+  | jq -r '.issues[] | "\(.severity)\t\(.rule)\t\(.component | sub("peteb4ker_romper:"; "")):\(.line)\t\(.message)"'
 ```
 
-If no open issue exists, tell the user to run `/sonar-report` first and stop.
+Add `&rules=<key>`, `&severities=<SEV>`, or filter by path with `jq` to narrow. Rule details: `https://sonarcloud.io/api/rules/show?key=<rule>&organization=peteb4ker`.
 
-Parse the issue body to extract:
-- The list of MAJOR/BLOCKER issues (files, lines, rules)
-- The mechanical fix groups (files, lines, fix patterns)
-- The overall quality gate status
+SonarCloud only re-analyzes on PRs and pushes to `main`, so it won't reflect local edits.
 
-## Step 2: Plan the Fix Scope
+## Fixing
 
-Based on `$ARGUMENTS`:
-- `--major-only`: Fix only BLOCKER/HIGH/MAJOR severity issues
-- `--mechanical-only`: Fix only the bulk mechanical patterns (S7773, S7723, S7758, S7781)
-- `--all` (default): Fix everything
+Sonar's suggested rewrite is not always behavior-preserving, so check each one in context. Known traps:
 
-**CRITICAL**: Before editing any file, READ it first to understand context. Never blindly find-and-replace.
+- `isNaN(x)` → `Number.isNaN(x)` differs for non-numbers (`isNaN("abc")` is true, `Number.isNaN("abc")` is false). Convert explicitly first when `x` may not be a number.
+- `.replace(/re/g, …)` → `.replaceAll(/re/g, …)` must keep the `g` flag; `replaceAll` throws on a non-global regex.
+- Accessibility rules (S6848, S1082) on clickable non-buttons: prefer switching to a real `<button>` over bolting on `role`/`tabIndex`/`onKeyDown`.
 
-## Step 3: Fix Mechanical Issues (Batch by Pattern)
+Leave **S7785** (prefer top-level await) in `electron/main/index.ts` alone and mark it won't-fix in the SonarCloud UI: top-level `await app.whenReady()` deadlocks the ESM main bootstrap, and only e2e catches it.
 
-These are safe, deterministic transformations. Process one pattern at a time across all files:
+## Validate
 
-### Pattern: `parseInt(x)` → `Number.parseInt(x)` (S7773)
-- Also: `parseFloat(x)` → `Number.parseFloat(x)`
-- Also: `isNaN(x)` → `Number.isNaN(x)`
-- **Caution**: Only change bare `parseInt`/`parseFloat`/`isNaN`, not `Number.parseInt` (already correct) or `someObj.parseInt` (different thing)
-
-### Pattern: `Array(n)` → `new Array(n)` (S7723)
-- **Caution**: Only change bare `Array()` calls, not `Array.from()` or `Array.isArray()`
-
-### Pattern: `charCodeAt` → `codePointAt`, `fromCharCode` → `fromCodePoint` (S7758)
-- These are direct replacements on string methods
-
-### Pattern: `replace(/regex/g, ...)` → `replaceAll(regex, ...)` (S7781)
-- Only when the regex has the `g` flag and is a simple pattern
-- **Caution**: If the regex uses special features beyond the `g` flag, leave it alone
-
-For each file:
-1. Read the file
-2. Find the exact line(s) from the issue
-3. Apply the transformation using Edit
-4. Verify the change makes sense in context
-
-## Step 4: Fix MAJOR Issues
-
-These require more judgment:
-
-### Accessibility (S6848, S1082, S6853)
-- **S6848** (non-native interactive elements): Add `role="button"` and `tabIndex={0}` to clickable non-button elements, plus `onKeyDown` handler for Enter/Space
-- **S1082** (click without keyboard): Add `onKeyDown` handler that triggers the same action on Enter/Space
-- **S6853** (label not associated): Add `htmlFor` attribute pointing to the input's `id`, or wrap the input inside the `<label>`
-- Read the component to understand the UX before changing it
-
-### Ambiguous Spacing (S6772)
-- Add `{' '}` JSX expression between adjacent inline elements, or restructure the JSX
-- Read surrounding context to determine the right fix
-
-### Other MAJOR issues
-- Look up the rule with `mcp__sonarqube__show_rule` if you're unsure what it means
-- Apply the fix that best fits the existing code patterns
-
-## Step 5: Validate
-
-After all fixes:
-
-1. **Run TypeScript check**: `npx tsc --noEmit`
-2. **Run linter**: `npx eslint . --ext .js,.jsx,.ts,.tsx`
-3. **Run tests**: `npm run test:fast`
-
-Fix any issues these surface. Do NOT skip failing tests.
-
-## Step 6: Verify Against SonarCloud
-
-Query SonarCloud again to confirm issues are resolved:
-
-```
-mcp__sonarqube__search_sonar_issues_in_projects with:
-  projects: ["peteb4ker_romper"]
-  issueStatuses: ["OPEN"]
-```
-
-Note: SonarCloud won't reflect your local changes until they're pushed and analyzed.
-Report what you expect to be resolved based on the fixes applied.
-
-## Step 7: Summary
-
-Print a summary:
-- Number of issues fixed, by category
-- Any issues skipped and why
-- Files modified
-- Test/lint/typecheck results
-- Remind the user to commit with `/commit` when satisfied
-
-$ARGUMENTS
+`npm run typecheck && npm run lint:check && npm run test:fast`, plus `npm run test:e2e` if you touched `electron/main`. Summarize what was fixed by rule, what was skipped and why.

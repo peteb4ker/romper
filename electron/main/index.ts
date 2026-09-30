@@ -20,6 +20,11 @@ import {
   saveWindowState,
   validateAndFixLocalStore,
 } from "./mainProcessSetup.js";
+import {
+  type AppNavigationTarget,
+  isAllowedAppNavigation,
+  isExternalHttpUrl,
+} from "./navigationPolicy.js";
 import { logger } from "./utils/logger.js";
 
 logger.log("[Romper Electron] Main process entrypoint loaded");
@@ -29,6 +34,9 @@ let inMemorySettings: InMemorySettings = {
 };
 
 const isDev = process.env.NODE_ENV === "development";
+const vitePort = process.env.VITE_DEV_SERVER_PORT || "5173";
+const devServerUrl = `http://localhost:${vitePort}`;
+const rendererIndexPath = path.resolve(__dirname, "../../renderer/index.html");
 
 // ROMPER_HEADLESS=true keeps the window hidden and the app out of the way
 // (no Dock icon, no focus stealing). The e2e suite sets it so test runs
@@ -82,7 +90,12 @@ function createWindow() {
     y: windowState.y,
   });
 
-  hardenNavigation(win);
+  hardenNavigation(
+    win,
+    isDev
+      ? { devServerOrigin: devServerUrl, kind: "dev" }
+      : { indexPath: rendererIndexPath, kind: "file" },
+  );
 
   // maximize() would show the window, and a hidden window's bounds shouldn't
   // overwrite the user's saved ones.
@@ -112,15 +125,14 @@ function createWindow() {
   });
 
   if (isDev) {
-    const vitePort = process.env.VITE_DEV_SERVER_PORT || "5173";
-    win.loadURL(`http://localhost:${vitePort}`).catch((err: unknown) => {
+    win.loadURL(devServerUrl).catch((err: unknown) => {
       console.error(
         "Failed to load URL:",
         err instanceof Error ? err.message : String(err),
       );
     });
   } else {
-    const indexPath = path.resolve(__dirname, "../../renderer/index.html");
+    const indexPath = rendererIndexPath;
     if (process.env.NODE_ENV !== "test") {
       logger.log("[Romper Electron] Attempting to load:", indexPath);
       if (!fs.existsSync(indexPath)) {
@@ -145,40 +157,55 @@ function getWindowStatePath(): string {
 }
 
 /**
- * Apply Electron navigation hardening to a window's web contents:
+ * Apply Electron navigation hardening to a window's web contents (RE-02):
  * - Deny all `window.open` / target=_blank popups, sending http(s) URLs to the
  *   user's external browser instead of opening an in-app window.
- * - Block any top-level navigation that would leave the app's own origin
- *   (e.g. an injected link), routing external http(s) links to the browser.
+ * - Allow a top-level navigation or redirect only when it stays on the app's
+ *   own page (see `isAllowedAppNavigation`). Anything else is blocked; http(s)
+ *   links go to the external browser, other schemes are dropped. This stops a
+ *   dropped or linked local HTML file from loading with the preload bridge.
+ * - Refuse `<webview>` attachment.
  *
- * Same-origin SPA routing uses the history API and does not trigger
- * `will-navigate`, so this does not interfere with normal app navigation.
+ * Hash-router navigation doesn't trigger `will-navigate`, and a full reload
+ * of the app's own page is still allowed.
  */
-function hardenNavigation(win: BrowserWindow): void {
+function hardenNavigation(
+  win: BrowserWindow,
+  appTarget: AppNavigationTarget,
+): void {
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:\/\//i.test(url)) {
+    if (isExternalHttpUrl(url)) {
       void shell.openExternal(url);
     }
     return { action: "deny" };
   });
 
   win.webContents.on("will-navigate", (event, navigationUrl) => {
-    if (isSameOrigin(navigationUrl, win.webContents.getURL())) {
+    if (isAllowedAppNavigation(navigationUrl, appTarget)) {
       return;
     }
     event.preventDefault();
-    if (/^https?:\/\//i.test(navigationUrl)) {
+    if (isExternalHttpUrl(navigationUrl)) {
       void shell.openExternal(navigationUrl);
+    } else {
+      console.warn(
+        "[Security] Blocked navigation to:",
+        navigationUrl.slice(0, 200),
+      );
     }
   });
-}
 
-function isSameOrigin(a: string, b: string): boolean {
-  try {
-    return new URL(a).origin === new URL(b).origin;
-  } catch {
-    return false;
-  }
+  win.webContents.on("will-redirect", (event, redirectUrl) => {
+    if (isAllowedAppNavigation(redirectUrl, appTarget)) {
+      return;
+    }
+    event.preventDefault();
+    console.warn("[Security] Blocked redirect to:", redirectUrl.slice(0, 200));
+  });
+
+  win.webContents.on("will-attach-webview", (event) => {
+    event.preventDefault();
+  });
 }
 
 function registerAllIpcHandlers(settings: InMemorySettings) {

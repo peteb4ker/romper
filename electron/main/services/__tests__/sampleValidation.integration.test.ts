@@ -643,7 +643,7 @@ describe("SampleValidation Integration Tests", () => {
 
       const result = sampleValidator.validateSampleFile(badPath);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain("missing RIFF signature");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should reject a RIFF file that is not WAVE format", () => {
@@ -656,7 +656,7 @@ describe("SampleValidation Integration Tests", () => {
 
       const result = sampleValidator.validateSampleFile(aviPath);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain("missing WAVE format identifier");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should reject a truncated file smaller than WAV header", () => {
@@ -665,7 +665,7 @@ describe("SampleValidation Integration Tests", () => {
 
       const result = sampleValidator.validateSampleFile(truncPath);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain("File too small");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should reject a zero-byte file", () => {
@@ -674,7 +674,7 @@ describe("SampleValidation Integration Tests", () => {
 
       const result = sampleValidator.validateSampleFile(emptyPath);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain("File too small");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should reject a .txt file", () => {

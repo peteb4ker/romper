@@ -3,8 +3,10 @@ import type { Sample } from "@romper/shared/db/schema.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import type { FormatValidationResult } from "../audioUtils.js";
-
+import {
+  type FormatValidationResult,
+  isFormatIssueCritical,
+} from "../audioUtils.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 import { syncProgressManager } from "./syncProgressManager.js";
 import {
@@ -75,6 +77,19 @@ export class SyncFileOperationsService {
     }
 
     const format = formatValidation.data;
+
+    // A file that can't be read or isn't a usable WAV is listed in the
+    // summary as a sample that can't be written (RE-08), never copied as-is.
+    const unusable = format.issues?.find(isFormatIssueCritical);
+    if (unusable) {
+      validationErrors.push({
+        error: unusable.message,
+        filename,
+        sourcePath,
+        type: "invalid_format",
+      });
+      return;
+    }
 
     if (format.issues && format.issues.length > 0) {
       this.addSyncFileToConvert(sample, destinationPath, format, results);
@@ -242,25 +257,6 @@ export class SyncFileOperationsService {
       fileOp.gainDb,
     );
     if (!conversionResult.success) {
-      // Check if this is a WAV format error that we can ignore
-      const isWavFormatError =
-        conversionResult.error?.toLowerCase().includes("missing fmt chunk") ||
-        conversionResult.error?.toLowerCase().includes("invalid wav file");
-      if (isWavFormatError) {
-        console.warn(
-          `Skipping problematic WAV file ${fileOp.filename}: ${conversionResult.error}`,
-        );
-        // Copy the original file instead of converting it
-        try {
-          await fs.promises.copyFile(fileOp.sourcePath, fileOp.destinationPath);
-          return; // Successfully handled by copying instead
-        } catch (copyError) {
-          console.error(
-            `Failed to copy problematic file ${fileOp.filename}:`,
-            copyError,
-          );
-        }
-      }
       throw new Error(
         `Failed to convert ${fileOp.filename}: ${conversionResult.error}`,
       );

@@ -8,6 +8,8 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import fs from "node:fs";
 import path from "node:path";
 
+import { parseWavHeader } from "./wavHeader.js";
+
 // Re-export shared audio types for callers that still import them from here.
 // The canonical definitions live in shared/audioTypes.ts so the renderer
 // does not need to reach into electron/main/.
@@ -31,111 +33,45 @@ export const RAMPLE_FORMAT_REQUIREMENTS: RampleFormatRequirements = {
 } as const;
 
 /**
- * Reads WAV file header to extract audio metadata
- * Reference: http://soundfile.sapp.org/doc/WaveFormat/
+ * Reads a WAV file's format from its header, wherever its `fmt ` and `data`
+ * chunks sit (see wavHeader.ts).
  */
 export function getAudioMetadata(filePath: string): DbResult<AudioMetadata> {
   try {
-    // Check if file exists
     if (!fs.existsSync(filePath)) {
       return { error: "File does not exist", success: false };
     }
-
-    // Check file extension
-    const ext = path.extname(filePath).toLowerCase();
-    if (ext !== ".wav") {
+    if (path.extname(filePath).toLowerCase() !== ".wav") {
       return { error: "Only WAV files are supported", success: false };
     }
 
-    // Get file size
-    const stats = fs.statSync(filePath);
-    const fileSize = stats.size;
-
-    // Read WAV header (first 44 bytes minimum)
-    const buffer = Buffer.alloc(44);
+    const fileSize = fs.statSync(filePath).size;
     const fd = fs.openSync(filePath, "r");
-
     try {
-      const bytesRead = fs.readSync(fd, buffer, 0, 44, 0);
-      if (bytesRead < 44) {
-        return { error: "Invalid WAV file: header too short", success: false };
-      }
-
-      // Check RIFF header
-      const riffHeader = buffer.subarray(0, 4).toString("ascii");
-      if (riffHeader !== "RIFF") {
-        return {
-          error: "Invalid WAV file: missing RIFF header",
-          success: false,
-        };
-      }
-
-      // Check WAVE format
-      const waveFormat = buffer.subarray(8, 12).toString("ascii");
-      if (waveFormat !== "WAVE") {
-        return { error: "Invalid WAV file: not WAVE format", success: false };
-      }
-
-      // Check fmt chunk
-      const fmtChunk = buffer.subarray(12, 16).toString("ascii");
-      if (fmtChunk !== "fmt ") {
-        return { error: "Invalid WAV file: missing fmt chunk", success: false };
-      }
-
-      // Read fmt chunk size (should be 16 for PCM)
-      const fmtChunkSize = buffer.readUInt32LE(16);
-      if (fmtChunkSize !== 16) {
-        return { error: "Only PCM format is supported", success: false };
-      }
-
-      // Read audio format (should be 1 for PCM)
-      const audioFormat = buffer.readUInt16LE(20);
-      if (audioFormat !== 1) {
-        return {
-          error: "Only uncompressed PCM format is supported",
-          success: false,
-        };
-      }
-
-      // Read audio metadata
-      const channels = buffer.readUInt16LE(22);
-      const sampleRate = buffer.readUInt32LE(24);
-      const bitsPerSample = buffer.readUInt16LE(34);
-
-      // Calculate duration from data chunk
-      let duration: number | undefined;
-      try {
-        // Find data chunk (skip fmt chunk and look for "data")
-        let offset = 20 + fmtChunkSize; // Start after fmt chunk
-        const searchBuffer = Buffer.alloc(8);
-
-        while (offset < fileSize - 8) {
-          fs.readSync(fd, searchBuffer, 0, 8, offset);
-          const chunkId = searchBuffer.subarray(0, 4).toString("ascii");
-          const chunkSize = searchBuffer.readUInt32LE(4);
-
-          if (chunkId === "data") {
-            const bytesPerSecond = sampleRate * channels * (bitsPerSample / 8);
-            duration = chunkSize / bytesPerSecond;
-            break;
-          }
-
-          offset += 8 + chunkSize;
-        }
-      } catch (error) {
-        // Duration calculation failed, but other metadata is still valid
-        console.warn("Could not calculate duration:", error);
-      }
-
-      const metadata: AudioMetadata = {
-        bitDepth: bitsPerSample,
-        channels,
-        duration,
-        fileSize,
-        sampleRate,
+      const read = (offset: number, length: number) => {
+        const buffer = Buffer.alloc(length);
+        const bytesRead = fs.readSync(fd, buffer, 0, length, offset);
+        return buffer.subarray(0, bytesRead);
       };
-
-      return { data: metadata, success: true };
+      const header = parseWavHeader(read, fileSize);
+      if (!header.success || !header.data) {
+        return { error: header.error, success: false };
+      }
+      const { bitDepth, blockAlign, channels, dataSize, encoding, extensible } =
+        header.data;
+      const { sampleRate } = header.data;
+      return {
+        data: {
+          bitDepth,
+          channels,
+          duration: dataSize / (sampleRate * blockAlign),
+          encoding,
+          extensible,
+          fileSize,
+          sampleRate,
+        },
+        success: true,
+      };
     } finally {
       fs.closeSync(fd);
     }
@@ -166,8 +102,27 @@ export function isFormatIssueCritical(issue: FormatIssue): boolean {
 export function validateAudioFormat(metadata: AudioMetadata): FormatIssue[] {
   const issues: FormatIssue[] = [];
 
-  // Validate bit depth
+  // Float samples and extensible headers are converted to plain PCM
+  if (metadata.encoding === "float") {
+    issues.push({
+      current: `${metadata.bitDepth}-bit float`,
+      message: `${metadata.bitDepth}-bit float samples will be converted to 16-bit PCM.`,
+      required: "PCM",
+      type: "encoding",
+    });
+  } else if (metadata.extensible) {
+    issues.push({
+      current: "WAVE_FORMAT_EXTENSIBLE",
+      message:
+        "The file has an extended WAV header; it will be rewritten as a standard WAV.",
+      required: "PCM",
+      type: "encoding",
+    });
+  }
+
+  // Validate bit depth (a float file's is covered above)
   if (
+    metadata.encoding !== "float" &&
     metadata.bitDepth !== undefined &&
     !RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(metadata.bitDepth)
   ) {

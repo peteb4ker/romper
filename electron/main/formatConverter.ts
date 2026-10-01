@@ -5,6 +5,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "./audioUtils.js";
+import { parseWavHeader, toPlainWav } from "./wavHeader.js";
 
 export interface ConversionOptions {
   forceMonoConversion?: boolean;
@@ -168,25 +169,20 @@ export async function convertToRampleDefault(
 }
 
 /**
- * Decodes a WAV file buffer with node-wav.
- *
- * node-wav 0.0.2 mis-handles a Buffer that is a view at a non-zero offset into
- * a larger ArrayBuffer: it starts parsing at `byteOffset` but stops at
- * `length` instead of `byteOffset + length`, so decoding silently returns
- * undefined. `fs.readFileSync` hands back exactly such pooled views for files
- * smaller than half of `Buffer.poolSize`, which is 64 KiB under Electron 41
- * (Node 24) versus 8 KiB under Node 22. Copy offset views into a Buffer that
- * owns its own ArrayBuffer before decoding.
+ * Decodes a WAV file buffer with node-wav, by way of a plain copy of its
+ * format and samples (toPlainWav): node-wav 0.0.2 can't read extensible
+ * headers or padded chunks, and mis-reads a Buffer that is a view into a
+ * larger pooled ArrayBuffer, which `fs` hands back for small files.
  */
 export function decodeWav(buffer: Buffer): ReturnType<typeof wav.decode> {
-  if (buffer.byteOffset === 0) {
-    return wav.decode(buffer);
-  }
-  const standalone = buffer.buffer.slice(
-    buffer.byteOffset,
-    buffer.byteOffset + buffer.byteLength,
+  const header = parseWavHeader(
+    (offset, length) => buffer.subarray(offset, offset + length),
+    buffer.length,
   );
-  return wav.decode(Buffer.from(standalone));
+  if (!header.success || !header.data) {
+    throw new Error(header.error);
+  }
+  return wav.decode(toPlainWav(buffer, header.data));
 }
 
 /**

@@ -53,7 +53,7 @@ describe("audioUtils", () => {
       const result = getAudioMetadata(filePath);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("header too short");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should return error for files without RIFF header", () => {
@@ -65,7 +65,7 @@ describe("audioUtils", () => {
       const result = getAudioMetadata(filePath);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("missing RIFF header");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should return error for files without WAVE format", () => {
@@ -78,7 +78,7 @@ describe("audioUtils", () => {
       const result = getAudioMetadata(filePath);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("not WAVE format");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should return error for files without fmt chunk", () => {
@@ -92,10 +92,10 @@ describe("audioUtils", () => {
       const result = getAudioMetadata(filePath);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("missing fmt chunk");
+      expect(result.error).toContain("No fmt chunk");
     });
 
-    it("should return error for non-PCM format", () => {
+    it("rejects compressed formats", () => {
       const filePath = path.join(testDir, "invalid.wav");
       const buffer = createValidWavHeader({
         audioFormat: 2, // Non-PCM format
@@ -109,7 +109,7 @@ describe("audioUtils", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain(
-        "Only uncompressed PCM format is supported",
+        "Unsupported WAV encoding (format 0x0002)",
       );
     });
 
@@ -170,7 +170,7 @@ describe("audioUtils", () => {
       expect(result.data!.duration).toBeCloseTo(1.0, 2);
     });
 
-    it("should handle files without readable data chunk gracefully", () => {
+    it("reports zero duration for an empty data chunk", () => {
       const filePath = path.join(testDir, "no-data.wav");
       const buffer = createValidWavHeader({
         audioFormat: 1,
@@ -183,7 +183,7 @@ describe("audioUtils", () => {
       const result = getAudioMetadata(filePath);
 
       expect(result.success).toBe(true);
-      expect(result.data!.duration).toBeUndefined();
+      expect(result.data!.duration).toBe(0);
     });
   });
 
@@ -245,6 +245,34 @@ describe("audioUtils", () => {
       expect(issues).toHaveLength(1);
       expect(issues[0].type).toBe("sampleRate");
       expect(issues[0].current).toBe(48000);
+    });
+  });
+
+  describe("validateAudioFormat encodings (RE-08)", () => {
+    it("asks to convert float samples, once", () => {
+      const issues = validateAudioFormat({
+        bitDepth: 32,
+        channels: 1,
+        encoding: "float",
+        sampleRate: 44100,
+      });
+      expect(issues.map((i) => i.type)).toEqual(["encoding"]);
+      expect(issues[0].message).toBe(
+        "32-bit float samples will be converted to 16-bit PCM.",
+      );
+      expect(isFormatIssueCritical(issues[0])).toBe(false);
+    });
+
+    it("asks to rewrite an extensible header, even for 16-bit 44.1 kHz", () => {
+      const issues = validateAudioFormat({
+        bitDepth: 16,
+        channels: 2,
+        encoding: "pcm",
+        extensible: true,
+        sampleRate: 44100,
+      });
+      expect(issues.map((i) => i.type)).toEqual(["encoding"]);
+      expect(isFormatIssueCritical(issues[0])).toBe(false);
     });
   });
 

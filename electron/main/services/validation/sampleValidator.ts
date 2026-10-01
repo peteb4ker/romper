@@ -3,6 +3,7 @@ import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as fs from "node:fs";
 
+import { getAudioMetadata } from "../../audioUtils.js";
 import { getKitSamples } from "../../db/romperDbCoreORM.js";
 
 /**
@@ -64,45 +65,17 @@ export class SampleValidator {
       return { error: "Only WAV files are supported", isValid: false };
     }
 
-    try {
-      // Check file is readable and has minimum size for WAV header
-      const stats = fs.statSync(filePath);
-      if (stats.size < 44) {
-        return {
-          error: "File too small to be a valid WAV file",
-          isValid: false,
-        };
-      }
-
-      // Read first 12 bytes to validate WAV header
-      const fd = fs.openSync(filePath, "r");
-      const buffer = Buffer.alloc(12);
-      fs.readSync(fd, buffer, 0, 12, 0);
-      fs.closeSync(fd);
-
-      // Check RIFF signature
-      if (buffer.toString("ascii", 0, 4) !== "RIFF") {
-        return {
-          error: "Invalid WAV file: missing RIFF signature",
-          isValid: false,
-        };
-      }
-
-      // Check WAVE format
-      if (buffer.toString("ascii", 8, 12) !== "WAVE") {
-        return {
-          error: "Invalid WAV file: missing WAVE format identifier",
-          isValid: false,
-        };
-      }
-
-      return { isValid: true };
-    } catch (error) {
+    // A file Romper can't read as an uncompressed PCM or float WAV can't be
+    // written to the card, so it's refused here rather than at sync (RE-08).
+    // Bit depth, rate and channel mismatches are fine: sync converts them.
+    const metadata = getAudioMetadata(filePath);
+    if (!metadata.success) {
       return {
-        error: `Failed to validate file: ${getErrorMessage(error)}`,
+        error: `Can't use this file: ${metadata.error}`,
         isValid: false,
       };
     }
+    return { isValid: true };
   }
 
   /**

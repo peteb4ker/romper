@@ -3,6 +3,7 @@ import type { Sample } from "@romper/shared/db/schema.js";
 import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { getAudioMetadata } from "../../../audioUtils.js";
 import * as romperDbCoreORM from "../../../db/romperDbCoreORM.js";
 import { SampleValidator } from "../sampleValidator";
 
@@ -10,6 +11,7 @@ vi.mock("node:fs", async (importOriginal) =>
   vi.mockObject(await importOriginal<typeof import("node:fs")>()),
 );
 vi.mock("../../../db/romperDbCoreORM.js");
+vi.mock("../../../audioUtils.js", () => ({ getAudioMetadata: vi.fn() }));
 
 const mockFs = vi.mocked(fs);
 const mockORM = vi.mocked(romperDbCoreORM);
@@ -83,82 +85,34 @@ describe("SampleValidator", () => {
       expect(result.error).toBe("Only WAV files are supported");
     });
 
-    it("should reject files too small for WAV header", () => {
+    it("rejects a file it can't read as an uncompressed WAV (RE-08)", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 20 } as NodeJS.Stats);
-
-      const result = validator.validateSampleFile("/path/to/file.wav");
-
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe("File too small to be a valid WAV file");
-    });
-
-    it("should reject files with invalid RIFF signature", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 100 } as NodeJS.Stats);
-
-      const buffer = Buffer.from("FAIL....WAVE", "ascii");
-      mockFs.openSync.mockReturnValue(1);
-      mockFs.readSync.mockImplementation((_fd, buf) => {
-        buffer.copy(buf as Buffer);
-        return 12;
-      });
-      mockFs.closeSync.mockReturnValue(undefined);
-
-      const result = validator.validateSampleFile("/path/to/file.wav");
-
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe("Invalid WAV file: missing RIFF signature");
-    });
-
-    it("should reject files with invalid WAVE format", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 100 } as NodeJS.Stats);
-
-      const buffer = Buffer.from("RIFF....FAIL", "ascii");
-      mockFs.openSync.mockReturnValue(1);
-      mockFs.readSync.mockImplementation((_fd, buf) => {
-        buffer.copy(buf as Buffer);
-        return 12;
-      });
-      mockFs.closeSync.mockReturnValue(undefined);
-
-      const result = validator.validateSampleFile("/path/to/file.wav");
-
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe(
-        "Invalid WAV file: missing WAVE format identifier",
-      );
-    });
-
-    it("should accept valid WAV files", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 100 } as NodeJS.Stats);
-
-      const buffer = Buffer.from("RIFF....WAVE", "ascii");
-      mockFs.openSync.mockReturnValue(1);
-      mockFs.readSync.mockImplementation((_fd, buf) => {
-        buffer.copy(buf as Buffer);
-        return 12;
-      });
-      mockFs.closeSync.mockReturnValue(undefined);
-
-      const result = validator.validateSampleFile("/path/to/file.wav");
-
-      expect(result.isValid).toBe(true);
-      expect(result.error).toBeUndefined();
-    });
-
-    it("should handle file read errors", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockImplementation(() => {
-        throw new Error("Permission denied");
+      vi.mocked(getAudioMetadata).mockReturnValue({
+        error:
+          "Unsupported WAV encoding (format 0x0002); only uncompressed PCM or float can be used",
+        success: false,
       });
 
       const result = validator.validateSampleFile("/path/to/file.wav");
 
-      expect(result.isValid).toBe(false);
-      expect(result.error).toContain("Failed to validate file");
+      expect(getAudioMetadata).toHaveBeenCalledWith("/path/to/file.wav");
+      expect(result).toEqual({
+        error:
+          "Can't use this file: Unsupported WAV encoding (format 0x0002); only uncompressed PCM or float can be used",
+        isValid: false,
+      });
+    });
+
+    it("accepts a readable WAV, even one sync will convert", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      vi.mocked(getAudioMetadata).mockReturnValue({
+        data: { bitDepth: 24, channels: 2, sampleRate: 48000 },
+        success: true,
+      });
+
+      const result = validator.validateSampleFile("/path/to/file.wav");
+
+      expect(result).toEqual({ isValid: true });
     });
   });
 
@@ -197,15 +151,10 @@ describe("SampleValidator", () => {
         return path === "/path/to/valid.wav";
       });
 
-      // Mock for valid file
-      mockFs.statSync.mockReturnValue({ size: 100 } as NodeJS.Stats);
-      const buffer = Buffer.from("RIFF....WAVE", "ascii");
-      mockFs.openSync.mockReturnValue(1);
-      mockFs.readSync.mockImplementation((_fd, buf) => {
-        buffer.copy(buf as Buffer);
-        return 12;
+      vi.mocked(getAudioMetadata).mockReturnValue({
+        data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
+        success: true,
       });
-      mockFs.closeSync.mockReturnValue(undefined);
 
       const result = validator.validateSampleSources("/db/path", "TestKit");
 

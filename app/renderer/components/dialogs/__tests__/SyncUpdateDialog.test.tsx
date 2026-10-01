@@ -369,6 +369,73 @@ describe("SyncUpdateDialog", () => {
       expect(screen.queryByTestId("bank-summary")).not.toBeInTheDocument();
     });
 
+    it("lets the user cancel a write in progress (RE-07)", async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const onCancelSync = vi.fn();
+
+      render(
+        <SyncUpdateDialog
+          isLoading={true}
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onCancelSync={onCancelSync}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          sdCardPath="/path/to/sd"
+          syncProgress={{
+            bytesCompleted: 0,
+            currentFile: "kick.wav",
+            filesCompleted: 1,
+            status: "copying",
+            totalBytes: 0,
+            totalFiles: 4,
+          }}
+        />,
+      );
+
+      const cancel = screen.getByTestId("cancel-write");
+      expect(cancel).toHaveTextContent("Cancel");
+      expect(cancel).toBeEnabled();
+
+      await user.click(cancel);
+
+      expect(onCancelSync).toHaveBeenCalledTimes(1);
+      expect(mockOnClose).not.toHaveBeenCalled();
+      expect(screen.getByTestId("cancel-write")).toHaveTextContent(
+        "Cancelling...",
+      );
+      expect(screen.getByTestId("cancel-write")).toBeDisabled();
+    });
+
+    it("shows a cancelled write and offers Close", () => {
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onCancelSync={vi.fn()}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          sdCardPath="/path/to/sd"
+          syncProgress={{
+            bytesCompleted: 0,
+            currentFile: "",
+            filesCompleted: 2,
+            status: "cancelled",
+            totalBytes: 0,
+            totalFiles: 4,
+          }}
+        />,
+      );
+
+      expect(screen.getByTestId("write-cancelled")).toHaveTextContent(
+        "Write cancelled",
+      );
+      expect(screen.getByText("2/4")).toBeInTheDocument();
+      expect(screen.getByTestId("cancel-sync")).toHaveTextContent("Close");
+    });
+
     it("should show progress during sync", () => {
       const mockSyncProgress = {
         bytesCompleted: 1024,

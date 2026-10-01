@@ -265,7 +265,7 @@ describe("useSyncUpdate", () => {
   });
 
   describe("cancelSync", () => {
-    it("should cancel sync and reset state", () => {
+    it("asks main to stop and leaves the result to the running write (RE-07)", () => {
       const { result } = renderHook(() =>
         useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
@@ -276,8 +276,68 @@ describe("useSyncUpdate", () => {
 
       expect(mockElectronAPI.cancelKitSync).toHaveBeenCalled();
       expect(result.current.syncProgress).toBeNull();
-      expect(result.current.isLoading).toBe(false);
       expect(result.current.error).toBeNull();
+    });
+
+    it("ignores progress events delivered after the write's result", async () => {
+      let onProgress: ((progress: unknown) => void) | undefined;
+      mockElectronAPI.onSyncProgress = vi.fn((callback) => {
+        onProgress = callback;
+      });
+      mockElectronAPI.startKitSync.mockResolvedValue({
+        data: {
+          cancelled: true,
+          skippedFiles: [],
+          syncedFiles: 2,
+          warnings: [],
+        },
+        success: true,
+      });
+      const { result } = renderHook(() =>
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
+      );
+
+      await act(async () => {
+        await result.current.startSync({ sdCardPath: "/sd" });
+      });
+      act(() => {
+        onProgress?.({
+          bytesCompleted: 0,
+          currentFile: "late.wav",
+          filesCompleted: 2,
+          status: "copying",
+          totalBytes: 0,
+          totalFiles: 4,
+        });
+      });
+
+      expect(result.current.syncProgress?.status).toBe("cancelled");
+      expect(result.current.syncProgress?.filesCompleted).toBe(2);
+    });
+
+    it("shows a cancelled write as cancelled, not failed or complete", async () => {
+      mockElectronAPI.startKitSync.mockResolvedValue({
+        data: {
+          cancelled: true,
+          skippedFiles: [],
+          syncedFiles: 2,
+          warnings: [],
+        },
+        success: true,
+      });
+      const { result } = renderHook(() =>
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
+      );
+
+      let success = false;
+      await act(async () => {
+        success = await result.current.startSync({ sdCardPath: "/sd" });
+      });
+
+      expect(success).toBe(true);
+      expect(result.current.syncProgress?.status).toBe("cancelled");
+      expect(result.current.error).toBeNull();
+      expect(result.current.isLoading).toBe(false);
     });
 
     it("should handle missing cancel method gracefully", () => {
@@ -288,13 +348,11 @@ describe("useSyncUpdate", () => {
         useSyncUpdate({ electronAPI: incompleteAPI }),
       );
 
-      act(() => {
-        result.current.cancelSync();
-      });
-
-      expect(result.current.syncProgress).toBeNull();
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.error).toBeNull();
+      expect(() =>
+        act(() => {
+          result.current.cancelSync();
+        }),
+      ).not.toThrow();
     });
   });
 

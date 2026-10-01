@@ -32,6 +32,7 @@ export interface SyncProgress {
   errorDetails?: SyncErrorDetails;
   filesCompleted: number;
   status:
+    | "cancelled"
     | "completed"
     | "converting"
     | "copying"
@@ -47,6 +48,8 @@ export interface SyncUpdateDialogProps {
   isOpen: boolean;
   kitName: string;
   localChangeSummary: null | SyncChangeSummary;
+  /** Stop a write in progress (after the file being written) */
+  onCancelSync?: () => void;
   onClose: () => void;
   onConfirm: (options: {
     sdCardPath: null | string;

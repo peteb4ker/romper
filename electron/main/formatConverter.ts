@@ -42,7 +42,7 @@ export async function convertSampleToRampleFormat(
 ): Promise<DbResult<ConversionResult>> {
   try {
     // Validate input file exists
-    if (!fs.existsSync(inputPath)) {
+    if (!(await fileExists(inputPath))) {
       return {
         error: `Input file does not exist: ${inputPath}`,
         success: false,
@@ -79,7 +79,7 @@ export async function convertSampleToRampleFormat(
     }
 
     // Read and decode input WAV file
-    const inputBuffer = fs.readFileSync(inputPath);
+    const inputBuffer = await fs.promises.readFile(inputPath);
     const decoded = decodeWav(inputBuffer);
 
     if (!decoded?.channelData?.length) {
@@ -111,7 +111,7 @@ export async function convertSampleToRampleFormat(
     }
 
     // Write output file
-    writeOutputFile(
+    await writeOutputFile(
       outputPath,
       outputChannelData,
       targetSampleRate,
@@ -119,7 +119,7 @@ export async function convertSampleToRampleFormat(
     );
 
     // Get output file stats and calculate result
-    const outputStats = fs.statSync(outputPath);
+    const outputStats = await fs.promises.stat(outputPath);
     const duration = outputChannelData[0].length / targetSampleRate;
 
     const result: ConversionResult = {
@@ -346,6 +346,15 @@ function determineTargetChannels(
   return Math.min(inputChannels, RAMPLE_FORMAT_REQUIREMENTS.maxChannels);
 }
 
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Performs sample rate conversion using linear interpolation
  */
@@ -404,22 +413,18 @@ function validateTargetFormat(
 /**
  * Writes audio data to output file
  */
-function writeOutputFile(
+async function writeOutputFile(
   outputPath: string,
   channelData: Float32Array[],
   targetSampleRate: number,
   targetBitDepth: number,
-): void {
+): Promise<void> {
   const outputBuffer = wav.encode(channelData, {
     bitDepth: targetBitDepth,
     float: false,
     sampleRate: targetSampleRate,
   });
 
-  const outputDir = path.dirname(outputPath);
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
-
-  fs.writeFileSync(outputPath, outputBuffer);
+  await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
+  await fs.promises.writeFile(outputPath, outputBuffer);
 }

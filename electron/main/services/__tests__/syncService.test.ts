@@ -396,9 +396,16 @@ describe("SyncService", () => {
       ]);
     });
 
-    it("removes nothing when the sync is cancelled", async () => {
-      vi.spyOn(syncProgressManager, "finalizeSyncJob").mockReturnValueOnce(
-        true,
+    it("reports a cancelled sync, and removes and marks nothing (RE-07)", async () => {
+      vi.mocked(
+        syncFileOperationsService.processAllFiles,
+      ).mockImplementationOnce(async () => {
+        syncProgressManager.cancelCurrentSync();
+        return 0;
+      });
+      const completion = vi.spyOn(
+        syncProgressManager,
+        "emitCompletionProgress",
       );
 
       const result = await syncService.startKitSync(mockSettings, {
@@ -406,10 +413,18 @@ describe("SyncService", () => {
       });
 
       expect(result).toEqual({
-        error: "Sync operation was cancelled",
-        success: false,
+        data: {
+          cancelled: true,
+          skippedFiles: [],
+          syncedFiles: 0,
+          warnings: [],
+        },
+        success: true,
       });
+      expect(completion).not.toHaveBeenCalled();
       expect(mockRemoveCardEntries).not.toHaveBeenCalled();
+      expect(mockMarkKitsAsSynced).not.toHaveBeenCalled();
+      expect(syncProgressManager.getCurrentSyncJob()).toBeNull();
     });
 
     it("keeps a name file for every named bank", async () => {

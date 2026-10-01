@@ -37,7 +37,7 @@ If validation finds issues, they're shown in a results dialog before any writing
 2. Romper runs validation across all kits
 3. The write summary lists anything on the card that's no longer in your library (a sample you removed, a kit you deleted, a bank you renamed); sync removes it
 4. A local backup of the current SD card contents is created automatically
-5. Files are copied to the SD card with progress shown in the status bar
+5. Files are copied to the SD card with progress shown in the status bar. **Cancel** stops the write after the file in progress; files already written stay on the card, and nothing is removed from it
 6. Format conversions happen during this step -- for example, stereo-to-mono conversion for samples configured in mono mode
 7. Bank names are written to the card
 8. A completion message confirms success

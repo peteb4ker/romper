@@ -6,9 +6,11 @@ vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal<typeof fs>();
   return {
     ...actual,
-    copyFileSync: vi.fn(),
-    existsSync: vi.fn(),
-    mkdirSync: vi.fn(),
+    promises: {
+      ...actual.promises,
+      copyFile: vi.fn().mockResolvedValue(undefined),
+      mkdir: vi.fn().mockResolvedValue(undefined),
+    },
   };
 });
 
@@ -64,30 +66,17 @@ describe("SyncFileOperationsService", () => {
   });
 
   describe("ensureDestinationDirectory", () => {
-    it("should create directory if it does not exist", () => {
+    it("creates the destination folder, with any missing parents", async () => {
       mockPath.dirname.mockReturnValue("/path/to/dir");
-      mockFs.existsSync.mockReturnValue(false);
 
-      syncFileOperationsService.ensureDestinationDirectory(
+      await syncFileOperationsService.ensureDestinationDirectory(
         "/path/to/dir/file.wav",
       );
 
       expect(mockPath.dirname).toHaveBeenCalledWith("/path/to/dir/file.wav");
-      expect(mockFs.existsSync).toHaveBeenCalledWith("/path/to/dir");
-      expect(mockFs.mkdirSync).toHaveBeenCalledWith("/path/to/dir", {
+      expect(mockFs.promises.mkdir).toHaveBeenCalledWith("/path/to/dir", {
         recursive: true,
       });
-    });
-
-    it("should not create directory if it already exists", () => {
-      mockPath.dirname.mockReturnValue("/path/to/dir");
-      mockFs.existsSync.mockReturnValue(true);
-
-      syncFileOperationsService.ensureDestinationDirectory(
-        "/path/to/dir/file.wav",
-      );
-
-      expect(mockFs.mkdirSync).not.toHaveBeenCalled();
     });
   });
 
@@ -103,7 +92,7 @@ describe("SyncFileOperationsService", () => {
     it("should copy file for copy operation", async () => {
       await syncFileOperationsService.executeFileOperation(fileOp, {});
 
-      expect(mockFs.copyFileSync).toHaveBeenCalledWith(
+      expect(mockFs.promises.copyFile).toHaveBeenCalledWith(
         "/source/file.wav",
         "/dest/file.wav",
       );
@@ -171,7 +160,7 @@ describe("SyncFileOperationsService", () => {
         syncFileOperationsService.executeFileOperation(fileOp, {}),
       ).resolves.not.toThrow();
 
-      expect(mockFs.copyFileSync).toHaveBeenCalledWith(
+      expect(mockFs.promises.copyFile).toHaveBeenCalledWith(
         "/source/file.wav",
         "/dest/file.wav",
       );
@@ -187,7 +176,7 @@ describe("SyncFileOperationsService", () => {
         syncFileOperationsService.executeFileOperation(fileOp, {}),
       ).resolves.not.toThrow();
 
-      expect(mockFs.copyFileSync).toHaveBeenCalledWith(
+      expect(mockFs.promises.copyFile).toHaveBeenCalledWith(
         "/source/file.wav",
         "/dest/file.wav",
       );
@@ -247,7 +236,6 @@ describe("SyncFileOperationsService", () => {
 
     it("should handle file processing", async () => {
       mockPath.dirname.mockReturnValue("/dest");
-      mockFs.existsSync.mockReturnValue(true);
 
       // Should handle file processing without throwing
       await expect(
@@ -269,7 +257,6 @@ describe("SyncFileOperationsService", () => {
 
     it("should handle file processing", async () => {
       mockPath.dirname.mockReturnValue("/dest");
-      mockFs.existsSync.mockReturnValue(true);
 
       // Should return a number (processed file count)
       const result = await syncFileOperationsService.processAllFiles(
@@ -283,6 +270,35 @@ describe("SyncFileOperationsService", () => {
     it("should handle empty file list", async () => {
       const result = await syncFileOperationsService.processAllFiles([], {});
       expect(result).toBe(0);
+    });
+
+    it("yields between files, so a Cancel sent mid-sync stops it (RE-07)", async () => {
+      mockPath.dirname.mockReturnValue("/dest");
+      const job = { cancelled: false };
+      vi.mocked(syncProgressManager.getCurrentSyncJob).mockReturnValue(
+        job as never,
+      );
+      const threeFiles = [1, 2, 3].map((n) => ({
+        ...fileOps[0],
+        destinationPath: `/dest/file${n}.wav`,
+        filename: `file${n}.wav`,
+      }));
+
+      // Stands in for the cancelKitSync IPC message: it can only be handled
+      // if the loop gives the event loop a turn.
+      setImmediate(() => {
+        job.cancelled = true;
+      });
+      const synced = await syncFileOperationsService.processAllFiles(
+        threeFiles,
+        {},
+      );
+
+      expect(synced).toBe(1);
+      expect(mockFs.promises.copyFile).toHaveBeenCalledTimes(1);
+      vi.mocked(syncProgressManager.getCurrentSyncJob).mockReturnValue({
+        cancelled: false,
+      } as never);
     });
   });
 

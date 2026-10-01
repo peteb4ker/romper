@@ -14,16 +14,67 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
   SyncChangeSummary,
+  SyncProgress,
   SyncUpdateDialogProps,
 } from "./SyncUpdateDialog.types.js";
 
 export type { SyncChangeSummary };
+
+interface DismissButtonProps {
+  canCancelWrite: boolean;
+  isCancelling: boolean;
+  isWriting: boolean;
+  onCancelWrite: () => void;
+  onClose: () => void;
+  status?: SyncProgress["status"];
+}
+
+const DISMISS_BUTTON_CLASS =
+  "px-3 py-1.5 text-xs text-text-secondary border border-border-default rounded hover:bg-surface-3 transition-colors disabled:opacity-50";
+
+/**
+ * While a write runs, Cancel stops it after the file in progress (RE-07).
+ * Otherwise the button closes the panel.
+ */
+const DismissButton: React.FC<DismissButtonProps> = ({
+  canCancelWrite,
+  isCancelling,
+  isWriting,
+  onCancelWrite,
+  onClose,
+  status,
+}) => {
+  if (isWriting) {
+    return (
+      <button
+        className={DISMISS_BUTTON_CLASS}
+        data-testid="cancel-write"
+        disabled={isCancelling || !canCancelWrite}
+        onClick={onCancelWrite}
+      >
+        {isCancelling ? "Cancelling..." : "Cancel"}
+      </button>
+    );
+  }
+  const finished =
+    status === "error" || status === "completed" || status === "cancelled";
+  return (
+    <button
+      className={DISMISS_BUTTON_CLASS}
+      data-testid="cancel-sync"
+      onClick={onClose}
+    >
+      {finished ? "Close" : "Cancel"}
+    </button>
+  );
+};
 
 const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   isLoading = false,
   isOpen,
   kitName: _kitName,
   localChangeSummary,
+  onCancelSync,
   onClose,
   onConfirm,
   onGenerateChangeSummary,
@@ -41,6 +92,12 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState<null | string>(null);
   const [isClosing, setIsClosing] = useState(false);
+  // Cancel was pressed during a write; main stops after the current file
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading) setIsCancelling(false);
+  }, [isLoading]);
 
   // The summary reads the card (to list what sync will remove), so it is
   // regenerated whenever the card changes. Only the latest request counts:
@@ -113,6 +170,11 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 
   const handleConfirm = () => {
     onConfirm({ sdCardPath: localSdCardPath, skipInvalidFiles });
+  };
+
+  const handleCancelWrite = () => {
+    setIsCancelling(true);
+    onCancelSync?.();
   };
 
   const handleClose = () => {
@@ -198,6 +260,14 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                   </span>
                 )}
                 {syncProgress.status === "finalizing" && "Finalizing..."}
+                {syncProgress.status === "cancelled" && (
+                  <span
+                    className="text-text-secondary"
+                    data-testid="write-cancelled"
+                  >
+                    Write cancelled
+                  </span>
+                )}
                 {syncProgress.status === "completed" && (
                   <span className="text-accent-success flex items-center gap-1">
                     <CheckCircleIcon size={12} weight="fill" />
@@ -503,17 +573,14 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             "color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2))",
         }}
       >
-        <button
-          className="px-3 py-1.5 text-xs text-text-secondary border border-border-default rounded hover:bg-surface-3 transition-colors disabled:opacity-50"
-          data-testid="cancel-sync"
-          disabled={isLoading}
-          onClick={handleClose}
-        >
-          {syncProgress?.status === "error" ||
-          syncProgress?.status === "completed"
-            ? "Close"
-            : "Cancel"}
-        </button>
+        <DismissButton
+          canCancelWrite={Boolean(onCancelSync)}
+          isCancelling={isCancelling}
+          isWriting={isLoading}
+          onCancelWrite={handleCancelWrite}
+          onClose={handleClose}
+          status={syncProgress?.status}
+        />
 
         <div className="flex gap-2">
           {syncProgress?.status === "error" &&

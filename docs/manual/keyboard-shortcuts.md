@@ -28,6 +28,9 @@ When you press a bank letter, focus jumps to the first kit in that bank.
 | Navigate sample slots | Up / Down arrows |
 | Play selected sample (sequencer hidden) | `Space` or `Enter` |
 | Toggle step sequencer | `S` |
+| Undo / redo the last edit | `Cmd+Z` / `Cmd+Shift+Z` (macOS), `Ctrl+Z` / `Ctrl+Y` (Windows/Linux) |
+
+**Edit → Undo** and **Edit → Redo** in the menu bar do the same. In a text field, such as the kit search, they undo your typing instead.
 
 ### Kit Navigation
 

@@ -475,6 +475,95 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     });
   });
 
+  describe("Edit menu undo and redo (RE-65)", () => {
+    it("undoes and redoes under the same rules as the keys", () => {
+      const { result } = renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: true,
+        }),
+      );
+
+      expect(result.current.undoIfAllowed()).toBe(true);
+      expect(result.current.redoIfAllowed()).toBe(true);
+
+      expect(mockUndo).toHaveBeenCalledTimes(1);
+      expect(mockRedo).toHaveBeenCalledTimes(1);
+    });
+
+    it("does nothing in a locked kit, or with no kit open", () => {
+      const locked = renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: false,
+        }),
+      );
+      const noKit = renderHook(() =>
+        useGlobalKeyboardShortcuts({ isEditMode: true }),
+      );
+
+      expect(locked.result.current.undoIfAllowed()).toBe(false);
+      expect(locked.result.current.redoIfAllowed()).toBe(false);
+      expect(noKit.result.current.undoIfAllowed()).toBe(false);
+
+      expect(mockUndo).not.toHaveBeenCalled();
+      expect(mockRedo).not.toHaveBeenCalled();
+    });
+
+    it("marks a handled Cmd+Z so the menu's accelerator doesn't undo again", () => {
+      renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: true,
+        }),
+      );
+      const event = new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        key: "z",
+        metaKey: true,
+      });
+
+      document.dispatchEvent(event);
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(mockUndo).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves an unhandled Cmd+Z unmarked, for the menu to handle", () => {
+      renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: false,
+        }),
+      );
+      const event = new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        key: "z",
+        metaKey: true,
+      });
+
+      document.dispatchEvent(event);
+
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it("treats Shift+Cmd+Z reported as an uppercase Z as redo", () => {
+      renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: true,
+        }),
+      );
+
+      fireEvent.keyDown(document, { key: "Z", metaKey: true, shiftKey: true });
+
+      expect(mockRedo).toHaveBeenCalledTimes(1);
+      expect(mockUndo).not.toHaveBeenCalled();
+    });
+  });
+
   describe("cleanup", () => {
     it("should remove event listeners on unmount", () => {
       const removeEventListenerSpy = vi.spyOn(document, "removeEventListener");

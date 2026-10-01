@@ -1,18 +1,21 @@
 import type { KitBrowserHandle } from "@romper/app/renderer/components/KitBrowser";
 
-import React, { useCallback, useRef } from "react";
+import React, { useRef } from "react";
 
 import { createLogger } from "../../../utils/logger";
 import { useBankScanning } from "../shared/useBankScanning";
+import { isTypingTarget } from "../shared/useGlobalKeyboardShortcuts";
 import { useMenuEvents } from "../shared/useMenuEvents";
 import { SCAN_ALL_CONFIRM_MESSAGE } from "./useKitScan";
 
 const log = createLogger("KitViewMenu");
 
 interface UseKitViewMenuHandlersProps {
-  canRedo?: boolean;
-  canUndo?: boolean;
   onMessage: (text: string, type?: string, duration?: number) => void;
+  /** Romper's redo, for Edit > Redo outside a text field */
+  onRedo?: () => void;
+  /** Romper's undo, for Edit > Undo outside a text field */
+  onUndo?: () => void;
   openChangeDirectory: () => void;
   openPreferences: () => void;
 }
@@ -26,9 +29,9 @@ interface UseKitViewMenuHandlersReturn {
  * Provides dependency injection for better testability
  */
 export function useKitViewMenuHandlers({
-  canRedo = false,
-  canUndo = false,
   onMessage,
+  onRedo,
+  onUndo,
   openChangeDirectory,
   openPreferences,
 }: UseKitViewMenuHandlersProps): UseKitViewMenuHandlersReturn {
@@ -39,18 +42,6 @@ export function useKitViewMenuHandlers({
   const { scanBanks } = useBankScanning({
     onMessage,
   });
-
-  // Helper to dispatch keyboard events for undo/redo
-  const dispatchUndoRedoEvent = useCallback((isRedo: boolean) => {
-    const event = new KeyboardEvent("keydown", {
-      bubbles: true,
-      ctrlKey: true, // For Windows/Linux
-      key: "z",
-      metaKey: true, // For Mac
-      shiftKey: isRedo,
-    });
-    document.dispatchEvent(event);
-  }, []);
 
   // Menu event handlers
   useMenuEvents({
@@ -67,9 +58,7 @@ export function useKitViewMenuHandlers({
     },
     onRedo: () => {
       log.debug("Menu redo triggered");
-      if (canRedo) {
-        dispatchUndoRedoEvent(true);
-      }
+      runEditCommand("redo", onRedo);
     },
     onScanAll: () => {
       log.debug("Menu scan all triggered");
@@ -84,13 +73,24 @@ export function useKitViewMenuHandlers({
     },
     onUndo: () => {
       log.debug("Menu undo triggered");
-      if (canUndo) {
-        dispatchUndoRedoEvent(false);
-      }
+      runEditCommand("undo", onUndo);
     },
   });
 
   return {
     kitBrowserRef,
   };
+}
+
+/**
+ * Edit > Undo/Redo: a focused text field gets its own undo, as the native
+ * menu role gave it; anything else gets Romper's (RE-65)
+ */
+function runEditCommand(command: "redo" | "undo", romperCommand?: () => void) {
+  if (isTypingTarget(document.activeElement)) {
+    // The page's only way to reach the browser's own text undo stack
+    document.execCommand(command);
+    return;
+  }
+  romperCommand?.();
 }

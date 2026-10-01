@@ -21,13 +21,12 @@ const mockMenu = {
   setApplicationMenu: vi.fn(),
 };
 
-const mockBrowserWindow = {
-  getAllWindows: vi.fn().mockReturnValue([]),
-  getFocusedWindow: vi.fn(),
-  webContents: {
-    send: vi.fn(),
-  },
-};
+// A class, so the menu's `instanceof BrowserWindow` check works
+class mockBrowserWindow {
+  static getAllWindows = vi.fn().mockReturnValue([]);
+  static getFocusedWindow = vi.fn();
+  webContents = { send: vi.fn() };
+}
 
 const mockShell = {
   openExternal: vi.fn(),
@@ -191,6 +190,57 @@ describe("Menu IPC Integration Tests", () => {
       menuItem.click();
 
       expect(mockWindow.webContents.send).toHaveBeenCalledWith(event);
+    });
+  });
+
+  describe("Edit > Undo and Redo (RE-65)", () => {
+    const editItem = async (label: string) => {
+      const { createApplicationMenu } = await import("../applicationMenu");
+      createApplicationMenu();
+      const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
+      const editMenu = menuTemplate.find(
+        (item: { label?: string }) => item.label === "Edit",
+      );
+      return editMenu.submenu.find(
+        (item: { label?: string }) => item.label === label,
+      );
+    };
+
+    it.each([
+      ["Undo", "undo", "CmdOrCtrl+Z", "menu-undo"],
+      ["Redo", "redo", "Shift+CmdOrCtrl+Z", "menu-redo"],
+    ])(
+      "%s sends %s's channel to the window it acted on, not the native role",
+      async (label, id, accelerator, channel) => {
+        const item = await editItem(label);
+
+        // The native role would only reach text fields, never Romper's undo
+        expect(item.role).toBeUndefined();
+        expect(item.id).toBe(id);
+        expect(item.accelerator).toBe(accelerator);
+
+        const window = new mockBrowserWindow();
+        item.click(item, window);
+        expect(window.webContents.send).toHaveBeenCalledWith(channel);
+        expect(mockBrowserWindow.getFocusedWindow).not.toHaveBeenCalled();
+      },
+    );
+
+    it("falls back to the focused window when the click has none", async () => {
+      const focused = new mockBrowserWindow();
+      mockBrowserWindow.getFocusedWindow.mockReturnValue(focused);
+      const item = await editItem("Undo");
+
+      item.click(item, undefined);
+
+      expect(focused.webContents.send).toHaveBeenCalledWith("menu-undo");
+    });
+
+    it("does nothing without a window", async () => {
+      mockBrowserWindow.getFocusedWindow.mockReturnValue(null);
+      const item = await editItem("Redo");
+
+      expect(() => item.click(item, undefined)).not.toThrow();
     });
   });
 

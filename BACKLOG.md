@@ -83,11 +83,13 @@ This file tracks what's being done about each item.
 | RE-56 | Medium | Dead code | About 942 LOC of unused main-process files (`stereoSyncProcessor`, `rampleNamingService`, `db/fileOperations`, `stepPatternUtils`, `sampleSlotService`, two utils) and about 1,100 LOC in the renderer (9 test-only modules, the unreachable `AboutView` route and `ValidationResultsDialog`). | partly done (#372 deletes `rampleNamingService` and `stereoSyncProcessor`) |
 | RE-57 | Medium | Contract | The bridge contract does not bind main. `SyncChangeSummary` does not match what main returns (the renderer casts it); `SyncProgress` is defined four times with different fields and status values; several return types differ from the contract (null versus undefined, `unknown`, an `"overwrite"` mode main rejects). | open |
 | RE-58 | Medium | Tooling | The pre-commit tests fail with Vitest worker-start timeouts when the machine is busy (load average above ~20, for example several sessions testing at once), because `vitest.config.fast.ts` always starts 10 workers. | open |
+| RE-62 | Medium | Dependencies | `node-wav` is abandoned (2016) with an open upstream security report; it needs workarounds (`toPlainWav`) and calls the deprecated `Buffer()`. | open (#388) |
 
 ## Done
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-61 | Medium | Sync | The write panel falls behind the real count on large stores: two progress events per file, and each re-rendered the kit grid. | done (#391) |
 | RE-19 | High | Release | Release secrets are more exposed than needed: the base64 p12 is a job-level environment variable during `npm ci` (the lifecycle scripts of about 1,500 packages) on all three runners; checkout keeps the token while the workflow has `contents: write`; `id-token: write` is unused; third-party actions that receive secrets are pinned by tag, not by SHA. | done (#389) |
 | RE-17 | High | Release | The release workflow runs no unit, integration or e2e tests and does not check that the tag is on `main` or that CI passed. | done (#386) |
 | RE-16 | High | Platform | macOS auto-update does not work in packaged builds. The main process is built as a browser-style library, so the bundled `update-electron-app` gets an empty `node:assert` and a `require` shim that throws under ESM. | done (#384) |

@@ -202,6 +202,15 @@ Cancel stops after the file in progress and returns a `cancelled` outcome.
 Converting a file is synchronous CPU work, but short (about 0.1 s for a
 3-minute stereo 24-bit file), so it runs in the main process.
 
+Progress reaches the renderer at most every 50 ms (RE-61):
+`syncProgressManager` sends per-file progress on a leading-edge throttle
+and holds the newest skipped update until the interval ends. The first
+update, the last file's count, completion and errors go out at once.
+In the renderer, progress lives in a small store (`syncProgressStore.ts`),
+not React state, and only the write panel (`LiveSyncUpdateDialog`)
+subscribes to it, so an update doesn't re-render the kit browser or the
+grid behind the panel.
+
 The main process is built for Node (`vite.main.config.ts`, RE-16): Node
 built-ins and every package in `dependencies` stay as imports and load
 from Node and the packaged `node_modules` at runtime. So a package main

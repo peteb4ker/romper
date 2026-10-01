@@ -97,8 +97,8 @@ vi.mock("../../components/hooks/shared/useValidationResults", () => ({
 }));
 
 const mockShowMessage = vi.fn();
-vi.mock("../../components/hooks/shared/useMessageDisplay", () => ({
-  useMessageDisplay: vi.fn(() => ({
+vi.mock("../../components/hooks/shared/useMessageApi", () => ({
+  useMessageApi: vi.fn(() => ({
     showMessage: mockShowMessage,
   })),
 }));

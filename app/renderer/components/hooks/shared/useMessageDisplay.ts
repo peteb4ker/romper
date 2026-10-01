@@ -27,6 +27,10 @@ const DEFAULT_DURATIONS: Record<MessageType, number> = {
  * terminates here; messages are held in state and rendered by the
  * MessageDisplay toast stack, and mirrored to the structured logger for
  * debugging.
+ *
+ * It owns the app's message state, so it's called once, by the provider in
+ * main.tsx. Components read it with `useMessageApi()`: a second call here
+ * makes a separate stack that nothing renders (RE-11).
  */
 export function useMessageDisplay() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);

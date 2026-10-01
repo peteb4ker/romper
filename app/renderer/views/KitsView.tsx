@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
 import InvalidLocalStoreDialog from "../components/dialogs/InvalidLocalStoreDialog";
 import { EnvironmentBanner } from "../components/EnvironmentBanner";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useKitDataManager } from "../components/hooks/kit-management/useKitDataManager";
 import { useKitFilters } from "../components/hooks/kit-management/useKitFilters";
 import { useKitNavigation } from "../components/hooks/kit-management/useKitNavigation";
@@ -175,56 +176,67 @@ const KitsView: React.FC = () => {
         )}
 
       {navigation.selectedKit && navigation.selectedKitSamples && currentKit ? (
-        <KitEditorContainer
-          kit={currentKit}
-          kitIndex={navigation.currentKitIndex}
-          kitName={navigation.selectedKit}
-          kits={navigation.sortedKits}
-          onAddUndoAction={keyboardShortcuts.addUndoAction}
-          onBack={navigation.handleBack}
-          onKitUpdated={refreshAllKitsAndSamples}
-          onMessage={showMessage}
-          onNextKit={navigation.handleNextKit}
-          onPrevKit={navigation.handlePrevKit}
-          onRefreshKitMetadata={handleRefreshKitMetadata}
-          onRequestSamplesReload={handleRequestSamplesReload}
-          onToggleEditableMode={toggleKitEditable}
-          onToggleFavorite={toggleKitFavorite}
-          onUpdateKitAlias={updateKitAlias}
-          samples={navigation.selectedKitSamples}
-          sequenceUndo={sequenceUndo}
-        />
+        <ErrorBoundary
+          area="Kit editor"
+          backLabel="Back to kits"
+          onBack={() => {
+            void navigation.handleBack();
+          }}
+          resetKey={navigation.selectedKit}
+        >
+          <KitEditorContainer
+            kit={currentKit}
+            kitIndex={navigation.currentKitIndex}
+            kitName={navigation.selectedKit}
+            kits={navigation.sortedKits}
+            onAddUndoAction={keyboardShortcuts.addUndoAction}
+            onBack={navigation.handleBack}
+            onKitUpdated={refreshAllKitsAndSamples}
+            onMessage={showMessage}
+            onNextKit={navigation.handleNextKit}
+            onPrevKit={navigation.handlePrevKit}
+            onRefreshKitMetadata={handleRefreshKitMetadata}
+            onRequestSamplesReload={handleRequestSamplesReload}
+            onToggleEditableMode={toggleKitEditable}
+            onToggleFavorite={toggleKitFavorite}
+            onUpdateKitAlias={updateKitAlias}
+            samples={navigation.selectedKitSamples}
+            sequenceUndo={sequenceUndo}
+          />
+        </ErrorBoundary>
       ) : (
-        <KitBrowserContainer
-          // Favorites filter props
-          favoritesCount={kitFilters.favoritesCount}
-          getKitFavoriteState={kitFilters.getKitFavoriteState}
-          handleToggleFavorite={kitFilters.handleToggleFavorite}
-          handleToggleFavoritesFilter={kitFilters.handleToggleFavoritesFilter}
-          handleToggleModifiedFilter={kitFilters.handleToggleModifiedFilter}
-          isSearching={search.isSearching}
-          // Other props
-          kits={kitFilters.filteredKits}
-          localStorePath={localStorePath}
-          modifiedCount={kitFilters.modifiedCount}
-          onAboutClick={() =>
-            globalThis.dispatchEvent(new CustomEvent("menu-about"))
-          }
-          onMessage={showMessage}
-          onRefreshKits={refreshAllKitsAndSamples}
-          onSearchChange={search.searchChange}
-          onSearchClear={search.clearSearch}
-          onSelectKit={navigation.handleSelectKit}
-          onShowSettings={dialogState.openPreferences}
-          ref={kitBrowserRef}
-          sampleCounts={sampleCounts}
-          // Search props
-          searchQuery={search.searchQuery}
-          searchResultCount={search.searchResultCount}
-          setLocalStorePath={setLocalStorePath}
-          showFavoritesOnly={kitFilters.showFavoritesOnly}
-          showModifiedOnly={kitFilters.showModifiedOnly}
-        />
+        <ErrorBoundary area="Kit list">
+          <KitBrowserContainer
+            // Favorites filter props
+            favoritesCount={kitFilters.favoritesCount}
+            getKitFavoriteState={kitFilters.getKitFavoriteState}
+            handleToggleFavorite={kitFilters.handleToggleFavorite}
+            handleToggleFavoritesFilter={kitFilters.handleToggleFavoritesFilter}
+            handleToggleModifiedFilter={kitFilters.handleToggleModifiedFilter}
+            isSearching={search.isSearching}
+            // Other props
+            kits={kitFilters.filteredKits}
+            localStorePath={localStorePath}
+            modifiedCount={kitFilters.modifiedCount}
+            onAboutClick={() =>
+              globalThis.dispatchEvent(new CustomEvent("menu-about"))
+            }
+            onMessage={showMessage}
+            onRefreshKits={refreshAllKitsAndSamples}
+            onSearchChange={search.searchChange}
+            onSearchClear={search.clearSearch}
+            onSelectKit={navigation.handleSelectKit}
+            onShowSettings={dialogState.openPreferences}
+            ref={kitBrowserRef}
+            sampleCounts={sampleCounts}
+            // Search props
+            searchQuery={search.searchQuery}
+            searchResultCount={search.searchResultCount}
+            setLocalStorePath={setLocalStorePath}
+            showFavoritesOnly={kitFilters.showFavoritesOnly}
+            showModifiedOnly={kitFilters.showModifiedOnly}
+          />
+        </ErrorBoundary>
       )}
 
       {/* Local Store Wizard Modal */}

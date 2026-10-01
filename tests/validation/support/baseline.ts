@@ -15,6 +15,13 @@ export const BASELINE_EXPECTED: Expectation[] = [
   },
   {
     pattern:
+      /:ERROR:gpu\/ipc\/client\/command_buffer_proxy_impl\.cc:\d+\] ContextResult::kTransientFailure/,
+    reason:
+      "Chromium's GPU process can't start on the GPU-less Linux CI runners",
+    sources: ["main-stderr"],
+  },
+  {
+    pattern:
       /:ERROR:sandbox\/mac\/system_services\.cc:\d+\] SetApplicationIsDaemon/,
     reason:
       "Chromium logs this on macOS runners when the app runs as an accessory (hidden window)",

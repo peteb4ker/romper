@@ -54,7 +54,7 @@ flowchart LR
   `sampleMetadataService`, `sampleSlotService` and `sampleValidator`.
 - `scanService` depends on the DB operations, `audioUtils` and
   `shared/kitUtilsShared`.
-- `archiveService` depends on `archiveUtils` (`unzipper`, `node:https`).
+- `archiveService` depends on `archiveUtils` (`unzipper`, global `fetch`).
 - All DB access goes through `db/romperDbCoreORM.ts`, a re-export file over
   `db/operations/*` and `db/utils/dbUtilities.ts`.
 - `stereoSyncProcessor` and `rampleNamingService` exist but nothing in

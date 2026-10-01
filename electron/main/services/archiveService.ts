@@ -3,6 +3,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  ArchiveChecksumError,
   countZipEntries,
   downloadArchive,
   extractZipEntries,
@@ -15,6 +16,14 @@ import { logger } from "../utils/logger.js";
  */
 export const SQUARP_FACTORY_SAMPLES_URL =
   "https://data.squarp.net/RampleSamplesV1-2.zip";
+
+/**
+ * SHA-256 of the archive at SQUARP_FACTORY_SAMPLES_URL (327,886,026 bytes),
+ * checked after every download from that URL. It must match
+ * `tests/validation/factory-archive.json`, which a unit test enforces.
+ */
+export const SQUARP_FACTORY_SAMPLES_SHA256 =
+  "1b03f1737a21598bdce05e1de344f71a1c9d64a0f314516ccf82c60215eca84c";
 
 /**
  * Service for archive download and extraction operations
@@ -56,10 +65,13 @@ export class ArchiveService {
       progressCallback?.({ percent: 100, phase: "Done" });
       return { success: true };
     } catch (e) {
+      return { error: this.formatErrorMessage(e), success: false };
+    } finally {
+      // The downloaded zip (about 313 MiB for the factory pack) is only
+      // needed until extraction ends, whether it succeeded or not
       if (tmpZipPath) {
         await this.cleanupTempFile(url, tmpZipPath);
       }
-      return { error: this.formatErrorMessage(e), success: false };
     }
   }
 
@@ -134,12 +146,24 @@ export class ArchiveService {
     const tmp = os.tmpdir();
     const tmpZipPath = path.join(tmp, `romper_download_${Date.now()}.zip`);
 
-    await downloadArchive(url, tmpZipPath, (percent: null | number) => {
-      progressCallback?.({
-        percent,
-        phase: "Downloading",
-      });
-    });
+    await downloadArchive(
+      url,
+      tmpZipPath,
+      (percent: null | number) => {
+        progressCallback?.({
+          percent,
+          phase: "Downloading",
+        });
+      },
+      {
+        // Only Squarp's archive has a known checksum; an override URL (tests,
+        // a local mirror) is trusted as given
+        expectedSha256:
+          url === SQUARP_FACTORY_SAMPLES_URL
+            ? SQUARP_FACTORY_SAMPLES_SHA256
+            : undefined,
+      },
+    );
 
     return tmpZipPath;
   }
@@ -148,6 +172,14 @@ export class ArchiveService {
    * Format error message
    */
   private formatErrorMessage(e: unknown): string {
+    if (e instanceof ArchiveChecksumError) {
+      console.error("[ArchiveService]", e.message);
+      return (
+        "The factory sample archive on Squarp's server has changed since " +
+        "this version of Romper was released, so Romper can't verify it. " +
+        "Update Romper, or set up from an SD card instead."
+      );
+    }
     let message = e instanceof Error ? e.message : String(e);
     if (message?.includes("premature close")) {
       message =

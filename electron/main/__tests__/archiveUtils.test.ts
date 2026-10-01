@@ -1,13 +1,19 @@
+import type { AddressInfo } from "node:net";
+
 import AdmZip from "adm-zip";
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
+import * as http from "node:http";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
+  ArchiveChecksumError,
   type ArchiveLimits,
   countZipEntries,
   DEFAULT_ARCHIVE_LIMITS,
+  downloadArchive,
   extractZipEntries,
   isValidEntry,
   isWithinDirectory,
@@ -187,6 +193,28 @@ describe("extractZipEntries", () => {
     ).rejects.toThrow(/maximum entry count/);
   });
 
+  it("fails when a file can't be written", async () => {
+    const zipPath = buildZip({ "kit/a.wav": "1" });
+    const dest = path.join(tmpRoot, "out");
+    fs.mkdirSync(path.join(dest, "kit", "a.wav"), { recursive: true });
+
+    // A folder where the file should go makes the write fail
+    await expect(extractZipEntries(zipPath, dest, 1, () => {})).rejects.toThrow(
+      /Extraction failed: couldn't write .*a\.wav/,
+    );
+  });
+
+  it("fails when a folder can't be created", async () => {
+    const zipPath = buildZip({ "kit/a.wav": "1" });
+    const dest = path.join(tmpRoot, "out");
+    fs.mkdirSync(dest, { recursive: true });
+    fs.writeFileSync(path.join(dest, "kit"), "a file, not a folder");
+
+    await expect(extractZipEntries(zipPath, dest, 1, () => {})).rejects.toThrow(
+      /Extraction failed: couldn't create folder .*kit/,
+    );
+  });
+
   it("counts only valid entries", async () => {
     const zipPath = buildZip({
       "__MACOSX/junk.wav": "junk",
@@ -194,5 +222,122 @@ describe("extractZipEntries", () => {
       "b.wav": "2",
     });
     await expect(countZipEntries(zipPath)).resolves.toBe(2);
+  });
+});
+
+describe("downloadArchive", () => {
+  const body = Buffer.alloc(64 * 1024, 0x5a);
+  const bodySha256 = createHash("sha256").update(body).digest("hex");
+  let tmpRoot: string;
+  let server: http.Server;
+  let baseUrl: string;
+  let target: string;
+
+  beforeEach(async () => {
+    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "romper-download-test-"));
+    target = path.join(tmpRoot, "archive.zip");
+    server = http.createServer((req, res) => {
+      switch (req.url) {
+        case "/archive.zip":
+          res.writeHead(200, { "Content-Length": body.length });
+          res.end(body);
+          return;
+        case "/moved":
+          res.writeHead(302, { Location: "/archive.zip" });
+          res.end();
+          return;
+        case "/stall":
+          // Headers and a first chunk, then nothing
+          res.writeHead(200, { "Content-Length": body.length });
+          res.write(body.subarray(0, 1024));
+          return;
+        default:
+          res.writeHead(404, { "Content-Type": "text/html" });
+          res.end("<html>Not found</html>");
+      }
+    });
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve),
+    );
+    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterEach(async () => {
+    server.closeAllConnections();
+    await new Promise((resolve) => server.close(resolve));
+    fs.rmSync(tmpRoot, { force: true, recursive: true });
+  });
+
+  const leftovers = () => fs.readdirSync(tmpRoot);
+
+  it("saves the body and reports progress up to 100%", async () => {
+    const progress: (null | number)[] = [];
+    await downloadArchive(`${baseUrl}/archive.zip`, target, (p) =>
+      progress.push(p),
+    );
+
+    expect(fs.readFileSync(target)).toEqual(body);
+    expect(progress.at(-1)).toBe(100);
+    expect(leftovers()).toEqual(["archive.zip"]);
+  });
+
+  it("fails on a non-2xx response and keeps nothing", async () => {
+    await expect(
+      downloadArchive(`${baseUrl}/missing.zip`, target, () => {}),
+    ).rejects.toThrow(/HTTP 404/);
+    expect(leftovers()).toEqual([]);
+  });
+
+  it("follows a redirect to the archive", async () => {
+    await downloadArchive(`${baseUrl}/moved`, target, () => {});
+    expect(fs.readFileSync(target)).toEqual(body);
+  });
+
+  it("fails when no data arrives within the idle timeout", async () => {
+    await expect(
+      downloadArchive(`${baseUrl}/stall`, target, () => {}, {
+        idleTimeoutMs: 200,
+      }),
+    ).rejects.toThrow(/stalled: no data received/);
+    expect(leftovers()).toEqual([]);
+  });
+
+  it("accepts a matching checksum", async () => {
+    await downloadArchive(`${baseUrl}/archive.zip`, target, () => {}, {
+      expectedSha256: bodySha256,
+    });
+    expect(fs.existsSync(target)).toBe(true);
+  });
+
+  it("rejects a checksum mismatch and keeps nothing", async () => {
+    const expected = "0".repeat(64);
+    const error = await downloadArchive(
+      `${baseUrl}/archive.zip`,
+      target,
+      () => {},
+      { expectedSha256: expected },
+    ).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ArchiveChecksumError);
+    expect(error).toMatchObject({ actual: bodySha256, expected });
+    expect(leftovers()).toEqual([]);
+  });
+
+  it("fails when the file can't be written", async () => {
+    const unwritable = path.join(tmpRoot, "no-such-folder", "archive.zip");
+    await expect(
+      downloadArchive(`${baseUrl}/archive.zip`, unwritable, () => {}),
+    ).rejects.toThrow(/ENOENT/);
+  });
+
+  it("stops when the caller aborts", async () => {
+    const controller = new AbortController();
+    const download = downloadArchive(`${baseUrl}/stall`, target, () => {}, {
+      signal: controller.signal,
+    });
+    setTimeout(() => controller.abort(new Error("Setup cancelled")), 50);
+
+    await expect(download).rejects.toThrow("Setup cancelled");
+    expect(leftovers()).toEqual([]);
   });
 });

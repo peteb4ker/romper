@@ -9,6 +9,10 @@ class MockStream extends EventEmitter {
   close(cb?: Function) {
     if (cb) cb();
   }
+  // Extraction tears streams down on failure; a real stream then closes
+  destroy() {
+    setImmediate(() => this.emit("close"));
+  }
   pipe(dest: unknown) {
     if (dest && typeof dest.emitUnzipEvents === "function") {
       dest.emitUnzipEvents();
@@ -84,22 +88,20 @@ vi.mock("unzipper", () => ({
     return stream;
   }),
 }));
-vi.mock("node:https", () => ({
-  get: vi.fn((_url: unknown, cb: unknown) => {
-    const res = new MockStream();
-    res.headers = { "content-length": "100" };
-    setTimeout(() => {
-      res.emit("data", Buffer.alloc(50));
-      res.emit("data", Buffer.alloc(50));
-      res.emit("end");
-      setTimeout(() => {
-        if (lastWriteStream) lastWriteStream.emit("finish");
-      }, 1);
-    }, 5);
-    cb(res);
-    return { on: vi.fn() };
-  }),
+// The download itself is covered against a real HTTP server in
+// archiveUtils.test.ts; here it's a stub that reports progress and resolves.
+vi.mock("../../archiveUtils", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../archiveUtils")>()),
+  downloadArchive: vi.fn(),
 }));
+const fakeDownload = async (
+  _url: string,
+  _target: string,
+  onProgress: (percent: null | number) => void,
+) => {
+  onProgress(50);
+  onProgress(100);
+};
 
 const mockEvent = { sender: { send: vi.fn() } };
 
@@ -141,6 +143,17 @@ beforeEach(async () => {
   unzipperStreams.length = 0;
   lastWriteStream = null;
   unzipScript = defaultUnzipScript;
+  vi.mocked(fs.mkdir).mockImplementation(((
+    _dir: unknown,
+    _opts: unknown,
+    cb: (err: Error | null) => void,
+  ) => cb(null)) as unknown as typeof fs.mkdir);
+  vi.mocked(fs.createReadStream).mockImplementation(
+    () => new MockStream() as unknown as fs.ReadStream,
+  );
+  vi.mocked(fs.existsSync).mockReturnValue(true);
+  const { downloadArchive } = await import("../../archiveUtils");
+  vi.mocked(downloadArchive).mockImplementation(fakeDownload);
   const { registerIpcHandlers } = await import("../../ipcHandlers");
   registerIpcHandlers({}, {});
 });
@@ -179,14 +192,10 @@ describe("download-and-extract-archive handler", () => {
   }, 15000);
 
   it("handles download errors and emits archive-error", async () => {
-    const https = await import("node:https");
-    (https.get as unknown).mockImplementationOnce(() => {
-      const req = new MockStream();
-      setTimeout(() => {
-        req.emit("error", new Error("network fail"));
-      }, 1);
-      return req;
-    });
+    const { downloadArchive } = await import("../../archiveUtils");
+    vi.mocked(downloadArchive).mockRejectedValueOnce(
+      new Error("Download failed: the server answered HTTP 404 Not Found"),
+    );
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await invokeWithArchiveUrl(
       handler,
@@ -249,7 +258,7 @@ describe("download-and-extract-archive handler", () => {
     );
   }, 15000);
 
-  it("logs directory creation errors but continues extraction", async () => {
+  it("fails extraction when a folder can't be created (RE-24)", async () => {
     (fs.mkdir as unknown).mockImplementation(
       (dir: unknown, opts: unknown, cb: unknown) =>
         cb && cb(new Error("mkdir fail")),
@@ -260,14 +269,15 @@ describe("download-and-extract-archive handler", () => {
       handler,
       "https://mkdir.com/archive.zip",
     );
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/couldn't create folder.*mkdir fail/);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
-      expect.stringContaining("archive-progress"),
-      expect.objectContaining({ phase: expect.any(String) }),
+      "archive-error",
+      expect.objectContaining({ message: expect.any(String) }),
     );
   }, 15000);
 
-  it("logs file write errors but continues extraction", async () => {
+  it("fails extraction when a file can't be written (RE-24)", async () => {
     unzipScript = (stream) => {
       setTimeout(() => {
         // Emit an entry to trigger file extraction
@@ -300,10 +310,9 @@ describe("download-and-extract-archive handler", () => {
       handler,
       "https://write.com/archive.zip",
     );
-    expect(result.success).toBe(true);
-    expect(mockEvent.sender.send).toHaveBeenCalledWith(
-      expect.stringContaining("archive-progress"),
-      expect.objectContaining({ phase: expect.any(String) }),
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(
+      /couldn't write \/mock\/dest\/foo\.wav: write fail/,
     );
   }, 15000);
 
@@ -369,59 +378,7 @@ describe("download-and-extract-archive handler", () => {
     );
   }, 15000);
 
-  it("handles response with no content-length header", async () => {
-    const https = await import("node:https");
-    (https.get as unknown).mockImplementationOnce(
-      (_url: unknown, cb: unknown) => {
-        const res = new MockStream();
-        res.headers = {}; // No content-length header
-        setTimeout(() => {
-          res.emit("data", Buffer.alloc(50));
-          res.emit("data", Buffer.alloc(50));
-          res.emit("end");
-          setTimeout(() => {
-            if (lastWriteStream) lastWriteStream.emit("finish");
-          }, 1);
-        }, 5);
-        cb(res);
-        return { on: vi.fn() };
-      },
-    );
-
-    const handler = ipcMainHandlers["download-and-extract-archive"];
-    const result = await invokeWithArchiveUrl(
-      handler,
-      "https://nocontent.com/archive.zip",
-    );
-
-    expect(result.success).toBe(true);
-    expect(mockEvent.sender.send).toHaveBeenCalledWith(
-      expect.stringContaining("archive-progress"),
-      expect.objectContaining({ phase: expect.any(String) }),
-    );
-  }, 15000);
-
-  it("handles large download progress reporting", async () => {
-    const https = await import("node:https");
-    (https.get as unknown).mockImplementationOnce(
-      (_url: unknown, cb: unknown) => {
-        const res = new MockStream();
-        res.headers = { "content-length": "2000" };
-        setTimeout(() => {
-          // Emit multiple data chunks to test progress reporting
-          for (let i = 0; i < 10; i++) {
-            res.emit("data", Buffer.alloc(200));
-          }
-          res.emit("end");
-          setTimeout(() => {
-            if (lastWriteStream) lastWriteStream.emit("finish");
-          }, 1);
-        }, 5);
-        cb(res);
-        return { on: vi.fn() };
-      },
-    );
-
+  it("forwards download progress", async () => {
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await invokeWithArchiveUrl(
       handler,
@@ -430,13 +387,105 @@ describe("download-and-extract-archive handler", () => {
 
     expect(result.success).toBe(true);
     expect(mockEvent.sender.send).toHaveBeenCalledWith(
-      expect.stringContaining("archive-progress"),
-      expect.objectContaining({
-        percent: expect.any(Number),
-        phase: expect.any(String),
-      }),
+      "archive-progress",
+      expect.objectContaining({ percent: 50, phase: "Downloading" }),
     );
   }, 15000);
+});
+
+describe("temporary archive cleanup (RE-24)", () => {
+  const tempZip = expect.stringMatching(/romper_download_\d+\.zip$/);
+
+  it("deletes the downloaded zip after a successful setup", async () => {
+    const handler = ipcMainHandlers["download-and-extract-archive"];
+    const result = await invokeWithArchiveUrl(
+      handler,
+      "https://example.com/archive.zip",
+    );
+
+    expect(result.success).toBe(true);
+    expect(fs.promises.unlink).toHaveBeenCalledWith(tempZip);
+  }, 15000);
+
+  it("deletes the downloaded zip when extraction fails", async () => {
+    vi.mocked(fs.createReadStream)
+      .mockImplementationOnce(
+        () => new MockStream() as unknown as fs.ReadStream,
+      )
+      .mockImplementationOnce(() => {
+        throw new Error("fail");
+      });
+    const handler = ipcMainHandlers["download-and-extract-archive"];
+    const result = await invokeWithArchiveUrl(
+      handler,
+      "https://example.com/archive.zip",
+    );
+
+    expect(result.success).toBe(false);
+    expect(fs.promises.unlink).toHaveBeenCalledWith(tempZip);
+  }, 15000);
+
+  it("never deletes a local file:// archive", async () => {
+    const handler = ipcMainHandlers["download-and-extract-archive"];
+    const result = await invokeWithArchiveUrl(
+      handler,
+      "file:///mock/local/archive.zip",
+    );
+
+    expect(result.success).toBe(true);
+    expect(fs.promises.unlink).not.toHaveBeenCalled();
+  }, 15000);
+});
+
+describe("factory archive checksum (RE-24)", () => {
+  async function downloadOptionsFor(url: string | undefined) {
+    const { archiveService } = await import("../archiveService");
+    const { downloadArchive } = await import("../../archiveUtils");
+    if (url) process.env.ROMPER_SQUARP_ARCHIVE_URL = url;
+    try {
+      const { getFactorySamplesArchiveUrl } = await import("../archiveService");
+      await archiveService.downloadAndExtractArchive(
+        getFactorySamplesArchiveUrl(),
+        "/mock/dest",
+      );
+    } finally {
+      delete process.env.ROMPER_SQUARP_ARCHIVE_URL;
+    }
+    return vi.mocked(downloadArchive).mock.calls[0][3];
+  }
+
+  it("checks Squarp's archive against the pinned SHA-256", async () => {
+    const { SQUARP_FACTORY_SAMPLES_SHA256 } = await import("../archiveService");
+    expect(await downloadOptionsFor(undefined)).toEqual({
+      expectedSha256: SQUARP_FACTORY_SAMPLES_SHA256,
+    });
+  });
+
+  it("doesn't check an overridden archive URL", async () => {
+    expect(
+      await downloadOptionsFor("https://mirror.example/archive.zip"),
+    ).toEqual({ expectedSha256: undefined });
+  });
+
+  it("explains a mismatch: the archive changed; update or use an SD card", async () => {
+    const { ArchiveChecksumError, downloadArchive } =
+      await import("../../archiveUtils");
+    vi.mocked(downloadArchive).mockRejectedValueOnce(
+      new ArchiveChecksumError("a".repeat(64), "b".repeat(64)),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { archiveService, SQUARP_FACTORY_SAMPLES_URL } =
+      await import("../archiveService");
+
+    const result = await archiveService.downloadAndExtractArchive(
+      SQUARP_FACTORY_SAMPLES_URL,
+      "/mock/dest",
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/archive on Squarp's server has changed/);
+    expect(result.error).toMatch(/Update Romper, or set up from an SD card/);
+  });
 });
 
 describe("getFactorySamplesArchiveUrl (RE-03)", () => {

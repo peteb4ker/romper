@@ -80,12 +80,12 @@ This file tracks what's being done about each item.
 | RE-56 | Medium | Dead code | About 942 LOC of unused main-process files (`stereoSyncProcessor`, `rampleNamingService`, `db/fileOperations`, `stepPatternUtils`, `sampleSlotService`, two utils) and about 1,100 LOC in the renderer (9 test-only modules, the unreachable `AboutView` route and `ValidationResultsDialog`). | partly done (#372 deletes `rampleNamingService` and `stereoSyncProcessor`) |
 | RE-57 | Medium | Contract | The bridge contract does not bind main. `SyncChangeSummary` does not match what main returns (the renderer casts it); `SyncProgress` is defined four times with different fields and status values; several return types differ from the contract (null versus undefined, `unknown`, an `"overwrite"` mode main rejects). | open |
 | RE-58 | Medium | Tooling | The pre-commit tests fail with Vitest worker-start timeouts when the machine is busy (load average above ~20, for example several sessions testing at once), because `vitest.config.fast.ts` always starts 10 workers. | open |
-| RE-63 | Medium | Sync | Sample conversion truncates instead of rounding: re-encoding an unchanged 16-bit sample alters about a third of its samples, and 24- to 16-bit conversion has twice the quantization error. | open |
 
 ## Done
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-63 | Medium | Sync | Sample conversion truncates instead of rounding: re-encoding an unchanged 16-bit sample alters about a third of its samples, and 24- to 16-bit conversion has twice the quantization error. | done (#396) |
 | RE-14 | High | Playback | Each play connects a new analyser (and a splitter for stereo) to the slot's gain node, and nothing disconnects them. | done (#366 node leak; #397 one shared AudioContext) |
 | RE-13 | High | Playback | The voice choke can fail after any kit refresh. Step, condition, mode, volume and alias edits reload all kits, which resets the "playing" map while samples are still playing, so the next trigger on that voice does not stop them. | done (#394) |
 | RE-62 | Medium | Dependencies | `node-wav` is abandoned (2016) with an open upstream security report; it needs workarounds (`toPlainWav`) and calls the deprecated `Buffer()`. | done (#395) |

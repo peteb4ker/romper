@@ -193,11 +193,13 @@ WAV headers are read by walking RIFF chunks (`wavHeader.ts`, RE-08), so
 chunks, and other tools write `JUNK`, `bext` or `LIST` chunks and 18- or
 40-byte `fmt ` chunks. Metadata, conversion and adding a sample all use
 it. Conversion decodes and encodes samples in-repo (`wavCodec.ts`,
-RE-62), with the same scaling as node-wav, which it replaced. A file
-that isn't uncompressed PCM or float is refused when added and listed in
-the write summary as a sample that can't be written; float files and
-WAVE_FORMAT_EXTENSIBLE headers are converted to plain 16-bit PCM. A file
-is never copied to the card unconverted when its conversion fails.
+RE-62), with the same scaling as node-wav, which it replaced, but
+rounding to the nearest step when it encodes (RE-63), so an unchanged
+sample comes back exactly. A file that isn't uncompressed PCM or float
+is refused when added and listed in the write summary as a sample that
+can't be written; float files and WAVE_FORMAT_EXTENSIBLE headers are
+converted to plain 16-bit PCM. A file is never copied to the card
+unconverted when its conversion fails.
 
 Sync doesn't block the main process (RE-07): file I/O is asynchronous and
 `syncFileOperations.processAllFiles` yields to the event loop after every
